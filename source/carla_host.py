@@ -132,7 +132,9 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff (patchbay)
 
-        self.fMovingViaMiniCanvas = False
+        self.fExportImage   = QImage()
+        self.fExportPrinter = QPrinter()
+
         self.fPeaksCleared = True
 
         self.fExternalPatchbay = False
@@ -292,8 +294,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         self.setupCanvas()
 
-        QTimer.singleShot(100, self.slot_restoreScrollbarValues)
-
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
 
@@ -394,7 +394,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         self.setProperWindowTitle()
 
-        # FIXME: Qt4 needs this so it properly creates & resizes the canvas
+        # Qt4 needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.tabWidget.setCurrentIndex(0)
         self.fixCanvasPreviewSize()
@@ -402,6 +402,41 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------
+    # Setup
+
+    def refreshTransport(self, forced = False):
+        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
+            return
+
+        timeInfo = self.host.get_transport_info()
+        playing  = timeInfo['playing']
+        frame    = timeInfo['frame']
+
+        if playing != self.fLastTransportState or forced:
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.act_transport_play.setChecked(True)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Pause"))
+            else:
+                icon = getIcon("media-playback-start")
+                self.ui.act_transport_play.setChecked(False)
+                self.ui.act_transport_play.setIcon(icon)
+                self.ui.act_transport_play.setText(self.tr("&Play"))
+
+            self.fLastTransportState = playing
+
+        if frame != self.fLastTransportFrame or forced:
+            time = frame / self.fSampleRate
+            secs = time % 60
+            mins = (time / 60) % 60
+            hrs  = (time / 3600) % 60
+
+            self.fTransportText = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
+            self.fLastTransportFrame = frame
+
+    def setLoadRDFsNeeded(self):
+        self.fLadspaRdfNeedsUpdate = True
 
     def setProperWindowTitle(self):
         title = self.fClientName
@@ -413,140 +448,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         self.setWindowTitle(title)
 
-    def setupCanvas(self):
-        pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
-        pOptions.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
-        pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        pOptions.antialiasing     = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        pOptions.eyecandy         = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
-
-        pFeatures = patchcanvas.features_t()
-        pFeatures.group_info   = False
-        pFeatures.group_rename = False
-        pFeatures.port_info    = False
-        pFeatures.port_rename  = False
-        pFeatures.handle_group_pos = True
-
-        patchcanvas.setOptions(pOptions)
-        patchcanvas.setFeatures(pFeatures)
-        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
-
-        tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
-
-        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
-            self.fCanvasWidth  = int(tryCanvasSize[0])
-            self.fCanvasHeight = int(tryCanvasSize[1])
-        else:
-            self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
-            self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
-
-        patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-        patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
-        self.ui.graphicsView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
-
-        self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
-        self.ui.miniCanvasPreview.init(self.scene, self.fCanvasWidth, self.fCanvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
-
-    def updateCanvasInitialPos(self):
-        x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
-        y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
-        patchcanvas.setInitialPos(x, y)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(bool)
-    def slot_showCanvasMeters(self, yesNo):
-        self.ui.peak_in.setVisible(yesNo)
-        self.ui.peak_out.setVisible(yesNo)
-
-    @pyqtSlot(bool)
-    def slot_showCanvasKeyboard(self, yesNo):
-        self.ui.scrollArea.setVisible(yesNo)
-
-    @pyqtSlot()
-    def slot_restoreScrollbarValues(self):
-        settings = QSettings()
-        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().maximum()/2, type=int))
-        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().maximum()/2, type=int))
-
-    @pyqtSlot()
-    def slot_miniCanvasCheckAll(self):
-        self.slot_miniCanvasCheckSize()
-        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
-        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
-
-    @pyqtSlot()
-    def slot_miniCanvasCheckSize(self):
-        self.ui.miniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
-
-    @pyqtSlot(int)
-    def slot_horizontalScrollBarChanged(self, value):
-        if self.fMovingViaMiniCanvas: return
-
-        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
-        if maximum == 0:
-            xp = 0
-        else:
-            xp = float(value) / maximum
-        self.ui.miniCanvasPreview.setViewPosX(xp)
-        self.updateCanvasInitialPos()
-
-    @pyqtSlot(int)
-    def slot_verticalScrollBarChanged(self, value):
-        if self.fMovingViaMiniCanvas: return
-
-        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
-        if maximum == 0:
-            yp = 0
-        else:
-            yp = float(value) / maximum
-        self.ui.miniCanvasPreview.setViewPosY(yp)
-        self.updateCanvasInitialPos()
-
-    @pyqtSlot(float)
-    def slot_canvasScaleChanged(self, scale):
-        self.ui.miniCanvasPreview.setViewScale(scale)
-
-    @pyqtSlot(int, int, QPointF)
-    def slot_canvasItemMoved(self, group_id, split_mode, pos):
-        self.ui.miniCanvasPreview.update()
-
-    @pyqtSlot(list)
-    def slot_canvasPluginSelected(self, pluginList):
-        self.ui.keyboard.allNotesOff(False)
-        self.ui.scrollArea.setEnabled(len(pluginList) != 0) # and self.fPluginCount > 0
-        self.fSelectedPlugins = pluginList
-
-    @pyqtSlot(float, float)
-    def slot_miniCanvasMoved(self, xp, yp):
-        self.fMovingViaMiniCanvas = True
-        self.ui.graphicsView.horizontalScrollBar().setValue(xp * self.ui.graphicsView.horizontalScrollBar().maximum())
-        self.ui.graphicsView.verticalScrollBar().setValue(yp * self.ui.graphicsView.verticalScrollBar().maximum())
-        self.fMovingViaMiniCanvas = False
-        self.updateCanvasInitialPos()
-
     # --------------------------------------------------------------------------------------------------------
-    # Called by PluginDatabaseW
-
-    def setLoadRDFsNeeded(self):
-        self.fLadspaRdfNeedsUpdate = True
-
-    # --------------------------------------------------------------------------------------------------------
-    # Called by the signal handler
-
-    @pyqtSlot()
-    def slot_handleSIGUSR1(self):
-        print("Got SIGUSR1 -> Saving project now")
-        self.slot_fileSave()
-
-    @pyqtSlot()
-    def slot_handleSIGTERM(self):
-        print("Got SIGTERM -> Closing now")
-        self.close()
-
-    # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (files)
+    # Files
 
     def loadProjectNow(self):
         if not self.fProjectFilename:
@@ -581,10 +484,11 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         QTimer.singleShot(1000, self.slot_canvasRefresh)
 
     # --------------------------------------------------------------------------------------------------------
+    # Files (menu actions)
 
     @pyqtSlot()
     def slot_fileNew(self):
-        #self.fContainer.removeAllPlugins()
+        self.removeAllPlugins()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
 
@@ -600,13 +504,13 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         newFile = True
 
-        if self.host.get_current_plugin_count() > 0:
+        if self.fPluginCount > 0:
             ask = QMessageBox.question(self, self.tr("Question"), self.tr("There are some plugins loaded, do you want to remove them now?"),
                                                                           QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             newFile = (ask == QMessageBox.Yes)
 
         if newFile:
-            #self.fContainer.removeAllPlugins()
+            self.removeAllPlugins()
             self.fProjectFilename = filename
             self.setProperWindowTitle()
             self.loadProjectNow()
@@ -647,128 +551,41 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.loadProjectNow()
 
     # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (engine)
-
-    def setEngineSettings(self):
-        settings = QSettings("falkTX", "Carla2")
-
-        # ----------------------------------------------------------------------------------------------------
-        # main settings
-
-        setHostSettings(self.host)
-
-        # ----------------------------------------------------------------------------------------------------
-        # plugin paths
-
-        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
-        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
-        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
-        VST_PATH    = toList(settings.value(CARLA_KEY_PATHS_VST,    CARLA_DEFAULT_VST_PATH))
-        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
-        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
-        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
-        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
-
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(VST_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
-
-        # ----------------------------------------------------------------------------------------------------
-        # don't continue if plugin
-
-        if self.host.isPlugin:
-            return "Plugin"
-
-        # ----------------------------------------------------------------------------------------------------
-        # driver and device settings
-
-        # driver name
-        try:
-            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-        except:
-            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
-
-        # driver options
-        try:
-            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
-        except:
-            audioDevice = ""
-
-        try:
-            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        except:
-            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
-
-        try:
-            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        except:
-            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
-
-        try:
-            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
-        except:
-            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
-
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-
-        # ----------------------------------------------------------------------------------------------------
-        # fix things if needed
-
-        if audioDriver != "JACK" and self.host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
-
-        # ----------------------------------------------------------------------------------------------------
-        # return selected driver name
-
-        return audioDriver
-
-    # --------------------------------------------------------------------------------------------------------
+    # Engine (menu actions)
 
     @pyqtSlot()
     def slot_engineStart(self):
         audioDriver = self.setEngineSettings()
-
-        if not self.host.engine_init(audioDriver, self.fClientName):
-            if self.fFirstEngineInit:
-                self.fFirstEngineInit = False
-                return
-
-            audioError = self.host.get_last_error()
-
-            if audioError:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
-            else:
-                QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
-            return
+        firstInit   = self.fFirstEngineInit
 
         self.fFirstEngineInit = False
 
+        if self.host.engine_init(audioDriver, self.fClientName) or firstInit:
+            return
+
+        audioError = self.host.get_last_error()
+
+        if audioError:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s', possible reasons:\n%s" % (audioDriver, audioError)))
+        else:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
+
     @pyqtSlot()
     def slot_engineStop(self):
-        if self.host.get_current_plugin_count() > 0:
+        if self.fPluginCount > 0:
             ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
                                                                          "Do you want to do this now?"),
                                                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if ask != QMessageBox.Yes:
                 return
 
-            self.ui.act_plugin_remove_all.setEnabled(False)
-            #self.fContainer.removeAllPlugins()
+            self.removeAllPlugins()
 
         if self.host.is_engine_running() and not self.host.engine_close():
             print(self.host.get_last_error())
 
     # --------------------------------------------------------------------------------------------------------
+    # Engine (host callbacks)
 
     @pyqtSlot(str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
@@ -799,8 +616,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.killTimers()
 
         # just in case
-        self.ui.act_plugin_remove_all.setEnabled(False)
-        #self.fContainer.removeAllPlugins()
+        self.removeAllPlugins()
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
@@ -819,15 +635,11 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.fSampleRate = 0.0
         self.fTransportText = ""
 
-    @pyqtSlot(float)
-    def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fSampleRate = newSampleRate
-        self.refreshTransport(True)
-
     # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (plugins)
+    # Plugins
 
     def removeAllPlugins(self):
+        self.ui.act_plugin_remove_all.setEnabled(False)
         patchcanvas.handleAllPluginsRemoved()
 
         while self.ui.rack.takeItem(0):
@@ -837,13 +649,16 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         for pitem in self.fPluginList:
             if pitem is None:
-                break
+                continue
 
             pitem.closeEditDialog()
             del pitem
 
         self.fPluginCount = 0
         self.fPluginList  = []
+
+    # --------------------------------------------------------------------------------------------------------
+    # Plugins (menu actions)
 
     @pyqtSlot()
     def slot_pluginAdd(self, pluginToReplace = -1):
@@ -878,350 +693,28 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_pluginRemoveAll(self):
-        self.ui.act_plugin_remove_all.setEnabled(False)
-
-        count = self.host.get_current_plugin_count()
-
-        if count == 0:
+        if self.fPluginCount == 0:
             return
 
-        self.projectLoadingStarted()
+        if True:
+            # animated
+            self.projectLoadingStarted()
 
-        app = QApplication.instance()
-        for i in range(count):
+            app = QApplication.instance()
             app.processEvents()
-            self.host.remove_plugin(count-i-1)
 
-        self.projectLoadingFinished()
+            for i in range(self.fPluginCount):
+                self.host.remove_plugin(self.fPluginCount-i-1)
+                app.processEvents()
 
-        #self.fContainer.removeAllPlugins()
-        #self.host.remove_all_plugins()
+            self.projectLoadingFinished()
 
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
-        if pluginId in self.fSelectedPlugins:
-            self.ui.keyboard.sendNoteOn(note, False)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOffCallback(self, pluginId, channel, note):
-        if pluginId in self.fSelectedPlugins:
-            self.ui.keyboard.sendNoteOff(note, False)
-
-    # -----------------------------------------------------------------
-    # PluginEdit callbacks
-
-    def editDialogNotePressed(self, pluginId, note):
-        if pluginId in self.fSelectedPlugins:
-            self.ui.keyboard.sendNoteOn(note, False)
-
-    def editDialogNoteReleased(self, pluginId, note):
-        if pluginId in self.fSelectedPlugins:
-            self.ui.keyboard.sendNoteOff(note, False)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_noteOn(self, note):
-        for pluginId in self.fSelectedPlugins:
-            self.host.send_midi_note(pluginId, 0, note, 100)
-
-            pedit = self.getPluginEditDialog(pluginId)
-            pedit.noteOn(0, note, 100)
-
-    @pyqtSlot(int)
-    def slot_noteOff(self, note):
-        for pluginId in self.fSelectedPlugins:
-            self.host.send_midi_note(pluginId, 0, note, 0)
-
-            pedit = self.getPluginEditDialog(pluginId)
-            pedit.noteOff(0, note)
+        # just in case
+        self.removeAllPlugins()
+        self.host.remove_all_plugins()
 
     # --------------------------------------------------------------------------------------------------------
-
-    @pyqtSlot(int, str)
-    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        self.ui.act_plugin_remove_all.setEnabled(self.host.get_current_plugin_count() > 0)
-
-        #pitem = CarlaRackItem(self.fRack, pluginId, self.getSavedSettings()[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
-
-        #self.fPluginList.append(pitem)
-        self.fPluginCount += 1
-
-        #if not self.isProjectLoading():
-            #pitem.getWidget().setActive(True, True, True)
-
-    @pyqtSlot(int)
-    def slot_handlePluginRemovedCallback(self, pluginId):
-        self.ui.act_plugin_remove_all.setEnabled(self.host.get_current_plugin_count() > 0)
-        patchcanvas.handlePluginRemoved(pluginId)
-
-        if pluginId in self.fSelectedPlugins:
-            self.clearSideStuff()
-
-        #pitem = self.getPluginItem(pluginId)
-
-        self.fPluginCount -= 1
-        #self.fPluginList.pop(pluginId)
-        #self.fRack.takeItem(pluginId)
-
-        #if pitem is not None:
-            #pitem.closeEditDialog()
-            #del pitem
-
-        ## push all plugins 1 slot back
-        #for i in range(pluginId, self.fPluginCount):
-            #pitem = self.fPluginList[i]
-            #pitem.setPluginId(i)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, pluginId, clientName):
-        pcSplit = patchcanvas.SPLIT_UNDEF
-        pcIcon  = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_CARLA:
-            pass
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-
-        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
-
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-        if pluginId < 0:
-            return
-        if pluginId >= self.fPluginCount:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
-
-    @pyqtSlot(int)
-    def slot_handlePatchbayClientRemovedCallback(self, clientId):
-        #if not self.fEngineStarted: return
-        patchcanvas.removeGroup(clientId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, str)
-    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
-        patchcanvas.renameGroup(clientId, newClientName)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
-        pcIcon = patchcanvas.ICON_APPLICATION
-
-        if clientIcon == PATCHBAY_ICON_PLUGIN:
-            pcIcon = patchcanvas.ICON_PLUGIN
-        if clientIcon == PATCHBAY_ICON_HARDWARE:
-            pcIcon = patchcanvas.ICON_HARDWARE
-        elif clientIcon == PATCHBAY_ICON_CARLA:
-            pass
-        elif clientIcon == PATCHBAY_ICON_DISTRHO:
-            pcIcon = patchcanvas.ICON_DISTRHO
-        elif clientIcon == PATCHBAY_ICON_FILE:
-            pcIcon = patchcanvas.ICON_FILE
-
-        patchcanvas.setGroupIcon(clientId, pcIcon)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-        if pluginId < 0:
-            return
-        if pluginId >= self.fPluginCount:
-            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
-            return
-
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
-
-    @pyqtSlot(int, int, int, str)
-    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
-        isAlternate = False
-
-        if (portFlags & PATCHBAY_PORT_IS_INPUT):
-            portMode = patchcanvas.PORT_MODE_INPUT
-        else:
-            portMode = patchcanvas.PORT_MODE_OUTPUT
-
-        if (portFlags & PATCHBAY_PORT_TYPE_AUDIO):
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_TYPE_CV):
-            isAlternate = True
-            portType = patchcanvas.PORT_TYPE_AUDIO_JACK
-        elif (portFlags & PATCHBAY_PORT_TYPE_MIDI):
-            portType = patchcanvas.PORT_TYPE_MIDI_JACK
-        else:
-            portType = patchcanvas.PORT_TYPE_NULL
-
-        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, int)
-    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
-        #if not self.fEngineStarted: return
-        patchcanvas.removePort(groupId, portId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, int, str)
-    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
-        patchcanvas.renamePort(groupId, portId, newPortName)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int, int, int)
-    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
-        patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot(int, int, int)
-    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
-        #if not self.fEngineStarted: return
-        patchcanvas.disconnectPorts(connectionId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot()
-    def slot_canvasArrange(self):
-        patchcanvas.arrange()
-
-    @pyqtSlot()
-    def slot_canvasShowInternal(self):
-        self.fExternalPatchbay = False
-        self.ui.act_canvas_show_internal.blockSignals(True)
-        self.ui.act_canvas_show_external.blockSignals(True)
-        self.ui.act_canvas_show_internal.setChecked(True)
-        self.ui.act_canvas_show_external.setChecked(False)
-        self.ui.act_canvas_show_internal.blockSignals(False)
-        self.ui.act_canvas_show_external.blockSignals(False)
-        self.slot_canvasRefresh()
-
-    @pyqtSlot()
-    def slot_canvasShowExternal(self):
-        self.fExternalPatchbay = True
-        self.ui.act_canvas_show_internal.blockSignals(True)
-        self.ui.act_canvas_show_external.blockSignals(True)
-        self.ui.act_canvas_show_internal.setChecked(False)
-        self.ui.act_canvas_show_external.setChecked(True)
-        self.ui.act_canvas_show_internal.blockSignals(False)
-        self.ui.act_canvas_show_external.blockSignals(False)
-        self.slot_canvasRefresh()
-
-    @pyqtSlot()
-    def slot_canvasRefresh(self):
-        patchcanvas.clear()
-
-        if self.host.is_engine_running():
-            self.host.patchbay_refresh(self.fExternalPatchbay)
-
-            for pedit in self.fPluginList:
-                if pedit is None:
-                    break
-                pedit.reloadAll()
-
-        QTimer.singleShot(1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.ui.miniCanvasPreview.update)
-
-    @pyqtSlot()
-    def slot_canvasZoomFit(self):
-        self.scene.zoom_fit()
-
-    @pyqtSlot()
-    def slot_canvasZoomIn(self):
-        self.scene.zoom_in()
-
-    @pyqtSlot()
-    def slot_canvasZoomOut(self):
-        self.scene.zoom_out()
-
-    @pyqtSlot()
-    def slot_canvasZoomReset(self):
-        self.scene.zoom_reset()
-
-    @pyqtSlot()
-    def slot_canvasPrint(self):
-        self.scene.clearSelection()
-        self.fExportPrinter = QPrinter()
-        dialog = QPrintDialog(self.fExportPrinter, self)
-
-        if dialog.exec_():
-            painter = QPainter(self.fExportPrinter)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setRenderHint(QPainter.TextAntialiasing)
-            self.scene.render(painter)
-            painter.restore()
-
-    @pyqtSlot()
-    def slot_canvasSaveImage(self):
-        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
-
-        if config_UseQt5:
-            newPath = newPath[0]
-        if not newPath:
-            return
-
-        self.scene.clearSelection()
-
-        if newPath.lower().endswith((".jpg",)):
-            imgFormat = "JPG"
-        elif newPath.lower().endswith((".png",)):
-            imgFormat = "PNG"
-        else:
-            # File-dialog may not auto-add the extension
-            imgFormat = "PNG"
-            newPath  += ".png"
-
-        self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
-        painter = QPainter(self.fExportImage)
-        painter.save()
-        painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
-        painter.setRenderHint(QPainter.TextAntialiasing)
-        self.scene.render(painter)
-        self.fExportImage.save(newPath, imgFormat, 100)
-        painter.restore()
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_handleReloadAllCallback(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return
-
-        self.ui.listWidget.setCurrentRow(-1)
-        self.fCurrentRow = -1
-        self.fLastSelectedItem = None
-
-        pitem.recreateWidget()
-
-    # -----------------------------------------------------------------
-
-    @pyqtSlot(int)
-    def slot_currentRowChanged(self, row):
-        self.fCurrentRow = row
-
-        if self.fLastSelectedItem is not None:
-            self.fLastSelectedItem.setSelected(False)
-
-        if row < 0 or row >= self.fPluginCount or self.fPluginList[row] is None:
-            self.fLastSelectedItem = None
-            return
-
-        pitem = self.fPluginList[row]
-        pitem.getWidget().setSelected(True)
-        self.fLastSelectedItem = pitem.getWidget()
-
-    # -----------------------------------------------------------------
+    # Plugins (macros)
 
     @pyqtSlot()
     def slot_pluginsEnable(self):
@@ -1302,69 +795,47 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_RIGHT, 1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_PANNING, 0.0)
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # Plugins (host callbacks)
 
-    @pyqtSlot()
-    def slot_configureCarla(self):
-        dialog = CarlaSettingsW(self, self.host, True, hasGL)
-        if not dialog.exec_():
-            return
+    @pyqtSlot(int, str)
+    def slot_handlePluginAddedCallback(self, pluginId, pluginName):
+        #pitem = CarlaRackItem(self.fRack, pluginId, self.getSavedSettings()[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
 
-        self.loadSettings(False)
+        #self.fPluginList.append(pitem)
+        self.fPluginCount += 1
 
-        patchcanvas.clear()
+        #if not self.isProjectLoading():
+            #pitem.getWidget().setActive(True, True, True)
 
-        self.setupCanvas()
-        self.slot_miniCanvasCheckAll()
+        self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 
-        if self.host.is_engine_running():
-            self.host.patchbay_refresh(self.fExternalPatchbay)
+    @pyqtSlot(int)
+    def slot_handlePluginRemovedCallback(self, pluginId):
+        patchcanvas.handlePluginRemoved(pluginId)
+
+        if pluginId in self.fSelectedPlugins:
+            self.clearSideStuff()
+
+        #pitem = self.getPluginItem(pluginId)
+
+        self.fPluginCount -= 1
+        #self.fPluginList.pop(pluginId)
+        #self.fRack.takeItem(pluginId)
+
+        #if pitem is not None:
+            #pitem.closeEditDialog()
+            #del pitem
+
+        ## push all plugins 1 slot back
+        #for i in range(pluginId, self.fPluginCount):
+            #pitem = self.fPluginList[i]
+            #pitem.setPluginId(i)
+
+        self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 
     # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (plugin data)
-
-    def getExtraPtr(self, plugin):
-        ptype = plugin['type']
-
-        if ptype == PLUGIN_LADSPA:
-            uniqueId = plugin['uniqueId']
-
-            self.maybeLoadRDFs()
-
-            for rdfItem in self.fLadspaRdfList:
-                if rdfItem.UniqueID == uniqueId:
-                    return pointer(rdfItem)
-
-        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
-            if plugin['name'].lower().endswith(" (16 outputs)"):
-                return self._true
-
-        return None
-
-    def maybeLoadRDFs(self):
-        if not self.fLadspaRdfNeedsUpdate:
-            return
-
-        self.fLadspaRdfNeedsUpdate = False
-        self.fLadspaRdfList = []
-
-        if not haveLRDF:
-            return
-
-        settingsDir  = os.path.join(HOME, ".config", "falkTX")
-        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
-
-        if os.path.exists(frLadspaFile):
-            frLadspa = open(frLadspaFile, 'r')
-
-            try:
-                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
-            except:
-                pass
-
-            frLadspa.close()
-
-    # -----------------------------------------------------------------
+    # Canvas
 
     def clearSideStuff(self):
         self.scene.clearSelection()
@@ -1380,103 +851,276 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.ui.peak_out.displayMeter(1, 0.0, True)
         self.ui.peak_out.displayMeter(2, 0.0, True)
 
-    def getPluginItem(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return None
+    def setupCanvas(self):
+        pOptions = patchcanvas.options_t()
+        pOptions.theme_name       = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        pOptions.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        pOptions.antialiasing     = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.eyecandy         = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return None
-        #if False:
-            #pitem = CarlaRackItem(self, 0, False)
+        pFeatures = patchcanvas.features_t()
+        pFeatures.group_info   = False
+        pFeatures.group_rename = False
+        pFeatures.port_info    = False
+        pFeatures.port_rename  = False
+        pFeatures.handle_group_pos = True
 
-        return pitem
+        patchcanvas.setOptions(pOptions)
+        patchcanvas.setFeatures(pFeatures)
+        patchcanvas.init("Carla2", self.scene, canvasCallback, False)
 
-    def getPluginEditDialog(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return None
+        tryCanvasSize = self.fSavedSettings[CARLA_KEY_CANVAS_SIZE].split("x")
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return None
-        #if False:
-            #pitem = CarlaRackItem(self, 0, False)
+        if len(tryCanvasSize) == 2 and tryCanvasSize[0].isdigit() and tryCanvasSize[1].isdigit():
+            self.fCanvasWidth  = int(tryCanvasSize[0])
+            self.fCanvasHeight = int(tryCanvasSize[1])
+        else:
+            self.fCanvasWidth  = CARLA_DEFAULT_CANVAS_SIZE_WIDTH
+            self.fCanvasHeight = CARLA_DEFAULT_CANVAS_SIZE_HEIGHT
 
-        return pitem.getEditDialog()
+        patchcanvas.setCanvasSize(0, 0, self.fCanvasWidth, self.fCanvasHeight)
+        patchcanvas.setInitialPos(self.fCanvasWidth / 2, self.fCanvasHeight / 2)
+        self.ui.graphicsView.setSceneRect(0, 0, self.fCanvasWidth, self.fCanvasHeight)
 
-    def getPluginSlotWidget(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            return None
+        self.ui.miniCanvasPreview.setViewTheme(patchcanvas.canvas.theme.canvas_bg, patchcanvas.canvas.theme.rubberband_brush, patchcanvas.canvas.theme.rubberband_pen.color())
+        self.ui.miniCanvasPreview.init(self.scene, self.fCanvasWidth, self.fCanvasHeight, self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING])
 
-        pitem = self.fPluginList[pluginId]
-        if pitem is None:
-            return None
-        #if False:
-            #pitem = CarlaRackItem(self, 0, False)
-
-        return pitem.getWidget()
-
-    # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (timers)
-
-    def startTimers(self):
-        if self.fIdleTimerFast == 0:
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-
-        if self.fIdleTimerSlow == 0:
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    def restartTimersIfNeeded(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
-
-    def killTimers(self):
-        if self.fIdleTimerFast != 0:
-            self.killTimer(self.fIdleTimerFast)
-            self.fIdleTimerFast = 0
-
-        if self.fIdleTimerSlow != 0:
-            self.killTimer(self.fIdleTimerSlow)
-            self.fIdleTimerSlow = 0
+    def updateCanvasInitialPos(self):
+        x = self.ui.graphicsView.horizontalScrollBar().value() + self.width()/4
+        y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
+        patchcanvas.setInitialPos(x, y)
 
     # --------------------------------------------------------------------------------------------------------
-    # Internal stuff (transport)
+    # Canvas (menu actions)
 
-    def refreshTransport(self, forced = False):
-        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
+    @pyqtSlot()
+    def slot_canvasShowInternal(self):
+        self.fExternalPatchbay = False
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+        self.ui.act_canvas_show_internal.setChecked(True)
+        self.ui.act_canvas_show_external.setChecked(False)
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
+    def slot_canvasShowExternal(self):
+        self.fExternalPatchbay = True
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+        self.ui.act_canvas_show_internal.setChecked(False)
+        self.ui.act_canvas_show_external.setChecked(True)
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
+    def slot_canvasArrange(self):
+        patchcanvas.arrange()
+
+    @pyqtSlot()
+    def slot_canvasRefresh(self):
+        patchcanvas.clear()
+
+        if self.host.is_engine_running():
+            self.host.patchbay_refresh(self.fExternalPatchbay)
+
+            for pedit in self.fPluginList:
+                if pedit is None:
+                    break
+                pedit.reloadAll()
+
+        QTimer.singleShot(1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot()
+    def slot_canvasZoomFit(self):
+        self.scene.zoom_fit()
+
+    @pyqtSlot()
+    def slot_canvasZoomIn(self):
+        self.scene.zoom_in()
+
+    @pyqtSlot()
+    def slot_canvasZoomOut(self):
+        self.scene.zoom_out()
+
+    @pyqtSlot()
+    def slot_canvasZoomReset(self):
+        self.scene.zoom_reset()
+
+    @pyqtSlot()
+    def slot_canvasPrint(self):
+        self.scene.clearSelection()
+        dialog = QPrintDialog(self.fExportPrinter, self)
+
+        if dialog.exec_():
+            painter = QPainter(self.fExportPrinter)
+            painter.save()
+            painter.setRenderHint(QPainter.Antialiasing)
+            painter.setRenderHint(QPainter.TextAntialiasing)
+            self.scene.render(painter)
+            painter.restore()
+
+    @pyqtSlot()
+    def slot_canvasSaveImage(self):
+        newPath = QFileDialog.getSaveFileName(self, self.tr("Save Image"), filter=self.tr("PNG Image (*.png);;JPEG Image (*.jpg)"))
+
+        if config_UseQt5:
+            newPath = newPath[0]
+        if not newPath:
             return
 
-        timeInfo = self.host.get_transport_info()
-        playing  = timeInfo['playing']
-        frame    = timeInfo['frame']
+        self.scene.clearSelection()
 
-        if playing != self.fLastTransportState or forced:
-            if playing:
-                icon = getIcon("media-playback-pause")
-                self.ui.act_transport_play.setChecked(True)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Pause"))
-            else:
-                icon = getIcon("media-playback-start")
-                self.ui.act_transport_play.setChecked(False)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Play"))
+        if newPath.lower().endswith((".jpg", ".jpeg")):
+            imgFormat = "JPG"
+        elif newPath.lower().endswith((".png",)):
+            imgFormat = "PNG"
+        else:
+            # File-dialog may not auto-add the extension
+            imgFormat = "PNG"
+            newPath  += ".png"
 
-            self.fLastTransportState = playing
+        self.fExportImage = QImage(self.scene.sceneRect().width(), self.scene.sceneRect().height(), QImage.Format_RGB32)
+        painter = QPainter(self.fExportImage)
+        painter.save()
+        painter.setRenderHint(QPainter.Antialiasing) # TODO - set true, cleanup this
+        painter.setRenderHint(QPainter.TextAntialiasing)
+        self.scene.render(painter)
+        self.fExportImage.save(newPath, imgFormat, 100)
+        painter.restore()
 
-        if frame != self.fLastTransportFrame or forced:
-            time = frame / self.fSampleRate
-            secs = time % 60
-            mins = (time / 60) % 60
-            hrs  = (time / 3600) % 60
+    # --------------------------------------------------------------------------------------------------------
+    # Canvas (canvas callbacks)
 
-            self.fTransportText = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
-            self.fLastTransportFrame = frame
+    @pyqtSlot(int, int, QPointF)
+    def slot_canvasItemMoved(self, group_id, split_mode, pos):
+        self.ui.miniCanvasPreview.update()
+
+    @pyqtSlot(float)
+    def slot_canvasScaleChanged(self, scale):
+        self.ui.miniCanvasPreview.setViewScale(scale)
+
+    @pyqtSlot(list)
+    def slot_canvasPluginSelected(self, pluginList):
+        self.ui.keyboard.allNotesOff(False)
+        self.ui.scrollArea.setEnabled(len(pluginList) != 0) # and self.fPluginCount > 0
+        self.fSelectedPlugins = pluginList
+
+    # --------------------------------------------------------------------------------------------------------
+    # Canvas (host callbacks)
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayClientAddedCallback(self, clientId, clientIcon, pluginId, clientName):
+        pcSplit = patchcanvas.SPLIT_UNDEF
+        pcIcon  = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
+
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.fPluginCount:
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+
+    @pyqtSlot(int)
+    def slot_handlePatchbayClientRemovedCallback(self, clientId):
+        patchcanvas.removeGroup(clientId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, str)
+    def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
+        patchcanvas.renameGroup(clientId, newClientName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
+        pcIcon = patchcanvas.ICON_APPLICATION
+
+        if clientIcon == PATCHBAY_ICON_PLUGIN:
+            pcIcon = patchcanvas.ICON_PLUGIN
+        if clientIcon == PATCHBAY_ICON_HARDWARE:
+            pcIcon = patchcanvas.ICON_HARDWARE
+        elif clientIcon == PATCHBAY_ICON_CARLA:
+            pass
+        elif clientIcon == PATCHBAY_ICON_DISTRHO:
+            pcIcon = patchcanvas.ICON_DISTRHO
+        elif clientIcon == PATCHBAY_ICON_FILE:
+            pcIcon = patchcanvas.ICON_FILE
+
+        patchcanvas.setGroupIcon(clientId, pcIcon)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+        if pluginId < 0:
+            return
+        if pluginId >= self.fPluginCount:
+            print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
+            return
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+
+    @pyqtSlot(int, int, int, str)
+    def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):
+        if portFlags & PATCHBAY_PORT_IS_INPUT:
+            portMode = patchcanvas.PORT_MODE_INPUT
+        else:
+            portMode = patchcanvas.PORT_MODE_OUTPUT
+
+        if portFlags & PATCHBAY_PORT_TYPE_AUDIO:
+            portType    = patchcanvas.PORT_TYPE_AUDIO_JACK
+            isAlternate = False
+        elif portFlags & PATCHBAY_PORT_TYPE_CV:
+            portType    = patchcanvas.PORT_TYPE_AUDIO_JACK
+            isAlternate = True
+        elif portFlags & PATCHBAY_PORT_TYPE_MIDI:
+            portType    = patchcanvas.PORT_TYPE_MIDI_JACK
+            isAlternate = False
+        else:
+            portType    = patchcanvas.PORT_TYPE_NULL
+            isAlternate = False
+
+        patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int)
+    def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
+        patchcanvas.removePort(groupId, portId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, str)
+    def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
+        patchcanvas.renamePort(groupId, portId, newPortName)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int, int, int)
+    def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
+        patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    @pyqtSlot(int, int, int)
+    def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
+        patchcanvas.disconnectPorts(connectionId)
+        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Transport
 
     def setTransportMenuEnabled(self, enabled):
         self.ui.act_transport_play.setEnabled(enabled)
@@ -1484,6 +1128,9 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.ui.act_transport_backwards.setEnabled(enabled)
         self.ui.act_transport_forwards.setEnabled(enabled)
         self.ui.menu_Transport.setEnabled(enabled)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Transport (menu actions)
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
@@ -1527,8 +1174,111 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         newFrame = self.host.get_current_transport_frame() + 100000
         self.host.transport_relocate(newFrame)
 
-    # -----------------------------------------------------------------
-    # Internal stuff (settings)
+    # --------------------------------------------------------------------------------------------------------
+    # Settings
+
+    def setEngineSettings(self):
+        settings = QSettings("falkTX", "Carla2")
+
+        # ----------------------------------------------------------------------------------------------------
+        # main settings
+
+        setHostSettings(self.host)
+
+        # ----------------------------------------------------------------------------------------------------
+        # plugin paths
+
+        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
+        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
+        VST_PATH    = toList(settings.value(CARLA_KEY_PATHS_VST,    CARLA_DEFAULT_VST_PATH))
+        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
+        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
+        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
+        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
+        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
+
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST,    splitter.join(VST_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
+        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+
+        # ----------------------------------------------------------------------------------------------------
+        # don't continue if plugin
+
+        if self.host.isPlugin:
+            return "Plugin"
+
+        # ----------------------------------------------------------------------------------------------------
+        # driver and device settings
+
+        # driver name
+        try:
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        except:
+            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
+
+        # driver options
+        try:
+            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+        except:
+            audioDevice = ""
+
+        try:
+            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+        except:
+            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
+
+        try:
+            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+        except:
+            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
+
+        try:
+            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+        except:
+            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
+
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+        self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+
+        # ----------------------------------------------------------------------------------------------------
+        # fix things if needed
+
+        if audioDriver != "JACK" and self.host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
+            self.host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
+
+        # ----------------------------------------------------------------------------------------------------
+        # return selected driver name
+
+        return audioDriver
+
+    def saveSettings(self):
+        settings = QSettings()
+
+        settings.setValue("Geometry", self.saveGeometry())
+        #settings.setValue("SplitterState", self.ui.splitter.saveState())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+
+        diskFolders = []
+
+        for i in range(self.ui.cb_disk.count()):
+            diskFolders.append(self.ui.cb_disk.itemData(i))
+
+        settings.setValue("DiskFolders", diskFolders)
+
+        settings.setValue("ShowMeters", self.ui.act_settings_show_meters.isChecked())
+        settings.setValue("ShowKeyboard", self.ui.act_settings_show_keyboard.isChecked())
+        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
+        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
 
     def loadSettings(self, firstTime):
         settings = QSettings()
@@ -1566,9 +1316,9 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             self.ui.act_settings_show_keyboard.setChecked(showKeyboard)
             self.ui.scrollArea.setVisible(showKeyboard)
 
-        # ---------------------------------------------
+            QTimer.singleShot(100, self.slot_restoreCanvasScrollbarValues)
 
-        # TODO
+        # TODO - complete this
 
         self.fSavedSettings = {
             CARLA_KEY_MAIN_PROJECT_FOLDER:     settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,     CARLA_DEFAULT_MAIN_PROJECT_FOLDER,     type=str),
@@ -1586,35 +1336,48 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 
-        # ---------------------------------------------
-
         self.setEngineSettings()
-
         self.restartTimersIfNeeded()
 
-        # ---------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # Settings (helpers)
 
-    def saveSettings(self):
+    @pyqtSlot()
+    def slot_restoreCanvasScrollbarValues(self):
         settings = QSettings()
+        self.ui.graphicsView.horizontalScrollBar().setValue(settings.value("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().maximum()/2, type=int))
+        self.ui.graphicsView.verticalScrollBar().setValue(settings.value("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().maximum()/2, type=int))
 
-        settings.setValue("Geometry", self.saveGeometry())
-        #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+    # --------------------------------------------------------------------------------------------------------
+    # Settings (menu actions)
 
-        diskFolders = []
+    @pyqtSlot(bool)
+    def slot_showCanvasMeters(self, yesNo):
+        self.ui.peak_in.setVisible(yesNo)
+        self.ui.peak_out.setVisible(yesNo)
 
-        for i in range(self.ui.cb_disk.count()):
-            diskFolders.append(self.ui.cb_disk.itemData(i))
+    @pyqtSlot(bool)
+    def slot_showCanvasKeyboard(self, yesNo):
+        self.ui.scrollArea.setVisible(yesNo)
 
-        settings.setValue("DiskFolders", diskFolders)
+    @pyqtSlot()
+    def slot_configureCarla(self):
+        dialog = CarlaSettingsW(self, self.host, True, hasGL)
+        if not dialog.exec_():
+            return
 
-        settings.setValue("ShowMeters", self.ui.act_settings_show_meters.isChecked())
-        settings.setValue("ShowKeyboard", self.ui.act_settings_show_keyboard.isChecked())
-        settings.setValue("HorizontalScrollBarValue", self.ui.graphicsView.horizontalScrollBar().value())
-        settings.setValue("VerticalScrollBarValue", self.ui.graphicsView.verticalScrollBar().value())
+        self.loadSettings(False)
 
-    # -----------------------------------------------------------------
-    # Internal stuff (gui)
+        patchcanvas.clear()
+
+        self.setupCanvas()
+        self.slot_miniCanvasCheckAll()
+
+        if self.host.is_engine_running():
+            self.host.patchbay_refresh(self.fExternalPatchbay)
+
+    # --------------------------------------------------------------------------------------------------------
+    # About (menu actions)
 
     @pyqtSlot()
     def slot_aboutCarla(self):
@@ -1628,7 +1391,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
     def slot_aboutQt(self):
         QApplication.instance().aboutQt()
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # Disk (menu actions)
 
     @pyqtSlot(int)
     def slot_diskFolderChanged(self, index):
@@ -1676,7 +1440,159 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
                              self.tr("Failed to load file"),
                              self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # Canvas scrollbars
+
+    @pyqtSlot(int)
+    def slot_horizontalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.horizontalScrollBar().maximum()
+        if maximum == 0:
+            xp = 0
+        else:
+            xp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosX(xp)
+        self.updateCanvasInitialPos()
+
+    @pyqtSlot(int)
+    def slot_verticalScrollBarChanged(self, value):
+        maximum = self.ui.graphicsView.verticalScrollBar().maximum()
+        if maximum == 0:
+            yp = 0
+        else:
+            yp = float(value) / maximum
+        self.ui.miniCanvasPreview.setViewPosY(yp)
+        self.updateCanvasInitialPos()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Canvas keyboard
+
+    @pyqtSlot(int)
+    def slot_noteOn(self, note):
+        for pluginId in self.fSelectedPlugins:
+            self.host.send_midi_note(pluginId, 0, note, 100)
+
+            pedit = self.getPluginEditDialog(pluginId)
+            pedit.noteOn(0, note, 100)
+
+    @pyqtSlot(int)
+    def slot_noteOff(self, note):
+        for pluginId in self.fSelectedPlugins:
+            self.host.send_midi_note(pluginId, 0, note, 0)
+
+            pedit = self.getPluginEditDialog(pluginId)
+            pedit.noteOff(0, note)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Canvas keyboard (host callbacks)
+
+    @pyqtSlot(int, int, int, int)
+    def slot_handleNoteOnCallback(self, pluginId, channel, note, velocity):
+        if pluginId in self.fSelectedPlugins:
+            self.ui.keyboard.sendNoteOn(note, False)
+
+    @pyqtSlot(int, int, int)
+    def slot_handleNoteOffCallback(self, pluginId, channel, note):
+        if pluginId in self.fSelectedPlugins:
+            self.ui.keyboard.sendNoteOff(note, False)
+
+    # --------------------------------------------------------------------------------------------------------
+    # MiniCanvas stuff
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckAll(self):
+        self.slot_miniCanvasCheckSize()
+        self.slot_horizontalScrollBarChanged(self.ui.graphicsView.horizontalScrollBar().value())
+        self.slot_verticalScrollBarChanged(self.ui.graphicsView.verticalScrollBar().value())
+
+    @pyqtSlot()
+    def slot_miniCanvasCheckSize(self):
+        if self.fCanvasWidth == 0 or self.fCanvasHeight == 0:
+            return
+
+        self.ui.miniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
+
+    @pyqtSlot(float, float)
+    def slot_miniCanvasMoved(self, xp, yp):
+        hsb = self.ui.graphicsView.horizontalScrollBar()
+        vsb = self.ui.graphicsView.verticalScrollBar()
+        hsb.blockSignals(True)
+        vsb.blockSignals(True)
+        hsb.setValue(xp * hsb.maximum())
+        vsb.setValue(yp * vsb.maximum())
+        hsb.blockSignals(False)
+        vsb.blockSignals(False)
+        self.updateCanvasInitialPos()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Rack stuff
+
+    @pyqtSlot(int)
+    def slot_currentRowChanged(self, row):
+        self.fCurrentRow = row
+
+        if self.fLastSelectedItem is not None:
+            self.fLastSelectedItem.setSelected(False)
+
+        if row < 0 or row >= self.fPluginCount or self.fPluginList[row] is None:
+            self.fLastSelectedItem = None
+            return
+
+        pitem = self.fPluginList[row]
+        pitem.getWidget().setSelected(True)
+        self.fLastSelectedItem = pitem.getWidget()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Timers
+
+    def startTimers(self):
+        if self.fIdleTimerFast == 0:
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow == 0:
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def restartTimersIfNeeded(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL])
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = self.startTimer(self.fSavedSettings[CARLA_KEY_MAIN_REFRESH_INTERVAL]*4)
+
+    def killTimers(self):
+        if self.fIdleTimerFast != 0:
+            self.killTimer(self.fIdleTimerFast)
+            self.fIdleTimerFast = 0
+
+        if self.fIdleTimerSlow != 0:
+            self.killTimer(self.fIdleTimerSlow)
+            self.fIdleTimerSlow = 0
+
+    # --------------------------------------------------------------------------------------------------------
+    # Misc
+
+    @pyqtSlot(int)
+    def slot_handleReloadAllCallback(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return
+
+        self.ui.listWidget.setCurrentRow(-1)
+        self.fCurrentRow = -1
+        self.fLastSelectedItem = None
+
+        pitem.recreateWidget()
+
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fSampleRate = newSampleRate
+        self.refreshTransport(True)
+
+    # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
@@ -1694,7 +1610,102 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
     def slot_handleQuitCallback(self):
         pass # TODO
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot()
+    def slot_handleSIGUSR1(self):
+        print("Got SIGUSR1 -> Saving project now")
+        self.slot_fileSave()
+
+    @pyqtSlot()
+    def slot_handleSIGTERM(self):
+        print("Got SIGTERM -> Closing now")
+        self.close()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Internal stuff
+
+    def getExtraPtr(self, plugin):
+        ptype = plugin['type']
+
+        if ptype == PLUGIN_LADSPA:
+            uniqueId = plugin['uniqueId']
+
+            self.maybeLoadRDFs()
+
+            for rdfItem in self.fLadspaRdfList:
+                if rdfItem.UniqueID == uniqueId:
+                    return pointer(rdfItem)
+
+        elif ptype in (PLUGIN_GIG, PLUGIN_SF2):
+            if plugin['name'].lower().endswith(" (16 outputs)"):
+                return self._true
+
+        return None
+
+    def maybeLoadRDFs(self):
+        if not self.fLadspaRdfNeedsUpdate:
+            return
+
+        self.fLadspaRdfNeedsUpdate = False
+        self.fLadspaRdfList = []
+
+        if not haveLRDF:
+            return
+
+        settingsDir  = os.path.join(HOME, ".config", "falkTX")
+        frLadspaFile = os.path.join(settingsDir, "ladspa_rdf.db")
+
+        if os.path.exists(frLadspaFile):
+            frLadspa = open(frLadspaFile, 'r')
+
+            try:
+                self.fLadspaRdfList = ladspa_rdf.get_c_ladspa_rdfs(json.load(frLadspa))
+            except:
+                pass
+
+            frLadspa.close()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def getPluginItem(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return None
+        #if False:
+            #pitem = CarlaRackItem(self, 0, False)
+
+        return pitem
+
+    def getPluginEditDialog(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return None
+        #if False:
+            #pitem = CarlaRackItem(self, 0, False)
+
+        return pitem.getEditDialog()
+
+    def getPluginSlotWidget(self, pluginId):
+        if pluginId >= self.fPluginCount:
+            return None
+
+        pitem = self.fPluginList[pluginId]
+        if pitem is None:
+            return None
+        #if False:
+            #pitem = CarlaRackItem(self, 0, False)
+
+        return pitem.getWidget()
+
+    # --------------------------------------------------------------------------------------------------------
+    # show/hide event
 
     def showEvent(self, event):
         QMainWindow.showEvent(self, event)
@@ -1709,7 +1720,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         QMainWindow.hideEvent(self, event)
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # resize event
 
     def fixCanvasPreviewSize(self):
         self.ui.patchbay.resize(self.ui.rack.size())
@@ -1723,7 +1735,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         else:
             self.slot_miniCanvasCheckSize()
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # timer event
 
     def idleFast(self):
         self.host.engine_idle()
@@ -1776,7 +1789,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         QMainWindow.timerEvent(self, event)
 
-    # -----------------------------------------------------------------
+    # --------------------------------------------------------------------------------------------------------
+    # close event
 
     def closeEvent(self, event):
         self.killTimers()
@@ -1787,7 +1801,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
             count = self.host.get_current_plugin_count()
 
-            if count > 0:
+            if self.fPluginCount > 0:
                 # simulate project loading, to disable container
                 self.ui.act_plugin_remove_all.setEnabled(False)
                 self.projectLoadingStarted() # FIXME

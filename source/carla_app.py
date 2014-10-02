@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla style
+# Carla application
 # Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software you can redistribute it and/or modify
@@ -88,7 +88,7 @@ class CarlaApplication(object):
             stylesDir = ""
 
         else:
-            self._createApp(appName)
+            self.createApp(appName)
             return
 
         # base settings
@@ -96,14 +96,14 @@ class CarlaApplication(object):
         useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
 
         if not useProTheme:
-            self._createApp(appName)
+            self.createApp(appName)
             return
 
         # set style
         QApplication.setStyle("carla" if stylesDir else "fusion")
 
         # create app
-        self._createApp(appName)
+        self.createApp(appName)
 
         self.fApp.setStyle("carla" if stylesDir else "fusion")
 
@@ -232,9 +232,7 @@ class CarlaApplication(object):
             self.fPalBlue.setColor(QPalette.Inactive, QPalette.LinkVisited, QColor(64, 128, 255))
             self.fApp.setPalette(self.fPalBlue)
 
-        print("Using \"%s\" theme" % self.fApp.style().objectName())
-
-    def _createApp(self, appName):
+    def createApp(self, appName):
         self.fApp = QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
@@ -247,6 +245,8 @@ class CarlaApplication(object):
 
         if MACOS and config_UseQt5:
             self.fApp.setAttribute(Qt.AA_DontShowIconsInMenus)
+
+        print("Using \"%s\" theme" % self.fApp.style().objectName())
 
     def arguments(self):
         return self.fApp.arguments()
