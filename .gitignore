@@ -53,7 +53,7 @@ source/paramspinbox.py
 source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py
-source/qgraphicsembedscene.py
+source/racklistwidget.py
 
 # Binaries
 carla-bridge-qtcreator

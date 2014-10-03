@@ -279,6 +279,7 @@ RES = \
 	bin/resources/pixmapbutton.py \
 	bin/resources/pixmapdial.py \
 	bin/resources/pixmapkeyboard.py \
+	bin/resources/racklistwidget.py \
 	bin/resources/resources_rc.py \
 	bin/resources/ui_carla_about.py \
 	bin/resources/ui_carla_about_juce.py \
@@ -352,7 +353,8 @@ WIDGETS = \
 	source/paramspinbox.py \
 	source/pixmapbutton.py \
 	source/pixmapdial.py \
-	source/pixmapkeyboard.py
+	source/pixmapkeyboard.py \
+	source/racklistwidget.py
 
 WIDGETS: $(WIDGETS)
 
@@ -538,6 +540,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/pixmapbutton.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/pixmapdial.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/pixmapkeyboard.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/racklistwidget.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/resources_rc.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_about.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_about_juce.py      $(DESTDIR)$(PREFIX)/share/carla/resources/

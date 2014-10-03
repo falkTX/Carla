@@ -57,20 +57,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QListWidget" name="listWidget">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <property name="verticalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-          <property name="horizontalScrollBarPolicy">
-           <enum>Qt::ScrollBarAlwaysOff</enum>
-          </property>
-         </widget>
+         <widget class="RackListWidget" name="listWidget"/>
         </item>
         <item>
          <widget class="QLabel" name="pad_right">
@@ -813,6 +800,11 @@
    <extends>QWidget</extends>
    <header>digitalpeakmeter.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>RackListWidget</class>
+   <extends>QListWidget</extends>
+   <header>racklistwidget.h</header>
   </customwidget>
  </customwidgets>
  <resources>

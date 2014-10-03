@@ -39,65 +39,6 @@ from carla_host import *
 from carla_skin import *
 
 # ------------------------------------------------------------------------------------------------------------
-# Rack widget item
-
-class CarlaRackItem(QListWidgetItem):
-    kRackItemType = QListWidgetItem.UserType + 1
-
-    def __init__(self, parent, pluginId, useSkins):
-        QListWidgetItem.__init__(self, parent, self.kRackItemType)
-
-        # ----------------------------------------------------------------------------------------------------
-        # Internal stuff
-
-        self.fParent   = parent
-        self.fPluginId = pluginId
-        self.fUseSkins = useSkins
-        self.fWidget   = None
-
-        self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled)
-
-        # ----------------------------------------------------------------------------------------------------
-        # Set-up GUI
-
-        self.recreateWidget()
-
-        if False:
-            self.fWidget = AbstractPluginSlot(parent, parent.host, pluginId)
-
-    # --------------------------------------------------------------------------------------------------------
-
-    def setPluginId(self, pluginId):
-        self.fPluginId = pluginId
-        self.fWidget.setPluginId(pluginId)
-
-    # --------------------------------------------------------------------------------------------------------
-
-    def getEditDialog(self):
-        return self.fWidget.fEditDialog
-
-    def closeEditDialog(self):
-        self.fWidget.fEditDialog.close()
-
-    # --------------------------------------------------------------------------------------------------------
-
-    def getWidget(self):
-        return self.fWidget
-
-    def recreateWidget(self):
-        if self.fWidget is not None:
-            #self.fWidget.fEditDialog.close()
-            del self.fWidget
-
-        self.fWidget = createPluginSlot(self.fParent, self.fParent.host, self.fPluginId, self.fUseSkins)
-        self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
-
-        self.setSizeHint(QSize(640, self.fWidget.getFixedHeight()))
-
-        self.fParent.setItemWidget(self, self.fWidget)
-
-# ------------------------------------------------------------------------------------------------------------
 # Rack widget list
 
 class CarlaRackList(QListWidget):

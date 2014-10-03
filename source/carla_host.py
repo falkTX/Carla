@@ -642,7 +642,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.ui.act_plugin_remove_all.setEnabled(False)
         patchcanvas.handleAllPluginsRemoved()
 
-        while self.ui.rack.takeItem(0):
+        while self.ui.listWidget.takeItem(0):
             pass
 
         self.clearSideStuff()
