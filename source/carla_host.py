@@ -216,6 +216,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
 
+        self.ui.listWidget.setHost(self.host)
+
         sb = self.ui.listWidget.verticalScrollBar()
         self.ui.rackScrollBar.setMinimum(sb.minimum())
         self.ui.rackScrollBar.setMaximum(sb.maximum())
@@ -800,13 +802,13 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     @pyqtSlot(int, str)
     def slot_handlePluginAddedCallback(self, pluginId, pluginName):
-        #pitem = CarlaRackItem(self.fRack, pluginId, self.getSavedSettings()[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
+        pitem = self.ui.listWidget.createItem(pluginId, self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
 
-        #self.fPluginList.append(pitem)
+        self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        #if not self.isProjectLoading():
-            #pitem.getWidget().setActive(True, True, True)
+        if not self.fIsProjectLoading:
+            pitem.getWidget().setActive(True, True, True)
 
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 
@@ -817,20 +819,20 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         if pluginId in self.fSelectedPlugins:
             self.clearSideStuff()
 
-        #pitem = self.getPluginItem(pluginId)
+        pitem = self.getPluginItem(pluginId)
 
         self.fPluginCount -= 1
-        #self.fPluginList.pop(pluginId)
-        #self.fRack.takeItem(pluginId)
+        self.fPluginList.pop(pluginId)
+        self.ui.listWidget.takeItem(pluginId)
 
-        #if pitem is not None:
-            #pitem.closeEditDialog()
-            #del pitem
+        if pitem is not None:
+            pitem.close()
+            del pitem
 
-        ## push all plugins 1 slot back
-        #for i in range(pluginId, self.fPluginCount):
-            #pitem = self.fPluginList[i]
-            #pitem.setPluginId(i)
+        # push all plugins 1 slot back
+        for i in range(pluginId, self.fPluginCount):
+            pitem = self.fPluginList[i]
+            pitem.setPluginId(i)
 
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 

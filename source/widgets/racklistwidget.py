@@ -40,7 +40,7 @@ from carla_skin import createPluginSlot
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget item
 
-class CarlaRackItem(QListWidgetItem):
+class RackListItem(QListWidgetItem):
     kRackItemType = QListWidgetItem.UserType + 1
 
     def __init__(self, parent, pluginId, useSkins):
@@ -50,6 +50,7 @@ class CarlaRackItem(QListWidgetItem):
         if False:
             # kdevelop likes this :)
             from carla_backend import CarlaHostMeta
+            parent = RackListWidget()
             host = CarlaHostMeta()
             self.host = host
 
@@ -71,8 +72,9 @@ class CarlaRackItem(QListWidgetItem):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def closeEditDialog(self):
+    def close(self):
         self.fWidget.fEditDialog.close()
+        self.fWidget.close()
 
     def getEditDialog(self):
         return self.fWidget.fEditDialog
@@ -90,10 +92,11 @@ class CarlaRackItem(QListWidgetItem):
 
     def recreateWidget(self):
         if self.fWidget is not None:
-            #self.fWidget.fEditDialog.close()
+            self.fWidget.fEditDialog.close()
+            self.fWidget.close()
             del self.fWidget
 
-        self.fWidget = createPluginSlot(self.fParent, self.fParent.host, self.fPluginId, self.fUseSkins)
+        self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
 
         self.setSizeHint(QSize(640, self.fWidget.getFixedHeight()))
@@ -106,6 +109,13 @@ class CarlaRackItem(QListWidgetItem):
 class RackListWidget(QListWidget):
     def __init__(self, parent):
         QListWidget.__init__(self, parent)
+        self.host = None
+
+        if False:
+            # kdevelop likes this :)
+            from carla_backend import CarlaHostMeta
+            host = CarlaHostMeta()
+            self.host = host
 
         self.fSupportedExtensions = []
         self.fWasLastDragValid    = False
@@ -126,6 +136,14 @@ class RackListWidget(QListWidget):
         self.fPixmapR = QPixmap(":/bitmaps/rack_interior_right.png")
 
         self.fPixmapWidth = self.fPixmapL.width()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def createItem(self, pluginId, useSkins):
+        return RackListItem(self, pluginId, useSkins)
+
+    def setHost(self, host):
+        self.host = host
 
     # --------------------------------------------------------------------------------------------------------
 
