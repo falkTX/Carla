@@ -35,7 +35,7 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
-from carla_skin import createPluginSlot
+from carla_skin import *
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget item
@@ -79,6 +79,9 @@ class RackListItem(QListWidgetItem):
     def getEditDialog(self):
         return self.fWidget.fEditDialog
 
+    def getPluginId(self):
+        return self.fPluginId
+
     def getWidget(self):
         return self.fWidget
 
@@ -94,6 +97,7 @@ class RackListItem(QListWidgetItem):
         if self.fWidget is not None:
             self.fWidget.fEditDialog.close()
             self.fWidget.close()
+            del self.fWidget.fEditDialog
             del self.fWidget
 
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
@@ -120,7 +124,7 @@ class RackListWidget(QListWidget):
         self.fSupportedExtensions = []
         self.fWasLastDragValid    = False
 
-        self.setMinimumWidth(700)
+        self.setMinimumWidth(740)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(False)
 
@@ -145,7 +149,116 @@ class RackListWidget(QListWidget):
     def setHost(self, host):
         self.host = host
 
+        exts = host.get_supported_file_extensions().split(";")
+
+        exts.append(".dll")
+
+        if MACOS:
+            exts.append(".dylib")
+        if not WINDOWS:
+            exts.append(".so")
+
+        self.fSupportedExtensions = tuple(i.replace("*","") for i in exts)
+
     # --------------------------------------------------------------------------------------------------------
+
+    def isDragUrlValid(self, url):
+        filename = url.toLocalFile()
+
+        if os.path.isdir(filename):
+            if os.path.exists(os.path.join(filename, "manifest.ttl")):
+                return True
+            if filename.lower().endswith((".vst", ".vst3")):
+                return True
+
+        elif os.path.isfile(filename):
+            if filename.lower().endswith(self.fSupportedExtensions):
+                return True
+
+        return False
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def dragEnterEvent(self, event):
+        urls = event.mimeData().urls()
+
+        for url in urls:
+            if self.isDragUrlValid(url):
+                self.fWasLastDragValid = True
+                event.acceptProposedAction()
+                return
+
+        self.fWasLastDragValid = False
+        QListWidget.dragEnterEvent(self, event)
+
+    def dragMoveEvent(self, event):
+        if not self.fWasLastDragValid:
+            QListWidget.dragMoveEvent(self, event)
+            return
+
+        event.acceptProposedAction()
+
+        tryItem = self.itemAt(event.pos())
+
+        if tryItem is not None:
+            self.setCurrentRow(tryItem.getPluginId())
+        else:
+            self.setCurrentRow(-1)
+
+    def dragLeaveEvent(self, event):
+        self.fWasLastDragValid = False
+        QListWidget.dragLeaveEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    # FIXME: this needs some attention
+
+    # if dropping project file over 1 plugin, load it in rack or patchbay
+    # if dropping regular files over 1 plugin, keep replacing plugins
+
+    def dropEvent(self, event):
+        event.acceptProposedAction()
+
+        urls = event.mimeData().urls()
+
+        if len(urls) == 0:
+            return
+
+        tryItem = self.itemAt(event.pos())
+
+        if tryItem is not None:
+            pluginId = tryItem.getPluginId()
+        else:
+            pluginId = -1
+
+        for url in urls:
+            if pluginId >= 0:
+                self.host.replace_plugin(pluginId)
+                pluginId += 1
+
+                if pluginId > self.host.get_current_plugin_count():
+                    pluginId = -1
+
+            filename = url.toLocalFile()
+
+            if not self.host.load_file(filename):
+                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
+                                 self.tr("Failed to load file"),
+                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        if tryItem is not None:
+            self.host.replace_plugin(self.host.get_max_plugin_number())
+            #tryItem.widget.setActive(True, True, True)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def mousePressEvent(self, event):
+        if self.itemAt(event.pos()) is None:
+            event.accept()
+            self.setCurrentRow(-1)
+            return
+
+        QListWidget.mousePressEvent(self, event)
 
     def paintEvent(self, event):
         painter = QPainter(self.viewport())

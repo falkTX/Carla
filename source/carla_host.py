@@ -75,7 +75,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def __init__(self, host, withCanvas=True, parent=None):
+    def __init__(self, host, withCanvas, parent=None):
         QMainWindow.__init__(self, parent)
         self.host = host
         self.ui = ui_carla_host.Ui_CarlaHostW()
@@ -143,6 +143,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.fCanvasWidth  = 0
         self.fCanvasHeight = 0
 
+        self.fWithCanvas = withCanvas
+
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff (transport, TODO remove)
 
@@ -181,8 +183,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.setTransportMenuEnabled(False)
 
         if not withCanvas:
-            self.ui.act_canvas_show_internal.setEnabled(False)
-            self.ui.act_canvas_show_external.setEnabled(False)
+            self.ui.act_canvas_show_internal.setVisible(False)
+            self.ui.act_canvas_show_external.setVisible(False)
             self.ui.act_canvas_arrange.setVisible(False)
             self.ui.act_canvas_print.setVisible(False)
             self.ui.act_canvas_refresh.setVisible(False)
@@ -193,11 +195,15 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             self.ui.act_canvas_zoom_out.setVisible(False)
             self.ui.act_settings_show_meters.setVisible(False)
             self.ui.act_settings_show_keyboard.setVisible(False)
-            self.ui.menu_Canvas.setEnabled(False)
-            self.ui.menu_Canvas.setVisible(False)
             self.ui.menu_Canvas_Zoom.setEnabled(False)
             self.ui.menu_Canvas_Zoom.setVisible(False)
+            self.ui.menu_Canvas_Zoom.menuAction().setVisible(False)
+            self.ui.menu_Canvas.setEnabled(False)
+            self.ui.menu_Canvas.setVisible(False)
+            self.ui.menu_Canvas.menuAction().setVisible(False)
             self.ui.miniCanvasPreview.hide()
+            self.ui.tabWidget.removeTab(1)
+            self.ui.tabWidget.tabBar().hide()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
@@ -653,7 +659,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             if pitem is None:
                 continue
 
-            pitem.closeEditDialog()
+            pitem.close()
             del pitem
 
         self.fPluginCount = 0
@@ -929,10 +935,11 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
-            for pedit in self.fPluginList:
-                if pedit is None:
-                    break
-                pedit.reloadAll()
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+
+            pitem.getEditDialog().reloadAll()
 
         QTimer.singleShot(1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.ui.miniCanvasPreview.update)
 
@@ -1790,6 +1797,20 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
             self.idleSlow()
 
         QMainWindow.timerEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
+    # paint event
+
+    #def paintEvent(self, event):
+        #QMainWindow.paintEvent(self, event)
+
+        #if MACOS or not self.fSavedSettings[CARLA_KEY_CUSTOM_PAINTING]:
+            #return
+
+        #painter = QPainter(self)
+        #painter.setBrush(QColor(36, 36, 36))
+        #painter.setPen(QColor(62, 62, 62))
+        #painter.drawRect(1, self.height()/2, self.width()-3, self.height()-self.height()/2-1)
 
     # --------------------------------------------------------------------------------------------------------
     # close event

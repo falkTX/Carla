@@ -20,17 +20,6 @@
 # Imports (Custom Stuff)
 
 from carla_host import *
-from carla_patchbay import CarlaPatchbayW
-
-# ------------------------------------------------------------------------------------------------------------
-# Main Window
-
-class CarlaHostW(HostWindow):
-    def __init__(self, host):
-        HostWindow.__init__(self, host)
-
-        self.fContainer = CarlaPatchbayW(self, host)
-        self.setupContainer(True, self.fContainer.themeData)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
@@ -70,7 +59,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Create GUI
 
-    gui = CarlaHostW(host)
+    gui = HostWindow(host, True)
 
     # -------------------------------------------------------------
     # Load project file if set

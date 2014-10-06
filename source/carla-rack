@@ -20,17 +20,6 @@
 # Imports (Custom Stuff)
 
 from carla_host import *
-from carla_rack import CarlaRackW
-
-# ------------------------------------------------------------------------------------------------------------
-# Main Window
-
-class CarlaHostW(HostWindow):
-    def __init__(self, host):
-        HostWindow.__init__(self, host)
-
-        self.fContainer = CarlaRackW(self, host)
-        self.setupContainer(False)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
@@ -70,7 +59,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Create GUI
 
-    gui = CarlaHostW(host)
+    gui = HostWindow(host, False)
 
     # -------------------------------------------------------------
     # Load project file if set

@@ -80,7 +80,7 @@ class PluginHost(CarlaHostPlugin):
 class CarlaMiniW(ExternalUI, HostWindow):
     def __init__(self, host, parent=None):
         ExternalUI.__init__(self)
-        HostWindow.__init__(self, host, parent)
+        HostWindow.__init__(self, host, sys.argv[0].lower().endswith("/carla-plugin-patchbay"), parent)
         self.host = host
 
         if False:
@@ -89,15 +89,6 @@ class CarlaMiniW(ExternalUI, HostWindow):
             self.host = host
 
         host.setExternalUI(self)
-
-        if sys.argv[0].lower().endswith("/carla-plugin-patchbay"):
-            from carla_patchbay import CarlaPatchbayW
-            self.fContainer = CarlaPatchbayW(self, host)
-            self.setupContainer(True, self.fContainer.themeData)
-        else:
-            from carla_rack import CarlaRackW
-            self.fContainer = CarlaRackW(self, host)
-            self.setupContainer(False)
 
         self.fFirstInit = True
 
