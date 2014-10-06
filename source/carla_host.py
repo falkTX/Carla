@@ -2199,7 +2199,7 @@ def setHostSettings(host):
     if False: host = CarlaHostMeta()
 
     # TEST
-    host.preventBadBehaviour = True
+    #host.preventBadBehaviour = True
 
     host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "")
     host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "")
