@@ -262,8 +262,6 @@ RES = \
 	bin/resources/carla_config.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
-	bin/resources/carla_patchbay.py \
-	bin/resources/carla_rack.py \
 	bin/resources/carla_settings.py \
 	bin/resources/carla_skin.py \
 	bin/resources/carla_shared.py \
@@ -523,8 +521,6 @@ endif
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_patchbay.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_rack.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_shared.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
