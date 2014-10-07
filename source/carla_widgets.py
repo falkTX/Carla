@@ -48,10 +48,10 @@ from pixmapkeyboard import PixmapKeyboardHArea
 # ------------------------------------------------------------------------------------------------------------
 # Carla GUI defines
 
-ICON_STATE_ON    = 3 # turns on, sets as wait1
-ICON_STATE_WAIT1 = 2 # sets as wait2
-ICON_STATE_WAIT2 = 1 # turns off, sets as off
-ICON_STATE_OFF   = 0 # do nothing
+ICON_STATE_ON   = 3 # turns on, sets as wait
+ICON_STATE_WAIT = 2 # nothing, sets as off
+ICON_STATE_OFF  = 1 # turns off, sets as null
+ICON_STATE_NULL = 0 # nothing
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla About dialog
@@ -1056,11 +1056,11 @@ class PluginEdit(QDialog):
         # Check Tab icons
         for i in range(len(self.fTabIconTimers)):
             if self.fTabIconTimers[i] == ICON_STATE_ON:
-                self.fTabIconTimers[i] = ICON_STATE_WAIT1
-            elif self.fTabIconTimers[i] == ICON_STATE_WAIT1:
-                self.fTabIconTimers[i] = ICON_STATE_WAIT2
-            elif self.fTabIconTimers[i] == ICON_STATE_WAIT2:
+                self.fTabIconTimers[i] = ICON_STATE_WAIT
+            elif self.fTabIconTimers[i] == ICON_STATE_WAIT:
                 self.fTabIconTimers[i] = ICON_STATE_OFF
+            elif self.fTabIconTimers[i] == ICON_STATE_OFF:
+                self.fTabIconTimers[i] = ICON_STATE_NULL
                 self.ui.tabWidget.setTabIcon(i+1, self.fTabIconOff)
 
         # Check parameters needing update
@@ -1108,7 +1108,7 @@ class PluginEdit(QDialog):
                     if paramType == PARAMETER_INPUT:
                         tabIndex = paramWidget.getTabIndex()
 
-                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_OFF:
+                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
                             self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
 
                         self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
@@ -1483,7 +1483,7 @@ class PluginEdit(QDialog):
             if paramType == PARAMETER_INPUT:
                 self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOff)
 
-            self.fTabIconTimers.append(ICON_STATE_OFF)
+            self.fTabIconTimers.append(ICON_STATE_NULL)
 
     def _updateCtrlPrograms(self):
         self.ui.keyboard.setEnabled(self.fControlChannel >= 0)
