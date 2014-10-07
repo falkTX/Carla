@@ -59,7 +59,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Create GUI
 
-    gui = HostWindow(host, False)
+    gui = HostWindow(host, True)
 
     # -------------------------------------------------------------
     # Load project file if set
