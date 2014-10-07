@@ -41,6 +41,7 @@ import ui_carla_host
 
 from carla_app import *
 from carla_database import *
+from carla_panels import *
 from carla_settings import *
 from carla_widgets import *
 from digitalpeakmeter import DigitalPeakMeter
@@ -146,14 +147,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.fWithCanvas = withCanvas
 
         # ----------------------------------------------------------------------------------------------------
-        # Internal stuff (transport, TODO remove)
-
-        self.fSampleRate = 0.0
-        self.fLastTransportFrame = 0
-        self.fLastTransportState = False
-        self.fTransportText = ""
-
-        # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
         if self.host.isPlugin:
@@ -179,8 +172,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         self.ui.dockWidgetTitleBar = QWidget(self)
         self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
-
-        self.setTransportMenuEnabled(False)
 
         if not withCanvas:
             self.ui.act_canvas_show_internal.setVisible(False)
@@ -218,6 +209,13 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.ui.fileTreeView.setColumnHidden(2, True)
         self.ui.fileTreeView.setColumnHidden(3, True)
         self.ui.fileTreeView.setHeaderHidden(True)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (panels)
+
+        self.fPanelTime = CarlaPanelTime(host, self)
+        self.fPanelTime.setEnabled(False)
+        self.fPanelTime.show()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
@@ -338,11 +336,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
-        self.ui.act_transport_play.triggered.connect(self.slot_transportPlayPause)
-        self.ui.act_transport_stop.triggered.connect(self.slot_transportStop)
-        self.ui.act_transport_backwards.triggered.connect(self.slot_transportBackwards)
-        self.ui.act_transport_forwards.triggered.connect(self.slot_transportForwards)
-
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
@@ -373,7 +366,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
-        host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
@@ -411,37 +403,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     # --------------------------------------------------------------------------------------------------------
     # Setup
-
-    def refreshTransport(self, forced = False):
-        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
-            return
-
-        timeInfo = self.host.get_transport_info()
-        playing  = timeInfo['playing']
-        frame    = timeInfo['frame']
-
-        if playing != self.fLastTransportState or forced:
-            if playing:
-                icon = getIcon("media-playback-pause")
-                self.ui.act_transport_play.setChecked(True)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Pause"))
-            else:
-                icon = getIcon("media-playback-start")
-                self.ui.act_transport_play.setChecked(False)
-                self.ui.act_transport_play.setIcon(icon)
-                self.ui.act_transport_play.setText(self.tr("&Play"))
-
-            self.fLastTransportState = playing
-
-        if frame != self.fLastTransportFrame or forced:
-            time = frame / self.fSampleRate
-            secs = time % 60
-            mins = (time / 60) % 60
-            hrs  = (time / 3600) % 60
-
-            self.fTransportText = "Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs)
-            self.fLastTransportFrame = frame
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -597,8 +558,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     @pyqtSlot(str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
-        self.fSampleRate = self.host.get_sample_rate()
-
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
 
@@ -611,11 +570,9 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
                 self.ui.act_file_save.setEnabled(True)
                 self.ui.act_file_save_as.setEnabled(True)
 
-            self.setTransportMenuEnabled(True)
+            self.fPanelTime.setEnabled(True)
 
-        self.fLastTransportFrame = 0
-        self.fLastTransportState = False
-        self.refreshTransport(True)
+        self.fPanelTime.refreshTransport(True)
         self.startTimers()
 
     @pyqtSlot()
@@ -638,10 +595,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
                 self.ui.act_file_save.setEnabled(False)
                 self.ui.act_file_save_as.setEnabled(False)
 
-            self.setTransportMenuEnabled(False)
-
-        self.fSampleRate = 0.0
-        self.fTransportText = ""
+            self.fPanelTime.setEnabled(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -1129,61 +1083,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
 
     # --------------------------------------------------------------------------------------------------------
-    # Transport
-
-    def setTransportMenuEnabled(self, enabled):
-        self.ui.act_transport_play.setEnabled(enabled)
-        self.ui.act_transport_stop.setEnabled(enabled)
-        self.ui.act_transport_backwards.setEnabled(enabled)
-        self.ui.act_transport_forwards.setEnabled(enabled)
-        self.ui.menu_Transport.setEnabled(enabled)
-
-    # --------------------------------------------------------------------------------------------------------
-    # Transport (menu actions)
-
-    @pyqtSlot(bool)
-    def slot_transportPlayPause(self, toggled):
-        if not self.host.is_engine_running():
-            return
-
-        if toggled:
-            self.host.transport_play()
-        else:
-            self.host.transport_pause()
-
-        self.refreshTransport()
-
-    @pyqtSlot()
-    def slot_transportStop(self):
-        if not self.host.is_engine_running():
-            return
-
-        self.host.transport_pause()
-        self.host.transport_relocate(0)
-
-        self.refreshTransport()
-
-    @pyqtSlot()
-    def slot_transportBackwards(self):
-        if not self.host.is_engine_running():
-            return
-
-        newFrame = self.host.get_current_transport_frame() - 100000
-
-        if newFrame < 0:
-            newFrame = 0
-
-        self.host.transport_relocate(newFrame)
-
-    @pyqtSlot()
-    def slot_transportForwards(self):
-        if not self.host.is_engine_running():
-            return
-
-        newFrame = self.host.get_current_transport_frame() + 100000
-        self.host.transport_relocate(newFrame)
-
-    # --------------------------------------------------------------------------------------------------------
     # Settings
 
     def setEngineSettings(self):
@@ -1596,11 +1495,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         pitem.recreateWidget()
 
-    @pyqtSlot(float)
-    def slot_handleSampleRateChangedCallback(self, newSampleRate):
-        self.fSampleRate = newSampleRate
-        self.refreshTransport(True)
-
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot(int, int, int, float, str)
@@ -1749,7 +1643,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
     def idleFast(self):
         self.host.engine_idle()
-        self.refreshTransport()
+        self.fPanelTime.refreshTransport()
 
         if self.fPluginCount == 0:
             return

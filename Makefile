@@ -284,6 +284,7 @@ RES = \
 	bin/resources/ui_carla_database.py \
 	bin/resources/ui_carla_edit.py \
 	bin/resources/ui_carla_host.py \
+	bin/resources/ui_carla_panel_time.py \
 	bin/resources/ui_carla_parameter.py \
 	bin/resources/ui_carla_plugin_basic_fx.py \
 	bin/resources/ui_carla_plugin_calf.py \
@@ -325,6 +326,7 @@ UIs = \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
 	source/ui_carla_parameter.py \
+	source/ui_carla_panel_time.py \
 	source/ui_carla_plugin_basic_fx.py \
 	source/ui_carla_plugin_calf.py \
 	source/ui_carla_plugin_default.py \
