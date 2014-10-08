@@ -410,7 +410,12 @@ class PluginEditParentMeta():
 # Plugin Editor (Built-in)
 
 class PluginEdit(QDialog):
+    # settings
     kParamsPerPage = 8
+
+    # signals
+    SIGTERM = pyqtSignal()
+    SIGUSR1 = pyqtSignal()
 
     def __init__(self, parent, host, pluginId):
         QDialog.__init__(self, parent.window() if parent is not None else None)
@@ -698,8 +703,8 @@ class PluginEdit(QDialog):
         self.ui.le_unique_id.setText(str(self.fPluginInfo['uniqueId']))
         self.ui.le_unique_id.setToolTip(str(self.fPluginInfo['uniqueId']))
 
-        self.ui.label_plugin.setText("\n%s\n" % self.fPluginInfo['name'])
-        self.setWindowTitle(self.fPluginInfo['name'])
+        self.ui.label_plugin.setText("\n%s\n" % (self.fPluginInfo['name'] or "(none)"))
+        self.setWindowTitle(self.fPluginInfo['name'] or "(none)")
 
         self.ui.dial_drywet.setEnabled(pluginHints & PLUGIN_CAN_DRYWET)
         self.ui.dial_vol.setEnabled(pluginHints & PLUGIN_CAN_VOLUME)
@@ -1519,6 +1524,14 @@ class PluginEdit(QDialog):
 
     def testTimer(self):
         self.fIdleTimerId = self.startTimer(50)
+
+        self.SIGTERM.connect(self.testTimerClose)
+        gCarla.gui = self
+        setUpSignals()
+
+    def testTimerClose(self):
+        self.close()
+        app.quit()
 
     #------------------------------------------------------------------
 

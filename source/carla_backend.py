@@ -1187,12 +1187,12 @@ PyCarlaPluginInfo = {
     'hints': 0x0,
     'optionsAvailable': 0x0,
     'optionsEnabled': 0x0,
-    'filename': None,
-    'name':  None,
-    'label': None,
-    'maker': None,
-    'copyright': None,
-    'iconName': None,
+    'filename': "",
+    'name':  "",
+    'label': "",
+    'maker': "",
+    'copyright': "",
+    'iconName': "",
     'uniqueId': 0
 }
 
@@ -1206,10 +1206,10 @@ PyCarlaNativePluginInfo = {
     'midiOuts': 0,
     'parameterIns': 0,
     'parameterOuts': 0,
-    'name':  None,
-    'label': None,
-    'maker': None,
-    'copyright': None
+    'name':  "",
+    'label': "",
+    'maker': "",
+    'copyright': ""
 }
 
 # @see CarlaPortCountInfo
@@ -1220,16 +1220,16 @@ PyCarlaPortCountInfo = {
 
 # @see CarlaParameterInfo
 PyCarlaParameterInfo = {
-    'name': None,
-    'symbol': None,
-    'unit': None,
+    'name': "",
+    'symbol': "",
+    'unit': "",
     'scalePointCount': 0,
 }
 
 # @see CarlaScalePointInfo
 PyCarlaScalePointInfo = {
     'value': 0.0,
-    'label': None
+    'label': ""
 }
 
 # @see CarlaTransportInfo
@@ -2022,10 +2022,10 @@ class CarlaHostNull(CarlaHostMeta):
         return text
 
     def get_juce_version(self):
-        return ""
+        return "3.0"
 
     def get_supported_file_extensions(self):
-        return ""
+        return "*.carxp;*.carxs;*.mid;*.midi;*.sf2;*.gig;*.sfz;*.xmz;*.xiz"
 
     def get_engine_driver_count(self):
         return 0
