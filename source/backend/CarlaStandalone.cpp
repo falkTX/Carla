@@ -511,7 +511,7 @@ const char* carla_get_complete_license_text()
         // LinuxSampler GPL exception
         "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
 #endif
-        "</p>
+        "</p>"
         ;
     }
 
