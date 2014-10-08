@@ -1981,7 +1981,45 @@ class CarlaHostNull(CarlaHostMeta):
         self.fEngineRunning  = False
 
     def get_complete_license_text(self):
-        return ""
+        text = (
+            "<p>This current Carla build is using the following features and 3rd-party code:</p>"
+            "<ul>"
+
+            # Plugin formats
+            "<li>LADSPA plugin support</li>"
+            "<li>DSSI plugin support</li>"
+            "<li>LV2 plugin support</li>"
+            "<li>VST plugin support using official VST SDK 2.4 [1]</li>"
+            "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
+            "<li>AU plugin support</li>"
+
+            # Sample kit libraries
+            "<li>FluidSynth library for SF2 support</li>"
+            "<li>LinuxSampler library for GIG and SFZ support [2]</li>"
+
+            # Internal plugins
+            "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
+            "<li>ZynAddSubFX plugin code</li>"
+
+            # misc libs
+            "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
+            "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
+            "<li>liblo library for OSC support</li>"
+            "<li>rtmempool library by Nedko Arnaudov"
+            "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
+            "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
+
+            # end
+            "</ul>"
+
+            "<p>"
+            # Required by VST SDK
+            "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
+            # LinuxSampler GPL exception
+            "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
+            "</p>"
+        )
+        return text
 
     def get_juce_version(self):
         return ""

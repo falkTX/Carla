@@ -1557,8 +1557,8 @@ if __name__ == '__main__':
     host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
     host.set_active(0, True)
 
-    #gui1 = CarlaAboutW(None, host)
-    #gui1.show()
+    gui1 = CarlaAboutW(None, host)
+    gui1.show()
 
     gui2 = PluginEdit(None, host, 0)
     gui2.testTimer()

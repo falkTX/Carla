@@ -458,16 +458,16 @@ const char* carla_get_complete_license_text()
         "<ul>"
 
         // Plugin formats
-        "<li>LADSPA plugin support - http://www.ladspa.org/</li>"
-        "<li>DSSI plugin support - http://dssi.sourceforge.net/</li>"
-        "<li>LV2 plugin support - http://lv2plug.in/</li>"
+        "<li>LADSPA plugin support</li>"
+        "<li>DSSI plugin support</li>"
+        "<li>LV2 plugin support</li>"
 #ifdef VESTIGE_HEADER
         "<li>VST plugin support using VeSTige header by Javier Serrano Polo</li>"
 #else
-        "<li>VST plugin support using official VST SDK 2.4 (trademark of Steinberg Media Technologies GmbH)</li>"
+        "<li>VST plugin support using official VST SDK 2.4 [1]</li>"
 #endif
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        "<li>VST3 plugin support using official VST SDK 3.6 (trademark of Steinberg Media Technologies GmbH)</li>"
+        "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
 #endif
 #ifdef CARLA_OS_MAC
         "<li>AU plugin support</li>"
@@ -475,34 +475,43 @@ const char* carla_get_complete_license_text()
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
-        "<li>FluidSynth library for SF2 support - http://www.fluidsynth.org/</li>"
+        "<li>FluidSynth library for SF2 support</li>"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support* - http://www.linuxsampler.org/</li>"
+        "<li>LinuxSampler library for GIG and SFZ support [2]</li>"
 #endif
 
         // Internal plugins
         "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
 #ifdef WANT_ZYNADDSUBFX
-        "<li>ZynAddSubFX plugin code - http://zynaddsubfx.sf.net/</li>"
+        "<li>ZynAddSubFX plugin code</li>"
 #endif
 
         // misc libs
-        "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger - http://www.adp-gmbh.ch/cpp/common/base64.html</li>"
-        "<li>liblo library for OSC support - http://liblo.sourceforge.net/</li>"
+        "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
+#ifdef CARLA_OS_MAC
+        "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
+#endif
+        "<li>liblo library for OSC support</li>"
         "<li>rtmempool library by Nedko Arnaudov"
-        "<li>serd, sord, sratom and lilv libraries for LV2 discovery - http://drobilla.net/software/lilv/</li>"
+        "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        "<li>RtAudio+RtMidi libraries for extra Audio and MIDI support - http://www.music.mcgill.ca/~gary/rtaudio/</li>"
+        "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
 #endif
 
         // end
         "</ul>"
 
+        "<p>"
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
+        // Required by VST SDK
+        "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
+#endif
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        "<p>(*) Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors.</p>"
+        "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
 #endif
+        "</p>
         ;
     }
 
