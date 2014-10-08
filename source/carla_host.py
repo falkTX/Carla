@@ -572,7 +572,6 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
             self.fPanelTime.setEnabled(True)
 
-        self.fPanelTime.refreshTransport(True)
         self.startTimers()
 
     @pyqtSlot()

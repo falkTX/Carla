@@ -26,7 +26,7 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSlot
-    from PyQt5.QtGui import QDialog
+    from PyQt5.QtWidgets import QDialog
 else:
     from PyQt4.QtCore import pyqtSlot
     from PyQt4.QtGui import QDialog
@@ -69,6 +69,15 @@ class CarlaPanelTime(QDialog):
         #elif view == TRANSPORT_VIEW_FRAMES:
             #self.fCurTransportView = TRANSPORT_VIEW_FRAMES
             #self.ui.label_time.setMinimumWidth(QFontMetrics(self.ui.label_time.font()).width("000'000'000") + 3)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Disable buttons if plugin
+
+        if host.isPlugin:
+            self.ui.b_play.setEnabled(False)
+            self.ui.b_stop.setEnabled(False)
+            self.ui.b_backwards.setEnabled(False)
+            self.ui.b_forwards.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -155,7 +164,7 @@ class CarlaPanelTime(QDialog):
 
         if frame != self.fLastTransportFrame or forced:
             time = frame / self.fSampleRate
-            secs = time % 60
+            secs =  time % 60
             mins = (time / 60) % 60
             hrs  = (time / 3600) % 60
 
@@ -221,6 +230,7 @@ class CarlaPanelTime(QDialog):
     @pyqtSlot(str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.fSampleRate = self.host.get_sample_rate()
+        self.refreshTransport(True)
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
