@@ -21,9 +21,12 @@
 # error This file should not be compiled for Windows
 #endif
 
+#include "CarlaMathUtils.hpp"
 #include "CarlaNativeExtUI.hpp"
 
-#include <cmath>
+#include "juce_audio_basics.h"
+using juce::FloatVectorOperations;
+using juce::Range;
 
 // -----------------------------------------------------------------------
 
@@ -33,6 +36,7 @@ public:
     BigMeterPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "/bigmeter-ui"),
           fColor(1),
+          fStyle(1),
           fOutLeft(0.0f),
           fOutRight(0.0f),
           leakDetector_BigMeterPlugin() {}
@@ -43,13 +47,12 @@ protected:
 
     uint32_t getParameterCount() const override
     {
-        return 3;
+        return 4;
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        if (index >= 3)
-            return nullptr;
+        CARLA_SAFE_ASSERT_RETURN(index < 4, nullptr);
 
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
@@ -75,18 +78,31 @@ protected:
             param.ranges.def = 1.0f;
             param.ranges.min = 1.0f;
             param.ranges.max = 2.0f;
-            scalePoints[0].label = "Green";
-            scalePoints[1].label = "Blue";
             scalePoints[0].value = 1.0f;
+            scalePoints[0].label = "Green";
             scalePoints[1].value = 2.0f;
+            scalePoints[1].label = "Blue";
             param.scalePointCount = 2;
             param.scalePoints     = scalePoints;
             break;
         case 1:
+            hints |= PARAMETER_IS_INTEGER|PARAMETER_USES_SCALEPOINTS;
+            param.name = "Style";
+            param.ranges.def = 1.0f;
+            param.ranges.min = 1.0f;
+            param.ranges.max = 2.0f;
+            scalePoints[0].value = 1.0f;
+            scalePoints[0].label = "Default";
+            scalePoints[1].value = 2.0f;
+            scalePoints[1].label = "OpenAV";
+            param.scalePointCount = 2;
+            param.scalePoints     = scalePoints;
+            break;
+        case 2:
             hints |= PARAMETER_IS_OUTPUT;
             param.name = "Out Left";
             break;
-        case 2:
+        case 3:
             hints |= PARAMETER_IS_OUTPUT;
             param.name = "Out Right";
             break;
@@ -102,10 +118,12 @@ protected:
         switch (index)
         {
         case 0:
-            return (float)fColor;
+            return float(fColor);
         case 1:
-            return fOutLeft;
+            return float(fStyle);
         case 2:
+            return fOutLeft;
+        case 3:
             return fOutRight;
         default:
             return 0.0f;
@@ -120,12 +138,15 @@ protected:
         switch (index)
         {
         case 0:
-            fColor = (int)value;
+            fColor = int(value);
             break;
         case 1:
-            fOutLeft = value;
+            fStyle = int(value);
             break;
         case 2:
+            fOutLeft = value;
+            break;
+        case 3:
             fOutRight = value;
             break;
         default:
@@ -138,28 +159,17 @@ protected:
 
     void process(float** inputs, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        float tmp, tmpLeft, tmpRight;
-        tmpLeft = tmpRight = 0.0f;
+        Range<float> range;
 
-        for (uint32_t i=0; i < frames; ++i)
-        {
-            tmp = std::abs(inputs[0][i]);
+        range     = FloatVectorOperations::findMinAndMax(inputs[0], static_cast<int>(frames));
+        fOutLeft  = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
-            if (tmp > tmpLeft)
-                tmpLeft = tmp;
-
-            tmp = std::abs(inputs[1][i]);
-
-            if (tmp > tmpRight)
-                tmpRight = tmp;
-        }
-
-        fOutLeft  = tmpLeft;
-        fOutRight = tmpRight;
+        range     = FloatVectorOperations::findMinAndMax(inputs[1], static_cast<int>(frames));
+        fOutRight = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
     }
 
 private:
-    int fColor;
+    int fColor, fStyle;
     float fOutLeft, fOutRight;
 
     PluginClassEND(BigMeterPlugin)

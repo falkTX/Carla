@@ -45,8 +45,8 @@ class DigitalPeakMeter(QWidget):
     BLUE  = 2
 
     # enum Style
-    STYLE_DEFAULT = 0
-    STYLE_OPENAV  = 1
+    STYLE_DEFAULT = 1
+    STYLE_OPENAV  = 2
 
     def __init__(self, parent):
         QWidget.__init__(self, parent)

@@ -53,13 +53,21 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
         if index == 0:
             color = int(value)
 
-            if color not in (self.GREEN, self.BLUE):
+            if color not in (DigitalPeakMeter.GREEN, DigitalPeakMeter.BLUE):
                 return
 
             self.setColor(color)
 
+        elif index == 1:
+            style = int(value)
+
+            if style not in (DigitalPeakMeter.STYLE_DEFAULT, DigitalPeakMeter.STYLE_OPENAV):
+                return
+
+            self.setMeterStyle(style)
+
         else:
-            self.displayMeter(index, value)
+            self.displayMeter(index-1, value)
 
     # -------------------------------------------------------------------
     # ExternalUI Callbacks

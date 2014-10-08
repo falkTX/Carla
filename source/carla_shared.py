@@ -436,6 +436,7 @@ if WINDOWS:
     try:
         key = OpenKey(reg, r"SOFTWARE\Wine")
         CloseKey(key)
+        del key
         readEnvVars = False
     except:
         pass
