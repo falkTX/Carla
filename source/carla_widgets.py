@@ -1107,30 +1107,34 @@ class PluginEdit(QDialog):
                 for paramType, paramId, paramWidget in self.fParameterList:
                     if paramId != index:
                         continue
+                    # FIXME see below
+                    if paramType != PARAMETER_INPUT:
+                        continue
 
+                    paramWidget.blockSignals(True)
                     paramWidget.setValue(value)
+                    paramWidget.blockSignals(False)
 
-                    if paramType == PARAMETER_INPUT:
-                        tabIndex = paramWidget.getTabIndex()
+                    #if paramType == PARAMETER_INPUT:
+                    tabIndex = paramWidget.getTabIndex()
 
-                        if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
-                            self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
+                    if self.fTabIconTimers[tabIndex-1] == ICON_STATE_NULL:
+                        self.ui.tabWidget.setTabIcon(tabIndex, self.fTabIconOn)
 
-                        self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
-
+                    self.fTabIconTimers[tabIndex-1] = ICON_STATE_ON
                     break
 
         # Clear all parameters
         self.fParametersToUpdate = []
 
-        # Update parameter outputs
-        #for paramType, paramId, paramWidget in self.fParameterList:
-            #if paramType != PARAMETER_OUTPUT:
-                #continue
+        # Update parameter outputs | FIXME needed?
+        for paramType, paramId, paramWidget in self.fParameterList:
+            if paramType != PARAMETER_OUTPUT:
+                continue
 
-            #paramWidget.blockSignals(True)
-            #paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
-            #paramWidget.blockSignals(False)
+            paramWidget.blockSignals(True)
+            paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
+            paramWidget.blockSignals(False)
 
     #------------------------------------------------------------------
 

@@ -215,7 +215,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
 
         self.fPanelTime = CarlaPanelTime(host, self)
         self.fPanelTime.setEnabled(False)
-        self.fPanelTime.show()
+        QTimer.singleShot(0, self.fPanelTime.show)
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)

@@ -143,12 +143,6 @@ protected:
         case 1:
             fStyle = int(value);
             break;
-        case 2:
-            fOutLeft = value;
-            break;
-        case 3:
-            fOutRight = value;
-            break;
         default:
             break;
         }
@@ -156,6 +150,12 @@ protected:
 
     // -------------------------------------------------------------------
     // Plugin process calls
+
+    void activate() override
+    {
+        fOutLeft  = 0.0f;
+        fOutRight = 0.0f;
+    }
 
     void process(float** inputs, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
@@ -180,7 +180,7 @@ private:
 
 static const NativePluginDescriptor bigmeterDesc = {
     /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
+    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 0,

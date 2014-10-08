@@ -129,20 +129,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.fParameterIconTimer = ICON_STATE_NULL
         self.fParameterList      = [] # index, widget
 
-        if host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-            self.fPeaksInputCount  = 2
+        audioCountInfo = host.get_audio_port_count_info(self.fPluginId)
+
+        self.fPeaksInputCount  = int(audioCountInfo['ins'])
+        self.fPeaksOutputCount = int(audioCountInfo['outs'])
+
+        if self.fPeaksInputCount > 2:
+            self.fPeaksInputCount = 2
+
+        if self.fPeaksOutputCount > 2:
             self.fPeaksOutputCount = 2
-        else:
-            audioCountInfo = host.get_audio_port_count_info(self.fPluginId)
-
-            self.fPeaksInputCount  = int(audioCountInfo['ins'])
-            self.fPeaksOutputCount = int(audioCountInfo['outs'])
-
-            if self.fPeaksInputCount > 2:
-                self.fPeaksInputCount = 2
-
-            if self.fPeaksOutputCount > 2:
-                self.fPeaksOutputCount = 2
 
         # used during testing
         self.fIdleTimerId = 0
@@ -288,11 +284,15 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.peak_in.setColor(DigitalPeakMeter.GREEN)
             self.peak_in.setChannels(self.fPeaksInputCount)
             self.peak_in.setOrientation(DigitalPeakMeter.HORIZONTAL)
+            if self.fPeaksInputCount == 0:
+                self.peak_in.hide()
 
         if self.peak_out is not None:
             self.peak_out.setColor(DigitalPeakMeter.BLUE)
             self.peak_out.setChannels(self.fPeaksOutputCount)
             self.peak_out.setOrientation(DigitalPeakMeter.HORIZONTAL)
+            if self.fPeaksOutputCount == 0:
+                self.peak_out.hide()
 
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)

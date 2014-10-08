@@ -39,7 +39,7 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
 
         #self.setSmoothRelease(0) # till 5
 
-        self.resize(30, 400)
+        self.resize(50, 400)
         self.setWindowTitle(self.fUiName)
 
         self.fIdleTimer = self.startTimer(30)
