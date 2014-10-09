@@ -101,9 +101,8 @@ curl -O http://zlib.net/zlib-1.2.8.tar.gz
 tar -xf zlib-1.2.8.tar.gz
 fi
 
-if [ ! -f zlib-1.2.8_$ARCH/build-done ]; then
-cp -r zlib-1.2.8 zlib-1.2.8_$ARCH
-cd zlib-1.2.8_$ARCH
+if [ ! -f zlib-1.2.8/build-done ]; then
+cd zlib-1.2.8
 ./configure --static --prefix=$PREFIX
 make
 sudo make install
@@ -119,14 +118,217 @@ curl -O http://www.msweet.org/files/project3/mxml-2.8.tar.gz
 tar -xf mxml-2.8.tar.gz
 fi
 
-if [ ! -f mxml-2.8_$ARCH/build-done ]; then
-cp -r mxml-2.8 mxml-2.8_$ARCH
-cd mxml-2.8_$ARCH
+if [ ! -f mxml-2.8/build-done ]; then
+cd mxml-2.8
 ./configure --enable-static --disable-shared --prefix=$PREFIX
 make
 sudo cp *.a    $PREFIX/lib/
 sudo cp *.pc   $PREFIX/lib/pkgconfig/
 sudo cp mxml.h $PREFIX/include/
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# libogg
+
+if [ ! -d libogg-1.3.2 ]; then
+curl -O http://downloads.xiph.org/releases/ogg/libogg-1.3.2.tar.gz
+tar -xf libogg-1.3.2.tar.gz
+fi
+
+if [ ! -f libogg-1.3.2/build-done ]; then
+cd libogg-1.3.2
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# libvorbis
+
+if [ ! -d libvorbis-1.3.4 ]; then
+curl -O http://downloads.xiph.org/releases/vorbis/libvorbis-1.3.4.tar.gz
+tar -xf libvorbis-1.3.4.tar.gz
+fi
+
+if [ ! -f libvorbis-1.3.4/build-done ]; then
+cd libvorbis-1.3.4
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# flac
+
+if [ ! -d flac-1.3.0 ]; then
+curl -O https://svn.xiph.org/releases/flac/flac-1.3.0.tar.xz
+/opt/local/bin/7z x flac-1.3.0.tar.xz
+/opt/local/bin/7z x flac-1.3.0.tar
+fi
+
+if [ ! -f flac-1.3.0/build-done ]; then
+cd flac-1.3.0
+chmod +x configure install-sh
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# libsndfile
+
+if [ ! -d libsndfile-1.0.25 ]; then
+curl -O http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.25.tar.gz
+tar -xf libsndfile-1.0.25.tar.gz
+fi
+
+if [ ! -f libsndfile-1.0.25/build-done ]; then
+cd libsndfile-1.0.25
+sed -i -e "s/#include <Carbon.h>//" programs/sndfile-play.c
+./configure --enable-static --disable-shared --disable-sqlite --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# libgig
+
+if [ ! -d libgig-svn ]; then
+/opt/local/bin/svn co https://svn.linuxsampler.org/svn/libgig/trunk libgig-svn
+fi
+
+if [ ! -f libgig-svn/build-done ]; then
+cd libgig-svn
+env PATH=/opt/local/bin:$PATH /opt/local/bin/aclocal -I /opt/local/share/aclocal
+env PATH=/opt/local/bin:$PATH /opt/local/bin/glibtoolize --force --copy
+env PATH=/opt/local/bin:$PATH /opt/local/bin/autoheader
+env PATH=/opt/local/bin:$PATH /opt/local/bin/automake --add-missing --copy
+env PATH=/opt/local/bin:$PATH /opt/local/bin/autoconf
+env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=$PREFIX
+env PATH=/opt/local/bin:$PATH make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# linuxsampler
+
+if [ ! -d linuxsampler-svn ]; then
+/opt/local/bin/svn co https://svn.linuxsampler.org/svn/linuxsampler/trunk linuxsampler-svn
+fi
+
+if [ ! -f linuxsampler-svn/build-done ]; then
+cd linuxsampler-svn
+mkdir -p tmp
+cd tmp
+curl -L https://launchpad.net/~kxstudio-debian/+archive/ubuntu/libs/+files/linuxsampler-static_1.0.0%2Bsvn2593-1kxstudio5.debian.tar.xz -o linuxsampler-static.debian.tar.xz
+/opt/local/bin/7z x linuxsampler-static.debian.tar.xz
+/opt/local/bin/7z x linuxsampler-static.debian.tar
+cd ..
+mv tmp/debian/patches/*.patch .
+patch -p1 < allow-no-drivers-build.patch
+patch -p1 < disable-ladspa-fx.patch
+rm -r *.patch tmp/
+sed -i -e "s/HAVE_AU/HAVE_VST/" src/hostplugins/Makefile.am
+env PATH=/opt/local/bin:$PATH /opt/local/bin/aclocal -I /opt/local/share/aclocal
+env PATH=/opt/local/bin:$PATH /opt/local/bin/glibtoolize --force --copy
+env PATH=/opt/local/bin:$PATH /opt/local/bin/autoheader
+env PATH=/opt/local/bin:$PATH /opt/local/bin/automake --add-missing --copy
+env PATH=/opt/local/bin:$PATH /opt/local/bin/autoconf
+env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=$PREFIX \
+--disable-arts-driver --disable-artstest \
+--disable-asio-driver --disable-midishare-driver --disable-coremidi-driver --disable-coreaudio-driver --disable-mmemidi-driver
+env PATH=/opt/local/bin:$PATH ./scripts/generate_instrument_script_parser.sh
+sed -i -e "s/bison (GNU Bison) //" config.h
+env PATH=/opt/local/bin:$PATH make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# libffi
+
+if [ ! -d libffi-3.1 ]; then
+curl -O ftp://sourceware.org/pub/libffi/libffi-3.1.tar.gz
+tar -xf libffi-3.1.tar.gz
+fi
+
+if [ ! -f libffi-3.1/build-done ]; then
+cd libffi-3.1
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# gettext
+
+if [ ! -d gettext-0.18.3.2 ]; then
+curl -O http://ftp.gnu.org/gnu/gettext/gettext-0.18.3.2.tar.gz
+tar -xf gettext-0.18.3.2.tar.gz
+fi
+
+if [ ! -f gettext-0.18.3.2/build-done ]; then
+cd gettext-0.18.3.2
+env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=$PREFIX
+env PATH=/opt/local/bin:$PATH make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# glib
+
+if [ ! -d glib-2.42.0 ]; then
+curl -O http://ftp.gnome.org/pub/GNOME/sources/glib/2.42/glib-2.42.0.tar.xz
+/opt/local/bin/7z x glib-2.42.0.tar.xz
+/opt/local/bin/7z x glib-2.42.0.tar
+fi
+
+if [ ! -f glib-2.42.0/build-done ]; then
+cd glib-2.42.0
+chmod +x configure install-sh
+env CFLAGS="$CFLAGS -I$PREFIX/include" LDFLAGS="$LDFLAGS -L$PREFIX/lib" PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=$PREFIX
+env PATH=/opt/local/bin:$PATH make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
+# fluidsynth
+
+if [ ! -d fluidsynth-1.1.6 ]; then
+curl -L http://sourceforge.net/projects/fluidsynth/files/fluidsynth-1.1.6/fluidsynth-1.1.6.tar.gz/download -o fluidsynth-1.1.6.tar.gz
+tar -xf fluidsynth-1.1.6.tar.gz
+fi
+
+if [ ! -f fluidsynth-1.1.6/build-done ]; then
+cd fluidsynth-1.1.6
+env LDFLAGS="$LDFLAGS -framework Carbon -framework CoreFoundation" \
+ ./configure --enable-static --disable-shared --prefix=$PREFIX \
+ --disable-dbus-support --disable-aufile-support \
+ --disable-pulse-support --disable-alsa-support --disable-portaudio-support --disable-oss-support --disable-jack-support \
+ --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca \
+ --without-readline \
+ --enable-libsndfile-support
+make
+sudo make install
 touch build-done
 cd ..
 fi
@@ -139,11 +341,10 @@ curl -O http://www.fftw.org/fftw-3.3.4.tar.gz
 tar -xf fftw-3.3.4.tar.gz
 fi
 
-if [ ! -f fftw-3.3.4_$ARCH/build-done ]; then
+if [ ! -f fftw-3.3.4/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -ffast-math -mfpmath=sse -m$ARCH -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
-cp -r fftw-3.3.4 fftw-3.3.4_$ARCH
-cd fftw-3.3.4_$ARCH
+cd fftw-3.3.4
 ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=$PREFIX
 make
 sudo make install
