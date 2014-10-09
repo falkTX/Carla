@@ -13,6 +13,28 @@ if [ -f Makefile ]; then
 fi
 
 # ------------------------------------------------------------------------------------
+# function to remove old stuff
+
+cleanup()
+{
+
+sudo rm -rf /opt/carla32/ /opt/carla64/
+sudo rm -rf cx_Freeze-*
+sudo rm -rf Python-*
+rm -rf fftw-*
+rm -rf liblo-*
+rm -rf mxml-*
+rm -rf pkg-config-*
+rm -rf PyQt-*
+rm -rf qtbase-*
+rm -rf qtmacextras-*
+rm -rf qtsvg-*
+rm -rf sip-*
+rm -rf zlib-*
+
+}
+
+# ------------------------------------------------------------------------------------
 # function to build base libs
 
 build_base()
@@ -166,18 +188,18 @@ export CFG_ARCH=x86_64
 export QMAKESPEC=macx-clang
 
 # ------------------------------------------------------------------------------------
-# qt5-base download (5.2.1 for now)
+# qt5-base download
 
-if [ ! -d qtbase-opensource-src-5.3.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtbase-opensource-src-5.3.1.tar.gz -o qtbase-opensource-src-5.3.1.tar.gz
-tar -xf qtbase-opensource-src-5.3.1.tar.gz
+if [ ! -d qtbase-opensource-src-5.3.2 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.2/submodules/qtbase-opensource-src-5.3.2.tar.gz -o qtbase-opensource-src-5.3.2.tar.gz
+tar -xf qtbase-opensource-src-5.3.2.tar.gz
 fi
 
 # ------------------------------------------------------------------------------------
-# qt5-base (regular, 64bit, shared, framework)
+# qt5-base (64bit, shared, framework)
 
-if [ ! -f qtbase-opensource-src-5.3.1/build-done ]; then
-cd qtbase-opensource-src-5.3.1
+if [ ! -f qtbase-opensource-src-5.3.2/build-done ]; then
+cd qtbase-opensource-src-5.3.2
 ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
             -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -qt-sql-sqlite -qt-zlib -opengl desktop -qpa cocoa \
@@ -198,13 +220,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-mac-extras
 
-if [ ! -d qtmacextras-opensource-src-5.3.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtmacextras-opensource-src-5.3.1.tar.gz -o qtmacextras-opensource-src-5.3.1.tar.gz
-tar -xf qtmacextras-opensource-src-5.3.1.tar.gz
+if [ ! -d qtmacextras-opensource-src-5.3.2 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.2/submodules/qtmacextras-opensource-src-5.3.2.tar.gz -o qtmacextras-opensource-src-5.3.2.tar.gz
+tar -xf qtmacextras-opensource-src-5.3.2.tar.gz
 fi
 
-if [ ! -f qtmacextras-opensource-src-5.3.1/build-done ]; then
-cd qtmacextras-opensource-src-5.3.1
+if [ ! -f qtmacextras-opensource-src-5.3.2/build-done ]; then
+cd qtmacextras-opensource-src-5.3.2
 qmake
 make -j 2
 sudo make install
@@ -215,13 +237,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-svg
 
-if [ ! -d qtsvg-opensource-src-5.3.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.1/submodules/qtsvg-opensource-src-5.3.1.tar.gz -o qtsvg-opensource-src-5.3.1.tar.gz
-tar -xf qtsvg-opensource-src-5.3.1.tar.gz
+if [ ! -d qtsvg-opensource-src-5.3.2 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.2/submodules/qtsvg-opensource-src-5.3.2.tar.gz -o qtsvg-opensource-src-5.3.2.tar.gz
+tar -xf qtsvg-opensource-src-5.3.2.tar.gz
 fi
 
-if [ ! -f qtsvg-opensource-src-5.3.1/build-done ]; then
-cd qtsvg-opensource-src-5.3.1
+if [ ! -f qtsvg-opensource-src-5.3.2/build-done ]; then
+cd qtsvg-opensource-src-5.3.2
 qmake
 make -j 2
 sudo make install
@@ -232,13 +254,13 @@ fi
 # ------------------------------------------------------------------------------------
 # python
 
-if [ ! -d Python-3.4.1 ]; then
-curl -O https://www.python.org/ftp/python/3.4.1/Python-3.4.1.tgz
-tar -xf Python-3.4.1.tgz
+if [ ! -d Python-3.4.2 ]; then
+curl -O https://www.python.org/ftp/python/3.4.2/Python-3.4.2.tgz
+tar -xf Python-3.4.2.tgz
 fi
 
-if [ ! -f Python-3.4.1/build-done ]; then
-cd Python-3.4.1
+if [ ! -f Python-3.4.2/build-done ]; then
+cd Python-3.4.2
 ./configure --prefix=$PREFIX
 make
 sudo make install
@@ -249,13 +271,13 @@ fi
 # ------------------------------------------------------------------------------------
 # sip
 
-if [ ! -d sip-4.16.2 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.2/sip-4.16.2.tar.gz -o sip-4.16.2.tar.gz
-tar -xf sip-4.16.2.tar.gz
+if [ ! -d sip-4.16.3 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.3/sip-4.16.3.tar.gz -o sip-4.16.3.tar.gz
+tar -xf sip-4.16.3.tar.gz
 fi
 
-if [ ! -f sip-4.16.2/build-done ]; then
-cd sip-4.16.2
+if [ ! -f sip-4.16.3/build-done ]; then
+cd sip-4.16.3
 python3 configure.py
 make
 sudo make install
@@ -266,13 +288,13 @@ fi
 # ------------------------------------------------------------------------------------
 # pyqt5
 
-if [ ! -d PyQt-gpl-5.3.1 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.3.1/PyQt-gpl-5.3.1.tar.gz -o PyQt-gpl-5.3.1.tar.gz
-tar -xf PyQt-gpl-5.3.1.tar.gz
+if [ ! -d PyQt-gpl-5.3.2 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.3.2/PyQt-gpl-5.3.2.tar.gz -o PyQt-gpl-5.3.2.tar.gz
+tar -xf PyQt-gpl-5.3.2.tar.gz
 fi
 
-if [ ! -f PyQt-gpl-5.3.1/build-done ]; then
-cd PyQt-gpl-5.3.1
+if [ ! -f PyQt-gpl-5.3.2/build-done ]; then
+cd PyQt-gpl-5.3.2
 python3 configure.py --confirm-license
 make
 sudo make install
