@@ -496,6 +496,7 @@ fi
 
 if [ ! -f PyQt-gpl-5.3.2/build-done ]; then
 cd PyQt-gpl-5.3.2
+sed -i -e "s/# Read the details./pylib_dir = ''/" configure.py
 python3 configure.py --confirm-license
 make
 sudo make install
