@@ -107,7 +107,7 @@ def findMacVSTBundles(bundlePath, isVST3):
     bundles = []
 
     for root, dirs, files in os.walk(bundlePath, followlinks=True):
-        if root == bundlePath: continue
+        #if root == bundlePath: continue # FIXME
         for name in [name for name in dirs if name.lower().endswith(".vst3" if isVST3 else ".vst")]:
             bundles.append(os.path.join(root, name))
 

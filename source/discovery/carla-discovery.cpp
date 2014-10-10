@@ -1375,16 +1375,18 @@ static void do_vst_check(void*& libHandle, const bool doInit)
 #endif // ! CARLA_OS_MAC
 
 #ifdef USE_JUCE_PROCESSORS
-static void do_juce_check(const char* const filename, const char* const stype, const bool doInit)
+static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
 {
+    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
+    carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
+
     using namespace juce;
+
+    juce::String filename(File(filename_).getFullPathName());
 
     ScopedPointer<AudioPluginFormat> pluginFormat;
 
-    if (stype == nullptr)
-        return;
-
-    else if (std::strcmp(stype, "VST") == 0)
+    /* */ if (std::strcmp(stype, "VST") == 0)
     {
 #if JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
@@ -1415,13 +1417,21 @@ static void do_juce_check(const char* const filename, const char* const stype, c
         return;
     }
 
+    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
+
     OwnedArray<PluginDescription> results;
     pluginFormat->findAllTypesForFile(results, filename);
+
+    if (results.size() == 0)
+    {
+        DISCOVERY_OUT("error", "No plugins found");
+        return;
+    }
 
     for (PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
     {
         static int iv=0;
-        carla_stderr2("LOOKING FOR PLUGIN %i", iv++);
+        carla_debug("LOOKING FOR PLUGIN %i", iv++);
         PluginDescription* const desc(*it);
 
         uint hints = 0x0;
@@ -1598,17 +1608,17 @@ int main(int argc, char* argv[])
     const char* const filename = argv[2];
     const PluginType  type     = getPluginTypeFromString(stype);
 
-    CarlaString filenameStr(filename);
-    filenameStr.toLower();
+    CarlaString filenameCheck(filename);
+    filenameCheck.toLower();
 
     if (type != PLUGIN_GIG && type != PLUGIN_SF2 && type != PLUGIN_SFZ)
     {
-        if (filenameStr.contains("fluidsynth", true))
+        if (filenameCheck.contains("fluidsynth", true))
         {
             DISCOVERY_OUT("info", "skipping fluidsynth based plugin");
             return 0;
         }
-        if (filenameStr.contains("linuxsampler", true) || filenameStr.endsWith("ls16.so"))
+        if (filenameCheck.contains("linuxsampler", true) || filenameCheck.endsWith("ls16.so"))
         {
             DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
             return 0;
@@ -1642,7 +1652,7 @@ int main(int argc, char* argv[])
     }
 
     // never do init for dssi-vst, takes too long and it's crashy
-    bool doInit = ! filenameStr.contains("dssi-vst", true);
+    bool doInit = ! filenameCheck.contains("dssi-vst", true);
 
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;
