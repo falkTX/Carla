@@ -286,7 +286,7 @@ FLUIDSYNTH_LIBS  = $(shell pkg-config --libs fluidsynth)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -Wno-unused-parameter
+LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
 endif
 

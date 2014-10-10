@@ -262,6 +262,7 @@ RES = \
 	bin/resources/carla_config.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
+	bin/resources/carla_panels.py \
 	bin/resources/carla_settings.py \
 	bin/resources/carla_skin.py \
 	bin/resources/carla_shared.py \

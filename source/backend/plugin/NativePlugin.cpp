@@ -1632,7 +1632,9 @@ public:
 
                     if (midiEvent.size > 4)
                         continue;
+#ifdef CARLA_PROPER_CPP11_SUPPORT
                     static_assert(4 <= EngineMidiEvent::kDataSize, "Incorrect data");
+#endif
 
                     uint8_t status = uint8_t(MIDI_GET_STATUS_FROM_DATA(midiEvent.data));
 

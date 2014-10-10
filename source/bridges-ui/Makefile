@@ -72,11 +72,13 @@ TARGETS += ui_vst-x11
 endif
 
 ifeq ($(MACOS),true)
-TARGETS += ui_lv2-cocoa
+# TODO
+# TARGETS += ui_lv2-cocoa
 endif
 
 ifeq ($(WIN32),true)
-TARGETS += ui_lv2-windows
+# TODO
+# TARGETS += ui_lv2-windows
 endif
 
 # --------------------------------------------------------------

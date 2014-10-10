@@ -118,7 +118,10 @@ struct ERect {
     int16_t top, left, bottom, right;
 };
 #else
-#ifndef CARLA_OS_MAC
+#ifdef CARLA_OS_MAC
+# undef __ppc__
+# define __ppc__ 0
+#else
 # undef TARGET_API_MAC_CARBON
 # define TARGET_API_MAC_CARBON 0
 #endif

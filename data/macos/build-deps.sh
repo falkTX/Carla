@@ -305,6 +305,7 @@ cd glib-2.42.0
 chmod +x configure install-sh
 env CFLAGS="$CFLAGS -I$PREFIX/include" LDFLAGS="$LDFLAGS -L$PREFIX/lib" PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=$PREFIX
 env PATH=/opt/local/bin:$PATH make
+sudo touch /opt/carla64/bin/gtester-report
 sudo make install
 touch build-done
 cd ..
