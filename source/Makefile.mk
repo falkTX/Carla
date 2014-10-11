@@ -128,6 +128,7 @@ ifeq ($(LINUX),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include/ntk
+CXXFLAGS   += -isystem /opt/kxstudio-trusty/include/ntk
 CXXFLAGS   += -isystem /usr/include/qt4
 endif
 ifeq ($(MACOS),true)

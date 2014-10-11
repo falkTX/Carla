@@ -35,6 +35,31 @@
 
 // -----------------------------------------------------------------------
 
+struct ScopedLocale {
+    const char* locale;
+
+    ScopedLocale() noexcept
+        : locale(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
+    {
+        ::setlocale(LC_NUMERIC, "C");
+    }
+
+    ~ScopedLocale() noexcept
+    {
+        if (locale != nullptr)
+        {
+            ::setlocale(LC_NUMERIC, locale);
+            delete[] locale;
+            locale = nullptr;
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(ScopedLocale)
+    CARLA_PREVENT_HEAP_ALLOCATION
+};
+
+// -----------------------------------------------------------------------
+
 class CarlaPipeServer
 {
 protected:
@@ -273,8 +298,8 @@ public:
 
             if (locale == nullptr)
             {
-                locale = carla_strdup(setlocale(LC_NUMERIC, nullptr));
-                ::setlocale(LC_NUMERIC, "POSIX");
+                locale = carla_strdup(::setlocale(LC_NUMERIC, nullptr));
+                ::setlocale(LC_NUMERIC, "C");
             }
 
             fIsReading = true;

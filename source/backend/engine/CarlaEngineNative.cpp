@@ -788,6 +788,7 @@ protected:
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
     {
         const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const ScopedLocale csl;
 
         const uint pluginId(plugin->getId());
 
@@ -917,6 +918,7 @@ protected:
         }
 
         const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const ScopedLocale csl;
 
         std::sprintf(fTmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
         fUiServer.writeMsg(fTmpBuf);
@@ -1387,32 +1389,31 @@ protected:
         if (! fUiServer.isOk())
             return;
 
-        for (uint i=0; i < pData->curPluginCount; ++i)
         {
-            const EnginePluginData& plugData(pData->plugins[i]);
-            const CarlaPlugin* const plugin(pData->plugins[i].plugin);
+            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+            const ScopedLocale csl;
 
+            for (uint i=0; i < pData->curPluginCount; ++i)
             {
-                const CarlaMutexLocker cml(fUiServer.getWriteLock());
+                const EnginePluginData& plugData(pData->plugins[i]);
+                const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
                 std::sprintf(fTmpBuf, "PEAKS_%i\n", i);
                 fUiServer.writeMsg(fTmpBuf);
 
                 std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
                 fUiServer.writeMsg(fTmpBuf);
-            }
 
-            for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
-            {
-                if (! plugin->isParameterOutput(j))
-                    continue;
+                for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
+                {
+                    if (! plugin->isParameterOutput(j))
+                        continue;
 
-                const CarlaMutexLocker cml(fUiServer.getWriteLock());
-
-                std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", i, j);
-                fUiServer.writeMsg(fTmpBuf);
-                std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(j));
-                fUiServer.writeMsg(fTmpBuf);
+                    std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", i, j);
+                    fUiServer.writeMsg(fTmpBuf);
+                    std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(j));
+                    fUiServer.writeMsg(fTmpBuf);
+                }
             }
         }
 
