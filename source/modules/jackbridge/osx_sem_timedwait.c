@@ -420,7 +420,7 @@ static void* timeoutThreadMain (void* passedPtr)
       } else if (errno == EINTR) {
          requestedDelay = remainingDelay;
       } else {
-         Return = (void*) errno;
+         Return = (void*) (long) errno;
          break;
       }
    }
@@ -437,7 +437,7 @@ static void* timeoutThreadMain (void* passedPtr)
    if (pthread_kill(details.callingThread,0) == 0) {
       *(details.timedOutShort) = TRUE;
       if (triggerSignal (SIGUSR2,details.callingThread) < 0) {
-         Return = (void*) errno;
+         Return = (void*) (long) errno;
       }
    }
    

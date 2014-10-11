@@ -253,6 +253,7 @@ env PATH=/opt/local/bin:$PATH ./scripts/generate_instrument_script_parser.sh
 sed -i -e "s/bison (GNU Bison) //" config.h
 env PATH=/opt/local/bin:$PATH make
 sudo make install
+sudo sed -i -e "s|-llinuxsampler|-L/opt/carla64/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lpthread|" /opt/carla64/lib/pkgconfig/linuxsampler.pc
 touch build-done
 cd ..
 fi
@@ -330,6 +331,7 @@ env LDFLAGS="$LDFLAGS -framework Carbon -framework CoreFoundation" \
  --enable-libsndfile-support
 make
 sudo make install
+sudo sed -i -e "s|-lfluidsynth|-lfluidsynth -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm -liconv -lintl|" /opt/carla64/lib/pkgconfig/fluidsynth.pc
 touch build-done
 cd ..
 fi
