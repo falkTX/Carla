@@ -253,7 +253,7 @@ env PATH=/opt/local/bin:$PATH ./scripts/generate_instrument_script_parser.sh
 sed -i -e "s/bison (GNU Bison) //" config.h
 env PATH=/opt/local/bin:$PATH make
 sudo make install
-sudo sed -i -e "s|-llinuxsampler|-L/opt/carla64/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lpthread|" /opt/carla64/lib/pkgconfig/linuxsampler.pc
+sudo sed -i -e "s|-llinuxsampler|-llinuxsampler -L/opt/carla64/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lpthread -lsqlite3|" /opt/carla64/lib/pkgconfig/linuxsampler.pc
 touch build-done
 cd ..
 fi
