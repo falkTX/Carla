@@ -41,7 +41,9 @@ ui_*.py
 *.aria2
 *.deb
 *.meta4
+*.tar
 *.ttl
+*.xz
 *.zip
 
 # PyQt widgets
@@ -81,6 +83,7 @@ carla-lv2-export
 
 data/linux/unzipfx2cat32
 data/linux/unzipfx2cat64
+data/macos/*-svn/
 data/windows/Carla
 data/windows/CarlaControl
 data/windows/Carla-*-win32/
