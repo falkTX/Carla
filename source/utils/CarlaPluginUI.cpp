@@ -21,8 +21,10 @@
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
 # include "juce_gui_basics.h"
 using juce::Colour;
+using juce::Colours;
 using juce::ComponentPeer;
 using juce::DocumentWindow;
+using juce::Graphics;
 #endif
 
 #ifdef HAVE_X11
@@ -30,6 +32,92 @@ using juce::DocumentWindow;
 # include <X11/Xatom.h>
 # include <X11/Xlib.h>
 # include <X11/Xutil.h>
+#endif
+
+// -----------------------------------------------------
+// AutoResizingNSViewComponentWithParent, see juce_audio_processors.cpp
+
+#ifdef CARLA_OS_MAC
+# include "juce_gui_extra.h"
+
+# ifdef CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
+#  include "juce_core/native/juce_BasicNativeHeaders.h"
+# else
+struct NSView;
+# endif
+
+namespace juce {
+//==============================================================================
+struct AutoResizingNSViewComponent : public NSViewComponent,
+                                     private AsyncUpdater {
+    AutoResizingNSViewComponent();
+    void childBoundsChanged(Component*) override;
+    void handleAsyncUpdate() override;
+    bool recursive;
+};
+
+struct AutoResizingNSViewComponentWithParent : public AutoResizingNSViewComponent,
+                                               private Timer {
+    AutoResizingNSViewComponentWithParent();
+    NSView* getChildView() const;
+    void timerCallback() override;
+};
+
+//==============================================================================
+# ifdef CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
+#  include "juce_core/native/juce_BasicNativeHeaders.h"
+
+AutoResizingNSViewComponent::AutoResizingNSViewComponent()
+    : recursive (false) {}
+
+void AutoResizingNSViewComponent::childBoundsChanged(Component*) override
+{
+    if (recursive)
+    {
+        triggerAsyncUpdate();
+    }
+    else
+    {
+        recursive = true;
+        resizeToFitView();
+        recursive = true;
+    }
+}
+
+void AutoResizingNSViewComponent::handleAsyncUpdate() override
+{
+    resizeToFitView();
+}
+
+AutoResizingNSViewComponentWithParent::AutoResizingNSViewComponentWithParent()
+{
+    NSView* v = [[NSView alloc] init];
+    setView (v);
+    [v release];
+
+    startTimer(500);
+}
+
+NSView* AutoResizingNSViewComponentWithParent::getChildView() const
+{
+    if (NSView* parent = (NSView*)getView())
+        if ([[parent subviews] count] > 0)
+            return [[parent subviews] objectAtIndex: 0];
+
+    return nil;
+}
+
+void AutoResizingNSViewComponentWithParent::timerCallback() override
+{
+    if (NSView* child = getChildView())
+    {
+        stopTimer();
+        setView(child);
+    }
+}
+#endif
+} // namespace juce
+using juce::AutoResizingNSViewComponentWithParent;
 #endif
 
 // -----------------------------------------------------
@@ -44,6 +132,9 @@ public:
         : CarlaPluginUI(cb, false),
           DocumentWindow("JucePluginUI", Colour(50, 50, 200), DocumentWindow::closeButton, false),
           fClosed(false),
+#ifdef CARLA_OS_MAC
+          fCocoaWrapper(),
+#endif
           leakDetector_JucePluginUI()
     {
         setVisible(false);
@@ -52,10 +143,23 @@ public:
         setResizable(false, false);
         setUsingNativeTitleBar(true);
 
+#ifdef CARLA_OS_MAC
+        addAndMakeVisible(fCocoaWrapper = new AutoResizingNSViewComponentWithParent());
+#endif
+
         addToDesktop();
     }
 
+    ~JucePluginUI() override
+    {
+#ifdef CARLA_OS_MAC
+        // deleted before window
+        fCocoaWrapper = nullptr;
+#endif
+    }
+
 protected:
+    // CarlaPluginUI calls
     void closeButtonPressed() override
     {
         fClosed = true;
@@ -104,15 +208,63 @@ protected:
 
     void* getPtr() const noexcept override
     {
+#ifdef CARLA_OS_MAC
+        return fCocoaWrapper->getView();
+#else
         if (ComponentPeer* const peer = getPeer())
             return peer->getNativeHandle();
 
         carla_stdout("getPtr() failed");
         return nullptr;
+#endif
     }
+
+#ifdef CARLA_OS_MAC
+    // JUCE MacOS calls
+    void childBoundsChanged(Component*) override
+    {
+        if (fCocoaWrapper != nullptr)
+        {
+            const int w = fCocoaWrapper->getWidth();
+            const int h = fCocoaWrapper->getHeight();
+
+            if (w != DocumentWindow::getWidth() || h != DocumentWindow::getHeight())
+                DocumentWindow::setSize(w, h);
+        }
+    }
+
+    void resized() override
+    {
+        if (fCocoaWrapper != nullptr)
+            fCocoaWrapper->setSize(DocumentWindow::getWidth(), DocumentWindow::getHeight());
+    }
+#endif
+
+#ifdef CARLA_OS_WINDOWS
+    // JUCE Windows calls
+    void mouseDown(const MouseEvent&) override
+    {
+        DocumentWindow::toFront(true);
+    }
+#endif
+
+    void paint(Graphics& g) override
+    {
+        g.fillAll(Colours::black);
+    }
+
+#if 0
+    //==============================================================================
+    bool keyStateChanged (bool) override                 { return pluginWantsKeys; }
+    bool keyPressed (const juce::KeyPress&) override     { return pluginWantsKeys; }
+#endif
 
 private:
     volatile bool fClosed;
+
+#ifdef CARLA_OS_MAC
+    juce::ScopedPointer<AutoResizingNSViewComponentWithParent> fCocoaWrapper;
+#endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePluginUI)
 };

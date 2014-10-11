@@ -1236,7 +1236,7 @@ int main(int argc, char* argv[])
 
     if (argc != 6)
     {
-        carla_stderr("usage: %s <osc-url|\"null\"> <plugin-bundle> <plugin-uri> <ui-uri> <ui-title>", argv[0]);
+        carla_stderr("usage: %s <osc-url|\"null\"><plugin-uri> <ui-uri> <ui-bundle>  <ui-title>", argv[0]);
         return 1;
     }
 

@@ -133,6 +133,7 @@ endif
 ifeq ($(MACOS),true)
 CFLAGS     += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include
+CXXFLAGS   += -isystem /System/Library/Frameworks
 endif
 ifeq ($(WIN64),true)
 CFLAGS     += -isystem /opt/mingw64/include

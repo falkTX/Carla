@@ -20,6 +20,12 @@
 
 #include "CarlaPluginUI.hpp"
 
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+# include "juce_events.h"
+using juce::MessageManager;
+using juce::ScopedJuceInitialiser_GUI;
+#endif
+
 CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
@@ -79,7 +85,12 @@ public:
             if (! kClient->oscIdle())
                 break;
 
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+            if (MessageManager* const msgMgr = MessageManager::getInstance())
+                msgMgr->runDispatchLoopUntil(20);
+#else
             carla_msleep(20);
+#endif
         }
     }
 
@@ -154,6 +165,10 @@ private:
     CarlaPluginUI* fUI;
     bool fIdling;
 
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+    const ScopedJuceInitialiser_GUI kJuceInit;
+#endif
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitPlugin)
 };
 
@@ -168,6 +183,7 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const clien
 
 CARLA_BRIDGE_END_NAMESPACE
 
+#define CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
 #include "CarlaPluginUI.cpp"
 
 // -------------------------------------------------------------------------

@@ -40,7 +40,7 @@ BUILD_LV2_X11_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(X11
 LINK_LV2_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
 
 BUILD_LV2_COCOA_FLAGS   = $(BUILD_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA
-LINK_LV2_COCOA_FLAGS    = $(LINK_FLAGS) -ldl
+LINK_LV2_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore -ldl
 
 BUILD_LV2_WINDOWS_FLAGS = $(BUILD_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND
 LINK_LV2_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
@@ -72,13 +72,11 @@ TARGETS += ui_vst-x11
 endif
 
 ifeq ($(MACOS),true)
-# TODO
-# TARGETS += ui_lv2-cocoa
+TARGETS += ui_lv2-cocoa
 endif
 
 ifeq ($(WIN32),true)
-# TODO
-# TARGETS += ui_lv2-windows
+TARGETS += ui_lv2-windows
 endif
 
 # --------------------------------------------------------------
@@ -100,6 +98,18 @@ ui_vst-x11:     ../../bin/carla-bridge-vst-x11
 OBJS_LV2_LIBS = \
 	../modules/juce_core.a \
 	../modules/lilv.a
+
+OBJS_LV2_LIBS_JUCE_UI = \
+	$(OBJS_LV2_LIBS) \
+	../modules/juce_data_structures.a \
+	../modules/juce_events.a \
+	../modules/juce_graphics.a \
+	../modules/juce_gui_basics.a
+
+ifeq ($(MACOS),true)
+OBJS_LV2_LIBS_JUCE_UI += \
+	../modules/juce_gui_extra.a
+endif
 
 OBJS_VST_LIBS = \
 	../modules/juce_core.a
@@ -206,11 +216,11 @@ OBJS_LV2_COCOA = \
 	CarlaBridgeToolkitPlugin__lv2-cocoa.o \
 	CarlaBridgeUI-LV2__lv2-cocoa.o
 
-../../bin/carla-bridge-lv2-cocoa: $(OBJS_LV2_COCOA) $(OBJS_LV2_LIBS)
+../../bin/carla-bridge-lv2-cocoa: $(OBJS_LV2_COCOA) $(OBJS_LV2_LIBS_JUCE_UI)
 	$(CXX) $^ $(LINK_LV2_COCOA_FLAGS) -o $@
 
 %__lv2-cocoa.o: %.cpp
-	$(CXX) $< $(BUILD_LV2_COCOA_FLAGS) -c -o $@
+	$(CXX) $< $(BUILD_LV2_COCOA_FLAGS) -ObjC++ -c -o $@
 
 # --------------------------------------------------------------
 # ui_lv2-windows
@@ -221,7 +231,7 @@ OBJS_LV2_WINDOWS = \
 	CarlaBridgeToolkitPlugin__lv2-windows.o \
 	CarlaBridgeUI-LV2__lv2-windows.o
 
-../../bin/carla-bridge-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(OBJS_LV2_LIBS)
+../../bin/carla-bridge-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(OBJS_LV2_LIBS_JUCE_UI)
 	$(CXX) $^ $(LINK_LV2_WINDOWS_FLAGS) -o $@
 
 %__lv2-windows.o: %.cpp
