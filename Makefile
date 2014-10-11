@@ -326,8 +326,8 @@ UIs = \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
-	source/ui_carla_parameter.py \
 	source/ui_carla_panel_time.py \
+	source/ui_carla_parameter.py \
 	source/ui_carla_plugin_basic_fx.py \
 	source/ui_carla_plugin_calf.py \
 	source/ui_carla_plugin_default.py \
@@ -524,6 +524,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_panels.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_shared.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -546,6 +547,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/ui_carla_database.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_edit.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_panel_time.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_parameter.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_basic_fx.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -628,10 +630,16 @@ ANS_NO=" NO "
 ANS_YES=" YES "
 endif
 
+ifeq ($(DEFAULT_QT),4)
+FEV="Qt4"
+else
+FEV="Qt5"
+endif
+
 features:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
-	@echo "Front-End:  $(ANS_YES)"
+	@echo "Front-End:  $(ANS_YES) (Using $(FEV))"
 ifneq ($(WIN32),true)
 	@echo "LV2 plugin: $(ANS_YES)"
 else
