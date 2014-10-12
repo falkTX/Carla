@@ -108,6 +108,9 @@ public:
         fVstRect.right  = 740;
 
         init();
+
+        // tell host we want MIDI events
+        fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
     }
 
     ~NativePlugin()
@@ -302,6 +305,13 @@ public:
                     return 1;
                 if (std::strcmp(canDo, "receiveVstTimeInfo") == 0)
                     return 1;
+#if 0
+                // TODO - MIDI Out
+                if (std::strcmp(canDo, "sendVstEvents") == 0)
+                    return 1;
+                if (std::strcmp(canDo, "sendVstMidiEvent") == 0)
+                    return 1;
+#endif
             }
             break;
         }
@@ -365,6 +375,8 @@ public:
 
         if (fHandle != nullptr)
             fDescriptor->process(fHandle, const_cast<float**>(inputs), outputs, static_cast<uint32_t>(sampleFrames), fMidiEvents, fMidiEventCount);
+
+        // TODO: MIDI Out
 
         fMidiEventCount = 0;
     }
