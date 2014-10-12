@@ -29,7 +29,7 @@ if config_UseQt5:
     from PyQt5.QtGui import QColor, QPalette
     from PyQt5.QtWidgets import QApplication
 else:
-    from PyQt4.QtCore import QSettings
+    from PyQt4.QtCore import Qt, QSettings
     from PyQt4.QtGui import QApplication, QColor, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
@@ -243,7 +243,7 @@ class CarlaApplication(object):
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-        if MACOS and config_UseQt5:
+        if MACOS:
             self.fApp.setAttribute(Qt.AA_DontShowIconsInMenus)
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())

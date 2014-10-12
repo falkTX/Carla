@@ -272,7 +272,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (special stuff for Mac OS)
 
-        if MACOS and config_UseQt5:
+        if MACOS:
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
