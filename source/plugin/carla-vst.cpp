@@ -153,7 +153,7 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents);
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
         return true;
@@ -196,7 +196,6 @@ public:
                     fDescriptor->activate(fHandle);
 
                 fMidiEventCount = 0;
-                carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
             }
             else
@@ -294,7 +293,7 @@ public:
                     fMidiEvents[j].size = 3;
 
                     for (uint32_t k=0; k<3; ++k)
-                        fMidiEvents[fMidiEventCount].data[k] = static_cast<uint8_t>(vstMidiEvent->midiData[k]);
+                        fMidiEvents[j].data[k] = static_cast<uint8_t>(vstMidiEvent->midiData[k]);
                 }
             }
             break;
@@ -373,40 +372,12 @@ public:
             fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*fTimeInfo.bbt.beatsPerBar*(fTimeInfo.bbt.bar-1);
         }
 
-        const uint32_t oldMidiEventCount(fMidiEventCount);
+        fMidiOutEvents.numEvents = 0;
 
         if (fHandle != nullptr)
             fDescriptor->process(fHandle, const_cast<float**>(inputs), outputs, static_cast<uint32_t>(sampleFrames), fMidiEvents, fMidiEventCount);
 
-        const uint32_t newMidiEventCount(fMidiEventCount);
-
         fMidiEventCount = 0;
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-
-        CARLA_SAFE_ASSERT_RETURN(newMidiEventCount == oldMidiEventCount,);
-
-        fMidiOutEvents.numEvents = 0;
-
-        // reverse lookup MIDI events
-        for (uint32_t i = (kMaxMidiEvents*2)-1; i >= newMidiEventCount; --i)
-        {
-            if (fMidiEvents[i].data[0] == 0)
-                break;
-
-            NativeMidiEvent& midiEvent(fMidiEvents[i]);
-            VstMidiEvent& vstMidiEvent(fMidiOutEvents.mdata[i]);
-
-            vstMidiEvent.type     = kVstMidiType;
-            vstMidiEvent.byteSize = kVstMidiEventSize;
-
-            uint8_t j=0;
-            for (; j<midiEvent.size; ++j)
-                vstMidiEvent.midiData[j] = static_cast<char>(midiEvent.data[j]);
-            for (; j<4; ++j)
-                vstMidiEvent.midiData[j] = 0;
-
-            ++(fMidiOutEvents.numEvents);
-        }
 
         if (fMidiOutEvents.numEvents > 0)
             fAudioMaster(fEffect, audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
@@ -441,15 +412,19 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
-        // reverse-find first free event, and put it there
-        for (uint32_t i=(kMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
-        {
-            if (fMidiEvents[i].data[0] == 0)
-            {
-                std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
-                return true;
-            }
-        }
+        if (fMidiOutEvents.numEvents >= static_cast<int32_t>(kMaxMidiEvents))
+            return false;
+
+        VstMidiEvent& vstMidiEvent(fMidiOutEvents.mdata[fMidiOutEvents.numEvents++]);
+
+        vstMidiEvent.type     = kVstMidiType;
+        vstMidiEvent.byteSize = kVstMidiEventSize;
+
+        uint8_t i=0;
+        for (; i<event->size; ++i)
+            vstMidiEvent.midiData[i] = static_cast<char>(event->data[i]);
+        for (; i<4; ++i)
+            vstMidiEvent.midiData[i] = 0;
 
         return false;
     }
@@ -503,15 +478,15 @@ private:
 
     // Temporary data
     uint32_t        fMidiEventCount;
-    NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
+    NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
 
     struct FixedVstEvents {
         int32_t numEvents;
         intptr_t reserved;
-        VstEvent* data[kMaxMidiEvents*2];
-        VstMidiEvent mdata[kMaxMidiEvents*2];
+        VstEvent* data[kMaxMidiEvents];
+        VstMidiEvent mdata[kMaxMidiEvents];
 
         FixedVstEvents()
             : numEvents(0),
@@ -519,9 +494,9 @@ private:
               data(),
               mdata()
         {
-            for (uint32_t i=0; i<kMaxMidiEvents*2; ++i)
+            for (uint32_t i=0; i<kMaxMidiEvents; ++i)
                 data[i] = (VstEvent*)&mdata[i];
-            carla_zeroStruct<VstMidiEvent>(mdata, kMaxMidiEvents*2);
+            carla_zeroStruct<VstMidiEvent>(mdata, kMaxMidiEvents);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
