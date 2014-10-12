@@ -144,7 +144,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
             elif msg.startswith("PARAMVAL_"):
                 pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
                 paramValue = float(self.readlineblock())
-                self.host._set_parameterValue(pluginId, paramId, paramValue)
+                if paramId < 0:
+                    self.host._set_internalValue(pluginId, paramId, paramValue)
+                else:
+                    self.host._set_parameterValue(pluginId, paramId, paramValue)
 
             elif msg.startswith("ENGINE_CALLBACK_"):
                 action   = int(msg.replace("ENGINE_CALLBACK_", ""))

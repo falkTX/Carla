@@ -792,6 +792,14 @@ protected:
 
         const uint pluginId(plugin->getId());
 
+        for (int32_t i=PARAMETER_ACTIVE; i>PARAMETER_MAX; --i)
+        {
+            std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
+            fUiServer.writeMsg(fTmpBuf);
+            std::sprintf(fTmpBuf, "%f\n", plugin->getInternalParameterValue(i));
+            fUiServer.writeMsg(fTmpBuf);
+        }
+
         uint32_t ins, outs, count;
         plugin->getParameterCountInfo(ins, outs);
         count = plugin->getParameterCount();

@@ -671,7 +671,6 @@ class HostWindow(QMainWindow):
 
             self.projectLoadingFinished()
 
-        # just in case
         self.host.remove_all_plugins()
         self.removeAllPlugins()
 
