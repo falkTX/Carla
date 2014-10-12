@@ -49,10 +49,10 @@ class RackListItem(QListWidgetItem):
 
         if False:
             # kdevelop likes this :)
-            from carla_backend import CarlaHostMeta
             parent = RackListWidget()
             host = CarlaHostMeta()
             self.host = host
+            self.fWidget = AbstractPluginSlot()
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
@@ -103,7 +103,7 @@ class RackListItem(QListWidgetItem):
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
 
-        self.setSizeHint(QSize(640, self.fWidget.getFixedHeight()))
+        self.setSizeHint(QSize(700, self.fWidget.getFixedHeight()))
 
         self.fParent.setItemWidget(self, self.fWidget)
 

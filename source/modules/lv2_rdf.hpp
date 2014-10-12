@@ -291,6 +291,7 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_EQ(x, y)                  ((x) & LV2_GROUP_EQ)
 #define LV2_IS_FILTER(x, y)              ((x) & LV2_GROUP_FILTER)
 #define LV2_IS_GENERATOR(x, y)           ((y) & LV2_GROUP_GENERATOR)
+#define LV2_IS_INSTRUMENT(x, y)          ((y) & LV2_PLUGIN_INSTRUMENT)
 #define LV2_IS_MODULATOR(x, y)           ((y) & LV2_GROUP_MODULATOR)
 #define LV2_IS_REVERB(x, y)              ((x) & LV2_GROUP_REVERB)
 #define LV2_IS_SIMULATOR(x, y)           ((x) & LV2_GROUP_SIMULATOR)

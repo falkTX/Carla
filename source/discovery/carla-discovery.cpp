@@ -1112,7 +1112,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
             }
         }
 
-        if (LV2_IS_GENERATOR(rdfDescriptor->Type[0], rdfDescriptor->Type[1]))
+        if (LV2_IS_INSTRUMENT(rdfDescriptor->Type[0], rdfDescriptor->Type[1]))
             hints |= PLUGIN_IS_SYNTH;
 
         if (rdfDescriptor->UICount > 0)

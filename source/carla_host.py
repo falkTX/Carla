@@ -68,7 +68,7 @@ NSM_URL         = os.getenv("NSM_URL")
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
 
-class HostWindow(QMainWindow, PluginEditParentMeta):
+class HostWindow(QMainWindow):
 #class HostWindow(QMainWindow, PluginEditParentMeta, metaclass=PyQtMetaClass):
     # signals
     SIGTERM = pyqtSignal()
@@ -1578,7 +1578,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         if pitem is None:
             return None
         #if False:
-            #pitem = CarlaRackItem(self, 0, False)
+            #return CarlaRackItem(self, 0, False)
 
         return pitem
 
@@ -1589,8 +1589,8 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         pitem = self.fPluginList[pluginId]
         if pitem is None:
             return None
-        #if False:
-            #pitem = CarlaRackItem(self, 0, False)
+        if False:
+            return PluginEdit(self, self.host, 0)
 
         return pitem.getEditDialog()
 
@@ -1602,7 +1602,7 @@ class HostWindow(QMainWindow, PluginEditParentMeta):
         if pitem is None:
             return None
         #if False:
-            #pitem = CarlaRackItem(self, 0, False)
+            #return AbstractPluginSlot()
 
         return pitem.getWidget()
 
