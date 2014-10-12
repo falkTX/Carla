@@ -732,7 +732,7 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     std::memset(effect, 0, sizeof(AEffect));
 
     // vst fields
-    effect->magic    = kEffectMagic;
+    effect->magic = kEffectMagic;
 #ifdef VESTIGE_HEADER
     int32_t* const version = (int32_t*)&effect->unknown1;
     *version = CARLA_VERSION_HEX;
