@@ -52,6 +52,8 @@ using juce::SharedResourcePointer;
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
 
+static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
+
 // -----------------------------------------------------------------------
 
 class NativePlugin
@@ -70,6 +72,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
+          fMidiOutEvents(),
           fStateChunk(nullptr),
           sJuceInitialiser(),
           leakDetector_NativePlugin()
@@ -284,14 +287,14 @@ public:
                     if (fMidiEventCount >= kMaxMidiEvents)
                         break;
 
-                    fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = static_cast<uint32_t>(vstMidiEvent->deltaFrames);
-                    fMidiEvents[fMidiEventCount].size = 3;
+                    const uint32_t j(fMidiEventCount++);
 
-                    for (uint32_t j=0; j < 3; ++j)
-                        fMidiEvents[fMidiEventCount].data[j] = static_cast<uint8_t>(vstMidiEvent->midiData[j]);
+                    fMidiEvents[j].port = 0;
+                    fMidiEvents[j].time = static_cast<uint32_t>(vstMidiEvent->deltaFrames);
+                    fMidiEvents[j].size = 3;
 
-                    fMidiEventCount += 1;
+                    for (uint32_t k=0; k<3; ++k)
+                        fMidiEvents[fMidiEventCount].data[k] = static_cast<uint8_t>(vstMidiEvent->midiData[k]);
                 }
             }
             break;
@@ -305,13 +308,10 @@ public:
                     return 1;
                 if (std::strcmp(canDo, "receiveVstTimeInfo") == 0)
                     return 1;
-#if 0
-                // TODO - MIDI Out
                 if (std::strcmp(canDo, "sendVstEvents") == 0)
                     return 1;
                 if (std::strcmp(canDo, "sendVstMidiEvent") == 0)
                     return 1;
-#endif
             }
             break;
         }
@@ -373,12 +373,43 @@ public:
             fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*fTimeInfo.bbt.beatsPerBar*(fTimeInfo.bbt.bar-1);
         }
 
+        const uint32_t oldMidiEventCount(fMidiEventCount);
+
         if (fHandle != nullptr)
             fDescriptor->process(fHandle, const_cast<float**>(inputs), outputs, static_cast<uint32_t>(sampleFrames), fMidiEvents, fMidiEventCount);
 
-        // TODO: MIDI Out
+        const uint32_t newMidiEventCount(fMidiEventCount);
 
         fMidiEventCount = 0;
+        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+
+        CARLA_SAFE_ASSERT_RETURN(newMidiEventCount == oldMidiEventCount,);
+
+        fMidiOutEvents.numEvents = 0;
+
+        // reverse lookup MIDI events
+        for (uint32_t i = (kMaxMidiEvents*2)-1; i >= newMidiEventCount; --i)
+        {
+            if (fMidiEvents[i].data[0] == 0)
+                break;
+
+            NativeMidiEvent& midiEvent(fMidiEvents[i]);
+            VstMidiEvent& vstMidiEvent(fMidiOutEvents.mdata[i]);
+
+            vstMidiEvent.type     = kVstMidiType;
+            vstMidiEvent.byteSize = kVstMidiEventSize;
+
+            uint8_t j=0;
+            for (; j<midiEvent.size; ++j)
+                vstMidiEvent.midiData[j] = static_cast<char>(midiEvent.data[j]);
+            for (; j<4; ++j)
+                vstMidiEvent.midiData[j] = 0;
+
+            ++(fMidiOutEvents.numEvents);
+        }
+
+        if (fMidiOutEvents.numEvents > 0)
+            fAudioMaster(fEffect, audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
     }
 
 protected:
@@ -475,6 +506,26 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
+
+    struct FixedVstEvents {
+        int32_t numEvents;
+        intptr_t reserved;
+        VstEvent* data[kMaxMidiEvents*2];
+        VstMidiEvent mdata[kMaxMidiEvents*2];
+
+        FixedVstEvents()
+            : numEvents(0),
+              reserved(0),
+              data(),
+              mdata()
+        {
+            for (uint32_t i=0; i<kMaxMidiEvents*2; ++i)
+                data[i] = (VstEvent*)&mdata[i];
+            carla_zeroStruct<VstMidiEvent>(mdata, kMaxMidiEvents*2);
+        }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
+    } fMidiOutEvents;
 
     char* fStateChunk;
 
