@@ -659,8 +659,7 @@ class HostWindow(QMainWindow):
         if self.fPluginCount == 0:
             return
 
-        if True:
-            # animated
+        if not self.host.isPlugin:
             self.projectLoadingStarted()
 
             app = QApplication.instance()
@@ -674,9 +673,7 @@ class HostWindow(QMainWindow):
 
         # just in case
         self.host.remove_all_plugins()
-
-        if not self.host.isPlugin:
-            self.removeAllPlugins()
+        self.removeAllPlugins()
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
