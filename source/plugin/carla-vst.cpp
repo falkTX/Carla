@@ -703,9 +703,17 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         if (ptr != nullptr)
         {
 #ifdef CARLA_PLUGIN_PATCHBAY
+# ifdef CARLA_PLUGIN_SYNTH
             std::strncpy((char*)ptr, "Carla-Patchbay", 64);
+# else
+            std::strncpy((char*)ptr, "Carla-PatchbayFX", 64);
+# endif
 #else
+# ifdef CARLA_PLUGIN_SYNTH
             std::strncpy((char*)ptr, "Carla-Rack", 64);
+# else
+            std::strncpy((char*)ptr, "Carla-RackFX", 64);
+# endif
 #endif
             return 1;
         }
@@ -723,9 +731,17 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         if (ptr != nullptr)
         {
 #ifdef CARLA_PLUGIN_PATCHBAY
+# ifdef CARLA_PLUGIN_SYNTH
             std::strncpy((char*)ptr, "CarlaPatchbay", 32);
+# else
+            std::strncpy((char*)ptr, "CarlaPatchbayFX", 32);
+# endif
 #else
+# ifdef CARLA_PLUGIN_SYNTH
             std::strncpy((char*)ptr, "CarlaRack", 32);
+# else
+            std::strncpy((char*)ptr, "CarlaRackFX", 32);
+# endif
 #endif
             return 1;
         }
