@@ -215,7 +215,9 @@ class HostWindow(QMainWindow):
 
         self.fPanelTime = CarlaPanelTime(host, self)
         self.fPanelTime.setEnabled(False)
-        QTimer.singleShot(0, self.fPanelTime.show)
+
+        if not host.isPlugin:
+            QTimer.singleShot(0, self.fPanelTime.show)
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
@@ -671,8 +673,10 @@ class HostWindow(QMainWindow):
             self.projectLoadingFinished()
 
         # just in case
-        self.removeAllPlugins()
         self.host.remove_all_plugins()
+
+        if not self.host.isPlugin:
+            self.removeAllPlugins()
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
@@ -885,14 +889,11 @@ class HostWindow(QMainWindow):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
+        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
+            return
+
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
-
-        for pitem in self.fPluginList:
-            if pitem is None:
-                break
-
-            pitem.getEditDialog().reloadAll()
 
         QTimer.singleShot(1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.ui.miniCanvasPreview.update)
 
@@ -1280,7 +1281,9 @@ class HostWindow(QMainWindow):
         self.setupCanvas()
         self.slot_miniCanvasCheckAll()
 
-        if self.host.is_engine_running():
+        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
+            pass
+        elif self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
     # --------------------------------------------------------------------------------------------------------

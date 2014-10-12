@@ -103,7 +103,7 @@ class RackListItem(QListWidgetItem):
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
 
-        self.setSizeHint(QSize(700, self.fWidget.getFixedHeight()))
+        self.setSizeHint(QSize(620, self.fWidget.getFixedHeight()))
 
         self.fParent.setItemWidget(self, self.fWidget)
 
@@ -124,7 +124,7 @@ class RackListWidget(QListWidget):
         self.fSupportedExtensions = []
         self.fWasLastDragValid    = False
 
-        self.setMinimumWidth(740)
+        self.setMinimumWidth(640)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(False)
 
