@@ -1537,43 +1537,47 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
     pluginData.outsPeak[1] = outPeaks[1];
 }
 
-void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
+void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
 {
-    outStrm << "<?xml version='1.0' encoding='UTF-8'?>\n";
-    outStrm << "<!DOCTYPE CARLA-PROJECT>\n";
-    outStrm << "<CARLA-PROJECT VERSION='2.0'>\n";
+    outStream << "<?xml version='1.0' encoding='UTF-8'?>\n";
+    outStream << "<!DOCTYPE CARLA-PROJECT>\n";
+    outStream << "<CARLA-PROJECT VERSION='2.0'>\n";
 
     const bool isPlugin(std::strcmp(getCurrentDriverName(), "Plugin") == 0);
     const EngineOptions& options(pData->options);
 
+    MemoryOutputStream outSettings(1024);
+
+
     // save appropriate engine settings
-    outStrm << " <EngineSettings>\n";
+    outSettings << " <EngineSettings>\n";
 
     //processMode
     //transportMode
 
-    outStrm << "  <ForceStereo>"         << bool2str(options.forceStereo)         << "</ForceStereo>\n";
-    outStrm << "  <PreferPluginBridges>" << bool2str(options.preferPluginBridges) << "</PreferPluginBridges>\n";
-    outStrm << "  <PreferUiBridges>"     << bool2str(options.preferUiBridges)     << "</PreferUiBridges>\n";
-    outStrm << "  <UIsAlwaysOnTop>"      << bool2str(options.uisAlwaysOnTop)      << "</UIsAlwaysOnTop>\n";
+    outSettings << "  <ForceStereo>"         << bool2str(options.forceStereo)         << "</ForceStereo>\n";
+    outSettings << "  <PreferPluginBridges>" << bool2str(options.preferPluginBridges) << "</PreferPluginBridges>\n";
+    outSettings << "  <PreferUiBridges>"     << bool2str(options.preferUiBridges)     << "</PreferUiBridges>\n";
+    outSettings << "  <UIsAlwaysOnTop>"      << bool2str(options.uisAlwaysOnTop)      << "</UIsAlwaysOnTop>\n";
 
-    outStrm << "  <MaxParameters>"       << String(options.maxParameters)    << "</MaxParameters>\n";
-    outStrm << "  <UIBridgesTimeout>"    << String(options.uiBridgesTimeout) << "</UIBridgesTimeout>\n";
+    outSettings << "  <MaxParameters>"       << String(options.maxParameters)    << "</MaxParameters>\n";
+    outSettings << "  <UIBridgesTimeout>"    << String(options.uiBridgesTimeout) << "</UIBridgesTimeout>\n";
 
     if (isPlugin)
     {
-        outStrm << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
-        outStrm << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
-        outStrm << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
-        outStrm << "  <VST_PATH>"    << xmlSafeString(options.pathVST,    true) << "</VST_PATH>\n";
-        outStrm << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
-        outStrm << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
-        outStrm << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
-        outStrm << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
-        outStrm << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
+        outSettings << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
+        outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
+        outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
+        outSettings << "  <VST_PATH>"    << xmlSafeString(options.pathVST,    true) << "</VST_PATH>\n";
+        outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
+        outSettings << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
+        outSettings << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
+        outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
+        outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
     }
 
-    outStrm << " </EngineSettings>\n";
+    outSettings << " </EngineSettings>\n";
+    outStream << outSettings;
 
     char strBuf[STR_MAX+1];
 
@@ -1583,17 +1587,20 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
 
         if (plugin != nullptr && plugin->isEnabled())
         {
-            outStrm << "\n";
+            MemoryOutputStream outPlugin(4096);
+
+            outPlugin << "\n";
 
             strBuf[0] = '\0';
             plugin->getRealName(strBuf);
 
             if (strBuf[0] != '\0')
-                outStrm << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
+                outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
-            outStrm << " <Plugin>\n";
-            outStrm << plugin->getStateSave().toString();
-            outStrm << " </Plugin>\n";
+            outPlugin << " <Plugin>\n";
+            outPlugin << plugin->getStateSave().toString();
+            outPlugin << " </Plugin>\n";
+            outStream << outPlugin;
         }
     }
 
@@ -1617,7 +1624,9 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
     {
         if (const char* const* const patchbayConns = getPatchbayConnections())
         {
-            outStrm << "\n <Patchbay>\n";
+            MemoryOutputStream outPatchbay(2048);
+
+            outPatchbay << "\n <Patchbay>\n";
 
             for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
             {
@@ -1627,18 +1636,19 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStrm) const
                 CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
                 CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
 
-                outStrm << "  <Connection>\n";
-                outStrm << "   <Source>" << connSource << "</Source>\n";
-                outStrm << "   <Target>" << connTarget << "</Target>\n";
-                outStrm << "  </Connection>\n";
+                outPatchbay << "  <Connection>\n";
+                outPatchbay << "   <Source>" << connSource << "</Source>\n";
+                outPatchbay << "   <Target>" << connTarget << "</Target>\n";
+                outPatchbay << "  </Connection>\n";
             }
 
-            outStrm << " </Patchbay>\n";
+            outPatchbay << " </Patchbay>\n";
+            outStream << outPatchbay;
         }
     }
 #endif
 
-    outStrm << "</CARLA-PROJECT>\n";
+    outStream << "</CARLA-PROJECT>\n";
 }
 
 bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)

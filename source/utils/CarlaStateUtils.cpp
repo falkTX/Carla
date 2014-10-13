@@ -21,6 +21,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include <string>
+
 using juce::String;
 using juce::XmlElement;
 
@@ -48,6 +50,51 @@ static String getNewLineSplittedString(const String& string)
     newString += string.substring(i);
 
     return newString;
+}
+
+// -----------------------------------------------------------------------
+// xmlSafeStringFast
+
+/* Based on some code by James Kanze from stackoverflow
+ * https://stackoverflow.com/questions/7724011/in-c-whats-the-fastest-way-to-replace-all-occurrences-of-a-substring-within */
+
+static std::string replaceStdString(const std::string& original, const std::string& before, const std::string& after)
+{
+    std::string::const_iterator current = original.begin(), end = original.end(), next;
+    std::string retval;
+
+    for (; (next = std::search(current, end, before.begin(), before.end())) != end;)
+    {
+        retval.append(current, next);
+        retval.append(after);
+        current = next + static_cast<std::ssize_t>(before.size());
+    }
+    retval.append(current, next);
+    return retval;
+}
+
+static std::string xmlSafeStringFast(const char* const cstring, const bool toXml)
+{
+    std::string string(cstring);
+
+    if (toXml)
+    {
+        string = replaceStdString(string, "&","&amp;");
+        string = replaceStdString(string, "<","&lt;");
+        string = replaceStdString(string, ">","&gt;");
+        string = replaceStdString(string, "'","&apos;");
+        string = replaceStdString(string, "\"","&quot;");
+    }
+    else
+    {
+        string = replaceStdString(string, "&lt;","<");
+        string = replaceStdString(string, "&gt;",">");
+        string = replaceStdString(string, "&apos;","'");
+        string = replaceStdString(string, "&quot;","\"");
+        string = replaceStdString(string, "&amp;","&");
+    }
+
+    return string;
 }
 
 // -----------------------------------------------------------------------
@@ -577,13 +624,13 @@ String StateSave::toString() const
         if (std::strcmp(stateCustomData->type, CUSTOM_DATA_TYPE_CHUNK) == 0 || std::strlen(stateCustomData->value) >= 128)
         {
             customDataXml << "    <Value>\n";
-            customDataXml << xmlSafeString(stateCustomData->value, true);
+            customDataXml << xmlSafeStringFast(stateCustomData->value, true);
             customDataXml << "\n    </Value>\n";
         }
         else
         {
             customDataXml << "    <Value>";
-            customDataXml << xmlSafeString(stateCustomData->value, true);
+            customDataXml << xmlSafeStringFast(stateCustomData->value, true);
             customDataXml << "</Value>\n";
         }
 
