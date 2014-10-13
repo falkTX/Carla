@@ -346,6 +346,8 @@ class HostWindow(QMainWindow):
         self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
+        self.ui.act_extra_next_tab.triggered.connect(self.slot_tabsNext)
+
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
         self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
         self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
@@ -1300,6 +1302,18 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutQt(self):
         QApplication.instance().aboutQt()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Extra (menu actions)
+
+    @pyqtSlot()
+    def slot_tabsNext(self):
+        nextTab = self.ui.tabWidget.currentIndex()+1
+
+        if nextTab > self.ui.tabWidget.count():
+            nextTab = 0
+
+        self.ui.tabWidget.setCurrentIndex(nextTab)
 
     # --------------------------------------------------------------------------------------------------------
     # Disk (menu actions)
