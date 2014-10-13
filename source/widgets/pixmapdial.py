@@ -252,9 +252,11 @@ class PixmapDial(QDial):
         return QSize(self.fPixmapBaseSize, self.fPixmapBaseSize)
 
     def changeEvent(self, event):
-        if event.type() == QEvent.EnabledChange:
-            QTimer.singleShot(0, self.slot_updatePixmap)
         QDial.changeEvent(self, event)
+
+        # Force pixmap update if enabled state changes
+        if event.type() == QEvent.EnabledChange:
+            self.setPixmap(int(self.fPixmapNum))
 
     def enterEvent(self, event):
         self.fIsHovered = True
