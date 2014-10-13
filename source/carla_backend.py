@@ -3201,10 +3201,11 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def _set_info(self, license, juceversion, fileexts):
-        self.fCompleteLicenseText = license;
-        self.fJuceVersion        = juceversion
-        self.fSupportedFileExts  = fileexts
+    def _set_info(self, license, juceversion, fileexts, maxnum):
+        self.fCompleteLicenseText = license
+        self.fJuceVersion         = juceversion
+        self.fSupportedFileExts   = fileexts
+        self.fMaxPluginNumber     = maxnum
 
     def _add(self, pluginId):
         if len(self.fPluginsInfo) != pluginId:
