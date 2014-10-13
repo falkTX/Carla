@@ -137,7 +137,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>19</height>
+     <height>17</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -784,14 +784,6 @@
    </property>
    <property name="text">
     <string>Show External</string>
-   </property>
-  </action>
-  <action name="act_extra_next_tab">
-   <property name="text">
-    <string>Next Tab</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+Tab</string>
    </property>
   </action>
  </widget>
