@@ -2301,38 +2301,6 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const char* carla_get_library_filename()
-{
-    carla_debug("carla_get_library_filename()");
-
-    static CarlaString ret;
-
-    if (ret.isEmpty())
-    {
-        using juce::File;
-        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
-    }
-
-    return ret;
-}
-
-const char* carla_get_library_folder()
-{
-    carla_debug("carla_get_library_folder()");
-
-    static CarlaString ret;
-
-    if (ret.isEmpty())
-    {
-        using juce::File;
-        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
-    }
-
-    return ret;
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"

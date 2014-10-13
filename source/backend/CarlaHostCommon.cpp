@@ -166,3 +166,35 @@ const char* carla_get_supported_file_extensions()
 }
 
 // -------------------------------------------------------------------------------------------------------------------
+
+const char* carla_get_library_filename()
+{
+    carla_debug("carla_get_library_filename()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using juce::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
+const char* carla_get_library_folder()
+{
+    carla_debug("carla_get_library_folder()");
+
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using juce::File;
+        ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
+    }
+
+    return ret;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
