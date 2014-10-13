@@ -2894,6 +2894,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fCompleteLicenseText = ""
         self.fJuceVersion         = ""
         self.fSupportedFileExts   = ""
+        self.fMaxPluginNumber     = 0
         self.fLastError           = ""
         self.fOscUrlTCP           = ""
         self.fOscUrlUDP           = ""
@@ -3007,7 +3008,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return len(self.fPluginsInfo)
 
     def get_max_plugin_number(self):
-        return 0 # TODO
+        return self.fMaxPluginNumber
 
     def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
         return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId])

@@ -320,6 +320,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 exts = self.readlineblock().replace("\r", "\n")
                 self.host.fSupportedFileExts = exts
 
+            elif msg == "carla-max-plugin-number":
+                maxnum = int(self.readlineblock())
+                self.host.fMaxPluginNumber = maxnum
+
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")
                 engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)

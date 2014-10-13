@@ -961,6 +961,10 @@ protected:
 
         fUiServer.writeAndFixMsg("carla-file-exts");
         fUiServer.writeAndFixMsg(carla_get_supported_file_extensions());
+
+        fUiServer.writeAndFixMsg("carla-max-plugin-number");
+        std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
+        fUiServer.writeMsg(fTmpBuf);
     }
 
     void uiServerOptions()
