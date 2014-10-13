@@ -946,6 +946,23 @@ protected:
         fUiServer.writeAndFixMsg(valueStr);
     }
 
+    void uiServerInfo()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
+
+        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
+        fUiServer.writeAndFixMsg("carla-complete-license");
+        fUiServer.writeAndFixMsg(carla_get_complete_license_text());
+
+        fUiServer.writeAndFixMsg("carla-juce-version");
+        fUiServer.writeAndFixMsg(carla_get_juce_version());
+
+        fUiServer.writeAndFixMsg("carla-file-exts");
+        fUiServer.writeAndFixMsg(carla_get_supported_file_extensions());
+    }
+
     void uiServerOptions()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
@@ -1366,6 +1383,7 @@ protected:
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
             fUiServer.start(false);
 
+            uiServerInfo();
             uiServerOptions();
 
             fUiServer.show();
@@ -1760,6 +1778,7 @@ const EngineDriverDeviceInfo* CarlaEngine::getRtAudioDeviceInfo(const uint, cons
 
 CARLA_BACKEND_END_NAMESPACE
 
+#include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"

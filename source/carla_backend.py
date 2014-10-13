@@ -2891,12 +2891,12 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.processModeForced = True
 
         # text data to return when requested
-        self.fCompleteLicentText = ""
-        self.fJuceVersion        = ""
-        self.fSupportedFileExts  = ""
-        self.fLastError          = ""
-        self.fOscUrlTCP          = ""
-        self.fOscUrlUDP          = ""
+        self.fCompleteLicenseText = ""
+        self.fJuceVersion         = ""
+        self.fSupportedFileExts   = ""
+        self.fLastError           = ""
+        self.fOscUrlTCP           = ""
+        self.fOscUrlUDP           = ""
 
         # plugin info
         self.fPluginsInfo = []
@@ -2934,7 +2934,7 @@ class CarlaHostPlugin(CarlaHostMeta):
     # --------------------------------------------------------------------------------------------------------
 
     def get_complete_license_text(self):
-        return self.fCompleteLicentText
+        return self.fCompleteLicenseText
 
     def get_juce_version(self):
         return self.fJuceVersion
@@ -3199,6 +3199,11 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fOscUrlUDP
 
     # --------------------------------------------------------------------------------------------------------
+
+    def _set_info(self, license, juceversion, fileexts):
+        self.fCompleteLicenseText = license;
+        self.fJuceVersion        = juceversion
+        self.fSupportedFileExts  = fileexts
 
     def _add(self, pluginId):
         if len(self.fPluginsInfo) != pluginId:

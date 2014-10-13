@@ -79,79 +79,86 @@ class CarlaAboutW(QDialog):
                                      "<br>Copyright (C) 2011-2014 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
-        if host.isControl or host.isPlugin:
+        if host.isControl:
             self.ui.l_extended.hide()
             self.ui.tabWidget.removeTab(2)
             self.ui.tabWidget.removeTab(1)
 
+        elif host.isPlugin:
+            self.ui.tabWidget.removeTab(2)
+
+        self.ui.l_extended.setText(host.get_complete_license_text())
+
+        if host.is_engine_running() and not (host.isControl or host.isPlugin):
+            self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
+            self.ui.le_osc_url_udp.setText(host.get_host_osc_url_udp())
         else:
-            self.ui.l_extended.setText(host.get_complete_license_text())
+            self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
+            self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
 
-            if host.is_engine_running():
-                self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
-                self.ui.le_osc_url_udp.setText(host.get_host_osc_url_udp())
-            else:
-                self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
-                self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
+        self.ui.l_osc_cmds.setText(""
+                                    " /set_active                 <i-value>\n"
+                                    " /set_drywet                 <f-value>\n"
+                                    " /set_volume                 <f-value>\n"
+                                    " /set_balance_left           <f-value>\n"
+                                    " /set_balance_right          <f-value>\n"
+                                    " /set_panning                <f-value>\n"
+                                    " /set_parameter_value        <i-index> <f-value>\n"
+                                    " /set_parameter_midi_cc      <i-index> <i-cc>\n"
+                                    " /set_parameter_midi_channel <i-index> <i-channel>\n"
+                                    " /set_program                <i-index>\n"
+                                    " /set_midi_program           <i-index>\n"
+                                    " /note_on                    <i-note> <i-velo>\n"
+                                    " /note_off                   <i-note>\n"
+                                  )
 
-            self.ui.l_osc_cmds.setText(""
-                                       " /set_active                 <i-value>\n"
-                                       " /set_drywet                 <f-value>\n"
-                                       " /set_volume                 <f-value>\n"
-                                       " /set_balance_left           <f-value>\n"
-                                       " /set_balance_right          <f-value>\n"
-                                       " /set_panning                <f-value>\n"
-                                       " /set_parameter_value        <i-index> <f-value>\n"
-                                       " /set_parameter_midi_cc      <i-index> <i-cc>\n"
-                                       " /set_parameter_midi_channel <i-index> <i-channel>\n"
-                                       " /set_program                <i-index>\n"
-                                       " /set_midi_program           <i-index>\n"
-                                       " /note_on                    <i-note> <i-velo>\n"
-                                       " /note_off                   <i-note>\n"
-                                      )
+        self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
+        self.ui.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
 
-            self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
-            self.ui.l_example_help.setText("<i>(as in this example, \"2\" is the plugin number and \"5\" the parameter)</i>")
+        self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
+        self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
+        self.ui.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions)<br/>"
+                                      "Implemented Feature/Extensions:"
+                                      "<ul>"
+                                      "<li>http://lv2plug.in/ns/ext/atom</li>"
+                                      "<li>http://lv2plug.in/ns/ext/buf-size</li>"
+                                      "<li>http://lv2plug.in/ns/ext/data-access</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
+                                      "<li>http://lv2plug.in/ns/ext/event</li>"
+                                      "<li>http://lv2plug.in/ns/ext/instance-access</li>"
+                                      "<li>http://lv2plug.in/ns/ext/log</li>"
+                                      "<li>http://lv2plug.in/ns/ext/midi</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/morph</li>"
+                                      "<li>http://lv2plug.in/ns/ext/options</li>"
+                                      "<li>http://lv2plug.in/ns/ext/parameters</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/patch</li>"
+                                      #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
+                                      "<li>http://lv2plug.in/ns/ext/port-props</li>"
+                                      "<li>http://lv2plug.in/ns/ext/presets</li>"
+                                      "<li>http://lv2plug.in/ns/ext/resize-port</li>"
+                                      "<li>http://lv2plug.in/ns/ext/state</li>"
+                                      "<li>http://lv2plug.in/ns/ext/time</li>"
+                                      "<li>http://lv2plug.in/ns/ext/uri-map</li>"
+                                      "<li>http://lv2plug.in/ns/ext/urid</li>"
+                                      "<li>http://lv2plug.in/ns/ext/worker</li>"
+                                      "<li>http://lv2plug.in/ns/extensions/ui</li>"
+                                      "<li>http://lv2plug.in/ns/extensions/units</li>"
+                                      "<li>http://home.gna.org/lv2dynparam/rtmempool/v1</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/programs</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/props</li>"
+                                      "<li>http://kxstudio.sf.net/ns/lv2ext/rtmempool</li>"
+                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
+                                      "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
+                                      "</ul>"))
+        self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
 
-            self.ui.l_ladspa.setText(self.tr("Everything! (Including LRDF)"))
-            self.ui.l_dssi.setText(self.tr("Everything! (Including CustomData/Chunks)"))
-            self.ui.l_lv2.setText(self.tr("About 95&#37; complete (using custom extensions)<br/>"
-                                          "Implemented Feature/Extensions:"
-                                          "<ul>"
-                                          "<li>http://lv2plug.in/ns/ext/atom</li>"
-                                          "<li>http://lv2plug.in/ns/ext/buf-size</li>"
-                                          "<li>http://lv2plug.in/ns/ext/data-access</li>"
-                                         #"<li>http://lv2plug.in/ns/ext/dynmanifest</li>"
-                                          "<li>http://lv2plug.in/ns/ext/event</li>"
-                                          "<li>http://lv2plug.in/ns/ext/instance-access</li>"
-                                          "<li>http://lv2plug.in/ns/ext/log</li>"
-                                          "<li>http://lv2plug.in/ns/ext/midi</li>"
-                                         #"<li>http://lv2plug.in/ns/ext/morph</li>"
-                                          "<li>http://lv2plug.in/ns/ext/options</li>"
-                                          "<li>http://lv2plug.in/ns/ext/parameters</li>"
-                                         #"<li>http://lv2plug.in/ns/ext/patch</li>"
-                                         #"<li>http://lv2plug.in/ns/ext/port-groups</li>"
-                                          "<li>http://lv2plug.in/ns/ext/port-props</li>"
-                                          "<li>http://lv2plug.in/ns/ext/presets</li>"
-                                          "<li>http://lv2plug.in/ns/ext/resize-port</li>"
-                                          "<li>http://lv2plug.in/ns/ext/state</li>"
-                                          "<li>http://lv2plug.in/ns/ext/time</li>"
-                                          "<li>http://lv2plug.in/ns/ext/uri-map</li>"
-                                          "<li>http://lv2plug.in/ns/ext/urid</li>"
-                                          "<li>http://lv2plug.in/ns/ext/worker</li>"
-                                          "<li>http://lv2plug.in/ns/extensions/ui</li>"
-                                          "<li>http://lv2plug.in/ns/extensions/units</li>"
-                                          "<li>http://home.gna.org/lv2dynparam/rtmempool/v1</li>"
-                                          "<li>http://kxstudio.sf.net/ns/lv2ext/external-ui</li>"
-                                          "<li>http://kxstudio.sf.net/ns/lv2ext/programs</li>"
-                                          "<li>http://kxstudio.sf.net/ns/lv2ext/props</li>"
-                                          "<li>http://kxstudio.sf.net/ns/lv2ext/rtmempool</li>"
-                                          "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
-                                          "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
-                                          "</ul>"))
-            self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
-
+        # 2nd tab is usually longer than the 1st
+        # adjust appropriately
+        self.ui.tabWidget.setCurrentIndex(1)
         self.adjustSize()
+
+        self.ui.tabWidget.setCurrentIndex(0)
         self.setFixedSize(self.size())
 
         if WINDOWS:
