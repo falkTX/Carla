@@ -1002,7 +1002,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
         CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
 
-        const EngineOptions& options(getOptions());
+        const EngineOptions& options(pData->options);
         const CarlaMutexLocker cml(fUiServer.getWriteLock());
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
@@ -1270,13 +1270,6 @@ protected:
     {
         const PendingRtEventsRunner prt(this);
 
-        if (pData->curPluginCount == 0 && ! kIsPatchbay)
-        {
-            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
-            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
-            return;
-        }
-
         // ---------------------------------------------------------------
         // Time Info
 
@@ -1301,6 +1294,16 @@ protected:
 
             pData->timeInfo.bbt.ticksPerBeat = timeInfo->bbt.ticksPerBeat;
             pData->timeInfo.bbt.beatsPerMinute = timeInfo->bbt.beatsPerMinute;
+        }
+
+        // ---------------------------------------------------------------
+        // Do nothing if no plugins and rack mode
+
+        if (pData->curPluginCount == 0 && ! kIsPatchbay)
+        {
+            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
+            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
+            return;
         }
 
         // ---------------------------------------------------------------
@@ -1451,9 +1454,29 @@ protected:
             return;
 
         {
+            const EngineTimeInfo& timeInfo(pData->timeInfo);
             const CarlaMutexLocker cml(fUiServer.getWriteLock());
             const ScopedLocale csl;
 
+            // send transport
+            fUiServer.writeAndFixMsg("transport");
+            fUiServer.writeAndFixMsg(bool2str(timeInfo.playing));
+
+            if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+            {
+                std::sprintf(fTmpBuf, P_UINT64 ":%i:%i:%i\n", timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, timeInfo.bbt.tick);
+                fUiServer.writeMsg(fTmpBuf);
+                std::sprintf(fTmpBuf, "%f\n", timeInfo.bbt.beatsPerMinute);
+                fUiServer.writeMsg(fTmpBuf);
+            }
+            else
+            {
+                std::sprintf(fTmpBuf, P_UINT64 ":0:0:0\n", timeInfo.frame);
+                fUiServer.writeMsg(fTmpBuf);
+                fUiServer.writeMsg("0.0\n");
+            }
+
+            // send peaks and param outputs for all plugins
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
                 const EnginePluginData& plugData(pData->plugins[i]);

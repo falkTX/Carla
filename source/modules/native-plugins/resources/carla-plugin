@@ -331,6 +331,12 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 srate = float(self.readlineblock())
                 self.host.fSampleRate = srate
 
+            elif msg == "transport":
+                playing = bool(self.readlineblock() == "true")
+                frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
+                bpm = float(self.readlineblock())
+                self.host._set_transport(playing, frame, bar, beat, tick, bpm)
+
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")
                 engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)

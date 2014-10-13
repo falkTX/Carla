@@ -58,7 +58,7 @@ class CarlaPanelTime(QDialog):
 
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
-        self.fSampleRate         = host.get_sample_rate() if host.is_engine_running() else 0.0
+        self.fSampleRate         = 0.0
 
         #if view == TRANSPORT_VIEW_HMS:
             #self.fCurTransportView = TRANSPORT_VIEW_HMS
@@ -90,17 +90,12 @@ class CarlaPanelTime(QDialog):
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
-        # ----------------------------------------------------------------------------------------------------
-        # Final setup
-
-        self.refreshTransport(True)
-
     # --------------------------------------------------------------------------------------------------------
     # Button actions
 
     @pyqtSlot(bool)
     def slot_transportPlayPause(self, toggled):
-        if not self.host.is_engine_running():
+        if self.host.isPlugin or not self.host.is_engine_running():
             return
 
         if toggled:
@@ -112,7 +107,7 @@ class CarlaPanelTime(QDialog):
 
     @pyqtSlot()
     def slot_transportStop(self):
-        if not self.host.is_engine_running():
+        if self.host.isPlugin or not self.host.is_engine_running():
             return
 
         self.host.transport_pause()
@@ -122,7 +117,7 @@ class CarlaPanelTime(QDialog):
 
     @pyqtSlot()
     def slot_transportBackwards(self):
-        if not self.host.is_engine_running():
+        if self.host.isPlugin or not self.host.is_engine_running():
             return
 
         newFrame = self.host.get_current_transport_frame() - 100000
@@ -134,7 +129,7 @@ class CarlaPanelTime(QDialog):
 
     @pyqtSlot()
     def slot_transportForwards(self):
-        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
+        if self.fSampleRate == 0.0 or self.host.isPlugin or not self.host.is_engine_running():
             return
 
         newFrame = self.host.get_current_transport_frame() + int(self.fSampleRate*2.5)

@@ -3204,6 +3204,16 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fSupportedFileExts   = fileexts
         self.fMaxPluginNumber     = maxnum
 
+    def _set_transport(self, playing, frame, bar, beat, tick, bpm):
+        self.fTransportInfo = {
+            "playing": playing,
+            "frame": frame,
+            "bar": bar,
+            "beat": beat,
+            "tick": tick,
+            "bpm": bpm
+        }
+
     def _add(self, pluginId):
         if len(self.fPluginsInfo) != pluginId:
             return
