@@ -73,10 +73,25 @@ class RackListItem(QListWidgetItem):
     # --------------------------------------------------------------------------------------------------------
 
     def close(self):
+        if self.fWidget is None:
+            return
+
         self.fWidget.fEditDialog.close()
+        self.fWidget.fEditDialog.setParent(None)
+        self.fWidget.fEditDialog.deleteLater()
+        del self.fWidget.fEditDialog
+
         self.fWidget.close()
+        self.fWidget.setParent(None)
+        self.fWidget.deleteLater()
+        del self.fWidget
+
+        self.fWidget = None
 
     def getEditDialog(self):
+        if self.fWidget is None:
+            return None
+
         return self.fWidget.fEditDialog
 
     def getPluginId(self):
@@ -89,16 +104,14 @@ class RackListItem(QListWidgetItem):
 
     def setPluginId(self, pluginId):
         self.fPluginId = pluginId
-        self.fWidget.setPluginId(pluginId)
+
+        if self.fWidget is not None:
+            self.fWidget.setPluginId(pluginId)
 
     # --------------------------------------------------------------------------------------------------------
 
     def recreateWidget(self):
-        if self.fWidget is not None:
-            self.fWidget.fEditDialog.close()
-            self.fWidget.close()
-            del self.fWidget.fEditDialog
-            del self.fWidget
+        self.close()
 
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
