@@ -37,7 +37,6 @@ class PluginHost(CarlaHostPlugin):
 
         self.fExternalUI = None
         self.fIsRunning  = True
-        self.fSampleRate = float(sys.argv[1]) if len(sys.argv) > 1 else 44100.0
 
     # -------------------------------------------------------------------
 
@@ -308,21 +307,29 @@ class CarlaMiniW(ExternalUI, HostWindow):
                 name = self.readlineblock().replace("\r", "\n")
                 self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
-            elif msg == "carla-complete-license":
+            elif msg == "complete-license":
                 license = self.readlineblock().replace("\r", "\n")
                 self.host.fCompleteLicenseText = license
 
-            elif msg == "carla-juce-version":
+            elif msg == "juce-version":
                 version = self.readlineblock().replace("\r", "\n")
                 self.host.fJuceVersion = version
 
-            elif msg == "carla-file-exts":
+            elif msg == "file-exts":
                 exts = self.readlineblock().replace("\r", "\n")
                 self.host.fSupportedFileExts = exts
 
-            elif msg == "carla-max-plugin-number":
+            elif msg == "max-plugin-number":
                 maxnum = int(self.readlineblock())
                 self.host.fMaxPluginNumber = maxnum
+
+            elif msg == "buffer-size":
+                bufsize = int(self.readlineblock())
+                self.host.fBufferSize = bufsize
+
+            elif msg == "sample-rate":
+                srate = float(self.readlineblock())
+                self.host.fSampleRate = srate
 
             elif msg == "error":
                 error = self.readlineblock().replace("\r", "\n")
@@ -448,11 +455,6 @@ if __name__ == '__main__':
         gui = CarlaEmbedW(host, winId)
     else:
         gui = CarlaMiniW(host)
-
-    # -------------------------------------------------------------
-    # simulate an engire started callback FIXME
-
-    engineCallback(host, ENGINE_CALLBACK_ENGINE_STARTED, 0, host.processMode, ENGINE_TRANSPORT_MODE_PLUGIN, 0.0, "Plugin")
 
     # -------------------------------------------------------------
     # App-Loop

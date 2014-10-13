@@ -586,6 +586,9 @@ public:
 
         carla_zeroChar(fTmpBuf, STR_MAX+1);
 
+        pData->bufferSize = pHost->get_buffer_size(pHost->handle);
+        pData->sampleRate = pHost->get_sample_rate(pHost->handle);
+
         // set-up engine
         if (kIsPatchbay)
         {
@@ -715,6 +718,14 @@ protected:
         if (pData->bufferSize == newBufferSize)
             return;
 
+        {
+            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+
+            fUiServer.writeAndFixMsg("buffer-size");
+            std::sprintf(fTmpBuf, "%i\n", newBufferSize);
+            fUiServer.writeMsg(fTmpBuf);
+        }
+
         pData->bufferSize = newBufferSize;
         CarlaEngine::bufferSizeChanged(newBufferSize);
     }
@@ -723,6 +734,15 @@ protected:
     {
         if (carla_compareFloats(pData->sampleRate, newSampleRate))
             return;
+
+        {
+            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+            const ScopedLocale csl;
+
+            fUiServer.writeAndFixMsg("sample-rate");
+            std::sprintf(fTmpBuf, "%f\n", newSampleRate);
+            fUiServer.writeMsg(fTmpBuf);
+        }
 
         pData->sampleRate = newSampleRate;
         CarlaEngine::sampleRateChanged(newSampleRate);
@@ -953,17 +973,27 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getWriteLock());
 
-        fUiServer.writeAndFixMsg("carla-complete-license");
+        fUiServer.writeAndFixMsg("complete-license");
         fUiServer.writeAndFixMsg(carla_get_complete_license_text());
 
-        fUiServer.writeAndFixMsg("carla-juce-version");
+        fUiServer.writeAndFixMsg("juce-version");
         fUiServer.writeAndFixMsg(carla_get_juce_version());
 
-        fUiServer.writeAndFixMsg("carla-file-exts");
+        fUiServer.writeAndFixMsg("file-exts");
         fUiServer.writeAndFixMsg(carla_get_supported_file_extensions());
 
-        fUiServer.writeAndFixMsg("carla-max-plugin-number");
+        fUiServer.writeAndFixMsg("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
+        fUiServer.writeMsg(fTmpBuf);
+
+        fUiServer.writeAndFixMsg("buffer-size");
+        std::sprintf(fTmpBuf, "%i\n", pData->bufferSize);
+        fUiServer.writeMsg(fTmpBuf);
+
+        const ScopedLocale csl;
+
+        fUiServer.writeAndFixMsg("sample-rate");
+        std::sprintf(fTmpBuf, "%f\n", pData->sampleRate);
         fUiServer.writeMsg(fTmpBuf);
     }
 
@@ -1389,6 +1419,7 @@ protected:
 
             uiServerInfo();
             uiServerOptions();
+            uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, "Plugin");
 
             fUiServer.show();
 

@@ -173,6 +173,8 @@ void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
     if (audio.outBuf[0]   != nullptr) { delete[] audio.outBuf[0];   audio.outBuf[0]   = nullptr; }
     if (audio.outBuf[1]   != nullptr) { delete[] audio.outBuf[1];   audio.outBuf[1]   = nullptr; }
 
+    CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
+
     try {
         audio.inBufTmp[0] = new float[bufferSize];
         audio.inBufTmp[1] = new float[bufferSize];

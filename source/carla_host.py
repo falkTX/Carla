@@ -401,6 +401,10 @@ class HostWindow(QMainWindow):
         self.ui.tabWidget.setCurrentIndex(0)
         self.fixCanvasPreviewSize()
 
+        # Plugin needs to have timers always running so it receives messages
+        if self.host.isPlugin:
+            self.startTimers()
+
         QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------

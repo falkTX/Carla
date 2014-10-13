@@ -2896,8 +2896,6 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.fSupportedFileExts   = ""
         self.fMaxPluginNumber     = 0
         self.fLastError           = ""
-        self.fOscUrlTCP           = ""
-        self.fOscUrlUDP           = ""
 
         # plugin info
         self.fPluginsInfo = []
@@ -2913,7 +2911,6 @@ class CarlaHostPlugin(CarlaHostMeta):
         }
 
         # some other vars
-        self.fHostName   = ""
         self.fBufferSize = 0
         self.fSampleRate = 0.0
 
@@ -2950,7 +2947,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return "Plugin"
 
     def get_engine_driver_device_names(self, index):
-        return [self.fHostName]
+        return []
 
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
@@ -3194,10 +3191,10 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fLastError
 
     def get_host_osc_url_tcp(self):
-        return self.fOscUrlTCP
+        return ""
 
     def get_host_osc_url_udp(self):
-        return self.fOscUrlUDP
+        return ""
 
     # --------------------------------------------------------------------------------------------------------
 
