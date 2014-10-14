@@ -1481,7 +1481,7 @@ class PluginDatabaseW(QDialog):
 
             internalCountNew = self.host.get_cached_plugin_count(PLUGIN_INTERNAL, "")
             lv2CountNew      = self.host.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
-            auCountNew       = self.host.get_cached_plugin_count(PLUGIN_AU,  AU_PATH)
+            auCountNew       = self.host.get_cached_plugin_count(PLUGIN_AU, AU_PATH)
 
             if internalCountNew != internalCount or (len(internalPlugins) > 0 and
                                                      len(internalPlugins[0]) > 0 and

@@ -448,7 +448,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
                 if (typeNodes.contains(lv2World.class_instrument))
                 {
                     info.category = CB::PLUGIN_CATEGORY_SYNTH;
-                    info.hints |= PLUGIN_IS_SYNTH;
+                    info.hints |= CB::PLUGIN_IS_SYNTH;
                 }
             }
 
