@@ -24,6 +24,11 @@
 
 #include "juce_audio_formats.h"
 
+#ifdef CARLA_OS_MAC
+# include "juce_audio_processors.h"
+using juce::StringArray;
+#endif
+
 namespace CB = CarlaBackend;
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -259,6 +264,10 @@ const char* carla_get_supported_file_extensions()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+#ifdef CARLA_OS_MAC
+static StringArray gCachedAuPluginResults;
+#endif
+
 uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath)
 {
     CARLA_SAFE_ASSERT_RETURN(ptype == CB::PLUGIN_INTERNAL || ptype == CB::PLUGIN_LV2 || ptype == CB::PLUGIN_AU, 0);
@@ -280,9 +289,21 @@ uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath)
         return lv2World.getPluginCount();
     }
 
-    case CB::PLUGIN_AU:  {
-        // TODO
+    case CB::PLUGIN_AU: {
+#ifdef CARLA_OS_MAC
+        static bool initiated = false;
+
+        if (initiated)
+            return gCachedAuPluginResults.size();
+
+        initiated = true;
+
+        AudioUnitPluginFormat auFormat;
+        gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false);
+        return gCachedAuPluginResults.size();
+#else
         return 0;
+#endif
     }
 
     default:
@@ -613,8 +634,53 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
     }
 
     case CB::PLUGIN_AU: {
-        // TODO
+#ifdef CARLA_OS_MAC
+        const int indexi(static_cast<int>(index));
+        CARLA_SAFE_ASSERT_RETURN(indexi < gCachedAuPluginResults.size(), nullptr);
+
+        using namespace juce;
+
+        String pluginId(gCachedAuPluginResults[indexi]);
+        OwnedArray<PluginDescription> results;
+
+        AudioPluginFormat& auFormat = *(AudioPluginFormat*)0;
+        auFormat.findAllTypesForFile(results, pluginId);
+        CARLA_SAFE_ASSERT_RETURN(results.size() > 0, nullptr);
+        CARLA_SAFE_ASSERT(results.size() == 1);
+
+        PluginDescription* const desc(results[0]);
+        CARLA_SAFE_ASSERT_RETURN(desc != nullptr, nullptr);
+
+        info.category = CB::PLUGIN_CATEGORY_NONE;
+        info.hints    = 0x0;
+
+        if (desc->isInstrument)
+            info.hints |= CB::PLUGIN_IS_SYNTH;
+        if (true)
+            info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
+
+        info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
+        info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
+        info.midiIns   = desc->isInstrument ? 1 : 0;
+        info.midiOuts  = 0;
+        info.parameterIns  = 0;
+        info.parameterOuts = 0;
+
+        static CarlaString sname, slabel, smaker;
+
+        sname  = desc->name.toRawUTF8();
+        slabel = desc->fileOrIdentifier.toRawUTF8();
+        smaker = desc->manufacturerName.toRawUTF8();
+
+        info.name      = sname;
+        info.label     = slabel;
+        info.maker     = smaker;
+        info.copyright = gNullCharPtr;
+
+        return &info;
+#else
         return nullptr;
+#endif
     }
 
     default:
