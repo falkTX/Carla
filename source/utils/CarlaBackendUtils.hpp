@@ -480,6 +480,8 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_VST3;
     if (stype == "au")
         return PLUGIN_AU;
+    if (stype == "audiounit")
+        return PLUGIN_AU;
     if (stype == "gig")
         return PLUGIN_GIG;
     if (stype == "sf2")

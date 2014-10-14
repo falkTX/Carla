@@ -170,7 +170,10 @@ public:
 
     void getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fDesc.name.toRawUTF8(), STR_MAX);
+        if (fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit")
+            std::strncpy(strBuf, fDesc.fileOrIdentifier.toRawUTF8(), STR_MAX);
+        else
+            std::strncpy(strBuf, fDesc.name.toRawUTF8(), STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -1036,7 +1039,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, /*const char* const label, */const int64_t uniqueId, const char* const format)
+    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1049,44 +1052,45 @@ public:
             return false;
         }
 
-        if (filename == nullptr || filename[0] == '\0')
-        {
-            pData->engine->setLastError("null filename");
-            return false;
-        }
-
-#if 0
-        if (label == nullptr || label[0] == '\0')
-        {
-            pData->engine->setLastError("null label");
-            return false;
-        }
-#endif
-
         if (format == nullptr || format[0] == '\0')
         {
             pData->engine->setLastError("null format");
             return false;
         }
 
-        // ---------------------------------------------------------------
-        // fix path for wine usage
+        if (std::strcmp(format, "AU") == 0)
+        {
+            if (label == nullptr || label[0] == '\0')
+            {
+                pData->engine->setLastError("null label");
+                return false;
+            }
 
-        String jfilename(filename);
+            fDesc.fileOrIdentifier = label;
+        }
+        else
+        {
+            if (filename == nullptr || filename[0] == '\0')
+            {
+                pData->engine->setLastError("null filename");
+                return false;
+            }
+
+            String jfilename(filename);
 
 #ifdef CARLA_OS_WIN
-        if (jfilename.startsWith("/"))
-        {
-            jfilename.replace("/", "\\");
-            jfilename = "Z:" + jfilename;
-        }
+            if (jfilename.startsWith("/"))
+            {
+                jfilename.replace("/", "\\");
+                jfilename = "Z:" + jfilename;
+            }
 #endif
 
-        //fDesc.name = fDesc.descriptiveName = label;
-        fDesc.uid = static_cast<int>(uniqueId);
-        fDesc.fileOrIdentifier = jfilename;
-        fDesc.pluginFormatName = format;
+            fDesc.fileOrIdentifier = jfilename;
+            fDesc.uid = static_cast<int>(uniqueId);
+        }
 
+        fDesc.pluginFormatName = format;
         fFormatManager.addDefaultFormats();
 
         String error;
@@ -1174,7 +1178,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, /*init.label,*/ init.uniqueId, format))
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
     {
         delete plugin;
         return nullptr;

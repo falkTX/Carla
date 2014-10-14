@@ -285,7 +285,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     type = xmlSafeStringCharDup(text, false);
                 else if (tag.equalsIgnoreCase("name"))
                     name = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("uri"))
+                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("identifier") || tag.equalsIgnoreCase("uri"))
                     label = xmlSafeStringCharDup(text, false);
                 else if (tag.equalsIgnoreCase("binary") || tag.equalsIgnoreCase("bundle") || tag.equalsIgnoreCase("filename"))
                     binary = xmlSafeStringCharDup(text, false);
@@ -511,9 +511,7 @@ String StateSave::toString() const
             infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_AU:
-            // TODO?
-            infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Identifier>" << xmlSafeString(label, true) << "</Identifier>\n";
             break;
         case PLUGIN_GIG:
         case PLUGIN_SF2:

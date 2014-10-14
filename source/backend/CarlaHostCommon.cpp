@@ -26,6 +26,7 @@
 
 #ifdef CARLA_OS_MAC
 # include "juce_audio_processors.h"
+using juce::AudioUnitPluginFormat;
 using juce::StringArray;
 #endif
 
@@ -36,11 +37,13 @@ namespace CB = CarlaBackend;
 
 static const char* const gNullCharPtr = "";
 
+#ifdef CARLA_COMMON_NEED_CHECKSTRINGPTR
 static void checkStringPtr(const char*& charPtr) noexcept
 {
     if (charPtr == nullptr)
         charPtr = gNullCharPtr;
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 // Constructors
@@ -294,13 +297,13 @@ uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath)
         static bool initiated = false;
 
         if (initiated)
-            return gCachedAuPluginResults.size();
+            return static_cast<uint>(gCachedAuPluginResults.size());
 
         initiated = true;
-
         AudioUnitPluginFormat auFormat;
         gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false);
-        return gCachedAuPluginResults.size();
+
+        return static_cast<uint>(gCachedAuPluginResults.size());
 #else
         return 0;
 #endif
@@ -313,7 +316,6 @@ uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath)
 
 const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index)
 {
-    CARLA_SAFE_ASSERT_RETURN(ptype == CB::PLUGIN_INTERNAL || ptype == CB::PLUGIN_LV2 || ptype == CB::PLUGIN_AU, nullptr);
     carla_debug("carla_get_cached_plugin_info(%i:%s, %i)", ptype, CB::PluginType2Str(ptype), index);
 
     static CarlaCachedPluginInfo info;
@@ -323,7 +325,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
     case CB::PLUGIN_INTERNAL: {
 #ifndef BUILD_BRIDGE
         const NativePluginDescriptor* const desc(CarlaPlugin::getNativePluginDescriptor(index));
-        CARLA_SAFE_ASSERT_RETURN(desc != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_BREAK(desc != nullptr);
 
         info.category = static_cast<CB::PluginCategory>(desc->category);
         info.hints    = 0x0;
@@ -339,19 +341,19 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         if (desc->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
             info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
 
-        info.audioIns  = desc->audioIns;
-        info.audioOuts = desc->audioOuts;
-        info.midiIns   = desc->midiIns;
-        info.midiOuts  = desc->midiOuts;
+        info.audioIns      = desc->audioIns;
+        info.audioOuts     = desc->audioOuts;
+        info.midiIns       = desc->midiIns;
+        info.midiOuts      = desc->midiOuts;
         info.parameterIns  = desc->paramIns;
         info.parameterOuts = desc->paramOuts;
-
-        info.name      = desc->name;
-        info.label     = desc->label;
-        info.maker     = desc->maker;
-        info.copyright = desc->copyright;
+        info.name          = desc->name;
+        info.label         = desc->label;
+        info.maker         = desc->maker;
+        info.copyright     = desc->copyright;
+        return &info;
 #else
-        return nullptr;
+        break;
 #endif
     }
 
@@ -359,10 +361,10 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
         const LilvPlugin* const cPlugin(lv2World.getPluginFromIndex(index));
-        CARLA_SAFE_ASSERT_RETURN(cPlugin != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_BREAK(cPlugin != nullptr);
 
         Lilv::Plugin lilvPlugin(cPlugin);
-        CARLA_SAFE_ASSERT_RETURN(lilvPlugin.get_uri().is_uri(), nullptr);
+        CARLA_SAFE_ASSERT_BREAK(lilvPlugin.get_uri().is_uri());
 
         // features
         info.hints = 0x0;
@@ -636,22 +638,22 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
     case CB::PLUGIN_AU: {
 #ifdef CARLA_OS_MAC
         const int indexi(static_cast<int>(index));
-        CARLA_SAFE_ASSERT_RETURN(indexi < gCachedAuPluginResults.size(), nullptr);
+        CARLA_SAFE_ASSERT_BREAK(indexi < gCachedAuPluginResults.size());
 
         using namespace juce;
 
         String pluginId(gCachedAuPluginResults[indexi]);
         OwnedArray<PluginDescription> results;
 
-        AudioPluginFormat& auFormat = *(AudioPluginFormat*)0;
+        AudioUnitPluginFormat auFormat;
         auFormat.findAllTypesForFile(results, pluginId);
-        CARLA_SAFE_ASSERT_RETURN(results.size() > 0, nullptr);
+        CARLA_SAFE_ASSERT_BREAK(results.size() > 0);
         CARLA_SAFE_ASSERT(results.size() == 1);
 
         PluginDescription* const desc(results[0]);
-        CARLA_SAFE_ASSERT_RETURN(desc != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_BREAK(desc != nullptr);
 
-        info.category = CB::PLUGIN_CATEGORY_NONE;
+        info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
         info.hints    = 0x0;
 
         if (desc->isInstrument)
@@ -679,19 +681,26 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
 
         return &info;
 #else
-        return nullptr;
+        break;
 #endif
     }
 
     default:
-        return nullptr;
+        break;
     }
 
-     checkStringPtr(info.name);
-     checkStringPtr(info.label);
-     checkStringPtr(info.maker);
-     checkStringPtr(info.copyright);
-
+    info.category      = CB::PLUGIN_CATEGORY_NONE;
+    info.hints         = 0x0;
+    info.audioIns      = 0;
+    info.audioOuts     = 0;
+    info.midiIns       = 0;
+    info.midiOuts      = 0;
+    info.parameterIns  = 0;
+    info.parameterOuts = 0;
+    info.name          = gNullCharPtr;
+    info.label         = gNullCharPtr;
+    info.maker         = gNullCharPtr;
+    info.copyright     = gNullCharPtr;
     return &info;
 }
 
