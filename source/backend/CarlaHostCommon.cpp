@@ -612,9 +612,10 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         return &info;
     }
 
-    case CB::PLUGIN_AU:
+    case CB::PLUGIN_AU: {
         // TODO
         return nullptr;
+    }
 
     default:
         return nullptr;

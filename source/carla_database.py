@@ -134,7 +134,7 @@ def findFilenames(filePath, stype):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 4
+PLUGIN_QUERY_API_VERSION = 5
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
@@ -285,12 +285,12 @@ def killDiscovery():
     if gDiscoveryProcess is not None:
         gDiscoveryProcess.kill()
 
-def checkPluginInternal(desc):
+def checkPluginCached(desc, ptype):
     plugins = []
 
     pinfo = deepcopy(PyPluginInfo)
     pinfo['build'] = BINARY_NATIVE
-    pinfo['type']  = PLUGIN_INTERNAL
+    pinfo['type']  = ptype
     pinfo['hints'] = desc['hints']
     pinfo['name']  = desc['name']
     pinfo['label'] = desc['label']
@@ -356,10 +356,8 @@ class SearchPluginsThread(QThread):
 
         self.fCheckLADSPA = False
         self.fCheckDSSI   = False
-        self.fCheckLV2    = False
         self.fCheckVST    = False
         self.fCheckVST3   = False
-        self.fCheckAU     = False
         self.fCheckGIG    = False
         self.fCheckSF2    = False
         self.fCheckSFZ    = False
@@ -381,10 +379,8 @@ class SearchPluginsThread(QThread):
 
         self.fLadspaPlugins = []
         self.fDssiPlugins   = []
-        self.fLv2Plugins    = []
         self.fVstPlugins    = []
         self.fVst3Plugins   = []
-        self.fAuPlugins     = []
         self.fKitPlugins    = []
 
         # -------------------------------------------------------------
@@ -399,13 +395,11 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, vst, vst3, gig, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
-        self.fCheckLV2    = lv2
         self.fCheckVST    = vst
         self.fCheckVST3   = vst3
-        self.fCheckAU     = au and MACOS
         self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
         self.fCheckSFZ    = sfz
@@ -422,10 +416,8 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckLADSPA: pluginCount += 1
         if self.fCheckDSSI:   pluginCount += 1
-        if self.fCheckLV2:    pluginCount += 1
         if self.fCheckVST:    pluginCount += 1
         if self.fCheckVST3:   pluginCount += 1
-        if self.fCheckAU:     pluginCount += 1
 
         if self.fCheckNative:
             self.fCurCount += pluginCount
@@ -442,13 +434,9 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckWin32:
             self.fCurCount += pluginCount
-            if self.fCheckAU:
-                self.fCurCount -= 1
 
         if self.fCheckWin64:
             self.fCurCount += pluginCount
-            if self.fCheckAU:
-                self.fCurCount -= 1
 
         if self.fCheckNative and self.fToolNative:
             if self.fCheckGIG: self.fCurCount += 1
@@ -570,39 +558,6 @@ class SearchPluginsThread(QThread):
 
             if not self.fContinueChecking: return
 
-        if self.fCheckLV2:
-            if self.fCheckNative:
-                self._checkLV2(self.fToolNative)
-                settingsDB.setValue("Plugins/LV2_native", self.fLv2Plugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckPosix32:
-                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
-                settingsDB.setValue("Plugins/LV2_posix32", self.fLv2Plugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckPosix64:
-                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
-                settingsDB.setValue("Plugins/LV2_posix64", self.fLv2Plugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckWin32:
-                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-win32.exe"), not WINDOWS)
-                settingsDB.setValue("Plugins/LV2_win32", self.fLv2Plugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckWin64:
-                self._checkLV2(os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
-                settingsDB.setValue("Plugins/LV2_win64", self.fLv2Plugins)
-
-            settingsDB.sync()
-
-            if not self.fContinueChecking: return
-
         if self.fCheckVST:
             if self.fCheckNative:
                 self._checkVST(OS, self.fToolNative)
@@ -664,27 +619,6 @@ class SearchPluginsThread(QThread):
             if self.fCheckWin64:
                 self._checkVST3(os.path.join(self.fPathBinaries, "carla-discovery-win64.exe"), not WINDOWS)
                 settingsDB.setValue("Plugins/VST3_win64", self.fVst3Plugins)
-
-            settingsDB.sync()
-
-            if not self.fContinueChecking: return
-
-        if self.fCheckAU:
-            if self.fCheckNative:
-                self._checkAU(self.fToolNative)
-                settingsDB.setValue("Plugins/AU_native", self.fAuPlugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckPosix32:
-                self._checkAU(os.path.join(self.fPathBinaries, "carla-discovery-posix32"))
-                settingsDB.setValue("Plugins/AU_posix32", self.fAuPlugins)
-
-            if not self.fContinueChecking: return
-
-            if self.fCheckPosix64:
-                self._checkAU(os.path.join(self.fPathBinaries, "carla-discovery-posix64"))
-                settingsDB.setValue("Plugins/AU_posix64", self.fAuPlugins)
 
             settingsDB.sync()
 
@@ -788,40 +722,6 @@ class SearchPluginsThread(QThread):
 
         self.fLastCheckValue += self.fCurPercentValue
 
-    def _checkLV2(self, tool, isWine=False):
-        lv2Bundles = []
-        self.fLv2Plugins = []
-
-        self._pluginLook(self.fLastCheckValue, "LV2 bundles...")
-
-        settings = QSettings("falkTX", "Carla2")
-        LV2_PATH = toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH))
-        del settings
-
-        for iPATH in LV2_PATH:
-            bundles = findLV2Bundles(iPATH)
-            for bundle in bundles:
-                if bundle not in lv2Bundles:
-                    lv2Bundles.append(bundle)
-
-        lv2Bundles.sort()
-
-        if not self.fContinueChecking: return
-
-        for i in range(len(lv2Bundles)):
-            lv2     = lv2Bundles[i]
-            percent = ( float(i) / len(lv2Bundles) ) * self.fCurPercentValue
-            self._pluginLook(self.fLastCheckValue + percent, lv2)
-
-            plugins = checkPluginLV2(lv2, tool, isWine)
-            if plugins:
-                self.fLv2Plugins.append(plugins)
-                self.fSomethingChanged = True
-
-            if not self.fContinueChecking: break
-
-        self.fLastCheckValue += self.fCurPercentValue
-
     def _checkVST(self, OS, tool, isWine=False):
         vstBinaries = []
         self.fVstPlugins = []
@@ -896,41 +796,6 @@ class SearchPluginsThread(QThread):
             plugins = checkPluginVST3(vst3, tool, isWine)
             if plugins:
                 self.fVst3Plugins.append(plugins)
-                self.fSomethingChanged = True
-
-            if not self.fContinueChecking: break
-
-        self.fLastCheckValue += self.fCurPercentValue
-
-    def _checkAU(self, tool):
-        auBinaries = []
-        self.fAuPlugins = []
-
-        # FIXME - this probably uses bundles
-        self._pluginLook(self.fLastCheckValue, "AU plugins...")
-
-        settings = QSettings("falkTX", "Carla2")
-        AU_PATH = toList(settings.value(CARLA_KEY_PATHS_AU, CARLA_DEFAULT_AU_PATH))
-        del settings
-
-        for iPATH in AU_PATH:
-            binaries = findBinaries(iPATH, "MACOS")
-            for binary in binaries:
-                if binary not in auBinaries:
-                    auBinaries.append(binary)
-
-        auBinaries.sort()
-
-        if not self.fContinueChecking: return
-
-        for i in range(len(auBinaries)):
-            au      = auBinaries[i]
-            percent = ( float(i) / len(auBinaries) ) * self.fCurPercentValue
-            self._pluginLook(self.fLastCheckValue + percent, au)
-
-            plugins = checkPluginAU(au, tool)
-            if plugins:
-                self.fAuPlugins.append(plugins)
                 self.fSomethingChanged = True
 
             if not self.fContinueChecking: break
@@ -1088,13 +953,8 @@ class PluginRefreshW(QDialog):
             if not hasNonNative:
                 self.ui.ch_ladspa.setEnabled(False)
                 self.ui.ch_dssi.setEnabled(False)
-                self.ui.ch_lv2.setEnabled(False)
                 self.ui.ch_vst.setEnabled(False)
                 self.ui.ch_vst3.setEnabled(False)
-                self.ui.ch_au.setEnabled(False)
-
-        if not MACOS:
-            self.ui.ch_au.setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Load settings
@@ -1114,10 +974,8 @@ class PluginRefreshW(QDialog):
         self.ui.ch_win64.clicked.connect(self.slot_checkTools)
         self.ui.ch_ladspa.clicked.connect(self.slot_checkTools)
         self.ui.ch_dssi.clicked.connect(self.slot_checkTools)
-        self.ui.ch_lv2.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst.clicked.connect(self.slot_checkTools)
         self.ui.ch_vst3.clicked.connect(self.slot_checkTools)
-        self.ui.ch_au.clicked.connect(self.slot_checkTools)
         self.ui.ch_gig.clicked.connect(self.slot_checkTools)
         self.ui.ch_sf2.clicked.connect(self.slot_checkTools)
         self.ui.ch_sfz.clicked.connect(self.slot_checkTools)
@@ -1135,10 +993,8 @@ class PluginRefreshW(QDialog):
         settings = QSettings("falkTX", "CarlaRefresh2")
         self.ui.ch_ladspa.setChecked(settings.value("PluginDatabase/SearchLADSPA", True, type=bool) and self.ui.ch_ladspa.isEnabled())
         self.ui.ch_dssi.setChecked(settings.value("PluginDatabase/SearchDSSI", True, type=bool) and self.ui.ch_dssi.isEnabled())
-        self.ui.ch_lv2.setChecked(settings.value("PluginDatabase/SearchLV2", True, type=bool) and self.ui.ch_lv2.isEnabled())
         self.ui.ch_vst.setChecked(settings.value("PluginDatabase/SearchVST", True, type=bool) and self.ui.ch_vst.isEnabled())
         self.ui.ch_vst3.setChecked(settings.value("PluginDatabase/SearchVST3", (MACOS or WINDOWS), type=bool) and self.ui.ch_vst3.isEnabled())
-        self.ui.ch_au.setChecked(settings.value("PluginDatabase/SearchAU", True, type=bool) and self.ui.ch_au.isEnabled())
         self.ui.ch_gig.setChecked(settings.value("PluginDatabase/SearchGIG", False, type=bool) and self.ui.ch_gig.isEnabled())
         self.ui.ch_sf2.setChecked(settings.value("PluginDatabase/SearchSF2", False, type=bool) and self.ui.ch_sf2.isEnabled())
         self.ui.ch_sfz.setChecked(settings.value("PluginDatabase/SearchSFZ", False, type=bool) and self.ui.ch_sfz.isEnabled())
@@ -1156,10 +1012,8 @@ class PluginRefreshW(QDialog):
         settings = QSettings("falkTX", "CarlaRefresh2")
         settings.setValue("PluginDatabase/SearchLADSPA", self.ui.ch_ladspa.isChecked())
         settings.setValue("PluginDatabase/SearchDSSI", self.ui.ch_dssi.isChecked())
-        settings.setValue("PluginDatabase/SearchLV2", self.ui.ch_lv2.isChecked())
         settings.setValue("PluginDatabase/SearchVST", self.ui.ch_vst.isChecked())
         settings.setValue("PluginDatabase/SearchVST3", self.ui.ch_vst3.isChecked())
-        settings.setValue("PluginDatabase/SearchAU", self.ui.ch_au.isChecked())
         settings.setValue("PluginDatabase/SearchGIG", self.ui.ch_gig.isChecked())
         settings.setValue("PluginDatabase/SearchSF2", self.ui.ch_sf2.isChecked())
         settings.setValue("PluginDatabase/SearchSFZ", self.ui.ch_sfz.isChecked())
@@ -1192,13 +1046,12 @@ class PluginRefreshW(QDialog):
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
                                                   self.ui.ch_win32.isChecked(), self.ui.ch_win64.isChecked())
 
-        ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
-                                                           self.ui.ch_lv2.isChecked(), self.ui.ch_vst.isChecked(),
-                                                           self.ui.ch_vst3.isChecked(), self.ui.ch_au.isChecked(),
-                                                           self.ui.ch_gig.isChecked(), self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
+        ladspa, dssi, vst, vst3, gig, sf2, sfz = (self.ui.ch_ladspa.isChecked(), self.ui.ch_dssi.isChecked(),
+                                                  self.ui.ch_vst.isChecked(), self.ui.ch_vst3.isChecked(),
+                                                  self.ui.ch_gig.isChecked(), self.ui.ch_sf2.isChecked(), self.ui.ch_sfz.isChecked())
 
         self.fThread.setSearchBinaryTypes(native, posix32, posix64, win32, win64)
-        self.fThread.setSearchPluginTypes(ladspa, dssi, lv2, vst, vst3, au, gig, sf2, sfz)
+        self.fThread.setSearchPluginTypes(ladspa, dssi, vst, vst3, gig, sf2, sfz)
         self.fThread.start()
 
     # --------------------------------------------------------------------------------------------------------
@@ -1212,8 +1065,8 @@ class PluginRefreshW(QDialog):
     @pyqtSlot()
     def slot_checkTools(self):
         enabled1 = bool(self.ui.ch_native.isChecked() or self.ui.ch_posix32.isChecked() or self.ui.ch_posix64.isChecked() or self.ui.ch_win32.isChecked() or self.ui.ch_win64.isChecked())
-        enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or self.ui.ch_lv2.isChecked() or self.ui.ch_vst.isChecked() or self.ui.ch_vst3.isChecked() or
-                        self.ui.ch_au.isChecked() or self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
+        enabled2 = bool(self.ui.ch_ladspa.isChecked() or self.ui.ch_dssi.isChecked() or self.ui.ch_vst.isChecked() or self.ui.ch_vst3.isChecked() or
+                        self.ui.ch_gig.isChecked() or self.ui.ch_sf2.isChecked() or self.ui.ch_sfz.isChecked())
         self.ui.b_start.setEnabled(enabled1 and enabled2)
 
     # --------------------------------------------------------------------------------------------------------
@@ -1533,7 +1386,7 @@ class PluginDatabaseW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def _addPluginToTable(self, plugin, ptype):
-        if plugin['API'] != PLUGIN_QUERY_API_VERSION and not ptype == self.tr("Internal"):
+        if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
             return
 
         index = self.fLastTableIndex
@@ -1602,33 +1455,91 @@ class PluginDatabaseW(QDialog):
         kitCount    = 0
 
         # ----------------------------------------------------------------------------------------------------
-        # Internal
+        # Cached plugins
 
         internalPlugins = toList(settingsDB.value("Plugins/Internal", []))
 
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
-        canRefreshInternals = not self.host.isPlugin
+        lv2Plugins = toList(settingsDB.value("Plugins/LV2", []))
 
-        if canRefreshInternals and internalCount != self.host.get_cached_plugin_count(PLUGIN_INTERNAL, ""):
-            internalCount   = self.host.get_cached_plugin_count(PLUGIN_INTERNAL, "")
-            internalPlugins = []
+        for plugins in lv2Plugins:
+            lv2Count += len(plugins)
 
-            for i in range(internalCount):
-                descInfo = self.host.get_cached_plugin_info(PLUGIN_INTERNAL, i)
-                plugins  = checkPluginInternal(descInfo)
+        auPlugins = toList(settingsDB.value("Plugins/AU", []))
 
-                if plugins:
-                    internalPlugins.append(plugins)
+        for plugins in auPlugins:
+            auCount += len(plugins)
 
-            settingsDB.setValue("Plugins/Internal", internalPlugins)
+        # Can't update cached plugins in carla-plugin
+        if not self.host.isPlugin:
+            settings = QSettings("falkTX", "Carla2")
+            LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
+            AU_PATH  = splitter.join(toList(settings.value(CARLA_KEY_PATHS_AU,  CARLA_DEFAULT_AU_PATH)))
+            del settings
+
+            internalCountNew = self.host.get_cached_plugin_count(PLUGIN_INTERNAL, "")
+            lv2CountNew      = self.host.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
+            auCountNew       = self.host.get_cached_plugin_count(PLUGIN_AU,  AU_PATH)
+
+            if internalCountNew != internalCount or (len(internalPlugins) > 0 and
+                                                     len(internalPlugins[0]) > 0 and
+                                                     internalPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+                internalPlugins = []
+
+                for i in range(internalCountNew):
+                    descInfo = self.host.get_cached_plugin_info(PLUGIN_INTERNAL, i)
+                    plugins  = checkPluginCached(descInfo, PLUGIN_INTERNAL)
+
+                    if plugins:
+                        internalPlugins.append(plugins)
+
+                settingsDB.setValue("Plugins/Internal", internalPlugins)
+
+            if lv2CountNew != lv2Count or (len(lv2Plugins) > 0 and
+                                           len(lv2Plugins[0]) > 0 and
+                                           lv2Plugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+                lv2Plugins = []
+
+                for i in range(lv2CountNew):
+                    descInfo = self.host.get_cached_plugin_info(PLUGIN_LV2, i)
+                    plugins  = checkPluginCached(descInfo, PLUGIN_LV2)
+
+                    if plugins:
+                        lv2Plugins.append(plugins)
+
+                settingsDB.setValue("Plugins/LV2", lv2Plugins)
+
+            if auCountNew != auCount or (len(auPlugins) > 0 and
+                                         len(auPlugins[0]) > 0 and
+                                         auPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+                auPlugins = []
+
+                for i in range(auCountNew):
+                    descInfo = self.host.get_cached_plugin_info(PLUGIN_AU, i)
+                    plugins  = checkPluginCached(descInfo, PLUGIN_AU)
+
+                    if plugins:
+                        auPlugins.append(plugins)
+
+                settingsDB.setValue("Plugins/AU", auPlugins)
 
         for plugins in internalPlugins:
             for plugin in plugins:
                 self._addPluginToTable(plugin, self.tr("Internal"))
 
+        for plugins in lv2Plugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, self.tr("LV2"))
+
+        for plugins in auPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, self.tr("AU"))
+
         del internalPlugins
+        del lv2Plugins
+        del auPlugins
 
         # ----------------------------------------------------------------------------------------------------
         # LADSPA
@@ -1663,23 +1574,6 @@ class PluginDatabaseW(QDialog):
                 dssiCount += 1
 
         del dssiPlugins
-
-        # ----------------------------------------------------------------------------------------------------
-        # LV2
-
-        lv2Plugins  = []
-        lv2Plugins += toList(settingsDB.value("Plugins/LV2_native", []))
-        lv2Plugins += toList(settingsDB.value("Plugins/LV2_posix32", []))
-        lv2Plugins += toList(settingsDB.value("Plugins/LV2_posix64", []))
-        lv2Plugins += toList(settingsDB.value("Plugins/LV2_win32", []))
-        lv2Plugins += toList(settingsDB.value("Plugins/LV2_win64", []))
-
-        for plugins in lv2Plugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "LV2")
-                lv2Count += 1
-
-        del lv2Plugins
 
         # ----------------------------------------------------------------------------------------------------
         # VST

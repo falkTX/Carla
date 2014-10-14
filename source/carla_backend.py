@@ -1402,10 +1402,9 @@ class CarlaHostMeta(QObject):
     def get_cached_plugin_count(self, ptype, pluginPath):
         raise NotImplementedError
 
-    # Get information about an internal plugin.
-    # @param index Internal plugin Id
+    # Get information about a cached plugin.
     @abstractmethod
-    def get_cached_plugin_info(self, index):
+    def get_cached_plugin_info(self, ptype, index):
         raise NotImplementedError
 
     # Initialize the engine.
@@ -2042,7 +2041,7 @@ class CarlaHostNull(CarlaHostMeta):
     def get_cached_plugin_count(self, ptype, pluginPath):
         return 0
 
-    def get_cached_plugin_info(self, index):
+    def get_cached_plugin_info(self, ptype, index):
         return PyCarlaCachedPluginInfo
 
     def engine_init(self, driverName, clientName):
@@ -2330,7 +2329,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_cached_plugin_count.argtypes = [c_enum, c_char_p]
         self.lib.carla_get_cached_plugin_count.restype = c_uint
 
-        self.lib.carla_get_cached_plugin_info.argtypes = [c_uint]
+        self.lib.carla_get_cached_plugin_info.argtypes = [c_enum, c_uint]
         self.lib.carla_get_cached_plugin_info.restype = POINTER(CarlaCachedPluginInfo)
 
         self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
@@ -2602,8 +2601,8 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_cached_plugin_count(self, ptype, pluginPath):
         return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
 
-    def get_cached_plugin_info(self, index):
-        return structToDict(self.lib.carla_get_cached_plugin_info(index).contents)
+    def get_cached_plugin_info(self, ptype, index):
+        return structToDict(self.lib.carla_get_cached_plugin_info(ptype, index).contents)
 
     def engine_init(self, driverName, clientName):
         return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
@@ -2955,7 +2954,7 @@ class CarlaHostPlugin(CarlaHostMeta):
     def get_cached_plugin_count(self, ptype, pluginPath):
         return 0
 
-    def get_cached_plugin_info(self, index):
+    def get_cached_plugin_info(self, ptype, index):
         return PyCarlaCachedPluginInfo
 
     def set_engine_callback(self, func):
