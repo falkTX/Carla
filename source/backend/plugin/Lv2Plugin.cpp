@@ -3835,7 +3835,7 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = velo;
 
-                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, sizeof(LV2_Event) + 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
@@ -3868,7 +3868,7 @@ public:
                 midiEv.data[1] = note;
                 midiEv.data[2] = 0;
 
-                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, sizeof(LV2_Event) + 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
             }
         }
     }
