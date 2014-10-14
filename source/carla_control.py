@@ -192,8 +192,8 @@ class Host(object):
     # get_engine_driver_count
     # get_engine_driver_name
     # get_engine_driver_device_names
-    # get_internal_plugin_count
-    # get_internal_plugin_info
+    # get_cached_plugin_count
+    # get_cached_plugin_info
     # engine_init
     # engine_close
     # engine_idle

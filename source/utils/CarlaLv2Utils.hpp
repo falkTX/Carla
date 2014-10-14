@@ -393,61 +393,63 @@ public:
         Lilv::World::load_bundle(Lilv::Node(new_uri(bundle)));
     }
 
-    const LilvPlugin* getPlugin(const LV2_URI uri) const
+    uint getPluginCount() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(! needsInit, 0);
+
+        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
+        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, 0);
+
+        return lilv_plugins_size(cPlugins);
+    }
+
+    const LilvPlugin* getPluginFromIndex(const uint index) const
+    {
+        CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
+
+        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
+        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, nullptr);
+
+        uint32_t i=0;
+        for (LilvIter *it = lilv_plugins_begin(cPlugins); ! lilv_plugins_is_end(cPlugins, it); it = lilv_plugins_next(cPlugins, it), ++i)
+        {
+            if (index != i)
+                continue;
+
+            return lilv_plugins_get(cPlugins, it);
+        }
+
+        return nullptr;
+    }
+
+    const LilvPlugin* getPluginFromURI(const LV2_URI uri) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
         CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
 
         const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
+        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, nullptr);
 
-        if (cPlugins == nullptr)
-        {
-            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugins from world", uri);
-            return nullptr;
-        }
-
-        LilvNode* const uriNode(Lilv::World::new_uri(uri));
-
-        if (uriNode == nullptr)
-        {
-            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get node from uri", uri);
-            return nullptr;
-        }
+        LilvNode* const uriNode(lilv_new_uri(this->me, uri));
+        CARLA_SAFE_ASSERT_RETURN(uriNode != nullptr, nullptr);
 
         const LilvPlugin* const cPlugin(lilv_plugins_get_by_uri(cPlugins, uriNode));
         lilv_node_free(uriNode);
 
-        if (cPlugin == nullptr)
-        {
-            carla_stderr("Lv2WorldClass::getPlugin(\"%s\") - Failed to get plugin", uri);
-            return nullptr;
-        }
-
         return cPlugin;
     }
 
-    LilvState* getState(const LV2_URI uri, const LV2_URID_Map* const uridMap) const
+    LilvState* getStateFromURI(const LV2_URI uri, const LV2_URID_Map* const uridMap) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
         CARLA_SAFE_ASSERT_RETURN(uridMap != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
 
-        LilvNode* const uriNode(Lilv::World::new_uri(uri));
-
-        if (uriNode == nullptr)
-        {
-            carla_stderr("Lv2WorldClass::getState(\"%s\", %p) - Failed to get node from uri", uri, uridMap);
-            return nullptr;
-        }
+        LilvNode* const uriNode(lilv_new_uri(this->me, uri));
+        CARLA_SAFE_ASSERT_RETURN(uriNode != nullptr, nullptr);
 
         LilvState* const cState(lilv_state_new_from_world(this->me, uridMap, uriNode));
         lilv_node_free(uriNode);
-
-        if (cState == nullptr)
-        {
-            carla_stderr("Lv2WorldClass::getState(\"%s\", %p) - Failed to get state", uri, uridMap);
-            return nullptr;
-        }
 
         return cState;
     }
@@ -465,13 +467,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
     Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
 
-    const LilvPlugin* const cPlugin(lv2World.getPlugin(uri));
-
-    if (cPlugin == nullptr)
-    {
-        // Error already printed in getPlugin()
-        return nullptr;
-    }
+    const LilvPlugin* const cPlugin(lv2World.getPluginFromURI(uri));
+    CARLA_SAFE_ASSERT_RETURN(cPlugin != nullptr, nullptr);
 
     Lilv::Plugin lilvPlugin(cPlugin);
     LV2_RDF_Descriptor* const rdfDescriptor(new LV2_RDF_Descriptor());
@@ -658,7 +655,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             // Set Port Mode and Type
             {
                 // Input or Output
-                if (lilvPort.is_a(lv2World.port_input))
+                /**/ if (lilvPort.is_a(lv2World.port_input))
                     rdfPort->Types |= LV2_PORT_INPUT;
                 else if (lilvPort.is_a(lv2World.port_output))
                     rdfPort->Types |= LV2_PORT_OUTPUT;
@@ -666,7 +663,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is not input or output", uri, rdfPort->Name);
 
                 // Data Type
-                if (lilvPort.is_a(lv2World.port_control))
+                /**/ if (lilvPort.is_a(lv2World.port_control))
                 {
                     rdfPort->Types |= LV2_PORT_CONTROL;
                 }
@@ -702,7 +699,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         const Lilv::Node node(lilv_nodes_get(supportNodes.me, it));
                         CARLA_SAFE_ASSERT_CONTINUE(node.is_uri());
 
-                        if (node.equals(lv2World.midi_event))
+                        /**/ if (node.equals(lv2World.midi_event))
                             rdfPort->Types |= LV2_PORT_DATA_MIDI_EVENT;
 
                         else if (node.equals(lv2World.patch_message))
@@ -860,7 +857,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 {
                     if (const char* const designation = lilv_node_as_string(designationNode))
                     {
-                        if (std::strcmp(designation, LV2_CORE__control) == 0)
+                        /**/ if (std::strcmp(designation, LV2_CORE__control) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_CONTROL;
                         else if (std::strcmp(designation, LV2_CORE__freeWheeling) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
@@ -913,7 +910,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         {
                             if (const char* const midiMapType = midiMapTypeNodes.get_first().as_string())
                             {
-                                if (std::strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
+                                /**/ if (std::strcmp(midiMapType, LV2_MIDI_Map__CC) == 0)
                                     rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_CC;
                                 else if (std::strcmp(midiMapType, LV2_MIDI_Map__NRPN) == 0)
                                     rdfPort->MidiMap.Type = LV2_PORT_MIDI_MAP_NRPN;
@@ -970,7 +967,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         {
                             rdfPort->Unit.Hints |= LV2_PORT_UNIT_UNIT;
 
-                            if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
+                            /**/ if (std::strcmp(unitUnit, LV2_UNITS__bar) == 0)
                                 rdfPort->Unit.Unit = LV2_PORT_UNIT_BAR;
                             else if (std::strcmp(unitUnit, LV2_UNITS__beat) == 0)
                                 rdfPort->Unit.Unit = LV2_PORT_UNIT_BEAT;
@@ -1286,7 +1283,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // -------------------------------------------------------
                 // Set UI Type
 
-                if (lilvUI.is_a(lv2World.ui_gtk2))
+                /**/ if (lilvUI.is_a(lv2World.ui_gtk2))
                     rdfUI->Type = LV2_UI_GTK2;
                 else if (lilvUI.is_a(lv2World.ui_gtk3))
                     rdfUI->Type = LV2_UI_GTK3;

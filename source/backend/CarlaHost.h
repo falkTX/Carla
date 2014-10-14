@@ -143,10 +143,10 @@ typedef struct _CarlaPluginInfo {
 } CarlaPluginInfo;
 
 /*!
- * Information about an internal Carla plugin.
- * @see carla_get_internal_plugin_info()
+ * Information about a cached plugin.
+ * @see carla_get_cached_plugin_info()
  */
-typedef struct _CarlaNativePluginInfo {
+typedef struct _CarlaCachedPluginInfo {
     /*!
      * Plugin category.
      */
@@ -212,11 +212,11 @@ typedef struct _CarlaNativePluginInfo {
     /*!
      * C++ constructor.
      */
-    _CarlaNativePluginInfo() noexcept;
-    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaNativePluginInfo)
+    _CarlaCachedPluginInfo() noexcept;
+    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaCachedPluginInfo)
 #endif
 
-} CarlaNativePluginInfo;
+} CarlaCachedPluginInfo;
 
 /*!
  * Port count information, used for Audio and MIDI ports and parameters.
@@ -391,18 +391,17 @@ CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(uint index)
  */
 CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name);
 
-#ifndef BUILD_BRIDGE
 /*!
- * Get how many internal plugins are available.
+ * Get how many cached plugins are available.
+ * Internal, LV2 and AU plugin formats are cached and need to be discovered via this function.
+ * Do not call this for any other plugin formats.
  */
-CARLA_EXPORT uint carla_get_internal_plugin_count();
+CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
 
 /*!
- * Get information about an internal plugin.
- * @param index Internal plugin Id
+ * Get information about a cached plugin.
  */
-CARLA_EXPORT const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index);
-#endif
+CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
 #ifdef __cplusplus
 /*!

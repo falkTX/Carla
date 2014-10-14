@@ -1071,8 +1071,8 @@ class CarlaPluginInfo(Structure):
     ]
 
 # Information about an internal Carla plugin.
-# @see carla_get_internal_plugin_info()
-class CarlaNativePluginInfo(Structure):
+# @see carla_get_cached_plugin_info()
+class CarlaCachedPluginInfo(Structure):
     _fields_ = [
         # Plugin category.
         ("category", c_enum),
@@ -1196,8 +1196,8 @@ PyCarlaPluginInfo = {
     'uniqueId': 0
 }
 
-# @see CarlaNativePluginInfo
-PyCarlaNativePluginInfo = {
+# @see CarlaCachedPluginInfo
+PyCarlaCachedPluginInfo = {
     'category': PLUGIN_CATEGORY_NONE,
     'hints': 0x0,
     'audioIns': 0,
@@ -1399,13 +1399,13 @@ class CarlaHostMeta(QObject):
 
     # Get how many internal plugins are available.
     @abstractmethod
-    def get_internal_plugin_count(self):
+    def get_cached_plugin_count(self, ptype, pluginPath):
         raise NotImplementedError
 
     # Get information about an internal plugin.
     # @param index Internal plugin Id
     @abstractmethod
-    def get_internal_plugin_info(self, index):
+    def get_cached_plugin_info(self, index):
         raise NotImplementedError
 
     # Initialize the engine.
@@ -2039,11 +2039,11 @@ class CarlaHostNull(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
 
-    def get_internal_plugin_count(self):
+    def get_cached_plugin_count(self, ptype, pluginPath):
         return 0
 
-    def get_internal_plugin_info(self, index):
-        return PyCarlaNativePluginInfo
+    def get_cached_plugin_info(self, index):
+        return PyCarlaCachedPluginInfo
 
     def engine_init(self, driverName, clientName):
         self.fEngineRunning = True
@@ -2327,11 +2327,11 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
 
-        self.lib.carla_get_internal_plugin_count.argtypes = None
-        self.lib.carla_get_internal_plugin_count.restype = c_uint
+        self.lib.carla_get_cached_plugin_count.argtypes = [c_enum, c_char_p]
+        self.lib.carla_get_cached_plugin_count.restype = c_uint
 
-        self.lib.carla_get_internal_plugin_info.argtypes = [c_uint]
-        self.lib.carla_get_internal_plugin_info.restype = POINTER(CarlaNativePluginInfo)
+        self.lib.carla_get_cached_plugin_info.argtypes = [c_uint]
+        self.lib.carla_get_cached_plugin_info.restype = POINTER(CarlaCachedPluginInfo)
 
         self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
         self.lib.carla_engine_init.restype = c_bool
@@ -2599,11 +2599,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return structToDict(self.lib.carla_get_engine_driver_device_info(index, name.encode("utf-8")).contents)
 
-    def get_internal_plugin_count(self):
-        return int(self.lib.carla_get_internal_plugin_count())
+    def get_cached_plugin_count(self, ptype, pluginPath):
+        return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
 
-    def get_internal_plugin_info(self, index):
-        return structToDict(self.lib.carla_get_internal_plugin_info(index).contents)
+    def get_cached_plugin_info(self, index):
+        return structToDict(self.lib.carla_get_cached_plugin_info(index).contents)
 
     def engine_init(self, driverName, clientName):
         return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
@@ -2952,11 +2952,11 @@ class CarlaHostPlugin(CarlaHostMeta):
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
 
-    def get_internal_plugin_count(self):
+    def get_cached_plugin_count(self, ptype, pluginPath):
         return 0
 
-    def get_internal_plugin_info(self, index):
-        return PyCarlaNativePluginInfo
+    def get_cached_plugin_info(self, index):
+        return PyCarlaCachedPluginInfo
 
     def set_engine_callback(self, func):
         return # TODO

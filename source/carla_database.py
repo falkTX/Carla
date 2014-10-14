@@ -1609,14 +1609,14 @@ class PluginDatabaseW(QDialog):
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
-        canRefreshInternals = not (self.host.isControl or self.host.isPlugin)
+        canRefreshInternals = not self.host.isPlugin
 
-        if  canRefreshInternals and internalCount != self.host.get_internal_plugin_count():
-            internalCount   = self.host.get_internal_plugin_count()
+        if canRefreshInternals and internalCount != self.host.get_cached_plugin_count(PLUGIN_INTERNAL, ""):
+            internalCount   = self.host.get_cached_plugin_count(PLUGIN_INTERNAL, "")
             internalPlugins = []
 
-            for i in range(self.host.get_internal_plugin_count()):
-                descInfo = self.host.get_internal_plugin_info(i)
+            for i in range(internalCount):
+                descInfo = self.host.get_cached_plugin_info(PLUGIN_INTERNAL, i)
                 plugins  = checkPluginInternal(descInfo)
 
                 if plugins:

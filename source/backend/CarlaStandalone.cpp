@@ -20,7 +20,6 @@
 
 #include "CarlaHost.h"
 #include "CarlaMIDI.h"
-#include "CarlaNative.h"
 
 #include "CarlaEngine.hpp"
 #include "CarlaPlugin.hpp"
@@ -357,93 +356,11 @@ private:
 static CarlaNSM gNSM;
 
 // -------------------------------------------------------------------------------------------------------------------
-// Always return a valid string ptr
-
-static const char* const gNullCharPtr = "";
-
-static void checkStringPtr(const char*& charPtr) noexcept
-{
-    if (charPtr == nullptr)
-        charPtr = gNullCharPtr;
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-// Constructors
-
-_CarlaPluginInfo::_CarlaPluginInfo() noexcept
-    : type(CB::PLUGIN_NONE),
-      category(CB::PLUGIN_CATEGORY_NONE),
-      hints(0x0),
-      optionsAvailable(0x0),
-      optionsEnabled(0x0),
-      filename(gNullCharPtr),
-      name(gNullCharPtr),
-      label(gNullCharPtr),
-      maker(gNullCharPtr),
-      copyright(gNullCharPtr),
-      iconName(gNullCharPtr),
-      uniqueId(0) {}
-
-_CarlaPluginInfo::~_CarlaPluginInfo() noexcept
-{
-    if (label != gNullCharPtr)
-        delete[] label;
-    if (maker != gNullCharPtr)
-        delete[] maker;
-    if (copyright != gNullCharPtr)
-        delete[] copyright;
-}
-
-_CarlaNativePluginInfo::_CarlaNativePluginInfo() noexcept
-    : category(CB::PLUGIN_CATEGORY_NONE),
-      hints(0x0),
-      audioIns(0),
-      audioOuts(0),
-      midiIns(0),
-      midiOuts(0),
-      parameterIns(0),
-      parameterOuts(0),
-      name(gNullCharPtr),
-      label(gNullCharPtr),
-      maker(gNullCharPtr),
-      copyright(gNullCharPtr) {}
-
-_CarlaParameterInfo::_CarlaParameterInfo() noexcept
-    : name(gNullCharPtr),
-      symbol(gNullCharPtr),
-      unit(gNullCharPtr),
-      scalePointCount(0) {}
-
-_CarlaParameterInfo::~_CarlaParameterInfo() noexcept
-{
-    if (name != gNullCharPtr)
-        delete[] name;
-    if (symbol != gNullCharPtr)
-        delete[] symbol;
-    if (unit != gNullCharPtr)
-        delete[] unit;
-}
-
-_CarlaScalePointInfo::_CarlaScalePointInfo() noexcept
-    : value(0.0f),
-      label(gNullCharPtr) {}
-
-_CarlaScalePointInfo::~_CarlaScalePointInfo() noexcept
-{
-    if (label != gNullCharPtr)
-        delete[] label;
-}
-
-_CarlaTransportInfo::_CarlaTransportInfo() noexcept
-    : playing(false),
-      frame(0),
-      bar(0),
-      beat(0),
-      tick(0),
-      bpm(0.0) {}
-
-// -------------------------------------------------------------------------------------------------------------------
 // API
+
+#include "CarlaHostCommon.cpp"
+
+// -------------------------------------------------------------------------------------------------------------------
 
 uint carla_get_engine_driver_count()
 {
@@ -485,62 +402,6 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
 
     return nullptr;
 }
-
-#ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------------------------------------------------------
-
-uint carla_get_internal_plugin_count()
-{
-    carla_debug("carla_get_internal_plugin_count()");
-
-    return static_cast<uint>(CarlaPlugin::getNativePluginCount());
-}
-
-const CarlaNativePluginInfo* carla_get_internal_plugin_info(uint index)
-{
-    carla_debug("carla_get_internal_plugin_info(%i)", index);
-
-    static CarlaNativePluginInfo info;
-
-    const NativePluginDescriptor* const nativePlugin(CarlaPlugin::getNativePluginDescriptor(index));
-
-    // as internal plugin, this must never fail
-    CARLA_SAFE_ASSERT_RETURN(nativePlugin != nullptr, nullptr);
-
-     info.category = static_cast<CB::PluginCategory>(nativePlugin->category);
-     info.hints    = 0x0;
-
-     if (nativePlugin->hints & ::PLUGIN_IS_RTSAFE)
-         info.hints |= CB::PLUGIN_IS_RTSAFE;
-     if (nativePlugin->hints & ::PLUGIN_IS_SYNTH)
-         info.hints |= CB::PLUGIN_IS_SYNTH;
-     if (nativePlugin->hints & ::PLUGIN_HAS_UI)
-         info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-     if (nativePlugin->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS)
-         info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
-     if (nativePlugin->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
-         info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
-
-     info.audioIns  = nativePlugin->audioIns;
-     info.audioOuts = nativePlugin->audioOuts;
-     info.midiIns   = nativePlugin->midiIns;
-     info.midiOuts  = nativePlugin->midiOuts;
-     info.parameterIns  = nativePlugin->paramIns;
-     info.parameterOuts = nativePlugin->paramOuts;
-
-     info.name      = nativePlugin->name;
-     info.label     = nativePlugin->label;
-     info.maker     = nativePlugin->maker;
-     info.copyright = nativePlugin->copyright;
-
-     checkStringPtr(info.name);
-     checkStringPtr(info.label);
-     checkStringPtr(info.maker);
-     checkStringPtr(info.copyright);
-
-    return &info;
-}
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2301,7 +2162,6 @@ const char* carla_get_host_osc_url_udp()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
 #include "CarlaStateUtils.cpp"
