@@ -105,9 +105,15 @@
 // Custom Atom types
 
 struct LV2_Atom_MidiEvent {
-    LV2_Atom_Event event;
-    uint8_t data[4];
+    LV2_Atom atom;    /**< Atom header. */
+    uint8_t  data[4]; /**< MIDI data (body). */
 };
+
+static inline
+uint32_t lv2_atom_total_size(const LV2_Atom_MidiEvent& midiEv)
+{
+    return static_cast<uint32_t>(sizeof(LV2_Atom)) + midiEv.atom.size;
+}
 
 // -----------------------------------------------------------------------
 // Our LV2 World class

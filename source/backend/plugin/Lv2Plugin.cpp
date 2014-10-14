@@ -1329,14 +1329,14 @@ public:
                 {
                     if (pData->osc.data.target != nullptr)
                     {
-                        CarlaString chunk(CarlaString::asBase64(atom, sizeof(LV2_Atom)+atom->size));
+                        CarlaString chunk(CarlaString::asBase64(atom, lv2_atom_total_size(atom)));
                         osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.buffer());
                     }
                 }
                 else
                 {
                     if (hasPortEvent)
-                        fUI.descriptor->port_event(fUI.handle, portIndex, atom->size, CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+                        fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
                 }
             }
         }
@@ -3783,7 +3783,7 @@ public:
             if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr)
             {
                 CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
-                fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), 0, &value);
+                fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
             }
         }
     }
@@ -3828,14 +3828,13 @@ public:
             if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
-                midiEv.event.time.frames = 0;
-                midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-                midiEv.event.body.size   = 3;
+                midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
+                midiEv.atom.size = 3;
                 midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
                 midiEv.data[1] = note;
                 midiEv.data[2] = velo;
 
-                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, &midiEv);
             }
         }
     }
@@ -3861,14 +3860,13 @@ public:
             if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
             {
                 LV2_Atom_MidiEvent midiEv;
-                midiEv.event.time.frames = 0;
-                midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-                midiEv.event.body.size   = 3;
+                midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
+                midiEv.atom.size = 3;
                 midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
                 midiEv.data[1] = note;
                 midiEv.data[2] = 0;
 
-                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+                fUI.descriptor->port_event(fUI.handle, fEventsIn.ctrl->rindex, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, &midiEv);
             }
         }
     }
@@ -4426,7 +4424,7 @@ public:
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
             // plugins sometimes fail on this, not good...
-            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom)+atom->size)), bufferSize, atom->size);
+            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_pad_size(lv2_atom_total_size(atom)), bufferSize, atom->size);
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
             {

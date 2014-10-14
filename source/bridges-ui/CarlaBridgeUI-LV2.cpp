@@ -526,7 +526,7 @@ public:
         if (fDescriptor->port_event == nullptr)
             return;
 
-        fDescriptor->port_event(fHandle, static_cast<uint32_t>(rindex), sizeof(float), 0, &value);
+        fDescriptor->port_event(fHandle, static_cast<uint32_t>(rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
     }
 
     void setProgram(const uint32_t) override
@@ -552,14 +552,13 @@ public:
             return;
 
         LV2_Atom_MidiEvent midiEv;
-        midiEv.event.time.frames = 0;
-        midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-        midiEv.event.body.size   = 3;
+        midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
+        midiEv.atom.size = 3;
         midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
         midiEv.data[1] = note;
         midiEv.data[2] = velo;
 
-        fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+        fDescriptor->port_event(fHandle, /* TODO */ 0, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
     }
 
     void noteOff(const uint8_t channel, const uint8_t note) override
@@ -571,14 +570,13 @@ public:
             return;
 
         LV2_Atom_MidiEvent midiEv;
-        midiEv.event.time.frames = 0;
-        midiEv.event.body.type   = CARLA_URI_MAP_ID_MIDI_EVENT;
-        midiEv.event.body.size   = 3;
+        midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
+        midiEv.atom.size = 3;
         midiEv.data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
         midiEv.data[1] = note;
         midiEv.data[2] = 0;
 
-        fDescriptor->port_event(fHandle, 0, 3, CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+        fDescriptor->port_event(fHandle, /* TODO */ 0, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
     }
 
     // ---------------------------------------------------------------------
