@@ -80,7 +80,8 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     if (output == nullptr || output[0] == '\0')
         return BINARY_NATIVE;
 
-    if (std::strstr(output, "PE32 executable") != nullptr && std::strstr(output, "MS Windows") != nullptr)
+    if ((std::strstr(output, "PE32 executable")  != nullptr ||
+         std::strstr(output, "PE32+ executable") != nullptr) && std::strstr(output, "MS Windows") != nullptr)
         return (std::strstr(output, "x86-64") != nullptr) ? BINARY_WIN64 : BINARY_WIN32;
 
     if (std::strstr(output, "ELF") != nullptr)
