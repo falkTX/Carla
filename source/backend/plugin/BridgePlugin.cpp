@@ -614,7 +614,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
+        CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtControl.mutex);
@@ -1635,7 +1635,7 @@ public:
             CARLA_SAFE_ASSERT_BREAK(rindex >= 0);
             CARLA_SAFE_ASSERT_BREAK(type >= 0);
             CARLA_SAFE_ASSERT_BREAK(hints >= 0);
-            CARLA_SAFE_ASSERT_BREAK(midiCC >= -1 && midiCC < 0x5F);
+            CARLA_SAFE_ASSERT_BREAK(midiCC >= -1 && midiCC < MAX_MIDI_CONTROL);
             CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
 
             if (index < static_cast<int32_t>(pData->param.count))

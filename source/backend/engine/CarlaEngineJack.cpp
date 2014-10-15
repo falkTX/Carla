@@ -366,7 +366,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(type != kEngineControlEventTypeNull, false);
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, false);
-        CARLA_SAFE_ASSERT_RETURN(param < 0x5F, false);
+        CARLA_SAFE_ASSERT_RETURN(param < MAX_MIDI_CONTROL, false);
         CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
         if (type == kEngineControlEventTypeParameter) {

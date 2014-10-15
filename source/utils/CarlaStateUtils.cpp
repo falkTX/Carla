@@ -422,7 +422,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         else if (pTag.equalsIgnoreCase("midicc") || pTag.equalsIgnoreCase("midi-cc"))
                         {
                             const int cc(pText.getIntValue());
-                            if (cc >= 1 && cc < 0x5F)
+                            if (cc >= -1 && cc < MAX_MIDI_CONTROL)
                                 stateParameter->midiCC = static_cast<int16_t>(cc);
                         }
 #endif

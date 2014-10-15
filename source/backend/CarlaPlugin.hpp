@@ -557,7 +557,7 @@ public:
 
     /*!
      * Set parameter's @a parameterId MIDI CC to @a cc.
-     * @a cc must be between 0 and 95 (0x5F), or -1 for invalid.
+     * @a cc must be between 0 and 119 (0x77), or -1 for invalid.
      */
     virtual void setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept;
 

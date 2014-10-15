@@ -425,7 +425,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(pluginId), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(parameterId), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(cc), true);
-            CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < 0x5F, true);
+            CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, true);
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->setParameterMidiCC(parameterId, static_cast<int16_t>(cc), true, false);

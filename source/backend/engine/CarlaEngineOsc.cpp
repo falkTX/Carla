@@ -681,7 +681,7 @@ int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     const int32_t cc    = argv[1]->i;
 
     CARLA_SAFE_ASSERT_RETURN(index >= 0, 0);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F, 0);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL, 0);
 
     plugin->setParameterMidiCC(static_cast<uint32_t>(index), static_cast<int16_t>(cc), false, true);
     return 0;

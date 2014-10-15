@@ -1955,7 +1955,7 @@ void carla_set_parameter_midi_channel(uint pluginId, uint32_t parameterId, uint8
 void carla_set_parameter_midi_cc(uint pluginId, uint32_t parameterId, int16_t cc)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
     carla_debug("carla_set_parameter_midi_cc(%i, %i, %i)", pluginId, parameterId, cc);
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))

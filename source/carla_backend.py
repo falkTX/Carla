@@ -899,7 +899,7 @@ class ParameterData(Structure):
 
         # Currently mapped MIDI CC.
         # A value lower than 0 means invalid or unused.
-        # Maximum allowed value is 95 (0x5F).
+        # Maximum allowed value is 119 (0x77).
         ("midiCC", c_int16),
 
         # Currently mapped MIDI channel.

@@ -512,7 +512,7 @@ void CarlaEngine::oscSend_control_set_parameter_midi_cc(const uint pluginId, con
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->path != nullptr && pData->oscData->path[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(pData->oscData->target != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount,);
-    CARLA_SAFE_ASSERT_RETURN(cc <= 0x5F,);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
     carla_debug("CarlaEngine::oscSend_control_set_parameter_midi_cc(%i, %i, %i)", pluginId, index, cc);
 
     char targetPath[std::strlen(pData->oscData->path)+23];

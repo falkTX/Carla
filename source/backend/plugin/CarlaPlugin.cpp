@@ -1162,7 +1162,7 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t c
     CARLA_SAFE_ASSERT_RETURN(sendOsc || sendCallback,); // never call this from RT
 #endif
     CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
-    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc <= 0x5F,);
+    CARLA_SAFE_ASSERT_RETURN(cc >= -1 && cc < MAX_MIDI_CONTROL,);
 
     pData->param.data[parameterId].midiCC = cc;
 

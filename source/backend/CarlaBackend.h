@@ -1253,7 +1253,7 @@ typedef struct {
     /*!
      * Currently mapped MIDI CC.
      * A value lower than 0 means invalid or unused.
-     * Maximum allowed value is 95 (0x5F). - FIXME
+     * Maximum allowed value is 119 (0x77).
      */
     int16_t midiCC;
 

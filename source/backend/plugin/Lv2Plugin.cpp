@@ -2014,7 +2014,7 @@ public:
 
                     if (LV2_IS_PORT_MIDI_MAP_CC(portMidiMap.Type))
                     {
-                        if (portMidiMap.Number < 0x5F && ! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
+                        if (portMidiMap.Number < MAX_MIDI_CONTROL && ! MIDI_IS_CONTROL_BANK_SELECT(portMidiMap.Number))
                             pData->param.data[j].midiCC = static_cast<int16_t>(portMidiMap.Number);
                     }
                 }
@@ -2983,7 +2983,7 @@ public:
                         if (k != pData->param.count)
                             break;
 
-                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param <= 0x5F)
+                        if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
                         {
                             uint8_t midiData[3];
                             midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));

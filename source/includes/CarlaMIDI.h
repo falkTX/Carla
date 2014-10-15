@@ -21,7 +21,7 @@
 #define MAX_MIDI_CHANNELS 16
 #define MAX_MIDI_NOTE     128
 #define MAX_MIDI_VALUE    128
-//#define MAX_MIDI_CTRL     128
+#define MAX_MIDI_CONTROL  120 // 0x77
 
 #define MIDI_STATUS_BIT  0xF0
 #define MIDI_CHANNEL_BIT 0x0F
