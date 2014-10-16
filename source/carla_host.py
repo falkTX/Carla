@@ -143,6 +143,7 @@ class HostWindow(QMainWindow):
 
         self.fCanvasWidth  = 0
         self.fCanvasHeight = 0
+        self.fMiniCanvasUpdateTimeout = 0
 
         self.fWithCanvas = withCanvas
 
@@ -896,7 +897,7 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
-        QTimer.singleShot(1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot()
     def slot_canvasZoomFit(self):
@@ -994,7 +995,7 @@ class HostWindow(QMainWindow):
 
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
 
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
         if pluginId < 0:
             return
@@ -1007,12 +1008,12 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
         patchcanvas.removeGroup(clientId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, str)
     def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
         patchcanvas.renameGroup(clientId, newClientName)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
@@ -1030,7 +1031,7 @@ class HostWindow(QMainWindow):
             pcIcon = patchcanvas.ICON_FILE
 
         patchcanvas.setGroupIcon(clientId, pcIcon)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
         if pluginId < 0:
             return
@@ -1061,27 +1062,27 @@ class HostWindow(QMainWindow):
             isAlternate = False
 
         patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, int)
     def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
         patchcanvas.removePort(groupId, portId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, int, str)
     def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
         patchcanvas.renamePort(groupId, portId, newPortName)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
         patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
         patchcanvas.disconnectPorts(connectionId)
-        QTimer.singleShot(0, self.ui.miniCanvasPreview.update)
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
 
     # --------------------------------------------------------------------------------------------------------
     # Settings
@@ -1244,6 +1245,8 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CUSTOM_PAINTING:        (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
+
+        self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0
 
         self.setEngineSettings()
         self.restartTimersIfNeeded()
