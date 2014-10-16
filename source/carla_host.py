@@ -466,6 +466,7 @@ class HostWindow(QMainWindow):
         self.removeAllPlugins()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
+        patchcanvas.clear()
 
     @pyqtSlot()
     def slot_fileOpen(self):
