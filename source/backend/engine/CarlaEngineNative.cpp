@@ -1063,14 +1063,14 @@ protected:
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        std::sprintf(fTmpBuf, "%s\n", "true");
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", options.binaryDir);
         fUiServer.writeMsg(fTmpBuf);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
+        std::sprintf(fTmpBuf, "%s\n", "true");
         fUiServer.writeMsg(fTmpBuf);
         std::sprintf(fTmpBuf, "%s\n", options.resourceDir);
         fUiServer.writeMsg(fTmpBuf);
