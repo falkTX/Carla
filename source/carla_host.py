@@ -464,10 +464,9 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileNew(self):
-        self.removeAllPlugins()
+        self.slot_pluginRemoveAll()
         self.fProjectFilename = ""
         self.setProperWindowTitle()
-        patchcanvas.clear()
 
     @pyqtSlot()
     def slot_fileOpen(self):
@@ -487,7 +486,7 @@ class HostWindow(QMainWindow):
             newFile = (ask == QMessageBox.Yes)
 
         if newFile:
-            self.removeAllPlugins()
+            self.slot_pluginRemoveAll()
             self.fProjectFilename = filename
             self.setProperWindowTitle()
             self.loadProjectNow()
@@ -548,15 +547,18 @@ class HostWindow(QMainWindow):
             QMessageBox.critical(self, self.tr("Error"), self.tr("Could not connect to Audio backend '%s'" % audioDriver))
 
     @pyqtSlot()
-    def slot_engineStop(self):
+    def slot_engineStop(self, forced = False):
         if self.fPluginCount > 0:
-            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                         "Do you want to do this now?"),
-                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if ask != QMessageBox.Yes:
-                return
+            if not forced:
+                ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                            "Do you want to do this now?"),
+                                                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if ask != QMessageBox.Yes:
+                    return
 
             self.removeAllPlugins()
+            self.host.set_engine_about_to_close()
+            self.host.remove_all_plugins()
 
         if self.host.is_engine_running() and not self.host.engine_close():
             print(self.host.get_last_error())
@@ -1246,7 +1248,7 @@ class HostWindow(QMainWindow):
                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 
-        self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] else 0
+        self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] == patchcanvas.EYECANDY_FULL else 0
 
         self.setEngineSettings()
         self.restartTimersIfNeeded()
@@ -1720,25 +1722,6 @@ class HostWindow(QMainWindow):
         self.saveSettings()
 
         if self.host.is_engine_running() and not self.host.isPlugin:
-            self.host.set_engine_about_to_close()
-
-            count = self.host.get_current_plugin_count()
-
-            if self.fPluginCount > 0:
-                # simulate project loading, to disable container
-                self.ui.act_plugin_remove_all.setEnabled(False)
-                self.projectLoadingStarted() # FIXME
-
-                app = QApplication.instance()
-                for i in range(count):
-                    app.processEvents()
-                    self.host.remove_plugin(count-i-1)
-
-                app.processEvents()
-
-                #self.removeAllPlugins()
-                #self.host.remove_all_plugins()
-
             self.slot_engineStop()
 
         QMainWindow.closeEvent(self, event)
