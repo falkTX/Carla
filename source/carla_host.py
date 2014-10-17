@@ -1722,7 +1722,7 @@ class HostWindow(QMainWindow):
         self.saveSettings()
 
         if self.host.is_engine_running() and not self.host.isPlugin:
-            self.slot_engineStop()
+            self.slot_engineStop(True)
 
         QMainWindow.closeEvent(self, event)
 
