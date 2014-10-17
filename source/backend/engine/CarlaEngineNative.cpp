@@ -617,13 +617,7 @@ public:
             delete[] pData->options.binaryDir;
 
         pData->options.resourceDir = carla_strdup(pHost->resourceDir);
-
-#ifndef CARLA_PLUGIN_EXPORT
-        if (gNeedsJuceHandling)
-            pData->options.binaryDir = carla_strdup(carla_get_library_folder());
-        else
-#endif
-            pData->options.binaryDir = carla_strdup(File(pHost->resourceDir).getParentDirectory().getFullPathName().toRawUTF8());
+        pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
 
         setCallback(_ui_server_callback, this);
     }

@@ -134,7 +134,7 @@ def findFilenames(filePath, stype):
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Query
 
-PLUGIN_QUERY_API_VERSION = 5
+PLUGIN_QUERY_API_VERSION = 6
 
 PyPluginInfo = {
     'API': PLUGIN_QUERY_API_VERSION,
