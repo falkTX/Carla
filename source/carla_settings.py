@@ -251,6 +251,9 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_process_mode_jack.setEnabled(False)
             self.ui.cb_engine_process_mode_other.setEnabled(False)
 
+        # FIXME, not implemented yet
+        self.ui.ch_engine_uis_always_on_top.hide()
+
         # ----------------------------------------------------------------------------------------------------
         # Load settings
 
