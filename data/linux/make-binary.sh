@@ -6,7 +6,7 @@ if [ -f Makefile ]; then
   cd data/linux
 fi
 
-VERSION="1.9.5~git20141017.4"
+VERSION="1.9.5~git20141017.6"
 
 if [ ! -f carla-git-static_"$VERSION"_amd64.deb ]; then
     wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_amd64.deb
@@ -40,28 +40,34 @@ fi
 
 rm -rf Carla-2.0beta3-linux32
 mkdir Carla-2.0beta3-linux32
-cp -r carla-git-static_"$VERSION"_i386/opt/carla/Carla carla-git-static_"$VERSION"_i386/opt/carla/carla-native.lv2/ Carla-2.0beta3-linux32
+cp -r carla-git-static_"$VERSION"_i386/opt/carla/Carla \
+      carla-git-static_"$VERSION"_i386/opt/carla/carla.lv2/ \
+      carla-git-static_"$VERSION"_i386/opt/carla/carla.vst/ Carla-2.0beta3-linux32
 rm -r carla-git-static_"$VERSION"_i386
 
 rm -rf Carla-2.0beta3-linux64
 mkdir Carla-2.0beta3-linux64
-cp -r carla-git-static_"$VERSION"_amd64/opt/carla/Carla carla-git-static_"$VERSION"_amd64/opt/carla/carla-native.lv2/ Carla-2.0beta3-linux64
+cp -r carla-git-static_"$VERSION"_amd64/opt/carla/Carla \
+      carla-git-static_"$VERSION"_amd64/opt/carla/carla.lv2/ \
+      carla-git-static_"$VERSION"_amd64/opt/carla/carla.vst/ Carla-2.0beta3-linux64
 rm -r carla-git-static_"$VERSION"_amd64
 
 cd Carla-2.0beta3-linux32
 unzip Carla || true
-rm -f Carla carla/*posix32 carla-native.lv2/*posix32
+rm -f Carla carla/*posix32 carla.lv2/*posix32 carla.vst/*posix32
 cd ..
 
 cd Carla-2.0beta3-linux64
 unzip Carla || true
-rm -f Carla carla/*posix64 carla-native.lv2/*posix64
+rm -f Carla carla/*posix64 carla.lv2/*posix64 carla.vst/*posix64
 cd ..
 
 cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux32/carla/
 cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux32/carla.lv2/
+cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux32/carla.vst/
 cp /usr/lib/carla/*wine32.dll Carla-2.0beta3-linux32/carla/
 cp /usr/lib/carla/*wine32.dll Carla-2.0beta3-linux32/carla.lv2/
+cp /usr/lib/carla/*wine32.dll Carla-2.0beta3-linux32/carla.vst/
 
 cp /usr/lib/carla/*posix32    Carla-2.0beta3-linux64/carla/
 cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux64/carla/
@@ -73,6 +79,11 @@ cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux64/carla.lv2/
 cp /usr/lib/carla/*win64.exe  Carla-2.0beta3-linux64/carla.lv2/
 cp /usr/lib/carla/*wine32.dll Carla-2.0beta3-linux64/carla.lv2/
 cp /usr/lib/carla/*wine64.dll Carla-2.0beta3-linux64/carla.lv2/
+cp /usr/lib/carla/*posix32    Carla-2.0beta3-linux64/carla.vst/
+cp /usr/lib/carla/*win32.exe  Carla-2.0beta3-linux64/carla.vst/
+cp /usr/lib/carla/*win64.exe  Carla-2.0beta3-linux64/carla.vst/
+cp /usr/lib/carla/*wine32.dll Carla-2.0beta3-linux64/carla.vst/
+cp /usr/lib/carla/*wine64.dll Carla-2.0beta3-linux64/carla.vst/
 
 cd Carla-2.0beta3-linux32
 zip --symlinks -r -9 carla.zip carla
