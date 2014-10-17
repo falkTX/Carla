@@ -2961,7 +2961,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return # TODO
 
     def set_engine_option(self, option, value, valueStr):
-        self.sendMsg(["set_engine_option", option, value, valueStr])
+        self.sendMsg(["set_engine_option", option, int(value), valueStr])
 
     def set_file_callback(self, func):
         return # TODO

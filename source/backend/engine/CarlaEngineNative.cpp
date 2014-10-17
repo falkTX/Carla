@@ -109,7 +109,8 @@ protected:
                 fEngine->setOption(static_cast<EngineOption>(option), value, valueStr);
             } CARLA_SAFE_EXCEPTION("setOption");
 
-            delete[] valueStr;
+            if (valueStr != nullptr)
+                delete[] valueStr;
         }
         else if (std::strcmp(msg, "load_file") == 0)
         {
