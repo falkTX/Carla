@@ -21,9 +21,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
-// has pthread_setname_np
-#elif defined(CARLA_OS_LINUX)
+#ifdef CARLA_OS_LINUX
 # include <sys/prctl.h>
 #endif
 
@@ -198,10 +196,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
+#ifdef CARLA_OS_LINUX
+        prctl(PR_SET_NAME, name, 0, 0, 0);
+#endif
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
         pthread_setname_np(pthread_self(), name);
-#elif defined(CARLA_OS_LINUX)
-        prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
     }
 
