@@ -360,7 +360,7 @@ bool MessageManager::postMessageToSystemQueue (MessageManager::MessageBase* cons
 
     if (InternalMessageQueue* const queue = InternalMessageQueue::getInstanceWithoutCreating())
     {
-        InternalMessageQueue::getInstanceWithoutCreating()->postMessage (message);
+        queue->postMessage (message);
         return true;
     }
 

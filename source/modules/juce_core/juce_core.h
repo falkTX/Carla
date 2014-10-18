@@ -129,10 +129,6 @@
  #define JUCE_STRING_UTF_TYPE 8
 #endif
 
-#ifndef JUCE_USE_VFORK
- #define JUCE_USE_VFORK 0
-#endif
-
 //=============================================================================
 //=============================================================================
 #if JUCE_MSVC
@@ -198,6 +194,7 @@ extern JUCE_API void JUCE_CALLTYPE logAssertion (const char* file, int line) noe
 #include "threads/juce_ScopedLock.h"
 #include "threads/juce_CriticalSection.h"
 #include "maths/juce_Range.h"
+#include "maths/juce_NormalisableRange.h"
 #include "containers/juce_ElementComparator.h"
 #include "containers/juce_ArrayAllocationBase.h"
 #include "containers/juce_Array.h"

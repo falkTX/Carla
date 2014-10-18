@@ -179,6 +179,11 @@ String URL::toString (const bool includeGetParameters) const
     return url;
 }
 
+bool URL::isEmpty() const noexcept
+{
+    return url.isEmpty();
+}
+
 bool URL::isWellFormed() const
 {
     //xxx TODO
@@ -342,7 +347,6 @@ InputStream* URL::createInputStream (const bool usePostCommand,
     if (! headers.endsWithChar ('\n'))
         headers << "\r\n";
 
-   #if ! JUCE_HAIKU
     ScopedPointer<WebInputStream> wi (new WebInputStream (toString (! usePostCommand),
                                                           usePostCommand, headersAndPostData,
                                                           progressCallback, progressCallbackContext,
@@ -352,9 +356,6 @@ InputStream* URL::createInputStream (const bool usePostCommand,
         *statusCode = wi->statusCode;
 
     return wi->isError() ? nullptr : wi.release();
-   #else
-    return nullptr; // TODO
-   #endif
 }
 
 //==============================================================================

@@ -212,33 +212,6 @@
  #include <dirent.h>
  #include <fnmatch.h>
  #include <sys/wait.h>
-
-//==============================================================================
-#elif JUCE_HAIKU
- #include <sched.h>
- #include <pthread.h>
- #include <sys/time.h>
- #include <errno.h>
- #include <sys/stat.h>
- #include <sys/statvfs.h>
- #include <sys/wait.h>
- #include <sys/mman.h>
- #include <fnmatch.h>
- #include <utime.h>
- #include <pwd.h>
- #include <fcntl.h>
- #include <dlfcn.h>
- #include <netdb.h>
- #include <arpa/inet.h>
- #include <netinet/in.h>
- #include <sys/types.h>
- #include <sys/ioctl.h>
- #include <sys/socket.h>
- #include <sys/sockio.h>
- #include <net/if.h>
- #include <sys/file.h>
- #include <signal.h>
- #include <stddef.h>
 #endif
 
 // Need to clear various moronic redefinitions made by system headers..

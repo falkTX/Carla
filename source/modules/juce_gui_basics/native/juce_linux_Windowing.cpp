@@ -979,11 +979,13 @@ public:
 
     Point<float> localToGlobal (Point<float> relativePosition) override
     {
+        updateWindowBounds();
         return relativePosition + bounds.getPosition().toFloat();
     }
 
     Point<float> globalToLocal (Point<float> screenPosition) override
     {
+        updateWindowBounds();
         return screenPosition - bounds.getPosition().toFloat();
     }
 
@@ -1087,9 +1089,7 @@ public:
         {
             for (int i = windowListSize; --i >= 0;)
             {
-                LinuxComponentPeer* const peer = LinuxComponentPeer::getPeerFor (windowList[i]);
-
-                if (peer != 0)
+                if (LinuxComponentPeer* const peer = LinuxComponentPeer::getPeerFor (windowList[i]))
                 {
                     result = (peer == this);
                     break;

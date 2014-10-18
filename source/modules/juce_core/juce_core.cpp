@@ -71,14 +71,17 @@
  #endif
 
 #else
- #if JUCE_LINUX || JUCE_ANDROID || JUCE_HAIKU
+ #if JUCE_LINUX || JUCE_ANDROID
   #include <sys/types.h>
   #include <sys/socket.h>
-  #if ! JUCE_HAIKU
-   #include <sys/errno.h>
-  #endif
+  #include <sys/errno.h>
   #include <unistd.h>
   #include <netinet/in.h>
+ #endif
+
+ #if JUCE_LINUX
+  #include <langinfo.h>
+  #include <ifaddrs.h>
  #endif
 
  #include <pwd.h>
@@ -90,14 +93,12 @@
  #include <net/if.h>
  #include <sys/ioctl.h>
 
- #if JUCE_LINUX
+ #if ! JUCE_ANDROID
   #include <execinfo.h>
-  #include <langinfo.h>
  #endif
 #endif
 
 #if JUCE_MAC || JUCE_IOS
- #include <execinfo.h>
  #include <xlocale.h>
  #include <mach/mach.h>
 #endif
@@ -215,10 +216,6 @@ namespace juce
 #include "native/juce_android_Network.cpp"
 #include "native/juce_android_SystemStats.cpp"
 #include "native/juce_android_Threads.cpp"
-
-//==============================================================================
-#elif JUCE_HAIKU
-// TODO
 
 #endif
 

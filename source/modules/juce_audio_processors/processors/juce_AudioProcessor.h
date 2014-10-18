@@ -379,10 +379,10 @@ public:
     /** This must return the correct value immediately after the object has been
         created, and mustn't change the number of parameters later.
     */
-    virtual int getNumParameters() = 0;
+    virtual int getNumParameters();
 
     /** Returns the name of a particular parameter. */
-    virtual const String getParameterName (int parameterIndex) = 0;
+    virtual const String getParameterName (int parameterIndex);
 
     /** Called by the host to find out the value of one of the filter's parameters.
 
@@ -392,10 +392,10 @@ public:
         It's also likely to be called by non-UI threads, so the code in here should
         be thread-aware.
     */
-    virtual float getParameter (int parameterIndex) = 0;
+    virtual float getParameter (int parameterIndex);
 
     /** Returns the value of a parameter as a text string. */
-    virtual const String getParameterText (int parameterIndex) = 0;
+    virtual const String getParameterText (int parameterIndex);
 
     /** Returns the name of a parameter as a text string with a preferred maximum length.
         If you want to provide customised short versions of your parameter names that
@@ -416,11 +416,17 @@ public:
     virtual String getParameterText (int parameterIndex, int maximumStringLength);
 
     /** Returns the number of discrete steps that this parameter can represent.
-        The default return value if you don't implement this method is 0x7fffffff.
+        The default return value if you don't implement this method is
+        AudioProcessor::getDefaultNumParameterSteps().
         If your parameter is boolean, then you may want to make this return 2.
         The value that is returned may or may not be used, depending on the host.
     */
     virtual int getParameterNumSteps (int parameterIndex);
+
+    /** Returns the default number of steps for a parameter.
+        @see getParameterNumSteps
+    */
+    static int getDefaultNumParameterSteps() noexcept;
 
     /** Returns the default value for the parameter.
         By default, this just returns 0.
@@ -451,7 +457,7 @@ public:
 
         The value passed will be between 0 and 1.0.
     */
-    virtual void setParameter (int parameterIndex, float newValue) = 0;
+    virtual void setParameter (int parameterIndex, float newValue);
 
     /** Your filter can call this when it needs to change one of its parameters.
 
@@ -502,6 +508,16 @@ public:
         etc, has changed, and that it should update itself.
     */
     void updateHostDisplay();
+
+    //==============================================================================
+    /** Adds a parameter to the list.
+        The parameter object will be managed and deleted automatically by the list
+        when no longer needed.
+    */
+    void addParameter (AudioProcessorParameter*);
+
+    /** Returns the current list of parameters. */
+    const OwnedArray<AudioProcessorParameter>& getParameters() const noexcept;
 
     //==============================================================================
     /** Returns the number of preset programs the filter supports.
@@ -582,7 +598,7 @@ public:
     //==============================================================================
     /** LV2 specific calls, saving/restore as string. */
     virtual String getStateInformationString () { return String::empty; }
-    virtual void setStateInformationString (const String& data) {}
+    virtual void setStateInformationString (const String&) {}
 
     //==============================================================================
     /** Adds a listener that will be called when an aspect of this processor changes. */
@@ -667,6 +683,9 @@ private:
     bool suspended, nonRealtime;
     CriticalSection callbackLock, listenerLock;
     String inputSpeakerArrangement, outputSpeakerArrangement;
+
+    OwnedArray<AudioProcessorParameter> managedParameters;
+    AudioProcessorParameter* getParamChecked (int) const noexcept;
 
    #if JUCE_DEBUG
     BigInteger changingParams;
