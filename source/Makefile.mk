@@ -53,7 +53,7 @@ endif
 BASE_FLAGS = -Wall -Wextra -pipe -DREAL_BUILD
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -fdata-sections -ffunction-sections
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
-# LINK_OPTS += -Wl,--strip-all
+LINK_OPTS += -Wl,--strip-all
 
 ifneq ($(MACOS),true)
 # MacOS doesn't support this
