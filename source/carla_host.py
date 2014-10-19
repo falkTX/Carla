@@ -2107,12 +2107,14 @@ def loadHostSettings(host):
         except:
             host.processMode = CARLA_DEFAULT_PROCESS_MODE
 
+        host.nextProcessMode = host.processMode
+
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed
 
     if host.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS and LADISH_APP_NAME:
         print("LADISH detected but using multiple clients (not allowed), forcing single client now")
-        host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
+        host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
 
 # ------------------------------------------------------------------------------------------------------------
 # Set host settings
@@ -2135,7 +2137,7 @@ def setHostSettings(host):
     if host.isPlugin:
         return
 
-    host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.processMode,         "")
+    host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
 
 # ------------------------------------------------------------------------------------------------------------

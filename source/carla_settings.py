@@ -348,10 +348,10 @@ class CarlaSettingsW(QDialog):
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
             self.ui.tb_engine_driver_config.setEnabled(not self.host.isPlugin)
 
-        self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.processMode)
+        self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.nextProcessMode)
 
-        if self.host.processMode >= self.PROCESS_MODE_NON_JACK_PADDING:
-            self.ui.cb_engine_process_mode_other.setCurrentIndex(self.host.processMode-self.PROCESS_MODE_NON_JACK_PADDING)
+        if self.host.nextProcessMode >= self.PROCESS_MODE_NON_JACK_PADDING:
+            self.ui.cb_engine_process_mode_other.setCurrentIndex(self.host.nextProcessMode-self.PROCESS_MODE_NON_JACK_PADDING)
         else:
             self.ui.cb_engine_process_mode_other.setCurrentIndex(0)
 
@@ -458,11 +458,11 @@ class CarlaSettingsW(QDialog):
 
         if not self.host.processModeForced:
             # engine sends callback if processMode really changes
-            processMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
+            self.host.nextProcessMode = self.ui.cb_engine_process_mode_jack.currentIndex() if audioDriver == "JACK" else self.ui.cb_engine_process_mode_other.currentIndex()+self.PROCESS_MODE_NON_JACK_PADDING
 
-            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, processMode, "")
+            self.host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, self.host.nextProcessMode, "")
 
-            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, processMode)
+            settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()

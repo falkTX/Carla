@@ -1311,8 +1311,9 @@ class CarlaHostMeta(QObject):
         self.isPlugin  = False
 
         # settings
-        self.processMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-        self.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+        self.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+        self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
+        self.nextProcessMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
         self.processModeForced = False
 
         # settings
