@@ -6,34 +6,28 @@ if [ -f Makefile ]; then
   cd data/linux
 fi
 
-VERSION="1.9.5~git20141017.10"
-
-if [ ! -f carla-git-static_"$VERSION"_amd64.deb ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_amd64.deb
-fi
-
-if [ ! -f carla-git-static_"$VERSION"_i386.deb ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_i386.deb
-fi
+VERSION="1.9.5~git20141019.2"
 
 if [ ! -d carla-git-static_"$VERSION"_amd64.deb ]; then
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_amd64.deb
     dpkg -x carla-git-static_"$VERSION"_amd64.deb carla-git-static_"$VERSION"_amd64
 fi
 
 if [ ! -d carla-git-static_"$VERSION"_i386.deb ]; then
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_i386.deb
     dpkg -x carla-git-static_"$VERSION"_i386.deb carla-git-static_"$VERSION"_i386
 fi
 
 if [ ! -f unzipfx2cat32 ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/unzipfx-carla_1.9.4-0kxstudio1_i386.deb
-    dpkg -x unzipfx-carla_1.9.4-0kxstudio1_i386.deb tmpfx
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/unzipfx-carla_1.9.5-1kxstudio1_i386.deb
+    dpkg -x unzipfx-carla_1.9.5-1kxstudio1_i386.deb tmpfx
     mv tmpfx/opt/carla/unzipfx2cat unzipfx2cat32
     rm -rf tmpfx
 fi
 
 if [ ! -f unzipfx2cat64 ]; then
-    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/unzipfx-carla_1.9.4-0kxstudio1_amd64.deb
-    dpkg -x unzipfx-carla_1.9.4-0kxstudio1_amd64.deb tmpfx
+    wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/unzipfx-carla_1.9.5-1kxstudio1_amd64.deb
+    dpkg -x unzipfx-carla_1.9.5-1kxstudio1_amd64.deb tmpfx
     mv tmpfx/opt/carla/unzipfx2cat unzipfx2cat64
     rm -rf tmpfx
 fi
