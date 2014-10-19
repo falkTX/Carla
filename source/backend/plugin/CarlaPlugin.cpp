@@ -1471,11 +1471,11 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // Plugin Parameters
-    if (pData->param.count > 0 && pData->param.count < pData->engine->getOptions().maxParameters)
+    if (pData->param.count > 0)
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
-        for (uint32_t i=0; i < pData->param.count; ++i)
+        for (uint32_t i=0, count=pData->param.count, maxParams=pData->engine->getOptions().maxParameters; i<count && i<maxParams; ++i)
         {
             carla_zeroChar(bufName, STR_MAX);
             carla_zeroChar(bufUnit, STR_MAX);

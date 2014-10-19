@@ -1581,8 +1581,9 @@ public:
 
                 if (count > maxParams)
                 {
+                    // this is expected right now, to be handled better later
+                    //carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
                     count = maxParams;
-                    carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
                 }
 
                 const uint32_t ucount(static_cast<uint32_t>(count));
