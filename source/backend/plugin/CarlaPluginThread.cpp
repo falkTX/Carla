@@ -138,9 +138,13 @@ void CarlaPluginThread::run()
     }
 
     String name(fPlugin->getName());
+    String filename(fPlugin->getFilename());
 
     if (name.isEmpty())
         name = "(none)";
+
+    if (filename.isEmpty())
+        filename = "\"\"";
 
     if (fLabel.isEmpty())
         fLabel = "\"\"";
@@ -252,7 +256,7 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_DSSI_GUI:
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
-        /* filename */ arguments.add(fPlugin->getFilename());
+        /* filename */ arguments.add(filename);
         /* label    */ arguments.add(fLabel.buffer());
         /* ui-title */ arguments.add(name + String(" (GUI)"));
         break;
@@ -267,13 +271,13 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_VST_GUI:
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
-        /* filename */ arguments.add(fPlugin->getFilename());
+        /* filename */ arguments.add(filename);
         /* ui-title */ arguments.add(name + String(" (GUI)"));
         break;
 
     case PLUGIN_THREAD_BRIDGE:
         /* stype    */ arguments.add(fExtra1.buffer());
-        /* filename */ arguments.add(fPlugin->getFilename());
+        /* filename */ arguments.add(filename);
         /* label    */ arguments.add(fLabel.buffer());
         /* uniqueId */ arguments.add(String(static_cast<juce::int64>(fPlugin->getUniqueId())));
 

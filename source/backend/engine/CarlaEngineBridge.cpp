@@ -701,7 +701,7 @@ protected:
                 case kPluginBridgeRtSetCVPool: {
                     const uint64_t poolSize(fShmRtControl.readULong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
-                    fShmCVPool.data = (float*)jackbridge_shm_map(fShmCVPool.shm, static_cast<size_t>(poolSize));
+                    //fShmCVPool.data = (float*)jackbridge_shm_map(fShmCVPool.shm, static_cast<size_t>(poolSize));
                     break;
                 }
 
