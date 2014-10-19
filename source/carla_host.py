@@ -165,8 +165,10 @@ class HostWindow(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
-        self.ui.act_canvas_show_internal.setChecked(True)
+        self.ui.act_canvas_show_internal.setChecked(False)
+        self.ui.act_canvas_show_internal.setVisible(False)
         self.ui.act_canvas_show_external.setChecked(False)
+        self.ui.act_canvas_show_external.setVisible(False)
 
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
@@ -570,6 +572,23 @@ class HostWindow(QMainWindow):
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
+
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and driverName == "JACK":
+            self.ui.act_canvas_show_internal.setChecked(True)
+            self.ui.act_canvas_show_internal.setVisible(True)
+            self.ui.act_canvas_show_external.setChecked(False)
+            self.ui.act_canvas_show_external.setVisible(True)
+        else:
+            self.ui.act_canvas_show_internal.setChecked(False)
+            self.ui.act_canvas_show_internal.setVisible(False)
+            self.ui.act_canvas_show_external.setChecked(False)
+            self.ui.act_canvas_show_external.setVisible(False)
+
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
 
         if not self.host.isPlugin:
             self.ui.act_engine_start.setEnabled(False)
