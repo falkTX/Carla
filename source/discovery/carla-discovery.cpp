@@ -1430,8 +1430,6 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
     for (PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
     {
-        static int iv=0;
-        carla_debug("LOOKING FOR PLUGIN %i", iv++);
         PluginDescription* const desc(*it);
 
         uint hints = 0x0;
