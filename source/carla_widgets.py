@@ -565,6 +565,9 @@ class PluginEdit(QDialog):
         host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
         host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
 
+        # TODO
+        self.ui.ch_force_stereo.hide()
+
     #------------------------------------------------------------------
 
     @pyqtSlot(int, int, int, int)
