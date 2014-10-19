@@ -48,14 +48,14 @@ make $JOBS backend
 # make $JOBS bridges
 
 # Build UI bridges
-# make $JOBS -C source/bridges ui_lv2-win32 ui_vst-hwnd
+make $JOBS -C source/bridges-ui ui_lv2-windows
 
 export PYTHONPATH=`pwd`/source
 
 rm -rf ./data/windows/Carla
-cp ./source/carla ./source/carla.pyw
+cp ./source/carla ./source/Carla.pyw
 $PYTHON_EXE ./data/windows/app.py build_exe
-rm -f ./source/carla.pyw
+rm -f ./source/Carla.pyw
 mv build data/windows/Carla
 
 cd data/windows/
