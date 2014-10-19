@@ -378,20 +378,19 @@ public:
         {
             try {
                 dispatcher(effBeginSetProgram, 0, 0, nullptr, 0.0f);
-            } catch (...) {
-                return;
-            }
+            } CARLA_SAFE_EXCEPTION_RETURN("effBeginSetProgram",);
 
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
                 try {
                     dispatcher(effSetProgram, 0, index, nullptr, 0.0f);
-                } catch(...) {}
+                } CARLA_SAFE_EXCEPTION("effSetProgram");
             }
 
             try {
                 dispatcher(effEndSetProgram, 0, 0, nullptr, 0.0f);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("effEndSetProgram");
         }
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);

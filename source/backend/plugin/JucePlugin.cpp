@@ -271,6 +271,23 @@ public:
         pData->updateParameterValues(this, sendOsc, true, false);
     }
 
+    void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
+
+        if (index >= 0)
+        {
+            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
+
+            try {
+                fInstance->setCurrentProgram(index);
+            } CARLA_SAFE_EXCEPTION("setCurrentProgram");
+        }
+
+        CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -325,7 +342,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
-        carla_debug("VstPlugin::reload() - start");
+        carla_debug("JucePlugin::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -542,12 +559,99 @@ public:
         fInstance->setPlayConfigDetails(static_cast<int>(aIns), static_cast<int>(aOuts), pData->engine->getSampleRate(), static_cast<int>(pData->engine->getBufferSize()));
 
         bufferSizeChanged(pData->engine->getBufferSize());
-        //reloadPrograms(true);
+        reloadPrograms(true);
 
         if (pData->active)
             activate();
 
-        carla_debug("VstPlugin::reload() - end");
+        carla_debug("JucePlugin::reload() - end");
+    }
+
+    void reloadPrograms(const bool doInit) override
+    {
+        carla_debug("JucePlugin::reloadPrograms(%s)", bool2str(doInit));
+        const uint32_t oldCount = pData->prog.count;
+        const int32_t  current  = pData->prog.current;
+
+        // Delete old programs
+        pData->prog.clear();
+
+        // Query new programs
+        uint32_t newCount = (fInstance->getNumPrograms() > 0) ? static_cast<uint32_t>(fInstance->getNumPrograms()) : 0;
+
+        if (newCount > 0)
+        {
+            pData->prog.createNew(newCount);
+
+            // Update names
+            for (int i=0, count=fInstance->getNumPrograms(); i<count; ++i)
+                pData->prog.names[i] = carla_strdup(fInstance->getProgramName(i).toRawUTF8());
+        }
+
+#ifndef BUILD_BRIDGE
+        // Update OSC Names
+        if (pData->engine->isOscControlRegistered())
+        {
+            pData->engine->oscSend_control_set_program_count(pData->id, newCount);
+
+            for (uint32_t i=0; i < newCount; ++i)
+                pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
+        }
+#endif
+
+        if (doInit)
+        {
+            if (newCount > 0)
+                setProgram(0, false, false, false);
+        }
+        else
+        {
+            // Check if current program is invalid
+            bool programChanged = false;
+
+            if (newCount == oldCount+1)
+            {
+                // one program added, probably created by user
+                pData->prog.current = static_cast<int32_t>(oldCount);
+                programChanged = true;
+            }
+            else if (current < 0 && newCount > 0)
+            {
+                // programs exist now, but not before
+                pData->prog.current = 0;
+                programChanged = true;
+            }
+            else if (current >= 0 && newCount == 0)
+            {
+                // programs existed before, but not anymore
+                pData->prog.current = -1;
+                programChanged = true;
+            }
+            else if (current >= static_cast<int32_t>(newCount))
+            {
+                // current program > count
+                pData->prog.current = 0;
+                programChanged = true;
+            }
+            else
+            {
+                // no change
+                pData->prog.current = current;
+            }
+
+            if (programChanged)
+            {
+                setProgram(pData->prog.current, true, true, true);
+            }
+            else
+            {
+                // Program was changed during update, re-set it
+                if (pData->prog.current >= 0)
+                    fInstance->setCurrentProgram(pData->prog.current);
+            }
+
+            pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -630,13 +734,6 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            uint32_t nextBankId;
-
-            if (pData->midiprog.current >= 0 && pData->midiprog.count > 0)
-                nextBankId = pData->midiprog.data[pData->midiprog.current].bank;
-            else
-                nextBankId = 0;
-
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
@@ -758,24 +855,16 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankId = ctrlEvent.param;
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
                         {
-                            const uint32_t nextProgramId = ctrlEvent.param;
-
-                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
+                            if (ctrlEvent.param < pData->prog.count)
                             {
-                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
-                                {
-                                    const int32_t index(static_cast<int32_t>(k));
-                                    setMidiProgram(index, false, false, false);
-                                    pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, index, 0, 0.0f);
-                                    break;
-                                }
+                                setProgram(ctrlEvent.param, false, false, false);
+                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
+                                break;
                             }
                         }
                         break;
@@ -969,7 +1058,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("VstPlugin::bufferSizeChanged(%i)", newBufferSize);
+        carla_debug("JucePlugin::bufferSizeChanged(%i)", newBufferSize);
 
         fAudioBuffer.setSize(static_cast<int>(std::max<uint32_t>(pData->audioIn.count, pData->audioOut.count)), static_cast<int>(newBufferSize));
 
@@ -983,7 +1072,7 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("VstPlugin::sampleRateChanged(%g)", newSampleRate);
+        carla_debug("JucePlugin::sampleRateChanged(%g)", newSampleRate);
 
         if (pData->active)
         {
