@@ -399,10 +399,9 @@ class HostWindow(QMainWindow):
 
         self.setProperWindowTitle()
 
-        # Qt4 needs this so it properly creates & resizes the canvas
+        # Qt needs this so it properly creates & resizes the canvas
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.tabWidget.setCurrentIndex(0)
-        self.fixCanvasPreviewSize()
 
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin:
@@ -1288,10 +1287,12 @@ class HostWindow(QMainWindow):
     def slot_showCanvasMeters(self, yesNo):
         self.ui.peak_in.setVisible(yesNo)
         self.ui.peak_out.setVisible(yesNo)
+        QTimer.singleShot(0, self.slot_miniCanvasCheckAll)
 
     @pyqtSlot(bool)
     def slot_showCanvasKeyboard(self, yesNo):
         self.ui.scrollArea.setVisible(yesNo)
+        QTimer.singleShot(0, self.slot_miniCanvasCheckAll)
 
     @pyqtSlot()
     def slot_configureCarla(self):
@@ -1444,18 +1445,23 @@ class HostWindow(QMainWindow):
         if self.fCanvasWidth == 0 or self.fCanvasHeight == 0:
             return
 
-        self.ui.miniCanvasPreview.setViewSize(float(self.width()) / self.fCanvasWidth, float(self.height()) / self.fCanvasHeight)
+        if self.ui.tabWidget.currentIndex() == 1:
+            width  = self.ui.graphicsView.width()
+            height = self.ui.graphicsView.height()
+        else:
+            self.ui.tabWidget.setCurrentIndex(1)
+            width  = self.ui.graphicsView.width()
+            height = self.ui.graphicsView.height()
+            self.ui.tabWidget.setCurrentIndex(0)
+
+        self.ui.miniCanvasPreview.setViewSize(float(width)/self.fCanvasWidth, float(height)/self.fCanvasHeight)
 
     @pyqtSlot(float, float)
     def slot_miniCanvasMoved(self, xp, yp):
         hsb = self.ui.graphicsView.horizontalScrollBar()
         vsb = self.ui.graphicsView.verticalScrollBar()
-        hsb.blockSignals(True)
-        vsb.blockSignals(True)
         hsb.setValue(xp * hsb.maximum())
         vsb.setValue(yp * vsb.maximum())
-        hsb.blockSignals(False)
-        vsb.blockSignals(False)
         self.updateCanvasInitialPos()
 
     # --------------------------------------------------------------------------------------------------------
@@ -1661,9 +1667,10 @@ class HostWindow(QMainWindow):
         QMainWindow.resizeEvent(self, event)
 
         if self.ui.tabWidget.currentIndex() != 1:
-            self.fixCanvasPreviewSize()
-        else:
-            self.slot_miniCanvasCheckSize()
+            size = self.ui.rack.size()
+            self.ui.patchbay.resize(size)
+
+        self.slot_miniCanvasCheckSize()
 
     # --------------------------------------------------------------------------------------------------------
     # timer event

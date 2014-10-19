@@ -387,8 +387,11 @@ public:
             const PluginBridgeNonRtOpcode opcode(fShmNonRtControl.readOpcode());
             CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
-            if (opcode != kPluginBridgeNonRtPing)
-                carla_stdout("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtOpcode2str(opcode));
+#ifdef DEBUG
+            if (opcode != kPluginBridgeNonRtPing) {
+                carla_debug("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtOpcode2str(opcode));
+            }
+#endif
 
             switch (opcode)
             {
@@ -682,9 +685,11 @@ protected:
                 const PluginBridgeRtOpcode opcode(fShmRtControl.readOpcode());
                 CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
+#ifdef DEBUG
                 if (opcode != kPluginBridgeRtProcess && opcode != kPluginBridgeRtMidiEvent) {
-                    carla_stdout("CarlaEngineBridgeRtThread::run() - got opcode: %s", PluginBridgeRtOpcode2str(opcode));
+                    carla_debug("CarlaEngineBridgeRtThread::run() - got opcode: %s", PluginBridgeRtOpcode2str(opcode));
                 }
+#endif
 
                 switch (opcode)
                 {
