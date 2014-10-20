@@ -29,9 +29,9 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-#define WAIT_START_TIMEOUT  3000 /* ms */
-#define WAIT_ZOMBIE_TIMEOUT 3000 /* ms */
-#define WAIT_STEP 100            /* ms */
+#define WAIT_START_TIMEOUT  10000 /* 10 secs */
+#define WAIT_ZOMBIE_TIMEOUT 10000 /* 10 secs */
+#define WAIT_STEP 100             /* 100 ms */
 
 // -----------------------------------------------------------------------
 
@@ -663,7 +663,7 @@ private:
             carla_msleep(WAIT_STEP); /* wait 100 ms */
         }
 
-        carla_stderr2("we waited for child with pid %i to exit for %.1f seconds and we are giving up", int(pid), float(WAIT_START_TIMEOUT)/1000.0f);
+        carla_stderr2("we waited for child with pid %i to exit for %.1f seconds and we are giving up", int(pid), float(WAIT_ZOMBIE_TIMEOUT)/1000.0f);
         return false;
     }
 };
