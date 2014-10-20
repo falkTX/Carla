@@ -1389,6 +1389,9 @@ class PluginDatabaseW(QDialog):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
             return
 
+        if ptype in (self.tr("Internal"), "LV2", "AU"):
+            plugin['build'] = BINARY_NATIVE
+
         index = self.fLastTableIndex
 
         if plugin['build'] == BINARY_NATIVE:
@@ -1531,11 +1534,11 @@ class PluginDatabaseW(QDialog):
 
         for plugins in lv2Plugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, self.tr("LV2"))
+                self._addPluginToTable(plugin, "LV2")
 
         for plugins in auPlugins:
             for plugin in plugins:
-                self._addPluginToTable(plugin, self.tr("AU"))
+                self._addPluginToTable(plugin, "AU")
 
         del internalPlugins
         del lv2Plugins
