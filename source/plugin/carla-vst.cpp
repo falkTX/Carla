@@ -732,27 +732,27 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         return 0;
 
     case effGetVendorString:
-        if (ptr != nullptr)
+        if (char* const cptr = (char*)ptr)
         {
-            std::strncpy((char*)ptr, "falkTX", 64);
+            std::strncpy(cptr, "falkTX", 32);
             return 1;
         }
         return 0;
 
     case effGetProductString:
-        if (ptr != nullptr)
+        if (char* const cptr = (char*)ptr)
         {
 #ifdef CARLA_PLUGIN_PATCHBAY
 # ifdef CARLA_PLUGIN_SYNTH
-            std::strncpy((char*)ptr, "CarlaPatchbay", 32);
+            std::strncpy(cptr, "CarlaPatchbay", 32);
 # else
-            std::strncpy((char*)ptr, "CarlaPatchbayFX", 32);
+            std::strncpy(cptr, "CarlaPatchbayFX", 32);
 # endif
 #else
 # ifdef CARLA_PLUGIN_SYNTH
-            std::strncpy((char*)ptr, "CarlaRack", 32);
+            std::strncpy(cptr, "CarlaRack", 32);
 # else
-            std::strncpy((char*)ptr, "CarlaRackFX", 32);
+            std::strncpy(cptr, "CarlaRackFX", 32);
 # endif
 #endif
             return 1;
