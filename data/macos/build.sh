@@ -48,9 +48,9 @@ unset CXXFLAGS
 unset LDLAGS
 unset PKG_CONFIG_PATH
 
-rm -rf ./build ./build-lv2
-rm -f bin/carla-bridge-lv2-cocoa # TODO
-rm -f bin/carla-bridge-lv2-qt5
+rm -rf ./build
+rm -rf ./build-lv2
+rm -f bin/carla-bridge-lv2-qt5 bin/carla.lv2/carla-bridge-lv2-qt5
 
 mkdir build
 
@@ -75,6 +75,7 @@ cp     bin/styles/*          build/Carla.app/Contents/MacOS/styles/
 find build/ -type f -name "*.py" -delete
 rm build/Carla.app/Contents/MacOS/resources/carla-plugin
 rm build/Carla.app/Contents/MacOS/resources/*-ui
+rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
 
 cd build/Carla.app/Contents/MacOS/resources/
 ln -sf ../*.so* ../Qt* ../imageformats ../platforms .
@@ -93,14 +94,14 @@ cp build/notes-ui.app/Contents/MacOS/notes-ui         build/Carla.app/Contents/M
 rm -rf build/carla-plugin.app build/bigmeter-ui.app build/notes-ui.app
 
 mkdir build-lv2
-mkdir build-lv2/carla-native.lv2
-mkdir build-lv2/carla-native.lv2/resources
-mkdir build-lv2/carla-native.lv2/styles
+mkdir build-lv2/carla.lv2
+mkdir build-lv2/carla.lv2/resources
+mkdir build-lv2/carla.lv2/styles
 
-cp bin/carla-native.lv2/*.* build-lv2/carla-native.lv2/
-cp bin/carla-bridge-*       build-lv2/carla-native.lv2/
-cp bin/carla-discovery-*    build-lv2/carla-native.lv2/
-cp -LR build/Carla.app/Contents/MacOS/resources/* build-lv2/carla-native.lv2/resources/
-cp     build/Carla.app/Contents/MacOS/styles/*    build-lv2/carla-native.lv2/styles/
+cp bin/carla.lv2/*.*        build-lv2/carla.lv2/
+cp bin/carla-bridge-*       build-lv2/carla.lv2/
+cp bin/carla-discovery-*    build-lv2/carla.lv2/
+cp -LR build/Carla.app/Contents/MacOS/resources/* build-lv2/carla.lv2/resources/
+cp     build/Carla.app/Contents/MacOS/styles/*    build-lv2/carla.lv2/styles/
 
 ##############################################################################################

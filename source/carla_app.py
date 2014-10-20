@@ -91,6 +91,10 @@ class CarlaApplication(object):
             self.createApp(appName)
             return
 
+        # Needed for MacOS LV2 plugin
+        if MACOS and os.path.exists(CWD):
+            QApplication.addLibraryPath(CWD)
+
         # base settings
         settings    = QSettings("falkTX", appName)
         useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
