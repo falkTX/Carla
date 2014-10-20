@@ -5,7 +5,7 @@ set -e
 MINGW=i686-w64-mingw32
 MINGW_PATH=/opt/mingw32
 
-JOBS="-j 8"
+JOBS="-j 2"
 
 if [ ! -f Makefile ]; then
   cd ../..
@@ -18,8 +18,10 @@ export CC=$MINGW-gcc
 export CXX=$MINGW-g++
 export WINDRES=$MINGW-windres
 
-export CFLAGS=-DPTW32_STATIC_LIB
-export CXXFLAGS=-DPTW32_STATIC_LIB
+export CFLAGS="-DPTW32_STATIC_LIB"
+export CXXFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
+unset CPPFLAGS
+unset LDFLAGS
 
 export WINEARCH=win32
 export WINEPREFIX=~/.winepy3_x86
@@ -39,7 +41,8 @@ make $JOBS UI RES WIDGETS
 
 # Build discovery
 make $JOBS discovery
-mv bin/carla-discovery-native.exe bin/carla-discovery-win32.exe
+rm bin/carla-discovery-win32.exe
+cp bin/carla-discovery-native.exe bin/carla-discovery-win32.exe
 
 # Build backend
 make $JOBS backend
@@ -62,6 +65,7 @@ cd data/windows/
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
 mv Carla/exe.*/* Carla/
+rm Carla/carla-discovery-native.exe
 rmdir Carla/exe.*
 
 rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd

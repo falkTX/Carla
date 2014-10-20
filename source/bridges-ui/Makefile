@@ -4,6 +4,8 @@
 # Created by falkTX
 #
 
+# TODO: $(LIBS_START) + $(LIBS_END)
+
 include ../Makefile.mk
 
 # --------------------------------------------------------------
@@ -232,7 +234,7 @@ OBJS_LV2_WINDOWS = \
 	CarlaBridgeUI-LV2__lv2-windows.o
 
 ../../bin/carla-bridge-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(OBJS_LV2_LIBS_JUCE_UI)
-	$(CXX) $^ $(LINK_LV2_WINDOWS_FLAGS) -o $@
+	$(CXX) $(OBJS_LV2_WINDOWS) $(LIBS_START) $(OBJS_LV2_LIBS_JUCE_UI) $(LIBS_END) $(LINK_LV2_WINDOWS_FLAGS) -o $@
 
 %__lv2-windows.o: %.cpp
 	$(CXX) $< $(BUILD_LV2_WINDOWS_FLAGS) -c -o $@
