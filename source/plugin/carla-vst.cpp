@@ -111,9 +111,6 @@ public:
         fVstRect.right  = 740;
 
         init();
-
-        // tell host we want MIDI events
-        fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
     }
 
     ~NativePlugin()
@@ -197,6 +194,9 @@ public:
 
                 fMidiEventCount = 0;
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+
+                // tell host we want MIDI events
+                fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
             }
             else
             {
