@@ -101,6 +101,13 @@ make -C unzipfx-carla-control -f Makefile.win32 clean
 rm -f Carla.zip CarlaControl.zip
 rm -f unzipfx-*/*.exe
 
+rm -rf Carla-2.0beta3-win64
+mkdir Carla-2.0beta3-win64
+mkdir Carla-2.0beta3-win64/vcredist
+cp Carla.exe README.txt Carla-2.0beta3-win64
+cp ~/.cache/winetricks/vcrun2010/vcredist_x64.exe Carla-2.0beta3-win64/vcredist
+zip -r -9 Carla-2.0beta3-win64.zip Carla-2.0beta3-win64
+
 cd ../..
 
 # Testing:
