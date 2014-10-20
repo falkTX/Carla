@@ -94,6 +94,23 @@ return
 fi
 
 # ------------------------------------------------------------------------------------
+# file/magic
+
+if [ ! -d file-5.19 ]; then
+curl -O ftp://ftp.astron.com/pub/file/file-5.19.tar.gz
+tar -xf file-5.19.tar.gz
+fi
+
+if [ ! -f file-5.19/build-done ]; then
+cd file-5.19
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
 # zlib
 
 if [ ! -d zlib-1.2.8 ]; then
