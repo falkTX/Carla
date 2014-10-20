@@ -73,7 +73,7 @@ ifeq ($(HAVE_X11),true)
 STANDALONE_FLAGS += $(X11_LIBS)
 endif
 
-ifeq ($(LINUX),true)
+ifeq ($(UNIX),true)
 STANDALONE_FLAGS += -lmagic
 endif
 

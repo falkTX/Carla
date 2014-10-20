@@ -45,7 +45,7 @@ ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
 endif
 
-ifeq ($(LINUX),true)
+ifeq ($(UNIX),true)
 LINK_FLAGS += -lmagic
 endif
 
