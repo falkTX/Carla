@@ -1348,7 +1348,8 @@ class CarlaHostMeta(QObject):
 
     # unset environment variable
     def unsetenv(self, key):
-        environ.pop(key)
+        if environ.get(key) is not None:
+            environ.pop(key)
 
         if WINDOWS:
             keyrm = "%s=" % key
