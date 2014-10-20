@@ -69,6 +69,7 @@ public:
           fDescriptor(desc),
           fBufferSize(d_lastBufferSize),
           fSampleRate(d_lastSampleRate),
+          fIsActive(false),
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
@@ -115,6 +116,15 @@ public:
 
     ~NativePlugin()
     {
+        if (fIsActive)
+        {
+            // host has not de-activated the plugin yet, nasty!
+            fIsActive = false;
+
+            if (fDescriptor->deactivate != nullptr)
+                fDescriptor->deactivate(fHandle);
+        }
+
         if (fDescriptor->cleanup != nullptr && fHandle != nullptr)
             fDescriptor->cleanup(fHandle);
 
@@ -189,19 +199,27 @@ public:
         case effMainsChanged:
             if (value != 0)
             {
-                if (fDescriptor->activate != nullptr)
-                    fDescriptor->activate(fHandle);
-
                 fMidiEventCount = 0;
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
                 // tell host we want MIDI events
                 fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
+
+                CARLA_SAFE_ASSERT_BREAK(! fIsActive);
+
+                if (fDescriptor->activate != nullptr)
+                    fDescriptor->activate(fHandle);
+
+                fIsActive = true;
             }
             else
             {
+                CARLA_SAFE_ASSERT_BREAK(fIsActive);
+
                 if (fDescriptor->deactivate != nullptr)
                     fDescriptor->deactivate(fHandle);
+
+                fIsActive = false;
             }
             break;
 
@@ -270,6 +288,15 @@ public:
             break;
 
         case effProcessEvents:
+            if (! fIsActive)
+            {
+                // host has not activated the plugin yet, nasty!
+                fIsActive = true;
+
+                if (fDescriptor->activate != nullptr)
+                    fDescriptor->activate(fHandle);
+            }
+
             if (const VstEvents* const events = (const VstEvents*)ptr)
             {
                 if (events->numEvents == 0)
@@ -331,6 +358,15 @@ public:
     {
         if (sampleFrames <= 0)
             return;
+
+        if (! fIsActive)
+        {
+            // host has not activated the plugin yet, nasty!
+            fIsActive = true;
+
+            if (fDescriptor->activate != nullptr)
+                fDescriptor->activate(fHandle);
+        }
 
         static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
 
@@ -477,6 +513,7 @@ private:
     double   fSampleRate;
 
     // Temporary data
+    bool            fIsActive;
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
