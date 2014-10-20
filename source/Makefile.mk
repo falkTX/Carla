@@ -41,6 +41,17 @@ MACOS_OR_WIN32=true
 endif
 
 # --------------------------------------------------------------
+# Set UNIX
+
+ifeq ($(LINUX),true)
+UNIX=true
+endif
+
+ifeq ($(MACOS),true)
+UNIX=true
+endif
+
+# --------------------------------------------------------------
 # Force some features on MacOS and Windows
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -154,7 +165,7 @@ ifneq ($(shell pkg-config --exists liblo && echo true),true)
 $(error liblo missing, cannot continue)
 endif
 
-ifeq ($(LINUX),true)
+ifeq ($(UNIX),true)
 ifeq (,$(wildcard /usr/include/magic.h))
 $(error libmagic missing, cannot continue)
 endif
