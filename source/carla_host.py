@@ -362,6 +362,8 @@ class HostWindow(QMainWindow):
 
         self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
+        self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
+
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
         self.scene.sceneGroupMoved.connect(self.slot_canvasItemMoved)
         self.scene.pluginSelected.connect(self.slot_canvasPluginSelected)
@@ -400,8 +402,10 @@ class HostWindow(QMainWindow):
         self.setProperWindowTitle()
 
         # Qt needs this so it properly creates & resizes the canvas
+        self.ui.tabWidget.blockSignals(True)
         self.ui.tabWidget.setCurrentIndex(1)
         self.ui.tabWidget.setCurrentIndex(0)
+        self.ui.tabWidget.blockSignals(False)
 
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin:
@@ -1449,10 +1453,12 @@ class HostWindow(QMainWindow):
             width  = self.ui.graphicsView.width()
             height = self.ui.graphicsView.height()
         else:
+            self.ui.tabWidget.blockSignals(True)
             self.ui.tabWidget.setCurrentIndex(1)
             width  = self.ui.graphicsView.width()
             height = self.ui.graphicsView.height()
             self.ui.tabWidget.setCurrentIndex(0)
+            self.ui.tabWidget.blockSignals(False)
 
         self.ui.miniCanvasPreview.setViewSize(float(width)/self.fCanvasWidth, float(height)/self.fCanvasHeight)
 
@@ -1512,6 +1518,13 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Misc
+
+    @pyqtSlot(int)
+    def slot_tabChanged(self, index):
+        if index != 1:
+            return
+
+        self.ui.graphicsView.setFocus()
 
     @pyqtSlot(int)
     def slot_handleReloadAllCallback(self, pluginId):
