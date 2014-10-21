@@ -317,6 +317,9 @@ if WINDOWS:
     DEFAULT_VST_PATH     = PROGRAMFILES + "\\VstPlugins"
     DEFAULT_VST_PATH    += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
 
+    if kIs64bit:
+        DEFAULT_VST_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
+
     DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
 
     DEFAULT_GIG_PATH     = APPDATA + "\\GIG"
