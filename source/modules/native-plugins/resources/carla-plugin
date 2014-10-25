@@ -318,6 +318,8 @@ class CarlaMiniW(ExternalUI, HostWindow):
             elif msg == "file-exts":
                 exts = self.readlineblock().replace("\r", "\n")
                 self.host.fSupportedFileExts = exts
+                # only now we know the supported extensions
+                self.fDirModel.setNameFilters(exts.split(";"))
 
             elif msg == "max-plugin-number":
                 maxnum = int(self.readlineblock())
