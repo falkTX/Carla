@@ -2,17 +2,12 @@
 
 0.  THIS IS A BETA RELEASE!
 
-1.  LADISH does not support multi-client JACK applications.
-    To prevent any issues Carla will switch to single-client mode automatically.
+1. Carla-Control is not available in the 2.0-beta versions yet
 
-2.  Rack mode is still a bit experimental, specially on non-JACK drivers.
+2. Linux release has support for bridging Window plugins using Wine (32bit and 64bit)
 
-3.  Carla will not work with non-native LV2 Plugin UIs that require the instance-data extension.
-    This is by design and not a bug.
+3. Linux 32bit release will not load 64bit plugins even if ran on a 64bit system
 
-4.  OSC control seems to work well, but has not been tested in great detail.
-    Be sure to report any issues.
+4. MacOS release is 64bit only but it can load 32bit plugins
 
-5.  LinuxSampler (used for GIG and SFZ file loading) and ZynAddSubFX internal plugin is not available for Windows at this point.
-
-6.  Carla-Control is not available at this point (needs to be reworked for the 2.0 codebase).
+5. Windows builds do not support bridges (ie, 32bit plugins on a 64bit Carla) or Carla as a plugin
