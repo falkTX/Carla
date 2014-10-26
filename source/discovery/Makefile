@@ -11,9 +11,9 @@ include $(CWD)/Makefile.mk
 # --------------------------------------------------------------
 
 ifeq ($(WIN64),true)
-winv = "64"
+winv=64
 else
-winv = "32"
+winv=32
 endif
 
 # --------------------------------------------------------------
@@ -39,11 +39,13 @@ endif
 # --------------------------------------------------------------
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-NATIVE_FLAGS += $(FLUIDSYNTH_FLAGS) $(FLUIDSYNTH_LIBS)
+NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
+NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-NATIVE_FLAGS += $(LINUXSAMPLER_FLAGS) $(LINUXSAMPLER_LIBS)
+NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
+NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 endif
 
 # --------------------------------------------------------------
@@ -53,7 +55,7 @@ LIBS_posix32  = ../modules/lilv.posix32.a
 LIBS_posix64  = ../modules/lilv.posix64.a
 LIBS_win32    = ../modules/lilv.win32.a
 LIBS_win64    = ../modules/lilv.win64.a
-LINK_FLAGS    = $(LILV_LIBS)
+LINK_FLAGS   += $(LILV_LIBS)
 
 LIBS         += ../modules/juce_core.a
 LIBS_posix32 += ../modules/juce_core.posix32.a
@@ -109,19 +111,9 @@ LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
-POSIX_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
-POSIX_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32 -L/usr/lib/i386-linux-gnu
-POSIX_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64 -L/usr/lib/x86_64-linux-gnu
-POSIX_LINK_FLAGS  = $(LINK_FLAGS)
-
-ifneq ($(HAIKU),true)
-POSIX_LINK_FLAGS += -ldl
+ifeq ($(UNIX),true)
+LINK_FLAGS += -ldl
 endif
-
-WIN_BUILD_FLAGS = $(BUILD_CXX_FLAGS)
-WIN_32BIT_FLAGS = $(32BIT_FLAGS)
-WIN_64BIT_FLAGS = $(64BIT_FLAGS)
-WIN_LINK_FLAGS  = $(LINK_FLAGS) $(EXTRA_LIBS)
 
 # --------------------------------------------------------------
 
@@ -147,29 +139,46 @@ win64:   ../../bin/carla-discovery-win64.exe
 
 # --------------------------------------------------------------
 
-../../bin/carla-discovery-native: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(NATIVE_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+carla-discovery.cpp.o: carla-discovery.cpp $(DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
-../../bin/carla-discovery-native.exe: $(OBJS) $(DEPS) $(LIBS)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS) $(LIBS_END) $(WIN_BUILD_FLAGS) $(NATIVE_FLAGS) $(WIN_LINK_FLAGS) -o $@ && \
+carla-discovery.cpp.posix32.o: carla-discovery.cpp $(DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+
+carla-discovery.cpp.posix64.o: carla-discovery.cpp $(DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+
+carla-discovery.cpp.win32.o: carla-discovery.cpp $(DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+
+carla-discovery.cpp.win64.o: carla-discovery.cpp $(DEPS)
+	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+
+# --------------------------------------------------------------
+
+../../bin/carla-discovery-native: carla-discovery.cpp.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+
+../../bin/carla-discovery-native.exe: carla-discovery.cpp.o $(LIBS)
+	$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@ && \
 	cd ../../bin/ && ln -s carla-discovery-native.exe carla-discovery-win$(winv).exe
 
-../../bin/carla-discovery-posix32: $(OBJS) $(DEPS) $(LIBS_posix32)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(POSIX_32BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+../../bin/carla-discovery-posix32: carla-discovery.cpp.posix32.o $(LIBS_posix32)
+	$(CXX) $< $(LIBS_START) $(LIBS_posix32) $(LIBS_END) $(32BIT_FLAGS) $(LINK_FLAGS) -o $@
 
-../../bin/carla-discovery-posix64: $(OBJS) $(DEPS) $(LIBS_posix64)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(POSIX_BUILD_FLAGS) $(POSIX_64BIT_FLAGS) $(POSIX_LINK_FLAGS) -o $@
+../../bin/carla-discovery-posix64: carla-discovery.cpp.posix64.o $(DEPS) $(LIBS_posix64)
+	$(CXX) $< $(LIBS_START) $(LIBS_posix64) $(LIBS_END) $(64BIT_FLAGS) $(LINK_FLAGS) -o $@
 
-../../bin/carla-discovery-win32.exe: $(OBJS) $(DEPS) $(LIBS_win32)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(WIN_BUILD_FLAGS) $(WIN_32BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+../../bin/carla-discovery-win32.exe: carla-discovery.cpp.win32.o $(DEPS) $(LIBS_win32)
+	$(CXX) $< $(LIBS_START) $(LIBS_win32) $(LIBS_END) $(32BIT_FLAGS) $(LINK_FLAGS) -o $@
 
-../../bin/carla-discovery-win64.exe: $(OBJS) $(DEPS) $(LIBS_win64)
-	$(CXX) $(OBJS) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(WIN_BUILD_FLAGS) $(WIN_64BIT_FLAGS) $(WIN_LINK_FLAGS) -o $@
+../../bin/carla-discovery-win64.exe: carla-discovery.cpp.win64.o $(DEPS) $(LIBS_win64)
+	$(CXX) $< $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(64BIT_FLAGS) $(LINK_FLAGS) -o $@
 
 # --------------------------------------------------------------
 
 clean:
-	$(RM) ../../bin/carla-discovery-*
+	$(RM) *.o ../../bin/carla-discovery-*
 
 debug:
 	$(MAKE) DEBUG=true

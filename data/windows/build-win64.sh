@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ### fluidsynth.pc:
-# -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -ldsound -lwinmm -lole32
+# -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -ldsound -lwinmm -lole32 -lws2_32
 ### linuxsampler.pc:
 # -L${prefix}/lib/libgig -llinuxsampler -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lrpcrt4
 
