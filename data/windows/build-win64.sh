@@ -1,5 +1,10 @@
 #!/bin/bash
 
+### fluidsynth.pc:
+# -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -ldsound -lwinmm -lole32
+### linuxsampler.pc:
+# -L${prefix}/lib/libgig -llinuxsampler -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lrpcrt4
+
 set -e
 
 MINGW=x86_64-w64-mingw32
