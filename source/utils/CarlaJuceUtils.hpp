@@ -193,4 +193,10 @@ private:
     CARLA_PREVENT_HEAP_ALLOCATION
 };
 
+#ifdef CARLA_OS_WIN
+namespace juce {
+extern bool juce_isRunningInWine();
+}
+#endif
+
 #endif // CARLA_JUCE_UTILS_HPP_INCLUDED

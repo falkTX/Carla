@@ -1147,14 +1147,14 @@ public:
             return false;
         }
 
+        if (label == nullptr || label[0] == '\0')
+        {
+            pData->engine->setLastError("null label");
+            return false;
+        }
+
         if (std::strcmp(format, "AU") == 0)
         {
-            if (label == nullptr || label[0] == '\0')
-            {
-                pData->engine->setLastError("null label");
-                return false;
-            }
-
             fDesc.fileOrIdentifier = label;
         }
         else
@@ -1168,7 +1168,8 @@ public:
             String jfilename(filename);
 
 #ifdef CARLA_OS_WIN
-            if (jfilename.startsWith("/"))
+            // Fix for wine usage
+            if (juce_isRunningInWine() && filename[0] == '/')
             {
                 jfilename.replace("/", "\\");
                 jfilename = "Z:" + jfilename;
@@ -1176,6 +1177,7 @@ public:
 #endif
 
             fDesc.fileOrIdentifier = jfilename;
+            fDesc.name = label;
             fDesc.uid = static_cast<int>(uniqueId);
         }
 

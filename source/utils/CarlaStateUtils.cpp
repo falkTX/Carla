@@ -506,9 +506,8 @@ String StateSave::toString() const
             infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;
         case PLUGIN_VST3:
-            // TODO?
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
             break;
         case PLUGIN_AU:
             infoXml << "   <Identifier>" << xmlSafeString(label, true) << "</Identifier>\n";

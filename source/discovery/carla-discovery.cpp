@@ -1381,10 +1381,21 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
     carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
 
     using namespace juce;
+    juce::String filename;
 
-    juce::String filename(File(filename_).getFullPathName());
+#ifdef CARLA_OS_WIN
+    // Fix for wine usage
+    if (juce_isRunningInWine() && filename_[0] == '/')
+    {
+        filename = filename_;
+        filename.replace("/", "\\");
+        filename = "Z:" + filename;
+    }
+    else
+#endif
+     filename = File(filename_).getFullPathName();
 
-    ScopedPointer<AudioPluginFormat> pluginFormat;
+    juce::ScopedPointer<AudioPluginFormat> pluginFormat;
 
     /* */ if (std::strcmp(stype, "VST") == 0)
     {
@@ -1417,6 +1428,9 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         return;
     }
 
+#ifdef CARLA_OS_WIN
+    CARLA_SAFE_ASSERT_RETURN(File(filename).existsAsFile(),);
+#endif
     CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
 
     OwnedArray<PluginDescription> results;
@@ -1464,8 +1478,8 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
         DISCOVERY_OUT("init", "-----------");
         DISCOVERY_OUT("build", BINARY_NATIVE);
         DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("name", desc->name);
-        DISCOVERY_OUT("label", desc->descriptiveName);
+        DISCOVERY_OUT("name", desc->descriptiveName);
+        DISCOVERY_OUT("label", desc->name);
         DISCOVERY_OUT("maker", desc->manufacturerName);
         DISCOVERY_OUT("uniqueId", desc->uid);
         DISCOVERY_OUT("audio.ins", audioIns);
