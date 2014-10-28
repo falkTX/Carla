@@ -6,7 +6,7 @@
 
 # --------------------------------------------------------------
 
-BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DREAL_BUILD -fPIC -DPIC -DDEBUG -O0 -g
+BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DREAL_BUILD -DDEBUG -O0 -g
 BASE_FLAGS += -I. -I../backend -I../includes -I../utils -isystem ../modules
 BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion
 BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
