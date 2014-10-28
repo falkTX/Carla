@@ -167,7 +167,7 @@ enum EngineControlEventType {
 /*!
  * Engine control event.
  */
-struct EngineControlEvent {
+struct CARLA_API EngineControlEvent {
     EngineControlEventType type; //!< Control-Event type.
     uint16_t param;              //!< Parameter Id, midi bank or midi program.
     float    value;              //!< Parameter value, normalized to 0.0f<->1.0f.
@@ -181,7 +181,7 @@ struct EngineControlEvent {
 /*!
  * Engine MIDI event.
  */
-struct EngineMidiEvent {
+struct CARLA_API EngineMidiEvent {
     static const uint8_t kDataSize = 4; //!< Size of internal data
 
     uint8_t port; //!< Port offset (usually 0)
@@ -198,7 +198,7 @@ struct EngineMidiEvent {
 /*!
  * Engine event.
  */
-struct EngineEvent {
+struct CARLA_API EngineEvent {
     EngineEventType type; //!< Event Type; either Control or MIDI
     uint32_t time;        //!< Time offset in frames
     uint8_t  channel;     //!< Channel, used for MIDI-related events
@@ -222,7 +222,7 @@ struct EngineEvent {
 /*!
  * Engine options.
  */
-struct EngineOptions {
+struct CARLA_API EngineOptions {
     EngineProcessMode   processMode;
     EngineTransportMode transportMode;
 
@@ -264,7 +264,7 @@ struct EngineOptions {
 /*!
  * Engine BBT Time information.
  */
-struct EngineTimeInfoBBT {
+struct CARLA_API EngineTimeInfoBBT {
     int32_t bar;  //!< current bar
     int32_t beat; //!< current beat-within-bar
     int32_t tick; //!< current tick-within-beat
@@ -284,7 +284,7 @@ struct EngineTimeInfoBBT {
 /*!
  * Engine Time information.
  */
-struct EngineTimeInfo {
+struct CARLA_API EngineTimeInfo {
     static const uint kValidBBT = 0x1;
 
     bool playing;
@@ -313,7 +313,7 @@ struct EngineTimeInfo {
  * Carla Engine port (Abstract).
  * This is the base class for all Carla Engine ports.
  */
-class CarlaEnginePort
+class CARLA_API CarlaEnginePort
 {
 protected:
     /*!
@@ -366,7 +366,7 @@ protected:
 /*!
  * Carla Engine Audio port.
  */
-class CarlaEngineAudioPort : public CarlaEnginePort
+class CARLA_API CarlaEngineAudioPort : public CarlaEnginePort
 {
 public:
     /*!
@@ -413,7 +413,7 @@ protected:
 /*!
  * Carla Engine CV port.
  */
-class CarlaEngineCVPort : public CarlaEnginePort
+class CARLA_API CarlaEngineCVPort : public CarlaEnginePort
 {
 public:
     /*!
@@ -460,7 +460,7 @@ protected:
 /*!
  * Carla Engine Event port.
  */
-class CarlaEngineEventPort : public CarlaEnginePort
+class CARLA_API CarlaEngineEventPort : public CarlaEnginePort
 {
 public:
     /*!
@@ -553,7 +553,7 @@ protected:
  * Each plugin requires one client from the engine (created via CarlaEngine::addClient()).
  * @note This is a virtual class, some engine types provide custom funtionality.
  */
-class CarlaEngineClient
+class CARLA_API CarlaEngineClient
 {
 public:
     /*!
@@ -648,7 +648,7 @@ protected:
  * Carla Engine.
  * @note This is a virtual class for all available engine types available in Carla.
  */
-class CarlaEngine
+class CARLA_API CarlaEngine
 {
 protected:
     /*!

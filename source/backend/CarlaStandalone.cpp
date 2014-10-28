@@ -404,7 +404,7 @@ const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, co
 
 // -------------------------------------------------------------------------------------------------------------------
 
-const CarlaEngine* carla_get_engine()
+CarlaEngine* carla_get_engine()
 {
     carla_debug("carla_get_engine()");
 

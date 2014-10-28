@@ -64,7 +64,7 @@ struct StateSave;
  *
  * @see PluginType
  */
-class CarlaPlugin
+class CARLA_API CarlaPlugin
 {
 protected:
     /*!

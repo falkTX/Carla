@@ -408,7 +408,7 @@ CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginTyp
  * Get the currently used engine, maybe be NULL.
  * @note C++ only
  */
-CARLA_EXPORT const CarlaEngine* carla_get_engine();
+CARLA_EXPORT CarlaEngine* carla_get_engine();
 #endif
 
 /*!

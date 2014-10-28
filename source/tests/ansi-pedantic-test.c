@@ -23,12 +23,14 @@
 #ifdef __cplusplus
 # include "CarlaEngine.hpp"
 # include "CarlaPlugin.hpp"
+# include <cassert>
 # include <cstdio>
 # ifdef CARLA_PROPER_CPP11_SUPPORT
 #  undef NULL
 #  define NULL nullptr
 # endif
 #else
+# include <assert.h>
 # include <stdio.h>
 #endif
 
@@ -87,8 +89,18 @@ int main(int argc, char* argv[])
 
     if (carla_engine_init("JACK", "ansi-test"))
     {
+#ifdef __cplusplus
+        CarlaEngine* const engine(carla_get_engine());
+        assert(engine != nullptr);
+        engine->getLastError();
+#endif
         if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL))
         {
+#ifdef __cplusplus
+            CarlaPlugin* const plugin(engine->getPlugin(0));
+            assert(plugin != nullptr);
+            plugin->getId();
+#endif
             carla_set_custom_data(0, CUSTOM_DATA_TYPE_STRING, "file", "/home/falktx/Music/test.wav");
             carla_transport_play();
         }
@@ -96,15 +108,30 @@ int main(int argc, char* argv[])
         {
             printf("%s\n", carla_get_last_error());
         }
-
+#ifdef __cplusplus
+        engine->setAboutToClose();
+#endif
         carla_engine_close();
     }
 
+#ifdef __cplusplus
+    EngineControlEvent e1;
+    EngineMidiEvent e2;
+    EngineEvent e3;
+    e3.fillFromMidiData(0, nullptr);
+    EngineOptions e4;
+    EngineTimeInfoBBT e5;
+    EngineTimeInfo e6;
+#endif
+
     return 0;
 
-    /* unused */
+    /* unused C */
     (void)argc;
     (void)argv;
     (void)a; (void)b; (void)c; (void)d; (void)e;
     (void)f; (void)g; (void)h; (void)i; (void)j; (void)k;
+#ifdef __cplusplus
+    (void)e1; (void)e2; (void)e4; (void)e5; (void)e6;
+#endif
 }
