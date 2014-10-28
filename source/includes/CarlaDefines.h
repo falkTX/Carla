@@ -220,6 +220,21 @@ private:                                        \
     static void* operator new(std::size_t);
 #endif
 
+/* Define CARLA_API */
+#ifdef BUILD_BRIDGE
+# define CARLA_API
+#else
+# if defined(CARLA_OS_WIN) && ! defined(__WINE__)
+#  ifdef BUILDING_CARLA
+#   define CARLA_API __declspec (dllexport)
+#  else
+#   define CARLA_API __declspec (imexport)
+#  endif
+# else
+#  define CARLA_API __attribute__ ((visibility("default")))
+# endif
+#endif
+
 /* Define CARLA_EXTERN_C */
 #ifdef __cplusplus
 # define CARLA_EXTERN_C extern "C"
@@ -232,9 +247,9 @@ private:                                        \
 # define CARLA_EXPORT CARLA_EXTERN_C
 #else
 # if defined(CARLA_OS_WIN) && ! defined(__WINE__)
-#  define CARLA_EXPORT CARLA_EXTERN_C __declspec (dllexport)
+#  define CARLA_EXPORT CARLA_EXTERN_C CARLA_API
 # else
-#  define CARLA_EXPORT CARLA_EXTERN_C __attribute__ ((visibility("default")))
+#  define CARLA_EXPORT CARLA_EXTERN_C CARLA_API
 # endif
 #endif
 
