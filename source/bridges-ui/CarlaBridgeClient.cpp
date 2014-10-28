@@ -245,14 +245,6 @@ bool CarlaBridgeClient::uiLibClose()
     return closed;
 }
 
-void* CarlaBridgeClient::uiLibSymbol(const char* const symbol)
-{
-    CARLA_SAFE_ASSERT_RETURN(fUI.lib != nullptr, nullptr);
-    carla_debug("CarlaBridgeClient::uiLibSymbol(\"%s\")", symbol);
-
-    return lib_symbol(fUI.lib, symbol);
-}
-
 const char* CarlaBridgeClient::uiLibError()
 {
     carla_debug("CarlaBridgeClient::uiLibError()");

@@ -20,6 +20,7 @@
 
 #include "CarlaBridgeOsc.hpp"
 #include "CarlaBridgeToolkit.hpp"
+#include "CarlaLibUtils.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -91,10 +92,21 @@ protected:
 
     void* getContainerId();
     void* getContainerId2();
-    bool  uiLibOpen(const char* const filename);
-    bool  uiLibClose();
-    void* uiLibSymbol(const char* const symbol);
+
+    // ---------------------------------------------------------------------
+
+    bool uiLibOpen(const char* const filename);
+    bool uiLibClose();
     const char* uiLibError();
+
+    template<typename Func>
+    Func uiLibSymbol(const char* const symbol)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI.lib != nullptr, nullptr);
+        carla_debug("CarlaBridgeClient::uiLibSymbol(\"%s\")", symbol);
+
+        return lib_symbol<Func>(fUI.lib, symbol);
+    }
 
     // ---------------------------------------------------------------------
 

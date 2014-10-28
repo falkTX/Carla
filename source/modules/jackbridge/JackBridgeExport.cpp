@@ -34,7 +34,7 @@ public:
 #endif
         CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
 
-        func = (jackbridge_exported_function_type)lib_symbol(lib, "jackbridge_get_exported_functions");
+        func = lib_symbol<jackbridge_exported_function_type>(lib, "jackbridge_get_exported_functions");
         CARLA_SAFE_ASSERT_RETURN(func != nullptr,);
     }
 

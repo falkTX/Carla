@@ -1551,7 +1551,7 @@ public:
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        const LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)pData->libSymbol("ladspa_descriptor");
+        const LADSPA_Descriptor_Function descFn = pData->libSymbol<LADSPA_Descriptor_Function>("ladspa_descriptor");
 
         if (descFn == nullptr)
         {

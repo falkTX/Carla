@@ -72,10 +72,10 @@ public:
         // -----------------------------------------------------------------
         // get DLL main entry
 
-        VST_Function vstFn = (VST_Function)uiLibSymbol("VSTPluginMain");
+        VST_Function vstFn = uiLibSymbol<VST_Function>("VSTPluginMain");
 
         if (vstFn == nullptr)
-            vstFn = (VST_Function)uiLibSymbol("main");
+            vstFn = uiLibSymbol<VST_Function>("main");
 
         if (vstFn == nullptr)
             return false;

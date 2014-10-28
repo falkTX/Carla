@@ -228,7 +228,7 @@ private:                                        \
 #  ifdef BUILDING_CARLA
 #   define CARLA_API __declspec (dllexport)
 #  else
-#   define CARLA_API __declspec (imexport)
+#   define CARLA_API __declspec (dllimport)
 #  endif
 # else
 #  define CARLA_API __attribute__ ((visibility("default")))

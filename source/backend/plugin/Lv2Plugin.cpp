@@ -4581,7 +4581,7 @@ public:
         // ---------------------------------------------------------------
         // try to get DLL main entry via new mode
 
-        if (const LV2_Lib_Descriptor_Function libDescFn = (LV2_Lib_Descriptor_Function)pData->libSymbol("lv2_lib_descriptor"))
+        if (const LV2_Lib_Descriptor_Function libDescFn = pData->libSymbol<LV2_Lib_Descriptor_Function>("lv2_lib_descriptor"))
         {
             // -----------------------------------------------------------
             // all ok, get lib descriptor
@@ -4609,7 +4609,7 @@ public:
             // -----------------------------------------------------------
             // get DLL main entry (old mode)
 
-            const LV2_Descriptor_Function descFn = (LV2_Descriptor_Function)pData->libSymbol("lv2_descriptor");
+            const LV2_Descriptor_Function descFn = pData->libSymbol<LV2_Descriptor_Function>("lv2_descriptor");
 
             if (descFn == nullptr)
             {
@@ -5110,7 +5110,7 @@ public:
         // ---------------------------------------------------------------
         // get UI DLL main entry
 
-        LV2UI_DescriptorFunction uiDescFn = (LV2UI_DescriptorFunction)pData->uiLibSymbol("lv2ui_descriptor");
+        LV2UI_DescriptorFunction uiDescFn = pData->uiLibSymbol<LV2UI_DescriptorFunction>("lv2ui_descriptor");
 
         if (uiDescFn == nullptr)
         {

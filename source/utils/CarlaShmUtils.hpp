@@ -117,7 +117,7 @@ shm_t carla_shm_attach(const char* const filename) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        ret.shm = ::CreateFileA(filename, GENERIC_READ|GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+        ret.shm = ::CreateFileA(filename, GENERIC_READ|GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
         ret.map = nullptr;
 #else
         ret.fd       = ::shm_open(filename, O_RDWR, 0);
@@ -174,7 +174,7 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        const HANDLE map = ::CreateFileMapping(shm.shm, NULL, PAGE_READWRITE, size, size, NULL);
+        const HANDLE map = ::CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr);
         CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
         HANDLE ptr = ::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);

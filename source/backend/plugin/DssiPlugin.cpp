@@ -2025,7 +2025,7 @@ public:
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        const DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)pData->libSymbol("dssi_descriptor");
+        const DSSI_Descriptor_Function descFn = pData->libSymbol<DSSI_Descriptor_Function>("dssi_descriptor");
 
         if (descFn == nullptr)
         {

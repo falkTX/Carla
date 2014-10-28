@@ -415,7 +415,7 @@ public:
         // -----------------------------------------------------------------
         // get DLL main entry
 
-        const LV2UI_DescriptorFunction ui_descFn = (LV2UI_DescriptorFunction)uiLibSymbol("lv2ui_descriptor");
+        const LV2UI_DescriptorFunction ui_descFn = uiLibSymbol<LV2UI_DescriptorFunction>("lv2ui_descriptor");
 
         if (ui_descFn == nullptr)
             return false;

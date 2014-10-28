@@ -403,7 +403,7 @@ private:
 
 static void do_ladspa_check(void*& libHandle, const char* const filename, const bool doInit)
 {
-    LADSPA_Descriptor_Function descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
+    LADSPA_Descriptor_Function descFn = lib_symbol<LADSPA_Descriptor_Function>(libHandle, "ladspa_descriptor");
 
     if (descFn == nullptr)
     {
@@ -443,7 +443,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
                 return;
             }
 
-            descFn = (LADSPA_Descriptor_Function)lib_symbol(libHandle, "ladspa_descriptor");
+            descFn = lib_symbol<LADSPA_Descriptor_Function>(libHandle, "ladspa_descriptor");
 
             if (descFn == nullptr)
             {
@@ -636,7 +636,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
 
 static void do_dssi_check(void*& libHandle, const char* const filename, const bool doInit)
 {
-    DSSI_Descriptor_Function descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
+    DSSI_Descriptor_Function descFn = lib_symbol<DSSI_Descriptor_Function>(libHandle, "dssi_descriptor");
 
     if (descFn == nullptr)
     {
@@ -684,7 +684,7 @@ static void do_dssi_check(void*& libHandle, const char* const filename, const bo
                 return;
             }
 
-            descFn = (DSSI_Descriptor_Function)lib_symbol(libHandle, "dssi_descriptor");
+            descFn = lib_symbol<DSSI_Descriptor_Function>(libHandle, "dssi_descriptor");
 
             if (descFn == nullptr)
             {
@@ -1144,11 +1144,11 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 #ifndef CARLA_OS_MAC
 static void do_vst_check(void*& libHandle, const bool doInit)
 {
-    VST_Function vstFn = (VST_Function)lib_symbol(libHandle, "VSTPluginMain");
+    VST_Function vstFn = lib_symbol<VST_Function>(libHandle, "VSTPluginMain");
 
     if (vstFn == nullptr)
     {
-        vstFn = (VST_Function)lib_symbol(libHandle, "main");
+        vstFn = lib_symbol<VST_Function>(libHandle, "main");
 
         if (vstFn == nullptr)
         {

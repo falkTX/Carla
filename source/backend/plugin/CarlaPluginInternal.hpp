@@ -21,6 +21,7 @@
 #include "CarlaPlugin.hpp"
 #include "CarlaPluginThread.hpp"
 
+#include "CarlaLibUtils.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
@@ -330,13 +331,23 @@ struct CarlaPlugin::ProtectedData {
 
     static const char* libError(const char* const filename) noexcept;
 
-    bool  libOpen(const char* const filename) noexcept;
-    bool  libClose() noexcept;
-    void* libSymbol(const char* const symbol) const noexcept;
+    bool libOpen(const char* const filename) noexcept;
+    bool libClose() noexcept;
 
-    bool  uiLibOpen(const char* const filename, const bool canDelete) noexcept;
-    bool  uiLibClose() noexcept;
-    void* uiLibSymbol(const char* const symbol) const noexcept;
+    bool uiLibOpen(const char* const filename, const bool canDelete) noexcept;
+    bool uiLibClose() noexcept;
+
+    template<typename Func>
+    Func libSymbol(const char* const symbol) const noexcept
+    {
+        return lib_symbol<Func>(lib, symbol);
+    }
+
+    template<typename Func>
+    Func uiLibSymbol(const char* const symbol) const noexcept
+    {
+        return lib_symbol<Func>(uiLib, symbol);
+    }
 
     // -------------------------------------------------------------------
     // Misc

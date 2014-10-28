@@ -2212,11 +2212,11 @@ public:
         // ---------------------------------------------------------------
         // get DLL main entry
 
-        VST_Function vstFn = (VST_Function)pData->libSymbol("VSTPluginMain");
+        VST_Function vstFn = pData->libSymbol<VST_Function>("VSTPluginMain");
 
         if (vstFn == nullptr)
         {
-            vstFn = (VST_Function)pData->libSymbol("main");
+            vstFn = pData->libSymbol<VST_Function>("main");
 
             if (vstFn == nullptr)
             {

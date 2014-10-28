@@ -71,6 +71,8 @@ static void test_CarlaJuceUtils()
 
 // -----------------------------------------------------------------------
 
+typedef void (*nullFunc)();
+
 static void test_CarlaLibUtils() noexcept
 {
     void* const libNot = lib_open("/libzzzzz...");
@@ -80,7 +82,7 @@ static void test_CarlaLibUtils() noexcept
     void* const lib = lib_open("/usr/lib/liblo.so");
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr,);
 
-    void* const libS = lib_symbol(lib, "lo_server_new");
+    const nullFunc libS = lib_symbol<nullFunc>(lib, "lo_server_new");
     CARLA_SAFE_ASSERT(libS != nullptr);
 
     const bool closed = lib_close(lib);

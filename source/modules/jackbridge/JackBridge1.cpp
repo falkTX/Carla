@@ -368,7 +368,7 @@ struct JackBridge {
         }
 
         #define JOIN(a, b) a ## b
-        #define LIB_SYMBOL(NAME) JOIN(NAME, _ptr) = (jacksym_##NAME)lib_symbol(lib, "jack_" #NAME);
+        #define LIB_SYMBOL(NAME) JOIN(NAME, _ptr) = lib_symbol<jacksym_##NAME>(lib, "jack_" #NAME);
 
         LIB_SYMBOL(get_version)
         LIB_SYMBOL(get_version_string)

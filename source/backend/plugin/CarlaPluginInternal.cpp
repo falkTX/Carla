@@ -684,11 +684,6 @@ bool CarlaPlugin::ProtectedData::libClose() noexcept
     return ret;
 }
 
-void* CarlaPlugin::ProtectedData::libSymbol(const char* const symbol) const noexcept
-{
-    return lib_symbol(lib, symbol);
-}
-
 bool CarlaPlugin::ProtectedData::uiLibOpen(const char* const fname, const bool canDelete) noexcept
 {
     uiLib = sLibCounter.open(fname, canDelete);
@@ -700,11 +695,6 @@ bool CarlaPlugin::ProtectedData::uiLibClose() noexcept
     const bool ret = sLibCounter.close(uiLib);
     uiLib = nullptr;
     return ret;
-}
-
-void* CarlaPlugin::ProtectedData::uiLibSymbol(const char* const symbol) const noexcept
-{
-    return lib_symbol(uiLib, symbol);
 }
 
 // -----------------------------------------------------------------------

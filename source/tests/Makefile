@@ -52,7 +52,9 @@ TARGETS += ansi-pedantic-test_cxx11
 TARGETS += CarlaRingBuffer
 TARGETS += CarlaString
 TARGETS += CarlaUtils1
+ifneq ($(WIN32),true)
 TARGETS += CarlaUtils2
+endif
 TARGETS += CarlaUtils3
 TARGETS += CarlaUtils4
 TARGETS += Exceptions
@@ -82,15 +84,21 @@ ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h ../includes
 
 CarlaRingBuffer: CarlaRingBuffer.cpp ../utils/CarlaRingBuffer.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 CarlaString: CarlaString.cpp ../utils/CarlaString.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
@@ -99,24 +107,34 @@ CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 
 CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ -ldl -lrt
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
 		../modules/juce_core.a -ldl -lpthread -lrt
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 Exceptions: Exceptions.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 Print: Print.cpp ../utils/CarlaUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
+ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
+endif
 
 # --------------------------------------------------------------
 

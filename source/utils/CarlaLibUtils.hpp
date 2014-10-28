@@ -67,17 +67,20 @@ bool lib_close(void* const lib) noexcept
  * Get a library symbol (must not be null).
  * Returns null if the symbol is not found.
  */
+template<typename Func>
 static inline
-void* lib_symbol(void* const lib, const char* const symbol) noexcept
+Func lib_symbol(void* const lib, const char* const symbol) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
+    try {
 #ifdef CARLA_OS_WIN
-    return (void*)::GetProcAddress((HMODULE)lib, symbol);
+        return (Func)::GetProcAddress((HMODULE)lib, symbol);
 #else
-    return ::dlsym(lib, symbol);
+        return (Func)(uintptr_t)::dlsym(lib, symbol);
 #endif
+    } CARLA_SAFE_EXCEPTION_RETURN("lib_symbol", nullptr);
 }
 
 /*
