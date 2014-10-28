@@ -40,70 +40,70 @@ typedef void* NativePluginHandle;
 // enums
 
 typedef enum {
-    PLUGIN_CATEGORY_NONE       = 0, //!< Null plugin category.
-    PLUGIN_CATEGORY_SYNTH      = 1, //!< A synthesizer or generator.
-    PLUGIN_CATEGORY_DELAY      = 2, //!< A delay or reverberator.
-    PLUGIN_CATEGORY_EQ         = 3, //!< An equalizer.
-    PLUGIN_CATEGORY_FILTER     = 4, //!< A filter.
-    PLUGIN_CATEGORY_DISTORTION = 5, //!< A distortion plugin.
-    PLUGIN_CATEGORY_DYNAMICS   = 6, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-    PLUGIN_CATEGORY_MODULATOR  = 7, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-    PLUGIN_CATEGORY_UTILITY    = 8, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-    PLUGIN_CATEGORY_OTHER      = 9  //!< Misc plugin (used to check if the plugin has a category).
+    NATIVE_PLUGIN_CATEGORY_NONE       = 0, //!< Null plugin category.
+    NATIVE_PLUGIN_CATEGORY_SYNTH      = 1, //!< A synthesizer or generator.
+    NATIVE_PLUGIN_CATEGORY_DELAY      = 2, //!< A delay or reverberator.
+    NATIVE_PLUGIN_CATEGORY_EQ         = 3, //!< An equalizer.
+    NATIVE_PLUGIN_CATEGORY_FILTER     = 4, //!< A filter.
+    NATIVE_PLUGIN_CATEGORY_DISTORTION = 5, //!< A distortion plugin.
+    NATIVE_PLUGIN_CATEGORY_DYNAMICS   = 6, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
+    NATIVE_PLUGIN_CATEGORY_MODULATOR  = 7, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
+    NATIVE_PLUGIN_CATEGORY_UTILITY    = 8, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
+    NATIVE_PLUGIN_CATEGORY_OTHER      = 9  //!< Misc plugin (used to check if the plugin has a category).
 } NativePluginCategory;
 
 typedef enum {
-    PLUGIN_IS_RTSAFE           = 1 <<  0,
-    PLUGIN_IS_SYNTH            = 1 <<  1,
-    PLUGIN_HAS_UI              = 1 <<  2,
-    PLUGIN_NEEDS_FIXED_BUFFERS = 1 <<  3,
-    PLUGIN_NEEDS_SINGLE_THREAD = 1 <<  4,
-    PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 <<  5,
-    PLUGIN_USES_MULTI_PROGS    = 1 <<  6, // has 1 patch per midi channel
-    PLUGIN_USES_PANNING        = 1 <<  7, // uses stereo balance if unset (default)
-    PLUGIN_USES_STATE          = 1 <<  8,
-    PLUGIN_USES_TIME           = 1 <<  9,
-    PLUGIN_USES_PARENT_ID      = 1 << 10  // can set transient hint to parent
+    NATIVE_PLUGIN_IS_RTSAFE           = 1 <<  0,
+    NATIVE_PLUGIN_IS_SYNTH            = 1 <<  1,
+    NATIVE_PLUGIN_HAS_UI              = 1 <<  2,
+    NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS = 1 <<  3,
+    NATIVE_PLUGIN_NEEDS_SINGLE_THREAD = 1 <<  4,
+    NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 <<  5,
+    NATIVE_PLUGIN_USES_MULTI_PROGS    = 1 <<  6, // has 1 patch per midi channel
+    NATIVE_PLUGIN_USES_PANNING        = 1 <<  7, // uses stereo balance if unset (default)
+    NATIVE_PLUGIN_USES_STATE          = 1 <<  8,
+    NATIVE_PLUGIN_USES_TIME           = 1 <<  9,
+    NATIVE_PLUGIN_USES_PARENT_ID      = 1 << 10  // can set transient hint to parent
 } NativePluginHints;
 
 typedef enum {
-    PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
-    PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
-    PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
-    PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
-    PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
-    PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
-    PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
+    NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
+    NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
+    NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
+    NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
+    NATIVE_PLUGIN_SUPPORTS_PITCHBEND        = 1 << 4,
+    NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF    = 1 << 5,
+    NATIVE_PLUGIN_SUPPORTS_EVERYTHING       = (1 << 6)-1
 } NativePluginSupports;
 
 typedef enum {
-    PARAMETER_IS_OUTPUT        = 1 << 0,
-    PARAMETER_IS_ENABLED       = 1 << 1,
-    PARAMETER_IS_AUTOMABLE     = 1 << 2,
-    PARAMETER_IS_BOOLEAN       = 1 << 3,
-    PARAMETER_IS_INTEGER       = 1 << 4,
-    PARAMETER_IS_LOGARITHMIC   = 1 << 5,
-    PARAMETER_USES_SAMPLE_RATE = 1 << 6,
-    PARAMETER_USES_SCALEPOINTS = 1 << 7,
-    PARAMETER_USES_CUSTOM_TEXT = 1 << 8
+    NATIVE_PARAMETER_IS_OUTPUT        = 1 << 0,
+    NATIVE_PARAMETER_IS_ENABLED       = 1 << 1,
+    NATIVE_PARAMETER_IS_AUTOMABLE     = 1 << 2,
+    NATIVE_PARAMETER_IS_BOOLEAN       = 1 << 3,
+    NATIVE_PARAMETER_IS_INTEGER       = 1 << 4,
+    NATIVE_PARAMETER_IS_LOGARITHMIC   = 1 << 5,
+    NATIVE_PARAMETER_USES_SAMPLE_RATE = 1 << 6,
+    NATIVE_PARAMETER_USES_SCALEPOINTS = 1 << 7,
+    NATIVE_PARAMETER_USES_CUSTOM_TEXT = 1 << 8
 } NativeParameterHints;
 
 typedef enum {
-    PLUGIN_OPCODE_NULL                = 0, // nothing
-    PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
-    PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
-    PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
-    PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
+    NATIVE_PLUGIN_OPCODE_NULL                = 0, // nothing
+    NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
+    NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
+    NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
+    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
 } NativePluginDispatcherOpcode;
 
 typedef enum {
-    HOST_OPCODE_NULL                  = 0, // nothing
-    HOST_OPCODE_UPDATE_PARAMETER      = 1, // uses index, -1 for all
-    HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, // uses index, -1 for all; may use value for channel
-    HOST_OPCODE_RELOAD_PARAMETERS     = 3, // nothing
-    HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, // nothing
-    HOST_OPCODE_RELOAD_ALL            = 5, // nothing
-    HOST_OPCODE_UI_UNAVAILABLE        = 6  // nothing
+    NATIVE_HOST_OPCODE_NULL                  = 0, // nothing
+    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1, // uses index, -1 for all
+    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, // uses index, -1 for all; may use value for channel
+    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3, // nothing
+    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, // nothing
+    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, // nothing
+    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6  // nothing
 } NativeHostDispatcherOpcode;
 
 // -----------------------------------------------------------------------

@@ -17,15 +17,20 @@
 
 #include "CarlaBackend.h"
 #include "CarlaHost.h"
-
-#include <stdio.h>
+#include "CarlaNative.h"
+#include "CarlaMIDI.h"
 
 #ifdef __cplusplus
-CARLA_BACKEND_USE_NAMESPACE
+# include "CarlaEngine.hpp"
+# include "CarlaPlugin.hpp"
+# include <cstdio>
 # ifdef CARLA_PROPER_CPP11_SUPPORT
 #  undef NULL
 #  define NULL nullptr
 # endif
+CARLA_BACKEND_USE_NAMESPACE
+#else
+# include <stdio.h>
 #endif
 
 int main(int argc, char* argv[])
@@ -37,13 +42,12 @@ int main(int argc, char* argv[])
     EngineDriverDeviceInfo e;
 
     CarlaPluginInfo f;
-    CarlaNativePluginInfo g;
+    CarlaCachedPluginInfo g;
     CarlaPortCountInfo h;
     CarlaParameterInfo i;
     CarlaScalePointInfo j;
     CarlaTransportInfo k;
 
-#if 0
     const char* licenseText;
     const char* fileExtensions;
 
@@ -92,7 +96,6 @@ int main(int argc, char* argv[])
 
         carla_engine_close();
     }
-#endif
 
     return 0;
 

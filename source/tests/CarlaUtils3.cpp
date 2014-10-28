@@ -116,6 +116,7 @@ static void test_CarlaLibUtils() noexcept
 
 static void test_CarlaOscUtils() noexcept
 {
+    // nothing for now
 }
 
 // -----------------------------------------------------------------------

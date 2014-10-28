@@ -16,23 +16,27 @@
  */
 
 #include "CarlaDefines.h"
-#include "CarlaUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 // -----------------------------------------------------------------------
 
 struct Struct1 {
-    Struct1() noexcept {}
+    Struct1() noexcept : leakDetector_Struct1() {}
     ~Struct1() noexcept {}
 
     void throwHere()
     {
         throw 1;
     }
+
+    CARLA_LEAK_DETECTOR(Struct1)
 };
 
 struct Struct2 {
-    Struct2() { throw 2; }
+    Struct2() : leakDetector_Struct2() { throw 2; }
     ~Struct2() noexcept {}
+
+    CARLA_LEAK_DETECTOR(Struct2)
 };
 
 // -----------------------------------------------------------------------
@@ -41,32 +45,32 @@ int main()
 {
     carla_safe_assert("test here", __FILE__, __LINE__);
 
-    Struct1 a;
-    Struct1* b;
-    Struct2* c = nullptr;
+    Struct1 a1;
+    Struct1* b1;
+    Struct2* c2 = nullptr;
 
     try {
-        a.throwHere();
+        a1.throwHere();
     } CARLA_SAFE_EXCEPTION("Struct1 a throw");
 
     try {
-        b = new Struct1;
-    } CARLA_SAFE_EXCEPTION("Struct1 b throw constructor");
+        b1 = new Struct1;
+    } CARLA_SAFE_EXCEPTION("NOT POSSIBLE! Struct1 b throw constructor");
 
-    assert(b != nullptr);
+    assert(b1 != nullptr);
 
     try {
-        b->throwHere();
+        b1->throwHere();
     } CARLA_SAFE_EXCEPTION("Struct1 b throw runtime");
 
-    delete b;
-    b = nullptr;
+    delete b1;
+    b1 = nullptr;
 
     try {
-        c = new Struct2;
+        c2 = new Struct2;
     } CARLA_SAFE_EXCEPTION("Struct2 c throw");
 
-    assert(c == nullptr);
+    assert(c2 == nullptr);
 
     return 0;
 }

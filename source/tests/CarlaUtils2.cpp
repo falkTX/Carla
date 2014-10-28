@@ -70,12 +70,12 @@ static void test_CarlaLv2Utils()
     lv2World.initIfNeeded(std::getenv("LV2_PATH"));
 
     // getPlugin
-    const LilvPlugin* const plugin(lv2World.getPlugin("urn:juced:DrumSynth"));
+    const LilvPlugin* const plugin(lv2World.getPluginFromURI("urn:juced:DrumSynth"));
     CARLA_SAFE_ASSERT(plugin != nullptr);
 
     // getState
     LV2_URID_Map uridMap = { nullptr, test_lv2_uridMap };
-    LilvState* const state(lv2World.getState("http://arcticanaudio.com/plugins/thefunction#preset001", &uridMap));
+    LilvState* const state(lv2World.getStateFromURI("http://arcticanaudio.com/plugins/thefunction#preset001", &uridMap));
     CARLA_SAFE_ASSERT(state != nullptr);
     if (state != nullptr) lilv_state_free(state);
 

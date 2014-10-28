@@ -44,29 +44,39 @@ endif
 
 # --------------------------------------------------------------
 
-TARGETS  = ansi-pedantic-test_c ansi-pedantic-test_c99
-TARGETS += CarlaRingBuffer CarlaString
-TARGETS += CarlaUtils1 CarlaUtils2 CarlaUtils3 CarlaUtils4
-TARGETS += Exceptions Print RDF
-
-# ansi-pedantic-test_cxx ansi-pedantic-test_cxx11
-# TARGETS +=  EngineEvents PipeServer RtLinkedList RtLinkedListGnu
+TARGETS  = ansi-pedantic-test_c89
+TARGETS += ansi-pedantic-test_c99
+TARGETS += ansi-pedantic-test_c11
+TARGETS += ansi-pedantic-test_cxx03
+TARGETS += ansi-pedantic-test_cxx11
+TARGETS += CarlaRingBuffer
+TARGETS += CarlaString
+TARGETS += CarlaUtils1
+TARGETS += CarlaUtils2
+TARGETS += CarlaUtils3
+TARGETS += CarlaUtils4
+TARGETS += Exceptions
+TARGETS += Print
+TARGETS += RDF
 
 all: $(TARGETS)
 
 # --------------------------------------------------------------
 
-ansi-pedantic-test_c: ansi-pedantic-test.c ../backend/Carla*.h
-	$(CC) $< $(ANSI_FLAGS) -Wc++-compat -o $@
+ansi-pedantic-test_c89: ansi-pedantic-test.c ../backend/Carla*.h ../includes/*.h
+	$(CC) $< $(ANSI_FLAGS) -std=c89 -pedantic -pedantic-errors -Wc++-compat -L../../bin -lcarla_standalone2 -o $@
 
-ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/Carla*.h
-	$(CC) $< $(ANSI_FLAGS) -std=c99 -pedantic -pedantic-errors -Wc++-compat -o $@
+ansi-pedantic-test_c99: ansi-pedantic-test.c ../backend/Carla*.h ../includes/*.h
+	$(CC) $< $(ANSI_FLAGS) -std=c99 -pedantic -pedantic-errors -Wc++-compat -L../../bin -lcarla_standalone2 -o $@
 
-ansi-pedantic-test_cxx: ansi-pedantic-test.cpp ../backend/Carla*.h
-	$(CXX) $< $(ANSI_FLAGS) -o $@
+ansi-pedantic-test_c11: ansi-pedantic-test.c ../backend/Carla*.h ../includes/*.h
+	$(CC) $< $(ANSI_FLAGS) -std=c11 -pedantic -pedantic-errors -Wc++-compat -L../../bin -lcarla_standalone2 -o $@
 
-ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h
-	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -pedantic -pedantic-errors -o $@
+ansi-pedantic-test_cxx03: ansi-pedantic-test.cpp ../backend/Carla*.h ../includes/*.h
+	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -pedantic -pedantic-errors -L../../bin -lcarla_standalone2 -o $@
+
+ansi-pedantic-test_cxx11: ansi-pedantic-test.cpp ../backend/Carla*.h ../includes/*.h
+	$(CXX) $< $(ANSI_FLAGS) -std=c++11 -pedantic -pedantic-errors -L../../bin -lcarla_standalone2 -o $@
 
 # --------------------------------------------------------------
 
