@@ -24,25 +24,25 @@
 // Define list_entry and list_entry_const
 
 #ifndef offsetof
-# define offsetof(TYPE, MEMBER) ((std::size_t) &((TYPE *)0)->MEMBER)
+# define offsetof(TYPE, MEMBER) ((std::size_t) &((TYPE*)nullptr)->MEMBER)
 #endif
 
 #if (defined(__GNUC__) || defined(__clang__)) && ! defined(__STRICT_ANSI__)
-# define container_of(ptr, type, member) ({                  \
-    typeof( ((type *)0)->member ) *__mptr = (ptr);          \
-    (type *)( (char *)__mptr - offsetof(type, member) );})
-# define container_of_const(ptr, type, member) ({            \
-    const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-    (const type *)( (const char *)__mptr - offsetof(type, member) );})
-# define list_entry(ptr, type, member) \
+# define container_of(ptr, type, member) ({                   \
+    typeof( ((type*)nullptr)->member ) *__mptr = (ptr);       \
+    (type*)( (char*)__mptr - offsetof(type, member) );})
+# define container_of_const(ptr, type, member) ({             \
+    const typeof( ((type*)nullptr)->member ) *__mptr = (ptr); \
+    (const type*)( (const char*)__mptr - offsetof(type, member) );})
+# define list_entry(ptr, type, member)       \
     container_of(ptr, type, member)
 # define list_entry_const(ptr, type, member) \
     container_of_const(ptr, type, member)
 #else
-# define list_entry(ptr, type, member) \
-    ((type *)((char *)(ptr)-offsetof(type, member)))
+# define list_entry(ptr, type, member)       \
+    ((type*)((char*)(ptr)-offsetof(type, member)))
 # define list_entry_const(ptr, type, member) \
-    ((const type *)((const char *)(ptr)-offsetof(type, member)))
+    ((const type*)((const char*)(ptr)-offsetof(type, member)))
 #endif
 
 // -----------------------------------------------------------------------
