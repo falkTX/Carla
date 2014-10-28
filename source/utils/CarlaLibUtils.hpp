@@ -20,8 +20,11 @@
 
 #include "CarlaUtils.hpp"
 
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
+typedef HMODULE lib_t;
+#else
 # include <dlfcn.h>
+typedef void* lib_t;
 #endif
 
 // -----------------------------------------------------------------------
@@ -32,13 +35,13 @@
  * May return null, in which case "lib_error" has the error.
  */
 static inline
-void* lib_open(const char* const filename) noexcept
+lib_t lib_open(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
     try {
 #ifdef CARLA_OS_WIN
-        return (void*)::LoadLibraryA(filename);
+        return ::LoadLibraryA(filename);
 #else
         return ::dlopen(filename, RTLD_NOW|RTLD_LOCAL);
 #endif
@@ -50,13 +53,13 @@ void* lib_open(const char* const filename) noexcept
  * If false is returned, "lib_error" has the error.
  */
 static inline
-bool lib_close(void* const lib) noexcept
+bool lib_close(const lib_t lib) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, false);
 
     try {
 #ifdef CARLA_OS_WIN
-        return ::FreeLibrary((HMODULE)lib);
+        return ::FreeLibrary(lib);
 #else
         return (::dlclose(lib) == 0);
 #endif
@@ -69,14 +72,14 @@ bool lib_close(void* const lib) noexcept
  */
 template<typename Func>
 static inline
-Func lib_symbol(void* const lib, const char* const symbol) noexcept
+Func lib_symbol(const lib_t lib, const char* const symbol) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(lib != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', nullptr);
 
     try {
 #ifdef CARLA_OS_WIN
-        return (Func)::GetProcAddress((HMODULE)lib, symbol);
+        return (Func)::GetProcAddress(lib, symbol);
 #else
         return (Func)(uintptr_t)::dlsym(lib, symbol);
 #endif

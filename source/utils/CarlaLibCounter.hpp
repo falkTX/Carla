@@ -58,7 +58,7 @@ public:
         fLibs.clear();
     }
 
-    void* open(const char* const filename, const bool canDelete = true) noexcept
+    lib_t open(const char* const filename, const bool canDelete = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', nullptr);
 
@@ -87,7 +87,7 @@ public:
             }
         }
 
-        void* const libPtr(lib_open(filename));
+        const lib_t libPtr(lib_open(filename));
 
         if (libPtr == nullptr)
         {
@@ -108,7 +108,7 @@ public:
         return nullptr;
     }
 
-    bool close(void* const libPtr) noexcept
+    bool close(const lib_t libPtr) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(libPtr != nullptr, false);
 
@@ -151,7 +151,7 @@ public:
 
 private:
     struct Lib {
-        void* lib;
+        lib_t lib;
         const char* filename;
         int count;
         bool canDelete;

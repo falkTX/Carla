@@ -217,8 +217,8 @@ struct CarlaPlugin::ProtectedData {
     bool enabled;
     bool needsReset;
 
-    void* lib;
-    void* uiLib;
+    lib_t lib;
+    lib_t uiLib;
 
     // misc
     int8_t ctrlChannel;

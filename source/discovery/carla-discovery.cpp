@@ -1638,7 +1638,7 @@ int main(int argc, char* argv[])
     }
 
     bool openLib = false;
-    void* handle = nullptr;
+    lib_t handle = nullptr;
 
     switch (type)
     {

@@ -117,7 +117,7 @@ private:
     struct UI {
         CarlaBridgeToolkit* const toolkit;
         CarlaString filename;
-        void* lib;
+        lib_t lib;
         bool quit;
 
         UI(CarlaBridgeToolkit* const toolkit_)
