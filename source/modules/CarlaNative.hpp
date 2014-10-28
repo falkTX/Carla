@@ -157,56 +157,56 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_PARAMETER, index, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UPDATE_PARAMETER, index, 0, nullptr, 0.0f);
     }
 
     void hostUpdateAllParameters() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_PARAMETER, -1, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UPDATE_PARAMETER, -1, 0, nullptr, 0.0f);
     }
 
     void hostUpdateMidiProgram(const int32_t index, const intptr_t channel = 0) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_MIDI_PROGRAM, index, channel, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM, index, channel, nullptr, 0.0f);
     }
 
     void hostUpdateAllMidiPrograms(const intptr_t channel = 0) const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UPDATE_MIDI_PROGRAM, -1, channel, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM, -1, channel, nullptr, 0.0f);
     }
 
     void hostReloadParameters() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_PARAMETERS, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_PARAMETERS, 0, 0, nullptr, 0.0f);
     }
 
     void hostReloadMidiPrograms() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_MIDI_PROGRAMS, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS, 0, 0, nullptr, 0.0f);
     }
 
     void hostReloadAll() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_RELOAD_ALL, 0, 0, nullptr, 0.0f);
     }
 
     void hostUiUnavailable() const
     {
         CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
 
-        pHost->dispatcher(pHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -488,20 +488,20 @@ public:
     {
         switch(opcode)
         {
-        case PLUGIN_OPCODE_NULL:
+        case NATIVE_PLUGIN_OPCODE_NULL:
             return 0;
-        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
-        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
-        case PLUGIN_OPCODE_OFFLINE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED:
             handlePtr->offlineChanged(value != 0);
             return 0;
-        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
             handlePtr->uiNameChanged(static_cast<const char*>(ptr));
             return 0;

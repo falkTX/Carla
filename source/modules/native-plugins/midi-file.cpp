@@ -200,8 +200,10 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor midifileDesc = {
-    /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

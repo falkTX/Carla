@@ -85,9 +85,9 @@ static void midisplit_process(NativePluginHandle handle, float** inBuffer, float
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor midisplitDesc = {
-    .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
+    .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
+    .supports  = NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 1,

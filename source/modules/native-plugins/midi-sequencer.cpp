@@ -233,8 +233,8 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor midisequencerDesc = {
-    /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ PLUGIN_IS_RTSAFE/*|PLUGIN_HAS_GUI*/,
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE/*|NATIVE_PLUGIN_HAS_GUI*/,
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

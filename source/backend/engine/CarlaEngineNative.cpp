@@ -1102,26 +1102,26 @@ protected:
                 uint hints = 0x0;
 
                 if (paramData.hints & PARAMETER_IS_BOOLEAN)
-                    hints |= ::PARAMETER_IS_BOOLEAN;
+                    hints |= NATIVE_PARAMETER_IS_BOOLEAN;
                 if (paramData.hints & PARAMETER_IS_INTEGER)
-                    hints |= ::PARAMETER_IS_INTEGER;
+                    hints |= NATIVE_PARAMETER_IS_INTEGER;
                 if (paramData.hints & PARAMETER_IS_LOGARITHMIC)
-                    hints |= ::PARAMETER_IS_LOGARITHMIC;
+                    hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
                 if (paramData.hints & PARAMETER_IS_AUTOMABLE)
-                    hints |= ::PARAMETER_IS_AUTOMABLE;
+                    hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
                 if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-                    hints |= ::PARAMETER_USES_SAMPLE_RATE;
+                    hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
                 if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
-                    hints |= ::PARAMETER_USES_SCALEPOINTS;
+                    hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
                 if (paramData.hints & PARAMETER_USES_CUSTOM_TEXT)
-                    hints |= ::PARAMETER_USES_CUSTOM_TEXT;
+                    hints |= NATIVE_PARAMETER_USES_CUSTOM_TEXT;
 
                 if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
                 {
                     if (paramData.hints & PARAMETER_IS_ENABLED)
-                        hints |= ::PARAMETER_IS_ENABLED;
+                        hints |= NATIVE_PARAMETER_IS_ENABLED;
                     if (paramData.type == PARAMETER_OUTPUT)
-                        hints |= ::PARAMETER_IS_OUTPUT;
+                        hints |= NATIVE_PARAMETER_IS_OUTPUT;
                 }
 
                 param.hints = static_cast<NativeParameterHints>(hints);
@@ -1503,7 +1503,7 @@ protected:
         case CarlaExternalUI::UiShow:
             break;
         case CarlaExternalUI::UiCrashed:
-            pHost->dispatcher(pHost->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
+            pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
@@ -1639,20 +1639,20 @@ public:
     {
         switch(opcode)
         {
-        case PLUGIN_OPCODE_NULL:
+        case NATIVE_PLUGIN_OPCODE_NULL:
             return 0;
-        case PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
             handlePtr->bufferSizeChanged(static_cast<uint32_t>(value));
             return 0;
-        case PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(opt > 0.0, 0);
             handlePtr->sampleRateChanged(static_cast<double>(opt));
             return 0;
-        case PLUGIN_OPCODE_OFFLINE_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED:
             handlePtr->offlineModeChanged(value != 0);
             return 0;
-        case PLUGIN_OPCODE_UI_NAME_CHANGED:
+        case NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED:
             //handlePtr->uiNameChanged(static_cast<const char*>(ptr));
             return 0;
         }
@@ -1704,9 +1704,14 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor carlaRackDesc = {
-    /* category  */ ::PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
@@ -1742,9 +1747,14 @@ static const NativePluginDescriptor carlaRackDesc = {
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
-    /* category  */ ::PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
@@ -1780,9 +1790,14 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
-    /* category  */ ::PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 16,
     /* audioOuts */ 16,
     /* midiIns   */ 1,
@@ -1818,9 +1833,14 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
-    /* category  */ ::PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(::PLUGIN_IS_SYNTH|::PLUGIN_HAS_UI|::PLUGIN_NEEDS_FIXED_BUFFERS|::PLUGIN_NEEDS_SINGLE_THREAD|::PLUGIN_USES_STATE|::PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(::PLUGIN_SUPPORTS_EVERYTHING),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
     /* audioIns  */ 32,
     /* audioOuts */ 32,
     /* midiIns   */ 1,

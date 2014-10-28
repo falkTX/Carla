@@ -215,25 +215,25 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     switch (pluginDesc->category)
     {
-    case PLUGIN_CATEGORY_SYNTH:
+    case NATIVE_PLUGIN_CATEGORY_SYNTH:
         text += "    a lv2:InstrumentPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_DELAY:
+    case NATIVE_PLUGIN_CATEGORY_DELAY:
         text += "    a lv2:DelayPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_EQ:
+    case NATIVE_PLUGIN_CATEGORY_EQ:
         text += "    a lv2:EQPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_FILTER:
+    case NATIVE_PLUGIN_CATEGORY_FILTER:
         text += "    a lv2:FilterPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_DYNAMICS:
+    case NATIVE_PLUGIN_CATEGORY_DYNAMICS:
         text += "    a lv2:DynamicsPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_MODULATOR:
+    case NATIVE_PLUGIN_CATEGORY_MODULATOR:
         text += "    a lv2:ModulatorPlugin, lv2:Plugin ;\n";
         break;
-    case PLUGIN_CATEGORY_UTILITY:
+    case NATIVE_PLUGIN_CATEGORY_UTILITY:
         text += "    a lv2:UtilityPlugin, lv2:Plugin ;\n";
         break;
     default:
@@ -246,12 +246,12 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Features
 
-    if (pluginDesc->hints & PLUGIN_IS_RTSAFE)
+    if (pluginDesc->hints & NATIVE_PLUGIN_IS_RTSAFE)
         text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n\n";
 
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
 
-    if (pluginDesc->hints & PLUGIN_NEEDS_FIXED_BUFFERS)
+    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
 
     text += "                        <" LV2_OPTIONS__options "> ,\n";
@@ -263,12 +263,12 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     text += "    lv2:extensionData <" LV2_OPTIONS__interface ">";
 
-    if (pluginDesc->hints & PLUGIN_USES_STATE)
+    if (pluginDesc->hints & NATIVE_PLUGIN_USES_STATE)
     {
         text += " ,\n";
         text += "                      <" LV2_STATE__interface ">";
 
-        if (pluginDesc->category != PLUGIN_CATEGORY_SYNTH)
+        if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
         {
             text += " ,\n";
             text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
@@ -276,7 +276,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         else
             text += " ;\n";
     }
-    else if (pluginDesc->category != PLUGIN_CATEGORY_SYNTH)
+    else if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
     {
         text += " ,\n";
         text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
@@ -289,7 +289,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // UIs
 
-    if (pluginDesc->hints & PLUGIN_HAS_UI)
+    if (pluginDesc->hints & NATIVE_PLUGIN_HAS_UI)
     {
         text += "    ui:ui <http://kxstudio.sf.net/carla/ui> ;\n";
         text += "\n";
@@ -298,13 +298,13 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // First MIDI/Time port
 
-    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & PLUGIN_USES_TIME) != 0)
+    if (pluginDesc->midiIns > 0 || (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
     {
         text += "    lv2:port [\n";
         text += "        a lv2:InputPort, atom:AtomPort ;\n";
         text += "        atom:bufferType atom:Sequence ;\n";
 
-        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & PLUGIN_USES_TIME) != 0)
+        if (pluginDesc->midiIns > 0 && (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             text += "        atom:supports <" LV2_MIDI__MidiEvent "> ,\n";
             text += "                      <" LV2_TIME__Position "> ;\n";
@@ -467,7 +467,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         if (i == 0)
             text += "    lv2:port [\n";
 
-        if (paramInfo->hints & PARAMETER_IS_OUTPUT)
+        if (paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT)
             text += "        a lv2:OutputPort, lv2:ControlPort ;\n";
         else
             text += "        a lv2:InputPort, lv2:ControlPort ;\n";
@@ -484,21 +484,21 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
         text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
 
-        if (paramInfo->hints & PARAMETER_IS_ENABLED)
+        if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
         {
-            if ((paramInfo->hints & PARAMETER_IS_AUTOMABLE) == 0)
+            if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE) == 0)
                 text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
-            if (paramInfo->hints & PARAMETER_IS_BOOLEAN)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
                 text += "        lv2:portProperty lv2:toggled ;\n";
-            if (paramInfo->hints & PARAMETER_IS_INTEGER)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
                 text += "        lv2:portProperty lv2:integer ;\n";
-            if (paramInfo->hints & PARAMETER_IS_LOGARITHMIC)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
                 text += "        lv2:portProperty <" LV2_PORT_PROPS__logarithmic "> ;\n";
-            if (paramInfo->hints & PARAMETER_USES_SAMPLE_RATE)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
                 text += "        lv2:portProperty lv2:toggled ;\n";
-            if (paramInfo->hints & PARAMETER_USES_SCALEPOINTS)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
                 text += "        lv2:portProperty lv2:enumeration ;\n";
-            if (paramInfo->hints & PARAMETER_USES_CUSTOM_TEXT)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_CUSTOM_TEXT)
                 pass(); // TODO: custom lv2 extension for this
         }
         else

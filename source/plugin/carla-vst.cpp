@@ -183,7 +183,7 @@ public:
             fSampleRate = opt;
 
             if (fDescriptor->dispatcher != nullptr)
-                fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
             break;
 
         case effSetBlockSize:
@@ -193,7 +193,7 @@ public:
             fBufferSize = static_cast<uint32_t>(value);
 
             if (fDescriptor->dispatcher != nullptr)
-                fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
             break;
 
         case effMainsChanged:

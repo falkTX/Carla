@@ -292,10 +292,10 @@ public:
 
         uint options = 0x0;
 
-        if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
+        if (hasMidiProgs && (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (getMidiInCount() == 0 && (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
+        if (getMidiInCount() == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -306,15 +306,15 @@ public:
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CONTROL_CHANGES)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return options;
@@ -505,7 +505,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
-        if (pData->midiprog.count > 0 && fDescriptor->category == ::PLUGIN_CATEGORY_SYNTH)
+        if (pData->midiprog.count > 0 && fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
         {
             char strBuf[STR_MAX+1];
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i:%i",
@@ -518,7 +518,7 @@ public:
             CarlaPlugin::setCustomData(CUSTOM_DATA_TYPE_STRING, "midiPrograms", strBuf, false);
         }
 
-        if (fDescriptor == nullptr || fDescriptor->get_state == nullptr || (fDescriptor->hints & ::PLUGIN_USES_STATE) == 0)
+        if (fDescriptor == nullptr || fDescriptor->get_state == nullptr || (fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0)
             return;
 
         if (char* data = fDescriptor->get_state(fHandle))
@@ -546,7 +546,7 @@ public:
         fHost.uiName = carla_strdup(uiName);
 
         if (fDescriptor->dispatcher != nullptr)
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_UI_NAME_CHANGED, 0, 0, uiName, 0.0f);
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED, 0, 0, uiName, 0.0f);
 
         CarlaPlugin::setName(newName);
     }
@@ -594,7 +594,7 @@ public:
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) == 0)
         {
-            if (fDescriptor->set_state != nullptr && (fDescriptor->hints & ::PLUGIN_USES_STATE) != 0)
+            if (fDescriptor->set_state != nullptr && (fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) != 0)
             {
                 const ScopedSingleProcessLocker spl(this, true);
 
@@ -716,7 +716,7 @@ public:
         }
 
 #ifndef BUILD_BRIDGE
-        if ((fDescriptor->hints & ::PLUGIN_USES_PARENT_ID) == 0 && std::strstr(fDescriptor->label, "file") == nullptr)
+        if ((fDescriptor->hints & NATIVE_PLUGIN_USES_PARENT_ID) == 0 && std::strstr(fDescriptor->label, "file") == nullptr)
             pData->tryTransient();
 #endif
 
@@ -1002,7 +1002,7 @@ public:
             else if (def > max)
                 def = max;
 
-            if (paramInfo->hints & ::PARAMETER_USES_SAMPLE_RATE)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
             {
                 min *= sampleRate;
                 max *= sampleRate;
@@ -1010,14 +1010,14 @@ public:
                 pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
             }
 
-            if (paramInfo->hints & ::PARAMETER_IS_BOOLEAN)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
             {
                 step = max - min;
                 stepSmall = step;
                 stepLarge = step;
                 pData->param.data[j].hints |= PARAMETER_IS_BOOLEAN;
             }
-            else if (paramInfo->hints & ::PARAMETER_IS_INTEGER)
+            else if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
             {
                 step = 1.0f;
                 stepSmall = 1.0f;
@@ -1032,7 +1032,7 @@ public:
                 stepLarge = range/10.0f;
             }
 
-            if (paramInfo->hints & ::PARAMETER_IS_OUTPUT)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT)
             {
                 pData->param.data[j].type = PARAMETER_OUTPUT;
                 needsCtrlOut = true;
@@ -1044,19 +1044,19 @@ public:
             }
 
             // extra parameter hints
-            if (paramInfo->hints & ::PARAMETER_IS_ENABLED)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
                 pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
 
-            if (paramInfo->hints & ::PARAMETER_IS_AUTOMABLE)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;
 
-            if (paramInfo->hints & ::PARAMETER_IS_LOGARITHMIC)
+            if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
                 pData->param.data[j].hints |= PARAMETER_IS_LOGARITHMIC;
 
-            if (paramInfo->hints & ::PARAMETER_USES_SCALEPOINTS)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
                 pData->param.data[j].hints |= PARAMETER_USES_SCALEPOINTS;
 
-            if (paramInfo->hints & ::PARAMETER_USES_CUSTOM_TEXT)
+            if (paramInfo->hints & NATIVE_PARAMETER_USES_CUSTOM_TEXT)
                 pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
 
             pData->param.ranges[j].min = min;
@@ -1117,15 +1117,15 @@ public:
             pData->hints |= PLUGIN_CAN_BALANCE;
 
         // native plugin hints
-        if (fDescriptor->hints & ::PLUGIN_IS_RTSAFE)
+        if (fDescriptor->hints & NATIVE_PLUGIN_IS_RTSAFE)
             pData->hints |= PLUGIN_IS_RTSAFE;
-        if (fDescriptor->hints & ::PLUGIN_IS_SYNTH)
+        if (fDescriptor->hints & NATIVE_PLUGIN_IS_SYNTH)
             pData->hints |= PLUGIN_IS_SYNTH;
-        if (fDescriptor->hints & ::PLUGIN_HAS_UI)
+        if (fDescriptor->hints & NATIVE_PLUGIN_HAS_UI)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-        if (fDescriptor->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
             pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
-        if (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS)
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
 
         // extra plugin hints
@@ -1134,7 +1134,7 @@ public:
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
-        if (fDescriptor->hints & ::PLUGIN_USES_MULTI_PROGS)
+        if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
             pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         bufferSizeChanged(pData->engine->getBufferSize());
@@ -1923,10 +1923,10 @@ public:
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
+                fDescriptor->dispatcher(fHandle2, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
         }
     }
 
@@ -1937,10 +1937,10 @@ public:
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
+                fDescriptor->dispatcher(fHandle2, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
         }
     }
 
@@ -1948,10 +1948,10 @@ public:
     {
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
-            fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
+            fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
 
             if (fHandle2 != nullptr)
-                fDescriptor->dispatcher(fHandle2, PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
+                fDescriptor->dispatcher(fHandle2, NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
         }
     }
 
@@ -2162,29 +2162,29 @@ protected:
 
         switch (opcode)
         {
-        case ::HOST_OPCODE_NULL:
+        case NATIVE_HOST_OPCODE_NULL:
             break;
-        case ::HOST_OPCODE_UPDATE_PARAMETER:
+        case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
             // TODO
             pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case ::HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+        case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
             // TODO
             pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case ::HOST_OPCODE_RELOAD_PARAMETERS:
+        case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
             reload(); // FIXME
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PARAMETERS, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case ::HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+        case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
             reloadPrograms(false);
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case ::HOST_OPCODE_RELOAD_ALL:
+        case NATIVE_HOST_OPCODE_RELOAD_ALL:
             reload();
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_ALL, pData->id, -1, 0, 0.0f, nullptr);
             break;
-        case ::HOST_OPCODE_UI_UNAVAILABLE:
+        case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
             break;
         }
@@ -2326,22 +2326,22 @@ public:
 
         pData->options = 0x0;
 
-        if (hasMidiProgs && (fDescriptor->supports & ::PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
+        if (hasMidiProgs && (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (getMidiInCount() > 0 || (fDescriptor->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+        if (getMidiInCount() > 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getOptions().forceStereo)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH)
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_PITCHBEND)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PITCHBEND)
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
-        if (fDescriptor->supports & ::PLUGIN_SUPPORTS_ALL_SOUND_OFF)
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
         return true;

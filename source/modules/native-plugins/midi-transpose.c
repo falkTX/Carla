@@ -65,7 +65,7 @@ static const NativeParameter* miditranspose_get_parameter_info(NativePluginHandl
 
     param.name  = "Octaves";
     param.unit  = NULL;
-    param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE|PARAMETER_IS_INTEGER;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
     param.ranges.def = 0.0f;
     param.ranges.min = -8.0f;
     param.ranges.max = 8.0f;
@@ -144,9 +144,9 @@ static void miditranspose_process(NativePluginHandle handle, float** inBuffer, f
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor miditransposeDesc = {
-    .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
+    .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
+    .supports  = NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 1,

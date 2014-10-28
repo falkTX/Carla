@@ -54,7 +54,7 @@ struct PluginListManager {
             const NativePluginDescriptor* const desc(CarlaPlugin::getNativePluginDescriptor(i));
 
             // Open/Save not possible in plugins
-            if (desc->hints & PLUGIN_NEEDS_UI_OPEN_SAVE)
+            if (desc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
                 continue;
 
             // skip some plugins

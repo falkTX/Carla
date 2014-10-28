@@ -84,7 +84,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
     static NativeParameter param;
     static NativeParameterScalePoint paramModes[5];
 
-    param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;
 
@@ -105,7 +105,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
     case PARAM_MODE:
         param.name   = "Mode";
         param.unit   = NULL;
-        param.hints |= PARAMETER_IS_INTEGER|PARAMETER_USES_SCALEPOINTS;
+        param.hints |= NATIVE_PARAMETER_IS_INTEGER|NATIVE_PARAMETER_USES_SCALEPOINTS;
         param.ranges.def = 1.0f;
         param.ranges.min = 1.0f;
         param.ranges.max = 5.0f;
@@ -148,7 +148,7 @@ static const NativeParameter* lfo_get_parameter_info(NativePluginHandle handle, 
     case PARAM_LFO_OUT:
         param.name   = "LFO Out";
         param.unit   = NULL;
-        param.hints |= PARAMETER_IS_OUTPUT;
+        param.hints |= NATIVE_PARAMETER_IS_OUTPUT;
         param.ranges.def = 0.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -265,8 +265,8 @@ static void lfo_process(NativePluginHandle handle, float** inBuffer, float** out
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor lfoDesc = {
-    .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
+    .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
     .supports  = 0x0,
     .audioIns  = 0,
     .audioOuts = 0,

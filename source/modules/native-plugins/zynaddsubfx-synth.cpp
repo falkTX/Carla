@@ -809,13 +809,17 @@ public:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor zynaddsubfxDesc = {
-    /* category  */ PLUGIN_CATEGORY_SYNTH,
+    /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
 #ifdef WANT_ZYNADDSUBFX_UI
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_HAS_UI|PLUGIN_USES_MULTI_PROGS|PLUGIN_USES_STATE),
-#else
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_SYNTH|PLUGIN_USES_MULTI_PROGS|PLUGIN_USES_STATE),
+                                                  |NATIVE_PLUGIN_HAS_UI
 #endif
-    /* supports  */ static_cast<NativePluginSupports>(PLUGIN_SUPPORTS_CONTROL_CHANGES|PLUGIN_SUPPORTS_NOTE_AFTERTOUCH|PLUGIN_SUPPORTS_PITCHBEND|PLUGIN_SUPPORTS_ALL_SOUND_OFF),
+                                                  |NATIVE_PLUGIN_USES_MULTI_PROGS
+                                                  |NATIVE_PLUGIN_USES_STATE),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES
+                                                     |NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH
+                                                     |NATIVE_PLUGIN_SUPPORTS_PITCHBEND
+                                                     |NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 1,

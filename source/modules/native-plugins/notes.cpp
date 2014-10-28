@@ -49,7 +49,9 @@ protected:
 
         static NativeParameter param;
 
-        param.hints = static_cast<NativeParameterHints>(PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE|PARAMETER_IS_INTEGER);
+        param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_ENABLED
+                                                       |NATIVE_PARAMETER_IS_AUTOMABLE
+                                                       |NATIVE_PARAMETER_IS_INTEGER);
         param.name  = "Page";
         param.unit  = nullptr;
         param.ranges.def       = 1.0f;
@@ -100,8 +102,8 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor notesDesc = {
-    /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

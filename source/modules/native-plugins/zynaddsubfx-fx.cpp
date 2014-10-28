@@ -212,7 +212,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -228,17 +228,17 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 70.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -250,17 +250,17 @@ protected:
             scalePoints[1].value  = 1.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 62.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Depth";
             param.ranges.def = 60.0f;
             break;
         case 5:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 105.0f;
             break;
@@ -271,12 +271,12 @@ protected:
             param.ranges.max = 100.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Cross";
             param.ranges.def = 0.0f;
             break;
         case 8:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Phase";
             param.ranges.def = 64.0f;
             break;
@@ -358,7 +358,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -374,17 +374,17 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 50.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -396,38 +396,38 @@ protected:
             scalePoints[1].value  = 1.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 90.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Depth";
             param.ranges.def = 40.0f;
             break;
         case 5:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Delay";
             param.ranges.def = 85.0f;
             break;
         case 6:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 64.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Cross";
             param.ranges.def = 119.0f;
             break;
         case 8:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Flange Mode";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 9:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Subtract Output";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -528,7 +528,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[14];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -544,22 +544,22 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Cross";
             param.ranges.def = 35.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Drive";
             param.ranges.def = 56.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Level";
             param.ranges.def = 70.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "Type";
             param.ranges.def = 0.0f;
             param.ranges.max = 13.0f;
@@ -595,29 +595,29 @@ protected:
             scalePoints[13].value = 13.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Negate";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 5:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Low-Pass Filter";
             param.ranges.def = 96.0f;
             break;
         case 6:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "High-Pass Filter";
             param.ranges.def = 0.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Stereo";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 8:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Pre-Filtering";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -706,7 +706,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -722,17 +722,17 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 80.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -744,28 +744,28 @@ protected:
             scalePoints[1].value  = 1.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 64.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Depth";
             param.ranges.def = 0.0f;
             break;
         case 5:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Amp sns";
             param.ranges.def = 90.0f;
             break;
         case 6:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Amp sns inv";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Amp Smooth";
             param.ranges.def = 60.0f;
             break;
@@ -849,7 +849,7 @@ protected:
 
         static NativeParameter param;
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -865,27 +865,27 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Delay";
             param.ranges.def = 35.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Delay";
             param.ranges.def = 64.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Cross";
             param.ranges.def = 30.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 59.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "High Damp";
             param.ranges.def = 0.0f;
             break;
@@ -982,7 +982,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -998,17 +998,17 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Frequency";
             param.ranges.def = 36.0f;
             break;
         case 1:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Randomness";
             param.ranges.def = 0.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "LFO Type";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -1020,17 +1020,17 @@ protected:
             scalePoints[1].value  = 1.0f;
             break;
         case 3:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "LFO Stereo";
             param.ranges.def = 64.0f;
             break;
         case 4:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Depth";
             param.ranges.def = 110.0f;
             break;
         case 5:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 64.0f;
             break;
@@ -1041,34 +1041,34 @@ protected:
             param.ranges.max = 12.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "L/R Cross|Offset";
             param.ranges.def = 0.0f;
             break;
         case 8:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Subtract Output";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 9:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Phase|Width";
             param.ranges.def = 20.0f;
             break;
         case 10:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Hyper";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
             break;
         case 11:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Distortion";
             param.ranges.def = 0.0f;
             break;
         case 12:
-            hints |= PARAMETER_IS_AUTOMABLE|PARAMETER_IS_BOOLEAN;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
             param.name = "Analog";
             param.ranges.def = 0.0f;
             param.ranges.max = 1.0f;
@@ -1175,7 +1175,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[3];
 
-        int hints = PARAMETER_IS_ENABLED | PARAMETER_IS_INTEGER;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -1191,7 +1191,7 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Time";
             param.ranges.def = 63.0f;
             break;
@@ -1200,7 +1200,7 @@ protected:
             param.ranges.def = 24.0f;
             break;
         case 2:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Feedback";
             param.ranges.def = 0.0f;
             break;
@@ -1221,13 +1221,13 @@ protected:
             param.ranges.def = 5.0f;
             break;
         case 7:
-            hints |= PARAMETER_IS_AUTOMABLE;
+            hints |= NATIVE_PARAMETER_IS_AUTOMABLE;
             param.name = "Damp";
             param.ranges.def = 83.0f;
             param.ranges.min = 64.0f;
             break;
         case 8:
-            hints |= PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "Type";
             param.ranges.def = 1.0f;
             param.ranges.max = 2.0f;
@@ -1333,8 +1333,8 @@ protected:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor fxAlienWahDesc = {
-    /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1350,8 +1350,8 @@ static const NativePluginDescriptor fxAlienWahDesc = {
 };
 
 static const NativePluginDescriptor fxChorusDesc = {
-    /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1367,8 +1367,8 @@ static const NativePluginDescriptor fxChorusDesc = {
 };
 
 static const NativePluginDescriptor fxDistortionDesc = {
-    /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1384,8 +1384,8 @@ static const NativePluginDescriptor fxDistortionDesc = {
 };
 
 static const NativePluginDescriptor fxDynamicFilterDesc = {
-    /* category  */ PLUGIN_CATEGORY_FILTER,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1401,8 +1401,8 @@ static const NativePluginDescriptor fxDynamicFilterDesc = {
 };
 
 static const NativePluginDescriptor fxEchoDesc = {
-    /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1418,8 +1418,8 @@ static const NativePluginDescriptor fxEchoDesc = {
 };
 
 static const NativePluginDescriptor fxPhaserDesc = {
-    /* category  */ PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1435,8 +1435,8 @@ static const NativePluginDescriptor fxPhaserDesc = {
 };
 
 static const NativePluginDescriptor fxReverbDesc = {
-    /* category  */ PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_USES_PANNING|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

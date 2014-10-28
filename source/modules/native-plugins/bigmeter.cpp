@@ -57,7 +57,7 @@ protected:
         static NativeParameter param;
         static NativeParameterScalePoint scalePoints[2];
 
-        int hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
 
         param.name = nullptr;
         param.unit = nullptr;
@@ -73,7 +73,7 @@ protected:
         switch (index)
         {
         case 0:
-            hints |= PARAMETER_IS_INTEGER|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_INTEGER|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "Color";
             param.ranges.def = 1.0f;
             param.ranges.min = 1.0f;
@@ -86,7 +86,7 @@ protected:
             param.scalePoints     = scalePoints;
             break;
         case 1:
-            hints |= PARAMETER_IS_INTEGER|PARAMETER_USES_SCALEPOINTS;
+            hints |= NATIVE_PARAMETER_IS_INTEGER|NATIVE_PARAMETER_USES_SCALEPOINTS;
             param.name = "Style";
             param.ranges.def = 1.0f;
             param.ranges.min = 1.0f;
@@ -99,11 +99,11 @@ protected:
             param.scalePoints     = scalePoints;
             break;
         case 2:
-            hints |= PARAMETER_IS_OUTPUT;
+            hints |= NATIVE_PARAMETER_IS_OUTPUT;
             param.name = "Out Left";
             break;
         case 3:
-            hints |= PARAMETER_IS_OUTPUT;
+            hints |= NATIVE_PARAMETER_IS_OUTPUT;
             param.name = "Out Right";
             break;
         }
@@ -179,8 +179,10 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor bigmeterDesc = {
-    /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI|PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 0,

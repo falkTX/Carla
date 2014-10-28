@@ -28,13 +28,16 @@
 #  undef NULL
 #  define NULL nullptr
 # endif
-CARLA_BACKEND_USE_NAMESPACE
 #else
 # include <stdio.h>
 #endif
 
 int main(int argc, char* argv[])
 {
+#ifdef __cplusplus
+    CARLA_BACKEND_USE_NAMESPACE
+#endif
+
     ParameterData a;
     ParameterRanges b;
     MidiProgramData c;

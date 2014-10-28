@@ -168,7 +168,7 @@ public:
 
         if (fDescriptor->midiIns > 0)
             fUI.portOffset += desc->midiIns;
-        else if (fDescriptor->hints & PLUGIN_USES_TIME)
+        else if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             fUI.portOffset += 1;
 
         fUI.portOffset += desc->midiOuts;
@@ -262,14 +262,14 @@ public:
 
             curValue = *fPorts.paramsPtr[i];
 
-            if ((! carla_compareFloats(fPorts.paramsLast[i], curValue)) && (fDescriptor->get_parameter_info(fHandle, i)->hints & PARAMETER_IS_OUTPUT) == 0)
+            if ((! carla_compareFloats(fPorts.paramsLast[i], curValue)) && (fDescriptor->get_parameter_info(fHandle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT) == 0)
             {
                 fPorts.paramsLast[i] = curValue;
                 fDescriptor->set_parameter_value(fHandle, i, curValue);
             }
         }
 
-        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIME) != 0)
+        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
             carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
@@ -549,7 +549,7 @@ public:
                     fBufferSize = static_cast<uint32_t>(value);
 
                     if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
                 }
                 else
                     carla_stderr("Host changed maxBlockLength but with wrong value type");
@@ -564,7 +564,7 @@ public:
                     fSampleRate = value;
 
                     if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
                 }
                 else
                     carla_stderr("Host changed sampleRate but with wrong value type");
@@ -576,7 +576,7 @@ public:
 
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index)
     {
-        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
+        if (fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
             return nullptr;
         if (fDescriptor->get_midi_program_count == nullptr)
             return nullptr;
@@ -599,7 +599,7 @@ public:
 
     void lv2_select_program(uint32_t bank, uint32_t program)
     {
-        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
+        if (fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
             return;
         if (fDescriptor->set_midi_program == nullptr)
             return;
@@ -609,7 +609,7 @@ public:
 
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
     {
-        if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
+        if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
 
         if (char* const state = fDescriptor->get_state(fHandle))
@@ -624,7 +624,7 @@ public:
 
     LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* const /*features*/) const
     {
-        if ((fDescriptor->hints & PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
+        if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
 
         size_t   size = 0;
@@ -737,7 +737,7 @@ public:
 
     void lv2ui_select_program(uint32_t bank, uint32_t program) const
     {
-        if (fDescriptor->category == PLUGIN_CATEGORY_SYNTH)
+        if (fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
             return;
         if (fDescriptor->ui_set_midi_program == nullptr)
             return;
@@ -883,15 +883,15 @@ protected:
 
         switch (opcode)
         {
-        case HOST_OPCODE_NULL:
-        case HOST_OPCODE_UPDATE_PARAMETER:
-        case HOST_OPCODE_UPDATE_MIDI_PROGRAM:
-        case HOST_OPCODE_RELOAD_PARAMETERS:
-        case HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
-        case HOST_OPCODE_RELOAD_ALL:
+        case NATIVE_HOST_OPCODE_NULL:
+        case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
+        case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+        case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
+        case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+        case NATIVE_HOST_OPCODE_RELOAD_ALL:
             // nothing
             break;
-        case HOST_OPCODE_UI_UNAVAILABLE:
+        case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             handleUiClosed();
             break;
         }
@@ -909,7 +909,7 @@ protected:
     {
         for (uint32_t i=0; i < fPorts.paramCount; ++i)
         {
-            if (fDescriptor->get_parameter_info(fHandle, i)->hints & PARAMETER_IS_OUTPUT)
+            if (fDescriptor->get_parameter_info(fHandle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT)
             {
                 fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
 
@@ -1089,7 +1089,7 @@ private:
                 for (uint32_t i=0; i < desc->midiIns; ++i)
                     eventsIn[i] = nullptr;
             }
-            else if (desc->hints & PLUGIN_USES_TIME)
+            else if (desc->hints & NATIVE_PLUGIN_USES_TIME)
             {
                 eventsIn = new LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
@@ -1141,7 +1141,7 @@ private:
         {
             uint32_t index = 0;
 
-            if (desc->midiIns > 0 || (desc->hints & PLUGIN_USES_TIME) != 0)
+            if (desc->midiIns > 0 || (desc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
             {
                 if (port == index++)
                 {

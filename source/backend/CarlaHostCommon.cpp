@@ -330,15 +330,15 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         info.category = static_cast<CB::PluginCategory>(desc->category);
         info.hints    = 0x0;
 
-        if (desc->hints & ::PLUGIN_IS_RTSAFE)
+        if (desc->hints & NATIVE_PLUGIN_IS_RTSAFE)
             info.hints |= CB::PLUGIN_IS_RTSAFE;
-        if (desc->hints & ::PLUGIN_IS_SYNTH)
+        if (desc->hints & NATIVE_PLUGIN_IS_SYNTH)
             info.hints |= CB::PLUGIN_IS_SYNTH;
-        if (desc->hints & ::PLUGIN_HAS_UI)
+        if (desc->hints & NATIVE_PLUGIN_HAS_UI)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-        if (desc->hints & ::PLUGIN_NEEDS_FIXED_BUFFERS)
+        if (desc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
-        if (desc->hints & ::PLUGIN_NEEDS_SINGLE_THREAD)
+        if (desc->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
             info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
 
         info.audioIns      = desc->audioIns;

@@ -44,8 +44,8 @@ static void bypass_process(NativePluginHandle handle, float** inBuffer, float** 
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor bypassDesc = {
-    .category  = PLUGIN_CATEGORY_NONE,
-    .hints     = PLUGIN_IS_RTSAFE,
+    .category  = NATIVE_PLUGIN_CATEGORY_NONE,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
     .supports  = 0x0,
     .audioIns  = 1,
     .audioOuts = 1,

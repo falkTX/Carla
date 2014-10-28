@@ -78,7 +78,7 @@ static const NativeParameter* midigain_get_parameter_info(NativePluginHandle han
 
     static NativeParameter param;
 
-    param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
     param.unit  = NULL;
     param.scalePointCount = 0;
     param.scalePoints     = NULL;
@@ -96,7 +96,7 @@ static const NativeParameter* midigain_get_parameter_info(NativePluginHandle han
         break;
     case PARAM_APPLY_NOTES:
         param.name   = "Apply Notes";
-        param.hints |= PARAMETER_IS_BOOLEAN;
+        param.hints |= NATIVE_PARAMETER_IS_BOOLEAN;
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -106,7 +106,7 @@ static const NativeParameter* midigain_get_parameter_info(NativePluginHandle han
         break;
     case PARAM_APPLY_AFTERTOUCH:
         param.name   = "Apply Aftertouch";
-        param.hints |= PARAMETER_IS_BOOLEAN;
+        param.hints |= NATIVE_PARAMETER_IS_BOOLEAN;
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -116,7 +116,7 @@ static const NativeParameter* midigain_get_parameter_info(NativePluginHandle han
         break;
     case PARAM_APPLY_CC:
         param.name   = "Apply CC";
-        param.hints |= PARAMETER_IS_BOOLEAN;
+        param.hints |= NATIVE_PARAMETER_IS_BOOLEAN;
         param.ranges.def = 0.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -215,9 +215,9 @@ static void midigain_process(NativePluginHandle handle, float** inBuffer, float*
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor midigainDesc = {
-    .category  = PLUGIN_CATEGORY_UTILITY,
-    .hints     = PLUGIN_IS_RTSAFE,
-    .supports  = PLUGIN_SUPPORTS_EVERYTHING,
+    .category  = NATIVE_PLUGIN_CATEGORY_UTILITY,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
+    .supports  = NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     .audioIns  = 0,
     .audioOuts = 0,
     .midiIns   = 1,

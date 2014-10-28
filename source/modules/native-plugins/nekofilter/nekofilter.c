@@ -178,7 +178,7 @@ nekofilter_get_parameter_info(
     // internal cleanup call
     return NULL;
 
-  param.hints = PARAMETER_IS_ENABLED|PARAMETER_IS_AUTOMABLE;
+  param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
   param.ranges.def = 0.0f;
   param.ranges.min = 0.0f;
   param.ranges.max = 0.0f;
@@ -189,7 +189,7 @@ nekofilter_get_parameter_info(
   {
   case GLOBAL_PARAMETER_ACTIVE:
     name = strdup("Active");
-    param.hints |= PARAMETER_IS_BOOLEAN;
+    param.hints |= NATIVE_PARAMETER_IS_BOOLEAN;
     param.ranges.max = 1.0f;
     goto ready;
     break;
@@ -215,7 +215,7 @@ nekofilter_get_parameter_info(
   case BAND_PARAMETER_ACTIVE:
     strcat(strBuf, "Active");
     name = strdup(strBuf);
-    param.hints |= PARAMETER_IS_BOOLEAN;
+    param.hints |= NATIVE_PARAMETER_IS_BOOLEAN;
     param.ranges.max = 1.0f;
     break;
 
@@ -223,7 +223,7 @@ nekofilter_get_parameter_info(
     strcat(strBuf, "Frequency");
     name = strdup(strBuf);
     unit = strdup("Hz");
-    param.hints |= PARAMETER_IS_LOGARITHMIC;
+    param.hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
 
     switch (band)
     {
@@ -249,7 +249,7 @@ nekofilter_get_parameter_info(
   case BAND_PARAMETER_BANDWIDTH:
     strcat(strBuf, "Bandwidth");
     name = strdup(strBuf);
-    param.hints |= PARAMETER_IS_LOGARITHMIC;
+    param.hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
     param.ranges.min = 0.125f;
     param.ranges.max = 8.0f;
     break;
@@ -264,7 +264,7 @@ nekofilter_get_parameter_info(
   }
 
 ready:
-  if (param.hints & PARAMETER_IS_BOOLEAN)
+  if (param.hints & NATIVE_PARAMETER_IS_BOOLEAN)
   {
     param.ranges.step = 1.0f;
     param.ranges.stepSmall = 1.0f;
@@ -361,7 +361,7 @@ nekofilter_ui_show(
     if (nekofilter_ptr->ui != NULL)
       nekoui_show(nekofilter_ptr->ui);
     else
-      nekofilter_ptr->host->dispatcher(nekofilter_ptr->host->handle, HOST_OPCODE_UI_UNAVAILABLE, 0, 0, NULL, 0.0f);
+      nekofilter_ptr->host->dispatcher(nekofilter_ptr->host->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, NULL, 0.0f);
   }
   else if (nekofilter_ptr->ui != NULL)
     nekoui_hide(nekofilter_ptr->ui);

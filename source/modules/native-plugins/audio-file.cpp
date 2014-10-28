@@ -88,7 +88,7 @@ protected:
 
         param.name  = "Loop Mode";
         param.unit  = nullptr;
-        param.hints = static_cast<NativeParameterHints>(PARAMETER_IS_ENABLED|PARAMETER_IS_BOOLEAN);
+        param.hints = static_cast<NativeParameterHints>(NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_BOOLEAN);
         param.ranges.def = 1.0f;
         param.ranges.min = 0.0f;
         param.ranges.max = 1.0f;
@@ -292,8 +292,8 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor audiofileDesc = {
-    /* category  */ PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(PLUGIN_HAS_UI|PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 2,

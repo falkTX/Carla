@@ -27,11 +27,11 @@
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor nekofilterDesc = {
-    .category  = PLUGIN_CATEGORY_FILTER,
+    .category  = NATIVE_PLUGIN_CATEGORY_FILTER,
 #ifdef WANT_UI
-    .hints     = PLUGIN_IS_RTSAFE|PLUGIN_HAS_UI,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI,
 #else
-    .hints     = PLUGIN_IS_RTSAFE,
+    .hints     = NATIVE_PLUGIN_IS_RTSAFE,
 #endif
     .supports  = 0x0,
     .audioIns  = 1,
