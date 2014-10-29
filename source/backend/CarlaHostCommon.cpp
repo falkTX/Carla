@@ -366,6 +366,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         Lilv::Plugin lilvPlugin(cPlugin);
         CARLA_SAFE_ASSERT_BREAK(lilvPlugin.get_uri().is_uri());
 
+        carla_stdout("Filling info for LV2 with URI '%s'", lilvPlugin.get_uri().as_uri());
+
         // features
         info.hints = 0x0;
 
