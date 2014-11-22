@@ -83,3 +83,32 @@ def getPluginTypeFromString(stype):
     return PLUGIN_NONE
 
 # ------------------------------------------------------------------------------------------------------------
+# Carla Utils object using a DLL
+
+class CarlaUtils(object):
+    def __init__(self, filename):
+        object.__init__(self)
+
+        self.lib = cdll.LoadLibrary(filename)
+
+        self.lib.carla_set_process_name.argtypes = [c_char_p]
+        self.lib.carla_set_process_name.restype = None
+
+        self.lib.carla_get_library_filename.argtypes = None
+        self.lib.carla_get_library_filename.restype = c_char_p
+
+        self.lib.carla_get_library_folder.argtypes = None
+        self.lib.carla_get_library_folder.restype = c_char_p
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def set_process_name(self, index, name):
+        self.lib.carla_set_process_name(name.encode("utf-8"))
+
+    def get_library_filename(self):
+        return charPtrToString(self.lib.carla_get_library_filename())
+
+    def get_library_folder(self):
+        return charPtrToString(self.lib.carla_get_library_folder())
+
+# ------------------------------------------------------------------------------------------------------------

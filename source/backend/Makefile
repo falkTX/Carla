@@ -35,6 +35,8 @@ STANDALONE_LIBS += ../modules/rtaudio.a
 STANDALONE_LIBS += ../modules/rtmidi.a
 endif
 
+UTILS_LIBS = ../modules/juce_core.a
+
 # --------------------------------------------------------------
 
 STANDALONE_FLAGS  = $(JACKBRIDGE_LIBS)
@@ -77,13 +79,17 @@ ifeq ($(UNIX),true)
 STANDALONE_FLAGS += -lmagic
 endif
 
+UTILS_FLAGS = $(JUCE_CORE_LIBS)
+
 # --------------------------------------------------------------
 
 OBJS = \
-	CarlaStandalone.cpp.o
+	CarlaStandalone.cpp.o \
+	CarlaUtils.cpp.o
 
 TARGETS = \
-	../../bin/libcarla_standalone2$(LIB_EXT)
+	../../bin/libcarla_standalone2$(LIB_EXT) \
+	../../bin/libcarla_utils2$(LIB_EXT)
 
 # --------------------------------------------------------------
 
@@ -108,9 +114,15 @@ doxygen: CarlaBackend.doxygen
 CarlaStandalone.cpp.o: $(CARLA_STANDALONE_CPP)
 	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+CarlaUtils.cpp.o: $(CARLA_UTILS_CPP)
+	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 # --------------------------------------------------------------
 
-../../bin/libcarla_standalone2$(LIB_EXT): $(OBJS) $(STANDALONE_LIBS)
+../../bin/libcarla_standalone2$(LIB_EXT): CarlaStandalone.cpp.o $(STANDALONE_LIBS)
 	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
+
+../../bin/libcarla_utils2$(LIB_EXT): CarlaUtils.cpp.o $(UTILS_LIBS)
+	$(CXX) $< $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_FLAGS) $(SHARED) -o $@
 
 # --------------------------------------------------------------

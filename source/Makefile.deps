@@ -168,4 +168,7 @@ VST3_PLUGIN_CPP                = $(CWD)/backend/plugin/Vst3Plugin.cpp          $
 CARLA_STANDALONE_CPP_DEPS = $(CARLA_HOST_H) $(CARLA_MIDI_H) $(CARLA_NATIVE_H) $(CARLA_ENGINE_HPP) $(CARLA_PLUGIN_HPP) $(CARLA_BACKEND_UTILS_HPP) $(CARLA_BASE64_UTILS_HPP) $(CARLA_OSC_UTILS_HPP)
 CARLA_STANDALONE_CPP      = $(CWD)/backend/CarlaStandalone.cpp $(CARLA_STANDALONE_CPP_DEPS) $(CARLA_PLUGIN_UI_CPP) $(CARLA_DSSI_UTILS_CPP) $(CARLA_STATE_UTILS_CPP)
 
+CARLA_UTILS_CPP_DEPS      = $(CARLA_UTILS_H) $(CARLA_THREAD_HPP)
+CARLA_UTILS_CPP           = $(CWD)/backend/CarlaUtils.cpp $(CARLA_UTILS_CPP_DEPS)
+
 # ----------------------------------------------------------------------------------------------------------------------------

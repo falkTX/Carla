@@ -109,10 +109,13 @@ source/modules/%.a: .FORCE
 
 # --------------------------------------------------------------
 
-backend: bin/libcarla_standalone2$(LIB_EXT)
+backend: bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils2$(LIB_EXT)
 
 bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
-	$(MAKE) -C source/backend
+	$(MAKE) -C source/backend ../../bin/libcarla_standalone2$(LIB_EXT)
+
+bin/libcarla_utils2$(LIB_EXT): libs .FORCE
+	$(MAKE) -C source/backend ../../bin/libcarla_utils2$(LIB_EXT)
 
 # --------------------------------------------------------------
 
