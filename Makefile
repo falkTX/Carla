@@ -109,13 +109,13 @@ source/modules/%.a: .FORCE
 
 # --------------------------------------------------------------
 
-backend: bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils2$(LIB_EXT)
+backend: bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils$(LIB_EXT)
 
 bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
 	$(MAKE) -C source/backend ../../bin/libcarla_standalone2$(LIB_EXT)
 
-bin/libcarla_utils2$(LIB_EXT): libs .FORCE
-	$(MAKE) -C source/backend ../../bin/libcarla_utils2$(LIB_EXT)
+bin/libcarla_utils$(LIB_EXT): libs .FORCE
+	$(MAKE) -C source/backend ../../bin/libcarla_utils$(LIB_EXT)
 
 # --------------------------------------------------------------
 
@@ -453,6 +453,7 @@ install:
 	# Install backend
 	install -m 644 \
 		bin/libcarla_standalone2.* \
+		bin/libcarla_utils.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
 ifeq ($(LINUX),true)
@@ -568,8 +569,8 @@ endif
 		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
 		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
 	done
-	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_*.*
-	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_*.*
+	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_standalone2.*
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
 
 	# Link styles for lv2 & vst plugin
 	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/

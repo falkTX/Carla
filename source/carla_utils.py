@@ -102,7 +102,7 @@ class CarlaUtils(object):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def set_process_name(self, index, name):
+    def set_process_name(self, name):
         self.lib.carla_set_process_name(name.encode("utf-8"))
 
     def get_library_filename(self):

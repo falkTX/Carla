@@ -89,7 +89,7 @@ OBJS = \
 
 TARGETS = \
 	../../bin/libcarla_standalone2$(LIB_EXT) \
-	../../bin/libcarla_utils2$(LIB_EXT)
+	../../bin/libcarla_utils$(LIB_EXT)
 
 # --------------------------------------------------------------
 
@@ -122,7 +122,7 @@ CarlaUtils.cpp.o: $(CARLA_UTILS_CPP)
 ../../bin/libcarla_standalone2$(LIB_EXT): CarlaStandalone.cpp.o $(STANDALONE_LIBS)
 	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
 
-../../bin/libcarla_utils2$(LIB_EXT): CarlaUtils.cpp.o $(UTILS_LIBS)
+../../bin/libcarla_utils$(LIB_EXT): CarlaUtils.cpp.o $(UTILS_LIBS)
 	$(CXX) $< $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_FLAGS) $(SHARED) -o $@
 
 # --------------------------------------------------------------

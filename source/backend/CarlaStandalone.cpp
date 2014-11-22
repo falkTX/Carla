@@ -27,7 +27,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "CarlaOscUtils.hpp"
-#include "CarlaThread.hpp"
 
 #include "juce_audio_formats.h"
 
@@ -771,10 +770,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB:: ENGINE_OPTION_NSM_INIT:
         CARLA_SAFE_ASSERT_RETURN(value != 0,);
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-
-        // this is only called if we're not a plugin, so it's safe
-        CarlaThread::setCurrentThreadName("Carla");
-        juce::Thread::setCurrentThreadName("Carla");
 
         gNSM.announce(value, valueStr);
         break;

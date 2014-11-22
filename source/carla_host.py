@@ -43,7 +43,9 @@ from carla_app import *
 from carla_database import *
 from carla_panels import *
 from carla_settings import *
+from carla_utils import *
 from carla_widgets import *
+
 from digitalpeakmeter import DigitalPeakMeter
 from pixmapkeyboard import PixmapKeyboardHArea
 
@@ -1971,19 +1973,18 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
     # --------------------------------------------------------------------------------------------------------
     # Set Carla library name
 
-    libname = "libcarla_"
-
-    if isControl:
-        libname += "control2"
-    else:
-        libname += "standalone2"
+    libname   = "libcarla_%s2" % ("control" if isControl else "standalone")
+    utilsname = "libcarla_utils"
 
     if WINDOWS:
-        libname += ".dll"
+        libname   += ".dll"
+        utilsname += ".dll"
     elif MACOS:
-        libname += ".dylib"
+        libname   += ".dylib"
+        utilsname += ".dylib"
     else:
-        libname += ".so"
+        libname   += ".so"
+        utilsname += ".so"
 
     # --------------------------------------------------------------------------------------------------------
     # Set binary dir
@@ -2068,6 +2069,15 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
         if not isControl:
             host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Init utils
+
+    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
+    gCarla.utils.set_process_name(initName)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Done
 
     return host
 

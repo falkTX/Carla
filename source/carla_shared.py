@@ -483,11 +483,13 @@ del DEFAULT_SFZ_PATH
 
 class CarlaObject(object):
     __slots__ = [
-        'gui' # Host Window
+        'gui',  # Host Window
+        'utils' # Utils object
     ]
 
 gCarla = CarlaObject()
-gCarla.gui = None
+gCarla.gui   = None
+gCarla.utils = None
 
 # ------------------------------------------------------------------------------------------------------------
 # Set CWD
