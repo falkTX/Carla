@@ -47,7 +47,7 @@ bool jackbridge_sem_init(void* sem) noexcept
 
     char strBuf[0xff+1];
     carla_zeroChar(strBuf, 0xff+1);
-    std::sprintf(strBuf, "carla-sem-%i-%li", std::rand(), sCounter);
+    std::sprintf(strBuf, "carla-sem-%i-%lu", std::rand(), sCounter);
 
     sem_unlink(strBuf);
 

@@ -94,22 +94,11 @@ ifneq ($(WIN32),true)
 	./$@ && valgrind --leak-check=full ./$@
 endif
 
-CarlaPipeClient: CarlaPipeUtils.cpp
-ifeq ($(WIN32),true)
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
-else
+CarlaPipeUtils: CarlaPipeUtils.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -ldl -lpthread
-endif
 
-CarlaPipeServer: CarlaPipeUtils.cpp CarlaPipeClient
-ifeq ($(WIN32),true)
+CarlaPipeUtils.exe: CarlaPipeUtils.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
-	./$@
-else
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -ldl -lpthread
-	./$@
-# 	&& valgrind --leak-check=full ./$@
-endif
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
