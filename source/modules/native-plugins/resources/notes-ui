@@ -32,6 +32,12 @@ else:
     from PyQt4.QtGui import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
 # -----------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_shared import *
+from carla_utils import *
+
+# -----------------------------------------------------------------------
 # Imports (ExternalUI)
 
 from carla_app import CarlaApplication
@@ -98,7 +104,7 @@ class DistrhoUINotes(ExternalUI, QWidget):
 
         if pageValue != self.fNotes[self.fCurPage-1]:
             self.fNotes[self.fCurPage-1] = pageValue
-            self.d_setState(pageKey, pageValue)
+            self.sendConfigure(pageKey, pageValue)
 
     # -------------------------------------------------------------------
 
@@ -106,7 +112,7 @@ class DistrhoUINotes(ExternalUI, QWidget):
     def slot_buttonClicked(self, click):
         readOnly = not click
         self.fTextEdit.setReadOnly(readOnly)
-        self.d_setState("readOnly", "yes" if readOnly else "no")
+        self.sendConfigure("readOnly", "yes" if readOnly else "no")
 
     @pyqtSlot(float)
     def slot_progressBarValueChanged(self, value):
@@ -122,10 +128,10 @@ class DistrhoUINotes(ExternalUI, QWidget):
             self.fSaveTextNowChecker = -1
 
         # change current page
-        self.d_parameterChanged(0, value)
+        self.dspParameterChanged(0, value)
 
         # tell host about this change
-        self.d_setParameterValue(0, value)
+        self.sendControl(0, value)
 
     @pyqtSlot()
     def slot_textChanged(self):
@@ -134,7 +140,7 @@ class DistrhoUINotes(ExternalUI, QWidget):
     # -------------------------------------------------------------------
     # DSP Callbacks
 
-    def d_parameterChanged(self, index, value):
+    def dspParameterChanged(self, index, value):
         if index != 0:
             return
 
@@ -148,7 +154,7 @@ class DistrhoUINotes(ExternalUI, QWidget):
             self.fProgressBar.setValue(self.fCurPage)
             self.fProgressBar.update()
 
-    def d_stateChanged(self, key, value):
+    def dspStateChanged(self, key, value):
         if key == "guiWidth":
             try:
                 width = int(value)
@@ -187,17 +193,18 @@ class DistrhoUINotes(ExternalUI, QWidget):
     # -------------------------------------------------------------------
     # ExternalUI Callbacks
 
-    def d_uiShow(self):
+    def uiShow(self):
         self.show()
 
-    def d_uiHide(self):
+    def uiHide(self):
         self.hide()
 
-    def d_uiQuit(self):
+    def uiQuit(self):
+        self.closeExternalUI()
         self.close()
         app.quit()
 
-    def d_uiTitleChanged(self, uiTitle):
+    def uiTitleChanged(self, uiTitle):
         self.setWindowTitle(uiTitle)
 
     # -------------------------------------------------------------------
@@ -209,9 +216,11 @@ class DistrhoUINotes(ExternalUI, QWidget):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimer:
+            self.idleExternalUI()
+
             if self.fSaveSizeNowChecker == 11:
-                self.d_setState("guiWidth", str(self.width()))
-                self.d_setState("guiHeight", str(self.height()))
+                self.sendConfigure("guiWidth", str(self.width()))
+                self.sendConfigure("guiHeight", str(self.height()))
                 self.fSaveSizeNowChecker = -1
             elif self.fSaveSizeNowChecker >= 0:
                 self.fSaveSizeNowChecker += 1
@@ -222,9 +231,6 @@ class DistrhoUINotes(ExternalUI, QWidget):
             elif self.fSaveTextNowChecker >= 0:
                 self.fSaveTextNowChecker += 1
 
-            if not self.idleExternalUI():
-                self.d_uiQuit()
-
         QWidget.timerEvent(self, event)
 
     def closeEvent(self, event):
@@ -234,6 +240,12 @@ class DistrhoUINotes(ExternalUI, QWidget):
 #--------------- main ------------------
 if __name__ == '__main__':
     import resources_rc
+
+    pathBinaries, pathResources = getPaths()
+    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
+    gCarla.utils.set_locale_C()
+    gCarla.utils.set_process_name("Notes")
+
     app = CarlaApplication("Notes")
     gui = DistrhoUINotes()
     app.exit_exec()

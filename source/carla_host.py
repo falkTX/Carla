@@ -1970,58 +1970,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
         PluginClass = None
         libPrefix   = libPrefixOrPluginClass
 
-    # --------------------------------------------------------------------------------------------------------
-    # Set Carla library name
-
-    libname   = "libcarla_%s2" % ("control" if isControl else "standalone")
-    utilsname = "libcarla_utils"
-
-    if WINDOWS:
-        libname   += ".dll"
-        utilsname += ".dll"
-    elif MACOS:
-        libname   += ".dylib"
-        utilsname += ".dylib"
-    else:
-        libname   += ".so"
-        utilsname += ".so"
-
-    # --------------------------------------------------------------------------------------------------------
-    # Set binary dir
-
-    CWDl = CWD.lower()
-
-    # standalone, installed system-wide linux
-    if libPrefix is not None:
-        pathBinaries  = os.path.join(libPrefix, "lib", "carla")
-        pathResources = os.path.join(libPrefix, "share", "carla", "resources")
-
-    # standalone, local source
-    elif CWDl.endswith("source"):
-        pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
-        pathResources = os.path.join(pathBinaries, "resources")
-
-    # plugin
-    elif CWDl.endswith("resources"):
-        # installed system-wide linux
-        if CWDl.endswith("/share/carla/resources"):
-            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
-            pathResources = CWD
-
-        # local source
-        elif CWDl.endswith("native-plugins%sresources" % os.sep):
-            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-            pathResources = CWD
-
-        # other
-        else:
-            pathBinaries  = os.path.abspath(os.path.join(CWD, ".."))
-            pathResources = CWD
-
-    # everything else
-    else:
-        pathBinaries  = CWD
-        pathResources = os.path.join(pathBinaries, "resources")
+    pathBinaries, pathResources = getPaths(libPrefix)
 
     # --------------------------------------------------------------------------------------------------------
     # Fail if binary dir is not found
@@ -2031,6 +1980,12 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
             QMessageBox.critical(None, "Error", "Failed to find the carla binaries, cannot continue")
             sys.exit(1)
         return
+
+    # --------------------------------------------------------------------------------------------------------
+    # Set Carla library name
+
+    libname   = "libcarla_%s2.%s"   % ("control" if isControl else "standalone", DLL_EXTENSION)
+    utilsname = "libcarla_utils.%s" % (DLL_EXTENSION)
 
     # --------------------------------------------------------------------------------------------------------
     # Print info
@@ -2075,6 +2030,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
     gCarla.utils.set_process_name(initName)
+    gCarla.utils.set_locale_C()
 
     # --------------------------------------------------------------------------------------------------------
     # Done

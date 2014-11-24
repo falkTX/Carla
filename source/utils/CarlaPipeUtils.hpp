@@ -72,14 +72,11 @@ public:
 
     // -------------------------------------------------------------------
 
-private:
+protected:
     struct PrivateData;
     PrivateData* const pData;
 
     // -------------------------------------------------------------------
-
-    friend class CarlaPipeClient;
-    friend class CarlaPipeServer;
 
     // internal
     const char* readline() noexcept;
@@ -112,7 +109,7 @@ public:
     CarlaPipeClient() noexcept;
     ~CarlaPipeClient() noexcept override;
 
-    bool init(char* argv[]) noexcept;
+    bool init(const char* argv[]) noexcept;
     void close() noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeClient)

@@ -504,6 +504,16 @@ if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
 
 # ------------------------------------------------------------------------------------------------------------
+# Set DLL_EXTENSION
+
+if WINDOWS:
+    DLL_EXTENSION = "dll"
+elif MACOS:
+    DLL_EXTENSION = "dylib"
+else:
+    DLL_EXTENSION = "so"
+
+# ------------------------------------------------------------------------------------------------------------
 # Check if a value is a number (float support)
 
 def isNumber(value):
@@ -529,6 +539,46 @@ def toList(value):
 
 def getIcon(icon, size = 16):
     return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+
+# ------------------------------------------------------------------------------------------------------------
+# Get paths (binaries, resources)
+
+def getPaths(libPrefix = None):
+    CWDl = CWD.lower()
+
+    # standalone, installed system-wide linux
+    if libPrefix is not None:
+        pathBinaries  = os.path.join(libPrefix, "lib", "carla")
+        pathResources = os.path.join(libPrefix, "share", "carla", "resources")
+
+    # standalone, local source
+    elif CWDl.endswith("source"):
+        pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "bin"))
+        pathResources = os.path.join(pathBinaries, "resources")
+
+    # plugin
+    elif CWDl.endswith("resources"):
+        # installed system-wide linux
+        if CWDl.endswith("/share/carla/resources"):
+            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
+            pathResources = CWD
+
+        # local source
+        elif CWDl.endswith("native-plugins%sresources" % os.sep):
+            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+            pathResources = CWD
+
+        # other
+        else:
+            pathBinaries  = os.path.abspath(os.path.join(CWD, ".."))
+            pathResources = CWD
+
+    # everything else
+    else:
+        pathBinaries  = CWD
+        pathResources = os.path.join(pathBinaries, "resources")
+
+    return (pathBinaries, pathResources)
 
 # ------------------------------------------------------------------------------------------------------------
 # Signal handler

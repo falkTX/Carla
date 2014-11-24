@@ -30,9 +30,14 @@
  */
 
 /*!
- * Get the juce version used in the current Carla build.
+ * TODO.
  */
-CARLA_EXPORT void carla_set_process_name(const char* name);
+typedef void* CarlaPipeClientHandle;
+
+/*!
+ * TODO.
+ */
+typedef void (*CarlaPipeCallbackFunc)(void* ptr, const char* msg);
 
 /*!
  * Get the current carla library filename.
@@ -43,6 +48,71 @@ CARLA_EXPORT const char* carla_get_library_filename();
  * Get the folder where the current use carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder();
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT void carla_set_locale_C();
+
+/*!
+ * Get the juce version used in the current Carla build.
+ */
+CARLA_EXPORT void carla_set_process_name(const char* name);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbackFunc callbackFunc, void* callbackPtr);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT void carla_pipe_client_idle(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_is_running(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT void carla_pipe_client_lock(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT void carla_pipe_client_unlock(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const char* msg);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_flush(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle);
+
+/*!
+ * TODO.
+ */
+CARLA_EXPORT void carla_pipe_client_destroy(CarlaPipeClientHandle handle);
 
 /** @} */
 

@@ -36,7 +36,6 @@ class PluginHost(CarlaHostPlugin):
         # ---------------------------------------------------------------
 
         self.fExternalUI = None
-        self.fIsRunning  = True
 
     # -------------------------------------------------------------------
 
@@ -53,22 +52,16 @@ class PluginHost(CarlaHostPlugin):
     # -------------------------------------------------------------------
 
     def engine_init(self, driverName, clientName):
-        self.fIsRunning = True
         return True
 
     def engine_close(self):
-        self.fIsRunning = False
         return True
 
     def engine_idle(self):
-        if self.fExternalUI.idleExternalUI():
-            return
-
-        self.fIsRunning = False
-        self.fExternalUI.d_uiQuit()
+        self.fExternalUI.idleExternalUI()
 
     def is_engine_running(self):
-        return self.fIsRunning
+        return self.fExternalUI.isRunning()
 
     def set_engine_about_to_close(self):
         return
@@ -97,19 +90,20 @@ class CarlaMiniW(ExternalUI, HostWindow):
     # -------------------------------------------------------------------
     # ExternalUI Callbacks
 
-    def d_uiShow(self):
+    def uiShow(self):
         if self.parent() is None:
             self.show()
 
-    def d_uiHide(self):
+    def uiHide(self):
         if self.parent() is None:
             self.hide()
 
-    def d_uiQuit(self):
+    def uiQuit(self):
+        self.closeExternalUI()
         self.close()
         app.quit()
 
-    def d_uiTitleChanged(self, uiTitle):
+    def uiTitleChanged(self, uiTitle):
         self.setWindowTitle(uiTitle)
 
     # -------------------------------------------------------------------
@@ -120,248 +114,239 @@ class CarlaMiniW(ExternalUI, HostWindow):
         HostWindow.closeEvent(self, event)
 
     # -------------------------------------------------------------------
-    # Custom idler
+    # Custom callback
 
-    def idleExternalUI(self):
-        while True:
-            if self.fPipeRecv is None:
-                return True
+    def msgCallback(self, msg):
+        msg = charPtrToString(msg)
 
-            try:
-                msg = self.fPipeRecv.readline().strip()
-            except IOError:
-                return False
+        #if not msg:
+            #return
 
-            if not msg:
-                return True
+        if msg.startswith("PEAKS_"):
+            pluginId = int(msg.replace("PEAKS_", ""))
+            in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
+            self.host._set_peaks(pluginId, in1, in2, out1, out2)
 
-            elif msg.startswith("PEAKS_"):
-                pluginId = int(msg.replace("PEAKS_", ""))
-                in1, in2, out1, out2 = [float(i) for i in self.readlineblock().split(":")]
-                self.host._set_peaks(pluginId, in1, in2, out1, out2)
-
-            elif msg.startswith("PARAMVAL_"):
-                pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
-                paramValue = float(self.readlineblock())
-                if paramId < 0:
-                    self.host._set_internalValue(pluginId, paramId, paramValue)
-                else:
-                    self.host._set_parameterValue(pluginId, paramId, paramValue)
-
-            elif msg.startswith("ENGINE_CALLBACK_"):
-                action   = int(msg.replace("ENGINE_CALLBACK_", ""))
-                pluginId = int(self.readlineblock())
-                value1   = int(self.readlineblock())
-                value2   = int(self.readlineblock())
-                value3   = float(self.readlineblock())
-                valueStr = self.readlineblock().replace("\r", "\n")
-
-                if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
-                    self.host._set_pluginName(pluginId, valueStr)
-                elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-                    if value1 < 0:
-                        self.host._set_internalValue(pluginId, value1, value3)
-                    else:
-                        self.host._set_parameterValue(pluginId, value1, value3)
-                elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-                    self.host._set_parameterDefault(pluginId, value1, value3)
-                elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
-                    self.host._set_parameterMidiCC(pluginId, value1, value2)
-                elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
-                    self.host._set_parameterMidiChannel(pluginId, value1, value2)
-                elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
-                    self.host._set_currentProgram(pluginId, value1)
-                elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-                    self.host._set_currentMidiProgram(pluginId, value1)
-
-                engineCallback(self.host, action, pluginId, value1, value2, value3, valueStr)
-
-            elif msg.startswith("ENGINE_OPTION_"):
-                option = int(msg.replace("ENGINE_OPTION_", ""))
-                forced = bool(self.readlineblock() == "true")
-                value  = self.readlineblock()
-
-                if self.fFirstInit and not forced:
-                    continue
-
-                if option == ENGINE_OPTION_PROCESS_MODE:
-                    self.host.processMode = int(value)
-                elif option == ENGINE_OPTION_TRANSPORT_MODE:
-                    self.host.transportMode = int(value)
-                elif option == ENGINE_OPTION_FORCE_STEREO:
-                    self.host.forceStereo = bool(value == "true")
-                elif option == ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
-                    self.host.preferPluginBridges = bool(value == "true")
-                elif option == ENGINE_OPTION_PREFER_UI_BRIDGES:
-                    self.host.preferUIBridges = bool(value == "true")
-                elif option == ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
-                    self.host.uisAlwaysOnTop = bool(value == "true")
-                elif option == ENGINE_OPTION_MAX_PARAMETERS:
-                    self.host.maxParameters = int(value)
-                elif option == ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
-                    self.host.uiBridgesTimeout = int(value)
-                elif option == ENGINE_OPTION_PATH_BINARIES:
-                    self.host.pathBinaries = value
-                elif option == ENGINE_OPTION_PATH_RESOURCES:
-                    self.host.pathResources = value
-
-            elif msg.startswith("PLUGIN_INFO_"):
-                pluginId = int(msg.replace("PLUGIN_INFO_", ""))
-                self.host._add(pluginId)
-
-                type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
-                filename  = self.readlineblock().replace("\r", "\n")
-                name      = self.readlineblock().replace("\r", "\n")
-                iconName  = self.readlineblock().replace("\r", "\n")
-                realName  = self.readlineblock().replace("\r", "\n")
-                label     = self.readlineblock().replace("\r", "\n")
-                maker     = self.readlineblock().replace("\r", "\n")
-                copyright = self.readlineblock().replace("\r", "\n")
-
-                pinfo = {
-                    'type': type_,
-                    'category': category,
-                    'hints': hints,
-                    'optionsAvailable': optsAvail,
-                    'optionsEnabled': optsEnabled,
-                    'filename': filename,
-                    'name':  name,
-                    'label': label,
-                    'maker': maker,
-                    'copyright': copyright,
-                    'iconName': iconName,
-                    'patchbayClientId': 0,
-                    'uniqueId': uniqueId
-                }
-                self.host._set_pluginInfo(pluginId, pinfo)
-                self.host._set_pluginRealName(pluginId, realName)
-
-            elif msg.startswith("AUDIO_COUNT_"):
-                pluginId, ins, outs = [int(i) for i in msg.replace("AUDIO_COUNT_", "").split(":")]
-                self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
-
-            elif msg.startswith("MIDI_COUNT_"):
-                pluginId, ins, outs = [int(i) for i in msg.replace("MIDI_COUNT_", "").split(":")]
-                self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
-
-            elif msg.startswith("PARAMETER_COUNT_"):
-                pluginId, ins, outs, count = [int(i) for i in msg.replace("PARAMETER_COUNT_", "").split(":")]
-                self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
-
-            elif msg.startswith("PARAMETER_DATA_"):
-                pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
-                paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.readlineblock().split(":")]
-                paramName = self.readlineblock().replace("\r", "\n")
-                paramUnit = self.readlineblock().replace("\r", "\n")
-
-                paramInfo = {
-                    'name': paramName,
-                    'symbol': "",
-                    'unit': paramUnit,
-                    'scalePointCount': 0,
-                }
-                self.host._set_parameterInfo(pluginId, paramId, paramInfo)
-
-                paramData = {
-                    'type': paramType,
-                    'hints': paramHints,
-                    'index': paramId,
-                    'rindex': -1,
-                    'midiCC': midiCC,
-                    'midiChannel': midiChannel
-                }
-                self.host._set_parameterData(pluginId, paramId, paramData)
-
-            elif msg.startswith("PARAMETER_RANGES_"):
-                pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
-                def_, min_, max_, step, stepSmall, stepLarge = [float(i) for i in self.readlineblock().split(":")]
-
-                paramRanges = {
-                    'def': def_,
-                    'min': min_,
-                    'max': max_,
-                    'step': step,
-                    'stepSmall': stepSmall,
-                    'stepLarge': stepLarge
-                }
-                self.host._set_parameterRanges(pluginId, paramId, paramRanges)
-
-            elif msg.startswith("PROGRAM_COUNT_"):
-                pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
-                self.host._set_programCount(pluginId, count)
-                self.host._set_currentProgram(pluginId, current)
-
-            elif msg.startswith("PROGRAM_NAME_"):
-                pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
-                progName = self.readlineblock().replace("\r", "\n")
-                self.host._set_programName(pluginId, progId, progName)
-
-            elif msg.startswith("MIDI_PROGRAM_COUNT_"):
-                pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
-                self.host._set_midiProgramCount(pluginId, count)
-                self.host._set_currentMidiProgram(pluginId, current)
-
-            elif msg.startswith("MIDI_PROGRAM_DATA_"):
-                pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
-                bank, program = [int(i) for i in self.readlineblock().split(":")]
-                name = self.readlineblock().replace("\r", "\n")
-                self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
-
-            elif msg == "complete-license":
-                license = self.readlineblock().replace("\r", "\n")
-                self.host.fCompleteLicenseText = license
-
-            elif msg == "juce-version":
-                version = self.readlineblock().replace("\r", "\n")
-                self.host.fJuceVersion = version
-
-            elif msg == "file-exts":
-                exts = self.readlineblock().replace("\r", "\n")
-                self.host.fSupportedFileExts = exts
-                # only now we know the supported extensions
-                self.fDirModel.setNameFilters(exts.split(";"))
-
-            elif msg == "max-plugin-number":
-                maxnum = int(self.readlineblock())
-                self.host.fMaxPluginNumber = maxnum
-
-            elif msg == "buffer-size":
-                bufsize = int(self.readlineblock())
-                self.host.fBufferSize = bufsize
-
-            elif msg == "sample-rate":
-                srate = float(self.readlineblock())
-                self.host.fSampleRate = srate
-
-            elif msg == "transport":
-                playing = bool(self.readlineblock() == "true")
-                frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
-                bpm = float(self.readlineblock())
-                self.host._set_transport(playing, frame, bar, beat, tick, bpm)
-
-            elif msg == "error":
-                error = self.readlineblock().replace("\r", "\n")
-                engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
-
-            elif msg == "show":
-                self.fFirstInit = False
-                self.d_uiShow()
-
-            elif msg == "hide":
-                self.d_uiHide()
-
-            elif msg == "quit":
-                self.fQuitReceived = True
-                self.d_uiQuit()
-
-            elif msg == "uiTitle":
-                uiTitle = self.readlineblock().replace("\r", "\n")
-                self.d_uiTitleChanged(uiTitle)
-
+        elif msg.startswith("PARAMVAL_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMVAL_", "").split(":")]
+            paramValue = float(self.readlineblock())
+            if paramId < 0:
+                self.host._set_internalValue(pluginId, paramId, paramValue)
             else:
-                print("unknown message: \"" + msg + "\"")
+                self.host._set_parameterValue(pluginId, paramId, paramValue)
 
-        return True
+        elif msg.startswith("ENGINE_CALLBACK_"):
+            action   = int(msg.replace("ENGINE_CALLBACK_", ""))
+            pluginId = int(self.readlineblock())
+            value1   = int(self.readlineblock())
+            value2   = int(self.readlineblock())
+            value3   = float(self.readlineblock())
+            valueStr = self.readlineblock().replace("\r", "\n")
+
+            if action == ENGINE_CALLBACK_PLUGIN_RENAMED:
+                self.host._set_pluginName(pluginId, valueStr)
+            elif action == ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+                if value1 < 0:
+                    self.host._set_internalValue(pluginId, value1, value3)
+                else:
+                    self.host._set_parameterValue(pluginId, value1, value3)
+            elif action == ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+                self.host._set_parameterDefault(pluginId, value1, value3)
+            elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED:
+                self.host._set_parameterMidiCC(pluginId, value1, value2)
+            elif action == ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED:
+                self.host._set_parameterMidiChannel(pluginId, value1, value2)
+            elif action == ENGINE_CALLBACK_PROGRAM_CHANGED:
+                self.host._set_currentProgram(pluginId, value1)
+            elif action == ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+                self.host._set_currentMidiProgram(pluginId, value1)
+
+            engineCallback(self.host, action, pluginId, value1, value2, value3, valueStr)
+
+        elif msg.startswith("ENGINE_OPTION_"):
+            option = int(msg.replace("ENGINE_OPTION_", ""))
+            forced = bool(self.readlineblock() == "true")
+            value  = self.readlineblock()
+
+            if self.fFirstInit and not forced:
+                return
+
+            if option == ENGINE_OPTION_PROCESS_MODE:
+                self.host.processMode = int(value)
+            elif option == ENGINE_OPTION_TRANSPORT_MODE:
+                self.host.transportMode = int(value)
+            elif option == ENGINE_OPTION_FORCE_STEREO:
+                self.host.forceStereo = bool(value == "true")
+            elif option == ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+                self.host.preferPluginBridges = bool(value == "true")
+            elif option == ENGINE_OPTION_PREFER_UI_BRIDGES:
+                self.host.preferUIBridges = bool(value == "true")
+            elif option == ENGINE_OPTION_UIS_ALWAYS_ON_TOP:
+                self.host.uisAlwaysOnTop = bool(value == "true")
+            elif option == ENGINE_OPTION_MAX_PARAMETERS:
+                self.host.maxParameters = int(value)
+            elif option == ENGINE_OPTION_UI_BRIDGES_TIMEOUT:
+                self.host.uiBridgesTimeout = int(value)
+            elif option == ENGINE_OPTION_PATH_BINARIES:
+                self.host.pathBinaries = value
+            elif option == ENGINE_OPTION_PATH_RESOURCES:
+                self.host.pathResources = value
+
+        elif msg.startswith("PLUGIN_INFO_"):
+            pluginId = int(msg.replace("PLUGIN_INFO_", ""))
+            self.host._add(pluginId)
+
+            type_, category, hints, uniqueId, optsAvail, optsEnabled = [int(i) for i in self.readlineblock().split(":")]
+            filename  = self.readlineblock().replace("\r", "\n")
+            name      = self.readlineblock().replace("\r", "\n")
+            iconName  = self.readlineblock().replace("\r", "\n")
+            realName  = self.readlineblock().replace("\r", "\n")
+            label     = self.readlineblock().replace("\r", "\n")
+            maker     = self.readlineblock().replace("\r", "\n")
+            copyright = self.readlineblock().replace("\r", "\n")
+
+            pinfo = {
+                'type': type_,
+                'category': category,
+                'hints': hints,
+                'optionsAvailable': optsAvail,
+                'optionsEnabled': optsEnabled,
+                'filename': filename,
+                'name':  name,
+                'label': label,
+                'maker': maker,
+                'copyright': copyright,
+                'iconName': iconName,
+                'patchbayClientId': 0,
+                'uniqueId': uniqueId
+            }
+            self.host._set_pluginInfo(pluginId, pinfo)
+            self.host._set_pluginRealName(pluginId, realName)
+
+        elif msg.startswith("AUDIO_COUNT_"):
+            pluginId, ins, outs = [int(i) for i in msg.replace("AUDIO_COUNT_", "").split(":")]
+            self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("MIDI_COUNT_"):
+            pluginId, ins, outs = [int(i) for i in msg.replace("MIDI_COUNT_", "").split(":")]
+            self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("PARAMETER_COUNT_"):
+            pluginId, ins, outs, count = [int(i) for i in msg.replace("PARAMETER_COUNT_", "").split(":")]
+            self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
+
+        elif msg.startswith("PARAMETER_DATA_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_DATA_", "").split(":")]
+            paramType, paramHints, midiChannel, midiCC = [int(i) for i in self.readlineblock().split(":")]
+            paramName = self.readlineblock().replace("\r", "\n")
+            paramUnit = self.readlineblock().replace("\r", "\n")
+
+            paramInfo = {
+                'name': paramName,
+                'symbol': "",
+                'unit': paramUnit,
+                'scalePointCount': 0,
+            }
+            self.host._set_parameterInfo(pluginId, paramId, paramInfo)
+
+            paramData = {
+                'type': paramType,
+                'hints': paramHints,
+                'index': paramId,
+                'rindex': -1,
+                'midiCC': midiCC,
+                'midiChannel': midiChannel
+            }
+            self.host._set_parameterData(pluginId, paramId, paramData)
+
+        elif msg.startswith("PARAMETER_RANGES_"):
+            pluginId, paramId = [int(i) for i in msg.replace("PARAMETER_RANGES_", "").split(":")]
+            def_, min_, max_, step, stepSmall, stepLarge = [float(i) for i in self.readlineblock().split(":")]
+
+            paramRanges = {
+                'def': def_,
+                'min': min_,
+                'max': max_,
+                'step': step,
+                'stepSmall': stepSmall,
+                'stepLarge': stepLarge
+            }
+            self.host._set_parameterRanges(pluginId, paramId, paramRanges)
+
+        elif msg.startswith("PROGRAM_COUNT_"):
+            pluginId, count, current = [int(i) for i in msg.replace("PROGRAM_COUNT_", "").split(":")]
+            self.host._set_programCount(pluginId, count)
+            self.host._set_currentProgram(pluginId, current)
+
+        elif msg.startswith("PROGRAM_NAME_"):
+            pluginId, progId = [int(i) for i in msg.replace("PROGRAM_NAME_", "").split(":")]
+            progName = self.readlineblock().replace("\r", "\n")
+            self.host._set_programName(pluginId, progId, progName)
+
+        elif msg.startswith("MIDI_PROGRAM_COUNT_"):
+            pluginId, count, current = [int(i) for i in msg.replace("MIDI_PROGRAM_COUNT_", "").split(":")]
+            self.host._set_midiProgramCount(pluginId, count)
+            self.host._set_currentMidiProgram(pluginId, current)
+
+        elif msg.startswith("MIDI_PROGRAM_DATA_"):
+            pluginId, midiProgId = [int(i) for i in msg.replace("MIDI_PROGRAM_DATA_", "").split(":")]
+            bank, program = [int(i) for i in self.readlineblock().split(":")]
+            name = self.readlineblock().replace("\r", "\n")
+            self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
+
+        elif msg == "complete-license":
+            license = self.readlineblock().replace("\r", "\n")
+            self.host.fCompleteLicenseText = license
+
+        elif msg == "juce-version":
+            version = self.readlineblock().replace("\r", "\n")
+            self.host.fJuceVersion = version
+
+        elif msg == "file-exts":
+            exts = self.readlineblock().replace("\r", "\n")
+            self.host.fSupportedFileExts = exts
+            # only now we know the supported extensions
+            self.fDirModel.setNameFilters(exts.split(";"))
+
+        elif msg == "max-plugin-number":
+            maxnum = int(self.readlineblock())
+            self.host.fMaxPluginNumber = maxnum
+
+        elif msg == "buffer-size":
+            bufsize = int(self.readlineblock())
+            self.host.fBufferSize = bufsize
+
+        elif msg == "sample-rate":
+            srate = float(self.readlineblock())
+            self.host.fSampleRate = srate
+
+        elif msg == "transport":
+            playing = bool(self.readlineblock() == "true")
+            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
+            bpm = float(self.readlineblock())
+            self.host._set_transport(playing, frame, bar, beat, tick, bpm)
+
+        elif msg == "error":
+            error = self.readlineblock().replace("\r", "\n")
+            engineCallback(self.host, ENGINE_CALLBACK_ERROR, 0, 0, 0, 0.0, error)
+
+        elif msg == "show":
+            self.fFirstInit = False
+            self.uiShow()
+
+        elif msg == "hide":
+            self.uiHide()
+
+        elif msg == "quit":
+            self.fQuitReceived = True
+            self.uiQuit()
+
+        elif msg == "uiTitle":
+            uiTitle = self.readlineblock().replace("\r", "\n")
+            self.uiTitleChanged(uiTitle)
+
+        else:
+            print("unknown message: \"" + msg + "\"")
 
 # ------------------------------------------------------------------------------------------------------------
 # Embed plugin UI

@@ -967,7 +967,7 @@ protected:
         std::sprintf(fTmpBuf, "%f\n", value3);
         fUiServer.writeMsg(fTmpBuf);
 
-        fUiServer.writeAndFixMsg(valueStr);
+        fUiServer.writeAndFixMsg(valueStr != nullptr ? valueStr : "");
 
         fUiServer.flush();
     }
@@ -1465,7 +1465,7 @@ protected:
 
             // send transport
             fUiServer.writeAndFixMsg("transport");
-            fUiServer.writeAndFixMsg(bool2str(timeInfo.playing));
+            fUiServer.writeMsg(timeInfo.playing ? "true\n" : "false\n");
 
             if (timeInfo.valid & EngineTimeInfo::kValidBBT)
             {

@@ -17,6 +17,11 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+from sys import argv
+
+# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from carla_backend import *
@@ -83,6 +88,12 @@ def getPluginTypeFromString(stype):
     return PLUGIN_NONE
 
 # ------------------------------------------------------------------------------------------------------------
+# Carla Pipe stuff
+
+CarlaPipeClientHandle = c_void_p
+CarlaPipeCallbackFunc = CFUNCTYPE(None, c_void_p, c_char_p)
+
+# ------------------------------------------------------------------------------------------------------------
 # Carla Utils object using a DLL
 
 class CarlaUtils(object):
@@ -91,24 +102,104 @@ class CarlaUtils(object):
 
         self.lib = cdll.LoadLibrary(filename)
 
-        self.lib.carla_set_process_name.argtypes = [c_char_p]
-        self.lib.carla_set_process_name.restype = None
-
         self.lib.carla_get_library_filename.argtypes = None
         self.lib.carla_get_library_filename.restype = c_char_p
 
         self.lib.carla_get_library_folder.argtypes = None
         self.lib.carla_get_library_folder.restype = c_char_p
 
-    # --------------------------------------------------------------------------------------------------------
+        self.lib.carla_set_locale_C.argtypes = None
+        self.lib.carla_set_locale_C.restype = None
 
-    def set_process_name(self, name):
-        self.lib.carla_set_process_name(name.encode("utf-8"))
+        self.lib.carla_set_process_name.argtypes = [c_char_p]
+        self.lib.carla_set_process_name.restype = None
+
+        self.lib.carla_pipe_client_new.argtypes = [POINTER(c_char_p), CarlaPipeCallbackFunc, c_void_p]
+        self.lib.carla_pipe_client_new.restype = CarlaPipeClientHandle
+
+        self.lib.carla_pipe_client_idle.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_idle.restype = None
+
+        self.lib.carla_pipe_client_is_running.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_is_running.restype = c_bool
+
+        self.lib.carla_pipe_client_lock.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_lock.restype = None
+
+        self.lib.carla_pipe_client_unlock.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_unlock.restype = None
+
+        self.lib.carla_pipe_client_readlineblock.argtypes = [CarlaPipeClientHandle, c_uint]
+        self.lib.carla_pipe_client_readlineblock.restype = c_char_p
+
+        self.lib.carla_pipe_client_write_msg.argtypes = [CarlaPipeClientHandle, c_char_p]
+        self.lib.carla_pipe_client_write_msg.restype = c_bool
+
+        self.lib.carla_pipe_client_write_and_fix_msg.argtypes = [CarlaPipeClientHandle, c_char_p]
+        self.lib.carla_pipe_client_write_and_fix_msg.restype = c_bool
+
+        self.lib.carla_pipe_client_flush.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_flush.restype = c_bool
+
+        self.lib.carla_pipe_client_flush_and_unlock.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_flush_and_unlock.restype = c_bool
+
+        self.lib.carla_pipe_client_destroy.argtypes = [CarlaPipeClientHandle]
+        self.lib.carla_pipe_client_destroy.restype = None
+
+    # --------------------------------------------------------------------------------------------------------
 
     def get_library_filename(self):
         return charPtrToString(self.lib.carla_get_library_filename())
 
     def get_library_folder(self):
         return charPtrToString(self.lib.carla_get_library_folder())
+
+    def set_locale_C(self):
+        self.lib.carla_set_locale_C()
+
+    def set_process_name(self, name):
+        self.lib.carla_set_process_name(name.encode("utf-8"))
+
+    def pipe_client_new(self, func):
+        argc      = len(argv)
+        cagrvtype = c_char_p * argc
+        cargv     = cagrvtype()
+
+        for i in range(argc):
+            cargv[i] = c_char_p(argv[i].encode("utf-8"))
+
+        self._pipeClientCallback = CarlaPipeCallbackFunc(func)
+        return self.lib.carla_pipe_client_new(cargv, self._pipeClientCallback, None)
+
+    def pipe_client_idle(self, handle):
+        self.lib.carla_pipe_client_idle(handle)
+
+    def pipe_client_is_running(self, handle):
+        return bool(self.lib.carla_pipe_client_is_running(handle))
+
+    def pipe_client_lock(self, handle):
+        self.lib.carla_pipe_client_lock(handle)
+
+    def pipe_client_unlock(self, handle):
+        self.lib.carla_pipe_client_unlock(handle)
+
+    def pipe_client_readlineblock(self, handle, timeout):
+        return charPtrToString(self.lib.carla_pipe_client_readlineblock(handle, timeout))
+
+    def pipe_client_write_msg(self, handle, msg):
+        return bool(self.lib.carla_pipe_client_write_msg(handle, msg.encode("utf-8")))
+
+    def pipe_client_write_and_fix_msg(self, handle, msg):
+        return bool(self.lib.carla_pipe_client_write_and_fix_msg(handle, msg.encode("utf-8")))
+
+    def pipe_client_flush(self, handle):
+        return bool(self.lib.carla_pipe_client_flush(handle))
+
+    def pipe_client_flush_and_unlock(self, handle):
+        return bool(self.lib.carla_pipe_client_flush_and_unlock(handle))
+
+    def pipe_client_destroy(self, handle):
+        self.lib.carla_pipe_client_destroy(handle)
 
 # ------------------------------------------------------------------------------------------------------------

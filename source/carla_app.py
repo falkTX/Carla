@@ -43,57 +43,28 @@ class CarlaApplication(object):
     def __init__(self, appName = "Carla2", libPrefix = None):
         object.__init__(self)
 
-        # try to find styles dir
-        stylesDir = ""
+        pathBinaries, pathResources = getPaths(libPrefix)
 
-        CWDl = CWD.lower()
+        # Needed for MacOS LV2 plugin
+        if MACOS and os.path.exists(CWD):
+            QApplication.addLibraryPath(CWD)
 
-        # standalone, installed system-wide linux
-        if libPrefix is not None:
-            stylesDir = os.path.join(libPrefix, "lib", "carla")
+        # Needed for local wine build
+        if WINDOWS and CWD.endswith("source"):
+            QApplication.addLibraryPath("C:\\Python34\\Lib\\site-packages\\PyQt5\\plugins")
 
-        # standalone, local source
-        elif CWDl.endswith("source"):
-            stylesDir = os.path.abspath(os.path.join(CWD, "..", "bin"))
+        # Use binary dir as library path (except in Windows)
+        if os.path.exists(pathBinaries) and not WINDOWS:
+            QApplication.addLibraryPath(pathBinaries)
+            stylesDir = pathBinaries
 
-            if WINDOWS:
-                # Fixes local wine build
-                QApplication.addLibraryPath("C:\\Python34\\Lib\\site-packages\\PyQt5\\plugins")
-
-        # plugin
-        elif CWDl.endswith("resources"):
-            # installed system-wide linux
-            if CWDl.endswith("/share/carla/resources"):
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
-
-            # local source
-            elif CWDl.endswith("native-plugins%sresources" % os.sep):
-                stylesDir = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
-
-            # other
-            else:
-                stylesDir = os.path.abspath(os.path.join(CWD, ".."))
-
-        # everything else
-        else:
-            stylesDir = CWD
-
-        if os.path.exists(stylesDir):
-            QApplication.addLibraryPath(stylesDir)
-
-            if WINDOWS:
-                stylesDir = ""
-
+        # If style is not available we can still fake it in Qt5
         elif config_UseQt5:
             stylesDir = ""
 
         else:
             self.createApp(appName)
             return
-
-        # Needed for MacOS LV2 plugin
-        if MACOS and os.path.exists(CWD):
-            QApplication.addLibraryPath(CWD)
 
         # base settings
         settings    = QSettings("falkTX", appName)

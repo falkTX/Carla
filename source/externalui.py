@@ -16,203 +16,173 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# -----------------------------------------------------------------------
-# Imports
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
 
-from os import fdopen, O_NONBLOCK
-from fcntl import fcntl, F_GETFL, F_SETFL
 from sys import argv
-from time import sleep
 
-# -----------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_shared import *
+
+# ------------------------------------------------------------------------------------------------------------
 # External UI
 
 class ExternalUI(object):
     def __init__(self):
         object.__init__(self)
 
-        self.fPipeRecv     = None
-        self.fPipeSend     = None
         self.fQuitReceived = False
 
         if len(argv) > 1:
             self.fSampleRate = float(argv[1])
             self.fUiName     = argv[2]
-
-            pipeRecvServer = int(argv[3])
-            pipeRecvClient = int(argv[4])
-            pipeSendServer = int(argv[5])
-            pipeSendClient = int(argv[6])
-
-            oldFlags = fcntl(pipeRecvServer, F_GETFL)
-            fcntl(pipeRecvServer, F_SETFL, oldFlags | O_NONBLOCK)
-
-            self.fPipeRecv = fdopen(pipeRecvServer, 'r')
-            self.fPipeSend = fdopen(pipeSendServer, 'w')
-
+            self.fPipeClient = gCarla.utils.pipe_client_new(lambda s,msg: self.msgCallback(msg))
         else:
             self.fSampleRate = 44100.0
             self.fUiName     = "TestUI"
+            self.fPipeClient = None
 
-            self.fPipeRecv = None
-            self.fPipeSend = None
+    # -------------------------------------------------------------------
+    # Public methods
 
     def ready(self):
-        if self.fPipeRecv is not None:
+        if self.fPipeClient is not None:
             # send empty line (just newline char)
             self.send([""])
         else:
             # testing, show UI only
-            self.d_uiShow()
+            self.uiShow()
 
-    # -------------------------------------------------------------------
-    # Host DSP State
+    def isRunning(self):
+        if self.fPipeClient is not None:
+            return gCarla.utils.pipe_client_is_running(self.fPipeClient)
+        return False
 
-    def d_getSampleRate(self):
-        return self.fSampleRate
-
-    def d_editParameter(self, index, started):
-        self.send(["editParam", index, started])
-
-    def d_setParameterValue(self, index, value):
-        self.send(["control", index, value])
-
-    def d_setProgram(self, channel, bank, program):
-        self.send(["program", channel, bank, program])
-
-    def d_setState(self, key, value):
-        self.send(["configure", key, value])
-
-    def d_sendNote(self, onOff, channel, note, velocity):
-        self.send(["note", onOff, channel, note, velocity])
-
-    # -------------------------------------------------------------------
-    # DSP Callbacks
-
-    def d_parameterChanged(self, index, value):
-        return
-
-    def d_programChanged(self, channel, bank, program):
-        return
-
-    def d_stateChanged(self, key, value):
-        return
-
-    def d_noteReceived(self, onOff, channel, note, velocity):
-        return
-
-    # -------------------------------------------------------------------
-    # ExternalUI Callbacks
-
-    def d_uiShow(self):
-        return
-
-    def d_uiHide(self):
-        return
-
-    def d_uiQuit(self):
-        return
-
-    def d_uiTitleChanged(self, uiTitle):
-        return
-
-    # -------------------------------------------------------------------
-    # Public methods
+    def idleExternalUI(self):
+        if self.fPipeClient is not None:
+            gCarla.utils.pipe_client_idle(self.fPipeClient)
 
     def closeExternalUI(self):
         if not self.fQuitReceived:
             self.send(["exiting"])
 
-        if self.fPipeRecv is not None:
-          self.fPipeRecv.close()
-          self.fPipeRecv = None
+        if self.fPipeClient is not None:
+            gCarla.utils.pipe_client_destroy(self.fPipeClient)
+            self.fPipeClient = None
 
-        if self.fPipeSend is not None:
-          self.fPipeSend.close()
-          self.fPipeSend = None
+    # -------------------------------------------------------------------
+    # Host DSP State
 
-    def idleExternalUI(self):
-        while True:
-            if self.fPipeRecv is None:
-                return True
+    def getSampleRate(self):
+        return self.fSampleRate
 
-            try:
-                msg = self.fPipeRecv.readline().strip()
-            except IOError:
-                return False
+    def sendControl(self, index, value):
+        self.send(["control", index, value])
 
-            if not msg:
-                return True
+    def sendProgram(self, channel, bank, program):
+        self.send(["program", channel, bank, program])
 
-            elif msg == "control":
-                index = int(self.readlineblock())
-                value = float(self.readlineblock())
-                self.d_parameterChanged(index, value)
+    def sendConfigure(self, key, value):
+        self.send(["configure", key, value])
 
-            elif msg == "program":
-                channel = int(self.readlineblock())
-                bank    = int(self.readlineblock())
-                program = int(self.readlineblock())
-                self.d_programChanged(channel, bank, program)
+    def sendNote(self, onOff, channel, note, velocity):
+        self.send(["note", onOff, channel, note, velocity])
 
-            elif msg == "configure":
-                key   = self.readlineblock().replace("\r", "\n")
-                value = self.readlineblock().replace("\r", "\n")
-                self.d_stateChanged(key, value)
+    # -------------------------------------------------------------------
+    # DSP Callbacks
 
-            elif msg == "note":
-                onOff    = bool(self.readlineblock() == "true")
-                channel  = int(self.readlineblock())
-                note     = int(self.readlineblock())
-                velocity = int(self.readlineblock())
-                self.d_noteReceived(onOff, channel, note, velocity)
+    def dspParameterChanged(self, index, value):
+        return
 
-            elif msg == "show":
-                self.d_uiShow()
+    def dspProgramChanged(self, channel, bank, program):
+        return
 
-            elif msg == "hide":
-                self.d_uiHide()
+    def dspStateChanged(self, key, value):
+        return
 
-            elif msg == "quit":
-                self.fQuitReceived = True
-                self.d_uiQuit()
+    def dspNoteReceived(self, onOff, channel, note, velocity):
+        return
 
-            elif msg == "uiTitle":
-                uiTitle = self.readlineblock().replace("\r", "\n")
-                self.d_uiTitleChanged(uiTitle)
+    # -------------------------------------------------------------------
+    # ExternalUI Callbacks
 
-            else:
-                print("unknown message: \"" + msg + "\"")
+    def uiShow(self):
+        return
 
-        return True
+    def uiHide(self):
+        return
+
+    def uiQuit(self):
+        self.closeExternalUI()
+
+    def uiTitleChanged(self, uiTitle):
+        return
+
+    # -------------------------------------------------------------------
+    # Callback
+
+    def msgCallback(self, msg):
+        msg = charPtrToString(msg)
+
+        #if not msg:
+            #return
+
+        if msg == "control":
+            index = int(self.readlineblock())
+            value = float(self.readlineblock())
+            self.dspParameterChanged(index, value)
+
+        elif msg == "program":
+            channel = int(self.readlineblock())
+            bank    = int(self.readlineblock())
+            program = int(self.readlineblock())
+            self.dspProgramChanged(channel, bank, program)
+
+        elif msg == "configure":
+            key   = self.readlineblock() #.replace("\r", "\n")
+            value = self.readlineblock() #.replace("\r", "\n")
+            self.dspStateChanged(key, value)
+
+        elif msg == "note":
+            onOff    = bool(self.readlineblock() == "true")
+            channel  = int(self.readlineblock())
+            note     = int(self.readlineblock())
+            velocity = int(self.readlineblock())
+            self.dspNoteReceived(onOff, channel, note, velocity)
+
+        elif msg == "show":
+            self.uiShow()
+
+        elif msg == "hide":
+            self.uiHide()
+
+        elif msg == "quit":
+            self.fQuitReceived = True
+            self.uiQuit()
+
+        elif msg == "uiTitle":
+            uiTitle = self.readlineblock() #.replace("\r", "\n")
+            self.uiTitleChanged(uiTitle)
+
+        else:
+            print("unknown message: \"" + msg + "\"")
 
     # -------------------------------------------------------------------
     # Internal stuff
 
     def readlineblock(self):
-        if self.fPipeRecv is None:
+        if self.fPipeClient is None:
             return ""
 
-        # try a maximum of 20 times
-        # 20 * 50ms = 1000ms
-        for x in range(20):
-            try:
-                msg = self.fPipeRecv.readline()
-            except IOError:
-                msg = ""
-
-            if msg:
-                return msg.strip()
-
-            # try again in 50 ms
-            sleep(0.050)
-
-        print("readlineblock timed out")
-        return ""
+        return gCarla.utils.pipe_client_readlineblock(self.fPipeClient, 50)
 
     def send(self, lines):
-        if self.fPipeSend is None:
+        if self.fPipeClient is None or len(lines) == 0:
             return
+
+        gCarla.utils.pipe_client_lock(self.fPipeClient)
 
         for line in lines:
             if line is None:
@@ -229,6 +199,6 @@ class ExternalUI(object):
                 print("unknown data type to send:", type(line))
                 return
 
-            self.fPipeSend.write(line2 + "\n")
+            gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n")
 
-        self.fPipeSend.flush()
+        gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient)

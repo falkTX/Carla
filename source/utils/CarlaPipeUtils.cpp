@@ -1150,7 +1150,7 @@ CarlaPipeClient::~CarlaPipeClient() noexcept
     close();
 }
 
-bool CarlaPipeClient::init(char* argv[]) noexcept
+bool CarlaPipeClient::init(const char* argv[]) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv == INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend == INVALID_PIPE_VALUE, false);

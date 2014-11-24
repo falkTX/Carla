@@ -17,6 +17,12 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # -----------------------------------------------------------------------
+# Imports (Custom)
+
+from carla_shared import *
+from carla_utils import *
+
+# -----------------------------------------------------------------------
 # Imports (ExternalUI)
 
 from carla_app import CarlaApplication
@@ -49,7 +55,7 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
     # -------------------------------------------------------------------
     # DSP Callbacks
 
-    def d_parameterChanged(self, index, value):
+    def dspParameterChanged(self, index, value):
         if index == 0:
             color = int(value)
 
@@ -72,25 +78,26 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
     # -------------------------------------------------------------------
     # ExternalUI Callbacks
 
-    def d_uiShow(self):
+    def uiShow(self):
         self.show()
 
-    def d_uiHide(self):
+    def uiHide(self):
         self.hide()
 
-    def d_uiQuit(self):
+    def uiQuit(self):
+        self.closeExternalUI()
         self.close()
         app.quit()
 
-    def d_uiTitleChanged(self, uiTitle):
+    def uiTitleChanged(self, uiTitle):
         self.setWindowTitle(uiTitle)
 
     # -------------------------------------------------------------------
     # Qt events
 
     def timerEvent(self, event):
-        if event.timerId() == self.fIdleTimer and not self.idleExternalUI():
-            self.d_uiQuit()
+        if event.timerId() == self.fIdleTimer:
+            self.idleExternalUI()
         DigitalPeakMeter.timerEvent(self, event)
 
     def closeEvent(self, event):
@@ -100,6 +107,12 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
 #--------------- main ------------------
 if __name__ == '__main__':
     import resources_rc
+
+    pathBinaries, pathResources = getPaths()
+    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
+    gCarla.utils.set_locale_C()
+    gCarla.utils.set_process_name("BigMeter")
+
     app = CarlaApplication("BigMeter")
     gui = DistrhoUIBigMeter()
     app.exit_exec()
