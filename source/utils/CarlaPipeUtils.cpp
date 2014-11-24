@@ -508,7 +508,7 @@ bool CarlaPipeCommon::readNextLineAsBool(bool& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = (std::strcmp(msg, "true") == 0);
         delete[] msg;
@@ -522,7 +522,7 @@ bool CarlaPipeCommon::readNextLineAsInt(int32_t& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = std::atoi(msg);
         delete[] msg;
@@ -536,7 +536,7 @@ bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         int32_t tmp = std::atoi(msg);
         delete[] msg;
@@ -555,7 +555,7 @@ bool CarlaPipeCommon::readNextLineAsLong(int64_t& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = std::atol(msg);
         delete[] msg;
@@ -569,7 +569,7 @@ bool CarlaPipeCommon::readNextLineAsULong(uint64_t& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         int64_t tmp = std::atol(msg);
         delete[] msg;
@@ -588,7 +588,7 @@ bool CarlaPipeCommon::readNextLineAsFloat(float& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = static_cast<float>(std::atof(msg));
         delete[] msg;
@@ -602,7 +602,7 @@ bool CarlaPipeCommon::readNextLineAsDouble(double& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = std::atof(msg);
         delete[] msg;
@@ -616,7 +616,7 @@ bool CarlaPipeCommon::readNextLineAsString(const char*& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
-    if (const char* const msg = readline())
+    if (const char* const msg = readlineblock())
     {
         value = msg;
         return true;
@@ -692,6 +692,8 @@ bool CarlaPipeCommon::writeAndFixMsg(const char* const msg) noexcept
 // internal
 const char* CarlaPipeCommon::readline() noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv != INVALID_PIPE_VALUE, nullptr);
+
     char    c;
     char*   ptr = pData->tmpBuf;
     ssize_t ret;
@@ -741,6 +743,25 @@ const char* CarlaPipeCommon::readline() noexcept
         break;
     }
 
+    return nullptr;
+}
+
+const char* CarlaPipeCommon::readlineblock(const uint32_t timeOutMilliseconds) noexcept
+{
+    const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
+
+    for (;;)
+    {
+        if (const char* const msg = readline())
+            return msg;
+
+        if (juce::Time::getMillisecondCounter() >= timeoutEnd)
+            break;
+
+        carla_msleep(5);
+    }
+
+    carla_stderr("readlineblock timed out");
     return nullptr;
 }
 

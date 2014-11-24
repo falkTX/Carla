@@ -82,7 +82,7 @@ private:
 
     // internal
     const char* readline() noexcept;
-    // internal
+    const char* readlineblock(const uint32_t timeOutMilliseconds = 50) noexcept;
     bool writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeCommon)
