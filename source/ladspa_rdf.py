@@ -16,7 +16,7 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  C types
 
 # Imports (Global)
@@ -131,7 +131,7 @@ class LADSPA_RDF_Descriptor(Structure):
         ("Ports", POINTER(LADSPA_RDF_Port))
     ]
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  Python compatible C types
 
 PyLADSPA_RDF_ScalePoint = {
@@ -163,7 +163,7 @@ PyLADSPA_RDF_Descriptor = {
     'Ports': []
 }
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  RDF data and conversions
 
 # Namespaces
@@ -328,7 +328,7 @@ def get_c_unit_type(value):
 
     return ret
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  Global objects
 
 global LADSPA_RDF_PATH, LADSPA_Plugins
@@ -340,7 +340,7 @@ def set_rdf_path(PATH):
     global LADSPA_RDF_PATH
     LADSPA_RDF_PATH = PATH
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  Helper methods
 
 LADSPA_RDF_TYPE_PLUGIN = 1
@@ -372,7 +372,7 @@ def to_plugin_and_port_number(subject):
 def to_plugin_port(subject):
     return to_plugin_and_port_number(subject)[1]
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  RDF store/retrieve data methods
 
 def check_and_add_plugin(pluginId):
@@ -490,7 +490,7 @@ def get_value_index(value, vlist):
         print("LADSPA_RDF - CRITICAL ERROR #002")
         return 0
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  RDF sort data methods
 
 # Sort the plugin's port's ScalePoints by value
@@ -534,7 +534,7 @@ def SORT_PyLADSPA_RDF_Ports(oldDictList):
 
     return newDictList
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  RDF data parsing
 
 from rdflib import ConjunctiveGraph, URIRef, BNode
@@ -681,7 +681,7 @@ def parse_rdf_file(filename):
         index, pluginId, portId, value = portDefault
         set_port_default(pluginId, portId, value)
 
-# -------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------------------------
 #  LADSPA_RDF main methods
 
 import os
@@ -795,3 +795,5 @@ def get_c_ladspa_rdfs(pyPluginList):
         C_LADSPA_Plugins.append(desc)
 
     return C_LADSPA_Plugins
+
+# ------------------------------------------------------------------------------------------------------------
