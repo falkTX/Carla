@@ -19,6 +19,7 @@
 #define CARLA_EXTERNAL_UI_HPP_INCLUDED
 
 #include "CarlaPipeUtils.hpp"
+#include "CarlaString.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -65,7 +66,7 @@ public:
         if (! show)
             return;
 
-        const CarlaMutexLocker cml(fWriteLock);
+        const CarlaMutexLocker cml(getLock());
         writeMsg("show\n", 5);
     }
 
@@ -75,7 +76,7 @@ protected:
     {
         if (std::strcmp(msg, "exiting") == 0)
         {
-            waitChildClose();
+            close();
             fUiState = UiHide;
             return true;
         }

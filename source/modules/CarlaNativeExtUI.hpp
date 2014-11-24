@@ -35,13 +35,9 @@ class NativePluginAndUiClass : public NativePluginClass,
 public:
     NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const extUiPath)
         : NativePluginClass(host),
-          fExtUiPath(extUiPath)
-    {
-    }
-
-    ~NativePluginAndUiClass() override
-    {
-    }
+          CarlaExternalUI(),
+          fExtUiPath(extUiPath),
+          leakDetector_NativePluginAndUiClass() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -51,7 +47,7 @@ protected:
     {
         if (show)
         {
-            if (isOk())
+            if (isRunning())
                 return;
 
             CarlaString path(getResourceDir() + fExtUiPath);
@@ -62,16 +58,13 @@ protected:
         }
         else
         {
-            CarlaExternalUI::stop();
+            CarlaExternalUI::stop(5000);
         }
     }
 
     void uiIdle() override
     {
         CarlaExternalUI::idle();
-
-        if (! CarlaExternalUI::isOk())
-            return;
 
         switch (CarlaExternalUI::getAndResetUiState())
         {
@@ -83,7 +76,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
-            CarlaExternalUI::stop();
+            CarlaExternalUI::stop(2000);
             break;
         }
     }
@@ -94,7 +87,7 @@ protected:
 
         char tmpBuf[0xff+1];
 
-        const CarlaMutexLocker cml(fWriteLock);
+        const CarlaMutexLocker cml(getLock());
 
         writeMsg("control\n", 8);
         std::sprintf(tmpBuf, "%i\n", index);
@@ -109,7 +102,7 @@ protected:
 
         char tmpBuf[0xff+1];
 
-        const CarlaMutexLocker cml(fWriteLock);
+        const CarlaMutexLocker cml(getLock());
 
         writeMsg("program\n", 8);
         std::sprintf(tmpBuf, "%i\n", channel);
@@ -125,7 +118,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        const CarlaMutexLocker cml(fWriteLock);
+        const CarlaMutexLocker cml(getLock());
 
         writeMsg("configure\n", 10);
         writeAndFixMsg(key);
@@ -150,7 +143,7 @@ protected:
 
             try {
                 uiParameterChanged(param, value);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("uiParameterChanged");
 
             return true;
         }
@@ -166,7 +159,7 @@ protected:
 
             try {
                 uiMidiProgramChanged(channel, bank, program);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("uiMidiProgramChanged");
 
             return true;
         }
@@ -181,7 +174,7 @@ protected:
 
             try {
                 uiCustomDataChanged(key, value);
-            } catch(...) {}
+            } CARLA_SAFE_EXCEPTION("uiCustomDataChanged");
 
             delete[] key;
             delete[] value;

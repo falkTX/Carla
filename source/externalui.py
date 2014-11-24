@@ -38,14 +38,17 @@ class ExternalUI(object):
         if len(argv) > 1:
             self.fSampleRate = float(argv[1])
             self.fUiName     = argv[2]
-            self.fPipeRecvFd = int(argv[3])
-            self.fPipeSendFd = int(argv[4])
 
-            oldFlags = fcntl(self.fPipeRecvFd, F_GETFL)
-            fcntl(self.fPipeRecvFd, F_SETFL, oldFlags | O_NONBLOCK)
+            pipeRecvServer = int(argv[3])
+            pipeRecvClient = int(argv[4])
+            pipeSendServer = int(argv[5])
+            pipeSendClient = int(argv[6])
 
-            self.fPipeRecv = fdopen(self.fPipeRecvFd, 'r')
-            self.fPipeSend = fdopen(self.fPipeSendFd, 'w')
+            oldFlags = fcntl(pipeRecvServer, F_GETFL)
+            fcntl(pipeRecvServer, F_SETFL, oldFlags | O_NONBLOCK)
+
+            self.fPipeRecv = fdopen(pipeRecvServer, 'r')
+            self.fPipeSend = fdopen(pipeSendServer, 'w')
 
         else:
             self.fSampleRate = 44100.0
@@ -53,7 +56,6 @@ class ExternalUI(object):
 
             self.fPipeRecv = None
             self.fPipeSend = None
-
 
     def ready(self):
         if self.fPipeRecv is not None:

@@ -76,14 +76,9 @@ public:
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
 
-    CarlaMutex& getWriteLock() noexcept
-    {
-        return fWriteLock;
-    }
-
     void show() noexcept
     {
-        const CarlaMutexLocker cml(fWriteLock);
+        const CarlaMutexLocker cml(getLock());
         writeMsg("show\n", 5);
     }
 
@@ -549,7 +544,7 @@ protected:
 
         if (! ok)
         {
-            const CarlaMutexLocker cml(fWriteLock);
+            const CarlaMutexLocker cml(getLock());
             writeMsg("error\n", 6);
             writeAndFixMsg(fEngine->getLastError());
         }
@@ -715,7 +710,7 @@ protected:
             return;
 
         {
-            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+            const CarlaMutexLocker cml(fUiServer.getLock());
 
             fUiServer.writeAndFixMsg("buffer-size");
             std::sprintf(fTmpBuf, "%i\n", newBufferSize);
@@ -732,7 +727,7 @@ protected:
             return;
 
         {
-            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+            const CarlaMutexLocker cml(fUiServer.getLock());
             const ScopedLocale csl;
 
             fUiServer.writeAndFixMsg("sample-rate");
@@ -748,7 +743,7 @@ protected:
 
     void uiServerSendPluginInfo(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
 
         const uint pluginId(plugin->getId());
 
@@ -803,7 +798,7 @@ protected:
 
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
         const ScopedLocale csl;
 
         const uint pluginId(plugin->getId());
@@ -850,7 +845,7 @@ protected:
 
     void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
 
         const uint pluginId(plugin->getId());
 
@@ -887,7 +882,7 @@ protected:
     {
         if (! fIsRunning)
             return;
-        if (! fUiServer.isOk())
+        if (! fUiServer.isRunning())
             return;
 
         CarlaPlugin* plugin;
@@ -941,7 +936,7 @@ protected:
             break;
         }
 
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
         const ScopedLocale csl;
 
         std::sprintf(fTmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
@@ -965,9 +960,9 @@ protected:
     void uiServerInfo()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isRunning(),);
 
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
 
         fUiServer.writeAndFixMsg("complete-license");
         fUiServer.writeAndFixMsg(carla_get_complete_license_text());
@@ -996,10 +991,10 @@ protected:
     void uiServerOptions()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.isOk(),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isRunning(),);
 
         const EngineOptions& options(pData->options);
-        const CarlaMutexLocker cml(fUiServer.getWriteLock());
+        const CarlaMutexLocker cml(fUiServer.getLock());
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
         fUiServer.writeMsg(fTmpBuf);
@@ -1401,7 +1396,7 @@ protected:
     {
         if (show)
         {
-            if (fUiServer.isOk())
+            if (fUiServer.isRunning())
                 return;
 
             CarlaString path(pHost->resourceDir);
@@ -1437,7 +1432,7 @@ protected:
         }
         else
         {
-            fUiServer.stop();
+            fUiServer.stop(5000);
         }
     }
 
@@ -1446,12 +1441,10 @@ protected:
         CarlaEngine::idle();
         fUiServer.idle();
 
-        if (! fUiServer.isOk())
-            return;
-
+        if (fUiServer.isRunning())
         {
             const EngineTimeInfo& timeInfo(pData->timeInfo);
-            const CarlaMutexLocker cml(fUiServer.getWriteLock());
+            const CarlaMutexLocker cml(fUiServer.getLock());
             const ScopedLocale csl;
 
             // send transport
@@ -1507,7 +1500,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
-            fUiServer.stop();
+            fUiServer.stop(2000);
             break;
         }
     }
@@ -1943,6 +1936,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
+#include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
 #include "CarlaJuceEvents.cpp"
 
