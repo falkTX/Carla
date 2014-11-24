@@ -748,7 +748,7 @@ const char* CarlaPipeCommon::readline() noexcept
             continue;
         }
 
-        if (pData->tmpStr.isNotEmpty() || ptr != pData->tmpBuf)
+        if (pData->tmpStr.isNotEmpty() || ptr != pData->tmpBuf || ret == 1)
         {
             if (ptr != pData->tmpBuf)
             {

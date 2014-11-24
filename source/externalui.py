@@ -219,16 +219,16 @@ class ExternalUI(object):
                 line2 = "(null)"
             elif isinstance(line, str):
                 line2 = line.replace("\n", "\r")
+            elif isinstance(line, bool):
+                line2 = "true" if line else "false"
+            elif isinstance(line, int):
+                line2 = "%i" % line
+            elif isinstance(line, float):
+                line2 = "%.10f" % line
             else:
-                if isinstance(line, bool):
-                    line2 = "true" if line else "false"
-                elif isinstance(line, int):
-                    line2 = "%i" % line
-                elif isinstance(line, float):
-                    line2 = "%.10f" % line
-                else:
-                    print("unknown data type to send:", type(line))
-                    return
+                print("unknown data type to send:", type(line))
+                return
 
             self.fPipeSend.write(line2 + "\n")
-            self.fPipeSend.flush()
+
+        self.fPipeSend.flush()
