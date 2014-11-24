@@ -79,7 +79,10 @@ ifeq ($(UNIX),true)
 STANDALONE_FLAGS += -lmagic
 endif
 
-UTILS_FLAGS = $(JUCE_CORE_LIBS)
+UTILS_FLAGS  = $(JUCE_CORE_LIBS)
+ifneq ($(HAIKU),true)
+UTILS_FLAGS += -lpthread
+endif
 
 # --------------------------------------------------------------
 

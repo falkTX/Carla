@@ -50,7 +50,7 @@ class CarlaApplication(object):
             QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
-        if WINDOWS and CWD.endswith("source"):
+        if WINDOWS and (CWD.endswith("source") or os.getenv("CXFREEZE") is not None):
             QApplication.addLibraryPath("C:\\Python34\\Lib\\site-packages\\PyQt5\\plugins")
 
         # Use binary dir as library path (except in Windows)

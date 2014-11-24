@@ -401,7 +401,7 @@ private:
 
 // ------------------------------ Plugin Checks -----------------------------
 
-static void do_ladspa_check(void*& libHandle, const char* const filename, const bool doInit)
+static void do_ladspa_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
     LADSPA_Descriptor_Function descFn = lib_symbol<LADSPA_Descriptor_Function>(libHandle, "ladspa_descriptor");
 
@@ -634,7 +634,7 @@ static void do_ladspa_check(void*& libHandle, const char* const filename, const 
     }
 }
 
-static void do_dssi_check(void*& libHandle, const char* const filename, const bool doInit)
+static void do_dssi_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
     DSSI_Descriptor_Function descFn = lib_symbol<DSSI_Descriptor_Function>(libHandle, "dssi_descriptor");
 
@@ -984,7 +984,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
         if (doInit)
         {
             // test if DLL is loadable, twice
-            void* const libHandle1 = lib_open(rdfDescriptor->Binary);
+            const lib_t libHandle1 = lib_open(rdfDescriptor->Binary);
 
             if (libHandle1 == nullptr)
             {
@@ -995,7 +995,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 
             lib_close(libHandle1);
 
-            void* const libHandle2 = lib_open(rdfDescriptor->Binary);
+            const lib_t libHandle2 = lib_open(rdfDescriptor->Binary);
 
             if (libHandle2 == nullptr)
             {
@@ -1142,7 +1142,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
 }
 
 #ifndef CARLA_OS_MAC
-static void do_vst_check(void*& libHandle, const bool doInit)
+static void do_vst_check(lib_t& libHandle, const bool doInit)
 {
     VST_Function vstFn = lib_symbol<VST_Function>(libHandle, "VSTPluginMain");
 

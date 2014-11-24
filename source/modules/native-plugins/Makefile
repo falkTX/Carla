@@ -57,14 +57,12 @@ OBJS += \
 	audio-file.cpp.o \
 	midi-file.cpp.o
 
-ifneq ($(WIN32),true)
 # --------------------------------------------------------------
 # External-UI plugins
 
 OBJS += \
 	bigmeter.cpp.o \
 	notes.cpp.o
-endif
 
 # --------------------------------------------------------------
 # ZynAddSubFX

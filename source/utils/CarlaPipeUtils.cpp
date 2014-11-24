@@ -60,7 +60,7 @@ struct OverlappedEvent {
 };
 
 static inline
-ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* buf, size_t numBytes)
+ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* const buf, const std::size_t numBytes)
 {
     DWORD dsize;
     OverlappedEvent over;
@@ -68,17 +68,47 @@ ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* buf, si
     if (::ReadFile(pipeh, buf, numBytes, &dsize, &over.over) != FALSE)
         return static_cast<ssize_t>(dsize);
 
-    if (GetLastError() == ERROR_IO_PENDING)
+    if (::GetLastError() == ERROR_IO_PENDING)
     {
         HANDLE handles[] = { over.over.hEvent, cancelh };
 
-        if (WaitForMultipleObjects(2, handles, FALSE, 0) != WAIT_OBJECT_0)
+        if (::WaitForMultipleObjects(2, handles, FALSE, 0) != WAIT_OBJECT_0)
         {
-            CancelIo(pipeh);
+            ::CancelIo(pipeh);
             return -1;
         }
 
-        if (GetOverlappedResult(pipeh, &over.over, &dsize, FALSE) != FALSE)
+        if (::GetOverlappedResult(pipeh, &over.over, &dsize, FALSE) != FALSE)
+            return static_cast<ssize_t>(dsize);
+    }
+
+    return -1;
+}
+static inline
+ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* const buf, const std::size_t numBytes)
+{
+    DWORD dsize;
+    if (::WriteFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
+        return static_cast<ssize_t>(dsize);
+    return -1;
+
+    //DWORD dsize;
+    OverlappedEvent over;
+
+    if (::WriteFile(pipeh, buf, numBytes, &dsize, &over.over) != FALSE)
+        return static_cast<ssize_t>(dsize);
+
+    if (::GetLastError() == ERROR_IO_PENDING)
+    {
+        HANDLE handles[] = { over.over.hEvent, cancelh };
+
+        if (::WaitForMultipleObjects(2, handles, FALSE, 0) != WAIT_OBJECT_0)
+        {
+            ::CancelIo(pipeh);
+            return -1;
+        }
+
+        if (::GetOverlappedResult(pipeh, &over.over, &dsize, FALSE) != FALSE)
             return static_cast<ssize_t>(dsize);
     }
 
@@ -113,12 +143,12 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION& processInfo)
 
     STARTUPINFOW startupInfo;
     carla_zeroStruct(startupInfo);
-//# if 1
+# if 0
     startupInfo.hStdInput  = INVALID_HANDLE_VALUE;
     startupInfo.hStdOutput = INVALID_HANDLE_VALUE;
     startupInfo.hStdError  = INVALID_HANDLE_VALUE;
     startupInfo.dwFlags    = STARTF_USESTDHANDLES;
-//# endif
+# endif
     startupInfo.cb         = sizeof(STARTUPINFOW);
 
     return CreateProcessW(nullptr, const_cast<LPWSTR>(command.toWideCharPointer()),
@@ -798,13 +828,17 @@ bool CarlaPipeCommon::writeMsgBuffer(const char* const msg, const std::size_t si
 
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
+    ssize_t ret;
+
     try {
 #ifdef CARLA_OS_WIN
-        return (::WriteFile(pData->pipeSend, msg, size, nullptr, nullptr) != FALSE);
+        ret = ::WriteFileNonBlock(pData->pipeSend, pData->cancelEvent, msg, size);
 #else
-        return (::write(pData->pipeSend, msg, size) == static_cast<ssize_t>(size));
+        ret = ::write(pData->pipeSend, msg, size);
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
+
+     return (ret == static_cast<ssize_t>(size));
 }
 
 // -----------------------------------------------------------------------

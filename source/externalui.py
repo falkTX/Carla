@@ -17,11 +17,6 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
-
-from sys import argv
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
 
 from carla_shared import *
@@ -35,9 +30,9 @@ class ExternalUI(object):
 
         self.fQuitReceived = False
 
-        if len(argv) > 1:
-            self.fSampleRate = float(argv[1])
-            self.fUiName     = argv[2]
+        if len(sys.argv) > 1:
+            self.fSampleRate = float(sys.argv[1])
+            self.fUiName     = sys.argv[2]
             self.fPipeClient = gCarla.utils.pipe_client_new(lambda s,msg: self.msgCallback(msg))
         else:
             self.fSampleRate = 44100.0
@@ -48,10 +43,7 @@ class ExternalUI(object):
     # Public methods
 
     def ready(self):
-        if self.fPipeClient is not None:
-            # send empty line (just newline char)
-            self.send([""])
-        else:
+        if self.fPipeClient is None:
             # testing, show UI only
             self.uiShow()
 
@@ -65,12 +57,14 @@ class ExternalUI(object):
             gCarla.utils.pipe_client_idle(self.fPipeClient)
 
     def closeExternalUI(self):
+        if self.fPipeClient is None:
+            return
+
         if not self.fQuitReceived:
             self.send(["exiting"])
 
-        if self.fPipeClient is not None:
-            gCarla.utils.pipe_client_destroy(self.fPipeClient)
-            self.fPipeClient = None
+        gCarla.utils.pipe_client_destroy(self.fPipeClient)
+        self.fPipeClient = None
 
     # -------------------------------------------------------------------
     # Host DSP State
@@ -176,7 +170,7 @@ class ExternalUI(object):
         if self.fPipeClient is None:
             return ""
 
-        return gCarla.utils.pipe_client_readlineblock(self.fPipeClient, 50)
+        return gCarla.utils.pipe_client_readlineblock(self.fPipeClient, 5000)
 
     def send(self, lines):
         if self.fPipeClient is None or len(lines) == 0:
@@ -184,21 +178,25 @@ class ExternalUI(object):
 
         gCarla.utils.pipe_client_lock(self.fPipeClient)
 
-        for line in lines:
-            if line is None:
-                line2 = "(null)"
-            elif isinstance(line, str):
-                line2 = line.replace("\n", "\r")
-            elif isinstance(line, bool):
-                line2 = "true" if line else "false"
-            elif isinstance(line, int):
-                line2 = "%i" % line
-            elif isinstance(line, float):
-                line2 = "%.10f" % line
-            else:
-                print("unknown data type to send:", type(line))
-                return
+        # this must never fail, we need to unlock at the end
+        try:
+            for line in lines:
+                if line is None:
+                    line2 = "(null)"
+                elif isinstance(line, str):
+                    line2 = line.replace("\n", "\r")
+                elif isinstance(line, bool):
+                    line2 = "true" if line else "false"
+                elif isinstance(line, int):
+                    line2 = "%i" % line
+                elif isinstance(line, float):
+                    line2 = "%.10f" % line
+                else:
+                    print("unknown data type to send:", type(line))
+                    return
 
-            gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n")
+                gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n")
+        except:
+            pass
 
         gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient)

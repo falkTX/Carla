@@ -20,23 +20,17 @@ OBJS = \
 	CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
-	CarlaEngineJack.cpp.o
+	CarlaEngineJack.cpp.o \
+	CarlaEngineNative.cpp.o
 
 ifeq ($(MACOS_OR_WIN32),true)
-OBJSa += \
-	CarlaEngineJuce.cpp.o
+OBJSa += CarlaEngineJuce.cpp.o
 else
-OBJSa += \
-	CarlaEngineRtAudio.cpp.o
+OBJSa += CarlaEngineRtAudio.cpp.o
 endif
-
-ifneq ($(WIN32),true)
-OBJSa += \
-	CarlaEngineNative.cpp.o
 
 OBJSp  = $(OBJS) \
 	CarlaEngineNative.cpp.exp.o
-endif
 
 TARGETS = \
 	../carla_engine.a \

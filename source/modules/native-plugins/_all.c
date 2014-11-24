@@ -32,14 +32,12 @@ extern void carla_register_native_plugin_audiofile(void);
 // MIDI File
 extern void carla_register_native_plugin_midifile(void);
 
-#ifndef CARLA_OS_WIN
 // Carla
 extern void carla_register_native_plugin_carla(void);
 
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
-#endif
 
 #ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
@@ -66,14 +64,12 @@ void carla_register_all_plugins(void)
     // MIDI File
     carla_register_native_plugin_midifile();
 
-#ifndef CARLA_OS_WIN
     // Carla
     carla_register_native_plugin_carla();
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
-#endif
 
 #ifdef WANT_ZYNADDSUBFX
     // ZynAddSubFX

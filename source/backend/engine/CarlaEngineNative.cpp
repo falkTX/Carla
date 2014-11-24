@@ -20,9 +20,6 @@
 #ifdef BUILD_BRIDGE
 # error This file should not be compiled if building bridge
 #endif
-#ifdef CARLA_OS_WIN
-# error This file should not be compiled for Windows
-#endif
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
@@ -1418,10 +1415,12 @@ protected:
             CarlaString path(pHost->resourceDir);
 
             if (kIsPatchbay)
-                path += "/carla-plugin-patchbay";
+                path += CARLA_OS_SEP_STR "carla-plugin-patchbay";
             else
-                path += "/carla-plugin";
-
+                path += CARLA_OS_SEP_STR "carla-plugin";
+#ifdef CARLA_OS_WIN
+            path += ".exe";
+#endif
             carla_stdout("Trying to start carla-plugin using \"%s\"", path.buffer());
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
@@ -1463,6 +1462,7 @@ protected:
             const CarlaMutexLocker cml(fUiServer.getLock());
             const ScopedLocale csl;
 
+#ifndef CARLA_OS_WIN // FIXME
             // send transport
             fUiServer.writeAndFixMsg("transport");
             fUiServer.writeMsg(timeInfo.playing ? "true\n" : "false\n");
@@ -1482,6 +1482,7 @@ protected:
             }
 
             fUiServer.flush();
+#endif
 
             // send peaks and param outputs for all plugins
             for (uint i=0; i < pData->curPluginCount; ++i)

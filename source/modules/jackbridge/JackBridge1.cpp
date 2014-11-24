@@ -140,7 +140,7 @@ typedef int  (__cdecl *jacksym_set_property_change_callback)(jack_client_t*, Jac
 // -----------------------------------------------------------------------------
 
 struct JackBridge {
-    void* lib;
+    lib_t lib;
 
     jacksym_get_version get_version_ptr;
     jacksym_get_version_string get_version_string_ptr;

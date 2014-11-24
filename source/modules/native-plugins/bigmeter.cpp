@@ -17,10 +17,6 @@
 
 #include "CarlaDefines.h"
 
-#ifdef CARLA_OS_WIN
-# error This file should not be compiled for Windows
-#endif
-
 #include "CarlaMathUtils.hpp"
 #include "CarlaNativeExtUI.hpp"
 
@@ -34,7 +30,7 @@ class BigMeterPlugin : public NativePluginAndUiClass
 {
 public:
     BigMeterPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, "/bigmeter-ui"),
+        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "bigmeter-ui"),
           fColor(1),
           fStyle(1),
           fOutLeft(0.0f),

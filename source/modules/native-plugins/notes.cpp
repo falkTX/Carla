@@ -17,10 +17,6 @@
 
 #include "CarlaDefines.h"
 
-#ifdef CARLA_OS_WIN
-# error This file should not be compiled for Windows
-#endif
-
 #include "CarlaNativeExtUI.hpp"
 
 // -----------------------------------------------------------------------
@@ -29,7 +25,7 @@ class NotesPlugin : public NativePluginAndUiClass
 {
 public:
     NotesPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, "/notes-ui"),
+        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "notes-ui"),
           fCurPage(1),
           leakDetector_NotesPlugin() {}
 
