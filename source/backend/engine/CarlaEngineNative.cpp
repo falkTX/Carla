@@ -80,6 +80,7 @@ public:
     {
         const CarlaMutexLocker cml(getLock());
         writeMsg("show\n", 5);
+        flush();
     }
 
 protected:
@@ -547,6 +548,7 @@ protected:
             const CarlaMutexLocker cml(getLock());
             writeMsg("error\n", 6);
             writeAndFixMsg(fEngine->getLastError());
+            flush();
         }
 
         return true;
@@ -715,6 +717,7 @@ protected:
             fUiServer.writeAndFixMsg("buffer-size");
             std::sprintf(fTmpBuf, "%i\n", newBufferSize);
             fUiServer.writeMsg(fTmpBuf);
+            fUiServer.flush();
         }
 
         pData->bufferSize = newBufferSize;
@@ -733,6 +736,7 @@ protected:
             fUiServer.writeAndFixMsg("sample-rate");
             std::sprintf(fTmpBuf, "%f\n", newSampleRate);
             fUiServer.writeMsg(fTmpBuf);
+            fUiServer.flush();
         }
 
         pData->sampleRate = newSampleRate;
@@ -794,6 +798,8 @@ protected:
 
         std::sprintf(fTmpBuf, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
         fUiServer.writeMsg(fTmpBuf);
+
+        fUiServer.flush();
     }
 
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
@@ -809,6 +815,7 @@ protected:
             fUiServer.writeMsg(fTmpBuf);
             std::sprintf(fTmpBuf, "%f\n", plugin->getInternalParameterValue(i));
             fUiServer.writeMsg(fTmpBuf);
+            fUiServer.flush();
         }
 
         uint32_t ins, outs, count;
@@ -841,6 +848,8 @@ protected:
             std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(i));
             fUiServer.writeMsg(fTmpBuf);
         }
+
+        fUiServer.flush();
     }
 
     void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
@@ -861,6 +870,8 @@ protected:
             fUiServer.writeAndFixMsg(fTmpBuf);
         }
 
+        fUiServer.flush();
+
         count = plugin->getMidiProgramCount();
         std::sprintf(fTmpBuf, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
         fUiServer.writeMsg(fTmpBuf);
@@ -876,6 +887,8 @@ protected:
             std::sprintf(fTmpBuf, "%s", mpData.name);
             fUiServer.writeAndFixMsg(fTmpBuf);
         }
+
+        fUiServer.flush();
     }
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
@@ -955,6 +968,8 @@ protected:
         fUiServer.writeMsg(fTmpBuf);
 
         fUiServer.writeAndFixMsg(valueStr);
+
+        fUiServer.flush();
     }
 
     void uiServerInfo()
@@ -986,6 +1001,8 @@ protected:
         fUiServer.writeAndFixMsg("sample-rate");
         std::sprintf(fTmpBuf, "%f\n", pData->sampleRate);
         fUiServer.writeMsg(fTmpBuf);
+
+        fUiServer.flush();
     }
 
     void uiServerOptions()
@@ -996,75 +1013,74 @@ protected:
         const EngineOptions& options(pData->options);
         const CarlaMutexLocker cml(fUiServer.getLock());
 
+        const char* const optionsForcedStr(fOptionsForced ? "true\n" : "false\n");
+        const std::size_t optionsForcedStrSize(fOptionsForced ? 5 : 6);
+
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.processMode);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.transportMode);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(options.forceStereo));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMsg(options.forceStereo ? "true\n" : "false\n");
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferPluginBridges));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMsg(options.preferPluginBridges ? "true\n" : "false\n");
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(options.preferUiBridges));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMsg(options.preferUiBridges ? "true\n" : "false\n");
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(options.uisAlwaysOnTop));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMsg(options.uisAlwaysOnTop ? "true\n" : "false\n");
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.maxParameters);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", bool2str(fOptionsForced));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.uiBridgesTimeout);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", "true");
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg("true\n", 5);
         std::sprintf(fTmpBuf, "%s\n", options.binaryDir);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
         fUiServer.writeMsg(fTmpBuf);
-        std::sprintf(fTmpBuf, "%s\n", "true");
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMsg("true\n", 5);
         std::sprintf(fTmpBuf, "%s\n", options.resourceDir);
         fUiServer.writeMsg(fTmpBuf);
+        fUiServer.flush();
     }
 
     // -------------------------------------------------------------------
@@ -1465,6 +1481,8 @@ protected:
                 fUiServer.writeMsg("0.0\n");
             }
 
+            fUiServer.flush();
+
             // send peaks and param outputs for all plugins
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
@@ -1476,6 +1494,7 @@ protected:
 
                 std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
                 fUiServer.writeMsg(fTmpBuf);
+                fUiServer.flush();
 
                 for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
                 {
@@ -1486,6 +1505,7 @@ protected:
                     fUiServer.writeMsg(fTmpBuf);
                     std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(j));
                     fUiServer.writeMsg(fTmpBuf);
+                    fUiServer.flush();
                 }
             }
         }

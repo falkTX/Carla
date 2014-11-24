@@ -68,6 +68,7 @@ public:
 
         const CarlaMutexLocker cml(getLock());
         writeMsg("show\n", 5);
+        flush();
     }
 
 protected:

@@ -648,7 +648,7 @@ bool CarlaPipeCommon::writeMsg(const char* const msg, std::size_t size) const no
     return writeMsgBuffer(msg, size);
 }
 
-bool CarlaPipeCommon::writeAndFixMsg(const char* const msg) noexcept
+bool CarlaPipeCommon::writeAndFixMsg(const char* const msg) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msg != nullptr, false);
 
@@ -685,6 +685,27 @@ bool CarlaPipeCommon::writeAndFixMsg(const char* const msg) noexcept
     }
 
     return writeMsgBuffer(fixedMsg, size+1);
+}
+
+bool CarlaPipeCommon::flush() const noexcept
+{
+    // TESTING remove later (replace with trylock scope)
+    if (pData->writeLock.tryLock())
+    {
+        carla_safe_assert("! pData->writeLock.tryLock()", __FILE__, __LINE__);
+        pData->writeLock.unlock();
+        return false;
+    }
+
+    CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
+
+    try {
+#ifdef CARLA_OS_WIN
+        return (::FlushFileBuffers(pData->pipeSend) != FALSE);
+#else
+        return (::fsync(pData->pipeSend) == 0);
+#endif
+    } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
 }
 
 // -------------------------------------------------------------------
@@ -1194,6 +1215,7 @@ bool CarlaPipeClient::init(char* argv[]) noexcept
     pData->pipeSend = pipeSendServer;
 
     writeMsg("\n");
+    flush();
 
     return true;
 }

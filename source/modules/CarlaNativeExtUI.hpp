@@ -94,6 +94,7 @@ protected:
         writeMsg(tmpBuf);
         std::sprintf(tmpBuf, "%f\n", value);
         writeMsg(tmpBuf);
+        flush();
     }
 
     void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
@@ -111,6 +112,7 @@ protected:
         writeMsg(tmpBuf);
         std::sprintf(tmpBuf, "%i\n", program);
         writeMsg(tmpBuf);
+        flush();
     }
 
     void uiSetCustomData(const char* const key, const char* const value) override
@@ -123,6 +125,7 @@ protected:
         writeMsg("configure\n", 10);
         writeAndFixMsg(key);
         writeAndFixMsg(value);
+        flush();
     }
 
     // -------------------------------------------------------------------

@@ -67,7 +67,8 @@ public:
 
     bool writeMsg(const char* const msg) const noexcept;
     bool writeMsg(const char* const msg, std::size_t size) const noexcept;
-    bool writeAndFixMsg(const char* const msg) noexcept;
+    bool writeAndFixMsg(const char* const msg) const noexcept;
+    bool flush() const noexcept;
 
     // -------------------------------------------------------------------
 
