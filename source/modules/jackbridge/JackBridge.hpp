@@ -391,9 +391,9 @@ __cdecl bool jackbridge_remove_all_properties(jack_client_t* client);
 __cdecl bool jackbridge_set_property_change_callback(jack_client_t* client, JackPropertyChangeCallback callback, void* arg);
 
 __cdecl bool jackbridge_sem_init(void* sem) noexcept;
-__cdecl bool jackbridge_sem_destroy(void* sem) noexcept;
+__cdecl void jackbridge_sem_destroy(void* sem) noexcept;
 __cdecl bool jackbridge_sem_post(void* sem) noexcept;
-__cdecl bool jackbridge_sem_timedwait(void* sem, int secs) noexcept;
+__cdecl bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept;
 
 __cdecl bool  jackbridge_shm_is_valid(const void* shm) noexcept;
 __cdecl void  jackbridge_shm_init(void* shm) noexcept;

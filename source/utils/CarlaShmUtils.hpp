@@ -125,6 +125,7 @@ shm_t carla_shm_attach(const char* const filename) noexcept
 #endif
     }
     catch(...) {
+        carla_safe_exception("carla_shm_attach", __FILE__, __LINE__);
         ret = gNullCarlaShm;
     }
 
@@ -174,10 +175,10 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        const HANDLE map = ::CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr);
+        const HANDLE map(:CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr));
         CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
-        HANDLE ptr = ::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size);
+        const HANDLE ptr(::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size));
 
         if (ptr == nullptr)
         {
@@ -191,7 +192,7 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
 #else
         if (shm.filename != nullptr)
         {
-            const int ret = ::ftruncate(shm.fd, static_cast<off_t>(size));
+            const int ret(::ftruncate(shm.fd, static_cast<off_t>(size)));
             CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
         }
 
@@ -215,13 +216,13 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const std::size_t size) noexce
 
     try {
 #ifdef CARLA_OS_WIN
-        const HANDLE map = shm.map;
+        const HANDLE map(shm.map);
         shm.map = nullptr;
 
         ::UnmapViewOfFile(ptr);
         ::CloseHandle(map);
 #else
-        const int ret = ::munmap(ptr, size);
+        const int ret(::munmap(ptr, size));
         CARLA_SAFE_ASSERT(ret == 0);
 #endif
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");

@@ -221,7 +221,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForServer(const int secs) noexcept
+    bool waitForServer(const uint secs) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
@@ -2200,7 +2200,7 @@ private:
         waitForServer();
     }
 
-    bool waitForServer(const int secs = 5)
+    bool waitForServer(const uint secs = 5)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedOut, false);
 
