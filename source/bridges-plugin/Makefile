@@ -133,10 +133,8 @@ win64:   $(BINDIR)/carla-bridge-win64.exe
 # ----------------------------------------------------------------------------------------------------------------------------
 # native
 
-OBJS_NATIVE  = $(OBJDIR)/CarlaBridgePlugin.cpp.o
-
-# carla-engine
-OBJS_NATIVE += \
+OBJS_NATIVE  = \
+	$(OBJDIR)/CarlaBridgePlugin.cpp.o \
 	$(OBJDIR)/CarlaEngine.cpp.o \
 	$(OBJDIR)/CarlaEngineClient.cpp.o \
 	$(OBJDIR)/CarlaEngineData.cpp.o \
@@ -146,26 +144,20 @@ OBJS_NATIVE += \
 	$(OBJDIR)/CarlaEnginePorts.cpp.o \
 	$(OBJDIR)/CarlaEngineThread.cpp.o \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
-	$(OBJDIR)/CarlaEngineBridge.cpp.o
-
-# carla-plugin
-OBJS_NATIVE += \
+	$(OBJDIR)/CarlaEngineBridge.cpp.o \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
 	$(OBJDIR)/CarlaPluginThread.cpp.o \
-	$(OBJDIR)/NativePlugin.cpp.o \
-	$(OBJDIR)/LadspaPlugin.cpp.o \
-	$(OBJDIR)/DssiPlugin.cpp.o \
-	$(OBJDIR)/Lv2Plugin.cpp.o \
-	$(OBJDIR)/VstPlugin.cpp.o \
-	$(OBJDIR)/Vst3Plugin.cpp.o \
-	$(OBJDIR)/AuPlugin.cpp.o \
-	$(OBJDIR)/JucePlugin.cpp.o \
-	$(OBJDIR)/FluidSynthPlugin.cpp.o \
-	$(OBJDIR)/LinuxSamplerPlugin.cpp.o
-
-# carla-standalone
-OBJS_NATIVE += \
+	$(OBJDIR)/CarlaPluginNative.cpp.o \
+	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
+	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
+	$(OBJDIR)/CarlaPluginLV2.cpp.o \
+	$(OBJDIR)/CarlaPluginVST2.cpp.o \
+	$(OBJDIR)/CarlaPluginVST3.cpp.o \
+	$(OBJDIR)/CarlaPluginAU.cpp.o \
+	$(OBJDIR)/CarlaPluginJuce.cpp.o \
+	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
+	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
 
 # libs

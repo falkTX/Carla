@@ -501,7 +501,7 @@ String StateSave::toString() const
         case PLUGIN_LV2:
             infoXml << "   <URI>"      << xmlSafeString(label, true)  << "</URI>\n";
             break;
-        case PLUGIN_VST:
+        case PLUGIN_VST2:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
             infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
             break;

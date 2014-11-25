@@ -115,16 +115,6 @@ endif
 
 # --------------------------------------------------------------
 
-DEPS  = $(CARLA_BACKEND_UTILS_HPP)
-DEPS += $(CARLA_LIB_UTILS_HPP)
-DEPS += $(CARLA_MATH_UTILS_HPP)
-DEPS += $(CARLA_MIDI_H)
-# juce_audio_processors.h
-DEPS += $(CARLA_LADSPA_UTILS_HPP)
-DEPS += $(CARLA_DSSI_UTILS_CPP)
-DEPS += $(CARLA_LV2_UTILS_HPP)
-DEPS += $(CARLA_VST_UTILS_HPP)
-
 OBJS = carla-discovery.cpp
 
 # --------------------------------------------------------------

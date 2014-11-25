@@ -22,7 +22,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "JucePluginWindow.hpp"
+#include "CarlaPluginJuceWindow.hpp"
 
 #include "juce_audio_processors.h"
 
@@ -32,12 +32,12 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------
 
-class JucePlugin : public CarlaPlugin,
-                   public AudioPlayHead,
-                   public AudioProcessorListener
+class CarlaPluginJuce : public CarlaPlugin,
+                        private AudioPlayHead,
+                        private AudioProcessorListener
 {
 public:
-    JucePlugin(CarlaEngine* const engine, const uint id)
+    CarlaPluginJuce(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fDesc(),
           fInstance(nullptr),
@@ -48,18 +48,18 @@ public:
           fChunk(),
           fUniqueId(nullptr),
           fWindow(),
-          leakDetector_JucePlugin()
+          leakDetector_CarlaPluginJuce()
     {
-        carla_debug("JucePlugin::JucePlugin(%p, %i)", engine, id);
+        carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
 
         fMidiBuffer.ensureSize(2048);
         fMidiBuffer.clear();
         fPosInfo.resetToDefault();
     }
 
-    ~JucePlugin() override
+    ~CarlaPluginJuce() override
     {
-        carla_debug("JucePlugin::~JucePlugin()");
+        carla_debug("CarlaPluginJuce::~CarlaPluginJuce()");
 
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
@@ -125,7 +125,7 @@ public:
         try {
             fChunk.reset();
             fInstance->getStateInformation(fChunk);
-        } CARLA_SAFE_EXCEPTION_RETURN("JucePlugin::getChunkData", 0);
+        } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginJuce::getChunkData", 0);
 
         if (const std::size_t size = fChunk.getSize())
         {
@@ -302,7 +302,7 @@ public:
                 String uiName(pData->name);
                 uiName += " (GUI)";
 
-                fWindow = new JucePluginWindow();
+                fWindow = new CarlaPluginJuceWindow();
                 fWindow->setName(uiName);
             }
 
@@ -342,7 +342,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
-        carla_debug("JucePlugin::reload() - start");
+        carla_debug("CarlaPluginJuce::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -564,12 +564,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("JucePlugin::reload() - end");
+        carla_debug("CarlaPluginJuce::reload() - end");
     }
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("JucePlugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginJuce::reloadPrograms(%s)", bool2str(doInit));
         const uint32_t oldCount = pData->prog.count;
         const int32_t  current  = pData->prog.current;
 
@@ -1058,7 +1058,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("JucePlugin::bufferSizeChanged(%i)", newBufferSize);
+        carla_debug("CarlaPluginJuce::bufferSizeChanged(%i)", newBufferSize);
 
         fAudioBuffer.setSize(static_cast<int>(std::max<uint32_t>(pData->audioIn.count, pData->audioOut.count)), static_cast<int>(newBufferSize));
 
@@ -1072,7 +1072,7 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("JucePlugin::sampleRateChanged(%g)", newSampleRate);
+        carla_debug("CarlaPluginJuce::sampleRateChanged(%g)", newSampleRate);
 
         if (pData->active)
         {
@@ -1249,9 +1249,9 @@ private:
 
     const char* fUniqueId;
 
-    ScopedPointer<JucePluginWindow> fWindow;
+    ScopedPointer<CarlaPluginJuceWindow> fWindow;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JucePlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJuce)
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -1267,7 +1267,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
     carla_debug("CarlaPlugin::newJuce({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format);
 
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    JucePlugin* const plugin(new JucePlugin(init.engine, init.id));
+    CarlaPluginJuce* const plugin(new CarlaPluginJuce(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
     {

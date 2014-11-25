@@ -910,7 +910,7 @@ public:
     static CarlaPlugin* newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor);
     static CarlaPlugin* newDSSI(const Initializer& init);
     static CarlaPlugin* newLV2(const Initializer& init);
-    static CarlaPlugin* newVST(const Initializer& init);
+    static CarlaPlugin* newVST2(const Initializer& init);
     static CarlaPlugin* newVST3(const Initializer& init);
     static CarlaPlugin* newAU(const Initializer& init);
 

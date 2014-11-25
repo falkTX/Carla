@@ -1397,7 +1397,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 
     juce::ScopedPointer<AudioPluginFormat> pluginFormat;
 
-    /* */ if (std::strcmp(stype, "VST") == 0)
+    /* */ if (std::strcmp(stype, "VST2") == 0)
     {
 #if JUCE_PLUGINHOST_VST
         pluginFormat = new VSTPluginFormat();
@@ -1645,7 +1645,7 @@ int main(int argc, char* argv[])
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
 #ifndef CARLA_OS_MAC
-    case PLUGIN_VST:
+    case PLUGIN_VST2:
         openLib = true;
 #endif
     default:
@@ -1698,9 +1698,9 @@ int main(int argc, char* argv[])
     case PLUGIN_LV2:
         do_lv2_check(filename, doInit);
         break;
-    case PLUGIN_VST:
+    case PLUGIN_VST2:
 #ifdef CARLA_OS_MAC
-        do_juce_check(filename, "VST", doInit);
+        do_juce_check(filename, "VST2", doInit);
 #else
         do_vst_check(handle, doInit);
 #endif

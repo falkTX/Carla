@@ -465,9 +465,9 @@ typedef enum {
     PLUGIN_LV2 = 4,
 
     /*!
-     * VST plugin.
+     * VST2 plugin.
      */
-    PLUGIN_VST = 5,
+    PLUGIN_VST2 = 5,
 
     /*!
      * VST3 plugin.

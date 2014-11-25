@@ -39,10 +39,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------
 
-class FluidSynthPlugin : public CarlaPlugin
+class CarlaPluginFluidSynth : public CarlaPlugin
 {
 public:
-    FluidSynthPlugin(CarlaEngine* const engine, const uint id, const bool use16Outs)
+    CarlaPluginFluidSynth(CarlaEngine* const engine, const uint id, const bool use16Outs)
         : CarlaPlugin(engine, id),
           kUse16Outs(use16Outs),
           fSettings(nullptr),
@@ -50,9 +50,9 @@ public:
           fSynthId(0),
           fAudio16Buffers(nullptr),
           fLabel(nullptr),
-          leakDetector_FluidSynthPlugin()
+          leakDetector_CarlaPluginFluidSynth()
     {
-        carla_debug("FluidSynthPlugin::FluidSynthPlugin(%p, %i, %s)", engine, id,  bool2str(use16Outs));
+        carla_debug("CarlaPluginFluidSynth::CarlaPluginFluidSynth(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
         FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
         carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
@@ -91,9 +91,9 @@ public:
             fluid_synth_set_interp_method(fSynth, i, FLUID_INTERP_DEFAULT);
     }
 
-    ~FluidSynthPlugin() override
+    ~CarlaPluginFluidSynth() override
     {
-        carla_debug("FluidSynthPlugin::~FluidSynthPlugin()");
+        carla_debug("CarlaPluginFluidSynth::~CarlaPluginFluidSynth()");
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -460,13 +460,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-        carla_debug("FluidSynthPlugin::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginFluidSynth::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
-            return carla_stderr2("FluidSynthPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginFluidSynth::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(key, "midiPrograms") != 0)
-            return carla_stderr2("FluidSynthPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginFluidSynth::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         StringArray midiProgramList(StringArray::fromTokens(value, ":", ""));
 
@@ -534,7 +534,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fSynth != nullptr,);
-        carla_debug("FluidSynthPlugin::reload() - start");
+        carla_debug("CarlaPluginFluidSynth::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -880,12 +880,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("FluidSynthPlugin::reload() - end");
+        carla_debug("CarlaPluginFluidSynth::reload() - end");
     }
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("FluidSynthPlugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginFluidSynth::reloadPrograms(%s)", bool2str(doInit));
 
         // save drum info in case we have one program for it
         bool hasDrums = false;
@@ -1510,7 +1510,7 @@ public:
 
     void clearBuffers() noexcept override
     {
-        carla_debug("FluidSynthPlugin::clearBuffers() - start");
+        carla_debug("CarlaPluginFluidSynth::clearBuffers() - start");
 
         if (fAudio16Buffers != nullptr)
         {
@@ -1529,7 +1529,7 @@ public:
 
         CarlaPlugin::clearBuffers();
 
-        carla_debug("FluidSynthPlugin::clearBuffers() - end");
+        carla_debug("CarlaPluginFluidSynth::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -1658,7 +1658,7 @@ private:
 
     const char* fLabel;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FluidSynthPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginFluidSynth)
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -1686,7 +1686,7 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
         return nullptr;
     }
 
-    FluidSynthPlugin* const plugin(new FluidSynthPlugin(init.engine, init.id,  use16Outs));
+    CarlaPluginFluidSynth* const plugin(new CarlaPluginFluidSynth(init.engine, init.id,  use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {

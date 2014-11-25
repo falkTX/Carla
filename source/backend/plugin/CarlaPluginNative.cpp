@@ -131,10 +131,10 @@ struct ScopedInitializer {
 
 // -----------------------------------------------------
 
-class NativePlugin : public CarlaPlugin
+class CarlaPluginNative : public CarlaPlugin
 {
 public:
-    NativePlugin(CarlaEngine* const engine, const uint id)
+    CarlaPluginNative(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -148,9 +148,9 @@ public:
           fMidiIn(),
           fMidiOut(),
           fTimeInfo(),
-          leakDetector_NativePlugin()
+          leakDetector_CarlaPluginNative()
     {
-        carla_debug("NativePlugin::NativePlugin(%p, %i)", engine, id);
+        carla_debug("CarlaPluginNative::CarlaPluginNative(%p, %i)", engine, id);
 
         carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
         carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
@@ -174,9 +174,9 @@ public:
         fHost.dispatcher             = carla_host_dispatcher;
     }
 
-    ~NativePlugin() override
+    ~CarlaPluginNative() override
     {
-        carla_debug("NativePlugin::~NativePlugin()");
+        carla_debug("CarlaPluginNative::~CarlaPluginNative()");
 
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
@@ -587,10 +587,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-        carla_debug("NativePlugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginNative::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0 && std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) != 0)
-            return carla_stderr2("NativePlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginNative::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is invalid", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_CHUNK) == 0)
         {
@@ -767,7 +767,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        carla_debug("NativePlugin::reload() - start");
+        carla_debug("CarlaPluginNative::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -1143,12 +1143,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("NativePlugin::reload() - end");
+        carla_debug("CarlaPluginNative::reload() - end");
     }
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("NativePlugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginNative::reloadPrograms(%s)", bool2str(doInit));
         uint32_t i, oldCount  = pData->midiprog.count;
         const int32_t current = pData->midiprog.current;
 
@@ -1905,7 +1905,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("NativePlugin::bufferSizeChanged(%i)", newBufferSize);
+        carla_debug("CarlaPluginNative::bufferSizeChanged(%i)", newBufferSize);
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
         {
@@ -1933,7 +1933,7 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("NativePlugin::sampleRateChanged(%g)", newSampleRate);
+        carla_debug("CarlaPluginNative::sampleRateChanged(%g)", newSampleRate);
 
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
@@ -1968,7 +1968,7 @@ public:
 
     void clearBuffers() noexcept override
     {
-        carla_debug("NativePlugin::clearBuffers() - start");
+        carla_debug("CarlaPluginNative::clearBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
@@ -2005,7 +2005,7 @@ public:
 
         CarlaPlugin::clearBuffers();
 
-        carla_debug("NativePlugin::clearBuffers() - end");
+        carla_debug("CarlaPluginNative::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -2111,7 +2111,7 @@ protected:
             return false;
         if (! fIsProcessing)
         {
-            carla_stderr2("NativePlugin::handleWriteMidiEvent(%p) - received MIDI out event outside audio thread, ignoring", event);
+            carla_stderr2("CarlaPluginNative::handleWriteMidiEvent(%p) - received MIDI out event outside audio thread, ignoring", event);
             return false;
         }
 
@@ -2156,7 +2156,7 @@ protected:
 
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
-        carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
+        carla_debug("CarlaPluginNative::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
 
         intptr_t ret = 0;
 
@@ -2371,7 +2371,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    #define handlePtr ((NativePlugin*)handle)
+    #define handlePtr ((CarlaPluginNative*)handle)
 
     static uint32_t carla_host_get_buffer_size(NativeHostHandle handle) noexcept
     {
@@ -2430,19 +2430,19 @@ private:
 
     #undef handlePtr
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NativePlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginNative)
 };
 
 // -----------------------------------------------------------------------
 
 std::size_t CarlaPlugin::getNativePluginCount() noexcept
 {
-    return NativePlugin::getPluginCount();
+    return CarlaPluginNative::getPluginCount();
 }
 
 const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const std::size_t index) noexcept
 {
-    return NativePlugin::getPluginDescriptor(index);
+    return CarlaPluginNative::getPluginDescriptor(index);
 }
 
 // -----------------------------------------------------------------------
@@ -2451,7 +2451,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newNative({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
-    NativePlugin* const plugin(new NativePlugin(init.engine, init.id));
+    CarlaPluginNative* const plugin(new CarlaPluginNative(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
     {

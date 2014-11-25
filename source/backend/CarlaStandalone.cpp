@@ -478,8 +478,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engineOptions.pathLV2 != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_LV2, gStandalone.engineOptions.pathLV2);
 
-    if (gStandalone.engineOptions.pathVST != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST, gStandalone.engineOptions.pathVST);
+    if (gStandalone.engineOptions.pathVST2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST2, gStandalone.engineOptions.pathVST2);
 
     if (gStandalone.engineOptions.pathVST3 != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
@@ -584,8 +584,8 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseNa
     if (const char* const pathLV2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_LV2"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_LV2, pathLV2);
 
-    if (const char* const pathVST = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST, pathVST);
+    if (const char* const pathVST2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST2"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST2, pathVST2);
 
     if (const char* const pathVST3 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST3"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST3, pathVST3);
@@ -796,10 +796,10 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
                 delete[] gStandalone.engineOptions.pathLV2;
             gStandalone.engineOptions.pathLV2 = carla_strdup_safe(valueStr);
             break;
-        case CB::PLUGIN_VST:
-            if (gStandalone.engineOptions.pathVST != nullptr)
-                delete[] gStandalone.engineOptions.pathVST;
-            gStandalone.engineOptions.pathVST = carla_strdup_safe(valueStr);
+        case CB::PLUGIN_VST2:
+            if (gStandalone.engineOptions.pathVST2 != nullptr)
+                delete[] gStandalone.engineOptions.pathVST2;
+            gStandalone.engineOptions.pathVST2 = carla_strdup_safe(valueStr);
             break;
         case CB::PLUGIN_VST3:
             if (gStandalone.engineOptions.pathVST3 != nullptr)

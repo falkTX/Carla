@@ -157,6 +157,16 @@ $(OBJDIR)/%.c.o: %.c
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/zynaddsubfx-fx.cpp.o: zynaddsubfx-fx.cpp $(ZYN_UI_FILES_H)
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -c -o $@
+
+$(OBJDIR)/zynaddsubfx-synth.cpp.o: zynaddsubfx-synth.cpp $(ZYN_UI_FILES_H)
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -c -o $@
+
 $(OBJDIR)/zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
@@ -166,11 +176,6 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -w -c -o $@
-
-$(OBJDIR)/zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(ZYN_UI_FILES_H)
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -c -o $@
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)

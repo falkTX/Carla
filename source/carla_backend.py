@@ -385,8 +385,8 @@ PLUGIN_DSSI = 3
 # LV2 plugin.
 PLUGIN_LV2 = 4
 
-# VST plugin.
-PLUGIN_VST = 5
+# VST2 plugin.
+PLUGIN_VST2 = 5
 
 # VST3 plugin.
 PLUGIN_VST3 = 6
@@ -1990,7 +1990,7 @@ class CarlaHostNull(CarlaHostMeta):
             "<li>LADSPA plugin support</li>"
             "<li>DSSI plugin support</li>"
             "<li>LV2 plugin support</li>"
-            "<li>VST plugin support using official VST SDK 2.4 [1]</li>"
+            "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
             "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
             "<li>AU plugin support</li>"
 

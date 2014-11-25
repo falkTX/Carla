@@ -39,8 +39,8 @@ def getPluginTypeAsString(ptype):
         return "DSSI"
     if ptype == PLUGIN_LV2:
         return "LV2"
-    if ptype == PLUGIN_VST:
-        return "VST"
+    if ptype == PLUGIN_VST2:
+        return "VST2"
     if ptype == PLUGIN_VST3:
         return "VST3"
     if ptype == PLUGIN_AU:
@@ -63,7 +63,7 @@ def getPluginTypeFromString(stype):
 
     if stype == "none":
         return PLUGIN_NONE
-    if stype == "internal":
+    if stype in ("internal", "native"):
         return PLUGIN_INTERNAL
     if stype == "ladspa":
         return PLUGIN_LADSPA
@@ -71,11 +71,11 @@ def getPluginTypeFromString(stype):
         return PLUGIN_DSSI
     if stype == "lv2":
         return PLUGIN_LV2
-    if stype == "vst":
-        return PLUGIN_VST
+    if stype in ("vst2", "vst"):
+        return PLUGIN_VST2
     if stype == "vst3":
         return PLUGIN_VST3
-    if stype == "au":
+    if stype in ("au", "audiounit"):
         return PLUGIN_AU
     if stype == "gig":
         return PLUGIN_GIG

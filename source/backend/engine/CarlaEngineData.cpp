@@ -203,7 +203,7 @@ EngineOptions::EngineOptions() noexcept
       pathLADSPA(nullptr),
       pathDSSI(nullptr),
       pathLV2(nullptr),
-      pathVST(nullptr),
+      pathVST2(nullptr),
       pathVST3(nullptr),
       pathAU(nullptr),
       pathGIG(nullptr),
@@ -240,10 +240,10 @@ EngineOptions::~EngineOptions() noexcept
         pathLV2 = nullptr;
     }
 
-    if (pathVST != nullptr)
+    if (pathVST2 != nullptr)
     {
-        delete[] pathVST;
-        pathVST = nullptr;
+        delete[] pathVST2;
+        pathVST2 = nullptr;
     }
 
     if (pathVST3 != nullptr)

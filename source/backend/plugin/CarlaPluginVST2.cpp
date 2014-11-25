@@ -51,11 +51,11 @@ static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEven
 
 // -----------------------------------------------------
 
-class VstPlugin : public CarlaPlugin,
-                         CarlaPluginUI::CloseCallback
+class CarlaPluginVST2 : public CarlaPlugin,
+                        private CarlaPluginUI::CloseCallback
 {
 public:
-    VstPlugin(CarlaEngine* const engine, const uint id)
+    CarlaPluginVST2(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fUnique1(1),
           fEffect(nullptr),
@@ -72,9 +72,9 @@ public:
           fEvents(),
           fUI(),
           fUnique2(2),
-          leakDetector_VstPlugin()
+          leakDetector_CarlaPluginVST2()
     {
-        carla_debug("VstPlugin::VstPlugin(%p, %i)", engine, id);
+        carla_debug("CarlaPluginVST2::CarlaPluginVST2(%p, %i)", engine, id);
 
         carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
         carla_zeroStruct<VstTimeInfo>(fTimeInfo);
@@ -82,7 +82,7 @@ public:
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
 
-        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST_GUI);
+        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST2_GUI);
 
 #ifdef CARLA_OS_WIN
         fProcThread.p = nullptr;
@@ -96,9 +96,9 @@ public:
         fUnique1 = fUnique2 = rand();
     }
 
-    ~VstPlugin() override
+    ~CarlaPluginVST2() override
     {
-        carla_debug("VstPlugin::~VstPlugin()");
+        carla_debug("CarlaPluginVST2::~CarlaPluginVST2()");
 
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
@@ -146,7 +146,7 @@ public:
 
     PluginType getType() const noexcept override
     {
-        return PLUGIN_VST;
+        return PLUGIN_VST2;
     }
 
     PluginCategory getCategory() const noexcept override
@@ -204,7 +204,7 @@ public:
             const intptr_t ret = dispatcher(effGetChunk, 0 /* bank */, 0, dataPtr, 0.0f);
             CARLA_SAFE_ASSERT_RETURN(ret >= 0, 0);
             return static_cast<std::size_t>(ret);
-        } CARLA_SAFE_EXCEPTION_RETURN("VstPlugin::getChunkData", 0);
+        } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginVST2::getChunkData", 0);
     }
 
     // -------------------------------------------------------------------
@@ -555,7 +555,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
-        carla_debug("VstPlugin::reload() - start");
+        carla_debug("CarlaPluginVST2::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -926,12 +926,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("VstPlugin::reload() - end");
+        carla_debug("CarlaPluginVST2::reload() - end");
     }
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("VstPlugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginVST2::reloadPrograms(%s)", bool2str(doInit));
         const uint32_t oldCount = pData->prog.count;
         const int32_t  current  = pData->prog.current;
 
@@ -1660,7 +1660,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("VstPlugin::bufferSizeChanged(%i)", newBufferSize);
+        carla_debug("CarlaPluginVST2::bufferSizeChanged(%i)", newBufferSize);
 
         if (pData->active)
             deactivate();
@@ -1677,7 +1677,7 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("VstPlugin::sampleRateChanged(%g)", newSampleRate);
+        carla_debug("CarlaPluginVST2::sampleRateChanged(%g)", newSampleRate);
 
         if (pData->active)
             deactivate();
@@ -1769,7 +1769,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::UI_EMBED || fUI.type == UI::UI_EXTERNAL,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("VstPlugin::handlePluginUIClosed()");
+        carla_debug("CarlaPluginVST2::handlePluginUIClosed()");
 
         showCustomUI(false);
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -1779,7 +1779,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::UI_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("VstPlugin::handlePluginUIResized(%u, %u)", width, height);
+        carla_debug("CarlaPluginVST2::handlePluginUIResized(%u, %u)", width, height);
 
         return; // unused
         (void)width; (void)height;
@@ -1792,7 +1792,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 #ifdef DEBUG
         if (opcode != effIdle && opcode != effEditIdle && opcode != effProcessEvents)
-            carla_debug("VstPlugin::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::dispatcher(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstEffectOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
         try {
@@ -1804,7 +1804,7 @@ protected:
     {
 #ifdef DEBUG
         if (opcode != audioMasterGetTime)
-            carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f)", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
 #endif
 
         intptr_t ret = 0;
@@ -1942,7 +1942,7 @@ protected:
 
             if (x_engine->getOptions().processMode == PROCESS_MODE_CONTINUOUS_RACK)
             {
-                carla_stderr2("VstPlugin::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
+                carla_stderr2("CarlaPluginVST2::handleAudioMasterIOChanged() - plugin asked IO change, but it's not supported in rack mode");
                 return 0;
             }
 
@@ -2144,7 +2144,7 @@ protected:
 #endif
 
         default:
-            carla_debug("VstPlugin::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f) UNDEF", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
+            carla_debug("CarlaPluginVST2::handleAudioMasterCallback(%02i:%s, %i, " P_INTPTR ", %p, %f) UNDEF", opcode, vstMasterOpcode2str(opcode), index, value, ptr, opt);
             break;
         }
 
@@ -2228,9 +2228,9 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 1)
 
-        sLastVstPlugin = this;
+        sLastCarlaPluginVST2 = this;
         fEffect = vstFn(carla_vst_audioMasterCallback);
-        sLastVstPlugin = nullptr;
+        sLastCarlaPluginVST2 = nullptr;
 
         if (fEffect == nullptr)
         {
@@ -2415,7 +2415,7 @@ private:
 
     int fUnique2;
 
-    static VstPlugin* sLastVstPlugin;
+    static CarlaPluginVST2* sLastCarlaPluginVST2;
 
     // -------------------------------------------------------------------
 
@@ -2497,21 +2497,21 @@ private:
         }
 
         // Check if 'resvd1' points to us, otherwise register ourselfs if possible
-        VstPlugin* self = nullptr;
+        CarlaPluginVST2* self = nullptr;
 
         if (effect != nullptr)
         {
 #ifdef VESTIGE_HEADER
             if (effect->ptr1 != nullptr)
             {
-                self = (VstPlugin*)effect->ptr1;
+                self = (CarlaPluginVST2*)effect->ptr1;
                 if (self->fUnique1 != self->fUnique2)
                     self = nullptr;
             }
 #else
             if (effect->resvd1 != 0)
             {
-                self = (VstPlugin*)effect->resvd1;
+                self = (CarlaPluginVST2*)effect->resvd1;
                 if (self->fUnique1 != self->fUnique2)
                     self = nullptr;
             }
@@ -2528,24 +2528,24 @@ private:
                     self = nullptr;
                 }
             }
-            else if (sLastVstPlugin != nullptr)
+            else if (sLastCarlaPluginVST2 != nullptr)
             {
 #ifdef VESTIGE_HEADER
-                effect->ptr1 = sLastVstPlugin;
+                effect->ptr1 = sLastCarlaPluginVST2;
 #else
-                effect->resvd1 = (intptr_t)sLastVstPlugin;
+                effect->resvd1 = (intptr_t)sLastCarlaPluginVST2;
 #endif
-                self = sLastVstPlugin;
+                self = sLastCarlaPluginVST2;
             }
         }
 
         return (self != nullptr) ? self->handleAudioMasterCallback(opcode, index, value, ptr, opt) : 0;
     }
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(VstPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginVST2)
 };
 
-VstPlugin* VstPlugin::sLastVstPlugin = nullptr;
+CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
@@ -2555,14 +2555,14 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newVST(const Initializer& init)
+CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 {
-    carla_debug("CarlaPlugin::newVST({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
+    carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
 #ifdef USE_JUCE_FOR_VST
     return newJuce(init, "VST");
 #else
-    VstPlugin* const plugin(new VstPlugin(init.engine, init.id));
+    CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId))
     {

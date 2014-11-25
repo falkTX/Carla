@@ -139,9 +139,9 @@ const char* carla_get_complete_license_text()
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
 #ifdef VESTIGE_HEADER
-        "<li>VST plugin support using VeSTige header by Javier Serrano Polo</li>"
+        "<li>VST2 plugin support using VeSTige header by Javier Serrano Polo</li>"
 #else
-        "<li>VST plugin support using official VST SDK 2.4 [1]</li>"
+        "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
 #endif
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
         "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"

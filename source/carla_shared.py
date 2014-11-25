@@ -212,7 +212,7 @@ CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT    = "Engine/UiBridgesTimeout"    # int
 CARLA_KEY_PATHS_LADSPA = "Paths/LADSPA"
 CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
-CARLA_KEY_PATHS_VST    = "Paths/VST"
+CARLA_KEY_PATHS_VST2   = "Paths/VST2"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
 CARLA_KEY_PATHS_AU     = "Paths/AU"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
@@ -276,7 +276,7 @@ else:
 DEFAULT_LADSPA_PATH = ""
 DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
-DEFAULT_VST_PATH    = ""
+DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
 DEFAULT_AU_PATH     = ""
 DEFAULT_GIG_PATH    = ""
@@ -314,11 +314,11 @@ if WINDOWS:
     DEFAULT_LV2_PATH     = APPDATA + "\\LV2"
     DEFAULT_LV2_PATH    += ";" + COMMONPROGRAMFILES + "\\LV2"
 
-    DEFAULT_VST_PATH     = PROGRAMFILES + "\\VstPlugins"
-    DEFAULT_VST_PATH    += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
+    DEFAULT_VST2_PATH    = PROGRAMFILES + "\\VstPlugins"
+    DEFAULT_VST2_PATH   += ";" + PROGRAMFILES + "\\Steinberg\\VstPlugins"
 
     if kIs64bit:
-        DEFAULT_VST_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
+        DEFAULT_VST2_PATH  += ";" + COMMONPROGRAMFILES + "\\VST2"
 
     DEFAULT_VST3_PATH    = COMMONPROGRAMFILES + "\\VST3"
 
@@ -329,8 +329,8 @@ if WINDOWS:
     if PROGRAMFILESx86:
         DEFAULT_LADSPA_PATH += ";" + PROGRAMFILESx86 + "\\LADSPA"
         DEFAULT_DSSI_PATH   += ";" + PROGRAMFILESx86 + "\\DSSI"
-        DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
-        DEFAULT_VST_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
+        DEFAULT_VST2_PATH    += ";" + PROGRAMFILESx86 + "\\VstPlugins"
+        DEFAULT_VST2_PATH    += ";" + PROGRAMFILESx86 + "\\Steinberg\\VstPlugins"
 
     if COMMONPROGRAMFILESx86:
         DEFAULT_VST3_PATH   += COMMONPROGRAMFILESx86 + "\\VST3"
@@ -347,8 +347,8 @@ elif HAIKU:
     DEFAULT_LV2_PATH     = HOME + "/.lv2"
     DEFAULT_LV2_PATH    += ":/boot/common/add-ons/lv2"
 
-    DEFAULT_VST_PATH     = HOME + "/.vst"
-    DEFAULT_VST_PATH    += ":/boot/common/add-ons/vst"
+    DEFAULT_VST2_PATH    = HOME + "/.vst"
+    DEFAULT_VST2_PATH   += ":/boot/common/add-ons/vst"
 
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/boot/common/add-ons/vst3"
@@ -365,8 +365,8 @@ elif MACOS:
     DEFAULT_LV2_PATH     = HOME + "/Library/Audio/Plug-Ins/LV2"
     DEFAULT_LV2_PATH    += ":/Library/Audio/Plug-Ins/LV2"
 
-    DEFAULT_VST_PATH     = HOME + "/Library/Audio/Plug-Ins/VST"
-    DEFAULT_VST_PATH    += ":/Library/Audio/Plug-Ins/VST"
+    DEFAULT_VST2_PATH    = HOME + "/Library/Audio/Plug-Ins/VST"
+    DEFAULT_VST2_PATH   += ":/Library/Audio/Plug-Ins/VST"
 
     DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
     DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
@@ -389,9 +389,9 @@ else:
     DEFAULT_LV2_PATH    += ":/usr/lib/lv2"
     DEFAULT_LV2_PATH    += ":/usr/local/lib/lv2"
 
-    DEFAULT_VST_PATH     = HOME + "/.vst"
-    DEFAULT_VST_PATH    += ":/usr/lib/vst"
-    DEFAULT_VST_PATH    += ":/usr/local/lib/vst"
+    DEFAULT_VST2_PATH    = HOME + "/.vst"
+    DEFAULT_VST2_PATH   += ":/usr/lib/vst"
+    DEFAULT_VST2_PATH   += ":/usr/local/lib/vst"
 
     DEFAULT_VST3_PATH    = HOME + "/.vst3"
     DEFAULT_VST3_PATH   += ":/usr/lib/vst3"
@@ -413,11 +413,11 @@ if not WINDOWS:
         winePrefix = HOME + "/.wine"
 
     if os.path.exists(winePrefix):
-        DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
+        DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files/VstPlugins"
         DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files/Common Files/VST3"
 
         if kIs64bit and os.path.exists(winePrefix + "/drive_c/Program Files (x86)"):
-            DEFAULT_VST_PATH  += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
+            DEFAULT_VST2_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/VstPlugins"
             DEFAULT_VST3_PATH += ":" + winePrefix + "/drive_c/Program Files (x86)/Common Files/VST3"
 
     del winePrefix
@@ -447,7 +447,7 @@ if readEnvVars:
     CARLA_DEFAULT_LADSPA_PATH = os.getenv("LADSPA_PATH", DEFAULT_LADSPA_PATH).split(splitter)
     CARLA_DEFAULT_DSSI_PATH   = os.getenv("DSSI_PATH",   DEFAULT_DSSI_PATH).split(splitter)
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
-    CARLA_DEFAULT_VST_PATH    = os.getenv("VST_PATH",    DEFAULT_VST_PATH).split(splitter)
+    CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
     CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
     CARLA_DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
     CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
@@ -458,7 +458,7 @@ else:
     CARLA_DEFAULT_LADSPA_PATH = DEFAULT_LADSPA_PATH.split(splitter)
     CARLA_DEFAULT_DSSI_PATH   = DEFAULT_DSSI_PATH.split(splitter)
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
-    CARLA_DEFAULT_VST_PATH    = DEFAULT_VST_PATH.split(splitter)
+    CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
     CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
     CARLA_DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
     CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
@@ -471,7 +471,7 @@ else:
 del DEFAULT_LADSPA_PATH
 del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
-del DEFAULT_VST_PATH
+del DEFAULT_VST2_PATH
 del DEFAULT_VST3_PATH
 del DEFAULT_AU_PATH
 del DEFAULT_GIG_PATH

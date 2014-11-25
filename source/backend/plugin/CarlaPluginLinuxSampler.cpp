@@ -199,10 +199,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-class LinuxSamplerPlugin : public CarlaPlugin
+class CarlaPluginLinuxSampler : public CarlaPlugin
 {
 public:
-    LinuxSamplerPlugin(CarlaEngine* const engine, const uint id, const bool isGIG, const bool use16Outs)
+    CarlaPluginLinuxSampler(CarlaEngine* const engine, const uint id, const bool isGIG, const bool use16Outs)
         : CarlaPlugin(engine, id),
           kIsGIG(isGIG),
           kUses16Outs(use16Outs && isGIG),
@@ -215,9 +215,9 @@ public:
           fInstrument(nullptr),
           fInstrumentIds(),
           sSampler(),
-          leakDetector_LinuxSamplerPlugin()
+          leakDetector_CarlaPluginLinuxSampler()
     {
-        carla_debug("LinuxSamplerPlugin::LinuxSamplerPlugin(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
+        carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
         carla_zeroStruct(fCurProgs,        MAX_MIDI_CHANNELS);
         carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
@@ -227,9 +227,9 @@ public:
             carla_stderr("Tried to use SFZ with 16 stereo outs, this doesn't make much sense so single stereo mode will be used instead");
     }
 
-    ~LinuxSamplerPlugin() override
+    ~CarlaPluginLinuxSampler() override
     {
-        carla_debug("LinuxSamplerPlugin::~LinuxSamplerPlugin()");
+        carla_debug("CarlaPluginLinuxSampler::~CarlaPluginLinuxSampler()");
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -408,13 +408,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-        carla_debug("LinuxSamplerPlugin::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginLinuxSampler::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
-            return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(key, "programs") != 0)
-            return carla_stderr2("LinuxSamplerPlugin::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
         {
@@ -514,7 +514,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fInstrument != nullptr,);
-        carla_debug("LinuxSamplerPlugin::reload() - start");
+        carla_debug("CarlaPluginLinuxSampler::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -644,12 +644,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("LinuxSamplerPlugin::reload() - end");
+        carla_debug("CarlaPluginLinuxSampler::reload() - end");
     }
 
     void reloadPrograms(bool doInit) override
     {
-        carla_debug("LinuxSamplerPlugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginLinuxSampler::reloadPrograms(%s)", bool2str(doInit));
 
         // Delete old programs
         pData->prog.clear();
@@ -1316,7 +1316,7 @@ private:
 
     SharedResourcePointer<LinuxSampler::SamplerPlugin> sSampler;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(LinuxSamplerPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginLinuxSampler)
 };
 
 CARLA_BACKEND_END_NAMESPACE
@@ -1329,7 +1329,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs)
 {
-    carla_debug("LinuxSamplerPlugin::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format, bool2str(use16Outs));
+    carla_debug("CarlaPluginLinuxSampler::newLinuxSampler({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %s, %s)", init.engine, init.filename, init.name, init.label, init.uniqueId, format, bool2str(use16Outs));
 
 #ifdef HAVE_LINUXSAMPLER
     CarlaString sformat(format);
@@ -1356,7 +1356,7 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
         return nullptr;
     }
 
-    LinuxSamplerPlugin* const plugin(new LinuxSamplerPlugin(init.engine, init.id, (sformat == "gig"), use16Outs));
+    CarlaPluginLinuxSampler* const plugin(new CarlaPluginLinuxSampler(init.engine, init.id, (sformat == "gig"), use16Outs));
 
     if (! plugin->init(init.filename, init.name, init.label))
     {

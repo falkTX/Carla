@@ -40,8 +40,8 @@ const char* PluginThreadMode2str(const CarlaPluginThread::Mode mode) noexcept
         return "PLUGIN_THREAD_DSSI_GUI";
     case CarlaPluginThread::PLUGIN_THREAD_LV2_GUI:
         return "PLUGIN_THREAD_LV2_GUI";
-    case CarlaPluginThread::PLUGIN_THREAD_VST_GUI:
-        return "PLUGIN_THREAD_VST_GUI";
+    case CarlaPluginThread::PLUGIN_THREAD_VST2_GUI:
+        return "PLUGIN_THREAD_VST2_GUI";
     case CarlaPluginThread::PLUGIN_THREAD_BRIDGE:
         return "PLUGIN_THREAD_BRIDGE";
     }
@@ -129,7 +129,7 @@ void CarlaPluginThread::run()
 
         case PLUGIN_THREAD_DSSI_GUI:
         case PLUGIN_THREAD_LV2_GUI:
-        case PLUGIN_THREAD_VST_GUI:
+        case PLUGIN_THREAD_VST2_GUI:
             fEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, fPlugin->getId(), 0, 0, 0.0f, nullptr);
             fProcess->kill();
             fProcess = nullptr;
@@ -199,10 +199,10 @@ void CarlaPluginThread::run()
     else
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", "");
 
-    if (options.pathVST != nullptr)
-        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST", options.pathVST);
+    if (options.pathVST2 != nullptr)
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", options.pathVST2);
     else
-        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST", "");
+        carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", "");
 
     if (options.pathVST3 != nullptr)
         carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", options.pathVST3);
@@ -269,7 +269,7 @@ void CarlaPluginThread::run()
         /* UI Title  */ arguments.add(name + String(" (GUI)"));
         break;
 
-    case PLUGIN_THREAD_VST_GUI:
+    case PLUGIN_THREAD_VST2_GUI:
         /* osc-url  */ arguments.add(String(fEngine->getOscServerPathUDP()) + String("/") + String(fPlugin->getId()));
         /* filename */ arguments.add(filename);
         /* ui-title */ arguments.add(name + String(" (GUI)"));
@@ -305,7 +305,7 @@ void CarlaPluginThread::run()
 
     case PLUGIN_THREAD_DSSI_GUI:
     case PLUGIN_THREAD_LV2_GUI:
-    case PLUGIN_THREAD_VST_GUI:
+    case PLUGIN_THREAD_VST2_GUI:
         if (fPlugin->waitForOscGuiShow())
         {
             while (fProcess->isRunning() && ! shouldThreadExit())

@@ -481,8 +481,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
             plugin = CarlaPlugin::newLV2(initializer);
             break;
 
-        case PLUGIN_VST:
-            plugin = CarlaPlugin::newVST(initializer);
+        case PLUGIN_VST2:
+            plugin = CarlaPlugin::newVST2(initializer);
             break;
 
         case PLUGIN_VST3:
@@ -1315,13 +1315,13 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             else
                 pData->options.pathLV2 = nullptr;
             break;
-        case PLUGIN_VST:
-            if (pData->options.pathVST != nullptr)
-                delete[] pData->options.pathVST;
+        case PLUGIN_VST2:
+            if (pData->options.pathVST2 != nullptr)
+                delete[] pData->options.pathVST2;
             if (valueStr != nullptr)
-                pData->options.pathVST = carla_strdup_safe(valueStr);
+                pData->options.pathVST2 = carla_strdup_safe(valueStr);
             else
-                pData->options.pathVST = nullptr;
+                pData->options.pathVST2 = nullptr;
             break;
         case PLUGIN_VST3:
             if (pData->options.pathVST3 != nullptr)
@@ -1574,7 +1574,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
         outSettings << "  <LADSPA_PATH>" << xmlSafeString(options.pathLADSPA, true) << "</LADSPA_PATH>\n";
         outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
         outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
-        outSettings << "  <VST_PATH>"    << xmlSafeString(options.pathVST,    true) << "</VST_PATH>\n";
+        outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
         outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
         outSettings << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
         outSettings << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
@@ -1747,10 +1747,10 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     value    = PLUGIN_LV2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("VST_PATH"))
+                else if (tag.equalsIgnoreCase("VST2_PATH"))
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
-                    value    = PLUGIN_VST;
+                    value    = PLUGIN_VST2;
                     valueStr = text.toRawUTF8();
                 }
                 else if (tag.equalsIgnoreCase("VST3_PATH"))

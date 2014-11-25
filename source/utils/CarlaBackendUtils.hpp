@@ -95,8 +95,8 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_DSSI";
     case PLUGIN_LV2:
         return "PLUGIN_LV2";
-    case PLUGIN_VST:
-        return "PLUGIN_VST";
+    case PLUGIN_VST2:
+        return "PLUGIN_VST2";
     case PLUGIN_VST3:
         return "PLUGIN_VST3";
     case PLUGIN_AU:
@@ -433,8 +433,8 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "DSSI";
     case PLUGIN_LV2:
         return "LV2";
-    case PLUGIN_VST:
-        return "VST";
+    case PLUGIN_VST2:
+        return "VST2";
     case PLUGIN_VST3:
         return "VST3";
     case PLUGIN_AU:
@@ -466,7 +466,7 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
 
     if (stype == "none")
         return PLUGIN_NONE;
-    if (stype == "internal")
+    if (stype == "internal" || stype == "native")
         return PLUGIN_INTERNAL;
     if (stype == "ladspa")
         return PLUGIN_LADSPA;
@@ -474,13 +474,11 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_DSSI;
     if (stype == "lv2")
         return PLUGIN_LV2;
-    if (stype == "vst")
-        return PLUGIN_VST;
+    if (stype == "vst2" || stype == "vst")
+        return PLUGIN_VST2;
     if (stype == "vst3")
         return PLUGIN_VST3;
-    if (stype == "au")
-        return PLUGIN_AU;
-    if (stype == "audiounit")
+    if (stype == "au" || stype == "audiounit")
         return PLUGIN_AU;
     if (stype == "gig")
         return PLUGIN_GIG;

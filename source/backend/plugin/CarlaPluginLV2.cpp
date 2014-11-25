@@ -207,19 +207,19 @@ struct Lv2EventData {
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2EventData)
 };
 
-struct Lv2PluginEventData {
+struct CarlaPluginLV2EventData {
     uint32_t count;
     Lv2EventData* data;
     Lv2EventData* ctrl; // default port, either this->data[x] or pData->portIn/Out
     uint32_t ctrlIndex;
 
-    Lv2PluginEventData() noexcept
+    CarlaPluginLV2EventData() noexcept
         : count(0),
           data(nullptr),
           ctrl(nullptr),
           ctrlIndex(0) {}
 
-    ~Lv2PluginEventData() noexcept
+    ~CarlaPluginLV2EventData() noexcept
     {
         CARLA_SAFE_ASSERT_INT(count == 0, count);
         CARLA_SAFE_ASSERT(data == nullptr);
@@ -271,12 +271,12 @@ struct Lv2PluginEventData {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginEventData)
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2EventData)
 };
 
 // -----------------------------------------------------
 
-struct Lv2PluginOptions {
+struct CarlaPluginLV2Options {
     enum OptIndex {
         MaxBlockLenth = 0,
         MinBlockLenth,
@@ -296,7 +296,7 @@ struct Lv2PluginOptions {
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
-    Lv2PluginOptions() noexcept
+    CarlaPluginLV2Options() noexcept
         : maxBufferSize(0),
           minBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
@@ -361,7 +361,7 @@ struct Lv2PluginOptions {
         optNull.value   = nullptr;
     }
 
-    ~Lv2PluginOptions() noexcept
+    ~CarlaPluginLV2Options() noexcept
     {
         LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
 
@@ -375,16 +375,16 @@ struct Lv2PluginOptions {
         }
     }
 
-    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginOptions);
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2Options);
 };
 
 // -----------------------------------------------------
 
-class Lv2Plugin : public CarlaPlugin,
-                         CarlaPluginUI::CloseCallback
+class CarlaPluginLV2 : public CarlaPlugin,
+                       private CarlaPluginUI::CloseCallback
 {
 public:
-    Lv2Plugin(CarlaEngine* const engine, const uint id)
+    CarlaPluginLV2(CarlaEngine* const engine, const uint id)
         : CarlaPlugin(engine, id),
           fHandle(nullptr),
           fHandle2(nullptr),
@@ -410,9 +410,9 @@ public:
           fLastTimeInfo(),
           fExt(),
           fUI(),
-          leakDetector_Lv2Plugin()
+          leakDetector_CarlaPluginLV2()
     {
-        carla_debug("Lv2Plugin::Lv2Plugin(%p, %i)", engine, id);
+        carla_debug("CarlaPluginLV2::CarlaPluginLV2(%p, %i)", engine, id);
 
         carla_fill<LV2_Feature*>(fFeatures, nullptr, kFeatureCountAll+1);
 
@@ -453,9 +453,9 @@ public:
         pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
 
-    ~Lv2Plugin() override
+    ~CarlaPluginLV2() override
     {
-        carla_debug("Lv2Plugin::~Lv2Plugin()");
+        carla_debug("CarlaPluginLV2::~CarlaPluginLV2()");
 
         // close UI
         if (fUI.type != UI::TYPE_NULL)
@@ -986,8 +986,8 @@ public:
         delete[] fLv2Options.windowTitle;
         fLv2Options.windowTitle = guiTitle.dup();
 
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
+        fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].value = fLv2Options.windowTitle;
 
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fLv2Options.windowTitle;
@@ -1019,7 +1019,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
-        carla_debug("Lv2Plugin::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
+        carla_debug("CarlaPluginLV2::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
         // we should only call state restore once
         // so inject this in CarlaPlugin::loadSaveState
@@ -1048,22 +1048,22 @@ public:
             switch (status)
             {
             case LV2_STATE_SUCCESS:
-                carla_debug("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
+                carla_debug("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - success", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_UNKNOWN:
-                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - unknown error", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_BAD_TYPE:
-                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad type", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_BAD_FLAGS:
-                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, bad flags", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_NO_FEATURE:
-                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing feature", type, key, bool2str(sendGui));
                 break;
             case LV2_STATE_ERR_NO_PROPERTY:
-                carla_stderr("Lv2Plugin::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
                 break;
             }
             return;
@@ -1397,7 +1397,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        carla_debug("Lv2Plugin::reload() - start");
+        carla_debug("CarlaPluginLV2::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
 
@@ -2282,12 +2282,12 @@ public:
         if (pData->active)
             activate();
 
-        carla_debug("Lv2Plugin::reload() - end");
+        carla_debug("CarlaPluginLV2::reload() - end");
     }
 
     void reloadPrograms(const bool doInit) override
     {
-        carla_debug("Lv2Plugin::reloadPrograms(%s)", bool2str(doInit));
+        carla_debug("CarlaPluginLV2::reloadPrograms(%s)", bool2str(doInit));
         const uint32_t oldCount = pData->midiprog.count;
         const int32_t  current  = pData->midiprog.current;
 
@@ -3530,7 +3530,7 @@ public:
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
-        carla_debug("Lv2Plugin::bufferSizeChanged(%i) - start", newBufferSize);
+        carla_debug("CarlaPluginLV2::bufferSizeChanged(%i) - start", newBufferSize);
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
         {
@@ -3618,25 +3618,25 @@ public:
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
-                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MaxBlockLenth]);
-                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::MinBlockLenth]);
+                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MaxBlockLenth]);
+                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
             }
         }
 
-        carla_debug("Lv2Plugin::bufferSizeChanged(%i) - end", newBufferSize);
+        carla_debug("CarlaPluginLV2::bufferSizeChanged(%i) - end", newBufferSize);
     }
 
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("Lv2Plugin::sampleRateChanged(%g) - start", newSampleRate);
+        carla_debug("CarlaPluginLV2::sampleRateChanged(%g) - start", newSampleRate);
 
         if (! carla_compareFloats(fLv2Options.sampleRate, newSampleRate))
         {
             fLv2Options.sampleRate = newSampleRate;
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
-                fExt.options->set(fHandle, &fLv2Options.opts[Lv2PluginOptions::SampleRate]);
+                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::SampleRate]);
         }
 
         for (uint32_t k=0; k < pData->param.count; ++k)
@@ -3649,7 +3649,7 @@ public:
             }
         }
 
-        carla_debug("Lv2Plugin::sampleRateChanged(%g) - end", newSampleRate);
+        carla_debug("CarlaPluginLV2::sampleRateChanged(%g) - end", newSampleRate);
     }
 
     void offlineModeChanged(const bool isOffline) override
@@ -3678,7 +3678,7 @@ public:
 
     void clearBuffers() noexcept override
     {
-        carla_debug("Lv2Plugin::clearBuffers() - start");
+        carla_debug("CarlaPluginLV2::clearBuffers() - start");
 
         if (fAudioInBuffers != nullptr)
         {
@@ -3751,7 +3751,7 @@ public:
 
         CarlaPlugin::clearBuffers();
 
-        carla_debug("Lv2Plugin::clearBuffers() - end");
+        carla_debug("CarlaPluginLV2::clearBuffers() - end");
     }
 
     // -------------------------------------------------------------------
@@ -3995,7 +3995,7 @@ public:
     void recheckExtensions()
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,);
-        carla_debug("Lv2Plugin::recheckExtensions()");
+        carla_debug("CarlaPluginLV2::recheckExtensions()");
 
         fExt.options  = nullptr;
         fExt.programs = nullptr;
@@ -4079,7 +4079,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.handle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fUI.descriptor != nullptr,);
-        carla_debug("Lv2Plugin::updateUi()");
+        carla_debug("CarlaPluginLV2::updateUi()");
 
         // update midi program
         if (fExt.uiprograms != nullptr && pData->midiprog.count > 0 && pData->midiprog.current >= 0)
@@ -4105,7 +4105,7 @@ public:
     LV2_URID getCustomURID(const char* const uri)
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
-        carla_debug("Lv2Plugin::getCustomURID(\"%s\")", uri);
+        carla_debug("CarlaPluginLV2::getCustomURID(\"%s\")", uri);
 
         for (size_t i=0; i < fCustomURIDs.count(); ++i)
         {
@@ -4128,7 +4128,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
         CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
-        carla_debug("Lv2Plugin::getCustomURIString(%i)", urid);
+        carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
         return fCustomURIDs.getAt(urid, nullptr);
     }
@@ -4138,7 +4138,7 @@ public:
     void handleProgramChanged(const int32_t index)
     {
         CARLA_SAFE_ASSERT_RETURN(index >= -1,);
-        carla_debug("Lv2Plugin::handleProgramChanged(%i)", index);
+        carla_debug("CarlaPluginLV2::handleProgramChanged(%i)", index);
 
         if (index == -1)
         {
@@ -4170,7 +4170,7 @@ public:
     LV2_Resize_Port_Status handleResizePort(const uint32_t index, const size_t size)
     {
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_RESIZE_PORT_ERR_UNKNOWN);
-        carla_debug("Lv2Plugin::handleResizePort(%i, " P_SIZE ")", index, size);
+        carla_debug("CarlaPluginLV2::handleResizePort(%i, " P_SIZE ")", index, size);
 
         // TODO
         return LV2_RESIZE_PORT_ERR_NO_SPACE;
@@ -4186,7 +4186,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size > 0, LV2_STATE_ERR_NO_PROPERTY);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL, LV2_STATE_ERR_BAD_TYPE);
         CARLA_SAFE_ASSERT_RETURN(flags & LV2_STATE_IS_POD, LV2_STATE_ERR_BAD_FLAGS);
-        carla_debug("Lv2Plugin::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)", key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
+        carla_debug("CarlaPluginLV2::handleStateStore(%i:\"%s\", %p, " P_SIZE ", %i:\"%s\", %i)", key, carla_lv2_urid_unmap(this, key), value, size, type, carla_lv2_urid_unmap(this, type), flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
         const char* const stype(carla_lv2_urid_unmap(this, type));
@@ -4235,7 +4235,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(type != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(flags != nullptr, nullptr);
-        carla_debug("Lv2Plugin::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
+        carla_debug("CarlaPluginLV2::handleStateRetrieve(%i, %p, %p, %p)", key, size, type, flags);
 
         const char* const skey(carla_lv2_urid_unmap(this, key));
 
@@ -4294,7 +4294,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fExt.worker != nullptr && fExt.worker->work != nullptr, LV2_WORKER_ERR_UNKNOWN);
         CARLA_SAFE_ASSERT_RETURN(fEventsIn.ctrl != nullptr, LV2_WORKER_ERR_UNKNOWN);
-        carla_debug("Lv2Plugin::handleWorkerSchedule(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerSchedule(%i, %p)", size, data);
 
         if (pData->engine->isOffline())
         {
@@ -4311,7 +4311,7 @@ public:
 
     LV2_Worker_Status handleWorkerRespond(const uint32_t size, const void* const data)
     {
-        carla_debug("Lv2Plugin::handleWorkerRespond(%i, %p)", size, data);
+        carla_debug("CarlaPluginLV2::handleWorkerRespond(%i, %p)", size, data);
 
         LV2_Atom atom;
         atom.size = size;
@@ -4325,7 +4325,7 @@ public:
     void handleExternalUIClosed()
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
-        carla_debug("Lv2Plugin::handleExternalUIClosed()");
+        carla_debug("CarlaPluginLV2::handleExternalUIClosed()");
 
         if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
             fUI.descriptor->cleanup(fUI.handle);
@@ -4339,7 +4339,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_debug("Lv2Plugin::handlePluginUIClosed()");
+        carla_debug("CarlaPluginLV2::handlePluginUIClosed()");
 
         fUI.window->hide();
 
@@ -4355,7 +4355,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_stdout("Lv2Plugin::handlePluginUIResized(%u, %u)", width, height);
+        carla_stdout("CarlaPluginLV2::handlePluginUIResized(%u, %u)", width, height);
 
         if (fUI.handle != nullptr && fExt.uiresize != nullptr)
             fExt.uiresize->ui_resize(fUI.handle, static_cast<int>(width), static_cast<int>(height));
@@ -4366,7 +4366,7 @@ public:
     uint32_t handleUIPortMap(const char* const symbol) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(symbol != nullptr && symbol[0] != '\0', LV2UI_INVALID_PORT_INDEX);
-        carla_debug("Lv2Plugin::handleUIPortMap(\"%s\")", symbol);
+        carla_debug("CarlaPluginLV2::handleUIPortMap(\"%s\")", symbol);
 
         for (uint32_t i=0; i < fRdfDescriptor->PortCount; ++i)
         {
@@ -4382,7 +4382,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(width > 0, 1);
         CARLA_SAFE_ASSERT_RETURN(height > 0, 1);
-        carla_debug("Lv2Plugin::handleUIResize(%i, %i)", width, height);
+        carla_debug("CarlaPluginLV2::handleUIResize(%i, %i)", width, height);
 
         fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
 
@@ -4393,7 +4393,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-        carla_debug("Lv2Plugin::handleUIWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
+        carla_debug("CarlaPluginLV2::handleUIWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
 
         uint32_t index = LV2UI_INVALID_PORT_INDEX;
 
@@ -4447,7 +4447,7 @@ public:
         } break;
 
         default:
-            carla_stdout("Lv2Plugin::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            carla_stdout("CarlaPluginLV2::handleUIWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
             break;
         }
     }
@@ -4460,7 +4460,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
         CARLA_SAFE_ASSERT_RETURN(type != CARLA_URI_MAP_ID_NULL,);
-        carla_debug("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i)", portSymbol, value, size, type);
+        carla_debug("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i)", portSymbol, value, size, type);
 
         int32_t rindex = -1;
 
@@ -4500,7 +4500,7 @@ public:
             paramValue = static_cast<float>((*(const int64_t*)value));
             break;
         default:
-            carla_stdout("Lv2Plugin::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
+            carla_stdout("CarlaPluginLV2::handleLilvSetPortValue(\"%s\", %p, %i, %i:\"%s\") - unknown type", portSymbol, value, size, type, carla_lv2_urid_unmap(this, type));
             return;
         }
 
@@ -5201,8 +5201,8 @@ public:
         guiTitle += " (GUI)";
         fLv2Options.windowTitle = guiTitle.dup();
 
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
-        fLv2Options.opts[Lv2PluginOptions::WindowTitle].value = fLv2Options.windowTitle;
+        fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].size  = (uint32_t)std::strlen(fLv2Options.windowTitle);
+        fLv2Options.opts[CarlaPluginLV2Options::WindowTitle].value = fLv2Options.windowTitle;
 
         // ---------------------------------------------------------------
         // initialize ui features (part 1)
@@ -5297,7 +5297,7 @@ public:
     void handleTransferAtom(const uint32_t portIndex, const LV2_Atom* const atom)
     {
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
-        carla_debug("Lv2Plugin::handleTransferAtom(%i, %p)", portIndex, atom);
+        carla_debug("CarlaPluginLV2::handleTransferAtom(%i, %p)", portIndex, atom);
 
         fAtomBufferIn.put(atom, portIndex);
     }
@@ -5306,7 +5306,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-        carla_stdout("Lv2Plugin::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
+        carla_stdout("CarlaPluginLV2::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
 
         if (urid < fCustomURIDs.count())
         {
@@ -5348,9 +5348,9 @@ private:
     Lv2AtomRingBuffer fAtomBufferOut;
     LV2_Atom_Forge    fAtomForge;
 
-    Lv2PluginEventData fEventsIn;
-    Lv2PluginEventData fEventsOut;
-    Lv2PluginOptions   fLv2Options;
+    CarlaPluginLV2EventData fEventsIn;
+    CarlaPluginLV2EventData fEventsOut;
+    CarlaPluginLV2Options   fLv2Options;
 
     LinkedList<const char*> fCustomURIDs;
 
@@ -5512,7 +5512,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
         carla_debug("carla_lv2_program_changed(%p, %i)", handle, index);
 
-        ((Lv2Plugin*)handle)->handleProgramChanged(index);
+        ((CarlaPluginLV2*)handle)->handleProgramChanged(index);
     }
 
     // -------------------------------------------------------------------
@@ -5523,7 +5523,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, LV2_RESIZE_PORT_ERR_UNKNOWN);
         carla_debug("carla_lv2_program_changed(%p, %i, " P_SIZE ")", data, index, size);
 
-        return ((Lv2Plugin*)data)->handleResizePort(index, size);
+        return ((CarlaPluginLV2*)data)->handleResizePort(index, size);
     }
 
     // -------------------------------------------------------------------
@@ -5578,7 +5578,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_STATE_ERR_UNKNOWN);
         carla_debug("carla_lv2_state_store(%p, %i, %p, " P_SIZE ", %i, %i)", handle, key, value, size, type, flags);
 
-        return ((Lv2Plugin*)handle)->handleStateStore(key, value, size, type, flags);
+        return ((CarlaPluginLV2*)handle)->handleStateStore(key, value, size, type, flags);
     }
 
     static const void* carla_lv2_state_retrieve(LV2_State_Handle handle, uint32_t key, size_t* size, uint32_t* type, uint32_t* flags)
@@ -5586,7 +5586,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
         carla_debug("carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
 
-        return ((Lv2Plugin*)handle)->handleStateRetrieve(key, size, type, flags);
+        return ((CarlaPluginLV2*)handle)->handleStateRetrieve(key, size, type, flags);
     }
 
     // -------------------------------------------------------------------
@@ -5715,7 +5715,7 @@ private:
             return CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
         // Custom types
-        return ((Lv2Plugin*)handle)->getCustomURID(uri);
+        return ((CarlaPluginLV2*)handle)->getCustomURID(uri);
     }
 
     static const char* carla_lv2_urid_unmap(LV2_URID_Map_Handle handle, LV2_URID urid)
@@ -5829,7 +5829,7 @@ private:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
 
         // Custom types
-        return ((Lv2Plugin*)handle)->getCustomURIDString(urid);
+        return ((CarlaPluginLV2*)handle)->getCustomURIDString(urid);
     }
 
     // -------------------------------------------------------------------
@@ -5840,7 +5840,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_WORKER_ERR_UNKNOWN);
         carla_debug("carla_lv2_worker_schedule(%p, %i, %p)", handle, size, data);
 
-        return ((Lv2Plugin*)handle)->handleWorkerSchedule(size, data);
+        return ((CarlaPluginLV2*)handle)->handleWorkerSchedule(size, data);
     }
 
     static LV2_Worker_Status carla_lv2_worker_respond(LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
@@ -5848,7 +5848,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2_WORKER_ERR_UNKNOWN);
         carla_debug("carla_lv2_worker_respond(%p, %i, %p)", handle, size, data);
 
-        return ((Lv2Plugin*)handle)->handleWorkerRespond(size, data);
+        return ((CarlaPluginLV2*)handle)->handleWorkerRespond(size, data);
     }
 
     // -------------------------------------------------------------------
@@ -5859,7 +5859,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
         carla_debug("carla_lv2_external_ui_closed(%p)", controller);
 
-        ((Lv2Plugin*)controller)->handleExternalUIClosed();
+        ((CarlaPluginLV2*)controller)->handleExternalUIClosed();
     }
 
     // -------------------------------------------------------------------
@@ -5870,7 +5870,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, LV2UI_INVALID_PORT_INDEX);
         carla_debug("carla_lv2_ui_port_map(%p, \"%s\")", handle, symbol);
 
-        return ((Lv2Plugin*)handle)->handleUIPortMap(symbol);
+        return ((CarlaPluginLV2*)handle)->handleUIPortMap(symbol);
     }
 
     // -------------------------------------------------------------------
@@ -5881,7 +5881,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, 1);
         carla_debug("carla_lv2_ui_resize(%p, %i, %i)", handle, width, height);
 
-        return ((Lv2Plugin*)handle)->handleUIResize(width, height);
+        return ((CarlaPluginLV2*)handle)->handleUIResize(width, height);
     }
 
     // -------------------------------------------------------------------
@@ -5892,7 +5892,7 @@ private:
         CARLA_SAFE_ASSERT_RETURN(controller != nullptr,);
         carla_debug("carla_lv2_ui_write_function(%p, %i, %i, %i, %p)", controller, port_index, buffer_size, format, buffer);
 
-        ((Lv2Plugin*)controller)->handleUIWrite(port_index, buffer_size, format, buffer);
+        ((CarlaPluginLV2*)controller)->handleUIWrite(port_index, buffer_size, format, buffer);
     }
 
     // -------------------------------------------------------------------
@@ -5903,17 +5903,17 @@ private:
         CARLA_SAFE_ASSERT_RETURN(user_data != nullptr,);
         carla_debug("carla_lilv_set_port_value(\"%s\", %p, %p, %i, %i", port_symbol, user_data, value, size, type);
 
-        ((Lv2Plugin*)user_data)->handleLilvSetPortValue(port_symbol, value, size, type);
+        ((CarlaPluginLV2*)user_data)->handleLilvSetPortValue(port_symbol, value, size, type);
     }
 
     // -------------------------------------------------------------------
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Lv2Plugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginLV2)
 };
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#define lv2PluginPtr ((Lv2Plugin*)plugin)
+#define lv2PluginPtr ((CarlaPluginLV2*)plugin)
 
 #ifndef BUILD_BRIDGE
 int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
@@ -5957,7 +5957,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
 
-    Lv2Plugin* const plugin(new Lv2Plugin(init.engine, init.id));
+    CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
     {

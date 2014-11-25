@@ -88,7 +88,7 @@ extern QStringList MIDI_CC_LIST;
 #define CARLA_KEY_PATHS_LADSPA "Paths/LADSPA"
 #define CARLA_KEY_PATHS_DSSI   "Paths/DSSI"
 #define CARLA_KEY_PATHS_LV2    "Paths/LV2"
-#define CARLA_KEY_PATHS_VST    "Paths/VST"
+#define CARLA_KEY_PATHS_VST2   "Paths/VST2"
 #define CARLA_KEY_PATHS_VST3   "Paths/VST3"
 #define CARLA_KEY_PATHS_AU     "Paths/AU"
 #define CARLA_KEY_PATHS_GIG    "Paths/GIG"

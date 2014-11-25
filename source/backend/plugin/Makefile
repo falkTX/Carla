@@ -13,17 +13,17 @@ OBJS = \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
 	$(OBJDIR)/CarlaPluginThread.cpp.o \
-	$(OBJDIR)/NativePlugin.cpp.o \
-	$(OBJDIR)/BridgePlugin.cpp.o \
-	$(OBJDIR)/LadspaPlugin.cpp.o \
-	$(OBJDIR)/DssiPlugin.cpp.o \
-	$(OBJDIR)/Lv2Plugin.cpp.o \
-	$(OBJDIR)/VstPlugin.cpp.o \
-	$(OBJDIR)/Vst3Plugin.cpp.o \
-	$(OBJDIR)/AuPlugin.cpp.o \
-	$(OBJDIR)/JucePlugin.cpp.o \
-	$(OBJDIR)/FluidSynthPlugin.cpp.o \
-	$(OBJDIR)/LinuxSamplerPlugin.cpp.o
+	$(OBJDIR)/CarlaPluginNative.cpp.o \
+	$(OBJDIR)/CarlaPluginBridge.cpp.o \
+	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
+	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
+	$(OBJDIR)/CarlaPluginLV2.cpp.o \
+	$(OBJDIR)/CarlaPluginVST2.cpp.o \
+	$(OBJDIR)/CarlaPluginVST3.cpp.o \
+	$(OBJDIR)/CarlaPluginAU.cpp.o \
+	$(OBJDIR)/CarlaPluginJuce.cpp.o \
+	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
+	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o
 
 TARGETS = \
 	$(MODULEDIR)/carla_plugin.a
@@ -50,12 +50,12 @@ $(MODULEDIR)/carla_plugin.a: $(OBJS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp
+$(OBJDIR)/CarlaPluginFluidSynth.cpp.o: CarlaPluginFluidSynth.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -MMD -c -o $@
 
-$(OBJDIR)/LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp
+$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o: CarlaPluginLinuxSampler.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) -MMD -c -o $@
