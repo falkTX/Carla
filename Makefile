@@ -40,8 +40,8 @@ all: BIN RES UI WIDGETS
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
-BIN: libs
-# backend bridges-plugin bridges-ui discovery interposer plugin theme
+BIN: backend theme
+# backend bridges-plugin bridges-ui discovery interposer plugin
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
-# ALL_LIBS += $(MODULEDIR)/native-plugins.a
+ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -125,61 +125,34 @@ $(MODULEDIR)/%.a: .FORCE
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-backend: $(BINDIR)/libcarla_standalone2$(LIB_EXT) $(BINDIR)/libcarla_utils$(LIB_EXT)
+backend: libs
+	@$(MAKE) -C source/backend
 
-$(BINDIR)/libcarla_standalone2$(LIB_EXT): libs .FORCE
-	$(MAKE) -C source/backend
+bridges-plugin: libs
+	@$(MAKE) -C source/bridges-plugin
 
-bin/libcarla_utils$(LIB_EXT): $(BINDIR)/libcarla_standalone2$(LIB_EXT)
-	$(MAKE) -C source/backend
+bridges-ui: libs
+	@$(MAKE) -C source/bridges-ui
 
-# ----------------------------------------------------------------------------------------------------------------------------
+discovery: libs
+	@$(MAKE) -C source/discovery
 
-bridges-plugin: $(BINDIR)/carla-bridge-native$(APP_EXT)
+interposer: libs
+	@$(MAKE) -C source/interposer
 
-$(BINDIR)/carla-bridge-native$(APP_EXT): libs .FORCE
-	$(MAKE) -C source/bridges-plugin
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-bridges-ui: libs .FORCE
-	$(MAKE) -C source/bridges-ui
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-discovery: $(BINDIR)/carla-discovery-native$(APP_EXT)
-
-$(BINDIR)/carla-discovery-native$(APP_EXT): libs .FORCE
-	$(MAKE) -C source/discovery
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-interposer: $(BINDIR)/libcarla_interposer.so
-
-$(BINDIR)/libcarla_interposer.so: .FORCE
-	$(MAKE) -C source/interposer
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-plugin: plugin_build $(BINDIR)/carla.lv2/manifest.ttl
-
-plugin_build: libs .FORCE
-	$(MAKE) -C source/plugin
-
-$(BINDIR)/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
-	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
-	cd $(BINDIR)/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
-
-# ----------------------------------------------------------------------------------------------------------------------------
+plugin: libs
+	@$(MAKE) -C source/plugin
 
 ifeq ($(HAVE_QT),true)
-theme: $(BINDIR)/styles/carlastyle$(LIB_EXT)
-
-$(BINDIR)/styles/carlastyle$(LIB_EXT): .FORCE
-	$(MAKE) -C source/modules/theme
+theme:
+	@$(MAKE) -C source/modules/theme
 else
 theme:
 endif
+
+# $(BINDIR)/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
+# 	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
+# 	cd $(BINDIR)/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)

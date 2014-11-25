@@ -87,10 +87,10 @@ $(OBJDIR)/$(MODULENAME).c.%64.o: $(MODULENAME).c
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
--include $(OBJS:%.c.o=%.c.d)
--include $(OBJS_posix32:%.c.posix32.o=%.c.posix32.d)
--include $(OBJS_posix64:%.c.posix64.o=%.c.posix64.d)
--include $(OBJS_win32:%.c.win32.o=%.c.win32.d)
--include $(OBJS_win64:%.c.win64.o=%.c.win64.d)
+-include $(OBJS:%.o=%.d)
+-include $(OBJS_posix32:%.o=%.d)
+-include $(OBJS_posix64:%.o=%.d)
+-include $(OBJS_win32:%.o=%.d)
+-include $(OBJS_win64:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

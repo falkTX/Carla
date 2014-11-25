@@ -4,14 +4,16 @@
 # Created by falkTX
 #
 
-include ../../Makefile.mk
+CWD=../..
+MODULENAME=native-plugins
+include ../Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_C_FLAGS   += -I. -I../../includes -isystem ..
-BUILD_CXX_FLAGS += -I. -I../../includes -I../../utils -I../distrho -isystem ..
+BUILD_C_FLAGS   += -isystem ..
+BUILD_CXX_FLAGS += -I../distrho -isystem ..
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Flags for _all.c
 
 ALL_C_FLAGS  = $(BUILD_C_FLAGS)
@@ -21,7 +23,7 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -36,45 +38,42 @@ ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
 endif
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Set objects
 
-OBJS = _all.c.o
+OBJS = \
+	$(OBJDIR)/_all.c.o
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Simple plugins
 
 OBJS += \
-	bypass.c.o \
-	lfo.c.o \
-	midi-gain.c.o \
-	midi-split.c.o \
-	midi-through.c.o \
-	midi-transpose.c.o \
-	nekofilter.c.o
+	$(OBJDIR)/bypass.c.o \
+	$(OBJDIR)/lfo.c.o \
+	$(OBJDIR)/midi-gain.c.o \
+	$(OBJDIR)/midi-split.c.o \
+	$(OBJDIR)/midi-through.c.o \
+	$(OBJDIR)/midi-transpose.c.o \
+	$(OBJDIR)/nekofilter.c.o
 
 OBJS += \
-	audio-file.cpp.o \
-	midi-file.cpp.o
+	$(OBJDIR)/audio-file.cpp.o \
+	$(OBJDIR)/bigmeter.cpp.o \
+	$(OBJDIR)/midi-file.cpp.o \
+	$(OBJDIR)/notes.cpp.o
 
-# --------------------------------------------------------------
-# External-UI plugins
-
-OBJS += \
-	bigmeter.cpp.o \
-	notes.cpp.o
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS += \
-	zynaddsubfx-fx.cpp.o \
-	zynaddsubfx-synth.cpp.o \
-	zynaddsubfx-src.cpp.o
+	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
+	$(OBJDIR)/zynaddsubfx-synth.cpp.o \
+	$(OBJDIR)/zynaddsubfx-src.cpp.o
 
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-OBJS += zynaddsubfx-ui.cpp.o
+OBJS += \
+	$(OBJDIR)/zynaddsubfx-ui.cpp.o
 
 ZYN_UI_FILES_CPP = \
 	zynaddsubfx/UI/ADnoteUI.cpp \
@@ -114,78 +113,72 @@ ZYN_UI_FILES_H = \
 endif
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-all: ../native-plugins.a
+all: $(MODULEDIR)/$(MODULENAME).a
 
-# --------------------------------------------------------------
-
-../native-plugins.a: $(OBJS)
-	$(RM) $@
-	$(AR) crs $@ $^
-
-# --------------------------------------------------------------
-
-CDEPS   = ../CarlaNative.h
-
-_all.c.o: _all.c $(CDEPS)
-	$(CC) $< $(ALL_C_FLAGS) -c -o $@
-
-bypass.c.o: bypass.c $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-lfo.c.o: lfo.c $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-midi-%.c.o: midi-%.c $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-nekofilter.c.o: nekofilter.c nekofilter/*.c nekofilter/*.h $(CDEPS)
-	$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
-
-CXXDEPS = ../CarlaNative.h ../CarlaNative.hpp
-
-audio-file.cpp.o: audio-file.cpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-bigmeter.cpp.o: bigmeter.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-midi-file.cpp.o: midi-file.cpp midi-base.hpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-midi-sequencer.cpp.o: midi-sequencer.cpp midi-base.hpp $(CXXDEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-notes.cpp.o: notes.cpp $(CXXDEPS) ../CarlaNativeExtUI.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(CXXDEPS) $(ZYN_UI_FILES_H)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
-
-zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
-
-zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
-	$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
-
-zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
-	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
-
-zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
-	ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../native-plugins*.a ../libnative-plugins.*
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	$(RM) $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
-endif
+	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(MODULEDIR)/$(MODULENAME).a: $(OBJS)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
+	@echo "Generating $@/h"
+	@ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+
+zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
+	@echo "Generating $@/cpp"
+	@ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/_all.c.o: _all.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CC) $< $(ALL_C_FLAGS) -MMD -c -o $@
+
+$(OBJDIR)/%.c.o: %.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CC) $< $(BUILD_C_FLAGS) -MMD -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -w -c -o $@
+
+$(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -w -c -o $@
+
+$(OBJDIR)/zynaddsubfx-%.cpp.o: zynaddsubfx-%.cpp $(ZYN_UI_FILES_H)
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -MMD -c -o $@
+
+$(OBJDIR)/%.cpp.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+-include $(OBJS:%.o=%.d)
+
+# ----------------------------------------------------------------------------------------------------------------------------

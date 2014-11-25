@@ -82,7 +82,6 @@ $(OBJDIR)/%.cpp.o: %.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
--include $(OBJSa:%.cpp.o=%.cpp.d)
--include $(OBJDIR)/CarlaEngineNative.cpp.exp.d
+-include $(OBJS:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

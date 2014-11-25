@@ -144,8 +144,6 @@ $(OBJDIR)/JackBridge2.cpp.o: JackBridge2.cpp
 	@echo "Compiling JackBridge2.cpp"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
--include $(OBJS:%.cpp.o=%.cpp.d)
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp
@@ -157,11 +155,6 @@ $(OBJDIR)/JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -fpermissive -c -o $@
-
--include $(OBJDIR)/JackBridgeExport.cpp.posix32e.d
--include $(OBJDIR)/JackBridgeExport.cpp.posix64e.d
--include $(OBJDIR)/JackBridgeExport.cpp.win32e.d
--include $(OBJDIR)/JackBridgeExport.cpp.win64e.d
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -195,11 +188,18 @@ $(OBJDIR)/%.cpp.wine64.o: %.cpp
 	@echo "Compiling $< (wine64)"
 	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
 
--include $(OBJS_posix32:%.cpp.posix32.o=%.cpp.posix32.d)
--include $(OBJS_posix64:%.cpp.posix64.o=%.cpp.posix64.d)
--include $(OBJS_win32:%.cpp.win32.o=%.cpp.win32.d)
--include $(OBJS_win64:%.cpp.win64.o=%.cpp.win64.d)
--include $(OBJS_wine32:%.cpp.wine32.o=%.cpp.wine32.d)
--include $(OBJS_wine64:%.cpp.wine64.o=%.cpp.wine64.d)
+# ----------------------------------------------------------------------------------------------------------------------------
+
+-include $(OBJS:%.o=%.d)
+-include $(OBJS_posix32:%.o=%.d)
+-include $(OBJS_posix32e:%.o=%.d)
+-include $(OBJS_posix64:%.o=%.d)
+-include $(OBJS_posix64e:%.o=%.d)
+-include $(OBJS_win32:%.o=%.d)
+-include $(OBJS_win32e:%.o=%.d)
+-include $(OBJS_win64:%.o=%.d)
+-include $(OBJS_win64e:%.o=%.d)
+-include $(OBJS_wine32:%.o=%.d)
+-include $(OBJS_wine64:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

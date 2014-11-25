@@ -110,16 +110,10 @@ $(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(MACOS),true)
--include $(OBJDIR)/$(MODULENAME).mm.d
--include $(OBJDIR)/$(MODULENAME).mm.posix32.d
--include $(OBJDIR)/$(MODULENAME).mm.posix64.d
-else
--include $(OBJDIR)/$(MODULENAME).cpp.d
--include $(OBJDIR)/$(MODULENAME).cpp.posix32.d
--include $(OBJDIR)/$(MODULENAME).cpp.posix64.d
-endif
--include $(OBJDIR)/$(MODULENAME).cpp.win32.d
--include $(OBJDIR)/$(MODULENAME).cpp.win64.d
+-include $(OBJS:%.o=%.d)
+-include $(OBJS_posix32:%.o=%.d)
+-include $(OBJS_posix64:%.o=%.d)
+-include $(OBJS_win32:%.o=%.d)
+-include $(OBJS_win64:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

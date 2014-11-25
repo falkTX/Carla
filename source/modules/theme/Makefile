@@ -202,9 +202,8 @@ $(OBJDIR)/%.cpp.qt5.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	@echo "Compiling $< (Qt5)"
 	@$(CXX) $< $(QT5_CXX_FLAGS) -MMD -c -o $@
 
--include $(OBJSDIR)/CarlaStyle.cpp.qt4.d
--include $(OBJSDIR)/CarlaStyle.cpp.qt5.d
--include $(OBJSDIR)/CarlaStylePlugin.cpp.qt4.d
--include $(OBJSDIR)/CarlaStylePlugin.cpp.qt5.d
+# ----------------------------------------------------------------------------------------------------------------------------
+
+-include $(OBJS:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
