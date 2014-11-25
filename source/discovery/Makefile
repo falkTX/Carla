@@ -4,9 +4,7 @@
 # Created by falkTX
 #
 
-CWD=..
-include $(CWD)/Makefile.deps
-include $(CWD)/Makefile.mk
+include ../Makefile.mk
 
 # --------------------------------------------------------------
 

@@ -40,8 +40,8 @@ all: BIN RES UI WIDGETS
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
-BIN: backend theme
-# backend bridges-plugin bridges-ui discovery interposer plugin
+BIN: backend bridges-plugin theme
+# bridges-ui discovery interposer plugin
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

@@ -536,7 +536,7 @@ protected:
         }
         else
         {
-            carla_stderr("msgReceived : %s", msg);
+            carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
             return false;
         }
 
@@ -1410,7 +1410,11 @@ protected:
         if (show)
         {
             if (fUiServer.isRunning())
+            {
+                fUiServer.writeMsg("focus\n", 6);
+                fUiServer.flush();
                 return;
+            }
 
             CarlaString path(pHost->resourceDir);
 

@@ -161,6 +161,8 @@ source/modules/native-plugins/zynaddsubfx/UI/VirKeyboard.cpp
 source/modules/native-plugins/zynaddsubfx/UI/VirKeyboard.h
 
 # Other
+bin/styles/
+
 source/includes/asio/
 source/includes/rewire/
 source/includes/vst/

@@ -48,7 +48,11 @@ protected:
         if (show)
         {
             if (isRunning())
+            {
+                writeMsg("focus\n", 6);
+                flush();
                 return;
+            }
 
             CarlaString path(getResourceDir() + fExtUiPath);
             carla_stdout("Trying to start UI using \"%s\"", path.buffer());
@@ -185,7 +189,7 @@ protected:
             return true;
         }
 
-        carla_stderr("msgReceived : %s", msg);
+        carla_stderr("NativePluginAndUiClass::msgReceived : %s", msg);
         return false;
     }
 
