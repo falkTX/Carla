@@ -42,97 +42,94 @@ OBJS_win32e   = $(OBJDIR)/JackBridgeExport.cpp.win32e.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-all:      $(MODULEDIR)/jackbridge.a
-
-posix32:  $(MODULEDIR)/jackbridge.posix32.a
-posix64:  $(MODULEDIR)/jackbridge.posix64.a
-posix32e: $(MODULEDIR)/jackbridge.posix32e.a
-posix64e: $(MODULEDIR)/jackbridge.posix64e.a
-
-win32:    $(MODULEDIR)/jackbridge.win32.a
-win64:    $(MODULEDIR)/jackbridge.win64.a
-win32e:   $(MODULEDIR)/jackbridge.win32e.a
-win64e:   $(MODULEDIR)/jackbridge.win64e.a
-
-wine32:   $(MODULEDIR)/jackbridge-wine32.dll$(LIB_EXT)
-wine64:   $(MODULEDIR)/jackbridge-wine64.dll$(LIB_EXT)
+all:      $(MODULEDIR)/$(MODULENAME).a
+posix32:  $(MODULEDIR)/$(MODULENAME).posix32.a
+posix64:  $(MODULEDIR)/$(MODULENAME).posix64.a
+posix32e: $(MODULEDIR)/$(MODULENAME).posix32e.a
+posix64e: $(MODULEDIR)/$(MODULENAME).posix64e.a
+win32:    $(MODULEDIR)/$(MODULENAME).win32.a
+win64:    $(MODULEDIR)/$(MODULENAME).win64.a
+win32e:   $(MODULEDIR)/$(MODULENAME).win32e.a
+win64e:   $(MODULEDIR)/$(MODULENAME).win64e.a
+wine32:   $(MODULEDIR)/$(MODULENAME)-wine32.dll$(LIB_EXT)
+wine64:   $(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJDIR)/JackBridge*.o $(MODULEDIR)/jackbridge*.*
+	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.*
 
 debug:
 	$(MAKE) DEBUG=true
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(MODULEDIR)/jackbridge.a: $(OBJS)
+$(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.a"
+	@echo "Creating $(MODULENAME).a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
-$(MODULEDIR)/jackbridge.posix32.a: $(OBJS_posix32)
+$(MODULEDIR)/$(MODULENAME).posix32.a: $(OBJS_posix32)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.posix32.a"
+	@echo "Creating $(MODULENAME).posix32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
-$(MODULEDIR)/jackbridge.posix64.a: $(OBJS_posix64)
+$(MODULEDIR)/$(MODULENAME).posix64.a: $(OBJS_posix64)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.posix64.a"
+	@echo "Creating $(MODULENAME).posix64.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
-$(MODULEDIR)/jackbridge.win32.a: $(OBJS_win32)
+$(MODULEDIR)/$(MODULENAME).win32.a: $(OBJS_win32)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.win32.a"
+	@echo "Creating $(MODULENAME).win32.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
-$(MODULEDIR)/jackbridge.win64.a: $(OBJS_win64)
+$(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.win64.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-$(MODULEDIR)/jackbridge.posix32e.a: $(OBJS_posix32e)
-	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.posix32e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
-
-$(MODULEDIR)/jackbridge.posix64e.a: $(OBJS_posix64e)
-	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.posix64e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
-
-$(MODULEDIR)/jackbridge.win32e.a: $(OBJS_win32e)
-	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.win32e.a"
-	@rm -f $@
-	@$(AR) crs $@ $^
-
-$(MODULEDIR)/jackbridge.win64e.a: $(OBJS_win64e)
-	-@mkdir -p $(MODULEDIR)
-	@echo "Creating jackbridge.win64e.a"
+	@echo "Creating $(MODULENAME).win64.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(MODULEDIR)/jackbridge-wine32.dll$(LIB_EXT): $(OBJS_wine32) JackBridgeExport.def
+$(MODULEDIR)/$(MODULENAME).posix32e.a: $(OBJS_posix32e)
 	-@mkdir -p $(MODULEDIR)
-	@echo "Linking jackbridge-wine32.dll$(LIB_EXT)"
+	@echo "Creating $(MODULENAME).posix32e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).posix64e.a: $(OBJS_posix64e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).posix64e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).win32e.a: $(OBJS_win32e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).win32e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).win64e.a: $(OBJS_win64e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).win64e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(MODULEDIR)/$(MODULENAME)-wine32.dll$(LIB_EXT): $(OBJS_wine32) JackBridgeExport.def
+	-@mkdir -p $(MODULEDIR)
+	@echo "Linking $(MODULENAME)-wine32.dll$(LIB_EXT)"
 	@$(WINECXX) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
-$(MODULEDIR)/jackbridge-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport.def
+$(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport.def
 	-@mkdir -p $(MODULEDIR)
-	@echo "Linking jackbridge-wine64.dll$(LIB_EXT)"
+	@echo "Linking $(MODULENAME)-wine64.dll$(LIB_EXT)"
 	@$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------

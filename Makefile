@@ -49,10 +49,10 @@ ALL_LIBS  = $(MODULEDIR)/carla_engine.a
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
+ALL_LIBS += $(MODULEDIR)/juce_core.a
 
-# ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
-# ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
-# ALL_LIBS += $(MODULEDIR)/juce_core.a
 # ALL_LIBS += $(MODULEDIR)/lilv.a
 # ALL_LIBS += $(MODULEDIR)/native-plugins.a
 # ALL_LIBS += $(MODULEDIR)/rtmempool.a
@@ -83,49 +83,45 @@ ALL_LIBS += $(MODULEDIR)/jackbridge.a
 libs: $(ALL_LIBS)
 
 $(MODULEDIR)/carla_engine.a: .FORCE
-	@echo "Building CarlaEngine"
 	@$(MAKE) -C source/backend/engine
 
 $(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a .FORCE
-	@echo "Building CarlaEnginePlugin"
 	@$(MAKE) -C source/backend/engine
 
 $(MODULEDIR)/carla_plugin.a: .FORCE
-	@echo "Building CarlaPlugin"
 	@$(MAKE) -C source/backend/plugin
 
 $(MODULEDIR)/%.qt4.a: .FORCE
-	$(MAKE) -C source/modules/$* qt4
+	@$(MAKE) -C source/modules/$* qt4
 
 $(MODULEDIR)/%.qt5.a: .FORCE
-	$(MAKE) -C source/modules/$* qt5
+	@$(MAKE) -C source/modules/$* qt5
 
 $(MODULEDIR)/%.posix32.a: .FORCE
-	$(MAKE) -C source/modules/$* posix32
+	@$(MAKE) -C source/modules/$* posix32
 
 $(MODULEDIR)/%.posix32e.a: .FORCE
-	$(MAKE) -C source/modules/$* posix32e
+	@$(MAKE) -C source/modules/$* posix32e
 
 $(MODULEDIR)/%.posix64.a: .FORCE
-	$(MAKE) -C source/modules/$* posix64
+	@$(MAKE) -C source/modules/$* posix64
 
 $(MODULEDIR)/%.posix64e.a: .FORCE
-	$(MAKE) -C source/modules/$* posix64e
+	@$(MAKE) -C source/modules/$* posix64e
 
 $(MODULEDIR)/%.win32.a: .FORCE
-	$(MAKE) -C source/modules/$* win32
+	@$(MAKE) -C source/modules/$* win32
 
 $(MODULEDIR)/%.win32e.a: .FORCE
-	$(MAKE) -C source/modules/$* win32e
+	@$(MAKE) -C source/modules/$* win32e
 
 $(MODULEDIR)/%.win64.a: .FORCE
-	$(MAKE) -C source/modules/$* win64
+	@$(MAKE) -C source/modules/$* win64
 
 $(MODULEDIR)/%.win64e.a: .FORCE
-	$(MAKE) -C source/modules/$* win64e
+	@$(MAKE) -C source/modules/$* win64e
 
 $(MODULEDIR)/%.a: .FORCE
-	@echo "Building $*"
 	@$(MAKE) -C source/modules/$*
 
 # ----------------------------------------------------------------------------------------------------------------------------
