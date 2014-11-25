@@ -52,40 +52,39 @@ ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
-
-# ALL_LIBS += $(MODULEDIR)/lilv.a
+ALL_LIBS += $(MODULEDIR)/lilv.a
 # ALL_LIBS += $(MODULEDIR)/native-plugins.a
-# ALL_LIBS += $(MODULEDIR)/rtmempool.a
-#
-# ifeq ($(MACOS_OR_WIN32),true)
-# ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
-# ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
-# ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
-# ALL_LIBS += $(MODULEDIR)/juce_events.a
-# ALL_LIBS += $(MODULEDIR)/juce_graphics.a
-# ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
-# ifeq ($(MACOS),true)
-# ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
-# endif
-# else
-# ALL_LIBS += $(MODULEDIR)/rtaudio.a
-# ALL_LIBS += $(MODULEDIR)/rtmidi.a
-# endif
-#
-# ifeq ($(HAVE_QT4),true)
-# ALL_LIBS += $(MODULEDIR)/theme.qt4.a
-# endif
-#
-# ifeq ($(HAVE_QT5),true)
-# ALL_LIBS += $(MODULEDIR)/theme.qt5.a
-# endif
+ALL_LIBS += $(MODULEDIR)/rtmempool.a
+
+ifeq ($(MACOS_OR_WIN32),true)
+ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
+ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
+ALL_LIBS += $(MODULEDIR)/juce_events.a
+ALL_LIBS += $(MODULEDIR)/juce_graphics.a
+ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
+ifeq ($(MACOS),true)
+ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+else
+ALL_LIBS += $(MODULEDIR)/rtaudio.a
+ALL_LIBS += $(MODULEDIR)/rtmidi.a
+endif
+
+ifeq ($(HAVE_QT4),true)
+ALL_LIBS += $(MODULEDIR)/theme.qt4.a
+endif
+
+ifeq ($(HAVE_QT5),true)
+ALL_LIBS += $(MODULEDIR)/theme.qt5.a
+endif
 
 libs: $(ALL_LIBS)
 
 $(MODULEDIR)/carla_engine.a: .FORCE
 	@$(MAKE) -C source/backend/engine
 
-$(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a .FORCE
+$(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a
 	@$(MAKE) -C source/backend/engine
 
 $(MODULEDIR)/carla_plugin.a: .FORCE
@@ -126,19 +125,19 @@ $(MODULEDIR)/%.a: .FORCE
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-backend: bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils$(LIB_EXT)
+backend: $(BINDIR)/libcarla_standalone2$(LIB_EXT) $(BINDIR)/libcarla_utils$(LIB_EXT)
 
-bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
-	$(MAKE) -C source/backend ../../bin/libcarla_standalone2$(LIB_EXT)
+$(BINDIR)/libcarla_standalone2$(LIB_EXT): libs .FORCE
+	$(MAKE) -C source/backend
 
-bin/libcarla_utils$(LIB_EXT): libs .FORCE
-	$(MAKE) -C source/backend ../../bin/libcarla_utils$(LIB_EXT)
+bin/libcarla_utils$(LIB_EXT): $(BINDIR)/libcarla_standalone2$(LIB_EXT)
+	$(MAKE) -C source/backend
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-bridges-plugin: bin/carla-bridge-native$(APP_EXT)
+bridges-plugin: $(BINDIR)/carla-bridge-native$(APP_EXT)
 
-bin/carla-bridge-native$(APP_EXT): libs .FORCE
+$(BINDIR)/carla-bridge-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/bridges-plugin
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -148,35 +147,35 @@ bridges-ui: libs .FORCE
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-discovery: bin/carla-discovery-native$(APP_EXT)
+discovery: $(BINDIR)/carla-discovery-native$(APP_EXT)
 
-bin/carla-discovery-native$(APP_EXT): libs .FORCE
+$(BINDIR)/carla-discovery-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/discovery
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-interposer: bin/libcarla_interposer.so
+interposer: $(BINDIR)/libcarla_interposer.so
 
-bin/libcarla_interposer.so: .FORCE
+$(BINDIR)/libcarla_interposer.so: .FORCE
 	$(MAKE) -C source/interposer
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-plugin: plugin_build bin/carla.lv2/manifest.ttl
+plugin: plugin_build $(BINDIR)/carla.lv2/manifest.ttl
 
 plugin_build: libs .FORCE
 	$(MAKE) -C source/plugin
 
-bin/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
+$(BINDIR)/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
 	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
-	cd bin/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
+	cd $(BINDIR)/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_QT),true)
-theme: bin/styles/carlastyle$(LIB_EXT)
+theme: $(BINDIR)/styles/carlastyle$(LIB_EXT)
 
-bin/styles/carlastyle$(LIB_EXT): .FORCE
+$(BINDIR)/styles/carlastyle$(LIB_EXT): .FORCE
 	$(MAKE) -C source/modules/theme
 else
 theme:
@@ -185,7 +184,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)
 
-LIBS_POSIX32 += $(MODULEDIR)/jackbridge.posix32.a
+LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
@@ -207,7 +206,7 @@ posix32: $(LIBS_POSIX32)
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix64)
 
-LIBS_POSIX64 += $(MODULEDIR)/jackbridge.posix64.a
+LIBS_POSIX64  = $(MODULEDIR)/jackbridge.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
@@ -223,13 +222,13 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 
 posix64: $(LIBS_POSIX64)
-	$(MAKE) -C source/bridges-plugin posix64
-	$(MAKE) -C source/discovery posix64
+# 	$(MAKE) -C source/bridges-plugin posix64
+# 	$(MAKE) -C source/discovery posix64
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)
 
-LIBS_WIN32 += $(MODULEDIR)/jackbridge.win32e.a
+LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
@@ -247,7 +246,7 @@ win32: $(LIBS_WIN32)
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
 
-LIBS_WIN64 += $(MODULEDIR)/jackbridge.win64e.a
+LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a

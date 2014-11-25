@@ -4,88 +4,122 @@
 # Created by falkTX
 #
 
-include ../../Makefile.mk
+CWD=../..
+MODULENAME=juce_gui_basics
+include ../Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_GUI_BASICS_FLAGS) -I. -w
+BUILD_CXX_FLAGS += $(JUCE_GUI_BASICS_FLAGS) -w
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS),true)
-OBJS         = juce_gui_basics.mm.o
-OBJS_posix32 = juce_gui_basics.mm.posix32.o
-OBJS_posix64 = juce_gui_basics.mm.posix64.o
+OBJS         = $(OBJDIR)/$(MODULENAME).mm.o
+OBJS_posix32 = $(OBJDIR)/$(MODULENAME).mm.posix32.o
+OBJS_posix64 = $(OBJDIR)/$(MODULENAME).mm.posix64.o
 else
-OBJS         = juce_gui_basics.cpp.o
-OBJS_posix32 = juce_gui_basics.cpp.posix32.o
-OBJS_posix64 = juce_gui_basics.cpp.posix64.o
+OBJS         = $(OBJDIR)/$(MODULENAME).cpp.o
+OBJS_posix32 = $(OBJDIR)/$(MODULENAME).cpp.posix32.o
+OBJS_posix64 = $(OBJDIR)/$(MODULENAME).cpp.posix64.o
 endif
-OBJS_win32   = juce_gui_basics.cpp.win32.o
-OBJS_win64   = juce_gui_basics.cpp.win64.o
+OBJS_win32   = $(OBJDIR)/$(MODULENAME).cpp.win32.o
+OBJS_win64   = $(OBJDIR)/$(MODULENAME).cpp.win64.o
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-all:     ../juce_gui_basics.a
-posix32: ../juce_gui_basics.posix32.a
-posix64: ../juce_gui_basics.posix64.a
-win32:   ../juce_gui_basics.win32.a
-win64:   ../juce_gui_basics.win64.a
+all:     $(MODULEDIR)/$(MODULENAME).a
+posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
+posix64: $(MODULEDIR)/$(MODULENAME).posix64.a
+win32:   $(MODULEDIR)/$(MODULENAME).win32.a
+win64:   $(MODULEDIR)/$(MODULENAME).win64.a
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../juce_gui_basics*.a
+	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a
 
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../juce_gui_basics.a: $(OBJS)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/$(MODULENAME).a: $(OBJS)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../juce_gui_basics.posix32.a: $(OBJS_posix32)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/$(MODULENAME).posix32.a: $(OBJS_posix32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).posix32.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../juce_gui_basics.posix64.a: $(OBJS_posix64)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/$(MODULENAME).posix64.a: $(OBJS_posix64)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).posix64.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../juce_gui_basics.win32.a: $(OBJS_win32)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/$(MODULENAME).win32.a: $(OBJS_win32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).win32.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../juce_gui_basics.win64.a: $(OBJS_win64)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).win64.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-CPP_DEPS = juce_gui_basics.cpp juce_gui_basics.h AppConfig.h */*.cpp */*.h
+$(OBJDIR)/$(MODULENAME).cpp.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-juce_gui_basics.cpp.o: $(CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/$(MODULENAME).cpp.%32.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (32bit)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
 
-juce_gui_basics.cpp.%32.o: $(CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+$(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (64bit)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
 
-juce_gui_basics.cpp.%64.o: $(CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+# ----------------------------------------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------
+$(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -ObjC++ -c -o $@
 
-MM_DEPS = juce_gui_basics.cpp juce_gui_basics.h AppConfig.h */*.mm */*.cpp */*.h
+$(OBJDIR)/$(MODULENAME).mm.%32.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (32bit)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -ObjC++ -c -o $@
 
-juce_gui_basics.mm.o: $(MM_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+$(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (64bit)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -ObjC++ -c -o $@
 
-juce_gui_basics.mm.%32.o: $(MM_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(32BIT_FLAGS) -c -o $@
+# ----------------------------------------------------------------------------------------------------------------------------
 
-juce_gui_basics.mm.%64.o: $(MM_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ $(64BIT_FLAGS) -c -o $@
+ifeq ($(MACOS),true)
+-include $(OBJDIR)/$(MODULENAME).mm.d
+-include $(OBJDIR)/$(MODULENAME).mm.posix32.d
+-include $(OBJDIR)/$(MODULENAME).mm.posix64.d
+else
+-include $(OBJDIR)/$(MODULENAME).cpp.d
+-include $(OBJDIR)/$(MODULENAME).cpp.posix32.d
+-include $(OBJDIR)/$(MODULENAME).cpp.posix64.d
+endif
+-include $(OBJDIR)/$(MODULENAME).cpp.win32.d
+-include $(OBJDIR)/$(MODULENAME).cpp.win64.d
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
