@@ -7,102 +7,101 @@
 CWD=..
 include Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-STANDALONE_LIBS  = carla_engine.a
-STANDALONE_LIBS += carla_plugin.a
+OBJS = \
+	$(OBJDIR)/CarlaStandalone.cpp.o \
+	$(OBJDIR)/CarlaUtils.cpp.o
 
-STANDALONE_LIBS += ../modules/jackbridge.a
-STANDALONE_LIBS += ../modules/juce_audio_basics.a
-STANDALONE_LIBS += ../modules/juce_audio_formats.a
-STANDALONE_LIBS += ../modules/juce_core.a
-STANDALONE_LIBS += ../modules/lilv.a
-STANDALONE_LIBS += ../modules/native-plugins.a
-STANDALONE_LIBS += ../modules/rtmempool.a
+TARGETS = \
+	$(BINDIR)/libcarla_standalone2$(LIB_EXT) \
+	$(BINDIR)/libcarla_utils$(LIB_EXT)
 
-ifeq ($(MACOS_OR_WIN32),true)
-STANDALONE_LIBS += ../modules/juce_audio_devices.a
-STANDALONE_LIBS += ../modules/juce_audio_processors.a
-STANDALONE_LIBS += ../modules/juce_data_structures.a
-STANDALONE_LIBS += ../modules/juce_events.a
-STANDALONE_LIBS += ../modules/juce_graphics.a
-STANDALONE_LIBS += ../modules/juce_gui_basics.a
-ifeq ($(MACOS),true)
-STANDALONE_LIBS += ../modules/juce_gui_extra.a
-endif
-else
-STANDALONE_LIBS += ../modules/rtaudio.a
-STANDALONE_LIBS += ../modules/rtmidi.a
-endif
+# ----------------------------------------------------------------------------------------------------------------------------
 
-UTILS_LIBS = ../modules/juce_core.a
+STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
+STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
 
-# --------------------------------------------------------------
-
-STANDALONE_FLAGS  = $(JACKBRIDGE_LIBS)
-STANDALONE_FLAGS += $(JUCE_CORE_LIBS)
-STANDALONE_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-STANDALONE_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
-STANDALONE_FLAGS += $(LIBLO_LIBS)
-STANDALONE_FLAGS += $(LILV_LIBS)
-STANDALONE_FLAGS += $(NATIVE_PLUGINS_LIBS)
-STANDALONE_FLAGS += $(RTMEMPOOL_LIBS)
+STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_formats.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_core.a
+STANDALONE_LIBS += $(MODULEDIR)/lilv.a
+STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
+STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
-STANDALONE_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
-STANDALONE_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
-STANDALONE_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-STANDALONE_FLAGS += $(JUCE_EVENTS_LIBS)
-STANDALONE_FLAGS += $(JUCE_GRAPHICS_LIBS)
-STANDALONE_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_processors.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_data_structures.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
 ifeq ($(MACOS),true)
-STANDALONE_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+STANDALONE_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 else
-STANDALONE_FLAGS += $(RTAUDIO_LIBS)
-STANDALONE_FLAGS += $(RTMIDI_LIBS)
+STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
+STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
+endif
+
+UTILS_LIBS = $(MODULEDIR)/juce_core.a
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+STANDALONE_LINK_FLAGS  = $(JACKBRIDGE_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_CORE_LIBS)
+STANDALONE_LINK_FLAGS += $(LIBLO_LIBS)
+STANDALONE_LINK_FLAGS += $(LILV_LIBS)
+STANDALONE_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
+STANDALONE_LINK_FLAGS += $(RTMEMPOOL_LIBS)
+
+ifeq ($(MACOS_OR_WIN32),true)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_DEVICES_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+STANDALONE_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+ifeq ($(MACOS),true)
+STANDALONE_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
+else
+STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
+STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
-STANDALONE_FLAGS += $(FLUIDSYNTH_LIBS)
+STANDALONE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
-STANDALONE_FLAGS += $(LINUXSAMPLER_LIBS)
+STANDALONE_LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
 ifeq ($(HAVE_X11),true)
-STANDALONE_FLAGS += $(X11_LIBS)
+STANDALONE_LINK_FLAGS += $(X11_LIBS)
 endif
 
 ifeq ($(UNIX),true)
-STANDALONE_FLAGS += -lmagic
+STANDALONE_LINK_FLAGS += -lmagic
 endif
 
-UTILS_FLAGS  = $(JUCE_CORE_LIBS)
+UTILS_LINK_FLAGS  = $(JUCE_CORE_LIBS)
 ifneq ($(HAIKU),true)
-UTILS_FLAGS += -lpthread
+UTILS_LINK_FLAGS += -lpthread
 endif
 
-# --------------------------------------------------------------
-
-OBJS = \
-	CarlaStandalone.cpp.o \
-	CarlaUtils.cpp.o
-
-TARGETS = \
-	../../bin/libcarla_standalone2$(LIB_EXT) \
-	../../bin/libcarla_utils$(LIB_EXT)
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS)
-	$(RM) $(TARGETS)
+	rm -f $(OBJS) $(TARGETS)
 	$(MAKE) clean -C engine
 	$(MAKE) clean -C plugin
 
@@ -112,20 +111,25 @@ debug:
 doxygen: CarlaBackend.doxygen
 	doxygen $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaStandalone.cpp.o: $(CARLA_STANDALONE_CPP)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJDIR)/CarlaStandalone.cpp.o $(STANDALONE_LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla_standalone2$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
 
-CarlaUtils.cpp.o: $(CARLA_UTILS_CPP)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJDIR)/CarlaUtils.cpp.o $(UTILS_LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla_utils$(LIB_EXT)"
+	@$(CXX) $< $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_LINK_FLAGS) $(SHARED) -o $@
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../../bin/libcarla_standalone2$(LIB_EXT): CarlaStandalone.cpp.o $(STANDALONE_LIBS)
-	$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_FLAGS) $(SHARED) -o $@
+$(OBJDIR)/%.cpp.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-../../bin/libcarla_utils$(LIB_EXT): CarlaUtils.cpp.o $(UTILS_LIBS)
-	$(CXX) $< $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_FLAGS) $(SHARED) -o $@
+-include $(OBJS:%.cpp.o=%.cpp.d)
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------

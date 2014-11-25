@@ -6,12 +6,9 @@
 
 include source/Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-PREFIX  = /usr/local
-DESTDIR =
-
-LINK = ln -sf
+LINK    := ln -sf
 
 ifeq ($(DEFAULT_QT),4)
 PYUIC ?= pyuic4 -w
@@ -21,93 +18,117 @@ PYUIC ?= pyuic5
 PYRCC ?= pyrcc5
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
+
+PREFIX    := /usr/local
+DESTDIR   :=
+
+BINDIR    := $(CURDIR)/bin
+
+ifeq ($(DEBUG),true)
+OBJDIR    := $(CURDIR)/build/backend/Debug
+MODULEDIR := $(CURDIR)/build/modules/Debug
+else
+OBJDIR    := $(CURDIR)/build/backend/Release
+MODULEDIR := $(CURDIR)/build/modules/Release
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
 
 all: BIN RES UI WIDGETS
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
-BIN: libs backend bridges-plugin bridges-ui discovery interposer plugin theme
+BIN: libs
+# backend bridges-plugin bridges-ui discovery interposer plugin theme
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-ALL_LIBS += source/backend/carla_engine.a
-ALL_LIBS += source/backend/carla_engine_plugin.a
-ALL_LIBS += source/backend/carla_plugin.a
-ALL_LIBS += source/modules/jackbridge.a
-ALL_LIBS += source/modules/juce_audio_basics.a
-ALL_LIBS += source/modules/juce_audio_formats.a
-ALL_LIBS += source/modules/juce_core.a
-ALL_LIBS += source/modules/lilv.a
-ALL_LIBS += source/modules/native-plugins.a
-ALL_LIBS += source/modules/rtmempool.a
+ALL_LIBS  = $(MODULEDIR)/carla_engine.a
+ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
+ALL_LIBS += $(MODULEDIR)/carla_plugin.a
+ALL_LIBS += $(MODULEDIR)/jackbridge.a
 
-ifeq ($(MACOS_OR_WIN32),true)
-ALL_LIBS += source/modules/juce_audio_devices.a
-ALL_LIBS += source/modules/juce_audio_processors.a
-ALL_LIBS += source/modules/juce_data_structures.a
-ALL_LIBS += source/modules/juce_events.a
-ALL_LIBS += source/modules/juce_graphics.a
-ALL_LIBS += source/modules/juce_gui_basics.a
-ifeq ($(MACOS),true)
-ALL_LIBS += source/modules/juce_gui_extra.a
-endif
-else
-ALL_LIBS += source/modules/rtaudio.a
-ALL_LIBS += source/modules/rtmidi.a
-endif
-
-ifeq ($(HAVE_QT4),true)
-ALL_LIBS += source/modules/theme.qt4.a
-endif
-
-ifeq ($(HAVE_QT5),true)
-ALL_LIBS += source/modules/theme.qt5.a
-endif
+# ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
+# ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
+# ALL_LIBS += $(MODULEDIR)/juce_core.a
+# ALL_LIBS += $(MODULEDIR)/lilv.a
+# ALL_LIBS += $(MODULEDIR)/native-plugins.a
+# ALL_LIBS += $(MODULEDIR)/rtmempool.a
+#
+# ifeq ($(MACOS_OR_WIN32),true)
+# ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
+# ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
+# ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
+# ALL_LIBS += $(MODULEDIR)/juce_events.a
+# ALL_LIBS += $(MODULEDIR)/juce_graphics.a
+# ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
+# ifeq ($(MACOS),true)
+# ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
+# endif
+# else
+# ALL_LIBS += $(MODULEDIR)/rtaudio.a
+# ALL_LIBS += $(MODULEDIR)/rtmidi.a
+# endif
+#
+# ifeq ($(HAVE_QT4),true)
+# ALL_LIBS += $(MODULEDIR)/theme.qt4.a
+# endif
+#
+# ifeq ($(HAVE_QT5),true)
+# ALL_LIBS += $(MODULEDIR)/theme.qt5.a
+# endif
 
 libs: $(ALL_LIBS)
 
-source/backend/carla_%_plugin.a: .FORCE
-	$(MAKE) -C source/backend/$* ../carla_$*_plugin.a
+$(MODULEDIR)/carla_engine.a: .FORCE
+	@echo "Building CarlaEngine"
+	@$(MAKE) -C source/backend/engine
 
-source/backend/carla_%.a: .FORCE
-	$(MAKE) -C source/backend/$* ../carla_$*.a
+$(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a .FORCE
+	@echo "Building CarlaEnginePlugin"
+	@$(MAKE) -C source/backend/engine
 
-source/modules/%.qt4.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.qt4.a
+$(MODULEDIR)/carla_plugin.a: .FORCE
+	@echo "Building CarlaPlugin"
+	@$(MAKE) -C source/backend/plugin
 
-source/modules/%.qt5.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.qt5.a
+$(MODULEDIR)/%.qt4.a: .FORCE
+	$(MAKE) -C source/modules/$* qt4
 
-source/modules/%.posix32.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.posix32.a
+$(MODULEDIR)/%.qt5.a: .FORCE
+	$(MAKE) -C source/modules/$* qt5
 
-source/modules/%.posix32e.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.posix32e.a
+$(MODULEDIR)/%.posix32.a: .FORCE
+	$(MAKE) -C source/modules/$* posix32
 
-source/modules/%.posix64.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.posix64.a
+$(MODULEDIR)/%.posix32e.a: .FORCE
+	$(MAKE) -C source/modules/$* posix32e
 
-source/modules/%.posix64e.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.posix64e.a
+$(MODULEDIR)/%.posix64.a: .FORCE
+	$(MAKE) -C source/modules/$* posix64
 
-source/modules/%.win32.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.win32.a
+$(MODULEDIR)/%.posix64e.a: .FORCE
+	$(MAKE) -C source/modules/$* posix64e
 
-source/modules/%.win32e.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.win32e.a
+$(MODULEDIR)/%.win32.a: .FORCE
+	$(MAKE) -C source/modules/$* win32
 
-source/modules/%.win64.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.win64.a
+$(MODULEDIR)/%.win32e.a: .FORCE
+	$(MAKE) -C source/modules/$* win32e
 
-source/modules/%.win64e.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.win64e.a
+$(MODULEDIR)/%.win64.a: .FORCE
+	$(MAKE) -C source/modules/$* win64
 
-source/modules/%.a: .FORCE
-	$(MAKE) -C source/modules/$* ../$*.a
+$(MODULEDIR)/%.win64e.a: .FORCE
+	$(MAKE) -C source/modules/$* win64e
 
-# --------------------------------------------------------------
+$(MODULEDIR)/%.a: .FORCE
+	@echo "Building $*"
+	@$(MAKE) -C source/modules/$*
+
+# ----------------------------------------------------------------------------------------------------------------------------
 
 backend: bin/libcarla_standalone2$(LIB_EXT) bin/libcarla_utils$(LIB_EXT)
 
@@ -117,33 +138,33 @@ bin/libcarla_standalone2$(LIB_EXT): libs .FORCE
 bin/libcarla_utils$(LIB_EXT): libs .FORCE
 	$(MAKE) -C source/backend ../../bin/libcarla_utils$(LIB_EXT)
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 bridges-plugin: bin/carla-bridge-native$(APP_EXT)
 
 bin/carla-bridge-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/bridges-plugin
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 bridges-ui: libs .FORCE
 	$(MAKE) -C source/bridges-ui
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 discovery: bin/carla-discovery-native$(APP_EXT)
 
 bin/carla-discovery-native$(APP_EXT): libs .FORCE
 	$(MAKE) -C source/discovery
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 interposer: bin/libcarla_interposer.so
 
 bin/libcarla_interposer.so: .FORCE
 	$(MAKE) -C source/interposer
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 plugin: plugin_build bin/carla.lv2/manifest.ttl
 
@@ -154,7 +175,7 @@ bin/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
 	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
 	cd bin/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_QT),true)
 theme: bin/styles/carlastyle$(LIB_EXT)
@@ -165,98 +186,98 @@ else
 theme:
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)
 
-LIBS_POSIX32 += source/modules/jackbridge.posix32.a
-LIBS_POSIX32 += source/modules/juce_audio_basics.posix32.a
-LIBS_POSIX32 += source/modules/juce_core.posix32.a
-LIBS_POSIX32 += source/modules/lilv.posix32.a
-LIBS_POSIX32 += source/modules/rtmempool.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/jackbridge.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 
 ifeq ($(MACOS),true)
-LIBS_POSIX32 += source/modules/juce_audio_processors.posix32.a
-LIBS_POSIX32 += source/modules/juce_data_structures.posix32.a
-LIBS_POSIX32 += source/modules/juce_events.posix32.a
-LIBS_POSIX32 += source/modules/juce_graphics.posix32.a
-LIBS_POSIX32 += source/modules/juce_gui_basics.posix32.a
-LIBS_POSIX32 += source/modules/juce_gui_extra.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 endif
 
 posix32: $(LIBS_POSIX32)
 	$(MAKE) -C source/bridges-plugin posix32
 	$(MAKE) -C source/discovery posix32
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix64)
 
-LIBS_POSIX64 += source/modules/jackbridge.posix64.a
-LIBS_POSIX64 += source/modules/juce_audio_basics.posix64.a
-LIBS_POSIX64 += source/modules/juce_core.posix64.a
-LIBS_POSIX64 += source/modules/lilv.posix64.a
-LIBS_POSIX64 += source/modules/rtmempool.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/jackbridge.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 
 ifeq ($(MACOS),true)
-LIBS_POSIX64 += source/modules/juce_audio_processors.posix64.a
-LIBS_POSIX64 += source/modules/juce_data_structures.posix64.a
-LIBS_POSIX64 += source/modules/juce_events.posix64.a
-LIBS_POSIX64 += source/modules/juce_graphics.posix64.a
-LIBS_POSIX64 += source/modules/juce_gui_basics.posix64.a
-LIBS_POSIX64 += source/modules/juce_gui_extra.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 
 posix64: $(LIBS_POSIX64)
 	$(MAKE) -C source/bridges-plugin posix64
 	$(MAKE) -C source/discovery posix64
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)
 
-LIBS_WIN32 += source/modules/jackbridge.win32e.a
-LIBS_WIN32 += source/modules/juce_audio_basics.win32.a
-LIBS_WIN32 += source/modules/juce_audio_processors.win32.a
-LIBS_WIN32 += source/modules/juce_core.win32.a
-LIBS_WIN32 += source/modules/juce_data_structures.win32.a
-LIBS_WIN32 += source/modules/juce_events.win32.a
-LIBS_WIN32 += source/modules/juce_graphics.win32.a
-LIBS_WIN32 += source/modules/juce_gui_basics.win32.a
-LIBS_WIN32 += source/modules/lilv.win32.a
-LIBS_WIN32 += source/modules/rtmempool.win32.a
+LIBS_WIN32 += $(MODULEDIR)/jackbridge.win32e.a
+LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
+LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
+LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 
 win32: $(LIBS_WIN32)
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
 
-LIBS_WIN64 += source/modules/jackbridge.win64e.a
-LIBS_WIN64 += source/modules/juce_audio_basics.win64.a
-LIBS_WIN64 += source/modules/juce_audio_processors.win64.a
-LIBS_WIN64 += source/modules/juce_core.win64.a
-LIBS_WIN64 += source/modules/juce_data_structures.win64.a
-LIBS_WIN64 += source/modules/juce_events.win64.a
-LIBS_WIN64 += source/modules/juce_graphics.win64.a
-LIBS_WIN64 += source/modules/juce_gui_basics.win64.a
-LIBS_WIN64 += source/modules/lilv.win64.a
-LIBS_WIN64 += source/modules/rtmempool.win64.a
+LIBS_WIN64 += $(MODULEDIR)/jackbridge.win64e.a
+LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
+LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
+LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 
 win64: $(LIBS_WIN64)
 	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
 
 wine32:
 	$(MAKE) -C source/modules/jackbridge wine32
-	cp -f source/modules/jackbridge-wine32.dll.so bin/jackbridge-wine32.dll
+	cp -f $(MODULEDIR)/jackbridge-wine32.dll.so $(BINDIR)/jackbridge-wine32.dll
 
 wine64:
 	$(MAKE) -C source/modules/jackbridge wine64
-	cp -f source/modules/jackbridge-wine64.dll.so bin/jackbridge-wine64.dll
+	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(BINDIR)/jackbridge-wine64.dll
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Resources
 
 RES = \
@@ -319,7 +340,7 @@ source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.
 bin/resources/%.py: source/%.py
 	$(LINK) $(CURDIR)/source/$*.py bin/resources/
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # UI code
 
 UIs = \
@@ -347,7 +368,7 @@ UI: $(UIs)
 source/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 # Widgets
 
 WIDGETS = \
@@ -365,7 +386,7 @@ WIDGETS: $(WIDGETS)
 source/%.py: source/widgets/%.py
 	$(LINK) widgets/$*.py $@
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
 	$(MAKE) clean -C source/backend
@@ -379,13 +400,17 @@ clean:
 	rm -f $(WIDGETS)
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
+distclean: clean
+	rm -f bin/*.dll bin/*.so
+	rm -rf build
+
 debug:
 	$(MAKE) DEBUG=true
 
 doxygen:
 	$(MAKE) doxygen -C source/backend
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 install:
 	# Create directories
@@ -594,7 +619,7 @@ endif
 # 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
@@ -612,7 +637,7 @@ uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 USE_COLORS=true
 
@@ -804,9 +829,9 @@ else
 	@echo "ZynAddSubFX:   $(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 .FORCE:
 .PHONY: .FORCE
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------

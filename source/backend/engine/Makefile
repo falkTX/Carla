@@ -4,103 +4,85 @@
 # Created by falkTX
 #
 
+CWD=../..
 include ../Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
-	CarlaEngine.cpp.o \
-	CarlaEngineClient.cpp.o \
-	CarlaEngineData.cpp.o \
-	CarlaEngineGraph.cpp.o \
-	CarlaEngineInternal.cpp.o \
-	CarlaEngineOsc.cpp.o \
-	CarlaEngineOscSend.cpp.o \
-	CarlaEnginePorts.cpp.o \
-	CarlaEngineThread.cpp.o
+	$(OBJDIR)/CarlaEngine.cpp.o \
+	$(OBJDIR)/CarlaEngineClient.cpp.o \
+	$(OBJDIR)/CarlaEngineData.cpp.o \
+	$(OBJDIR)/CarlaEngineGraph.cpp.o \
+	$(OBJDIR)/CarlaEngineInternal.cpp.o \
+	$(OBJDIR)/CarlaEngineOsc.cpp.o \
+	$(OBJDIR)/CarlaEngineOscSend.cpp.o \
+	$(OBJDIR)/CarlaEnginePorts.cpp.o \
+	$(OBJDIR)/CarlaEngineThread.cpp.o
 
 OBJSa = $(OBJS) \
-	CarlaEngineJack.cpp.o \
-	CarlaEngineNative.cpp.o
+	$(OBJDIR)/CarlaEngineJack.cpp.o \
+	$(OBJDIR)/CarlaEngineNative.cpp.o
 
 ifeq ($(MACOS_OR_WIN32),true)
-OBJSa += CarlaEngineJuce.cpp.o
+OBJSa += \
+	$(OBJDIR)/CarlaEngineJuce.cpp.o
 else
-OBJSa += CarlaEngineRtAudio.cpp.o
+OBJSa += \
+	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
 endif
 
-OBJSp  = $(OBJS) \
-	CarlaEngineNative.cpp.exp.o
+OBJSp = $(OBJS) \
+	$(OBJDIR)/CarlaEngineNative.cpp.exp.o
 
 TARGETS = \
-	../carla_engine.a \
-	../carla_engine_plugin.a
+	$(MODULEDIR)/carla_engine.a \
+	$(MODULEDIR)/carla_engine_plugin.a
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJSa) $(OBJSp)
-	$(RM) $(TARGETS)
+	rm -f $(OBJSa) $(OBJSp) $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../carla_engine.a: $(OBJSa)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/carla_engine.a: $(OBJSa)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating carla_engine.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../carla_engine_plugin.a: $(OBJSp)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/carla_engine_plugin.a: $(OBJSp)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating carla_engine_plugin.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaEngine.cpp.o: CarlaEngine.cpp $(CARLA_ENGINE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEngineRtAudio.cpp"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -MMD -c -o $@
 
-CarlaEngineClient.cpp.o: CarlaEngineClient.cpp $(CARLA_ENGINE_CLIENT_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEngineNative.cpp (plugin)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -MMD -c -o $@
 
-CarlaEngineData.cpp.o: CarlaEngineData.cpp $(CARLA_ENGINE_DATA_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/%.cpp.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-CarlaEngineGraph.cpp.o: CarlaEngineGraph.cpp $(CARLA_ENGINE_GRAPH_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+-include $(OBJSa:%.cpp.o=%.cpp.d)
+-include $(OBJDIR)/CarlaEngineNative.cpp.exp.d
 
-CarlaEngineInternal.cpp.o: CarlaEngineInternal.cpp $(CARLA_ENGINE_INTERNAL_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineOsc.cpp.o: CarlaEngineOsc.cpp $(CARLA_ENGINE_OSC_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineOscSend.cpp.o: CarlaEngineOscSend.cpp $(CARLA_ENGINE_OSC_SEND_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEnginePorts.cpp.o: CarlaEnginePorts.cpp $(CARLA_ENGINE_PORTS_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineThread.cpp.o: CarlaEngineThread.cpp $(CARLA_ENGINE_THREAD_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineJack.cpp.o: CarlaEngineJack.cpp $(CARLA_ENGINE_JACK_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp $(CARLA_ENGINE_RTAUDIO_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
-
-CarlaEngineJuce.cpp.o: CarlaEngineJuce.cpp $(CARLA_ENGINE_JUCE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineNative.cpp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_NATIVE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp $(CARLA_ENGINE_NATIVE_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------

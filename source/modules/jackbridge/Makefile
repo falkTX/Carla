@@ -4,142 +4,205 @@
 # Created by falkTX
 #
 
-include ../../Makefile.mk
+CWD=../..
+MODULENAME=jackbridge
+include ../Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 WINECXX ?= wineg++
 
-BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS) -I. -I../../includes -I../../utils
+BUILD_CXX_FLAGS += $(JACKBRIDGE_FLAGS)
 LINK_FLAGS      += $(JACKBRIDGE_LIBS)
 
+ifeq ($(MACOS),true)
+WINE_32BIT_FLAGS = $(32BIT_FLAGS)
+WINE_64BIT_FLAGS = $(64BIT_FLAGS)
+WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lpthread
+else
 WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wine
 WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lrt -lpthread
+endif
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-OBJS          = JackBridge1.cpp.o          JackBridge2.cpp.o
-OBJS_posix32  = JackBridge1.cpp.posix32.o  JackBridge2.cpp.posix32.o
-OBJS_posix64  = JackBridge1.cpp.posix64.o  JackBridge2.cpp.posix64.o
-OBJS_win32    = JackBridge1.cpp.win32.o    JackBridge2.cpp.win32.o
-OBJS_win64    = JackBridge1.cpp.win64.o    JackBridge2.cpp.win64.o
+OBJS          = $(OBJDIR)/JackBridge1.cpp.o          $(OBJDIR)/JackBridge2.cpp.o
+OBJS_posix32  = $(OBJDIR)/JackBridge1.cpp.posix32.o  $(OBJDIR)/JackBridge2.cpp.posix32.o
+OBJS_posix64  = $(OBJDIR)/JackBridge1.cpp.posix64.o  $(OBJDIR)/JackBridge2.cpp.posix64.o
+OBJS_win32    = $(OBJDIR)/JackBridge1.cpp.win32.o    $(OBJDIR)/JackBridge2.cpp.win32.o
+OBJS_win64    = $(OBJDIR)/JackBridge1.cpp.win64.o    $(OBJDIR)/JackBridge2.cpp.win64.o
+OBJS_wine32   = $(OBJDIR)/JackBridge1.cpp.wine32.o   $(OBJDIR)/JackBridge2.cpp.wine32.o $(OBJDIR)/JackBridge3.cpp.wine32.o
+OBJS_wine64   = $(OBJDIR)/JackBridge1.cpp.wine64.o   $(OBJDIR)/JackBridge2.cpp.wine64.o $(OBJDIR)/JackBridge3.cpp.wine64.o
 
-OBJS_posix32e = JackBridgeExport.cpp.posix32e.o
-OBJS_posix64e = JackBridgeExport.cpp.posix64e.o
-OBJS_win64e   = JackBridgeExport.cpp.win64e.o
-OBJS_win32e   = JackBridgeExport.cpp.win32e.o
+OBJS_posix32e = $(OBJDIR)/JackBridgeExport.cpp.posix32e.o
+OBJS_posix64e = $(OBJDIR)/JackBridgeExport.cpp.posix64e.o
+OBJS_win64e   = $(OBJDIR)/JackBridgeExport.cpp.win64e.o
+OBJS_win32e   = $(OBJDIR)/JackBridgeExport.cpp.win32e.o
 
-OBJS_wine32   = JackBridge1.cpp.wine32.o JackBridge2.cpp.wine32.o JackBridge3.cpp.wine32.o
-OBJS_wine64   = JackBridge1.cpp.wine64.o JackBridge2.cpp.wine64.o JackBridge3.cpp.wine64.o
+# ----------------------------------------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------
+all:      $(MODULEDIR)/jackbridge.a
 
-all: ../jackbridge.a
+posix32:  $(MODULEDIR)/jackbridge.posix32.a
+posix64:  $(MODULEDIR)/jackbridge.posix64.a
+posix32e: $(MODULEDIR)/jackbridge.posix32e.a
+posix64e: $(MODULEDIR)/jackbridge.posix64e.a
 
-posix32:  ../jackbridge.posix32.a
-posix64:  ../jackbridge.posix64.a
-posix32e: ../jackbridge.posix32e.a
-posix64e: ../jackbridge.posix64e.a
+win32:    $(MODULEDIR)/jackbridge.win32.a
+win64:    $(MODULEDIR)/jackbridge.win64.a
+win32e:   $(MODULEDIR)/jackbridge.win32e.a
+win64e:   $(MODULEDIR)/jackbridge.win64e.a
 
-win32:   ../jackbridge.win32.a
-win64:   ../jackbridge.win64.a
-win32e:  ../jackbridge.win32e.a
-win64e:  ../jackbridge.win64e.a
+wine32:   $(MODULEDIR)/jackbridge-wine32.dll$(LIB_EXT)
+wine64:   $(MODULEDIR)/jackbridge-wine64.dll$(LIB_EXT)
 
-wine32:  ../jackbridge-wine32.dll.so
-wine64:  ../jackbridge-wine64.dll.so
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) *.o ../jackbridge*.*
+	rm -f $(OBJDIR)/JackBridge*.o $(MODULEDIR)/jackbridge*.*
 
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../jackbridge.a: $(OBJS)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.a: $(OBJS)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.posix32.a: $(OBJS_posix32)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.posix32.a: $(OBJS_posix32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.posix32.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.posix64.a: $(OBJS_posix64)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.posix64.a: $(OBJS_posix64)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.posix64.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.win32.a: $(OBJS_win32)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.win32.a: $(OBJS_win32)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.win32.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.win64.a: $(OBJS_win64)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.win64.a: $(OBJS_win64)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.win64.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../jackbridge.posix32e.a: $(OBJS_posix32e)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.posix32e.a: $(OBJS_posix32e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.posix32e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.posix64e.a: $(OBJS_posix64e)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.posix64e.a: $(OBJS_posix64e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.posix64e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.win32e.a: $(OBJS_win32e)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.win32e.a: $(OBJS_win32e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.win32e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-../jackbridge.win64e.a: $(OBJS_win64e)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/jackbridge.win64e.a: $(OBJS_win64e)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating jackbridge.win64e.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../jackbridge-wine32.dll.so: $(OBJS_wine32) JackBridgeExport.def
-	$(WINECXX) $^ -shared $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
+$(MODULEDIR)/jackbridge-wine32.dll$(LIB_EXT): $(OBJS_wine32) JackBridgeExport.def
+	-@mkdir -p $(MODULEDIR)
+	@echo "Linking jackbridge-wine32.dll$(LIB_EXT)"
+	@$(WINECXX) $^ $(WINE_32BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
-../jackbridge-wine64.dll.so: $(OBJS_wine64) JackBridgeExport.def
-	$(WINECXX) $^ -shared $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) -o $@
+$(MODULEDIR)/jackbridge-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport.def
+	-@mkdir -p $(MODULEDIR)
+	@echo "Linking jackbridge-wine64.dll$(LIB_EXT)"
+	@$(WINECXX) $^ $(WINE_64BIT_FLAGS) $(WINE_LINK_FLAGS) $(SHARED) -o $@
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-JackBridge1.cpp.o: JackBridge1.cpp JackBridge.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/JackBridge1.cpp.o: JackBridge1.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling JackBridge1.cpp"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-JackBridge2.cpp.o: JackBridge2.cpp JackBridge.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/JackBridge2.cpp.o: JackBridge2.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling JackBridge2.cpp"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp JackBridgeExport.hpp JackBridge.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -fpermissive -c -o $@
+-include $(OBJS:%.cpp.o=%.cpp.d)
 
-JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp JackBridgeExport.hpp JackBridge.hpp
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -fpermissive -c -o $@
+# ----------------------------------------------------------------------------------------------------------------------------
 
-# --------------------------------------------------------------
+$(OBJDIR)/JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -fpermissive -c -o $@
 
-%.posix32.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+$(OBJDIR)/JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -fpermissive -c -o $@
 
-%.posix64.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+-include $(OBJDIR)/JackBridgeExport.cpp.posix32e.d
+-include $(OBJDIR)/JackBridgeExport.cpp.posix64e.d
+-include $(OBJDIR)/JackBridgeExport.cpp.win32e.d
+-include $(OBJDIR)/JackBridgeExport.cpp.win64e.d
 
-%.win32.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+# ----------------------------------------------------------------------------------------------------------------------------
 
-%.win64.o: %
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+$(OBJDIR)/%.cpp.posix32.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (posix32)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
 
-# --------------------------------------------------------------
+$(OBJDIR)/%.cpp.posix64.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (posix64)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
 
-%.wine32.o: %
-	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
+$(OBJDIR)/%.cpp.win32.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (win32)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
 
-%.wine64.o: %
-	$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
+$(OBJDIR)/%.cpp.win64.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (win64)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
 
-# --------------------------------------------------------------
+$(OBJDIR)/%.cpp.wine32.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (wine32)"
+	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+
+$(OBJDIR)/%.cpp.wine64.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $< (wine64)"
+	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+
+-include $(OBJS_posix32:%.cpp.posix32.o=%.cpp.posix32.d)
+-include $(OBJS_posix64:%.cpp.posix64.o=%.cpp.posix64.d)
+-include $(OBJS_win32:%.cpp.win32.o=%.cpp.win32.d)
+-include $(OBJS_win64:%.cpp.win64.o=%.cpp.win64.d)
+-include $(OBJS_wine32:%.cpp.wine32.o=%.cpp.wine32.d)
+-include $(OBJS_wine64:%.cpp.wine64.o=%.cpp.wine64.d)
+
+# ----------------------------------------------------------------------------------------------------------------------------

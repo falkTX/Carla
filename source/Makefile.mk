@@ -14,7 +14,6 @@ CARLA_VESTIGE_HEADER = true
 # DO NOT MODIFY PAST THIS POINT!
 
 AR  ?= ar
-RM  ?= rm -f
 CC  ?= gcc
 CXX ?= g++
 

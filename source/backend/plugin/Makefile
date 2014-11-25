@@ -4,90 +4,67 @@
 # Created by falkTX
 #
 
+CWD=../..
 include ../Makefile.mk
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
-	CarlaPlugin.cpp.o \
-	CarlaPluginInternal.cpp.o \
-	CarlaPluginThread.cpp.o \
-	NativePlugin.cpp.o \
-	BridgePlugin.cpp.o \
-	LadspaPlugin.cpp.o \
-	DssiPlugin.cpp.o \
-	Lv2Plugin.cpp.o \
-	VstPlugin.cpp.o \
-	Vst3Plugin.cpp.o \
-	AuPlugin.cpp.o \
-	JucePlugin.cpp.o \
-	FluidSynthPlugin.cpp.o \
-	LinuxSamplerPlugin.cpp.o
+	$(OBJDIR)/CarlaPlugin.cpp.o \
+	$(OBJDIR)/CarlaPluginInternal.cpp.o \
+	$(OBJDIR)/CarlaPluginThread.cpp.o \
+	$(OBJDIR)/NativePlugin.cpp.o \
+	$(OBJDIR)/BridgePlugin.cpp.o \
+	$(OBJDIR)/LadspaPlugin.cpp.o \
+	$(OBJDIR)/DssiPlugin.cpp.o \
+	$(OBJDIR)/Lv2Plugin.cpp.o \
+	$(OBJDIR)/VstPlugin.cpp.o \
+	$(OBJDIR)/Vst3Plugin.cpp.o \
+	$(OBJDIR)/AuPlugin.cpp.o \
+	$(OBJDIR)/JucePlugin.cpp.o \
+	$(OBJDIR)/FluidSynthPlugin.cpp.o \
+	$(OBJDIR)/LinuxSamplerPlugin.cpp.o
 
 TARGETS = \
-	../carla_plugin.a
+	$(MODULEDIR)/carla_plugin.a
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	$(RM) $(OBJS)
-	$(RM) $(TARGETS)
+	rm -f $(OBJS) $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-../carla_plugin.a: $(OBJS)
-	$(RM) $@
-	$(AR) crs $@ $^
+$(MODULEDIR)/carla_plugin.a: $(OBJS)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating carla_plugin.a"
+	@rm -f $@
+	@$(AR) crs $@ $^
 
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
 
-CarlaPlugin.cpp.o: CarlaPlugin.cpp $(CARLA_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -MMD -c -o $@
 
-CarlaPluginInternal.cpp.o: CarlaPluginInternal.cpp $(CARLA_PLUGIN_INTERNAL_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) -MMD -c -o $@
 
-CarlaPluginThread.cpp.o: CarlaPluginThread.cpp $(CARLA_PLUGIN_THREAD_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+$(OBJDIR)/%.cpp.o: %.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
 
-NativePlugin.cpp.o: NativePlugin.cpp $(NATIVE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+-include $(OBJS:%.cpp.o=%.cpp.d)
 
-BridgePlugin.cpp.o: BridgePlugin.cpp $(BRIDGE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-LadspaPlugin.cpp.o: LadspaPlugin.cpp $(LADSPA_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-DssiPlugin.cpp.o: DssiPlugin.cpp $(DSSI_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-Lv2Plugin.cpp.o: Lv2Plugin.cpp $(LV2_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-VstPlugin.cpp.o: VstPlugin.cpp $(VST_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-Vst3Plugin.cpp.o: Vst3Plugin.cpp $(VST3_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-AuPlugin.cpp.o: AuPlugin.cpp $(AU_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-JucePlugin.cpp.o: JucePlugin.cpp $(JUCE_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-FluidSynthPlugin.cpp.o: FluidSynthPlugin.cpp $(FLUIDSYNTH_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(FLUIDSYNTH_FLAGS) -c -o $@
-
-LinuxSamplerPlugin.cpp.o: LinuxSamplerPlugin.cpp $(LINUXSAMPLER_PLUGIN_CPP_DEPS)
-	$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) -c -o $@
-
-# --------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------------
