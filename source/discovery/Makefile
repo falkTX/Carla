@@ -44,8 +44,8 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-NATIVE_BUILD_FLAGS  = ""
-NATIVE_LINK_FLAGS   = ""
+NATIVE_BUILD_FLAGS  =
+NATIVE_LINK_FLAGS   =
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)

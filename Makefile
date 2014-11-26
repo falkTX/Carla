@@ -40,8 +40,7 @@ all: BIN RES UI WIDGETS
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
-BIN: backend discovery bridges-plugin bridges-ui plugin theme
-# interposer
+BIN: backend discovery bridges-plugin bridges-ui interposer plugin theme
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -137,8 +136,12 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-interposer: libs
+ifeq ($(LINUX),true)
+interposer:
 	@$(MAKE) -C source/interposer
+else
+interposer:
+endif
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
