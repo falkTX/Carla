@@ -1195,10 +1195,10 @@ bool CarlaPipeClient::init(const char* argv[]) noexcept
     // read arguments
 
 #ifdef CARLA_OS_WIN
-    HANDLE pipeRecvServer = (HANDLE)std::atol(argv[3]); // READ
-    HANDLE pipeRecvClient = (HANDLE)std::atol(argv[4]);
-    HANDLE pipeSendServer = (HANDLE)std::atol(argv[5]); // SEND
-    HANDLE pipeSendClient = (HANDLE)std::atol(argv[6]);
+    HANDLE pipeRecvServer = (HANDLE)std::atoll(argv[3]); // READ
+    HANDLE pipeRecvClient = (HANDLE)std::atoll(argv[4]);
+    HANDLE pipeSendServer = (HANDLE)std::atoll(argv[5]); // SEND
+    HANDLE pipeSendClient = (HANDLE)std::atoll(argv[6]);
 
     CARLA_SAFE_ASSERT_RETURN(pipeRecvServer != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pipeRecvClient != INVALID_HANDLE_VALUE, false);

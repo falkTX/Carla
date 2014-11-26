@@ -42,6 +42,7 @@ public:
     {
         if (lib == nullptr)
             return;
+
         lib_close(lib);
         lib  = nullptr;
         func = nullptr;
@@ -66,7 +67,7 @@ public:
     }
 
 private:
-    void* lib;
+    lib_t lib;
     jackbridge_exported_function_type func;
 
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -529,9 +530,9 @@ bool jackbridge_sem_init(void* sem) noexcept
     return getBridgeInstance().sem_init_ptr(sem);
 }
 
-bool jackbridge_sem_destroy(void* sem) noexcept
+void jackbridge_sem_destroy(void* sem) noexcept
 {
-    return getBridgeInstance().sem_destroy_ptr(sem);
+    getBridgeInstance().sem_destroy_ptr(sem);
 }
 
 bool jackbridge_sem_post(void* sem) noexcept
@@ -539,7 +540,7 @@ bool jackbridge_sem_post(void* sem) noexcept
     return getBridgeInstance().sem_post_ptr(sem);
 }
 
-bool jackbridge_sem_timedwait(void* sem, int secs) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept
 {
     return getBridgeInstance().sem_timedwait_ptr(sem, secs);
 }

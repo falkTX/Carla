@@ -22,7 +22,7 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaPluginJuceWindow.hpp"
+#include "JucePluginWindow.hpp"
 
 #include "juce_audio_processors.h"
 
@@ -302,7 +302,7 @@ public:
                 String uiName(pData->name);
                 uiName += " (GUI)";
 
-                fWindow = new CarlaPluginJuceWindow();
+                fWindow = new JucePluginWindow();
                 fWindow->setName(uiName);
             }
 
@@ -1249,7 +1249,7 @@ private:
 
     const char* fUniqueId;
 
-    ScopedPointer<CarlaPluginJuceWindow> fWindow;
+    ScopedPointer<JucePluginWindow> fWindow;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJuce)
 };

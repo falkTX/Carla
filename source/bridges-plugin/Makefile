@@ -39,7 +39,7 @@ LIBS_native   = $(MODULEDIR)/jackbridge.a
 LIBS_posix32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_posix64  = $(MODULEDIR)/jackbridge.posix64.a
 LIBS_win32    = $(MODULEDIR)/jackbridge.win32e.a
-LIBS_win64    = $(MODULEDIR)/jackbridge.win364e.a
+LIBS_win64    = $(MODULEDIR)/jackbridge.win64e.a
 LINK_FLAGS   += $(JACKBRIDGE_LIBS)
 
 LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
