@@ -40,8 +40,8 @@ all: BIN RES UI WIDGETS
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
-BIN: backend bridges-plugin theme
-# bridges-ui discovery interposer plugin
+BIN: backend discovery bridges-plugin bridges-ui plugin theme
+# interposer
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -140,7 +140,7 @@ discovery: libs
 interposer: libs
 	@$(MAKE) -C source/interposer
 
-plugin: libs
+plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
 ifeq ($(HAVE_QT),true)
@@ -149,10 +149,6 @@ theme:
 else
 theme:
 endif
-
-# $(BINDIR)/carla.lv2/manifest.ttl: plugin_build bridges-plugin bridges-ui discovery
-# 	cd bin && ./carla-lv2-export$(APP_EXT); cd ..
-# 	cd $(BINDIR)/carla.lv2 && $(LINK) ../*bridge-* ../carla-discovery-* .; cd ..
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)

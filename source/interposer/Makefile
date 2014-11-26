@@ -9,7 +9,7 @@ include ../Makefile.mk
 
 # --------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I../includes -I../utils -isystem ../modules
+BUILD_CXX_FLAGS += -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 
 # --------------------------------------------------------------
 

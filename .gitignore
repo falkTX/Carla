@@ -21,6 +21,10 @@
 *.msi
 *.so
 
+# Binary dir
+bin/styles/
+build/
+
 # Project files
 *.carxp
 *.carxs
@@ -70,9 +74,9 @@ carla-bridge-lv2-gtk3
 carla-bridge-lv2-qt4
 carla-bridge-lv2-qt5
 carla-bridge-lv2-x11
-carla-bridge-vst-carbon
-carla-bridge-vst-cocoa
-carla-bridge-vst-x11
+carla-bridge-vst2-carbon
+carla-bridge-vst2-cocoa
+carla-bridge-vst2-x11
 
 carla-discovery-qtcreator
 carla-discovery-native
@@ -161,8 +165,6 @@ source/modules/native-plugins/zynaddsubfx/UI/VirKeyboard.cpp
 source/modules/native-plugins/zynaddsubfx/UI/VirKeyboard.h
 
 # Other
-bin/styles/
-
 source/includes/asio/
 source/includes/rewire/
 source/includes/vst/

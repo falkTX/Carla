@@ -15,6 +15,14 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifndef CARLA_PLUGIN_PATCHBAY
+# error CARLA_PLUGIN_PATCHBAY undefined
+#endif
+
+#ifndef CARLA_PLUGIN_SYNTH
+# error CARLA_PLUGIN_SYNTH undefined
+#endif
+
 #define CARLA_NATIVE_PLUGIN_VST
 #include "carla-base.cpp"
 

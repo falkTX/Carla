@@ -90,7 +90,7 @@ STANDALONE_LINK_FLAGS += -lmagic
 endif
 
 UTILS_LINK_FLAGS  = $(JUCE_CORE_LIBS)
-ifneq ($(HAIKU),true)
+ifeq ($(UNIX),true)
 UTILS_LINK_FLAGS += -lpthread
 endif
 
