@@ -356,7 +356,7 @@ class SearchPluginsThread(QThread):
 
         self.fCheckLADSPA = False
         self.fCheckDSSI   = False
-        self.fCheckVST    = False
+        self.fCheckVST2   = False
         self.fCheckVST3   = False
         self.fCheckGIG    = False
         self.fCheckSF2    = False
@@ -379,7 +379,7 @@ class SearchPluginsThread(QThread):
 
         self.fLadspaPlugins = []
         self.fDssiPlugins   = []
-        self.fVstPlugins    = []
+        self.fVst2Plugins   = []
         self.fVst3Plugins   = []
         self.fKitPlugins    = []
 
@@ -395,10 +395,10 @@ class SearchPluginsThread(QThread):
         self.fCheckWin32   = win32
         self.fCheckWin64   = win64
 
-    def setSearchPluginTypes(self, ladspa, dssi, vst, vst3, gig, sf2, sfz):
+    def setSearchPluginTypes(self, ladspa, dssi, vst2, vst3, gig, sf2, sfz):
         self.fCheckLADSPA = ladspa
         self.fCheckDSSI   = dssi
-        self.fCheckVST    = vst
+        self.fCheckVST2   = vst2
         self.fCheckVST3   = vst3
         self.fCheckGIG    = gig
         self.fCheckSF2    = sf2
@@ -416,7 +416,7 @@ class SearchPluginsThread(QThread):
 
         if self.fCheckLADSPA: pluginCount += 1
         if self.fCheckDSSI:   pluginCount += 1
-        if self.fCheckVST:    pluginCount += 1
+        if self.fCheckVST2:   pluginCount += 1
         if self.fCheckVST3:   pluginCount += 1
 
         if self.fCheckNative:
@@ -558,7 +558,7 @@ class SearchPluginsThread(QThread):
 
             if not self.fContinueChecking: return
 
-        if self.fCheckVST:
+        if self.fCheckVST2:
             if self.fCheckNative:
                 self._checkVST2(OS, self.fToolNative)
                 settingsDB.setValue("Plugins/VST2_native", self.fVstPlugins)
@@ -1579,21 +1579,21 @@ class PluginDatabaseW(QDialog):
         del dssiPlugins
 
         # ----------------------------------------------------------------------------------------------------
-        # VST
+        # VST2
 
-        vstPlugins  = []
-        vstPlugins += toList(settingsDB.value("Plugins/VST_native", []))
-        vstPlugins += toList(settingsDB.value("Plugins/VST_posix32", []))
-        vstPlugins += toList(settingsDB.value("Plugins/VST_posix64", []))
-        vstPlugins += toList(settingsDB.value("Plugins/VST_win32", []))
-        vstPlugins += toList(settingsDB.value("Plugins/VST_win64", []))
+        vst2Plugins  = []
+        vst2Plugins += toList(settingsDB.value("Plugins/VST2_native", []))
+        vst2Plugins += toList(settingsDB.value("Plugins/VST2_posix32", []))
+        vst2Plugins += toList(settingsDB.value("Plugins/VST2_posix64", []))
+        vst2Plugins += toList(settingsDB.value("Plugins/VST2_win32", []))
+        vst2Plugins += toList(settingsDB.value("Plugins/VST2_win64", []))
 
-        for plugins in vstPlugins:
+        for plugins in vst2Plugins:
             for plugin in plugins:
                 self._addPluginToTable(plugin, "VST2")
                 vstCount += 1
 
-        del vstPlugins
+        del vst2Plugins
 
         # ----------------------------------------------------------------------------------------------------
         # VST3
