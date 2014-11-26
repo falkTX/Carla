@@ -20,6 +20,10 @@
 
 #include <gtk/gtk.h>
 
+#ifdef CARLA_OS_LINUX
+# include <gdk/gdkx.h>
+#endif
+
 CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
@@ -47,13 +51,13 @@ public:
 
     ~CarlaBridgeToolkitGtk() override
     {
-        CARLA_ASSERT(fWindow == nullptr);
+        CARLA_SAFE_ASSERT(fWindow == nullptr);
         carla_debug("CarlaBridgeToolkitGtk::~CarlaBridgeToolkitGtk()");
     }
 
     void init() override
     {
-        CARLA_ASSERT(fWindow == nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::init()");
 
         gtk_init(&gargc, &gargv);
@@ -65,8 +69,8 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_ASSERT(kClient != nullptr);
-        CARLA_ASSERT(fWindow != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showUI));
 
         GtkWidget* const widget((GtkWidget*)kClient->getWidget());
@@ -75,6 +79,33 @@ public:
 
         gtk_window_set_resizable(GTK_WINDOW(fWindow), kClient->isResizable());
         gtk_window_set_title(GTK_WINDOW(fWindow), kWindowTitle);
+
+        if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
+        {
+            if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
+            {
+#ifdef CARLA_OS_LINUX
+                if (GdkWindow* const gdkWindow = GDK_WINDOW(fWindow))
+                {
+                    if (GdkDisplay* const gdkDisplay = gdk_window_get_display(gdkWindow))
+                    {
+                        ::Display* const display(gdk_x11_display_get_xdisplay(gdkDisplay));
+# ifdef BRIDGE_GTK3
+                        ::XID const xid(gdk_x11_window_get_xid(gdkWindow));
+# else
+                        ::XID xid = 0;
+                        if (GdkDrawable* const gdkDrawable = GDK_DRAWABLE(fWindow))
+                            xid = gdk_x11_drawable_get_xid(gdkDrawable);
+# endif
+                        if (display != nullptr && xid != 0)
+                            XSetTransientForHint(display, xid, static_cast<::Window>(winId));
+                    }
+                }
+#else
+                (void)winId;
+#endif
+            }
+        }
 
         if (showUI || fNeedsShow)
         {
@@ -101,8 +132,7 @@ public:
             gtk_widget_destroy(fWindow);
             fWindow = nullptr;
 
-            if (gtk_main_level() != 0)
-                gtk_main_quit();
+            gtk_main_quit_if_needed();
         }
     }
 
@@ -128,11 +158,10 @@ public:
 
     void resize(int width, int height) override
     {
-        CARLA_ASSERT(fWindow != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::resize(%i, %i)", width, height);
 
-        if (fWindow != nullptr)
-            gtk_window_resize(GTK_WINDOW(fWindow), width, height);
+        gtk_window_resize(GTK_WINDOW(fWindow), width, height);
     }
 
     // ---------------------------------------------------------------------
@@ -162,30 +191,38 @@ protected:
         }
 
         kClient->uiIdle();
-        return kClient->oscIdle();
+
+        if (! kClient->oscIdle())
+        {
+            gtk_main_quit_if_needed();
+            return false;
+        }
+
+        return true;
     }
 
     // ---------------------------------------------------------------------
 
 private:
+    static void gtk_main_quit_if_needed()
+    {
+        if (gtk_main_level() != 0)
+            gtk_main_quit();
+    }
+
     static void gtk_ui_destroy(GtkWidget*, gpointer data)
     {
-        CARLA_ASSERT(data != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
-        if (CarlaBridgeToolkitGtk* const _this_ = (CarlaBridgeToolkitGtk*)data)
-            _this_->handleDestroy();
-
-        gtk_main_quit();
+        ((CarlaBridgeToolkitGtk*)data)->handleDestroy();
+        gtk_main_quit_if_needed();
     }
 
     static gboolean gtk_ui_timeout(gpointer data)
     {
-        CARLA_ASSERT(data != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-        if (CarlaBridgeToolkitGtk* const _this_ = (CarlaBridgeToolkitGtk*)data)
-            return _this_->handleTimeout();
-
-        return false;
+        return ((CarlaBridgeToolkitGtk*)data)->handleTimeout();
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitGtk)

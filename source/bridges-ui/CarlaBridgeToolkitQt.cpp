@@ -22,12 +22,17 @@
 #include <QtCore/QThread>
 #include <QtCore/QTimerEvent>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 # include <QtWidgets/QApplication>
 # include <QtWidgets/QMainWindow>
 #else
 # include <QtGui/QApplication>
 # include <QtGui/QMainWindow>
+#endif
+
+#if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+# include <QtGui/QX11Info>
+# include <X11/Xlib.h>
 #endif
 
 CARLA_BRIDGE_START_NAMESPACE
@@ -61,17 +66,17 @@ public:
 
     ~CarlaBridgeToolkitQt() override
     {
-        CARLA_ASSERT(fApp == nullptr);
-        CARLA_ASSERT(fWindow == nullptr);
-        CARLA_ASSERT(fMsgTimer == 0);
+        CARLA_SAFE_ASSERT(fApp == nullptr);
+        CARLA_SAFE_ASSERT(fWindow == nullptr);
+        CARLA_SAFE_ASSERT(fMsgTimer == 0);
         carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
     }
 
     void init() override
     {
-        CARLA_ASSERT(fApp == nullptr);
-        CARLA_ASSERT(fWindow == nullptr);
-        CARLA_ASSERT(fMsgTimer == 0);
+        CARLA_SAFE_ASSERT_RETURN(fApp == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fMsgTimer == 0,);
         carla_debug("CarlaBridgeToolkitQt::init()");
 
         fApp = new QApplication(qargc, qargv);
@@ -83,9 +88,9 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_ASSERT(kClient != nullptr);
-        CARLA_ASSERT(fApp != nullptr);
-        CARLA_ASSERT(fWindow != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
         QWidget* const widget((QWidget*)kClient->getWidget());
@@ -99,13 +104,25 @@ public:
         if (! kClient->isResizable())
         {
             fWindow->setFixedSize(fWindow->width(), fWindow->height());
-#ifdef Q_OS_WIN
+#ifdef CARLA_OS_WIN
             fWindow->setWindowFlags(fWindow->windowFlags() | Qt::MSWindowsFixedSizeDialogHint);
 #endif
         }
 
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
         fWindow->setWindowTitle(kWindowTitle.buffer());
+
+        if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
+        {
+            if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
+            {
+#if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+                XSetTransientForHint(QX11Info::display(), static_cast<::Window>(fWindow->winId()), static_cast<::Window>(winId));
+#else
+                (void)winId;
+#endif
+            }
+        }
 
         if (showUI || fNeedsShow)
         {
@@ -124,9 +141,9 @@ public:
 
     void quit() override
     {
-        CARLA_ASSERT(kClient != nullptr);
-        CARLA_ASSERT(fApp != nullptr);
-        CARLA_ASSERT(fWindow != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::quit()");
 
         if (fMsgTimer != 0)
@@ -175,16 +192,11 @@ public:
 
     void resize(const int width, const int height) override
     {
-        CARLA_ASSERT_INT(width > 0, width);
-        CARLA_ASSERT_INT(height > 0, height);
+        CARLA_SAFE_ASSERT_RETURN(width > 0,);
+        CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
-        if (width <= 0)
-            return;
-        if (height <= 0)
-            return;
-
-        emit setSizeSafeSignal(width, height);
+        emit setSizeSafeSignal(static_cast<uint>(width), static_cast<uint>(height));
     }
 
 protected:
@@ -205,6 +217,7 @@ protected:
         {
             killTimer(fMsgTimer);
             fMsgTimer = 0;
+            fApp->quit();
         }
     }
 
@@ -221,13 +234,10 @@ signals:
     void setSizeSafeSignal(int, int);
 
 private slots:
-    void setSizeSafeSlot(int width, int height)
+    void setSizeSafeSlot(uint width, uint height)
     {
-        CARLA_ASSERT(kClient != nullptr && ! kClient->isResizable());
-        CARLA_ASSERT(fWindow != nullptr);
-
-        if (kClient == nullptr || fWindow == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
 
         if (kClient->isResizable())
             fWindow->resize(width, height);
@@ -263,7 +273,7 @@ CARLA_BRIDGE_END_NAMESPACE
 int qInitResources();
 int qCleanupResources();
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 # include "resources.qt5.cpp"
 #else
 # include "resources.qt4.cpp"

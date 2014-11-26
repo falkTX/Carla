@@ -72,6 +72,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
         carla_debug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showUI));
 
+        if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
+        {
+            if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
+                fUI->setTransientWinId(static_cast<uintptr_t>(winId));
+        }
+
         if (showUI)
             fUI->show();
 

@@ -61,6 +61,12 @@ LINK_LV2_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 BUILD_VST2_X11_FLAGS    = $(BUILD_VST2_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST2_X11 $(X11_FLAGS)
 LINK_VST2_X11_FLAGS     = $(LINK_FLAGS) $(X11_LIBS) -ldl
 
+ifeq ($(LINUX),true)
+LINK_LV2_GTK2_FLAGS += -lX11
+LINK_LV2_GTK3_FLAGS += -lX11
+LINK_LV2_QT4_FLAGS  += -lX11
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(MACOS_OR_WIN32),true)
