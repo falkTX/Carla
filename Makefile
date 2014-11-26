@@ -194,8 +194,8 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 
 posix64: $(LIBS_POSIX64)
-# 	$(MAKE) -C source/bridges-plugin posix64
-# 	$(MAKE) -C source/discovery posix64
+	$(MAKE) -C source/bridges-plugin posix64
+	$(MAKE) -C source/discovery posix64
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)

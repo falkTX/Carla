@@ -562,7 +562,7 @@ private:
 class CarlaEngineNative : public CarlaEngine
 {
 public:
-    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const uint32_t channels = 2)
+    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const uint32_t inChan = 2, uint32_t outChan = 0)
         : CarlaEngine(),
           pHost(host),
           kIsPatchbay(isPatchbay),
@@ -584,6 +584,9 @@ public:
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
 
+        if (outChan == 0)
+            outChan = inChan;
+
         // set-up engine
         if (kIsPatchbay)
         {
@@ -593,11 +596,12 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(false, pData->sampleRate, pData->bufferSize, channels, channels);
+            pData->graph.create(false, pData->sampleRate, pData->bufferSize, inChan, outChan);
         }
         else
         {
-            CARLA_SAFE_ASSERT(channels == 2);
+            CARLA_SAFE_ASSERT(inChan == 2);
+            CARLA_SAFE_ASSERT(outChan == 2);
             pData->options.processMode         = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
             pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
             pData->options.forceStereo         = true;
@@ -1563,6 +1567,11 @@ public:
         return new CarlaEngineNative(host, true);
     }
 
+    static NativePluginHandle _instantiatePatchbay3s(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, 3, 2);
+    }
+
     static NativePluginHandle _instantiatePatchbay16(const NativeHostDescriptor* host)
     {
         return new CarlaEngineNative(host, true, 16);
@@ -1807,6 +1816,49 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_dispatcher
 };
 
+static const NativePluginDescriptor carlaPatchbay3sDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 3,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay (sidechain)",
+    /* label     */ "carlapatchbay3s",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay3s,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_parameter_text,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
 static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -1905,6 +1957,7 @@ void carla_register_native_plugin_carla()
     CARLA_BACKEND_USE_NAMESPACE;
     carla_register_native_plugin(&carlaRackDesc);
     carla_register_native_plugin(&carlaPatchbayDesc);
+    carla_register_native_plugin(&carlaPatchbay3sDesc);
     carla_register_native_plugin(&carlaPatchbay16Desc);
     carla_register_native_plugin(&carlaPatchbay32Desc);
 }
