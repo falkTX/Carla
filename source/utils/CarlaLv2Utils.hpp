@@ -92,6 +92,7 @@
 #define NS_rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define NS_rdfs "http://www.w3.org/2000/01/rdf-schema#"
 #define NS_llmm "http://ll-plugins.nongnu.org/lv2/ext/midimap#"
+#define NS_mod  "http://portalmod.com/ns/modgui#"
 
 #define LV2_MIDI_Map__CC      "http://ll-plugins.nongnu.org/lv2/namespace#CC"
 #define LV2_MIDI_Map__NRPN    "http://ll-plugins.nongnu.org/lv2/namespace#NRPN"
@@ -363,9 +364,7 @@ public:
           rdf_type           (new_uri(NS_rdf "type")),
           rdfs_label         (new_uri(NS_rdfs "label")),
 
-          needsInit(true)
-    {
-    }
+          needsInit(true)    {}
 
     static Lv2WorldClass& getInstance()
     {
@@ -1265,11 +1264,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     // -------------------------------------------------------------------
     // Set Plugin UIs
     {
+        const bool hasMODGui(lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr);
+
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
 
-        if (lilvUIs.size() > 0)
+        if (lilvUIs.size() > 0 || hasMODGui)
         {
-            rdfDescriptor->UICount = lilvUIs.size();
+            rdfDescriptor->UICount = lilvUIs.size() + (hasMODGui ? 1 : 0);
             rdfDescriptor->UIs = new LV2_RDF_UI[rdfDescriptor->UICount];
 
             uint32_t h = 0;
@@ -1388,6 +1389,29 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                     lilv_nodes_free(const_cast<LilvNodes*>(lilvExtensionDataNodes.me));
                 }
+            }
+
+            for (; hasMODGui;)
+            {
+                CARLA_SAFE_ASSERT_BREAK(h == rdfDescriptor->UICount-1);
+
+                LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
+
+                // -------------------------------------------------------
+                // Set UI Type
+
+                rdfUI->Type = LV2_UI_MOD;
+
+                // -------------------------------------------------------
+                // Set UI Information
+
+                if (const char* const resDir = lilvPlugin.get_modgui_resources_directory().as_uri())
+                    rdfUI->URI = carla_strdup(lilv_uri_to_path(resDir));
+
+                if (rdfDescriptor->Bundle != nullptr)
+                    rdfUI->Bundle = carla_strdup(rdfDescriptor->Bundle);
+
+                break;
             }
         }
 

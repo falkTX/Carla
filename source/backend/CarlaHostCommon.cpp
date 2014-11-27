@@ -369,7 +369,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint
         // features
         info.hints = 0x0;
 
-        if (lilvPlugin.get_uis().size() > 0)
+        if (lilvPlugin.get_uis().size() > 0 || lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
 
         {
