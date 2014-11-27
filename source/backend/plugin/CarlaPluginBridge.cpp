@@ -204,6 +204,9 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 
         if (carla_shm_map<BridgeRtData>(shm, data))
         {
+            carla_zeroStruct(data->sem);
+            carla_zeroStruct(data->timeInfo);
+            carla_zeroBytes(data->midiOut, kBridgeRtDataMidiOutSize);
             setRingBuffer(&data->ringBuffer, true);
             return true;
         }

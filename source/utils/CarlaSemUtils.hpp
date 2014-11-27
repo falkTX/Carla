@@ -53,16 +53,20 @@ sem_t* carla_sem_create() noexcept
 
     return ::sem_open(strBuf, O_CREAT, O_RDWR, 0);
 #else
-    sem_t* const sem((sem_t*)std::malloc(sizeof(sem_t)));
-    CARLA_SAFE_ASSERT_RETURN(sem != nullptr, nullptr);
+    sem_t sem;
 
-    if (::sem_init(sem, 1, 0) != 0)
-    {
-        std::free(sem);
+    if (::sem_init(&sem, 1, 0) != 0)
         return nullptr;
+
+    // can't return temporary variable, so allocate a new one
+    if (sem_t* const sem2 = (sem_t*)std::malloc(sizeof(sem_t)))
+    {
+        std::memcpy(sem2, &sem, sizeof(sem_t));
+        return sem2;
     }
 
-    return sem;
+    ::sem_destroy(&sem);
+    return nullptr;
 #endif
 }
 
@@ -77,8 +81,19 @@ void carla_sem_destroy(sem_t* const sem) noexcept
 #if defined(CARLA_OS_MAC)
     ::sem_close(sem);
 #else
-    ::sem_destroy(sem);
-    std::free(sem);
+    // we can't call "sem_destroy(sem)" directly because it will free memory which we allocated during carla_sem_create()
+    // so we create a temp variable, free our memory, and finally pass the temp variable to sem_destroy()
+
+    // temp var
+    sem_t sem2;
+    std::memcpy(&sem2, sem, sizeof(sem_t));
+
+    // free memory allocated in carla_sem_create()
+    // FIXME
+    //std::free(sem);
+
+    // destroy semaphore
+    ::sem_destroy(&sem2);
 #endif
 }
 

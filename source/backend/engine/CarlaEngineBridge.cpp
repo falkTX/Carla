@@ -138,6 +138,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 
         if (jackbridge_shm_map2<BridgeRtData>(shm, data))
         {
+            CARLA_SAFE_ASSERT(data->midiOut[0] == 0);
             setRingBuffer(&data->ringBuffer, false);
             return true;
         }

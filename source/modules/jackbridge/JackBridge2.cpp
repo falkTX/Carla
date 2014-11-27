@@ -31,8 +31,9 @@ bool jackbridge_sem_init(void* sem) noexcept
     return false;
 #else
     sem_t* const sema(carla_sem_create());
-    std::memcpy(sem, &sema, sizeof(sem_t*));
-    //std::memcpy(sem, sema, sizeof(sem_t*));
+    CARLA_SAFE_ASSERT_RETURN(sema != nullptr, false);
+
+    std::memcpy(sem, sema, sizeof(sem_t));
     return (sema != nullptr);
 #endif
 }

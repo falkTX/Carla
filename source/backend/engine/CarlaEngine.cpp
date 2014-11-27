@@ -1067,7 +1067,10 @@ float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const n
 
 void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept
 {
-    carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+#ifdef DEBUG
+    if (action != ENGINE_CALLBACK_IDLE)
+        carla_debug("CarlaEngine::callback(%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+#endif
 
 #ifdef BUILD_BRIDGE
     if (pData->isIdling)

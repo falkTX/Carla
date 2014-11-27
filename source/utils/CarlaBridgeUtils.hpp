@@ -102,6 +102,8 @@ enum PluginBridgeNonRtOpcode {
 const char* const CARLA_BRIDGE_MSG_HIDE_GUI = "CarlaBridgeHideGUI"; //!< Plugin -> Host configure, tells host GUI is now hidden
 const char* const CARLA_BRIDGE_MSG_SAVED    = "CarlaBridgeSaved";   //!< Plugin -> Host configure, tells host state is saved
 
+static const std::size_t kBridgeRtDataMidiOutSize = 512*4;
+
 // -----------------------------------------------------------------------
 
 struct BridgeSemaphore {
@@ -131,6 +133,7 @@ struct BridgeRtData {
     BridgeSemaphore sem;
     BridgeTimeInfo timeInfo;
     StackBuffer ringBuffer;
+    uint8_t midiOut[kBridgeRtDataMidiOutSize];
 };
 
 struct BridgeNonRtData {
