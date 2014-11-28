@@ -25,10 +25,10 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot
+    from PyQt5.QtCore import pyqtSlot, Qt
     from PyQt5.QtWidgets import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 else:
-    from PyQt4.QtCore import pyqtSlot
+    from PyQt4.QtCore import pyqtSlot, Qt
     from PyQt4.QtGui import QGridLayout, QLabel, QPushButton, QTextEdit, QWidget
 
 # -----------------------------------------------------------------------
@@ -196,6 +196,13 @@ class DistrhoUINotes(ExternalUI, QWidget):
     def uiShow(self):
         self.show()
 
+    def uiFocus(self):
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
+
     def uiHide(self):
         self.hide()
 
@@ -243,8 +250,8 @@ if __name__ == '__main__':
 
     pathBinaries, pathResources = getPaths()
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
-    gCarla.utils.set_locale_C()
     gCarla.utils.set_process_name("Notes")
+    #gCarla.utils.set_locale_C()
 
     app = CarlaApplication("Notes")
     gui = DistrhoUINotes()

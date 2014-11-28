@@ -91,12 +91,24 @@ class CarlaMiniW(ExternalUI, HostWindow):
     # ExternalUI Callbacks
 
     def uiShow(self):
-        if self.parent() is None:
-            self.show()
+        if self.parent() is not None:
+            return
+        self.show()
+
+    def uiFocus(self):
+        if self.parent() is not None:
+            return
+
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
 
     def uiHide(self):
-        if self.parent() is None:
-            self.hide()
+        if self.parent() is not None:
+            return
+        self.hide()
 
     def uiQuit(self):
         self.closeExternalUI()
@@ -339,6 +351,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
         elif msg == "show":
             self.fFirstInit = False
             self.uiShow()
+
+        elif msg == "focus":
+            self.uiFocus()
 
         elif msg == "hide":
             self.uiHide()

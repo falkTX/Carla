@@ -105,6 +105,9 @@ class ExternalUI(object):
     def uiShow(self):
         return
 
+    def uiFocus(self):
+        return
+
     def uiHide(self):
         return
 
@@ -148,6 +151,9 @@ class ExternalUI(object):
 
         elif msg == "show":
             self.uiShow()
+
+        elif msg == "focus":
+            self.uiFocus()
 
         elif msg == "hide":
             self.uiHide()

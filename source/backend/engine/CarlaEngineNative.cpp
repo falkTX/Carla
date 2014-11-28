@@ -73,11 +73,18 @@ public:
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
 
-    void show() noexcept
+    void writeShowMessage() noexcept
     {
-        const CarlaMutexLocker cml(getLock());
-        writeMsg("show\n", 5);
-        flush();
+        const CarlaMutexLocker cml(getPipeLock());
+        writeMessage("show\n", 5);
+        flushMessages();
+    }
+
+    void writeFocusMessage() noexcept
+    {
+        const CarlaMutexLocker cml(getPipeLock());
+        writeMessage("focus\n", 6);
+        flushMessages();
     }
 
 protected:
@@ -542,10 +549,10 @@ protected:
 
         if (! ok)
         {
-            const CarlaMutexLocker cml(getLock());
-            writeMsg("error\n", 6);
-            writeAndFixMsg(fEngine->getLastError());
-            flush();
+            const CarlaMutexLocker cml(getPipeLock());
+            writeMessage("error\n", 6);
+            writeAndFixMessage(fEngine->getLastError());
+            flushMessages();
         }
 
         return true;
@@ -713,12 +720,12 @@ protected:
             return;
 
         {
-            const CarlaMutexLocker cml(fUiServer.getLock());
+            const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-            fUiServer.writeAndFixMsg("buffer-size");
+            fUiServer.writeAndFixMessage("buffer-size");
             std::sprintf(fTmpBuf, "%i\n", newBufferSize);
-            fUiServer.writeMsg(fTmpBuf);
-            fUiServer.flush();
+            fUiServer.writeMessage(fTmpBuf);
+            fUiServer.flushMessages();
         }
 
         pData->bufferSize = newBufferSize;
@@ -731,13 +738,13 @@ protected:
             return;
 
         {
-            const CarlaMutexLocker cml(fUiServer.getLock());
+            const CarlaMutexLocker cml(fUiServer.getPipeLock());
             const ScopedLocale csl;
 
-            fUiServer.writeAndFixMsg("sample-rate");
+            fUiServer.writeAndFixMessage("sample-rate");
             std::sprintf(fTmpBuf, "%f\n", newSampleRate);
-            fUiServer.writeMsg(fTmpBuf);
-            fUiServer.flush();
+            fUiServer.writeMessage(fTmpBuf);
+            fUiServer.flushMessages();
         }
 
         pData->sampleRate = newSampleRate;
@@ -748,64 +755,64 @@ protected:
 
     void uiServerSendPluginInfo(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const uint pluginId(plugin->getId());
 
         std::sprintf(fTmpBuf, "PLUGIN_INFO_%i\n", pluginId);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "%i:%i:%i:" P_INT64 ":%i:%i\n", plugin->getType(), plugin->getCategory(), plugin->getHints(), plugin->getUniqueId(), plugin->getOptionsAvailable(), plugin->getOptionsEnabled());
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         if (const char* const filename = plugin->getFilename())
         {
             std::sprintf(fTmpBuf, "%s", filename);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
         }
         else
-            fUiServer.writeMsg("\n");
+            fUiServer.writeMessage("\n");
 
         if (const char* const name = plugin->getName())
         {
             std::sprintf(fTmpBuf, "%s", name);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
         }
         else
-            fUiServer.writeMsg("\n");
+            fUiServer.writeMessage("\n");
 
         if (const char* const iconName = plugin->getIconName())
         {
             std::sprintf(fTmpBuf, "%s", iconName);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
         }
         else
-            fUiServer.writeMsg("\n");
+            fUiServer.writeMessage("\n");
 
         plugin->getRealName(fTmpBuf);
-        fUiServer.writeAndFixMsg(fTmpBuf);
+        fUiServer.writeAndFixMessage(fTmpBuf);
 
         plugin->getLabel(fTmpBuf);
-        fUiServer.writeAndFixMsg(fTmpBuf);
+        fUiServer.writeAndFixMessage(fTmpBuf);
 
         plugin->getMaker(fTmpBuf);
-        fUiServer.writeAndFixMsg(fTmpBuf);
+        fUiServer.writeAndFixMessage(fTmpBuf);
 
         plugin->getCopyright(fTmpBuf);
-        fUiServer.writeAndFixMsg(fTmpBuf);
+        fUiServer.writeAndFixMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "AUDIO_COUNT_%i:%i:%i\n", pluginId, plugin->getAudioInCount(), plugin->getAudioOutCount());
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "MIDI_COUNT_%i:%i:%i\n", pluginId, plugin->getMidiInCount(), plugin->getMidiOutCount());
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
     }
 
     void uiServerSendPluginParameters(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const ScopedLocale csl;
 
         const uint pluginId(plugin->getId());
@@ -813,17 +820,17 @@ protected:
         for (int32_t i=PARAMETER_ACTIVE; i>PARAMETER_MAX; --i)
         {
             std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             std::sprintf(fTmpBuf, "%f\n", plugin->getInternalParameterValue(i));
-            fUiServer.writeMsg(fTmpBuf);
-            fUiServer.flush();
+            fUiServer.writeMessage(fTmpBuf);
+            fUiServer.flushMessages();
         }
 
         uint32_t ins, outs, count;
         plugin->getParameterCountInfo(ins, outs);
         count = plugin->getParameterCount();
         std::sprintf(fTmpBuf, "PARAMETER_COUNT_%i:%i:%i:%i\n", pluginId, ins, outs, count);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         for (uint32_t i=0; i<count; ++i)
         {
@@ -831,72 +838,72 @@ protected:
             const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
 
             std::sprintf(fTmpBuf, "PARAMETER_DATA_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             std::sprintf(fTmpBuf, "%i:%i:%i:%i\n", paramData.type, paramData.hints, paramData.midiChannel, paramData.midiCC);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             plugin->getParameterName(i, fTmpBuf);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
             plugin->getParameterUnit(i, fTmpBuf);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
 
             std::sprintf(fTmpBuf, "PARAMETER_RANGES_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             std::sprintf(fTmpBuf, "%f:%f:%f:%f:%f:%f\n", paramRanges.def, paramRanges.min, paramRanges.max, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
 
             std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(i));
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
         }
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
     }
 
     void uiServerSendPluginPrograms(CarlaPlugin* const plugin)
     {
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const uint pluginId(plugin->getId());
 
         uint32_t count = plugin->getProgramCount();
         std::sprintf(fTmpBuf, "PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentProgram());
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         for (uint32_t i=0; i<count; ++i)
         {
             std::sprintf(fTmpBuf, "PROGRAM_NAME_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             plugin->getProgramName(i, fTmpBuf);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
         }
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
 
         count = plugin->getMidiProgramCount();
         std::sprintf(fTmpBuf, "MIDI_PROGRAM_COUNT_%i:%i:%i\n", pluginId, count, plugin->getCurrentMidiProgram());
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         for (uint32_t i=0; i<count; ++i)
         {
             std::sprintf(fTmpBuf, "MIDI_PROGRAM_DATA_%i:%i\n", pluginId, i);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
 
             const MidiProgramData& mpData(plugin->getMidiProgramData(i));
             std::sprintf(fTmpBuf, "%i:%i\n", mpData.bank, mpData.program);
-            fUiServer.writeMsg(fTmpBuf);
+            fUiServer.writeMessage(fTmpBuf);
             std::sprintf(fTmpBuf, "%s", mpData.name);
-            fUiServer.writeAndFixMsg(fTmpBuf);
+            fUiServer.writeAndFixMessage(fTmpBuf);
         }
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
     }
 
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
         if (! fIsRunning)
             return;
-        if (! fUiServer.isRunning())
+        if (! fUiServer.isPipeRunning())
             return;
 
         CarlaPlugin* plugin;
@@ -950,138 +957,138 @@ protected:
             break;
         }
 
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
         const ScopedLocale csl;
 
         std::sprintf(fTmpBuf, "ENGINE_CALLBACK_%i\n", int(action));
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "%u\n", pluginId);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "%i\n", value1);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "%i\n", value2);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         std::sprintf(fTmpBuf, "%f\n", value3);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
-        fUiServer.writeAndFixMsg(valueStr != nullptr ? valueStr : "");
+        fUiServer.writeAndFixMessage(valueStr != nullptr ? valueStr : "");
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
     }
 
     void uiServerInfo()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.isRunning(),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
-        fUiServer.writeAndFixMsg("complete-license");
-        fUiServer.writeAndFixMsg(carla_get_complete_license_text());
+        fUiServer.writeAndFixMessage("complete-license");
+        fUiServer.writeAndFixMessage(carla_get_complete_license_text());
 
-        fUiServer.writeAndFixMsg("juce-version");
-        fUiServer.writeAndFixMsg(carla_get_juce_version());
+        fUiServer.writeAndFixMessage("juce-version");
+        fUiServer.writeAndFixMessage(carla_get_juce_version());
 
-        fUiServer.writeAndFixMsg("file-exts");
-        fUiServer.writeAndFixMsg(carla_get_supported_file_extensions());
+        fUiServer.writeAndFixMessage("file-exts");
+        fUiServer.writeAndFixMessage(carla_get_supported_file_extensions());
 
-        fUiServer.writeAndFixMsg("max-plugin-number");
+        fUiServer.writeAndFixMessage("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
-        fUiServer.writeAndFixMsg("buffer-size");
+        fUiServer.writeAndFixMessage("buffer-size");
         std::sprintf(fTmpBuf, "%i\n", pData->bufferSize);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
         const ScopedLocale csl;
 
-        fUiServer.writeAndFixMsg("sample-rate");
+        fUiServer.writeAndFixMessage("sample-rate");
         std::sprintf(fTmpBuf, "%f\n", pData->sampleRate);
-        fUiServer.writeMsg(fTmpBuf);
+        fUiServer.writeMessage(fTmpBuf);
 
-        fUiServer.flush();
+        fUiServer.flushMessages();
     }
 
     void uiServerOptions()
     {
         CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
-        CARLA_SAFE_ASSERT_RETURN(fUiServer.isRunning(),);
+        CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
         const EngineOptions& options(pData->options);
-        const CarlaMutexLocker cml(fUiServer.getLock());
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
         const char* const optionsForcedStr(fOptionsForced ? "true\n" : "false\n");
         const std::size_t optionsForcedStrSize(fOptionsForced ? 5 : 6);
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PROCESS_MODE);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.processMode);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_TRANSPORT_MODE);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.transportMode);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_FORCE_STEREO);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
-        fUiServer.writeMsg(options.forceStereo ? "true\n" : "false\n");
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(options.forceStereo ? "true\n" : "false\n");
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_PLUGIN_BRIDGES);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
-        fUiServer.writeMsg(options.preferPluginBridges ? "true\n" : "false\n");
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(options.preferPluginBridges ? "true\n" : "false\n");
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PREFER_UI_BRIDGES);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
-        fUiServer.writeMsg(options.preferUiBridges ? "true\n" : "false\n");
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(options.preferUiBridges ? "true\n" : "false\n");
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UIS_ALWAYS_ON_TOP);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
-        fUiServer.writeMsg(options.uisAlwaysOnTop ? "true\n" : "false\n");
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(options.uisAlwaysOnTop ? "true\n" : "false\n");
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_MAX_PARAMETERS);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.maxParameters);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_UI_BRIDGES_TIMEOUT);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg(optionsForcedStr, optionsForcedStrSize);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage(optionsForcedStr, optionsForcedStrSize);
         std::sprintf(fTmpBuf, "%i\n", options.uiBridgesTimeout);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_BINARIES);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg("true\n", 5);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage("true\n", 5);
         std::sprintf(fTmpBuf, "%s\n", options.binaryDir);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
 
         std::sprintf(fTmpBuf, "ENGINE_OPTION_%i\n", ENGINE_OPTION_PATH_RESOURCES);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.writeMsg("true\n", 5);
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.writeMessage("true\n", 5);
         std::sprintf(fTmpBuf, "%s\n", options.resourceDir);
-        fUiServer.writeMsg(fTmpBuf);
-        fUiServer.flush();
+        fUiServer.writeMessage(fTmpBuf);
+        fUiServer.flushMessages();
     }
 
     // -------------------------------------------------------------------
@@ -1413,10 +1420,9 @@ protected:
     {
         if (show)
         {
-            if (fUiServer.isRunning())
+            if (fUiServer.isPipeRunning())
             {
-                fUiServer.writeMsg("focus\n", 6);
-                fUiServer.flush();
+                fUiServer.writeFocusMessage();
                 return;
             }
 
@@ -1432,13 +1438,13 @@ protected:
             carla_stdout("Trying to start carla-plugin using \"%s\"", path.buffer());
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
-            fUiServer.start(false);
+            fUiServer.startPipeServer(false);
 
             uiServerInfo();
             uiServerOptions();
             uiServerCallback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, "Plugin");
 
-            fUiServer.show();
+            fUiServer.writeShowMessage();
 
             for (uint i=0; i < pData->curPluginCount; ++i)
             {
@@ -1455,41 +1461,41 @@ protected:
         }
         else
         {
-            fUiServer.stop(5000);
+            fUiServer.stopPipeServer(5000);
         }
     }
 
     void uiIdle()
     {
         CarlaEngine::idle();
-        fUiServer.idle();
+        fUiServer.idlePipe();
 
-        if (fUiServer.isRunning())
+        if (fUiServer.isPipeRunning())
         {
             const EngineTimeInfo& timeInfo(pData->timeInfo);
-            const CarlaMutexLocker cml(fUiServer.getLock());
+            const CarlaMutexLocker cml(fUiServer.getPipeLock());
             const ScopedLocale csl;
 
 #ifndef CARLA_OS_WIN // FIXME
             // send transport
-            fUiServer.writeAndFixMsg("transport");
-            fUiServer.writeMsg(timeInfo.playing ? "true\n" : "false\n");
+            fUiServer.writeAndFixMessage("transport");
+            fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n");
 
             if (timeInfo.valid & EngineTimeInfo::kValidBBT)
             {
                 std::sprintf(fTmpBuf, P_UINT64 ":%i:%i:%i\n", timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, timeInfo.bbt.tick);
-                fUiServer.writeMsg(fTmpBuf);
+                fUiServer.writeMessage(fTmpBuf);
                 std::sprintf(fTmpBuf, "%f\n", timeInfo.bbt.beatsPerMinute);
-                fUiServer.writeMsg(fTmpBuf);
+                fUiServer.writeMessage(fTmpBuf);
             }
             else
             {
                 std::sprintf(fTmpBuf, P_UINT64 ":0:0:0\n", timeInfo.frame);
-                fUiServer.writeMsg(fTmpBuf);
-                fUiServer.writeMsg("0.0\n");
+                fUiServer.writeMessage(fTmpBuf);
+                fUiServer.writeMessage("0.0\n");
             }
 
-            fUiServer.flush();
+            fUiServer.flushMessages();
 #endif
 
             // send peaks and param outputs for all plugins
@@ -1499,11 +1505,11 @@ protected:
                 const CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
                 std::sprintf(fTmpBuf, "PEAKS_%i\n", i);
-                fUiServer.writeMsg(fTmpBuf);
+                fUiServer.writeMessage(fTmpBuf);
 
                 std::sprintf(fTmpBuf, "%f:%f:%f:%f\n", plugData.insPeak[0], plugData.insPeak[1], plugData.outsPeak[0], plugData.outsPeak[1]);
-                fUiServer.writeMsg(fTmpBuf);
-                fUiServer.flush();
+                fUiServer.writeMessage(fTmpBuf);
+                fUiServer.flushMessages();
 
                 for (uint32_t j=0, count=plugin->getParameterCount(); j < count; ++j)
                 {
@@ -1511,10 +1517,10 @@ protected:
                         continue;
 
                     std::sprintf(fTmpBuf, "PARAMVAL_%i:%i\n", i, j);
-                    fUiServer.writeMsg(fTmpBuf);
+                    fUiServer.writeMessage(fTmpBuf);
                     std::sprintf(fTmpBuf, "%f\n", plugin->getParameterValue(j));
-                    fUiServer.writeMsg(fTmpBuf);
-                    fUiServer.flush();
+                    fUiServer.writeMessage(fTmpBuf);
+                    fUiServer.flushMessages();
                 }
             }
         }
@@ -1529,7 +1535,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
-            fUiServer.stop(2000);
+            fUiServer.stopPipeServer(2000);
             break;
         }
     }
@@ -1546,6 +1552,15 @@ protected:
 
     void setState(const char* const data)
     {
+        // remove all plugins first, no lock
+        fIsRunning = false;
+        removeAllPlugins();
+        fIsRunning = true;
+
+        // stopped during removeAllPlugins()
+        if (! pData->thread.isThreadRunning())
+            pData->thread.startThread();
+
         fOptionsForced = true;
         const String state(data);
         XmlDocument xml(state);

@@ -22,53 +22,141 @@
 #include "CarlaMutex.hpp"
 
 // -----------------------------------------------------------------------
+// CarlaPipeCommon class
 
 class CarlaPipeCommon
 {
 protected:
+    /*!
+     * Constructor.
+     */
     CarlaPipeCommon() noexcept;
+
+    /*!
+     * Destructor.
+     */
     virtual ~CarlaPipeCommon() noexcept;
 
-    // returns true if msg handled
+    /*!
+     * A message has been received (in the context of idlePipe()).
+     * If extra data is required, use any of the readNextLineAs* functions.
+     * Returning true means the message has been handled and should not propagate to subclasses.
+     */
     virtual bool msgReceived(const char* const msg) noexcept = 0;
 
-    // to possibly send errors somewhere
+    /*!
+     * An error has occurred during the current requested operation.
+     * Reimplementing this method allows to catch these errors as strings.
+     * By default the error is simply printed to stderr.
+     */
     virtual void fail(const char* const error) noexcept
     {
         carla_stderr2(error);
     }
 
 public:
-    void idle() noexcept;
-    bool isRunning() const noexcept;
+    /*!
+     * Check if the pipe is running.
+     */
+    bool isPipeRunning() const noexcept;
+
+    /*!
+     * Check the pipe for new messages and send them to msgReceived().
+     */
+    void idlePipe() noexcept;
 
     // -------------------------------------------------------------------
     // write lock
 
-    void lock() const noexcept;
-    bool tryLock() const noexcept;
-    void unlock() const noexcept;
+    /*!
+     * Lock the pipe write mutex.
+     */
+    void lockPipe() const noexcept;
 
-    CarlaMutex& getLock() noexcept;
+    /*!
+     * Try locking the pipe write mutex.
+     * Returns true if successful.
+     */
+    bool tryLockPipe() const noexcept;
+
+    /*!
+     * Unlock the pipe write mutex.
+     */
+    void unlockPipe() const noexcept;
+
+    /*!
+     * Get the pipe write lock.
+     */
+    CarlaMutex& getPipeLock() noexcept;
 
     // -------------------------------------------------------------------
+    // read lines, must only be called in the context of msgReceived()
 
+    /*!
+     * Read the next line as a boolean.
+     */
     bool readNextLineAsBool(bool& value) noexcept;
+
+    /*!
+     * Read the next line as an integer.
+     */
     bool readNextLineAsInt(int32_t& value) noexcept;
+
+    /*!
+     * Read the next line as an unsigned integer.
+     */
     bool readNextLineAsUInt(uint32_t& value) noexcept;
+
+    /*!
+     * Read the next line as a long integer.
+     */
     bool readNextLineAsLong(int64_t& value) noexcept;
+
+    /*!
+     * Read the next line as a long unsigned integer.
+     */
     bool readNextLineAsULong(uint64_t& value) noexcept;
+
+    /*!
+     * Read the next line as a floating point number (single precision).
+     */
     bool readNextLineAsFloat(float& value) noexcept;
+
+    /*!
+     * Read the next line as a floating point number (double precision).
+     */
     bool readNextLineAsDouble(double& value) noexcept;
+
+    /*!
+     * Read the next line as a string.
+     * @note: @a value must be deleted if valid.
+     */
     bool readNextLineAsString(const char*& value) noexcept;
 
     // -------------------------------------------------------------------
-    // must be locked before calling
+    // write messages, must be locked before calling
 
-    bool writeMsg(const char* const msg) const noexcept;
-    bool writeMsg(const char* const msg, std::size_t size) const noexcept;
-    bool writeAndFixMsg(const char* const msg) const noexcept;
-    bool flush() const noexcept;
+    /*!
+     * Write a valid message with unknown size.
+     * A valid message has only one '\n' character and it's at the end.
+     */
+    bool writeMessage(const char* const msg) const noexcept;
+
+    /*!
+     * Write a valid message with known size.
+     * A valid message has only one '\n' character and it's at the end.
+     */
+    bool writeMessage(const char* const msg, std::size_t size) const noexcept;
+
+    /*!
+     * Write and fix a message.
+     */
+    bool writeAndFixMessage(const char* const msg) const noexcept;
+
+    /*!
+     * Flush all messages currently in cache.
+     */
+    bool flushMessages() const noexcept;
 
     // -------------------------------------------------------------------
 
@@ -78,44 +166,86 @@ protected:
 
     // -------------------------------------------------------------------
 
-    // internal
-    const char* readline() noexcept;
-    const char* readlineblock(const uint32_t timeOutMilliseconds = 50) noexcept;
-    bool writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept;
+    /*! @internal */
+    const char* _readline() noexcept;
+
+    /*! @internal */
+    const char* _readlineblock(const uint32_t timeOutMilliseconds = 50) noexcept;
+
+    /*! @internal */
+    bool _writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeCommon)
 };
 
 // -----------------------------------------------------------------------
+// CarlaPipeServer class
 
 class CarlaPipeServer : public CarlaPipeCommon
 {
 public:
+    /*!
+     * Constructor.
+     */
     CarlaPipeServer() noexcept;
+
+    /*!
+     * Destructor.
+     */
     ~CarlaPipeServer() noexcept override;
 
-    bool start(const char* const filename, const char* const arg1, const char* const arg2) noexcept;
-    void stop(const uint32_t timeOutMilliseconds) noexcept;
-    void close() noexcept;
+    /*!
+     * Start the pipe server using @a filename with 2 arguments.
+     * @see fail()
+     */
+    bool startPipeServer(const char* const filename, const char* const arg1, const char* const arg2) noexcept;
+
+    /*!
+     * Stop the pipe server.
+     * This will send a quit message to the client, wait for it to close for @a timeOutMilliseconds, and close the pipes.
+     */
+    void stopPipeServer(const uint32_t timeOutMilliseconds) noexcept;
+
+    /*!
+     * Close the pipes without waiting for the child process to terminate.
+     */
+    void closePipeServer() noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeServer)
 };
 
 // -----------------------------------------------------------------------
+// CarlaPipeClient class
 
 class CarlaPipeClient : public CarlaPipeCommon
 {
 public:
+    /*!
+     * Constructor.
+     */
     CarlaPipeClient() noexcept;
+
+    /*!
+     * Destructor.
+     */
     ~CarlaPipeClient() noexcept override;
 
-    bool init(const char* argv[]) noexcept;
-    void close() noexcept;
+    /*!
+     * Initialize the pipes used by a server.
+     * @a argv must match the arguments set the by server.
+     */
+    bool initPipeClient(const char* argv[]) noexcept;
+
+    /*!
+     * Close the pipes.
+     */
+    void closePipeClient() noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeClient)
 };
 
 // -----------------------------------------------------------------------
+// ScopedLocale class
 
 class ScopedLocale {
 public:

@@ -59,16 +59,16 @@ public:
         fUiTitle    = uiTitle;
     }
 
-    void start(const bool show = true) noexcept
+    void startPipeServer(const bool show = true) noexcept
     {
-        CarlaPipeServer::start(fFilename, fSampleRate, fUiTitle);
+        CarlaPipeServer::startPipeServer(fFilename, fSampleRate, fUiTitle);
 
         if (! show)
             return;
 
-        const CarlaMutexLocker cml(getLock());
-        writeMsg("show\n", 5);
-        flush();
+        const CarlaMutexLocker cml(getPipeLock());
+        writeMessage("show\n", 5);
+        flushMessages();
     }
 
 protected:
@@ -77,7 +77,7 @@ protected:
     {
         if (std::strcmp(msg, "exiting") == 0)
         {
-            close();
+            closePipeServer();
             fUiState = UiHide;
             return true;
         }

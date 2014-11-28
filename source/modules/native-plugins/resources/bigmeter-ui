@@ -16,6 +16,19 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+if config_UseQt5:
+    from PyQt5.QtCore import Qt
+else:
+    from PyQt4.QtCore import Qt
+
 # -----------------------------------------------------------------------
 # Imports (Custom)
 
@@ -81,6 +94,13 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
     def uiShow(self):
         self.show()
 
+    def uiFocus(self):
+        self.setWindowState((self.windowState() & ~Qt.WindowMinimized) | Qt.WindowActive)
+        self.show()
+
+        self.raise_()
+        self.activateWindow()
+
     def uiHide(self):
         self.hide()
 
@@ -110,8 +130,8 @@ if __name__ == '__main__':
 
     pathBinaries, pathResources = getPaths()
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
-    gCarla.utils.set_locale_C()
     gCarla.utils.set_process_name("BigMeter")
+    #gCarla.utils.set_locale_C()
 
     app = CarlaApplication("BigMeter")
     gui = DistrhoUIBigMeter()

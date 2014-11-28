@@ -87,7 +87,7 @@ public:
 
     const char* readlineblock(const uint timeout) noexcept
     {
-        return CarlaPipeClient::readlineblock(timeout);
+        return CarlaPipeClient::_readlineblock(timeout);
     }
 
     bool msgReceived(const char* const msg) noexcept
@@ -115,7 +115,7 @@ CarlaPipeClientHandle carla_pipe_client_new(const char* argv[], CarlaPipeCallbac
 
     CarlaPipeClientPlugin* const pipe(new CarlaPipeClientPlugin(callbackFunc, callbackPtr));
 
-    if (! pipe->init(argv))
+    if (! pipe->initPipeClient(argv))
     {
         delete pipe;
         return nullptr;
@@ -128,28 +128,28 @@ void carla_pipe_client_idle(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
 
-    ((CarlaPipeClientPlugin*)handle)->idle();
+    ((CarlaPipeClientPlugin*)handle)->idlePipe();
 }
 
 bool carla_pipe_client_is_running(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-    return ((CarlaPipeClientPlugin*)handle)->isRunning();
+    return ((CarlaPipeClientPlugin*)handle)->isPipeRunning();
 }
 
 void carla_pipe_client_lock(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
 
-    return ((CarlaPipeClientPlugin*)handle)->lock();
+    return ((CarlaPipeClientPlugin*)handle)->lockPipe();
 }
 
 void carla_pipe_client_unlock(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
 
-    return ((CarlaPipeClientPlugin*)handle)->unlock();
+    return ((CarlaPipeClientPlugin*)handle)->unlockPipe();
 }
 
 const char* carla_pipe_client_readlineblock(CarlaPipeClientHandle handle, uint timeout)
@@ -163,21 +163,21 @@ bool carla_pipe_client_write_msg(CarlaPipeClientHandle handle, const char* msg)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-    return ((CarlaPipeClientPlugin*)handle)->writeMsg(msg);
+    return ((CarlaPipeClientPlugin*)handle)->writeMessage(msg);
 }
 
 bool carla_pipe_client_write_and_fix_msg(CarlaPipeClientHandle handle, const char* msg)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-    return ((CarlaPipeClientPlugin*)handle)->writeAndFixMsg(msg);
+    return ((CarlaPipeClientPlugin*)handle)->writeAndFixMessage(msg);
 }
 
 bool carla_pipe_client_flush(CarlaPipeClientHandle handle)
 {
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
-    return ((CarlaPipeClientPlugin*)handle)->flush();
+    return ((CarlaPipeClientPlugin*)handle)->flushMessages();
 }
 
 bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle)
@@ -185,8 +185,8 @@ bool carla_pipe_client_flush_and_unlock(CarlaPipeClientHandle handle)
     CARLA_SAFE_ASSERT_RETURN(handle != nullptr, false);
 
     CarlaPipeClientPlugin* const pipe((CarlaPipeClientPlugin*)handle);
-    const bool ret(pipe->flush());
-    pipe->unlock();
+    const bool ret(pipe->flushMessages());
+    pipe->unlockPipe();
     return ret;
 }
 
@@ -196,7 +196,7 @@ void carla_pipe_client_destroy(CarlaPipeClientHandle handle)
     carla_debug("carla_pipe_client_destroy(%p)", handle);
 
     CarlaPipeClientPlugin* const pipe((CarlaPipeClientPlugin*)handle);
-    pipe->close();
+    pipe->closePipeClient();
     delete pipe;
 }
 

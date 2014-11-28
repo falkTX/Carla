@@ -47,10 +47,10 @@ protected:
     {
         if (show)
         {
-            if (isRunning())
+            if (isPipeRunning())
             {
-                writeMsg("focus\n", 6);
-                flush();
+                writeMessage("focus\n", 6);
+                flushMessages();
                 return;
             }
 
@@ -58,17 +58,17 @@ protected:
             carla_stdout("Trying to start UI using \"%s\"", path.buffer());
 
             CarlaExternalUI::setData(path, getSampleRate(), getUiName());
-            CarlaExternalUI::start();
+            CarlaExternalUI::startPipeServer();
         }
         else
         {
-            CarlaExternalUI::stop(5000);
+            CarlaExternalUI::stopPipeServer(5000);
         }
     }
 
     void uiIdle() override
     {
-        CarlaExternalUI::idle();
+        CarlaExternalUI::idlePipe();
 
         switch (CarlaExternalUI::getAndResetUiState())
         {
@@ -80,7 +80,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
-            CarlaExternalUI::stop(2000);
+            CarlaExternalUI::stopPipeServer(2000);
             break;
         }
     }
@@ -90,15 +90,22 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
         char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
 
-        const CarlaMutexLocker cml(getLock());
+        const CarlaMutexLocker cml(getPipeLock());
+        const ScopedLocale csl;
 
-        writeMsg("control\n", 8);
-        std::sprintf(tmpBuf, "%i\n", index);
-        writeMsg(tmpBuf);
-        std::sprintf(tmpBuf, "%f\n", value);
-        writeMsg(tmpBuf);
-        flush();
+        writeMessage("control\n", 8);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", index);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%f\n", value);
+            writeMessage(tmpBuf);
+        }
+
+        flushMessages();
     }
 
     void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
@@ -106,17 +113,24 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
         char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
 
-        const CarlaMutexLocker cml(getLock());
+        const CarlaMutexLocker cml(getPipeLock());
 
-        writeMsg("program\n", 8);
-        std::sprintf(tmpBuf, "%i\n", channel);
-        writeMsg(tmpBuf);
-        std::sprintf(tmpBuf, "%i\n", bank);
-        writeMsg(tmpBuf);
-        std::sprintf(tmpBuf, "%i\n", program);
-        writeMsg(tmpBuf);
-        flush();
+        writeMessage("program\n", 8);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", channel);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", bank);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", program);
+            writeMessage(tmpBuf);
+        }
+
+        flushMessages();
     }
 
     void uiSetCustomData(const char* const key, const char* const value) override
@@ -124,12 +138,14 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        const CarlaMutexLocker cml(getLock());
+        const CarlaMutexLocker cml(getPipeLock());
 
-        writeMsg("configure\n", 10);
-        writeAndFixMsg(key);
-        writeAndFixMsg(value);
-        flush();
+        writeMessage("configure\n", 10);
+
+        writeAndFixMessage(key);
+        writeAndFixMessage(value);
+
+        flushMessages();
     }
 
     // -------------------------------------------------------------------
