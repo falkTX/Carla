@@ -118,41 +118,27 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wcast-qual -Wconversion -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
-BASE_FLAGS += -Wfloat-equal -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter #-Wstrict-overflow=5
-ifeq ($(CC),clang)
-# BASE_FLAGS += -Wdocumentation -Wdocumentation-unknown-command
-# BASE_FLAGS += -Weverything
-else
-BASE_FLAGS += -Wcast-align -Wunsafe-loop-optimizations
-endif
-ifneq ($(MACOS),true)
-BASE_FLAGS += -Wmissing-declarations -Wsign-conversion
-ifneq ($(CC),clang)
-BASE_FLAGS += -Wlogical-op
-endif
-endif
-CFLAGS     += -Wold-style-definition -Wmissing-declarations -Wmissing-prototypes -Wstrict-prototypes
-CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual
+BASE_FLAGS += -Werror -Wabi -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Winline -Wmissing-declarations
+BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wswitch-default -Wundef -Wuninitialized -Wunused
+BASE_FLAGS += -Wstack-protector -fstack-protector
+BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
+BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
+CFLAGS     += -Wbad-function-cast -Wc++-compat -Wc++0x-compat -Wc++11-compat -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wunsuffixed-float-constants -Wwrite-strings
+CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wuseless-cast -Wzero-as-null-pointer-constant
 ifeq ($(LINUX),true)
-CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include
+BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include/ntk
-CXXFLAGS   += -isystem /opt/kxstudio-trusty/include/ntk
 CXXFLAGS   += -isystem /usr/include/qt4
 endif
 ifeq ($(MACOS),true)
-CFLAGS     += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include
+BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /System/Library/Frameworks
 endif
 ifeq ($(WIN64),true)
-CFLAGS     += -isystem /opt/mingw64/include
-CXXFLAGS   += -isystem /opt/mingw64/include
+BASE_FLAGS += -isystem /opt/mingw64/include
 else
 ifeq ($(WIN32),true)
-CFLAGS     += -isystem /opt/mingw32/include
-CXXFLAGS   += -isystem /opt/mingw32/include
+BASE_FLAGS += -isystem /opt/mingw32/include
 endif
 endif
 endif
