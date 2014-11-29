@@ -9,7 +9,6 @@
 all:
 
 clean:
-	$(MAKE) clean -C jackbridge
 	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_audio_devices
 	$(MAKE) clean -C juce_audio_formats
@@ -21,10 +20,8 @@ clean:
 	$(MAKE) clean -C juce_gui_basics
 	$(MAKE) clean -C juce_gui_extra
 	$(MAKE) clean -C lilv
-	$(MAKE) clean -C native-plugins
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool
 	$(MAKE) clean -C rtmidi
-	$(MAKE) clean -C theme
 
 # ----------------------------------------------------------------------------------------------------------------------------

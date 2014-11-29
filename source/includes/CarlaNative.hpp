@@ -34,7 +34,8 @@ class NativePluginClass
 {
 public:
     NativePluginClass(const NativeHostDescriptor* const host)
-        : pHost(host)
+        : pHost(host),
+          leakDetector_NativePluginClass()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
     }
@@ -362,12 +363,12 @@ protected:
         (void)sampleRate;
     }
 
-    virtual void offlineChanged(const bool isOffline)
+    virtual void offlineChanged(const bool offline)
     {
         return;
 
         // unused
-        (void)isOffline;
+        (void)offline;
     }
 
     virtual void uiNameChanged(const char* const uiName)

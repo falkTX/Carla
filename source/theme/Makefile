@@ -4,9 +4,9 @@
 # Created by falkTX
 #
 
-CWD=../..
+CWD=..
 MODULENAME=theme
-include ../Makefile.mk
+include ../modules/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -170,12 +170,12 @@ $(OBJDIR)/moc_%.qt5.cpp: %.hpp
 	@echo "Generating moc_$*.qt5.cpp"
 	@$(MOC_QT5) -Istyles $< -o $@
 
-$(OBJDIR)/resources.qt4.cpp: ../../../resources/resources-theme.qrc
+$(OBJDIR)/resources.qt4.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt4.cpp"
 	@$(RCC_QT4) $< -o $@
 
-$(OBJDIR)/resources.qt5.cpp: ../../../resources/resources-theme.qrc
+$(OBJDIR)/resources.qt5.cpp: $(CWD)/../resources/resources-theme.qrc
 	-@mkdir -p $(OBJDIR)
 	@echo "Generating resources.qt5.cpp"
 	@$(RCC_QT5) $< -o $@

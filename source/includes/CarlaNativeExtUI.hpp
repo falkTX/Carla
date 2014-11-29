@@ -181,7 +181,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS, true);
 
             try {
-                uiMidiProgramChanged(channel, bank, program);
+                uiMidiProgramChanged(static_cast<uint8_t>(channel), bank, program);
             } CARLA_SAFE_EXCEPTION("uiMidiProgramChanged");
 
             return true;

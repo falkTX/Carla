@@ -459,7 +459,7 @@ int main(int argc, char* argv[])
         if (label == nullptr)
             label = clientName;
 
-        if (std::strstr(label, " (16 outs)") == 0)
+        if (std::strstr(label, " (16 outs)") != nullptr)
             extraStuff = "true";
     }
 

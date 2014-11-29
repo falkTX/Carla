@@ -165,7 +165,7 @@ protected:
 #ifdef CARLA_OS_LINUX
         if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
             if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
-                setTransient(winId);
+                setTransient(static_cast<uintptr_t>(winId));
 #endif
     }
 

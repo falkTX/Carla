@@ -4,9 +4,9 @@
 # Created by falkTX
 #
 
-CWD=../..
+CWD=..
 MODULENAME=jackbridge
-include ../Makefile.mk
+include ../modules/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

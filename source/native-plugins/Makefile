@@ -4,14 +4,14 @@
 # Created by falkTX
 #
 
-CWD=../..
+CWD=..
 MODULENAME=native-plugins
-include ../Makefile.mk
+include ../modules/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_C_FLAGS   += -I..
-BUILD_CXX_FLAGS += -I.. -I../distrho
+BUILD_CXX_FLAGS += -I.. -I../distrho -isystem $(CWD)/modules
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Flags for _all.c

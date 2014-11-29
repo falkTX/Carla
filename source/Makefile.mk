@@ -118,13 +118,12 @@ endif
 # Strict test build
 
 ifeq ($(TESTBUILD),true)
-BASE_FLAGS += -Werror -Wabi -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Winline -Wmissing-declarations
-BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wswitch-default -Wundef -Wuninitialized -Wunused
-BASE_FLAGS += -Wstack-protector -fstack-protector
+BASE_FLAGS += -Werror -Wabi -Wcast-qual -Wclobbered -Wconversion -Wdisabled-optimization -Wfloat-equal -Wformat=2 -Winit-self -Wmissing-declarations
+BASE_FLAGS += -Woverlength-strings -Wpointer-arith -Wredundant-decls -Wshadow -Wsign-conversion -Wundef -Wuninitialized -Wunused
 BASE_FLAGS += -Wstrict-aliasing -fstrict-aliasing
 BASE_FLAGS += -Wstrict-overflow -fstrict-overflow
-CFLAGS     += -Wbad-function-cast -Wc++-compat -Wc++0x-compat -Wc++11-compat -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wunsuffixed-float-constants -Wwrite-strings
-CXXFLAGS   += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wuseless-cast -Wzero-as-null-pointer-constant
+CFLAGS     += -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wwrite-strings
+CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wzero-as-null-pointer-constant
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include/ntk

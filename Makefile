@@ -26,10 +26,8 @@ DESTDIR   :=
 BINDIR    := $(CURDIR)/bin
 
 ifeq ($(DEBUG),true)
-OBJDIR    := $(CURDIR)/build/backend/Debug
 MODULEDIR := $(CURDIR)/build/modules/Debug
 else
-OBJDIR    := $(CURDIR)/build/backend/Release
 MODULEDIR := $(CURDIR)/build/modules/Release
 endif
 
@@ -48,11 +46,11 @@ ALL_LIBS  = $(MODULEDIR)/carla_engine.a
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
+ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
-ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -89,35 +87,35 @@ $(MODULEDIR)/carla_engine_plugin.a: $(MODULEDIR)/carla_engine.a
 $(MODULEDIR)/carla_plugin.a: .FORCE
 	@$(MAKE) -C source/backend/plugin
 
-$(MODULEDIR)/%.qt4.a: .FORCE
-	@$(MAKE) -C source/modules/$* qt4
+$(MODULEDIR)/jackbridge.a: .FORCE
+	@$(MAKE) -C source/jackbridge
 
-$(MODULEDIR)/%.qt5.a: .FORCE
-	@$(MAKE) -C source/modules/$* qt5
+$(MODULEDIR)/jackbridge.%.a: .FORCE
+	@$(MAKE) -C source/jackbridge $*
+
+$(MODULEDIR)/native-plugins.a: .FORCE
+	@$(MAKE) -C source/native-plugins
+
+$(MODULEDIR)/theme.a: .FORCE
+	@$(MAKE) -C source/theme
+
+$(MODULEDIR)/theme.qt4.a: .FORCE
+	@$(MAKE) -C source/theme qt4
+
+$(MODULEDIR)/theme.qt5.a: .FORCE
+	@$(MAKE) -C source/theme qt5
 
 $(MODULEDIR)/%.posix32.a: .FORCE
 	@$(MAKE) -C source/modules/$* posix32
 
-$(MODULEDIR)/%.posix32e.a: .FORCE
-	@$(MAKE) -C source/modules/$* posix32e
-
 $(MODULEDIR)/%.posix64.a: .FORCE
 	@$(MAKE) -C source/modules/$* posix64
-
-$(MODULEDIR)/%.posix64e.a: .FORCE
-	@$(MAKE) -C source/modules/$* posix64e
 
 $(MODULEDIR)/%.win32.a: .FORCE
 	@$(MAKE) -C source/modules/$* win32
 
-$(MODULEDIR)/%.win32e.a: .FORCE
-	@$(MAKE) -C source/modules/$* win32e
-
 $(MODULEDIR)/%.win64.a: .FORCE
 	@$(MAKE) -C source/modules/$* win64
-
-$(MODULEDIR)/%.win64e.a: .FORCE
-	@$(MAKE) -C source/modules/$* win64e
 
 $(MODULEDIR)/%.a: .FORCE
 	@$(MAKE) -C source/modules/$*
@@ -148,7 +146,7 @@ plugin: backend bridges-plugin bridges-ui discovery
 
 ifeq ($(HAVE_QT),true)
 theme:
-	@$(MAKE) -C source/modules/theme
+	@$(MAKE) -C source/theme
 else
 theme:
 endif
