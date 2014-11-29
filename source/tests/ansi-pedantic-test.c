@@ -124,8 +124,6 @@ int main(int argc, char* argv[])
     EngineTimeInfo e6;
 #endif
 
-    return 0;
-
     /* unused C */
     (void)argc;
     (void)argv;
@@ -134,4 +132,6 @@ int main(int argc, char* argv[])
 #ifdef __cplusplus
     (void)e1; (void)e2; (void)e4; (void)e5; (void)e6;
 #endif
+
+    return 0;
 }
