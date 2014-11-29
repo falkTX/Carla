@@ -15,7 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "../utils/CarlaPipeUtils.cpp"
+#include "CarlaPipeUtils.hpp"
+#include "CarlaSemUtils.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -30,6 +31,8 @@ public:
         carla_stdout("CLIENT RECEIVED: \"%s\"", msg);
         return true;
     }
+
+    sem_t sem;
 };
 
 class CarlaPipeServer2 : public CarlaPipeServer
@@ -54,19 +57,19 @@ int main(int argc, char* argv[])
         carla_stdout("CLIENT STARTED %i", argc);
 
         CarlaPipeClient2 p;
-        const bool ok = p.start(argv);
+        const bool ok = p.initPipeClient(argv);
         CARLA_SAFE_ASSERT_RETURN(ok,1);
 
-        p.lock();
-        p.writeMsg("CLIENT=>SERVER\n");
-        p.writeAndFixMsg("heheheheheh");
-        p.unlock();
+        p.lockPipe();
+        p.writeMessage("CLIENT=>SERVER\n");
+        p.writeAndFixMessage("heheheheheh");
+        p.unlockPipe();
 
-        carla_sleep(2);
+        carla_msleep(500);
         carla_stderr2("CLIENT idle start");
-        p.idle();
+        p.idlePipe();
         carla_stderr2("CLIENT idle end");
-        carla_sleep(2);
+        carla_msleep(500);
     }
     else
     {
@@ -74,24 +77,28 @@ int main(int argc, char* argv[])
 
         CarlaPipeServer2 p;
 #ifdef CARLA_OS_WIN
-        const bool ok = p.start("H:\\Source\\falkTX\\Carla\\source\\tests\\CarlaPipeUtils.exe", "/home/falktx/Videos", "/home/falktx");
+        const bool ok = p.startPipeServer("H:\\Source\\falkTX\\Carla\\source\\tests\\CarlaPipeUtils.exe", "/home/falktx/Videos", "/home/falktx");
 #else
-        const bool ok = p.start("/home/falktx/Source/falkTX/Carla/source/tests/CarlaPipeUtils", "/home/falktx/Videos", "/home/falktx");
+        const bool ok = p.startPipeServer("/home/falktx/Source/falkTX/Carla/source/tests/CarlaPipeUtils", "/home/falktx/Videos", "/home/falktx");
 #endif
         CARLA_SAFE_ASSERT_RETURN(ok,1);
 
-        p.lock();
-        p.writeMsg("SERVER=>CLIENT\n");
-        p.unlock();
+        p.lockPipe();
+        p.writeMessage("SERVER=>CLIENT\n");
+        p.unlockPipe();
 
-        carla_sleep(2);
+        carla_msleep(500);
         carla_stderr2("SERVER idle start");
-        p.idle();
+        p.idlePipe();
         carla_stderr2("SERVER idle end");
-        carla_sleep(2);
+        carla_msleep(500);
     }
 
     return 0;
 }
+
+// -----------------------------------------------------------------------
+
+#include "../utils/CarlaPipeUtils.cpp"
 
 // -----------------------------------------------------------------------

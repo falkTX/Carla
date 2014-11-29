@@ -36,20 +36,20 @@ extern "C" {
 typedef void* NativeHostHandle;
 typedef void* NativePluginHandle;
 
-// -----------------------------------------------------------------------
-// enums
+/* ------------------------------------------------------------------------------------------------------------
+ * enums */
 
 typedef enum {
-    NATIVE_PLUGIN_CATEGORY_NONE       = 0, //!< Null plugin category.
-    NATIVE_PLUGIN_CATEGORY_SYNTH      = 1, //!< A synthesizer or generator.
-    NATIVE_PLUGIN_CATEGORY_DELAY      = 2, //!< A delay or reverberator.
-    NATIVE_PLUGIN_CATEGORY_EQ         = 3, //!< An equalizer.
-    NATIVE_PLUGIN_CATEGORY_FILTER     = 4, //!< A filter.
-    NATIVE_PLUGIN_CATEGORY_DISTORTION = 5, //!< A distortion plugin.
-    NATIVE_PLUGIN_CATEGORY_DYNAMICS   = 6, //!< A 'dynamic' plugin (amplifier, compressor, gate, etc).
-    NATIVE_PLUGIN_CATEGORY_MODULATOR  = 7, //!< A 'modulator' plugin (chorus, flanger, phaser, etc).
-    NATIVE_PLUGIN_CATEGORY_UTILITY    = 8, //!< An 'utility' plugin (analyzer, converter, mixer, etc).
-    NATIVE_PLUGIN_CATEGORY_OTHER      = 9  //!< Misc plugin (used to check if the plugin has a category).
+    NATIVE_PLUGIN_CATEGORY_NONE       = 0, /** Null plugin category.                                     */
+    NATIVE_PLUGIN_CATEGORY_SYNTH      = 1, /** A synthesizer or generator.                               */
+    NATIVE_PLUGIN_CATEGORY_DELAY      = 2, /** A delay or reverberator.                                  */
+    NATIVE_PLUGIN_CATEGORY_EQ         = 3, /** An equalizer.                                             */
+    NATIVE_PLUGIN_CATEGORY_FILTER     = 4, /** A filter.                                                 */
+    NATIVE_PLUGIN_CATEGORY_DISTORTION = 5, /** A distortion plugin.                                      */
+    NATIVE_PLUGIN_CATEGORY_DYNAMICS   = 6, /** A 'dynamic' plugin (amplifier, compressor, gate, etc).    */
+    NATIVE_PLUGIN_CATEGORY_MODULATOR  = 7, /** A 'modulator' plugin (chorus, flanger, phaser, etc).      */
+    NATIVE_PLUGIN_CATEGORY_UTILITY    = 8, /** An 'utility' plugin (analyzer, converter, mixer, etc).    */
+    NATIVE_PLUGIN_CATEGORY_OTHER      = 9  /** Misc plugin (used to check if the plugin has a category). */
 } NativePluginCategory;
 
 typedef enum {
@@ -59,15 +59,15 @@ typedef enum {
     NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS = 1 <<  3,
     NATIVE_PLUGIN_NEEDS_SINGLE_THREAD = 1 <<  4,
     NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 <<  5,
-    NATIVE_PLUGIN_USES_MULTI_PROGS    = 1 <<  6, // has 1 patch per midi channel
-    NATIVE_PLUGIN_USES_PANNING        = 1 <<  7, // uses stereo balance if unset (default)
+    NATIVE_PLUGIN_USES_MULTI_PROGS    = 1 <<  6, /** has 1 patch per midi channel           */
+    NATIVE_PLUGIN_USES_PANNING        = 1 <<  7, /** uses stereo balance if unset (default) */
     NATIVE_PLUGIN_USES_STATE          = 1 <<  8,
     NATIVE_PLUGIN_USES_TIME           = 1 <<  9,
-    NATIVE_PLUGIN_USES_PARENT_ID      = 1 << 10  // can set transient hint to parent
+    NATIVE_PLUGIN_USES_PARENT_ID      = 1 << 10  /** can set transient hint to parent       */
 } NativePluginHints;
 
 typedef enum {
-    NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, // handles MIDI programs internally instead of host-exposed/exported
+    NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, /** handles MIDI programs internally instead of host-exposed/exported */
     NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
     NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,
     NATIVE_PLUGIN_SUPPORTS_NOTE_AFTERTOUCH  = 1 << 3,
@@ -89,25 +89,25 @@ typedef enum {
 } NativeParameterHints;
 
 typedef enum {
-    NATIVE_PLUGIN_OPCODE_NULL                = 0, // nothing
-    NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, // uses value
-    NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, // uses opt
-    NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, // uses value (0=off, 1=on)
-    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  // uses ptr
+    NATIVE_PLUGIN_OPCODE_NULL                = 0, /** nothing                  */
+    NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED = 1, /** uses value               */
+    NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED = 2, /** uses opt                 */
+    NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED     = 3, /** uses value (0=off, 1=on) */
+    NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED     = 4  /** uses ptr                 */
 } NativePluginDispatcherOpcode;
 
 typedef enum {
-    NATIVE_HOST_OPCODE_NULL                  = 0, // nothing
-    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1, // uses index, -1 for all
-    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, // uses index, -1 for all; may use value for channel
-    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3, // nothing
-    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, // nothing
-    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, // nothing
-    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6  // nothing
+    NATIVE_HOST_OPCODE_NULL                  = 0, /** nothing                                           */
+    NATIVE_HOST_OPCODE_UPDATE_PARAMETER      = 1, /** uses index, -1 for all                            */
+    NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM   = 2, /** uses index, -1 for all; may use value for channel */
+    NATIVE_HOST_OPCODE_RELOAD_PARAMETERS     = 3, /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, /** nothing                                           */
+    NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, /** nothing                                           */
+    NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6  /** nothing                                           */
 } NativeHostDispatcherOpcode;
 
-// -----------------------------------------------------------------------
-// base structs
+/* ------------------------------------------------------------------------------------------------------------
+ * base structs */
 
 typedef struct {
     const char* label;
@@ -153,13 +153,13 @@ typedef struct {
 typedef struct {
     bool valid;
 
-    int32_t bar;  //!< current bar
-    int32_t beat; //!< current beat-within-bar
-    int32_t tick; //!< current tick-within-beat
+    int32_t bar;  /** current bar              */
+    int32_t beat; /** current beat-within-bar  */
+    int32_t tick; /** current tick-within-beat */
     double barStartTick;
 
-    float beatsPerBar; //!< time signature "numerator"
-    float beatType;    //!< time signature "denominator"
+    float beatsPerBar; /** time signature "numerator"  */
+    float beatType;    /** time signature "denominator" */
 
     double ticksPerBeat;
     double beatsPerMinute;
@@ -172,8 +172,8 @@ typedef struct {
     NativeTimeInfoBBT bbt;
 } NativeTimeInfo;
 
-// -----------------------------------------------------------------------
-// HostDescriptor
+/* ------------------------------------------------------------------------------------------------------------
+ * HostDescriptor */
 
 typedef struct {
     NativeHostHandle handle;
@@ -200,8 +200,8 @@ typedef struct {
 
 } NativeHostDescriptor;
 
-// -----------------------------------------------------------------------
-// PluginDescriptor
+/* ------------------------------------------------------------------------------------------------------------
+ * PluginDescriptor */
 
 typedef struct _NativePluginDescriptor {
     const NativePluginCategory category;
@@ -251,21 +251,21 @@ typedef struct _NativePluginDescriptor {
 
 } NativePluginDescriptor;
 
-// -----------------------------------------------------------------------
-// Register plugin
+/* ------------------------------------------------------------------------------------------------------------
+ * Register plugin */
 
-// Implemented by host
+/** Implemented by host */
 extern void carla_register_native_plugin(const NativePluginDescriptor* desc);
 
-// Called once on host init
+/** Called once on host init */
 void carla_register_all_plugins();
 
-// -----------------------------------------------------------------------
+/* ------------------------------------------------------------------------------------------------------------ */
 
 /**@}*/
 
 #ifdef __cplusplus
-} // extern "C"
+} /* extern "C" */
 #endif
 
-#endif // CARLA_NATIVE_H_INCLUDED
+#endif /* CARLA_NATIVE_H_INCLUDED */
