@@ -406,6 +406,9 @@ struct LV2_RDF_Port {
           Designation(0),
           Name(nullptr),
           Symbol(nullptr),
+          MidiMap(),
+          Points(),
+          Unit(),
           MinimumSize(0),
           ScalePointCount(0),
           ScalePoints(nullptr) {}

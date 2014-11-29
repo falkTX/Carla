@@ -9,12 +9,15 @@
 CLANG   ?= clang
 CXXLANG ?= clang++
 
+MODULEDIR=../../build/modules/Debug
+
 # --------------------------------------------------------------
 
-BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DREAL_BUILD -DDEBUG -O0 -g
+BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DBUILDING_CARLA -DREAL_BUILD -DDEBUG -O0 -g
 BASE_FLAGS += -I. -I../backend -I../includes -I../modules -I../utils
-BASE_FLAGS += -Wcast-align -Wcast-qual -Wconversion -Wmissing-declarations -Wsign-conversion
-BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wundef -Wwrite-strings
+BASE_FLAGS += -Wcast-align -Wmissing-declarations
+# BASE_FLAGS += -Wcast-qual -Wconversion -Wsign-conversion -Wundef
+BASE_FLAGS += -Wformat -Wformat-security -Wredundant-decls -Wshadow -Wstrict-overflow -fstrict-overflow -Wwrite-strings
 BASE_FLAGS += -Wpointer-arith -Wabi -Winit-self -Wuninitialized -Wunused-parameter
 # -Wfloat-equal
 ifneq ($(CC),clang-3.4)
@@ -40,7 +43,8 @@ endif
 PEDANTIC_CXX_FLAGS  = $(BASE_FLAGS)
 PEDANTIC_CXX_FLAGS += -std=c++11 -pedantic -pedantic-errors
 PEDANTIC_CXX_FLAGS += -isystem /opt/kxstudio/include
-PEDANTIC_CXX_FLAGS += -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wno-vla
+# PEDANTIC_CXX_FLAGS += -Weffc++
+PEDANTIC_CXX_FLAGS += -Wnon-virtual-dtor -Woverloaded-virtual -Wno-vla
 ifeq ($(CC),clang-3.4)
 PEDANTIC_CXX_FLAGS += -Wno-vla-extension
 else
@@ -58,15 +62,16 @@ TARGETS += ansi-pedantic-test_cxx_ansi
 TARGETS += ansi-pedantic-test_cxx03
 TARGETS += ansi-pedantic-test_cxx11
 TARGETS += ansi-pedantic-test_cxxlang
+TARGETS += CarlaPipeUtils
 TARGETS += CarlaRingBuffer
 TARGETS += CarlaString
 # TARGETS += CarlaUtils1
 # ifneq ($(WIN32),true)
 # TARGETS += CarlaUtils2
 # endif
-# TARGETS += CarlaUtils3
+TARGETS += CarlaUtils3
 # TARGETS += CarlaUtils4
-# TARGETS += Exceptions
+TARGETS += Exceptions
 TARGETS += Print
 TARGETS += RDF
 
@@ -116,10 +121,14 @@ ifneq ($(WIN32),true)
 endif
 
 CarlaPipeUtils: CarlaPipeUtils.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -ldl -lpthread
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -ldl -lpthread
+ifneq ($(WIN32),true)
+	set -e;  valgrind --leak-check=full ./$@
+# 	./$@ &&
+endif
 
 CarlaPipeUtils.exe: CarlaPipeUtils.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ ../modules/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
@@ -129,7 +138,7 @@ endif
 
 CarlaUtils2: CarlaUtils2.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		 ../modules/juce_core.a ../modules/lilv.a -ldl -lpthread -lrt
+		 $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -lpthread -lrt
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 
 CarlaUtils3: CarlaUtils3.cpp ../utils/*.hpp
@@ -140,7 +149,7 @@ endif
 
 CarlaUtils4: CarlaUtils4.cpp ../utils/CarlaStateUtils.cpp ../utils/*.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ \
-		../modules/juce_core.a -ldl -lpthread -lrt
+		$(MODULEDIR)/juce_core.a -ldl -lpthread -lrt
 ifneq ($(WIN32),true)
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 endif
@@ -165,14 +174,14 @@ endif
 
 # --------------------------------------------------------------
 
-sem: sem.cpp ../modules/jackbridge/*
+sem: sem.cpp $(MODULEDIR)/jackbridge/*
 	$(CXX) $< -Wall -Wextra -O0 -g -I../utils -I../includes -DREAL_BUILD -o $@
 	./$@
 
 # --------------------------------------------------------------
 
 ChildProcess: ChildProcess.cpp
-	$(CXX) $< $(PEDANTIC_CXX_FLAGS) ../modules/juce_core.a -ldl -lpthread -lrt -o $@
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) $(MODULEDIR)/juce_core.a -ldl -lpthread -lrt -o $@
 	valgrind --leak-check=full ./$@
 
 CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
@@ -180,19 +189,19 @@ CarlaMutex: CarlaMutex.cpp ../utils/CarlaMutex.hpp
 	valgrind --leak-check=full ./$@
 
 # ifneq ($(MACOS_OR_WIN32),true)
-# 	 ../modules/rtaudio.a ../modules/rtmidi.a \
+# 	 $(MODULEDIR)/rtaudio.a $(MODULEDIR)/rtmidi.a \
 # endif
 
 Engine: Engine.cpp
 	$(CXX) $< \
 	../backend/standalone/CarlaStandalone.cpp.o \
 	-Wl,--start-group \
-	../backend/carla_engine.a ../backend/carla_plugin.a ../modules/native-plugins.a \
-	../modules/dgl.a ../modules/jackbridge.a ../modules/lilv.a ../modules/rtmempool.a \
+	../backend/carla_engine.a ../backend/carla_plugin.a $(MODULEDIR)/native-plugins.a \
+	$(MODULEDIR)/dgl.a $(MODULEDIR)/jackbridge.a $(MODULEDIR)/lilv.a $(MODULEDIR)/rtmempool.a \
 	-Wl,--end-group \
 	$(PEDANTIC_CXX_FLAGS) $(shell pkg-config --libs alsa libpulse-simple liblo QtCore QtXml fluidsynth linuxsampler x11 gl smf fftw3 mxml zlib ntk_images ntk) -o $@
 	env LD_LIBRARY_PATH=../backend valgrind --leak-check=full ./$@
-# 	../modules/juce_audio_basics.a ../modules/juce_core.a \
+# 	$(MODULEDIR)/juce_audio_basics.a $(MODULEDIR)/juce_core.a \
 
 EngineEvents: EngineEvents.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -L../backend -lcarla_standalone2 -o $@
@@ -202,12 +211,12 @@ PipeServer: PipeServer.cpp ../utils/CarlaPipeUtils.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
 	valgrind --leak-check=full ./$@
 
-RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
-	$(CXX) $< ../modules/rtmempool.a $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
+RtLinkedList: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp $(MODULEDIR)/rtmempool.a
+	$(CXX) $< $(MODULEDIR)/rtmempool.a $(PEDANTIC_CXX_FLAGS) -lpthread -o $@
 	valgrind --leak-check=full ./$@
 
-RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp ../modules/rtmempool.a
-	$(CXX) $< ../modules/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
+RtLinkedListGnu: RtLinkedList.cpp ../utils/LinkedList.hpp ../utils/RtLinkedList.hpp $(MODULEDIR)/rtmempool.a
+	$(CXX) $< $(MODULEDIR)/rtmempool.a $(GNU_CXX_FLAGS) -lpthread -o $@
 	valgrind --leak-check=full ./$@
 
 # --------------------------------------------------------------
