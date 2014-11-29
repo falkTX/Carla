@@ -90,7 +90,7 @@ envHOME = os.getenv("HOME")
 if envHOME is None:
     if LINUX or MACOS:
         qWarning("HOME variable not set")
-    HOME = QDir.homePath()
+    HOME = QDir.toNativeSeparators(QDir.homePath())
 else:
     HOME = envHOME
 
