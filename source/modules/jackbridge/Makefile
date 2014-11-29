@@ -137,56 +137,56 @@ $(MODULEDIR)/$(MODULENAME)-wine64.dll$(LIB_EXT): $(OBJS_wine64) JackBridgeExport
 $(OBJDIR)/JackBridge1.cpp.o: JackBridge1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling JackBridge1.cpp"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/JackBridge2.cpp.o: JackBridge2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling JackBridge2.cpp"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/JackBridgeExport.cpp.%32e.o: JackBridgeExport.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -fpermissive -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -fpermissive -c -o $@
 
 $(OBJDIR)/JackBridgeExport.cpp.%64e.o: JackBridgeExport.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -fpermissive -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -fpermissive -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.cpp.posix32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.posix64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (posix64)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.win32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win32)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.win64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (win64)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine32.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine32)"
-	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.wine64.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (wine64)"
-	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(WINECXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

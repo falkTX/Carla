@@ -61,7 +61,7 @@ $(BINDIR)/libcarla_interposer$(LIB_EXT): $(OBJS)
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 

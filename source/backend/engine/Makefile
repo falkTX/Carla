@@ -70,17 +70,17 @@ $(MODULEDIR)/carla_engine_plugin.a: $(OBJSp)
 $(OBJDIR)/CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineRtAudio.cpp"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineNative.cpp (plugin)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 -include $(OBJSa:%.o=%.d)
 -include $(OBJDIR)/CarlaEngineNative.cpp.exp.d

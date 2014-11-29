@@ -80,68 +80,68 @@ $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 $(OBJDIR)/serd.c.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) -c -o $@
 
 $(OBJDIR)/serd.c.%32.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/serd.c.%64.o: serd.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Iserd-$(SERD_VERSION) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/sord.c.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src -c -o $@
 
 $(OBJDIR)/sord.c.%32.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sord.c.%64.o: sord.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isord-$(SORD_VERSION) -Isord-$(SORD_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/sratom.c.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) -c -o $@
 
 $(OBJDIR)/sratom.c.%32.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/sratom.c.%64.o: sratom.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Isratom-$(SRATOM_VERSION) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/lilv.c.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src -c -o $@
 
 $(OBJDIR)/lilv.c.%32.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/lilv.c.%64.o: lilv.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -Ililv-$(LILV_VERSION) -Ililv-$(LILV_VERSION)/src $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

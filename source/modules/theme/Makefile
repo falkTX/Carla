@@ -185,25 +185,26 @@ $(OBJDIR)/resources.qt5.cpp: ../../../resources/resources-theme.qrc
 $(OBJDIR)/%.qt4.cpp.o: $(OBJDIR)/%.qt4.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $*.cpp (Qt4)"
-	@$(CXX) $< $(QT4_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.qt5.cpp.o: $(OBJDIR)/%.qt5.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $*.cpp (Qt5)"
-	@$(CXX) $< $(QT5_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.qt4.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt4)"
-	@$(CXX) $< $(QT4_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.qt5.o: %.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (Qt5)"
-	@$(CXX) $< $(QT5_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(QT5_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
--include $(OBJS:%.o=%.d)
+-include $(OBJS_qt4_shared:%.o=%.d)
+-include $(OBJS_qt5_shared:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

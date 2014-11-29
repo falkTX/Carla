@@ -146,27 +146,27 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(LIB
 $(OBJDIR)/carla-lv2.cpp.o: carla-lv2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.rack-fx.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (RackFX)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -DCARLA_PLUGIN_PATCHBAY=0 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=0 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.rack-syn.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (RackSynth)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -DCARLA_PLUGIN_PATCHBAY=0 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=0 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.patchbay-fx.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbayFX)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=0 -c -o $@
 
 $(OBJDIR)/carla-vst.cpp.patchbay-syn.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -187,7 +187,7 @@ $(BINDIR)/carla-lv2-export$(APP_EXT): $(OBJDIR)/carla-lv2-export.cpp.o $(LIBS)
 $(OBJDIR)/carla-lv2-export.cpp.o: carla-lv2-export.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

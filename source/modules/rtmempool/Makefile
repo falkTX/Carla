@@ -73,17 +73,17 @@ $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 $(OBJDIR)/$(MODULENAME).c.o: $(MODULENAME).c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).c.%32.o: $(MODULENAME).c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).c.%64.o: $(MODULENAME).c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

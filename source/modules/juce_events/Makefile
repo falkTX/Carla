@@ -79,34 +79,34 @@ $(MODULEDIR)/$(MODULENAME).win64.a: $(OBJS_win64)
 $(OBJDIR)/$(MODULENAME).cpp.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
 $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -MMD -ObjC++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/$(MODULENAME).mm.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -MMD -ObjC++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -ObjC++ -c -o $@
 
 $(OBJDIR)/$(MODULENAME).mm.%64.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (64bit)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -MMD -ObjC++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -ObjC++ -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

@@ -158,12 +158,12 @@ LIBS_VST2 = \
 $(OBJDIR)/%.cpp.lv2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2)"
-	@$(CXX) $< $(BUILD_LV2_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.vst2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (VST2)"
-	@$(CXX) $< $(BUILD_VST2_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_VST2_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk2
@@ -182,7 +182,7 @@ $(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_LV2_GTK2) $(LIBS_LV2)
 $(OBJDIR)/%.cpp.lv2-gtk2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-GTK2)"
-	@$(CXX) $< $(BUILD_LV2_GTK2_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_GTK2_FLAGS) -c -o $@
 
 -include $(OBJS_LV2_GTK2:%.o=%.d)
 
@@ -203,7 +203,7 @@ $(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_LV2_GTK3) $(LIBS_LV2)
 $(OBJDIR)/%.cpp.lv2-gtk3.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-GTK3)"
-	@$(CXX) $< $(BUILD_LV2_GTK3_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_GTK3_FLAGS) -c -o $@
 
 -include $(OBJS_LV2_GTK3:%.o=%.d)
 
@@ -224,7 +224,7 @@ $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_LV2_QT4) $(LIBS_LV2) $(MODULEDIR)/theme.
 $(OBJDIR)/%.cpp.lv2-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-QT4)"
-	@$(CXX) $< $(BUILD_LV2_QT4_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_QT4_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt4.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
@@ -255,7 +255,7 @@ $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_LV2_QT5) $(LIBS_LV2) $(MODULEDIR)/theme.
 $(OBJDIR)/%.cpp.lv2-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-QT5)"
-	@$(CXX) $< $(BUILD_LV2_QT5_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_QT5_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt5.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
@@ -286,7 +286,7 @@ $(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_LV2_X11) $(LIBS_LV2)
 $(OBJDIR)/%.cpp.lv2-x11.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-X11)"
-	@$(CXX) $< $(BUILD_LV2_X11_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_X11_FLAGS) -c -o $@
 
 -include $(OBJS_LV2_X11:%.o=%.d)
 
@@ -307,7 +307,7 @@ $(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_LV2_COCOA) $(LIBS_LV2_JUCE)
 $(OBJDIR)/%.cpp.lv2-cocoa.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-Cocoa)"
-	@$(CXX) $< $(BUILD_LV2_COCOA_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_COCOA_FLAGS) -c -o $@
 
 -include $(OBJS_LV2_COCOA:%.o=%.d)
 
@@ -328,7 +328,7 @@ $(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(LIBS_LV2_JUCE)
 $(OBJDIR)/%.cpp.lv2-windows.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (LV2-Windows)"
-	@$(CXX) $< $(BUILD_LV2_WINDOWS_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_LV2_WINDOWS_FLAGS) -c -o $@
 
 -include $(OBJS_LV2_WINDOWS:%.o=%.d)
 
@@ -349,7 +349,7 @@ $(BINDIR)/$(MODULENAME)-vst2-x11: $(OBJS_VST2_X11) $(LIBS_VST2)
 $(OBJDIR)/%.cpp.vst2-x11.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (VST2-X11)"
-	@$(CXX) $< $(BUILD_VST2_X11_FLAGS) -MMD -c -o $@
+	@$(CXX) $< $(BUILD_VST2_X11_FLAGS) -c -o $@
 
 -include $(OBJS_VST2_X11:%.o=%.d)
 
