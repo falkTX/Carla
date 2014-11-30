@@ -388,12 +388,6 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         if (std::strcmp(bmethod, "error") == 0)
             return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscError, argc, argv, types);
     }
-
-    // Plugin-specific methods
-    if (std::strcmp(method, "lv2_atom_transfer") == 0)
-        return handleMsgLv2AtomTransfer(plugin, argc, argv, types);
-    if (std::strcmp(method, "lv2_urid_map") == 0)
-        return handleMsgLv2UridMap(plugin, argc, argv, types);
 #endif
 
     carla_stderr("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);

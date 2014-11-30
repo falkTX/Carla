@@ -26,6 +26,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -----------------------------------------------------
 
 class CarlaPluginDSSI : public CarlaPlugin
@@ -2325,6 +2326,7 @@ private:
 };
 
 LinkedList<const char*> CarlaPluginDSSI::sMultiSynthList;
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2332,6 +2334,7 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
+#if 0
     CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label))
@@ -2370,6 +2373,9 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     }
 
     return plugin;
+#endif
+    return nullptr;
+    (void)init;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

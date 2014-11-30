@@ -1058,7 +1058,7 @@ public:
         if (needsReinit)
         {
             // reload plugin to recreate its ports
-            const StateSave& saveState(plugin->getStateSave());
+            const CarlaStateSave& saveState(plugin->getStateSave());
             plugin->reload();
             plugin->loadStateSave(saveState);
         }

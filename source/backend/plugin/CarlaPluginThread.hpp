@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#if 0
+
 #ifndef CARLA_PLUGIN_THREAD_HPP_INCLUDED
 #define CARLA_PLUGIN_THREAD_HPP_INCLUDED
 
@@ -73,3 +75,5 @@ private:
 CARLA_BACKEND_END_NAMESPACE
 
 #endif // CARLA_PLUGIN_THREAD_HPP_INCLUDED
+
+#endif

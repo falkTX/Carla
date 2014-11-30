@@ -40,9 +40,7 @@ public:
         CARLA_SAFE_ASSERT(host != nullptr);
     }
 
-    virtual ~NativePluginClass()
-    {
-    }
+    virtual ~NativePluginClass() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -268,8 +266,7 @@ protected:
         return;
 
         // unused
-        (void)bank;
-        (void)program;
+        (void)bank; (void)program;
     }
 
     virtual void setCustomData(const char* const key, const char* const value)
@@ -281,13 +278,9 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    virtual void activate()
-    {
-    }
+    virtual void activate() {}
 
-    virtual void deactivate()
-    {
-    }
+    virtual void deactivate() {}
 
     virtual void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) = 0;
 
@@ -321,13 +314,12 @@ protected:
         return;
 
         // unused
-        (void)bank;
-        (void)program;
+        (void)bank; (void)program;
     }
 
     virtual void uiSetCustomData(const char* const key, const char* const value)
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
     }
 

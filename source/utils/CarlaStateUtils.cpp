@@ -108,7 +108,7 @@ static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 // -----------------------------------------------------------------------
 // StateParameter
 
-StateParameter::StateParameter() noexcept
+CarlaStateSave::Parameter::Parameter() noexcept
     : isInput(true),
       index(-1),
       name(nullptr),
@@ -121,7 +121,7 @@ StateParameter::StateParameter() noexcept
       value(0.0f) {}
 #endif
 
-StateParameter::~StateParameter() noexcept
+CarlaStateSave::Parameter::~Parameter() noexcept
 {
     if (name != nullptr)
     {
@@ -138,12 +138,12 @@ StateParameter::~StateParameter() noexcept
 // -----------------------------------------------------------------------
 // StateCustomData
 
-StateCustomData::StateCustomData() noexcept
+CarlaStateSave::CustomData::CustomData() noexcept
     : type(nullptr),
       key(nullptr),
       value(nullptr) {}
 
-StateCustomData::~StateCustomData() noexcept
+CarlaStateSave::CustomData::~CustomData() noexcept
 {
     if (type != nullptr)
     {
@@ -165,7 +165,7 @@ StateCustomData::~StateCustomData() noexcept
 // -----------------------------------------------------------------------
 // StateSave
 
-StateSave::StateSave() noexcept
+CarlaStateSave::CarlaStateSave() noexcept
     : type(nullptr),
       name(nullptr),
       label(nullptr),
@@ -189,12 +189,12 @@ StateSave::StateSave() noexcept
       parameters(),
       customData() {}
 
-StateSave::~StateSave() noexcept
+CarlaStateSave::~CarlaStateSave() noexcept
 {
     clear();
 }
 
-void StateSave::clear() noexcept
+void CarlaStateSave::clear() noexcept
 {
     if (type != nullptr)
     {
@@ -242,15 +242,15 @@ void StateSave::clear() noexcept
     currentMidiBank     = -1;
     currentMidiProgram  = -1;
 
-    for (StateParameterItenerator it = parameters.begin(); it.valid(); it.next())
+    for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
     {
-        StateParameter* const stateParameter(it.getValue());
+        Parameter* const stateParameter(it.getValue());
         delete stateParameter;
     }
 
-    for (StateCustomDataItenerator it = customData.begin(); it.valid(); it.next())
+    for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
     {
-        StateCustomData* const stateCustomData(it.getValue());
+        CustomData* const stateCustomData(it.getValue());
         delete stateCustomData;
     }
 
@@ -261,7 +261,7 @@ void StateSave::clear() noexcept
 // -----------------------------------------------------------------------
 // fillFromXmlElement
 
-bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
+bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 {
     CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
 
@@ -386,7 +386,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
                 else if (tag.equalsIgnoreCase("parameter"))
                 {
-                    StateParameter* const stateParameter(new StateParameter());
+                    Parameter* const stateParameter(new Parameter());
 
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
@@ -436,7 +436,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
                 else if (tag.equalsIgnoreCase("customdata") || tag.equalsIgnoreCase("custom-data"))
                 {
-                    StateCustomData* const stateCustomData(new StateCustomData());
+                    CustomData* const stateCustomData(new CustomData());
 
                     for (XmlElement* xmlSubData = xmlData->getFirstChildElement(); xmlSubData != nullptr; xmlSubData = xmlSubData->getNextElement())
                     {
@@ -472,7 +472,7 @@ bool StateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 // -----------------------------------------------------------------------
 // fillXmlStringFromStateSave
 
-String StateSave::toString() const
+String CarlaStateSave::toString() const
 {
     String content;
 
@@ -557,9 +557,9 @@ String StateSave::toString() const
     }
 #endif
 
-    for (StateParameterItenerator it = parameters.begin(); it.valid(); it.next())
+    for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
     {
-        StateParameter* const stateParameter(it.getValue());
+        Parameter* const stateParameter(it.getValue());
 
         String parameterXml("\n""   <Parameter>\n");
 
@@ -607,9 +607,9 @@ String StateSave::toString() const
         content << midiProgramXml;
     }
 
-    for (StateCustomDataItenerator it = customData.begin(); it.valid(); it.next())
+    for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
     {
-        StateCustomData* const stateCustomData(it.getValue());
+        CustomData* const stateCustomData(it.getValue());
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->type  != nullptr && stateCustomData->type[0] != '\0');
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->key   != nullptr && stateCustomData->key[0]  != '\0');
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->value != nullptr);

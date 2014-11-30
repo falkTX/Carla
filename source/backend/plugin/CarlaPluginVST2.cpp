@@ -40,6 +40,7 @@ using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -----------------------------------------------------
 
 const uint PLUGIN_CAN_PROCESS_REPLACING = 0x1000;
@@ -2547,6 +2548,8 @@ private:
 
 CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
+#endif
+
 CARLA_BACKEND_END_NAMESPACE
 
 #endif // ! USE_JUCE_FOR_VST
@@ -2561,7 +2564,7 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 
 #ifdef USE_JUCE_FOR_VST
     return newJuce(init, "VST");
-#else
+#elif 0 //se
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId))
@@ -2580,6 +2583,9 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     }
 
     return plugin;
+#else
+    return nullptr;
+    (void)init;
 #endif
 }
 

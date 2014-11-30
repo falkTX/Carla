@@ -27,41 +27,41 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
-struct StateParameter {
-    bool        isInput;
-    int32_t     index;
-    const char* name;
-    const char* symbol;
-    float       value;
+struct CarlaStateSave {
+    struct Parameter {
+        bool        isInput;
+        int32_t     index;
+        const char* name;
+        const char* symbol;
+        float       value;
 #ifndef BUILD_BRIDGE
-    uint8_t     midiChannel;
-    int16_t     midiCC;
+        uint8_t     midiChannel;
+        int16_t     midiCC;
 #endif
 
-    StateParameter() noexcept;
-    ~StateParameter() noexcept;
+        Parameter() noexcept;
+        ~Parameter() noexcept;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(StateParameter)
-};
+        CARLA_DECLARE_NON_COPY_STRUCT(Parameter)
+    };
 
-struct StateCustomData {
-    const char* type;
-    const char* key;
-    const char* value;
+    typedef LinkedList<Parameter*> ParameterList;
+    typedef LinkedList<Parameter*>::Itenerator ParameterItenerator;
 
-    StateCustomData() noexcept;
-    ~StateCustomData() noexcept;
+    struct CustomData {
+        const char* type;
+        const char* key;
+        const char* value;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(StateCustomData)
-};
+        CustomData() noexcept;
+        ~CustomData() noexcept;
 
-typedef LinkedList<StateParameter*> StateParameterList;
-typedef LinkedList<StateCustomData*> StateCustomDataList;
+        CARLA_DECLARE_NON_COPY_STRUCT(CustomData)
+    };
 
-typedef LinkedList<StateParameter*>::Itenerator StateParameterItenerator;
-typedef LinkedList<StateCustomData*>::Itenerator StateCustomDataItenerator;
+    typedef LinkedList<CustomData*> CustomDataList;
+    typedef LinkedList<CustomData*>::Itenerator CustomDataItenerator;
 
-struct StateSave {
     const char* type;
     const char* name;
     const char* label;
@@ -85,17 +85,17 @@ struct StateSave {
     int32_t     currentMidiProgram;
     const char* chunk;
 
-    StateParameterList parameters;
-    StateCustomDataList customData;
+    ParameterList parameters;
+    CustomDataList customData;
 
-    StateSave() noexcept;
-    ~StateSave() noexcept;
+    CarlaStateSave() noexcept;
+    ~CarlaStateSave() noexcept;
     void clear() noexcept;
 
     bool fillFromXmlElement(const juce::XmlElement* const xmlElement);
     juce::String toString() const;
 
-    CARLA_DECLARE_NON_COPY_STRUCT(StateSave)
+    CARLA_DECLARE_NON_COPY_STRUCT(CarlaStateSave)
 };
 
 static inline

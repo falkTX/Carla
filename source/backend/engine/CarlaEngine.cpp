@@ -1803,7 +1803,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
         if (isPreset || tagName.equalsIgnoreCase("plugin"))
         {
-            StateSave stateSave;
+            CarlaStateSave stateSave;
             stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
 
             callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);

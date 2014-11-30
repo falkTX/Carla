@@ -73,7 +73,7 @@ struct ParamSymbol {
 // Constructor and destructor
 
 CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const uint id)
-    : pData(new ProtectedData(engine, id, this))
+    : pData(new ProtectedData(engine, id))
 {
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_SAFE_ASSERT(id < engine->getMaxPluginNumber());
@@ -471,7 +471,7 @@ void CarlaPlugin::randomizeParameters() noexcept
     }
 }
 
-const StateSave& CarlaPlugin::getStateSave()
+const CarlaStateSave& CarlaPlugin::getStateSave()
 {
     pData->stateSave.clear();
     prepareForSave();
@@ -558,7 +558,7 @@ const StateSave& CarlaPlugin::getStateSave()
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
-        StateParameter* const stateParameter(new StateParameter());
+        CarlaStateSave::Parameter* const stateParameter(new CarlaStateSave::Parameter());
 
         stateParameter->isInput = (paramData.type == PARAMETER_INPUT);
         stateParameter->index   = paramData.index;
@@ -588,7 +588,7 @@ const StateSave& CarlaPlugin::getStateSave()
     {
         const CustomData& cData(it.getValue());
 
-        StateCustomData* stateCustomData(new StateCustomData());
+        CarlaStateSave::CustomData* stateCustomData(new CarlaStateSave::CustomData());
 
         stateCustomData->type  = carla_strdup(cData.type);
         stateCustomData->key   = carla_strdup(cData.key);
@@ -600,7 +600,7 @@ const StateSave& CarlaPlugin::getStateSave()
     return pData->stateSave;
 }
 
-void CarlaPlugin::loadStateSave(const StateSave& stateSave)
+void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 {
     char strBuf[STR_MAX+1];
     const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
@@ -608,9 +608,9 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only that which reload programs)
 
-    for (LinkedList<StateCustomData*>::Itenerator it = stateSave.customData.begin(); it.valid(); it.next())
+    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
-        const StateCustomData* const stateCustomData(it.getValue());
+        const CarlaStateSave::CustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
 
         bool wantData = false;
@@ -688,9 +688,9 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
 
     const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
 
-    for (LinkedList<StateParameter*>::Itenerator it = stateSave.parameters.begin(); it.valid(); it.next())
+    for (CarlaStateSave::ParameterItenerator it = stateSave.parameters.begin(); it.valid(); it.next())
     {
-        StateParameter* const stateParameter(it.getValue());
+        CarlaStateSave::Parameter* const stateParameter(it.getValue());
 
         int32_t index = -1;
 
@@ -778,9 +778,9 @@ void CarlaPlugin::loadStateSave(const StateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 5 - set custom data
 
-    for (LinkedList<StateCustomData*>::Itenerator it = stateSave.customData.begin(); it.valid(); it.next())
+    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
-        const StateCustomData* const stateCustomData(it.getValue());
+        const CarlaStateSave::CustomData* const stateCustomData(it.getValue());
         const char* const key(stateCustomData->key);
 
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
@@ -1338,7 +1338,13 @@ void CarlaPlugin::idle()
     CarlaString uiTitle(pData->name);
     uiTitle += " (GUI)";
 
-    if (CarlaPluginUI::tryTransientWinIdMatch(pData->osc.data.target != nullptr ? pData->osc.thread.getPid() : 0, uiTitle, pData->engine->getOptions().frontendWinId, true))
+    uint32_t pid = 0;
+#ifndef BUILD_BRIDGE
+    if (pData->oscData.target != nullptr && pData->childProcess != nullptr)
+        pid = pData->childProcess->getPID();
+#endif
+
+    if (CarlaPluginUI::tryTransientWinIdMatch(pid, uiTitle, pData->engine->getOptions().frontendWinId, true))
         pData->transientTryCounter = 0;
 }
 
@@ -1572,14 +1578,14 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     // FIXME - remove debug prints later
     carla_stdout("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
 
-    pData->osc.data.clear();
+    pData->oscData.clear();
 
     const int proto = lo_address_get_protocol(source);
 
     {
         const char* host = lo_address_get_hostname(source);
         const char* port = lo_address_get_port(source);
-        pData->osc.data.source = lo_address_new_with_proto(proto, host, port);
+        pData->oscData.source = lo_address_new_with_proto(proto, host, port);
 
         carla_stdout("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
     }
@@ -1587,9 +1593,9 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     {
         char* host = lo_url_get_hostname(url);
         char* port = lo_url_get_port(url);
-        pData->osc.data.path   = carla_strdup_free(lo_url_get_path(url));
-        pData->osc.data.target = lo_address_new_with_proto(proto, host, port);
-        carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, pData->osc.data.path);
+        pData->oscData.path   = carla_strdup_free(lo_url_get_path(url));
+        pData->oscData.target = lo_address_new_with_proto(proto, host, port);
+        carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, pData->oscData.path);
 
         std::free(host);
         std::free(port);
@@ -1607,7 +1613,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
     if (updateOscDataExtra())
         pData->engine->idleOsc();
 
-    osc_send_sample_rate(pData->osc.data, static_cast<float>(pData->engine->getSampleRate()));
+    osc_send_sample_rate(pData->oscData, static_cast<float>(pData->engine->getSampleRate()));
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
@@ -1618,24 +1624,24 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
         CARLA_SAFE_ASSERT_CONTINUE(cData.value != nullptr);
 
         if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0)
-            osc_send_configure(pData->osc.data, cData.key, cData.value);
+            osc_send_configure(pData->oscData, cData.key, cData.value);
     }
 
     if (pData->prog.current >= 0)
-        osc_send_program(pData->osc.data, static_cast<uint32_t>(pData->prog.current));
+        osc_send_program(pData->oscData, static_cast<uint32_t>(pData->prog.current));
 
     if (pData->midiprog.current >= 0)
     {
         const MidiProgramData& curMidiProg(pData->midiprog.getCurrent());
 
         if (getType() == PLUGIN_DSSI)
-            osc_send_program(pData->osc.data, curMidiProg.bank, curMidiProg.program);
+            osc_send_program(pData->oscData, curMidiProg.bank, curMidiProg.program);
         else
-            osc_send_midi_program(pData->osc.data, curMidiProg.bank, curMidiProg.program);
+            osc_send_midi_program(pData->oscData, curMidiProg.bank, curMidiProg.program);
     }
 
     for (uint32_t i=0; i < pData->param.count; ++i)
-        osc_send_control(pData->osc.data, pData->param.data[i].rindex, getParameterValue(i));
+        osc_send_control(pData->oscData, pData->param.data[i].rindex, getParameterValue(i));
 
     if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
         pData->transientTryCounter = 1;
@@ -1652,7 +1658,7 @@ void CarlaPlugin::updateOscURL()
 {
     const String newURL(String(pData->engine->getOscServerPathUDP()) + String("/") + String(pData->id));
 
-    osc_send_update_url(pData->osc.data, newURL.toRawUTF8());
+    osc_send_update_url(pData->oscData, newURL.toRawUTF8());
 }
 
 bool CarlaPlugin::waitForOscGuiShow()
@@ -1663,14 +1669,14 @@ bool CarlaPlugin::waitForOscGuiShow()
     // wait for UI 'update' call
     for (; i < oscUiTimeout/100; ++i)
     {
-        if (pData->osc.data.target != nullptr)
+        if (pData->oscData.target != nullptr)
         {
             carla_stdout("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
-            osc_send_show(pData->osc.data);
+            osc_send_show(pData->oscData);
             return true;
         }
 
-        if (pData->osc.thread.isThreadRunning())
+        if (pData->childProcess != nullptr && pData->childProcess->isRunning())
             carla_msleep(100);
         else
             return false;

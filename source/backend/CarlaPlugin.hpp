@@ -47,11 +47,7 @@ CARLA_BACKEND_START_NAMESPACE
 class CarlaEngineAudioPort;
 class CarlaEngineCVPort;
 class CarlaEngineEventPort;
-
-/*!
- * Save state data.
- */
-struct StateSave;
+struct CarlaStateSave;
 
 // -----------------------------------------------------------------------
 
@@ -396,14 +392,14 @@ public:
      *
      * @see loadStateSave()
      */
-    const StateSave& getStateSave();
+    const CarlaStateSave& getStateSave();
 
     /*!
      * Get the plugin's save state.
      *
      * @see getStateSave()
      */
-    void loadStateSave(const StateSave& stateSave);
+    void loadStateSave(const CarlaStateSave& stateSave);
 
     /*!
      * Save the current plugin state to @a filename.

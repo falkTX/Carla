@@ -58,7 +58,7 @@ protected:
             carla_stdout("Trying to start UI using \"%s\"", path.buffer());
 
             CarlaExternalUI::setData(path, getSampleRate(), getUiName());
-            CarlaExternalUI::startPipeServer();
+            CarlaExternalUI::startPipeServer(true);
         }
         else
         {

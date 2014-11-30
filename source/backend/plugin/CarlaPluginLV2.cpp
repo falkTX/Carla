@@ -42,6 +42,7 @@ using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -----------------------------------------------------
 
 // Maximum default buffer size
@@ -5951,12 +5952,15 @@ int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
 
 #undef lv2PluginPtr
 
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
 
+#if 0
     CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
@@ -5995,6 +5999,9 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     }
 
     return plugin;
+#endif
+    return nullptr;
+    (void)init;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

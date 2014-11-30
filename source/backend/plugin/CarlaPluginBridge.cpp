@@ -63,6 +63,7 @@ using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -------------------------------------------------------------------------------------------------------------------
 // call carla_shm_create with for a XXXXXX temp filename
 
@@ -356,8 +357,6 @@ public:
           leakDetector_BridgePlugin()
     {
         carla_debug("BridgePlugin::BridgePlugin(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
-
-        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_BRIDGE);
 
         pData->hints |= PLUGIN_IS_BRIDGE;
     }
@@ -2219,6 +2218,7 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BridgePlugin)
 };
+#endif
 
 CARLA_BACKEND_END_NAMESPACE
 
@@ -2232,7 +2232,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 {
     carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
-#ifndef BUILD_BRIDGE
+#if 0 //ndef BUILD_BRIDGE
     if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
@@ -2283,7 +2283,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     return nullptr;
 
     // unused
-    (void)bridgeBinary;
+    (void)bridgeBinary; (void)btype; (void)ptype;
 #endif
 }
 
@@ -2296,11 +2296,12 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType type,
                                        const int argc, const lo_arg* const* const argv, const char* const types);
 
-int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType type,
-                                const int argc, const lo_arg* const* const argv, const char* const types)
+int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType /*type*/,
+                                const int /*argc*/, const lo_arg* const* const /*argv*/, const char* const /*types*/)
 {
     CARLA_SAFE_ASSERT(plugin != nullptr && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0);
-    return bridgePlugin->setOscPluginBridgeInfo(type, argc, argv, types);
+    return 0;
+    //return bridgePlugin->setOscPluginBridgeInfo(type, argc, argv, types);
 }
 
 #undef bridgePlugin

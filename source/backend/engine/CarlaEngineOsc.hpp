@@ -108,6 +108,7 @@ private:
 
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
+    // Common OSC methods (all bridges)
     int handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source);
     int handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1);
 
@@ -115,11 +116,13 @@ private:
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
     int handleMsgUnregister();
 
+    // Common OSC methods (DSSI and bridge UIs)
     int handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 
+    // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2);
@@ -133,9 +136,6 @@ private:
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2);
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-
-    int handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2);
 #endif
 
     // -----------------------------------------------------------------------

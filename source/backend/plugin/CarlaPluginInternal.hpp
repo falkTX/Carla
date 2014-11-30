@@ -22,15 +22,19 @@
 #include "CarlaPluginThread.hpp"
 
 #include "CarlaLibUtils.hpp"
+#include "CarlaMutex.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
+#include "CarlaString.hpp"
 
 #include "CarlaMIDI.h"
 #include "RtLinkedList.hpp"
 
 #include "juce_audio_basics.h"
 
+using juce::ChildProcess;
 using juce::FloatVectorOperations;
+using juce::ScopedPointer;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -250,7 +254,12 @@ struct CarlaPlugin::ProtectedData {
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()
 
-    StateSave stateSave;
+#ifndef BUILD_BRIDGE
+    ScopedPointer<ChildProcess> childProcess;
+    CarlaOscData oscData;
+#endif
+
+    CarlaStateSave stateSave;
 
     struct ExternalNotes {
         CarlaMutex mutex;
@@ -297,19 +306,7 @@ struct CarlaPlugin::ProtectedData {
     } postProc;
 #endif
 
-    struct OSC {
-        CarlaOscData data;
-        CarlaPluginThread thread;
-
-        OSC(CarlaEngine* const engine, CarlaPlugin* const plugin) noexcept;
-
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        OSC() = delete;
-        CARLA_DECLARE_NON_COPY_STRUCT(OSC)
-#endif
-    } osc;
-
-    ProtectedData(CarlaEngine* const engine, const uint idx, CarlaPlugin* const plugin) noexcept;
+    ProtectedData(CarlaEngine* const engine, const uint idx) noexcept;
     ~ProtectedData() noexcept;
 
     // -------------------------------------------------------------------
@@ -359,8 +356,9 @@ struct CarlaPlugin::ProtectedData {
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
-    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
+    CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData);
 #endif
+    CARLA_LEAK_DETECTOR(ProtectedData);
 };
 
 CARLA_BACKEND_END_NAMESPACE

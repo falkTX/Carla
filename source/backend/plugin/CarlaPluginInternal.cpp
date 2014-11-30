@@ -432,13 +432,7 @@ CarlaPlugin::ProtectedData::PostProc::PostProc() noexcept
 
 // -----------------------------------------------------------------------
 
-CarlaPlugin::ProtectedData::OSC::OSC(CarlaEngine* const eng, CarlaPlugin* const plug) noexcept
-    : data(),
-      thread(eng, plug) {}
-
-// -----------------------------------------------------------------------
-
-CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx, CarlaPlugin* const plug) noexcept
+CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx) noexcept
     : engine(eng),
       client(nullptr),
       id(idx),
@@ -471,13 +465,17 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       custom(),
       masterMutex(),
       singleMutex(),
+#ifndef BUILD_BRIDGE
+      childProcess(),
+      oscData(),
+#endif
       stateSave(),
       extNotes(),
       postRtEvents(),
 #ifndef BUILD_BRIDGE
       postProc(),
 #endif
-      osc(eng, plug) {}
+      leakDetector_ProtectedData() {}
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {
