@@ -86,8 +86,7 @@ public:
     class Itenerator {
     public:
         Itenerator(const ListHead& queue) noexcept
-            : fData(nullptr),
-              fEntry(queue.next),
+            : fEntry(queue.next),
               fEntry2(fEntry->next),
               kQueue(queue)
         {
@@ -106,20 +105,31 @@ public:
             fEntry2 = (fEntry != nullptr) ? fEntry->next : nullptr;
         }
 
-        T& getValue() noexcept
+        T& getValue(T& fallback) const noexcept
         {
-            fData = list_entry(fEntry, Data, siblings);
-            return fData->value;
+            Data* const data(list_entry(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+            return data->value;
+        }
+
+        const T& getValue(const T& fallback) const noexcept
+        {
+            const Data* const data(list_entry_const(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+            return data->value;
         }
 
         void setValue(const T& value) noexcept
         {
-            fData = list_entry(fEntry, Data, siblings);
-            fData->value = value;
+            Data* const data(list_entry(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+            data->value = value;
         }
 
     private:
-        Data* fData;
         ListHead* fEntry;
         ListHead* fEntry2;
         const ListHead& kQueue;
@@ -137,12 +147,9 @@ public:
         if (fCount == 0)
             return;
 
-        ListHead* entry;
-        ListHead* entry2;
-
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
-            Data* const data = list_entry(entry, Data, siblings);
+            Data* const data(list_entry(entry, Data, siblings));
             CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
 
             _deallocate(data);
@@ -181,20 +188,18 @@ public:
         return _add(value, false, it.fEntry->prev);
     }
 
-    const T& getAt(const std::size_t index, const T& fallback) const noexcept
+    T getAt(const std::size_t index, T& fallback, const bool removeObj) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         std::size_t i = 0;
-        ListHead* entry;
-        ListHead* entry2;
 
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
             if (index != i++)
                 continue;
 
-            return _get(entry, fallback);
+            return _get(entry, fallback, removeObj);
         }
 
         return fallback;
@@ -205,10 +210,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         std::size_t i = 0;
-        ListHead* entry;
-        ListHead* entry2;
 
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
             if (index != i++)
                 continue;
@@ -219,20 +222,18 @@ public:
         return fallback;
     }
 
-    T getAt(const std::size_t index, T& fallback, const bool removeObj) noexcept
+    const T& getAt(const std::size_t index, const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         std::size_t i = 0;
-        ListHead* entry;
-        ListHead* entry2;
 
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
             if (index != i++)
                 continue;
 
-            return _get(entry, fallback, removeObj);
+            return _get(entry, fallback);
         }
 
         return fallback;
@@ -283,17 +284,16 @@ public:
     void remove(Itenerator& it) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(it.fEntry != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(it.fData != nullptr,);
 
-        _delete(it.fEntry, it.fData);
+        Data* const data(list_entry(it.fEntry, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+        _delete(it.fEntry, data);
     }
 
     bool removeOne(const T& value) noexcept
     {
-        ListHead* entry;
-        ListHead* entry2;
-
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
             Data* const data = list_entry(entry, Data, siblings);
             CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
@@ -311,10 +311,7 @@ public:
 
     void removeAll(const T& value) noexcept
     {
-        ListHead* entry;
-        ListHead* entry2;
-
-        for (entry = fQueue.next, entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
+        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
         {
             Data* const data = list_entry(entry, Data, siblings);
             CARLA_SAFE_ASSERT_CONTINUE(data != nullptr);
@@ -326,25 +323,20 @@ public:
         }
     }
 
-    void spliceAppendTo(AbstractLinkedList<T>& list) noexcept
+    // move data to a new list, and clear ourselves
+    void moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
     {
-        if (fQueue.next == &fQueue)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0,);
 
-        __list_splice_tail(&fQueue, &list.fQueue);
+        if (inTail)
+            __list_splice_tail(&fQueue, &list.fQueue);
+        else
+            __list_splice(&fQueue, &list.fQueue);
+
+        //! @a list gets our items
         list.fCount += fCount;
 
-        _init();
-    }
-
-    void spliceInsertInto(AbstractLinkedList<T>& list) noexcept
-    {
-        if (fQueue.next == &fQueue)
-            return;
-
-        __list_splice(&fQueue, &list.fQueue);
-        list.fCount += fCount;
-
+        //! and we get nothing
         _init();
     }
 
@@ -365,59 +357,63 @@ private:
         fQueue.prev = &fQueue;
     }
 
-    void _createData(Data* const data, const T& value) noexcept
-    {
-        ++fCount;
-        data->value = value;
-        //std::memcpy(data->value, value, kDataSize);
-    }
-
     bool _add(const T& value, const bool inTail, ListHead* const queue) noexcept
     {
-        if (Data* const data = _allocate())
+        return _add_internal(_allocate(), value, inTail, queue);
+    }
+
+    bool _add_internal(Data* const data, const T& value, const bool inTail, ListHead* const queue) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(data        != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(queue       != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(queue->prev != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(queue->next != nullptr, false);
+
+        data->value = value;
+
+        ListHead* const siblings(&data->siblings);
+
+        if (inTail)
         {
-            _createData(data, value);
+            siblings->prev = queue->prev;
+            siblings->next = queue;
 
-            if (inTail)
-                __list_add(data->siblings, queue->prev, queue);
-            else
-                __list_add(data->siblings, queue, queue->next);
+            queue->prev->next = siblings;
+            queue->prev       = siblings;
+        }
+        else
+        {
+            siblings->prev = queue;
+            siblings->next = queue->next;
 
-            return true;
+            queue->next->prev = siblings;
+            queue->next       = siblings;
         }
 
-        return false;
+        ++fCount;
+        return true;
     }
 
     void _delete(ListHead* const entry, Data* const data) noexcept
     {
-        __list_del(entry->prev, entry->next);
+        CARLA_SAFE_ASSERT_RETURN(entry       != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(entry->prev != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(entry->next != nullptr,);
+
+        --fCount;
+
+        entry->next->prev = entry->prev;
+        entry->prev->next = entry->next;
+
         entry->next = nullptr;
         entry->prev = nullptr;
 
         _deallocate(data);
-        --fCount;
-    }
-
-    const T& _get(ListHead* const entry, const T& fallback) const noexcept
-    {
-        const Data* const data = list_entry_const(entry, Data, siblings);
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
-
-        return data->value;
-    }
-
-    T& _get(ListHead* const entry, T& fallback) const noexcept
-    {
-        Data* const data = list_entry(entry, Data, siblings);
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
-
-        return data->value;
     }
 
     T _get(ListHead* const entry, T& fallback, const bool removeObj) noexcept
     {
-        Data* const data = list_entry(entry, Data, siblings);
+        Data* const data(list_entry(entry, Data, siblings));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
 
         if (! removeObj)
@@ -430,25 +426,20 @@ private:
         return value;
     }
 
-   /*
-    * Insert a new entry between two known consecutive entries.
-    */
-    static void __list_add(ListHead& newl, ListHead* const prev, ListHead* const next) noexcept
+    T& _get(ListHead* const entry, T& fallback) const noexcept
     {
-        next->prev = &newl;
-        newl.next  = next;
-        newl.prev  = prev;
-        prev->next = &newl;
+        Data* const data(list_entry(entry, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+        return data->value;
     }
 
-   /*
-    * Delete a list entry by making the prev/next entries
-    * point to each other.
-    */
-    static void __list_del(ListHead* const prev, ListHead* const next) noexcept
+    const T& _get(ListHead* const entry, const T& fallback) const noexcept
     {
-        next->prev = prev;
-        prev->next = next;
+        const Data* const data(list_entry_const(entry, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+        return data->value;
     }
 
     static void __list_splice(ListHead* const list, ListHead* const head) noexcept
@@ -500,8 +491,6 @@ protected:
 
     void _deallocate(typename AbstractLinkedList<T>::Data* const dataPtr) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
-
         std::free(dataPtr);
     }
 

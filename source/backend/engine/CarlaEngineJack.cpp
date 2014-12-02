@@ -568,19 +568,25 @@ public:
     {
         for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin(); it.valid(); it.next())
         {
-            CarlaEngineJackAudioPort* const port(it.getValue());
+            CarlaEngineJackAudioPort* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+
             port->invalidate();
         }
 
         for (LinkedList<CarlaEngineJackCVPort*>::Itenerator it = fCVPorts.begin(); it.valid(); it.next())
         {
-            CarlaEngineJackCVPort* const port(it.getValue());
+            CarlaEngineJackCVPort* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+
             port->invalidate();
         }
 
         for (LinkedList<CarlaEngineJackEventPort*>::Itenerator it = fEventPorts.begin(); it.valid(); it.next())
         {
-            CarlaEngineJackEventPort* const port(it.getValue());
+            CarlaEngineJackEventPort* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+
             port->invalidate();
         }
 
@@ -887,11 +893,11 @@ public:
             return;
 
         LinkedList<uint> newPlugins;
-        fNewGroups.spliceInsertInto(newPlugins);
+        fNewGroups.moveTo(newPlugins);
 
         for (LinkedList<uint>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
         {
-            const uint groupId(it.getValue());
+            const uint groupId(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
 
             const char* const groupName(fUsedGroups.getGroupName(groupId));
@@ -1102,7 +1108,10 @@ public:
 
         for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin(); it.valid(); it.next())
         {
-            const ConnectionToId& connectionToId(it.getValue());
+            static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+
+            const ConnectionToId& connectionToId(it.getValue(fallback));
+            CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
             if (connectionToId.id == connectionId)
             {
@@ -1596,7 +1605,10 @@ protected:
         {
             for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin(); it.valid(); it.next())
             {
-                const ConnectionToId& connectionToId(it.getValue());
+                static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+
+                const ConnectionToId& connectionToId(it.getValue(fallback));
+                CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
                 if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
                     connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
@@ -1619,9 +1631,12 @@ protected:
 
         for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin(); it.valid(); it.next())
         {
-            GroupNameToId& groupNameToId(it.getValue());
+            static GroupNameToId groupNameFallback = { 0, { '\0' } };
 
-            if (std::strcmp(groupNameToId.name, oldName) == 0)
+            GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
+
+            if (std::strncmp(groupNameToId.name, oldName, STR_MAX) == 0)
             {
                 groupNameToId.rename(newName);
                 callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, groupNameToId.group, 0, 0, 0.0f, groupNameToId.name);
@@ -1655,9 +1670,12 @@ protected:
 
         for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin(); it.valid(); it.next())
         {
-            PortNameToId& portNameToId(it.getValue());
+            static PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
-            if (std::strcmp(portNameToId.fullName, oldFullName) == 0)
+            PortNameToId& portNameToId(it.getValue(portNameFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+            if (std::strncmp(portNameToId.fullName, oldFullName, STR_MAX) == 0)
             {
                 CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group == groupId);
 

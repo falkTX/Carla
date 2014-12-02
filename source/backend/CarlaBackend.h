@@ -1423,6 +1423,19 @@ typedef struct {
      */
     const char* value;
 
+#ifdef __cplusplus
+    /*!
+     * Check if valid.
+     */
+    bool isValid() const noexcept
+    {
+        if (type  == nullptr || type[0] == '\0') return false;
+        if (key   == nullptr || key [0] == '\0') return false;
+        if (value == nullptr)                    return false;
+        return true;
+    }
+#endif /* __cplusplus */
+
 } CustomData;
 
 /*!

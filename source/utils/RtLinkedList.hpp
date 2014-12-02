@@ -37,9 +37,9 @@ public:
     class Pool
     {
     public:
-        Pool(const size_t minPreallocated, const size_t maxPreallocated) noexcept
-            : fHandle(nullptr),
-              kDataSize(sizeof(typename AbstractLinkedList<T>::Data))
+        Pool(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
+            : kDataSize(sizeof(typename AbstractLinkedList<T>::Data)),
+              fHandle(nullptr)
         {
             resize(minPreallocated, maxPreallocated);
         }
@@ -65,10 +65,12 @@ public:
 
         void deallocate(void* const dataPtr) const noexcept
         {
+            CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
+
             rtsafe_memory_pool_deallocate(fHandle, dataPtr);
         }
 
-        void resize(const size_t minPreallocated, const size_t maxPreallocated) noexcept
+        void resize(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
         {
             if (fHandle != nullptr)
             {
@@ -91,8 +93,9 @@ public:
         }
 
     private:
+        const std::size_t kDataSize;
+
         mutable RtMemPool_Handle fHandle;
-        const size_t             kDataSize;
 
         CARLA_PREVENT_HEAP_ALLOCATION
         CARLA_DECLARE_NON_COPY_CLASS(Pool)
@@ -114,25 +117,19 @@ public:
         return _add_sleepy(value, false);
     }
 
-    void resize(const size_t minPreallocated, const size_t maxPreallocated) noexcept
+    void resize(const std::size_t minPreallocated, const std::size_t maxPreallocated) noexcept
     {
+        CARLA_SAFE_ASSERT(this->fCount == 0);
         this->clear();
 
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void spliceAppendTo(RtLinkedList<T>& list) noexcept
+    void moveTo(RtLinkedList<T>& list, const bool inTail) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
 
-        AbstractLinkedList<T>::spliceAppendTo(list);
-    }
-
-    void spliceInsertInto(RtLinkedList<T>& list) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
-
-        AbstractLinkedList<T>::spliceInsertInto(list);
+        AbstractLinkedList<T>::moveTo(list, inTail);
     }
 
 protected:
@@ -148,8 +145,6 @@ protected:
 
     void _deallocate(typename AbstractLinkedList<T>::Data* const dataPtr) noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr,);
-
         fMemPool.deallocate(dataPtr);
     }
 
@@ -158,19 +153,7 @@ private:
 
     bool _add_sleepy(const T& value, const bool inTail) noexcept
     {
-        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
-        {
-            this->_createData(data, value);
-
-            if (inTail)
-                this->__list_add(data->siblings, this->fQueue.prev, &(this->fQueue));
-            else
-                this->__list_add(data->siblings, &(this->fQueue), this->fQueue.next);
-
-            return true;
-        }
-
-        return false;
+        return this->_add_internal(_allocate_sleepy(), value, inTail, &this->fQueue);
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION

@@ -136,7 +136,7 @@ protected:
         std::size_t i=0;
         for (LinkedList<const char*>::Itenerator it = list.begin(); it.valid(); it.next(), ++i)
         {
-            tmpList[i] = carla_strdup_safe(it.getValue());
+            tmpList[i] = carla_strdup_safe(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_BREAK(tmpList[i] != nullptr);
         }
         CARLA_SAFE_ASSERT(i == count);
@@ -163,7 +163,7 @@ public:
         : LinkedList<const char*>()
     {
         for (Itenerator it = list.begin(); it.valid(); it.next())
-            LinkedList<const char*>::append(carla_strdup_safe(it.getValue()));
+            LinkedList<const char*>::append(carla_strdup_safe(it.getValue(nullptr)));
     }
 
     ~CarlaStringList() noexcept override
@@ -177,7 +177,7 @@ public:
     {
         for (Itenerator it = begin(); it.valid(); it.next())
         {
-            if (const char* const string = it.getValue())
+            if (const char* const string = it.getValue(nullptr))
                 delete[] string;
         }
 
@@ -246,7 +246,7 @@ public:
 
     void remove(Itenerator& it) noexcept
     {
-        if (const char* const string = it.getValue())
+        if (const char* const string = it.getValue(nullptr))
             delete[] string;
 
         LinkedList<const char*>::remove(it);
@@ -258,7 +258,7 @@ public:
 
         for (Itenerator it = begin(); it.valid(); it.next())
         {
-            const char* const stringComp(it.getValue());
+            const char* const stringComp(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
 
             if (std::strcmp(string, stringComp) != 0)
@@ -278,7 +278,7 @@ public:
 
         for (Itenerator it = begin(); it.valid(); it.next())
         {
-            const char* const stringComp(it.getValue());
+            const char* const stringComp(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
 
             if (std::strcmp(string, stringComp) != 0)
@@ -317,7 +317,7 @@ public:
 
         for (Itenerator it = list.begin(); it.valid(); it.next())
         {
-            if (const char* const string = carla_strdup_safe(it.getValue()))
+            if (const char* const string = carla_strdup_safe(it.getValue(nullptr)))
                 LinkedList<const char*>::append(string);
         }
 

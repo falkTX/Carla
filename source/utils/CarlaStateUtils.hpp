@@ -55,6 +55,7 @@ struct CarlaStateSave {
 
         CustomData() noexcept;
         ~CustomData() noexcept;
+        bool isValid() const noexcept;
 
         CARLA_DECLARE_NON_COPY_STRUCT(CustomData)
     };

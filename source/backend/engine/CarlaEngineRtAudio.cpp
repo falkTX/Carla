@@ -343,7 +343,9 @@ public:
 
         for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
         {
-            MidiInPort& inPort(it.getValue());
+            static MidiInPort fallback = { nullptr, { '\0' } };
+
+            MidiInPort& inPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
             inPort.port->cancelCallback();
@@ -358,7 +360,9 @@ public:
 
         for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
         {
-            MidiOutPort& outPort(it.getValue());
+            static MidiOutPort fallback = { nullptr, { '\0' } };
+
+            MidiOutPort& outPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
             outPort.port->closePort();
@@ -516,7 +520,8 @@ public:
 
         for (LinkedList<uint>::Itenerator it = graph->audio.connectedIn1.begin(); it.valid(); it.next())
         {
-            const uint& portId(it.getValue());
+            const uint& portId(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
             CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
 
             ConnectionToId connectionToId;
@@ -531,7 +536,8 @@ public:
 
         for (LinkedList<uint>::Itenerator it = graph->audio.connectedIn2.begin(); it.valid(); it.next())
         {
-            const uint& portId(it.getValue());
+            const uint& portId(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
             CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
 
             ConnectionToId connectionToId;
@@ -546,7 +552,8 @@ public:
 
         for (LinkedList<uint>::Itenerator it = graph->audio.connectedOut1.begin(); it.valid(); it.next())
         {
-            const uint& portId(it.getValue());
+            const uint& portId(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
             CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
 
             ConnectionToId connectionToId;
@@ -561,7 +568,8 @@ public:
 
         for (LinkedList<uint>::Itenerator it = graph->audio.connectedOut2.begin(); it.valid(); it.next())
         {
-            const uint& portId(it.getValue());
+            const uint& portId(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
             CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
 
             ConnectionToId connectionToId;
@@ -578,7 +586,10 @@ public:
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            const MidiInPort& inPort(it.getValue());
+            static const MidiInPort fallback = { nullptr, { '\0' } };
+
+            const MidiInPort& inPort(it.getValue(fallback));
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
             const uint portId(graph->midi.getPortId(true, inPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < graph->midi.ins.count());
@@ -597,7 +608,10 @@ public:
 
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            const MidiOutPort& outPort(it.getValue());
+            static const MidiOutPort fallback = { nullptr, { '\0' } };
+
+            const MidiOutPort& outPort(it.getValue(fallback));
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
             const uint portId(graph->midi.getPortId(false, outPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < graph->midi.outs.count());
@@ -684,8 +698,12 @@ protected:
 
             for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin(); it.valid(); it.next())
             {
-                const RtMidiEvent& midiEvent(it.getValue());
-                EngineEvent&       engineEvent(pData->events.in[engineEventIndex++]);
+                static const RtMidiEvent fallback = { 0, 0, { 0 } };
+
+                const RtMidiEvent& midiEvent(it.getValue(fallback));
+                CARLA_SAFE_ASSERT_CONTINUE(midiEvent.size > 0);
+
+                EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
 
                 if (midiEvent.time < pData->timeInfo.frame)
                 {
@@ -754,7 +772,9 @@ protected:
 
                     for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
                     {
-                        MidiOutPort& outPort(it.getValue());
+                        static MidiOutPort fallback = { nullptr, { '\0' } };
+
+                        MidiOutPort& outPort(it.getValue(fallback));
                         CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
                         outPort.port->sendMessage(&fMidiOutVector);
@@ -932,10 +952,12 @@ protected:
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
-            MidiInPort& inPort(it.getValue());
+            static MidiInPort fallback = { nullptr, { '\0' } };
+
+            MidiInPort& inPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            if (std::strcmp(inPort.name, portName) != 0)
+            if (std::strncmp(inPort.name, portName, STR_MAX) != 0)
                 continue;
 
             inPort.port->cancelCallback();
@@ -962,10 +984,12 @@ protected:
 
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
         {
-            MidiOutPort& outPort(it.getValue());
+            static MidiOutPort fallback = { nullptr, { '\0' } };
+
+            MidiOutPort& outPort(it.getValue(fallback));
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
-            if (std::strcmp(outPort.name, portName) != 0)
+            if (std::strncmp(outPort.name, portName, STR_MAX) != 0)
                 continue;
 
             outPort.port->closePort();
@@ -1046,7 +1070,7 @@ private:
 
         void splice()
         {
-            dataPending.spliceAppendTo(data);
+            dataPending.moveTo(data, true /* append */);
         }
     };
 

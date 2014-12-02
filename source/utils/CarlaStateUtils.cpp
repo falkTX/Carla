@@ -162,6 +162,14 @@ CarlaStateSave::CustomData::~CustomData() noexcept
     }
 }
 
+bool CarlaStateSave::CustomData::isValid() const noexcept
+{
+    if (type  == nullptr || type[0] == '\0') return false;
+    if (key   == nullptr || key [0] == '\0') return false;
+    if (value == nullptr)                    return false;
+    return true;
+}
+
 // -----------------------------------------------------------------------
 // StateSave
 
@@ -244,13 +252,13 @@ void CarlaStateSave::clear() noexcept
 
     for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
     {
-        Parameter* const stateParameter(it.getValue());
+        Parameter* const stateParameter(it.getValue(nullptr));
         delete stateParameter;
     }
 
     for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
     {
-        CustomData* const stateCustomData(it.getValue());
+        CustomData* const stateCustomData(it.getValue(nullptr));
         delete stateCustomData;
     }
 
@@ -451,7 +459,10 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                             stateCustomData->value = carla_strdup(cText.toRawUTF8()); //xmlSafeStringCharDup(cText, false);
                     }
 
-                    customData.append(stateCustomData);
+                    if (stateCustomData->isValid())
+                        customData.append(stateCustomData);
+                    else
+                        carla_stderr("Reading CustomData property failed, missing data");
                 }
 
                 // -------------------------------------------------------
@@ -559,7 +570,8 @@ String CarlaStateSave::toString() const
 
     for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
     {
-        Parameter* const stateParameter(it.getValue());
+        Parameter* const stateParameter(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(stateParameter != nullptr);
 
         String parameterXml("\n""   <Parameter>\n");
 
@@ -609,10 +621,9 @@ String CarlaStateSave::toString() const
 
     for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
     {
-        CustomData* const stateCustomData(it.getValue());
-        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->type  != nullptr && stateCustomData->type[0] != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->key   != nullptr && stateCustomData->key[0]  != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->value != nullptr);
+        CustomData* const stateCustomData(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
         String customDataXml("\n""   <CustomData>\n");
         customDataXml << "    <Type>" << xmlSafeString(stateCustomData->type, true) << "</Type>\n";

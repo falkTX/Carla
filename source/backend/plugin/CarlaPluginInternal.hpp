@@ -22,12 +22,12 @@
 #include "CarlaPluginThread.hpp"
 
 #include "CarlaLibUtils.hpp"
-#include "CarlaMutex.hpp"
 #include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
-#include "CarlaString.hpp"
 
 #include "CarlaMIDI.h"
+#include "CarlaMutex.hpp"
+#include "CarlaString.hpp"
 #include "RtLinkedList.hpp"
 
 #include "juce_audio_basics.h"

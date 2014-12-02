@@ -50,7 +50,7 @@ struct GroupNameToId {
     {
         if (groupNameToId.group != group)
             return false;
-        if (std::strcmp(groupNameToId.name, name) != 0)
+        if (std::strncmp(groupNameToId.name, name, STR_MAX) != 0)
             return false;
         return true;
     }
@@ -81,9 +81,12 @@ struct PatchbayGroupList {
 
         for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
         {
-            const GroupNameToId& groupNameToId(it.getValue());
+            static const GroupNameToId groupNameFallback = { 0, { '\0' } };
 
-            if (std::strcmp(groupNameToId.name, groupName) == 0)
+            const GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
+
+            if (std::strncmp(groupNameToId.name, groupName, STR_MAX) == 0)
                 return groupNameToId.group;
         }
 
@@ -96,7 +99,10 @@ struct PatchbayGroupList {
 
         for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
         {
-            const GroupNameToId& groupNameToId(it.getValue());
+            static const GroupNameToId groupNameFallback = { 0, { '\0' } };
+
+            const GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
 
             if (groupNameToId.group == groupId)
                 return groupNameToId.name;
@@ -111,7 +117,7 @@ struct PatchbayGroupList {
 struct PortNameToId {
     uint group;
     uint port;
-    char name[STR_MAX+1]; // locally unique
+    char name[STR_MAX+1]; // locally unique (within the same group)
     char fullName[STR_MAX+1]; // globally unique
 
     void clear() noexcept
@@ -142,9 +148,9 @@ struct PortNameToId {
     {
         if (portNameToId.group != group || portNameToId.port != port)
             return false;
-        if (std::strcmp(portNameToId.name, name) != 0)
+        if (std::strncmp(portNameToId.name, name, STR_MAX) != 0)
             return false;
-        if (std::strcmp(portNameToId.fullName, fullName) != 0)
+        if (std::strncmp(portNameToId.fullName, fullName, STR_MAX) != 0)
             return false;
         return true;
     }
@@ -175,7 +181,10 @@ struct PatchbayPortList {
 
         for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
         {
-            const PortNameToId& portNameToId(it.getValue());
+            static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
+
+            const PortNameToId& portNameToId(it.getValue(portNameFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
 
             if (portNameToId.group == groupId && portNameToId.port == portId)
                 return portNameToId.fullName;
@@ -192,9 +201,10 @@ struct PatchbayPortList {
 
         for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
         {
-            const PortNameToId& portNameToId(it.getValue());
+            const PortNameToId& portNameToId(it.getValue(fallback));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
 
-            if (std::strcmp(portNameToId.fullName, fullPortName) == 0)
+            if (std::strncmp(portNameToId.fullName, fullPortName, STR_MAX) == 0)
                 return portNameToId;
         }
 

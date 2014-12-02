@@ -44,6 +44,8 @@ static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 static const CustomData      kCustomDataNull      = { nullptr, nullptr, nullptr };
 
+static const PluginPostRtEvent kPluginPostRtEventFallback = { kPluginPostRtEventNull, 0, 0, 0.0f };
+
 // -------------------------------------------------------------------
 // ParamSymbol struct, needed for CarlaPlugin::loadStateSave()
 
@@ -586,7 +588,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave()
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData(it.getValue());
+        const CustomData& cData(it.getValue(kCustomDataNull));
+        CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
 
         CarlaStateSave::CustomData* stateCustomData(new CarlaStateSave::CustomData());
 
@@ -1194,28 +1197,25 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     // Check if we already have this key
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        CustomData& cData(it.getValue());
+        CustomData& customData(it.getValue());
+        CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
 
-        CARLA_SAFE_ASSERT_CONTINUE(cData.type != nullptr && cData.type[0] != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(cData.key != nullptr && cData.key[0] != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(cData.value != nullptr);
-
-        if (std::strcmp(cData.key, key) == 0)
+        if (std::strcmp(customData.key, key) == 0)
         {
-            if (cData.value != nullptr)
-                delete[] cData.value;
+            if (customData.value != nullptr)
+                delete[] customData.value;
 
-            cData.value = carla_strdup(value);
+            customData.value = carla_strdup(value);
             return;
         }
     }
 
     // Otherwise store it
-    CustomData newData;
-    newData.type  = carla_strdup(type);
-    newData.key   = carla_strdup(key);
-    newData.value = carla_strdup(value);
-    pData->custom.append(newData);
+    CustomData customData;
+    customData.type  = carla_strdup(type);
+    customData.key   = carla_strdup(key);
+    customData.value = carla_strdup(value);
+    pData->custom.append(customData);
 }
 
 void CarlaPlugin::setChunkData(const void* const data, const std::size_t dataSize)
@@ -1617,14 +1617,11 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData(it.getValue());
+        const CustomData& customData(it.getValue(kCustomDataNull));
+        CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
 
-        CARLA_SAFE_ASSERT_CONTINUE(cData.type != nullptr && cData.type[0] != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(cData.key != nullptr && cData.key[0] != '\0');
-        CARLA_SAFE_ASSERT_CONTINUE(cData.value != nullptr);
-
-        if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0)
-            osc_send_configure(pData->oscData, cData.key, cData.value);
+        if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_STRING) == 0)
+            osc_send_configure(pData->oscData, customData.key, customData.value);
     }
 
     if (pData->prog.current >= 0)
@@ -1757,7 +1754,8 @@ void CarlaPlugin::postRtEventsRun()
 
     for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin(); it.valid(); it.next())
     {
-        const PluginPostRtEvent& event(it.getValue());
+        const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
 
         switch (event.type)
         {

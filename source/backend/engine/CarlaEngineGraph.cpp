@@ -114,10 +114,13 @@ const char* RackGraph::MIDI::getName(const bool isInput, const uint portId) cons
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
     {
-        const PortNameToId& port(it.getValue());
+        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
-        if (port.port == portId)
-            return port.name;
+        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+        if (portNameToId.port == portId)
+            return portNameToId.name;
     }
 
     return nullptr;
@@ -127,13 +130,16 @@ uint RackGraph::MIDI::getPortId(const bool isInput, const char portName[], bool*
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
     {
-        const PortNameToId& port(it.getValue());
+        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
-        if (std::strcmp(port.name, portName) == 0)
+        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+        if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
         {
             if (ok != nullptr)
                 *ok = true;
-            return port.port;
+            return portNameToId.port;
         }
     }
 
@@ -315,28 +321,31 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
-        const ConnectionToId& connection(it.getValue());
+        static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
-        if (connection.id != connectionId)
+        const ConnectionToId& connectionToId(it.getValue(fallback));
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+        if (connectionToId.id != connectionId)
             continue;
 
         uint otherGroup, otherPort, carlaPort;
 
-        if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
+        if (connectionToId.groupA == RACK_GRAPH_GROUP_CARLA)
         {
-            CARLA_SAFE_ASSERT_RETURN(connection.groupB != RACK_GRAPH_GROUP_CARLA, false);
+            CARLA_SAFE_ASSERT_RETURN(connectionToId.groupB != RACK_GRAPH_GROUP_CARLA, false);
 
-            carlaPort  = connection.portA;
-            otherGroup = connection.groupB;
-            otherPort  = connection.portB;
+            carlaPort  = connectionToId.portA;
+            otherGroup = connectionToId.groupB;
+            otherPort  = connectionToId.portB;
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(connection.groupB == RACK_GRAPH_GROUP_CARLA, false);
+            CARLA_SAFE_ASSERT_RETURN(connectionToId.groupB == RACK_GRAPH_GROUP_CARLA, false);
 
-            carlaPort  = connection.portB;
-            otherGroup = connection.groupA;
-            otherPort  = connection.portA;
+            carlaPort  = connectionToId.portB;
+            otherGroup = connectionToId.groupA;
+            otherPort  = connectionToId.portA;
         }
 
         CARLA_SAFE_ASSERT_RETURN(carlaPort > RACK_GRAPH_CARLA_PORT_NULL && carlaPort < RACK_GRAPH_CARLA_PORT_MAX, false);
@@ -387,7 +396,7 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
             return false;
         }
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
+        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
         return true;
@@ -424,25 +433,28 @@ const char* const* RackGraph::getConnections() const noexcept
 
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
-        const ConnectionToId& connection(it.getValue());
+        static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+
+        const ConnectionToId& connectionToId(it.getValue(fallback));
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
         uint otherGroup, otherPort, carlaPort;
 
-        if (connection.groupA == RACK_GRAPH_GROUP_CARLA)
+        if (connectionToId.groupA == RACK_GRAPH_GROUP_CARLA)
         {
-            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB != RACK_GRAPH_GROUP_CARLA);
+            CARLA_SAFE_ASSERT_CONTINUE(connectionToId.groupB != RACK_GRAPH_GROUP_CARLA);
 
-            carlaPort  = connection.portA;
-            otherGroup = connection.groupB;
-            otherPort  = connection.portB;
+            carlaPort  = connectionToId.portA;
+            otherGroup = connectionToId.groupB;
+            otherPort  = connectionToId.portB;
         }
         else
         {
-            CARLA_SAFE_ASSERT_CONTINUE(connection.groupB == RACK_GRAPH_GROUP_CARLA);
+            CARLA_SAFE_ASSERT_CONTINUE(connectionToId.groupB == RACK_GRAPH_GROUP_CARLA);
 
-            carlaPort  = connection.portB;
-            otherGroup = connection.groupA;
-            otherPort  = connection.portA;
+            carlaPort  = connectionToId.portB;
+            otherGroup = connectionToId.groupA;
+            otherPort  = connectionToId.portA;
         }
 
         CARLA_SAFE_ASSERT_CONTINUE(carlaPort > RACK_GRAPH_CARLA_PORT_NULL && carlaPort < RACK_GRAPH_CARLA_PORT_MAX);
@@ -679,7 +691,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         // connect input buffers
         for (LinkedList<uint>::Itenerator it = audio.connectedIn1.begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
+            const uint& port(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
             CARLA_SAFE_ASSERT_CONTINUE(port < inputs);
 
             if (noConnections)
@@ -700,7 +713,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
         for (LinkedList<uint>::Itenerator it = audio.connectedIn2.begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
+            const uint& port(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
             CARLA_SAFE_ASSERT_CONTINUE(port < inputs);
 
             if (noConnections)
@@ -734,7 +748,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     {
         for (LinkedList<uint>::Itenerator it = audio.connectedOut1.begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
+            const uint& port(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
             CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
 
             FloatVectorOperations::add(outBuf[port], audio.outBuf[0], iframes);
@@ -745,7 +760,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     {
         for (LinkedList<uint>::Itenerator it = audio.connectedOut2.begin(); it.valid(); it.next())
         {
-            const uint& port(it.getValue());
+            const uint& port(it.getValue(0));
+            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
             CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
 
             FloatVectorOperations::add(outBuf[port], audio.outBuf[1], iframes);
@@ -1317,24 +1333,27 @@ bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint connectionI
 
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
-        const ConnectionToId& connection(it.getValue());
+        static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
-        if (connection.id != connectionId)
+        const ConnectionToId& connectionToId(it.getValue(fallback));
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+        if (connectionToId.id != connectionId)
             continue;
 
-        uint adjustedPortA = connection.portA;
-        uint adjustedPortB = connection.portB;
+        uint adjustedPortA = connectionToId.portA;
+        uint adjustedPortB = connectionToId.portB;
 
         if (! adjustPatchbayPortIdForJuce(adjustedPortA))
             return false;
         if (! adjustPatchbayPortIdForJuce(adjustedPortB))
             return false;
 
-        if (! graph.removeConnection(connection.groupA, static_cast<int>(adjustedPortA),
-                                     connection.groupB, static_cast<int>(adjustedPortB)))
+        if (! graph.removeConnection(connectionToId.groupA, static_cast<int>(adjustedPortA),
+                                     connectionToId.groupB, static_cast<int>(adjustedPortB)))
             return false;
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connection.id, 0, 0, 0.0f, nullptr);
+        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
         return true;
@@ -1421,12 +1440,15 @@ const char* const* PatchbayGraph::getConnections() const
 
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
-        const ConnectionToId& connection(it.getValue());
+        static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
-        AudioProcessorGraph::Node* const nodeA(graph.getNodeForId(connection.groupA));
+        const ConnectionToId& connectionToId(it.getValue(fallback));
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+        AudioProcessorGraph::Node* const nodeA(graph.getNodeForId(connectionToId.groupA));
         CARLA_SAFE_ASSERT_CONTINUE(nodeA != nullptr);
 
-        AudioProcessorGraph::Node* const nodeB(graph.getNodeForId(connection.groupB));
+        AudioProcessorGraph::Node* const nodeB(graph.getNodeForId(connectionToId.groupB));
         CARLA_SAFE_ASSERT_CONTINUE(nodeB != nullptr);
 
         AudioProcessor* const procA(nodeA->getProcessor());
@@ -1435,10 +1457,10 @@ const char* const* PatchbayGraph::getConnections() const
         AudioProcessor* const procB(nodeB->getProcessor());
         CARLA_SAFE_ASSERT_CONTINUE(procB != nullptr);
 
-        String fullPortNameA(getProcessorFullPortName(procA, connection.portA));
+        String fullPortNameA(getProcessorFullPortName(procA, connectionToId.portA));
         CARLA_SAFE_ASSERT_CONTINUE(fullPortNameA.isNotEmpty());
 
-        String fullPortNameB(getProcessorFullPortName(procB, connection.portB));
+        String fullPortNameB(getProcessorFullPortName(procB, connectionToId.portB));
         CARLA_SAFE_ASSERT_CONTINUE(fullPortNameB.isNotEmpty());
 
         connList.append(fullPortNameA.toRawUTF8());
