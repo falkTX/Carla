@@ -2029,6 +2029,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaHostCommon.cpp"
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
+#include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
 #include "CarlaJuceEvents.cpp"

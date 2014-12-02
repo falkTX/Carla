@@ -75,41 +75,10 @@ struct PatchbayGroupList {
         list.clear();
     }
 
-    uint getGroupId(const char* const groupName) const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(groupName != nullptr && groupName[0] != '\0', 0);
+    uint getGroupId(const char* const groupName) const noexcept;
 
-        for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
-        {
-            static const GroupNameToId groupNameFallback = { 0, { '\0' } };
-
-            const GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
-
-            if (std::strncmp(groupNameToId.name, groupName, STR_MAX) == 0)
-                return groupNameToId.group;
-        }
-
-        return 0;
-    }
-
-    const char* getGroupName(const uint groupId) const noexcept
-    {
-        static const char fallback[] = { '\0' };
-
-        for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
-        {
-            static const GroupNameToId groupNameFallback = { 0, { '\0' } };
-
-            const GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
-
-            if (groupNameToId.group == groupId)
-                return groupNameToId.name;
-        }
-
-        return fallback;
-    }
+    // always returns valid pointer (non-null)
+    const char* getGroupName(const uint groupId) const noexcept;
 };
 
 // -----------------------------------------------------------------------
@@ -175,41 +144,10 @@ struct PatchbayPortList {
         list.clear();
     }
 
-    const char* getFullPortName(const uint groupId, const uint portId) const noexcept
-    {
-        static const char fallback[] = { '\0' };
+    // always returns valid pointer (non-null)
+    const char* getFullPortName(const uint groupId, const uint portId) const noexcept;
 
-        for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
-        {
-            static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-            const PortNameToId& portNameToId(it.getValue(portNameFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
-
-            if (portNameToId.group == groupId && portNameToId.port == portId)
-                return portNameToId.fullName;
-        }
-
-        return fallback;
-    }
-
-    const PortNameToId& getPortNameToId(const char* const fullPortName) const noexcept
-    {
-        static const PortNameToId fallback = { 0, 0, { '\0' }, { '\0' } };
-
-        CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0', fallback);
-
-        for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
-        {
-            const PortNameToId& portNameToId(it.getValue(fallback));
-            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
-
-            if (std::strncmp(portNameToId.fullName, fullPortName, STR_MAX) == 0)
-                return portNameToId;
-        }
-
-        return fallback;
-    }
+    const PortNameToId& getPortNameToId(const char* const fullPortName) const noexcept;
 };
 
 // -----------------------------------------------------------------------

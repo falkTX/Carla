@@ -2163,6 +2163,7 @@ const char* carla_get_host_osc_url_udp()
 
 #include "CarlaPluginUI.cpp"
 #include "CarlaDssiUtils.cpp"
+#include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
 #include "CarlaJuceEvents.cpp"

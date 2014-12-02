@@ -36,7 +36,9 @@ public:
         // might have some leftovers
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
-            Lib& lib(it.getValue());
+            static Lib libFallback = { nullptr, nullptr, 0, false };
+
+            Lib& lib(it.getValue(libFallback));
             CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
 
@@ -73,7 +75,9 @@ public:
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
-            Lib& lib(it.getValue());
+            static Lib libFallback = { nullptr, nullptr, 0, false };
+
+            Lib& lib(it.getValue(libFallback));
             CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.filename != nullptr);
 
@@ -116,7 +120,9 @@ public:
 
         for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
         {
-            Lib& lib(it.getValue());
+            static Lib libFallback = { nullptr, nullptr, 0, false };
+
+            Lib& lib(it.getValue(libFallback));
             CARLA_SAFE_ASSERT_CONTINUE(lib.count > 0);
             CARLA_SAFE_ASSERT_CONTINUE(lib.lib != nullptr);
 

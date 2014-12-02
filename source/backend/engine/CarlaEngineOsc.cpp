@@ -401,9 +401,11 @@ int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_addr
     carla_debug("CarlaEngineOsc::handleMsgUpdate()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
 
+#ifndef BUILD_BRIDGE
     const char* const url = (const char*)&argv[0]->s;
 
     plugin->updateOscData(source, url);
+#endif
     return 0;
 }
 

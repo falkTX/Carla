@@ -129,6 +129,13 @@ public:
             data->value = value;
         }
 
+        // TODO: remove this, fallback should be mandatory
+        T& getValue() const noexcept
+        {
+            Data* const data(list_entry(fEntry, Data, siblings));
+            return data->value;
+        }
+
     private:
         ListHead* fEntry;
         ListHead* fEntry2;

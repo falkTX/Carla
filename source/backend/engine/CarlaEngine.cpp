@@ -512,7 +512,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     if (plugin == nullptr)
         return false;
 
+#ifndef BUILD_BRIDGE
     plugin->registerToOscClient();
+#endif
 
     EnginePluginData& pluginData(pData->plugins[id]);
     pluginData.plugin      = plugin;

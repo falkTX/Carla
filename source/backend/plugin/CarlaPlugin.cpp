@@ -44,6 +44,8 @@ static const ParameterRanges kParameterRangesNull = { 0.0f, 0.0f, 1.0f, 0.01f, 0
 static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
 static const CustomData      kCustomDataNull      = { nullptr, nullptr, nullptr };
 
+static const CustomData        kCustomDataFallback        = { nullptr, nullptr, nullptr };
+static /* */ CustomData        kCustomDataFallbackNC      = { nullptr, nullptr, nullptr };
 static const PluginPostRtEvent kPluginPostRtEventFallback = { kPluginPostRtEventNull, 0, 0, 0.0f };
 
 // -------------------------------------------------------------------
@@ -261,7 +263,7 @@ const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) con
 const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
-    return pData->custom.getAt(index, kCustomDataNull);
+    return pData->custom.getAt(index, kCustomDataFallback);
 }
 
 std::size_t CarlaPlugin::getChunkData(void** const dataPtr) noexcept
@@ -588,7 +590,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave()
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& cData(it.getValue(kCustomDataNull));
+        const CustomData& cData(it.getValue(kCustomDataFallback));
         CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
 
         CarlaStateSave::CustomData* stateCustomData(new CarlaStateSave::CustomData());
@@ -613,7 +615,10 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
-        const CarlaStateSave::CustomData* const stateCustomData(it.getValue());
+        const CarlaStateSave::CustomData* const stateCustomData(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
+
         const char* const key(stateCustomData->key);
 
         bool wantData = false;
@@ -693,7 +698,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     for (CarlaStateSave::ParameterItenerator it = stateSave.parameters.begin(); it.valid(); it.next())
     {
-        CarlaStateSave::Parameter* const stateParameter(it.getValue());
+        CarlaStateSave::Parameter* const stateParameter(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(stateParameter != nullptr);
 
         int32_t index = -1;
 
@@ -704,7 +710,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             {
                 for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
                 {
-                    ParamSymbol* const paramSymbol(it2.getValue());
+                    ParamSymbol* const paramSymbol(it2.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(paramSymbol != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(paramSymbol->symbol != nullptr);
 
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
@@ -725,7 +733,9 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             {
                 for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
                 {
-                    ParamSymbol* const paramSymbol(it2.getValue());
+                    ParamSymbol* const paramSymbol(it2.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(paramSymbol != nullptr);
+                    CARLA_SAFE_ASSERT_CONTINUE(paramSymbol->symbol != nullptr);
 
                     if (std::strcmp(stateParameter->symbol, paramSymbol->symbol) == 0)
                     {
@@ -772,7 +782,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
     {
-        ParamSymbol* const paramSymbol(it.getValue());
+        ParamSymbol* const paramSymbol(it.getValue(nullptr));
         delete paramSymbol;
     }
 
@@ -783,7 +793,10 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
-        const CarlaStateSave::CustomData* const stateCustomData(it.getValue());
+        const CarlaStateSave::CustomData* const stateCustomData(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
+        CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
+
         const char* const key(stateCustomData->key);
 
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
@@ -1197,7 +1210,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     // Check if we already have this key
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        CustomData& customData(it.getValue());
+        CustomData& customData(it.getValue(kCustomDataFallbackNC));
         CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
 
         if (std::strcmp(customData.key, key) == 0)
@@ -1422,6 +1435,7 @@ void CarlaPlugin::clearBuffers() noexcept
     pData->clearBuffers();
 }
 
+#ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------
 // OSC stuff
 
@@ -1617,7 +1631,7 @@ void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
 
     for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
     {
-        const CustomData& customData(it.getValue(kCustomDataNull));
+        const CustomData& customData(it.getValue(kCustomDataFallback));
         CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
 
         if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_STRING) == 0)
@@ -1682,6 +1696,7 @@ bool CarlaPlugin::waitForOscGuiShow()
     carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);
     return false;
 }
+#endif
 
 // -------------------------------------------------------------------
 // MIDI events

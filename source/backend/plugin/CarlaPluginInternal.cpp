@@ -26,7 +26,9 @@ CARLA_BACKEND_START_NAMESPACE
 // -------------------------------------------------------------------
 // Fallback data
 
-static const MidiProgramData kMidiProgramDataNull = { 0, 0, nullptr };
+static const MidiProgramData kMidiProgramDataNull  = { 0, 0, nullptr };
+static const CustomData      kCustomDataFallback   = { nullptr, nullptr, nullptr };
+static /* */ CustomData      kCustomDataFallbackNC = { nullptr, nullptr, nullptr };
 
 // -----------------------------------------------------------------------
 // PluginAudioData
@@ -405,7 +407,8 @@ void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
 {
     if (mutex.tryLock())
     {
-        dataPendingRT.spliceAppendTo(data);
+        if (dataPendingRT.count() > 0)
+            dataPendingRT.moveTo(data, true);
         mutex.unlock();
     }
 }
@@ -525,31 +528,32 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 
     for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
     {
-        CustomData& cData(it.getValue());
+        CustomData& customData(it.getValue(kCustomDataFallbackNC));
+        //CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
 
-        if (cData.type != nullptr)
+        if (customData.type != nullptr)
         {
-            delete[] cData.type;
-            cData.type = nullptr;
+            delete[] customData.type;
+            customData.type = nullptr;
         }
         else
-            carla_safe_assert("cData.type != nullptr", __FILE__, __LINE__);
+            carla_safe_assert("customData.type != nullptr", __FILE__, __LINE__);
 
-        if (cData.key != nullptr)
+        if (customData.key != nullptr)
         {
-            delete[] cData.key;
-            cData.key = nullptr;
+            delete[] customData.key;
+            customData.key = nullptr;
         }
         else
-            carla_safe_assert("cData.key != nullptr", __FILE__, __LINE__);
+            carla_safe_assert("customData.key != nullptr", __FILE__, __LINE__);
 
-        if (cData.value != nullptr)
+        if (customData.value != nullptr)
         {
-            delete[] cData.value;
-            cData.value = nullptr;
+            delete[] customData.value;
+            customData.value = nullptr;
         }
         else
-            carla_safe_assert("cData.value != nullptr", __FILE__, __LINE__);
+            carla_safe_assert("customData.value != nullptr", __FILE__, __LINE__);
     }
 
     prog.clear();
