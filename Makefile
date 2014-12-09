@@ -491,7 +491,7 @@ endif
 		source/backend/CarlaHost.h \
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
-		source/modules/CarlaNative.h \
+		source/includes/CarlaNative.h \
 		$(DESTDIR)$(PREFIX)/include/carla/
 
 	install -m 644 \
