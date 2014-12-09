@@ -254,10 +254,8 @@ struct CarlaPlugin::ProtectedData {
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()
 
-#ifndef BUILD_BRIDGE
     ScopedPointer<ChildProcess> childProcess;
     CarlaOscData oscData;
-#endif
 
     CarlaStateSave stateSave;
 

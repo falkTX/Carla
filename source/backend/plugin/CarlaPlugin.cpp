@@ -1435,7 +1435,6 @@ void CarlaPlugin::clearBuffers() noexcept
     pData->clearBuffers();
 }
 
-#ifndef BUILD_BRIDGE
 // -------------------------------------------------------------------
 // OSC stuff
 
@@ -1696,7 +1695,6 @@ bool CarlaPlugin::waitForOscGuiShow()
     carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);
     return false;
 }
-#endif
 
 // -------------------------------------------------------------------
 // MIDI events

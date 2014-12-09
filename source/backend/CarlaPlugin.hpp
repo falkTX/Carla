@@ -707,7 +707,6 @@ public:
      */
     virtual void clearBuffers() noexcept;
 
-#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // OSC stuff
 
@@ -739,7 +738,6 @@ public:
      * This is a handy function that waits for the GUI to respond and automatically asks it to show itself.
      */
     bool waitForOscGuiShow();
-#endif
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

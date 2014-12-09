@@ -23,10 +23,163 @@
 
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaThread.hpp"
+
+using juce::String;
+using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
+// -----------------------------------------------------
+
+class CarlaThreadDSSIUI : public CarlaThread
+{
+public:
+    CarlaThreadDSSIUI(CarlaEngine* const engine, CarlaPlugin* const plugin, ScopedPointer<ChildProcess>& childProcess) noexcept
+        : CarlaThread("CarlaThreadDSSIUI"),
+          kEngine(engine),
+          kPlugin(plugin),
+          fBinary(),
+          fLabel(),
+          fProcess(childProcess),
+          leakDetector_CarlaThreadDSSIUI() {}
+
+    void setData(const char* const binary, const char* const label) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr /*&& label[0] != '\0'*/,);
+        CARLA_SAFE_ASSERT(! isThreadRunning());
+
+        fBinary = binary;
+        fLabel  = label;
+
+        if (fLabel.isEmpty())
+            fLabel = "\"\"";
+    }
+
+    uintptr_t getPid() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
+
+        return (uintptr_t)fProcess->getPID();
+    }
+
+    void run()
+    {
+        if (fProcess == nullptr)
+        {
+            fProcess = new ChildProcess();
+        }
+        else if (fProcess->isRunning())
+        {
+            carla_stderr("CarlaThreadDSSI::run() - already running, giving up...");
+
+            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+            fProcess->kill();
+            fProcess = nullptr;
+            return;
+        }
+
+#if 0 //def CARLA_OS_LINUX
+        const char* const oldPreload(std::getenv("LD_PRELOAD"));
+        ::unsetenv("LD_PRELOAD");
+
+        if (oldPreload != nullptr)
+            ::setenv("LD_PRELOAD", oldPreload, 1);
+#endif
+
+        String name(kPlugin->getName());
+        String filename(kPlugin->getFilename());
+
+        if (name.isEmpty())
+            name = "(none)";
+
+        if (filename.isEmpty())
+            filename = "\"\"";
+
+        StringArray arguments;
+
+#ifndef CARLA_OS_WIN
+        // start with "wine" if needed
+        if (fBinary.endsWith(".exe"))
+            arguments.add("wine");
+#endif
+
+        // binary
+        arguments.add(fBinary.buffer());
+
+        // osc-url
+        arguments.add(String(kEngine->getOscServerPathUDP()) + String("/") + String(kPlugin->getId()));
+
+        // filename
+        arguments.add(filename);
+
+        // label
+        arguments.add(fLabel.buffer());
+
+        // ui-title
+        arguments.add(name + String(" (GUI)"));
+
+        carla_stdout("starting DSSI UI...");
+
+        if (! fProcess->start(arguments))
+        {
+            carla_stdout("failed!");
+            fProcess = nullptr;
+            return;
+        }
+
+        if (kPlugin->waitForOscGuiShow())
+        {
+            for (; fProcess->isRunning() && ! shouldThreadExit();)
+                carla_sleep(1);
+
+            // we only get here if UI was closed or thread asked to exit
+            if (fProcess->isRunning() && shouldThreadExit())
+            {
+                fProcess->waitForProcessToFinish(static_cast<int>(kEngine->getOptions().uiBridgesTimeout));
+
+                if (fProcess->isRunning())
+                {
+                    carla_stdout("CarlaThreadDSSIUI::run() - UI refused to close, force kill now");
+                    fProcess->kill();
+                }
+                else
+                {
+                    carla_stdout("CarlaThreadDSSIUI::run() - UI auto-closed successfully");
+                }
+            }
+            else if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+                carla_stderr("CarlaThreadDSSIUI::run() - UI crashed while running");
+            else
+                carla_stdout("CarlaThreadDSSIUI::run() - UI closed cleanly");
+
+            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+        }
+        else
+        {
+            fProcess->kill();
+
+            carla_stdout("CarlaThreadDSSIUI::run() - GUI timeout");
+            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+        }
+
+        carla_stdout("DSSI UI finished");
+        fProcess = nullptr;
+    }
+
+private:
+    CarlaEngine* const kEngine;
+    CarlaPlugin* const kPlugin;
+
+    CarlaString fBinary;
+    CarlaString fLabel;
+
+    ScopedPointer<ChildProcess>& fProcess;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThreadDSSIUI)
+};
+
 // -----------------------------------------------------
 
 class CarlaPluginDSSI : public CarlaPlugin
@@ -45,11 +198,10 @@ public:
           fParamBuffers(nullptr),
           fLatencyChanged(false),
           fLatencyIndex(-1),
+          fThreadUI(engine, this, pData->childProcess),
           leakDetector_CarlaPluginDSSI()
     {
         carla_debug("CarlaPluginDSSI::CarlaPluginDSSI(%p, %i)", engine, id);
-
-        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_DSSI_GUI);
     }
 
     ~CarlaPluginDSSI() noexcept override
@@ -61,7 +213,7 @@ public:
         {
             showCustomUI(false);
 
-            pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            fThreadUI.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
 
         pData->singleMutex.lock();
@@ -335,8 +487,8 @@ public:
             }
         }
 
-        if (sendGui && pData->osc.data.target != nullptr)
-            osc_send_configure(pData->osc.data, key, value);
+        if (sendGui && pData->oscData.target != nullptr)
+            osc_send_configure(pData->oscData, key, value);
 
         if (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0)
         {
@@ -410,21 +562,21 @@ public:
     {
         if (yesNo)
         {
-            pData->osc.data.clear();
-            pData->osc.thread.startThread();
+            pData->oscData.clear();
+            fThreadUI.startThread();
         }
         else
         {
             pData->transientTryCounter = 0;
 
-            if (pData->osc.data.target != nullptr)
+            if (pData->oscData.target != nullptr)
             {
-                osc_send_hide(pData->osc.data);
-                osc_send_quit(pData->osc.data);
-                pData->osc.data.clear();
+                osc_send_hide(pData->oscData);
+                osc_send_quit(pData->oscData);
+                pData->oscData.clear();
             }
 
-            pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+            fThreadUI.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
     }
 
@@ -1901,7 +2053,7 @@ public:
     void updateOscURL() override
     {
         // DSSI does not support this
-        if (! pData->osc.thread.isThreadRunning())
+        if (! fThreadUI.isThreadRunning())
             return;
 
         showCustomUI(false);
@@ -1915,20 +2067,20 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (pData->osc.data.target == nullptr)
+        if (pData->oscData.target == nullptr)
             return;
 
-        osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
+        osc_send_control(pData->oscData, pData->param.data[index].rindex, value);
     }
 
     void uiMidiProgramChange(const uint32_t index) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
-        if (pData->osc.data.target == nullptr)
+        if (pData->oscData.target == nullptr)
             return;
 
-        osc_send_program(pData->osc.data, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+        osc_send_program(pData->oscData, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
     }
 
     void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept override
@@ -1937,7 +2089,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (pData->osc.data.target == nullptr)
+        if (pData->oscData.target == nullptr)
             return;
 
 #if 0
@@ -1947,7 +2099,7 @@ public:
         midiData[2] = note;
         midiData[3] = velo;
 
-        osc_send_midi(pData->osc.data, midiData);
+        osc_send_midi(pData->oscData, midiData);
 #endif
     }
 
@@ -1956,7 +2108,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (pData->osc.data.target == nullptr)
+        if (pData->oscData.target == nullptr)
             return;
 
 #if 0
@@ -1966,7 +2118,7 @@ public:
         midiData[2] = note;
         midiData[3] = 0;
 
-        osc_send_midi(pData->osc.data, midiData);
+        osc_send_midi(pData->oscData, midiData);
 #endif
     }
 
@@ -2154,7 +2306,7 @@ public:
 
         if (const char* const guiFilename = find_dssi_ui(filename, fDescriptor->Label))
         {
-            pData->osc.thread.setOscData(guiFilename, fDescriptor->Label);
+            fThreadUI.setData(guiFilename, fDescriptor->Label);
             fUiFilename = guiFilename;
         }
 
@@ -2214,6 +2366,8 @@ private:
     int32_t fLatencyIndex; // -1 if invalid
 
     snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
+
+    CarlaThreadDSSIUI fThreadUI;
 
     // -------------------------------------------------------------------
 
@@ -2326,7 +2480,6 @@ private:
 };
 
 LinkedList<const char*> CarlaPluginDSSI::sMultiSynthList;
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2334,7 +2487,6 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.label, init.uniqueId);
 
-#if 0
     CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label))
@@ -2373,9 +2525,6 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     }
 
     return plugin;
-#endif
-    return nullptr;
-    (void)init;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

@@ -450,8 +450,6 @@ public:
 #elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 # pragma GCC diagnostic pop
 #endif
-
-        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_LV2_GUI);
     }
 
     ~CarlaPluginLV2() override

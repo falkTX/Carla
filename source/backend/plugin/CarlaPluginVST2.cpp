@@ -83,8 +83,6 @@ public:
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
 
-        pData->osc.thread.setMode(CarlaPluginThread::PLUGIN_THREAD_VST2_GUI);
-
 #ifdef CARLA_OS_WIN
         fProcThread.p = nullptr;
         fProcThread.x = 0;
