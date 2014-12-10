@@ -2582,8 +2582,8 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 
     return plugin;
 #else
+    init.engine->setLastError("VST2 plugins not working due to pending code rewrite.");
     return nullptr;
-    (void)init;
 #endif
 }
 

@@ -2232,7 +2232,8 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 {
     carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
-#if 0 //ndef BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
+# if 0
     if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
@@ -2278,6 +2279,12 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     }
 
     return plugin;
+# else
+    init.engine->setLastError("Bridged plugins not working due to pending code rewrite.");
+    return nullptr;
+    // unused
+    (void)bridgeBinary; (void)btype; (void)ptype;
+# endif
 #else
     init.engine->setLastError("Plugin bridge support not available");
     return nullptr;

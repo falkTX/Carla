@@ -5998,8 +5998,8 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     return plugin;
 #endif
+    init.engine->setLastError("LV2 plugins not working due to pending code rewrite.");
     return nullptr;
-    (void)init;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
