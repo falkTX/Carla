@@ -15,8 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeClient.hpp"
-#include "CarlaBridgeToolkit.hpp"
+#include "CarlaBridgeUI.hpp"
 #include "CarlaVstUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -28,11 +27,11 @@ CARLA_BRIDGE_START_NAMESPACE
 uint32_t bufferSize = 512;
 double   sampleRate = 44100.0;
 
-class CarlaVstClient : public CarlaBridgeClient
+class CarlaVstClient : public CarlaBridgeUI
 {
 public:
-    CarlaVstClient(const char* const uiTitle)
-        : CarlaBridgeClient(uiTitle),
+    CarlaVstClient()
+        : CarlaBridgeUI(),
           unique1(0),
           effect(nullptr),
           needIdle(false),
@@ -58,7 +57,7 @@ public:
         // -----------------------------------------------------------------
         // init
 
-        CarlaBridgeClient::uiInit(binary, nullptr, nullptr);
+        CarlaBridgeUI::uiInit(binary, nullptr, nullptr);
 
         // -----------------------------------------------------------------
         // open DLL
@@ -155,7 +154,7 @@ public:
             effect = nullptr;
         }
 
-        CarlaBridgeClient::uiClose();
+        CarlaBridgeUI::uiClose();
         uiLibClose();
     }
 

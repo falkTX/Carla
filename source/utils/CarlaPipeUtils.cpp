@@ -403,15 +403,15 @@ struct CarlaPipeCommon::PrivateData {
     int pipeSend;
 #endif
 
-    // read functions must only be called in context of idle()
+    // read functions must only be called in context of idlePipe()
     bool isReading;
 
     // common write lock
     CarlaMutex writeLock;
 
-    // temporary buffers for readline()
-    char        tmpBuf[0xff+1];
-    CarlaString tmpStr;
+    // temporary buffers for _readline()
+    mutable char        tmpBuf[0xff+1];
+    mutable CarlaString tmpStr;
 
     PrivateData() noexcept
 #ifdef CARLA_OS_WIN
@@ -527,14 +527,14 @@ void CarlaPipeCommon::unlockPipe() const noexcept
     pData->writeLock.unlock();
 }
 
-CarlaMutex& CarlaPipeCommon::getPipeLock() noexcept
+CarlaMutex& CarlaPipeCommon::getPipeLock() const noexcept
 {
     return pData->writeLock;
 }
 
 // -------------------------------------------------------------------
 
-bool CarlaPipeCommon::readNextLineAsBool(bool& value) noexcept
+bool CarlaPipeCommon::readNextLineAsBool(bool& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -548,7 +548,26 @@ bool CarlaPipeCommon::readNextLineAsBool(bool& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsInt(int32_t& value) noexcept
+bool CarlaPipeCommon::readNextLineAsByte(uint8_t& value) const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
+
+    if (const char* const msg = _readlineblock())
+    {
+        int tmp = std::atoi(msg);
+        delete[] msg;
+
+        if (tmp >= 0 && tmp <= 0xFF)
+        {
+            value = static_cast<uint8_t>(tmp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CarlaPipeCommon::readNextLineAsInt(int32_t& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -562,7 +581,7 @@ bool CarlaPipeCommon::readNextLineAsInt(int32_t& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) noexcept
+bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -581,7 +600,7 @@ bool CarlaPipeCommon::readNextLineAsUInt(uint32_t& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsLong(int64_t& value) noexcept
+bool CarlaPipeCommon::readNextLineAsLong(int64_t& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -595,7 +614,7 @@ bool CarlaPipeCommon::readNextLineAsLong(int64_t& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsULong(uint64_t& value) noexcept
+bool CarlaPipeCommon::readNextLineAsULong(uint64_t& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -614,7 +633,7 @@ bool CarlaPipeCommon::readNextLineAsULong(uint64_t& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsFloat(float& value) noexcept
+bool CarlaPipeCommon::readNextLineAsFloat(float& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -628,7 +647,7 @@ bool CarlaPipeCommon::readNextLineAsFloat(float& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsDouble(double& value) noexcept
+bool CarlaPipeCommon::readNextLineAsDouble(double& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -642,7 +661,7 @@ bool CarlaPipeCommon::readNextLineAsDouble(double& value) noexcept
     return false;
 }
 
-bool CarlaPipeCommon::readNextLineAsString(const char*& value) noexcept
+bool CarlaPipeCommon::readNextLineAsString(const char*& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->isReading, false);
 
@@ -741,7 +760,7 @@ bool CarlaPipeCommon::flushMessages() const noexcept
 // -------------------------------------------------------------------
 
 // internal
-const char* CarlaPipeCommon::_readline() noexcept
+const char* CarlaPipeCommon::_readline() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv != INVALID_PIPE_VALUE, nullptr);
 
@@ -797,7 +816,7 @@ const char* CarlaPipeCommon::_readline() noexcept
     return nullptr;
 }
 
-const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) noexcept
+const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) const noexcept
 {
     const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
 

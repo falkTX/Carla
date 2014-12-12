@@ -85,7 +85,7 @@ protected:
         }
     }
 
-    void uiSetParameterValue(const uint32_t index, const float value) override
+    void uiSetParameterValue(const uint32_t index, const float value) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
 
@@ -108,7 +108,7 @@ protected:
         flushMessages();
     }
 
-    void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
+    void uiSetMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
@@ -133,7 +133,7 @@ protected:
         flushMessages();
     }
 
-    void uiSetCustomData(const char* const key, const char* const value) override
+    void uiSetCustomData(const char* const key, const char* const value) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);

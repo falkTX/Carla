@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeUI.hpp"
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaStyle.hpp"
 
@@ -50,9 +50,9 @@ class CarlaBridgeToolkitQt: public QObject,
       Q_OBJECT
 
 public:
-    CarlaBridgeToolkitQt(CarlaBridgeClient* const client, const char* const windowTitle)
+    CarlaBridgeToolkitQt(CarlaBridgeUI* const ui)
         : QObject(nullptr),
-          CarlaBridgeToolkit(client, windowTitle),
+          CarlaBridgeToolkit(ui),
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
@@ -72,11 +72,11 @@ public:
         carla_debug("CarlaBridgeToolkitQt::~CarlaBridgeToolkitQt()");
     }
 
-    void init() override
+    bool init(const int /*argc*/, const char** /*argv[]*/) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fApp == nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fMsgTimer == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fApp == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fMsgTimer == 0, false);
         carla_debug("CarlaBridgeToolkitQt::init()");
 
         fApp = new QApplication(qargc, qargv);
@@ -84,16 +84,20 @@ public:
         fWindow = new QMainWindow(nullptr);
         fWindow->resize(30, 30);
         fWindow->hide();
+
+        return true;
     }
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
-        QWidget* const widget((QWidget*)kClient->getWidget());
+        const CarlaBridgeUI::Options& options(ui->getOptions());
+
+        QWidget* const widget((QWidget*)ui->getWidget());
 
         fWindow->setCentralWidget(widget);
         fWindow->adjustSize();
@@ -101,7 +105,7 @@ public:
         widget->setParent(fWindow);
         widget->show();
 
-        if (! kClient->isResizable())
+        if (! options.isResizable)
         {
             fWindow->setFixedSize(fWindow->width(), fWindow->height());
 #ifdef CARLA_OS_WIN
@@ -110,18 +114,13 @@ public:
         }
 
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
-        fWindow->setWindowTitle(kWindowTitle.buffer());
+        fWindow->setWindowTitle(options.windowTitle);
 
-        if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
+        if (options.transientWindowId != 0)
         {
-            if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
-            {
 #if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-                XSetTransientForHint(QX11Info::display(), static_cast<::Window>(fWindow->winId()), static_cast<::Window>(winId));
-#else
-                (void)winId;
+            XSetTransientForHint(QX11Info::display(), static_cast<::Window>(fWindow->winId()), static_cast<::Window>(options.transientWindowId));
 #endif
-            }
         }
 
         if (showUI || fNeedsShow)
@@ -141,7 +140,7 @@ public:
 
     void quit() override
     {
-        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::quit()");
@@ -180,6 +179,11 @@ public:
             fWindow->show();
     }
 
+    void focus() override
+    {
+        carla_debug("CarlaBridgeToolkitQt::focus()");
+    }
+
     void hide() override
     {
         carla_debug("CarlaBridgeToolkitQt::hide()");
@@ -190,13 +194,27 @@ public:
             fWindow->hide();
     }
 
-    void resize(const int width, const int height) override
+    void setSize(const uint width, const uint height) override
     {
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(width > 0,);
         CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
-        emit setSizeSafeSignal(static_cast<uint>(width), static_cast<uint>(height));
+        if (ui->getOptions().isResizable)
+            fWindow->resize(width, height);
+        else
+            fWindow->setFixedSize(width, height);
+    }
+
+    void setTitle(const char* const title) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0',);
+        carla_debug("CarlaBridgeToolkitQt::setTitle(\"%s\")", title);
+
+        fWindow->setWindowTitle(title);
     }
 
 protected:
@@ -208,41 +226,26 @@ protected:
 
     void handleTimeout()
     {
-        if (kClient == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
 
-        kClient->uiIdle();
+        ui->idlePipe();
+        ui->idleUI();
 
-        if (! kClient->oscIdle())
-        {
-            killTimer(fMsgTimer);
-            fMsgTimer = 0;
-            fApp->quit();
-        }
+//         if (! kClient->oscIdle())
+//         {
+//             killTimer(fMsgTimer);
+//             fMsgTimer = 0;
+//             fApp->quit();
+//         }
     }
 
 private:
-    void timerEvent(QTimerEvent* const ev)
+    void timerEvent(QTimerEvent* const ev) override
     {
         if (ev->timerId() == fMsgTimer)
             handleTimeout();
 
         QObject::timerEvent(ev);
-    }
-
-signals:
-    void setSizeSafeSignal(int, int);
-
-private slots:
-    void setSizeSafeSlot(uint width, uint height)
-    {
-        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
-
-        if (kClient->isResizable())
-            fWindow->resize(width, height);
-        else
-            fWindow->setFixedSize(width, height);
     }
 
 #ifndef MOC_PARSING
@@ -258,9 +261,9 @@ private slots:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
 {
-    return new CarlaBridgeToolkitQt(client, windowTitle);
+    return new CarlaBridgeToolkitQt(ui);
 }
 
 // -------------------------------------------------------------------------

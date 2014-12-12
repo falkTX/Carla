@@ -87,7 +87,7 @@ public:
     /*!
      * Get the pipe write lock.
      */
-    CarlaMutex& getPipeLock() noexcept;
+    CarlaMutex& getPipeLock() const noexcept;
 
     // -------------------------------------------------------------------
     // read lines, must only be called in the context of msgReceived()
@@ -95,43 +95,48 @@ public:
     /*!
      * Read the next line as a boolean.
      */
-    bool readNextLineAsBool(bool& value) noexcept;
+    bool readNextLineAsBool(bool& value) const noexcept;
+
+    /*!
+     * Read the next line as a byte.
+     */
+    bool readNextLineAsByte(uint8_t& value) const noexcept;
 
     /*!
      * Read the next line as an integer.
      */
-    bool readNextLineAsInt(int32_t& value) noexcept;
+    bool readNextLineAsInt(int32_t& value) const noexcept;
 
     /*!
      * Read the next line as an unsigned integer.
      */
-    bool readNextLineAsUInt(uint32_t& value) noexcept;
+    bool readNextLineAsUInt(uint32_t& value) const noexcept;
 
     /*!
      * Read the next line as a long integer.
      */
-    bool readNextLineAsLong(int64_t& value) noexcept;
+    bool readNextLineAsLong(int64_t& value) const noexcept;
 
     /*!
      * Read the next line as a long unsigned integer.
      */
-    bool readNextLineAsULong(uint64_t& value) noexcept;
+    bool readNextLineAsULong(uint64_t& value) const noexcept;
 
     /*!
      * Read the next line as a floating point number (single precision).
      */
-    bool readNextLineAsFloat(float& value) noexcept;
+    bool readNextLineAsFloat(float& value) const noexcept;
 
     /*!
      * Read the next line as a floating point number (double precision).
      */
-    bool readNextLineAsDouble(double& value) noexcept;
+    bool readNextLineAsDouble(double& value) const noexcept;
 
     /*!
      * Read the next line as a string.
      * @note: @a value must be deleted if valid.
      */
-    bool readNextLineAsString(const char*& value) noexcept;
+    bool readNextLineAsString(const char*& value) const noexcept;
 
     // -------------------------------------------------------------------
     // write messages, must be locked before calling
@@ -167,10 +172,10 @@ protected:
     // -------------------------------------------------------------------
 
     /*! @internal */
-    const char* _readline() noexcept;
+    const char* _readline() const noexcept;
 
     /*! @internal */
-    const char* _readlineblock(const uint32_t timeOutMilliseconds = 50) noexcept;
+    const char* _readlineblock(const uint32_t timeOutMilliseconds = 50) const noexcept;
 
     /*! @internal */
     bool _writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept;

@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeClient.hpp"
+#include "CarlaBridgeUI.hpp"
 #include "CarlaBridgeToolkit.hpp"
 
 #include "CarlaPluginUI.hpp"
@@ -34,13 +34,13 @@ class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
                                  private CarlaPluginUI::CloseCallback
 {
 public:
-    CarlaBridgeToolkitPlugin(CarlaBridgeClient* const client, const char* const windowTitle)
-        : CarlaBridgeToolkit(client, windowTitle),
+    CarlaBridgeToolkitPlugin(CarlaBridgeUI* const ui)
+        : CarlaBridgeToolkit(ui),
           fUI(nullptr),
           fIdling(false),
           leakDetector_CarlaBridgeToolkitPlugin()
     {
-        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p, \"%s\")", client, windowTitle);
+        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", ui);
     }
 
     ~CarlaBridgeToolkitPlugin() override
@@ -49,26 +49,31 @@ public:
         carla_debug("CarlaBridgeToolkitPlugin::~CarlaBridgeToolkitPlugin()");
     }
 
-    void init() override
+    bool init(const int /*argc*/, const char** /*argv[]*/) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fUI == nullptr, false);
         carla_debug("CarlaBridgeToolkitPlugin::init()");
 
-#if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        fUI = CarlaPluginUI::newCocoa(this, 0);
-#elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
-        fUI = CarlaPluginUI::newWindows(this, 0);
-#elif defined(HAVE_X11) && defined(BRIDGE_X11)
-        fUI = CarlaPluginUI::newX11(this, 0, false); // TODO: check if UI is resizable
-#endif
-        CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
+        const CarlaBridgeUI::Options& options(ui->getOptions());
 
-        fUI->setTitle(kWindowTitle);
+#if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
+        fUI = CarlaPluginUI::newCocoa(this, 0, options.isResizable);
+#elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
+        fUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
+#elif defined(HAVE_X11) && defined(BRIDGE_X11)
+        fUI = CarlaPluginUI::newX11(this, 0, options.isResizable);
+#endif
+        CARLA_SAFE_ASSERT_RETURN(fUI != nullptr, false);
+
+        fUI->setTitle(options.windowTitle);
+        fUI->setTransientWinId(options.transientWindowId);
+
+        return true;
     }
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
         carla_debug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showUI));
 
@@ -86,10 +91,11 @@ public:
         for (; fIdling;)
         {
             fUI->idle();
-            kClient->uiIdle();
+            ui->idlePipe();
+            ui->idleUI();
 
-            if (! kClient->oscIdle())
-                break;
+            //if (! kClient->oscIdle())
+            //    break;
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
             if (MessageManager* const msgMgr = MessageManager::getInstance())
@@ -119,6 +125,14 @@ public:
         fUI->show();
     }
 
+    void focus() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
+        carla_debug("CarlaBridgeToolkitPlugin::focus()");
+
+        fUI->focus();
+    }
+
     void hide() override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
@@ -127,14 +141,22 @@ public:
         fUI->hide();
     }
 
-    void resize(int width, int height) override
+    void setSize(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(width >= 0,);
-        CARLA_SAFE_ASSERT_RETURN(height >= 0,);
+        CARLA_SAFE_ASSERT_RETURN(width > 0,);
+        CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
 
-        fUI->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+        fUI->setSize(width, height, false);
+    }
+
+    void setTitle(const char* const title) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
+        carla_debug("CarlaBridgeToolkitPlugin::setTitle(\"%s\")", title);
+
+        fUI->setTitle(title);
     }
 
     void* getContainerId() const override
@@ -180,9 +202,9 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
 {
-    return new CarlaBridgeToolkitPlugin(client, windowTitle);
+    return new CarlaBridgeToolkitPlugin(ui);
 }
 
 // -------------------------------------------------------------------------

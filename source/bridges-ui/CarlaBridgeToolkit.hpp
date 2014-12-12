@@ -30,26 +30,26 @@ class CarlaBridgeToolkit
 public:
     virtual ~CarlaBridgeToolkit() {}
 
-    virtual void init() = 0;
+    virtual bool init(const int argc, const char* argv[]) = 0;
     virtual void exec(const bool showUI) = 0;
     virtual void quit() = 0;
 
     virtual void show() = 0;
+    virtual void focus() = 0;
     virtual void hide() = 0;
-    virtual void resize(const int width, const int height) = 0;
+    virtual void setSize(const uint width, const uint height) = 0;
+    virtual void setTitle(const char* const title) = 0;
 
     virtual void* getContainerId() const  { return nullptr; }
     virtual void* getContainerId2() const { return nullptr; }
 
-    static CarlaBridgeToolkit* createNew(CarlaBridgeClient* const client, const char* const windowTitle);
+    static CarlaBridgeToolkit* createNew(CarlaBridgeUI* const ui);
 
 protected:
-    CarlaBridgeClient* const kClient;
-    const CarlaString        kWindowTitle;
+    CarlaBridgeUI* const ui;
 
-    CarlaBridgeToolkit(CarlaBridgeClient* const client, const char* const windowTitle)
-        : kClient(client),
-          kWindowTitle(windowTitle),
+    CarlaBridgeToolkit(CarlaBridgeUI* const u)
+        : ui(u),
           leakDetector_CarlaBridgeToolkit() {}
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)

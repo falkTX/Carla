@@ -23,7 +23,6 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
-BUILD_CXX_FLAGS  += $(LIBLO_FLAGS)
 
 BUILD_LV2_FLAGS   = $(BUILD_CXX_FLAGS) -DBRIDGE_LV2
 BUILD_VST2_FLAGS  = $(BUILD_CXX_FLAGS) -DBRIDGE_VST2
@@ -33,7 +32,6 @@ BUILD_VST2_FLAGS += -DVESTIGE_HEADER
 endif
 
 LINK_FLAGS += $(JUCE_CORE_LIBS)
-LINK_FLAGS += $(LIBLO_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -128,7 +126,7 @@ ui_lv2-qt5:     $(BINDIR)/$(MODULENAME)-lv2-qt5
 ui_lv2-x11:     $(BINDIR)/$(MODULENAME)-lv2-x11
 ui_lv2-cocoa:   $(BINDIR)/$(MODULENAME)-lv2-cocoa
 ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
-ui_vst2-x11:    $(BINDIR)/$(MODULENAME)-vst2-x11
+ui_vst2-x11:   #$(BINDIR)/$(MODULENAME)-vst2-x11
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common libs
@@ -169,10 +167,9 @@ $(OBJDIR)/%.cpp.vst2.o: %.cpp
 # ui_lv2-gtk2
 
 OBJS_LV2_GTK2 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk2.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk2.o \
+	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk2.o
 
 $(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_LV2_GTK2) $(LIBS_LV2)
 	-@mkdir -p $(BINDIR)
@@ -190,10 +187,9 @@ $(OBJDIR)/%.cpp.lv2-gtk2.o: %.cpp
 # ui_lv2-gtk3
 
 OBJS_LV2_GTK3 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk3.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk3.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk3.o \
+	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk3.o
 
 $(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_LV2_GTK3) $(LIBS_LV2)
 	-@mkdir -p $(BINDIR)
@@ -211,10 +207,9 @@ $(OBJDIR)/%.cpp.lv2-gtk3.o: %.cpp
 # ui_lv2-qt4
 
 OBJS_LV2_QT4 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt4.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt4.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt4.o \
+	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt4.o
 
 $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_LV2_QT4) $(LIBS_LV2) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
@@ -242,10 +237,9 @@ $(OBJDIR)/resources.qt4.cpp: ../../resources/resources-theme.qrc
 # ui_lv2-qt5
 
 OBJS_LV2_QT5 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt5.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt5.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt5.o \
+	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt5.o
 
 $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_LV2_QT5) $(LIBS_LV2) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
@@ -273,10 +267,9 @@ $(OBJDIR)/resources.qt5.cpp: ../../resources/resources-theme.qrc
 # ui_lv2-x11
 
 OBJS_LV2_X11 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-x11.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-x11.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-x11.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-x11.o
 
 $(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_LV2_X11) $(LIBS_LV2)
 	-@mkdir -p $(BINDIR)
@@ -294,10 +287,9 @@ $(OBJDIR)/%.cpp.lv2-x11.o: %.cpp
 # ui_lv2-cocoa
 
 OBJS_LV2_COCOA = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-cocoa.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-cocoa.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-cocoa.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-cocoa.o
 
 $(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_LV2_COCOA) $(LIBS_LV2_JUCE)
 	-@mkdir -p $(BINDIR)
@@ -315,10 +307,9 @@ $(OBJDIR)/%.cpp.lv2-cocoa.o: %.cpp
 # ui_lv2-windows
 
 OBJS_LV2_WINDOWS = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-windows.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-windows.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-windows.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-windows.o
 
 $(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(LIBS_LV2_JUCE)
 	-@mkdir -p $(BINDIR)
@@ -336,10 +327,9 @@ $(OBJDIR)/%.cpp.lv2-windows.o: %.cpp
 # ui_vst2-x11
 
 OBJS_VST2_X11 = \
-	$(OBJDIR)/CarlaBridgeClient.cpp.vst2.o \
-	$(OBJDIR)/CarlaBridgeOsc.cpp.vst2.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.vst2-x11.o \
-	$(OBJDIR)/CarlaBridgeUI-VST2.cpp.vst2-x11.o
+	$(OBJDIR)/CarlaBridgeUI.cpp.vst2.o \
+	$(OBJDIR)/CarlaBridgeUI-VST2.cpp.vst2-x11.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.vst2-x11.o
 
 $(BINDIR)/$(MODULENAME)-vst2-x11: $(OBJS_VST2_X11) $(LIBS_VST2)
 	-@mkdir -p $(BINDIR)

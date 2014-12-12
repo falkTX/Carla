@@ -15,8 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeClient.hpp"
-#include "CarlaBridgeToolkit.hpp"
+#include "CarlaBridgeUI.hpp"
 
 #include <gtk/gtk.h>
 
@@ -36,8 +35,8 @@ static char** gargv = nullptr;
 class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
 {
 public:
-    CarlaBridgeToolkitGtk(CarlaBridgeClient* const client, const char* const windowTitle)
-        : CarlaBridgeToolkit(client, windowTitle),
+    CarlaBridgeToolkitGtk(CarlaBridgeUI* const ui)
+        : CarlaBridgeToolkit(ui),
           fNeedsShow(false),
           fWindow(nullptr),
           fLastX(0),
@@ -55,32 +54,38 @@ public:
         carla_debug("CarlaBridgeToolkitGtk::~CarlaBridgeToolkitGtk()");
     }
 
-    void init() override
+    bool init(const int /*argc*/, const char** /*argv[]*/) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow == nullptr, false);
         carla_debug("CarlaBridgeToolkitGtk::init()");
 
         gtk_init(&gargc, &gargv);
 
         fWindow = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr, false);
+
         gtk_window_resize(GTK_WINDOW(fWindow), 30, 30);
         gtk_widget_hide(fWindow);
+
+        return true;
     }
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(kClient != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showUI));
+
+        const CarlaBridgeUI::Options& options(ui->getOptions());
 
         GtkWindow* const gtkWindow(GTK_WINDOW(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gtkWindow != nullptr,);
 
-        GtkWidget* const widget((GtkWidget*)kClient->getWidget());
+        GtkWidget* const widget((GtkWidget*)ui->getWidget());
         gtk_container_add(GTK_CONTAINER(fWindow), widget);
 
-        gtk_window_set_resizable(gtkWindow, kClient->isResizable());
-        gtk_window_set_title(gtkWindow, kWindowTitle);
+        gtk_window_set_resizable(gtkWindow, options.isResizable);
+        gtk_window_set_title(gtkWindow, options.windowTitle);
 
         if (showUI || fNeedsShow)
         {
@@ -122,6 +127,11 @@ public:
             gtk_widget_show_all(fWindow);
     }
 
+    void focus() override
+    {
+        carla_debug("CarlaBridgeToolkitGtk::focus()");
+    }
+
     void hide() override
     {
         carla_debug("CarlaBridgeToolkitGtk::hide()");
@@ -132,12 +142,20 @@ public:
             gtk_widget_hide(fWindow);
     }
 
-    void resize(int width, int height) override
+    void setSize(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::resize(%i, %i)", width, height);
 
         gtk_window_resize(GTK_WINDOW(fWindow), width, height);
+    }
+
+    void setTitle(const char* const title) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        carla_debug("CarlaBridgeToolkitGtk::setTitle(\"%s\")", title);
+
+        gtk_window_set_title(GTK_WINDOW(fWindow), title);
     }
 
     // ---------------------------------------------------------------------
@@ -177,13 +195,14 @@ protected:
             gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
         }
 
-        kClient->uiIdle();
+        ui->idlePipe();
+        ui->idleUI();
 
-        if (! kClient->oscIdle())
-        {
-            gtk_main_quit_if_needed();
-            return false;
-        }
+//         if (! fUi)
+//         {
+//             gtk_main_quit_if_needed();
+//             return false;
+//         }
 
         return true;
     }
@@ -254,9 +273,9 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeClient* const client, const char* const windowTitle)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
 {
-    return new CarlaBridgeToolkitGtk(client, windowTitle);
+    return new CarlaBridgeToolkitGtk(ui);
 }
 
 // -------------------------------------------------------------------------
