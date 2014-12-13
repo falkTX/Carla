@@ -249,6 +249,7 @@ wine64:
 RES = \
 	bin/resources/carla_app.py \
 	bin/resources/carla_backend.py \
+	bin/resources/carla_backend_qt.py \
 	bin/resources/carla_config.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
@@ -516,6 +517,7 @@ endif
 	# Install resources (re-use python files)
 	$(LINK) $(PREFIX)/share/carla/carla_app.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_backend_qt.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/

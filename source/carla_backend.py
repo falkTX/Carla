@@ -17,11 +17,6 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Config)
-
-from carla_config import *
-
-# ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
 from abc import ABCMeta, abstractmethod
@@ -29,11 +24,6 @@ from ctypes import *
 from os import environ
 from platform import architecture
 from sys import platform, maxsize
-
-if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtWrapperType, QObject
-else:
-    from PyQt4.QtCore import pyqtSignal, pyqtWrapperType, QObject
 
 # ------------------------------------------------------------------------------------------------------------
 # 64bit check
@@ -1253,58 +1243,12 @@ else:
     BINARY_NATIVE = BINARY_OTHER
 
 # ------------------------------------------------------------------------------------------------------------
-# An empty class used to resolve metaclass conflicts between ABC and PyQt modules
-
-class PyQtMetaClass(pyqtWrapperType, ABCMeta):
-    pass
-
-# ------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
 
-class CarlaHostMeta(QObject):
-#class CarlaHostMeta(QObject, metaclass=PyQtMetaClass):
-    # signals
-    DebugCallback = pyqtSignal(int, int, int, float, str)
-    PluginAddedCallback = pyqtSignal(int, str)
-    PluginRemovedCallback = pyqtSignal(int)
-    PluginRenamedCallback = pyqtSignal(int, str)
-    PluginUnavailableCallback = pyqtSignal(int, str)
-    ParameterValueChangedCallback = pyqtSignal(int, int, float)
-    ParameterDefaultChangedCallback = pyqtSignal(int, int, float)
-    ParameterMidiCcChangedCallback = pyqtSignal(int, int, int)
-    ParameterMidiChannelChangedCallback = pyqtSignal(int, int, int)
-    ProgramChangedCallback = pyqtSignal(int, int)
-    MidiProgramChangedCallback = pyqtSignal(int, int)
-    OptionChangedCallback = pyqtSignal(int, int, bool)
-    UiStateChangedCallback = pyqtSignal(int, int)
-    NoteOnCallback = pyqtSignal(int, int, int, int)
-    NoteOffCallback = pyqtSignal(int, int, int)
-    UpdateCallback = pyqtSignal(int)
-    ReloadInfoCallback = pyqtSignal(int)
-    ReloadParametersCallback = pyqtSignal(int)
-    ReloadProgramsCallback = pyqtSignal(int)
-    ReloadAllCallback = pyqtSignal(int)
-    PatchbayClientAddedCallback = pyqtSignal(int, int, int, str)
-    PatchbayClientRemovedCallback = pyqtSignal(int)
-    PatchbayClientRenamedCallback = pyqtSignal(int, str)
-    PatchbayClientDataChangedCallback = pyqtSignal(int, int, int)
-    PatchbayPortAddedCallback = pyqtSignal(int, int, int, str)
-    PatchbayPortRemovedCallback = pyqtSignal(int, int)
-    PatchbayPortRenamedCallback = pyqtSignal(int, int, str)
-    PatchbayConnectionAddedCallback = pyqtSignal(int, int, int, int, int)
-    PatchbayConnectionRemovedCallback = pyqtSignal(int, int, int)
-    EngineStartedCallback = pyqtSignal(int, int, str)
-    EngineStoppedCallback = pyqtSignal()
-    ProcessModeChangedCallback = pyqtSignal(int)
-    TransportModeChangedCallback = pyqtSignal(int)
-    BufferSizeChangedCallback = pyqtSignal(int)
-    SampleRateChangedCallback = pyqtSignal(float)
-    InfoCallback = pyqtSignal(str)
-    ErrorCallback = pyqtSignal(str)
-    QuitCallback = pyqtSignal()
-
+class CarlaHostMeta(object):
+#class CarlaHostMeta(object, metaclass=ABCMeta):
     def __init__(self):
-        QObject.__init__(self)
+        object.__init__(self)
 
         # info about this host object
         self.isControl = False
@@ -2883,7 +2827,7 @@ class PluginStoreInfo(object):
 # Carla Host object for plugins (using pipes)
 
 class CarlaHostPlugin(CarlaHostMeta):
-#class CarlaHostPlugin(CarlaHostMeta, metaclass=PyQtMetaClass):
+#class CarlaHostPlugin(CarlaHostMeta, metaclass=ABCMeta):
     def __init__(self):
         CarlaHostMeta.__init__(self)
 
