@@ -25,9 +25,9 @@ from externalui import ExternalUI
 # ------------------------------------------------------------------------------------------------------------
 # Host Plugin object
 
-class PluginHost(CarlaHostPlugin):
+class PluginHost(CarlaHostQtPlugin):
     def __init__(self):
-        CarlaHostPlugin.__init__(self)
+        CarlaHostQtPlugin.__init__(self)
 
         if False:
             # kdevelop likes this :)

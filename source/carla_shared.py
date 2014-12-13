@@ -565,7 +565,7 @@ def getPaths(libPrefix = None):
 
         # local source
         elif CWDl.endswith("native-plugins%sresources" % os.sep):
-            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "..", "bin"))
+            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "bin"))
             pathResources = CWD
 
         # other
