@@ -245,6 +245,8 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
     {
         fQuitReceived = true;
         fToolkit->quit();
+        delete fToolkit;
+        fToolkit = nullptr;
         return true;
     }
 
@@ -299,6 +301,11 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
             closePipeClient();
         }
 #endif
+    }
+    else
+    {
+        // no mapping needed
+        fUridMapComplete = true;
     }
 
     return true;

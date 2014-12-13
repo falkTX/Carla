@@ -21,6 +21,7 @@
 #include "CarlaBridgeToolkit.hpp"
 #include "CarlaLibUtils.hpp"
 #include "CarlaPipeUtils.hpp"
+#include "CarlaString.hpp"
 
 #ifdef BRIDGE_LV2
 # include "lv2/atom.h"
@@ -115,7 +116,7 @@ public:
         /*!
          * Window title.
          */
-        const char* windowTitle;
+        CarlaString windowTitle;
 
         /*!
          * Transient window id (parent), null if zero.
@@ -129,7 +130,7 @@ public:
             : isResizable(true),
               useTheme(true),
               useThemeColors(true),
-              windowTitle(nullptr),
+              windowTitle("TestUI"),
               transientWindowId(0) {}
     };
 

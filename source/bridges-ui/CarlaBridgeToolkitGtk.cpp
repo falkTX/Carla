@@ -85,7 +85,7 @@ public:
         gtk_container_add(GTK_CONTAINER(fWindow), widget);
 
         gtk_window_set_resizable(gtkWindow, options.isResizable);
-        gtk_window_set_title(gtkWindow, options.windowTitle);
+        gtk_window_set_title(gtkWindow, options.windowTitle.buffer());
 
         if (showUI || fNeedsShow)
         {
@@ -195,14 +195,10 @@ protected:
             gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
         }
 
-        ui->idlePipe();
-        ui->idleUI();
+        if (ui->isPipeRunning())
+            ui->idlePipe();
 
-//         if (! fUi)
-//         {
-//             gtk_main_quit_if_needed();
-//             return false;
-//         }
+        ui->idleUI();
 
         return true;
     }

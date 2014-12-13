@@ -377,12 +377,6 @@ public:
 
     bool init(const int argc, const char* argv[]) override
     {
-        // -----------------------------------------------------------------
-        // init UI
-
-        if (! CarlaBridgeUI::init(argc, argv))
-            return false;
-
         const char* pluginURI = argv[1];
         const char* uiURI     = argv[2];
 
@@ -421,6 +415,45 @@ public:
         }
 
         CARLA_SAFE_ASSERT_RETURN(fRdfUiDescriptor != nullptr, false);
+
+        // -----------------------------------------------------------
+        // check if not resizable
+
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
+        // embed UIs can only be resizable if they provide resize extension
+        fUiOptions.isResizable = false;
+
+        for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
+        {
+            carla_stdout("Test UI extension %s", fRdfUiDescriptor->Extensions[i]);
+
+            if (std::strcmp(fRdfUiDescriptor->Extensions[i], LV2_UI__resize) == 0)
+            {
+                fUiOptions.isResizable = true;
+                break;
+            }
+        }
+#endif
+
+        for (uint32_t i=0; i < fRdfUiDescriptor->FeatureCount; ++i)
+        {
+            carla_stdout("Test UI feature %s", fRdfUiDescriptor->Features[i].URI);
+
+            if (std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__fixedSize   ) == 0 ||
+                std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
+            {
+                fUiOptions.isResizable = false;
+                break;
+            }
+        }
+
+        carla_stdout("Is resizable => %s", bool2str(fUiOptions.isResizable));
+
+        // -----------------------------------------------------------------
+        // init UI
+
+        if (! CarlaBridgeUI::init(argc, argv))
+            return false;
 
         // -----------------------------------------------------------------
         // open DLL
@@ -464,19 +497,6 @@ public:
 
         fHandle = fDescriptor->instantiate(fDescriptor, fRdfDescriptor->URI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
-
-        // -----------------------------------------------------------
-        // check if not resizable
-
-        for (uint32_t j=0; j < fRdfUiDescriptor->FeatureCount; ++j)
-        {
-            if (std::strcmp(fRdfUiDescriptor->Features[j].URI, LV2_UI__fixedSize   ) == 0 ||
-                std::strcmp(fRdfUiDescriptor->Features[j].URI, LV2_UI__noUserResize) == 0)
-            {
-                fUiOptions.isResizable = false;
-                break;
-            }
-        }
 
         // -----------------------------------------------------------
         // check for known extensions
@@ -568,7 +588,7 @@ public:
 
     void dspAtomReceived(const uint32_t portIndex, const LV2_Atom* const atom) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,)
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
 

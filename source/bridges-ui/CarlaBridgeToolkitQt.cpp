@@ -112,7 +112,7 @@ public:
         }
 
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
-        fWindow->setWindowTitle(options.windowTitle);
+        fWindow->setWindowTitle(options.windowTitle.buffer());
 
         if (options.transientWindowId != 0)
         {
@@ -226,15 +226,10 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
 
-        ui->idlePipe();
-        ui->idleUI();
+        if (ui->isPipeRunning())
+            ui->idlePipe();
 
-//         if (! kClient->oscIdle())
-//         {
-//             killTimer(fMsgTimer);
-//             fMsgTimer = 0;
-//             fApp->quit();
-//         }
+        ui->idleUI();
     }
 
 private:

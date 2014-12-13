@@ -65,7 +65,7 @@ public:
 #endif
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr, false);
 
-        fUI->setTitle(options.windowTitle);
+        fUI->setTitle(options.windowTitle.buffer());
         fUI->setTransientWinId(options.transientWindowId);
 
         return true;
@@ -90,12 +90,12 @@ public:
 
         for (; fIdling;)
         {
-            fUI->idle();
-            ui->idlePipe();
+            if (ui->isPipeRunning())
+                ui->idlePipe();
+
             ui->idleUI();
 
-            //if (! kClient->oscIdle())
-            //    break;
+            fUI->idle();
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
             if (MessageManager* const msgMgr = MessageManager::getInstance())
@@ -108,13 +108,16 @@ public:
 
     void quit() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fUI != nullptr,);
         carla_debug("CarlaBridgeToolkitPlugin::quit()");
 
         fIdling = false;
 
-        delete fUI;
-        fUI = nullptr;
+        if (fUI != nullptr)
+        {
+            fUI->hide();
+            delete fUI;
+            fUI = nullptr;
+        }
     }
 
     void show() override
