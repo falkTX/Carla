@@ -23,8 +23,7 @@
 
 #include "juce_core.h"
 
-#define URI_CARLA_FRONTEND_WIN_ID "http://kxstudio.sf.net/ns/carla/frontendWinId"
-#define URI_CARLA_WORKER          "http://kxstudio.sf.net/ns/carla/worker"
+#define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 
 using juce::File;
 
@@ -32,9 +31,8 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -----------------------------------------------------
 
-//static uint32_t gBufferSize  = 1024;
-static int      gBufferSizei = 1024;
-static double   gSampleRate  = 44100.0;
+static int    gBufferSize = 1024;
+static double gSampleRate = 44100.0;
 
 // Maximum default buffer size
 const unsigned int MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
@@ -62,30 +60,32 @@ const uint32_t CARLA_URI_MAP_ID_ATOM_TUPLE             = 18;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URI               = 19;
 const uint32_t CARLA_URI_MAP_ID_ATOM_URID              = 20;
 const uint32_t CARLA_URI_MAP_ID_ATOM_VECTOR            = 21;
-const uint32_t CARLA_URI_MAP_ID_ATOM_WORKER            = 22; // custom
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 23;
-const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 24;
-const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 25;
-const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 26;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 27;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 28;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 29;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 30;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 31;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 32; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 33; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 34;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 35;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 36;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 37;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 38;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 39;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 40;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 41;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 22;
+const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 23;
+const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 24;
+const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 25;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 26;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 27;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 28;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 29;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 30;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 31; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 32; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 33;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 36;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 37;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 38;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 39;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 40;
+const uint32_t CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT    = 41;
 const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 42;
 const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 43;
-const uint32_t CARLA_URI_MAP_ID_FRONTEND_WIN_ID        = 44;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 45;
+const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 44;
+const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 45;
+const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 46;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 47;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdLogs             =  0;
@@ -116,7 +116,9 @@ struct Lv2PluginOptions {
         SequenceSize,
         SampleRate,
         FrontendWinId,
-        Null
+        //WindowTitle,
+        Null,
+        Count
     };
 
     int maxBufferSize;
@@ -124,14 +126,16 @@ struct Lv2PluginOptions {
     int sequenceSize;
     double sampleRate;
     int64_t frontendWinId;
-    LV2_Options_Option opts[6];
+    const char* windowTitle;
+    LV2_Options_Option opts[Count];
 
-    Lv2PluginOptions()
+    Lv2PluginOptions() noexcept
         : maxBufferSize(0),
           minBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
-          frontendWinId(0)
+          frontendWinId(0),
+          windowTitle(nullptr)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
         optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
@@ -168,10 +172,20 @@ struct Lv2PluginOptions {
         LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
         optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
         optFrontendWinId.subject = 0;
-        optFrontendWinId.key     = CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
+        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
         optFrontendWinId.size    = sizeof(int64_t);
         optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
         optFrontendWinId.value   = &frontendWinId;
+
+        /*
+        LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
+        optWindowTitle.context = LV2_OPTIONS_INSTANCE;
+        optWindowTitle.subject = 0;
+        optWindowTitle.key     = CARLA_URI_MAP_ID_UI_WINDOW_TITLE;
+        optWindowTitle.size    = 0;
+        optWindowTitle.type    = CARLA_URI_MAP_ID_ATOM_STRING;
+        optWindowTitle.value   = nullptr;
+        */
 
         LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
@@ -209,8 +223,8 @@ public:
         // ---------------------------------------------------------------
         // initialize options
 
-        fLv2Options.minBufferSize = gBufferSizei;
-        fLv2Options.maxBufferSize = gBufferSizei;
+        fLv2Options.minBufferSize = gBufferSize;
+        fLv2Options.maxBufferSize = gBufferSize;
         fLv2Options.sampleRate    = gSampleRate;
 
         // ---------------------------------------------------------------
@@ -604,11 +618,11 @@ public:
         return urid;
     }
 
-    const char* getCustomURIString(const LV2_URID urid) const noexcept
+    const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
         CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
-        carla_debug("CarlaLv2Client::getCustomURIString(%i)", urid);
+        carla_debug("CarlaLv2Client::getCustomURIDString(%i)", urid);
 
         return fCustomURIDs.getAt(urid, nullptr);
     }
@@ -935,18 +949,22 @@ private:
             return CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND;
         if (std::strcmp(uri, LV2_TIME__speed) == 0)
             return CARLA_URI_MAP_ID_TIME_SPEED;
+        if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat) == 0)
+            return CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT;
 
         // Others
         if (std::strcmp(uri, LV2_MIDI__MidiEvent) == 0)
             return CARLA_URI_MAP_ID_MIDI_EVENT;
         if (std::strcmp(uri, LV2_PARAMETERS__sampleRate) == 0)
             return CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+        if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
+            return CARLA_URI_MAP_ID_UI_WINDOW_TITLE;
 
         // Custom
-        if (std::strcmp(uri, URI_CARLA_FRONTEND_WIN_ID) == 0)
-            return CARLA_URI_MAP_ID_FRONTEND_WIN_ID;
-        if (std::strcmp(uri, URI_CARLA_WORKER) == 0)
-            return CARLA_URI_MAP_ID_ATOM_WORKER;
+        if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
+            return CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
+        if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
+            return CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
         // Custom types
         return ((CarlaLv2Client*)handle)->getCustomURID(uri);
@@ -1001,8 +1019,6 @@ private:
             return LV2_ATOM__URID;
         if (urid == CARLA_URI_MAP_ID_ATOM_VECTOR)
             return LV2_ATOM__Vector;
-        if (urid == CARLA_URI_MAP_ID_ATOM_WORKER)
-            return URI_CARLA_WORKER; // custom
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM)
             return LV2_ATOM__atomTransfer;
         if (urid == CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
@@ -1047,17 +1063,25 @@ private:
             return LV2_TIME__framesPerSecond;
         if (urid == CARLA_URI_MAP_ID_TIME_SPEED)
             return LV2_TIME__speed;
+        if (urid == CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT)
+            return LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat;
 
         // Others
         if (urid == CARLA_URI_MAP_ID_MIDI_EVENT)
             return LV2_MIDI__MidiEvent;
         if (urid == CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE)
             return LV2_PARAMETERS__sampleRate;
-        if (urid == CARLA_URI_MAP_ID_FRONTEND_WIN_ID)
-            return URI_CARLA_FRONTEND_WIN_ID;
+        if (urid == CARLA_URI_MAP_ID_UI_WINDOW_TITLE)
+            return LV2_UI__windowTitle;
+
+        // Custom
+        if (urid == CARLA_URI_MAP_ID_CARLA_ATOM_WORKER)
+            return URI_CARLA_ATOM_WORKER;
+        if (urid == CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID)
+            return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
 
         // Custom types
-        return ((CarlaLv2Client*)handle)->getCustomURIString(urid);
+        return ((CarlaLv2Client*)handle)->getCustomURIDString(urid);
     }
 
     // -------------------------------------------------------------------

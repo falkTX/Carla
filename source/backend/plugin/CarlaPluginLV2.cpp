@@ -25,6 +25,7 @@
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBase64Utils.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
 
@@ -42,7 +43,6 @@ using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if 0
 // -----------------------------------------------------
 
 // Maximum default buffer size
@@ -379,6 +379,196 @@ struct CarlaPluginLV2Options {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2Options);
 };
 
+// -----------------------------------------------------------------------
+
+class CarlaPluginLV2;
+
+class CarlaPipeServerLV2 : public CarlaPipeServer
+{
+public:
+    enum UiState {
+        UiNone = 0,
+        UiHide,
+        UiShow,
+        UiCrashed
+    };
+
+    CarlaPipeServerLV2(CarlaPluginLV2* const plugin)
+        : kPlugin(plugin),
+          fFilename(),
+          fPluginURI(),
+          fUiURI(),
+          fUiState(UiNone),
+          leakDetector_CarlaPipeServerLV2() {}
+
+    ~CarlaPipeServerLV2() noexcept override
+    {
+        CARLA_SAFE_ASSERT_INT(fUiState == UiNone, fUiState);
+    }
+
+    UiState getAndResetUiState() noexcept
+    {
+        const UiState uiState(fUiState);
+        fUiState = UiNone;
+        return uiState;
+    }
+
+    void setData(const char* const filename, const char* const pluginURI, const char* const uiURI) noexcept
+    {
+        fFilename  = filename;
+        fPluginURI = pluginURI;
+        fUiURI     = uiURI;
+    }
+
+    void startPipeServer() noexcept
+    {
+        CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
+    }
+
+    void writeAtomMessage(const uint32_t index, const LV2_Atom* const atom) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
+
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        CarlaString base64atom(CarlaString::asBase64(atom, lv2_atom_total_size(atom)));
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("atom\n", 5);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", index);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", atom->size);
+            writeMessage(tmpBuf);
+
+            writeAndFixMessage(base64atom.buffer());
+        }
+
+        flushMessages();
+    }
+
+    void writeUridMessage(const uint32_t urid, const char* const uri) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
+
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("urid\n", 5);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", urid);
+            writeMessage(tmpBuf);
+
+            writeAndFixMessage(uri);
+        }
+
+        flushMessages();
+    }
+
+    void writeControlMessage(const uint32_t index, const float value) const noexcept
+    {
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cml(getPipeLock());
+        const ScopedLocale csl;
+
+        writeMessage("control\n", 8);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", index);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%f\n", value);
+            writeMessage(tmpBuf);
+        }
+
+        flushMessages();
+    }
+
+    void writeProgramMessage(const uint32_t index) const noexcept
+    {
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("program\n", 8);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%i\n", index);
+            writeMessage(tmpBuf);
+        }
+
+        flushMessages();
+    }
+
+    void writeNoteMessage(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+        CARLA_SAFE_ASSERT_RETURN(velocity < MAX_MIDI_VALUE,);
+
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("note\n", 5);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(onOff));
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", channel);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", note);
+            writeMessage(tmpBuf);
+
+            std::snprintf(tmpBuf, 0xff, "%i\n", velocity);
+            writeMessage(tmpBuf);
+        }
+
+        flushMessages();
+    }
+
+    void writeShowMessage() noexcept
+    {
+        const CarlaMutexLocker cml(getPipeLock());
+        writeMessage("show\n", 5);
+        flushMessages();
+    }
+
+    void writeFocusMessage() noexcept
+    {
+        const CarlaMutexLocker cml(getPipeLock());
+        writeMessage("focus\n", 6);
+        flushMessages();
+    }
+
+protected:
+    // returns true if msg was handled
+    bool msgReceived(const char* const msg) noexcept override;
+
+private:
+    CarlaPluginLV2* const kPlugin;
+
+    CarlaString fFilename;
+    CarlaString fPluginURI;
+    CarlaString fUiURI;
+    UiState     fUiState;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeServerLV2)
+};
+
 // -----------------------------------------------------
 
 class CarlaPluginLV2 : public CarlaPlugin,
@@ -405,6 +595,7 @@ public:
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
+          fPipeServer(this),
           fCustomURIDs(),
           fFirstActive(true),
           fLastStateChunk(nullptr),
@@ -461,9 +652,9 @@ public:
         {
             showCustomUI(false);
 
-            if (fUI.type == UI::TYPE_OSC)
+            if (fUI.type == UI::TYPE_BRIDGE)
             {
-                pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+                fPipeServer.stopPipeServer(pData->engine->getOptions().uiBridgesTimeout);
             }
             else
             {
@@ -1131,23 +1322,28 @@ public:
         if (! yesNo)
             pData->transientTryCounter = 0;
 
-        if (fUI.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (yesNo)
             {
-                pData->osc.data.clear();
-                pData->osc.thread.startThread();
+                if (fPipeServer.isPipeRunning())
+                {
+                    fPipeServer.writeFocusMessage();
+                    return;
+                }
+
+                fPipeServer.startPipeServer();
+
+                for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
+                    fPipeServer.writeUridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
+
+                fPipeServer.writeUridMessage(CARLA_URI_MAP_ID_NULL, "Complete");
+
+                fPipeServer.writeShowMessage();
             }
             else
             {
-                if (pData->osc.data.target != nullptr)
-                {
-                    osc_send_hide(pData->osc.data);
-                    osc_send_quit(pData->osc.data);
-                    pData->osc.data.clear();
-                }
-
-                pData->osc.thread.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
+                fPipeServer.stopPipeServer(pData->engine->getOptions().uiBridgesTimeout);
             }
             return;
         }
@@ -1324,13 +1520,10 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(fExt.worker != nullptr && fExt.worker->work != nullptr);
                     fExt.worker->work(fHandle, carla_lv2_worker_respond, this, atom->size, LV2_ATOM_BODY_CONST(atom));
                 }
-                else if (fUI.type == UI::TYPE_OSC)
+                else if (fUI.type == UI::TYPE_BRIDGE)
                 {
-                    if (pData->osc.data.target != nullptr)
-                    {
-                        CarlaString chunk(CarlaString::asBase64(atom, lv2_atom_total_size(atom)));
-                        osc_send_lv2_atom_transfer(pData->osc.data, portIndex, chunk.buffer());
-                    }
+                    if (fPipeServer.isPipeRunning())
+                        fPipeServer.writeAtomMessage(portIndex, atom);
                 }
                 else
                 {
@@ -1365,6 +1558,25 @@ public:
             }
             else
                 carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
+        }
+
+        if (fPipeServer.isPipeRunning())
+        {
+            fPipeServer.idlePipe();
+
+            switch (fPipeServer.getAndResetUiState())
+            {
+            case CarlaPipeServerLV2::UiNone:
+            case CarlaPipeServerLV2::UiShow:
+                break;
+            case CarlaPipeServerLV2::UiCrashed:
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                break;
+            case CarlaPipeServerLV2::UiHide:
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                fPipeServer.stopPipeServer(2000);
+                break;
+            }
         }
 
         if (fUI.handle != nullptr && fUI.descriptor != nullptr)
@@ -3754,19 +3966,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // OSC stuff
-
-    bool updateOscDataExtra() override
-    {
-        for (size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
-            osc_send_lv2_urid_map(pData->osc.data, static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
-
-        osc_send_lv2_urid_map(pData->osc.data, CARLA_URI_MAP_ID_NULL, "Complete");
-
-        return true;
-    }
-
-    // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
@@ -3774,10 +3973,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->param.count,);
 
-        if (fUI.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_BRIDGE)
         {
-            if (pData->osc.data.target != nullptr)
-                osc_send_control(pData->osc.data, pData->param.data[index].rindex, value);
+            if (fPipeServer.isPipeRunning())
+                fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[index].rindex), value);
         }
         else
         {
@@ -3794,10 +3993,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
         CARLA_SAFE_ASSERT_RETURN(index < pData->midiprog.count,);
 
-        if (fUI.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_BRIDGE)
         {
-            if (pData->osc.data.target != nullptr)
-                osc_send_midi_program(pData->osc.data, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
+            if (fPipeServer.isPipeRunning())
+                fPipeServer.writeProgramMessage(index);
         }
         else
         {
@@ -3813,16 +4012,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
         CARLA_SAFE_ASSERT_RETURN(velo > 0 && velo < MAX_MIDI_VALUE,);
 
-        if (fUI.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_BRIDGE)
         {
-            if (pData->osc.data.target != nullptr)
-            {
-                uint8_t midiData[4] = { 0, 0, 0, 0 };
-                midiData[1] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
-                midiData[2] = note;
-                midiData[3] = velo;
-                osc_send_midi(pData->osc.data, midiData);
-            }
+            if (fPipeServer.isPipeRunning())
+                fPipeServer.writeNoteMessage(false, channel, note, velo);
         }
         else
         {
@@ -3846,15 +4039,10 @@ public:
         CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
         CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
 
-        if (fUI.type == UI::TYPE_OSC)
+        if (fUI.type == UI::TYPE_BRIDGE)
         {
-            if (pData->osc.data.target != nullptr)
-            {
-                uint8_t midiData[4] = { 0, 0, 0, 0 };
-                midiData[1] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
-                midiData[2] = note;
-                osc_send_midi(pData->osc.data, midiData);
-            }
+            if (fPipeServer.isPipeRunning())
+                fPipeServer.writeNoteMessage(false, channel, note, 0);
         }
         else
         {
@@ -4117,8 +4305,8 @@ public:
 
         fCustomURIDs.append(carla_strdup(uri));
 
-        if (fUI.type == UI::TYPE_OSC && pData->osc.data.target != nullptr)
-            osc_send_lv2_urid_map(pData->osc.data, urid, uri);
+        if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
+            fPipeServer.writeUridMessage(urid, uri);
 
         return urid;
     }
@@ -4425,7 +4613,7 @@ public:
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
             // plugins sometimes fail on this, not good...
-            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_pad_size(lv2_atom_total_size(atom)), bufferSize, atom->size);
+            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_total_size(atom), bufferSize, atom->size);
 
             for (uint32_t i=0; i < fEventsIn.count; ++i)
             {
@@ -5071,13 +5259,13 @@ public:
         if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
         {
             // -----------------------------------------------------------
-            // initialize osc-bridge
+            // initialize ui-bridge
 
             if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
             {
-                carla_stdout("Will use OSC-Bridge UI, binary: \"%s\"", bridgeBinary);
-                fUI.type = UI::TYPE_OSC;
-                pData->osc.thread.setOscData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI, fUI.rdfDescriptor->Bundle);
+                carla_stdout("Will use UI-Bridge, binary: \"%s\"", bridgeBinary);
+                fUI.type = UI::TYPE_BRIDGE;
+                fPipeServer.setData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI);
                 delete[] bridgeBinary;
                 return;
             }
@@ -5350,6 +5538,7 @@ private:
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;
     CarlaPluginLV2Options   fLv2Options;
+    CarlaPipeServerLV2      fPipeServer;
 
     LinkedList<const char*> fCustomURIDs;
 
@@ -5382,10 +5571,10 @@ private:
 
     struct UI {
         enum Type {
-            TYPE_NULL,
+            TYPE_NULL = 0,
+            TYPE_BRIDGE,
             TYPE_EMBED,
-            TYPE_EXTERNAL,
-            TYPE_OSC
+            TYPE_EXTERNAL
         };
 
         Type type;
@@ -5912,45 +6101,83 @@ private:
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#define lv2PluginPtr ((CarlaPluginLV2*)plugin)
-
-#ifndef BUILD_BRIDGE
-int CarlaEngineOsc::handleMsgLv2AtomTransfer(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
 {
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
-    carla_debug("CarlaOsc::handleMsgLv2AtomTransfer()");
+    if (std::strcmp(msg, "exiting") == 0)
+    {
+        closePipeServer();
+        fUiState = UiHide;
+        return true;
+    }
 
-    const int32_t portIndex   = argv[0]->i;
-    const char* const atomBuf = (const char*)&argv[1]->s;
+    if (std::strcmp(msg, "control") == 0)
+    {
+        uint32_t index;
+        float value;
 
-    CARLA_SAFE_ASSERT_RETURN(portIndex >= 0, 0);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
 
-    std::vector<uint8_t> chunk(carla_getChunkFromBase64String(atomBuf));
-    CARLA_SAFE_ASSERT_RETURN(chunk.size() > 0, 0);
+        try {
+            kPlugin->handleUIWrite(index, sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
+        } CARLA_SAFE_EXCEPTION("magReceived control");
 
-    const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
-    lv2PluginPtr->handleTransferAtom(static_cast<uint32_t>(portIndex), atom);
-    return 0;
+        return true;
+    }
+
+    if (std::strcmp(msg, "atom") == 0)
+    {
+        uint32_t index, size;
+        const char* base64atom;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(size), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(base64atom), true);
+
+        std::vector<uint8_t> chunk(carla_getChunkFromBase64String(base64atom));
+        delete[] base64atom;
+        CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
+
+        const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
+        CARLA_SAFE_ASSERT_RETURN(atom->size == chunk.size(), true);
+
+        try {
+            kPlugin->handleUIWrite(index, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
+        } CARLA_SAFE_EXCEPTION("magReceived atom");
+
+        return true;
+    }
+
+    if (std::strcmp(msg, "program") == 0)
+    {
+        uint32_t index;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
+
+        try {
+            kPlugin->setMidiProgram(static_cast<int32_t>(index), false, true, true);
+        } CARLA_SAFE_EXCEPTION("msgReceived program");
+
+        return true;
+    }
+
+    if (std::strcmp(msg, "urid") == 0)
+    {
+        uint32_t urid;
+        const char* uri;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri), true);
+
+        if (urid != 0)
+            kPlugin->handleUridMap(urid, uri);
+
+        delete[] uri;
+        return true;
+    }
+
+    return false;
 }
-
-int CarlaEngineOsc::handleMsgLv2UridMap(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "is");
-    carla_debug("CarlaOsc::handleMsgLv2UridMap()");
-
-    const int32_t urid    = argv[0]->i;
-    const char* const uri = (const char*)&argv[1]->s;
-
-    CARLA_SAFE_ASSERT_RETURN(urid > 0, 0);
-
-    lv2PluginPtr->handleUridMap(static_cast<LV2_URID>(urid), uri);
-    return 0;
-}
-#endif
-
-#undef lv2PluginPtr
-
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -5958,7 +6185,6 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newLV2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.name, init.label, init.uniqueId);
 
-#if 0
     CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
@@ -5997,9 +6223,6 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     }
 
     return plugin;
-#endif
-    init.engine->setLastError("LV2 plugins not working due to pending code rewrite.");
-    return nullptr;
 }
 
 // -------------------------------------------------------------------------------------------------------------------
