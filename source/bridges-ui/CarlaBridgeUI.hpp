@@ -55,17 +55,6 @@ protected:
     virtual ~CarlaBridgeUI() noexcept;
 
     // ---------------------------------------------------------------------
-    // Host DSP State
-
-    void sendControl(const uint32_t index, const float value) const noexcept;
-    void sendProgram(const uint32_t index) const noexcept;
-    void sendConfigure(const char* const key, const char* const value) const noexcept;
-    void sendNote(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) const noexcept;
-
-#ifdef BRIDGE_LV2
-    void sendAtom(const uint32_t index, const LV2_Atom* const atom) const noexcept;
-    void sendURID(const LV2_URID urid, const char* const uri) const noexcept;
-#endif
 
     bool libOpen(const char* const filename) noexcept;
     void* libSymbol(const char* const symbol) const noexcept;

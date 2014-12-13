@@ -73,20 +73,6 @@ public:
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
 
-    void writeShowMessage() noexcept
-    {
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("show\n", 5);
-        flushMessages();
-    }
-
-    void writeFocusMessage() noexcept
-    {
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("focus\n", 6);
-        flushMessages();
-    }
-
 protected:
     bool msgReceived(const char* const msg) noexcept override
     {

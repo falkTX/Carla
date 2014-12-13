@@ -33,7 +33,7 @@ public:
         UiCrashed
     };
 
-    CarlaExternalUI()
+    CarlaExternalUI() noexcept
         : fFilename(),
           fSampleRate(),
           fUiTitle(),
@@ -63,12 +63,8 @@ public:
     {
         CarlaPipeServer::startPipeServer(fFilename, fSampleRate, fUiTitle);
 
-        if (! show)
-            return;
-
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("show\n", 5);
-        flushMessages();
+        if (show)
+            writeShowMessage();
     }
 
 protected:

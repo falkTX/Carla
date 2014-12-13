@@ -425,135 +425,6 @@ public:
         CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
     }
 
-    void writeAtomMessage(const uint32_t index, const LV2_Atom* const atom) const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(atom != nullptr,);
-
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        CarlaString base64atom(CarlaString::asBase64(atom, lv2_atom_total_size(atom)));
-
-        const CarlaMutexLocker cml(getPipeLock());
-
-        writeMessage("atom\n", 5);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", index);
-            writeMessage(tmpBuf);
-
-            std::snprintf(tmpBuf, 0xff, "%i\n", atom->size);
-            writeMessage(tmpBuf);
-
-            writeAndFixMessage(base64atom.buffer());
-        }
-
-        flushMessages();
-    }
-
-    void writeUridMessage(const uint32_t urid, const char* const uri) const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-
-        writeMessage("urid\n", 5);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", urid);
-            writeMessage(tmpBuf);
-
-            writeAndFixMessage(uri);
-        }
-
-        flushMessages();
-    }
-
-    void writeControlMessage(const uint32_t index, const float value) const noexcept
-    {
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-        const ScopedLocale csl;
-
-        writeMessage("control\n", 8);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", index);
-            writeMessage(tmpBuf);
-
-            std::snprintf(tmpBuf, 0xff, "%f\n", value);
-            writeMessage(tmpBuf);
-        }
-
-        flushMessages();
-    }
-
-    void writeProgramMessage(const uint32_t index) const noexcept
-    {
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-
-        writeMessage("program\n", 8);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", index);
-            writeMessage(tmpBuf);
-        }
-
-        flushMessages();
-    }
-
-    void writeNoteMessage(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
-        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
-        CARLA_SAFE_ASSERT_RETURN(velocity < MAX_MIDI_VALUE,);
-
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-
-        writeMessage("note\n", 5);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(onOff));
-            writeMessage(tmpBuf);
-
-            std::snprintf(tmpBuf, 0xff, "%i\n", channel);
-            writeMessage(tmpBuf);
-
-            std::snprintf(tmpBuf, 0xff, "%i\n", note);
-            writeMessage(tmpBuf);
-
-            std::snprintf(tmpBuf, 0xff, "%i\n", velocity);
-            writeMessage(tmpBuf);
-        }
-
-        flushMessages();
-    }
-
-    void writeShowMessage() noexcept
-    {
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("show\n", 5);
-        flushMessages();
-    }
-
-    void writeFocusMessage() noexcept
-    {
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("focus\n", 6);
-        flushMessages();
-    }
-
 protected:
     // returns true if msg was handled
     bool msgReceived(const char* const msg) noexcept override;
@@ -1335,9 +1206,9 @@ public:
                 fPipeServer.startPipeServer();
 
                 for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
-                    fPipeServer.writeUridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
+                    fPipeServer.writeLv2UridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
 
-                fPipeServer.writeUridMessage(CARLA_URI_MAP_ID_NULL, "Complete");
+                fPipeServer.writeLv2UridMessage(CARLA_URI_MAP_ID_NULL, "Complete");
 
                 fPipeServer.writeShowMessage();
             }
@@ -1523,7 +1394,7 @@ public:
                 else if (fUI.type == UI::TYPE_BRIDGE)
                 {
                     if (fPipeServer.isPipeRunning())
-                        fPipeServer.writeAtomMessage(portIndex, atom);
+                        fPipeServer.writeLv2AtomMessage(portIndex, atom);
                 }
                 else
                 {
@@ -4015,7 +3886,7 @@ public:
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
-                fPipeServer.writeNoteMessage(false, channel, note, velo);
+                fPipeServer.writeMidiNoteMessage(false, channel, note, velo);
         }
         else
         {
@@ -4042,7 +3913,7 @@ public:
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
-                fPipeServer.writeNoteMessage(false, channel, note, 0);
+                fPipeServer.writeMidiNoteMessage(false, channel, note, 0);
         }
         else
         {
@@ -4306,7 +4177,7 @@ public:
         fCustomURIDs.append(carla_strdup(uri));
 
         if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
-            fPipeServer.writeUridMessage(urid, uri);
+            fPipeServer.writeLv2UridMessage(urid, uri);
 
         return urid;
     }
@@ -6139,7 +6010,7 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
 
         const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
-        CARLA_SAFE_ASSERT_RETURN(atom->size == chunk.size(), true);
+        CARLA_SAFE_ASSERT_RETURN(lv2_atom_total_size(atom) == chunk.size(), true);
 
         try {
             kPlugin->handleUIWrite(index, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
@@ -6170,7 +6041,11 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri), true);
 
         if (urid != 0)
-            kPlugin->handleUridMap(urid, uri);
+        {
+            try {
+                kPlugin->handleUridMap(urid, uri);
+            } CARLA_SAFE_EXCEPTION("msgReceived urid");
+        }
 
         delete[] uri;
         return true;

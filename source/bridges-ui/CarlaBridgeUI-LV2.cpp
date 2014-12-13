@@ -613,7 +613,7 @@ public:
         }
 
         if (isPipeRunning())
-            sendURID(urid, uri);
+            writeLv2UridMessage(urid, uri);
 
         return urid;
     }
@@ -632,7 +632,7 @@ public:
     void handleProgramChanged(const int32_t /*index*/)
     {
         if (isPipeRunning())
-            sendConfigure("reloadprograms", "");
+            writeConfigureMessage("reloadprograms", "");
     }
 
     uint32_t handleUiPortMap(const char* const symbol)
@@ -674,7 +674,7 @@ public:
             const float value(*(const float*)buffer);
 
             if (isPipeRunning())
-                sendControl(portIndex, value);
+                writeControlMessage(portIndex, value);
         }
         else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
         {
@@ -683,7 +683,7 @@ public:
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
             if (isPipeRunning())
-                sendAtom(portIndex, atom);
+                writeLv2AtomMessage(portIndex, atom);
         }
         else
         {

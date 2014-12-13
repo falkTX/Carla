@@ -21,6 +21,8 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMutex.hpp"
 
+#include "lv2/atom.h"
+
 // -----------------------------------------------------------------------
 // CarlaPipeCommon class
 
@@ -162,6 +164,64 @@ public:
      * Flush all messages currently in cache.
      */
     bool flushMessages() const noexcept;
+
+    // -------------------------------------------------------------------
+    // write prepared messages, no lock or flush needed (done internally)
+
+    /*!
+     * Write a single "show" message.
+     */
+    void writeShowMessage() const noexcept;
+
+    /*!
+     * Write a single "focus" message.
+     */
+    void writeFocusMessage() const noexcept;
+
+    /*!
+     * Write a single "hide" message.
+     */
+    void writeHideMessage() const noexcept;
+
+    /*!
+     * Write an "error" message.
+     */
+    void writeErrorMessage(const char* const error) const noexcept;
+
+    /*!
+     * Write a "control" message used for parameter changes.
+     */
+    void writeControlMessage(const uint32_t index, const float value) const noexcept;
+
+    /*!
+     * Write a "configure" message used for state changes.
+     */
+    void writeConfigureMessage(const char* const key, const char* const value) const noexcept;
+
+    /*!
+     * Write a "program" message (using index).
+     */
+    void writeProgramMessage(const uint32_t index) const noexcept;
+
+    /*!
+     * Write a "midiprogram" message (using bank and program).
+     */
+    void writeMidiProgramMessage(const uint32_t bank, const uint32_t program) const noexcept;
+
+    /*!
+     * Write a MIDI "note" message.
+     */
+    void writeMidiNoteMessage(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) const noexcept;
+
+    /*!
+     * Write an lv2 "atom" message.
+     */
+    void writeLv2AtomMessage(const uint32_t index, const LV2_Atom* const atom) const noexcept;
+
+    /*!
+     * Write an lv2 "urid" message.
+     */
+    void writeLv2UridMessage(const uint32_t urid, const char* const uri) const noexcept;
 
     // -------------------------------------------------------------------
 
