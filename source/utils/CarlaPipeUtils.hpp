@@ -65,7 +65,7 @@ public:
     /*!
      * Check the pipe for new messages and send them to msgReceived().
      */
-    void idlePipe() noexcept;
+    void idlePipe(const bool onlyOnce = false) noexcept;
 
     // -------------------------------------------------------------------
     // write lock
@@ -169,21 +169,6 @@ public:
     // write prepared messages, no lock or flush needed (done internally)
 
     /*!
-     * Write a single "show" message.
-     */
-    void writeShowMessage() const noexcept;
-
-    /*!
-     * Write a single "focus" message.
-     */
-    void writeFocusMessage() const noexcept;
-
-    /*!
-     * Write a single "hide" message.
-     */
-    void writeHideMessage() const noexcept;
-
-    /*!
      * Write an "error" message.
      */
     void writeErrorMessage(const char* const error) const noexcept;
@@ -275,6 +260,24 @@ public:
      * Close the pipes without waiting for the child process to terminate.
      */
     void closePipeServer() noexcept;
+
+    // -------------------------------------------------------------------
+    // write prepared messages, no lock or flush needed (done internally)
+
+    /*!
+     * Write a single "show" message.
+     */
+    void writeShowMessage() const noexcept;
+
+    /*!
+     * Write a single "focus" message.
+     */
+    void writeFocusMessage() const noexcept;
+
+    /*!
+     * Write a single "hide" message.
+     */
+    void writeHideMessage() const noexcept;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeServer)
 };

@@ -33,9 +33,7 @@ CARLA_BRIDGE_START_NAMESPACE
 CarlaBridgeUI::CarlaBridgeUI() noexcept
     : CarlaPipeClient(),
       fQuitReceived(false),
-#ifdef BRIDGE_LV2
-      fUridMapComplete(false),
-#endif
+      fGotOptions(false),
       fToolkit(nullptr),
       fLib(nullptr),
       fLibFilename(),
@@ -110,11 +108,9 @@ const char* CarlaBridgeUI::libError() const noexcept
 
 bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
 {
-#ifdef BRIDGE_LV2
-    if (! fUridMapComplete) {
-        CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0, true);
-    }
-#endif
+   if (! fGotOptions) {
+       CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0 || std::strcmp(msg, "uiOptions") == 0, true);
+   }
 
     if (std::strcmp(msg, "control") == 0)
     {
@@ -206,20 +202,31 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(urid), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uri), true);
 
-        if (urid == 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(std::strcmp(uri, "Complete") == 0, true);
-            fUridMapComplete = true;
-        }
-        else
-        {
+        if (urid != 0)
             dspURIDReceived(urid, uri);
-        }
 
         delete[] uri;
         return true;
     }
 #endif
+
+    if (std::strcmp(msg, "uiOptions") == 0)
+    {
+        bool useTheme, useThemeColors;
+        const char* windowTitle;
+        uint64_t transientWindowId;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useTheme), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useThemeColors), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(windowTitle), true);
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
+
+        fGotOptions = true;
+        uiOptionsChanged(useTheme, useThemeColors, windowTitle, transientWindowId);
+
+        delete[] windowTitle;
+        return true;
+    }
 
     CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr, true);
 
@@ -272,40 +279,30 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
 {
     CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr, false);
 
-    if (! fToolkit->init(argc, argv))
-        return false;
-
     if (argc == 7)
     {
         if (! initPipeClient(argv))
-        {
-            fToolkit->quit();
-            delete fToolkit;
-            fToolkit = nullptr;
             return false;
-        }
 
-#ifdef BRIDGE_LV2
-        // wait for URID map to complete
-        for (int i=0; i<20 && ! fUridMapComplete; ++i)
+        // wait for ui options, FIXME
+        for (int i=0; i<20 && ! fGotOptions; ++i)
         {
-            idlePipe();
+            idlePipe(true);
             carla_msleep(100);
         }
 
-        if (! fUridMapComplete)
+        if (! fGotOptions)
         {
-            fToolkit->quit();
-            delete fToolkit;
-            fToolkit = nullptr;
             closePipeClient();
+            return false;
         }
-#endif
     }
-    else
+
+    if (! fToolkit->init(argc, argv))
     {
-        // no mapping needed
-        fUridMapComplete = true;
+        if (argc == 7)
+            closePipeClient();
+        return false;
     }
 
     return true;

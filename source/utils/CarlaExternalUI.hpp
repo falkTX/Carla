@@ -59,12 +59,16 @@ public:
         fUiTitle    = uiTitle;
     }
 
-    void startPipeServer(const bool show = true) noexcept
+    bool startPipeServer(const bool show = true) noexcept
     {
-        CarlaPipeServer::startPipeServer(fFilename, fSampleRate, fUiTitle);
+        if (CarlaPipeServer::startPipeServer(fFilename, fSampleRate, fUiTitle))
+        {
+            if (show)
+                writeShowMessage();
+            return true;
+        }
 
-        if (show)
-            writeShowMessage();
+        return false;
     }
 
 protected:

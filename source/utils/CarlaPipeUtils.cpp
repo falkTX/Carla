@@ -481,7 +481,7 @@ bool CarlaPipeCommon::isPipeRunning() const noexcept
     return (pData->pipeRecv != INVALID_PIPE_VALUE && pData->pipeSend != INVALID_PIPE_VALUE);
 }
 
-void CarlaPipeCommon::idlePipe() noexcept
+void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 {
     const char* locale = nullptr;
 
@@ -492,7 +492,7 @@ void CarlaPipeCommon::idlePipe() noexcept
         if (msg == nullptr)
             break;
 
-        if (locale == nullptr)
+        if (locale == nullptr && ! onlyOnce)
         {
             locale = carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr));
             ::setlocale(LC_NUMERIC, "C");
@@ -507,6 +507,9 @@ void CarlaPipeCommon::idlePipe() noexcept
         pData->isReading = false;
 
         delete[] msg;
+
+        if (onlyOnce)
+            break;
     }
 
     if (locale != nullptr)
@@ -765,27 +768,6 @@ bool CarlaPipeCommon::flushMessages() const noexcept
 
 // -------------------------------------------------------------------
 
-void CarlaPipeCommon::writeShowMessage() const noexcept
-{
-    const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("show\n", 5);
-    flushMessages();
-}
-
-void CarlaPipeCommon::writeFocusMessage() const noexcept
-{
-    const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("focus\n", 6);
-    flushMessages();
-}
-
-void CarlaPipeCommon::writeHideMessage() const noexcept
-{
-    const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("show\n", 5);
-    flushMessages();
-}
-
 void CarlaPipeCommon::writeErrorMessage(const char* const error) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(error != nullptr && error[0] != '\0',);
@@ -795,8 +777,6 @@ void CarlaPipeCommon::writeErrorMessage(const char* const error) const noexcept
     writeAndFixMessage(error);
     flushMessages();
 }
-
-// -------------------------------------------------------------------
 
 void CarlaPipeCommon::writeControlMessage(const uint32_t index, const float value) const noexcept
 {
@@ -931,6 +911,7 @@ void CarlaPipeCommon::writeLv2AtomMessage(const uint32_t index, const LV2_Atom* 
 
 void CarlaPipeCommon::writeLv2UridMessage(const uint32_t urid, const char* const uri) const noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(urid != 0,);
     CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
 
     char tmpBuf[0xff+1];
@@ -1378,6 +1359,27 @@ void CarlaPipeServer::closePipeServer() noexcept
 #endif
         pData->pipeSend = INVALID_PIPE_VALUE;
     }
+}
+
+void CarlaPipeServer::writeShowMessage() const noexcept
+{
+    const CarlaMutexLocker cml(pData->writeLock);
+    _writeMsgBuffer("show\n", 5);
+    flushMessages();
+}
+
+void CarlaPipeServer::writeFocusMessage() const noexcept
+{
+    const CarlaMutexLocker cml(pData->writeLock);
+    _writeMsgBuffer("focus\n", 6);
+    flushMessages();
+}
+
+void CarlaPipeServer::writeHideMessage() const noexcept
+{
+    const CarlaMutexLocker cml(pData->writeLock);
+    _writeMsgBuffer("show\n", 5);
+    flushMessages();
 }
 
 // -----------------------------------------------------------------------

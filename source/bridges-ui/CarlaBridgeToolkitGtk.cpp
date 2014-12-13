@@ -180,11 +180,10 @@ protected:
     {
         carla_debug("CarlaBridgeToolkitGtk::handleRealize()");
 
-#ifdef CARLA_OS_LINUX
-        if (const char* const winIdStr = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
-            if (const long long winId = std::strtoll(winIdStr, nullptr, 16))
-                setTransient(static_cast<uintptr_t>(winId));
-#endif
+        const CarlaBridgeUI::Options& options(ui->getOptions());
+
+        if (options.transientWindowId != 0)
+            setTransient(options.transientWindowId);
     }
 
     gboolean handleTimeout()
@@ -203,7 +202,6 @@ protected:
         return true;
     }
 
-#ifdef CARLA_OS_LINUX
     void setTransient(const uintptr_t winId)
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
@@ -212,7 +210,7 @@ protected:
         GdkWindow* const gdkWindow(gtk_widget_get_window(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gdkWindow != nullptr,);
 
-# ifdef BRIDGE_GTK3
+#ifdef BRIDGE_GTK3
         GdkDisplay* const gdkDisplay(gdk_window_get_display(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(gdkDisplay != nullptr,);
 
@@ -221,17 +219,16 @@ protected:
 
         const ::XID xid(gdk_x11_window_get_xid(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
-# else
+#else
         ::Display* const display(gdk_x11_drawable_get_xdisplay(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
         const ::XID xid(gdk_x11_drawable_get_xid(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
-# endif
+#endif
 
         XSetTransientForHint(display, xid, static_cast< ::Window>(winId));
     }
-#endif
 
     // ---------------------------------------------------------------------
 

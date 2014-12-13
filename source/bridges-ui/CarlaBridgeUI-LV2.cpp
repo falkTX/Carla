@@ -606,6 +606,14 @@ public:
         fCustomURIDs.append(carla_strdup(uri));
     }
 
+    void uiOptionsChanged(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) override
+    {
+        fUiOptions.useTheme          = useTheme;
+        fUiOptions.useThemeColors    = useThemeColors;
+        fUiOptions.windowTitle       = windowTitle;
+        fUiOptions.transientWindowId = transientWindowId;
+    }
+
     // ---------------------------------------------------------------------
 
     LV2_URID getCustomURID(const char* const uri)

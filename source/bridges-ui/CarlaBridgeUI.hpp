@@ -75,6 +75,8 @@ protected:
     virtual void dspURIDReceived(const LV2_URID urid, const char* const uri) = 0;
 #endif
 
+    virtual void uiOptionsChanged(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) = 0;
+
 public:
     // ---------------------------------------------------------------------
     // UI initialization
@@ -143,9 +145,7 @@ public:
 
 protected:
     bool fQuitReceived;
-#ifdef BRIDGE_LV2
-    bool fUridMapComplete;
-#endif
+    bool fGotOptions;
     CarlaBridgeToolkit* fToolkit;
 
     lib_t fLib;

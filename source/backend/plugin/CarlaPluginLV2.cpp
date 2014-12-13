@@ -420,9 +420,45 @@ public:
         fUiURI     = uiURI;
     }
 
-    void startPipeServer() noexcept
+    bool startPipeServer() noexcept
     {
-        CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
+        return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
+    }
+
+    void writeUiOptionsMessage(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) const noexcept
+    {
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        _writeMsgBuffer("uiOptions\n", 10);
+
+        {
+            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(useTheme));
+            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+
+            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(useThemeColors));
+            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+
+            writeAndFixMessage(windowTitle != nullptr ? windowTitle : "");
+
+            std::snprintf(tmpBuf, 0xff, P_INTPTR "\n", transientWindowId);
+            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+        }
+
+        flushMessages();
+    }
+
+    void writeUiTitleMessage(const char* const title) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(title != nullptr && title[0] != '\0',);
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        _writeMsgBuffer("uiTitle\n", 8);
+        writeAndFixMessage(title);
+        flushMessages();
     }
 
 protected:
@@ -1190,6 +1226,8 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type != UI::TYPE_NULL,);
 
+        const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
+
         if (! yesNo)
             pData->transientTryCounter = 0;
 
@@ -1203,12 +1241,16 @@ public:
                     return;
                 }
 
-                fPipeServer.startPipeServer();
+                if (! fPipeServer.startPipeServer())
+                {
+                    pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                    return;
+                }
 
                 for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
                     fPipeServer.writeLv2UridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
 
-                fPipeServer.writeLv2UridMessage(CARLA_URI_MAP_ID_NULL, "Complete");
+                fPipeServer.writeUiOptionsMessage(true, true, fLv2Options.windowTitle, frontendWinId);
 
                 fPipeServer.writeShowMessage();
             }
@@ -1242,7 +1284,6 @@ public:
                 if (fUI.type == UI::TYPE_EMBED)
                 {
                     const char* msg = nullptr;
-                    const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
                     switch (fUI.rdfDescriptor->Type)
                     {
@@ -1285,11 +1326,7 @@ public:
                     }
 
                     if (fUI.window == nullptr && fExt.uishow == nullptr)
-                    {
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
-                        // unused
-                        (void)frontendWinId;
-                    }
 
                     if (fUI.window != nullptr)
                     {

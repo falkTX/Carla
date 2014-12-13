@@ -66,7 +66,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI != nullptr, false);
 
         fUI->setTitle(options.windowTitle.buffer());
-        fUI->setTransientWinId(options.transientWindowId);
+
+        if (options.transientWindowId != 0)
+            fUI->setTransientWinId(options.transientWindowId);
 
         return true;
     }
