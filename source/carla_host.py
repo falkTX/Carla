@@ -64,8 +64,9 @@ except:
 # ------------------------------------------------------------------------------------------------------------
 # Session Management support
 
-LADISH_APP_NAME = os.getenv("LADISH_APP_NAME")
-NSM_URL         = os.getenv("NSM_URL")
+CARLA_CLIENT_NAME = os.getenv("CARLA_CLIENT_NAME")
+LADISH_APP_NAME   = os.getenv("LADISH_APP_NAME")
+NSM_URL           = os.getenv("NSM_URL")
 
 # ------------------------------------------------------------------------------------------------------------
 # Host Window
@@ -123,7 +124,7 @@ class HostWindow(QMainWindow):
             self.fClientName         = "Carla" # "Carla.tmp"
             self.fSessionManagerName = "Non Session Manager"
         else:
-            self.fClientName         = "Carla"
+            self.fClientName         = CARLA_CLIENT_NAME or "Carla"
             self.fSessionManagerName = ""
 
         # ----------------------------------------------------------------------------------------------------
