@@ -1062,7 +1062,7 @@ CarlaPipeServer::CarlaPipeServer() noexcept
     carla_debug("CarlaPipeServer::CarlaPipeServer()");
 }
 
-CarlaPipeServer::~CarlaPipeServer() noexcept
+CarlaPipeServer::~CarlaPipeServer() /*noexcept*/
 {
     carla_debug("CarlaPipeServer::~CarlaPipeServer()");
 
@@ -1389,7 +1389,7 @@ CarlaPipeClient::CarlaPipeClient() noexcept
     carla_debug("CarlaPipeClient::CarlaPipeClient()");
 }
 
-CarlaPipeClient::~CarlaPipeClient() noexcept
+CarlaPipeClient::~CarlaPipeClient() /*noexcept*/
 {
     carla_debug("CarlaPipeClient::~CarlaPipeClient()");
 

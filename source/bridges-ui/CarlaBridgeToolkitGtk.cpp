@@ -45,7 +45,7 @@ public:
           fLastHeight(0),
           leakDetector_CarlaBridgeToolkitGtk()
     {
-        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p, \"%s\")", client, windowTitle);
+        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", ui);
     }
 
     ~CarlaBridgeToolkitGtk() override

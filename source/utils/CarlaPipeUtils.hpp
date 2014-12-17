@@ -257,7 +257,7 @@ public:
     /*!
      * Destructor.
      */
-    ~CarlaPipeServer() noexcept override;
+    ~CarlaPipeServer() /*noexcept*/ override;
 
     /*!
      * Start the pipe server using @a filename with 2 arguments.
@@ -293,7 +293,7 @@ public:
     /*!
      * Destructor.
      */
-    ~CarlaPipeClient() noexcept override;
+    ~CarlaPipeClient() /*noexcept*/ override;
 
     /*!
      * Initialize the pipes used by a server.

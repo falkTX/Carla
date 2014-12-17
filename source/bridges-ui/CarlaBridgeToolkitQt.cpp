@@ -59,9 +59,7 @@ public:
           fNeedsShow(false),
           leakDetector_CarlaBridgeToolkitQt()
     {
-        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p, \"%s\")", client, windowTitle);
-
-        connect(this, SIGNAL(setSizeSafeSignal(int,int)), SLOT(setSizeSafeSlot(int,int)));
+        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", ui);
     }
 
     ~CarlaBridgeToolkitQt() override

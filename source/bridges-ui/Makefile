@@ -13,10 +13,10 @@ include $(CWD)/Makefile.mk
 BINDIR    := $(CWD)/../bin
 
 ifeq ($(DEBUG),true)
-OBJDIR    := $(CWD)/../build/bridges-plugin/Debug
+OBJDIR    := $(CWD)/../build/bridges-ui/Debug
 MODULEDIR := $(CWD)/../build/modules/Debug
 else
-OBJDIR    := $(CWD)/../build/bridges-plugin/Release
+OBJDIR    := $(CWD)/../build/bridges-ui/Release
 MODULEDIR := $(CWD)/../build/modules/Release
 endif
 
