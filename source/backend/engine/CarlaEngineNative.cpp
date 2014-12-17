@@ -68,7 +68,7 @@ public:
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
     }
 
-    ~CarlaEngineNativeUI() override
+    ~CarlaEngineNativeUI() noexcept override
     {
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
     }
