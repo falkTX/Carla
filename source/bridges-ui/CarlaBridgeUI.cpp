@@ -48,7 +48,7 @@ CarlaBridgeUI::CarlaBridgeUI() noexcept
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaBridgeToolkit::createNew",);
 }
 
-CarlaBridgeUI::~CarlaBridgeUI() noexcept
+CarlaBridgeUI::~CarlaBridgeUI() /*noexcept*/
 {
     carla_debug("CarlaBridgeUI::~CarlaBridgeUI()");
 

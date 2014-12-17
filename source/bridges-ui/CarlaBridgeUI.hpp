@@ -52,7 +52,7 @@ protected:
     /*!
      * Destructor.
      */
-    virtual ~CarlaBridgeUI() noexcept;
+    virtual ~CarlaBridgeUI() /*noexcept*/;
 
     // ---------------------------------------------------------------------
 
