@@ -37,7 +37,7 @@ protected:
     /*!
      * Destructor.
      */
-    virtual ~CarlaPipeCommon() noexcept;
+    virtual ~CarlaPipeCommon() /*noexcept*/;
 
     /*!
      * A message has been received (in the context of idlePipe()).

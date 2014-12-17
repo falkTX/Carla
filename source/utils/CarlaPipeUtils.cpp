@@ -467,7 +467,7 @@ CarlaPipeCommon::CarlaPipeCommon() noexcept
     carla_debug("CarlaPipeCommon::CarlaPipeCommon()");
 }
 
-CarlaPipeCommon::~CarlaPipeCommon() noexcept
+CarlaPipeCommon::~CarlaPipeCommon() /*noexcept*/
 {
     carla_debug("CarlaPipeCommon::~CarlaPipeCommon()");
 
