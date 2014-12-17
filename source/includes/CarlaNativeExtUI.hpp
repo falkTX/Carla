@@ -39,6 +39,8 @@ public:
           fExtUiPath(extUiPath),
           leakDetector_NativePluginAndUiClass() {}
 
+    ~NativePluginAndUiClass() noexcept override {}
+
 protected:
     // -------------------------------------------------------------------
     // Plugin UI calls
