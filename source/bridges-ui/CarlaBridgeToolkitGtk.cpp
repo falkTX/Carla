@@ -233,7 +233,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
 # endif
 
-        XSetTransientForHint(display, xid, static_cast<::Window>(winId));
+        XSetTransientForHint(display, xid, static_cast< ::Window>(winId));
     }
 #endif
 

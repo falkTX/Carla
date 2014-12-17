@@ -117,7 +117,7 @@ public:
         if (options.transientWindowId != 0)
         {
 #if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-            XSetTransientForHint(QX11Info::display(), static_cast<::Window>(fWindow->winId()), static_cast<::Window>(options.transientWindowId));
+            XSetTransientForHint(QX11Info::display(), static_cast< ::Window>(fWindow->winId()), static_cast< ::Window>(options.transientWindowId));
 #endif
         }
 
