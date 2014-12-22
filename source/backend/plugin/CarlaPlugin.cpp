@@ -1361,13 +1361,9 @@ void CarlaPlugin::idle()
         pData->transientTryCounter = 0;
 }
 
-void CarlaPlugin::showCustomUI(const bool yesNo)
+void CarlaPlugin::showCustomUI(const bool)
 {
     CARLA_SAFE_ASSERT(false);
-    return;
-
-    // unused
-    (void)yesNo;
 }
 
 // -------------------------------------------------------------------
@@ -1586,114 +1582,10 @@ void CarlaPlugin::registerToOscClient() noexcept
 #endif
 }
 
-void CarlaPlugin::updateOscData(const lo_address& source, const char* const url)
+void CarlaPlugin::updateOscData(const lo_address&, const char* const)
 {
-    // FIXME - remove debug prints later
-    carla_stdout("CarlaPlugin::updateOscData(%p, \"%s\")", source, url);
-
-    pData->oscData.clear();
-
-    const int proto = lo_address_get_protocol(source);
-
-    {
-        const char* host = lo_address_get_hostname(source);
-        const char* port = lo_address_get_port(source);
-        pData->oscData.source = lo_address_new_with_proto(proto, host, port);
-
-        carla_stdout("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
-    }
-
-    {
-        char* host = lo_url_get_hostname(url);
-        char* port = lo_url_get_port(url);
-        pData->oscData.path   = carla_strdup_free(lo_url_get_path(url));
-        pData->oscData.target = lo_address_new_with_proto(proto, host, port);
-        carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, pData->oscData.path);
-
-        std::free(host);
-        std::free(port);
-    }
-
-#ifndef BUILD_BRIDGE
-    if (pData->hints & PLUGIN_IS_BRIDGE)
-    {
-        carla_stdout("CarlaPlugin::updateOscData() - done");
-        return;
-    }
-#endif
-
-    // send possible extra data first
-    if (updateOscDataExtra())
-        pData->engine->idleOsc();
-
-    osc_send_sample_rate(pData->oscData, static_cast<float>(pData->engine->getSampleRate()));
-
-    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
-    {
-        const CustomData& customData(it.getValue(kCustomDataFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
-
-        if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_STRING) == 0)
-            osc_send_configure(pData->oscData, customData.key, customData.value);
-    }
-
-    if (pData->prog.current >= 0)
-        osc_send_program(pData->oscData, static_cast<uint32_t>(pData->prog.current));
-
-    if (pData->midiprog.current >= 0)
-    {
-        const MidiProgramData& curMidiProg(pData->midiprog.getCurrent());
-
-        if (getType() == PLUGIN_DSSI)
-            osc_send_program(pData->oscData, curMidiProg.bank, curMidiProg.program);
-        else
-            osc_send_midi_program(pData->oscData, curMidiProg.bank, curMidiProg.program);
-    }
-
-    for (uint32_t i=0; i < pData->param.count; ++i)
-        osc_send_control(pData->oscData, pData->param.data[i].rindex, getParameterValue(i));
-
-    if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
-        pData->transientTryCounter = 1;
-
-    carla_stdout("CarlaPlugin::updateOscData() - done");
-}
-
-bool CarlaPlugin::updateOscDataExtra()
-{
-    return false;
-}
-
-void CarlaPlugin::updateOscURL()
-{
-    const String newURL(String(pData->engine->getOscServerPathUDP()) + String("/") + String(pData->id));
-
-    osc_send_update_url(pData->oscData, newURL.toRawUTF8());
-}
-
-bool CarlaPlugin::waitForOscGuiShow()
-{
-    carla_stdout("CarlaPlugin::waitForOscGuiShow()");
-    uint i=0, oscUiTimeout = pData->engine->getOptions().uiBridgesTimeout;
-
-    // wait for UI 'update' call
-    for (; i < oscUiTimeout/100; ++i)
-    {
-        if (pData->oscData.target != nullptr)
-        {
-            carla_stdout("CarlaPlugin::waitForOscGuiShow() - got response, asking UI to show itself now");
-            osc_send_show(pData->oscData);
-            return true;
-        }
-
-        if (pData->childProcess != nullptr && pData->childProcess->isRunning())
-            carla_msleep(100);
-        else
-            return false;
-    }
-
-    carla_stdout("CarlaPlugin::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);
-    return false;
+    // should not happen
+    CARLA_SAFE_ASSERT(false);
 }
 
 // -------------------------------------------------------------------

@@ -718,26 +718,9 @@ public:
     /*!
      * Update the plugin's internal OSC data according to @a source and @a url.
      * This is used for OSC-GUI bridges.
+     * TODO remove
      */
-    void updateOscData(const lo_address& source, const char* const url);
-
-    /*!
-     * Update the plugin's extra OSC data, called from the start of updateOscData().
-     * The default implementation does nothing.
-     */
-    virtual bool updateOscDataExtra();
-
-    /*!
-     * Update the plugin's OSC URL used in UI bridges.
-     * This is called when removing or switching plugins.
-     */
-    virtual void updateOscURL();
-
-    /*!
-     * Show the plugin's OSC based GUI.
-     * This is a handy function that waits for the GUI to respond and automatically asks it to show itself.
-     */
-    bool waitForOscGuiShow();
+    virtual void updateOscData(const lo_address& source, const char* const url);
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

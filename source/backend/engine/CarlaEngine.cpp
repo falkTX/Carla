@@ -593,12 +593,14 @@ bool CarlaEngine::removePlugin(const uint id)
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
+    /*
     for (uint i=id; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin2(pData->plugins[i].plugin);
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
         plugin2->updateOscURL();
     }
+    */
 
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
@@ -778,6 +780,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
+    /*
     CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
     CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
 
@@ -786,6 +789,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
         pluginA->updateOscURL();
         pluginB->updateOscURL();
     }
+    */
 
     // TODO
     //if (isOscControlRegistered())

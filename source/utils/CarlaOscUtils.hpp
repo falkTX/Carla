@@ -225,20 +225,6 @@ void osc_send_update(const CarlaOscData& oscData, const char* const url) noexcep
 }
 
 static inline
-void osc_send_update_url(const CarlaOscData& oscData, const char* const url) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(oscData.target != nullptr,);;
-    CARLA_SAFE_ASSERT_RETURN(url != nullptr && url[0] != '\0',);
-    carla_debug("osc_send_update_url(path:\"%s\", \"%s\")", oscData.path, url);
-
-    char targetPath[std::strlen(oscData.path)+12];
-    std::strcpy(targetPath, oscData.path);
-    std::strcat(targetPath, "/update_url");
-    try_lo_send(oscData.target, targetPath, "s", url);
-}
-
-static inline
 void osc_send_show(const CarlaOscData& oscData) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(oscData.path != nullptr && oscData.path[0] != '\0',);
