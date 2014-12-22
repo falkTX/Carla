@@ -245,6 +245,13 @@ public:
     ~CarlaPipeServer() /*noexcept*/ override;
 
     /*!
+     * Get the process ID of this pipe's matching client.
+     * Will return 0 if client is not running.
+     * @note: Unsupported on Windows
+     */
+    uintptr_t getPID() const noexcept;
+
+    /*!
      * Start the pipe server using @a filename with 2 arguments.
      * @see fail()
      */

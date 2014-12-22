@@ -1050,6 +1050,15 @@ CarlaPipeServer::~CarlaPipeServer() /*noexcept*/
     stopPipeServer(5*1000);
 }
 
+uintptr_t CarlaPipeServer::getPID() const noexcept
+{
+#ifndef CARLA_OS_WIN
+    return pData->pid;
+#else
+    return 0;
+#endif
+}
+
 // -----------------------------------------------------------------------
 
 bool CarlaPipeServer::startPipeServer(const char* const filename, const char* const arg1, const char* const arg2) noexcept

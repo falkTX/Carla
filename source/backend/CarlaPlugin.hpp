@@ -423,7 +423,7 @@ public:
      *
      * @see getId()
      */
-    void setId(const uint newId) noexcept;
+    virtual void setId(const uint newId) noexcept;
 
     /*!
      * Set the plugin's name to @a newName.
@@ -837,6 +837,13 @@ public:
      * This will be LADSPA_Descriptor, DSSI_Descriptor, LV2_Descriptor, AEffect, etc.
      */
     virtual const void* getNativeDescriptor() const noexcept;
+
+    /*!
+     * Get the plugin UI bridge process Id.
+     */
+    virtual uintptr_t getUiBridgeProcessId() const noexcept;
+
+    // -------------------------------------------------------------------
 
     /*!
      * Get the plugin's patchbay nodeId.

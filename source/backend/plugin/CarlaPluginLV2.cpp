@@ -4621,6 +4621,11 @@ public:
         return fDescriptor;
     }
 
+    uintptr_t getUiBridgeProcessId() const noexcept override
+    {
+        return fPipeServer.isPipeRunning() ? fPipeServer.getPID() : 0;
+    }
+
     // -------------------------------------------------------------------
 
 public:

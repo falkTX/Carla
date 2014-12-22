@@ -350,7 +350,13 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    // nothing
+    void setId(const uint newId) noexcept
+    {
+        CarlaPlugin::setId(newId);
+
+        // UI osc-url uses Id, so we need to close it when it changes
+        showCustomUI(false);
+    }
 
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
@@ -2024,6 +2030,11 @@ public:
     const void* getNativeDescriptor() const noexcept override
     {
         return fDssiDescriptor;
+    }
+
+    uintptr_t getUiBridgeProcessId() const noexcept override
+    {
+        return (pData->oscData.target != nullptr && pData->childProcess != nullptr) ? pData->childProcess->getPID() : 0;
     }
 
     const void* getExtraStuff() const noexcept override

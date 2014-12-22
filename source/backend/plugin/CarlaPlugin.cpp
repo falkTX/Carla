@@ -1351,13 +1351,7 @@ void CarlaPlugin::idle()
     CarlaString uiTitle(pData->name);
     uiTitle += " (GUI)";
 
-    uint32_t pid = 0;
-#ifndef BUILD_BRIDGE
-    if (pData->oscData.target != nullptr && pData->childProcess != nullptr)
-        pid = pData->childProcess->getPID();
-#endif
-
-    if (CarlaPluginUI::tryTransientWinIdMatch(pid, uiTitle, pData->engine->getOptions().frontendWinId, true))
+    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle, pData->engine->getOptions().frontendWinId, true))
         pData->transientTryCounter = 0;
 }
 
@@ -1890,6 +1884,13 @@ const void* CarlaPlugin::getNativeDescriptor() const noexcept
 {
     return nullptr;
 }
+
+uintptr_t CarlaPlugin::getUiBridgeProcessId() const noexcept
+{
+    return 0;
+}
+
+// -------------------------------------------------------------------
 
 uint32_t CarlaPlugin::getPatchbayNodeId() const noexcept
 {
