@@ -468,8 +468,6 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       custom(),
       masterMutex(),
       singleMutex(),
-      childProcess(),
-      oscData(),
       stateSave(),
       extNotes(),
       postRtEvents(),

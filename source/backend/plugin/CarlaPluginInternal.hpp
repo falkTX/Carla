@@ -32,9 +32,7 @@
 
 #include "juce_audio_basics.h"
 
-using juce::ChildProcess;
 using juce::FloatVectorOperations;
-using juce::ScopedPointer;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -253,9 +251,6 @@ struct CarlaPlugin::ProtectedData {
 
     CarlaMutex masterMutex; // global master lock
     CarlaMutex singleMutex; // small lock used only in processSingle()
-
-    ScopedPointer<ChildProcess> childProcess;
-    CarlaOscData oscData;
 
     CarlaStateSave stateSave;
 
