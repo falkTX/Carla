@@ -1576,10 +1576,9 @@ void CarlaPlugin::registerToOscClient() noexcept
 #endif
 }
 
-void CarlaPlugin::updateOscData(const lo_address&, const char* const)
+void CarlaPlugin::handleOscMessage(const char* const, const int, const void* const, const char* const, const lo_message)
 {
-    // should not happen
-    CARLA_SAFE_ASSERT(false);
+    // do nothing
 }
 
 // -------------------------------------------------------------------

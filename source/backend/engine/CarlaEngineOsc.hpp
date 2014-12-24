@@ -22,8 +22,7 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
-#define CARLA_ENGINE_OSC_HANDLE_ARGS1 CarlaPlugin* const plugin
-#define CARLA_ENGINE_OSC_HANDLE_ARGS2 CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types
+#define CARLA_ENGINE_OSC_HANDLE_ARGS CarlaPlugin* const plugin, const int argc, const lo_arg* const* const argv, const char* const types
 
 #define CARLA_ENGINE_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                     \
     /* check argument count */                                                                                                 \
@@ -108,34 +107,24 @@ private:
 
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
-    // Common OSC methods (all bridges)
-    int handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source);
-    int handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1);
-
 #ifndef BUILD_BRIDGE
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
     int handleMsgUnregister();
 
-    // Common OSC methods (DSSI and bridge UIs)
-    int handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-
     // Internal methods
-    int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2);
-    int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2);
+    int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS);
+    int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS);
 #endif
 
     // -----------------------------------------------------------------------

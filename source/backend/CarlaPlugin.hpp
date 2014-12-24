@@ -23,7 +23,7 @@
 // -----------------------------------------------------------------------
 // Avoid including extra libs here
 
-typedef void* lo_address;
+typedef void* lo_message;
 typedef struct _NativePluginDescriptor NativePluginDescriptor;
 struct LADSPA_RDF_Descriptor;
 
@@ -712,15 +712,15 @@ public:
 
     /*!
      * Register this plugin to the engine's OSC client (controller or bridge).
+     * TODO
      */
     void registerToOscClient() noexcept;
 
     /*!
-     * Update the plugin's internal OSC data according to @a source and @a url.
-     * This is used for OSC-GUI bridges.
-     * TODO remove
+     * Handle an OSC message.
+     * FIXME
      */
-    virtual void updateOscData(const lo_address& source, const char* const url);
+    virtual void handleOscMessage(const char* const method, const int argc, const void* const argv, const char* const types, const lo_message msg);
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

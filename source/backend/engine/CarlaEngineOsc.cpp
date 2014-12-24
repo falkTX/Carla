@@ -209,7 +209,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 #endif
 
-    const size_t nameSize(fName.length());
+    const std::size_t nameSize(fName.length());
 
     // Check if message is for this client
     if (std::strlen(path) <= nameSize || std::strncmp(path+1, fName, nameSize) != 0)
@@ -220,7 +220,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
     // Get plugin id from path, "/carla/23/method" -> 23
     uint pluginId = 0;
-    size_t offset;
+    std::size_t offset;
 
     if (std::isdigit(path[nameSize+2]))
     {
@@ -286,26 +286,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return 0;
     }
 
-    // Common OSC methods (all bridges)
-    if (std::strcmp(method, "update") == 0)
-    {
-        const lo_address source(lo_message_get_source(msg));
-        return handleMsgUpdate(plugin, argc, argv, types, source);
-    }
-    if (std::strcmp(method, "exiting") == 0)
-        return handleMsgExiting(plugin);
-
 #ifndef BUILD_BRIDGE
-    // Common OSC methods (DSSI and bridge UIs)
-    if (std::strcmp(method, "configure") == 0)
-        return handleMsgConfigure(plugin, argc, argv, types);
-    if (std::strcmp(method, "control") == 0)
-        return handleMsgControl(plugin, argc, argv, types);
-    if (std::strcmp(method, "program") == 0)
-        return handleMsgProgram(plugin, argc, argv, types);
-    if (std::strcmp(method, "midi") == 0)
-        return handleMsgMidi(plugin, argc, argv, types);
-
     // Internal methods
     if (std::strcmp(method, "set_active") == 0)
         return handleMsgSetActive(plugin, argc, argv, types);
@@ -333,90 +314,10 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgNoteOn(plugin, argc, argv, types);
     if (std::strcmp(method, "note_off") == 0)
         return handleMsgNoteOff(plugin, argc, argv, types);
-
-    // Plugin Bridges
-    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && std::strlen(method) >= 11 && std::strncmp(method, "bridge_", 7) == 0)
-    {
-        const char* const bmethod(method+7);
-
-        if (std::strcmp(bmethod, "pong") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPong, argc, argv, types);
-        if (std::strcmp(bmethod, "plugin_info1") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPluginInfo1, argc, argv, types);
-        if (std::strcmp(bmethod, "plugin_info2") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscPluginInfo2, argc, argv, types);
-        if (std::strcmp(bmethod, "audio_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscAudioCount, argc, argv, types);
-        if (std::strcmp(bmethod, "midi_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiCount, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterCount, argc, argv, types);
-        if (std::strcmp(bmethod, "program_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscProgramCount, argc, argv, types);
-        if (std::strcmp(bmethod, "midi_program_count") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiProgramCount, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_data1") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData1, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_data2") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterData2, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_ranges1") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges1, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_ranges2") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterRanges2, argc, argv, types);
-        if (std::strcmp(bmethod, "parameter_value") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscParameterValue, argc, argv, types);
-        if (std::strcmp(bmethod, "default_value") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscDefaultValue, argc, argv, types);
-        if (std::strcmp(bmethod, "current_program") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscCurrentProgram, argc, argv, types);
-        if (std::strcmp(bmethod, "current_midi_program") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscCurrentMidiProgram, argc, argv, types);
-        if (std::strcmp(bmethod, "program_name") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscProgramName, argc, argv, types);
-        if (std::strcmp(bmethod, "midi_program_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscMidiProgramData, argc, argv, types);
-        if (std::strcmp(bmethod, "configure") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscConfigure, argc, argv, types);
-        if (std::strcmp(bmethod, "set_custom_data") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscSetCustomData, argc, argv, types);
-        if (std::strcmp(bmethod, "set_chunk_data_file") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscSetChunkDataFile, argc, argv, types);
-        if (std::strcmp(bmethod, "latency") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscLatency, argc, argv, types);
-        if (std::strcmp(bmethod, "ready") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscReady, argc, argv, types);
-        if (std::strcmp(bmethod, "error") == 0)
-            return CarlaPluginSetOscBridgeInfo(plugin, kPluginBridgeOscError, argc, argv, types);
-    }
 #endif
 
-    carla_stderr("CarlaEngineOsc::handleMessage() - unsupported OSC method '%s'", method);
-    return 1;
-}
-
-// -----------------------------------------------------------------------
-
-int CarlaEngineOsc::handleMsgUpdate(CARLA_ENGINE_OSC_HANDLE_ARGS2, const lo_address source)
-{
-    carla_debug("CarlaEngineOsc::handleMsgUpdate()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
-
-#ifndef BUILD_BRIDGE
-    const char* const url = (const char*)&argv[0]->s;
-
-    plugin->updateOscData(source, url);
-#endif
-    return 0;
-}
-
-int CarlaEngineOsc::handleMsgExiting(CARLA_ENGINE_OSC_HANDLE_ARGS1)
-{
-    carla_debug("CarlaEngineOsc::handleMsgExiting()");
-
-    // TODO - check for non-UIs (dssi-vst) and set to -1 instead
-    fEngine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, plugin->getId(), 0, 0, 0.0f, nullptr);
-
-    plugin->showCustomUI(false);
+    // Send all other methods to plugins, TODO
+    plugin->handleOscMessage(method, argc, argv, types, msg);
     return 0;
 }
 
@@ -481,114 +382,7 @@ int CarlaEngineOsc::handleMsgUnregister()
 
 // -----------------------------------------------------------------------
 
-int CarlaEngineOsc::handleMsgConfigure(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    carla_debug("CarlaEngineOsc::handleMsgConfigure()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ss");
-
-    const char* const key   = (const char*)&argv[0]->s;
-    const char* const value = (const char*)&argv[1]->s;
-
-    plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
-    return 0;
-}
-
-int CarlaEngineOsc::handleMsgControl(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    carla_debug("CarlaEngineOsc::handleMsgControl()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
-
-    const int32_t rindex = argv[0]->i;
-    const float   value  = argv[1]->f;
-
-    plugin->setParameterValueByRealIndex(rindex, value, false, true, true);
-    return 0;
-}
-
-int CarlaEngineOsc::handleMsgProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    carla_debug("CarlaEngineOsc::handleMsgProgram()");
-
-    if (argc == 2)
-    {
-        CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
-
-        const int32_t bank    = argv[0]->i;
-        const int32_t program = argv[1]->i;
-
-        CARLA_SAFE_ASSERT_RETURN(bank >= 0, 0);
-        CARLA_SAFE_ASSERT_RETURN(program >= 0, 0);
-
-        plugin->setMidiProgramById(static_cast<uint32_t>(bank), static_cast<uint32_t>(program), false, true, true);
-        return 0;
-    }
-    else
-    {
-        CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
-
-        const int32_t program = argv[0]->i;
-
-        CARLA_SAFE_ASSERT_RETURN(program >= 0, 0);
-        CARLA_SAFE_ASSERT_RETURN(program < static_cast<int32_t>(plugin->getProgramCount()), 0);
-
-        plugin->setProgram(program, false, true, true);
-        return 0;
-    }
-}
-
-int CarlaEngineOsc::handleMsgMidi(CARLA_ENGINE_OSC_HANDLE_ARGS2)
-{
-    carla_debug("CarlaEngineOsc::handleMsgMidi()");
-    CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "m");
-
-#ifdef BUILD_BRIDGE
-    CARLA_ASSERT(false); // this should never happen
-    return 0;
-
-    // unused
-    (void)plugin;
-    (void)argv;
-#else
-    if (plugin->getMidiInCount() == 0)
-    {
-        carla_stderr("CarlaEngineOsc::handleMsgMidi() - received midi when plugin has no midi inputs");
-        return 0;
-    }
-
-    const uint8_t* const data = argv[0]->m;
-    uint8_t status  = data[1];
-    uint8_t channel = status & 0x0F;
-
-    // Fix bad note-off
-    if (MIDI_IS_STATUS_NOTE_ON(status) && data[3] == 0)
-        status = MIDI_STATUS_NOTE_OFF;
-
-    if (MIDI_IS_STATUS_NOTE_OFF(status))
-    {
-        const uint8_t note = data[2];
-
-        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE, 0);
-
-        plugin->sendMidiSingleNote(channel, note, 0, false, true, true);
-    }
-    else if (MIDI_IS_STATUS_NOTE_ON(status))
-    {
-        const uint8_t note = data[2];
-        const uint8_t velo = data[3];
-
-        CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE, 0);
-        CARLA_SAFE_ASSERT_RETURN(velo < MAX_MIDI_VALUE, 0);
-
-        plugin->sendMidiSingleNote(channel, note, velo, false, true, true);
-    }
-
-    return 0;
-#endif
-}
-
-// -----------------------------------------------------------------------
-
-int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetActive()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
@@ -599,7 +393,7 @@ int CarlaEngineOsc::handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetDryWet()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
@@ -610,7 +404,7 @@ int CarlaEngineOsc::handleMsgSetDryWet(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetVolume()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
@@ -621,7 +415,7 @@ int CarlaEngineOsc::handleMsgSetVolume(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetBalanceLeft()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
@@ -632,7 +426,7 @@ int CarlaEngineOsc::handleMsgSetBalanceLeft(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetBalanceRight()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
@@ -643,7 +437,7 @@ int CarlaEngineOsc::handleMsgSetBalanceRight(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetPanning()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "f");
@@ -654,7 +448,7 @@ int CarlaEngineOsc::handleMsgSetPanning(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetParameterValue()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "if");
@@ -668,7 +462,7 @@ int CarlaEngineOsc::handleMsgSetParameterValue(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetParameterMidiCC()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
@@ -683,7 +477,7 @@ int CarlaEngineOsc::handleMsgSetParameterMidiCC(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetParameterMidiChannel()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");
@@ -698,7 +492,7 @@ int CarlaEngineOsc::handleMsgSetParameterMidiChannel(CARLA_ENGINE_OSC_HANDLE_ARG
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
@@ -711,7 +505,7 @@ int CarlaEngineOsc::handleMsgSetProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgSetMidiProgram()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "i");
@@ -724,7 +518,7 @@ int CarlaEngineOsc::handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgNoteOn()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(3, "iii");
@@ -741,7 +535,7 @@ int CarlaEngineOsc::handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS2)
     return 0;
 }
 
-int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS2)
+int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS)
 {
     carla_debug("CarlaEngineOsc::handleMsgNoteOff()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(2, "ii");

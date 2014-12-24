@@ -30,9 +30,30 @@ using juce::ScopedPointer;
 using juce::String;
 using juce::StringArray;
 
-CARLA_BACKEND_START_NAMESPACE
+#define CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                 \
+    /* check argument count */                                                                                                  \
+    if (argc != argcToCompare)                                                                                                  \
+    {                                                                                                                           \
+        carla_stderr("CarlaPluginDSSI::%s() - argument count mismatch: %i != %i", __FUNCTION__, argc, argcToCompare);           \
+        return;                                                                                                                 \
+    }                                                                                                                           \
+    if (argc > 0)                                                                                                               \
+    {                                                                                                                           \
+        /* check for nullness */                                                                                                \
+        if (types == nullptr || typesToCompare == nullptr)                                                                      \
+        {                                                                                                                       \
+            carla_stderr("CarlaPluginDSSI::%s() - argument types are null", __FUNCTION__);                                      \
+            return;                                                                                                             \
+        }                                                                                                                       \
+        /* check argument types */                                                                                              \
+        if (std::strcmp(types, typesToCompare) != 0)                                                                            \
+        {                                                                                                                       \
+            carla_stderr("CarlaPluginDSSI::%s() - argument types mismatch: '%s' != '%s'", __FUNCTION__, types, typesToCompare); \
+            return;                                                                                                             \
+        }                                                                                                                       \
+    }
 
-class CarlaPluginDSSI;
+CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
 // Fallback data
@@ -2091,6 +2112,207 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // OSC stuff
+
+    void handleOscMessage(const char* const method, const int argc, const void* const argvx, const char* const types, const lo_message msg) override
+    {
+        const lo_address source(lo_message_get_source(msg));
+        CARLA_SAFE_ASSERT_RETURN(source != nullptr,);
+
+        // protocol for DSSI UIs *must* be UDP
+        CARLA_SAFE_ASSERT_RETURN(lo_address_get_protocol(source) == LO_UDP,);
+
+        if (fOscData.source == nullptr)
+        {
+            // if no UI is registered yet only "update" message is valid
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(method, "update") == 0,)
+        }
+        else
+        {
+            // make sure message source is the DSSI UI
+            const char* const msghost = lo_address_get_hostname(source);
+            const char* const msgport = lo_address_get_port(source);
+
+            const char* const ourhost = lo_address_get_hostname(fOscData.source);
+            const char* const ourport = lo_address_get_port(fOscData.source);
+
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(msghost, ourhost) == 0,);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(msgport, ourport) == 0,);
+        }
+
+        const lo_arg* const* const argv(static_cast<const lo_arg* const* const>(argvx));
+
+        if (std::strcmp(method, "configure") == 0)
+            return handleOscMessageConfigure(argc, argv, types);
+        if (std::strcmp(method, "control") == 0)
+            return handleOscMessageControl(argc, argv, types);
+        if (std::strcmp(method, "program") == 0)
+            return handleOscMessageProgram(argc, argv, types);
+        if (std::strcmp(method, "midi") == 0)
+            return handleOscMessageMIDI(argc, argv, types);
+        if (std::strcmp(method, "update") == 0)
+            return handleOscMessageUpdate(argc, argv, types, lo_message_get_source(msg));
+        if (std::strcmp(method, "exiting") == 0)
+            return handleOscMessageExiting();
+
+        carla_stdout("CarlaPluginDSSI::handleOscMessage() - unknown method '%s'", method);
+    }
+
+    void handleOscMessageConfigure(const int argc, const lo_arg* const* const argv, const char* const types)
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgConfigure()");
+        CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "ss");
+
+        const char* const key   = (const char*)&argv[0]->s;
+        const char* const value = (const char*)&argv[1]->s;
+
+        setCustomData(CUSTOM_DATA_TYPE_STRING, key, value, false);
+    }
+
+    void handleOscMessageControl(const int argc, const lo_arg* const* const argv, const char* const types)
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgControl()");
+        CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "if");
+
+        const int32_t rindex = argv[0]->i;
+        const float   value  = argv[1]->f;
+
+        setParameterValueByRealIndex(rindex, value, false, true, true);
+    }
+
+    void handleOscMessageProgram(const int argc, const lo_arg* const* const argv, const char* const types)
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgProgram()");
+        CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(2, "ii");
+
+        const int32_t bank    = argv[0]->i;
+        const int32_t program = argv[1]->i;
+
+        CARLA_SAFE_ASSERT_RETURN(bank >= 0,);
+        CARLA_SAFE_ASSERT_RETURN(program >= 0,);
+
+        setMidiProgramById(static_cast<uint32_t>(bank), static_cast<uint32_t>(program), false, true, true);
+    }
+
+    void handleOscMessageMIDI(const int argc, const lo_arg* const* const argv, const char* const types)
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgMidi()");
+        CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(1, "m");
+
+        if (getMidiInCount() == 0)
+        {
+            carla_stderr("CarlaPluginDSSI::handleMsgMidi() - received midi when plugin has no midi inputs");
+            return;
+        }
+
+#ifndef BUILD_BRIDGE
+        const uint8_t* const data = argv[0]->m;
+        uint8_t status  = data[1];
+        uint8_t channel = status & 0x0F;
+
+        // Fix bad note-off
+        if (MIDI_IS_STATUS_NOTE_ON(status) && data[3] == 0)
+            status = MIDI_STATUS_NOTE_OFF;
+
+        if (MIDI_IS_STATUS_NOTE_OFF(status))
+        {
+            const uint8_t note = data[2];
+
+            CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+
+            sendMidiSingleNote(channel, note, 0, false, true, true);
+        }
+        else if (MIDI_IS_STATUS_NOTE_ON(status))
+        {
+            const uint8_t note = data[2];
+            const uint8_t velo = data[3];
+
+            CARLA_SAFE_ASSERT_RETURN(note < MAX_MIDI_NOTE,);
+            CARLA_SAFE_ASSERT_RETURN(velo < MAX_MIDI_VALUE,);
+
+            sendMidiSingleNote(channel, note, velo, false, true, true);
+        }
+#endif
+    }
+
+    void handleOscMessageUpdate(const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source)
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgUpdate()");
+        CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(1, "s");
+
+        const char* const url = (const char*)&argv[0]->s;
+
+        // FIXME - remove debug prints later
+        carla_stdout("CarlaPluginDSSI::updateOscData(%p, \"%s\")", source, url);
+
+        fOscData.clear();
+
+        const int proto = lo_address_get_protocol(source);
+
+        {
+            const char* host = lo_address_get_hostname(source);
+            const char* port = lo_address_get_port(source);
+            fOscData.source = lo_address_new_with_proto(proto, host, port);
+
+            carla_stdout("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
+        }
+
+        {
+            char* host = lo_url_get_hostname(url);
+            char* port = lo_url_get_port(url);
+            fOscData.path   = carla_strdup_free(lo_url_get_path(url));
+            fOscData.target = lo_address_new_with_proto(proto, host, port);
+            carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, fOscData.path);
+
+            std::free(host);
+            std::free(port);
+        }
+
+        osc_send_sample_rate(fOscData, static_cast<float>(pData->engine->getSampleRate()));
+
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        {
+            const CustomData& customData(it.getValue(kCustomDataFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
+
+            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_STRING) == 0)
+                osc_send_configure(fOscData, customData.key, customData.value);
+        }
+
+        if (pData->prog.current >= 0)
+            osc_send_program(fOscData, static_cast<uint32_t>(pData->prog.current));
+
+        if (pData->midiprog.current >= 0)
+        {
+            const MidiProgramData& curMidiProg(pData->midiprog.getCurrent());
+
+            if (getType() == PLUGIN_DSSI)
+                osc_send_program(fOscData, curMidiProg.bank, curMidiProg.program);
+            else
+                osc_send_midi_program(fOscData, curMidiProg.bank, curMidiProg.program);
+        }
+
+        for (uint32_t i=0; i < pData->param.count; ++i)
+            osc_send_control(fOscData, pData->param.data[i].rindex, getParameterValue(i));
+
+        if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
+            pData->transientTryCounter = 1;
+
+        carla_stdout("CarlaPluginDSSI::updateOscData() - done");
+    }
+
+    void handleOscMessageExiting()
+    {
+        carla_debug("CarlaPluginDSSI::handleMsgExiting()");
+
+        // hide UI
+        showCustomUI(false);
+
+        // tell frontend
+        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
+
+    // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
     void uiParameterChange(const uint32_t index, const float value) noexcept override
@@ -2172,69 +2394,6 @@ public:
     const void* getExtraStuff() const noexcept override
     {
         return fUiFilename;
-    }
-
-    // -------------------------------------------------------------------
-
-    void updateOscData(const lo_address& source, const char* const url) override
-    {
-        // FIXME - remove debug prints later
-        carla_stdout("CarlaPluginDSSI::updateOscData(%p, \"%s\")", source, url);
-
-        fOscData.clear();
-
-        const int proto = lo_address_get_protocol(source);
-
-        {
-            const char* host = lo_address_get_hostname(source);
-            const char* port = lo_address_get_port(source);
-            fOscData.source = lo_address_new_with_proto(proto, host, port);
-
-            carla_stdout("CarlaPlugin::updateOscData() - source: host \"%s\", port \"%s\"", host, port);
-        }
-
-        {
-            char* host = lo_url_get_hostname(url);
-            char* port = lo_url_get_port(url);
-            fOscData.path   = carla_strdup_free(lo_url_get_path(url));
-            fOscData.target = lo_address_new_with_proto(proto, host, port);
-            carla_stdout("CarlaPlugin::updateOscData() - target: host \"%s\", port \"%s\", path \"%s\"", host, port, fOscData.path);
-
-            std::free(host);
-            std::free(port);
-        }
-
-        osc_send_sample_rate(fOscData, static_cast<float>(pData->engine->getSampleRate()));
-
-        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
-        {
-            const CustomData& customData(it.getValue(kCustomDataFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
-
-            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_STRING) == 0)
-                osc_send_configure(fOscData, customData.key, customData.value);
-        }
-
-        if (pData->prog.current >= 0)
-            osc_send_program(fOscData, static_cast<uint32_t>(pData->prog.current));
-
-        if (pData->midiprog.current >= 0)
-        {
-            const MidiProgramData& curMidiProg(pData->midiprog.getCurrent());
-
-            if (getType() == PLUGIN_DSSI)
-                osc_send_program(fOscData, curMidiProg.bank, curMidiProg.program);
-            else
-                osc_send_midi_program(fOscData, curMidiProg.bank, curMidiProg.program);
-        }
-
-        for (uint32_t i=0; i < pData->param.count; ++i)
-            osc_send_control(fOscData, pData->param.data[i].rindex, getParameterValue(i));
-
-        if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
-            pData->transientTryCounter = 1;
-
-        carla_stdout("CarlaPluginDSSI::updateOscData() - done");
     }
 
     // -------------------------------------------------------------------
