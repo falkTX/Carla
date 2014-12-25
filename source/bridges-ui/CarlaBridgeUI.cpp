@@ -20,11 +20,9 @@
 
 #include "CarlaBase64Utils.hpp"
 
-#ifdef BRIDGE_LV2
-# undef NULL
-# define NULL nullptr
-# include "lv2/atom-util.h"
-#endif
+#undef NULL
+#define NULL nullptr
+#include "lv2/atom-util.h"
 
 CARLA_BRIDGE_START_NAMESPACE
 
@@ -173,7 +171,6 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         dspNoteReceived(onOff, channel, note, velocity);
     }
 
-#ifdef BRIDGE_LV2
     if (std::strcmp(msg, "atom") == 0)
     {
         uint32_t index, size;
@@ -208,7 +205,6 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         delete[] uri;
         return true;
     }
-#endif
 
     if (std::strcmp(msg, "uiOptions") == 0)
     {

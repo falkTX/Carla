@@ -1503,7 +1503,7 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri) noexcept
 
     if (is_lv2_feature_supported(uri))
         return true;
-#ifndef BRIDGE_LV2
+#ifndef BUILD_BRIDGE_UI
     if (std::strcmp(uri, LV2_DATA_ACCESS_URI) == 0)
         return true;
     if (std::strcmp(uri, LV2_INSTANCE_ACCESS_URI) == 0)

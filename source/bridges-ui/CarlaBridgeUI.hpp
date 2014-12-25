@@ -23,10 +23,8 @@
 #include "CarlaPipeUtils.hpp"
 #include "CarlaString.hpp"
 
-#ifdef BRIDGE_LV2
-# include "lv2/atom.h"
-# include "lv2/urid.h"
-#endif
+#include "lv2/atom.h"
+#include "lv2/urid.h"
 
 //#include "CarlaBridgeToolkit.hpp"
 //#include "CarlaLibUtils.hpp"
@@ -70,10 +68,8 @@ protected:
     virtual void dspStateChanged(const char* const key, const char* const value) = 0;
     virtual void dspNoteReceived(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) = 0;
 
-#ifdef BRIDGE_LV2
     virtual void dspAtomReceived(const uint32_t index, const LV2_Atom* const atom) = 0;
     virtual void dspURIDReceived(const LV2_URID urid, const char* const uri) = 0;
-#endif
 
     virtual void uiOptionsChanged(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) = 0;
 

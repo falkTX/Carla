@@ -22,47 +22,36 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
-
-BUILD_LV2_FLAGS   = $(BUILD_CXX_FLAGS) -DBRIDGE_LV2
-BUILD_VST2_FLAGS  = $(BUILD_CXX_FLAGS) -DBRIDGE_VST2
-
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_VST2_FLAGS += -DVESTIGE_HEADER
-endif
-
-LINK_FLAGS += $(JUCE_CORE_LIBS)
+BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
+LINK_FLAGS       += $(JUCE_CORE_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_LV2_GTK2_FLAGS    = $(BUILD_LV2_FLAGS) -DBRIDGE_GTK2 -DBRIDGE_LV2_GTK2 $(shell pkg-config --cflags gtk+-2.0)
-LINK_LV2_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) -ldl
+BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)
+LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) -ldl
 
-BUILD_LV2_GTK3_FLAGS    = $(BUILD_LV2_FLAGS) -DBRIDGE_GTK3 -DBRIDGE_LV2_GTK3 $(shell pkg-config --cflags gtk+-3.0)
-LINK_LV2_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-3.0) -ldl
+BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(shell pkg-config --cflags gtk+-3.0)
+LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-3.0) -ldl
 
-BUILD_LV2_QT4_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_QT4 -DBRIDGE_LV2_QT4 $(shell pkg-config --cflags QtCore QtGui) -I$(OBJDIR) -I$(CWD)/theme
-LINK_LV2_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) -ldl
+BUILD_QT4_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT4 $(shell pkg-config --cflags QtCore QtGui) -I$(OBJDIR) -I$(CWD)/theme
+LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) -ldl
 
-BUILD_LV2_QT5_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_QT5 -DBRIDGE_LV2_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets) -I$(OBJDIR) -I$(CWD)/theme
-LINK_LV2_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) -ldl
+BUILD_QT5_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets) -I$(OBJDIR) -I$(CWD)/theme
+LINK_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) -ldl
 
-BUILD_LV2_X11_FLAGS     = $(BUILD_LV2_FLAGS) -DBRIDGE_X11 -DBRIDGE_LV2_X11 $(X11_FLAGS)
-LINK_LV2_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
+BUILD_X11_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_X11 $(X11_FLAGS)
+LINK_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
 
-BUILD_LV2_COCOA_FLAGS   = $(BUILD_LV2_FLAGS) -DBRIDGE_COCOA -DBRIDGE_LV2_COCOA -ObjC++
-LINK_LV2_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore -ldl
+BUILD_COCOA_FLAGS   = $(BUILD_CXX_FLAGS) -DBRIDGE_COCOA -ObjC++
+LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore -ldl
 
-BUILD_LV2_WINDOWS_FLAGS = $(BUILD_LV2_FLAGS) -DBRIDGE_HWND -DBRIDGE_LV2_HWND
-LINK_LV2_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
-
-BUILD_VST2_X11_FLAGS    = $(BUILD_VST2_FLAGS) -DBRIDGE_X11 -DBRIDGE_VST2_X11 $(X11_FLAGS)
-LINK_VST2_X11_FLAGS     = $(LINK_FLAGS) $(X11_LIBS) -ldl
+BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
+LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
 ifeq ($(LINUX),true)
-LINK_LV2_GTK2_FLAGS += -lX11
-LINK_LV2_GTK3_FLAGS += -lX11
-LINK_LV2_QT4_FLAGS  += -lX11
+LINK_GTK2_FLAGS += -lX11
+LINK_GTK3_FLAGS += -lX11
+LINK_QT4_FLAGS  += -lX11
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -90,7 +79,6 @@ endif
 
 ifeq ($(HAVE_X11),true)
 TARGETS += ui_lv2-x11
-TARGETS += ui_vst2-x11
 endif
 
 ifeq ($(MACOS),true)
@@ -109,7 +97,7 @@ all: $(TARGETS)
 
 clean:
 	rm -f $(OBJDIR)/*.cpp $(OBJDIR)/*.moc $(OBJDIR)/*.o
-	rm -f $(BINDIR)/$(MODULENAME)-lv2-* $(BINDIR)/$(MODULENAME)-vst2-*
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-*
 
 debug:
 	$(MAKE) DEBUG=true
@@ -126,100 +114,91 @@ ui_lv2-qt5:     $(BINDIR)/$(MODULENAME)-lv2-qt5
 ui_lv2-x11:     $(BINDIR)/$(MODULENAME)-lv2-x11
 ui_lv2-cocoa:   $(BINDIR)/$(MODULENAME)-lv2-cocoa
 ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
-ui_vst2-x11:   #$(BINDIR)/$(MODULENAME)-vst2-x11
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common libs
 
-LIBS_LV2 = \
+LIBS = \
 	$(MODULEDIR)/juce_core.a \
 	$(MODULEDIR)/lilv.a
 
-LIBS_LV2_JUCE = \
-	$(LIBS_LV2) \
+LIBS_JUCE = \
+	$(LIBS) \
 	$(MODULEDIR)/juce_data_structures.a \
 	$(MODULEDIR)/juce_events.a \
 	$(MODULEDIR)/juce_graphics.a \
 	$(MODULEDIR)/juce_gui_basics.a
 
 ifeq ($(MACOS),true)
-LIBS_LV2_JUCE += \
+LIBS_JUCE += \
 	$(MODULEDIR)/juce_gui_extra.a
 endif
-
-LIBS_VST2 = \
-	$(MODULEDIR)/juce_core.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common objects
 
-$(OBJDIR)/%.cpp.lv2.o: %.cpp
+$(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2)"
-	@$(CXX) $< $(BUILD_LV2_FLAGS) -c -o $@
-
-$(OBJDIR)/%.cpp.vst2.o: %.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (VST2)"
-	@$(CXX) $< $(BUILD_VST2_FLAGS) -c -o $@
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk2
 
-OBJS_LV2_GTK2 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk2.o \
-	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk2.o
+OBJS_GTK2 = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-gtk2.o \
+	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk2.o
 
-$(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_LV2_GTK2) $(LIBS_LV2)
+$(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_GTK2) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk2"
-	@$(CXX) $(OBJS_LV2_GTK2) $(LIBS_START) $(LIBS_LV2) $(LIBS_END) $(LINK_LV2_GTK2_FLAGS) -o $@
+	@$(CXX) $(OBJS_GTK2) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK2_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-gtk2.o: %.cpp
+$(OBJDIR)/%.cpp-gtk2.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-GTK2)"
-	@$(CXX) $< $(BUILD_LV2_GTK2_FLAGS) -c -o $@
+	@echo "Compiling $< (GTK2)"
+	@$(CXX) $< $(BUILD_GTK2_FLAGS) -c -o $@
 
--include $(OBJS_LV2_GTK2:%.o=%.d)
+-include $(OBJS_GTK2:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk3
 
-OBJS_LV2_GTK3 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-gtk3.o \
-	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp.lv2-gtk3.o
+OBJS_GTK3 = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-gtk3.o \
+	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk3.o
 
-$(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_LV2_GTK3) $(LIBS_LV2)
+$(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_GTK3) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-gtk3"
-	@$(CXX) $(OBJS_LV2_GTK3) $(LIBS_START) $(LIBS_LV2) $(LIBS_END) $(LINK_LV2_GTK3_FLAGS) -o $@
+	@$(CXX) $(OBJS_GTK3) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_GTK3_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-gtk3.o: %.cpp
+$(OBJDIR)/%.cpp-gtk3.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-GTK3)"
-	@$(CXX) $< $(BUILD_LV2_GTK3_FLAGS) -c -o $@
+	@echo "Compiling $< (GTK3)"
+	@$(CXX) $< $(BUILD_GTK3_FLAGS) -c -o $@
 
--include $(OBJS_LV2_GTK3:%.o=%.d)
+-include $(OBJS_GTK3:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-qt4
 
-OBJS_LV2_QT4 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt4.o \
-	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt4.o
+OBJS_QT4 = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-qt4.o \
+	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt4.o
 
-$(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_LV2_QT4) $(LIBS_LV2) $(MODULEDIR)/theme.qt4.a
+$(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt4"
-	@$(CXX) $(OBJS_LV2_QT4) $(LIBS_START) $(LIBS_LV2) $(MODULEDIR)/theme.qt4.a $(LIBS_END) $(LINK_LV2_QT4_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT4) $(LIBS_START) $(LIBS) $(MODULEDIR)/theme.qt4.a $(LIBS_END) $(LINK_QT4_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
+$(OBJDIR)/%.cpp-qt4.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt4.moc $(OBJDIR)/resources.qt4.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-QT4)"
-	@$(CXX) $< $(BUILD_LV2_QT4_FLAGS) -c -o $@
+	@echo "Compiling $< (QT4)"
+	@$(CXX) $< $(BUILD_QT4_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt4.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
@@ -231,25 +210,25 @@ $(OBJDIR)/resources.qt4.cpp: ../../resources/resources-theme.qrc
 	@echo "Generating resources.qt4.cpp"
 	@$(RCC_QT4) $< -o $@
 
--include $(OBJS_LV2_QT4:%.o=%.d)
+-include $(OBJS_QT4:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-qt5
 
-OBJS_LV2_QT5 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-qt5.o \
-	$(OBJDIR)/CarlaBridgeToolkitQt.cpp.lv2-qt5.o
+OBJS_QT5 = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-qt5.o \
+	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt5.o
 
-$(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_LV2_QT5) $(LIBS_LV2) $(MODULEDIR)/theme.qt5.a
+$(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-qt5"
-	@$(CXX) $(OBJS_LV2_QT5) $(LIBS_START) $(LIBS_LV2) $(MODULEDIR)/theme.qt5.a $(LIBS_END) $(LINK_LV2_QT5_FLAGS) -o $@
+	@$(CXX) $(OBJS_QT5) $(LIBS_START) $(LIBS) $(MODULEDIR)/theme.qt5.a $(LIBS_END) $(LINK_QT5_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
+$(OBJDIR)/%.cpp-qt5.o: %.cpp $(OBJDIR)/CarlaBridgeToolkitQt5.moc $(OBJDIR)/resources.qt5.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-QT5)"
-	@$(CXX) $< $(BUILD_LV2_QT5_FLAGS) -c -o $@
+	@echo "Compiling $< (QT5)"
+	@$(CXX) $< $(BUILD_QT5_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgeToolkitQt5.moc: CarlaBridgeToolkitQt.cpp
 	-@mkdir -p $(OBJDIR)
@@ -261,86 +240,66 @@ $(OBJDIR)/resources.qt5.cpp: ../../resources/resources-theme.qrc
 	@echo "Generating resources.qt5.cpp"
 	@$(RCC_QT5) $< -o $@
 
--include $(OBJS_LV2_QT5:%.o=%.d)
+-include $(OBJS_QT5:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-x11
 
-OBJS_LV2_X11 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-x11.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-x11.o
+OBJS_X11 = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-x11.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-x11.o
 
-$(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_LV2_X11) $(LIBS_LV2)
+$(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_X11) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-x11"
-	@$(CXX) $(OBJS_LV2_X11) $(LIBS_START) $(LIBS_LV2) $(LIBS_END) $(LINK_LV2_X11_FLAGS) -o $@
+	@$(CXX) $(OBJS_X11) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_X11_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-x11.o: %.cpp
+$(OBJDIR)/%.cpp-x11.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-X11)"
-	@$(CXX) $< $(BUILD_LV2_X11_FLAGS) -c -o $@
+	@echo "Compiling $< (X11)"
+	@$(CXX) $< $(BUILD_X11_FLAGS) -c -o $@
 
--include $(OBJS_LV2_X11:%.o=%.d)
+-include $(OBJS_X11:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-cocoa
 
-OBJS_LV2_COCOA = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-cocoa.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-cocoa.o
+OBJS_COCOA = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-cocoa.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-cocoa.o
 
-$(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_LV2_COCOA) $(LIBS_LV2_JUCE)
+$(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS_JUCE)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-cocoa"
-	@$(CXX) $(OBJS_LV2_COCOA) $(LIBS_START) $(LIBS_LV2_JUCE) $(LIBS_END) $(LINK_LV2_COCOA_FLAGS) -o $@
+	@$(CXX) $(OBJS_COCOA) $(LIBS_START) $(LIBS_JUCE) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-cocoa.o: %.cpp
+$(OBJDIR)/%.cpp-cocoa.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-Cocoa)"
-	@$(CXX) $< $(BUILD_LV2_COCOA_FLAGS) -c -o $@
+	@echo "Compiling $< (Cocoa)"
+	@$(CXX) $< $(BUILD_COCOA_FLAGS) -c -o $@
 
--include $(OBJS_LV2_COCOA:%.o=%.d)
+-include $(OBJS_COCOA:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ui_lv2-windows
 
-OBJS_LV2_WINDOWS = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.lv2.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp.lv2-windows.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.lv2-windows.o
+OBJS_WINDOWS = \
+	$(OBJDIR)/CarlaBridgeUI.cpp.o \
+	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-windows.o \
+	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-windows.o
 
-$(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_LV2_WINDOWS) $(LIBS_LV2_JUCE)
+$(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS_JUCE)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-windows.exe"
-	@$(CXX) $(OBJS_LV2_WINDOWS) $(LIBS_START) $(LIBS_LV2_JUCE) $(LIBS_END) $(LINK_LV2_WINDOWS_FLAGS) -o $@
+	@$(CXX) $(OBJS_WINDOWS) $(LIBS_START) $(LIBS_JUCE) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
 
-$(OBJDIR)/%.cpp.lv2-windows.o: %.cpp
+$(OBJDIR)/%.cpp-windows.o: %.cpp
 	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (LV2-Windows)"
-	@$(CXX) $< $(BUILD_LV2_WINDOWS_FLAGS) -c -o $@
+	@echo "Compiling $< (Windows)"
+	@$(CXX) $< $(BUILD_WINDOWS_FLAGS) -c -o $@
 
--include $(OBJS_LV2_WINDOWS:%.o=%.d)
-
-# ----------------------------------------------------------------------------------------------------------------------------
-# ui_vst2-x11
-
-OBJS_VST2_X11 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.vst2.o \
-	$(OBJDIR)/CarlaBridgeUI-VST2.cpp.vst2-x11.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp.vst2-x11.o
-
-$(BINDIR)/$(MODULENAME)-vst2-x11: $(OBJS_VST2_X11) $(LIBS_VST2)
-	-@mkdir -p $(BINDIR)
-	@echo "Linking $(MODULENAME)-vst2-x11"
-	@$(CXX) $(OBJS_VST2_X11) $(LIBS_START) $(LIBS_VST2) $(LIBS_END) $(LINK_VST2_X11_FLAGS) -o $@
-
-$(OBJDIR)/%.cpp.vst2-x11.o: %.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $< (VST2-X11)"
-	@$(CXX) $< $(BUILD_VST2_X11_FLAGS) -c -o $@
-
--include $(OBJS_VST2_X11:%.o=%.d)
+-include $(OBJS_WINDOWS:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------
