@@ -29,14 +29,6 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-#ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------
-// Bridge Helper, defined in BridgePlugin.cpp
-
-extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType type,
-                                       const int argc, const lo_arg* const* const argv, const char* const types);
-#endif
-
 // -----------------------------------------------------------------------
 
 CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept

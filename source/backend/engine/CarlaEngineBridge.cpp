@@ -94,9 +94,9 @@ struct BridgeAudioPool {
 
 // -------------------------------------------------------------------
 
-struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
+struct BridgeRtControl : public CarlaRingBufferControl<SmallStackBuffer> {
     CarlaString filename;
-    BridgeRtData* data;
+    BridgeRtClientData* data;
     char shm[64];
 
     BridgeRtControl() noexcept
@@ -136,7 +136,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
-        if (jackbridge_shm_map2<BridgeRtData>(shm, data))
+        if (jackbridge_shm_map2<BridgeRtClientData>(shm, data))
         {
             CARLA_SAFE_ASSERT(data->midiOut[0] == 0);
             setRingBuffer(&data->ringBuffer, false);
@@ -146,9 +146,9 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
         return false;
     }
 
-    PluginBridgeRtOpcode readOpcode() noexcept
+    PluginBridgeRtClientOpcode readOpcode() noexcept
     {
-        return static_cast<PluginBridgeRtOpcode>(readInt());
+        return static_cast<PluginBridgeRtClientOpcode>(readInt());
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtControl)
@@ -156,9 +156,9 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 
 // -------------------------------------------------------------------
 
-struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
+struct BridgeNonRtControl : public CarlaRingBufferControl<BigStackBuffer> {
     CarlaString filename;
-    BridgeNonRtData* data;
+    BridgeNonRtClientData* data;
     char shm[64];
 
     BridgeNonRtControl() noexcept
@@ -198,7 +198,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
-        if (jackbridge_shm_map2<BridgeNonRtData>(shm, data))
+        if (jackbridge_shm_map2<BridgeNonRtClientData>(shm, data))
         {
             setRingBuffer(&data->ringBuffer, false);
             return true;
@@ -207,9 +207,9 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
         return false;
     }
 
-    PluginBridgeNonRtOpcode readOpcode() noexcept
+    PluginBridgeNonRtClientOpcode readOpcode() noexcept
     {
-        return static_cast<PluginBridgeNonRtOpcode>(readInt());
+        return static_cast<PluginBridgeNonRtClientOpcode>(readInt());
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtControl)
@@ -299,32 +299,32 @@ public:
             return false;
         }
 
-        PluginBridgeNonRtOpcode opcode;
+        PluginBridgeNonRtClientOpcode opcode;
 
         opcode = fShmNonRtControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtNull, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientNull, opcode);
 
         const uint32_t shmRtDataSize = fShmNonRtControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(shmRtDataSize == sizeof(BridgeRtData), shmRtDataSize, sizeof(BridgeRtData));
+        CARLA_SAFE_ASSERT_INT2(shmRtDataSize == sizeof(BridgeRtClientData), shmRtDataSize, sizeof(BridgeRtClientData));
 
         const uint32_t shmNonRtDataSize = fShmNonRtControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(shmNonRtDataSize == sizeof(BridgeNonRtData), shmNonRtDataSize, sizeof(BridgeNonRtData));
+        CARLA_SAFE_ASSERT_INT2(shmNonRtDataSize == sizeof(BridgeNonRtClientData), shmNonRtDataSize, sizeof(BridgeNonRtClientData));
 
         opcode = fShmNonRtControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtSetBufferSize, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
         pData->bufferSize = fShmNonRtControl.readUInt();
 
         opcode = fShmNonRtControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtSetSampleRate, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
         pData->sampleRate = fShmNonRtControl.readDouble();
 
         carla_stdout("Carla Client Info:");
         carla_stdout("  BufferSize: %i", pData->bufferSize);
         carla_stdout("  SampleRate: %g", pData->sampleRate);
-        carla_stdout("  sizeof(BridgeRtData):    %i/" P_SIZE, shmRtDataSize,    sizeof(BridgeRtData));
-        carla_stdout("  sizeof(BridgeNonRtData): %i/" P_SIZE, shmNonRtDataSize, sizeof(BridgeNonRtData));
+        carla_stdout("  sizeof(BridgeRtData):    %i/" P_SIZE, shmRtDataSize,    sizeof(BridgeRtClientData));
+        carla_stdout("  sizeof(BridgeNonRtData): %i/" P_SIZE, shmNonRtDataSize, sizeof(BridgeNonRtClientData));
 
-        if (shmRtDataSize != sizeof(BridgeRtData) || shmNonRtDataSize != sizeof(BridgeNonRtData))
+        if (shmRtDataSize != sizeof(BridgeRtClientData) || shmNonRtDataSize != sizeof(BridgeNonRtClientData))
             return false;
 
         startThread();
@@ -385,59 +385,59 @@ public:
     {
         for (; fShmNonRtControl.isDataAvailableForReading();)
         {
-            const PluginBridgeNonRtOpcode opcode(fShmNonRtControl.readOpcode());
+            const PluginBridgeNonRtClientOpcode opcode(fShmNonRtControl.readOpcode());
             CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
 #ifdef DEBUG
-            if (opcode != kPluginBridgeNonRtPing) {
-                carla_debug("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtOpcode2str(opcode));
+            if (opcode != kPluginBridgeNonRtClientPing) {
+                carla_debug("CarlaEngineBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
             }
 #endif
 
             switch (opcode)
             {
-            case kPluginBridgeNonRtNull:
+            case kPluginBridgeNonRtClientNull:
                 break;
 
-            case kPluginBridgeNonRtPing:
+            case kPluginBridgeNonRtClientPing:
                 oscSend_bridge_pong();
                 break;
 
-            case kPluginBridgeNonRtActivate:
+            case kPluginBridgeNonRtClientActivate:
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setActive(true, false, false);
                 break;
 
-            case kPluginBridgeNonRtDeactivate:
+            case kPluginBridgeNonRtClientDeactivate:
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->setActive(false, false, false);
                 break;
 
-            case kPluginBridgeNonRtSetBufferSize: {
+            case kPluginBridgeNonRtClientSetBufferSize: {
                 const uint32_t bufferSize(fShmNonRtControl.readUInt());
                 pData->bufferSize = bufferSize;
                 bufferSizeChanged(bufferSize);
                 break;
             }
 
-            case kPluginBridgeNonRtSetSampleRate: {
+            case kPluginBridgeNonRtClientSetSampleRate: {
                 const double sampleRate(fShmNonRtControl.readDouble());
                 pData->sampleRate = sampleRate;
                 sampleRateChanged(sampleRate);
                 break;
             }
 
-            case kPluginBridgeNonRtSetOffline:
+            case kPluginBridgeNonRtClientSetOffline:
                 fIsOffline = true;
                 offlineModeChanged(true);
                 break;
 
-            case kPluginBridgeNonRtSetOnline:
+            case kPluginBridgeNonRtClientSetOnline:
                 fIsOffline = false;
                 offlineModeChanged(false);
                 break;
 
-            case kPluginBridgeNonRtSetParameterValue: {
+            case kPluginBridgeNonRtClientSetParameterValue: {
                 const uint32_t index(fShmNonRtControl.readUInt());
                 const float    value(fShmNonRtControl.readFloat());
 
@@ -446,7 +446,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetParameterMidiChannel: {
+            case kPluginBridgeNonRtClientSetParameterMidiChannel: {
                 const uint32_t index(fShmNonRtControl.readUInt());
                 const uint8_t  channel(fShmNonRtControl.readByte());
 
@@ -455,7 +455,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetParameterMidiCC: {
+            case kPluginBridgeNonRtClientSetParameterMidiCC: {
                 const uint32_t index(fShmNonRtControl.readUInt());
                 const int16_t  cc(fShmNonRtControl.readShort());
 
@@ -464,7 +464,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetProgram: {
+            case kPluginBridgeNonRtClientSetProgram: {
                 const int32_t index(fShmNonRtControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
@@ -472,7 +472,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetMidiProgram: {
+            case kPluginBridgeNonRtClientSetMidiProgram: {
                 const int32_t index(fShmNonRtControl.readInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
@@ -480,7 +480,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetCustomData: {
+            case kPluginBridgeNonRtClientSetCustomData: {
                 // type
                 const uint32_t typeSize(fShmNonRtControl.readUInt());
                 char typeStr[typeSize+1];
@@ -504,7 +504,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetChunkDataFile: {
+            case kPluginBridgeNonRtClientSetChunkDataFile: {
                 const uint32_t size(fShmNonRtControl.readUInt());
                 CARLA_SAFE_ASSERT_BREAK(size > 0);
 
@@ -535,7 +535,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetCtrlChannel: {
+            case kPluginBridgeNonRtClientSetCtrlChannel: {
                 const int16_t channel(fShmNonRtControl.readShort());
                 CARLA_SAFE_ASSERT_BREAK(channel >= -1 && channel < MAX_MIDI_CHANNELS);
 
@@ -544,21 +544,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtSetOscURL: {
-                const uint32_t size(fShmNonRtControl.readUInt());
-
-                char url[size+1];
-                carla_zeroChar(url, size+1);
-                fShmNonRtControl.readCustomData(url, size);
-
-                CARLA_SAFE_ASSERT_BREAK(url[0] != '\0');
-                if (plugin == nullptr || ! plugin->isEnabled()) break;
-
-                pData->oscData->setNewURL(url);
-                break;
-            }
-
-            case kPluginBridgeNonRtSetOption: {
+            case kPluginBridgeNonRtClientSetOption: {
                 const uint32_t option(fShmNonRtControl.readUInt());
                 const bool     yesNo(fShmNonRtControl.readBool());
 
@@ -567,7 +553,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtPrepareForSave: {
+            case kPluginBridgeNonRtClientPrepareForSave: {
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
                 plugin->prepareForSave();
@@ -599,21 +585,21 @@ public:
                     }
                 }
 
-                oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
+                //oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");
                 break;
             }
 
-            case kPluginBridgeNonRtShowUI:
+            case kPluginBridgeNonRtClientShowUI:
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->showCustomUI(true);
                 break;
 
-            case kPluginBridgeNonRtHideUI:
+            case kPluginBridgeNonRtClientHideUI:
                 if (plugin != nullptr && plugin->isEnabled())
                     plugin->showCustomUI(false);
                 break;
 
-            case kPluginBridgeNonRtUiParameterChange: {
+            case kPluginBridgeNonRtClientUiParameterChange: {
                 const uint32_t index(fShmNonRtControl.readUInt());
                 const float    value(fShmNonRtControl.readFloat());
 
@@ -622,7 +608,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtUiProgramChange: {
+            case kPluginBridgeNonRtClientUiProgramChange: {
                 const uint32_t index(fShmNonRtControl.readUInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
@@ -630,7 +616,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtUiMidiProgramChange: {
+            case kPluginBridgeNonRtClientUiMidiProgramChange: {
                 const uint32_t index(fShmNonRtControl.readUInt());
 
                 if (plugin != nullptr && plugin->isEnabled())
@@ -638,7 +624,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtUiNoteOn: {
+            case kPluginBridgeNonRtClientUiNoteOn: {
                 const uint8_t chnl(fShmNonRtControl.readByte());
                 const uint8_t note(fShmNonRtControl.readByte());
                 const uint8_t velo(fShmNonRtControl.readByte());
@@ -648,7 +634,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtUiNoteOff: {
+            case kPluginBridgeNonRtClientUiNoteOff: {
                 const uint8_t chnl(fShmNonRtControl.readByte());
                 const uint8_t note(fShmNonRtControl.readByte());
 
@@ -657,7 +643,7 @@ public:
                 break;
             }
 
-            case kPluginBridgeNonRtQuit:
+            case kPluginBridgeNonRtClientQuit:
                 signalThreadShouldExit();
                 callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
                 break;
@@ -683,35 +669,35 @@ protected:
 
             for (; fShmRtControl.isDataAvailableForReading();)
             {
-                const PluginBridgeRtOpcode opcode(fShmRtControl.readOpcode());
+                const PluginBridgeRtClientOpcode opcode(fShmRtControl.readOpcode());
                 CarlaPlugin* const plugin(pData->plugins[0].plugin);
 
 #ifdef DEBUG
-                if (opcode != kPluginBridgeRtProcess && opcode != kPluginBridgeRtMidiEvent) {
-                    carla_debug("CarlaEngineBridgeRtThread::run() - got opcode: %s", PluginBridgeRtOpcode2str(opcode));
+                if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent) {
+                    carla_debug("CarlaEngineBridgeRtThread::run() - got opcode: %s", PluginBridgeRtClientOpcode2str(opcode));
                 }
 #endif
 
                 switch (opcode)
                 {
-                case kPluginBridgeRtNull:
+                case kPluginBridgeRtClientNull:
                     break;
 
-                case kPluginBridgeRtSetAudioPool: {
+                case kPluginBridgeRtClientSetAudioPool: {
                     const uint64_t poolSize(fShmRtControl.readULong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
                     fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, static_cast<size_t>(poolSize));
                     break;
                 }
 
-                case kPluginBridgeRtSetCVPool: {
+                case kPluginBridgeRtClientSetCVPool: {
                     const uint64_t poolSize(fShmRtControl.readULong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
                     //fShmCVPool.data = (float*)jackbridge_shm_map(fShmCVPool.shm, static_cast<size_t>(poolSize));
                     break;
                 }
 
-                case kPluginBridgeRtControlEventParameter: {
+                case kPluginBridgeRtClientControlEventParameter: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
                     const uint16_t param(fShmRtControl.readUShort());
@@ -729,7 +715,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtControlEventMidiBank: {
+                case kPluginBridgeRtClientControlEventMidiBank: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
                     const uint16_t index(fShmRtControl.readUShort());
@@ -746,7 +732,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtControlEventMidiProgram: {
+                case kPluginBridgeRtClientControlEventMidiProgram: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
                     const uint16_t index(fShmRtControl.readUShort());
@@ -763,7 +749,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtControlEventAllSoundOff: {
+                case kPluginBridgeRtClientControlEventAllSoundOff: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
 
@@ -778,7 +764,7 @@ protected:
                     }
                 }
 
-                case kPluginBridgeRtControlEventAllNotesOff: {
+                case kPluginBridgeRtClientControlEventAllNotesOff: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  channel(fShmRtControl.readByte());
 
@@ -793,7 +779,7 @@ protected:
                     }
                 }
 
-                case kPluginBridgeRtMidiEvent: {
+                case kPluginBridgeRtClientMidiEvent: {
                     const uint32_t time(fShmRtControl.readUInt());
                     const uint8_t  port(fShmRtControl.readByte());
                     const uint8_t  size(fShmRtControl.readByte());
@@ -834,7 +820,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtProcess: {
+                case kPluginBridgeRtClientProcess: {
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
                     if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(false))
@@ -896,7 +882,7 @@ protected:
                     break;
                 }
 
-                case kPluginBridgeRtQuit:
+                case kPluginBridgeRtClientQuit:
                     signalThreadShouldExit();
                     break;
                 }

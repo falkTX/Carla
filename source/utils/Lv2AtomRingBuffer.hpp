@@ -25,7 +25,7 @@
 
 // -----------------------------------------------------------------------
 
-class Lv2AtomRingBuffer : public CarlaRingBuffer<HeapBuffer>
+class Lv2AtomRingBuffer : public CarlaRingBufferControl<HeapBuffer>
 {
 public:
     Lv2AtomRingBuffer() noexcept
@@ -33,12 +33,11 @@ public:
           fHeapBuffer(HeapBuffer_INIT),
           fNeedsDataDelete(true)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , fRetAtom{{0,0}, {0}} {}
-#else
+        , fRetAtom{{0,0}, {0}}
+#endif
     {
         carla_zeroStruct(fHeapBuffer);
     }
-#endif
 
     Lv2AtomRingBuffer(Lv2AtomRingBuffer& ringBuf, uint8_t buf[]) noexcept
         : fMutex(),
@@ -48,9 +47,7 @@ public:
         , fRetAtom{{0,0}, {0}}
 #endif
     {
-#ifndef CARLA_PROPER_CPP11_SUPPORT
         carla_zeroStruct(fHeapBuffer);
-#endif
 
         fHeapBuffer.buf  = buf;
         fHeapBuffer.size = ringBuf.fHeapBuffer.size;
@@ -208,7 +205,7 @@ private:
     HeapBuffer fHeapBuffer;
     const bool fNeedsDataDelete;
 
-    static const size_t kMaxAtomDataSize = 8192;
+    static const std::size_t kMaxAtomDataSize = 8192;
 
     struct RetAtom {
         LV2_Atom atom;

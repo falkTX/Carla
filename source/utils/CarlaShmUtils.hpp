@@ -26,7 +26,7 @@ struct shm_t { HANDLE shm; HANDLE map; };
 #else
 # include <fcntl.h>
 # include <sys/mman.h>
-struct shm_t { int fd; const char* filename; };
+struct shm_t { int fd; const char* filename; std::size_t size; };
 # define shm_t_INIT {-1, nullptr}
 #endif
 
@@ -39,7 +39,7 @@ struct shm_t { int fd; const char* filename; };
 #ifdef CARLA_OS_WIN
 static const shm_t gNullCarlaShm = { nullptr, nullptr };
 #else
-static const shm_t gNullCarlaShm = { -1, nullptr };
+static const shm_t gNullCarlaShm = { -1, nullptr, 0 };
 #endif
 
 /*
@@ -67,6 +67,7 @@ void carla_shm_init(shm_t& shm) noexcept
 #else
     shm.fd       = -1;
     shm.filename = nullptr;
+    shm.size     = 0;
 #endif
 }
 
@@ -88,6 +89,7 @@ shm_t carla_shm_create(const char* const filename) noexcept
 #else
         ret.fd       = ::shm_open(filename, O_CREAT|O_EXCL|O_RDWR, 0600);
         ret.filename = (ret.fd >= 0) ? carla_strdup_safe(filename) : nullptr;
+        ret.size     = 0;
 
         if (ret.fd >= 0 && ret.filename == nullptr)
         {
@@ -122,6 +124,7 @@ shm_t carla_shm_attach(const char* const filename) noexcept
 #else
         ret.fd       = ::shm_open(filename, O_RDWR, 0);
         ret.filename = nullptr;
+        ret.size     = 0;
 #endif
     }
     catch(...) {
@@ -171,6 +174,8 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
     CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map == nullptr, nullptr);
+#else
+    CARLA_SAFE_ASSERT_RETURN(shm.size == 0, nullptr);
 #endif
 
     try {
@@ -178,7 +183,7 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
         const HANDLE map(:CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr));
         CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
-        const HANDLE ptr(::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size));
+        void* const ptr(::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size));
 
         if (ptr == nullptr)
         {
@@ -196,7 +201,16 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
             CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
         }
 
-        return ::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
+        void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0));
+
+        if (ptr == nullptr)
+        {
+            carla_safe_assert("ptr != nullptr", __FILE__, __LINE__);
+            return nullptr;
+        }
+
+        shm.size = size;
+        return ptr;
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_map", nullptr);
 }
@@ -205,13 +219,14 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
  * Unmap a shared memory object address.
  */
 static inline
-void carla_shm_unmap(shm_t& shm, void* const ptr, const std::size_t size) noexcept
+void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
     CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(size > 0,);
 #ifdef CARLA_OS_WIN
     CARLA_SAFE_ASSERT_RETURN(shm.map != nullptr,);
+#else
+    CARLA_SAFE_ASSERT_RETURN(shm.size > 0,);
 #endif
 
     try {
@@ -222,13 +237,13 @@ void carla_shm_unmap(shm_t& shm, void* const ptr, const std::size_t size) noexce
         ::UnmapViewOfFile(ptr);
         ::CloseHandle(map);
 #else
+        const std::size_t size(shm.size);
+        shm.size = 0;
+
         const int ret(::munmap(ptr, size));
         CARLA_SAFE_ASSERT(ret == 0);
 #endif
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
-
-    // unused depending on platform
-    return; (void)shm; (void)size;
 }
 
 // -----------------------------------------------------------------------
@@ -253,17 +268,6 @@ bool carla_shm_map(shm_t& shm, T*& value) noexcept
 {
     value = (T*)carla_shm_map(shm, sizeof(T));
     return (value != nullptr);
-}
-
-/*
- * Unmap a shared memory object address and set it as null.
- */
-template<typename T>
-static inline
-void carla_shm_unmap(shm_t& shm, T*& value) noexcept
-{
-    carla_shm_unmap(shm, value, sizeof(T));
-    value = nullptr;
 }
 
 // -----------------------------------------------------------------------

@@ -69,6 +69,7 @@ struct CarlaOscData {
         }
     }
 
+#if 0
     void setNewURL(const char* const url)
     {
         if (path != nullptr)
@@ -93,6 +94,7 @@ struct CarlaOscData {
         std::free(host);
         std::free(port);
     }
+#endif
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaOscData)

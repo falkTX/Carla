@@ -1053,7 +1053,7 @@ CarlaPipeServer::~CarlaPipeServer() /*noexcept*/
 uintptr_t CarlaPipeServer::getPID() const noexcept
 {
 #ifndef CARLA_OS_WIN
-    return pData->pid;
+    return static_cast<uintptr_t>(pData->pid);
 #else
     return 0;
 #endif

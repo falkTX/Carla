@@ -133,7 +133,7 @@ struct BridgeAudioPool {
 
         if (data != nullptr)
         {
-            carla_shm_unmap(shm, data, size);
+            carla_shm_unmap(shm, data);
             data = nullptr;
         }
 
@@ -144,7 +144,7 @@ struct BridgeAudioPool {
     void resize(const uint32_t bufferSize, const uint32_t portCount) noexcept
     {
         if (data != nullptr)
-            carla_shm_unmap(shm, data, size);
+            carla_shm_unmap(shm, data);
 
         size = portCount*bufferSize*sizeof(float);
 
@@ -192,7 +192,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
 
         if (data != nullptr)
         {
-            carla_shm_unmap(shm, data, sizeof(BridgeRtData));
+            carla_shm_unmap(shm, data);
             data = nullptr;
         }
 
@@ -219,7 +219,7 @@ struct BridgeRtControl : public CarlaRingBuffer<StackBuffer> {
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
-        carla_shm_unmap(shm, data, sizeof(BridgeRtData));
+        carla_shm_unmap(shm, data);
         data = nullptr;
 
         setRingBuffer(nullptr, false);
@@ -279,7 +279,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
 
         if (data != nullptr)
         {
-            carla_shm_unmap(shm, data, sizeof(BridgeNonRtData));
+            carla_shm_unmap(shm, data);
             data = nullptr;
         }
 
@@ -303,7 +303,7 @@ struct BridgeNonRtControl : public CarlaRingBuffer<BigStackBuffer> {
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
-        carla_shm_unmap(shm, data, sizeof(BridgeNonRtData));
+        carla_shm_unmap(shm, data);
         data = nullptr;
 
         setRingBuffer(nullptr, false);
@@ -2293,27 +2293,6 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     (void)bridgeBinary; (void)btype; (void)ptype;
 #endif
 }
-
-#ifndef BUILD_BRIDGE
-// -------------------------------------------------------------------------------------------------------------------
-// Bridge Helper
-
-#define bridgePlugin ((BridgePlugin*)plugin)
-
-extern int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType type,
-                                       const int argc, const lo_arg* const* const argv, const char* const types);
-
-int CarlaPluginSetOscBridgeInfo(CarlaPlugin* const plugin, const PluginBridgeOscInfoType /*type*/,
-                                const int /*argc*/, const lo_arg* const* const /*argv*/, const char* const /*types*/)
-{
-    CARLA_SAFE_ASSERT(plugin != nullptr && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0);
-    return 0;
-    //return bridgePlugin->setOscPluginBridgeInfo(type, argc, argv, types);
-}
-
-#undef bridgePlugin
-
-#endif
 
 CARLA_BACKEND_END_NAMESPACE
 
