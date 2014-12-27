@@ -869,6 +869,10 @@ public:
 
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPing);
             fShmNonRtClientControl.commitWrite();
+
+            try {
+                handleNonRtData();
+            } CARLA_SAFE_EXCEPTION("handleNonRtData");
         }
         else
             carla_stderr2("TESTING: Bridge has closed!");
@@ -901,6 +905,16 @@ public:
         {
             pData->audioOut.createNew(fInfo.aOuts);
             needsCtrlIn = true;
+        }
+
+        if (fInfo.cvIns > 0)
+        {
+            pData->cvIn.createNew(fInfo.cvIns);
+        }
+
+        if (fInfo.cvOuts > 0)
+        {
+            pData->cvOut.createNew(fInfo.cvOuts);
         }
 
         if (fInfo.mIns > 0)
@@ -959,6 +973,8 @@ public:
             pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
             pData->audioOut.ports[j].rindex = j;
         }
+
+        // TODO - CV
 
         if (needsCtrlIn)
         {
@@ -1026,7 +1042,7 @@ public:
 
         try {
             timedOut = waitForClient(1);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("activate - waitForClient");
 
         if (! timedOut)
             fTimedOut = false;
@@ -1045,7 +1061,7 @@ public:
 
         try {
             timedOut = waitForClient(1);
-        } catch(...) {}
+        } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
 
         if (! timedOut)
             fTimedOut = false;
@@ -1452,7 +1468,7 @@ public:
 
     void bufferSizeChanged(const uint32_t newBufferSize) override
     {
-        resizeAudioAndCVPool(newBufferSize);
+        resizeAudioPool(newBufferSize);
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1568,461 +1584,413 @@ public:
 
     // -------------------------------------------------------------------
 
-#if 0
-    int setOscPluginBridgeInfo(const PluginBridgeOscInfoType infoType, const int argc, const lo_arg* const* const argv, const char* const types)
+    void handleNonRtData()
     {
-#ifdef DEBUG
-        if (infoType != kPluginBridgeOscPong) {
-            carla_debug("CarlaPluginBridge::setOscPluginBridgeInfo(%s, %i, %p, \"%s\")", PluginBridgeOscInfoType2str(infoType), argc, argv, types);
-        }
-#endif
-
-        switch (infoType)
+        for (; fShmNonRtServerControl.isDataAvailableForReading();)
         {
-        case kPluginBridgeOscNull:
-            break;
-
-        case kPluginBridgeOscPong:
-            if (fLastPongCounter > 0)
-                fLastPongCounter = 0;
-            break;
-
-        case kPluginBridgeOscPluginInfo1: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(5, "iiiih");
-
-            const int32_t category = argv[0]->i;
-            const int32_t hints    = argv[1]->i;
-            const int32_t optionAv = argv[2]->i;
-            const int32_t optionEn = argv[3]->i;
-            const int64_t uniqueId = argv[4]->h;
-
-            CARLA_SAFE_ASSERT_BREAK(category >= 0);
-            CARLA_SAFE_ASSERT_BREAK(hints >= 0);
-            CARLA_SAFE_ASSERT_BREAK(optionAv >= 0);
-            CARLA_SAFE_ASSERT_BREAK(optionEn >= 0);
-
-            pData->hints  = static_cast<uint>(hints);
-            pData->hints |= PLUGIN_IS_BRIDGE;
-
-            pData->options = static_cast<uint>(optionEn);
-
-            fInfo.category = static_cast<PluginCategory>(category);
-            fInfo.uniqueId = uniqueId;
-            fInfo.optionsAvailable = static_cast<uint>(optionAv);
-            break;
-        }
-
-        case kPluginBridgeOscPluginInfo2: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ssss");
-
-            const char* const realName  = (const char*)&argv[0]->s;
-            const char* const label     = (const char*)&argv[1]->s;
-            const char* const maker     = (const char*)&argv[2]->s;
-            const char* const copyright = (const char*)&argv[3]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(realName != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(label != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(maker != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(copyright != nullptr);
-
-            fInfo.name  = realName;
-            fInfo.label = label;
-            fInfo.maker = maker;
-            fInfo.copyright = copyright;
-
-            if (pData->name == nullptr)
-                pData->name = pData->engine->getUniquePluginName(realName);
-            break;
-        }
-
-        case kPluginBridgeOscAudioCount: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
-
-            const int32_t ins  = argv[0]->i;
-            const int32_t outs = argv[1]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
-            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
-
-            fInfo.aIns  = static_cast<uint32_t>(ins);
-            fInfo.aOuts = static_cast<uint32_t>(outs);
-            break;
-        }
-
-        case kPluginBridgeOscMidiCount: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
-
-            const int32_t ins  = argv[0]->i;
-            const int32_t outs = argv[1]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
-            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
-
-            fInfo.mIns  = static_cast<uint32_t>(ins);
-            fInfo.mOuts = static_cast<uint32_t>(outs);
-            break;
-        }
-
-        case kPluginBridgeOscParameterCount: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ii");
-
-            const int32_t ins  = argv[0]->i;
-            const int32_t outs = argv[1]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(ins >= 0);
-            CARLA_SAFE_ASSERT_BREAK(outs >= 0);
-
-            // delete old data
-            pData->param.clear();
-
-            if (fParams != nullptr)
-            {
-                delete[] fParams;
-                fParams = nullptr;
+            const PluginBridgeNonRtServerOpcode opcode(fShmNonRtServerControl.readOpcode());
+#ifdef DEBUG
+            if (opcode != kPluginBridgeNonRtServerPong) {
+                carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
-
-            if (int32_t count = ins+outs)
+#endif
+            switch (opcode)
             {
-                const int32_t maxParams(static_cast<int32_t>(pData->engine->getOptions().maxParameters));
+            case kPluginBridgeNonRtServerNull:
+                break;
 
-                if (count > maxParams)
+            case kPluginBridgeNonRtServerPong:
+                if (fLastPongCounter > 0)
+                    fLastPongCounter = 0;
+                break;
+
+            case kPluginBridgeNonRtServerPluginInfo1: {
+                // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
+                const uint32_t category = fShmNonRtServerControl.readUInt();
+                const uint32_t hints    = fShmNonRtServerControl.readUInt();
+                const uint32_t optionAv = fShmNonRtServerControl.readUInt();
+                const uint32_t optionEn = fShmNonRtServerControl.readUInt();
+                const  int64_t uniqueId = fShmNonRtServerControl.readLong();
+
+                pData->hints   = hints | PLUGIN_IS_BRIDGE;
+                pData->options = optionEn;
+
+                fInfo.category = static_cast<PluginCategory>(category);
+                fInfo.uniqueId = uniqueId;
+                fInfo.optionsAvailable = optionAv;
+            }   break;
+
+            case kPluginBridgeNonRtServerPluginInfo2: {
+                // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
+
+                // realName
+                const uint32_t realNameSize(fShmNonRtServerControl.readUInt());
+                char realName[realNameSize+1];
+                carla_zeroChar(realName, realNameSize+1);
+                fShmNonRtServerControl.readCustomData(realName, realNameSize);
+
+                // label
+                const uint32_t labelSize(fShmNonRtServerControl.readUInt());
+                char label[labelSize+1];
+                carla_zeroChar(label, labelSize+1);
+                fShmNonRtServerControl.readCustomData(label, labelSize);
+
+                // maker
+                const uint32_t makerSize(fShmNonRtServerControl.readUInt());
+                char maker[makerSize+1];
+                carla_zeroChar(maker, makerSize+1);
+                fShmNonRtServerControl.readCustomData(maker, makerSize);
+
+                // copyright
+                const uint32_t copyrightSize(fShmNonRtServerControl.readUInt());
+                char copyright[copyrightSize+1];
+                carla_zeroChar(copyright, copyrightSize+1);
+                fShmNonRtServerControl.readCustomData(copyright, copyrightSize);
+
+                fInfo.name  = realName;
+                fInfo.label = label;
+                fInfo.maker = maker;
+                fInfo.copyright = copyright;
+
+                if (pData->name == nullptr)
+                    pData->name = pData->engine->getUniquePluginName(realName);
+            }   break;
+
+            case kPluginBridgeNonRtServerAudioCount: {
+                // uint/ins, uint/outs
+                fInfo.aIns  = fShmNonRtServerControl.readUInt();
+                fInfo.aOuts = fShmNonRtServerControl.readUInt();
+            }   break;
+
+            case kPluginBridgeNonRtServerMidiCount: {
+                // uint/ins, uint/outs
+                fInfo.mIns  = fShmNonRtServerControl.readUInt();
+                fInfo.mOuts = fShmNonRtServerControl.readUInt();
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterCount: {
+                // uint/ins, uint/outs
+                const uint32_t ins  = fShmNonRtServerControl.readUInt();
+                const uint32_t outs = fShmNonRtServerControl.readUInt();
+
+                // delete old data
+                pData->param.clear();
+
+                if (fParams != nullptr)
                 {
-                    // this is expected right now, to be handled better later
-                    //carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
-                    count = maxParams;
+                    delete[] fParams;
+                    fParams = nullptr;
                 }
 
-                const uint32_t ucount(static_cast<uint32_t>(count));
-
-                pData->param.createNew(ucount, false);
-                fParams = new BridgeParamInfo[ucount];
-            }
-            break;
-        }
-
-        case kPluginBridgeOscProgramCount: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t count = argv[0]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(count >= 0);
-
-            pData->prog.clear();
-
-            if (count > 0)
-                pData->prog.createNew(static_cast<uint32_t>(count));
-
-            break;
-        }
-
-        case kPluginBridgeOscMidiProgramCount: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t count = argv[0]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(count >= 0);
-
-            pData->midiprog.clear();
-
-            if (count > 0)
-                pData->midiprog.createNew(static_cast<uint32_t>(count));
-            break;
-        }
-
-        case kPluginBridgeOscParameterData1: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(5, "iiiii");
-
-            const int32_t index    = argv[0]->i;
-            const int32_t rindex   = argv[1]->i;
-            const int32_t type     = argv[2]->i;
-            const int32_t hints    = argv[3]->i;
-            const int32_t midiCC   = argv[4]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_BREAK(rindex >= 0);
-            CARLA_SAFE_ASSERT_BREAK(type >= 0);
-            CARLA_SAFE_ASSERT_BREAK(hints >= 0);
-            CARLA_SAFE_ASSERT_BREAK(midiCC >= -1 && midiCC < MAX_MIDI_CONTROL);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-            {
-                pData->param.data[index].type   = static_cast<ParameterType>(type);
-                pData->param.data[index].index  = index;
-                pData->param.data[index].rindex = rindex;
-                pData->param.data[index].hints  = static_cast<uint>(hints);
-                pData->param.data[index].midiCC = static_cast<int16_t>(midiCC);
-            }
-            break;
-        }
-
-        case kPluginBridgeOscParameterData2: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "iss");
-
-            const int32_t index    = argv[0]->i;
-            const char* const name = (const char*)&argv[1]->s;
-            const char* const unit = (const char*)&argv[2]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(unit != nullptr);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-            {
-                fParams[index].name = name;
-                fParams[index].unit = unit;
-            }
-            break;
-        }
-
-        case kPluginBridgeOscParameterRanges1: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ifff");
-
-            const int32_t index = argv[0]->i;
-            const float def     = argv[1]->f;
-            const float min     = argv[2]->f;
-            const float max     = argv[3]->f;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_BREAK(min < max);
-            CARLA_SAFE_ASSERT_BREAK(def >= min);
-            CARLA_SAFE_ASSERT_BREAK(def <= max);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-            {
-                pData->param.ranges[index].def = def;
-                pData->param.ranges[index].min = min;
-                pData->param.ranges[index].max = max;
-            }
-            break;
-        }
-
-        case kPluginBridgeOscParameterRanges2: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "ifff");
-
-            const int32_t index   = argv[0]->i;
-            const float step      = argv[1]->f;
-            const float stepSmall = argv[2]->f;
-            const float stepLarge = argv[3]->f;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-            {
-                pData->param.ranges[index].step      = step;
-                pData->param.ranges[index].stepSmall = stepSmall;
-                pData->param.ranges[index].stepLarge = stepLarge;
-            }
-            break;
-        }
-
-        case kPluginBridgeOscParameterValue: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
-
-            const int32_t index = argv[0]->i;
-            const float   value = argv[1]->f;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-            {
-                const uint32_t uindex(static_cast<uint32_t>(index));
-                const float fixedValue(pData->param.getFixedValue(uindex, value));
-                fParams[uindex].value = fixedValue;
-
-                CarlaPlugin::setParameterValue(uindex, fixedValue, false, true, true);
-            }
-            break;
-        }
-
-        case kPluginBridgeOscDefaultValue: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "if");
-
-            const int32_t index = argv[0]->i;
-            const float   value = argv[1]->f;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->param.count), index, pData->param.count);
-
-            if (index < static_cast<int32_t>(pData->param.count))
-                pData->param.ranges[index].def = value;
-            break;
-        }
-
-        case kPluginBridgeOscCurrentProgram: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t index = argv[0]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= -1);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
-
-            CarlaPlugin::setProgram(index, false, true, true);
-            break;
-        }
-
-        case kPluginBridgeOscCurrentMidiProgram: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "i");
-
-            const int32_t index = argv[0]->i;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= -1);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
-
-            CarlaPlugin::setMidiProgram(index, false, true, true);
-            break;
-        }
-
-        case kPluginBridgeOscProgramName: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "is");
-
-            const int32_t index    = argv[0]->i;
-            const char* const name = (const char*)&argv[1]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
-
-            if (index < static_cast<int32_t>(pData->prog.count))
-            {
-                if (pData->prog.names[index] != nullptr)
-                    delete[] pData->prog.names[index];
-                pData->prog.names[index] = carla_strdup(name);
-            }
-            break;
-        }
-
-        case kPluginBridgeOscMidiProgramData: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(4, "iiis");
-
-            const int32_t index    = argv[0]->i;
-            const int32_t bank     = argv[1]->i;
-            const int32_t program  = argv[2]->i;
-            const char* const name = (const char*)&argv[3]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(index >= 0);
-            CARLA_SAFE_ASSERT_BREAK(bank >= 0);
-            CARLA_SAFE_ASSERT_BREAK(program >= 0);
-            CARLA_SAFE_ASSERT_BREAK(name != nullptr);
-            CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
-
-            if (index < static_cast<int32_t>(pData->midiprog.count))
-            {
-                if (pData->midiprog.data[index].name != nullptr)
-                    delete[] pData->midiprog.data[index].name;
-                pData->midiprog.data[index].bank    = static_cast<uint32_t>(bank);
-                pData->midiprog.data[index].program = static_cast<uint32_t>(program);
-                pData->midiprog.data[index].name    = carla_strdup(name);
-            }
-            break;
-        }
-
-        case kPluginBridgeOscConfigure: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(2, "ss");
-
-            const char* const key   = (const char*)&argv[0]->s;
-            const char* const value = (const char*)&argv[1]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(key != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(value != nullptr);
-
-            if (std::strcmp(key, CARLA_BRIDGE_MSG_HIDE_GUI) == 0)
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
-            else if (std::strcmp(key, CARLA_BRIDGE_MSG_SAVED) == 0)
-                fSaved = true;
-            break;
-        }
-
-        case kPluginBridgeOscSetCustomData: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(3, "sss");
-
-            const char* const type  = (const char*)&argv[0]->s;
-            const char* const key   = (const char*)&argv[1]->s;
-            const char* const value = (const char*)&argv[2]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(type != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(key != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(value != nullptr);
-
-            CarlaPlugin::setCustomData(type, key, value, false);
-            break;
-        }
-
-        case kPluginBridgeOscSetChunkDataFile: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "s");
-
-            const char* const chunkFilePath = (const char*)&argv[0]->s;
-
-            CARLA_SAFE_ASSERT_BREAK(chunkFilePath != nullptr);
-
-            String realChunkFilePath(chunkFilePath);
-            carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
+                if (uint32_t count = ins+outs)
+                {
+                    const uint32_t maxParams(pData->engine->getOptions().maxParameters);
+
+                    if (count > maxParams)
+                    {
+                        // this is expected right now, to be handled better later
+                        //carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
+                        count = maxParams;
+                    }
+
+                    pData->param.createNew(count, false);
+                    fParams = new BridgeParamInfo[count];
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerProgramCount: {
+                // uint/count
+                pData->prog.clear();
+
+                if (const uint32_t count = fShmNonRtServerControl.readUInt())
+                    pData->prog.createNew(static_cast<uint32_t>(count));
+
+            }   break;
+
+            case kPluginBridgeNonRtServerMidiProgramCount: {
+                // uint/count
+                pData->midiprog.clear();
+
+                if (const uint32_t count = fShmNonRtServerControl.readUInt())
+                    pData->midiprog.createNew(static_cast<uint32_t>(count));
+
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterData1: {
+                // uint/index, int/rindex, uint/type, uint/hints, int/cc
+                const uint32_t index  = fShmNonRtServerControl.readUInt();
+                const  int32_t rindex = fShmNonRtServerControl.readInt();
+                const uint32_t type   = fShmNonRtServerControl.readUInt();
+                const uint32_t hints  = fShmNonRtServerControl.readUInt();
+                const  int16_t midiCC = fShmNonRtServerControl.readShort();
+
+                CARLA_SAFE_ASSERT_BREAK(midiCC >= -1 && midiCC < MAX_MIDI_CONTROL);
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    pData->param.data[index].type   = static_cast<ParameterType>(type);
+                    pData->param.data[index].index  = static_cast<int32_t>(index);
+                    pData->param.data[index].rindex = rindex;
+                    pData->param.data[index].hints  = hints;
+                    pData->param.data[index].midiCC = midiCC;
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterData2: {
+                // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+
+                // name
+                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
+                char name[nameSize+1];
+                carla_zeroChar(name, nameSize+1);
+                fShmNonRtServerControl.readCustomData(name, nameSize);
+
+                // unit
+                const uint32_t unitSize(fShmNonRtServerControl.readUInt());
+                char unit[unitSize+1];
+                carla_zeroChar(unit, unitSize+1);
+                fShmNonRtServerControl.readCustomData(unit, unitSize);
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    fParams[index].name = name;
+                    fParams[index].unit = unit;
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterRanges1: {
+                // uint/index, float/def, float/min, float/max
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+                const float def      = fShmNonRtServerControl.readFloat();
+                const float min      = fShmNonRtServerControl.readFloat();
+                const float max      = fShmNonRtServerControl.readFloat();
+
+                CARLA_SAFE_ASSERT_BREAK(min < max);
+                CARLA_SAFE_ASSERT_BREAK(def >= min);
+                CARLA_SAFE_ASSERT_BREAK(def <= max);
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    pData->param.ranges[index].def = def;
+                    pData->param.ranges[index].min = min;
+                    pData->param.ranges[index].max = max;
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterRanges2: {
+                // uint/index float/step, float/stepSmall, float/stepLarge
+                const uint32_t index  = fShmNonRtServerControl.readUInt();
+                const float step      = fShmNonRtServerControl.readFloat();
+                const float stepSmall = fShmNonRtServerControl.readFloat();
+                const float stepLarge = fShmNonRtServerControl.readFloat();
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    pData->param.ranges[index].step      = step;
+                    pData->param.ranges[index].stepSmall = stepSmall;
+                    pData->param.ranges[index].stepLarge = stepLarge;
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterValue: {
+                // uint/index float/value
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+                const float    value = fShmNonRtServerControl.readFloat();
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    const float fixedValue(pData->param.getFixedValue(index, value));
+                    fParams[index].value = fixedValue;
+
+                    CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerDefaultValue: {
+                // uint/index float/value
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+                const float    value = fShmNonRtServerControl.readFloat();
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                    pData->param.ranges[index].def = value;
+            }   break;
+
+            case kPluginBridgeNonRtServerCurrentProgram: {
+                // int/index
+                const int32_t index = fShmNonRtServerControl.readInt();
+
+                CARLA_SAFE_ASSERT_BREAK(index >= -1);
+                CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->prog.count), index, pData->prog.count);
+
+                CarlaPlugin::setProgram(index, false, true, true);
+            }   break;
+
+            case kPluginBridgeNonRtServerCurrentMidiProgram: {
+                // int/index
+                const int32_t index = fShmNonRtServerControl.readInt();
+
+                CARLA_SAFE_ASSERT_BREAK(index >= -1);
+                CARLA_SAFE_ASSERT_INT2(index < static_cast<int32_t>(pData->midiprog.count), index, pData->midiprog.count);
+
+                CarlaPlugin::setMidiProgram(index, false, true, true);
+            }   break;
+
+            case kPluginBridgeNonRtServerProgramName: {
+                // uint/index, uint/size, str[] (name)
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+
+                // name
+                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
+                char name[nameSize+1];
+                carla_zeroChar(name, nameSize+1);
+                fShmNonRtServerControl.readCustomData(name, nameSize);
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->prog.count, index, pData->prog.count);
+
+                if (index < pData->prog.count)
+                {
+                    if (pData->prog.names[index] != nullptr)
+                        delete[] pData->prog.names[index];
+                    pData->prog.names[index] = carla_strdup(name);
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerMidiProgramData: {
+                // uint/index, uint/bank, uint/program, uint/size, str[] (name)
+                const uint32_t index   = fShmNonRtServerControl.readUInt();
+                const uint32_t bank    = fShmNonRtServerControl.readUInt();
+                const uint32_t program = fShmNonRtServerControl.readUInt();
+
+                // name
+                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
+                char name[nameSize+1];
+                carla_zeroChar(name, nameSize+1);
+                fShmNonRtServerControl.readCustomData(name, nameSize);
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->midiprog.count, index, pData->midiprog.count);
+
+                if (index < pData->midiprog.count)
+                {
+                    if (pData->midiprog.data[index].name != nullptr)
+                        delete[] pData->midiprog.data[index].name;
+                    pData->midiprog.data[index].bank    = bank;
+                    pData->midiprog.data[index].program = program;
+                    pData->midiprog.data[index].name    = carla_strdup(name);
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerSetCustomData: {
+                // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
+
+                // type
+                const uint32_t typeSize(fShmNonRtServerControl.readUInt());
+                char type[typeSize+1];
+                carla_zeroChar(type, typeSize+1);
+                fShmNonRtServerControl.readCustomData(type, typeSize);
+
+                // key
+                const uint32_t keySize(fShmNonRtServerControl.readUInt());
+                char key[keySize+1];
+                carla_zeroChar(key, keySize+1);
+                fShmNonRtServerControl.readCustomData(key, keySize);
+
+                // value
+                const uint32_t valueSize(fShmNonRtServerControl.readUInt());
+                char value[valueSize+1];
+                carla_zeroChar(value, valueSize+1);
+                fShmNonRtServerControl.readCustomData(value, valueSize);
+
+                CarlaPlugin::setCustomData(type, key, value, false);
+            }   break;
+
+            case kPluginBridgeNonRtServerSetChunkDataFile: {
+                // uint/size, str[] (filename)
+
+                // chunkFilePath
+                const uint32_t chunkFilePathSize(fShmNonRtServerControl.readUInt());
+                char chunkFilePath[chunkFilePathSize+1];
+                carla_zeroChar(chunkFilePath, chunkFilePathSize+1);
+                fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
+
+                String realChunkFilePath(chunkFilePath);
+                carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
 
 #ifndef CARLA_OS_WIN
-            // Using Wine, fix temp dir
-            if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
-            {
-                // Get WINEPREFIX
-                String wineDir;
-                if (const char* const WINEPREFIX = getenv("WINEPREFIX"))
-                    wineDir = String(WINEPREFIX);
-                else
-                    wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+                // Using Wine, fix temp dir
+                if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
+                {
+                    // Get WINEPREFIX
+                    String wineDir;
+                    if (const char* const WINEPREFIX = getenv("WINEPREFIX"))
+                        wineDir = String(WINEPREFIX);
+                    else
+                        wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
 
-                const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
+                    const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
 
-                realChunkFilePath  = wineDir;
-                realChunkFilePath += "/drive_";
-                realChunkFilePath += driveLetterSplit[0].toLowerCase();
-                realChunkFilePath += "/";
-                realChunkFilePath += driveLetterSplit[1];
+                    realChunkFilePath  = wineDir;
+                    realChunkFilePath += "/drive_";
+                    realChunkFilePath += driveLetterSplit[0].toLowerCase();
+                    realChunkFilePath += "/";
+                    realChunkFilePath += driveLetterSplit[1];
 
-                realChunkFilePath  = realChunkFilePath.replace("\\", "/");
-                carla_stdout("chunk save path AFTER => %s", realChunkFilePath.toRawUTF8());
-            }
+                    realChunkFilePath  = realChunkFilePath.replace("\\", "/");
+                    carla_stdout("chunk save path AFTER => %s", realChunkFilePath.toRawUTF8());
+                }
 #endif
 
-            File chunkFile(realChunkFilePath);
+                File chunkFile(realChunkFilePath);
 
-            if (chunkFile.existsAsFile())
-            {
-                fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
-                chunkFile.deleteFile();
-                carla_stderr("chunk data final");
+                if (chunkFile.existsAsFile())
+                {
+                    fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
+                    chunkFile.deleteFile();
+                    carla_stderr("chunk data final");
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerSetLatency: {
+                // uint
+            }   break;
+
+            case kPluginBridgeNonRtServerReady:
+                fInitiated = true;
+                break;
+
+            case kPluginBridgeNonRtServerSaved:
+                fSaved = true;
+                break;
+
+            case kPluginBridgeNonRtServerUiClosed:
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                break;
+
+            case kPluginBridgeNonRtServerError: {
+                // error
+                const uint32_t errorSize(fShmNonRtServerControl.readUInt());
+                char error[errorSize+1];
+                carla_zeroChar(error, errorSize+1);
+                fShmNonRtServerControl.readCustomData(error, errorSize);
+
+                pData->engine->setLastError(error);
+
+                fInitError = true;
+                fInitiated = true;
+            }   break;
             }
-            break;
         }
-
-        case kPluginBridgeOscLatency:
-            // TODO
-            break;
-
-        case kPluginBridgeOscReady:
-            fInitiated = true;
-            break;
-
-        case kPluginBridgeOscError: {
-            CARLA_BRIDGE_CHECK_OSC_TYPES(1, "s");
-
-            const char* const error = (const char*)&argv[0]->s;
-
-            CARLA_ASSERT(error != nullptr);
-
-            pData->engine->setLastError(error);
-
-            fInitError = true;
-            fInitiated = true;
-            break;
-        }
-        }
-
-        return 0;
     }
-#endif
 
     // -------------------------------------------------------------------
 
@@ -2179,19 +2147,15 @@ public:
 
         fShmNonRtClientControl.commitWrite();
 
-        // register plugin now so we can receive OSC (and wait for it)
-        pData->hints |= PLUGIN_IS_BRIDGE;
-        pData->engine->registerEnginePlugin(pData->id, this);
-
-        // init OSC
+        // init bridge thread
         {
             char shmIdsStr[6*4+1];
             carla_zeroChar(shmIdsStr, 6*4+1);
 
-            std::strncpy(shmIdsStr, &fShmAudioPool.filename[fShmAudioPool.filename.length()-6], 6);
-            std::strncat(shmIdsStr, &fShmRtClientControl.filename[fShmRtClientControl.filename.length()-6], 6);
-            std::strncat(shmIdsStr, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
-            std::strncat(shmIdsStr, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
+            std::strncpy(shmIdsStr+6*0, &fShmAudioPool.filename[fShmAudioPool.filename.length()-6], 6);
+            std::strncpy(shmIdsStr+6*1, &fShmRtClientControl.filename[fShmRtClientControl.filename.length()-6], 6);
+            std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
+            std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
             fBridgeThread.setData(bridgeBinary, label, shmIdsStr, fPluginType);
             fBridgeThread.startThread();
@@ -2297,7 +2261,7 @@ private:
 
     BridgeParamInfo* fParams;
 
-    void resizeAudioAndCVPool(const uint32_t bufferSize)
+    void resizeAudioPool(const uint32_t bufferSize)
     {
         fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, fInfo.cvIns+fInfo.cvOuts);
 

@@ -710,11 +710,13 @@ public:
     // -------------------------------------------------------------------
     // OSC stuff
 
+#ifndef BUILD_BRIDGE
     /*!
      * Register this plugin to the engine's OSC client (controller or bridge).
      * TODO
      */
     void registerToOscClient() noexcept;
+#endif
 
     /*!
      * Handle an OSC message.

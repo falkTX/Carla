@@ -249,12 +249,14 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 // -------------------------------------------------------------------
 
 struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
+    CarlaMutex mutex;
     CarlaString filename;
     BridgeNonRtServerData* data;
     char shm[64];
 
     BridgeNonRtServerControl() noexcept
-        : filename(),
+        :  mutex(),
+          filename(),
           data(nullptr)
     {
         carla_zeroChar(shm, 64);
@@ -465,6 +467,8 @@ public:
     {
         CarlaEngine::idle();
 
+        // TODO - send output parameters to server
+
         try {
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
@@ -498,7 +502,7 @@ public:
                 break;
 
             case kPluginBridgeNonRtClientPing:
-                oscSend_bridge_pong();
+                //oscSend_bridge_pong();
                 break;
 
             case kPluginBridgeNonRtClientActivate:
@@ -656,14 +660,15 @@ public:
 
                 plugin->prepareForSave();
 
-                for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
+                //for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
                 {
-                    const CustomData& cdata(plugin->getCustomData(i));
-                    oscSend_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
+                    //const CustomData& cdata(plugin->getCustomData(i));
+                    //oscSend_bridge_set_custom_data(cdata.type, cdata.key, cdata.value);
                 }
 
                 if (plugin->getOptionsEnabled() & PLUGIN_OPTION_USE_CHUNKS)
                 {
+                    /*
                     void* data = nullptr;
                     if (const std::size_t dataSize = plugin->getChunkData(&data))
                     {
@@ -681,6 +686,7 @@ public:
                         if (File(filePath).replaceWithText(dataBase64.buffer()))
                             oscSend_bridge_set_chunk_data_file(filePath.toRawUTF8());
                     }
+                    */
                 }
 
                 //oscSend_bridge_configure(CARLA_BRIDGE_MSG_SAVED, "");

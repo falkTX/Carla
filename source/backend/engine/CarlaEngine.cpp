@@ -1091,7 +1091,7 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
     {
         ++pData->isIdling;
     }
-#ifdef BUILD_BRIDGE
+#if 0 //def BUILD_BRIDGE
     else if (pData->oscData != nullptr)
     {
         switch (action)
@@ -1448,14 +1448,6 @@ const char* CarlaEngine::getOscServerPathUDP() const noexcept
 EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexcept
 {
     return isInput ? pData->events.in : pData->events.out;
-}
-
-void CarlaEngine::registerEnginePlugin(const uint id, CarlaPlugin* const plugin) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(id == pData->curPluginCount,);
-    carla_debug("CarlaEngine::registerEnginePlugin(%i, %p)", id, plugin);
-
-    pData->plugins[id].plugin = plugin;
 }
 
 // -----------------------------------------------------------------------

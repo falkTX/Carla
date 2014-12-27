@@ -77,7 +77,7 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerParameterCount,       // uint/ins, uint/outs
     kPluginBridgeNonRtServerProgramCount,         // uint/count
     kPluginBridgeNonRtServerMidiProgramCount,     // uint/count
-    kPluginBridgeNonRtServerParameterData1,       // uint/index, int/rindex, uint/type, uint/hints, int/cc
+    kPluginBridgeNonRtServerParameterData1,       // uint/index, int/rindex, uint/type, uint/hints, short/cc
     kPluginBridgeNonRtServerParameterData2,       // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
     kPluginBridgeNonRtServerParameterRanges1,     // uint/index, float/def, float/min, float/max
     kPluginBridgeNonRtServerParameterRanges2,     // uint/index float/step, float/stepSmall, float/stepLarge
@@ -87,7 +87,6 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerCurrentMidiProgram,   // int/index
     kPluginBridgeNonRtServerProgramName,          // uint/index, uint/size, str[] (name)
     kPluginBridgeNonRtServerMidiProgramData,      // uint/index, uint/bank, uint/program, uint/size, str[] (name)
-    kPluginBridgeNonRtServerConfigure,            // uint/size, str[], uint/size, str[]
     kPluginBridgeNonRtServerSetCustomData,        // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
     kPluginBridgeNonRtServerSetChunkDataFile,     // uint/size, str[] (filename)
     kPluginBridgeNonRtServerSetLatency,           // uint
@@ -283,8 +282,6 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerProgramName";
     case kPluginBridgeNonRtServerMidiProgramData:
         return "kPluginBridgeNonRtServerMidiProgramData";
-    case kPluginBridgeNonRtServerConfigure:
-        return "kPluginBridgeNonRtServerConfigure";
     case kPluginBridgeNonRtServerSetCustomData:
         return "kPluginBridgeNonRtServerSetCustomData";
     case kPluginBridgeNonRtServerSetChunkDataFile:

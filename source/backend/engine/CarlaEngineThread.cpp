@@ -93,7 +93,7 @@ void CarlaEngineThread::run() noexcept
                     if (oscRegisted)
                     {
 #ifdef BUILD_BRIDGE
-                        kEngine->oscSend_bridge_parameter_value(j, value);
+                        //kEngine->oscSend_bridge_parameter_value(j, value);
 #else
                         kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
