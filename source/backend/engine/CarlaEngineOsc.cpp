@@ -18,11 +18,6 @@
 #include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaPlugin.hpp"
-
-#ifndef BUILD_BRIDGE
-# include "CarlaBridgeUtils.hpp"
-#endif
-
 #include "CarlaMIDI.h"
 
 #include <cctype>

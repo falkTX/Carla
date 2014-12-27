@@ -169,7 +169,8 @@ static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp()
 class CarlaBridgePlugin
 {
 public:
-    CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName, const char* const rtBaseName, const char* const nonRtBaseName)
+    CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
+                      const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
           fProjFilename(),
           fOscControlData(),
@@ -178,12 +179,12 @@ public:
           leakDetector_CarlaBridgePlugin()
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
-        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtBaseName, nonRtBaseName);
+        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
         carla_set_engine_callback(callback, this);
 
         if (useBridge)
-            carla_engine_init_bridge(audioPoolBaseName, rtBaseName, nonRtBaseName, clientName);
+            carla_engine_init_bridge(audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
         else
             carla_engine_init("JACK", clientName);
 
@@ -420,25 +421,29 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Setup bridge ids
 
-    char bridgeBaseAudioName[6+1];
-    char bridgeBaseControlName[6+1];
-    char bridgeBaseTimeName[6+1];
+    char audioPoolBaseName[6+1];
+    char rtClientBaseName[6+1];
+    char nonRtClientBaseName[6+1];
+    char nonRtServerBaseName[6+1];
 
     if (useBridge)
     {
-        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*3, 1);
-        std::strncpy(bridgeBaseAudioName,   shmIds,    6);
-        std::strncpy(bridgeBaseControlName, shmIds+6,  6);
-        std::strncpy(bridgeBaseTimeName,    shmIds+12, 6);
-        bridgeBaseAudioName[6]   = '\0';
-        bridgeBaseControlName[6] = '\0';
-        bridgeBaseTimeName[6]    = '\0';
+        CARLA_SAFE_ASSERT_RETURN(std::strlen(shmIds) == 6*4, 1);
+        std::strncpy(audioPoolBaseName,   shmIds+6*0, 6);
+        std::strncpy(rtClientBaseName,    shmIds+6*1, 6);
+        std::strncpy(nonRtClientBaseName, shmIds+6*2, 6);
+        std::strncpy(nonRtServerBaseName, shmIds+6*3, 6);
+        audioPoolBaseName[6]   = '\0';
+        rtClientBaseName[6]    = '\0';
+        nonRtClientBaseName[6] = '\0';
+        nonRtServerBaseName[6] = '\0';
     }
     else
     {
-        bridgeBaseAudioName[0]   = '\0';
-        bridgeBaseControlName[0] = '\0';
-        bridgeBaseTimeName[0]    = '\0';
+        audioPoolBaseName[0]   = '\0';
+        rtClientBaseName[0]    = '\0';
+        nonRtClientBaseName[0] = '\0';
+        nonRtServerBaseName[0] = '\0';
     }
 
     // ---------------------------------------------------------------------
@@ -466,7 +471,7 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Init plugin bridge
 
-    CarlaBridgePlugin bridge(useBridge, clientName, bridgeBaseAudioName, bridgeBaseControlName, bridgeBaseTimeName);
+    CarlaBridgePlugin bridge(useBridge, clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
     if (! bridge.isOk())
     {

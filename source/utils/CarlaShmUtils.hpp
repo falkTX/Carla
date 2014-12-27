@@ -22,12 +22,13 @@
 
 #ifdef CARLA_OS_WIN
 struct shm_t { HANDLE shm; HANDLE map; };
-# define shm_t_INIT {nullptr, nullptr}
+# define shm_t_INIT { nullptr, nullptr }
 #else
+# include <cerrno>
 # include <fcntl.h>
 # include <sys/mman.h>
 struct shm_t { int fd; const char* filename; std::size_t size; };
-# define shm_t_INIT {-1, nullptr}
+# define shm_t_INIT { -1, nullptr, 0 }
 #endif
 
 // -----------------------------------------------------------------------
@@ -36,11 +37,7 @@ struct shm_t { int fd; const char* filename; std::size_t size; };
 /*
  * Null object returned when a shared memory operation fails.
  */
-#ifdef CARLA_OS_WIN
-static const shm_t gNullCarlaShm = { nullptr, nullptr };
-#else
-static const shm_t gNullCarlaShm = { -1, nullptr, 0 };
-#endif
+static const shm_t gNullCarlaShm = shm_t_INIT;
 
 /*
  * Check if a shared memory object is valid.
@@ -61,14 +58,7 @@ bool carla_is_shm_valid(const shm_t& shm) noexcept
 static inline
 void carla_shm_init(shm_t& shm) noexcept
 {
-#ifdef CARLA_OS_WIN
-    shm.shm = nullptr;
-    shm.map = nullptr;
-#else
-    shm.fd       = -1;
-    shm.filename = nullptr;
-    shm.size     = 0;
-#endif
+    shm = gNullCarlaShm;
 }
 
 /*
@@ -244,6 +234,57 @@ void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
         CARLA_SAFE_ASSERT(ret == 0);
 #endif
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
+}
+
+// -----------------------------------------------------------------------
+// advanced calls
+
+/*
+ * Create and open a new shared memory object for a XXXXXX temp filename.
+ * Will keep trying until a free random filename is obtained.
+ */
+static inline
+shm_t carla_shm_create_temp(char* const fileBase)
+{
+    // check if the fileBase name is valid
+    CARLA_SAFE_ASSERT_RETURN(fileBase != nullptr, gNullCarlaShm);
+
+    const std::size_t fileBaseLen(std::strlen(fileBase));
+
+    CARLA_SAFE_ASSERT_RETURN(fileBaseLen > 6, gNullCarlaShm);
+    CARLA_SAFE_ASSERT_RETURN(std::strcmp(fileBase + fileBaseLen - 6, "XXXXXX") == 0, gNullCarlaShm);
+
+    // character set to use randomly
+    static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"
+                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                  "0123456789";
+    static const int charSetLen = static_cast<int>(std::strlen(charSet) - 1); // -1 to avoid trailing '\0'
+
+    // try until getting a valid shm is obtained or an error occurs
+    for (;;)
+    {
+        // fill the XXXXXX characters randomly
+        for (std::size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
+            fileBase[c] = charSet[std::rand() % charSetLen];
+
+        // (try to) create new shm for this filename
+        const shm_t shm = carla_shm_create(fileBase);
+
+        // all ok!
+        if (carla_is_shm_valid(shm))
+            return shm;
+
+        // file already exists, keep trying
+#ifdef CARLA_OS_WIN
+        // TODO
+#else
+        if (errno == EEXIST)
+            continue;
+#endif
+
+        // some unknown error occurred, return null
+        return gNullCarlaShm;
+    }
 }
 
 // -----------------------------------------------------------------------

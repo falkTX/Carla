@@ -532,13 +532,15 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 }
 
 #ifdef BUILD_BRIDGE
-bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseName[6+1], const char nonRtBaseName[6+1], const char* clientName)
+bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
+                              const char nonRtServerBaseName[6+1], const char* clientName)
 {
     CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(rtBaseName != nullptr && rtBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(nonRtBaseName != nullptr && nonRtBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(rtClientBaseName != nullptr && rtClientBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(nonRtClientBaseName != nullptr && nonRtClientBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(nonRtServerBaseName != nullptr && nonRtServerBaseName[0] != '\0', false);
     CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtBaseName, nonRtBaseName, clientName);
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
 
     if (gStandalone.engine != nullptr)
     {
@@ -547,7 +549,7 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseNa
         return false;
     }
 
-    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtBaseName, nonRtBaseName);
+    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
     if (gStandalone.engine == nullptr)
     {

@@ -423,7 +423,8 @@ CARLA_EXPORT bool carla_engine_init(const char* driverName, const char* clientNa
 /*!
  * Initialize the engine in bridged mode.
  */
-CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtBaseName[6+1], const char nonRtBaseName[6+1], const char* clientName);
+CARLA_EXPORT bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
+                                           const char nonRtServerBaseName[6+1], const char* clientName);
 #endif
 
 /*!
