@@ -244,7 +244,7 @@ void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
  * Will keep trying until a free random filename is obtained.
  */
 static inline
-shm_t carla_shm_create_temp(char* const fileBase)
+shm_t carla_shm_create_temp(char* const fileBase) noexcept
 {
     // check if the fileBase name is valid
     CARLA_SAFE_ASSERT_RETURN(fileBase != nullptr, gNullCarlaShm);

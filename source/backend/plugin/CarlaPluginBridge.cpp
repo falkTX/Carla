@@ -15,10 +15,12 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifdef BUILD_BRIDGE
+# error This file should be used under bridge mode
+#endif
+
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
-
-#ifndef BUILD_BRIDGE
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
@@ -29,8 +31,6 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include <cerrno>
-#include <cmath>
 #include <ctime>
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -69,6 +69,21 @@ struct BridgeAudioPool {
         CARLA_SAFE_ASSERT(data == nullptr);
 
         clear();
+    }
+
+    bool initialize() noexcept
+    {
+        char tmpFileBase[64];
+
+        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL "XXXXXX");
+
+        shm = carla_shm_create_temp(tmpFileBase);
+
+        if (! carla_is_shm_valid(shm))
+            return false;
+
+        filename = tmpFileBase;
+        return true;
     }
 
     void clear() noexcept
@@ -113,15 +128,17 @@ struct BridgeAudioPool {
 // -------------------------------------------------------------------------------------------------------------------
 
 struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
-    CarlaString filename;
     BridgeRtClientData* data;
+    CarlaString filename;
+    bool needsSemDestroy;
     shm_t shm;
 
     BridgeRtClientControl()
-        : filename(),
-          data(nullptr)
+        : data(nullptr),
+          filename(),
+          needsSemDestroy(false),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(shm_t_INIT) {}
+          shm(shm_t_INIT) {}
 #else
     {
         shm = shm_t_INIT;
@@ -136,20 +153,66 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         clear();
     }
 
+    bool initialize() noexcept
+    {
+        char tmpFileBase[64];
+
+        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT "XXXXXX");
+
+        shm = carla_shm_create_temp(tmpFileBase);
+
+        if (! carla_is_shm_valid(shm))
+            return false;
+
+        if (! mapData())
+        {
+            carla_shm_close(shm);
+            carla_shm_init(shm);
+            return false;
+        }
+
+        CARLA_SAFE_ASSERT(data != nullptr);
+
+        if (! jackbridge_sem_init(&data->sem.server))
+        {
+            unmapData();
+            carla_shm_close(shm);
+            carla_shm_init(shm);
+            return false;
+        }
+
+        if (! jackbridge_sem_init(&data->sem.client))
+        {
+            jackbridge_sem_destroy(&data->sem.server);
+            unmapData();
+            carla_shm_close(shm);
+            carla_shm_init(shm);
+            return false;
+        }
+
+        filename = tmpFileBase;
+        needsSemDestroy = true;
+        return true;
+    }
+
     void clear() noexcept
     {
         filename.clear();
+
+        if (needsSemDestroy)
+        {
+            jackbridge_sem_destroy(&data->sem.client);
+            jackbridge_sem_destroy(&data->sem.server);
+            needsSemDestroy = false;
+        }
+
+        if (data != nullptr)
+            unmapData();
 
         if (! carla_is_shm_valid(shm))
         {
             CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
-
-        if (data != nullptr)
-        {
-            carla_shm_unmap(shm, data);
-            data = nullptr;
         }
 
         carla_shm_close(shm);
@@ -202,15 +265,15 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 // -------------------------------------------------------------------------------------------------------------------
 
 struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
-    CarlaMutex mutex;
-    CarlaString filename;
     BridgeNonRtClientData* data;
+    CarlaString filename;
+    CarlaMutex mutex;
     shm_t shm;
 
     BridgeNonRtClientControl() noexcept
-        : mutex(),
+        : data(nullptr),
           filename(),
-          data(nullptr)
+          mutex()
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         , shm(shm_t_INIT) {}
 #else
@@ -227,20 +290,41 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         clear();
     }
 
+    bool initialize() noexcept
+    {
+        char tmpFileBase[64];
+
+        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "XXXXXX");
+
+        shm = carla_shm_create_temp(tmpFileBase);
+
+        if (! carla_is_shm_valid(shm))
+            return false;
+
+        if (! mapData())
+        {
+            carla_shm_close(shm);
+            carla_shm_init(shm);
+            return false;
+        }
+
+        CARLA_SAFE_ASSERT(data != nullptr);
+
+        filename = tmpFileBase;
+        return true;
+    }
+
     void clear() noexcept
     {
         filename.clear();
+
+        if (data != nullptr)
+            unmapData();
 
         if (! carla_is_shm_valid(shm))
         {
             CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
-
-        if (data != nullptr)
-        {
-            carla_shm_unmap(shm, data);
-            data = nullptr;
         }
 
         carla_shm_close(shm);
@@ -281,13 +365,13 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 // -------------------------------------------------------------------------------------------------------------------
 
 struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
-    CarlaString filename;
     BridgeNonRtServerData* data;
+    CarlaString filename;
     shm_t shm;
 
     BridgeNonRtServerControl() noexcept
-        : filename(),
-          data(nullptr)
+        : data(nullptr),
+          filename()
 #ifdef CARLA_PROPER_CPP11_SUPPORT
         , shm(shm_t_INIT) {}
 #else
@@ -304,20 +388,41 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         clear();
     }
 
+    bool initialize() noexcept
+    {
+        char tmpFileBase[64];
+
+        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "XXXXXX");
+
+        shm = carla_shm_create_temp(tmpFileBase);
+
+        if (! carla_is_shm_valid(shm))
+            return false;
+
+        if (! mapData())
+        {
+            carla_shm_close(shm);
+            carla_shm_init(shm);
+            return false;
+        }
+
+        CARLA_SAFE_ASSERT(data != nullptr);
+
+        filename = tmpFileBase;
+        return true;
+    }
+
     void clear() noexcept
     {
         filename.clear();
+
+        if (data != nullptr)
+            unmapData();
 
         if (! carla_is_shm_valid(shm))
         {
             CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
-
-        if (data != nullptr)
-        {
-            carla_shm_unmap(shm, data);
-            data = nullptr;
         }
 
         carla_shm_close(shm);
@@ -376,7 +481,7 @@ class CarlaPluginBridgeThread : public CarlaThread
 {
 public:
     CarlaPluginBridgeThread(CarlaEngine* const engine, CarlaPlugin* const plugin) noexcept
-        : CarlaThread("CarlaThreadDSSIUI"),
+        : CarlaThread("CarlaPluginBridgeThread"),
           kEngine(engine),
           kPlugin(plugin),
           fBinary(),
@@ -468,7 +573,6 @@ public:
           fInitiated(false),
           fInitError(false),
           fSaved(false),
-          fNeedsSemDestroy(false),
           fTimedOut(false),
           fLastPongCounter(-1),
           fBridgeBinary(),
@@ -520,16 +624,10 @@ public:
 
         fBridgeThread.stopThread(3000);
 
-        if (fNeedsSemDestroy)
-        {
-            jackbridge_sem_destroy(&fShmRtClientControl.data->sem.server);
-            jackbridge_sem_destroy(&fShmRtClientControl.data->sem.client);
-        }
-
-        fShmAudioPool.clear();
-        fShmRtClientControl.clear();
-        fShmNonRtClientControl.clear();
         fShmNonRtServerControl.clear();
+        fShmNonRtClientControl.clear();
+        fShmRtClientControl.clear();
+        fShmAudioPool.clear();
 
         clearBuffers();
 
@@ -702,6 +800,7 @@ public:
 
     void setParameterValue(const uint32_t parameterId, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
 
         const float fixedValue(pData->param.getFixedValue(parameterId, value));
@@ -757,6 +856,7 @@ public:
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
         {
@@ -772,6 +872,7 @@ public:
 
     void setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
         {
@@ -865,10 +966,12 @@ public:
             if (fTimedOut && pData->active)
                 setActive(false, true, true);
 
-            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+            {
+                const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPing);
-            fShmNonRtClientControl.commitWrite();
+                fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPing);
+                fShmNonRtClientControl.commitWrite();
+            }
 
             try {
                 handleNonRtData();
@@ -2026,107 +2129,39 @@ public:
         std::srand(static_cast<uint>(std::time(nullptr)));
 
         // ---------------------------------------------------------------
-        // SHM Audio Pool
+        // init sem/shm
 
+        if (! fShmAudioPool.initialize())
         {
-            char tmpFileBase[64];
+            carla_stdout("Failed to initialize shared memory audio pool");
+            return false;
+        }
 
-            std::sprintf(tmpFileBase, "/carla-bridge_shm_ap_XXXXXX");
+        if (! fShmRtClientControl.initialize())
+        {
+            carla_stdout("Failed to initialize RT client control");
+            fShmAudioPool.clear();
+            return false;
+        }
 
-            fShmAudioPool.shm = carla_shm_create_temp(tmpFileBase);
+        if (! fShmNonRtClientControl.initialize())
+        {
+            carla_stdout("Failed to initialize Non-RT client control");
+            fShmRtClientControl.clear();
+            fShmAudioPool.clear();
+            return false;
+        }
 
-            if (! carla_is_shm_valid(fShmAudioPool.shm))
-            {
-                carla_stdout("Failed to open or create shared memory file #1");
-                return false;
-            }
-
-            fShmAudioPool.filename = tmpFileBase;
+        if (! fShmNonRtServerControl.initialize())
+        {
+            carla_stdout("Failed to initialize Non-RT server control");
+            fShmNonRtClientControl.clear();
+            fShmRtClientControl.clear();
+            fShmAudioPool.clear();
+            return false;
         }
 
         // ---------------------------------------------------------------
-        // SHM RT Control
-
-        {
-            char tmpFileBase[64];
-
-            std::sprintf(tmpFileBase, "/carla-bridge_shm_rtC_XXXXXX");
-
-            fShmRtClientControl.shm = carla_shm_create_temp(tmpFileBase);
-
-            if (! carla_is_shm_valid(fShmRtClientControl.shm))
-            {
-                carla_stdout("Failed to open or create shared memory file #2");
-                // clear
-                carla_shm_close(fShmAudioPool.shm);
-                return false;
-            }
-
-            fShmRtClientControl.filename = tmpFileBase;
-
-            if (! fShmRtClientControl.mapData())
-            {
-                carla_stdout("Failed to map shared memory file #2");
-                // clear
-                carla_shm_close(fShmRtClientControl.shm);
-                carla_shm_close(fShmAudioPool.shm);
-                return false;
-            }
-
-            CARLA_SAFE_ASSERT(fShmRtClientControl.data != nullptr);
-
-            if (! jackbridge_sem_init(&fShmRtClientControl.data->sem.server))
-            {
-                carla_stdout("Failed to initialize shared memory semaphore #1");
-                // clear
-                fShmRtClientControl.unmapData();
-                carla_shm_close(fShmRtClientControl.shm);
-                carla_shm_close(fShmAudioPool.shm);
-                return false;
-            }
-
-            if (! jackbridge_sem_init(&fShmRtClientControl.data->sem.client))
-            {
-                carla_stdout("Failed to initialize shared memory semaphore #2");
-                // clear
-                jackbridge_sem_destroy(&fShmRtClientControl.data->sem.server);
-                fShmRtClientControl.unmapData();
-                carla_shm_close(fShmRtClientControl.shm);
-                carla_shm_close(fShmAudioPool.shm);
-                return false;
-            }
-
-            fNeedsSemDestroy = true;
-        }
-
-        // ---------------------------------------------------------------
-        // SHM Non-RT Control
-        {
-            char tmpFileBase[64];
-
-            std::sprintf(tmpFileBase, "/carla-bridge_shm_nonrtC_XXXXXX");
-
-            fShmNonRtClientControl.shm = carla_shm_create_temp(tmpFileBase);
-
-            if (! carla_is_shm_valid(fShmNonRtClientControl.shm))
-            {
-                carla_stdout("Failed to open or create shared memory file #3");
-                return false;
-            }
-
-            fShmNonRtClientControl.filename = tmpFileBase;
-
-            if (! fShmNonRtClientControl.mapData())
-            {
-                carla_stdout("Failed to map shared memory file #3");
-                // clear
-                fShmNonRtClientControl.unmapData();
-                carla_shm_close(fShmNonRtClientControl.shm);
-                carla_shm_close(fShmRtClientControl.shm);
-                carla_shm_close(fShmAudioPool.shm);
-                return false;
-            }
-        }
 
         carla_stdout("Carla Server Info:");
         carla_stdout("  sizeof(BridgeRtClientData):    " P_SIZE, sizeof(BridgeRtClientData));
@@ -2216,7 +2251,6 @@ private:
     bool fInitiated;
     bool fInitError;
     bool fSaved;
-    bool fNeedsSemDestroy;
     bool fTimedOut;
 
     volatile int32_t fLastPongCounter;
@@ -2292,8 +2326,6 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // ! BUILD_BRIDGE
-
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2302,7 +2334,6 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 {
     carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
-#ifndef BUILD_BRIDGE
     if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
     {
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
@@ -2311,10 +2342,8 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-# if 0
     if (! plugin->init(init.filename, init.name, init.label, bridgeBinary))
     {
-        init.engine->registerEnginePlugin(init.id, nullptr);
         delete plugin;
         return nullptr;
     }
@@ -2322,9 +2351,6 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     plugin->reload();
 
     bool canRun = true;
-# else
-    bool canRun = false;
-# endif
 
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
@@ -2352,13 +2378,6 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
     }
 
     return plugin;
-#else
-    init.engine->setLastError("Plugin bridge support not available");
-    return nullptr;
-
-    // unused
-    (void)bridgeBinary; (void)btype; (void)ptype;
-#endif
 }
 
 CARLA_BACKEND_END_NAMESPACE

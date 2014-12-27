@@ -334,16 +334,16 @@ public:
     {
         carla_stdout("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
-        fShmAudioPool.filename  = "/carla-bridge_shm_ap_";
+        fShmAudioPool.filename  = PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL;
         fShmAudioPool.filename += audioPoolBaseName;
 
-        fShmRtClientControl.filename  = "/carla-bridge_shm_rtC_";
+        fShmRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT;
         fShmRtClientControl.filename += rtClientBaseName;
 
-        fShmNonRtClientControl.filename  = "/carla-bridge_shm_nonrtC_";
+        fShmNonRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT;
         fShmNonRtClientControl.filename += nonRtClientBaseName;
 
-        fShmNonRtServerControl.filename  = "/carla-bridge_shm_nonrtS_";
+        fShmNonRtServerControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER;
         fShmNonRtServerControl.filename += nonRtServerBaseName;
     }
 
