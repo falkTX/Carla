@@ -205,57 +205,7 @@ public:
 
     // ---------------------------------------------------------------------
 
-    void oscInit(const char* const url)
-    {
-        fOscServerThread = lo_server_thread_new_with_proto(nullptr, LO_UDP, osc_error_handler);
-
-        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr,)
-
-        {
-            char* const host = lo_url_get_hostname(url);
-            char* const port = lo_url_get_port(url);
-            fOscControlData.path   = carla_strdup_free(lo_url_get_path(url));
-            fOscControlData.target = lo_address_new_with_proto(LO_UDP, host, port);
-
-            std::free(host);
-            std::free(port);
-        }
-
-        if (char* const tmpServerPath = lo_server_thread_get_url(fOscServerThread))
-        {
-            std::srand((uint)(uintptr_t)this);
-            std::srand((uint)(uintptr_t)&url);
-
-            CarlaString oscName("plug-" + CarlaString(std::rand() % 99999));
-
-            fOscServerPath  = tmpServerPath;
-            fOscServerPath += oscName;
-            std::free(tmpServerPath);
-        }
-
-        lo_server_thread_start(fOscServerThread);
-
-        fEngine->setOscBridgeData(&fOscControlData);
-    }
-
-    void oscClose()
-    {
-        lo_server_thread_stop(fOscServerThread);
-
-        fEngine->setOscBridgeData(nullptr);
-
-        if (fOscServerThread != nullptr)
-        {
-            lo_server_thread_free(fOscServerThread);
-            fOscServerThread = nullptr;
-        }
-
-        fOscControlData.clear();
-        fOscServerPath.clear();
-    }
-
-    // ---------------------------------------------------------------------
-
+    /*
     void sendOscUpdate() const noexcept
     {
         if (fOscControlData.target != nullptr)
@@ -273,6 +223,7 @@ public:
         if (fOscControlData.target != nullptr)
             osc_send_bridge_error(fOscControlData, error);
     }
+    */
 
     // ---------------------------------------------------------------------
 
@@ -377,9 +328,9 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Check argument count
 
-    if (argc != 5)
+    if (argc != 4 && argc != 5)
     {
-        carla_stdout("usage: %s <type> <filename> <label> <uniqueId>", argv[0]);
+        carla_stdout("usage: %s <type> <filename> <label> [uniqueId]", argv[0]);
         return 1;
     }
 
@@ -389,7 +340,7 @@ int main(int argc, char* argv[])
     const char* const stype    = argv[1];
     const char* const filename = argv[2];
     const char*       label    = argv[3];
-    const int64_t     uniqueId = static_cast<int64_t>(std::atoll(argv[4]));
+    const int64_t     uniqueId = (argc == 5) ? static_cast<int64_t>(std::atoll(argv[4])) : 0;
 
     // ---------------------------------------------------------------------
     // Check plugin type
@@ -413,10 +364,9 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Setup options
 
-    const char* const oscUrl(std::getenv("ENGINE_BRIDGE_OSC_URL"));
     const char* const shmIds(std::getenv("ENGINE_BRIDGE_SHM_IDS"));
 
-    const bool useBridge = (shmIds != nullptr && oscUrl != nullptr);
+    const bool useBridge = (shmIds != nullptr);
 
     // ---------------------------------------------------------------------
     // Setup bridge ids
@@ -480,12 +430,6 @@ int main(int argc, char* argv[])
     }
 
     // ---------------------------------------------------------------------
-    // Init OSC
-
-    if (useBridge)
-        bridge.oscInit(oscUrl);
-
-    // ---------------------------------------------------------------------
     // Listen for ctrl+c or sigint/sigterm events
 
     initSignalHandler();
@@ -501,8 +445,8 @@ int main(int argc, char* argv[])
 
         if (useBridge)
         {
-            bridge.sendOscUpdate();
-            bridge.sendOscBridgeUpdate();
+            //bridge.sendOscUpdate();
+            //bridge.sendOscBridgeUpdate();
         }
         else
         {
@@ -524,15 +468,9 @@ int main(int argc, char* argv[])
         const char* const lastError(carla_get_last_error());
         carla_stderr("Plugin failed to load, error was:\n%s", lastError);
 
-        if (useBridge)
-            bridge.sendOscBridgeError(lastError);
+        //if (useBridge)
+        //    bridge.sendOscBridgeError(lastError);
     }
-
-    // ---------------------------------------------------------------------
-    // Close OSC
-
-    if (useBridge)
-        bridge.oscClose();
 
     return ret;
 }

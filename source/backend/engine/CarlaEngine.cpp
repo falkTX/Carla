@@ -1420,12 +1420,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 // -----------------------------------------------------------------------
 // OSC Stuff
 
-#ifdef BUILD_BRIDGE
-bool CarlaEngine::isOscBridgeRegistered() const noexcept
-{
-    return (pData->oscData != nullptr);
-}
-#else
+#ifndef BUILD_BRIDGE
 bool CarlaEngine::isOscControlRegistered() const noexcept
 {
     return pData->osc.isControlRegistered();
@@ -1446,13 +1441,6 @@ const char* CarlaEngine::getOscServerPathUDP() const noexcept
 {
     return pData->osc.getServerPathUDP();
 }
-
-#ifdef BUILD_BRIDGE
-void CarlaEngine::setOscBridgeData(CarlaOscData* const oscData) const noexcept
-{
-    pData->oscData = oscData;
-}
-#endif
 
 // -----------------------------------------------------------------------
 // Helper functions

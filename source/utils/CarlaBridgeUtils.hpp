@@ -26,7 +26,6 @@
 enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientNull = 0,
     kPluginBridgeRtClientSetAudioPool,            // ulong/ptr
-    kPluginBridgeRtClientSetCVPool,               // ulong/ptr
     kPluginBridgeRtClientControlEventParameter,   // uint/frame, byte/chan, ushort, float
     kPluginBridgeRtClientControlEventMidiBank,    // uint/frame, byte/chan, ushort
     kPluginBridgeRtClientControlEventMidiProgram, // uint/frame, byte/chan, ushort
@@ -156,8 +155,6 @@ const char* PluginBridgeRtClientOpcode2str(const PluginBridgeRtClientOpcode opco
         return "kPluginBridgeRtClientNull";
     case kPluginBridgeRtClientSetAudioPool:
         return "kPluginBridgeRtClientSetAudioPool";
-    case kPluginBridgeRtClientSetCVPool:
-        return "kPluginBridgeRtClientSetCVPool";
     case kPluginBridgeRtClientControlEventParameter:
         return "kPluginBridgeRtClientControlEventParameter";
     case kPluginBridgeRtClientControlEventMidiBank:

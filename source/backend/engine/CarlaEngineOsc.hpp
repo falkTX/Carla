@@ -110,6 +110,7 @@ private:
 #ifndef BUILD_BRIDGE
     int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
     int handleMsgUnregister();
+#endif
 
     // Internal methods
     int handleMsgSetActive(CARLA_ENGINE_OSC_HANDLE_ARGS);
@@ -125,7 +126,6 @@ private:
     int handleMsgSetMidiProgram(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgNoteOn(CARLA_ENGINE_OSC_HANDLE_ARGS);
     int handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS);
-#endif
 
     // -----------------------------------------------------------------------
 

@@ -1006,12 +1006,7 @@ public:
     // -------------------------------------------------------------------
     // OSC Stuff
 
-#ifdef BUILD_BRIDGE
-    /*!
-     * Check if OSC bridge is registered.
-     */
-    bool isOscBridgeRegistered() const noexcept;
-#else
+#ifndef BUILD_BRIDGE
     /*!
      * Check if OSC controller is registered.
      */
@@ -1032,13 +1027,6 @@ public:
      * Get OSC UDP server path.
      */
     const char* getOscServerPathUDP() const noexcept;
-
-#ifdef BUILD_BRIDGE
-    /*!
-     * Set OSC bridge data.
-     */
-    void setOscBridgeData(CarlaOscData* const oscData) const noexcept;
-#endif
 
     // -------------------------------------------------------------------
     // Helper functions

@@ -47,12 +47,13 @@ void CarlaEngineThread::run() noexcept
 
     bool needsSingleThread, needsUiUpdates, oscRegisted;
     float value;
+#ifdef BUILD_BRIDGE
+    oscRegisted = false;
+#endif
 
     for (; kEngine->isRunning() && ! shouldThreadExit();)
     {
-#ifdef BUILD_BRIDGE
-        oscRegisted = kEngine->isOscBridgeRegistered();
-#else
+#ifndef BUILD_BRIDGE
         oscRegisted = kEngine->isOscControlRegistered();
 #endif
 

@@ -130,12 +130,6 @@ public:
 
         StringArray arguments;
 
-#ifndef CARLA_OS_WIN
-        // start with "wine" if needed
-        if (fBinary.endsWith(".exe"))
-            arguments.add("wine");
-#endif
-
         // binary
         arguments.add(fBinary.buffer());
 

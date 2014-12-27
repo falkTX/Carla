@@ -1431,7 +1431,7 @@ void CarlaPlugin::clearBuffers() noexcept
 void CarlaPlugin::registerToOscClient() noexcept
 {
 #ifdef BUILD_BRIDGE
-    if (! pData->engine->isOscBridgeRegistered())
+    return;
 #else
     if (! pData->engine->isOscControlRegistered())
 #endif
