@@ -1450,6 +1450,16 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
     return isInput ? pData->events.in : pData->events.out;
 }
 
+void CarlaEngine::lockEnvironment() const noexcept
+{
+    pData->envMutex.lock();
+}
+
+void CarlaEngine::unlockEnvironment() const noexcept
+{
+    pData->envMutex.unlock();
+}
+
 // -----------------------------------------------------------------------
 // Internal stuff
 

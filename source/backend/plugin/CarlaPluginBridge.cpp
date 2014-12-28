@@ -20,11 +20,11 @@
 #endif
 
 #include "CarlaPluginInternal.hpp"
-#include "CarlaEngine.hpp"
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 #include "CarlaBridgeUtils.hpp"
+#include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
@@ -487,21 +487,22 @@ public:
           fBinary(),
           fLabel(),
           fShmIds(),
-          fPluginType(PLUGIN_NONE),
           fProcess(),
           leakDetector_CarlaPluginBridgeThread() {}
 
-    void setData(const char* const binary, const char* const label, const char* const shmIds, const PluginType ptype) noexcept
+    void setData(const char* const binary, const char* const label, const char* const shmIds) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr  && label[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
         fBinary = binary;
         fLabel  = binary;
         fShmIds = shmIds;
-        fPluginType = ptype;
+
+        if (fLabel.isEmpty())
+            fLabel = "\"\"";
     }
 
 protected:
@@ -529,32 +530,176 @@ protected:
 
 #ifndef CARLA_OS_WIN
         // start with "wine" if needed
-        if (fBinary.endsWith(".exe"))
+        if (fBinary.endsWithIgnoreCase(".exe"))
             arguments.add("wine");
 #endif
 
         // binary
-        arguments.add(fBinary.buffer());
+        arguments.add(fBinary);
 
-#if 0
-        /* stype    */ arguments.add(fExtra1.buffer());
-        /* filename */ arguments.add(filename);
-        /* label    */ arguments.add(fLabel.buffer());
-        /* uniqueId */ arguments.add(String(static_cast<juce::int64>(fPlugin->getUniqueId())));
+        // plugin type
+        arguments.add(PluginType2Str(kPlugin->getType()));
 
-        carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.buffer());
-        carla_setenv("WINEDEBUG", "-all");
+        // filename
+        arguments.add(filename);
+
+        // label
+        arguments.add(fLabel);
+
+        // uniqueId
+        arguments.add(String(static_cast<juce::int64>(kPlugin->getUniqueId())));
+
+        bool started;
+
+        {
+            char strBuf[STR_MAX+1];
+            strBuf[STR_MAX] = '\0';
+
+            const EngineOptions& options(kEngine->getOptions());
+            const ScopedEngineEnvironmentLocker _seel(kEngine);
+
+#ifdef CARLA_OS_LINUX
+            const char* const oldPreload(std::getenv("LD_PRELOAD"));
+
+            if (oldPreload != nullptr)
+                ::unsetenv("LD_PRELOAD");
 #endif
+
+            carla_setenv("ENGINE_OPTION_FORCE_STEREO",          bool2str(options.forceStereo));
+            carla_setenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES", bool2str(options.preferPluginBridges));
+            carla_setenv("ENGINE_OPTION_PREFER_UI_BRIDGES",     bool2str(options.preferUiBridges));
+            carla_setenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP",     bool2str(options.uisAlwaysOnTop));
+
+            std::snprintf(strBuf, STR_MAX, "%u", options.maxParameters);
+            carla_setenv("ENGINE_OPTION_MAX_PARAMETERS", strBuf);
+
+            std::snprintf(strBuf, STR_MAX, "%u", options.uiBridgesTimeout);
+            carla_setenv("ENGINE_OPTION_UI_BRIDGES_TIMEOUT",strBuf);
+
+            if (options.pathLADSPA != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA", options.pathLADSPA);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LADSPA", "");
+
+            if (options.pathDSSI != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_DSSI", options.pathDSSI);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_DSSI", "");
+
+            if (options.pathLV2 != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", options.pathLV2);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_LV2", "");
+
+            if (options.pathVST2 != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", options.pathVST2);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST2", "");
+
+            if (options.pathVST3 != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", options.pathVST3);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", "");
+
+            if (options.pathAU != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", options.pathAU);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", "");
+
+            if (options.pathGIG != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", options.pathGIG);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", "");
+
+            if (options.pathSF2 != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", options.pathSF2);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SF2", "");
+
+            if (options.pathSFZ != nullptr)
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", options.pathSFZ);
+            else
+                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_SFZ", "");
+
+            if (options.binaryDir != nullptr)
+                carla_setenv("ENGINE_OPTION_PATH_BINARIES", options.binaryDir);
+            else
+                carla_setenv("ENGINE_OPTION_PATH_BINARIES", "");
+
+            if (options.resourceDir != nullptr)
+                carla_setenv("ENGINE_OPTION_PATH_RESOURCES", options.resourceDir);
+            else
+                carla_setenv("ENGINE_OPTION_PATH_RESOURCES", "");
+
+            carla_setenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR", bool2str(options.preventBadBehaviour));
+
+            std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
+            carla_setenv("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
+
+            carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.toRawUTF8());
+            carla_setenv("WINEDEBUG", "-all");
+
+            carla_stdout("starting plugin bridge..");
+            started = fProcess->start(arguments);
+
+#ifdef CARLA_OS_LINUX
+            if (oldPreload != nullptr)
+                ::setenv("LD_PRELOAD", oldPreload, 1);
+#endif
+        }
+
+        if (! started)
+        {
+            carla_stdout("failed!");
+            fProcess = nullptr;
+            return;
+        }
+
+        for (; fProcess->isRunning() && ! shouldThreadExit();)
+            carla_sleep(1);
+
+        // we only get here if bridge crashed or thread asked to exit
+        if (fProcess->isRunning() && shouldThreadExit())
+        {
+            fProcess->waitForProcessToFinish(2000);
+
+            if (fProcess->isRunning())
+            {
+                carla_stdout("CarlaPluginBridgeThread::run() - bridge refused to close, force kill now");
+                fProcess->kill();
+            }
+            else
+            {
+                carla_stdout("CarlaPluginBridgeThread::run() - bridge auto-closed successfully");
+            }
+        }
+        else
+        {
+            // forced quit, may have crashed
+            if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
+            {
+                carla_stderr("CarlaPluginBridgeThread::run() - bridge crashed");
+
+                CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
+                                        "Saving now will lose its current settings.\n"
+                                        "Please remove this plugin, and not rely on it from this point.");
+                kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0.0f, errorString);
+            }
+            else
+                carla_stderr("CarlaPluginBridgeThread::run() - bridge closed cleanly");
+        }
+
+        carla_stdout("plugin bridge finished");
+        fProcess = nullptr;
     }
 
 private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    CarlaString fBinary;
-    CarlaString fLabel;
-    CarlaString fShmIds;
-    PluginType  fPluginType;
+    String fBinary;
+    String fLabel;
+    String fShmIds;
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -720,14 +865,14 @@ public:
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         std::strncpy(strBuf, fParams[parameterId].name.buffer(), STR_MAX);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
-        CARLA_ASSERT(parameterId < pData->param.count);
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         std::strncpy(strBuf, fParams[parameterId].unit.buffer(), STR_MAX);
     }
@@ -886,28 +1031,44 @@ public:
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-#if 0
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
-        CARLA_ASSERT(type);
-        CARLA_ASSERT(key);
-        CARLA_ASSERT(value);
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        if (sendGui)
+        using namespace juce;
+
+        const uint32_t typeLen(static_cast<uint32_t>(std::strlen(type)));
+        const uint32_t keyLen(static_cast<uint32_t>(std::strlen(key)));
+
+        MemoryOutputStream valueMemStream;
+        GZIPCompressorOutputStream compressedValueStream(&valueMemStream, 9, false);
+        compressedValueStream.write(value, std::strlen(value));
+
+        const CarlaString valueBase64(CarlaString::asBase64(valueMemStream.getData(), valueMemStream.getDataSize()));
+        const uint32_t valueBase64Len(static_cast<uint32_t>(valueBase64.length()));
+        CARLA_SAFE_ASSERT_RETURN(valueBase64.length() > 0,);
+
         {
-            // TODO - if type is chunk|binary, store it in a file and send path instead
-            QString cData;
-            cData  = type;
-            cData += "·";
-            cData += key;
-            cData += "·";
-            cData += value;
-            osc_send_configure(&osc.data, CARLA_BRIDGE_MSG_SET_CUSTOM, cData.toUtf8().constData());
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetCustomData);
+
+            fShmNonRtClientControl.writeUInt(typeLen);
+            fShmNonRtClientControl.writeCustomData(type, typeLen);
+
+            fShmNonRtClientControl.writeUInt(keyLen);
+            fShmNonRtClientControl.writeCustomData(key, keyLen);
+
+            fShmNonRtClientControl.writeUInt(valueBase64Len);
+            fShmNonRtClientControl.writeCustomData(valueBase64.buffer(), valueBase64Len);
+
+            fShmNonRtClientControl.commitWrite();
         }
 
         CarlaPlugin::setCustomData(type, key, value, sendGui);
     }
-#endif
 
     void setChunkData(const void* const data, const std::size_t dataSize) override
     {
@@ -915,13 +1076,12 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-        CarlaString dataBase64 = CarlaString::asBase64(data, dataSize);
+        CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
         CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
 
         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-        filePath += CARLA_OS_SEP_STR;
-        filePath += ".CarlaChunk_";
+        filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
         filePath += fShmAudioPool.filename.buffer() + 18;
 
         if (File(filePath).replaceWithText(dataBase64.buffer()))
@@ -1047,6 +1207,7 @@ public:
             }
             else
                 portName += "input";
+
             portName.truncate(portNameSize);
 
             pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
@@ -1071,6 +1232,7 @@ public:
             }
             else
                 portName += "output";
+
             portName.truncate(portNameSize);
 
             pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
@@ -1996,6 +2158,8 @@ public:
             case kPluginBridgeNonRtServerSetCustomData: {
                 // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
 
+                using namespace juce;
+
                 // type
                 const uint32_t typeSize(fShmNonRtServerControl.readUInt());
                 char type[typeSize+1];
@@ -2009,12 +2173,17 @@ public:
                 fShmNonRtServerControl.readCustomData(key, keySize);
 
                 // value
-                const uint32_t valueSize(fShmNonRtServerControl.readUInt());
-                char value[valueSize+1];
-                carla_zeroChar(value, valueSize+1);
-                fShmNonRtServerControl.readCustomData(value, valueSize);
+                const uint32_t valueBase64Size(fShmNonRtServerControl.readUInt());
+                char valueBase64[valueBase64Size+1];
+                carla_zeroChar(valueBase64, valueBase64Size+1);
+                fShmNonRtServerControl.readCustomData(valueBase64, valueBase64Size);
 
-                CarlaPlugin::setCustomData(type, key, value, false);
+                const std::vector<uint8_t> valueChunk(carla_getChunkFromBase64String(valueBase64));
+
+                MemoryInputStream valueMemStream(valueChunk.data(), valueChunk.size(), false);
+                GZIPDecompressorInputStream decompressedValueStream(valueMemStream);
+
+                CarlaPlugin::setCustomData(type, key, decompressedValueStream.readEntireStreamAsString().toRawUTF8(), false);
             }   break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile: {
@@ -2192,7 +2361,7 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(bridgeBinary, label, shmIdsStr, fPluginType);
+            fBridgeThread.setData(bridgeBinary, label, shmIdsStr);
             fBridgeThread.startThread();
         }
 

@@ -175,6 +175,7 @@ struct CarlaEngine::ProtectedData {
     uint maxPluginNumber; // number of plugins allowed (0, 16, 99 or 255)
     uint nextPluginId;    // invalid if == maxPluginNumber
 
+    CarlaMutex     envMutex;
     CarlaString    lastError;
     CarlaString    name;
     EngineOptions  options;

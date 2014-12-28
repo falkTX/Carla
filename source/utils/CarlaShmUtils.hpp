@@ -252,7 +252,7 @@ shm_t carla_shm_create_temp(char* const fileBase) noexcept
     const std::size_t fileBaseLen(std::strlen(fileBase));
 
     CARLA_SAFE_ASSERT_RETURN(fileBaseLen > 6, gNullCarlaShm);
-    CARLA_SAFE_ASSERT_RETURN(std::strcmp(fileBase + fileBaseLen - 6, "XXXXXX") == 0, gNullCarlaShm);
+    CARLA_SAFE_ASSERT_RETURN(std::strcmp(fileBase + (fileBaseLen - 6), "XXXXXX") == 0, gNullCarlaShm);
 
     // character set to use randomly
     static const char charSet[] = "abcdefghijklmnopqrstuvwxyz"

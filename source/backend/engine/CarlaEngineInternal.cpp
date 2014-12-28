@@ -109,6 +109,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       curPluginCount(0),
       maxPluginNumber(0),
       nextPluginId(0),
+      envMutex(),
       lastError(),
       name(),
       options(),

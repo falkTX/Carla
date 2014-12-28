@@ -19,7 +19,7 @@
 // TODO: common laterncy code
 
 #include "CarlaPluginInternal.hpp"
-#include "CarlaEngine.hpp"
+#include "CarlaEngineUtils.hpp"
 
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
@@ -111,14 +111,6 @@ public:
             return;
         }
 
-#if 0 //def CARLA_OS_LINUX
-        const char* const oldPreload(std::getenv("LD_PRELOAD"));
-        ::unsetenv("LD_PRELOAD");
-
-        if (oldPreload != nullptr)
-            ::setenv("LD_PRELOAD", oldPreload, 1);
-#endif
-
         String name(kPlugin->getName());
         String filename(kPlugin->getFilename());
 
@@ -145,9 +137,28 @@ public:
         // ui-title
         arguments.add(name + String(" (GUI)"));
 
-        carla_stdout("starting DSSI UI...");
+        bool started;
 
-        if (! fProcess->start(arguments))
+        {
+#ifdef CARLA_OS_LINUX
+            const ScopedEngineEnvironmentLocker _seel(kEngine);
+
+            const char* const oldPreload(std::getenv("LD_PRELOAD"));
+
+            if (oldPreload != nullptr)
+                ::unsetenv("LD_PRELOAD");
+#endif
+
+            carla_stdout("starting DSSI UI...");
+            started = fProcess->start(arguments);
+
+#ifdef CARLA_OS_LINUX
+            if (oldPreload != nullptr)
+                ::setenv("LD_PRELOAD", oldPreload, 1);
+#endif
+        }
+
+        if (! started)
         {
             carla_stdout("failed!");
             fProcess = nullptr;

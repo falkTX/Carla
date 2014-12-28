@@ -1062,6 +1062,7 @@ protected:
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
     friend class ScopedActionLock;
+    friend class ScopedEngineEnvironmentLocker;
     friend class PendingRtEventsRunner;
     friend struct PatchbayGraph;
     friend struct RackGraph;
@@ -1107,6 +1108,12 @@ protected:
      * Common load project function for main engine and plugin.
      */
     bool loadProjectInternal(juce::XmlDocument& xmlDoc);
+
+    /*!
+     * Lock/Unlock environment mutex, to prevent simultaneous changes from different threads.
+     */
+    void lockEnvironment() const noexcept;
+    void unlockEnvironment() const noexcept;
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

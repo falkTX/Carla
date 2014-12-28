@@ -56,8 +56,8 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientSetParameterMidiCC,      // uint, short
     kPluginBridgeNonRtClientSetProgram,              // int
     kPluginBridgeNonRtClientSetMidiProgram,          // int
-    kPluginBridgeNonRtClientSetCustomData,           // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
-    kPluginBridgeNonRtClientSetChunkDataFile,        // uint/size, str[] (filename)
+    kPluginBridgeNonRtClientSetCustomData,           // uint/size, str[], uint/size, str[], uint/size, str[] (base64, compressed)
+    kPluginBridgeNonRtClientSetChunkDataFile,        // uint/size, str[] (filename, base64 content)
     kPluginBridgeNonRtClientSetCtrlChannel,          // short
     kPluginBridgeNonRtClientSetOption,               // uint/option, bool
     kPluginBridgeNonRtClientPrepareForSave,
@@ -92,8 +92,8 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerCurrentMidiProgram,   // int/index
     kPluginBridgeNonRtServerProgramName,          // uint/index, uint/size, str[] (name)
     kPluginBridgeNonRtServerMidiProgramData,      // uint/index, uint/bank, uint/program, uint/size, str[] (name)
-    kPluginBridgeNonRtServerSetCustomData,        // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
-    kPluginBridgeNonRtServerSetChunkDataFile,     // uint/size, str[] (filename)
+    kPluginBridgeNonRtServerSetCustomData,        // uint/size, str[], uint/size, str[], uint/size, str[] (base64, compressed)
+    kPluginBridgeNonRtServerSetChunkDataFile,     // uint/size, str[] (filename, base64 content)
     kPluginBridgeNonRtServerSetLatency,           // uint
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
