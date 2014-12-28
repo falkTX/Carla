@@ -496,6 +496,13 @@ public:
             fLabel = "\"\"";
     }
 
+    uintptr_t getProcessPID() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
+
+        return (uintptr_t)fProcess->getPID();
+    }
+
 protected:
     void run()
     {
@@ -2262,10 +2269,17 @@ public:
 
     // -------------------------------------------------------------------
 
+    uintptr_t getUiBridgeProcessId() const noexcept override
+    {
+        return fBridgeThread.getProcessPID();
+    }
+
     const void* getExtraStuff() const noexcept override
     {
         return fBridgeBinary.isNotEmpty() ? fBridgeBinary.buffer() : nullptr;
     }
+
+    // -------------------------------------------------------------------
 
     bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
     {
