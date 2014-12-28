@@ -236,11 +236,11 @@ win64: $(LIBS_WIN64)
 # Binaries (wine)
 
 wine32:
-	$(MAKE) -C source/modules/jackbridge wine32
+	$(MAKE) -C source/jackbridge wine32
 	cp -f $(MODULEDIR)/jackbridge-wine32.dll.so $(BINDIR)/jackbridge-wine32.dll
 
 wine64:
-	$(MAKE) -C source/modules/jackbridge wine64
+	$(MAKE) -C source/jackbridge wine64
 	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(BINDIR)/jackbridge-wine64.dll
 
 # ----------------------------------------------------------------------------------------------------------------------------
