@@ -2210,7 +2210,6 @@ public:
             return;
         }
 
-#ifndef BUILD_BRIDGE
         const uint8_t* const data = argv[0]->m;
         uint8_t status  = data[1];
         uint8_t channel = status & 0x0F;
@@ -2237,7 +2236,6 @@ public:
 
             sendMidiSingleNote(channel, note, velo, false, true, true);
         }
-#endif
     }
 
     void handleOscMessageUpdate(const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source)

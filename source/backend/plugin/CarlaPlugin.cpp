@@ -1537,7 +1537,6 @@ void CarlaPlugin::handleOscMessage(const char* const, const int, const void* con
 // -------------------------------------------------------------------
 // MIDI events
 
-#ifndef BUILD_BRIDGE
 void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback)
 {
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
@@ -1562,6 +1561,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             uiNoteOff(channel, note);
     }
 
+#ifndef BUILD_BRIDGE
     if (sendOsc && pData->engine->isOscControlRegistered())
     {
         if (velo > 0)
@@ -1569,11 +1569,18 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
         else
             pData->engine->oscSend_control_note_off(pData->id, channel, note);
     }
+#endif
 
     if (sendCallback)
         pData->engine->callback((velo > 0) ? ENGINE_CALLBACK_NOTE_ON : ENGINE_CALLBACK_NOTE_OFF, pData->id, channel, note, velo, nullptr);
+
+#ifdef BUILD_BRIDGE
+    // unused
+    return; (void)sendOsc;
+#endif
 }
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::sendMidiAllNotesOffToCallback()
 {
     if (pData->ctrlChannel < 0 || pData->ctrlChannel >= MAX_MIDI_CHANNELS)

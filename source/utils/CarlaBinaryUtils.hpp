@@ -69,10 +69,10 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
 {
     carla_debug("getBinaryTypeFromFile(\"%s\")", filename);
 
-#if defined(CARLA_OS_UNIX) && ! defined(BUILD_BRIDGE)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 
+#if defined(CARLA_OS_UNIX) && ! defined(BUILD_BRIDGE)
     static const CarlaMagic magic;
 
     const char* const output(magic.getFileDescription(filename));

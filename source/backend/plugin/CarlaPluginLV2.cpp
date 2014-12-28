@@ -1298,7 +1298,7 @@ public:
 
                     case LV2_UI_COCOA:
 # ifdef CARLA_OS_MAC
-                        fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, isUiResizable());
 # else
                         msg = "UI is for MacOS only";
 # endif
@@ -1306,7 +1306,7 @@ public:
 
                     case LV2_UI_WINDOWS:
 # ifdef CARLA_OS_WIN
-                        fUI.window = CarlaPluginUI::newWindows(this, frontendWinId);
+                        fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, isUiResizable());
 # else
                         msg = "UI is for Windows only";
 # endif

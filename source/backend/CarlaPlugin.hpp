@@ -724,7 +724,6 @@ public:
      */
     virtual void handleOscMessage(const char* const method, const int argc, const void* const argv, const char* const types, const lo_message msg);
 
-#ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // MIDI events
 
@@ -735,6 +734,7 @@ public:
      */
     void sendMidiSingleNote(const uint8_t channel, const uint8_t note, const uint8_t velo, const bool sendGui, const bool sendOsc, const bool sendCallback);
 
+#ifndef BUILD_BRIDGE
     /*!
      * Send all midi notes off to the host callback.
      * This doesn't send the actual MIDI All-Notes-Off event, but 128 note-offs instead (IFF ctrlChannel is valid).

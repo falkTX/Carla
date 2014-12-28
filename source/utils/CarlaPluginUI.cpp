@@ -754,14 +754,14 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId)
+CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bool /*isResizable*/)
 {
     return new JucePluginUI(cb, parentId);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId)
+CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId, bool /*isResizable*/)
 {
     return new JucePluginUI(cb, parentId);
 }
