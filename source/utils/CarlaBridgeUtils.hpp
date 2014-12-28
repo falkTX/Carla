@@ -75,26 +75,26 @@ enum PluginBridgeNonRtClientOpcode {
 enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerNull = 0,
     kPluginBridgeNonRtServerPong,
-    kPluginBridgeNonRtServerPluginInfo1,          // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
-    kPluginBridgeNonRtServerPluginInfo2,          // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
-    kPluginBridgeNonRtServerAudioCount,           // uint/ins, uint/outs
-    kPluginBridgeNonRtServerMidiCount,            // uint/ins, uint/outs
-    kPluginBridgeNonRtServerParameterCount,       // uint/ins, uint/outs
-    kPluginBridgeNonRtServerProgramCount,         // uint/count
-    kPluginBridgeNonRtServerMidiProgramCount,     // uint/count
-    kPluginBridgeNonRtServerParameterData1,       // uint/index, int/rindex, uint/type, uint/hints, short/cc
-    kPluginBridgeNonRtServerParameterData2,       // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
-    kPluginBridgeNonRtServerParameterRanges1,     // uint/index, float/def, float/min, float/max
-    kPluginBridgeNonRtServerParameterRanges2,     // uint/index float/step, float/stepSmall, float/stepLarge
-    kPluginBridgeNonRtServerParameterValue,       // uint/index float/value
-    kPluginBridgeNonRtServerDefaultValue,         // uint/index float/value
-    kPluginBridgeNonRtServerCurrentProgram,       // int/index
-    kPluginBridgeNonRtServerCurrentMidiProgram,   // int/index
-    kPluginBridgeNonRtServerProgramName,          // uint/index, uint/size, str[] (name)
-    kPluginBridgeNonRtServerMidiProgramData,      // uint/index, uint/bank, uint/program, uint/size, str[] (name)
-    kPluginBridgeNonRtServerSetCustomData,        // uint/size, str[], uint/size, str[], uint/size, str[] (base64, compressed)
-    kPluginBridgeNonRtServerSetChunkDataFile,     // uint/size, str[] (filename, base64 content)
-    kPluginBridgeNonRtServerSetLatency,           // uint
+    kPluginBridgeNonRtServerPluginInfo1,        // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
+    kPluginBridgeNonRtServerPluginInfo2,        // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
+    kPluginBridgeNonRtServerAudioCount,         // uint/ins, uint/outs
+    kPluginBridgeNonRtServerMidiCount,          // uint/ins, uint/outs
+    kPluginBridgeNonRtServerParameterCount,     // uint/ins, uint/outs
+    kPluginBridgeNonRtServerProgramCount,       // uint/count
+    kPluginBridgeNonRtServerMidiProgramCount,   // uint/count
+    kPluginBridgeNonRtServerParameterData1,     // uint/index, int/rindex, uint/type, uint/hints, short/cc
+    kPluginBridgeNonRtServerParameterData2,     // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+    kPluginBridgeNonRtServerParameterRanges,    // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
+    kPluginBridgeNonRtServerParameterValue,     // uint/index float/value
+    kPluginBridgeNonRtServerParameterValue2,    // uint/index float/value (used for init/output parameters only, don't resend values)
+    kPluginBridgeNonRtServerDefaultValue,       // uint/index float/value
+    kPluginBridgeNonRtServerCurrentProgram,     // int/index
+    kPluginBridgeNonRtServerCurrentMidiProgram, // int/index
+    kPluginBridgeNonRtServerProgramName,        // uint/index, uint/size, str[] (name)
+    kPluginBridgeNonRtServerMidiProgramData,    // uint/index, uint/bank, uint/program, uint/size, str[] (name)
+    kPluginBridgeNonRtServerSetCustomData,      // uint/size, str[], uint/size, str[], uint/size, str[] (base64, compressed)
+    kPluginBridgeNonRtServerSetChunkDataFile,   // uint/size, str[] (filename, base64 content)
+    kPluginBridgeNonRtServerSetLatency,         // uint
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,
@@ -271,12 +271,12 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerParameterData1";
     case kPluginBridgeNonRtServerParameterData2:
         return "kPluginBridgeNonRtServerParameterData2";
-    case kPluginBridgeNonRtServerParameterRanges1:
-        return "kPluginBridgeNonRtServerParameterRanges1";
-    case kPluginBridgeNonRtServerParameterRanges2:
-        return "kPluginBridgeNonRtServerParameterRanges2";
+    case kPluginBridgeNonRtServerParameterRanges:
+        return "kPluginBridgeNonRtServerParameterRanges";
     case kPluginBridgeNonRtServerParameterValue:
         return "kPluginBridgeNonRtServerParameterValue";
+    case kPluginBridgeNonRtServerParameterValue2:
+        return "kPluginBridgeNonRtServerParameterValue2";
     case kPluginBridgeNonRtServerDefaultValue:
         return "kPluginBridgeNonRtServerDefaultValue";
     case kPluginBridgeNonRtServerCurrentProgram:

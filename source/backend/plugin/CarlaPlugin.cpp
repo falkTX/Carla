@@ -1438,11 +1438,12 @@ void CarlaPlugin::registerToOscClient() noexcept
 
     // Base data
     {
-        // TODO - clear buf
-        char bufName[STR_MAX+1]  = { '\0' };
-        char bufLabel[STR_MAX+1] = { '\0' };
-        char bufMaker[STR_MAX+1] = { '\0' };
-        char bufCopyright[STR_MAX+1] = { '\0' };
+        char bufName[STR_MAX+1], bufLabel[STR_MAX+1], bufMaker[STR_MAX+1], bufCopyright[STR_MAX+1];
+        carla_zeroChar(bufName, STR_MAX);
+        carla_zeroChar(bufLabel, STR_MAX);
+        carla_zeroChar(bufMaker, STR_MAX);
+        carla_zeroChar(bufCopyright, STR_MAX);
+
         getRealName(bufName);
         getLabel(bufLabel);
         getMaker(bufMaker);
@@ -1463,11 +1464,11 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // Plugin Parameters
-    if (pData->param.count > 0)
+    if (const uint32_t count = pData->param.count)
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
-        for (uint32_t i=0, count=pData->param.count, maxParams=pData->engine->getOptions().maxParameters; i<count && i<maxParams; ++i)
+        for (uint32_t i=0, maxParams=pData->engine->getOptions().maxParameters; i<count && i<maxParams; ++i)
         {
             carla_zeroChar(bufName, STR_MAX);
             carla_zeroChar(bufUnit, STR_MAX);
@@ -1488,22 +1489,22 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // Programs
-    if (pData->prog.count > 0)
+    if (const uint32_t count = pData->prog.count)
     {
-        pData->engine->oscSend_control_set_program_count(pData->id, pData->prog.count);
+        pData->engine->oscSend_control_set_program_count(pData->id, count);
 
-        for (uint32_t i=0; i < pData->prog.count; ++i)
+        for (uint32_t i=0; i < count; ++i)
             pData->engine->oscSend_control_set_program_name(pData->id, i, pData->prog.names[i]);
 
         pData->engine->oscSend_control_set_current_program(pData->id, pData->prog.current);
     }
 
     // MIDI Programs
-    if (pData->midiprog.count > 0)
+    if (const uint32_t count = pData->midiprog.count)
     {
-        pData->engine->oscSend_control_set_midi_program_count(pData->id, pData->midiprog.count);
+        pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
-        for (uint32_t i=0; i < pData->midiprog.count; ++i)
+        for (uint32_t i=0; i < count; ++i)
         {
             const MidiProgramData& mpData(pData->midiprog.data[i]);
 

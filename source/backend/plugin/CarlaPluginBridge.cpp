@@ -2020,12 +2020,15 @@ public:
                 }
             }   break;
 
-            case kPluginBridgeNonRtServerParameterRanges1: {
-                // uint/index, float/def, float/min, float/max
+            case kPluginBridgeNonRtServerParameterRanges: {
+                // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float def      = fShmNonRtServerControl.readFloat();
                 const float min      = fShmNonRtServerControl.readFloat();
                 const float max      = fShmNonRtServerControl.readFloat();
+                const float step      = fShmNonRtServerControl.readFloat();
+                const float stepSmall = fShmNonRtServerControl.readFloat();
+                const float stepLarge = fShmNonRtServerControl.readFloat();
 
                 CARLA_SAFE_ASSERT_BREAK(min < max);
                 CARLA_SAFE_ASSERT_BREAK(def >= min);
@@ -2037,20 +2040,6 @@ public:
                     pData->param.ranges[index].def = def;
                     pData->param.ranges[index].min = min;
                     pData->param.ranges[index].max = max;
-                }
-            }   break;
-
-            case kPluginBridgeNonRtServerParameterRanges2: {
-                // uint/index float/step, float/stepSmall, float/stepLarge
-                const uint32_t index  = fShmNonRtServerControl.readUInt();
-                const float step      = fShmNonRtServerControl.readFloat();
-                const float stepSmall = fShmNonRtServerControl.readFloat();
-                const float stepLarge = fShmNonRtServerControl.readFloat();
-
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
-
-                if (index < pData->param.count)
-                {
                     pData->param.ranges[index].step      = step;
                     pData->param.ranges[index].stepSmall = stepSmall;
                     pData->param.ranges[index].stepLarge = stepLarge;
@@ -2070,6 +2059,20 @@ public:
                     fParams[index].value = fixedValue;
 
                     CarlaPlugin::setParameterValue(index, fixedValue, false, true, true);
+                }
+            }   break;
+
+            case kPluginBridgeNonRtServerParameterValue2: {
+                // uint/index float/value
+                const uint32_t index = fShmNonRtServerControl.readUInt();
+                const float    value = fShmNonRtServerControl.readFloat();
+
+                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
+
+                if (index < pData->param.count)
+                {
+                    const float fixedValue(pData->param.getFixedValue(index, value));
+                    fParams[index].value = fixedValue;
                 }
             }   break;
 

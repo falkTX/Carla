@@ -89,16 +89,11 @@ void CarlaEngineThread::run() noexcept
 
                     value = plugin->getParameterValue(j);
 
+#ifndef BUILD_BRIDGE
                     // Update OSC engine client
                     if (oscRegisted)
-                    {
-#ifdef BUILD_BRIDGE
-                        //kEngine->oscSend_bridge_parameter_value(j, value);
-#else
                         kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
-                    }
-
                     // Update UI
                     if (needsUiUpdates)
                         plugin->uiParameterChange(j, value);

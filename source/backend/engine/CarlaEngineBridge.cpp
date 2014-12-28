@@ -511,22 +511,232 @@ public:
 
     void idle() noexcept override
     {
+        CarlaPlugin* const plugin(pData->plugins[0].plugin);
+        CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+
         if (fFirstIdle)
         {
             fFirstIdle = false;
             fLastPingCounter = 0;
 
+            char bufStr[STR_MAX+1];
+            uint32_t bufStrSize;
+
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
-            // TODO - send plugin data
+            // kPluginBridgeNonRtServerPluginInfo1
+            {
+                // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPluginInfo1);
+                fShmNonRtServerControl.writeUInt(plugin->getCategory());
+                fShmNonRtServerControl.writeUInt(plugin->getHints());
+                fShmNonRtServerControl.writeUInt(plugin->getOptionsAvailable());
+                fShmNonRtServerControl.writeUInt(plugin->getOptionsEnabled());
+                fShmNonRtServerControl.writeLong(plugin->getUniqueId());
+                fShmNonRtServerControl.commitWrite();
+            }
 
+            // kPluginBridgeNonRtServerPluginInfo2
+            {
+                // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPluginInfo2);
+
+                carla_zeroChar(bufStr, STR_MAX);
+                plugin->getRealName(bufStr);
+                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                fShmNonRtServerControl.writeUInt(bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                carla_zeroChar(bufStr, STR_MAX);
+                plugin->getLabel(bufStr);
+                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                fShmNonRtServerControl.writeUInt(bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                carla_zeroChar(bufStr, STR_MAX);
+                plugin->getMaker(bufStr);
+                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                fShmNonRtServerControl.writeUInt(bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                carla_zeroChar(bufStr, STR_MAX);
+                plugin->getCopyright(bufStr);
+                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                fShmNonRtServerControl.writeUInt(bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                fShmNonRtServerControl.commitWrite();
+            }
+
+            // kPluginBridgeNonRtServerAudioCount
+            {
+                // uint/ins, uint/outs
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerAudioCount);
+                fShmNonRtServerControl.writeUInt(plugin->getAudioInCount());
+                fShmNonRtServerControl.writeUInt(plugin->getAudioOutCount());
+                fShmNonRtServerControl.commitWrite();
+            }
+
+            // kPluginBridgeNonRtServerMidiCount
+            {
+                // uint/ins, uint/outs
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerMidiCount);
+                fShmNonRtServerControl.writeUInt(plugin->getMidiInCount());
+                fShmNonRtServerControl.writeUInt(plugin->getMidiOutCount());
+                fShmNonRtServerControl.commitWrite();
+            }
+
+            // kPluginBridgeNonRtServerParameter*
+            if (const uint32_t count = plugin->getParameterCount())
+            {
+                uint32_t paramIns, paramOuts;
+                plugin->getParameterCountInfo(paramIns, paramOuts);
+
+                // uint/ins, uint/outs
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterCount);
+                fShmNonRtServerControl.writeUInt(paramIns);
+                fShmNonRtServerControl.writeUInt(paramOuts);
+                fShmNonRtServerControl.commitWrite();
+
+                for (uint32_t i=0, maxParams=pData->options.maxParameters; i<count && i<maxParams; ++i)
+                {
+                    // kPluginBridgeNonRtServerParameterData1
+                    {
+                        const ParameterData& paramData(plugin->getParameterData(i));
+
+                        // uint/index, int/rindex, uint/type, uint/hints, short/cc
+                        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData1);
+                        fShmNonRtServerControl.writeUInt(i);
+                        fShmNonRtServerControl.writeInt(paramData.rindex);
+                        fShmNonRtServerControl.writeUInt(paramData.type);
+                        fShmNonRtServerControl.writeUInt(paramData.hints);
+                        fShmNonRtServerControl.writeShort(paramData.midiCC);
+                        fShmNonRtServerControl.commitWrite();
+                    }
+
+                    // kPluginBridgeNonRtServerParameterData2
+                    {
+                        // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+                        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData2);
+                        fShmNonRtServerControl.writeUInt(i);
+
+                        carla_zeroChar(bufStr, STR_MAX);
+                        plugin->getParameterName(i, bufStr);
+                        bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        fShmNonRtServerControl.writeUInt(bufStrSize);
+                        fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                        carla_zeroChar(bufStr, STR_MAX);
+                        plugin->getParameterUnit(i, bufStr);
+                        bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        fShmNonRtServerControl.writeUInt(bufStrSize);
+                        fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                        fShmNonRtServerControl.commitWrite();
+                    }
+
+                    // kPluginBridgeNonRtServerParameterRanges
+                    {
+                        const ParameterRanges& paramRanges(plugin->getParameterRanges(i));
+
+                        // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
+                        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterRanges);
+                        fShmNonRtServerControl.writeUInt(i);
+                        fShmNonRtServerControl.writeFloat(paramRanges.def);
+                        fShmNonRtServerControl.writeFloat(paramRanges.min);
+                        fShmNonRtServerControl.writeFloat(paramRanges.max);
+                        fShmNonRtServerControl.writeFloat(paramRanges.step);
+                        fShmNonRtServerControl.writeFloat(paramRanges.stepSmall);
+                        fShmNonRtServerControl.writeFloat(paramRanges.stepLarge);
+                        fShmNonRtServerControl.commitWrite();
+                    }
+
+                    // kPluginBridgeNonRtServerParameterValue2
+                    {
+                        // uint/index float/value (used for init/output parameters only, don't resend values)
+                        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue2);
+                        fShmNonRtServerControl.writeUInt(i);
+                        fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
+                        fShmNonRtServerControl.commitWrite();
+                    }
+                }
+            }
+
+            // kPluginBridgeNonRtServerProgram*
+            if (const uint32_t count = plugin->getProgramCount())
+            {
+                // uint/count
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerProgramCount);
+                fShmNonRtServerControl.writeUInt(count);
+                fShmNonRtServerControl.commitWrite();
+
+                for (uint32_t i=0; i < count; ++i)
+                {
+                    // uint/index, uint/size, str[] (name)
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerProgramName);
+                    fShmNonRtServerControl.writeUInt(i);
+
+                    carla_zeroChar(bufStr, STR_MAX);
+                    plugin->getProgramName(i, bufStr);
+                    bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                    fShmNonRtServerControl.writeUInt(bufStrSize);
+                    fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                    fShmNonRtServerControl.commitWrite();
+                }
+            }
+
+            // kPluginBridgeNonRtServerMidiProgram*
+            if (const uint32_t count = plugin->getMidiProgramCount())
+            {
+                // uint/count
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerMidiProgramCount);
+                fShmNonRtServerControl.writeUInt(count);
+                fShmNonRtServerControl.commitWrite();
+
+                for (uint32_t i=0; i < count; ++i)
+                {
+                    const MidiProgramData& mpData(plugin->getMidiProgramData(i));
+                    CARLA_SAFE_ASSERT_CONTINUE(mpData.name != nullptr);
+
+                    // uint/index, uint/bank, uint/program, uint/size, str[] (name)
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerMidiProgramData);
+                    fShmNonRtServerControl.writeUInt(i);
+                    fShmNonRtServerControl.writeUInt(mpData.bank);
+                    fShmNonRtServerControl.writeUInt(mpData.program);
+
+                    bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(mpData.name)));
+                    fShmNonRtServerControl.writeUInt(bufStrSize);
+                    fShmNonRtServerControl.writeCustomData(mpData.name, bufStrSize);
+
+                    fShmNonRtServerControl.commitWrite();
+                }
+            }
+
+            // ready!
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerReady);
             fShmNonRtServerControl.commitWrite();
 
             carla_stdout("Carla Client Ready!");
         }
 
-        // TODO - send output parameters to server
+        if (const uint32_t count = plugin->getParameterCount())
+        {
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+            for (uint32_t i=0; i < count; ++i)
+            {
+                if (! plugin->isParameterOutput(i))
+                    continue;
+
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue2);
+                fShmNonRtServerControl.writeUInt(i);
+                fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
+
+                if (! fShmNonRtServerControl.commitWrite())
+                    break;
+            }
+        }
 
         CarlaEngine::idle();
 
@@ -749,7 +959,7 @@ public:
 
                     const CarlaString valueBase64(CarlaString::asBase64(valueMemStream.getData(), valueMemStream.getDataSize()));
                     const uint32_t valueBase64Len(static_cast<uint32_t>(valueBase64.length()));
-                    CARLA_SAFE_ASSERT_CONTINUE(valueBase64.length() > 0);
+                    CARLA_SAFE_ASSERT_CONTINUE(valueBase64Len > 0);
 
                     {
                         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
