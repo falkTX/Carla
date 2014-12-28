@@ -85,9 +85,9 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerParameterData1,     // uint/index, int/rindex, uint/type, uint/hints, short/cc
     kPluginBridgeNonRtServerParameterData2,     // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
     kPluginBridgeNonRtServerParameterRanges,    // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
-    kPluginBridgeNonRtServerParameterValue,     // uint/index float/value
-    kPluginBridgeNonRtServerParameterValue2,    // uint/index float/value (used for init/output parameters only, don't resend values)
-    kPluginBridgeNonRtServerDefaultValue,       // uint/index float/value
+    kPluginBridgeNonRtServerParameterValue,     // uint/index, float/value
+    kPluginBridgeNonRtServerParameterValue2,    // uint/index, float/value (used for init/output parameters only, don't resend values)
+    kPluginBridgeNonRtServerDefaultValue,       // uint/index, float/value
     kPluginBridgeNonRtServerCurrentProgram,     // int/index
     kPluginBridgeNonRtServerCurrentMidiProgram, // int/index
     kPluginBridgeNonRtServerProgramName,        // uint/index, uint/size, str[] (name)

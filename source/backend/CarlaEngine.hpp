@@ -914,7 +914,7 @@ public:
      * Call the main engine callback, if set.
      * May be called by plugins.
      */
-    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
+    virtual void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept;
 
     /*!
      * Set the main engine callback to @a func.

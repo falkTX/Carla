@@ -1087,50 +1087,18 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
         carla_stdout("callback while idling (%i:%s, %i, %i, %i, %f, \"%s\")", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
     }
 
-    if (action == ENGINE_CALLBACK_IDLE)
-    {
-        ++pData->isIdling;
-    }
-#if 0 //def BUILD_BRIDGE
-    else if (pData->oscData != nullptr)
-    {
-        switch (action)
-        {
-        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
-            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
-            oscSend_bridge_parameter_value(static_cast<uint>(value1), value3);
-            break;
-        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
-            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
-            oscSend_bridge_default_value(static_cast<uint>(value1), value3);
-            break;
-        case ENGINE_CALLBACK_PROGRAM_CHANGED:
-            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
-            oscSend_bridge_current_program(value1);
-            break;
-        case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
-            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
-            oscSend_bridge_current_midi_program(value1);
-            break;
-        case ENGINE_CALLBACK_UI_STATE_CHANGED:
-            if (value1 != 1)
-                oscSend_bridge_configure("CarlaBridgeHideGUI", "");
-            break;
-        default:
-            break;
-        }
-    }
-#endif
-
     if (pData->callback != nullptr)
     {
+        if (action == ENGINE_CALLBACK_IDLE)
+            ++pData->isIdling;
+
         try {
             pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
         } CARLA_SAFE_EXCEPTION("callback");
-    }
 
-    if (action == ENGINE_CALLBACK_IDLE)
-        --pData->isIdling;
+        if (action == ENGINE_CALLBACK_IDLE)
+            --pData->isIdling;
+    }
 }
 
 void CarlaEngine::setCallback(const EngineCallbackFunc func, void* const ptr) noexcept

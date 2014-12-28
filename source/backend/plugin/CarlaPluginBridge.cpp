@@ -2047,7 +2047,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerParameterValue: {
-                // uint/index float/value
+                // uint/index, float/value
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
 
@@ -2063,7 +2063,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerParameterValue2: {
-                // uint/index float/value
+                // uint/index, float/value
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
 
@@ -2077,7 +2077,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerDefaultValue: {
-                // uint/index float/value
+                // uint/index, float/value
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
 

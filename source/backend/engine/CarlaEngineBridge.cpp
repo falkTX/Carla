@@ -751,6 +751,62 @@ public:
         }
     }
 
+    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
+    {
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
+
+        if (fLastPingCounter < 0)
+            return;
+
+        switch (action)
+        {
+        // uint/index float/value
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue);
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
+            fShmNonRtServerControl.writeFloat(value3);
+            fShmNonRtServerControl.commitWrite();
+            break;
+
+        // uint/index float/value
+        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerDefaultValue);
+            fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
+            fShmNonRtServerControl.writeFloat(value3);
+            fShmNonRtServerControl.commitWrite();
+            break;
+
+        // int/index
+        case ENGINE_CALLBACK_PROGRAM_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerCurrentProgram);
+            fShmNonRtServerControl.writeInt(value1);
+            fShmNonRtServerControl.commitWrite();
+            break;
+
+        // int/index
+        case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+            CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerCurrentMidiProgram);
+            fShmNonRtServerControl.writeInt(value1);
+            fShmNonRtServerControl.commitWrite();
+            break;
+
+        case ENGINE_CALLBACK_UI_STATE_CHANGED:
+            if (value1 != 1)
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
+                fShmNonRtServerControl.commitWrite();
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
     // -------------------------------------------------------------------
 
     void clear() noexcept
