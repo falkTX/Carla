@@ -19,7 +19,6 @@
 #include "CarlaHost.h"
 
 #include "CarlaBackendUtils.hpp"
-#include "CarlaOscUtils.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_UNIX
@@ -173,9 +172,7 @@ public:
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
           fProjFilename(),
-          fOscControlData(),
-          fOscServerPath(),
-          fOscServerThread(nullptr),
+          fUsingBridge(false),
           leakDetector_CarlaBridgePlugin()
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
@@ -205,31 +202,11 @@ public:
 
     // ---------------------------------------------------------------------
 
-    /*
-    void sendOscUpdate() const noexcept
+    void exec(const bool useBridge, int argc, char* argv[])
     {
-        if (fOscControlData.target != nullptr)
-            osc_send_update(fOscControlData, fOscServerPath);
-    }
+        fUsingBridge = useBridge;
 
-    void sendOscBridgeUpdate() const noexcept
-    {
-        if (fOscControlData.target != nullptr)
-            osc_send_bridge_ready(fOscControlData, fOscControlData.path);
-    }
-
-    void sendOscBridgeError(const char* const error) const noexcept
-    {
-        if (fOscControlData.target != nullptr)
-            osc_send_bridge_error(fOscControlData, error);
-    }
-    */
-
-    // ---------------------------------------------------------------------
-
-    void exec(const bool useOsc, int argc, char* argv[])
-    {
-        if (! useOsc)
+        if (! useBridge)
         {
             const CarlaPluginInfo* const pInfo(carla_get_plugin_info(0));
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
@@ -267,11 +244,9 @@ public:
     // ---------------------------------------------------------------------
 
 protected:
-    void handleCallback(const EngineCallbackOpcode action, const int value1, const int value2, const float value3, const char* const valueStr)
+    void handleCallback(const EngineCallbackOpcode action, const int value1, const int, const float, const char* const)
     {
         CARLA_BACKEND_USE_NAMESPACE;
-
-        // TODO
 
         switch (action)
         {
@@ -282,27 +257,19 @@ protected:
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
-            if (gIsInitiated && value1 != 1 && fOscControlData.target == nullptr)
+            if (gIsInitiated && value1 != 1 && ! fUsingBridge)
                 gCloseNow = true;
             break;
 
         default:
             break;
         }
-
-        return;
-        (void)value2;
-        (void)value3;
-        (void)valueStr;
     }
 
 private:
     const CarlaEngine* fEngine;
     String             fProjFilename;
-
-    CarlaOscData     fOscControlData;
-    CarlaString      fOscServerPath;
-    lo_server_thread fOscServerThread;
+    bool               fUsingBridge;
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -311,11 +278,6 @@ private:
         CARLA_SAFE_ASSERT_RETURN(pluginId == 0,);
 
         return ((CarlaBridgePlugin*)ptr)->handleCallback(action, value1, value2, value3, valueStr);
-    }
-
-    static void osc_error_handler(int num, const char* msg, const char* path)
-    {
-        carla_stderr("CarlaBridgePlugin::osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgePlugin)
@@ -443,12 +405,7 @@ int main(int argc, char* argv[])
     {
         ret = 0;
 
-        if (useBridge)
-        {
-            //bridge.sendOscUpdate();
-            //bridge.sendOscBridgeUpdate();
-        }
-        else
+        if (! useBridge)
         {
             carla_set_active(0, true);
 

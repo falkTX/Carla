@@ -210,10 +210,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
             unmapData();
 
         if (! carla_is_shm_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
 
         carla_shm_close(shm);
         carla_shm_init(shm);
@@ -322,10 +319,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
             unmapData();
 
         if (! carla_is_shm_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
 
         carla_shm_close(shm);
         carla_shm_init(shm);
@@ -420,10 +414,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
             unmapData();
 
         if (! carla_is_shm_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
             return;
-        }
 
         carla_shm_close(shm);
         carla_shm_init(shm);
@@ -498,7 +489,7 @@ public:
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
         fBinary = binary;
-        fLabel  = binary;
+        fLabel  = label;
         fShmIds = shmIds;
 
         if (fLabel.isEmpty())
@@ -538,7 +529,7 @@ protected:
         arguments.add(fBinary);
 
         // plugin type
-        arguments.add(PluginType2Str(kPlugin->getType()));
+        arguments.add(getPluginTypeAsString(kPlugin->getType()));
 
         // filename
         arguments.add(filename);
@@ -639,7 +630,9 @@ protected:
             carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.toRawUTF8());
             carla_setenv("WINEDEBUG", "-all");
 
-            carla_stdout("starting plugin bridge..");
+            carla_stdout("starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
+                         fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
+
             started = fProcess->start(arguments);
 
 #ifdef CARLA_OS_LINUX
@@ -1123,7 +1116,7 @@ public:
     {
         if (fBridgeThread.isThreadRunning())
         {
-            if (fTimedOut && pData->active)
+            if (fInitiated && fTimedOut && pData->active)
                 setActive(false, true, true);
 
             {
@@ -1854,9 +1847,9 @@ public:
         for (; fShmNonRtServerControl.isDataAvailableForReading();)
         {
             const PluginBridgeNonRtServerOpcode opcode(fShmNonRtServerControl.readOpcode());
-#ifdef DEBUG
+#if 1//def DEBUG
             if (opcode != kPluginBridgeNonRtServerPong) {
-                carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
+                carla_stdout("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
             switch (opcode)
@@ -2372,9 +2365,10 @@ public:
         {
             if (fInitiated || ! fBridgeThread.isThreadRunning())
                 break;
-            carla_msleep(25);
+            carla_msleep(20);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
+            idle();
         }
 
         fLastPongCounter = -1;
@@ -2422,7 +2416,7 @@ private:
     bool fSaved;
     bool fTimedOut;
 
-    volatile int32_t fLastPongCounter;
+    int32_t fLastPongCounter;
 
     CarlaString             fBridgeBinary;
     CarlaPluginBridgeThread fBridgeThread;

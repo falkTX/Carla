@@ -19,7 +19,6 @@
 #define CARLA_PLUGIN_INTERNAL_HPP_INCLUDED
 
 #include "CarlaPlugin.hpp"
-#include "CarlaPluginThread.hpp"
 
 #include "CarlaLibUtils.hpp"
 #include "CarlaOscUtils.hpp"

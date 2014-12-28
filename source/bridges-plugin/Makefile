@@ -168,7 +168,6 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngineBridge.cpp.o \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
-	$(OBJDIR)/CarlaPluginThread.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
@@ -195,7 +194,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngineBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginThread.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.arch.o \

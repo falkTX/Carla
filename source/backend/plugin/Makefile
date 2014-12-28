@@ -12,7 +12,6 @@ include ../Makefile.mk
 OBJS = \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
-	$(OBJDIR)/CarlaPluginThread.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
 	$(OBJDIR)/CarlaPluginBridge.cpp.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
