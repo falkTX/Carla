@@ -456,11 +456,13 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
 struct BridgeParamInfo {
     float value;
     CarlaString name;
+    CarlaString symbol;
     CarlaString unit;
 
     BridgeParamInfo() noexcept
         : value(0.0f),
           name(),
+          symbol(),
           unit() {}
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
@@ -868,6 +870,13 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         std::strncpy(strBuf, fParams[parameterId].name.buffer(), STR_MAX);
+    }
+
+    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+
+        std::strncpy(strBuf, fParams[parameterId].symbol.buffer(), STR_MAX);
     }
 
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
@@ -2022,6 +2031,12 @@ public:
                 carla_zeroChar(name, nameSize+1);
                 fShmNonRtServerControl.readCustomData(name, nameSize);
 
+                // symbol
+                const uint32_t symbolSize(fShmNonRtServerControl.readUInt());
+                char symbol[symbolSize+1];
+                carla_zeroChar(symbol, symbolSize+1);
+                fShmNonRtServerControl.readCustomData(symbol, symbolSize);
+
                 // unit
                 const uint32_t unitSize(fShmNonRtServerControl.readUInt());
                 char unit[unitSize+1];
@@ -2032,8 +2047,9 @@ public:
 
                 if (index < pData->param.count)
                 {
-                    fParams[index].name = name;
-                    fParams[index].unit = unit;
+                    fParams[index].name   = name;
+                    fParams[index].symbol = symbol;
+                    fParams[index].unit   = unit;
                 }
             }   break;
 

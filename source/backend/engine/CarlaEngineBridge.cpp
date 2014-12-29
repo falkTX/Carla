@@ -557,25 +557,25 @@ public:
 
                 carla_zeroChar(bufStr, STR_MAX);
                 plugin->getRealName(bufStr);
-                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
                 carla_zeroChar(bufStr, STR_MAX);
                 plugin->getLabel(bufStr);
-                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixValue(1U, 256U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
                 carla_zeroChar(bufStr, STR_MAX);
                 plugin->getMaker(bufStr);
-                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
                 carla_zeroChar(bufStr, STR_MAX);
                 plugin->getCopyright(bufStr);
-                bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
@@ -632,13 +632,19 @@ public:
 
                     // kPluginBridgeNonRtServerParameterData2
                     {
-                        // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
+                        // uint/index, uint/size, str[] (name), uint/size, str[] (symbol), uint/size, str[] (unit)
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData2);
                         fShmNonRtServerControl.writeUInt(i);
 
                         carla_zeroChar(bufStr, STR_MAX);
                         plugin->getParameterName(i, bufStr);
                         bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        fShmNonRtServerControl.writeUInt(bufStrSize);
+                        fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
+
+                        carla_zeroChar(bufStr, STR_MAX);
+                        plugin->getParameterSymbol(i, bufStr);
+                        bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
