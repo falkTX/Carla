@@ -1854,9 +1854,9 @@ public:
         for (; fShmNonRtServerControl.isDataAvailableForReading();)
         {
             const PluginBridgeNonRtServerOpcode opcode(fShmNonRtServerControl.readOpcode());
-#if 1//def DEBUG
+#ifdef DEBUG
             if (opcode != kPluginBridgeNonRtServerPong) {
-                carla_stdout("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
+                carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
             switch (opcode)
@@ -1960,6 +1960,17 @@ public:
 
                     pData->param.createNew(count, false);
                     fParams = new BridgeParamInfo[count];
+
+                    // we might not receive all parameter data, so ensure range max is not 0
+                    for (uint32_t i=0; i<maxParams; ++i)
+                    {
+                        pData->param.ranges[i].def = 0.0f;
+                        pData->param.ranges[i].min = 0.0f;
+                        pData->param.ranges[i].max = 1.0f;
+                        pData->param.ranges[i].step = 0.001f;
+                        pData->param.ranges[i].stepSmall = 0.0001f;
+                        pData->param.ranges[i].stepLarge = 0.1f;
+                    }
                 }
             }   break;
 

@@ -336,6 +336,19 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         writeUInt(static_cast<uint32_t>(opcode));
     }
 
+    void waitIfDataIsReachingLimit() const noexcept
+    {
+        if (getAvailableDataSize() < HugeStackBuffer::size/4)
+            return;
+
+        for (int i=50; --i >= 0;)
+        {
+            if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
+                break;
+            carla_msleep(20);
+        }
+    }
+
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
 };
 
@@ -586,6 +599,8 @@ public:
                 fShmNonRtServerControl.commitWrite();
             }
 
+            fShmNonRtServerControl.waitIfDataIsReachingLimit();
+
             // kPluginBridgeNonRtServerParameter*
             if (const uint32_t count = plugin->getParameterCount())
             {
@@ -659,6 +674,8 @@ public:
                         fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
                         fShmNonRtServerControl.commitWrite();
                     }
+
+                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
             }
 
@@ -683,6 +700,7 @@ public:
                     fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
                     fShmNonRtServerControl.commitWrite();
+                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
             }
 
@@ -710,6 +728,7 @@ public:
                     fShmNonRtServerControl.writeCustomData(mpData.name, bufStrSize);
 
                     fShmNonRtServerControl.commitWrite();
+                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
             }
 
@@ -719,6 +738,8 @@ public:
 
             carla_stdout("Carla Client Ready!");
         }
+
+        fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
         if (const uint32_t count = plugin->getParameterCount())
         {
@@ -732,9 +753,8 @@ public:
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue2);
                 fShmNonRtServerControl.writeUInt(i);
                 fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
-
-                if (! fShmNonRtServerControl.commitWrite())
-                    break;
+                fShmNonRtServerControl.commitWrite();
+                fShmNonRtServerControl.waitIfDataIsReachingLimit();
             }
         }
 
@@ -761,42 +781,47 @@ public:
         switch (action)
         {
         // uint/index float/value
-        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED: {
             CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
             fShmNonRtServerControl.writeFloat(value3);
             fShmNonRtServerControl.commitWrite();
-            break;
+        }   break;
 
         // uint/index float/value
-        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED:
+        case ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED: {
             CARLA_SAFE_ASSERT_BREAK(value1 >= 0);
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerDefaultValue);
             fShmNonRtServerControl.writeUInt(static_cast<uint>(value1));
             fShmNonRtServerControl.writeFloat(value3);
             fShmNonRtServerControl.commitWrite();
-            break;
+        }   break;
 
         // int/index
-        case ENGINE_CALLBACK_PROGRAM_CHANGED:
+        case ENGINE_CALLBACK_PROGRAM_CHANGED: {
             CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerCurrentProgram);
             fShmNonRtServerControl.writeInt(value1);
             fShmNonRtServerControl.commitWrite();
-            break;
+        }   break;
 
         // int/index
-        case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED:
+        case ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED: {
             CARLA_SAFE_ASSERT_BREAK(value1 >= -1);
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerCurrentMidiProgram);
             fShmNonRtServerControl.writeInt(value1);
             fShmNonRtServerControl.commitWrite();
-            break;
+        }   break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
             if (value1 != 1)
             {
+                const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
                 fShmNonRtServerControl.commitWrite();
             }

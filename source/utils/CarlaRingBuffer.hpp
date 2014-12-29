@@ -149,6 +149,15 @@ public:
         return (fBuffer->buf == nullptr || fBuffer->head == fBuffer->tail);
     }
 
+    uint32_t getAvailableDataSize() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, 0);
+
+        const uint32_t wrap((fBuffer->tail > fBuffer->wrtn) ? 0 : fBuffer->size);
+
+        return wrap + fBuffer->tail - fBuffer->wrtn;
+    }
+
     // -------------------------------------------------------------------
 
     bool readBool() noexcept
