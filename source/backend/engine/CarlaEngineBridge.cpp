@@ -605,21 +605,22 @@ public:
             // kPluginBridgeNonRtServerParameter*
             if (const uint32_t count = plugin->getParameterCount())
             {
-                uint32_t paramIns, paramOuts;
-                plugin->getParameterCountInfo(paramIns, paramOuts);
-
-                // uint/ins, uint/outs
+                // uint/count
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterCount);
-                fShmNonRtServerControl.writeUInt(paramIns);
-                fShmNonRtServerControl.writeUInt(paramOuts);
+                fShmNonRtServerControl.writeUInt(count);
                 fShmNonRtServerControl.commitWrite();
 
-                for (uint32_t i=0, maxParams=pData->options.maxParameters; i<count && i<maxParams; ++i)
+                for (uint32_t i=0; i<count; ++i)
                 {
+                    const ParameterData& paramData(plugin->getParameterData(i));
+
+                    if (paramData.type != PARAMETER_INPUT && paramData.type != PARAMETER_OUTPUT)
+                        continue;
+                    if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
+                        continue;
+
                     // kPluginBridgeNonRtServerParameterData1
                     {
-                        const ParameterData& paramData(plugin->getParameterData(i));
-
                         // uint/index, int/rindex, uint/type, uint/hints, short/cc
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData1);
                         fShmNonRtServerControl.writeUInt(i);

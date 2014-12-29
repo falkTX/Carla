@@ -79,7 +79,7 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerPluginInfo2,        // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
     kPluginBridgeNonRtServerAudioCount,         // uint/ins, uint/outs
     kPluginBridgeNonRtServerMidiCount,          // uint/ins, uint/outs
-    kPluginBridgeNonRtServerParameterCount,     // uint/ins, uint/outs
+    kPluginBridgeNonRtServerParameterCount,     // uint/count
     kPluginBridgeNonRtServerProgramCount,       // uint/count
     kPluginBridgeNonRtServerMidiProgramCount,   // uint/count
     kPluginBridgeNonRtServerParameterData1,     // uint/index, int/rindex, uint/type, uint/hints, short/cc

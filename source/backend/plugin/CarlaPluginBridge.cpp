@@ -1933,9 +1933,8 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerParameterCount: {
-                // uint/ins, uint/outs
-                const uint32_t ins  = fShmNonRtServerControl.readUInt();
-                const uint32_t outs = fShmNonRtServerControl.readUInt();
+                // uint/count
+                const uint32_t count = fShmNonRtServerControl.readUInt();
 
                 // delete old data
                 pData->param.clear();
@@ -1946,17 +1945,8 @@ public:
                     fParams = nullptr;
                 }
 
-                if (uint32_t count = ins+outs)
+                if (count > 0)
                 {
-                    const uint32_t maxParams(pData->engine->getOptions().maxParameters);
-
-                    if (count > maxParams)
-                    {
-                        // this is expected right now, to be handled better later
-                        //carla_safe_assert_int2("count <= pData->engine->getOptions().maxParameters", __FILE__, __LINE__, count, maxParams);
-                        count = maxParams;
-                    }
-
                     pData->param.createNew(count, false);
                     fParams = new BridgeParamInfo[count];
 

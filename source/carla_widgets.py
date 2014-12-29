@@ -777,41 +777,6 @@ class PluginEdit(QDialog):
 
         # -----------------------------------------------------------------
 
-        if parameterCount > self.host.maxParameters:
-            fakeName = self.tr("This plugin has too many parameters to display here!")
-
-            paramFakeListFull = []
-            paramFakeList  = []
-            paramFakeWidth = QFontMetrics(self.font()).width(fakeName)
-
-            parameter = {
-                'type': PARAMETER_UNKNOWN,
-                'hints': 0x0,
-                'name':  fakeName,
-                'unit':  "",
-                'scalePoints': [],
-
-                'index':   0,
-                'default': 0.0,
-                'minimum': 0.0,
-                'maximum': 1.0,
-                'step':    0.0,
-                'stepSmall': 0.0,
-                'stepLarge': 0.0,
-                'midiCC':   -1,
-                'midiChannel': 1,
-
-                'current': 0.0
-            }
-
-            paramFakeList.append(parameter)
-            paramFakeListFull.append((paramFakeList, paramFakeWidth))
-
-            self._createParameterWidgets(PARAMETER_UNKNOWN, paramFakeListFull, self.tr("Information"))
-            return
-
-        # -----------------------------------------------------------------
-
         paramInputList   = []
         paramOutputList  = []
         paramInputWidth  = 0
@@ -820,7 +785,7 @@ class PluginEdit(QDialog):
         paramInputListFull  = [] # ([params], width)
         paramOutputListFull = [] # ([params], width)
 
-        for i in range(parameterCount):
+        for i in range(min(parameterCount, self.host.maxParameters)):
             paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
             paramData   = self.host.get_parameter_data(self.fPluginId, i)
             paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
