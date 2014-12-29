@@ -365,7 +365,6 @@ public:
           fShmRtClientControl(),
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
-          fIsRunning(false),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingCounter(-1),
@@ -389,6 +388,8 @@ public:
     ~CarlaEngineBridge() noexcept override
     {
         carla_debug("CarlaEngineBridge::~CarlaEngineBridge()");
+
+        clear();
     }
 
     // -------------------------------------
@@ -504,7 +505,7 @@ public:
 
     bool isRunning() const noexcept override
     {
-        return isThreadRunning();
+        return isThreadRunning() || ! fFirstIdle;
     }
 
     bool isOffline() const noexcept override
@@ -855,15 +856,15 @@ public:
             }
 #endif
 
+            if (opcode != kPluginBridgeNonRtClientNull && fLastPingCounter > 0)
+                fLastPingCounter = 0;
+
             switch (opcode)
             {
             case kPluginBridgeNonRtClientNull:
                 break;
 
             case kPluginBridgeNonRtClientPing: {
-                if (fLastPingCounter > 0)
-                    fLastPingCounter = 0;
-
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
@@ -1395,7 +1396,6 @@ protected:
                 carla_stderr2("Could not post to client rt semaphore");
         }
 
-        fIsRunning = false;
         callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
     }
 
@@ -1420,7 +1420,6 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
-    bool fIsRunning;
     bool fIsOffline;
     bool fFirstIdle;
     int32_t fLastPingCounter;

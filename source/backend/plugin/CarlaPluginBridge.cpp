@@ -484,14 +484,14 @@ public:
     void setData(const char* const binary, const char* const label, const char* const shmIds) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(label != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
         fBinary = binary;
-        fLabel  = label;
         fShmIds = shmIds;
 
+        if (label != nullptr)
+            fLabel = label;
         if (fLabel.isEmpty())
             fLabel = "\"\"";
     }
@@ -1859,14 +1859,13 @@ public:
                 carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
+            if (opcode != kPluginBridgeNonRtServerNull && fLastPongCounter > 0)
+                fLastPongCounter = 0;
+
             switch (opcode)
             {
             case kPluginBridgeNonRtServerNull:
-                break;
-
             case kPluginBridgeNonRtServerPong:
-                if (fLastPongCounter > 0)
-                    fLastPongCounter = 0;
                 break;
 
             case kPluginBridgeNonRtServerPluginInfo1: {
@@ -1962,7 +1961,7 @@ public:
                     fParams = new BridgeParamInfo[count];
 
                     // we might not receive all parameter data, so ensure range max is not 0
-                    for (uint32_t i=0; i<maxParams; ++i)
+                    for (uint32_t i=0; i<count; ++i)
                     {
                         pData->param.ranges[i].def = 0.0f;
                         pData->param.ranges[i].min = 0.0f;
@@ -2069,8 +2068,6 @@ public:
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
 
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
-
                 if (index < pData->param.count)
                 {
                     const float fixedValue(pData->param.getFixedValue(index, value));
@@ -2085,8 +2082,6 @@ public:
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
 
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
-
                 if (index < pData->param.count)
                 {
                     const float fixedValue(pData->param.getFixedValue(index, value));
@@ -2098,8 +2093,6 @@ public:
                 // uint/index, float/value
                 const uint32_t index = fShmNonRtServerControl.readUInt();
                 const float    value = fShmNonRtServerControl.readFloat();
-
-                CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
 
                 if (index < pData->param.count)
                     pData->param.ranges[index].def = value;
@@ -2305,16 +2298,24 @@ public:
             return false;
         }
 
+        if (bridgeBinary == nullptr || bridgeBinary[0] == '\0')
+        {
+            pData->engine->setLastError("null bridge binary");
+            return false;
+        }
+
         // ---------------------------------------------------------------
         // set info
 
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
 
-        pData->filename = carla_strdup(filename);
+        if (filename != nullptr && filename[0] != '\0')
+            pData->filename = carla_strdup(filename);
+        else
+            pData->filename = carla_strdup("");
 
-        if (bridgeBinary != nullptr)
-            fBridgeBinary = bridgeBinary;
+        fBridgeBinary = bridgeBinary;
 
         std::srand(static_cast<uint>(std::time(nullptr)));
 
@@ -2416,9 +2417,7 @@ public:
 
         if (pData->name == nullptr)
         {
-            if (name != nullptr && name[0] != '\0')
-                pData->name = pData->engine->getUniquePluginName(name);
-            else if (label != nullptr && label[0] != '\0')
+            if (label != nullptr && label[0] != '\0')
                 pData->name = pData->engine->getUniquePluginName(label);
             else
                 pData->name = pData->engine->getUniquePluginName("unknown");
