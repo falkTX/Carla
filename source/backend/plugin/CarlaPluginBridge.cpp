@@ -1046,18 +1046,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        using namespace juce;
-
         const uint32_t typeLen(static_cast<uint32_t>(std::strlen(type)));
         const uint32_t keyLen(static_cast<uint32_t>(std::strlen(key)));
-
-        MemoryOutputStream valueMemStream;
-        GZIPCompressorOutputStream compressedValueStream(&valueMemStream, 9, false);
-        compressedValueStream.write(value, std::strlen(value));
-
-        const CarlaString valueBase64(CarlaString::asBase64(valueMemStream.getData(), valueMemStream.getDataSize()));
-        const uint32_t valueBase64Len(static_cast<uint32_t>(valueBase64.length()));
-        CARLA_SAFE_ASSERT_RETURN(valueBase64.length() > 0,);
+        const uint32_t valueLen(static_cast<uint32_t>(std::strlen(value)));
 
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1070,8 +1061,8 @@ public:
             fShmNonRtClientControl.writeUInt(keyLen);
             fShmNonRtClientControl.writeCustomData(key, keyLen);
 
-            fShmNonRtClientControl.writeUInt(valueBase64Len);
-            fShmNonRtClientControl.writeCustomData(valueBase64.buffer(), valueBase64Len);
+            fShmNonRtClientControl.writeUInt(valueLen);
+            fShmNonRtClientControl.writeCustomData(value, valueLen);
 
             fShmNonRtClientControl.commitWrite();
         }
@@ -2179,9 +2170,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerSetCustomData: {
-                // uint/size, str[], uint/size, str[], uint/size, str[] (compressed)
-
-                using namespace juce;
+                // uint/size, str[], uint/size, str[], uint/size, str[]
 
                 // type
                 const uint32_t typeSize(fShmNonRtServerControl.readUInt());
@@ -2196,17 +2185,12 @@ public:
                 fShmNonRtServerControl.readCustomData(key, keySize);
 
                 // value
-                const uint32_t valueBase64Size(fShmNonRtServerControl.readUInt());
-                char valueBase64[valueBase64Size+1];
-                carla_zeroChar(valueBase64, valueBase64Size+1);
-                fShmNonRtServerControl.readCustomData(valueBase64, valueBase64Size);
+                const uint32_t valueSize(fShmNonRtServerControl.readUInt());
+                char value[valueSize+1];
+                carla_zeroChar(value, valueSize+1);
+                fShmNonRtServerControl.readCustomData(value, valueSize);
 
-                const std::vector<uint8_t> valueChunk(carla_getChunkFromBase64String(valueBase64));
-
-                MemoryInputStream valueMemStream(valueChunk.data(), valueChunk.size(), false);
-                GZIPDecompressorInputStream decompressedValueStream(valueMemStream);
-
-                CarlaPlugin::setCustomData(type, key, decompressedValueStream.readEntireStreamAsString().toRawUTF8(), false);
+                CarlaPlugin::setCustomData(type, key, value, false);
             }   break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile: {

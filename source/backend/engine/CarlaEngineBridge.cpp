@@ -1034,20 +1034,14 @@ public:
 
                 for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
                 {
-                    using namespace juce;
-
                     const CustomData& cdata(plugin->getCustomData(i));
+
+                    if (std::strcmp(cdata.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cdata.key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(cdata.value, "true") == 0)
+                        continue;
 
                     const uint32_t typeLen(static_cast<uint32_t>(std::strlen(cdata.type)));
                     const uint32_t keyLen(static_cast<uint32_t>(std::strlen(cdata.key)));
-
-                    MemoryOutputStream valueMemStream;
-                    GZIPCompressorOutputStream compressedValueStream(&valueMemStream, 9, false);
-                    compressedValueStream.write(cdata.value, std::strlen(cdata.value));
-
-                    const CarlaString valueBase64(CarlaString::asBase64(valueMemStream.getData(), valueMemStream.getDataSize()));
-                    const uint32_t valueBase64Len(static_cast<uint32_t>(valueBase64.length()));
-                    CARLA_SAFE_ASSERT_CONTINUE(valueBase64Len > 0);
+                    const uint32_t valueLen(static_cast<uint32_t>(std::strlen(cdata.value)));
 
                     {
                         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -1060,10 +1054,11 @@ public:
                         fShmNonRtServerControl.writeUInt(keyLen);
                         fShmNonRtServerControl.writeCustomData(cdata.key, keyLen);
 
-                        fShmNonRtServerControl.writeUInt(valueBase64Len);
-                        fShmNonRtServerControl.writeCustomData(valueBase64.buffer(), valueBase64Len);
+                        fShmNonRtServerControl.writeUInt(valueLen);
+                        fShmNonRtServerControl.writeCustomData(cdata.value, valueLen);
 
                         fShmNonRtServerControl.commitWrite();
+                        fShmNonRtServerControl.waitIfDataIsReachingLimit();
                     }
                 }
 
