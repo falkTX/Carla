@@ -750,12 +750,12 @@ public:
             // ready!
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerReady);
             fShmNonRtServerControl.commitWrite();
+            fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             carla_stdout("Carla Client Ready!");
         }
 
-        fShmNonRtServerControl.waitIfDataIsReachingLimit();
-
+        // send parameter outputs
         if (const uint32_t count = plugin->getParameterCount())
         {
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -1350,15 +1350,17 @@ protected:
                         const float* cvIn[cvInCount];
                         /* */ float* cvOut[cvOutCount];
 
-                        for (uint32_t i=0; i < audioInCount; ++i)
-                            audioIn[i] = fShmAudioPool.data + i*pData->bufferSize;
-                        for (uint32_t i=0; i < audioOutCount; ++i)
-                            audioOut[i] = fShmAudioPool.data + (i+audioInCount)*pData->bufferSize;
+                        float* fdata = fShmAudioPool.data;
 
-                        for (uint32_t i=0; i < cvInCount; ++i)
-                            cvIn[i] = fShmAudioPool.data + i*pData->bufferSize;
-                        for (uint32_t i=0; i < cvOutCount; ++i)
-                            cvOut[i] = fShmAudioPool.data + (i+cvInCount)*pData->bufferSize;
+                        for (uint32_t i=0; i < audioInCount; ++i, fdata += pData->bufferSize)
+                            audioIn[i] = fdata;
+                        for (uint32_t i=0; i < audioOutCount; ++i, fdata += pData->bufferSize)
+                            audioOut[i] = fdata;
+
+                        for (uint32_t i=0; i < cvInCount; ++i, fdata += pData->bufferSize)
+                            cvIn[i] = fdata;
+                        for (uint32_t i=0; i < cvOutCount; ++i, fdata += pData->bufferSize)
+                            cvOut[i] = fdata;
 
                         EngineTimeInfo& timeInfo(pData->timeInfo);
 
@@ -1413,10 +1415,10 @@ protected:
     {
         for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
         {
-            EngineEvent& event(pData->events.in[i]);
+            EngineEvent* const event(&pData->events.in[i]);
 
-            if (event.type == kEngineEventTypeNull)
-                return &event;
+            if (event->type == kEngineEventTypeNull)
+                return event;
         }
         return nullptr;
     }
