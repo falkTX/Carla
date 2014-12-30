@@ -353,6 +353,26 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         writeUInt(static_cast<uint32_t>(opcode));
     }
 
+    void waitIfDataIsReachingLimit() noexcept
+    {
+        if (getAvailableDataSize() < BigStackBuffer::size/4)
+            return;
+
+        for (int i=50; --i >= 0;)
+        {
+            if (getAvailableDataSize() >= BigStackBuffer::size*3/4)
+            {
+                carla_stdout("Server waitIfDataIsReachingLimit() reached and waited successfully");
+                writeOpcode(kPluginBridgeNonRtClientPing);
+                commitWrite();
+                return;
+            }
+            carla_msleep(20);
+        }
+
+        carla_stderr("Server waitIfDataIsReachingLimit() reached and failed");
+    }
+
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtClientControl)
 };
 
@@ -967,6 +987,7 @@ public:
             fShmNonRtClientControl.writeUInt(parameterId);
             fShmNonRtClientControl.writeFloat(value);
             fShmNonRtClientControl.commitWrite();
+            fShmNonRtClientControl.waitIfDataIsReachingLimit();
         }
 
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);

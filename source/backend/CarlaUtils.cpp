@@ -63,6 +63,7 @@ static const NativePluginDescriptor carlaRackDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -79,7 +80,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -88,6 +89,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -104,7 +106,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -113,6 +115,7 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -129,7 +132,7 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -138,6 +141,7 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -154,7 +158,7 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -163,6 +167,7 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
+                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -179,7 +184,7 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr,
+    nullptr, nullptr, nullptr, nullptr, nullptr
 };
 
 static LinkedList<const NativePluginDescriptor*> gPluginDescriptors;

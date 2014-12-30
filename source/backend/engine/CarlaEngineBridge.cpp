@@ -336,7 +336,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         writeUInt(static_cast<uint32_t>(opcode));
     }
 
-    void waitIfDataIsReachingLimit() const noexcept
+    void waitIfDataIsReachingLimit() noexcept
     {
         if (getAvailableDataSize() < HugeStackBuffer::size/4)
             return;
@@ -344,9 +344,16 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         for (int i=50; --i >= 0;)
         {
             if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
-                break;
+            {
+                carla_stdout("Client waitIfDataIsReachingLimit() reached and waited successfully");
+                writeOpcode(kPluginBridgeNonRtServerPong);
+                commitWrite();
+                return;
+            }
             carla_msleep(20);
         }
+
+        carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)

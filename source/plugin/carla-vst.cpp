@@ -184,6 +184,11 @@ public:
 
         switch (opcode)
         {
+        case effIdle:
+            if (fDescriptor->idle != nullptr)
+                fDescriptor->idle(fHandle);
+            break;
+
         case effSetSampleRate:
             if (carla_compareFloats(fSampleRate, static_cast<double>(opt)))
                 return 0;
@@ -210,7 +215,8 @@ public:
                 fMidiEventCount = 0;
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
-                // tell host we want MIDI events
+                // tell host we want idle and MIDI events
+                fAudioMaster(fEffect, audioMasterNeedIdle, 0, 0, nullptr, 0.0f);
                 fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
 
                 CARLA_SAFE_ASSERT_BREAK(! fIsActive);

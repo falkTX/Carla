@@ -771,6 +771,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
+        if (fDescriptor->idle != nullptr && (fDescriptor->hints & ::NATIVE_PLUGIN_NEEDS_DSP_IDLE) != 0)
+            fDescriptor->idle(fHandle);
+
         if (fIsUiVisible && fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
 
