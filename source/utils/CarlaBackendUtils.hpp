@@ -19,7 +19,6 @@
 #define CARLA_BACKEND_UTILS_HPP_INCLUDED
 
 #include "CarlaBackend.h"
-#include "CarlaHost.h"
 #include "CarlaString.hpp"
 
 CARLA_BACKEND_START_NAMESPACE

@@ -31,6 +31,7 @@
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaExternalUI.hpp"
+#include "CarlaHost.h"
 #include "CarlaNative.hpp"
 
 #include "juce_audio_basics.h"
@@ -972,15 +973,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
-
-        fUiServer.writeAndFixMessage("complete-license");
-        fUiServer.writeAndFixMessage(carla_get_complete_license_text());
-
-        fUiServer.writeAndFixMessage("juce-version");
-        fUiServer.writeAndFixMessage(carla_get_juce_version());
-
-        fUiServer.writeAndFixMessage("file-exts");
-        fUiServer.writeAndFixMessage(carla_get_supported_file_extensions());
 
         fUiServer.writeAndFixMessage("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);

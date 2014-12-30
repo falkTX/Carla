@@ -207,7 +207,7 @@ class HostWindow(QMainWindow):
 
         self.fDirModel = QFileSystemModel(self)
         self.fDirModel.setRootPath(HOME)
-        self.fDirModel.setNameFilters(host.get_supported_file_extensions().split(";"))
+        self.fDirModel.setNameFilters(gCarla.utils.get_supported_file_extensions().split(";"))
 
         self.ui.fileTreeView.setModel(self.fDirModel)
         self.ui.fileTreeView.setRootIndex(self.fDirModel.index(HOME))
@@ -1328,7 +1328,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        JuceAboutW(self, self.host).exec_()
+        JuceAboutW(self).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):

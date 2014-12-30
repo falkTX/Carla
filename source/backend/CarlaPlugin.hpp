@@ -889,9 +889,6 @@ public:
         const int64_t uniqueId;
     };
 
-    static std::size_t getNativePluginCount() noexcept;
-    static const NativePluginDescriptor* getNativePluginDescriptor(const std::size_t index) noexcept;
-
     static CarlaPlugin* newNative(const Initializer& init);
     static CarlaPlugin* newBridge(const Initializer& init, const BinaryType btype, const PluginType ptype, const char* const bridgeBinary);
 

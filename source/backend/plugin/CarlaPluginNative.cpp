@@ -26,13 +26,31 @@
 using juce::String;
 using juce::StringArray;
 
-// -----------------------------------------------------
+// -----------------------------------------------------------------------
+
+CARLA_EXTERN_C
+std::size_t carla_getNativePluginCount();
+
+CARLA_EXTERN_C
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index);
+
+// -----------------------------------------------------------------------
 
 static LinkedList<const NativePluginDescriptor*> gPluginDescriptors;
 
 void carla_register_native_plugin(const NativePluginDescriptor* desc)
 {
     gPluginDescriptors.append(desc);
+}
+
+std::size_t carla_getNativePluginCount()
+{
+    return gPluginDescriptors.count();
+}
+
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index)
+{
+    return gPluginDescriptors.getAt(index, nullptr);
 }
 
 // -----------------------------------------------------
@@ -123,7 +141,7 @@ struct ScopedInitializer {
         carla_register_all_plugins();
     }
 
-    ~ScopedInitializer()
+    ~ScopedInitializer() noexcept
     {
         gPluginDescriptors.clear();
     }
@@ -2201,20 +2219,6 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    static size_t getPluginCount() noexcept
-    {
-        return gPluginDescriptors.count();
-    }
-
-    static const NativePluginDescriptor* getPluginDescriptor(const size_t index) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(index < gPluginDescriptors.count(), nullptr);
-
-        return gPluginDescriptors.getAt(index, nullptr);
-    }
-
-    // -------------------------------------------------------------------
-
     void* getNativeHandle() const noexcept override
     {
         return fHandle;
@@ -2432,18 +2436,6 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginNative)
 };
-
-// -----------------------------------------------------------------------
-
-std::size_t CarlaPlugin::getNativePluginCount() noexcept
-{
-    return CarlaPluginNative::getPluginCount();
-}
-
-const NativePluginDescriptor* CarlaPlugin::getNativePluginDescriptor(const std::size_t index) noexcept
-{
-    return CarlaPluginNative::getPluginDescriptor(index);
-}
 
 // -----------------------------------------------------------------------
 

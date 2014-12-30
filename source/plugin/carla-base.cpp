@@ -34,6 +34,14 @@
 using CarlaBackend::CarlaPlugin;
 
 // -----------------------------------------------------------------------
+
+CARLA_EXTERN_C
+std::size_t carla_getNativePluginCount();
+
+CARLA_EXTERN_C
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index);
+
+// -----------------------------------------------------------------------
 // Plugin List
 
 struct PluginListManager {
@@ -49,9 +57,9 @@ struct PluginListManager {
 #endif
           descs()
     {
-        for (size_t i=0, count = CarlaPlugin::getNativePluginCount(); i < count; ++i)
+        for (std::size_t i=0, count = carla_getNativePluginCount(); i < count; ++i)
         {
-            const NativePluginDescriptor* const desc(CarlaPlugin::getNativePluginDescriptor(i));
+            const NativePluginDescriptor* const desc(carla_getNativePluginDescriptor(i));
 
             // Open/Save not possible in plugins
             if (desc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)

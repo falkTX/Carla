@@ -143,82 +143,6 @@ typedef struct _CarlaPluginInfo {
 } CarlaPluginInfo;
 
 /*!
- * Information about a cached plugin.
- * @see carla_get_cached_plugin_info()
- */
-typedef struct _CarlaCachedPluginInfo {
-    /*!
-     * Plugin category.
-     */
-    PluginCategory category;
-
-    /*!
-     * Plugin hints.
-     * @see PluginHints
-     */
-    uint hints;
-
-    /*!
-     * Number of audio inputs.
-     */
-    uint32_t audioIns;
-
-    /*!
-     * Number of audio outputs.
-     */
-    uint32_t audioOuts;
-
-    /*!
-     * Number of MIDI inputs.
-     */
-    uint32_t midiIns;
-
-    /*!
-     * Number of MIDI outputs.
-     */
-    uint32_t midiOuts;
-
-    /*!
-     * Number of input parameters.
-     */
-    uint32_t parameterIns;
-
-    /*!
-     * Number of output parameters.
-     */
-    uint32_t parameterOuts;
-
-    /*!
-     * Plugin name.
-     */
-    const char* name;
-
-    /*!
-     * Plugin label.
-     */
-    const char* label;
-
-    /*!
-     * Plugin author/maker.
-     */
-    const char* maker;
-
-    /*!
-     * Plugin copyright/license.
-     */
-    const char* copyright;
-
-#ifdef __cplusplus
-    /*!
-     * C++ constructor.
-     */
-    CARLA_API _CarlaCachedPluginInfo() noexcept;
-    CARLA_DECLARE_NON_COPY_STRUCT(_CarlaCachedPluginInfo)
-#endif
-
-} CarlaCachedPluginInfo;
-
-/*!
  * Port count information, used for Audio and MIDI ports and parameters.
  * @see carla_get_audio_port_count_info()
  * @see carla_get_midi_port_count_info()
@@ -348,26 +272,6 @@ typedef struct _CarlaTransportInfo {
  * Carla Host API (C functions) */
 
 /*!
- * Get the complete license text of used third-party code and features.
- * Returned string is in basic html format.
- */
-CARLA_EXPORT const char* carla_get_complete_license_text();
-
-/*!
- * Get the juce version used in the current Carla build.
- */
-CARLA_EXPORT const char* carla_get_juce_version();
-
-/*!
- * Get all the supported file extensions in carla_load_file().
- * Returned string uses this syntax:
- * @code
- * "*.ext1;*.ext2;*.ext3"
- * @endcode
- */
-CARLA_EXPORT const char* carla_get_supported_file_extensions();
-
-/*!
  * Get how many engine drivers are available.
  */
 CARLA_EXPORT uint carla_get_engine_driver_count();
@@ -390,18 +294,6 @@ CARLA_EXPORT const char* const* carla_get_engine_driver_device_names(uint index)
  * @param name  Device name
  */
 CARLA_EXPORT const EngineDriverDeviceInfo* carla_get_engine_driver_device_info(uint index, const char* name);
-
-/*!
- * Get how many cached plugins are available.
- * Internal, LV2 and AU plugin formats are cached and need to be discovered via this function.
- * Do not call this for any other plugin formats.
- */
-CARLA_EXPORT uint carla_get_cached_plugin_count(PluginType ptype, const char* pluginPath);
-
-/*!
- * Get information about a cached plugin.
- */
-CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginType ptype, uint index);
 
 #ifdef __cplusplus
 /*!
@@ -995,12 +887,12 @@ CARLA_EXPORT const char* carla_get_host_osc_url_tcp();
 CARLA_EXPORT const char* carla_get_host_osc_url_udp();
 
 /*!
- * Get the current carla library filename.
+ * Get the absolute filename of this carla library.
  */
 CARLA_EXPORT const char* carla_get_library_filename();
 
 /*!
- * Get the folder where the current use carla library resides.
+ * Get the folder where this carla library resides.
  */
 CARLA_EXPORT const char* carla_get_library_folder();
 

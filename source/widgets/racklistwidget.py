@@ -134,7 +134,16 @@ class RackListWidget(QListWidget):
             host = CarlaHostMeta()
             self.host = host
 
-        self.fSupportedExtensions = []
+        exts = gCarla.utils.get_supported_file_extensions().split(";")
+
+        exts.append(".dll")
+
+        if MACOS:
+            exts.append(".dylib")
+        if not WINDOWS:
+            exts.append(".so")
+
+        self.fSupportedExtensions = tuple(i.replace("*","") for i in exts)
         self.fWasLastDragValid    = False
 
         self.setMinimumWidth(640)
@@ -161,17 +170,6 @@ class RackListWidget(QListWidget):
 
     def setHost(self, host):
         self.host = host
-
-        exts = host.get_supported_file_extensions().split(";")
-
-        exts.append(".dll")
-
-        if MACOS:
-            exts.append(".dylib")
-        if not WINDOWS:
-            exts.append(".so")
-
-        self.fSupportedExtensions = tuple(i.replace("*","") for i in exts)
 
     # --------------------------------------------------------------------------------------------------------
 

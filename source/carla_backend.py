@@ -1060,48 +1060,6 @@ class CarlaPluginInfo(Structure):
         ("uniqueId", c_int64)
     ]
 
-# Information about an internal Carla plugin.
-# @see carla_get_cached_plugin_info()
-class CarlaCachedPluginInfo(Structure):
-    _fields_ = [
-        # Plugin category.
-        ("category", c_enum),
-
-        # Plugin hints.
-        # @see PluginHints
-        ("hints", c_uint),
-
-        # Number of audio inputs.
-        ("audioIns", c_uint32),
-
-        # Number of audio outputs.
-        ("audioOuts", c_uint32),
-
-        # Number of MIDI inputs.
-        ("midiIns", c_uint32),
-
-        # Number of MIDI outputs.
-        ("midiOuts", c_uint32),
-
-        # Number of input parameters.
-        ("parameterIns", c_uint32),
-
-        # Number of output parameters.
-        ("parameterOuts", c_uint32),
-
-        # Plugin name.
-        ("name", c_char_p),
-
-        # Plugin label.
-        ("label", c_char_p),
-
-        # Plugin author/maker.
-        ("maker", c_char_p),
-
-        # Plugin copyright/license.
-        ("copyright", c_char_p)
-    ]
-
 # Port count information, used for Audio and MIDI ports and parameters.
 # @see carla_get_audio_port_count_info()
 # @see carla_get_midi_port_count_info()
@@ -1184,22 +1142,6 @@ PyCarlaPluginInfo = {
     'copyright': "",
     'iconName': "",
     'uniqueId': 0
-}
-
-# @see CarlaCachedPluginInfo
-PyCarlaCachedPluginInfo = {
-    'category': PLUGIN_CATEGORY_NONE,
-    'hints': 0x0,
-    'audioIns': 0,
-    'audioOuts': 0,
-    'midiIns': 0,
-    'midiOuts': 0,
-    'parameterIns': 0,
-    'parameterOuts': 0,
-    'name':  "",
-    'label': "",
-    'maker': "",
-    'copyright': ""
 }
 
 # @see CarlaPortCountInfo
@@ -1299,26 +1241,6 @@ class CarlaHostMeta(object):
             keyrm = "%s=" % key
             self.msvcrt._putenv(keyrm.encode("utf-8"))
 
-    # Get the complete license text of used third-party code and features.
-    # Returned string is in basic html format.
-    @abstractmethod
-    def get_complete_license_text(self):
-        raise NotImplementedError
-
-    # Get the juce version used in the current Carla build.
-    @abstractmethod
-    def get_juce_version(self):
-        raise NotImplementedError
-
-    # Get all the supported file extensions in carla_load_file().
-    # Returned string uses this syntax:
-    # @code
-    # "*.ext1;*.ext2;*.ext3"
-    # @endcode
-    @abstractmethod
-    def get_supported_file_extensions(self):
-        raise NotImplementedError
-
     # Get how many engine drivers are available.
     @abstractmethod
     def get_engine_driver_count(self):
@@ -1341,16 +1263,6 @@ class CarlaHostMeta(object):
     # @param name  Device name
     @abstractmethod
     def get_engine_driver_device_info(self, index, name):
-        raise NotImplementedError
-
-    # Get how many internal plugins are available.
-    @abstractmethod
-    def get_cached_plugin_count(self, ptype, pluginPath):
-        raise NotImplementedError
-
-    # Get information about a cached plugin.
-    @abstractmethod
-    def get_cached_plugin_info(self, ptype, index):
         raise NotImplementedError
 
     # Initialize the engine.
@@ -1925,53 +1837,6 @@ class CarlaHostNull(CarlaHostMeta):
         self.fEngineCallback = None
         self.fEngineRunning  = False
 
-    def get_complete_license_text(self):
-        text = (
-            "<p>This current Carla build is using the following features and 3rd-party code:</p>"
-            "<ul>"
-
-            # Plugin formats
-            "<li>LADSPA plugin support</li>"
-            "<li>DSSI plugin support</li>"
-            "<li>LV2 plugin support</li>"
-            "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
-            "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
-            "<li>AU plugin support</li>"
-
-            # Sample kit libraries
-            "<li>FluidSynth library for SF2 support</li>"
-            "<li>LinuxSampler library for GIG and SFZ support [2]</li>"
-
-            # Internal plugins
-            "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
-            "<li>ZynAddSubFX plugin code</li>"
-
-            # misc libs
-            "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
-            "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
-            "<li>liblo library for OSC support</li>"
-            "<li>rtmempool library by Nedko Arnaudov"
-            "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-            "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
-
-            # end
-            "</ul>"
-
-            "<p>"
-            # Required by VST SDK
-            "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
-            # LinuxSampler GPL exception
-            "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
-            "</p>"
-        )
-        return text
-
-    def get_juce_version(self):
-        return "3.0"
-
-    def get_supported_file_extensions(self):
-        return "*.carxp;*.carxs;*.mid;*.midi;*.sf2;*.gig;*.sfz;*.xmz;*.xiz"
-
     def get_engine_driver_count(self):
         return 0
 
@@ -1983,12 +1848,6 @@ class CarlaHostNull(CarlaHostMeta):
 
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
-
-    def get_cached_plugin_count(self, ptype, pluginPath):
-        return 0
-
-    def get_cached_plugin_info(self, ptype, index):
-        return PyCarlaCachedPluginInfo
 
     def engine_init(self, driverName, clientName):
         self.fEngineRunning = True
@@ -2251,15 +2110,6 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib = cdll.LoadLibrary(libName)
 
-        self.lib.carla_get_complete_license_text.argtypes = None
-        self.lib.carla_get_complete_license_text.restype = c_char_p
-
-        self.lib.carla_get_juce_version.argtypes = None
-        self.lib.carla_get_juce_version.restype = c_char_p
-
-        self.lib.carla_get_supported_file_extensions.argtypes = None
-        self.lib.carla_get_supported_file_extensions.restype = c_char_p
-
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint
 
@@ -2271,12 +2121,6 @@ class CarlaHostDLL(CarlaHostMeta):
 
         self.lib.carla_get_engine_driver_device_info.argtypes = [c_uint, c_char_p]
         self.lib.carla_get_engine_driver_device_info.restype = POINTER(EngineDriverDeviceInfo)
-
-        self.lib.carla_get_cached_plugin_count.argtypes = [c_enum, c_char_p]
-        self.lib.carla_get_cached_plugin_count.restype = c_uint
-
-        self.lib.carla_get_cached_plugin_info.argtypes = [c_enum, c_uint]
-        self.lib.carla_get_cached_plugin_info.restype = POINTER(CarlaCachedPluginInfo)
 
         self.lib.carla_engine_init.argtypes = [c_char_p, c_char_p]
         self.lib.carla_engine_init.restype = c_bool
@@ -2523,15 +2367,6 @@ class CarlaHostDLL(CarlaHostMeta):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def get_complete_license_text(self):
-        return charPtrToString(self.lib.carla_get_complete_license_text())
-
-    def get_juce_version(self):
-        return charPtrToString(self.lib.carla_get_juce_version())
-
-    def get_supported_file_extensions(self):
-        return charPtrToString(self.lib.carla_get_supported_file_extensions())
-
     def get_engine_driver_count(self):
         return int(self.lib.carla_get_engine_driver_count())
 
@@ -2543,12 +2378,6 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_engine_driver_device_info(self, index, name):
         return structToDict(self.lib.carla_get_engine_driver_device_info(index, name.encode("utf-8")).contents)
-
-    def get_cached_plugin_count(self, ptype, pluginPath):
-        return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
-
-    def get_cached_plugin_info(self, ptype, index):
-        return structToDict(self.lib.carla_get_cached_plugin_info(ptype, index).contents)
 
     def engine_init(self, driverName, clientName):
         return bool(self.lib.carla_engine_init(driverName.encode("utf-8"), clientName.encode("utf-8")))
@@ -2836,11 +2665,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         self.processModeForced = True
 
         # text data to return when requested
-        self.fCompleteLicenseText = ""
-        self.fJuceVersion         = ""
-        self.fSupportedFileExts   = ""
-        self.fMaxPluginNumber     = 0
-        self.fLastError           = ""
+        self.fMaxPluginNumber = 0
+        self.fLastError       = ""
 
         # plugin info
         self.fPluginsInfo = []
@@ -2876,15 +2702,6 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def get_complete_license_text(self):
-        return self.fCompleteLicenseText
-
-    def get_juce_version(self):
-        return self.fJuceVersion
-
-    def get_supported_file_extensions(self):
-        return self.fSupportedFileExts
-
     def get_engine_driver_count(self):
         return 1
 
@@ -2896,12 +2713,6 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_engine_driver_device_info(self, index, name):
         return PyEngineDriverDeviceInfo
-
-    def get_cached_plugin_count(self, ptype, pluginPath):
-        return 0
-
-    def get_cached_plugin_info(self, ptype, index):
-        return PyCarlaCachedPluginInfo
 
     def set_engine_callback(self, func):
         return # TODO
@@ -3142,12 +2953,6 @@ class CarlaHostPlugin(CarlaHostMeta):
         return ""
 
     # --------------------------------------------------------------------------------------------------------
-
-    def _set_info(self, license, juceversion, fileexts, maxnum):
-        self.fCompleteLicenseText = license
-        self.fJuceVersion         = juceversion
-        self.fSupportedFileExts   = fileexts
-        self.fMaxPluginNumber     = maxnum
 
     def _set_transport(self, playing, frame, bar, beat, tick, bpm):
         self.fTransportInfo = {

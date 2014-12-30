@@ -1482,9 +1482,9 @@ class PluginDatabaseW(QDialog):
             AU_PATH  = splitter.join(toList(settings.value(CARLA_KEY_PATHS_AU,  CARLA_DEFAULT_AU_PATH)))
             del settings
 
-            internalCountNew = self.host.get_cached_plugin_count(PLUGIN_INTERNAL, "")
-            lv2CountNew      = self.host.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
-            auCountNew       = self.host.get_cached_plugin_count(PLUGIN_AU, AU_PATH)
+            internalCountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_INTERNAL, "")
+            lv2CountNew      = gCarla.utils.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
+            auCountNew       = gCarla.utils.get_cached_plugin_count(PLUGIN_AU, AU_PATH)
 
             if internalCountNew != internalCount or (len(internalPlugins) > 0 and
                                                      len(internalPlugins[0]) > 0 and
@@ -1492,7 +1492,7 @@ class PluginDatabaseW(QDialog):
                 internalPlugins = []
 
                 for i in range(internalCountNew):
-                    descInfo = self.host.get_cached_plugin_info(PLUGIN_INTERNAL, i)
+                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_INTERNAL, i)
                     plugins  = checkPluginCached(descInfo, PLUGIN_INTERNAL)
 
                     if plugins:
@@ -1506,7 +1506,7 @@ class PluginDatabaseW(QDialog):
                 lv2Plugins = []
 
                 for i in range(lv2CountNew):
-                    descInfo = self.host.get_cached_plugin_info(PLUGIN_LV2, i)
+                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_LV2, i)
                     plugins  = checkPluginCached(descInfo, PLUGIN_LV2)
 
                     if plugins:
@@ -1520,7 +1520,7 @@ class PluginDatabaseW(QDialog):
                 auPlugins = []
 
                 for i in range(auCountNew):
-                    descInfo = self.host.get_cached_plugin_info(PLUGIN_AU, i)
+                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_AU, i)
                     plugins  = checkPluginCached(descInfo, PLUGIN_AU)
 
                     if plugins:

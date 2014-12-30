@@ -88,10 +88,71 @@ def getPluginTypeFromString(stype):
     return PLUGIN_NONE
 
 # ------------------------------------------------------------------------------------------------------------
-# Carla Pipe stuff
+# Carla Utils API (C stuff)
 
 CarlaPipeClientHandle = c_void_p
 CarlaPipeCallbackFunc = CFUNCTYPE(None, c_void_p, c_char_p)
+
+# Information about an internal Carla plugin.
+# @see carla_get_cached_plugin_info()
+class CarlaCachedPluginInfo(Structure):
+    _fields_ = [
+        # Plugin category.
+        ("category", c_enum),
+
+        # Plugin hints.
+        # @see PluginHints
+        ("hints", c_uint),
+
+        # Number of audio inputs.
+        ("audioIns", c_uint32),
+
+        # Number of audio outputs.
+        ("audioOuts", c_uint32),
+
+        # Number of MIDI inputs.
+        ("midiIns", c_uint32),
+
+        # Number of MIDI outputs.
+        ("midiOuts", c_uint32),
+
+        # Number of input parameters.
+        ("parameterIns", c_uint32),
+
+        # Number of output parameters.
+        ("parameterOuts", c_uint32),
+
+        # Plugin name.
+        ("name", c_char_p),
+
+        # Plugin label.
+        ("label", c_char_p),
+
+        # Plugin author/maker.
+        ("maker", c_char_p),
+
+        # Plugin copyright/license.
+        ("copyright", c_char_p)
+    ]
+
+# ------------------------------------------------------------------------------------------------------------
+# Carla Utils API (Python compatible stuff)
+
+# @see CarlaCachedPluginInfo
+PyCarlaCachedPluginInfo = {
+    'category': PLUGIN_CATEGORY_NONE,
+    'hints': 0x0,
+    'audioIns': 0,
+    'audioOuts': 0,
+    'midiIns': 0,
+    'midiOuts': 0,
+    'parameterIns': 0,
+    'parameterOuts': 0,
+    'name':  "",
+    'label': "",
+    'maker': "",
+    'copyright': ""
+}
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Utils object using a DLL
@@ -102,14 +163,20 @@ class CarlaUtils(object):
 
         self.lib = cdll.LoadLibrary(filename)
 
-        self.lib.carla_get_library_filename.argtypes = None
-        self.lib.carla_get_library_filename.restype = c_char_p
+        self.lib.carla_get_complete_license_text.argtypes = None
+        self.lib.carla_get_complete_license_text.restype = c_char_p
 
-        self.lib.carla_get_library_folder.argtypes = None
-        self.lib.carla_get_library_folder.restype = c_char_p
+        self.lib.carla_get_juce_version.argtypes = None
+        self.lib.carla_get_juce_version.restype = c_char_p
 
-        self.lib.carla_set_locale_C.argtypes = None
-        self.lib.carla_set_locale_C.restype = None
+        self.lib.carla_get_supported_file_extensions.argtypes = None
+        self.lib.carla_get_supported_file_extensions.restype = c_char_p
+
+        self.lib.carla_get_cached_plugin_count.argtypes = [c_enum, c_char_p]
+        self.lib.carla_get_cached_plugin_count.restype = c_uint
+
+        self.lib.carla_get_cached_plugin_info.argtypes = [c_enum, c_uint]
+        self.lib.carla_get_cached_plugin_info.restype = POINTER(CarlaCachedPluginInfo)
 
         self.lib.carla_set_process_name.argtypes = [c_char_p]
         self.lib.carla_set_process_name.restype = None
@@ -149,14 +216,30 @@ class CarlaUtils(object):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def get_library_filename(self):
-        return charPtrToString(self.lib.carla_get_library_filename())
+    # Get the complete license text of used third-party code and features.
+    # Returned string is in basic html format.
+    def get_complete_license_text(self):
+        return charPtrToString(self.lib.carla_get_complete_license_text())
 
-    def get_library_folder(self):
-        return charPtrToString(self.lib.carla_get_library_folder())
+    # Get the juce version used in the current Carla build.
+    def get_juce_version(self):
+        return charPtrToString(self.lib.carla_get_juce_version())
 
-    def set_locale_C(self):
-        self.lib.carla_set_locale_C()
+    # Get all the supported file extensions in carla_load_file().
+    # Returned string uses this syntax:
+    # @code
+    # "*.ext1;*.ext2;*.ext3"
+    # @endcode
+    def get_supported_file_extensions(self):
+        return charPtrToString(self.lib.carla_get_supported_file_extensions())
+
+    # Get how many internal plugins are available.
+    def get_cached_plugin_count(self, ptype, pluginPath):
+        return int(self.lib.carla_get_cached_plugin_count(ptype, pluginPath.encode("utf-8")))
+
+    # Get information about a cached plugin.
+    def get_cached_plugin_info(self, ptype, index):
+        return structToDict(self.lib.carla_get_cached_plugin_info(ptype, index).contents)
 
     def set_process_name(self, name):
         self.lib.carla_set_process_name(name.encode("utf-8"))

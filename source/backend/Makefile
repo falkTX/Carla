@@ -45,7 +45,11 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
-UTILS_LIBS = $(MODULEDIR)/juce_core.a
+UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
+UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
+UTILS_LIBS += $(MODULEDIR)/juce_core.a
+UTILS_LIBS += $(MODULEDIR)/lilv.a
+UTILS_LIBS += $(MODULEDIR)/native-plugins.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -89,10 +93,11 @@ ifeq ($(UNIX),true)
 STANDALONE_LINK_FLAGS += -lmagic
 endif
 
-UTILS_LINK_FLAGS  = $(JUCE_CORE_LIBS)
-ifeq ($(UNIX),true)
-UTILS_LINK_FLAGS += -lpthread
-endif
+UTILS_LINK_FLAGS  = $(JUCE_AUDIO_BASICS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
+UTILS_LINK_FLAGS += $(LILV_LIBS)
+UTILS_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

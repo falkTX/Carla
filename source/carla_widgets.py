@@ -87,7 +87,7 @@ class CarlaAboutW(QDialog):
         elif host.isPlugin:
             self.ui.tabWidget.removeTab(2)
 
-        self.ui.l_extended.setText(host.get_complete_license_text())
+        self.ui.l_extended.setText(gCarla.utils.get_complete_license_text())
 
         if host.is_engine_running() and not (host.isControl or host.isPlugin):
             self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
@@ -172,16 +172,12 @@ class CarlaAboutW(QDialog):
 # JUCE About dialog
 
 class JuceAboutW(QDialog):
-    def __init__(self, parent, host):
+    def __init__(self, parent):
         QDialog.__init__(self, parent)
         self.ui = ui_carla_about_juce.Ui_JuceAboutW()
         self.ui.setupUi(self)
 
-        if False:
-            # kdevelop likes this :)
-            host = CarlaHostMeta()
-
-        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % host.get_juce_version()))
+        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % gCarla.utils.get_juce_version()))
 
         self.adjustSize()
         self.setFixedSize(self.size())
