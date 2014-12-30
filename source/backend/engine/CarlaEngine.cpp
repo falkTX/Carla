@@ -36,6 +36,7 @@
 #include "jackbridge/JackBridge.hpp"
 #include "juce_core.h"
 
+using juce::CharPointer_UTF8;
 using juce::File;
 using juce::MemoryOutputStream;
 using juce::ScopedPointer;
@@ -405,7 +406,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         // fallback to dssi-vst if possible
         else if (btype == BINARY_WIN32 && File("/usr/lib/dssi/dssi-vst.so").existsAsFile())
         {
-            File file(filename);
+            const String jfilename = String(CharPointer_UTF8(filename));
+            File file(jfilename);
 
             CarlaString label2(file.getFileName().toRawUTF8());
             label2.replace(' ', '*');
@@ -910,7 +912,8 @@ bool CarlaEngine::loadFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadFile(\"%s\")", filename);
 
-    File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     CarlaString baseName(file.getFileName().toRawUTF8());
@@ -989,7 +992,8 @@ bool CarlaEngine::loadProject(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN_ERR(filename != nullptr && filename[0] != '\0', "Invalid filename");
     carla_debug("CarlaEngine::loadProject(\"%s\")", filename);
 
-    File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
     XmlDocument xml(file);
@@ -1004,7 +1008,8 @@ bool CarlaEngine::saveProject(const char* const filename)
     MemoryOutputStream out;
     saveProjectInternal(out);
 
-    File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;

@@ -46,6 +46,7 @@
 #include <iostream>
 
 #include "juce_core.h"
+using juce::CharPointer_UTF8;
 using juce::File;
 using juce::String;
 using juce::StringArray;
@@ -1495,7 +1496,8 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
-    const File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    const File file(jfilename);
 
     if (! file.existsAsFile())
     {
@@ -1584,7 +1586,8 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
 {
 #ifdef HAVE_LINUXSAMPLER
-    const File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    const File file(jfilename);
 
     if (! file.existsAsFile())
     {

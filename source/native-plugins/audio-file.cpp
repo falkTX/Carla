@@ -22,17 +22,7 @@
 
 #include "juce_audio_formats.h"
 
-using juce::AudioFormat;
-using juce::AudioFormatManager;
-using juce::AudioFormatReader;
-using juce::AudioFormatReaderSource;
-using juce::AudioSampleBuffer;
-using juce::BufferingAudioReader;
-using juce::File;
-using juce::FloatVectorOperations;
-using juce::MemoryMappedAudioFormatReader;
-using juce::ScopedPointer;
-using juce::TimeSliceThread;
+using namespace juce;
 
 // -----------------------------------------------------------------------
 
@@ -245,7 +235,8 @@ private:
             delete reader;
         }
 
-        File file(filename);
+        const String jfilename = String(CharPointer_UTF8(filename));
+        File file(jfilename);
 
         if (! file.existsAsFile())
             return;

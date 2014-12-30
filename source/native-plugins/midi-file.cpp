@@ -124,14 +124,10 @@ private:
     {
         fMidiOut.clear();
 
-        using juce::File;
-        using juce::FileInputStream;
-        using juce::MidiFile;
-        using juce::MidiMessage;
-        using juce::MidiMessageSequence;
-        using juce::ScopedPointer;
+        using namespace juce;
 
-        File file(filename);
+        const String jfilename = String(CharPointer_UTF8(filename));
+        File file(jfilename);
 
         if (! file.existsAsFile())
            return;

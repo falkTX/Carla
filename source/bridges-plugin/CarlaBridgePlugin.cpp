@@ -38,6 +38,7 @@ using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;
 using CarlaBackend::EngineCallbackOpcode2Str;
 
+using juce::CharPointer_UTF8;
 using juce::File;
 using juce::String;
 
@@ -99,7 +100,7 @@ static void initSignalHandler()
 
 // -------------------------------------------------------------------------
 
-static CarlaString gProjectFilename;
+static String gProjectFilename;
 
 static void gIdle()
 {
@@ -111,7 +112,7 @@ static void gIdle()
 
         if (gProjectFilename.isNotEmpty())
         {
-            if (! carla_save_plugin_state(0, gProjectFilename))
+            if (! carla_save_plugin_state(0, gProjectFilename.toRawUTF8()))
                 carla_stderr("Plugin preset save failed, error was:\n%s", carla_get_last_error());
         }
     }
@@ -171,7 +172,6 @@ public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
-          fProjFilename(),
           fUsingBridge(false),
           leakDetector_CarlaBridgePlugin()
     {
@@ -211,13 +211,13 @@ public:
             const CarlaPluginInfo* const pInfo(carla_get_plugin_info(0));
             CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr,);
 
-            fProjFilename  = pInfo->name;
-            fProjFilename += ".carxs";
+            gProjectFilename  = CharPointer_UTF8(pInfo->name);
+            gProjectFilename += ".carxs";
 
-            if (! File::isAbsolutePath(fProjFilename))
-                fProjFilename = File::getCurrentWorkingDirectory().getChildFile(fProjFilename).getFullPathName();
+            if (! File::isAbsolutePath(gProjectFilename))
+                gProjectFilename = File::getCurrentWorkingDirectory().getChildFile(gProjectFilename).getFullPathName();
 
-            if (File(fProjFilename).existsAsFile() && ! carla_load_plugin_state(0, fProjFilename.toRawUTF8()))
+            if (File(gProjectFilename).existsAsFile() && ! carla_load_plugin_state(0, gProjectFilename.toRawUTF8()))
                 carla_stderr("Plugin preset load failed, error was:\n%s", carla_get_last_error());
         }
 
@@ -268,7 +268,6 @@ protected:
 
 private:
     const CarlaEngine* fEngine;
-    String             fProjFilename;
     bool               fUsingBridge;
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
@@ -364,7 +363,10 @@ int main(int argc, char* argv[])
     CarlaString clientName(name != nullptr ? name : label);
 
     if (clientName.isEmpty())
-        clientName = juce::File(filename).getFileNameWithoutExtension().toRawUTF8();
+    {
+        const String jfilename = String(CharPointer_UTF8(filename));
+        clientName = File(jfilename).getFileNameWithoutExtension().toRawUTF8();
+    }
 
     // ---------------------------------------------------------------------
     // Set extraStuff

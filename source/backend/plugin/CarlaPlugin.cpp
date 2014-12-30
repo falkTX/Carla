@@ -27,6 +27,7 @@
 
 #include "juce_core.h"
 
+using juce::CharPointer_UTF8;
 using juce::File;
 using juce::MemoryOutputStream;
 using juce::ScopedPointer;
@@ -859,7 +860,8 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     out << getStateSave().toString();
     out << "</CARLA-PRESET>\n";
 
-    File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
 
     if (file.replaceWithData(out.getData(), out.getDataSize()))
         return true;
@@ -873,7 +875,8 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
-    File file(filename);
+    const String jfilename = String(CharPointer_UTF8(filename));
+    File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN(file.existsAsFile(), false);
 
     XmlDocument xml(file);
