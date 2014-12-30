@@ -46,7 +46,7 @@ typedef struct _LV2_External_UI_Widget_Compat {
   void (*show)(struct _LV2_External_UI_Widget_Compat*);
   void (*hide)(struct _LV2_External_UI_Widget_Compat*);
 
-  _LV2_External_UI_Widget_Compat()
+  _LV2_External_UI_Widget_Compat() noexcept
       : run(nullptr), show(nullptr), hide(nullptr) {}
 
 } LV2_External_UI_Widget_Compat;
@@ -83,10 +83,12 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fLastTimeSpeed(0.0),
+          fIsFirstRun(true),
           fIsProcessing(false),
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
+          fWorker(nullptr),
           fURIs(),
           fUI(),
           fPorts(),
@@ -121,9 +123,10 @@ public:
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
 
-        const LV2_Options_Option* options   = nullptr;
-        const LV2_URID_Map*       uridMap   = nullptr;
-        const LV2_URID_Unmap*     uridUnmap = nullptr;
+        const LV2_Options_Option*  options   = nullptr;
+        const LV2_URID_Map*        uridMap   = nullptr;
+        const LV2_URID_Unmap*      uridUnmap = nullptr;
+        const LV2_Worker_Schedule* worker    = nullptr;
 
         for (int i=0; features[i] != nullptr; ++i)
         {
@@ -133,11 +136,18 @@ public:
                 uridMap = (const LV2_URID_Map*)features[i]->data;
             else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
                 uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_WORKER__schedule) == 0)
+                worker = (const LV2_Worker_Schedule*)features[i]->data;
         }
 
         if (options == nullptr || uridMap == nullptr)
         {
-            carla_stderr("Host doesn't provides option or urid-map features");
+            carla_stderr("Host doesn't provide option or urid-map features");
+            return;
+        }
+        if (worker == nullptr && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE) != 0)
+        {
+            carla_stderr("Host doesn't provide worker feature");
             return;
         }
 
@@ -165,6 +175,7 @@ public:
         }
 
         fUridMap = uridMap;
+        fWorker  = worker;
 
         if (fDescriptor->midiIns > 0)
             fUI.portOffset += desc->midiIns;
@@ -190,6 +201,11 @@ public:
 
     bool init()
     {
+        if (fUI.portOffset == 0)
+        {
+            // host is missing features
+            return false;
+        }
         if (fDescriptor->instantiate == nullptr || fDescriptor->process == nullptr)
         {
             carla_stderr("Plugin is missing something...");
@@ -229,6 +245,8 @@ public:
             fDescriptor->activate(fHandle);
 
         carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+
+        fIsFirstRun = true;
     }
 
     void lv2_deactivate()
@@ -525,6 +543,17 @@ public:
         // TODO - midi out
 
         updateParameterOutputs();
+
+        if (! fIsFirstRun)
+            return;
+
+        fIsFirstRun = false;
+
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE)
+        {
+            CARLA_SAFE_ASSERT_RETURN(fWorker != nullptr,);
+            fWorker->schedule_work(fWorker->handle, 5, "idle");
+        }
     }
 
     // -------------------------------------------------------------------
@@ -629,7 +658,7 @@ public:
 
         size_t   size = 0;
         uint32_t type = 0;
-        const void* data = retrieve(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), &size, &type, &flags);
+        const void* const data = retrieve(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), &size, &type, &flags);
 
         if (size == 0)
             return LV2_STATE_ERR_UNKNOWN;
@@ -643,6 +672,38 @@ public:
         fDescriptor->set_state(fHandle, (const char*)data);
 
         return LV2_STATE_SUCCESS;
+    }
+
+    // This is called from the LV2 worker thread (non-RT), as requested from the "run()" function.
+    LV2_Worker_Status lv2_work(const LV2_Worker_Respond_Function respond, const LV2_Worker_Respond_Handle handle, const uint32_t size, const void* const data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(size == 5,          LV2_WORKER_ERR_UNKNOWN);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,    LV2_WORKER_ERR_UNKNOWN);
+        CARLA_SAFE_ASSERT_RETURN(respond != nullptr, LV2_WORKER_ERR_UNKNOWN);
+
+        const char* const msg((const char*)data);
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "idle") == 0, LV2_WORKER_ERR_UNKNOWN);
+
+        if (fDescriptor->idle != nullptr)
+            fDescriptor->idle(fHandle);
+
+        respond(handle, 6, "idled");
+
+        return LV2_WORKER_SUCCESS;
+    }
+
+    // This is called from the LV2 process thread (RT)
+    LV2_Worker_Status lv2_work_response(const uint32_t size, const void* const body)
+    {
+        CARLA_SAFE_ASSERT_RETURN(size == 6,       LV2_WORKER_ERR_UNKNOWN);
+        CARLA_SAFE_ASSERT_RETURN(body != nullptr, LV2_WORKER_ERR_UNKNOWN);
+
+        const char* const msg((const char*)body);
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "idled") == 0, LV2_WORKER_ERR_UNKNOWN);
+
+        fWorker->schedule_work(fWorker->handle, 5, "idle");
+
+        return LV2_WORKER_SUCCESS;
     }
 
     // -------------------------------------------------------------------
@@ -714,6 +775,9 @@ public:
 
     void lv2ui_cleanup()
     {
+        if (fUI.isVisible)
+            handleUiHide();
+
         fUI.host = nullptr;
         fUI.writeFunction = nullptr;
         fUI.controller = nullptr;
@@ -723,14 +787,6 @@ public:
             delete[] fHost.uiName;
             fHost.uiName = nullptr;
         }
-
-        if (! fUI.isVisible)
-            return;
-
-        if (fDescriptor->ui_show != nullptr)
-            fDescriptor->ui_show(fHandle, false);
-
-        fUI.isVisible = false;
     }
 
     // -------------------------------------------------------------------
@@ -752,9 +808,7 @@ public:
         if (! fUI.isVisible)
             return 1;
 
-        if (fDescriptor->ui_idle != nullptr)
-            fDescriptor->ui_idle(fHandle);
-
+        handleUiRun();
         return 0;
     }
 
@@ -933,13 +987,15 @@ private:
     NativeTimeInfo  fTimeInfo;
     double          fLastTimeSpeed;
 
+    bool fIsFirstRun; // first run after activate
     bool fIsProcessing;
 
     // Lv2 host data
     uint32_t fBufferSize;
     double   fSampleRate;
 
-    const LV2_URID_Map* fUridMap;
+    const LV2_URID_Map*        fUridMap;
+    const LV2_Worker_Schedule* fWorker;
 
     struct URIDs {
         LV2_URID atomBlank;
@@ -1411,6 +1467,18 @@ static LV2_State_Status lv2_restore(LV2_Handle instance, LV2_State_Retrieve_Func
     return instancePtr->lv2_restore(retrieve, handle, flags, features);
 }
 
+static LV2_Worker_Status lv2_work(LV2_Handle instance, LV2_Worker_Respond_Function respond, LV2_Worker_Respond_Handle handle, uint32_t size, const void* data)
+{
+    carla_debug("lv2_work(%p, %p, %p, %i, %p)", instance, respond, handle, size, data);
+    return instancePtr->lv2_work(respond, handle, size, data);
+}
+
+static LV2_Worker_Status lv2_work_response(LV2_Handle instance, uint32_t size, const void* body)
+{
+    carla_debug("lv2_work_response(%p, %i, %p)", instance, size, body);
+    return instancePtr->lv2_work_response(size, body);
+}
+
 static const void* lv2_extension_data(const char* uri)
 {
     carla_debug("lv2_extension_data(\"%s\")", uri);
@@ -1418,6 +1486,7 @@ static const void* lv2_extension_data(const char* uri)
     static const LV2_Options_Interface  options  = { lv2_get_options, lv2_set_options };
     static const LV2_Programs_Interface programs = { lv2_get_program, lv2_select_program };
     static const LV2_State_Interface    state    = { lv2_save, lv2_restore };
+    static const LV2_Worker_Interface   worker   = { lv2_work, lv2_work_response, nullptr };
 
     if (std::strcmp(uri, LV2_OPTIONS__interface) == 0)
         return &options;
@@ -1425,6 +1494,8 @@ static const void* lv2_extension_data(const char* uri)
         return &programs;
     if (std::strcmp(uri, LV2_STATE__interface) == 0)
         return &state;
+    if (std::strcmp(uri, LV2_WORKER__interface) == 0)
+        return &worker;
 
     return nullptr;
 }

@@ -44,6 +44,7 @@ namespace juce {
 #define effGetChunk 23
 #define effSetChunk 24
 #define effGetPlugCategory 35
+#define effIdle 53
 #define kPlugCategEffect 1
 #define kPlugCategSynth 2
 #define kVstVersion 2400
@@ -305,10 +306,8 @@ public:
             if (! fIsActive)
             {
                 // host has not activated the plugin yet, nasty!
+                vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
                 fIsActive = true;
-
-                if (fDescriptor->activate != nullptr)
-                    fDescriptor->activate(fHandle);
             }
 
             if (const VstEvents* const events = (const VstEvents*)ptr)
@@ -376,10 +375,8 @@ public:
         if (! fIsActive)
         {
             // host has not activated the plugin yet, nasty!
+            vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
             fIsActive = true;
-
-            if (fDescriptor->activate != nullptr)
-                fDescriptor->activate(fHandle);
         }
 
         static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);

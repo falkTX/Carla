@@ -31,6 +31,7 @@
 #include "lv2/ui.h"
 #include "lv2/units.h"
 #include "lv2/urid.h"
+#include "lv2/worker.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
@@ -246,13 +247,18 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Features
 
+    // optional
     if (pluginDesc->hints & NATIVE_PLUGIN_IS_RTSAFE)
         text += "    lv2:optionalFeature <" LV2_CORE__hardRTCapable "> ;\n\n";
 
+    // required
     text += "    lv2:requiredFeature <" LV2_BUF_SIZE__boundedBlockLength "> ,\n";
 
     if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
+
+    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE)
+        text += "                        <" LV2_WORKER__schedule "> ,\n";
 
     text += "                        <" LV2_OPTIONS__options "> ,\n";
     text += "                        <" LV2_URID__map "> ;\n";
@@ -261,28 +267,16 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     // -------------------------------------------------------------------
     // Extensions
 
-    text += "    lv2:extensionData <" LV2_OPTIONS__interface ">";
+    text += "    lv2:extensionData <" LV2_OPTIONS__interface "> ;";
 
     if (pluginDesc->hints & NATIVE_PLUGIN_USES_STATE)
-    {
-        text += " ,\n";
-        text += "                      <" LV2_STATE__interface ">";
+        text += "    lv2:extensionData <" LV2_STATE__interface "> ;";
 
-        if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
-        {
-            text += " ,\n";
-            text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
-        }
-        else
-            text += " ;\n";
-    }
-    else if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
-    {
-        text += " ,\n";
-        text += "                      <" LV2_PROGRAMS__Interface "> ;\n";
-    }
-    else
-        text += " ;\n";
+    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE)
+        text += "    lv2:extensionData <" LV2_WORKER__interface "> ;";
+
+    if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
+        text += "    lv2:extensionData <" LV2_PROGRAMS__Interface "> ;\n";
 
     text += "\n";
 
