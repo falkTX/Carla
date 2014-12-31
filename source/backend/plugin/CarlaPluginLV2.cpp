@@ -1535,7 +1535,7 @@ public:
         aIns = aOuts = cvIns = cvOuts = params = 0;
         LinkedList<uint> evIns, evOuts;
 
-        const uint32_t eventBufferSize(static_cast<uint32_t>(fLv2Options.sequenceSize));
+        const uint32_t eventBufferSize(static_cast<uint32_t>(fLv2Options.sequenceSize)+0xff);
 
         bool forcedStereoIn, forcedStereoOut;
         forcedStereoIn = forcedStereoOut = false;
