@@ -345,7 +345,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         {
             if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
             {
-                carla_stdout("Client waitIfDataIsReachingLimit() reached and waited successfully");
+                //carla_stdout("Client waitIfDataIsReachingLimit() reached and waited successfully");
                 writeOpcode(kPluginBridgeNonRtServerPong);
                 commitWrite();
                 return;
@@ -768,8 +768,10 @@ public:
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterValue2);
                 fShmNonRtServerControl.writeUInt(i);
                 fShmNonRtServerControl.writeFloat(plugin->getParameterValue(i));
-                fShmNonRtServerControl.commitWrite();
-                fShmNonRtServerControl.waitIfDataIsReachingLimit();
+
+                // parameter outputs are not that important, we can skip some
+                if (! fShmNonRtServerControl.commitWrite())
+                    break;
             }
         }
 

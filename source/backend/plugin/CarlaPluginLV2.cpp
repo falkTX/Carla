@@ -1496,7 +1496,7 @@ public:
                 fUI.window->idle();
 
             // note: UI might have been closed by ext-ui or window idle
-            if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
+            if (fUI.type != UI::TYPE_EXTERNAL && fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
@@ -5066,6 +5066,12 @@ public:
             }
         }
 
+       if (fRdfDescriptor->Author != nullptr && std::strcmp(fRdfDescriptor->Author, "rncbc aka. Rui Nuno Capela") == 0)
+       {
+          eExt = -1;
+          iExt = -1;
+       }
+
         if (eQt4 >= 0)
             iFinal = eQt4;
         else if (eQt5 >= 0)
@@ -5114,6 +5120,15 @@ public:
             {
                 LV2_RDF_UI* const ui(&fRdfDescriptor->UIs[i]);
 
+                if (std::strcmp(ui->URI, "http://drumkv1.sourceforge.net/lv2#ui") == 0 ||
+                    std::strcmp(ui->URI, "http://samplv1.sourceforge.net/lv2#ui") == 0 ||
+                    std::strcmp(ui->URI, "http://synthv1.sourceforge.net/lv2#ui") == 0 )
+                {
+                    iFinal = static_cast<int>(i);
+                    hasShowInterface = true;
+                    break;
+                }
+
                 for (uint32_t j=0; j < ui->ExtensionCount; ++j)
                 {
                     CARLA_SAFE_ASSERT_CONTINUE(ui->Extensions[j] != nullptr);
@@ -5144,9 +5159,12 @@ public:
 
         for (uint32_t i=0; i < fUI.rdfDescriptor->FeatureCount; ++i)
         {
-            if (! is_lv2_ui_feature_supported(fUI.rdfDescriptor->Features[i].URI))
+            const char* const uri(fUI.rdfDescriptor->Features[i].URI);
+            CARLA_SAFE_ASSERT_CONTINUE(uri != nullptr && uri[0] != '\0');
+
+            if (! is_lv2_ui_feature_supported(uri))
             {
-                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", fUI.rdfDescriptor->Features[i].URI);
+                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", uri);
 
                 if (LV2_IS_FEATURE_REQUIRED(fUI.rdfDescriptor->Features[i].Type))
                 {
@@ -5154,7 +5172,7 @@ public:
                     break;
                 }
             }
-            if (std::strcmp(fUI.rdfDescriptor->Features[i].URI, LV2_UI__makeResident) == 0)
+            if (std::strcmp(uri, LV2_UI__makeResident) == 0)
                 canDelete = false;
         }
 
