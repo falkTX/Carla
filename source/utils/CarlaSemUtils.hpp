@@ -26,6 +26,7 @@
 #include <semaphore.h>
 
 #if defined(CARLA_OS_MAC)
+# include <fcntl.h>
 extern "C" {
 # include "osx_sem_timedwait.c"
 };

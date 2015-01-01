@@ -364,13 +364,15 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
     if (bridgeBinary.isNotEmpty())
     {
-# ifndef CARLA_OS_WIN
         if (btype == BINARY_NATIVE)
         {
+#ifdef CARLA_OS_WIN
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
+#else
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
+#endif
         }
         else
-# endif
         {
             switch (btype)
             {
