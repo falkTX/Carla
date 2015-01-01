@@ -1147,10 +1147,14 @@ public:
             return false;
         }
 
-        if (label == nullptr || label[0] == '\0')
+        // AU and VST3 require label
+        if (std::strcmp(format, "AU") == 0 || std::strcmp(format, "VST3") == 0)
         {
-            pData->engine->setLastError("null label");
-            return false;
+            if (label == nullptr || label[0] == '\0')
+            {
+                pData->engine->setLastError("null label");
+                return false;
+            }
         }
 
         if (std::strcmp(format, "AU") == 0)
@@ -1159,6 +1163,7 @@ public:
         }
         else
         {
+            // VST2 and VST3 require filename
             if (filename == nullptr || filename[0] == '\0')
             {
                 pData->engine->setLastError("null filename");
@@ -1177,8 +1182,10 @@ public:
 #endif
 
             fDesc.fileOrIdentifier = jfilename;
-            fDesc.name = label;
             fDesc.uid = static_cast<int>(uniqueId);
+
+            if (label != nullptr && label[0] != '\0')
+                fDesc.name = label;
         }
 
         fDesc.pluginFormatName = format;
