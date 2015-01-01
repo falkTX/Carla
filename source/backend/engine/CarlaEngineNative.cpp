@@ -1410,13 +1410,18 @@ protected:
                 path += CARLA_OS_SEP_STR "carla-plugin-patchbay";
             else
                 path += CARLA_OS_SEP_STR "carla-plugin";
-#ifdef CARLA_OS_WIN
-            path += ".exe";
-#endif
+// #ifdef CARLA_OS_WIN
+//             path += ".exe";
+// #endif
             carla_stdout("Trying to start carla-plugin using \"%s\"", path.buffer());
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
-            fUiServer.startPipeServer(false);
+
+            if (! fUiServer.startPipeServer(false))
+            {
+                pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
+                return;
+            }
 
             uiServerInfo();
             uiServerOptions();
@@ -1449,8 +1454,9 @@ protected:
 
         if (fUiServer.isPipeRunning())
         {
-            const EngineTimeInfo& timeInfo(pData->timeInfo);
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
+#ifndef CARLA_OS_WIN
+            const EngineTimeInfo& timeInfo(pData->timeInfo);
             const ScopedLocale csl;
 
             // send transport
@@ -1472,6 +1478,7 @@ protected:
             }
 
             fUiServer.flushMessages();
+#endif
 
             // send peaks and param outputs for all plugins
             for (uint i=0; i < pData->curPluginCount; ++i)

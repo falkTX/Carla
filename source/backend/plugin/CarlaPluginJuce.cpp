@@ -972,14 +972,6 @@ public:
         // Process
 
         processSingle(audioIn, audioOut, frames);
-
-        // --------------------------------------------------------------------------------------------------------
-        // MIDI Output
-
-        if (pData->event.portOut != nullptr)
-        {
-            // TODO
-        }
     }
 
     bool processSingle(const float** const inBuffer, float** const outBuffer, const uint32_t frames)

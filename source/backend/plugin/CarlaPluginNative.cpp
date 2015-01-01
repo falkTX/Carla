@@ -720,9 +720,12 @@ public:
         if (fDescriptor->ui_show == nullptr)
             return;
 
+        const bool oldIsUiVisible(fIsUiVisible);
+
         fDescriptor->ui_show(fHandle, yesNo);
 
-        if (fIsUiVisible == yesNo)
+        // UI might not be available, see NATIVE_HOST_OPCODE_UI_UNAVAILABLE
+        if (fIsUiVisible == yesNo || fIsUiVisible != oldIsUiVisible)
             return;
 
         fIsUiVisible = yesNo;
@@ -2207,6 +2210,7 @@ protected:
             break;
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
+            fIsUiVisible = false;
             break;
         }
 

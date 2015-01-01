@@ -65,13 +65,27 @@ struct OverlappedEvent {
     CARLA_DECLARE_NON_COPY_STRUCT(OverlappedEvent)
 };
 
+// -----------------------------------------------------------------------
+// ReadFile
+
+static inline
+ssize_t ReadFileBlock(const HANDLE pipeh, void* const buf, const std::size_t numBytes)
+{
+    DWORD dsize;
+
+    if (::ReadFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
+        return static_cast<ssize_t>(dsize);
+
+    return -1;
+}
+
 static inline
 ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* const buf, const std::size_t numBytes)
 {
-    DWORD dsize;
+    DWORD dsize = numBytes;
     OverlappedEvent over;
 
-    if (::ReadFile(pipeh, buf, numBytes, &dsize, &over.over) != FALSE)
+    if (::ReadFile(pipeh, buf, numBytes, nullptr /*&dsize*/, &over.over) != FALSE)
         return static_cast<ssize_t>(dsize);
 
     if (::GetLastError() == ERROR_IO_PENDING)
@@ -84,24 +98,34 @@ ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* const b
             return -1;
         }
 
-        if (::GetOverlappedResult(pipeh, &over.over, &dsize, FALSE) != FALSE)
+        if (::GetOverlappedResult(pipeh, &over.over, nullptr /*&dsize*/, FALSE) != FALSE)
             return static_cast<ssize_t>(dsize);
     }
 
     return -1;
 }
+
+// -----------------------------------------------------------------------
+// WriteFile
+
+static inline
+ssize_t WriteFileBlock(const HANDLE pipeh, const void* const buf, const std::size_t numBytes)
+{
+    DWORD dsize;
+
+    if (::WriteFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
+        return static_cast<ssize_t>(dsize);
+
+    return -1;
+}
+
 static inline
 ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* const buf, const std::size_t numBytes)
 {
-    DWORD dsize;
-    if (::WriteFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
-        return static_cast<ssize_t>(dsize);
-    return -1;
-
-    //DWORD dsize;
+    DWORD dsize = numBytes;
     OverlappedEvent over;
 
-    if (::WriteFile(pipeh, buf, numBytes, &dsize, &over.over) != FALSE)
+    if (::WriteFile(pipeh, buf, numBytes, nullptr /*&dsize*/, &over.over) != FALSE)
         return static_cast<ssize_t>(dsize);
 
     if (::GetLastError() == ERROR_IO_PENDING)
@@ -127,11 +151,16 @@ ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* 
 
 #ifdef CARLA_OS_WIN
 static inline
-bool startProcess(const char* const argv[], PROCESS_INFORMATION& processInfo)
+bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processInfo)
 {
+    CARLA_SAFE_ASSERT_RETURN(processInfo != nullptr, false);
+
     using juce::String;
 
     String command;
+
+    // TESTING
+    command = "C:\\Python34\\python.exe ";
 
     for (int i=0; argv[i] != nullptr; ++i)
     {
@@ -146,6 +175,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION& processInfo)
     }
 
     command = command.trim();
+    carla_stdout("startProcess() command:\n%s", command.toRawUTF8());
 
     STARTUPINFOW startupInfo;
     carla_zeroStruct(startupInfo);
@@ -158,7 +188,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION& processInfo)
     startupInfo.cb         = sizeof(STARTUPINFOW);
 
     return CreateProcessW(nullptr, const_cast<LPWSTR>(command.toWideCharPointer()),
-                          nullptr, nullptr, TRUE, 0x0, nullptr, nullptr, &startupInfo, &processInfo) != FALSE;
+                          nullptr, nullptr, TRUE, 0x0, nullptr, nullptr, &startupInfo, processInfo) != FALSE;
 }
 #else
 static inline
@@ -212,6 +242,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
     {
         try {
 #ifdef CARLA_OS_WIN
+            //ret = ::ReadFileBlock(pipe.handle, &c, 1);
             ret = ::ReadFileNonBlock(pipe.handle, pipe.cancel, &c, 1);
 #else
             ret = ::read(pipe, &c, 1);
@@ -435,6 +466,8 @@ struct CarlaPipeCommon::PrivateData {
     {
 #ifdef CARLA_OS_WIN
         carla_zeroStruct(processInfo);
+        processInfo.hProcess = INVALID_HANDLE_VALUE;
+        processInfo.hThread  = INVALID_HANDLE_VALUE;
 
         try {
             cancelEvent = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -948,6 +981,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
     {
         try {
 #ifdef CARLA_OS_WIN
+            //ret = ::ReadFileBlock(pData->pipeRecv, &c, 1);
             ret = ::ReadFileNonBlock(pData->pipeRecv, pData->cancelEvent, &c, 1);
 #else
             ret = ::read(pData->pipeRecv, &c, 1);
@@ -1025,6 +1059,7 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
 
     try {
 #ifdef CARLA_OS_WIN
+        //ret = ::WriteFileBlock(pData->pipeSend, msg, size);
         ret = ::WriteFileNonBlock(pData->pipeSend, pData->cancelEvent, msg, size);
 #else
         ret = ::write(pData->pipeSend, msg, size);
@@ -1066,8 +1101,8 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv == INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend == INVALID_PIPE_VALUE, false);
 #ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT_RETURN(pData->processInfo.hThread  == nullptr, false);
-    CARLA_SAFE_ASSERT_RETURN(pData->processInfo.hProcess == nullptr, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->processInfo.hThread  == INVALID_HANDLE_VALUE, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->processInfo.hProcess == INVALID_HANDLE_VALUE, false);
 #else
     CARLA_SAFE_ASSERT_RETURN(pData->pid == -1, false);
 #endif
@@ -1101,12 +1136,22 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     const int randint = std::rand();
 
     std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe1-%i-%li", randint, sCounter);
-    pipe1[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 120*1000, &sa);
+    pipe1[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 300, &sa);
     pipe1[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, nullptr);
 
     std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe2-%i-%li", randint, sCounter);
-    pipe2[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 120*1000, &sa);
+    pipe2[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 300, &sa);
     pipe2[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, nullptr);
+
+#if 0
+    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe1-%i-%li", randint, sCounter);
+    pipe1[1] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE|PIPE_NOWAIT, 1, 4096, 4096, 120*1000, &sa);
+    pipe1[0] = ::CreateFileA(strBuf, GENERIC_READ, 0x0, &sa, OPEN_EXISTING, 0x0, nullptr);
+
+    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe2-%i-%li", randint, sCounter);
+    pipe2[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE|PIPE_NOWAIT, 1, 4096, 4096, 120*1000, &sa); // NB
+    pipe2[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, 0x0, nullptr);
+#endif
 
     if (pipe1[0] == INVALID_HANDLE_VALUE || pipe1[1] == INVALID_HANDLE_VALUE || pipe2[0] == INVALID_HANDLE_VALUE || pipe2[1] == INVALID_HANDLE_VALUE)
     {
@@ -1202,9 +1247,11 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     // start process
 
 #ifdef CARLA_OS_WIN
-    if (! startProcess(argv, pData->processInfo))
+    if (! startProcess(argv, &pData->processInfo))
     {
         carla_zeroStruct(pData->processInfo);
+        pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
+        pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
         try { ::CloseHandle(pipe1[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[0])");
         try { ::CloseHandle(pipe1[1]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[1])");
         try { ::CloseHandle(pipe2[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2[0])");
@@ -1287,6 +1334,8 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     try { CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
     try { CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
     carla_zeroStruct(pData->processInfo);
+    pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
+    pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
 #else
     if (::kill(pData->pid, SIGKILL) != -1)
     {
@@ -1326,6 +1375,8 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
         try { CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
         try { CloseHandle(pData->processInfo.hProcess); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hProcess)");
         carla_zeroStruct(pData->processInfo);
+        pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
+        pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
     }
 #else
     if (pData->pid != -1)
