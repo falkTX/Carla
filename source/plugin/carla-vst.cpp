@@ -663,7 +663,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
                 d_lastSampleRate = 44100.0;
 
             const NativePluginDescriptor* pluginDesc  = nullptr;
-#ifdef CARLA_PLUGIN_PATCHBAY
+#if CARLA_PLUGIN_PATCHBAY
             const char* const pluginLabel = "carlapatchbay";
 #else
             const char* const pluginLabel = "carlarack";
@@ -716,7 +716,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         return 0;
 
     case effGetPlugCategory:
-#ifdef CARLA_PLUGIN_SYNTH
+#if CARLA_PLUGIN_SYNTH
         return kPlugCategSynth;
 #else
         return kPlugCategEffect;
@@ -725,14 +725,14 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetEffectName:
         if (char* const cptr = (char*)ptr)
         {
-#ifdef CARLA_PLUGIN_PATCHBAY
-# ifdef CARLA_PLUGIN_SYNTH
+#if CARLA_PLUGIN_PATCHBAY
+# if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "Carla-Patchbay", 32);
 # else
             std::strncpy(cptr, "Carla-PatchbayFX", 32);
 # endif
 #else
-# ifdef CARLA_PLUGIN_SYNTH
+# if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "Carla-Rack", 32);
 # else
             std::strncpy(cptr, "Carla-RackFX", 32);
@@ -753,14 +753,14 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetProductString:
         if (char* const cptr = (char*)ptr)
         {
-#ifdef CARLA_PLUGIN_PATCHBAY
-# ifdef CARLA_PLUGIN_SYNTH
+#if CARLA_PLUGIN_PATCHBAY
+# if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "CarlaPatchbay", 32);
 # else
             std::strncpy(cptr, "CarlaPatchbayFX", 32);
 # endif
 #else
-# ifdef CARLA_PLUGIN_SYNTH
+# if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "CarlaRack", 32);
 # else
             std::strncpy(cptr, "CarlaRackFX", 32);
@@ -843,14 +843,14 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 #endif
 
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
-#ifdef CARLA_PLUGIN_SYNTH
-# ifdef CARLA_PLUGIN_PATCHBAY
+#if CARLA_PLUGIN_SYNTH
+# if CARLA_PLUGIN_PATCHBAY
     effect->uniqueID = uniqueId+4;
 # else
     effect->uniqueID = uniqueId+3;
 # endif
 #else
-# ifdef CARLA_PLUGIN_PATCHBAY
+# if CARLA_PLUGIN_PATCHBAY
     effect->uniqueID = uniqueId+2;
 # else
     effect->uniqueID = uniqueId+1;
@@ -867,7 +867,7 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     effect->flags |= effFlagsCanReplacing;
     effect->flags |= effFlagsHasEditor;
     effect->flags |= effFlagsProgramChunks;
-#ifdef CARLA_PLUGIN_SYNTH
+#if CARLA_PLUGIN_SYNTH
     effect->flags |= effFlagsIsSynth;
 #endif
 
