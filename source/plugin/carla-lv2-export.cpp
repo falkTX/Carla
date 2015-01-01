@@ -67,7 +67,11 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
     {
         for (int i=0; i < trimmedName.length(); ++i)
         {
+#ifdef CARLA_OS_WIN
+            const int32_t c = static_cast<int32_t>(trimmedName[i]);
+#else
             const juce_wchar c = trimmedName[i];
+#endif
             if (i == 0 && std::isdigit(c))
                 symbol += "_";
             else if (std::isalpha(c) || std::isdigit(c))
