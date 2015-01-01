@@ -619,14 +619,19 @@ public:
     EngineProcessMode getProcessMode() const noexcept;
 
     /*!
-     * Get an input port name.
+     * Get an audio port name.
      */
-    const char* getAudioInputPortName(const uint index) const noexcept;
+    const char* getAudioPortName(const bool isInput, const uint index) const noexcept;
 
     /*!
-     * Get an input port name.
+     * Get a CV port name.
      */
-    const char* getAudioOutputPortName(const uint index) const noexcept;
+    const char* getCVPortName(const bool isInput, const uint index) const noexcept;
+
+    /*!
+     * Get an event port name.
+     */
+    const char* getEventPortName(const bool isInput, const uint index) const noexcept;
 
 #ifndef DOXYGEN
 protected:
@@ -636,7 +641,10 @@ protected:
     struct ProtectedData;
     ProtectedData* const pData;
 
-    void _addName(const bool, const char* const);
+    void _addAudioPortName(const bool, const char* const);
+    void _addCVPortName(const bool, const char* const);
+    void _addEventPortName(const bool, const char* const);
+    const char* _getUniquePortName(const char* const);
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
 #endif

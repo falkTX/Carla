@@ -1069,14 +1069,14 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(i >= 0, String());
         CarlaEngineClient* const client(fPlugin->getEngineClient());
-        return client->getAudioInputPortName(static_cast<uint>(i));
+        return client->getAudioPortName(true, static_cast<uint>(i));
     }
 
     const String getOutputChannelName(int i) const override
     {
         CARLA_SAFE_ASSERT_RETURN(i >= 0, String());
         CarlaEngineClient* const client(fPlugin->getEngineClient());
-        return client->getAudioOutputPortName(static_cast<uint>(i));
+        return client->getAudioPortName(false, static_cast<uint>(i));
     }
 
     void prepareToPlay(double, int) override {}

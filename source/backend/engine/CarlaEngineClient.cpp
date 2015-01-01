@@ -17,6 +17,7 @@
 
 #include "CarlaEngineUtils.hpp"
 
+#include "CarlaString.hpp"
 #include "CarlaStringList.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -32,13 +33,21 @@ struct CarlaEngineClient::ProtectedData {
 
     CarlaStringList audioInList;
     CarlaStringList audioOutList;
+    CarlaStringList cvInList;
+    CarlaStringList cvOutList;
+    CarlaStringList eventInList;
+    CarlaStringList eventOutList;
 
-    ProtectedData(const CarlaEngine& eng)
+    ProtectedData(const CarlaEngine& eng) noexcept
         :  engine(eng),
            active(false),
            latency(0),
            audioInList(),
-           audioOutList() {}
+           audioOutList(),
+           cvInList(),
+           cvOutList(),
+           eventInList(),
+           eventOutList() {}
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
@@ -101,17 +110,18 @@ CarlaEnginePort* CarlaEngineClient::addPort(const EnginePortType portType, const
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
     carla_debug("CarlaEngineClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
 
-    _addName(isInput, name);
-
     switch (portType)
     {
     case kEnginePortTypeNull:
         break;
     case kEnginePortTypeAudio:
+        _addAudioPortName(isInput, name);
         return new CarlaEngineAudioPort(*this, isInput);
     case kEnginePortTypeCV:
+        _addCVPortName(isInput, name);
         return new CarlaEngineCVPort(*this, isInput);
     case kEnginePortTypeEvent:
+        _addEventPortName(isInput, name);
         return new CarlaEngineEventPort(*this, isInput);
     }
 
@@ -129,28 +139,128 @@ EngineProcessMode CarlaEngineClient::getProcessMode() const noexcept
     return pData->engine.getProccessMode();
 }
 
-const char* CarlaEngineClient::getAudioInputPortName(const uint index) const noexcept
+const char* CarlaEngineClient::getAudioPortName(const bool isInput, const uint index) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(index < pData->audioInList.count(), nullptr);
+    CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
+    CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
 
-    return pData->audioInList.getAt(index, nullptr);
+    return portList.getAt(index, nullptr);
 }
 
-const char* CarlaEngineClient::getAudioOutputPortName(const uint index) const noexcept
+const char* CarlaEngineClient::getCVPortName(const bool isInput, const uint index) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(index < pData->audioOutList.count(), nullptr);
+    CarlaStringList& portList(isInput ? pData->cvInList : pData->cvOutList);
+    CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
 
-    return pData->audioOutList.getAt(index, nullptr);
+    return portList.getAt(index, nullptr);
 }
 
-void CarlaEngineClient::_addName(const bool isInput, const char* const name)
+const char* CarlaEngineClient::getEventPortName(const bool isInput, const uint index) const noexcept
+{
+    CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
+    CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
+
+    return portList.getAt(index, nullptr);
+}
+
+void CarlaEngineClient::_addAudioPortName(const bool isInput, const char* const name)
 {
     CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
-    if (isInput)
-        pData->audioInList.append(name);
-    else
-        pData->audioOutList.append(name);
+    CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
+    portList.append(name);
+}
+
+void CarlaEngineClient::_addCVPortName(const bool isInput, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+
+    CarlaStringList& portList(isInput ? pData->cvInList : pData->cvOutList);
+    portList.append(name);
+}
+
+void CarlaEngineClient::_addEventPortName(const bool isInput, const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
+
+    CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
+    portList.append(name);
+}
+
+static void getUniquePortName(CarlaString& sname, const CarlaStringList& list)
+{
+    for (CarlaStringList::Itenerator it = list.begin(); it.valid(); it.next())
+    {
+        const char* const portName(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+
+        // Check if unique name doesn't exist
+          if (sname != portName)
+              continue;
+
+        // Check if string has already been modified
+        {
+            const std::size_t len(sname.length());
+
+            // 1 digit, ex: " (2)"
+            if (sname[len-4] == ' ' && sname[len-3] == '(' && sname.isDigit(len-2) && sname[len-1] == ')')
+            {
+                const int number = sname[len-2] - '0';
+
+                if (number == 9)
+                {
+                    // next number is 10, 2 digits
+                    sname.truncate(len-4);
+                    sname += " (10)";
+                    //sname.replace(" (9)", " (10)");
+                }
+                else
+                    sname[len-2] = char('0' + number + 1);
+
+                continue;
+            }
+
+            // 2 digits, ex: " (11)"
+            if (sname[len-5] == ' ' && sname[len-4] == '(' && sname.isDigit(len-3) && sname.isDigit(len-2) && sname[len-1] == ')')
+            {
+                char n2 = sname[len-2];
+                char n3 = sname[len-3];
+
+                if (n2 == '9')
+                {
+                    n2 = '0';
+                    n3 = static_cast<char>(n3 + 1);
+                }
+                else
+                    n2 = static_cast<char>(n2 + 1);
+
+                sname[len-2] = n2;
+                sname[len-3] = n3;
+
+                continue;
+            }
+        }
+
+        // Modify string if not
+        sname += " (2)";
+    }
+}
+
+const char* CarlaEngineClient::_getUniquePortName(const char* const name)
+{
+    CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', nullptr);
+
+    CarlaString sname;
+    sname = name;
+
+    getUniquePortName(sname, pData->audioInList);
+    getUniquePortName(sname, pData->audioOutList);
+    getUniquePortName(sname, pData->cvInList);
+    getUniquePortName(sname, pData->cvOutList);
+    getUniquePortName(sname, pData->eventInList);
+    getUniquePortName(sname, pData->eventOutList);
+
+    return sname.dup();
 }
 
 // -----------------------------------------------------------------------

@@ -855,12 +855,12 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
 
         // Check if string has already been modified
         {
-            const size_t len(sname.length());
+            const std::size_t len(sname.length());
 
             // 1 digit, ex: " (2)"
             if (sname[len-4] == ' ' && sname[len-3] == '(' && sname.isDigit(len-2) && sname[len-1] == ')')
             {
-                int number = sname[len-2] - '0';
+                const int number = sname[len-2] - '0';
 
                 if (number == 9)
                 {
