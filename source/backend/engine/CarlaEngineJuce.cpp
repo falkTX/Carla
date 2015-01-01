@@ -812,7 +812,7 @@ private:
 
         void splice()
         {
-            dataPending.spliceAppendTo(data);
+            dataPending.moveTo(data, true /* append */);
         }
     };
 

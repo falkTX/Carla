@@ -34,13 +34,16 @@ class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
                                  private CarlaPluginUI::CloseCallback
 {
 public:
-    CarlaBridgeToolkitPlugin(CarlaBridgeUI* const ui)
-        : CarlaBridgeToolkit(ui),
+    CarlaBridgeToolkitPlugin(CarlaBridgeUI* const u)
+        : CarlaBridgeToolkit(u),
           fUI(nullptr),
           fIdling(false),
+#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+          kJuceInit(),
+#endif
           leakDetector_CarlaBridgeToolkitPlugin()
     {
-        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", ui);
+        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", u);
     }
 
     ~CarlaBridgeToolkitPlugin() override

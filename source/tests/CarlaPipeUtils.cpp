@@ -16,7 +16,6 @@
  */
 
 #include "CarlaPipeUtils.hpp"
-#include "CarlaSemUtils.hpp"
 
 // -----------------------------------------------------------------------
 
@@ -31,8 +30,6 @@ public:
         carla_stdout("CLIENT RECEIVED: \"%s\"", msg);
         return true;
     }
-
-    sem_t sem;
 };
 
 class CarlaPipeServer2 : public CarlaPipeServer

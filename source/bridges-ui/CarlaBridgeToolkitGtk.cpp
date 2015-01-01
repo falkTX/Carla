@@ -37,8 +37,8 @@ static const bool gHideShowTesting = std::getenv("CARLA_UI_TESTING") != nullptr;
 class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
 {
 public:
-    CarlaBridgeToolkitGtk(CarlaBridgeUI* const ui)
-        : CarlaBridgeToolkit(ui),
+    CarlaBridgeToolkitGtk(CarlaBridgeUI* const u)
+        : CarlaBridgeToolkit(u),
           fNeedsShow(false),
           fWindow(nullptr),
           fLastX(0),
@@ -47,7 +47,7 @@ public:
           fLastHeight(0),
           leakDetector_CarlaBridgeToolkitGtk()
     {
-        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", ui);
+        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", u);
     }
 
     ~CarlaBridgeToolkitGtk() override

@@ -170,7 +170,7 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
 
     try {
 #ifdef CARLA_OS_WIN
-        const HANDLE map(:CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr));
+        const HANDLE map(::CreateFileMapping(shm.shm, nullptr, PAGE_READWRITE, size, size, nullptr));
         CARLA_SAFE_ASSERT_RETURN(map != nullptr, nullptr);
 
         void* const ptr(::MapViewOfFile(map, FILE_MAP_COPY, 0, 0, size));

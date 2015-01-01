@@ -19,6 +19,7 @@
 #ifdef JACKBRIDGE_DUMMY
 # include "CarlaUtils.hpp"
 #else
+# include <cerrno>
 # include "CarlaSemUtils.hpp"
 # include "CarlaShmUtils.hpp"
 #endif // ! JACKBRIDGE_DUMMY

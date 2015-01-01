@@ -26,8 +26,6 @@
 #include <semaphore.h>
 
 #if defined(CARLA_OS_MAC)
-# include <fcntl.h>
-# include <unistd.h>
 extern "C" {
 # include "osx_sem_timedwait.c"
 };
@@ -126,7 +124,7 @@ bool carla_sem_timedwait(sem_t* const sem, const uint secs) noexcept
     timeout.tv_sec  = now.tv_sec;
     timeout.tv_nsec = now.tv_usec * 1000;
 #endif
-    timeout.tv_sec += secs;
+    timeout.tv_sec += static_cast<time_t>(secs);
 
     try {
         return (::sem_timedwait(sem, &timeout) == 0);

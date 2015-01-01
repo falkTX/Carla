@@ -50,16 +50,16 @@ class CarlaBridgeToolkitQt: public QObject,
       Q_OBJECT
 
 public:
-    CarlaBridgeToolkitQt(CarlaBridgeUI* const ui)
+    CarlaBridgeToolkitQt(CarlaBridgeUI* const u)
         : QObject(nullptr),
-          CarlaBridgeToolkit(ui),
+          CarlaBridgeToolkit(u),
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
           fNeedsShow(false),
           leakDetector_CarlaBridgeToolkitQt()
     {
-        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", ui);
+        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", u);
     }
 
     ~CarlaBridgeToolkitQt() override

@@ -218,7 +218,7 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
 
         fGotOptions = true;
-        uiOptionsChanged(useTheme, useThemeColors, windowTitle, transientWindowId);
+        uiOptionsChanged(useTheme, useThemeColors, windowTitle, static_cast<uintptr_t>(transientWindowId));
 
         delete[] windowTitle;
         return true;

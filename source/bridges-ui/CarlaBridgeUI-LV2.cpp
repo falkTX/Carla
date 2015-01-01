@@ -519,8 +519,10 @@ public:
 
     void idleUI() override
     {
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
         if (fHandle != nullptr && fExt.idle != nullptr)
             fExt.idle->idle(fHandle);
+#endif
     }
 
     // ---------------------------------------------------------------------

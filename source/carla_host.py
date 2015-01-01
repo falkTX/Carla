@@ -2008,7 +2008,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
         try:
             host = PluginClass() if isPlugin else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
         except:
-            host = CarlaHostNull()
+            host = CarlaHostQtNull()
 
     host.isControl = isControl
     host.isPlugin  = isPlugin

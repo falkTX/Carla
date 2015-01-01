@@ -99,6 +99,10 @@ UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
 UTILS_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
+ifneq ($(HAIKU),true)
+UTILS_LINK_FLAGS += -lpthread
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)

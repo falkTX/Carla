@@ -25,6 +25,10 @@ endif
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
 LINK_FLAGS       += $(JUCE_CORE_LIBS)
 
+ifneq ($(HAIKU),true)
+LINK_FLAGS       += -lpthread
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)

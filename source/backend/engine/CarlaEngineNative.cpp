@@ -1453,7 +1453,6 @@ protected:
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
             const ScopedLocale csl;
 
-#ifndef CARLA_OS_WIN // FIXME
             // send transport
             fUiServer.writeAndFixMessage("transport");
             fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n");
@@ -1473,7 +1472,6 @@ protected:
             }
 
             fUiServer.flushMessages();
-#endif
 
             // send peaks and param outputs for all plugins
             for (uint i=0; i < pData->curPluginCount; ++i)

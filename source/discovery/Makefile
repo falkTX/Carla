@@ -39,6 +39,11 @@ ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
 endif
 
+# vstsdk requires this
+ifeq ($(MACOS_OR_WIN32),true)
+BUILD_CXX_FLAGS += -Wno-zero-as-null-pointer-constant
+endif
+
 32BIT_FLAGS += -DBUILD_BRIDGE
 64BIT_FLAGS += -DBUILD_BRIDGE
 

@@ -46,7 +46,7 @@ make $JOBS UI RES WIDGETS
 
 # Build discovery
 make $JOBS discovery
-rm bin/carla-discovery-win32.exe
+rm -f bin/carla-discovery-win32.exe
 cp bin/carla-discovery-native.exe bin/carla-discovery-win32.exe
 
 # Build backend
