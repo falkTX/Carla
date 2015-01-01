@@ -320,7 +320,7 @@ public:
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             for (int i=0, count=inputNames.size(); i<count; ++i)
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO, 0.0f, inputNames[i].toRawUTF8());
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, static_cast<int>(i)+1, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, inputNames[i].toRawUTF8());
         }
 
         // Audio Out
@@ -335,7 +335,7 @@ public:
             callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
             for (int i=0, count=outputNames.size(); i<count; ++i)
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, static_cast<int>(i), PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, outputNames[i].toRawUTF8());
+                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, static_cast<int>(i)+1, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, outputNames[i].toRawUTF8());
         }
 
         // MIDI In
@@ -351,7 +351,7 @@ public:
                 std::snprintf(strBuf, STR_MAX, "Readable MIDI ports:%s", portName.toRawUTF8());
 
                 PortNameToId portNameToId;
-                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_IN, static_cast<uint>(i), portName.toRawUTF8(), strBuf);
+                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_IN, static_cast<uint>(i)+1, portName.toRawUTF8(), strBuf);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
 
@@ -372,7 +372,7 @@ public:
                 std::snprintf(strBuf, STR_MAX, "Writable MIDI ports:%s", portName.toRawUTF8());
 
                 PortNameToId portNameToId;
-                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_OUT, static_cast<uint>(i), portName.toRawUTF8(), strBuf);
+                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_OUT, static_cast<uint>(i)+1, portName.toRawUTF8(), strBuf);
 
                 callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
 
@@ -812,7 +812,8 @@ private:
 
         void splice()
         {
-            dataPending.moveTo(data, true /* append */);
+            if (dataPending.count() > 0)
+                dataPending.moveTo(data, true /* append */);
         }
     };
 

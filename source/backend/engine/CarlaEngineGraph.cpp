@@ -464,14 +464,14 @@ const char* const* RackGraph::getConnections() const noexcept
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            std::snprintf(strBuf, STR_MAX, "AudioIn:%i", otherPort+1);
+            std::snprintf(strBuf, STR_MAX, "AudioIn:%i", otherPort);
             connList.append(strBuf);
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-            std::snprintf(strBuf, STR_MAX, "AudioOut:%i", otherPort+1);
+            std::snprintf(strBuf, STR_MAX, "AudioOut:%i", otherPort);
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             connList.append(strBuf);
             break;
@@ -516,7 +516,7 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
 
         if (const int portTest = std::atoi(fullPortName+8))
         {
-            portId = static_cast<uint>(portTest-1);
+            portId = static_cast<uint>(portTest);
             return true;
         }
     }
@@ -526,7 +526,7 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
 
         if (const int portTest = std::atoi(fullPortName+9))
         {
-            portId = static_cast<uint>(portTest-1);
+            portId = static_cast<uint>(portTest);
             return true;
         }
     }
@@ -749,10 +749,10 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         for (LinkedList<uint>::Itenerator it = audio.connectedOut1.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
-            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
-            CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
+            CARLA_SAFE_ASSERT_CONTINUE(port > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(port <= outputs);
 
-            FloatVectorOperations::add(outBuf[port], audio.outBuf[0], iframes);
+            FloatVectorOperations::add(outBuf[port-1], audio.outBuf[0], iframes);
         }
     }
 
@@ -761,10 +761,10 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         for (LinkedList<uint>::Itenerator it = audio.connectedOut2.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
-            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
-            CARLA_SAFE_ASSERT_CONTINUE(port < outputs);
+            CARLA_SAFE_ASSERT_CONTINUE(port > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(port <= outputs);
 
-            FloatVectorOperations::add(outBuf[port], audio.outBuf[1], iframes);
+            FloatVectorOperations::add(outBuf[port-1], audio.outBuf[1], iframes);
         }
     }
 }
