@@ -100,6 +100,13 @@ static std::string xmlSafeStringFast(const char* const cstring, const bool toXml
 // -----------------------------------------------------------------------
 // xmlSafeStringCharDup
 
+/*
+static const char* xmlSafeStringCharDup(const char* const cstring, const bool toXml)
+{
+    return carla_strdup(xmlSafeString(cstring, toXml).toRawUTF8());
+}
+*/
+
 static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 {
     return carla_strdup(xmlSafeString(string, toXml).toRawUTF8());

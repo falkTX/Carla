@@ -100,6 +100,17 @@ struct CarlaStateSave {
 };
 
 static inline
+juce::String xmlSafeString(const char* const cstring, const bool toXml)
+{
+    juce::String newString = juce::String(juce::CharPointer_UTF8(cstring));
+
+    if (toXml)
+        return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
+    else
+        return newString.replace("&lt;","<").replace("&gt;",">").replace("&apos;","'").replace("&quot;","\"").replace("&amp;","&");
+}
+
+static inline
 juce::String xmlSafeString(const juce::String& string, const bool toXml)
 {
     juce::String newString(string);
