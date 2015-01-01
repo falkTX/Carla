@@ -84,9 +84,6 @@ class CarlaHostSignals(QObject):
     ErrorCallback = pyqtSignal(str)
     QuitCallback = pyqtSignal()
 
-    #def __init__(self):
-        #QObject.__init__(self)
-
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (dummy/null, does nothing)
 
