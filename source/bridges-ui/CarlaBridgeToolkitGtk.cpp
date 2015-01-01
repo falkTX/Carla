@@ -30,6 +30,8 @@ CARLA_BRIDGE_START_NAMESPACE
 static int    gargc = 0;
 static char** gargv = nullptr;
 
+static const bool gHideShowTesting = std::getenv("CARLA_UI_TESTING") != nullptr;
+
 // -------------------------------------------------------------------------
 
 class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
@@ -198,6 +200,22 @@ protected:
             ui->idlePipe();
 
         ui->idleUI();
+
+        if (gHideShowTesting)
+        {
+            static int counter = 0;
+            ++counter;
+
+            if (counter == 100)
+            {
+                hide();
+            }
+            else if (counter == 200)
+            {
+                show();
+                counter = 0;
+            }
+        }
 
         return true;
     }
