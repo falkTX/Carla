@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_WIN) && defined(BUILDING_CARLA_FOR_WINDOWS)
 # define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "Global\\carla-bridge_shm_ap_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "Global\\carla-bridge_shm_rtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Global\\carla-bridge_shm_nonrtC_"

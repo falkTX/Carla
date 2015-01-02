@@ -88,8 +88,7 @@ shm_t carla_shm_create(const char* const filename) noexcept
             ::shm_unlink(filename);
             ret.fd = -1;
         }
-    }
-    CARLA_SAFE_EXCEPTION_RETURN("carla_shm_create", gNullCarlaShm);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_create", gNullCarlaShm);
 #endif
 
     return ret;
@@ -114,8 +113,7 @@ shm_t carla_shm_attach(const char* const filename) noexcept
         ret.fd       = ::shm_open(filename, O_RDWR, 0);
         ret.filename = nullptr;
         ret.size     = 0;
-    }
-    CARLA_SAFE_EXCEPTION_RETURN("carla_shm_attach", gNullCarlaShm);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_shm_attach", gNullCarlaShm);
 #endif
 
     return ret;
