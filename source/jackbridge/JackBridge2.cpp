@@ -55,20 +55,18 @@ bool jackbridge_sem_post(void* sem) noexcept
 #endif
 }
 
-bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(timedOut != nullptr, false);
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
     if (carla_sem_timedwait((sem_t*)sem, secs))
+    {
+        *timedOut = false;
         return true;
-    /*
-     * As a sspecial case we ignore timeouts for plugin bridges.
-     * Some big Windows plugins (Kontakt, FL Studio VST) can time out when initializing.
-     * If any other error happens the plugin bridge is stopped.
-     */
-    if (errno == ETIMEDOUT)
-        return true;
+    }
+    *timedOut = (errno == ETIMEDOUT);
     return false;
 #endif
 }

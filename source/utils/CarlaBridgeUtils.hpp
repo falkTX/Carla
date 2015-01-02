@@ -105,7 +105,7 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,
-    kPluginBridgeNonRtServerError
+    kPluginBridgeNonRtServerError               // uint/size, str[]
 };
 
 // -----------------------------------------------------------------------

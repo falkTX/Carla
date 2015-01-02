@@ -242,13 +242,13 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForClient(const uint secs) noexcept
+    bool waitForClient(const uint secs, bool* const timedOut) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jackbridge_sem_post(&data->sem.server);
 
-        return jackbridge_sem_timedwait(&data->sem.client, secs);
+        return jackbridge_sem_timedwait(&data->sem.client, secs, timedOut);
     }
 
     void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
@@ -741,6 +741,7 @@ public:
           fInitError(false),
           fSaved(false),
           fTimedOut(false),
+          fTimedError(false),
           fLastPongCounter(-1),
           fBridgeBinary(),
           fBridgeThread(engine, this),
@@ -786,7 +787,7 @@ public:
             fShmRtClientControl.commitWrite();
 
             if (! fTimedOut)
-                fShmRtClientControl.waitForClient(3);
+                waitForClient("stopping", 3);
         }
 
         fBridgeThread.stopThread(3000);
@@ -1317,6 +1318,8 @@ public:
 
     void activate() noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
+
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -1324,18 +1327,17 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        bool timedOut = true;
+        fTimedOut = false;
 
         try {
-            timedOut = waitForClient(1);
+            waitForClient("activate", 2);
         } CARLA_SAFE_EXCEPTION("activate - waitForClient");
-
-        if (! timedOut)
-            fTimedOut = false;
     }
 
     void deactivate() noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
+
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
@@ -1343,14 +1345,11 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        bool timedOut = true;
+        fTimedOut = false;
 
         try {
-            timedOut = waitForClient(1);
+            waitForClient("deactivate", 2);
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
-
-        if (! timedOut)
-            fTimedOut = false;
     }
 
     void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
@@ -1358,7 +1357,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
-        if (fTimedOut || ! pData->active)
+        if (fTimedOut || fTimedError || ! pData->active)
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1599,6 +1598,7 @@ public:
 
     bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames)
     {
+        CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
         if (pData->audioIn.count > 0)
@@ -1673,10 +1673,12 @@ public:
             fShmRtClientControl.commitWrite();
         }
 
-        if (! waitForClient(2))
+        waitForClient("process", 1);
+
+        if (fTimedOut)
         {
             pData->singleMutex.unlock();
-            return true;
+            return false;
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
@@ -1763,7 +1765,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        fShmRtClientControl.waitForClient(1);
+        waitForClient("buffersize", 1);
     }
 
     void sampleRateChanged(const double newSampleRate) override
@@ -1775,7 +1777,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        fShmRtClientControl.waitForClient(1);
+        waitForClient("samplerate", 1);
     }
 
     void offlineModeChanged(const bool isOffline) override
@@ -1786,7 +1788,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        fShmRtClientControl.waitForClient(1);
+        waitForClient("offline", 1);
     }
 
     // -------------------------------------------------------------------
@@ -2273,10 +2275,20 @@ public:
                 carla_zeroChar(error, errorSize+1);
                 fShmNonRtServerControl.readCustomData(error, errorSize);
 
-                pData->engine->setLastError(error);
+                if (fInitiated)
+                {
+                    pData->engine->callback(ENGINE_CALLBACK_ERROR, pData->id, 0, 0, 0.0f, error);
 
-                fInitError = true;
-                fInitiated = true;
+                    // just in case
+                    pData->engine->setLastError(error);
+                    fInitError = true;
+                }
+                else
+                {
+                    pData->engine->setLastError(error);
+                    fInitError = true;
+                    fInitiated = true;
+                }
             }   break;
             }
         }
@@ -2453,6 +2465,7 @@ private:
     bool fInitError;
     bool fSaved;
     bool fTimedOut;
+    bool fTimedError;
 
     int32_t fLastPongCounter;
 
@@ -2505,21 +2518,26 @@ private:
 
         fShmRtClientControl.commitWrite();
 
-        waitForClient();
+        waitForClient("resize-pool");
     }
 
-    bool waitForClient(const uint secs = 5)
+    void waitForClient(const char* const action, const uint secs = 5)
     {
-        CARLA_SAFE_ASSERT_RETURN(! fTimedOut, false);
+        CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
+        CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
 
-        if (! fShmRtClientControl.waitForClient(secs))
+        if (fShmRtClientControl.waitForClient(secs, &fTimedOut))
+            return;
+
+        if (fTimedOut)
         {
-            carla_stderr("waitForClient() timeout here");
-            fTimedOut = true;
-            return false;
+            carla_stderr("waitForClient(%s) timeout here", action);
         }
-
-        return true;
+        else
+        {
+            fTimedError = true;
+            carla_stderr("waitForClient(%s) error while waiting", action);
+        }
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridge)

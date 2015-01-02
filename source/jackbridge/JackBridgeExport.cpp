@@ -540,9 +540,9 @@ bool jackbridge_sem_post(void* sem) noexcept
     return getBridgeInstance().sem_post_ptr(sem);
 }
 
-bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept
 {
-    return getBridgeInstance().sem_timedwait_ptr(sem, secs);
+    return getBridgeInstance().sem_timedwait_ptr(sem, secs, timedOut);
 }
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept

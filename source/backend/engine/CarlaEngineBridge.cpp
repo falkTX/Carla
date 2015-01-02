@@ -168,11 +168,11 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         return jackbridge_sem_post(&data->sem.client);
     }
 
-    bool waitForServer(const uint secs) noexcept
+    bool waitForServer(const uint secs, bool* const timedOut) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-        return jackbridge_sem_timedwait(&data->sem.server, secs);
+        return jackbridge_sem_timedwait(&data->sem.server, secs, timedOut);
     }
 
     PluginBridgeRtClientOpcode readOpcode() noexcept
@@ -270,8 +270,8 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
 
     BridgeNonRtServerControl() noexcept
         :  mutex(),
-          filename(),
-          data(nullptr)
+           filename(),
+           data(nullptr)
     {
         carla_zeroChar(shm, 64);
         jackbridge_shm_init(shm);
@@ -1178,10 +1178,19 @@ public:
 protected:
     void run() override
     {
+        bool timedOut, quitReceived = false;
+
         for (; ! shouldThreadExit();)
         {
-            if (! fShmRtClientControl.waitForServer(5))
+            if (! fShmRtClientControl.waitForServer(5, &timedOut))
             {
+                /*
+                * As a special case we ignore timeouts for plugin bridges.
+                * Some big Windows plugins (Kontakt, FL Studio VST) can time out when initializing or doing UI stuff.
+                * If any other error happens the plugin bridge is stopped.
+                */
+                if (timedOut) continue;
+
                 carla_stderr2("Bridge timed-out, final post...");
                 fShmRtClientControl.postClient();
                 carla_stderr2("Bridge timed-out, done.");
@@ -1400,6 +1409,7 @@ protected:
                 }
 
                 case kPluginBridgeRtClientQuit:
+                    quitReceived = true;
                     signalThreadShouldExit();
                     break;
                 }
@@ -1410,6 +1420,18 @@ protected:
         }
 
         callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
+
+        if (! quitReceived)
+        {
+            const char* const message("Plugin bridge error, process thread has stopped");
+            const std::size_t messageSize(std::strlen(message));
+
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
+            fShmNonRtServerControl.writeUInt(messageSize);
+            fShmNonRtServerControl.writeCustomData(message, messageSize);
+            fShmNonRtServerControl.commitWrite();
+        }
     }
 
     // called from process thread above
