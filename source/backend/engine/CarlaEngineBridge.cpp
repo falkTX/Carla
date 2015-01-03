@@ -1286,7 +1286,7 @@ protected:
                         event->ctrl.param = 0;
                         event->ctrl.value = 0.0f;
                     }
-                }
+                }   break;
 
                 case kPluginBridgeRtClientControlEventAllNotesOff: {
                     const uint32_t time(fShmRtClientControl.readUInt());
@@ -1301,7 +1301,7 @@ protected:
                         event->ctrl.param = 0;
                         event->ctrl.value = 0.0f;
                     }
-                }
+                }   break;
 
                 case kPluginBridgeRtClientMidiEvent: {
                     const uint32_t time(fShmRtClientControl.readUInt());
@@ -1405,13 +1405,12 @@ protected:
                     if (pData->events.in[0].type != kEngineEventTypeNull)
                         carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
 
-                    break;
-                }
+                }   break;
 
-                case kPluginBridgeRtClientQuit:
+                case kPluginBridgeRtClientQuit: {
                     quitReceived = true;
                     signalThreadShouldExit();
-                    break;
+                }   break;
                 }
             }
 
