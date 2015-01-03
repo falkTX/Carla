@@ -407,11 +407,11 @@ install:
 		data/carla-database \
 		data/carla-patchbay \
 		data/carla-rack \
+		data/carla-single \
 		data/carla-settings \
 		$(DESTDIR)$(PREFIX)/bin/
 
 # 		data/carla-control \
-# 		data/carla-single \
 
 	# Install desktop files
 	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
@@ -581,10 +581,10 @@ endif
 		$(DESTDIR)$(PREFIX)/bin/carla-database \
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
+		$(DESTDIR)$(PREFIX)/bin/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 
-# 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
 # ----------------------------------------------------------------------------------------------------------------------------

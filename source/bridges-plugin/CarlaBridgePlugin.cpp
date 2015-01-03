@@ -299,9 +299,15 @@ int main(int argc, char* argv[])
     // Get args
 
     const char* const stype    = argv[1];
-    const char* const filename = argv[2];
+    const char*       filename = argv[2];
     const char*       label    = argv[3];
     const int64_t     uniqueId = (argc == 5) ? static_cast<int64_t>(std::atoll(argv[4])) : 0;
+
+    if (filename[0] == '\0' || std::strcmp(filename, "(none)") == 0)
+        filename = nullptr;
+
+    if (label[0] == '\0' || std::strcmp(label, "(none)") == 0)
+        label = nullptr;
 
     // ---------------------------------------------------------------------
     // Check plugin type

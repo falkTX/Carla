@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Script to start carla plugin bridges
+# Copyright (C) 2015 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+
+# --------------------------------------------------------------------------------------------------------
+# Imports
+
+import os
+import sys
+from signal import signal, SIGINT, SIGTERM
+from subprocess import Popen
+
+# --------------------------------------------------------------------------------------------------------
+# Setup
+
+INSTALL_PREFIX = "X-PREFIX-X"
+
+CARLA_LIBDIR = os.path.join(INSTALL_PREFIX, "lib", "carla")
+CARLA_RESDIR = os.path.join(INSTALL_PREFIX, "share", "carla", "resources")
+
+# --------------------------------------------------------------------------------------------------------
+# Check for enough arguments
+
+usageMsg = """\
+usage: %s [arch (optional)] [format] [filename/uri] [label (optional)] [uniqueId (optional)]
+
+Possible archs:
+  - native (default)
+  - linux32
+  - linux64
+  - win32
+  - win64
+
+Possible formats:
+  - internal
+  - ladspa
+  - dssi
+  - lv2
+  - vst|vst2
+  - vst3
+  - gig
+  - sf2
+  - sfz
+
+Examples:
+$ %s internal midisplit
+$ %s dssi /usr/lib/dssi/hexter.so hexter
+$ %s lv2 http://calf.sourceforge.net/plugins/Compressor
+$ %s native vst /usr/lib/vst/TAL-NoiseMaker.so
+$ %s win32 vst \"~/.wine/drive_c/Program Files (x86)/VstPlugins/Kontakt 5.dll\"
+
+Format can be skipped for internal and lv2 plugins (auto-detected), like this:
+$ %s nekofilter
+$ %s http://synthv1.sourceforge.net/lv2""" % ((sys.argv[0],)*8)
+
+def printUsageAndQuit():
+    print(usageMsg)
+    sys.exit(0)
+
+if len(sys.argv) < 2:
+    printUsageAndQuit()
+
+# --------------------------------------------------------------------------------------------------------
+# Initialize variables to null
+
+ARCH     = "native"
+FORMAT   = "none"
+FILENAME = ""
+LABEL    = ""
+UNIQUEID = 0
+
+# --------------------------------------------------------------------------------------------------------
+# Set arch
+
+arg = 1
+
+if sys.argv[arg] in ("native", "posix32", "posix64", "linux32", "linux64", "mac32", "mac64", "win32", "win64"):
+    ARCH = sys.argv[arg].replace("linux", "posix").replace("mac", "posix")
+    arg += 1
+
+if len(sys.argv) == arg:
+    printUsageAndQuit()
+
+# --------------------------------------------------------------------------------------------------------
+# Set format
+
+if sys.argv[arg] in ("internal", "ladspa", "dssi", "lv2", "vst", "vst2", "vst3", "au", "audiounit", "gig", "sf2", "sfz"):
+    FORMAT = sys.argv[arg]
+    arg += 1
+
+    if FORMAT == "vst":
+        FORMAT = "vst2"
+    elif FORMAT == "audiounit":
+        FORMAT = "au"
+
+elif len(sys.argv) == arg+1:
+    FORMAT = "lv2" if ":" in sys.argv[arg] else "internal"
+
+else:
+    print("Invalid format")
+    sys.exit(1)
+
+if len(sys.argv) == arg:
+    printUsageAndQuit()
+
+# --------------------------------------------------------------------------------------------------------
+# Set filename/uri
+
+if FORMAT in ("internal", "lv2"):
+    LABEL = sys.argv[arg]
+    arg += 1
+
+else:
+    FILENAME = os.path.expanduser(sys.argv[arg])
+    arg += 1
+
+# --------------------------------------------------------------------------------------------------------
+# Set label (optional)
+
+if len(sys.argv) > arg:
+    if FORMAT in ("internal", "lv2"):
+        print("label/uri already set, ignoring 2nd label")
+    else:
+        LABEL = sys.argv[arg]
+    arg += 1
+
+# --------------------------------------------------------------------------------------------------------
+# Set uniqueId (optional)
+
+if len(sys.argv) > arg:
+    if FORMAT in ("internal", "dssi", "lv2", "au", "gig", "sf2", "sfz"):
+        print("uniqueId is not used in this format, ignored")
+    else:
+        try:
+            UNIQUEID = int(sys.argv[arg])
+        except:
+            print("uniqueId must be a number")
+            sys.exit(1)
+    arg += 1
+
+# --------------------------------------------------------------------------------------------------------
+# Others?
+
+if len(sys.argv) > arg:
+    print("Got too many arguments, ignoring past uniqueId")
+
+# --------------------------------------------------------------------------------------------------------
+# Set bridge binary
+
+BRIDGE = os.path.join(CARLA_LIBDIR, "carla-bridge-" + ARCH)
+
+if ARCH in ("win32", "win64"):
+    BRIDGE = BRIDGE + ".exe"
+
+# --------------------------------------------------------------------------------------------------------
+# Check for existing carla folder
+
+if not os.path.exists(CARLA_LIBDIR):
+    print("Carla library folder does not exist, is it installed?")
+    sys.exit(2)
+
+if not os.path.exists(CARLA_RESDIR):
+    print("Carla resource folder does not exist, is it installed?")
+    sys.exit(2)
+
+# --------------------------------------------------------------------------------------------------------
+# Check for existing arch binary
+
+if not os.path.exists(BRIDGE):
+    print("Carla plugin bridge for the requested arch (%s) does not exist" % (ARCH,))
+    sys.exit(2)
+
+# --------------------------------------------------------------------------------------------------------
+# Final checks
+
+if ARCH not in ("native", "posix32", "posix64", "win32", "win64"):
+    print("Invalid arch")
+    sys.exit(1)
+
+if FORMAT not in ("internal", "ladspa", "dssi", "lv2", "vst2", "vst3", "gig", "sf2", "sfz"):
+    print("Invalid format")
+    sys.exit(1)
+
+if FILENAME and not os.path.exists(FILENAME):
+    print("Requested filename does not exist")
+    sys.exit(1)
+
+# ------------------------------------------------------------------------------------------------------------
+# Signal handler
+
+global gProc
+gProc = None
+
+def signalHandler(sig, frame):
+    global gProc
+
+    if gProc is None:
+        return
+
+    if sig in (SIGINT, SIGTERM):
+        gProc.kill()
+        gProc = None
+
+signal(SIGINT,  signalHandler)
+signal(SIGTERM, signalHandler)
+
+# --------------------------------------------------------------------------------------------------------
+# Setup environment
+
+#CARLA_CLIENT_NAME = os.getenv("CARLA_CLIENT_NAME", "(none)")
+
+#os.environ["ENGINE_OPTION_UIS_ALWAYS_ON_TOP"]  = "false"
+#os.environ["ENGINE_OPTION_MAX_PARAMETERS"]     = "200"
+#os.environ["ENGINE_OPTION_UI_BRIDGES_TIMEOUT"] = "3000"
+
+LADSPA_PATH = os.getenv("LADSPA_PATH")
+DSSI_PATH   = os.getenv("DSSI_PATH")
+LV2_PATH    = os.getenv("LV2_PATH")
+VST2_PATH   = os.getenv("VST_PATH")
+VST3_PATH   = os.getenv("VST3_PATH")
+AU_PATH     = os.getenv("AU_PATH")
+GIG_PATH    = os.getenv("GIG_PATH")
+SF2_PATH    = os.getenv("SF2_PATH")
+SFZ_PATH    = os.getenv("SFZ_PATH")
+
+if LADSPA_PATH is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_LADSPA"] = LADSPA_PATH
+if DSSI_PATH   is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_DSSI"]   = DSSI_PATH
+if LV2_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_LV2"]    = LV2_PATH
+if VST2_PATH   is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_VST2"]   = VST2_PATH
+if VST3_PATH   is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_VST3"]   = VST3_PATH
+if AU_PATH     is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_AU"]     = AU_PATH
+if GIG_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_GIG"]    = GIG_PATH
+if SF2_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_SF2"]    = SF2_PATH
+if SFZ_PATH    is not None: os.environ["ENGINE_OPTION_PLUGIN_PATH_SFZ"]    = SFZ_PATH
+
+os.environ["ENGINE_OPTION_PATH_BINARIES"]  = CARLA_LIBDIR
+os.environ["ENGINE_OPTION_PATH_RESOURCES"] = CARLA_RESDIR
+
+# --------------------------------------------------------------------------------------------------------
+# Exec
+
+command = []
+
+if ARCH in ("win32", "win64"):
+    command.append("wine")
+
+command.append(BRIDGE)
+command.append(FORMAT)
+command.append(FILENAME or "(none)")
+command.append(LABEL or "(none)")
+command.append(str(UNIQUEID))
+
+print(command)
+
+gProc = Popen(command)
+gProc.wait()
+
+# --------------------------------------------------------------------------------------------------------

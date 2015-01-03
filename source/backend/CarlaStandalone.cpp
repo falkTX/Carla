@@ -412,161 +412,20 @@ CarlaEngine* carla_get_engine()
 
 // -------------------------------------------------------------------------------------------------------------------
 
-bool carla_engine_init(const char* driverName, const char* clientName)
+static void carla_engine_init_common()
 {
-    CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init(\"%s\", \"%s\")", driverName, clientName);
-
-    if (gStandalone.engine != nullptr)
-    {
-        carla_stderr2("Engine is already running");
-        gStandalone.lastError = "Engine is already running";
-        return false;
-    }
-
-#ifdef CARLA_OS_WIN
-    carla_setenv("WINEASIO_CLIENT_NAME", clientName);
-#endif
-
-    // TODO: make this an option, put somewhere else
-    if (std::getenv("WINE_RT") == nullptr)
-    {
-        carla_setenv("WINE_RT", "15");
-        carla_setenv("WINE_SVR_RT", "10");
-    }
-
-    gStandalone.engine = CarlaEngine::newDriverByName(driverName);
-
-    if (gStandalone.engine == nullptr)
-    {
-        carla_stderr2("The seleted audio driver is not available");
-        gStandalone.lastError = "The seleted audio driver is not available";
-        return false;
-    }
-
     gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
     gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
 #ifdef BUILD_BRIDGE
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,                     nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_JACK,                               nullptr);
-#else
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),      nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode),    nullptr);
-#endif
+    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          gStandalone.engineOptions.forceStereo         ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, gStandalone.engineOptions.preferPluginBridges ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_NUM_PERIODS,     static_cast<int>(gStandalone.engineOptions.audioNumPeriods),  nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
+    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_PLUGIN_BRIDGES"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
-    if (gStandalone.engineOptions.audioDevice != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,   0, gStandalone.engineOptions.audioDevice);
-
-    if (gStandalone.engineOptions.pathLADSPA != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
-
-    if (gStandalone.engineOptions.pathDSSI != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_DSSI, gStandalone.engineOptions.pathDSSI);
-
-    if (gStandalone.engineOptions.pathLV2 != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_LV2, gStandalone.engineOptions.pathLV2);
-
-    if (gStandalone.engineOptions.pathVST2 != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST2, gStandalone.engineOptions.pathVST2);
-
-    if (gStandalone.engineOptions.pathVST3 != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
-
-    if (gStandalone.engineOptions.pathAU != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_AU, gStandalone.engineOptions.pathAU);
-
-    if (gStandalone.engineOptions.pathGIG != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_GIG, gStandalone.engineOptions.pathGIG);
-
-    if (gStandalone.engineOptions.pathSF2 != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_SF2, gStandalone.engineOptions.pathSF2);
-
-    if (gStandalone.engineOptions.pathSFZ != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,    CB::PLUGIN_SFZ, gStandalone.engineOptions.pathSFZ);
-
-    if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,  0, gStandalone.engineOptions.binaryDir);
-
-    if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES, 0, gStandalone.engineOptions.resourceDir);
-
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, gStandalone.engineOptions.preventBadBehaviour ? 1 : 0,  nullptr);
-
-    if (gStandalone.engineOptions.frontendWinId != 0)
-    {
-        char strBuf[STR_MAX+1];
-        strBuf[STR_MAX] = '\0';
-        std::snprintf(strBuf, STR_MAX, P_UINTPTR, gStandalone.engineOptions.frontendWinId);
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, strBuf);
-    }
-    else
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0");
-
-    if (gStandalone.engine->init(clientName))
-    {
-#ifndef BUILD_BRIDGE
-        juce::initialiseJuce_GUI();
-#endif
-        gStandalone.lastError = "No error";
-        return true;
-    }
-    else
-    {
-        gStandalone.lastError = gStandalone.engine->getLastError();
-        delete gStandalone.engine;
-        gStandalone.engine = nullptr;
-        return false;
-    }
-}
-
-#ifdef BUILD_BRIDGE
-bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
-                              const char nonRtServerBaseName[6+1], const char* clientName)
-{
-    CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(rtClientBaseName != nullptr && rtClientBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(nonRtClientBaseName != nullptr && nonRtClientBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(nonRtServerBaseName != nullptr && nonRtServerBaseName[0] != '\0', false);
-    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
-    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
-
-    if (gStandalone.engine != nullptr)
-    {
-        carla_stderr2("Engine is already running");
-        gStandalone.lastError = "Engine is already running";
-        return false;
-    }
-
-    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
-
-    if (gStandalone.engine == nullptr)
-    {
-        carla_stderr2("The seleted audio driver is not available!");
-        gStandalone.lastError = "The seleted audio driver is not available!";
-        return false;
-    }
-
-    gStandalone.engine->setCallback(gStandalone.engineCallback, gStandalone.engineCallbackPtr);
-    gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
-
-    // forced options for bridge mode
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          false, nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, false, nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false, nullptr);
+    if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
@@ -615,6 +474,161 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
 
     if (const char* const frontendWinId = std::getenv("ENGINE_OPTION_FRONTEND_WIN_ID"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, frontendWinId);
+#else
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          gStandalone.engineOptions.forceStereo         ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, gStandalone.engineOptions.preferPluginBridges ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     gStandalone.engineOptions.preferUiBridges     ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     gStandalone.engineOptions.uisAlwaysOnTop      ? 1 : 0,        nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_MAX_PARAMETERS,        static_cast<int>(gStandalone.engineOptions.maxParameters),    nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    static_cast<int>(gStandalone.engineOptions.uiBridgesTimeout), nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_NUM_PERIODS,     static_cast<int>(gStandalone.engineOptions.audioNumPeriods),  nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_BUFFER_SIZE,     static_cast<int>(gStandalone.engineOptions.audioBufferSize),  nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_SAMPLE_RATE,     static_cast<int>(gStandalone.engineOptions.audioSampleRate),  nullptr);
+
+    if (gStandalone.engineOptions.audioDevice != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_AUDIO_DEVICE,      0, gStandalone.engineOptions.audioDevice);
+
+    if (gStandalone.engineOptions.pathLADSPA != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_LADSPA, gStandalone.engineOptions.pathLADSPA);
+
+    if (gStandalone.engineOptions.pathDSSI != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_DSSI, gStandalone.engineOptions.pathDSSI);
+
+    if (gStandalone.engineOptions.pathLV2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_LV2, gStandalone.engineOptions.pathLV2);
+
+    if (gStandalone.engineOptions.pathVST2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST2, gStandalone.engineOptions.pathVST2);
+
+    if (gStandalone.engineOptions.pathVST3 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
+
+    if (gStandalone.engineOptions.pathAU != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_AU, gStandalone.engineOptions.pathAU);
+
+    if (gStandalone.engineOptions.pathGIG != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_GIG, gStandalone.engineOptions.pathGIG);
+
+    if (gStandalone.engineOptions.pathSF2 != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_SF2, gStandalone.engineOptions.pathSF2);
+
+    if (gStandalone.engineOptions.pathSFZ != nullptr)
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_SFZ, gStandalone.engineOptions.pathSFZ);
+
+    if (gStandalone.engineOptions.binaryDir != nullptr && gStandalone.engineOptions.binaryDir[0] != '\0')
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,     0, gStandalone.engineOptions.binaryDir);
+
+    if (gStandalone.engineOptions.resourceDir != nullptr && gStandalone.engineOptions.resourceDir[0] != '\0')
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,    0, gStandalone.engineOptions.resourceDir);
+
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR,    gStandalone.engineOptions.preventBadBehaviour ? 1 : 0,  nullptr);
+
+    if (gStandalone.engineOptions.frontendWinId != 0)
+    {
+        char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
+        std::snprintf(strBuf, STR_MAX, P_UINTPTR, gStandalone.engineOptions.frontendWinId);
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, strBuf);
+    }
+    else
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0");
+#endif
+}
+
+bool carla_engine_init(const char* driverName, const char* clientName)
+{
+    CARLA_SAFE_ASSERT_RETURN(driverName != nullptr && driverName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
+    carla_debug("carla_engine_init(\"%s\", \"%s\")", driverName, clientName);
+
+    if (gStandalone.engine != nullptr)
+    {
+        carla_stderr2("Engine is already running");
+        gStandalone.lastError = "Engine is already running";
+        return false;
+    }
+
+#ifdef CARLA_OS_WIN
+    carla_setenv("WINEASIO_CLIENT_NAME", clientName);
+#endif
+
+    // TODO: make this an option, put somewhere else
+    if (std::getenv("WINE_RT") == nullptr)
+    {
+        carla_setenv("WINE_RT", "15");
+        carla_setenv("WINE_SVR_RT", "10");
+    }
+
+    gStandalone.engine = CarlaEngine::newDriverByName(driverName);
+
+    if (gStandalone.engine == nullptr)
+    {
+        carla_stderr2("The seleted audio driver is not available");
+        gStandalone.lastError = "The seleted audio driver is not available";
+        return false;
+    }
+
+    carla_engine_init_common();
+
+#ifdef BUILD_BRIDGE
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,                  nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_JACK,                            nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO,          false,                                                     nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, false,                                                     nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false,                                                     nullptr);
+#else
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), nullptr);
+#endif
+
+    if (gStandalone.engine->init(clientName))
+    {
+#ifndef BUILD_BRIDGE
+        juce::initialiseJuce_GUI();
+#endif
+        gStandalone.lastError = "No error";
+        return true;
+    }
+    else
+    {
+        gStandalone.lastError = gStandalone.engine->getLastError();
+        delete gStandalone.engine;
+        gStandalone.engine = nullptr;
+        return false;
+    }
+}
+
+#ifdef BUILD_BRIDGE
+bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClientBaseName[6+1], const char nonRtClientBaseName[6+1],
+                              const char nonRtServerBaseName[6+1], const char* clientName)
+{
+    CARLA_SAFE_ASSERT_RETURN(audioBaseName != nullptr && audioBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(rtClientBaseName != nullptr && rtClientBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(nonRtClientBaseName != nullptr && nonRtClientBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(nonRtServerBaseName != nullptr && nonRtServerBaseName[0] != '\0', false);
+    CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
+    carla_debug("carla_engine_init_bridge(\"%s\", \"%s\", \"%s\", \"%s\", \"%s\")", audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName, clientName);
+
+    if (gStandalone.engine != nullptr)
+    {
+        carla_stderr2("Engine is already running");
+        gStandalone.lastError = "Engine is already running";
+        return false;
+    }
+
+    gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+
+    if (gStandalone.engine == nullptr)
+    {
+        carla_stderr2("The seleted audio driver is not available!");
+        gStandalone.lastError = "The seleted audio driver is not available!";
+        return false;
+    }
+
+    carla_engine_init_common();
+
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,   CB::ENGINE_PROCESS_MODE_BRIDGE,   nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE, CB::ENGINE_TRANSPORT_MODE_BRIDGE, nullptr);
 
     if (gStandalone.engine->init(clientName))
     {

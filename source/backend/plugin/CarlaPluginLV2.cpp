@@ -4665,7 +4665,7 @@ public:
 
         if (fRdfDescriptor == nullptr)
         {
-            pData->engine->setLastError("Failed to find the requested plugin in the LV2 Bundle");
+            pData->engine->setLastError("Failed to find the requested plugin");
             return false;
         }
 
