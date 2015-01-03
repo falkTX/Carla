@@ -249,6 +249,11 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
+ifeq ($(MACOS_OR_WIN32),true)
+HAVE_DGL_DEPS    = true
+else
+HAVE_DGL_DEPS    = $(shell pkg-config --exists gl x11 && echo true)
+endif
 HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS = $(shell pkg-config --exists ntk_images ntk && echo true)
 
@@ -320,6 +325,9 @@ ifeq ($(HAVE_PULSEAUDIO),true)
 RTAUDIO_FLAGS        += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
 RTAUDIO_LIBS         += $(shell pkg-config --libs libpulse-simple)
 endif
+ifeq ($(HAVE_DGL_DEPS),true)
+NATIVE_PLUGINS_LIBS   = $(shell pkg-config --libs gl x11)
+endif
 endif
 
 ifeq ($(MACOS),true)
@@ -334,6 +342,7 @@ JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS       = -framework Cocoa
 JUCE_GUI_EXTRA_LIBS        = -framework Cocoa -framework IOKit
 LILV_LIBS                  = -ldl -lm
+NATIVE_PLUGINS_LIBS        = -framework OpenGL -framework Cocoa
 endif
 
 ifeq ($(WIN32),true)
@@ -344,10 +353,15 @@ JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
+NATIVE_PLUGINS_LIBS     = -lopengl32 -lgdi32
 endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
+
+ifeq ($(HAVE_DGL_DEPS),true)
+NATIVE_PLUGINS_FLAGS += -DWANT_DISTRHO_UIS
+endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX
