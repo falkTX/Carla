@@ -923,13 +923,14 @@ public:
 
         carla_stdout("CarlaPluginBridge::prepareForSave() - sent, now waiting...");
 
-        for (int i=0; i < 200; ++i)
+        for (int i=0; i < 300; ++i)
         {
-            if (fSaved)
+            if (fSaved || ! fBridgeThread.isThreadRunning())
                 break;
-            carla_msleep(30);
+            carla_msleep(20);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
+            idle();
         }
 
         if (! fSaved)
