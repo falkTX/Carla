@@ -388,11 +388,11 @@ public:
 
     /*!
      * Get the plugin's save state.
-     * The plugin will automatically call prepareForSave() as needed.
+     * The plugin will automatically call prepareForSave() if requested.
      *
      * @see loadStateSave()
      */
-    const CarlaStateSave& getStateSave();
+    const CarlaStateSave& getStateSave(const bool callPrepareForSave = true);
 
     /*!
      * Get the plugin's save state.

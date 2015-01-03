@@ -476,10 +476,12 @@ void CarlaPlugin::randomizeParameters() noexcept
     }
 }
 
-const CarlaStateSave& CarlaPlugin::getStateSave()
+const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 {
+    if (callPrepareForSave)
+        prepareForSave();
+
     pData->stateSave.clear();
-    prepareForSave();
 
     const PluginType pluginType(getType());
 

@@ -1519,6 +1519,15 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
 
 void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
 {
+    // send initial prepareForSave first, giving time for bridges to act
+    for (uint i=0; i < pData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+        if (plugin != nullptr && plugin->isEnabled())
+            plugin->prepareForSave();
+    }
+
     outStream << "<?xml version='1.0' encoding='UTF-8'?>\n";
     outStream << "<!DOCTYPE CARLA-PROJECT>\n";
     outStream << "<CARLA-PROJECT VERSION='2.0'>\n";
@@ -1527,7 +1536,6 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     const EngineOptions& options(pData->options);
 
     MemoryOutputStream outSettings(1024);
-
 
     // save appropriate engine settings
     outSettings << " <EngineSettings>\n";
@@ -1578,7 +1586,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
                 outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
             outPlugin << " <Plugin>\n";
-            outPlugin << plugin->getStateSave().toString();
+            outPlugin << plugin->getStateSave(false).toString();
             outPlugin << " </Plugin>\n";
             outStream << outPlugin;
         }

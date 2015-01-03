@@ -739,7 +739,7 @@ public:
           fPluginType(ptype),
           fInitiated(false),
           fInitError(false),
-          fSaved(false),
+          fSaved(true),
           fTimedOut(false),
           fTimedError(false),
           fLastPongCounter(-1),
@@ -841,10 +841,15 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
+    // TODO - missing getCustomData
+
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
+
+        waitForSaved();
+
         CARLA_SAFE_ASSERT_RETURN(fInfo.chunk.size() > 0, 0);
 
         *dataPtr = fInfo.chunk.data();
@@ -910,7 +915,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (state)
 
-    void prepareForSave() override
+    void prepareForSave() noexcept override
     {
         fSaved = false;
 
@@ -920,8 +925,14 @@ public:
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
             fShmNonRtClientControl.commitWrite();
         }
+    }
 
-        carla_stdout("CarlaPluginBridge::prepareForSave() - sent, now waiting...");
+    void waitForSaved()
+    {
+        if (fSaved)
+            return;
+
+        carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
 
         for (int i=0; i < 300; ++i)
         {
@@ -930,13 +941,12 @@ public:
             carla_msleep(20);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
-            idle();
         }
 
         if (! fSaved)
-            carla_stderr("CarlaPluginBridge::prepareForSave() - Timeout while requesting save state");
+            carla_stderr("CarlaPluginBridge::waitForSaved() - Timeout while requesting save state");
         else
-            carla_stdout("CarlaPluginBridge::prepareForSave() - success!");
+            carla_stdout("CarlaPluginBridge::waitForSaved() - success!");
     }
 
     // -------------------------------------------------------------------
@@ -1118,6 +1128,10 @@ public:
             fShmNonRtClientControl.writeCustomData(filePath.toRawUTF8(), ulength);
             fShmNonRtClientControl.commitWrite();
         }
+
+        // save data internally as well
+        fInfo.chunk.resize(dataSize);
+        std::memcpy(fInfo.chunk.data(), data, dataSize);
     }
 
     // -------------------------------------------------------------------
