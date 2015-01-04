@@ -66,13 +66,18 @@ struct PluginListManager {
                 continue;
 
             // skip some plugins
-            if (std::strcmp(desc->label, "vexsynth") == 0)
+            if (std::strcmp(desc->label, "3bandeq"      ) == 0 ||
+                std::strcmp(desc->label, "3bandsplitter") == 0 ||
+                std::strcmp(desc->label, "mverb"        ) == 0 ||
+                std::strcmp(desc->label, "nekobi"       ) == 0 ||
+                std::strcmp(desc->label, "pingpongpan"  ) == 0 ||
+                std::strcmp(desc->label, "vexsynth"     ) == 0)
             {
                 continue;
             }
 
             // skip midi plugins, not implemented yet
-            if (desc->audioIns == 0 && desc->audioOuts == 0 && desc->midiIns == 1 && desc->midiOuts >= 1)
+            if (desc->audioIns == 0 && desc->audioOuts == 0 && desc->midiIns >= 1 && desc->midiOuts >= 1)
                 continue;
 
             descs.append(desc);
