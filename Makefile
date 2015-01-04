@@ -54,6 +54,10 @@ ALL_LIBS += $(MODULEDIR)/juce_core.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
+ifeq ($(HAVE_DGL),true)
+ALL_LIBS += $(MODULEDIR)/dgl.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a

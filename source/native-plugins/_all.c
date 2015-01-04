@@ -35,6 +35,10 @@ extern void carla_register_native_plugin_midifile(void);
 // Carla
 extern void carla_register_native_plugin_carla(void);
 
+// DISTRHO plugins
+//extern void carla_register_native_plugin_distrho_3bandeq(void);
+//extern void carla_register_native_plugin_distrho_3bandsplitter(void);
+
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);

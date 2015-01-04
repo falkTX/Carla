@@ -158,11 +158,14 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifneq ($(MACOS_OR_WIN32),true)
+ifeq ($(MACOS_OR_WIN32),true)
+HAVE_DGL        = true
+else
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
@@ -249,16 +252,15 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by internal plugins)
 
-ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL_DEPS    = true
-else
-HAVE_DGL_DEPS    = $(shell pkg-config --exists gl x11 && echo true)
-endif
 HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS = $(shell pkg-config --exists ntk_images ntk && echo true)
 
 # --------------------------------------------------------------
 # Set base defines
+
+ifeq ($(HAVE_DGL),true)
+BASE_FLAGS += -DHAVE_DGL
+endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BASE_FLAGS += -DHAVE_FLUIDSYNTH
@@ -315,6 +317,10 @@ ifeq ($(LINUX),true)
 JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
 JUCE_CORE_LIBS        = -ldl -lpthread -lrt
 LILV_LIBS             = -ldl -lm -lrt
+ifeq ($(HAVE_DGL),true)
+DGL_FLAGS             = $(shell pkg-config --cflags gl x11)
+DGL_LIBS              = $(shell pkg-config --libs gl x11)
+endif
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS        += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS         += $(shell pkg-config --libs alsa) -lpthread
@@ -325,12 +331,10 @@ ifeq ($(HAVE_PULSEAUDIO),true)
 RTAUDIO_FLAGS        += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
 RTAUDIO_LIBS         += $(shell pkg-config --libs libpulse-simple)
 endif
-ifeq ($(HAVE_DGL_DEPS),true)
-NATIVE_PLUGINS_LIBS   = $(shell pkg-config --libs gl x11)
-endif
 endif
 
 ifeq ($(MACOS),true)
+DGL_LIBS                   = -framework OpenGL -framework Cocoa
 JACKBRIDGE_LIBS            = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
@@ -342,10 +346,10 @@ JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
 JUCE_GUI_BASICS_LIBS       = -framework Cocoa
 JUCE_GUI_EXTRA_LIBS        = -framework Cocoa -framework IOKit
 LILV_LIBS                  = -ldl -lm
-NATIVE_PLUGINS_LIBS        = -framework OpenGL -framework Cocoa
 endif
 
 ifeq ($(WIN32),true)
+DGL_LIBS                = -lopengl32 -lgdi32
 JACKBRIDGE_LIBS         = -lpthread
 JUCE_AUDIO_DEVICES_LIBS = -lwinmm -lole32
 JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
@@ -353,15 +357,10 @@ JUCE_CORE_LIBS          = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 
 JUCE_GRAPHICS_LIBS      = -lgdi32
 JUCE_GUI_BASICS_LIBS    = -lgdi32 -limm32 -lcomdlg32 -lole32
 LILV_LIBS               = -lm
-NATIVE_PLUGINS_LIBS     = -lopengl32 -lgdi32
 endif
 
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
-
-ifeq ($(HAVE_DGL_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_DISTRHO_UIS
-endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX
