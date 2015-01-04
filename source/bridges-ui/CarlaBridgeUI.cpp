@@ -32,6 +32,7 @@ CarlaBridgeUI::CarlaBridgeUI() noexcept
     : CarlaPipeClient(),
       fQuitReceived(false),
       fGotOptions(false),
+      fLastMsgTimer(-1),
       fToolkit(nullptr),
       fLib(nullptr),
       fLibFilename(),
@@ -111,6 +112,9 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
     if (! fGotOptions) {
         CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0 || std::strcmp(msg, "uiOptions") == 0, true);
     }
+
+    if (fLastMsgTimer > 0)
+        --fLastMsgTimer;
 
     if (std::strcmp(msg, "control") == 0)
     {
@@ -284,15 +288,23 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
         if (! initPipeClient(argv))
             return false;
 
-        // wait for ui options, FIXME
-        for (int i=0; i<20 && ! fGotOptions; ++i)
+        fLastMsgTimer = 0;
+
+        // wait for ui options
+        for (; ++fLastMsgTimer < 50 && ! fGotOptions;)
         {
             idlePipe(true);
-            carla_msleep(100);
+            carla_msleep(20);
         }
 
         if (! fGotOptions)
         {
+            carla_stderr2("CarlaBridgeUI::init() - did not get options on time, quitting...");
+            {
+                const CarlaMutexLocker cml(getPipeLock());
+                writeMessage("exiting\n", 8);
+                flushMessages();
+            }
             closePipeClient();
             return false;
         }

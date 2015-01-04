@@ -142,6 +142,7 @@ public:
 protected:
     bool fQuitReceived;
     bool fGotOptions;
+    int  fLastMsgTimer;
     CarlaBridgeToolkit* fToolkit;
 
     lib_t fLib;

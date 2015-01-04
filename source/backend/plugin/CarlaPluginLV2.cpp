@@ -1493,6 +1493,10 @@ public:
                 break;
             }
         }
+        else
+        {
+            // TODO - detect if ui-bridge crashed
+        }
 
         if (fUI.handle != nullptr && fUI.descriptor != nullptr)
         {
@@ -4461,7 +4465,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
-        carla_stdout("CarlaPluginLV2::handlePluginUIResized(%u, %u)", width, height);
+        carla_debug("CarlaPluginLV2::handlePluginUIResized(%u, %u)", width, height);
 
         if (fUI.handle != nullptr && fExt.uiresize != nullptr)
             fExt.uiresize->ui_resize(fUI.handle, static_cast<int>(width), static_cast<int>(height));
@@ -5441,7 +5445,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-        carla_stdout("CarlaPluginLV2::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
+        carla_debug("CarlaPluginLV2::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
 
         if (urid < fCustomURIDs.count())
         {
