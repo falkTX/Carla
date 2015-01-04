@@ -20,6 +20,8 @@
  * - implement sample rate changes
  * - call outDev->ReconnectAll() after changing buffer size or sample rate
  * - use CARLA_SAFE_ASSERT_RETURN with err
+ * - pianoteq-like SetNoteOnVelocityFilter drawing points widget
+ * - voice count param
  */
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
@@ -99,7 +101,7 @@ public:
 
     // -------------------------------------------------------------------
 
-           bool isAutonomousDevice() override { return false; }
+    /*  */ bool isAutonomousDevice() override { return false; }
     static bool isAutonomousDriver()          { return false; }
 
     // -------------------------------------------------------------------
@@ -125,7 +127,7 @@ private:
 class MidiInputPortPlugin : public MidiInputPort
 {
 public:
-    MidiInputPortPlugin(MidiInputDevice* const device, const int portNum)
+    MidiInputPortPlugin(MidiInputDevice* const device, const int portNum = 0)
         : MidiInputPort(device, portNum),
           leakDetector_MidiInputPortPlugin() {}
 
@@ -162,29 +164,12 @@ public:
 
     // -------------------------------------------------------------------
 
-           bool isAutonomousDevice() override { return false; }
+    /*  */ bool isAutonomousDevice() override { return false; }
     static bool isAutonomousDriver()          { return false; }
 
     // -------------------------------------------------------------------
 
-    MidiInputPortPlugin* CreateMidiPortPlugin()
-    {
-        return new MidiInputPortPlugin(this, int(Ports.size()));
-    }
-
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiInputDevicePlugin)
-};
-
-// -----------------------------------------------------------------------
-// SamplerPlugin
-
-struct SamplerPlugin {
-    Sampler sampler;
-    MidiInputDevicePlugin midiIn;
-
-    SamplerPlugin()
-        : sampler(),
-          midiIn(&sampler) {}
 };
 
 } // namespace LinuxSampler
@@ -210,11 +195,12 @@ public:
           fLabel(nullptr),
           fMaker(nullptr),
           fRealName(nullptr),
+          sSampler(),
           fAudioOutputDevice(nullptr),
+          fMidiInputDevice(sSampler),
           fMidiInputPort(nullptr),
           fInstrument(nullptr),
           fInstrumentIds(),
-          sSampler(),
           leakDetector_CarlaPluginLinuxSampler()
     {
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
@@ -1166,34 +1152,38 @@ public:
         // Init LinuxSampler stuff
 
         fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
-        fMidiInputPort     = sSampler->midiIn.CreateMidiPortPlugin();
+        fMidiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(sSampler);
+        fMidiInputPort     = new LinuxSampler::MidiInputPortPlugin(fMidiInputDevice);
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            fSamplerChannels[i] = sSampler->sampler.AddSamplerChannel();
+            fSamplerChannels[i] = sSampler->AddSamplerChannel();
             CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
 
             fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
 
-            fEngineChannels[i] = fSamplerChannels[i]->GetEngineChannel();
-            CARLA_SAFE_ASSERT_CONTINUE(fEngineChannels[i] != nullptr);
+            LinuxSampler::EngineChannel* const engineChannel(fSamplerChannels[i]->GetEngineChannel());
+            CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
-            fEngineChannels[i]->Pan(0.0f);
-            fEngineChannels[i]->Volume(kIsGIG ? LinuxSampler::kVolumeMax/10.0f : LinuxSampler::kVolumeMax); // FIXME
-            fEngineChannels[i]->Connect(fAudioOutputDevice);
+            // TODO REMOVE
+            fEngineChannels[i] = engineChannel;
+
+            engineChannel->Pan(0.0f);
+            engineChannel->Volume(kIsGIG ? LinuxSampler::kVolumeMax/10.0f : LinuxSampler::kVolumeMax); // FIXME
+            engineChannel->Connect(fAudioOutputDevice);
 
             if (kUses16Outs)
             {
-                fEngineChannels[i]->SetOutputChannel(0, i*2);
-                fEngineChannels[i]->SetOutputChannel(1, i*2 +1);
-                fMidiInputPort->Connect(fEngineChannels[i], static_cast<LinuxSampler::midi_chan_t>(i));
+                engineChannel->SetOutputChannel(0, i*2);
+                engineChannel->SetOutputChannel(1, i*2 +1);
+                fMidiInputPort->Connect(engineChannel, static_cast<LinuxSampler::midi_chan_t>(i));
             }
             else
             {
-                fEngineChannels[i]->SetOutputChannel(0, 0);
-                fEngineChannels[i]->SetOutputChannel(1, 1);
-                fMidiInputPort->Connect(fEngineChannels[i], LinuxSampler::midi_chan_all);
+                engineChannel->SetOutputChannel(0, 0);
+                engineChannel->SetOutputChannel(1, 1);
+                fMidiInputPort->Connect(engineChannel, LinuxSampler::midi_chan_all);
             }
         }
 
@@ -1305,16 +1295,17 @@ private:
 
     int32_t fCurProgs[MAX_MIDI_CHANNELS];
 
-    LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
-    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
+    SharedResourcePointer<LinuxSampler::Sampler> sSampler;
 
     LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
+    LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
     LinuxSampler::MidiInputPortPlugin*     fMidiInputPort;
 
-    LinuxSampler::InstrumentManager* fInstrument;
-    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+    LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
+    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS]; // TODO remove
 
-    SharedResourcePointer<LinuxSampler::SamplerPlugin> sSampler;
+    /*       */ LinuxSampler::InstrumentManager*                  fInstrument;
+    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginLinuxSampler)
 };
