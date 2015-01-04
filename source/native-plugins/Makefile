@@ -11,7 +11,7 @@ include ../modules/Makefile.mk
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_C_FLAGS   += -I..
-BUILD_CXX_FLAGS += -I.. -I../distrho -isystem $(CWD)/modules
+BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Flags for _all.c
@@ -61,6 +61,16 @@ OBJS += \
 	$(OBJDIR)/bigmeter.cpp.o \
 	$(OBJDIR)/midi-file.cpp.o \
 	$(OBJDIR)/notes.cpp.o
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# DISTRHO plugins
+
+OBJS += \
+	$(OBJDIR)/distrho-3bandeq.cpp.o \
+	$(OBJDIR)/distrho-3bandsplitter.cpp.o \
+	$(OBJDIR)/distrho-mverb.cpp.o \
+	$(OBJDIR)/distrho-nekobi.cpp.o \
+	$(OBJDIR)/distrho-pingpongpan.cpp.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
@@ -157,6 +167,33 @@ $(OBJDIR)/%.c.o: %.c
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/distrho-3bandeq.cpp.o: distrho-3bandeq.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_3BandEQ -Idistrho-3bandeq -I$(CWD)/modules/dgl -c -o $@
+
+$(OBJDIR)/distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_3BandSplitter -Idistrho-3bandsplitter -I$(CWD)/modules/dgl -c -o $@
+
+$(OBJDIR)/distrho-mverb.cpp.o: distrho-mverb.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_MVerb -Idistrho-mverb -I$(CWD)/modules/dgl -c -o $@
+
+$(OBJDIR)/distrho-nekobi.cpp.o: distrho-nekobi.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -Idistrho-nekobi -I$(CWD)/modules/dgl -c -o $@
+
+$(OBJDIR)/distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -Idistrho-pingpongpan -I$(CWD)/modules/dgl -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
 $(OBJDIR)/zynaddsubfx-fx.cpp.o: zynaddsubfx-fx.cpp $(ZYN_UI_FILES_H)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
@@ -176,6 +213,8 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)

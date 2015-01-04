@@ -45,22 +45,27 @@ public:
           fPlugin(plugin),
           fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer())
     {
-        fUI.setTitle(host->uiName);
+        fUI.setWindowTitle(host->uiName);
 
         if (host->uiParentId != 0)
-            fUI.setTransientWinId(host->uiParentId);
+            fUI.setWindowTransientWinId(host->uiParentId);
+    }
+
+    ~UICarla()
+    {
+        fUI.quit();
     }
 
     // ---------------------------------------------
 
     void carla_show(const bool yesNo)
     {
-        fUI.setVisible(yesNo);
+        fUI.setWindowVisible(yesNo);
     }
 
-    void carla_idle()
+    bool carla_idle()
     {
-        fUI.idle();
+        return fUI.idle();
     }
 
     void carla_setParameterValue(const uint32_t index, const float value)
@@ -84,7 +89,7 @@ public:
 
     void carla_setUiTitle(const char* const uiTitle)
     {
-        fUI.setTitle(uiTitle);
+        fUI.setWindowTitle(uiTitle);
     }
 
     // ---------------------------------------------
@@ -112,7 +117,7 @@ protected:
 
     void handleSetSize(const uint width, const uint height)
     {
-        fUI.setSize(width, height);
+        fUI.setWindowSize(width, height);
     }
 
     // ---------------------------------------------
@@ -205,25 +210,23 @@ protected:
 
         static NativeParameter param;
 
-        // reset
-        param.hints = ::PARAMETER_IS_ENABLED;
         param.scalePointCount = 0;
         param.scalePoints = nullptr;
 
         {
-            int      nativeParamHints = ::PARAMETER_IS_ENABLED;
+            int      nativeParamHints = ::NATIVE_PARAMETER_IS_ENABLED;
             const uint32_t paramHints = fPlugin.getParameterHints(index);
 
             if (paramHints & kParameterIsAutomable)
-                nativeParamHints |= ::PARAMETER_IS_AUTOMABLE;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_AUTOMABLE;
             if (paramHints & kParameterIsBoolean)
-                nativeParamHints |= ::PARAMETER_IS_BOOLEAN;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_BOOLEAN;
             if (paramHints & kParameterIsInteger)
-                nativeParamHints |= ::PARAMETER_IS_INTEGER;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_INTEGER;
             if (paramHints & kParameterIsLogarithmic)
-                nativeParamHints |= ::PARAMETER_IS_LOGARITHMIC;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_LOGARITHMIC;
             if (paramHints & kParameterIsOutput)
-                nativeParamHints |= ::PARAMETER_IS_OUTPUT;
+                nativeParamHints |= ::NATIVE_PARAMETER_IS_OUTPUT;
 
             param.hints = static_cast<NativeParameterHints>(nativeParamHints);
         }
@@ -329,7 +332,13 @@ protected:
             realMidiEvent.frame = midiEvent.time;
             realMidiEvent.size  = midiEvent.size;
 
-            carla_copy<uint8_t>(realMidiEvent.buf, midiEvent.data, midiEvent.size);
+            uint8_t j=0;
+            for (; j<midiEvent.size; ++j)
+                realMidiEvent.data[j] = midiEvent.data[j];
+            for (; j<midiEvent.size; ++j)
+                realMidiEvent.data[j] = midiEvent.data[j];
+
+            realMidiEvent.dataExt = nullptr;
         }
 
         fPlugin.run(const_cast<const float**>(inBuffer), outBuffer, frames, realMidiEvents, midiEventCount);
@@ -348,17 +357,30 @@ protected:
     void uiShow(const bool show) override
     {
         if (show)
+        {
             createUiIfNeeded();
+            CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
 
-        if (fUiPtr != nullptr)
             fUiPtr->carla_show(show);
+        }
+        else if (fUiPtr != nullptr)
+        {
+            delete fUiPtr;
+            fUiPtr = nullptr;
+        }
     }
 
     void uiIdle() override
     {
         CARLA_SAFE_ASSERT_RETURN(fUiPtr != nullptr,);
 
-        fUiPtr->carla_idle();
+        if (! fUiPtr->carla_idle())
+        {
+            uiClosed();
+
+            delete fUiPtr;
+            fUiPtr = nullptr;
+        }
     }
 
     void uiSetParameterValue(const uint32_t index, const float value) override

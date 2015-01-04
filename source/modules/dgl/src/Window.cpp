@@ -227,7 +227,12 @@ struct Window::PrivateData {
     {
         DBG("Destroying window..."); DBGF;
 
-        //fOnModal = false;
+        if (fModal.enabled)
+        {
+            exec_fini();
+            close();
+        }
+
         fWidgets.clear();
 
         if (fUsingEmbed)
@@ -687,9 +692,9 @@ struct Window::PrivateData {
 
         Widget::SpecialEvent ev;
         ev.press = press;
-        ev.key  = key;
-        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
-        ev.time = puglGetEventTimestamp(fView);
+        ev.key   = key;
+        ev.mod   = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time  = puglGetEventTimestamp(fView);
 
         FOR_EACH_WIDGET_INV(rit)
         {
@@ -704,14 +709,17 @@ struct Window::PrivateData {
     {
         DBGp("PUGL: onMouse : %i %i %i %i\n", button, press, x, y);
 
+        // FIXME - pugl sends 2 of these for each window on init, don't ask me why. we'll ignore it
+        if (press && button == 0 && x == 0 && y == 0) return;
+
         if (fModal.childFocus != nullptr)
             return fModal.childFocus->focus();
 
         Widget::MouseEvent ev;
         ev.button = button;
-        ev.press = press;
-        ev.mod  = static_cast<Modifier>(puglGetModifiers(fView));
-        ev.time = puglGetEventTimestamp(fView);
+        ev.press  = press;
+        ev.mod    = static_cast<Modifier>(puglGetModifiers(fView));
+        ev.time   = puglGetEventTimestamp(fView);
 
         FOR_EACH_WIDGET_INV(rit)
         {
@@ -773,7 +781,7 @@ struct Window::PrivateData {
     {
         DBGp("PUGL: onReshape : %i %i\n", width, height);
 
-        if (width == 1 && height == 1)
+        if (width <= 1 && height <= 1)
             return;
 
         fWidth  = width;
@@ -794,7 +802,7 @@ struct Window::PrivateData {
     {
         DBG("PUGL: onClose\n");
 
-        if (fModal.enabled && fModal.parent != nullptr)
+        if (fModal.enabled)
             exec_fini();
 
         fSelf->onClose();
@@ -906,13 +914,16 @@ struct Window::PrivateData {
 // Window
 
 Window::Window(App& app)
-    : pData(new PrivateData(app, this)) {}
+    : pData(new PrivateData(app, this)),
+      leakDetector_Window() {}
 
 Window::Window(App& app, Window& parent)
-    : pData(new PrivateData(app, this, parent)) {}
+    : pData(new PrivateData(app, this, parent)),
+      leakDetector_Window() {}
 
 Window::Window(App& app, intptr_t parentId)
-    : pData(new PrivateData(app, this, parentId)) {}
+    : pData(new PrivateData(app, this, parentId)),
+      leakDetector_Window() {}
 
 Window::~Window()
 {

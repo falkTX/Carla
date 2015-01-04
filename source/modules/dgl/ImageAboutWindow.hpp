@@ -43,7 +43,8 @@ protected:
 private:
     Image fImgBackground;
 
-    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageAboutWindow)
+    DISTRHO_DECLARE_NON_COPY_CLASS(ImageAboutWindow)
+    //DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageAboutWindow)
 };
 
 // -----------------------------------------------------------------------

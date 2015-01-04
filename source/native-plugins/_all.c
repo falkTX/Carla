@@ -36,8 +36,11 @@ extern void carla_register_native_plugin_midifile(void);
 extern void carla_register_native_plugin_carla(void);
 
 // DISTRHO plugins
-//extern void carla_register_native_plugin_distrho_3bandeq(void);
-//extern void carla_register_native_plugin_distrho_3bandsplitter(void);
+extern void carla_register_native_plugin_distrho_3bandeq(void);
+extern void carla_register_native_plugin_distrho_3bandsplitter(void);
+extern void carla_register_native_plugin_distrho_mverb(void);
+extern void carla_register_native_plugin_distrho_nekobi(void);
+extern void carla_register_native_plugin_distrho_pingpongpan(void);
 
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
@@ -70,6 +73,13 @@ void carla_register_all_plugins(void)
 
     // Carla
     carla_register_native_plugin_carla();
+
+    // DISTRHO Plugins
+    carla_register_native_plugin_distrho_3bandeq();
+    carla_register_native_plugin_distrho_3bandsplitter();
+    carla_register_native_plugin_distrho_mverb();
+    carla_register_native_plugin_distrho_nekobi();
+    carla_register_native_plugin_distrho_pingpongpan();
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();

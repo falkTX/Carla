@@ -37,6 +37,10 @@ LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
 
+ifeq ($(HAVE_DGL),true)
+LIBS += $(MODULEDIR)/dgl.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_data_structures.a
@@ -71,6 +75,10 @@ endif
 
 ifeq ($(MACOS),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
+
+ifeq ($(HAVE_DGL),true)
+LINK_FLAGS += $(DGL_LIBS)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)

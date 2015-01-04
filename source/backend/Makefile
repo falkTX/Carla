@@ -30,6 +30,10 @@ STANDALONE_LIBS += $(MODULEDIR)/lilv.a
 STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
 
+ifeq ($(HAVE_DGL),true)
+STANDALONE_LIBS += $(MODULEDIR)/dgl.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_processors.a
@@ -50,6 +54,10 @@ UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
 UTILS_LIBS += $(MODULEDIR)/native-plugins.a
+
+ifeq ($(HAVE_DGL),true)
+UTILS_LIBS += $(MODULEDIR)/dgl.a
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -77,6 +85,10 @@ STANDALONE_LINK_FLAGS += $(RTAUDIO_LIBS)
 STANDALONE_LINK_FLAGS += $(RTMIDI_LIBS)
 endif
 
+ifeq ($(HAVE_DGL),true)
+STANDALONE_LINK_FLAGS += $(DGL_LIBS)
+endif
+
 ifeq ($(HAVE_FLUIDSYNTH),true)
 STANDALONE_LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 endif
@@ -98,6 +110,10 @@ UTILS_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
 UTILS_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
+
+ifeq ($(HAVE_DGL),true)
+UTILS_LINK_FLAGS += $(DGL_LIBS)
+endif
 
 ifneq ($(HAIKU),true)
 UTILS_LINK_FLAGS += -lpthread
