@@ -131,8 +131,6 @@ public:
         : MidiInputPort(device, portNum),
           leakDetector_MidiInputPortPlugin() {}
 
-    ~MidiInputPortPlugin() override {}
-
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiInputPortPlugin)
 };
 
@@ -144,7 +142,17 @@ class MidiInputDevicePlugin : public MidiInputDevice
 public:
     MidiInputDevicePlugin(Sampler* const sampler)
         : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler),
-          leakDetector_MidiInputDevicePlugin() {}
+          leakDetector_MidiInputDevicePlugin()
+    {
+        AcquirePorts(1);
+    }
+
+    ~MidiInputDevicePlugin() override
+    {
+        for (std::map<int,MidiInputPort*>::iterator it = Ports.begin(), end = Ports.end(); it != end; ++it)
+            delete dynamic_cast<MidiInputPortPlugin*>(it->second);
+        Ports.clear();
+    }
 
     // -------------------------------------------------------------------
     // LinuxSampler virtual methods
@@ -159,7 +167,7 @@ public:
 
     MidiInputPort* CreateMidiPort() override
     {
-        return new MidiInputPortPlugin(this, int(Ports.size()));
+        return new MidiInputPortPlugin(this, int(PortCount()));
     }
 
     // -------------------------------------------------------------------
@@ -196,18 +204,21 @@ public:
           fMaker(nullptr),
           fRealName(nullptr),
           sSampler(),
-          fAudioOutputDevice(nullptr),
+          fAudioOutputDevice(engine, this, kUses16Outs),
           fMidiInputDevice(sSampler),
           fMidiInputPort(nullptr),
-          fInstrument(nullptr),
           fInstrumentIds(),
+          fInstrumentInfo(),
           leakDetector_CarlaPluginLinuxSampler()
     {
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
+        sSampler->SetGlobalMaxStreams(300);
+        sSampler->SetGlobalMaxVoices(300);
+
         carla_zeroStruct(fCurProgs,        MAX_MIDI_CHANNELS);
-        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
         carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
+        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
 
         if (use16Outs && ! isGIG)
             carla_stderr("Tried to use SFZ with 16 stereo outs, this doesn't make much sense so single stereo mode will be used instead");
@@ -229,36 +240,26 @@ public:
             pData->active = false;
         }
 
-        if (fMidiInputPort != nullptr)
+        fMidiInputPort = nullptr;
+
+        for (uint i=0; i<kMaxChannels; ++i)
         {
-            for (uint i=0; i<kMaxChannels; ++i)
+            if (fSamplerChannels[i] != nullptr)
             {
-                if (fSamplerChannels[i] != nullptr)
+                if (fEngineChannels[i] != nullptr)
                 {
-                    if (fEngineChannels[i] != nullptr)
-                    {
-                        fMidiInputPort->Disconnect(fEngineChannels[i]);
-                        fEngineChannels[i]->DisconnectAudioOutputDevice();
-                        fEngineChannels[i] = nullptr;
-                    }
-
-                    sSampler->sampler.RemoveSamplerChannel(fSamplerChannels[i]);
-                    fSamplerChannels[i] = nullptr;
+                    fEngineChannels[i]->DisconnectAudioOutputDevice();
+                    fEngineChannels[i]->DisconnectAllMidiInputPorts();
+                    fEngineChannels[i] = nullptr;
                 }
+
+                sSampler->RemoveSamplerChannel(fSamplerChannels[i]);
+                fSamplerChannels[i] = nullptr;
             }
-
-            delete fMidiInputPort;
-            fMidiInputPort = nullptr;
         }
 
-        if (fAudioOutputDevice != nullptr)
-        {
-            delete fAudioOutputDevice;
-            fAudioOutputDevice = nullptr;
-        }
-
-        fInstrument = nullptr;
         fInstrumentIds.clear();
+        fInstrumentInfo.clear();
 
         if (fLabel != nullptr)
         {
@@ -430,7 +431,7 @@ public:
                         else
                         {
                             try {
-                                fInstrument->LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
+                                LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
                             } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
                         }
 
@@ -478,7 +479,7 @@ public:
             else
             {
                 try {
-                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
+                    LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
                 } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
             }
 
@@ -499,7 +500,6 @@ public:
     void reload() override
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fInstrument != nullptr,);
         carla_debug("CarlaPluginLinuxSampler::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
@@ -641,7 +641,7 @@ public:
         pData->prog.clear();
 
         // Query new programs
-        const uint32_t count(static_cast<uint32_t>(fInstrumentIds.size()));
+        const uint32_t count(static_cast<uint32_t>(fInstrumentInfo.size()));
 
         // sound kits must always have at least 1 midi-program
         CARLA_SAFE_ASSERT_RETURN(count > 0,);
@@ -649,16 +649,8 @@ public:
         pData->prog.createNew(count);
 
         // Update data
-        LinuxSampler::InstrumentManager::instrument_info_t info;
-
         for (uint32_t i=0; i < pData->prog.count; ++i)
-        {
-            try {
-                info = fInstrument->GetInstrumentInfo(fInstrumentIds[i]);
-            } CARLA_SAFE_EXCEPTION_CONTINUE("GetInstrumentInfo");
-
-            pData->prog.names[i] = carla_strdup_safe(info.InstrumentName.c_str());
-        }
+            pData->prog.names[i] = carla_strdup_safe(fInstrumentInfo[i].InstrumentName.c_str());
 
 #ifndef BUILD_BRIDGE
         // Update OSC Names
@@ -679,7 +671,7 @@ public:
                 CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
 
                 try {
-                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[0], engineChannel);
+                    LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[0], engineChannel);
                 } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
 
                 fCurProgs[i] = 0;
@@ -931,7 +923,7 @@ public:
                             else
                             {
                                 try {
-                                    fInstrument->LoadInstrumentInBackground(fInstrumentIds[programId], engineChannel);
+                                    LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[programId], engineChannel);
                                 } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
                             }
 
@@ -1038,11 +1030,11 @@ public:
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
-            if (LinuxSampler::AudioChannel* const outDev = fAudioOutputDevice->Channel(i))
+            if (LinuxSampler::AudioChannel* const outDev = fAudioOutputDevice.Channel(i))
                 outDev->SetBuffer(outBuffer[i] + timeOffset);
         }
 
-        fAudioOutputDevice->Render(frames);
+        fAudioOutputDevice.Render(frames);
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1102,16 +1094,12 @@ public:
 #ifndef CARLA_OS_WIN // FIXME, need to update linuxsampler win32 build
     void bufferSizeChanged(const uint32_t) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fAudioOutputDevice != nullptr,);
-
-        fAudioOutputDevice->ReconnectAll();
+        fAudioOutputDevice.ReconnectAll();
     }
 
     void sampleRateChanged(const double) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fAudioOutputDevice != nullptr,);
-
-        fAudioOutputDevice->ReconnectAll();
+        fAudioOutputDevice.ReconnectAll();
     }
 #endif
 
@@ -1151,40 +1139,52 @@ public:
         // ---------------------------------------------------------------
         // Init LinuxSampler stuff
 
-        fAudioOutputDevice = new LinuxSampler::AudioOutputDevicePlugin(pData->engine, this, kUses16Outs);
-        fMidiInputDevice   = new LinuxSampler::MidiInputDevicePlugin(sSampler);
-        fMidiInputPort     = new LinuxSampler::MidiInputPortPlugin(fMidiInputDevice);
+        fMidiInputPort = fMidiInputDevice.GetPort(0);
+
+        if (fMidiInputPort == nullptr)
+        {
+            pData->engine->setLastError("Failed to create LinuxSampler midi input port");
+            return false;
+        }
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            fSamplerChannels[i] = sSampler->AddSamplerChannel();
-            CARLA_SAFE_ASSERT_CONTINUE(fSamplerChannels[i] != nullptr);
+            LinuxSampler::SamplerChannel* const samplerChannel(sSampler->AddSamplerChannel());
+            CARLA_SAFE_ASSERT_CONTINUE(samplerChannel != nullptr);
 
-            fSamplerChannels[i]->SetEngineType(kIsGIG ? "GIG" : "SFZ");
-            fSamplerChannels[i]->SetAudioOutputDevice(fAudioOutputDevice);
+            samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
+            samplerChannel->SetAudioOutputDevice(&fAudioOutputDevice);
+            samplerChannel->SetMidiInputDevice(&fMidiInputDevice);
+            //samplerChannel->Connect(fMidiInputPort);
 
-            LinuxSampler::EngineChannel* const engineChannel(fSamplerChannels[i]->GetEngineChannel());
+            LinuxSampler::EngineChannel* const engineChannel(samplerChannel->GetEngineChannel());
             CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
-
-            // TODO REMOVE
-            fEngineChannels[i] = engineChannel;
 
             engineChannel->Pan(0.0f);
             engineChannel->Volume(kIsGIG ? LinuxSampler::kVolumeMax/10.0f : LinuxSampler::kVolumeMax); // FIXME
-            engineChannel->Connect(fAudioOutputDevice);
+            engineChannel->SetMidiInstrumentMapToDefault();
 
             if (kUses16Outs)
             {
                 engineChannel->SetOutputChannel(0, i*2);
                 engineChannel->SetOutputChannel(1, i*2 +1);
-                fMidiInputPort->Connect(engineChannel, static_cast<LinuxSampler::midi_chan_t>(i));
+                samplerChannel->SetMidiInputChannel(static_cast<LinuxSampler::midi_chan_t>(i));
             }
             else
             {
                 engineChannel->SetOutputChannel(0, 0);
                 engineChannel->SetOutputChannel(1, 1);
-                fMidiInputPort->Connect(engineChannel, LinuxSampler::midi_chan_all);
+                samplerChannel->SetMidiInputChannel(LinuxSampler::midi_chan_all);
             }
+
+            fSamplerChannels[i] = samplerChannel;
+            fEngineChannels[i]  = engineChannel;
+        }
+
+        if (fSamplerChannels[0] == nullptr || fEngineChannels[0] == nullptr)
+        {
+            pData->engine->setLastError("Failed to get LinuxSampler engine channels");
+            return false;
         }
 
         // ---------------------------------------------------------------
@@ -1194,16 +1194,16 @@ public:
 
         if (engine == nullptr)
         {
-            pData->engine->setLastError("Failed to get LinuxSampler instrument manager");
+            pData->engine->setLastError("Failed to get LinuxSampler engine via channel");
             return false;
         }
 
         // ---------------------------------------------------------------
         // Get the Engine's Instrument Manager
 
-        fInstrument = engine->GetInstrumentManager();
+        LinuxSampler::InstrumentManager* const instrumentMgr(engine->GetInstrumentManager());
 
-        if (fInstrument == nullptr)
+        if (instrumentMgr == nullptr)
         {
             pData->engine->setLastError("Failed to get LinuxSampler instrument manager");
             return false;
@@ -1213,7 +1213,7 @@ public:
         // Load the Instrument via filename
 
         try {
-            fInstrumentIds = fInstrument->GetInstrumentFileContent(filename);
+            fInstrumentIds = instrumentMgr->GetInstrumentFileContent(filename);
         }
         catch (const LinuxSampler::InstrumentManagerException& e)
         {
@@ -1224,22 +1224,23 @@ public:
         // ---------------------------------------------------------------
         // Get info
 
-        if (fInstrumentIds.size() == 0)
+        const std::size_t numInstruments(fInstrumentIds.size());
+
+        if (numInstruments == 0)
         {
             pData->engine->setLastError("Failed to find any instruments");
             return false;
         }
 
-        LinuxSampler::InstrumentManager::instrument_info_t info;
-
-        try {
-            info = fInstrument->GetInstrumentInfo(fInstrumentIds[0]);
-        }
-        catch (const LinuxSampler::InstrumentManagerException& e)
+        for (std::size_t i=0; i<numInstruments; ++i)
         {
-            pData->engine->setLastError(e.what());
-            return false;
+            try {
+                fInstrumentInfo.push_back(instrumentMgr->GetInstrumentInfo(fInstrumentIds[i]));
+            } CARLA_SAFE_EXCEPTION("GetInstrumentInfo");
         }
+        CARLA_SAFE_ASSERT(fInstrumentInfo.size() == numInstruments);
+
+        LinuxSampler::InstrumentManager::instrument_info_t& info(fInstrumentInfo[0]);
 
         CarlaString label2(label != nullptr ? label : File(filename).getFileNameWithoutExtension().toRawUTF8());
 
@@ -1297,15 +1298,15 @@ private:
 
     SharedResourcePointer<LinuxSampler::Sampler> sSampler;
 
-    LinuxSampler::AudioOutputDevicePlugin* fAudioOutputDevice;
-    LinuxSampler::MidiInputDevicePlugin*   fMidiInputDevice;
-    LinuxSampler::MidiInputPortPlugin*     fMidiInputPort;
+    LinuxSampler::AudioOutputDevicePlugin fAudioOutputDevice;
+    LinuxSampler::MidiInputDevicePlugin   fMidiInputDevice;
+    LinuxSampler::MidiInputPort*          fMidiInputPort;
 
     LinuxSampler::SamplerChannel* fSamplerChannels[MAX_MIDI_CHANNELS];
-    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS]; // TODO remove
+    LinuxSampler::EngineChannel*  fEngineChannels[MAX_MIDI_CHANNELS];
 
-    /*       */ LinuxSampler::InstrumentManager*                  fInstrument;
-    std::vector<LinuxSampler::InstrumentManager::instrument_id_t> fInstrumentIds;
+    std::vector<LinuxSampler::InstrumentManager::instrument_id_t>   fInstrumentIds;
+    std::vector<LinuxSampler::InstrumentManager::instrument_info_t> fInstrumentInfo;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginLinuxSampler)
 };
