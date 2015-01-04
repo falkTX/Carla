@@ -42,18 +42,21 @@ CarlaEngineThread::~CarlaEngineThread() noexcept
 void CarlaEngineThread::run() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(kEngine->isRunning());
+#endif
     carla_debug("CarlaEngineThread::run()");
 
     bool needsSingleThread, needsUiUpdates, oscRegisted;
     float value;
 #ifdef BUILD_BRIDGE
     oscRegisted = false;
-#endif
 
+    for (; /*kEngine->isRunning() &&*/ ! shouldThreadExit();)
+    {
+#else
     for (; kEngine->isRunning() && ! shouldThreadExit();)
     {
-#ifndef BUILD_BRIDGE
         oscRegisted = kEngine->isOscControlRegistered();
 #endif
 
