@@ -692,20 +692,23 @@ class HostWindow(QMainWindow):
         if self.fPluginCount == 0:
             return
 
-        if not self.host.isPlugin:
+        # FIXME - this is not working
+        # removing a plugin causes flicker, the rack-list becomes empty for some time
+        # this breaks the remove-all animation, so don't bother using it
+        if False and not self.host.isPlugin:
             self.projectLoadingStarted()
 
             app = QApplication.instance()
             app.processEvents()
 
-            for i in range(self.fPluginCount):
-                self.host.remove_plugin(self.fPluginCount-i-1)
+            for i in reversed(range(self.fPluginCount)):
+                self.host.remove_plugin(i)
                 app.processEvents()
 
             self.projectLoadingFinished()
 
-        self.host.remove_all_plugins()
         self.removeAllPlugins()
+        self.host.remove_all_plugins()
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
