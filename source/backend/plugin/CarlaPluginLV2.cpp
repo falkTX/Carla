@@ -1477,12 +1477,12 @@ public:
             case CarlaPipeServerLV2::UiNone:
             case CarlaPipeServerLV2::UiShow:
                 break;
-            case CarlaPipeServerLV2::UiCrashed:
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
-                break;
             case CarlaPipeServerLV2::UiHide:
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 fPipeServer.stopPipeServer(2000);
+                // nobreak
+            case CarlaPipeServerLV2::UiCrashed:
+                pData->transientTryCounter = 0;
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 break;
             }
         }
@@ -4422,6 +4422,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
         carla_debug("CarlaPluginLV2::handleExternalUIClosed()");
 
+        pData->transientTryCounter = 0;
+
         if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
             fUI.descriptor->cleanup(fUI.handle);
 
@@ -4435,6 +4437,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EMBED,);
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginLV2::handlePluginUIClosed()");
+
+        pData->transientTryCounter = 0;
 
         fUI.window->hide();
 
