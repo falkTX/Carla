@@ -425,16 +425,20 @@ public:
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
     }
 
-    void writeUiOptionsMessage(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) const noexcept
+    void writeUiOptionsMessage(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) const noexcept
     {
         char tmpBuf[0xff+1];
         tmpBuf[0xff] = '\0';
 
         const CarlaMutexLocker cml(getPipeLock());
+        const ScopedLocale csl;
 
         _writeMsgBuffer("uiOptions\n", 10);
 
         {
+            std::snprintf(tmpBuf, 0xff, "%g\n", sampleRate);
+            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+
             std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(useTheme));
             _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
 
@@ -1089,6 +1093,9 @@ public:
         if (fFeatures[kFeatureIdExternalUi] != nullptr && fFeatures[kFeatureIdExternalUi]->data != nullptr)
             ((LV2_External_UI_Host*)fFeatures[kFeatureIdExternalUi]->data)->plugin_human_id = fLv2Options.windowTitle;
 
+        if (fPipeServer.isPipeRunning())
+            fPipeServer.writeUiTitleMessage(fLv2Options.windowTitle);
+
 #ifndef LV2_UIS_ONLY_BRIDGES
         if (fUI.window != nullptr)
             fUI.window->setTitle(fLv2Options.windowTitle);
@@ -1250,7 +1257,7 @@ public:
                 for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
                     fPipeServer.writeLv2UridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
 
-                fPipeServer.writeUiOptionsMessage(true, true, fLv2Options.windowTitle, frontendWinId);
+                fPipeServer.writeUiOptionsMessage(pData->engine->getSampleRate(), true, true, fLv2Options.windowTitle, frontendWinId);
 
                 fPipeServer.writeShowMessage();
             }
@@ -5199,8 +5206,14 @@ public:
             if (const char* const bridgeBinary = getUiBridgeBinary(uiType))
             {
                 carla_stdout("Will use UI-Bridge, binary: \"%s\"", bridgeBinary);
+
+                CarlaString guiTitle(pData->name);
+                guiTitle += " (GUI)";
+                fLv2Options.windowTitle = guiTitle.dup();
+
                 fUI.type = UI::TYPE_BRIDGE;
                 fPipeServer.setData(bridgeBinary, fRdfDescriptor->URI, fUI.rdfDescriptor->URI);
+
                 delete[] bridgeBinary;
                 return;
             }

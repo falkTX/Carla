@@ -608,8 +608,12 @@ public:
         fCustomURIDs.append(carla_strdup(uri));
     }
 
-    void uiOptionsChanged(const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) override
+    void uiOptionsChanged(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) override
     {
+        carla_debug("CarlaLv2Client::uiOptionsChanged(%g, %s, %s, \"%s\", " P_UINTPTR ")", sampleRate, bool2str(useTheme), bool2str(useThemeColors), windowTitle, transientWindowId);
+
+        fLv2Options.sampleRate = gSampleRate = sampleRate;
+
         fUiOptions.useTheme          = useTheme;
         fUiOptions.useThemeColors    = useThemeColors;
         fUiOptions.windowTitle       = windowTitle;

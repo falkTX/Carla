@@ -106,9 +106,11 @@ const char* CarlaBridgeUI::libError() const noexcept
 
 bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
 {
-   if (! fGotOptions) {
-       CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0 || std::strcmp(msg, "uiOptions") == 0, true);
-   }
+    carla_debug("CarlaBridgeUI::msgReceived(\"%s\")", msg);
+
+    if (! fGotOptions) {
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0 || std::strcmp(msg, "uiOptions") == 0, true);
+    }
 
     if (std::strcmp(msg, "control") == 0)
     {
@@ -208,17 +210,19 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
 
     if (std::strcmp(msg, "uiOptions") == 0)
     {
+        double sampleRate;
         bool useTheme, useThemeColors;
         const char* windowTitle;
         uint64_t transientWindowId;
 
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(sampleRate), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useTheme), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsBool(useThemeColors), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(windowTitle), true);
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(transientWindowId), true);
 
         fGotOptions = true;
-        uiOptionsChanged(useTheme, useThemeColors, windowTitle, static_cast<uintptr_t>(transientWindowId));
+        uiOptionsChanged(sampleRate, useTheme, useThemeColors, windowTitle, static_cast<uintptr_t>(transientWindowId));
 
         delete[] windowTitle;
         return true;

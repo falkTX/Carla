@@ -697,11 +697,13 @@ bool CarlaPlugin::ProtectedData::uiLibClose() noexcept
 
 // -----------------------------------------------------------------------
 
+#ifndef BUILD_BRIDGE
 void CarlaPlugin::ProtectedData::tryTransient() noexcept
 {
     if (engine->getOptions().frontendWinId != 0)
         transientTryCounter = 1;
 }
+#endif
 
 void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept
 {

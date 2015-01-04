@@ -341,7 +341,9 @@ struct CarlaPlugin::ProtectedData {
     // -------------------------------------------------------------------
     // Misc
 
+#ifndef BUILD_BRIDGE
     void tryTransient() noexcept;
+#endif
     void updateParameterValues(CarlaPlugin* const plugin, const bool sendOsc, const bool sendCallback, const bool useDefault) noexcept;
 
     // -------------------------------------------------------------------

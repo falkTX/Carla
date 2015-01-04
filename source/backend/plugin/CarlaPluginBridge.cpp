@@ -2280,6 +2280,7 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
+                pData->transientTryCounter = 0;
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                 break;
 
