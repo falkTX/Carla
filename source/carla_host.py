@@ -2097,7 +2097,7 @@ def loadHostSettings(host):
         except:
             host.processMode = CARLA_DEFAULT_PROCESS_MODE
 
-        host.nextProcessMode = host.processMode
+    host.nextProcessMode = host.processMode
 
     # --------------------------------------------------------------------------------------------------------
     # fix things if needed
