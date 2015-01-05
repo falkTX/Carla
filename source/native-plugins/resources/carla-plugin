@@ -461,7 +461,7 @@ if __name__ == '__main__':
     except:
         winId = 0
 
-    host.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
+    gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
 
     if LINUX and winId != 0 and not config_UseQt5:
         gui = CarlaEmbedW(host, winId)

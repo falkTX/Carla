@@ -1215,32 +1215,6 @@ class CarlaHostMeta(object):
         self.pathBinaries  = ""
         self.pathResources = ""
 
-        # use _putenv on windows
-        if not WINDOWS:
-            self.msvcrt = None
-            return
-
-        self.msvcrt = cdll.msvcrt
-        self.msvcrt._putenv.argtypes = [c_char_p]
-        self.msvcrt._putenv.restype = None
-
-    # set environment variable
-    def setenv(self, key, value):
-        environ[key] = value
-
-        if WINDOWS:
-            keyvalue = "%s=%s" % (key, value)
-            self.msvcrt._putenv(keyvalue.encode("utf-8"))
-
-    # unset environment variable
-    def unsetenv(self, key):
-        if environ.get(key) is not None:
-            environ.pop(key)
-
-        if WINDOWS:
-            keyrm = "%s=" % key
-            self.msvcrt._putenv(keyrm.encode("utf-8"))
-
     # Get how many engine drivers are available.
     @abstractmethod
     def get_engine_driver_count(self):

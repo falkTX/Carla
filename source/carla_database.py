@@ -1038,9 +1038,9 @@ class PluginRefreshW(QDialog):
         self.ui.group_options.setEnabled(False)
 
         if self.ui.ch_do_checks.isChecked():
-            self.host.unsetenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
+            gCarla.utils.unsetenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS")
         else:
-            self.host.setenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "true")
+            gCarla.utils.setenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS", "true")
 
         native, posix32, posix64, win32, win64 = (self.ui.ch_native.isChecked(),
                                                   self.ui.ch_posix32.isChecked(), self.ui.ch_posix64.isChecked(),
