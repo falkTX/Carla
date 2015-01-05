@@ -46,7 +46,9 @@ using CarlaBackend::CarlaPlugin;
 // -----------------------------------------------------------------------
 // LinuxSampler static values
 
-static const float kVolumeMax = 3.16227766f; // +10 dB
+static const float kVolumeMax  = 3.16227766f; // +10 dB
+static const uint  kMaxStreams = 90*2; // default is not *2
+static const uint  kMaxVoices  = 64*2;
 
 // -----------------------------------------------------------------------
 // LinuxSampler AudioOutputDevice Plugin
@@ -213,8 +215,9 @@ public:
     {
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
-        sSampler->SetGlobalMaxStreams(300);
-        sSampler->SetGlobalMaxVoices(300);
+        // TODO - option for this
+        sSampler->SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
+        sSampler->SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
 
         carla_zeroStruct(fCurProgs,        MAX_MIDI_CHANNELS);
         carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
@@ -374,8 +377,8 @@ public:
 
         switch (parameterId)
         {
-        case LinuxSamplerStreamCount:
-            std::strncpy(strBuf, "Stream Count", STR_MAX);
+        case LinuxSamplerDiskStreamCount:
+            std::strncpy(strBuf, "Disk Stream Count", STR_MAX);
             return;
         case LinuxSamplerVoiceCount:
             std::strncpy(strBuf, "Voice Count", STR_MAX);
@@ -470,6 +473,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
         CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
+
+        if (fCurProgs[channel] == index)
+            return;
 
         LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? channel : 0]);
         CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
@@ -627,13 +633,13 @@ public:
             int j;
 
             // ----------------------
-            j = LinuxSamplerStreamCount;
+            j = LinuxSamplerDiskStreamCount;
             pData->param.data[j].type   = PARAMETER_OUTPUT;
             pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
-            pData->param.ranges[j].max = 65355.0f;
+            pData->param.ranges[j].max = LinuxSampler::kMaxStreams;
             pData->param.ranges[j].def = 0.0f;
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
@@ -646,7 +652,7 @@ public:
             pData->param.data[j].index  = j;
             pData->param.data[j].rindex = j;
             pData->param.ranges[j].min = 0.0f;
-            pData->param.ranges[j].max = 65355.0f;
+            pData->param.ranges[j].max = LinuxSampler::kMaxVoices;
             pData->param.ranges[j].def = 0.0f;
             pData->param.ranges[j].step = 1.0f;
             pData->param.ranges[j].stepSmall = 1.0f;
@@ -771,8 +777,8 @@ public:
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
 
-            fParamBuffers[LinuxSamplerStreamCount] = 0.0f;
-            fParamBuffers[LinuxSamplerVoiceCount]  = 0.0f;
+            fParamBuffers[LinuxSamplerDiskStreamCount] = 0.0f;
+            fParamBuffers[LinuxSamplerVoiceCount]      = 0.0f;
             return;
         }
 
@@ -1036,20 +1042,8 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Parameter outputs
 
-        uint streamCount = 0;
-        uint voiceCount  = 0;
-
-        for (uint i=0; i<kMaxChannels; ++i)
-        {
-            if (LinuxSampler::EngineChannel* const engineChannel = fEngineChannels[i])
-            {
-                streamCount += engineChannel->GetDiskStreamCount();
-                voiceCount  += engineChannel->GetVoiceCount();
-            }
-        }
-
-        fParamBuffers[LinuxSamplerStreamCount] = streamCount;
-        fParamBuffers[LinuxSamplerVoiceCount]  = voiceCount;
+        fParamBuffers[LinuxSamplerDiskStreamCount] = fEngineChannels[0]->GetDiskStreamCount();
+        fParamBuffers[LinuxSamplerVoiceCount]      = fEngineChannels[0]->GetVoiceCount();
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1339,9 +1333,9 @@ public:
 
 private:
     enum LinuxSamplerParameters {
-        LinuxSamplerStreamCount   = 0,
-        LinuxSamplerVoiceCount    = 1,
-        LinuxSamplerParametersMax = 2
+        LinuxSamplerDiskStreamCount = 0,
+        LinuxSamplerVoiceCount      = 1,
+        LinuxSamplerParametersMax   = 2
     };
 
     const bool kIsGIG; // SFZ if false
@@ -1352,8 +1346,8 @@ private:
     const char* fMaker;
     const char* fRealName;
 
-    int32_t fCurProgs[MAX_MIDI_CHANNELS];
-    float   fParamBuffers[LinuxSamplerParametersMax];
+    uint32_t fCurProgs[MAX_MIDI_CHANNELS];
+    float    fParamBuffers[LinuxSamplerParametersMax];
 
     SharedResourcePointer<LinuxSampler::Sampler> sSampler;
 

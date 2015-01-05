@@ -66,7 +66,14 @@
          </widget>
         </item>
         <item>
-         <widget class="RackListWidget" name="listWidget"/>
+         <widget class="RackListWidget" name="listWidget">
+          <property name="verticalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+          <property name="horizontalScrollBarPolicy">
+           <enum>Qt::ScrollBarAlwaysOff</enum>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QLabel" name="pad_right">
@@ -137,7 +144,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>17</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
