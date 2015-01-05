@@ -1627,7 +1627,7 @@ public:
     }
 
 private:
-    enum FluidSynthInputParameters {
+    enum FluidSynthParameters {
         FluidSynthReverbOnOff    = 0,
         FluidSynthReverbRoomSize = 1,
         FluidSynthReverbDamp     = 2,

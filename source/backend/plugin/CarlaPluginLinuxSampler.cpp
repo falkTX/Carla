@@ -220,6 +220,8 @@ public:
         carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
         carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
 
+        carla_zeroFloat(fParamBuffers, LinuxSamplerParametersMax);
+
         if (use16Outs && ! isGIG)
             carla_stderr("Tried to use SFZ with 16 stereo outs, this doesn't make much sense so single stereo mode will be used instead");
     }
@@ -321,6 +323,13 @@ public:
         return options;
     }
 
+    float getParameterValue(const uint32_t parameterId) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
+
+        return fParamBuffers[parameterId];
+    }
+
     void getLabel(char* const strBuf) const noexcept override
     {
         if (fLabel != nullptr)
@@ -357,6 +366,23 @@ public:
         }
 
         CarlaPlugin::getRealName(strBuf);
+    }
+
+    void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        switch (parameterId)
+        {
+        case LinuxSamplerStreamCount:
+            std::strncpy(strBuf, "Stream Count", STR_MAX);
+            return;
+        case LinuxSamplerVoiceCount:
+            std::strncpy(strBuf, "Voice Count", STR_MAX);
+            return;
+        }
+
+        CarlaPlugin::getParameterName(parameterId, strBuf);
     }
 
     // -------------------------------------------------------------------
@@ -401,7 +427,7 @@ public:
             return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
         if (std::strcmp(key, "programs") != 0)
-            return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
+            return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - key is not programs", type, key, value, bool2str(sendGui));
 
         if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
         {
@@ -409,40 +435,13 @@ public:
 
             if (programList.size() == MAX_MIDI_CHANNELS)
             {
-                uint8_t channel = 0;
+                int8_t channel = 0;
                 for (juce::String *it=programList.begin(), *end=programList.end(); it != end; ++it)
                 {
                     const int index(it->getIntValue());
 
-                    if (index >= 0 && index < static_cast<int>(pData->prog.count))
-                    {
-                        LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
-                        CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
-
-                        const uint32_t uindex(static_cast<uint32_t>(index));
-
-                        if (pData->engine->isOffline())
-                        {
-                            try {
-                                engineChannel->PrepareLoadInstrument(pData->filename, uindex);
-                                engineChannel->LoadInstrument();
-                            } CARLA_SAFE_EXCEPTION("LoadInstrument");
-                        }
-                        else
-                        {
-                            try {
-                                LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
-                            } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
-                        }
-
-                        fCurProgs[channel] = index;
-
-                        if (pData->ctrlChannel == static_cast<int32_t>(channel))
-                        {
-                            pData->prog.current = index;
-                            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
-                        }
-                    }
+                    if (index >= 0)
+                        setProgramInternal(static_cast<uint>(index), channel, true, false);
 
                     if (++channel >= MAX_MIDI_CHANNELS)
                         break;
@@ -456,37 +455,52 @@ public:
 
     void setProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept override
     {
+        CARLA_SAFE_ASSERT_RETURN(sendGui || sendOsc || sendCallback,); // never call this from RT
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->prog.count),);
 
         const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
 
-        if (index >= 0 && channel >= 0 && channel < MAX_MIDI_CHANNELS)
-        {
-            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[channel]);
-            CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
-
-            const uint32_t uindex(static_cast<uint32_t>(index));
-
-            const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
-
-            if (pData->engine->isOffline())
-            {
-                try {
-                    engineChannel->PrepareLoadInstrument(pData->filename, uindex);
-                    engineChannel->LoadInstrument();
-                } CARLA_SAFE_EXCEPTION("LoadInstrument");
-            }
-            else
-            {
-                try {
-                    LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[uindex], engineChannel);
-                } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
-            }
-
-            fCurProgs[channel] = index;
-        }
+        if (index >= 0 && channel >= 0)
+            setProgramInternal(static_cast<uint>(index), channel, sendCallback, false);
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
+    }
+
+    void setProgramInternal(const uint32_t index, const int8_t channel, const bool sendCallback, const bool inRtContent) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
+        CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
+
+        LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? channel : 0]);
+        CARLA_SAFE_ASSERT_RETURN(engineChannel != nullptr,);
+
+        const ScopedSingleProcessLocker spl(this, !inRtContent);
+
+        if (pData->engine->isOffline())
+        {
+            try {
+                engineChannel->PrepareLoadInstrument(pData->filename, index);
+                engineChannel->LoadInstrument();
+            } CARLA_SAFE_EXCEPTION("LoadInstrument");
+        }
+        else
+        {
+            try {
+                LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[index], engineChannel);
+            } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
+        }
+
+        fCurProgs[channel] = index;
+
+        if (pData->ctrlChannel == channel)
+        {
+            pData->prog.current = index;
+
+            if (inRtContent)
+                pData->postponeRtEvent(kPluginPostRtEventProgramChange, static_cast<int32_t>(index), 0, 0.0f);
+            else if (sendCallback)
+                pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -512,10 +526,12 @@ public:
 
         clearBuffers();
 
-        uint32_t aOuts;
-        aOuts = kUses16Outs ? 32 : 2;
+        uint32_t aOuts, params;
+        aOuts  = kUses16Outs ? 32 : 2;
+        params = LinuxSamplerParametersMax;
 
         pData->audioOut.createNew(aOuts);
+        pData->param.createNew(params, false);
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
         CarlaString portName;
@@ -602,6 +618,42 @@ public:
             portName.truncate(portNameSize);
 
             pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+        }
+
+        // ---------------------------------------
+        // Parameters
+
+        {
+            int j;
+
+            // ----------------------
+            j = LinuxSamplerStreamCount;
+            pData->param.data[j].type   = PARAMETER_OUTPUT;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
+            pData->param.data[j].index  = j;
+            pData->param.data[j].rindex = j;
+            pData->param.ranges[j].min = 0.0f;
+            pData->param.ranges[j].max = 65355.0f;
+            pData->param.ranges[j].def = 0.0f;
+            pData->param.ranges[j].step = 1.0f;
+            pData->param.ranges[j].stepSmall = 1.0f;
+            pData->param.ranges[j].stepLarge = 1.0f;
+
+            // ----------------------
+            j = LinuxSamplerVoiceCount;
+            pData->param.data[j].type   = PARAMETER_OUTPUT;
+            pData->param.data[j].hints  = PARAMETER_IS_ENABLED | PARAMETER_IS_AUTOMABLE | PARAMETER_IS_INTEGER;
+            pData->param.data[j].index  = j;
+            pData->param.data[j].rindex = j;
+            pData->param.ranges[j].min = 0.0f;
+            pData->param.ranges[j].max = 65355.0f;
+            pData->param.ranges[j].def = 0.0f;
+            pData->param.ranges[j].step = 1.0f;
+            pData->param.ranges[j].stepSmall = 1.0f;
+            pData->param.ranges[j].stepLarge = 1.0f;
+
+            for (j=0; j<LinuxSamplerParametersMax; ++j)
+                fParamBuffers[j] = pData->param.ranges[j].def;
         }
 
         // ---------------------------------------
@@ -718,6 +770,9 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+
+            fParamBuffers[LinuxSamplerStreamCount] = 0.0f;
+            fParamBuffers[LinuxSamplerVoiceCount]  = 0.0f;
             return;
         }
 
@@ -905,32 +960,9 @@ public:
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            const uint32_t programId(ctrlEvent.param);
-                            CARLA_SAFE_ASSERT_CONTINUE(programId < fInstrumentIds.size());
-
-                            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[kIsGIG ? event.channel : 0]);
-                            CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
-
-                            if (pData->engine->isOffline())
-                            {
-                                try {
-                                    engineChannel->PrepareLoadInstrument(pData->filename, programId);
-                                    engineChannel->LoadInstrument();
-                                } CARLA_SAFE_EXCEPTION("LoadInstrument");
-                            }
-                            else
-                            {
-                                try {
-                                    LinuxSampler::InstrumentManager::LoadInstrumentInBackground(fInstrumentIds[programId], engineChannel);
-                                } CARLA_SAFE_EXCEPTION("LoadInstrumentInBackground");
-                            }
-
-                            fCurProgs[event.channel] = static_cast<int32_t>(programId);
-
-                            if (pData->ctrlChannel == event.channel)
-                                pData->postponeRtEvent(kPluginPostRtEventProgramChange, static_cast<int32_t>(programId), 0, 0.0f);
+                            setProgramInternal(ctrlEvent.param, event.channel, false, true);
                         }
                         break;
 
@@ -1000,6 +1032,24 @@ public:
                 processSingle(audioOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
+
+        // --------------------------------------------------------------------------------------------------------
+        // Parameter outputs
+
+        uint streamCount = 0;
+        uint voiceCount  = 0;
+
+        for (uint i=0; i<kMaxChannels; ++i)
+        {
+            if (LinuxSampler::EngineChannel* const engineChannel = fEngineChannels[i])
+            {
+                streamCount += engineChannel->GetDiskStreamCount();
+                voiceCount  += engineChannel->GetVoiceCount();
+            }
+        }
+
+        fParamBuffers[LinuxSamplerStreamCount] = streamCount;
+        fParamBuffers[LinuxSamplerVoiceCount]  = voiceCount;
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1143,7 +1193,7 @@ public:
 
         if (fMidiInputPort == nullptr)
         {
-            pData->engine->setLastError("Failed to create LinuxSampler midi input port");
+            pData->engine->setLastError("Failed to get LinuxSampler midi input port");
             return false;
         }
 
@@ -1155,6 +1205,7 @@ public:
             samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             samplerChannel->SetAudioOutputDevice(&fAudioOutputDevice);
             samplerChannel->SetMidiInputDevice(&fMidiInputDevice);
+            samplerChannel->SetMidiInputChannel(kUses16Outs ? static_cast<LinuxSampler::midi_chan_t>(i) : LinuxSampler::midi_chan_all);
             //samplerChannel->Connect(fMidiInputPort);
 
             LinuxSampler::EngineChannel* const engineChannel(samplerChannel->GetEngineChannel());
@@ -1168,13 +1219,11 @@ public:
             {
                 engineChannel->SetOutputChannel(0, i*2);
                 engineChannel->SetOutputChannel(1, i*2 +1);
-                samplerChannel->SetMidiInputChannel(static_cast<LinuxSampler::midi_chan_t>(i));
             }
             else
             {
                 engineChannel->SetOutputChannel(0, 0);
                 engineChannel->SetOutputChannel(1, 1);
-                samplerChannel->SetMidiInputChannel(LinuxSampler::midi_chan_all);
             }
 
             fSamplerChannels[i] = samplerChannel;
@@ -1183,7 +1232,7 @@ public:
 
         if (fSamplerChannels[0] == nullptr || fEngineChannels[0] == nullptr)
         {
-            pData->engine->setLastError("Failed to get LinuxSampler engine channels");
+            pData->engine->setLastError("Failed to create LinuxSampler audio channels");
             return false;
         }
 
@@ -1237,10 +1286,13 @@ public:
             try {
                 fInstrumentInfo.push_back(instrumentMgr->GetInstrumentInfo(fInstrumentIds[i]));
             } CARLA_SAFE_EXCEPTION("GetInstrumentInfo");
+
+            instrumentMgr->SetMode(fInstrumentIds[i], LinuxSampler::InstrumentManager::ON_DEMAND);
         }
+
         CARLA_SAFE_ASSERT(fInstrumentInfo.size() == numInstruments);
 
-        LinuxSampler::InstrumentManager::instrument_info_t& info(fInstrumentInfo[0]);
+        // ---------------------------------------------------------------
 
         CarlaString label2(label != nullptr ? label : File(filename).getFileNameWithoutExtension().toRawUTF8());
 
@@ -1248,8 +1300,8 @@ public:
             label2 += " (16 outs)";
 
         fLabel    = label2.dup();
-        fMaker    = carla_strdup(info.Artists.c_str());
-        fRealName = carla_strdup(info.InstrumentName.c_str());
+        fMaker    = carla_strdup(fInstrumentInfo[0].Artists.c_str());
+        fRealName = carla_strdup(instrumentMgr->GetInstrumentName(fInstrumentIds[0]).c_str());
 
         pData->filename = carla_strdup(filename);
 
@@ -1286,15 +1338,22 @@ public:
     // -------------------------------------------------------------------
 
 private:
+    enum LinuxSamplerParameters {
+        LinuxSamplerStreamCount   = 0,
+        LinuxSamplerVoiceCount    = 1,
+        LinuxSamplerParametersMax = 2
+    };
+
     const bool kIsGIG; // SFZ if false
     const bool kUses16Outs;
-    const uint kMaxChannels; // 1 or 16 depending on format
+    const uint kMaxChannels; // 16 for gig, 1 for sfz
 
     const char* fLabel;
     const char* fMaker;
     const char* fRealName;
 
     int32_t fCurProgs[MAX_MIDI_CHANNELS];
+    float   fParamBuffers[LinuxSamplerParametersMax];
 
     SharedResourcePointer<LinuxSampler::Sampler> sSampler;
 
