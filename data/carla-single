@@ -21,8 +21,6 @@
 
 import os
 import sys
-from signal import signal, SIGINT, SIGTERM
-from subprocess import Popen
 
 # --------------------------------------------------------------------------------------------------------
 # Setup
@@ -199,29 +197,8 @@ if FILENAME and not os.path.exists(FILENAME):
     print("Requested filename does not exist")
     sys.exit(1)
 
-# ------------------------------------------------------------------------------------------------------------
-# Signal handler
-
-global gProc
-gProc = None
-
-def signalHandler(sig, frame):
-    global gProc
-
-    if gProc is None:
-        return
-
-    if sig in (SIGINT, SIGTERM):
-        gProc.kill()
-        gProc = None
-
-signal(SIGINT,  signalHandler)
-signal(SIGTERM, signalHandler)
-
 # --------------------------------------------------------------------------------------------------------
 # Setup environment
-
-#CARLA_CLIENT_NAME = os.getenv("CARLA_CLIENT_NAME", "(none)")
 
 #os.environ["ENGINE_OPTION_UIS_ALWAYS_ON_TOP"]  = "false"
 #os.environ["ENGINE_OPTION_MAX_PARAMETERS"]     = "200"
@@ -251,6 +228,18 @@ os.environ["ENGINE_OPTION_PATH_BINARIES"]  = CARLA_LIBDIR
 os.environ["ENGINE_OPTION_PATH_RESOURCES"] = CARLA_RESDIR
 
 # --------------------------------------------------------------------------------------------------------
+
+CARLA_CLIENT_NAME = os.getenv("CARLA_CLIENT_NAME")
+LADISH_APP_NAME   = os.getenv("LADISH_APP_NAME")
+
+if CARLA_CLIENT_NAME is not None:
+    os.environ["CARLA_CLIENT_NAME"] = CARLA_CLIENT_NAME
+elif CARLA_CLIENT_NAME is not None:
+    os.environ["CARLA_CLIENT_NAME"] = LADISH_APP_NAME
+else:
+    os.environ["CARLA_CLIENT_NAME"] = "(none)"
+
+# --------------------------------------------------------------------------------------------------------
 # Exec
 
 command = []
@@ -265,8 +254,6 @@ command.append(LABEL or "(none)")
 command.append(str(UNIQUEID))
 
 print(command)
-
-gProc = Popen(command)
-gProc.wait()
+os.execvp(command[0], command)
 
 # --------------------------------------------------------------------------------------------------------

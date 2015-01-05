@@ -70,11 +70,6 @@ struct CarlaBackendStandalone {
         engineOptions.forceStereo         = false;
         engineOptions.preferPluginBridges = false;
         engineOptions.preferUiBridges     = false;
-
-        using juce::File;
-        File binaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
-        engineOptions.binaryDir   = carla_strdup_safe(binaryDir.getFullPathName().toRawUTF8());
-        engineOptions.resourceDir = carla_strdup_safe(binaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 #endif
     }
 
@@ -418,6 +413,11 @@ static void carla_engine_init_common()
     gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
 #ifdef BUILD_BRIDGE
+    using juce::File;
+    File binaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
+    gStandalone.engineOptions.binaryDir   = carla_strdup_safe(binaryDir.getFullPathName().toRawUTF8());
+    gStandalone.engineOptions.resourceDir = carla_strdup_safe(binaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
+
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
