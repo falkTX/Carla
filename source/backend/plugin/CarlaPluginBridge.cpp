@@ -40,6 +40,7 @@ using juce::File;
 using juce::ScopedPointer;
 using juce::String;
 using juce::StringArray;
+using juce::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -742,7 +743,7 @@ public:
           fSaved(true),
           fTimedOut(false),
           fTimedError(false),
-          fLastPongCounter(-1),
+          fLastPongTime(-1),
           fBridgeBinary(),
           fBridgeThread(engine, this),
           fShmAudioPool(),
@@ -932,15 +933,19 @@ public:
         if (fSaved)
             return;
 
+        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 3000);
+
         carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
 
-        for (int i=0; i < 300; ++i)
+        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
-            if (fSaved || ! fBridgeThread.isThreadRunning())
-                break;
-            carla_msleep(20);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
+
+            if (fSaved)
+                break;
+
+            carla_msleep(20);
         }
 
         if (! fSaved)
@@ -1897,8 +1902,8 @@ public:
                 carla_debug("CarlaPluginBridge::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 #endif
-            if (opcode != kPluginBridgeNonRtServerNull && fLastPongCounter > 0)
-                fLastPongCounter = 0;
+            if (opcode != kPluginBridgeNonRtServerNull && fLastPongTime > 0)
+                fLastPongTime = Time::currentTimeMillis();
 
             switch (opcode)
             {
@@ -2427,19 +2432,37 @@ public:
         }
 
         fInitiated = false;
-        fLastPongCounter = 0;
+        fLastPongTime = Time::currentTimeMillis();
+        CARLA_SAFE_ASSERT(fLastPongTime > 0);
 
-        for (; fLastPongCounter++ < 500;)
+        static bool sFirstInit = true;
+
+        int64_t timeoutEnd = 5000;
+
+        if (sFirstInit)
+            timeoutEnd *= 2;
+#ifndef CARLA_OS_WIN
+         if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
+            timeoutEnd *= 2;
+#endif
+        sFirstInit = false;
+
+        carla_stdout("plugin bridge starting, current time: " P_INT64 "; max wait time: " P_INT64, fLastPongTime, timeoutEnd);
+
+        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
         {
-            if (fInitiated || ! fBridgeThread.isThreadRunning())
-                break;
-            carla_msleep(20);
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             pData->engine->idle();
             idle();
+
+            if (fInitiated)
+                break;
+
+            carla_msleep(20);
+            carla_stdout("plugin bridge waiting 20ms, remainig time: " P_INT64, fLastPongTime + timeoutEnd - Time::currentTimeMillis());
         }
 
-        fLastPongCounter = -1;
+        fLastPongTime = -1;
 
         if (fInitError || ! fInitiated)
         {
@@ -2483,7 +2506,7 @@ private:
     bool fTimedOut;
     bool fTimedError;
 
-    int32_t fLastPongCounter;
+    int64_t fLastPongTime;
 
     CarlaString             fBridgeBinary;
     CarlaPluginBridgeThread fBridgeThread;
