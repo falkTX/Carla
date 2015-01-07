@@ -904,6 +904,8 @@ public:
                 const uint32_t onOff(fShmNonRtClientControl.readBool());
 
                 fLastPingTime = onOff ? Time::currentTimeMillis() : -1;
+
+                carla_stdout("Carla bridge client side, OnOff ping checks => %s", bool2str(onOff));
             }   break;
 
             case kPluginBridgeNonRtClientActivate:
@@ -1018,6 +1020,8 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
+                carla_stdout("Carla bridge client side setChunkData 001");
+
                 String chunkFilePath(chunkFilePathTry);
 
 #ifdef CARLA_OS_WIN
@@ -1034,7 +1038,10 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(chunkDataBase64.isNotEmpty());
 
                 std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkDataBase64.toRawUTF8()));
+                carla_stdout("Carla bridge client side setChunkData 002");
+
                 plugin->setChunkData(chunk.data(), chunk.size());
+                carla_stdout("Carla bridge client side setChunkData done");
                 break;
             }
 

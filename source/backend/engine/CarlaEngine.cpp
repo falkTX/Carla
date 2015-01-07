@@ -1525,7 +1525,14 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled())
+        {
+#ifndef BUILD_BRIDGE
+            // deactivate bridge client-side ping check, since some plugins block during save
+            if (plugin->getHints() & PLUGIN_IS_BRIDGE)
+                plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
+#endif
             plugin->prepareForSave();
+        }
     }
 
     outStream << "<?xml version='1.0' encoding='UTF-8'?>\n";
@@ -1599,7 +1606,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
         if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
-            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "SavedComplete", "", false);
+            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
     bool saveConnections = true;
@@ -1817,7 +1824,15 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
             {
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+                {
+#ifndef BUILD_BRIDGE
+                    // deactivate bridge client-side ping check, since some plugins block during load
+                    if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
+                        plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
+#endif
+
                     plugin->loadStateSave(stateSave);
+                }
             }
             else
                 carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
@@ -1828,6 +1843,15 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     }
 
 #ifndef BUILD_BRIDGE
+    // tell bridges we're done loading
+    for (uint i=0; i < pData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+        if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
+            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
+    }
+
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
     // if we're running inside some session-manager, let them handle the connections

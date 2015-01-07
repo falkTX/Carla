@@ -923,10 +923,6 @@ public:
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
-            fShmNonRtClientControl.writeBool(false);
-            fShmNonRtClientControl.commitWrite();
-
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
             fShmNonRtClientControl.commitWrite();
         }
@@ -1089,13 +1085,15 @@ public:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "SavedComplete") == 0)
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "__CarlaPingOnOff__") == 0)
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
-            fShmNonRtClientControl.writeBool(true);
+            fShmNonRtClientControl.writeBool(std::strcmp(value, "true") == 0);
             fShmNonRtClientControl.commitWrite();
+
+            carla_stdout("Carla bridge server side, OnOff ping checks => %s", value);
             return;
         }
 
@@ -1129,6 +1127,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
+        carla_stdout("Carla bridge server side, setChunkData 001");
+
         CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
         CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
 
@@ -1139,6 +1139,8 @@ public:
 
         if (File(filePath).replaceWithText(dataBase64.buffer()))
         {
+            carla_stdout("Carla bridge server side, setChunkData 002");
+
             const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1147,11 +1149,15 @@ public:
             fShmNonRtClientControl.writeUInt(ulength);
             fShmNonRtClientControl.writeCustomData(filePath.toRawUTF8(), ulength);
             fShmNonRtClientControl.commitWrite();
+
+            carla_stdout("Carla bridge server side, setChunkData sent");
         }
 
         // save data internally as well
         fInfo.chunk.resize(dataSize);
         std::memcpy(fInfo.chunk.data(), data, dataSize);
+
+        carla_stdout("Carla bridge server side, setChunkData saved locally too");
     }
 
     // -------------------------------------------------------------------
