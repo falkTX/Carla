@@ -1593,6 +1593,15 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     }
 
 #ifndef BUILD_BRIDGE
+    // tell bridges we're done saving
+    for (uint i=0; i < pData->curPluginCount; ++i)
+    {
+        CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+        if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
+            plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "SavedComplete", "", false);
+    }
+
     bool saveConnections = true;
 
     // if we're running inside some session-manager, let them handle the connections

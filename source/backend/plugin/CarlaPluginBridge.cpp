@@ -923,6 +923,10 @@ public:
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
 
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
+            fShmNonRtClientControl.writeBool(false);
+            fShmNonRtClientControl.commitWrite();
+
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
             fShmNonRtClientControl.commitWrite();
         }
@@ -1084,6 +1088,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
+
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "SavedComplete") == 0)
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
+            fShmNonRtClientControl.writeBool(true);
+            fShmNonRtClientControl.commitWrite();
+            return;
+        }
 
         const uint32_t typeLen(static_cast<uint32_t>(std::strlen(type)));
         const uint32_t keyLen(static_cast<uint32_t>(std::strlen(key)));

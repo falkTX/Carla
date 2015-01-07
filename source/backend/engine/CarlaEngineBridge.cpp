@@ -1059,9 +1059,6 @@ public:
             case kPluginBridgeNonRtClientPrepareForSave: {
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
-                // saving might block for a long time, so don't care if we don't get pings on time
-                fLastPingTime = -1;
-
                 plugin->prepareForSave();
 
                 for (uint32_t i=0, count=plugin->getCustomDataCount(); i<count; ++i)
@@ -1130,9 +1127,6 @@ public:
                     fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSaved);
                     fShmNonRtServerControl.commitWrite();
                 }
-
-                // listen to pings once again, we're done saving
-                fLastPingTime = Time::currentTimeMillis();
                 break;
             }
 
