@@ -2452,8 +2452,6 @@ public:
 #endif
         sFirstInit = false;
 
-        carla_stdout("plugin bridge starting, current time: " P_INT64 "; max wait time: " P_INT64, fLastPongTime, timeoutEnd);
-
         for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
@@ -2464,7 +2462,6 @@ public:
                 break;
 
             carla_msleep(20);
-            carla_stdout("plugin bridge waiting 20ms, remainig time: " P_INT64, fLastPongTime + timeoutEnd - Time::currentTimeMillis());
         }
 
         fLastPongTime = -1;
