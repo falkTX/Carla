@@ -933,7 +933,8 @@ public:
         if (fSaved)
             return;
 
-        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 3000);
+        // TODO: only wait 1 minute for NI plugins
+        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 60*1000); // 60 secs, 1 minute
 
         carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
 
