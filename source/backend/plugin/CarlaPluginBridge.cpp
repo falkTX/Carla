@@ -1618,7 +1618,60 @@ public:
 
         } // End of Event Input
 
-        processSingle(audioIn, audioOut, cvIn, cvOut, frames);
+        if (! processSingle(audioIn, audioOut, cvIn, cvOut, frames))
+            return;
+
+        // --------------------------------------------------------------------------------------------------------
+        // Control and MIDI Output
+
+        if (pData->event.portOut != nullptr)
+        {
+            float value;
+
+            for (uint32_t k=0; k < pData->param.count; ++k)
+            {
+                if (pData->param.data[k].type != PARAMETER_OUTPUT)
+                    continue;
+
+                if (pData->param.data[k].midiCC > 0)
+                {
+                    value = pData->param.ranges[k].getNormalizedValue(fParams[k].value);
+                    pData->event.portOut->writeControlEvent(0, pData->param.data[k].midiChannel, kEngineControlEventTypeParameter, static_cast<uint16_t>(pData->param.data[k].midiCC), value);
+                }
+            }
+
+            uint8_t size;
+            uint32_t time;
+            const uint8_t* midiData(fShmRtClientControl.data->midiOut);
+
+            for (std::size_t read=0; read<kBridgeRtClientDataMidiOutSize;)
+            {
+                size = *midiData;
+
+                if (size == 0)
+                    break;
+
+                // advance 8 bits (1 byte)
+                midiData = midiData + 1;
+
+                // get time as 32bit
+                time = *(uint32_t*)midiData;
+
+                // advance 32 bits (4 bytes)
+                midiData = midiData + 4;
+
+                // store midi data advancing as needed
+                uint8_t data[size];
+
+                for (uint8_t j=0; j<size; ++j)
+                    data[j] = *midiData++;
+
+                pData->event.portOut->writeMidiEvent(time, size, data);
+
+                read += 1 /* size*/ + 4 /* time */ + size;
+            }
+
+        } // End of Control and MIDI Output
     }
 
     bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames)

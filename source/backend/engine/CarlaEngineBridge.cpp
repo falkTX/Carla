@@ -1418,11 +1418,71 @@ protected:
                         plugin->unlock();
                     }
 
-                    // clear buffer
-                    CARLA_SAFE_ASSERT_BREAK(pData->events.in != nullptr);
+                    uint8_t* midiData(fShmRtClientControl.data->midiOut);
+                    carla_zeroBytes(midiData, kBridgeRtClientDataMidiOutSize);
+                    std::size_t curMidiDataPos = 0;
 
                     if (pData->events.in[0].type != kEngineEventTypeNull)
-                        carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
+                        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+
+                    if (pData->events.out[0].type != kEngineEventTypeNull)
+                    {
+                        for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                        {
+                            const EngineEvent& event(pData->events.out[i]);
+
+                            if (event.type == kEngineEventTypeNull)
+                                break;
+
+                            if (event.type == kEngineEventTypeControl)
+                            {
+                                uint8_t size;
+                                uint8_t data[3];
+                                event.ctrl.convertToMidiData(event.channel, size, data);
+                                CARLA_SAFE_ASSERT_CONTINUE(size > 0 && size <= 3);
+
+                                if (curMidiDataPos + 1 /* size*/ + 4 /* time */ + size >= kBridgeRtClientDataMidiOutSize)
+                                    break;
+
+                                // set size
+                                *midiData++ = size;
+
+                                // set time
+                                *(uint32_t*)midiData = event.time;
+                                midiData = midiData + 4;
+
+                                // set data
+                                for (uint8_t j=0; j<size; ++j)
+                                    *midiData++ = data[j];
+
+                                curMidiDataPos += 1 /* size*/ + 4 /* time */ + size;
+                            }
+                            else if (event.type == kEngineEventTypeMidi)
+                            {
+                                const EngineMidiEvent& _midiEvent(event.midi);
+
+                                if (curMidiDataPos + 1 /* size*/ + 4 /* time */ + _midiEvent.size >= kBridgeRtClientDataMidiOutSize)
+                                    break;
+
+                                const uint8_t* const _midiData(_midiEvent.dataExt != nullptr ? _midiEvent.dataExt : _midiEvent.data);
+
+                                // set size
+                                *midiData++ = _midiEvent.size;
+
+                                // set time
+                                *(uint32_t*)midiData = event.time;
+                                midiData = midiData + 4;
+
+                                // set data
+                                for (uint8_t j=0; j<_midiEvent.size; ++j)
+                                    *midiData++ = _midiData[j];
+
+                                curMidiDataPos += 1 /* size*/ + 4 /* time */ + _midiEvent.size;
+                            }
+                        }
+
+                        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+                    }
 
                 }   break;
 
