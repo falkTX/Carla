@@ -770,7 +770,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_removePlugin(self):
-        self.host.remove_plugin(self.fPluginId)
+        if not self.host.remove_plugin(self.fPluginId):
+            CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     #------------------------------------------------------------------
 

@@ -107,6 +107,7 @@ class HostWindow(QMainWindow):
 
         self.fProjectFilename  = ""
         self.fIsProjectLoading = False
+        self.fCurrentlyRemovingAllPlugins = False
 
         # first attempt of auto-start engine doesn't show an error
         self.fFirstEngineInit = True
@@ -707,8 +708,17 @@ class HostWindow(QMainWindow):
 
             self.projectLoadingFinished()
 
-        self.removeAllPlugins()
-        self.host.remove_all_plugins()
+        self.fCurrentlyRemovingAllPlugins = True
+        ok = self.host.remove_all_plugins()
+        self.fCurrentlyRemovingAllPlugins = False
+
+        if ok:
+            self.removeAllPlugins()
+        else:
+            CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                   self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        self.fCurrentlyRemovingAllPlugins = False
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
@@ -1698,7 +1708,7 @@ class HostWindow(QMainWindow):
         self.host.engine_idle()
         self.fPanelTime.refreshTransport()
 
-        if self.fPluginCount == 0:
+        if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
 
         for pitem in self.fPluginList:
@@ -1727,7 +1737,7 @@ class HostWindow(QMainWindow):
         self.ui.peak_out.displayMeter(2, 0.0, True)
 
     def idleSlow(self):
-        if self.fPluginCount == 0:
+        if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
 
         for pitem in self.fPluginList:
@@ -1814,7 +1824,9 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_PLUGIN_CLONE:
         pluginId = value1
 
-        host.clone_plugin(pluginId)
+        if not host.clone_plugin(pluginId):
+            CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
+                                         host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     elif action == patchcanvas.ACTION_PLUGIN_EDIT:
         pluginId = value1
@@ -1830,12 +1842,16 @@ def canvasCallback(action, value1, value2, valueStr):
         pluginId = value1
         newName  = valueStr
 
-        host.rename_plugin(pluginId, newName)
+        if not host.rename_plugin(pluginId, newName):
+            CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
+                                         host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
 
-        host.remove_plugin(pluginId)
+        if not host.remove_plugin(pluginId):
+            CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
+                                         host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
         pluginId = value1
