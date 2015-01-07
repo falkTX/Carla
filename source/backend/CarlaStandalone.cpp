@@ -48,32 +48,27 @@ struct CarlaBackendStandalone {
     CarlaEngine*       engine;
     EngineCallbackFunc engineCallback;
     void*              engineCallbackPtr;
+#ifndef BUILD_BRIDGE
     EngineOptions      engineOptions;
+#endif
 
     FileCallbackFunc fileCallback;
     void*            fileCallbackPtr;
 
     CarlaString lastError;
 
-    CarlaBackendStandalone()
+    CarlaBackendStandalone() noexcept
         : engine(nullptr),
           engineCallback(nullptr),
           engineCallbackPtr(nullptr),
+#ifndef BUILD_BRIDGE
           engineOptions(),
+#endif
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
-          lastError()
-    {
-#ifdef BUILD_BRIDGE
-        engineOptions.processMode         = CB::ENGINE_PROCESS_MODE_BRIDGE;
-        engineOptions.transportMode       = CB::ENGINE_TRANSPORT_MODE_BRIDGE;
-        engineOptions.forceStereo         = false;
-        engineOptions.preferPluginBridges = false;
-        engineOptions.preferUiBridges     = false;
-#endif
-    }
+          lastError() {}
 
-    ~CarlaBackendStandalone()
+    ~CarlaBackendStandalone() noexcept
     {
         CARLA_SAFE_ASSERT(engine == nullptr);
     }
@@ -192,6 +187,7 @@ protected:
 #endif
     }
 
+    // FIXME
     int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
     {
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
@@ -203,8 +199,10 @@ protected:
 
         if (! carla_is_engine_running())
         {
+#ifndef BUILD_BRIDGE
             gStandalone.engineOptions.processMode   = CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
             gStandalone.engineOptions.transportMode = CB::ENGINE_TRANSPORT_MODE_JACK;
+#endif
 
             carla_engine_init("JACK", clientId);
         }
@@ -414,10 +412,9 @@ static void carla_engine_init_common()
 
 #ifdef BUILD_BRIDGE
     using juce::File;
-    File binaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
-    gStandalone.engineOptions.binaryDir   = carla_strdup_safe(binaryDir.getFullPathName().toRawUTF8());
-    gStandalone.engineOptions.resourceDir = carla_strdup_safe(binaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
+    File juceBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
+    /*
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FORCE_STEREO, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
 
@@ -426,6 +423,7 @@ static void carla_engine_init_common()
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_PREFER_UI_BRIDGES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
+    */
 
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_UIS_ALWAYS_ON_TOP"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_UIS_ALWAYS_ON_TOP, (std::strcmp(uisAlwaysOnTop, "true") == 0) ? 1 : 0, nullptr);
@@ -465,9 +463,13 @@ static void carla_engine_init_common()
 
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, binaryDir);
+    else
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, juceBinaryDir.getFullPathName().toRawUTF8());
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
+    else
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, juceBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 
     if (const char* const preventBadBehaviour = std::getenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, (std::strcmp(preventBadBehaviour, "true") == 0) ? 1 : 0, nullptr);
@@ -568,8 +570,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         return false;
     }
 
-    carla_engine_init_common();
-
 #ifdef BUILD_BRIDGE
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS,                  nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        CB::ENGINE_TRANSPORT_MODE_JACK,                            nullptr);
@@ -580,6 +580,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), nullptr);
 #endif
+
+    carla_engine_init_common();
 
     if (gStandalone.engine->init(clientName))
     {

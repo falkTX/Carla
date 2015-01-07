@@ -1179,8 +1179,13 @@ public:
                 handleNonRtData();
             } CARLA_SAFE_EXCEPTION("handleNonRtData");
         }
-        else
-            carla_stderr2("TESTING: Bridge has closed!");
+        else if (fInitiated)
+        {
+            fTimedOut   = true;
+            fTimedError = true;
+            fInitiated  = false;
+            pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f, "plugin bridge has been stopped or crashed");
+        }
 
         CarlaPlugin::idle();
     }

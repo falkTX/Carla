@@ -32,6 +32,7 @@
 using juce::File;
 using juce::MemoryBlock;
 using juce::String;
+using juce::Time;
 
 template<typename T>
 bool jackbridge_shm_map2(char* shm, T*& value) noexcept
@@ -374,7 +375,7 @@ public:
           fShmNonRtServerControl(),
           fIsOffline(false),
           fFirstIdle(true),
-          fLastPingCounter(-1),
+          fLastPingTime(-1),
           leakDetector_CarlaEngineBridge()
     {
         carla_stdout("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
@@ -492,6 +493,14 @@ public:
         if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData)  || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
             return false;
 
+        // tell backend we're live
+        {
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            fShmNonRtServerControl.commitWrite();
+        }
+
         startThread();
 
         return true;
@@ -500,7 +509,7 @@ public:
     bool close() override
     {
         carla_debug("CarlaEnginePlugin::close()");
-        fLastPingCounter = -1;
+        fLastPingTime = -1;
 
         CarlaEngine::close();
 
@@ -535,10 +544,13 @@ public:
         CarlaPlugin* const plugin(pData->plugins[0].plugin);
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
 
+        const bool wasFirstIdle(fFirstIdle);
+
         if (fFirstIdle)
         {
             fFirstIdle = false;
-            fLastPingCounter = 0;
+            fLastPingTime = Time::currentTimeMillis();
+            CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
             char bufStr[STR_MAX+1];
             uint32_t bufStrSize;
@@ -753,6 +765,7 @@ public:
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             carla_stdout("Carla Client Ready!");
+            fLastPingTime = Time::currentTimeMillis();
         }
 
         // send parameter outputs
@@ -781,9 +794,9 @@ public:
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
 
-        if (fLastPingCounter >= 0 && ++fLastPingCounter == 500)
+        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 5000 && ! wasFirstIdle)
         {
-            carla_stderr("Did not receive ping message from server for a long time, closing...");
+            carla_stderr("Did not receive ping message from server for 5 secs, closing...");
             callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
         }
     }
@@ -792,7 +805,7 @@ public:
     {
         CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
 
-        if (fLastPingCounter < 0)
+        if (fLastPingTime < 0)
             return;
 
         switch (action)
@@ -872,8 +885,8 @@ public:
             }
 #endif
 
-            if (opcode != kPluginBridgeNonRtClientNull && fLastPingCounter > 0)
-                fLastPingCounter = 0;
+            if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
+                fLastPingTime = Time::currentTimeMillis();
 
             switch (opcode)
             {
@@ -885,6 +898,12 @@ public:
 
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
                 fShmNonRtServerControl.commitWrite();
+            }   break;
+
+            case kPluginBridgeNonRtClientPingOnOff: {
+                const uint32_t onOff(fShmNonRtClientControl.readBool());
+
+                fLastPingTime = onOff ? Time::currentTimeMillis() : -1;
             }   break;
 
             case kPluginBridgeNonRtClientActivate:
@@ -1456,7 +1475,7 @@ private:
 
     bool fIsOffline;
     bool fFirstIdle;
-    int32_t fLastPingCounter;
+    int64_t fLastPingTime;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineBridge)
 };

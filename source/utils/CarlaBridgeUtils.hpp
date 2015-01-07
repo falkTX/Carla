@@ -52,6 +52,7 @@ enum PluginBridgeRtClientOpcode {
 enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientNull = 0,
     kPluginBridgeNonRtClientPing,
+    kPluginBridgeNonRtClientPingOnOff,               // bool
     kPluginBridgeNonRtClientActivate,
     kPluginBridgeNonRtClientDeactivate,
     kPluginBridgeNonRtClientSetBufferSize,           // uint
@@ -197,6 +198,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientNull";
     case kPluginBridgeNonRtClientPing:
         return "kPluginBridgeNonRtClientPing";
+    case kPluginBridgeNonRtClientPingOnOff:
+        return "kPluginBridgeNonRtClientPingOnOff";
     case kPluginBridgeNonRtClientActivate:
         return "kPluginBridgeNonRtClientActivate";
     case kPluginBridgeNonRtClientDeactivate:
