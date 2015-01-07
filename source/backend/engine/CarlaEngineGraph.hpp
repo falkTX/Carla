@@ -137,6 +137,7 @@ struct PatchbayGraph  {
 
     bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    void disconnectGroup(CarlaEngine* const engine, const uint groupId) noexcept;
     void clearConnections();
     void refreshConnections(CarlaEngine* const engine);
 

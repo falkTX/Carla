@@ -1229,9 +1229,19 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     CARLA_SAFE_ASSERT_RETURN(oldPlugin != newPlugin,);
     CARLA_SAFE_ASSERT_RETURN(oldPlugin->getId() == newPlugin->getId(),);
 
-    // FIXME
+    CarlaEngine* const engine(oldPlugin->getEngine());
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
-    graph.removeNode(oldPlugin->getPatchbayNodeId());
+    AudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
+    CARLA_SAFE_ASSERT_RETURN(oldNode != nullptr,);
+
+    if (! ignorePathbay)
+    {
+        disconnectGroup(engine, oldNode->nodeId);
+        removeNodeFromPatchbay(engine, oldNode->nodeId, oldNode->getProcessor());
+    }
+
+    graph.removeNode(oldNode->nodeId);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(newPlugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
@@ -1258,10 +1268,13 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     if (! ignorePathbay)
-        removeNodeFromPatchbay(engine, plugin->getPatchbayNodeId(), node->getProcessor());
+    {
+        disconnectGroup(engine, node->nodeId);
+        removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+    }
 
     // Fix plugin Ids properties
-    for (uint i=plugin->getId(), count=engine->getCurrentPluginCount(); i<count; ++i)
+    for (uint i=plugin->getId()+1, count=engine->getCurrentPluginCount(); i<count; ++i)
     {
         CarlaPlugin* const plugin2(engine->getPlugin(i));
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
@@ -1269,11 +1282,11 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
         if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
         {
             CARLA_SAFE_ASSERT_CONTINUE(node2->properties.getWithDefault("pluginId", -1) != juce::var(-1));
-            node2->properties.set("pluginId", static_cast<int>(plugin2->getId()));
+            node2->properties.set("pluginId", static_cast<int>(i-1));
         }
     }
 
-    CARLA_SAFE_ASSERT_RETURN(graph.removeNode(plugin->getPatchbayNodeId()),);
+    CARLA_SAFE_ASSERT_RETURN(graph.removeNode(node->nodeId),);
 }
 
 void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
@@ -1290,7 +1303,10 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
         if (! ignorePathbay)
+        {
+            disconnectGroup(engine, node->nodeId);
             removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+        }
 
         graph.removeNode(node->nodeId);
     }
@@ -1363,6 +1379,39 @@ bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint connectionI
     return false;
 }
 
+void PatchbayGraph::disconnectGroup(CarlaEngine* const engine, const uint groupId) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
+
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    {
+        static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+
+        const ConnectionToId& connectionToId(it.getValue(fallback));
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+        if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
+            continue;
+
+        /*
+        uint adjustedPortA = connectionToId.portA;
+        uint adjustedPortB = connectionToId.portB;
+
+        if (! adjustPatchbayPortIdForJuce(adjustedPortA))
+            return false;
+        if (! adjustPatchbayPortIdForJuce(adjustedPortB))
+            return false;
+
+        graph.removeConnection(connectionToId.groupA, static_cast<int>(adjustedPortA),
+                               connectionToId.groupB, static_cast<int>(adjustedPortB));
+        */
+
+        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+
+        connections.list.remove(it);
+    }
+}
+
 void PatchbayGraph::clearConnections()
 {
     connections.clear();
@@ -1376,6 +1425,7 @@ void PatchbayGraph::refreshConnections(CarlaEngine* const engine)
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
 
     connections.clear();
+    graph.removeIllegalConnections();
 
     for (int i=0, count=graph.getNumNodes(); i<count; ++i)
     {

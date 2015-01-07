@@ -513,6 +513,7 @@ public:
         CarlaPlugin::setId(newId);
 
         // UI osc-url uses Id, so we need to close it when it changes
+        // FIXME - must be RT safe
         showCustomUI(false);
     }
 

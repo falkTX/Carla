@@ -422,6 +422,7 @@ public:
      * Set the plugin's id to @a newId.
      *
      * @see getId()
+     * @note RT call
      */
     virtual void setId(const uint newId) noexcept;
 
