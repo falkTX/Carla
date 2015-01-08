@@ -1363,7 +1363,181 @@ void CarlaPlugin::idle()
     if (! pData->enabled)
         return;
 
-    postRtEventsRun();
+    const bool hasUI(pData->hints & PLUGIN_HAS_CUSTOM_UI);
+    const bool needsUiMainThread(pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD);
+#ifndef BUILD_BRIDGE
+    const bool sendOsc(pData->engine->isOscControlRegistered());
+#endif
+
+    const CarlaMutexLocker sl(pData->postRtEvents.mutex);
+
+    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin(); it.valid(); it.next())
+    {
+        const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
+
+        switch (event.type)
+        {
+        case kPluginPostRtEventNull: {
+        } break;
+
+        case kPluginPostRtEventDebug: {
+            pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, event.value1, event.value2, event.value3, nullptr);
+        } break;
+
+        case kPluginPostRtEventParameterChange: {
+            // Update UI
+            if (event.value1 >= 0 && hasUI)
+            {
+                if (needsUiMainThread)
+                    pData->postUiEvents.append(event);
+                else
+                    uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
+            }
+
+            if (event.value2 != 1)
+            {
+#ifndef BUILD_BRIDGE
+                // Update OSC control client
+                if (sendOsc)
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.value3);
+#endif
+                // Update Host
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, event.value1, 0, event.value3, nullptr);
+            }
+        } break;
+
+        case kPluginPostRtEventProgramChange: {
+            // Update UI
+            if (event.value1 >= 0 && hasUI)
+            {
+                if (needsUiMainThread)
+                    pData->postUiEvents.append(event);
+                else
+                    uiProgramChange(static_cast<uint32_t>(event.value1));
+            }
+
+            // Update param values
+            for (uint32_t j=0; j < pData->param.count; ++j)
+            {
+                const float paramDefault(pData->param.ranges[j].def);
+                const float paramValue(getParameterValue(j));
+
+#ifndef BUILD_BRIDGE
+                if (sendOsc)
+                {
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
+                    pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
+                }
+#endif
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
+            }
+
+#ifndef BUILD_BRIDGE
+            // Update OSC control client
+            if (sendOsc)
+                pData->engine->oscSend_control_set_current_program(pData->id, event.value1);
+#endif
+            // Update Host
+            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
+
+        } break;
+
+        case kPluginPostRtEventMidiProgramChange: {
+            // Update UI
+            if (event.value1 >= 0 && hasUI)
+            {
+                if (needsUiMainThread)
+                    pData->postUiEvents.append(event);
+                else
+                    uiMidiProgramChange(static_cast<uint32_t>(event.value1));
+            }
+
+            // Update param values
+            for (uint32_t j=0; j < pData->param.count; ++j)
+            {
+                const float paramDefault(pData->param.ranges[j].def);
+                const float paramValue(getParameterValue(j));
+
+#ifndef BUILD_BRIDGE
+                if (sendOsc)
+                {
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
+                    pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
+                }
+#endif
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
+            }
+
+#ifndef BUILD_BRIDGE
+            // Update OSC control client
+            if (sendOsc)
+                pData->engine->oscSend_control_set_current_midi_program(pData->id, event.value1);
+#endif
+            // Update Host
+            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
+
+        } break;
+
+        case kPluginPostRtEventNoteOn: {
+            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
+            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
+            CARLA_SAFE_ASSERT_BREAK(event.value3 >= 0 && event.value3 < MAX_MIDI_VALUE);
+
+            const uint8_t channel  = static_cast<uint8_t>(event.value1);
+            const uint8_t note     = static_cast<uint8_t>(event.value2);
+            const uint8_t velocity = uint8_t(event.value3);
+
+            // Update UI
+            if (hasUI)
+            {
+                if (needsUiMainThread)
+                    pData->postUiEvents.append(event);
+                else
+                    uiNoteOn(channel, note, velocity);
+            }
+
+#ifndef BUILD_BRIDGE
+            // Update OSC control client
+            if (sendOsc)
+                pData->engine->oscSend_control_note_on(pData->id, channel, note, velocity);
+#endif
+            // Update Host
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_ON, pData->id, event.value1, event.value2, event.value3, nullptr);
+
+        } break;
+
+        case kPluginPostRtEventNoteOff: {
+            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
+            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
+
+            const uint8_t channel = static_cast<uint8_t>(event.value1);
+            const uint8_t note    = static_cast<uint8_t>(event.value2);
+
+            // Update UI
+            if (hasUI)
+            {
+                if (needsUiMainThread)
+                    pData->postUiEvents.append(event);
+                else
+                    uiNoteOff(channel, note);
+            }
+
+#ifndef BUILD_BRIDGE
+            // Update OSC control client
+            if (sendOsc)
+                pData->engine->oscSend_control_note_off(pData->id, channel, note);
+#endif
+            // Update Host
+            pData->engine->callback(ENGINE_CALLBACK_NOTE_OFF, pData->id, event.value1, event.value2, 0.0f, nullptr);
+
+        } break;
+        }
+    }
+
+    pData->postRtEvents.data.clear();
 }
 
 bool CarlaPlugin::tryLock(const bool forcedOffline) noexcept
@@ -1575,160 +1749,6 @@ void CarlaPlugin::sendMidiAllNotesOffToCallback()
 #endif
 
 // -------------------------------------------------------------------
-// Post-poned events
-
-void CarlaPlugin::postRtEventsRun()
-{
-    const CarlaMutexLocker sl(pData->postRtEvents.mutex);
-#ifndef BUILD_BRIDGE
-    const bool sendOsc(pData->engine->isOscControlRegistered());
-#endif
-
-    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin(); it.valid(); it.next())
-    {
-        const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
-
-        switch (event.type)
-        {
-        case kPluginPostRtEventNull: {
-        } break;
-
-        case kPluginPostRtEventDebug: {
-            pData->engine->callback(ENGINE_CALLBACK_DEBUG, pData->id, event.value1, event.value2, event.value3, nullptr);
-        } break;
-
-        case kPluginPostRtEventParameterChange: {
-            // Update UI
-            if (event.value1 >= 0 && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
-                uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
-
-            if (event.value2 != 1)
-            {
-#ifndef BUILD_BRIDGE
-                // Update OSC control client
-                if (sendOsc)
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.value3);
-#endif
-                // Update Host
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, event.value1, 0, event.value3, nullptr);
-            }
-        } break;
-
-        case kPluginPostRtEventProgramChange: {
-            // Update UI
-            if (event.value1 >= 0 && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
-                uiProgramChange(static_cast<uint32_t>(event.value1));
-
-            // Update param values
-            for (uint32_t j=0; j < pData->param.count; ++j)
-            {
-                const float paramDefault(pData->param.ranges[j].def);
-                const float paramValue(getParameterValue(j));
-
-#ifndef BUILD_BRIDGE
-                if (sendOsc)
-                {
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
-                    pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
-                }
-#endif
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
-            }
-
-#ifndef BUILD_BRIDGE
-            // Update OSC control client
-            if (sendOsc)
-                pData->engine->oscSend_control_set_current_program(pData->id, event.value1);
-#endif
-            // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
-
-        } break;
-
-        case kPluginPostRtEventMidiProgramChange: {
-            // Update UI
-            if (event.value1 >= 0 && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
-                uiMidiProgramChange(static_cast<uint32_t>(event.value1));
-
-            // Update param values
-            for (uint32_t j=0; j < pData->param.count; ++j)
-            {
-                const float paramDefault(pData->param.ranges[j].def);
-                const float paramValue(getParameterValue(j));
-
-#ifndef BUILD_BRIDGE
-                if (sendOsc)
-                {
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
-                    pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
-                }
-#endif
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(j), 0, paramValue, nullptr);
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
-            }
-
-#ifndef BUILD_BRIDGE
-            // Update OSC control client
-            if (sendOsc)
-                pData->engine->oscSend_control_set_current_midi_program(pData->id, event.value1);
-#endif
-            // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_MIDI_PROGRAM_CHANGED, pData->id, event.value1, 0, 0.0f, nullptr);
-
-        } break;
-
-        case kPluginPostRtEventNoteOn: {
-            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
-            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
-            CARLA_SAFE_ASSERT_BREAK(event.value3 >= 0 && event.value3 < MAX_MIDI_VALUE);
-
-            const uint8_t channel  = static_cast<uint8_t>(event.value1);
-            const uint8_t note     = static_cast<uint8_t>(event.value2);
-            const uint8_t velocity = uint8_t(event.value3);
-
-            // Update UI
-            if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
-                uiNoteOn(channel, note, velocity);
-
-#ifndef BUILD_BRIDGE
-            // Update OSC control client
-            if (sendOsc)
-                pData->engine->oscSend_control_note_on(pData->id, channel, note, velocity);
-#endif
-            // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_NOTE_ON, pData->id, event.value1, event.value2, event.value3, nullptr);
-
-        } break;
-
-        case kPluginPostRtEventNoteOff: {
-            CARLA_SAFE_ASSERT_BREAK(event.value1 >= 0 && event.value1 < MAX_MIDI_CHANNELS);
-            CARLA_SAFE_ASSERT_BREAK(event.value2 >= 0 && event.value2 < MAX_MIDI_NOTE);
-
-            const uint8_t channel = static_cast<uint8_t>(event.value1);
-            const uint8_t note    = static_cast<uint8_t>(event.value2);
-
-            // Update UI
-            if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
-                uiNoteOff(channel, note);
-
-#ifndef BUILD_BRIDGE
-            // Update OSC control client
-            if (sendOsc)
-                pData->engine->oscSend_control_note_off(pData->id, channel, note);
-#endif
-            // Update Host
-            pData->engine->callback(ENGINE_CALLBACK_NOTE_OFF, pData->id, event.value1, event.value2, 0.0f, nullptr);
-
-        } break;
-        }
-    }
-
-    pData->postRtEvents.data.clear();
-}
-
-// -------------------------------------------------------------------
 // UI Stuff
 
 void CarlaPlugin::showCustomUI(const bool)
@@ -1738,11 +1758,51 @@ void CarlaPlugin::showCustomUI(const bool)
 
 void CarlaPlugin::uiIdle()
 {
-    // Update parameter outputs if needed
-    for (uint32_t i=0; i < pData->param.count; ++i)
+    if (pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD)
     {
-        if (pData->param.data[i].type == PARAMETER_OUTPUT)
-            uiParameterChange(i, getParameterValue(i));
+        // Update parameter outputs
+        for (uint32_t i=0; i < pData->param.count; ++i)
+        {
+            if (pData->param.data[i].type == PARAMETER_OUTPUT)
+                uiParameterChange(i, getParameterValue(i));
+        }
+
+        const CarlaMutexLocker sl(pData->postUiEvents.mutex);
+
+        for (LinkedList<PluginPostRtEvent>::Itenerator it = pData->postUiEvents.data.begin(); it.valid(); it.next())
+        {
+            const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
+
+            switch (event.type)
+            {
+            case kPluginPostRtEventNull:
+            case kPluginPostRtEventDebug:
+                break;
+
+            case kPluginPostRtEventParameterChange:
+                uiParameterChange(static_cast<uint32_t>(event.value1), event.value3);
+                break;
+
+            case kPluginPostRtEventProgramChange:
+                uiProgramChange(static_cast<uint32_t>(event.value1));
+                break;
+
+            case kPluginPostRtEventMidiProgramChange:
+                uiMidiProgramChange(static_cast<uint32_t>(event.value1));
+                break;
+
+            case kPluginPostRtEventNoteOn:
+                uiNoteOn(static_cast<uint8_t>(event.value1), static_cast<uint8_t>(event.value2), uint8_t(event.value3));
+                break;
+
+            case kPluginPostRtEventNoteOff:
+                uiNoteOff(static_cast<uint8_t>(event.value1), static_cast<uint8_t>(event.value2));
+                break;
+            }
+        }
+
+        pData->postUiEvents.data.clear();
     }
 
     if (pData->transientTryCounter == 0)

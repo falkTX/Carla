@@ -809,7 +809,7 @@ public:
         if (fEffect->flags & effFlagsHasEditor)
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-            pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
+            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)

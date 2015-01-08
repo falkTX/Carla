@@ -283,6 +283,19 @@ struct CarlaPlugin::ProtectedData {
 
     } postRtEvents;
 
+    struct PostUiEvents {
+        CarlaMutex mutex;
+        LinkedList<PluginPostRtEvent> data;
+
+        PostUiEvents() noexcept;
+        ~PostUiEvents() noexcept;
+        void append(const PluginPostRtEvent& event) noexcept;
+        void clear() noexcept;
+
+        CARLA_DECLARE_NON_COPY_STRUCT(PostUiEvents)
+
+    } postUiEvents;
+
 #ifndef BUILD_BRIDGE
     struct PostProc {
         float dryWet;

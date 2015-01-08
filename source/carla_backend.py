@@ -209,8 +209,8 @@ PLUGIN_CAN_PANNING = 0x080
 # Plugin needs a constant, fixed-size audio buffer.
 PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 
-# Plugin needs all UI events in a single/main thread.
-PLUGIN_NEEDS_SINGLE_THREAD = 0x200
+# Plugin needs to receive all UI events in the main thread.
+PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options

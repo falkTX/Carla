@@ -532,7 +532,7 @@ public:
         if (fInstance->hasEditor())
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-            pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
+            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))

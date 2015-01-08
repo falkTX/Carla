@@ -164,9 +164,9 @@ static const uint PLUGIN_CAN_PANNING = 0x080;
 static const uint PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
 
 /*!
- * Plugin needs all UI events in a single/main thread.
+ * Plugin needs to receive all UI events in the main thread.
  */
-static const uint PLUGIN_NEEDS_SINGLE_THREAD = 0x200;
+static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
 /** @} */
 

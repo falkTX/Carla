@@ -431,7 +431,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         if (desc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
         if (desc->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
-            info.hints |= CB::PLUGIN_NEEDS_SINGLE_THREAD;
+            info.hints |= CB::PLUGIN_NEEDS_UI_MAIN_THREAD;
 
         info.audioIns      = desc->audioIns;
         info.audioOuts     = desc->audioOuts;
@@ -460,10 +460,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         // features
         info.hints = 0x0;
 
-#if 0
-        if (lilvPlugin.get_uis().size() > 0 || lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
+        if (lilvPlugin.get_uis().size() > 0 /*|| lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr*/)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-#endif
 
         {
             Lilv::Nodes lilvFeatureNodes(lilvPlugin.get_supported_features());

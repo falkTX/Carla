@@ -1155,10 +1155,10 @@ public:
             pData->hints |= PLUGIN_IS_SYNTH;
         if (fDescriptor->hints & NATIVE_PLUGIN_HAS_UI)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
-        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
-            pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
+            pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
 
         // extra plugin hints
         pData->extraHints = 0x0;

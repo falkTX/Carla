@@ -47,17 +47,16 @@ void CarlaEngineThread::run() noexcept
 #endif
     carla_debug("CarlaEngineThread::run()");
 
-    bool needsSingleThread, needsUiUpdates, oscRegisted;
     float value;
-#ifdef BUILD_BRIDGE
-    oscRegisted = false;
 
+#ifdef BUILD_BRIDGE
     for (; /*kEngine->isRunning() &&*/ ! shouldThreadExit();)
     {
+        const bool oscRegisted = false;
 #else
     for (; kEngine->isRunning() && ! shouldThreadExit();)
     {
-        oscRegisted = kEngine->isOscControlRegistered();
+        const bool oscRegisted = kEngine->isOscControlRegistered();
 #endif
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
@@ -67,20 +66,20 @@ void CarlaEngineThread::run() noexcept
             CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr && plugin->isEnabled());
             CARLA_SAFE_ASSERT_UINT2(i == plugin->getId(), i, plugin->getId());
 
-            needsSingleThread = (plugin->getHints() & PLUGIN_NEEDS_SINGLE_THREAD);
-            needsUiUpdates    = (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI) && ! needsSingleThread;
+            const uint hints(plugin->getHints());
+            const bool updateUI((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) == 0);
 
             // -----------------------------------------------------------
-            // Process postponed events
+            // DSP Idle
 
-            if (! needsSingleThread)
-            {
-                try {
-                    plugin->idle();
-                } CARLA_SAFE_EXCEPTION("idle()")
-            }
+            try {
+                plugin->idle();
+            } CARLA_SAFE_EXCEPTION("idle()")
 
-            if (oscRegisted || needsUiUpdates)
+            // -----------------------------------------------------------
+            // Post-poned events
+
+            if (oscRegisted || updateUI)
             {
                 // -------------------------------------------------------
                 // Update parameter outputs
@@ -98,11 +97,11 @@ void CarlaEngineThread::run() noexcept
                         kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
 #endif
                     // Update UI
-                    if (needsUiUpdates)
+                    if (updateUI)
                         plugin->uiParameterChange(j, value);
                 }
 
-                if (needsUiUpdates)
+                if (updateUI)
                 {
                     try {
                         plugin->uiIdle();

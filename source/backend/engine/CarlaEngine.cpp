@@ -294,18 +294,11 @@ void CarlaEngine::idle() noexcept
         {
             const uint hints(plugin->getHints());
 
-            if (hints & PLUGIN_NEEDS_SINGLE_THREAD)
+            if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
             {
                 try {
-                    plugin->idle();
-                } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
-
-                if (hints & PLUGIN_HAS_CUSTOM_UI)
-                {
-                    try {
-                        plugin->uiIdle();
-                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
-                }
+                    plugin->uiIdle();
+                } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
             }
         }
     }

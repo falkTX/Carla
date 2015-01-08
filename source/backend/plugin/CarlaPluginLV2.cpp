@@ -2305,8 +2305,8 @@ public:
         {
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
-            if (fUI.type == UI::TYPE_EMBED)
-                pData->hints |= PLUGIN_NEEDS_SINGLE_THREAD;
+            if (fUI.type == UI::TYPE_EMBED || fUI.type == UI::TYPE_EXTERNAL)
+                pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
         }
 
         if (LV2_IS_GENERATOR(fRdfDescriptor->Type[0], fRdfDescriptor->Type[1]))

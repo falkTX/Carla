@@ -665,7 +665,7 @@ public:
 
     /*!
      * Idle function (non-UI), called at regular intervals.
-     * This function is called from the main thread only if PLUGIN_USES_SINGLE_THREAD is set.
+     * @note: This function is NOT called from the main thread.
      */
     virtual void idle();
 
@@ -730,15 +730,6 @@ public:
 #endif
 
     // -------------------------------------------------------------------
-    // Post-poned events
-
-    /*!
-     * Process all the post-poned events.
-     * This function is called from the main thread if PLUGIN_USES_SINGLE_THREAD is set.
-     */
-    void postRtEventsRun();
-
-    // -------------------------------------------------------------------
     // UI Stuff
 
     /*!
@@ -749,33 +740,38 @@ public:
 
     /*!
      * UI idle function, called at regular intervals.
-     * This function is called from the main thread only if PLUGIN_USES_SINGLE_THREAD is set.
+     * This function is only called from the main thread if PLUGIN_NEEDS_UI_MAIN_THREAD is set.
      * @note This function may sometimes be called even if the UI is not visible yet.
      */
     virtual void uiIdle();
 
     /*!
      * Tell the UI a parameter has changed.
+     * @see uiIdle
      */
     virtual void uiParameterChange(const uint32_t index, const float value) noexcept;
 
     /*!
      * Tell the UI the current program has changed.
+     * @see uiIdle
      */
     virtual void uiProgramChange(const uint32_t index) noexcept;
 
     /*!
      * Tell the UI the current midi program has changed.
+     * @see uiIdle
      */
     virtual void uiMidiProgramChange(const uint32_t index) noexcept;
 
     /*!
      * Tell the UI a note has been pressed.
+     * @see uiIdle
      */
     virtual void uiNoteOn(const uint8_t channel, const uint8_t note, const uint8_t velo) noexcept;
 
     /*!
      * Tell the UI a note has been released.
+     * @see uiIdle
      */
     virtual void uiNoteOff(const uint8_t channel, const uint8_t note) noexcept;
 

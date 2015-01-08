@@ -421,6 +421,32 @@ void CarlaPlugin::ProtectedData::PostRtEvents::clear() noexcept
     mutex.unlock();
 }
 
+// -----------------------------------------------------------------------
+// ProtectedData::PostUiEvents
+
+CarlaPlugin::ProtectedData::PostUiEvents::PostUiEvents() noexcept
+    : mutex(),
+      data() {}
+
+CarlaPlugin::ProtectedData::PostUiEvents::~PostUiEvents() noexcept
+{
+    clear();
+}
+
+void CarlaPlugin::ProtectedData::PostUiEvents::append(const PluginPostRtEvent& e) noexcept
+{
+    mutex.lock();
+    data.append(e);
+    mutex.unlock();
+}
+
+void CarlaPlugin::ProtectedData::PostUiEvents::clear() noexcept
+{
+    mutex.lock();
+    data.clear();
+    mutex.unlock();
+}
+
 #ifndef BUILD_BRIDGE
 // -----------------------------------------------------------------------
 // ProtectedData::PostProc
@@ -471,6 +497,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       stateSave(),
       extNotes(),
       postRtEvents(),
+      postUiEvents(),
 #ifndef BUILD_BRIDGE
       postProc(),
 #endif
