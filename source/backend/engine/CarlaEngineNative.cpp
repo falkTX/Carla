@@ -1467,7 +1467,9 @@ protected:
             }
         }
 
+#ifdef HAVE_LIBLO
         pData->osc.idle();
+#endif
 
         fUiServer.idlePipe();
 

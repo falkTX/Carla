@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifdef HAVE_LIBLO
+
 #include "CarlaBackendUtils.hpp"
 #include "CarlaEngineInternal.hpp"
 #include "CarlaMIDI.h"
@@ -401,3 +403,5 @@ void CarlaEngine::oscSend_control_exit() const noexcept
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+#endif // HAVE_LIBLO

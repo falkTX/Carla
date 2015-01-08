@@ -743,7 +743,7 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
         if (useDefault)
             param.ranges[i].def = value;
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         if (sendOsc)
         {
             if (useDefault)
@@ -760,10 +760,8 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
         }
     }
 
-#ifdef BUILD_BRIDGE
-    // unused
+    // may be unused
     return; (void)sendOsc;
-#endif
 }
 
 // -----------------------------------------------------------------------

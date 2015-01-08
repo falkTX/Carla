@@ -26,13 +26,17 @@
 // Plugin Code
 #include "distrho-mverb/DistrhoArtworkMVerb.cpp"
 #include "distrho-mverb/DistrhoPluginMVerb.cpp"
+#ifdef HAVE_DGL
 #include "distrho-mverb/DistrhoUIMVerb.cpp"
 #include "distrho-mverb/font/Kh-Kangrey.cpp"
+#endif
 
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
 #include "DistrhoPluginMain.cpp"
+#ifdef HAVE_DGL
 #include "DistrhoUIMain.cpp"
+#endif
 
 START_NAMESPACE_DISTRHO
 

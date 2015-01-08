@@ -18,6 +18,8 @@
 #ifndef CARLA_ENGINE_OSC_HPP_INCLUDED
 #define CARLA_ENGINE_OSC_HPP_INCLUDED
 
+#ifdef HAVE_LIBLO
+
 #include "CarlaBackend.h"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
@@ -155,5 +157,7 @@ private:
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+#endif // HAVE_LIBLO
 
 #endif // CARLA_ENGINE_OSC_HPP_INCLUDED

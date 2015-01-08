@@ -51,12 +51,14 @@ void CarlaEngineThread::run() noexcept
 
 #ifdef BUILD_BRIDGE
     for (; /*kEngine->isRunning() &&*/ ! shouldThreadExit();)
-    {
-        const bool oscRegisted = false;
 #else
     for (; kEngine->isRunning() && ! shouldThreadExit();)
+#endif
     {
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool oscRegisted = kEngine->isOscControlRegistered();
+#else
+        const bool oscRegisted = false;
 #endif
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
@@ -91,7 +93,7 @@ void CarlaEngineThread::run() noexcept
 
                     value = plugin->getParameterValue(j);
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                     // Update OSC engine client
                     if (oscRegisted)
                         kEngine->oscSend_control_set_parameter_value(i, static_cast<int32_t>(j), value);
@@ -109,7 +111,7 @@ void CarlaEngineThread::run() noexcept
                 }
             }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             // -----------------------------------------------------------
             // Update OSC control client peaks
 

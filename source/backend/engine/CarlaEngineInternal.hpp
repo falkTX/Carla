@@ -150,13 +150,15 @@ struct EnginePluginData {
 // CarlaEngineProtectedData
 
 struct CarlaEngine::ProtectedData {
-    CarlaEngineOsc    osc;
     CarlaEngineThread thread;
 
-#ifdef BUILD_BRIDGE
+#ifdef HAVE_LIBLO
+    CarlaEngineOsc osc;
+# ifdef BUILD_BRIDGE
     CarlaOscData* oscData;
-#else
+# else
     const CarlaOscData* oscData;
+# endif
 #endif
 
     EngineCallbackFunc callback;

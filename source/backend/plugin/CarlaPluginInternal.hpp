@@ -21,7 +21,6 @@
 #include "CarlaPlugin.hpp"
 
 #include "CarlaLibUtils.hpp"
-#include "CarlaOscUtils.hpp"
 #include "CarlaStateUtils.hpp"
 
 #include "CarlaMIDI.h"

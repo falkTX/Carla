@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifdef HAVE_LIBLO
+
 #include "CarlaEngine.hpp"
 #include "CarlaEngineOsc.hpp"
 #include "CarlaPlugin.hpp"
@@ -541,3 +543,5 @@ int CarlaEngineOsc::handleMsgNoteOff(CARLA_ENGINE_OSC_HANDLE_ARGS)
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+#endif // HAVE_LIBLO

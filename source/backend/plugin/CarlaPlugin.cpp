@@ -966,15 +966,17 @@ void CarlaPlugin::setActive(const bool active, const bool sendOsc, const bool se
 #ifndef BUILD_BRIDGE
     const float value(active ? 1.0f : 0.0f);
 
+# ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, value);
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, value, nullptr);
-#else
-    // unused
-    return; (void)sendOsc; (void)sendCallback;
 #endif
+
+    // may be unused
+    return; (void)sendOsc; (void)sendCallback;
 }
 
 #ifndef BUILD_BRIDGE
@@ -989,11 +991,16 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 
     pData->postProc.dryWet = fixedValue;
 
+#ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_DRYWET, fixedValue);
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_DRYWET, 0, fixedValue, nullptr);
+
+    // may be unused
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1007,11 +1014,16 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 
     pData->postProc.volume = fixedValue;
 
+#ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_VOLUME, fixedValue);
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_VOLUME, 0, fixedValue, nullptr);
+
+    // may be unused
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1025,11 +1037,16 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 
     pData->postProc.balanceLeft = fixedValue;
 
+#ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_LEFT, fixedValue);
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_LEFT, 0, fixedValue, nullptr);
+
+    // may be unused
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1043,11 +1060,16 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 
     pData->postProc.balanceRight = fixedValue;
 
+#ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_BALANCE_RIGHT, fixedValue);
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_BALANCE_RIGHT, 0, fixedValue, nullptr);
+
+    // may be unused
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool sendCallback) noexcept
@@ -1061,13 +1083,18 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 
     pData->postProc.panning = fixedValue;
 
+#ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_PANNING, fixedValue);
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_PANNING, 0, fixedValue, nullptr);
+
+    // may be unused
+    return; (void)sendOsc;
 }
-#endif
+#endif // ! BUILD_BRIDGE
 
 void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept
 {
@@ -1084,15 +1111,17 @@ void CarlaPlugin::setCtrlChannel(const int8_t channel, const bool sendOsc, const
 #ifndef BUILD_BRIDGE
     const float channelf(channel);
 
+# ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_CTRL_CHANNEL, channelf);
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_CTRL_CHANNEL, 0, channelf, nullptr);
-#else
-    // unused
-    return; (void)sendOsc; (void)sendCallback;
 #endif
+
+    // may be unused
+    return; (void)sendOsc; (void)sendCallback;
 }
 
 // -------------------------------------------------------------------
@@ -1106,17 +1135,17 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
         uiParameterChange(parameterId, value);
 
 #ifndef BUILD_BRIDGE
+# ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(parameterId), value);
-#endif
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
-
-#ifdef BUILD_BRIDGE
-    // unused
-    return; (void)sendOsc;
 #endif
+
+    // may be unused
+    return; (void)sendOsc; (void)sendCallback;
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1166,15 +1195,17 @@ void CarlaPlugin::setParameterMidiChannel(const uint32_t parameterId, const uint
     pData->param.data[parameterId].midiChannel = channel;
 
 #ifndef BUILD_BRIDGE
+# ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, parameterId, channel);
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CHANNEL_CHANGED, pData->id, static_cast<int>(parameterId), channel, 0.0f, nullptr);
-#else
-    // unused
-    return; (void)sendOsc; (void)sendCallback;
 #endif
+
+    // may be unused
+    return; (void)sendOsc; (void)sendCallback;
 }
 
 void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t cc, const bool sendOsc, const bool sendCallback) noexcept
@@ -1188,15 +1219,17 @@ void CarlaPlugin::setParameterMidiCC(const uint32_t parameterId, const int16_t c
     pData->param.data[parameterId].midiCC = cc;
 
 #ifndef BUILD_BRIDGE
+# ifdef HAVE_LIBLO
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, parameterId, cc);
+# endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_MIDI_CC_CHANGED, pData->id, static_cast<int>(parameterId), cc, 0.0f, nullptr);
-#else
-    // unused
-    return; (void)sendOsc; (void)sendCallback;
 #endif
+
+    // may be unused
+    return; (void)sendOsc; (void)sendCallback;
 }
 
 void CarlaPlugin::setCustomData(const char* const type, const char* const key, const char* const value, const bool)
@@ -1249,13 +1282,13 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 
     pData->prog.current = index;
 
-#ifdef BUILD_BRIDGE
-    const bool reallySendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
 
     if (reallySendOsc)
         pData->engine->oscSend_control_set_current_program(pData->id, index);
+#else
+    const bool reallySendOsc(false);
 #endif
 
     if (sendCallback)
@@ -1273,10 +1306,8 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
         pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
     }
 
-#ifdef BUILD_BRIDGE
-    // unused
+    // may be unused
     return; (void)sendGui; (void)sendOsc;
-#endif
 }
 
 void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1285,13 +1316,13 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 
     pData->midiprog.current = index;
 
-#ifdef BUILD_BRIDGE
-    const bool reallySendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
 
     if (reallySendOsc)
         pData->engine->oscSend_control_set_current_midi_program(pData->id, index);
+#else
+    const bool reallySendOsc(false);
 #endif
 
     if (sendCallback)
@@ -1308,10 +1339,8 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
         pData->updateParameterValues(this, reallySendOsc, sendCallback, true);
     }
 
-#ifdef BUILD_BRIDGE
-    // unused
+    // may be unused
     return; (void)sendGui; (void)sendOsc;
-#endif
 }
 
 void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1365,7 +1394,7 @@ void CarlaPlugin::idle()
 
     const bool hasUI(pData->hints & PLUGIN_HAS_CUSTOM_UI);
     const bool needsUiMainThread(pData->hints & PLUGIN_NEEDS_UI_MAIN_THREAD);
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool sendOsc(pData->engine->isOscControlRegistered());
 #endif
 
@@ -1397,7 +1426,7 @@ void CarlaPlugin::idle()
 
             if (event.value2 != 1)
             {
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                 // Update OSC control client
                 if (sendOsc)
                     pData->engine->oscSend_control_set_parameter_value(pData->id, event.value1, event.value3);
@@ -1423,7 +1452,7 @@ void CarlaPlugin::idle()
                 const float paramDefault(pData->param.ranges[j].def);
                 const float paramValue(getParameterValue(j));
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                 if (sendOsc)
                 {
                     pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
@@ -1434,7 +1463,7 @@ void CarlaPlugin::idle()
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
             }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             // Update OSC control client
             if (sendOsc)
                 pData->engine->oscSend_control_set_current_program(pData->id, event.value1);
@@ -1460,7 +1489,7 @@ void CarlaPlugin::idle()
                 const float paramDefault(pData->param.ranges[j].def);
                 const float paramValue(getParameterValue(j));
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
                 if (sendOsc)
                 {
                     pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
@@ -1471,7 +1500,7 @@ void CarlaPlugin::idle()
                 pData->engine->callback(ENGINE_CALLBACK_PARAMETER_DEFAULT_CHANGED, pData->id, static_cast<int>(j), 0, paramDefault, nullptr);
             }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             // Update OSC control client
             if (sendOsc)
                 pData->engine->oscSend_control_set_current_midi_program(pData->id, event.value1);
@@ -1499,7 +1528,7 @@ void CarlaPlugin::idle()
                     uiNoteOn(channel, note, velocity);
             }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             // Update OSC control client
             if (sendOsc)
                 pData->engine->oscSend_control_note_on(pData->id, channel, note, velocity);
@@ -1525,7 +1554,7 @@ void CarlaPlugin::idle()
                     uiNoteOff(channel, note);
             }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             // Update OSC control client
             if (sendOsc)
                 pData->engine->oscSend_control_note_off(pData->id, channel, note);
@@ -1573,10 +1602,10 @@ void CarlaPlugin::clearBuffers() noexcept
     pData->clearBuffers();
 }
 
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
 // -------------------------------------------------------------------
 // OSC stuff
 
-#ifndef BUILD_BRIDGE
 void CarlaPlugin::registerToOscClient() noexcept
 {
     if (! pData->engine->isOscControlRegistered())
@@ -1675,12 +1704,14 @@ void CarlaPlugin::registerToOscClient() noexcept
         pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, pData->active ? 1.0f : 0.0f);
     }
 }
-#endif // BUILD_BRIDGE
+#endif
 
+// FIXME
 void CarlaPlugin::handleOscMessage(const char* const, const int, const void* const, const char* const, const lo_message)
 {
     // do nothing
 }
+//#endif // HAVE_LIBLO && ! BUILD_BRIDGE
 
 // -------------------------------------------------------------------
 // MIDI events
@@ -1709,7 +1740,7 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
             uiNoteOff(channel, note);
     }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
     {
         if (velo > 0)
@@ -1722,10 +1753,8 @@ void CarlaPlugin::sendMidiSingleNote(const uint8_t channel, const uint8_t note, 
     if (sendCallback)
         pData->engine->callback((velo > 0) ? ENGINE_CALLBACK_NOTE_ON : ENGINE_CALLBACK_NOTE_OFF, pData->id, channel, note, velo, nullptr);
 
-#ifdef BUILD_BRIDGE
-    // unused
+    // may be unused
     return; (void)sendOsc;
-#endif
 }
 
 #ifndef BUILD_BRIDGE

@@ -26,12 +26,16 @@
 // Plugin Code
 #include "distrho-pingpongpan/DistrhoArtworkPingPongPan.cpp"
 #include "distrho-pingpongpan/DistrhoPluginPingPongPan.cpp"
+#ifdef HAVE_DGL
 #include "distrho-pingpongpan/DistrhoUIPingPongPan.cpp"
+#endif
 
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
 #include "DistrhoPluginMain.cpp"
+#ifdef HAVE_DGL
 #include "DistrhoUIMain.cpp"
+#endif
 
 START_NAMESPACE_DISTRHO
 

@@ -356,10 +356,10 @@ public:
         // simulate an updateDisplay callback
         handleAudioMasterCallback(audioMasterUpdateDisplay, 0, 0, nullptr, 0.0f);
 
-#ifdef BUILD_BRIDGE
-        const bool sendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool sendOsc(pData->engine->isOscControlRegistered());
+#else
+        const bool sendOsc(false);
 #endif
         pData->updateParameterValues(this, sendOsc, true, false);
     }
@@ -912,7 +912,7 @@ public:
             }
         }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {

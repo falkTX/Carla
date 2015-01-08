@@ -145,10 +145,6 @@ endif
 # --------------------------------------------------------------
 # Check for required libs
 
-ifneq ($(shell pkg-config --exists liblo && echo true),true)
-$(error liblo missing, cannot continue)
-endif
-
 ifeq ($(LINUX),true)
 ifeq (,$(wildcard /usr/include/magic.h))
 $(error libmagic missing, cannot continue)
@@ -173,6 +169,8 @@ endif
 
 HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
 HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+
+HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
 
@@ -262,6 +260,10 @@ ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
 endif
 
+ifeq ($(HAVE_LIBLO),true)
+BASE_FLAGS += -DHAVE_LIBLO
+endif
+
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BASE_FLAGS += -DHAVE_FLUIDSYNTH
 endif
@@ -281,8 +283,10 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 1)
 
+ifeq ($(HAVE_LIBLO),true)
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 FLUIDSYNTH_FLAGS = $(shell pkg-config --cflags fluidsynth)

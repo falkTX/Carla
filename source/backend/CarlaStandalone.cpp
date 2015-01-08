@@ -26,7 +26,10 @@
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
-#include "CarlaOscUtils.hpp"
+
+#ifdef HAVE_LIBLO
+# include "CarlaOscUtils.hpp"
+#endif
 
 #include "juce_audio_formats.h"
 
@@ -79,6 +82,7 @@ struct CarlaBackendStandalone {
 
 static CarlaBackendStandalone gStandalone;
 
+#ifdef HAVE_LIBLO
 // -------------------------------------------------------------------------------------------------------------------
 // NSM support
 
@@ -344,6 +348,8 @@ private:
 };
 
 static CarlaNSM gNSM;
+
+#endif // HAVE_LIBLO
 
 // -------------------------------------------------------------------------------------------------------------------
 // API
@@ -679,7 +685,9 @@ void carla_engine_idle()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
+#ifdef HAVE_LIBLO
     gNSM.idle();
+#endif
     gStandalone.engine->idle();
 }
 
@@ -788,8 +796,9 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
     case CB:: ENGINE_OPTION_NSM_INIT:
         CARLA_SAFE_ASSERT_RETURN(value != 0,);
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-
+#ifdef HAVE_LIBLO
         gNSM.announce(value, valueStr);
+#endif
         break;
 
     case CB::ENGINE_OPTION_PLUGIN_PATH:
@@ -2153,6 +2162,7 @@ const char* carla_get_host_osc_url_tcp()
 {
     carla_debug("carla_get_host_osc_url_tcp()");
 
+#ifdef HAVE_LIBLO
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("Engine is not running");
@@ -2161,12 +2171,16 @@ const char* carla_get_host_osc_url_tcp()
     }
 
     return gStandalone.engine->getOscServerPathTCP();
+#else
+    return nullptr;
+#endif
 }
 
 const char* carla_get_host_osc_url_udp()
 {
     carla_debug("carla_get_host_osc_url_udp()");
 
+#ifdef HAVE_LIBLO
     if (gStandalone.engine == nullptr)
     {
         carla_stderr2("Engine is not running");
@@ -2175,6 +2189,9 @@ const char* carla_get_host_osc_url_udp()
     }
 
     return gStandalone.engine->getOscServerPathUDP();
+#else
+    return nullptr;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

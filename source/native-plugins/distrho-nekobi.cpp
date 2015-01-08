@@ -26,12 +26,16 @@
 // Plugin Code
 #include "distrho-nekobi/DistrhoArtworkNekobi.cpp"
 #include "distrho-nekobi/DistrhoPluginNekobi.cpp"
+#ifdef HAVE_DGL
 #include "distrho-nekobi/DistrhoUINekobi.cpp"
+#endif
 
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
 #include "DistrhoPluginMain.cpp"
+#ifdef HAVE_DGL
 #include "DistrhoUIMain.cpp"
+#endif
 
 START_NAMESPACE_DISTRHO
 

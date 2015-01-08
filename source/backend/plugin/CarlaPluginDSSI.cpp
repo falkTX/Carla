@@ -23,7 +23,11 @@
 
 #include "CarlaDssiUtils.hpp"
 #include "CarlaMathUtils.hpp"
-#include "CarlaThread.hpp"
+
+#ifdef HAVE_LIBLO
+# include "CarlaOscUtils.hpp"
+# include "CarlaThread.hpp"
+#endif
 
 using juce::ChildProcess;
 using juce::ScopedPointer;
@@ -60,6 +64,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
 
+#ifdef HAVE_LIBLO
 // -------------------------------------------------------------------
 
 class CarlaThreadDSSIUI : public CarlaThread
@@ -241,6 +246,7 @@ private:
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaThreadDSSIUI)
 };
+#endif
 
 // -----------------------------------------------------
 
@@ -254,14 +260,18 @@ public:
           fDescriptor(nullptr),
           fDssiDescriptor(nullptr),
           fUsesCustomData(false),
+#ifdef HAVE_LIBLO
           fUiFilename(nullptr),
+#endif
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fLatencyChanged(false),
           fLatencyIndex(-1),
+#ifdef HAVE_LIBLO
           fOscData(),
           fThreadUI(engine, this, fOscData),
+#endif
           leakDetector_CarlaPluginDSSI()
     {
         carla_debug("CarlaPluginDSSI::CarlaPluginDSSI(%p, %i)", engine, id);
@@ -271,6 +281,7 @@ public:
     {
         carla_debug("CarlaPluginDSSI::~CarlaPluginDSSI()");
 
+#ifdef HAVE_LIBLO
         // close UI
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
         {
@@ -278,6 +289,7 @@ public:
 
             fThreadUI.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
+#endif
 
         pData->singleMutex.lock();
         pData->masterMutex.lock();
@@ -319,11 +331,13 @@ public:
             fDssiDescriptor = nullptr;
         }
 
+#ifdef HAVE_LIBLO
         if (fUiFilename != nullptr)
         {
             delete[] fUiFilename;
             fUiFilename = nullptr;
         }
+#endif
 
         clearBuffers();
     }
@@ -557,8 +571,10 @@ public:
             }
         }
 
+#ifdef HAVE_LIBLO
         if (sendGui && fOscData.target != nullptr)
             osc_send_configure(fOscData, key, value);
+#endif
 
         if (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0)
         {
@@ -588,10 +604,10 @@ public:
             } CARLA_SAFE_EXCEPTION("CarlaPluginDSSI::setChunkData");
         }
 
-#ifdef BUILD_BRIDGE
-        const bool sendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool sendOsc(pData->engine->isOscControlRegistered());
+#else
+        const bool sendOsc(false);
 #endif
         pData->updateParameterValues(this, sendOsc, true, false);
     }
@@ -625,6 +641,7 @@ public:
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
 
+#ifdef HAVE_LIBLO
     // -------------------------------------------------------------------
     // Set ui stuff
 
@@ -649,6 +666,7 @@ public:
             fThreadUI.stopThread(static_cast<int>(pData->engine->getOptions().uiBridgesTimeout * 2));
         }
     }
+#endif
 
     void idle() override
     {
@@ -1069,8 +1087,10 @@ public:
         if (LADSPA_IS_HARD_RT_CAPABLE(fDescriptor->Properties))
             pData->hints |= PLUGIN_IS_RTSAFE;
 
+#ifdef HAVE_LIBLO
         if (fUiFilename != nullptr)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+#endif
 
 #ifndef BUILD_BRIDGE
         if (aOuts > 0 && (aIns == aOuts || aIns == 1))
@@ -1204,7 +1224,7 @@ public:
             }
         }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
@@ -2117,6 +2137,7 @@ public:
         carla_debug("CarlaPluginDSSI::clearBuffers() - end");
     }
 
+#ifdef HAVE_LIBLO
     // -------------------------------------------------------------------
     // OSC stuff
 
@@ -2315,7 +2336,9 @@ public:
         // tell frontend
         pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
     }
+#endif
 
+#ifdef HAVE_LIBLO
     // -------------------------------------------------------------------
     // Post-poned UI Stuff
 
@@ -2377,6 +2400,7 @@ public:
         osc_send_midi(fOscData, midiData);
 #endif
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -2390,6 +2414,7 @@ public:
         return fDssiDescriptor;
     }
 
+#ifdef HAVE_LIBLO
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
         return fThreadUI.getProcessPID();
@@ -2399,6 +2424,7 @@ public:
     {
         return fUiFilename;
     }
+#endif
 
     // -------------------------------------------------------------------
 
@@ -2562,6 +2588,7 @@ public:
             }
         }
 
+#ifdef HAVE_LIBLO
         // ---------------------------------------------------------------
         // gui stuff
 
@@ -2570,6 +2597,7 @@ public:
             fThreadUI.setData(guiFilename, fDescriptor->Label);
             fUiFilename = guiFilename;
         }
+#endif
 
         // ---------------------------------------------------------------
         // set default options
@@ -2617,7 +2645,9 @@ private:
     const DSSI_Descriptor*   fDssiDescriptor;
 
     bool fUsesCustomData;
+#ifdef HAVE_LIBLO
     const char* fUiFilename;
+#endif
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
@@ -2628,8 +2658,10 @@ private:
 
     snd_seq_event_t fMidiEvents[kPluginMaxMidiEvents];
 
+#ifdef HAVE_LIBLO
     CarlaOscData      fOscData;
     CarlaThreadDSSIUI fThreadUI;
+#endif
 
     // -------------------------------------------------------------------
 

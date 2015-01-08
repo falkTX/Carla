@@ -250,6 +250,7 @@ wine64:
 # ----------------------------------------------------------------------------------------------------------------------------
 # Resources
 
+ifeq ($(HAVE_PYQT),true)
 RES = \
 	bin/resources/carla_app.py \
 	bin/resources/carla_backend.py \
@@ -310,10 +311,14 @@ source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.
 
 bin/resources/%.py: source/%.py
 	$(LINK) $(CURDIR)/source/$*.py bin/resources/
+else
+RES:
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # UI code
 
+ifeq ($(HAVE_PYQT),true)
 UIs = \
 	source/ui_carla_control.py \
 	source/ui_carla_about.py \
@@ -338,6 +343,9 @@ UI: $(UIs)
 
 source/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
+else
+UI:
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Widgets
@@ -785,20 +793,25 @@ endif
 
 	@echo "$(tS)---> Internal plugins: $(tE)"
 ifneq ($(WIN32),true)
-	@echo "Carla-Patchbay:$(ANS_YES)"
-	@echo "Carla-Rack:    $(ANS_YES)"
+	@echo "Carla-Patchbay: $(ANS_YES)"
+	@echo "Carla-Rack:     $(ANS_YES)"
 else
-	@echo "Carla-Patchbay:$(ANS_NO)  $(mS)Not available for Windows$(mE)"
-	@echo "Carla-Rack:    $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Patchbay: $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Rack:     $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+endif
+ifeq ($(HAVE_DGL),true)
+	@echo "DISTRHO Plugins:$(ANS_YES) (with UI)"
+else
+	@echo "DISTRHO Plugins:$(ANS_YES) (without UI)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	@echo "ZynAddSubFX:   $(ANS_YES) (with UI)"
+	@echo "ZynAddSubFX:    $(ANS_YES) (with UI)"
 else
-	@echo "ZynAddSubFX:   $(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
 endif
 else
-	@echo "ZynAddSubFX:   $(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

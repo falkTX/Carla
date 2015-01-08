@@ -270,7 +270,7 @@ bool CarlaEngine::close()
         removeAllPlugins();
     }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (pData->osc.isControlRegistered())
         oscSend_control_exit();
 #endif
@@ -303,7 +303,9 @@ void CarlaEngine::idle() noexcept
         }
     }
 
+#ifdef HAVE_LIBLO
     pData->osc.idle();
+#endif
 }
 
 CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
@@ -521,7 +523,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     if (plugin == nullptr)
         return false;
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     plugin->registerToOscClient();
 #endif
 
@@ -611,8 +613,10 @@ bool CarlaEngine::removePlugin(const uint id)
     }
     */
 
+# ifdef HAVE_LIBLO
     if (isOscControlRegistered())
         oscSend_control_remove_plugin(id);
+# endif
 #else
     pData->curPluginCount = 0;
     carla_zeroStruct(pData->plugins, 1);
@@ -1397,15 +1401,16 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     }
 }
 
+#ifdef HAVE_LIBLO
 // -----------------------------------------------------------------------
 // OSC Stuff
 
-#ifndef BUILD_BRIDGE
+# ifndef BUILD_BRIDGE
 bool CarlaEngine::isOscControlRegistered() const noexcept
 {
     return pData->osc.isControlRegistered();
 }
-#endif
+# endif
 
 void CarlaEngine::idleOsc() const noexcept
 {
@@ -1421,6 +1426,7 @@ const char* CarlaEngine::getOscServerPathUDP() const noexcept
 {
     return pData->osc.getServerPathUDP();
 }
+#endif
 
 // -----------------------------------------------------------------------
 // Helper functions

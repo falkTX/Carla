@@ -94,9 +94,11 @@ void EngineNextAction::clearAndReset() noexcept
 // CarlaEngine::ProtectedData
 
 CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
-    : osc(engine),
-      thread(engine),
+    : thread(engine),
+#ifdef HAVE_LIBLO
+      osc(engine),
       oscData(nullptr),
+#endif
       callback(nullptr),
       callbackPtr(nullptr),
       fileCallback(nullptr),
@@ -145,7 +147,9 @@ CarlaEngine::ProtectedData::~ProtectedData() noexcept
 bool CarlaEngine::ProtectedData::init(const char* const clientName)
 {
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(name.isEmpty(), "Invalid engine internal data (err #1)");
+#ifdef HAVE_LIBLO
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(oscData == nullptr, "Invalid engine internal data (err #2)");
+#endif
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.in  == nullptr, "Invalid engine internal data (err #4)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(events.out == nullptr, "Invalid engine internal data (err #5)");
     CARLA_SAFE_ASSERT_RETURN_INTERNAL_ERR(clientName != nullptr && clientName[0] != '\0', "Invalid client name");
@@ -193,10 +197,14 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     timeInfo.clear();
 
+#ifdef HAVE_LIBLO
     osc.init(clientName);
+# ifndef BUILD_BRIDGE
+    oscData = osc.getControlData();
+# endif
+#endif
 
 #ifndef BUILD_BRIDGE
-    oscData = osc.getControlData();
     plugins = new EnginePluginData[maxPluginNumber];
     carla_zeroStruct(plugins, maxPluginNumber);
 #endif
@@ -219,8 +227,10 @@ void CarlaEngine::ProtectedData::close()
     thread.stopThread(500);
     nextAction.ready();
 
+#ifdef HAVE_LIBLO
     osc.close();
     oscData = nullptr;
+#endif
 
     aboutToClose    = false;
     curPluginCount  = 0;
