@@ -1324,48 +1324,6 @@ void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program
 }
 
 // -------------------------------------------------------------------
-// Set ui stuff
-
-void CarlaPlugin::idle()
-{
-    if (! pData->enabled)
-        return;
-
-    if (pData->hints & PLUGIN_NEEDS_SINGLE_THREAD)
-    {
-        // Process postponed events
-        postRtEventsRun();
-
-        // Update parameter outputs
-        for (uint32_t i=0; i < pData->param.count; ++i)
-        {
-            if (pData->param.data[i].type == PARAMETER_OUTPUT)
-                uiParameterChange(i, getParameterValue(i));
-        }
-    }
-
-    if (pData->transientTryCounter == 0)
-        return;
-    if (++pData->transientTryCounter % 10 != 0)
-        return;
-    if (pData->transientTryCounter >= 200)
-        return;
-
-    carla_stdout("Trying to get window...");
-
-    CarlaString uiTitle(pData->name);
-    uiTitle += " (GUI)";
-
-    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle, pData->engine->getOptions().frontendWinId, true))
-        pData->transientTryCounter = 0;
-}
-
-void CarlaPlugin::showCustomUI(const bool)
-{
-    CARLA_SAFE_ASSERT(false);
-}
-
-// -------------------------------------------------------------------
 // Plugin state
 
 void CarlaPlugin::reloadPrograms(const bool)
@@ -1395,6 +1353,17 @@ void CarlaPlugin::sampleRateChanged(const double)
 
 void CarlaPlugin::offlineModeChanged(const bool)
 {
+}
+
+// -------------------------------------------------------------------
+// Misc
+
+void CarlaPlugin::idle()
+{
+    if (! pData->enabled)
+        return;
+
+    postRtEventsRun();
 }
 
 bool CarlaPlugin::tryLock(const bool forcedOffline) noexcept
@@ -1760,7 +1729,37 @@ void CarlaPlugin::postRtEventsRun()
 }
 
 // -------------------------------------------------------------------
-// Post-poned UI Stuff
+// UI Stuff
+
+void CarlaPlugin::showCustomUI(const bool)
+{
+    CARLA_SAFE_ASSERT(false);
+}
+
+void CarlaPlugin::uiIdle()
+{
+    // Update parameter outputs if needed
+    for (uint32_t i=0; i < pData->param.count; ++i)
+    {
+        if (pData->param.data[i].type == PARAMETER_OUTPUT)
+            uiParameterChange(i, getParameterValue(i));
+    }
+
+    if (pData->transientTryCounter == 0)
+        return;
+    if (++pData->transientTryCounter % 10 != 0)
+        return;
+    if (pData->transientTryCounter >= 200)
+        return;
+
+    carla_stdout("Trying to get window...");
+
+    CarlaString uiTitle(pData->name);
+    uiTitle += " (GUI)";
+
+    if (CarlaPluginUI::tryTransientWinIdMatch(getUiBridgeProcessId(), uiTitle, pData->engine->getOptions().frontendWinId, true))
+        pData->transientTryCounter = 0;
+}
 
 void CarlaPlugin::uiParameterChange(const uint32_t index, const float value) noexcept
 {

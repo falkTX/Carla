@@ -613,23 +613,6 @@ public:
     void setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept;
 
     // -------------------------------------------------------------------
-    // Set gui stuff
-
-    /*!
-     * Idle function.
-     *
-     * @note This function must be always called from the main thread.
-     */
-    virtual void idle();
-
-    /*!
-     * Show (or hide) the plugin's custom UI according to @a yesNo.
-     *
-     * @note This function must be always called from the main thread.
-     */
-    virtual void showCustomUI(const bool yesNo);
-
-    // -------------------------------------------------------------------
     // Plugin state
 
     /*!
@@ -677,12 +660,14 @@ public:
      */
     virtual void offlineModeChanged(const bool isOffline);
 
-#if 0
+    // -------------------------------------------------------------------
+    // Misc
+
     /*!
-     * Lock the plugin's master mutex.
+     * Idle function (non-UI), called at regular intervals.
+     * This function is called from the main thread only if PLUGIN_USES_SINGLE_THREAD is set.
      */
-    void lock();
-#endif
+    virtual void idle();
 
     /*!
      * Try to lock the plugin's master mutex.
@@ -749,12 +734,25 @@ public:
 
     /*!
      * Process all the post-poned events.
-     * This function must be called from the main thread (ie, idle()) if PLUGIN_USES_SINGLE_THREAD is set.
+     * This function is called from the main thread if PLUGIN_USES_SINGLE_THREAD is set.
      */
     void postRtEventsRun();
 
     // -------------------------------------------------------------------
-    // Post-poned UI Stuff
+    // UI Stuff
+
+    /*!
+     * Show (or hide) the plugin's custom UI according to @a yesNo.
+     * This function is always called from the main thread.
+     */
+    virtual void showCustomUI(const bool yesNo);
+
+    /*!
+     * UI idle function, called at regular intervals.
+     * This function is called from the main thread only if PLUGIN_USES_SINGLE_THREAD is set.
+     * @note This function may sometimes be called even if the UI is not visible yet.
+     */
+    virtual void uiIdle();
 
     /*!
      * Tell the UI a parameter has changed.

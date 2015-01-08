@@ -1417,6 +1417,38 @@ public:
 
     void idle() override
     {
+        if (fLatencyChanged && fLatencyIndex != -1)
+        {
+            fLatencyChanged = false;
+
+            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
+
+            if (latency >= 0)
+            {
+                const uint32_t ulatency(static_cast<uint32_t>(latency));
+
+                if (pData->latency != ulatency)
+                {
+                    carla_stdout("latency changed to %i", latency);
+
+                    const ScopedSingleProcessLocker sspl(this, true);
+
+                    pData->latency = ulatency;
+                    pData->client->setLatency(ulatency);
+#ifndef BUILD_BRIDGE
+                    pData->recreateLatencyBuffers();
+#endif
+                }
+            }
+            else
+                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
+        }
+
+        CarlaPlugin::idle();
+    }
+
+    void uiIdle() override
+    {
         if (fAtomBufferOut.isDataAvailableForReading())
         {
             uint8_t dumpBuf[fAtomBufferOut.getSize()];
@@ -1446,33 +1478,6 @@ public:
                         fUI.descriptor->port_event(fUI.handle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
                 }
             }
-        }
-
-        if (fLatencyChanged && fLatencyIndex != -1)
-        {
-            fLatencyChanged = false;
-
-            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
-
-            if (latency >= 0)
-            {
-                const uint32_t ulatency(static_cast<uint32_t>(latency));
-
-                if (pData->latency != ulatency)
-                {
-                    carla_stdout("latency changed to %i", latency);
-
-                    const ScopedSingleProcessLocker sspl(this, true);
-
-                    pData->latency = ulatency;
-                    pData->client->setLatency(ulatency);
-#ifndef BUILD_BRIDGE
-                    pData->recreateLatencyBuffers();
-#endif
-                }
-            }
-            else
-                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
         }
 
         if (fPipeServer.isPipeRunning())
@@ -1515,7 +1520,7 @@ public:
 #endif
         }
 
-        CarlaPlugin::idle();
+        CarlaPlugin::uiIdle();
     }
 
     // -------------------------------------------------------------------

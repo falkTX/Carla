@@ -76,8 +76,8 @@ void CarlaEngineThread::run() noexcept
             if (! needsSingleThread)
             {
                 try {
-                    plugin->postRtEventsRun();
-                } CARLA_SAFE_EXCEPTION("postRtEventsRun()")
+                    plugin->idle();
+                } CARLA_SAFE_EXCEPTION("idle()")
             }
 
             if (oscRegisted || needsUiUpdates)
@@ -100,6 +100,13 @@ void CarlaEngineThread::run() noexcept
                     // Update UI
                     if (needsUiUpdates)
                         plugin->uiParameterChange(j, value);
+                }
+
+                if (needsUiUpdates)
+                {
+                    try {
+                        plugin->uiIdle();
+                    } CARLA_SAFE_EXCEPTION("uiIdle()")
                 }
             }
 

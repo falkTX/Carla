@@ -292,9 +292,21 @@ void CarlaEngine::idle() noexcept
 
         if (plugin != nullptr && plugin->isEnabled())
         {
-            try {
-                plugin->idle();
-            } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
+            const uint hints(plugin->getHints());
+
+            if (hints & PLUGIN_NEEDS_SINGLE_THREAD)
+            {
+                try {
+                    plugin->idle();
+                } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin idle");
+
+                if (hints & PLUGIN_HAS_CUSTOM_UI)
+                {
+                    try {
+                        plugin->uiIdle();
+                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                }
+            }
         }
     }
 

@@ -484,9 +484,6 @@ public:
 
     void idle() override
     {
-        if (fNeedIdle)
-            dispatcher(effIdle, 0, 0, nullptr, 0.0f);
-
         if (fUI.window != nullptr)
         {
             fUI.window->idle();
@@ -496,6 +493,19 @@ public:
         }
 
         CarlaPlugin::idle();
+    }
+
+    void uiIdle() override
+    {
+        if (fUI.window != nullptr)
+        {
+            fUI.window->idle();
+
+            if (fUI.isVisible)
+                dispatcher(effEditIdle, 0, 0, nullptr, 0.0f);
+        }
+
+        CarlaPlugin::uiIdle();
     }
 
     // -------------------------------------------------------------------

@@ -777,10 +777,18 @@ public:
         if (fDescriptor->idle != nullptr && (fDescriptor->hints & ::NATIVE_PLUGIN_NEEDS_DSP_IDLE) != 0)
             fDescriptor->idle(fHandle);
 
+        CarlaPlugin::idle();
+    }
+
+    void uiIdle() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
+
         if (fIsUiVisible && fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
 
-        CarlaPlugin::idle();
+        CarlaPlugin::uiIdle();
     }
 
     // -------------------------------------------------------------------

@@ -321,7 +321,7 @@ public:
         }
     }
 
-    void idle() override
+    void uiIdle() override
     {
         if (fWindow != nullptr)
         {
@@ -332,7 +332,7 @@ public:
             }
         }
 
-        CarlaPlugin::idle();
+        CarlaPlugin::uiIdle();
     }
 
     // -------------------------------------------------------------------
