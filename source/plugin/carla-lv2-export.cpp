@@ -31,7 +31,6 @@
 #include "lv2/ui.h"
 #include "lv2/units.h"
 #include "lv2/urid.h"
-#include "lv2/worker.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
@@ -261,9 +260,6 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
         text += "                        <" LV2_BUF_SIZE__fixedBlockLength "> ,\n";
 
-    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE)
-        text += "                        <" LV2_WORKER__schedule "> ,\n";
-
     text += "                        <" LV2_OPTIONS__options "> ,\n";
     text += "                        <" LV2_URID__map "> ;\n";
     text += "\n";
@@ -275,9 +271,6 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     if (pluginDesc->hints & NATIVE_PLUGIN_USES_STATE)
         text += "    lv2:extensionData <" LV2_STATE__interface "> ;";
-
-    if (pluginDesc->hints & NATIVE_PLUGIN_NEEDS_DSP_IDLE)
-        text += "    lv2:extensionData <" LV2_WORKER__interface "> ;";
 
     if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
         text += "    lv2:extensionData <" LV2_PROGRAMS__Interface "> ;\n";

@@ -1450,6 +1450,25 @@ protected:
 
     void uiIdle()
     {
+        for (uint i=0; i < pData->curPluginCount; ++i)
+        {
+            CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                const uint hints(plugin->getHints());
+
+                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                {
+                    try {
+                        plugin->uiIdle();
+                    } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin uiIdle");
+                }
+            }
+        }
+
+        pData->osc.idle();
+
         fUiServer.idlePipe();
 
         if (fUiServer.isPipeRunning())
@@ -1582,11 +1601,6 @@ public:
     static void _cleanup(NativePluginHandle handle)
     {
         delete handlePtr;
-    }
-
-    static void _idle(NativePluginHandle handle)
-    {
-        handlePtr->idle();
     }
 
     static uint32_t _get_parameter_count(NativePluginHandle handle)
@@ -1737,8 +1751,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -1754,7 +1767,6 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiateRack,
     CarlaEngineNative::_cleanup,
-    CarlaEngineNative::_idle,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
@@ -1782,8 +1794,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -1799,7 +1810,6 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiatePatchbay,
     CarlaEngineNative::_cleanup,
-    CarlaEngineNative::_idle,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
@@ -1827,8 +1837,7 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -1844,7 +1853,6 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiatePatchbay3s,
     CarlaEngineNative::_cleanup,
-    CarlaEngineNative::_idle,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
@@ -1872,8 +1880,7 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -1889,7 +1896,6 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiatePatchbay16,
     CarlaEngineNative::_cleanup,
-    CarlaEngineNative::_idle,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
@@ -1917,8 +1923,7 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -1934,7 +1939,6 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiatePatchbay32,
     CarlaEngineNative::_cleanup,
-    CarlaEngineNative::_idle,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,

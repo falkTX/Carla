@@ -769,17 +769,6 @@ public:
         }
     }
 
-    void idle() override
-    {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-
-        if (fDescriptor->idle != nullptr && (fDescriptor->hints & ::NATIVE_PLUGIN_NEEDS_DSP_IDLE) != 0)
-            fDescriptor->idle(fHandle);
-
-        CarlaPlugin::idle();
-    }
-
     void uiIdle() override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
@@ -1157,7 +1146,7 @@ public:
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
-        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
+        if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
 
         // extra plugin hints

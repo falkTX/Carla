@@ -53,18 +53,17 @@ typedef enum {
 } NativePluginCategory;
 
 typedef enum {
-    NATIVE_PLUGIN_IS_RTSAFE           = 1 <<  0,
-    NATIVE_PLUGIN_IS_SYNTH            = 1 <<  1,
-    NATIVE_PLUGIN_HAS_UI              = 1 <<  2,
-    NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS = 1 <<  3,
-    NATIVE_PLUGIN_NEEDS_SINGLE_THREAD = 1 <<  4,
-    NATIVE_PLUGIN_NEEDS_DSP_IDLE      = 1 <<  5,
-    NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE  = 1 <<  6,
-    NATIVE_PLUGIN_USES_MULTI_PROGS    = 1 <<  7, /** has 1 patch per midi channel           */
-    NATIVE_PLUGIN_USES_PANNING        = 1 <<  8, /** uses stereo balance if unset (default) */
-    NATIVE_PLUGIN_USES_STATE          = 1 <<  9,
-    NATIVE_PLUGIN_USES_TIME           = 1 << 10,
-    NATIVE_PLUGIN_USES_PARENT_ID      = 1 << 11  /** can set transient hint to parent       */
+    NATIVE_PLUGIN_IS_RTSAFE            = 1 <<  0,
+    NATIVE_PLUGIN_IS_SYNTH             = 1 <<  1,
+    NATIVE_PLUGIN_HAS_UI               = 1 <<  2,
+    NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS  = 1 <<  3,
+    NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD = 1 <<  4,
+    NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE   = 1 <<  6,
+    NATIVE_PLUGIN_USES_MULTI_PROGS     = 1 <<  7, /** has 1 patch per midi channel           */
+    NATIVE_PLUGIN_USES_PANNING         = 1 <<  8, /** uses stereo balance if unset (default) */
+    NATIVE_PLUGIN_USES_STATE           = 1 <<  9,
+    NATIVE_PLUGIN_USES_TIME            = 1 << 10,
+    NATIVE_PLUGIN_USES_PARENT_ID       = 1 << 11  /** can set transient hint to parent       */
 } NativePluginHints;
 
 typedef enum {
@@ -221,7 +220,6 @@ typedef struct _NativePluginDescriptor {
 
     NativePluginHandle (*instantiate)(const NativeHostDescriptor* host);
     void               (*cleanup)(NativePluginHandle handle);
-    void               (*idle)(NativePluginHandle handle);
 
     uint32_t               (*get_parameter_count)(NativePluginHandle handle);
     const NativeParameter* (*get_parameter_info)(NativePluginHandle handle, uint32_t index);

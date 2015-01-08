@@ -44,7 +44,6 @@ namespace juce {
 #define effGetChunk 23
 #define effSetChunk 24
 #define effGetPlugCategory 35
-#define effIdle 53
 #define kPlugCategEffect 1
 #define kPlugCategSynth 2
 #define kVstVersion 2400
@@ -185,11 +184,6 @@ public:
 
         switch (opcode)
         {
-        case effIdle:
-            if (fDescriptor->idle != nullptr)
-                fDescriptor->idle(fHandle);
-            break;
-
         case effSetSampleRate:
             if (carla_compareFloats(fSampleRate, static_cast<double>(opt)))
                 return 0;
@@ -216,8 +210,7 @@ public:
                 fMidiEventCount = 0;
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
-                // tell host we want idle and MIDI events
-                fAudioMaster(fEffect, audioMasterNeedIdle, 0, 0, nullptr, 0.0f);
+                // tell host we want MIDI events
                 fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
 
                 CARLA_SAFE_ASSERT_BREAK(! fIsActive);

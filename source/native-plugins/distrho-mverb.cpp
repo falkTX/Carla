@@ -41,7 +41,7 @@ START_NAMESPACE_DISTRHO
 static const NativePluginDescriptor _mverbDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
 #ifdef HAVE_DGL
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_USES_PARENT_ID),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD|NATIVE_PLUGIN_USES_PARENT_ID),
 #else
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
 #endif

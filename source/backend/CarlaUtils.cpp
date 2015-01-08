@@ -62,8 +62,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -80,7 +79,7 @@ static const NativePluginDescriptor carlaRackDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbayDesc = {
@@ -88,8 +87,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -106,7 +104,7 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay3sDesc = {
@@ -114,8 +112,7 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -132,7 +129,7 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay16Desc = {
@@ -140,8 +137,7 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -158,7 +154,7 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr
 };
 
 static const NativePluginDescriptor carlaPatchbay32Desc = {
@@ -166,8 +162,7 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_SINGLE_THREAD
-                                                  |NATIVE_PLUGIN_NEEDS_DSP_IDLE
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
@@ -184,7 +179,7 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
     nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr
 };
 
 static LinkedList<const NativePluginDescriptor*> gPluginDescriptors;
@@ -430,7 +425,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
         if (desc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
-        if (desc->hints & NATIVE_PLUGIN_NEEDS_SINGLE_THREAD)
+        if (desc->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             info.hints |= CB::PLUGIN_NEEDS_UI_MAIN_THREAD;
 
         info.audioIns      = desc->audioIns;

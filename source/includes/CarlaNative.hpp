@@ -209,10 +209,6 @@ protected:
     }
 
     // -------------------------------------------------------------------
-
-    virtual void idle() {}
-
-    // -------------------------------------------------------------------
     // Plugin parameter calls
 
     virtual uint32_t getParameterCount() const
@@ -386,11 +382,6 @@ private:
 public:
     #define handlePtr ((NativePluginClass*)handle)
 
-    static void _idle(NativePluginHandle handle)
-    {
-        handlePtr->idle();
-    }
-
     static uint32_t _get_parameter_count(NativePluginHandle handle)
     {
         return handlePtr->getParameterCount();
@@ -539,7 +530,6 @@ public:                                                                      \
 #define PluginDescriptorFILL(ClassName) \
     ClassName::_instantiate,            \
     ClassName::_cleanup,                \
-    ClassName::_idle,                   \
     ClassName::_get_parameter_count,    \
     ClassName::_get_parameter_info,     \
     ClassName::_get_parameter_value,    \
