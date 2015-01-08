@@ -946,7 +946,7 @@ public:
             return;
         }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {

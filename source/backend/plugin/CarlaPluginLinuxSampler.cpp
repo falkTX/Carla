@@ -710,7 +710,7 @@ public:
         for (uint32_t i=0; i < pData->prog.count; ++i)
             pData->prog.names[i] = carla_strdup_safe(fInstrumentInfo[i].InstrumentName.c_str());
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
