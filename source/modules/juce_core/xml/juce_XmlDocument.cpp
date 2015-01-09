@@ -555,7 +555,7 @@ void XmlDocument::readChildElements (XmlElement& parent)
         else  // must be a character block
         {
             input = preWhitespaceInput; // roll back to include the leading whitespace
-            String textElementContent;
+            MemoryOutputStream textElementStream;
 
             for (;;)
             {
@@ -617,7 +617,7 @@ void XmlDocument::readChildElements (XmlElement& parent)
                     }
                     else
                     {
-                        textElementContent += entity;
+                        textElementStream << entity;
                     }
                 }
                 else
@@ -641,9 +641,13 @@ void XmlDocument::readChildElements (XmlElement& parent)
                         ++input;
                     }
 
-                    textElementContent.appendCharPointer (start, input);
+                    String content;
+                    content.appendCharPointer (start, input);
+                    textElementStream << content;
                 }
             }
+
+            String textElementContent (textElementStream.toString());
 
             if ((! ignoreEmptyTextElements) || textElementContent.containsNonWhitespaceChars())
                 childAppender.append (XmlElement::createTextElement (textElementContent));
