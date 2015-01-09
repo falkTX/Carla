@@ -1481,7 +1481,9 @@ protected:
                                 midiData = midiData + 4;
 
                                 // set data
-                                for (uint8_t j=0; j<_midiEvent.size; ++j)
+                                *midiData++ = uint8_t(_midiData[0] | (event.channel & MIDI_CHANNEL_BIT));
+
+                                for (uint8_t j=1; j<_midiEvent.size; ++j)
                                     *midiData++ = _midiData[j];
 
                                 curMidiDataPos += 1 /* size*/ + 4 /* time */ + _midiEvent.size;
