@@ -281,16 +281,16 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.led_audio_out.setEnabled(False)
 
         if self.peak_in is not None:
-            self.peak_in.setColor(DigitalPeakMeter.GREEN)
-            self.peak_in.setChannels(self.fPeaksInputCount)
-            self.peak_in.setOrientation(DigitalPeakMeter.HORIZONTAL)
+            self.peak_in.setChannelCount(self.fPeaksInputCount)
+            self.peak_in.setMeterColor(DigitalPeakMeter.COLOR_GREEN)
+            self.peak_in.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
             if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Default):
                 self.peak_in.hide()
 
         if self.peak_out is not None:
-            self.peak_out.setColor(DigitalPeakMeter.BLUE)
-            self.peak_out.setChannels(self.fPeaksOutputCount)
-            self.peak_out.setOrientation(DigitalPeakMeter.HORIZONTAL)
+            self.peak_out.setChannelCount(self.fPeaksOutputCount)
+            self.peak_out.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
+            self.peak_out.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
             if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default):
                 self.peak_out.hide()
 

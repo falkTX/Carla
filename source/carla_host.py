@@ -260,14 +260,14 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (patchbay)
 
-        self.ui.peak_in.setColor(DigitalPeakMeter.BLUE)
-        self.ui.peak_in.setChannels(2)
-        self.ui.peak_in.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.ui.peak_in.setChannelCount(2)
+        self.ui.peak_in.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
+        self.ui.peak_in.setMeterOrientation(DigitalPeakMeter.VERTICAL)
         self.ui.peak_in.setFixedWidth(25)
 
-        self.ui.peak_out.setColor(DigitalPeakMeter.GREEN)
-        self.ui.peak_out.setChannels(2)
-        self.ui.peak_out.setOrientation(DigitalPeakMeter.VERTICAL)
+        self.ui.peak_out.setChannelCount(2)
+        self.ui.peak_out.setMeterColor(DigitalPeakMeter.COLOR_GREEN)
+        self.ui.peak_out.setMeterOrientation(DigitalPeakMeter.VERTICAL)
         self.ui.peak_out.setFixedWidth(25)
 
         self.ui.scrollArea = PixmapKeyboardHArea(self.ui.patchbay)

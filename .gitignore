@@ -61,6 +61,7 @@ source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py
 source/racklistwidget.py
+source/widgets/carla_config.py
 
 # Binaries
 carla-bridge-qtcreator
