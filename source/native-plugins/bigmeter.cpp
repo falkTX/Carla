@@ -51,7 +51,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(index < 4, nullptr);
 
         static NativeParameter param;
-        static NativeParameterScalePoint scalePoints[2];
+        static NativeParameterScalePoint scalePoints[3];
 
         int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
 
@@ -86,12 +86,14 @@ protected:
             param.name = "Style";
             param.ranges.def = 1.0f;
             param.ranges.min = 1.0f;
-            param.ranges.max = 2.0f;
+            param.ranges.max = 3.0f;
             scalePoints[0].value = 1.0f;
             scalePoints[0].label = "Default";
             scalePoints[1].value = 2.0f;
             scalePoints[1].label = "OpenAV";
-            param.scalePointCount = 2;
+            scalePoints[2].value = 3.0f;
+            scalePoints[2].label = "RNCBC";
+            param.scalePointCount = 3;
             param.scalePoints     = scalePoints;
             break;
         case 2:

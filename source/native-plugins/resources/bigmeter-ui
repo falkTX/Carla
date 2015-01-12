@@ -52,9 +52,9 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
 
         channels = 2 #6 if argv[0].endswith("bigmeterM-ui") else 2
 
-        self.setChannels(channels)
-        self.setColor(self.GREEN)
-        self.setOrientation(self.VERTICAL)
+        self.setChannelCount(channels)
+        self.setMeterColor(self.COLOR_GREEN)
+        self.setMeterOrientation(self.VERTICAL)
 
         #self.setSmoothRelease(0) # till 5
 
@@ -72,15 +72,18 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
         if index == 0:
             color = int(value)
 
-            if color not in (DigitalPeakMeter.GREEN, DigitalPeakMeter.BLUE):
+            if color not in (DigitalPeakMeter.COLOR_GREEN,
+                             DigitalPeakMeter.COLOR_BLUE):
                 return
 
-            self.setColor(color)
+            self.setMeterColor(color)
 
         elif index == 1:
             style = int(value)
 
-            if style not in (DigitalPeakMeter.STYLE_DEFAULT, DigitalPeakMeter.STYLE_OPENAV):
+            if style not in (DigitalPeakMeter.STYLE_DEFAULT,
+                             DigitalPeakMeter.STYLE_OPENAV,
+                             DigitalPeakMeter.STYLE_RNCBC):
                 return
 
             self.setMeterStyle(style)
