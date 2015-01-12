@@ -22,6 +22,7 @@
 #include "CarlaMutex.hpp"
 #include "LinkedList.hpp"
 
+#include "CarlaJuceUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
 #define MAX_EVENT_DATA_SIZE          4
@@ -33,11 +34,11 @@ struct RawMidiEvent {
     uint8_t  size;
     uint8_t  data[MAX_EVENT_DATA_SIZE];
 
-    RawMidiEvent()
+    RawMidiEvent() noexcept
         : time(0),
           size(0)
     {
-        carla_fill<uint8_t>(data, 0, MAX_EVENT_DATA_SIZE);
+        carla_zeroBytes(data, MAX_EVENT_DATA_SIZE);
     }
 };
 

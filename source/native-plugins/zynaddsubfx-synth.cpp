@@ -59,7 +59,7 @@ extern CarlaString gUiPixmapPath;
 
 void set_module_parameters(Fl_Widget* o)
 {
-    CARLA_ASSERT(gModuleBackdrop != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(gModuleBackdrop != nullptr,);
 
     o->box(FL_DOWN_FRAME);
     o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
