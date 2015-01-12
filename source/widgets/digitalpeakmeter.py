@@ -53,6 +53,7 @@ class DigitalPeakMeter(QWidget):
 
     def __init__(self, parent):
         QWidget.__init__(self, parent)
+        self.setAttribute(Qt.WA_OpaquePaintEvent)
 
         # defaults are VERTICAL, COLOR_GREEN, STYLE_DEFAULT
 
@@ -68,10 +69,10 @@ class DigitalPeakMeter(QWidget):
         self.fMeterOrientation  = self.VERTICAL
         self.fMeterStyle        = self.STYLE_DEFAULT
 
-        self.fMeterBackground = QColor("#000000")
+        self.fMeterBackground = QColor("#070707")
         self.fMeterGradient   = QLinearGradient(0, 0, 0, 0)
 
-        self.fSmoothMultiplier = 1
+        self.fSmoothMultiplier = 2
 
         self.updateGrandient()
 
@@ -158,11 +159,11 @@ class DigitalPeakMeter(QWidget):
             return qCritical("DigitalPeakMeter::setMeterStyle(%i) - invalid style" % style)
 
         if style == self.STYLE_DEFAULT:
-            self.fMeterBackground = QColor("#000000")
+            self.fMeterBackground = QColor("#070707")
         elif style == self.STYLE_OPENAV:
             self.fMeterBackground = QColor("#1A1A1A")
         elif style == self.STYLE_RNCBC:
-            self.fMeterBackground = QColor("#111111")
+            self.fMeterBackground = QColor("#070707")
 
         self.fMeterStyle = style
 
@@ -217,11 +218,7 @@ class DigitalPeakMeter(QWidget):
     def updateGrandient(self):
         self.fMeterGradient = QLinearGradient(0, 0, 1, 1)
 
-        if self.fMeterStyle == self.STYLE_OPENAV:
-            self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
-            self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
-
-        else:
+        if self.fMeterStyle == self.STYLE_DEFAULT:
             if self.fMeterOrientation == self.HORIZONTAL:
                 self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
                 self.fMeterGradient.setColorAt(0.2, self.fMeterColorBase)
@@ -237,6 +234,36 @@ class DigitalPeakMeter(QWidget):
                 self.fMeterGradient.setColorAt(0.6, self.fMeterColorBase)
                 self.fMeterGradient.setColorAt(0.8, self.fMeterColorBase)
                 self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
+
+        elif self.fMeterStyle == self.STYLE_OPENAV:
+            self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
+
+        elif self.fMeterStyle == self.STYLE_RNCBC:
+            if self.fMeterColor == self.COLOR_BLUE:
+                c1 = QColor(40,160,160)
+                c2 = QColor(60,220,160)
+            elif self.fMeterColor == self.COLOR_GREEN:
+                c1 = QColor( 40,160,40)
+                c2 = QColor(160,220,20)
+
+            if self.fMeterOrientation == self.HORIZONTAL:
+                self.fMeterGradient.setColorAt(0.0, c1)
+                self.fMeterGradient.setColorAt(0.2, c1)
+                self.fMeterGradient.setColorAt(0.6, c2)
+                self.fMeterGradient.setColorAt(0.7, QColor(220,220, 20))
+                self.fMeterGradient.setColorAt(0.8, QColor(240,160, 20))
+                self.fMeterGradient.setColorAt(0.9, QColor(240,  0, 20))
+                self.fMeterGradient.setColorAt(1.0, QColor(240,  0, 20))
+
+            elif self.fMeterOrientation == self.VERTICAL:
+                self.fMeterGradient.setColorAt(0.0, QColor(240,  0, 20))
+                self.fMeterGradient.setColorAt(0.1, QColor(240,  0, 20))
+                self.fMeterGradient.setColorAt(0.2, QColor(240,160, 20))
+                self.fMeterGradient.setColorAt(0.3, QColor(220,220, 20))
+                self.fMeterGradient.setColorAt(0.4, c2)
+                self.fMeterGradient.setColorAt(0.8, c1)
+                self.fMeterGradient.setColorAt(1.0, c1)
 
         self.updateGrandientFinalStop()
 
@@ -272,32 +299,35 @@ class DigitalPeakMeter(QWidget):
         if self.fChannelCount == 0:
             return
 
+        meterPad  = 0
         meterPos  = 0
         meterSize = (height if self.fMeterOrientation == self.HORIZONTAL else width)/self.fChannelCount
-
-        #startX  = -1 if self.fMeterStyle == self.STYLE_OPENAV else 0
-        #padding =  2 if self.fMeterStyle == self.STYLE_OPENAV else 0
 
         # set pen/brush for levels
         painter.setPen(QPen(self.fMeterBackground, 0))
         painter.setBrush(self.fMeterGradient)
 
-        #if self.fMeterStyle == self.STYLE_OPENAV:
-            #color = self.fMeterGradient.stops()[0][1]
-            #painter.setPen(color)
-            #color.setAlphaF(0.5)
-            #painter.setBrush(color)
-            #del color
+        if self.fMeterStyle == self.STYLE_OPENAV:
+            colorTrans = QColor(self.fMeterColorBase)
+            colorTrans.setAlphaF(0.5)
+            painter.setBrush(colorTrans)
+            painter.setPen(QPen(self.fMeterColorBase, 1))
+            del colorTrans
+            meterPad  += 2
+            meterSize -= 2
 
         # draw levels
         for level in self.fChannelData:
+            if level == 0.0:
+                continue
+
             if self.fMeterOrientation == self.HORIZONTAL:
                 painter.drawRect(0, meterPos, int(level * float(width)), meterSize)
-                meterPos += meterSize
+                meterPos += meterSize+meterPad
 
             elif self.fMeterOrientation == self.VERTICAL:
                 painter.drawRect(meterPos, height - int(level * float(height)), meterSize, height)
-                meterPos += meterSize
+                meterPos += meterSize+meterPad
 
         if not self.fMeterLinesEnabled:
             return
@@ -309,14 +339,13 @@ class DigitalPeakMeter(QWidget):
             lfull  = float(height - 1)
 
             if self.fMeterStyle == self.STYLE_OPENAV:
-                pass
-                #painter.setPen(QColor(37, 37, 37, 100))
-                #painter.drawLine(lsmall * 0.25, 2, lsmall * 0.25, lfull-2.0)
-                #painter.drawLine(lsmall * 0.50, 2, lsmall * 0.50, lfull-2.0)
-                #painter.drawLine(lsmall * 0.75, 2, lsmall * 0.75, lfull-2.0)
+                painter.setPen(QColor(37, 37, 37, 100))
+                painter.drawLine(lsmall * 0.25, 2, lsmall * 0.25, lfull-2.0)
+                painter.drawLine(lsmall * 0.50, 2, lsmall * 0.50, lfull-2.0)
+                painter.drawLine(lsmall * 0.75, 2, lsmall * 0.75, lfull-2.0)
 
-                #if self.fChannelCount > 1:
-                    #painter.drawLine(1, lfull/2, lsmall-1, lfull/2)
+                if self.fChannelCount > 1:
+                    painter.drawLine(1, lfull/2-1, lsmall-1, lfull/2-1)
 
             else:
                 # Base
@@ -344,8 +373,13 @@ class DigitalPeakMeter(QWidget):
             lfull  = float(width - 1)
 
             if self.fMeterStyle == self.STYLE_OPENAV:
-                pass
-                # TODO
+                painter.setPen(QColor(37, 37, 37, 100))
+                painter.drawLine(2, lsmall - (lsmall * 0.25), lfull-2.0, lsmall - (lsmall * 0.25))
+                painter.drawLine(2, lsmall - (lsmall * 0.50), lfull-2.0, lsmall - (lsmall * 0.50))
+                painter.drawLine(2, lsmall - (lsmall * 0.75), lfull-2.0, lsmall - (lsmall * 0.75))
+
+                if self.fChannelCount > 1:
+                    painter.drawLine(lfull/2-1, 1, lfull/2-1, lsmall-1)
 
             else:
                 # Base
@@ -389,7 +423,8 @@ if __name__ == '__main__':
 
     gui = DigitalPeakMeter(None)
     gui.setChannelCount(2)
-    gui.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
+    #gui.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
+    gui.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
     gui.displayMeter(1, 0.5)
     gui.displayMeter(2, 0.8)
     gui.show()
