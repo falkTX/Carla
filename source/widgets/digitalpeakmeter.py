@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Digital Peak Meter, a custom Qt4 widget
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -36,150 +36,230 @@ else:
 # Widget Class
 
 class DigitalPeakMeter(QWidget):
+    # enum Color
+    COLOR_GREEN = 1
+    COLOR_BLUE  = 2
+
     # enum Orientation
     HORIZONTAL = 1
     VERTICAL   = 2
 
-    # enum Color
-    GREEN = 1
-    BLUE  = 2
-
     # enum Style
     STYLE_DEFAULT = 1
     STYLE_OPENAV  = 2
+    STYLE_RNCBC   = 3
 
     def __init__(self, parent):
         QWidget.__init__(self, parent)
 
-        self.fChannels    = 0
-        self.fDrawLines   = True
-        self.fOrientation = self.VERTICAL
+        # defaults are VERTICAL, COLOR_GREEN, STYLE_DEFAULT
+
+        self.fChannelCount    = 0
+        self.fChannelData     = []
+        self.fLastChannelData = []
+
+        self.fMeterColor        = self.COLOR_GREEN
+        self.fMeterColorBase    = QColor(93, 231, 61)
+        self.fMeterColorBaseAlt = QColor(15, 110, 15, 100)
+
+        self.fMeterLinesEnabled = True
+        self.fMeterOrientation  = self.VERTICAL
+        self.fMeterStyle        = self.STYLE_DEFAULT
+
+        self.fMeterBackground = QColor("#111111")
+        self.fMeterGradient   = QLinearGradient(0, 0, 0, 0)
+
         self.fSmoothMultiplier = 1
 
-        self.fColorBackground = QColor("#111111")
-        self.fGradientMeter   = QLinearGradient(0, 0, 1, 1)
+        self.updateGrandient()
 
-        self.fMeterStyle = self.STYLE_DEFAULT
+    # --------------------------------------------------------------------------------------------------------
 
-        self.setChannels(0)
-        self.setColor(self.GREEN)
+    def channelCount(self):
+        return self.fChannelCount
+
+    def setChannelCount(self, count):
+        if self.fChannelCount == count:
+            return
+
+        if count < 0:
+            return qCritical("DigitalPeakMeter::setChannelCount(%i) - channel count must be a positive integer or zero" % count)
+
+        self.fChannelCount    = count
+        self.fChannelData     = []
+        self.fLastChannelData = []
+
+        for x in range(count):
+            self.fChannelData.append(0.0)
+            self.fLastChannelData.append(0.0)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def meterColor(self):
+        return self.fMeterColor
+
+    def setMeterColor(self, color):
+        if self.fMeterColor == color:
+            return
+
+        if color not in (self.COLOR_GREEN, self.COLOR_BLUE):
+            return qCritical("DigitalPeakMeter::setMeterColor(%i) - invalid color" % color)
+
+        self.fMeterColor = color
+
+        if color == self.COLOR_GREEN:
+            self.fMeterColorBase    = QColor(93, 231, 61)
+            self.fMeterColorBaseAlt = QColor(15, 110, 15, 100)
+        elif color == self.COLOR_BLUE:
+            self.fMeterColorBase    = QColor(82, 238, 248)
+            self.fMeterColorBaseAlt = QColor(15, 15, 110, 100)
+
+        self.updateGrandient()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def meterLinesEnabled(self):
+        return self.fMeterLinesEnabled
+
+    def setMeterLinesEnabled(self, yesNo):
+        if self.fMeterLinesEnabled == yesNo:
+            return
+
+        self.fMeterLinesEnabled = yesNo
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def meterOrientation(self):
+        return self.fMeterOrientation
+
+    def setMeterOrientation(self, orientation):
+        if self.fMeterOrientation == orientation:
+            return
+
+        if orientation not in (self.HORIZONTAL, self.VERTICAL):
+            return qCritical("DigitalPeakMeter::setMeterOrientation(%i) - invalid orientation" % orientation)
+
+        self.fMeterOrientation = orientation
+
+        self.updateGrandient()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def meterStyle(self):
+        return self.fMeterStyle
+
+    def setMeterStyle(self, style):
+        if self.fMeterStyle == style:
+            return
+
+        if style not in (self.STYLE_DEFAULT, self.STYLE_OPENAV, self.STYLE_RNCBC):
+            return qCritical("DigitalPeakMeter::setMeterStyle(%i) - invalid style" % style)
+
+        self.fMeterStyle = style
+
+        if style == self.STYLE_DEFAULT:
+            self.fMeterBackground = QColor("#111111")
+        elif style == self.STYLE_OPENAV:
+            self.fMeterBackground = QColor("#1A1A1A")
+        elif style == self.STYLE_RNCBC:
+            self.fMeterBackground = QColor("#111111")
+
+        self.updateGrandient()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def smoothMultiplier(self):
+        return self.fSmoothMultiplier
+
+    def setSmoothMultiplier(self, value):
+        if self.fSmoothMultiplier == value:
+            return
+
+        if not isinstance(value, int):
+            return qCritical("DigitalPeakMeter::setSmoothMultiplier() - value must be an integer")
+        if value < 0:
+            return qCritical("DigitalPeakMeter::setSmoothMultiplier(%i) - value must be >= 0" % value)
+        if value > 5:
+            return qCritical("DigitalPeakMeter::setSmoothMultiplier(%i) - value must be < 5" % value)
+
+        self.fSmoothMultiplier = value
+
+    # --------------------------------------------------------------------------------------------------------
 
     def displayMeter(self, meter, level, forced = False):
-        if meter <= 0 or meter > self.fChannels:
-            return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
+        if not isinstance(meter, int):
+            return qCritical("DigitalPeakMeter::displayMeter(,) - meter value must be an integer")
         if not isinstance(level, float):
-            return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - meter value must be float" % (meter, level))
+            return qCritical("DigitalPeakMeter::displayMeter(%i,) - level value must be a float" % (meter,))
+        if meter <= 0 or meter > self.fChannelCount:
+            return qCritical("DigitalPeakMeter::displayMeter(%i, %f) - invalid meter number" % (meter, level))
 
         i = meter - 1
 
         if self.fSmoothMultiplier > 0 and not forced:
-            level = (self.fLastValueData[i] * self.fSmoothMultiplier + level) / float(self.fSmoothMultiplier + 1)
+            level = (self.fLastChannelData[i] * float(self.fSmoothMultiplier) + level) / float(self.fSmoothMultiplier + 1)
 
         if level < 0.001:
             level = 0.0
         elif level > 0.999:
             level = 1.0
 
-        if self.fChannelsData[i] != level:
-            self.fChannelsData[i] = level
+        if self.fChannelData[i] != level:
+            self.fChannelData[i] = level
             self.update()
 
-        self.fLastValueData[i] = level
+        self.fLastChannelData[i] = level
 
-    def setChannels(self, channels):
-        if channels < 0:
-            return qCritical("DigitalPeakMeter::setChannels(%i) - 'channels' must be a positive integer" % channels)
+    # --------------------------------------------------------------------------------------------------------
 
-        self.fChannels = channels
-        self.fChannelsData  = []
-        self.fLastValueData = []
-
-        for x in range(channels):
-            self.fChannelsData.append(0.0)
-            self.fLastValueData.append(0.0)
-
-    def setColor(self, color):
-        if color == self.GREEN:
-            self.fColorBase    = QColor(93, 231, 61)
-            self.fColorBaseAlt = QColor(15, 110, 15, 100)
-        elif color == self.BLUE:
-            self.fColorBase    = QColor(82, 238, 248)
-            self.fColorBaseAlt = QColor(15, 15, 110, 100)
-        else:
-            return qCritical("DigitalPeakMeter::setColor(%i) - invalid color" % color)
-
-        self.setOrientation(self.fOrientation)
-
-    def setMeterStyle(self, style):
-        self.fMeterStyle = style
-        self.setOrientation(self.fOrientation)
-
-    def setLinesEnabled(self, yesNo):
-        self.fDrawLines = yesNo
-
-    def setOrientation(self, orientation):
-        self.fOrientation   = orientation
-        self.fGradientMeter = QLinearGradient(0, 0, 1, 1)
+    def updateGrandient(self):
+        self.fMeterGradient = QLinearGradient(0, 0, 1, 1)
 
         if self.fMeterStyle == self.STYLE_OPENAV:
-            self.fGradientMeter.setColorAt(0.0, self.fColorBase)
-            self.fGradientMeter.setColorAt(1.0, self.fColorBase)
+            self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
 
-        elif self.fOrientation == self.HORIZONTAL:
-            self.fGradientMeter.setColorAt(0.0, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.2, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.4, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.6, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.8, Qt.yellow)
-            self.fGradientMeter.setColorAt(1.0, Qt.red)
+        elif self.fMeterOrientation == self.HORIZONTAL:
+            self.fMeterGradient.setColorAt(0.0, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.2, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.4, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.6, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.8, Qt.yellow)
+            self.fMeterGradient.setColorAt(1.0, Qt.red)
 
-        elif self.fOrientation == self.VERTICAL:
-            self.fGradientMeter.setColorAt(0.0, Qt.red)
-            self.fGradientMeter.setColorAt(0.2, Qt.yellow)
-            self.fGradientMeter.setColorAt(0.4, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.6, self.fColorBase)
-            self.fGradientMeter.setColorAt(0.8, self.fColorBase)
-            self.fGradientMeter.setColorAt(1.0, self.fColorBase)
+        elif self.fMeterOrientation == self.VERTICAL:
+            self.fMeterGradient.setColorAt(0.0, Qt.red)
+            self.fMeterGradient.setColorAt(0.2, Qt.yellow)
+            self.fMeterGradient.setColorAt(0.4, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.6, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(0.8, self.fMeterColorBase)
+            self.fMeterGradient.setColorAt(1.0, self.fMeterColorBase)
 
-        else:
-            return qCritical("DigitalPeakMeter::setOrientation(%i) - invalid orientation" % orientation)
+        self.updateGrandientFinalStop()
 
-        self.updateSizes()
+    def updateGrandientFinalStop(self):
+        if self.fMeterOrientation == self.HORIZONTAL:
+            self.fMeterGradient.setFinalStop(self.width(), 0)
 
-    def setSmoothRelease(self, value):
-        if value < 0:
-            value = 0
-        elif value > 5:
-            value = 5
+        elif self.fMeterOrientation == self.VERTICAL:
+            self.fMeterGradient.setFinalStop(0, self.height())
 
-        self.fSmoothMultiplier = value
+    # --------------------------------------------------------------------------------------------------------
 
     def minimumSizeHint(self):
         return QSize(10, 10)
 
     def sizeHint(self):
-        return QSize(self.fWidth, self.fHeight)
+        return QSize(self.width(), self.height())
 
-    def updateSizes(self):
-        self.fWidth  = self.width()
-        self.fHeight = self.height()
-        self.fSizeMeter = 0
-
-        if self.fOrientation == self.HORIZONTAL:
-            self.fGradientMeter.setFinalStop(self.fWidth, 0)
-
-            if self.fChannels > 0:
-                self.fSizeMeter = self.fHeight / self.fChannels
-
-        elif self.fOrientation == self.VERTICAL:
-            self.fGradientMeter.setFinalStop(0, self.fHeight)
-
-            if self.fChannels > 0:
-                self.fSizeMeter = self.fWidth / self.fChannels
+    # --------------------------------------------------------------------------------------------------------
 
     def paintEvent(self, event):
         painter = QPainter(self)
         event.accept()
+
+        width  = self.width()
+        height = self.height()
 
         if self.fMeterStyle == self.STYLE_OPENAV:
             painter.setPen(QColor("#1A1A1A"))
@@ -188,35 +268,35 @@ class DigitalPeakMeter(QWidget):
             painter.setPen(Qt.black)
             painter.setBrush(Qt.black)
 
-        painter.drawRect(0, 0, self.fWidth, self.fHeight)
+        painter.drawRect(0, 0, width, height)
 
         meterX  = 0
         startX  = -1 if self.fMeterStyle == self.STYLE_OPENAV else 0
         padding =  2 if self.fMeterStyle == self.STYLE_OPENAV else 0
 
-        painter.setPen(self.fColorBackground)
-        painter.setBrush(self.fGradientMeter)
+        painter.setPen(self.fMeterBackground) # FIXME ?
+        painter.setBrush(self.fMeterGradient)
 
-        if self.fMeterStyle == self.STYLE_OPENAV:
-            color = self.fGradientMeter.stops()[0][1]
-            painter.setPen(color)
-            color.setAlphaF(0.5)
-            painter.setBrush(color)
-            del color
+        #if self.fMeterStyle == self.STYLE_OPENAV:
+            #color = self.fMeterGradient.stops()[0][1]
+            #painter.setPen(color)
+            #color.setAlphaF(0.5)
+            #painter.setBrush(color)
+            #del color
 
-        for i in range(self.fChannels):
+        for i in range(self.fChannelCount):
             level = self.fChannelsData[i]
 
-            if self.fOrientation == self.HORIZONTAL:
-                value = level * float(self.fWidth)
-            elif self.fOrientation == self.VERTICAL:
-                value = float(self.fHeight) - (level * float(self.fHeight))
+            if self.fMeterOrientation == self.HORIZONTAL:
+                value = level * float(width)
+            elif self.fMeterOrientation == self.VERTICAL:
+                value = float(height) - (level * float(height))
             else:
                 value = 0.0
 
-            if self.fOrientation == self.HORIZONTAL:
+            if self.fMeterOrientation == self.HORIZONTAL:
                 painter.drawRect(startX, meterX+padding, int(value), self.fSizeMeter-padding*(1 if self.fChannels > 1 else 2))
-            elif self.fOrientation == self.VERTICAL:
+            elif self.fMeterOrientation == self.VERTICAL:
                 painter.drawRect(meterX, int(value), self.fSizeMeter, self.fHeight)
 
             meterX += self.fSizeMeter
@@ -287,7 +367,30 @@ class DigitalPeakMeter(QWidget):
                 painter.setPen(QColor(110, 15, 15, 100))
                 painter.drawLine(2, lsmall - (lsmall * 0.96), lfull-2.0, lsmall - (lsmall * 0.96))
 
+    # --------------------------------------------------------------------------------------------------------
+
     def resizeEvent(self, event):
-        self.updateSizes()
+        self.updateGrandientFinalStop()
         QWidget.resizeEvent(self, event)
 
+# ------------------------------------------------------------------------------------------------------------
+# Main Testing
+
+if __name__ == '__main__':
+    import sys
+    import resources_rc
+
+    if config_UseQt5:
+        from PyQt5.QtWidgets import QApplication
+    else:
+        from PyQt4.QtGui import QApplication
+
+    app = QApplication(sys.argv)
+
+    gui = DigitalPeakMeter(None)
+    gui.setChannelCount(2)
+    gui.displayMeter(1, 0.5)
+    gui.displayMeter(2, 0.8)
+    gui.show()
+
+    sys.exit(app.exec_())
