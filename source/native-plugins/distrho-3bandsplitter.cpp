@@ -67,6 +67,9 @@ END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
+void carla_register_native_plugin_distrho_3bandsplitter();
+
+CARLA_EXPORT
 void carla_register_native_plugin_distrho_3bandsplitter()
 {
     USE_NAMESPACE_DISTRHO

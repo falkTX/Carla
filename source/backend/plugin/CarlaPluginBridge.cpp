@@ -1676,7 +1676,7 @@ public:
                 midiData = midiData + 1;
 
                 // get time as 32bit
-                time = *(uint32_t*)midiData;
+                time = *(const uint32_t*)midiData;
 
                 // advance 32 bits (4 bytes)
                 midiData = midiData + 4;
@@ -1689,7 +1689,7 @@ public:
 
                 pData->event.portOut->writeMidiEvent(time, size, data);
 
-                read += 1 /* size*/ + 4 /* time */ + size;
+                read += 1U /* size*/ + 4U /* time */ + size;
             }
 
         } // End of Control and MIDI Output

@@ -1448,7 +1448,7 @@ protected:
                                 event.ctrl.convertToMidiData(event.channel, size, data);
                                 CARLA_SAFE_ASSERT_CONTINUE(size > 0 && size <= 3);
 
-                                if (curMidiDataPos + 1 /* size*/ + 4 /* time */ + size >= kBridgeRtClientDataMidiOutSize)
+                                if (curMidiDataPos + 1U /* size*/ + 4U /* time */ + size >= kBridgeRtClientDataMidiOutSize)
                                     break;
 
                                 // set size
@@ -1462,7 +1462,7 @@ protected:
                                 for (uint8_t j=0; j<size; ++j)
                                     *midiData++ = data[j];
 
-                                curMidiDataPos += 1 /* size*/ + 4 /* time */ + size;
+                                curMidiDataPos += 1U /* size*/ + 4U /* time */ + size;
                             }
                             else if (event.type == kEngineEventTypeMidi)
                             {
@@ -1486,7 +1486,7 @@ protected:
                                 for (uint8_t j=1; j<_midiEvent.size; ++j)
                                     *midiData++ = _midiData[j];
 
-                                curMidiDataPos += 1 /* size*/ + 4 /* time */ + _midiEvent.size;
+                                curMidiDataPos += 1U /* size*/ + 4U /* time */ + _midiEvent.size;
                             }
                         }
 

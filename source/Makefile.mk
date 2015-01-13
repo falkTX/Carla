@@ -143,15 +143,6 @@ endif
 endif
 
 # --------------------------------------------------------------
-# Check for required libs
-
-ifeq ($(LINUX),true)
-ifeq (,$(wildcard /usr/include/magic.h))
-$(error libmagic missing, cannot continue)
-endif
-endif
-
-# --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
 ifeq ($(MACOS_OR_WIN32),true)
@@ -173,6 +164,13 @@ HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && ech
 HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
+HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
+
+HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
+
+# libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
+HAVE_LIBMAGIC     = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
 
 # --------------------------------------------------------------
 # Set Qt tools
@@ -248,33 +246,7 @@ DEFAULT_QT ?= 5
 endif
 
 # --------------------------------------------------------------
-# Check for optional libs (required by internal plugins)
-
-HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS = $(shell pkg-config --exists ntk_images ntk && echo true)
-
-# --------------------------------------------------------------
 # Set base defines
-
-ifeq ($(HAVE_DGL),true)
-BASE_FLAGS += -DHAVE_DGL
-endif
-
-ifeq ($(HAVE_LIBLO),true)
-BASE_FLAGS += -DHAVE_LIBLO
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-BASE_FLAGS += -DHAVE_FLUIDSYNTH
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
-BASE_FLAGS += -DHAVE_LINUXSAMPLER
-endif
-
-ifeq ($(HAVE_X11),true)
-BASE_FLAGS += -DHAVE_X11
-endif
 
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BASE_FLAGS += -DVESTIGE_HEADER
@@ -296,6 +268,11 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
 LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
+endif
+
+ifeq ($(HAVE_PROJECTM),true)
+PROJECTM_FLAGS = $(shell pkg-config --cflags libprojectM)
+PROJECTM_LIBS  = $(shell pkg-config --libs libprojectM)
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -367,10 +344,8 @@ endif
 # Set libs stuff (part 3)
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DWANT_ZYNADDSUBFX_UI
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif

@@ -18,6 +18,8 @@
 #ifndef CARLA_ENGINE_OSC_HPP_INCLUDED
 #define CARLA_ENGINE_OSC_HPP_INCLUDED
 
+#include "CarlaDefines.h"
+
 #ifdef HAVE_LIBLO
 
 #include "CarlaBackend.h"

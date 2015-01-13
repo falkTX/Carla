@@ -53,9 +53,11 @@ BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
 LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
 ifeq ($(LINUX),true)
+ifeq ($(HAVE_X11),true)
 LINK_GTK2_FLAGS += -lX11
 LINK_GTK3_FLAGS += -lX11
 LINK_QT4_FLAGS  += -lX11
+endif
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

@@ -60,7 +60,6 @@ LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
-LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
@@ -77,8 +76,12 @@ ifeq ($(MACOS),true)
 LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
 endif
 
-ifeq ($(HAVE_DGL),true)
-LINK_FLAGS += $(DGL_LIBS)
+ifeq ($(HAVE_LIBLO),true)
+LINK_FLAGS += $(LIBLO_LIBS)
+endif
+
+ifeq ($(HAVE_LIBMAGIC),true)
+LINK_FLAGS += -lmagic
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -89,12 +92,12 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
-ifeq ($(HAVE_X11),true)
-LINK_FLAGS += $(X11_LIBS)
+ifeq ($(HAVE_DGL),true)
+LINK_FLAGS += $(DGL_LIBS)
 endif
 
-ifeq ($(UNIX),true)
-LINK_FLAGS += -lmagic
+ifeq ($(HAVE_X11),true)
+LINK_FLAGS += $(X11_LIBS)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

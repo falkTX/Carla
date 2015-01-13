@@ -411,7 +411,7 @@ public:
     void setCtrlChannel(const int8_t channel, const bool sendOsc, const bool sendCallback) noexcept override
     {
         if (channel >= 0 && channel < MAX_MIDI_CHANNELS)
-            pData->prog.current = fCurProgs[channel];
+            pData->prog.current = static_cast<int32_t>(fCurProgs[channel]);
 
         CarlaPlugin::setCtrlChannel(channel, sendOsc, sendCallback);
     }
@@ -438,7 +438,7 @@ public:
 
             if (programList.size() == MAX_MIDI_CHANNELS)
             {
-                int8_t channel = 0;
+                uint8_t channel = 0;
                 for (juce::String *it=programList.begin(), *end=programList.end(); it != end; ++it)
                 {
                     const int index(it->getIntValue());
@@ -464,15 +464,15 @@ public:
         const int8_t channel(kIsGIG ? pData->ctrlChannel : int8_t(0));
 
         if (index >= 0 && channel >= 0)
-            setProgramInternal(static_cast<uint>(index), channel, sendCallback, false);
+            setProgramInternal(static_cast<uint>(index), static_cast<uint8_t>(channel), sendCallback, false);
 
         CarlaPlugin::setProgram(index, sendGui, sendOsc, sendCallback);
     }
 
-    void setProgramInternal(const uint32_t index, const int8_t channel, const bool sendCallback, const bool inRtContent) noexcept
+    void setProgramInternal(const uint32_t index, const uint8_t channel, const bool sendCallback, const bool inRtContent) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(index < pData->prog.count,);
-        CARLA_SAFE_ASSERT_RETURN(channel >= 0 && channel < MAX_MIDI_CHANNELS,);
+        CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);
 
         if (fCurProgs[channel] == index)
             return;
@@ -500,12 +500,14 @@ public:
 
         if (pData->ctrlChannel == channel)
         {
-            pData->prog.current = index;
+            const int32_t iindex(static_cast<int32_t>(index));
+
+            pData->prog.current = iindex;
 
             if (inRtContent)
-                pData->postponeRtEvent(kPluginPostRtEventProgramChange, static_cast<int32_t>(index), 0, 0.0f);
+                pData->postponeRtEvent(kPluginPostRtEventProgramChange, iindex, 0, 0.0f);
             else if (sendCallback)
-                pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, index, 0, 0.0f, nullptr);
+                pData->engine->callback(ENGINE_CALLBACK_PROGRAM_CHANGED, pData->id, iindex, 0, 0.0f, nullptr);
         }
     }
 
@@ -1042,8 +1044,19 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Parameter outputs
 
-        fParamBuffers[LinuxSamplerDiskStreamCount] = fEngineChannels[0]->GetDiskStreamCount();
-        fParamBuffers[LinuxSamplerVoiceCount]      = fEngineChannels[0]->GetVoiceCount();
+        uint diskStreamCount=0, voiceCount=0;
+
+        for (uint i=0; i<kMaxChannels; ++i)
+        {
+            LinuxSampler::EngineChannel* const engineChannel(fEngineChannels[i]);
+            CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
+
+            diskStreamCount += engineChannel->GetDiskStreamCount();
+            /**/ voiceCount += engineChannel->GetVoiceCount();
+        }
+
+        fParamBuffers[LinuxSamplerDiskStreamCount] = static_cast<float>(diskStreamCount);
+        fParamBuffers[LinuxSamplerVoiceCount]      = static_cast<float>(voiceCount);
     }
 
     bool processSingle(float** const outBuffer, const uint32_t frames, const uint32_t timeOffset)
@@ -1198,7 +1211,7 @@ public:
 
             samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             samplerChannel->SetAudioOutputDevice(&fAudioOutputDevice);
-            samplerChannel->SetMidiInputDevice(&fMidiInputDevice);
+            //samplerChannel->SetMidiInputDevice(&fMidiInputDevice);
             samplerChannel->SetMidiInputChannel(kUses16Outs ? static_cast<LinuxSampler::midi_chan_t>(i) : LinuxSampler::midi_chan_all);
             //samplerChannel->Connect(fMidiInputPort);
 
@@ -1208,6 +1221,7 @@ public:
             engineChannel->Pan(0.0f);
             engineChannel->Volume(kIsGIG ? LinuxSampler::kVolumeMax/10.0f : LinuxSampler::kVolumeMax); // FIXME
             engineChannel->SetMidiInstrumentMapToDefault();
+            engineChannel->Connect(fMidiInputPort);
 
             if (kUses16Outs)
             {

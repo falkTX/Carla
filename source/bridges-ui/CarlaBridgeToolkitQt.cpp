@@ -30,7 +30,8 @@
 # include <QtGui/QMainWindow>
 #endif
 
-#if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+# define USE_CUSTOM_X11_METHODS
 # include <QtGui/QX11Info>
 # include <X11/Xlib.h>
 #endif
@@ -116,7 +117,7 @@ public:
 
         if (options.transientWindowId != 0)
         {
-#if defined(CARLA_OS_LINUX) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#ifdef USE_CUSTOM_X11_METHODS
             XSetTransientForHint(QX11Info::display(), static_cast< ::Window>(fWindow->winId()), static_cast< ::Window>(options.transientWindowId));
 #endif
         }

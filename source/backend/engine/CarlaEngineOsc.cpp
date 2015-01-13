@@ -15,6 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaDefines.h"
+
 #ifdef HAVE_LIBLO
 
 #include "CarlaEngine.hpp"

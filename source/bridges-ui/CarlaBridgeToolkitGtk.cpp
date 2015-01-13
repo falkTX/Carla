@@ -19,7 +19,8 @@
 
 #include <gtk/gtk.h>
 
-#ifdef CARLA_OS_LINUX
+#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
+# define USE_CUSTOM_X11_METHODS
 # include <gdk/gdkx.h>
 #endif
 
@@ -225,10 +226,11 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::setTransient(0x" P_UINTPTR ")", winId);
 
+#ifdef USE_CUSTOM_X11_METHODS
         GdkWindow* const gdkWindow(gtk_widget_get_window(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gdkWindow != nullptr,);
 
-#ifdef BRIDGE_GTK3
+# ifdef BRIDGE_GTK3
         GdkDisplay* const gdkDisplay(gdk_window_get_display(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(gdkDisplay != nullptr,);
 
@@ -237,15 +239,16 @@ protected:
 
         const ::XID xid(gdk_x11_window_get_xid(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
-#else
+# else
         ::Display* const display(gdk_x11_drawable_get_xdisplay(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(display != nullptr,);
 
         const ::XID xid(gdk_x11_drawable_get_xid(gdkWindow));
         CARLA_SAFE_ASSERT_RETURN(xid != 0,);
-#endif
+# endif
 
         XSetTransientForHint(display, xid, static_cast< ::Window>(winId));
+#endif
     }
 
     // ---------------------------------------------------------------------

@@ -37,6 +37,113 @@ endif
 all: BIN RES UI WIDGETS
 
 # ----------------------------------------------------------------------------------------------------------------------------
+# Config
+
+config: source/carla_config.py source/includes/config.h
+
+source/carla_config.py:
+	@echo "#!/usr/bin/env python3" > $@
+	@echo "# -*- coding: utf-8 -*-" >> $@
+ifeq ($(DEFAULT_QT),4)
+	@echo "config_UseQt5 = False" >> $@
+else
+	@echo "config_UseQt5 = True" >> $@
+endif
+
+source/includes/config.h:
+	@echo "/* Carla config, auto-generated file */" > $@
+	@echo "" >> $@
+
+	@echo "/* additional audio drivers, Linux only */" >> $@
+ifeq ($(HAVE_ALSA),true)
+	@echo "#define HAVE_ALSA" >> $@
+else
+	@echo "// #define HAVE_ALSA" >> $@
+endif
+ifeq ($(HAVE_PULSEAUDIO),true)
+	@echo "#define HAVE_PULSEAUDIO" >> $@
+else
+	@echo "// #define HAVE_PULSEAUDIO" >> $@
+endif
+	@echo "" >> $@
+
+	@echo "/* optional libs for extra backend features */" >> $@
+ifeq ($(HAVE_LIBLO),true)
+	@echo "#define HAVE_LIBLO" >> $@
+else
+	@echo "// #define HAVE_LIBLO" >> $@
+endif
+ifeq ($(HAVE_LIBMAGIC),true)
+	@echo "#define HAVE_LIBMAGIC" >> $@
+else
+	@echo "// #define HAVE_LIBMAGIC" >> $@
+endif
+ifeq ($(HAVE_FLUIDSYNTH),true)
+	@echo "#define HAVE_FLUIDSYNTH" >> $@
+else
+	@echo "// #define HAVE_FLUIDSYNTH" >> $@
+endif
+ifeq ($(HAVE_LINUXSAMPLER),true)
+	@echo "#define HAVE_LINUXSAMPLER" >> $@
+else
+	@echo "// #define HAVE_LINUXSAMPLER" >> $@
+endif
+	@echo "" >> $@
+
+	@echo "/* optional libs for extra plugins and UIs */" >> $@
+ifeq ($(HAVE_DGL),true)
+	@echo "#define HAVE_DGL" >> $@
+else
+	@echo "// #define HAVE_DGL" >> $@
+endif
+ifeq ($(HAVE_PROJECTM),true)
+	@echo "#define HAVE_PROJECTM" >> $@
+else
+	@echo "// #define HAVE_PROJECTM" >> $@
+endif
+ifeq ($(HAVE_ZYN_DEPS),true)
+	@echo "#define HAVE_ZYN_DEPS" >> $@
+else
+	@echo "// #define HAVE_ZYN_DEPS" >> $@
+endif
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	@echo "#define HAVE_ZYN_UI_DEPS" >> $@
+else
+	@echo "// #define HAVE_ZYN_UI_DEPS" >> $@
+endif
+	@echo "" >> $@
+
+	@echo "/* extra toolkits/frameworks for plugin UIs (native) */" >> $@
+ifeq ($(HAVE_X11),true)
+	@echo "#define HAVE_X11" >> $@
+else
+	@echo "// #define HAVE_X11" >> $@
+endif
+	@echo "" >> $@
+
+	@echo "/* extra toolkits/frameworks for plugin UIs (bridges, Linux only) */" >> $@
+ifeq ($(HAVE_GTK2),true)
+	@echo "#define HAVE_GTK2" >> $@
+else
+	@echo "// #define HAVE_GTK2" >> $@
+endif
+ifeq ($(HAVE_GTK3),true)
+	@echo "#define HAVE_GTK3" >> $@
+else
+	@echo "// #define HAVE_GTK3" >> $@
+endif
+ifeq ($(HAVE_QT4),true)
+	@echo "#define HAVE_QT4" >> $@
+else
+	@echo "// #define HAVE_QT4" >> $@
+endif
+ifeq ($(HAVE_QT5),true)
+	@echo "#define HAVE_QT5" >> $@
+else
+	@echo "// #define HAVE_QT5" >> $@
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (native)
 
 BIN: backend discovery bridges-plugin bridges-ui interposer plugin theme
@@ -81,7 +188,7 @@ ifeq ($(HAVE_QT5),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt5.a
 endif
 
-libs: $(ALL_LIBS)
+libs: config $(ALL_LIBS)
 
 $(MODULEDIR)/carla_engine.a: .FORCE
 	@$(MAKE) -C source/backend/engine
@@ -140,7 +247,7 @@ discovery: libs
 	@$(MAKE) -C source/discovery
 
 ifeq ($(LINUX),true)
-interposer:
+interposer: config
 	@$(MAKE) -C source/interposer
 else
 interposer:
@@ -150,7 +257,7 @@ plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
 ifeq ($(HAVE_QT),true)
-theme:
+theme: config
 	@$(MAKE) -C source/theme
 else
 theme:
@@ -174,7 +281,7 @@ LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
 endif
 
-posix32: $(LIBS_POSIX32)
+posix32: config $(LIBS_POSIX32)
 	$(MAKE) -C source/bridges-plugin posix32
 	$(MAKE) -C source/discovery posix32
 
@@ -196,7 +303,7 @@ LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
 endif
 
-posix64: $(LIBS_POSIX64)
+posix64: config $(LIBS_POSIX64)
 	$(MAKE) -C source/bridges-plugin posix64
 	$(MAKE) -C source/discovery posix64
 
@@ -214,7 +321,7 @@ LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 
-win32: $(LIBS_WIN32)
+win32: config $(LIBS_WIN32)
 	$(MAKE) -C source/bridges-plugin win32
 	$(MAKE) -C source/discovery win32
 
@@ -232,18 +339,18 @@ LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 
-win64: $(LIBS_WIN64)
+win64: config $(LIBS_WIN64)
 	$(MAKE) -C source/bridges-plugin win64
 	$(MAKE) -C source/discovery win64
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (wine)
 
-wine32:
+wine32: config
 	$(MAKE) -C source/jackbridge wine32
 	cp -f $(MODULEDIR)/jackbridge-wine32.dll.so $(BINDIR)/jackbridge-wine32.dll
 
-wine64:
+wine64: config
 	$(MAKE) -C source/jackbridge wine64
 	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(BINDIR)/jackbridge-wine64.dll
 
@@ -293,18 +400,9 @@ RES = \
 	bin/resources/ui_carla_settings.py \
 	bin/resources/ui_carla_settings_driver.py \
 	bin/resources/ui_inputdialog_value.py \
-	source/carla_config.py \
 	source/resources_rc.py
 
-RES: $(RES)
-
-source/carla_config.py:
-	@echo "#!/usr/bin/env python3\n# -*- coding: utf-8 -*-\n" > $@
-ifeq ($(DEFAULT_QT),4)
-	@echo "config_UseQt5 = False" >> $@
-else
-	@echo "config_UseQt5 = True" >> $@
-endif
+RES: config $(RES)
 
 source/resources_rc.py: resources/resources.qrc resources/*/*.png resources/*/*.svg
 	$(PYRCC) $< -o $@
@@ -339,7 +437,7 @@ UIs = \
 	source/ui_carla_settings_driver.py \
 	source/ui_inputdialog_value.py
 
-UI: $(UIs)
+UI: config $(UIs)
 
 source/ui_%.py: resources/ui/%.ui
 	$(PYUIC) $< -o $@
@@ -360,7 +458,7 @@ WIDGETS = \
 	source/pixmapkeyboard.py \
 	source/racklistwidget.py
 
-WIDGETS: $(WIDGETS)
+WIDGETS: config $(WIDGETS)
 
 source/%.py: source/widgets/%.py
 	$(LINK) widgets/$*.py $@
@@ -378,6 +476,7 @@ clean:
 	rm -f $(UIs)
 	rm -f $(WIDGETS)
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
+	rm -f source/carla_config.py source/includes/config.h
 
 distclean: clean
 	rm -f bin/*.dll bin/*.so
@@ -756,21 +855,21 @@ ifeq ($(HAVE_QT5),true)
 else
 	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
 endif
+ifeq ($(MACOS),true)
+	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
+else
+	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
+endif
+ifeq ($(WIN32),true)
+	@echo "Windows: $(ANS_YES) (direct+bridge)"
+else
+	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
+endif
 ifeq ($(HAVE_X11),true)
 	@echo "X11:     $(ANS_YES) (direct+bridge)"
 else
 	@echo "X11:     $(ANS_NO)  $(mS)X11 missing$(mE)"
 endif
-# ifeq ($(MACOS),true)
-# 	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
-# else
-# 	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
-# endif
-# ifeq ($(WIN32),true)
-# 	@echo "Windows: $(ANS_YES) (direct+bridge)"
-# else
-# 	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
-# endif
 	@echo ""
 
 	@echo "$(tS)---> File formats: $(tE)"
@@ -803,6 +902,11 @@ ifeq ($(HAVE_DGL),true)
 	@echo "DISTRHO Plugins:$(ANS_YES) (with UI)"
 else
 	@echo "DISTRHO Plugins:$(ANS_YES) (without UI)"
+endif
+ifeq ($(HAVE_PROJECTM),true)
+	@echo "DISTRHO ProM:   $(ANS_YES)"
+else
+	@echo "DISTRHO ProM:   $(ANS_NO)  (missing libprojectM)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)

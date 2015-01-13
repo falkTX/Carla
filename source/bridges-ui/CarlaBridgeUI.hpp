@@ -26,9 +26,6 @@
 #include "lv2/atom.h"
 #include "lv2/urid.h"
 
-//#include "CarlaBridgeToolkit.hpp"
-//#include "CarlaLibUtils.hpp"
-
 CARLA_BRIDGE_START_NAMESPACE
 
 /*!
