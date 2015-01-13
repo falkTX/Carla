@@ -608,6 +608,7 @@ endif
 
 	install -m 644 \
 		source/includes/CarlaDefines.h \
+		source/includes/config.h \
 		$(DESTDIR)$(PREFIX)/include/carla/includes/
 
 	# Install resources
