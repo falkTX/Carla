@@ -1211,9 +1211,7 @@ public:
 
             samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
             samplerChannel->SetAudioOutputDevice(&fAudioOutputDevice);
-            //samplerChannel->SetMidiInputDevice(&fMidiInputDevice);
-            samplerChannel->SetMidiInputChannel(kUses16Outs ? static_cast<LinuxSampler::midi_chan_t>(i) : LinuxSampler::midi_chan_all);
-            //samplerChannel->Connect(fMidiInputPort);
+            samplerChannel->SetMidiInputChannel(kIsGIG ? static_cast<LinuxSampler::midi_chan_t>(i) : LinuxSampler::midi_chan_all);
 
             LinuxSampler::EngineChannel* const engineChannel(samplerChannel->GetEngineChannel());
             CARLA_SAFE_ASSERT_CONTINUE(engineChannel != nullptr);
