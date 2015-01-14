@@ -1689,8 +1689,15 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost, loadHostSettings
 
-    app  = CarlaApplication()
-    host = initHost("Database", None, False, False, False)
+    libPrefix = None
+
+    for arg in sys.argv:
+        if arg.startswith("--with-libprefix="):
+            libPrefix = arg.replace("--with-libprefix=", "")
+            break
+
+    app  = CarlaApplication("Carla2-Database", libPrefix)
+    host = initHost("Carla2-Database", libPrefix, False, False, False)
     loadHostSettings(host)
 
     gui = PluginDatabaseW(None, host)
