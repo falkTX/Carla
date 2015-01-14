@@ -18,8 +18,10 @@
 #ifndef CARLA_DEFINES_H_INCLUDED
 #define CARLA_DEFINES_H_INCLUDED
 
-/* Configuration */
-#include "config.h"
+/* IDE Helper */
+#ifndef REAL_BUILD
+# include "config.h"
+#endif
 
 /* Compatibility with non-clang compilers */
 #ifndef __has_feature

@@ -172,8 +172,10 @@ HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
 HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
 HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
 
+ifeq ($(UNIX),true)
 # libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
 HAVE_LIBMAGIC     = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+endif
 
 # --------------------------------------------------------------
 # Set Qt tools
@@ -250,6 +252,34 @@ endif
 
 # --------------------------------------------------------------
 # Set base defines
+
+ifeq ($(HAVE_DGL),true)
+BASE_FLAGS += -DHAVE_DGL
+endif
+
+ifeq ($(HAVE_LIBLO),true)
+BASE_FLAGS += -DHAVE_LIBLO
+endif
+
+ifeq ($(HAVE_LIBMAGIC),true)
+BASE_FLAGS += -DHAVE_LIBMAGIC
+endif
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+BASE_FLAGS += -DHAVE_FLUIDSYNTH
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+BASE_FLAGS += -DHAVE_LINUXSAMPLER
+endif
+
+ifeq ($(HAVE_PROJECTM),true)
+BASE_FLAGS += -DHAVE_PROJECTM
+endif
+
+ifeq ($(HAVE_X11),true)
+BASE_FLAGS += -DHAVE_X11
+endif
 
 ifeq ($(CARLA_VESTIGE_HEADER),true)
 BASE_FLAGS += -DVESTIGE_HEADER
@@ -347,8 +377,10 @@ endif
 # Set libs stuff (part 3)
 
 ifeq ($(HAVE_ZYN_DEPS),true)
+NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
+NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_UI_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
