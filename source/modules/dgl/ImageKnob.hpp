@@ -85,11 +85,10 @@ private:
     Callback* fCallback;
 
     bool fIsImgVertical;
-    int  fImgLayerSize;
-    int  fImgLayerCount;
-    Rectangle<int> fKnobArea;
-    GLuint fTextureId;
+    uint fImgLayerSize;
+    uint fImgLayerCount;
     bool fIsReady;
+    GLuint fTextureId;
 
     float _logscale(float value) const;
     float _invlogscale(float value) const;

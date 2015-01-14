@@ -179,12 +179,12 @@ void ImageSlider::setStep(float step) noexcept
 
 void ImageSlider::setValue(float value, bool sendCallback) noexcept
 {
-    if (fValue == value)
+    if (d_isEqual(fValue, value))
         return;
 
     fValue = value;
 
-    if (fStep == 0.0f)
+    if (d_isZero(fStep))
         fValueTmp = value;
 
     repaint();
@@ -210,7 +210,7 @@ void ImageSlider::onDisplay()
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 #endif
 
-    float normValue = (fValue - fMinimum) / (fMaximum - fMinimum);
+    const float normValue = (fValue - fMinimum) / (fMaximum - fMinimum);
 
     int x, y;
 
@@ -278,7 +278,7 @@ bool ImageSlider::onMouse(const MouseEvent& ev)
         {
             fValueTmp = value = fMaximum;
         }
-        else if (fStep != 0.0f)
+        else if (d_isNotZero(fStep))
         {
             fValueTmp = value;
             const float rest = std::fmod(value, fStep);
@@ -347,7 +347,7 @@ bool ImageSlider::onMotion(const MotionEvent& ev)
         {
             fValueTmp = value = fMaximum;
         }
-        else if (fStep != 0.0f)
+        else if (d_isNotZero(fStep))
         {
             fValueTmp = value;
             const float rest = std::fmod(value, fStep);
@@ -381,16 +381,16 @@ void ImageSlider::_recheckArea() noexcept
         // horizontal
         fSliderArea = Rectangle<int>(fStartPos.getX(),
                                      fStartPos.getY(),
-                                     fEndPos.getX() + fImage.getWidth() - fStartPos.getX(),
-                                     fImage.getHeight());
+                                     fEndPos.getX() + static_cast<int>(fImage.getWidth()) - fStartPos.getX(),
+                                     static_cast<int>(fImage.getHeight()));
     }
     else
     {
         // vertical
         fSliderArea = Rectangle<int>(fStartPos.getX(),
                                      fStartPos.getY(),
-                                     fImage.getWidth(),
-                                     fEndPos.getY() + fImage.getHeight() - fStartPos.getY());
+                                     static_cast<int>(fImage.getWidth()),
+                                     fEndPos.getY() + static_cast<int>(fImage.getHeight()) - fStartPos.getY());
     }
 }
 

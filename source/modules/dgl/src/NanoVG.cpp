@@ -18,8 +18,32 @@
 #include "../Window.hpp"
 
 // -----------------------------------------------------------------------
+// Ignore some warnings if debugging
 
-#define NANOVG_GL2_IMPLEMENTATION
+#ifdef DEBUG
+# define NANOVG_GL3   0
+# define NANOVG_GLES2 0
+# define NANOVG_GLES3 0
+# define NANOVG_GL_USE_UNIFORMBUFFER 0
+# if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Weverything"
+# elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wall"
+#  pragma GCC diagnostic ignored "-Wextra"
+#  pragma GCC diagnostic ignored "-Wconversion"
+#  pragma GCC diagnostic ignored "-Weffc++"
+#  pragma GCC diagnostic ignored "-Wsign-conversion"
+#  pragma GCC diagnostic ignored "-Wundef"
+#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+# endif
+#endif
+
+// -----------------------------------------------------------------------
+// Include NanoVG OpenGL implementation
+
+#define NANOVG_GL2_IMPLEMENTATION 1
 #include "nanovg/nanovg_gl.h"
 
 #if defined(NANOVG_GL2)
@@ -35,6 +59,19 @@
 # define nvgCreateGL nvgCreateGLES3
 # define nvgDeleteGL nvgDeleteGLES3
 #endif
+
+// -----------------------------------------------------------------------
+// Restore normal state if debugging
+
+#ifdef DEBUG
+# if defined(__clang__)
+#  pragma clang diagnostic pop
+# elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#  pragma GCC diagnostic pop
+# endif
+#endif
+
+// -----------------------------------------------------------------------
 
 START_NAMESPACE_DGL
 
@@ -75,7 +112,8 @@ NanoVG::Paint::operator NVGpaint() const noexcept
 NanoImage::NanoImage(NVGcontext* const context, const int imageId) noexcept
     : fContext(context),
       fImageId(imageId),
-      fSize()
+      fSize(),
+      leakDetector_NanoImage()
 {
     _updateSize();
 }
@@ -114,7 +152,7 @@ void NanoImage::_updateSize()
         if (h < 0) h = 0;
     }
 
-    fSize.setSize(w, h);
+    fSize.setSize(static_cast<uint>(w), static_cast<uint>(h));
 }
 
 // -----------------------------------------------------------------------
@@ -122,14 +160,16 @@ void NanoImage::_updateSize()
 
 NanoVG::NanoVG()
     : fContext(nvgCreateGL(512, 512, NVG_ANTIALIAS)),
-      fInFrame(false)
+      fInFrame(false),
+      leakDetector_NanoVG()
 {
     DISTRHO_SAFE_ASSERT_RETURN(fContext != nullptr,);
 }
 
 NanoVG::NanoVG(const int textAtlasWidth, const int textAtlasHeight)
     : fContext(nvgCreateGL(textAtlasWidth, textAtlasHeight, NVG_ANTIALIAS)),
-      fInFrame(false)
+      fInFrame(false),
+      leakDetector_NanoVG()
 {
     DISTRHO_SAFE_ASSERT_RETURN(fContext != nullptr,);
 }
@@ -151,7 +191,7 @@ void NanoVG::beginFrame(const uint width, const uint height, const float scaleFa
     DISTRHO_SAFE_ASSERT_RETURN(! fInFrame,);
 
     fInFrame = true;
-    nvgBeginFrame(fContext, width, height, scaleFactor, static_cast<NVGalpha>(alpha));
+    nvgBeginFrame(fContext, static_cast<int>(width), static_cast<int>(height), scaleFactor, static_cast<NVGalpha>(alpha));
 }
 
 void NanoVG::beginFrame(Widget* const widget)
@@ -163,7 +203,7 @@ void NanoVG::beginFrame(Widget* const widget)
     Window& window(widget->getParentWindow());
 
     fInFrame = true;
-    nvgBeginFrame(fContext, window.getWidth(), window.getHeight(), 1.0f, NVG_PREMULTIPLIED_ALPHA);
+    nvgBeginFrame(fContext, static_cast<int>(window.getWidth()), static_cast<int>(window.getHeight()), 1.0f, NVG_PREMULTIPLIED_ALPHA);
 }
 
 void NanoVG::endFrame()
@@ -209,7 +249,17 @@ void NanoVG::strokeColor(const Color& color)
 void NanoVG::strokeColor(const int red, const int green, const int blue, const int alpha)
 {
     if (fContext != nullptr)
-        nvgStrokeColor(fContext, nvgRGBA(red, green, blue, alpha));
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(red   >= 0 && red   <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(green >= 0 && green <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(blue  >= 0 && blue  <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(alpha >= 0 && alpha <= 255,);
+
+        nvgStrokeColor(fContext, nvgRGBA(static_cast<uchar>(red),
+                                         static_cast<uchar>(green),
+                                         static_cast<uchar>(blue),
+                                         static_cast<uchar>(alpha)));
+    }
 }
 
 void NanoVG::strokeColor(const float red, const float green, const float blue, const float alpha)
@@ -233,7 +283,17 @@ void NanoVG::fillColor(const Color& color)
 void NanoVG::fillColor(const int red, const int green, const int blue, const int alpha)
 {
     if (fContext != nullptr)
-        nvgFillColor(fContext, nvgRGBA(red, green, blue, alpha));
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(red   >= 0 && red   <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(green >= 0 && green <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(blue  >= 0 && blue  <= 255,);
+        DISTRHO_SAFE_ASSERT_RETURN(alpha >= 0 && alpha <= 255,);
+
+        nvgFillColor(fContext, nvgRGBA(static_cast<uchar>(red),
+                                       static_cast<uchar>(green),
+                                       static_cast<uchar>(blue),
+                                       static_cast<uchar>(alpha)));
+    }
 }
 
 void NanoVG::fillColor(const float red, const float green, const float blue, const float alpha)
@@ -427,7 +487,7 @@ NanoImage* NanoVG::createImageRGBA(uint w, uint h, const uchar* data)
     if (fContext == nullptr) return nullptr;
     DISTRHO_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
 
-    if (const int imageId = nvgCreateImageRGBA(fContext, w, h, data))
+    if (const int imageId = nvgCreateImageRGBA(fContext, static_cast<int>(w), static_cast<int>(h), data))
         return new NanoImage(fContext, imageId);
 
     return nullptr;

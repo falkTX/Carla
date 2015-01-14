@@ -53,14 +53,17 @@ class Widget
 public:
    /**
       Base event data.
-      @a mod  The currently active keyboard modifiers.
+      @a mod  The currently active keyboard modifiers, @see Modifier.
       @a time The timestamp (if any).
     */
     struct BaseEvent {
-        Modifier mod;
+        uint     mod;
         uint32_t time;
-        // make -Weffc++ happy
-        virtual ~BaseEvent() {}
+
+        /** Constuctor */
+        BaseEvent() noexcept : mod(0x0), time(0) {}
+        /** Destuctor */
+        virtual ~BaseEvent() noexcept {}
     };
 
    /**
@@ -72,6 +75,12 @@ public:
     struct KeyboardEvent : BaseEvent {
         bool press;
         uint key;
+
+        /** Constuctor */
+        KeyboardEvent() noexcept
+            : BaseEvent(),
+              press(false),
+              key(0) {}
     };
 
    /**
@@ -82,7 +91,13 @@ public:
     */
     struct SpecialEvent : BaseEvent {
         bool press;
-        Key key;
+        Key  key;
+
+        /** Constuctor */
+        SpecialEvent() noexcept
+            : BaseEvent(),
+              press(false),
+              key(Key(0)) {}
     };
 
    /**
@@ -93,9 +108,16 @@ public:
       @see onMouse
     */
     struct MouseEvent : BaseEvent {
-        int button;
+        int  button;
         bool press;
         Point<int> pos;
+
+        /** Constuctor */
+        MouseEvent() noexcept
+            : BaseEvent(),
+              button(0),
+              press(false),
+              pos(0, 0) {}
     };
 
    /**
@@ -105,6 +127,11 @@ public:
     */
     struct MotionEvent : BaseEvent {
         Point<int> pos;
+
+        /** Constuctor */
+        MotionEvent() noexcept
+            : BaseEvent(),
+              pos(0, 0) {}
     };
 
    /**
@@ -116,6 +143,12 @@ public:
     struct ScrollEvent : BaseEvent {
         Point<int> pos;
         Point<float> delta;
+
+        /** Constuctor */
+        ScrollEvent() noexcept
+            : BaseEvent(),
+              pos(0, 0),
+              delta(0.0f, 0.0f) {}
     };
 
    /**
@@ -127,6 +160,11 @@ public:
     struct ResizeEvent {
         Size<uint> size;
         Size<uint> oldSize;
+
+        /** Constuctor */
+        ResizeEvent() noexcept
+            : size(0, 0),
+              oldSize(0, 0) {}
     };
 
    /**

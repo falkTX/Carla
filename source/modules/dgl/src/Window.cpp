@@ -70,6 +70,7 @@ struct Window::PrivateData {
           fUsingEmbed(false),
           fWidth(1),
           fHeight(1),
+          fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0),
@@ -97,6 +98,7 @@ struct Window::PrivateData {
           fUsingEmbed(false),
           fWidth(1),
           fHeight(1),
+          fWidgets(),
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0),
@@ -134,6 +136,7 @@ struct Window::PrivateData {
           fUsingEmbed(parentId != 0),
           fWidth(1),
           fHeight(1),
+          fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0),
@@ -177,7 +180,7 @@ struct Window::PrivateData {
         }
 
         puglInitResizable(fView, fResizable);
-        puglInitWindowSize(fView, fWidth, fHeight);
+        puglInitWindowSize(fView, static_cast<int>(fWidth), static_cast<int>(fHeight));
 
         puglSetHandle(fView, this);
         puglSetDisplayFunc(fView, onDisplayCallback);
@@ -611,7 +614,7 @@ struct Window::PrivateData {
 
     // -------------------------------------------------------------------
 
-    void onDisplay()
+    void onPuglDisplay()
     {
         fSelf->onDisplayBefore();
 
@@ -629,22 +632,35 @@ struct Window::PrivateData {
                 if (widget->fNeedsFullViewport || (widget->fAbsolutePos.isZero() && widget->fSize == Size<uint>(fWidth, fHeight)))
                 {
                     // full viewport size
-                    glViewport(0, 0, fWidth, fHeight);
+                    glViewport(0,
+                               0,
+                               static_cast<GLsizei>(fWidth),
+                               static_cast<GLsizei>(fHeight));
                 }
                 else if (! widget->fNeedsScaling)
                 {
                     // only set viewport pos
-                    glViewport(widget->getAbsoluteX(), /*fView->height - widget->getHeight()*/ - widget->getAbsoluteY(), fWidth, fHeight);
+                    glViewport(widget->getAbsoluteX(),
+                               /*fView->height - static_cast<int>(widget->getHeight())*/ - widget->getAbsoluteY(),
+                               static_cast<GLsizei>(fWidth),
+                               static_cast<GLsizei>(fHeight));
 
                     // then cut the outer bounds
-                    glScissor(widget->getAbsoluteX(), fView->height - widget->getHeight() - widget->getAbsoluteY(), widget->getWidth(), widget->getHeight());
+                    glScissor(widget->getAbsoluteX(),
+                              fView->height - static_cast<int>(widget->getHeight()) - widget->getAbsoluteY(),
+                              static_cast<GLsizei>(widget->getWidth()),
+                              static_cast<GLsizei>(widget->getHeight()));
+
                     glEnable(GL_SCISSOR_TEST);
                     needsDisableScissor = true;
                 }
                 else
                 {
                     // limit viewport to widget bounds
-                    glViewport(widget->getAbsoluteX(), fView->height - widget->getHeight() - widget->getAbsoluteY(), widget->getWidth(), widget->getHeight());
+                    glViewport(widget->getAbsoluteX(),
+                               fView->height - static_cast<int>(widget->getHeight()) - widget->getAbsoluteY(),
+                               static_cast<GLsizei>(widget->getWidth()),
+                               static_cast<GLsizei>(widget->getHeight()));
                 }
 
                 // display widget
@@ -661,7 +677,7 @@ struct Window::PrivateData {
         fSelf->onDisplayAfter();
     }
 
-    void onKeyboard(const bool press, const uint key)
+    void onPuglKeyboard(const bool press, const uint key)
     {
         DBGp("PUGL: onKeyboard : %i %i\n", press, key);
 
@@ -683,7 +699,7 @@ struct Window::PrivateData {
         }
     }
 
-    void onSpecial(const bool press, const Key key)
+    void onPuglSpecial(const bool press, const Key key)
     {
         DBGp("PUGL: onSpecial : %i %i\n", press, key);
 
@@ -705,7 +721,7 @@ struct Window::PrivateData {
         }
     }
 
-    void onMouse(const int button, const bool press, const int x, const int y)
+    void onPuglMouse(const int button, const bool press, const int x, const int y)
     {
         DBGp("PUGL: onMouse : %i %i %i %i\n", button, press, x, y);
 
@@ -732,7 +748,7 @@ struct Window::PrivateData {
         }
     }
 
-    void onMotion(const int x, const int y)
+    void onPuglMotion(const int x, const int y)
     {
         DBGp("PUGL: onMotion : %i %i\n", x, y);
 
@@ -754,7 +770,7 @@ struct Window::PrivateData {
         }
     }
 
-    void onScroll(const int x, const int y, const float dx, const float dy)
+    void onPuglScroll(const int x, const int y, const float dx, const float dy)
     {
         DBGp("PUGL: onScroll : %i %i %f %f\n", x, y, dx, dy);
 
@@ -777,28 +793,28 @@ struct Window::PrivateData {
         }
     }
 
-    void onReshape(const int width, const int height)
+    void onPuglReshape(const int width, const int height)
     {
         DBGp("PUGL: onReshape : %i %i\n", width, height);
 
         if (width <= 1 && height <= 1)
             return;
 
-        fWidth  = width;
-        fHeight = height;
+        fWidth  = static_cast<uint>(width);
+        fHeight = static_cast<uint>(height);
 
-        fSelf->onReshape(width, height);
+        fSelf->onReshape(fWidth, fHeight);
 
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
 
             if (widget->fNeedsFullViewport)
-                widget->setSize(width, height);
+                widget->setSize(fWidth, fHeight);
         }
     }
 
-    void onClose()
+    void onPuglClose()
     {
         DBG("PUGL: onClose\n");
 
@@ -808,7 +824,7 @@ struct Window::PrivateData {
         fSelf->onClose();
 
         if (fModal.childFocus != nullptr)
-            fModal.childFocus->onClose();
+            fModal.childFocus->fSelf->onClose();
 
         close();
     }
@@ -847,6 +863,8 @@ struct Window::PrivateData {
             DISTRHO_SAFE_ASSERT(! enabled);
             DISTRHO_SAFE_ASSERT(childFocus == nullptr);
         }
+
+        DISTRHO_DECLARE_NON_COPY_STRUCT(Modal)
     } fModal;
 
 #if defined(DISTRHO_OS_WINDOWS)
@@ -867,42 +885,42 @@ struct Window::PrivateData {
 
     static void onDisplayCallback(PuglView* view)
     {
-        handlePtr->onDisplay();
+        handlePtr->onPuglDisplay();
     }
 
     static void onKeyboardCallback(PuglView* view, bool press, uint32_t key)
     {
-        handlePtr->onKeyboard(press, key);
+        handlePtr->onPuglKeyboard(press, key);
     }
 
     static void onSpecialCallback(PuglView* view, bool press, PuglKey key)
     {
-        handlePtr->onSpecial(press, static_cast<Key>(key));
+        handlePtr->onPuglSpecial(press, static_cast<Key>(key));
     }
 
     static void onMouseCallback(PuglView* view, int button, bool press, int x, int y)
     {
-        handlePtr->onMouse(button, press, x, y);
+        handlePtr->onPuglMouse(button, press, x, y);
     }
 
     static void onMotionCallback(PuglView* view, int x, int y)
     {
-        handlePtr->onMotion(x, y);
+        handlePtr->onPuglMotion(x, y);
     }
 
     static void onScrollCallback(PuglView* view, int x, int y, float dx, float dy)
     {
-        handlePtr->onScroll(x, y, dx, dy);
+        handlePtr->onPuglScroll(x, y, dx, dy);
     }
 
     static void onReshapeCallback(PuglView* view, int width, int height)
     {
-        handlePtr->onReshape(width, height);
+        handlePtr->onPuglReshape(width, height);
     }
 
     static void onCloseCallback(PuglView* view)
     {
-        handlePtr->onClose();
+        handlePtr->onPuglClose();
     }
 
     #undef handlePtr

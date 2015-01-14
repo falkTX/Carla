@@ -258,7 +258,7 @@ public:
    /**
       Destructor.
     */
-    ~NanoVG();
+    virtual ~NanoVG();
 
    /**
       Get the NanoVG context.
@@ -761,7 +761,8 @@ public:
     */
     NanoWidget(Window& parent)
         : Widget(parent),
-          NanoVG()
+          NanoVG(),
+          leakDetector_NanoWidget()
     {
         setNeedsScaling(true);
     }

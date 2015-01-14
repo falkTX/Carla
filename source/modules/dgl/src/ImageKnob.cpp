@@ -42,9 +42,8 @@ ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation
       fIsImgVertical(image.getHeight() > image.getWidth()),
       fImgLayerSize(fIsImgVertical ? image.getWidth() : image.getHeight()),
       fImgLayerCount(fIsImgVertical ? image.getHeight()/fImgLayerSize : image.getWidth()/fImgLayerSize),
-      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize),
-      fTextureId(0),
       fIsReady(false),
+      fTextureId(0),
       leakDetector_ImageKnob()
 {
     glGenTextures(1, &fTextureId);
@@ -71,9 +70,8 @@ ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation
       fIsImgVertical(image.getHeight() > image.getWidth()),
       fImgLayerSize(fIsImgVertical ? image.getWidth() : image.getHeight()),
       fImgLayerCount(fIsImgVertical ? image.getHeight()/fImgLayerSize : image.getWidth()/fImgLayerSize),
-      fKnobArea(0, 0, fImgLayerSize, fImgLayerSize),
-      fTextureId(0),
       fIsReady(false),
+      fTextureId(0),
       leakDetector_ImageKnob()
 {
     glGenTextures(1, &fTextureId);
@@ -100,9 +98,8 @@ ImageKnob::ImageKnob(const ImageKnob& imageKnob)
       fIsImgVertical(imageKnob.fIsImgVertical),
       fImgLayerSize(imageKnob.fImgLayerSize),
       fImgLayerCount(imageKnob.fImgLayerCount),
-      fKnobArea(imageKnob.fKnobArea),
-      fTextureId(0),
       fIsReady(false),
+      fTextureId(0),
       leakDetector_ImageKnob()
 {
     glGenTextures(1, &fTextureId);
@@ -129,7 +126,6 @@ ImageKnob& ImageKnob::operator=(const ImageKnob& imageKnob)
     fIsImgVertical = imageKnob.fIsImgVertical;
     fImgLayerSize  = imageKnob.fImgLayerSize;
     fImgLayerCount = imageKnob.fImgLayerCount;
-    fKnobArea = imageKnob.fKnobArea;
     fIsReady  = false;
 
     if (fTextureId != 0)
@@ -206,12 +202,12 @@ void ImageKnob::setStep(float step) noexcept
 // NOTE: value is assumed to be scaled if using log
 void ImageKnob::setValue(float value, bool sendCallback) noexcept
 {
-    if (fValue == value)
+    if (d_isEqual(fValue, value))
         return;
 
     fValue = value;
 
-    if (fStep == 0.0f)
+    if (d_isZero(fStep))
         fValueTmp = value;
 
     if (fRotationAngle == 0)
@@ -274,36 +270,44 @@ void ImageKnob::onDisplay()
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-        int imageDataOffset = 0;
+        uint imageDataOffset = 0;
 
         if (fRotationAngle == 0)
         {
-            int layerDataSize = fImgLayerSize * fImgLayerSize * ((fImage.getFormat() == GL_BGRA || fImage.getFormat() == GL_RGBA) ? 4 : 3);
-            imageDataOffset   = layerDataSize * int(normValue * float(fImgLayerCount-1));
+            DISTRHO_SAFE_ASSERT_RETURN(fImgLayerCount > 0,);
+            DISTRHO_SAFE_ASSERT_RETURN(normValue >= 0.0f,);
+
+            const uint layerDataSize   = fImgLayerSize * fImgLayerSize * ((fImage.getFormat() == GL_BGRA || fImage.getFormat() == GL_RGBA) ? 4 : 3);
+            /*      */ imageDataOffset = layerDataSize * uint(normValue * float(fImgLayerCount-1));
         }
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, getWidth(), getHeight(), 0, fImage.getFormat(), fImage.getType(), fImage.getRawData() + imageDataOffset);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                     static_cast<GLsizei>(getWidth()), static_cast<GLsizei>(getHeight()), 0,
+                     fImage.getFormat(), fImage.getType(), fImage.getRawData() + imageDataOffset);
 
         fIsReady = true;
     }
+
+    const int w = static_cast<int>(getWidth());
+    const int h = static_cast<int>(getHeight());
 
     if (fRotationAngle != 0)
     {
         glPushMatrix();
 
-        const GLint w2 = getWidth()/2;
-        const GLint h2 = getHeight()/2;
+        const int w2 = w/2;
+        const int h2 = h/2;
 
         glTranslatef(static_cast<float>(w2), static_cast<float>(h2), 0.0f);
         glRotatef(normValue*static_cast<float>(fRotationAngle), 0.0f, 0.0f, 1.0f);
 
-        Rectangle<int>(-w2, -h2, getWidth(), getHeight()).draw();
+        Rectangle<int>(-w2, -h2, w, h).draw();
 
         glPopMatrix();
     }
     else
     {
-        Rectangle<int>(0, 0, getWidth(), getHeight()).draw();
+        Rectangle<int>(0, 0, w, h).draw();
     }
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -389,7 +393,7 @@ bool ImageKnob::onMotion(const MotionEvent& ev)
     {
         fValueTmp = value = fMaximum;
     }
-    else if (fStep != 0.0f)
+    else if (d_isNotZero(fStep))
     {
         fValueTmp = value;
         const float rest = std::fmod(value, fStep);
@@ -423,7 +427,7 @@ bool ImageKnob::onScroll(const ScrollEvent& ev)
     {
         fValueTmp = value = fMaximum;
     }
-    else if (fStep != 0.0f)
+    else if (d_isNotZero(fStep))
     {
         fValueTmp = value;
         const float rest = std::fmod(value, fStep);
