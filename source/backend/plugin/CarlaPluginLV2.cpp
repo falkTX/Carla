@@ -517,7 +517,7 @@ public:
     {
         carla_debug("CarlaPluginLV2::CarlaPluginLV2(%p, %i)", engine, id);
 
-        carla_fill<LV2_Feature*>(fFeatures, nullptr, kFeatureCountAll+1);
+        carla_zeroPointers(fFeatures, kFeatureCountAll+1);
 
         for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
             fCustomURIDs.append(nullptr);

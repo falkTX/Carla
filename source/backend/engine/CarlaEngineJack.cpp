@@ -667,7 +667,7 @@ public:
 #ifdef BUILD_BRIDGE
         pData->options.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
 #else
-        carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+        carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
 
         // FIXME: Always enable JACK transport for now
@@ -877,7 +877,7 @@ public:
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
                 jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
             }
-            carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+            carla_zeroPointers(fRackPorts, kRackPortCount);
 
             pData->graph.destroy();
         }
@@ -1711,7 +1711,7 @@ protected:
 
         fClient = nullptr;
 #ifndef BUILD_BRIDGE
-        carla_fill<jack_port_t*>(fRackPorts, nullptr, kRackPortCount);
+        carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
         runPendingRtEvents();
 

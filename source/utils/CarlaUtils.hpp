@@ -398,6 +398,19 @@ void carla_zeroChar(char* const data, const std::size_t numChars) noexcept
 }
 
 /*
+ * Clear a pointer array.
+ */
+template<typename T>
+static inline
+void carla_zeroPointers(T* pointers[], const std::size_t numPointers) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pointers != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(numPointers > 0,);
+
+    std::memset(pointers, 0, numPointers*sizeof(T*));
+}
+
+/*
  * Clear a single struct/class.
  */
 template <typename T>

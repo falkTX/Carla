@@ -2234,7 +2234,7 @@ private:
             : numEvents(0),
               reserved(0)
         {
-            carla_fill<VstEvent*>(data, nullptr, kPluginMaxMidiEvents*2);
+            carla_zeroPointers(data, kPluginMaxMidiEvents*2);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);
