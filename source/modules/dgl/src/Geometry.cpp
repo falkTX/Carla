@@ -641,13 +641,13 @@ Circle<T>& Circle<T>::operator=(const Circle<T>& cir) noexcept
 template<typename T>
 bool Circle<T>::operator==(const Circle<T>& cir) const noexcept
 {
-    return (fPos == cir.fPos && fSize == cir.fSize && fNumSegments == cir.fNumSegments);
+    return (fPos == cir.fPos && d_isEqual(fSize, cir.fSize) && fNumSegments == cir.fNumSegments);
 }
 
 template<typename T>
 bool Circle<T>::operator!=(const Circle<T>& cir) const noexcept
 {
-    return (fPos != cir.fPos || fSize != cir.fSize || fNumSegments != cir.fNumSegments);
+    return (fPos != cir.fPos || d_isNotEqual(fSize, cir.fSize) || fNumSegments != cir.fNumSegments);
 }
 
 template<typename T>

@@ -43,7 +43,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
     Image knobImage(DistrhoArtworkMVerb::knobData, DistrhoArtworkMVerb::knobWidth, DistrhoArtworkMVerb::knobHeight);
 
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::DAMPINGFREQ));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::DAMPINGFREQ);
         knob->setAbsolutePos(56 + 7*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -51,7 +52,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::DENSITY));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::DENSITY);
         knob->setAbsolutePos(56 + 4*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -59,7 +61,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::BANDWIDTHFREQ));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::BANDWIDTHFREQ);
         knob->setAbsolutePos(56 + 5*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -67,7 +70,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::DECAY));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::DECAY);
         knob->setAbsolutePos(56 + 6*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -75,7 +79,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::PREDELAY));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::PREDELAY);
         knob->setAbsolutePos(56 + 1*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -83,7 +88,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::SIZE));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::SIZE);
         knob->setAbsolutePos(56 + 3*40, 40);
         knob->setRange(5.0f, 100.0f);
         knob->setDefault(100.0f);
@@ -91,7 +97,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::GAIN));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::GAIN);
         knob->setAbsolutePos(56 + 8*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(75.0f);
@@ -99,7 +106,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::MIX));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::MIX);
         knob->setAbsolutePos(56 + 0*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);
@@ -107,7 +115,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
         fKnobs.push_back(knob);
     }
     {
-        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical, MVerb<float>::EARLYMIX));
+        ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
+        knob->setId(MVerb<float>::EARLYMIX);
         knob->setAbsolutePos(56 + 2*40, 40);
         knob->setRange(0.0f, 100.0f);
         knob->setDefault(50.0f);

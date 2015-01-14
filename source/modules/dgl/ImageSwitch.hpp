@@ -34,8 +34,8 @@ public:
         virtual void imageSwitchClicked(ImageSwitch* imageButton, bool down) = 0;
     };
 
-    explicit ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown, int id = 0) noexcept;
-    explicit ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown, int id = 0) noexcept;
+    explicit ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown) noexcept;
+    explicit ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown) noexcept;
     explicit ImageSwitch(const ImageSwitch& imageSwitch) noexcept;
     ImageSwitch& operator=(const ImageSwitch& imageSwitch) noexcept;
 

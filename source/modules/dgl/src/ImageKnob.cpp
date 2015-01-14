@@ -25,7 +25,6 @@ START_NAMESPACE_DGL
 ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation) noexcept
     : Widget(parent),
       fImage(image),
-      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),

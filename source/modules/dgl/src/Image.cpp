@@ -152,12 +152,14 @@ void Image::drawAt(const Point<int>& pos)
 
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, fSize.getWidth(), fSize.getHeight(), 0, fFormat, fType, fRawData);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
+                     static_cast<GLsizei>(fSize.getWidth()), static_cast<GLsizei>(fSize.getHeight()), 0,
+                     fFormat, fType, fRawData);
 
         fIsReady = true;
     }
 
-    Rectangle<int>(pos, fSize.getWidth(), fSize.getHeight()).draw();
+    Rectangle<int>(pos, static_cast<int>(fSize.getWidth()), static_cast<int>(fSize.getHeight())).draw();
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);

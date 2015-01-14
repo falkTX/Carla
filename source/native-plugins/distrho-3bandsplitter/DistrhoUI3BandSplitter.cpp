@@ -79,7 +79,8 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     Image knobImage(DistrhoArtwork3BandSplitter::knobData, DistrhoArtwork3BandSplitter::knobWidth, DistrhoArtwork3BandSplitter::knobHeight);
 
     // knob Low-Mid
-    fKnobLowMid = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPlugin3BandSplitter::paramLowMidFreq);
+    fKnobLowMid = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobLowMid->setId(DistrhoPlugin3BandSplitter::paramLowMidFreq);
     fKnobLowMid->setAbsolutePos(65, 269);
     fKnobLowMid->setRange(0.0f, 1000.0f);
     fKnobLowMid->setDefault(440.0f);
@@ -87,7 +88,8 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     fKnobLowMid->setCallback(this);
 
     // knob Mid-High
-    fKnobMidHigh = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPlugin3BandSplitter::paramMidHighFreq);
+    fKnobMidHigh = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobMidHigh->setId(DistrhoPlugin3BandSplitter::paramMidHighFreq);
     fKnobMidHigh->setAbsolutePos(159, 269);
     fKnobMidHigh->setRange(1000.0f, 20000.0f);
     fKnobMidHigh->setDefault(1000.0f);

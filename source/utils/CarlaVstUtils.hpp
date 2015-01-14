@@ -127,7 +127,7 @@ struct ERect {
 #endif
 #undef VST_64BIT_PLATFORM
 #define VST_64BIT_PLATFORM (defined(_WIN64) || defined(__LP64__) || defined (_LP64))
-#include "vst/pluginterfaces/vst2.x/aeffectx.h"
+#include "vst2/pluginterfaces/vst2.x/aeffectx.h"
 #endif
 
 // -----------------------------------------------------------------------

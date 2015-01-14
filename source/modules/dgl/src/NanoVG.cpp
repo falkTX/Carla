@@ -576,13 +576,13 @@ NanoVG::FontId NanoVG::createFont(const char* name, const char* filename)
     return nvgCreateFont(fContext, name, filename);
 }
 
-NanoVG::FontId NanoVG::createFontMem(const char* name, uchar* data, int ndata, bool freeData)
+NanoVG::FontId NanoVG::createFontMem(const char* name, const uchar* data, int ndata, bool freeData)
 {
     if (fContext == nullptr) return -1;
     DISTRHO_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0', -1);
     DISTRHO_SAFE_ASSERT_RETURN(data != nullptr, -1);
 
-    return nvgCreateFontMem(fContext, name, data, ndata, freeData);
+    return nvgCreateFontMem(fContext, name, const_cast<uchar*>(data), ndata, freeData);
 }
 
 NanoVG::FontId NanoVG::findFont(const char* name)

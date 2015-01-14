@@ -59,6 +59,8 @@ public:
     struct BaseEvent {
         Modifier mod;
         uint32_t time;
+        // make -Weffc++ happy
+        virtual ~BaseEvent() {}
     };
 
    /**

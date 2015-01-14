@@ -125,27 +125,27 @@ Color Color::fromHTML(const char* rgb, float alpha)
     if (rgblen == 3)
     {
         rgbtmp[0] = rgb[0];
-        r = std::strtol(rgbtmp, nullptr, 16);
+        r = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
         rgbtmp[0] = rgb[1];
-        g = std::strtol(rgbtmp, nullptr, 16);
+        g = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
         rgbtmp[0] = rgb[2];
-        b = std::strtol(rgbtmp, nullptr, 16);
+        b = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
     }
     else
     {
         rgbtmp[0] = rgb[0];
         rgbtmp[1] = rgb[1];
-        r = std::strtol(rgbtmp, nullptr, 16);
+        r = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
         rgbtmp[0] = rgb[2];
         rgbtmp[1] = rgb[3];
-        g = std::strtol(rgbtmp, nullptr, 16);
+        g = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
 
         rgbtmp[0] = rgb[4];
         rgbtmp[1] = rgb[5];
-        b = std::strtol(rgbtmp, nullptr, 16);
+        b = static_cast<int>(std::strtol(rgbtmp, nullptr, 16));
     }
 
     return Color(r, g, b, static_cast<int>(getFixedRange(alpha)*255.0f));

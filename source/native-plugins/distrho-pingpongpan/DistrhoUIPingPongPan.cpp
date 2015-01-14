@@ -38,7 +38,8 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
 
     // knob Low-Mid
-    fKnobFreq = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginPingPongPan::paramFreq);
+    fKnobFreq = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobFreq->setId(DistrhoPluginPingPongPan::paramFreq);
     fKnobFreq->setAbsolutePos(60, 58);
     fKnobFreq->setRange(0.0f, 100.0f);
     fKnobFreq->setDefault(50.0f);
@@ -46,7 +47,8 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     fKnobFreq->setCallback(this);
 
     // knob Mid-High
-    fKnobWidth = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginPingPongPan::paramWidth);
+    fKnobWidth = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobWidth->setId(DistrhoPluginPingPongPan::paramWidth);
     fKnobWidth->setAbsolutePos(182, 58);
     fKnobWidth->setRange(0.0f, 100.0f);
     fKnobWidth->setDefault(75.0f);
