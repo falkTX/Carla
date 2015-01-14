@@ -17,6 +17,8 @@
 
 #include "CarlaDefines.h"
 
+// -----------------------------------------------------------------------
+
 // Simple plugins
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
@@ -51,6 +53,13 @@ extern void carla_register_native_plugin_notes(void);
 extern void carla_register_native_plugin_zynaddsubfx_fx(void);
 extern void carla_register_native_plugin_zynaddsubfx_synth(void);
 #endif
+
+#ifdef WANT_EXPERIMENTAL_PLUGINS
+// Experimental plugins
+extern void carla_register_native_plugin_zita_jaaa(void);
+#endif
+
+// -----------------------------------------------------------------------
 
 void carla_register_all_plugins(void);
 
@@ -90,4 +99,11 @@ void carla_register_all_plugins(void)
     carla_register_native_plugin_zynaddsubfx_fx();
     carla_register_native_plugin_zynaddsubfx_synth();
 #endif
+
+#ifdef WANT_EXPERIMENTAL_PLUGINS
+    // Experimental plugins
+    carla_register_native_plugin_zita_jaaa();
+#endif
 }
+
+// -----------------------------------------------------------------------

@@ -23,6 +23,11 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
 endif
 
+# Experimental plugins
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+ALL_C_FLAGS += -DWANT_EXPERIMENTAL_PLUGINS
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 # Flags for ZynAddSubFX
 
@@ -121,6 +126,14 @@ ZYN_UI_FILES_H = \
 	zynaddsubfx/UI/SUBnoteUI.h \
 	zynaddsubfx/UI/VirKeyboard.h
 endif
+endif
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# Experimental plugins
+
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+OBJS += \
+	$(OBJDIR)/zita-jaaa.cpp.o
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

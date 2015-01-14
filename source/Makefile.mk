@@ -10,6 +10,9 @@
 # Use the free vestige header instead of the official VST SDK
 CARLA_VESTIGE_HEADER = true
 
+# Enable experimental plugins, don't complain if the build fails when using this!
+EXPERIMENTAL_PLUGINS = false
+
 # --------------------------------------------------------------
 # DO NOT MODIFY PAST THIS POINT!
 
