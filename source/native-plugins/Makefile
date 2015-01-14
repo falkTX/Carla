@@ -192,13 +192,15 @@ $(OBJDIR)/distrho-3bandsplitter.cpp.o: distrho-3bandsplitter.cpp
 
 $(OBJDIR)/distrho-mverb.cpp.o: distrho-mverb.cpp
 	-@mkdir -p $(OBJDIR)
+	# FIXME - fix mverb strict warnings
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_MVerb -Idistrho-mverb -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_MVerb -Idistrho-mverb -I$(CWD)/modules/dgl -Wno-conversion -Wno-effc++ -Wno-shadow -c -o $@
 
 $(OBJDIR)/distrho-nekobi.cpp.o: distrho-nekobi.cpp
 	-@mkdir -p $(OBJDIR)
+	# FIXME - fix nekobi strict warnings
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -Idistrho-nekobi -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_Nekobi -Idistrho-nekobi -I$(CWD)/modules/dgl -w -c -o $@
 
 $(OBJDIR)/distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 	-@mkdir -p $(OBJDIR)

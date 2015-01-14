@@ -56,7 +56,7 @@ public:
 
     void setTitle(const char* title);
 
-    void setTransientWinId(intptr_t winId);
+    void setTransientWinId(uintptr_t winId);
 
     App& getApp() const noexcept;
     intptr_t getWindowId() const noexcept;

@@ -36,13 +36,10 @@ public:
         virtual void imageSliderValueChanged(ImageSlider* imageSlider, float value) = 0;
     };
 
-    explicit ImageSlider(Window& parent, const Image& image, int id = 0) noexcept;
-    explicit ImageSlider(Widget* widget, const Image& image, int id = 0) noexcept;
+    explicit ImageSlider(Window& parent, const Image& image) noexcept;
+    explicit ImageSlider(Widget* widget, const Image& image) noexcept;
     explicit ImageSlider(const ImageSlider& imageSlider) noexcept;
     ImageSlider& operator=(const ImageSlider& imageSlider) noexcept;
-
-    int getId() const noexcept;
-    void setId(int id) noexcept;
 
     float getValue() const noexcept;
 
@@ -65,7 +62,6 @@ protected:
 
 private:
     Image fImage;
-    int   fId;
     float fMinimum;
     float fMaximum;
     float fStep;

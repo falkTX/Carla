@@ -256,6 +256,18 @@ public:
     */
     void repaint() noexcept;
 
+   /**
+      Get the Id associated with this widget.
+      @see setId
+    */
+    uint getId() const noexcept;
+
+   /**
+      Set an Id to be associated with this widget.
+      @see getId
+    */
+    void setId(uint id) noexcept;
+
 protected:
    /**
       A function called to draw the view contents with OpenGL.
@@ -318,6 +330,7 @@ private:
     bool    fNeedsFullViewport;
     bool    fNeedsScaling;
     bool    fVisible;
+    uint    fId;
     Point<int> fAbsolutePos;
     Size<uint> fSize;
 

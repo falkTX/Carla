@@ -96,8 +96,8 @@ void UI::d_uiReshape(uint width, uint height)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, width, height, 0, 0.0f, 1.0f);
-    glViewport(0, 0, width, height);
+    glOrtho(0.0, static_cast<GLdouble>(width), static_cast<GLdouble>(height), 0.0, 0.0, 1.0);
+    glViewport(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }

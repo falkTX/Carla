@@ -20,12 +20,11 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageSwitch::ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown, int id) noexcept
+ImageSwitch::ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown) noexcept
     : Widget(parent),
       fImageNormal(imageNormal),
       fImageDown(imageDown),
       fIsDown(false),
-      fId(id),
       fCallback(nullptr),
       leakDetector_ImageSwitch()
 {
@@ -34,12 +33,11 @@ ImageSwitch::ImageSwitch(Window& parent, const Image& imageNormal, const Image& 
     setSize(fImageNormal.getSize());
 }
 
-ImageSwitch::ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown, int id) noexcept
+ImageSwitch::ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown) noexcept
     : Widget(widget->getParentWindow()),
       fImageNormal(imageNormal),
       fImageDown(imageDown),
       fIsDown(false),
-      fId(id),
       fCallback(nullptr),
       leakDetector_ImageSwitch()
 {
@@ -53,7 +51,6 @@ ImageSwitch::ImageSwitch(const ImageSwitch& imageSwitch) noexcept
       fImageNormal(imageSwitch.fImageNormal),
       fImageDown(imageSwitch.fImageDown),
       fIsDown(imageSwitch.fIsDown),
-      fId(imageSwitch.fId),
       fCallback(imageSwitch.fCallback),
       leakDetector_ImageSwitch()
 {
@@ -67,7 +64,6 @@ ImageSwitch& ImageSwitch::operator=(const ImageSwitch& imageSwitch) noexcept
     fImageNormal = imageSwitch.fImageNormal;
     fImageDown   = imageSwitch.fImageDown;
     fIsDown      = imageSwitch.fIsDown;
-    fId          = imageSwitch.fId;
     fCallback    = imageSwitch.fCallback;
 
     DISTRHO_SAFE_ASSERT(fImageNormal.getSize() == fImageDown.getSize());
@@ -75,16 +71,6 @@ ImageSwitch& ImageSwitch::operator=(const ImageSwitch& imageSwitch) noexcept
     setSize(fImageNormal.getSize());
 
     return *this;
-}
-
-int ImageSwitch::getId() const noexcept
-{
-    return fId;
-}
-
-void ImageSwitch::setId(int id) noexcept
-{
-    fId = id;;
 }
 
 bool ImageSwitch::isDown() const noexcept

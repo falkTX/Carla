@@ -75,7 +75,7 @@ struct UI::PrivateData {
           setSizeCallbackFunc(nullptr),
           ptr(nullptr)
     {
-        DISTRHO_SAFE_ASSERT(sampleRate != 0.0);
+        DISTRHO_SAFE_ASSERT(d_isNotZero(sampleRate));
 
 #if defined(DISTRHO_PLUGIN_TARGET_DSSI) || defined(DISTRHO_PLUGIN_TARGET_LV2)
         parameterOffset += DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS;
@@ -331,7 +331,7 @@ public:
         glWindow.setTitle(uiTitle);
     }
 
-    void setWindowTransientWinId(const intptr_t winId)
+    void setWindowTransientWinId(const uintptr_t winId)
     {
         glWindow.setTransientWinId(winId);
     }
@@ -351,7 +351,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
         DISTRHO_SAFE_ASSERT(sampleRate > 0.0);
 
-        if (fData->sampleRate == sampleRate)
+        if (d_isEqual(fData->sampleRate, sampleRate))
             return;
 
         fData->sampleRate = sampleRate;

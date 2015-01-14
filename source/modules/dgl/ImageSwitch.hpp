@@ -39,9 +39,6 @@ public:
     explicit ImageSwitch(const ImageSwitch& imageSwitch) noexcept;
     ImageSwitch& operator=(const ImageSwitch& imageSwitch) noexcept;
 
-    int getId() const noexcept;
-    void setId(int id) noexcept;
-
     bool isDown() const noexcept;
     void setDown(bool down) noexcept;
 
@@ -55,7 +52,6 @@ private:
     Image fImageNormal;
     Image fImageDown;
     bool  fIsDown;
-    int   fId;
 
     Callback* fCallback;
 

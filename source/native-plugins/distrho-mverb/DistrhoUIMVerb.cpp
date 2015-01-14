@@ -37,7 +37,7 @@ DistrhoUIMVerb::DistrhoUIMVerb()
     fImgBackground = Image(DistrhoArtworkMVerb::backgroundData, DistrhoArtworkMVerb::backgroundWidth, DistrhoArtworkMVerb::backgroundHeight, GL_BGR);
 
     // text
-    fNanoText.createFontMem("kh", (uchar*)khkangrey_ttf, khkangrey_ttfSize, false);
+    fNanoText.createFontMem("kh", (const uchar*)khkangrey_ttf, khkangrey_ttfSize, false);
 
     // knobs
     Image knobImage(DistrhoArtworkMVerb::knobData, DistrhoArtworkMVerb::knobWidth, DistrhoArtworkMVerb::knobHeight);
@@ -233,7 +233,7 @@ void DistrhoUIMVerb::onDisplay()
     char strBuf[32+1];
     strBuf[32] = '\0';
 
-    for (int i=0; i<MVerb<float>::NUM_PARAMS; ++i)
+    for (std::size_t i=0; i<MVerb<float>::NUM_PARAMS; ++i)
     {
         std::snprintf(strBuf, 32, "%i%%", int(fKnobs[i]->getValue()));
         fNanoText.textBox(58 + fKnobs[i]->getAbsoluteX()-56, 73, 30.0f, strBuf, nullptr);

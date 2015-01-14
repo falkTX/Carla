@@ -83,7 +83,7 @@ struct Plugin::PrivateData {
           sampleRate(d_lastSampleRate)
     {
         DISTRHO_SAFE_ASSERT(bufferSize != 0);
-        DISTRHO_SAFE_ASSERT(sampleRate != 0.0);
+        DISTRHO_SAFE_ASSERT(d_isNotZero(sampleRate));
     }
 
     ~PrivateData() noexcept
@@ -433,7 +433,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         DISTRHO_SAFE_ASSERT(sampleRate > 0.0);
 
-        if (fData->sampleRate == sampleRate)
+        if (d_isEqual(fData->sampleRate, sampleRate))
             return;
 
         fData->sampleRate = sampleRate;

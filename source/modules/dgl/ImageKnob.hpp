@@ -47,9 +47,6 @@ public:
     ImageKnob& operator=(const ImageKnob& imageKnob);
     ~ImageKnob() override;
 
-    int getId() const noexcept;
-    void setId(int id) noexcept;
-
     float getValue() const noexcept;
 
     void setDefault(float def) noexcept;
@@ -70,7 +67,6 @@ protected:
 
 private:
     Image fImage;
-    int   fId;
     float fMinimum;
     float fMaximum;
     float fStep;

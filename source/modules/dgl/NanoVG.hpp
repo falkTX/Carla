@@ -641,7 +641,7 @@ public:
       Creates font by loading it from the specified memory chunk.
       Returns handle to the font.
     */
-    FontId createFontMem(const char* name, uchar* data, int ndata, bool freeData);
+    FontId createFontMem(const char* name, const uchar* data, int ndata, bool freeData);
 
    /**
       Finds a loaded font of specified name, and returns handle to it, or -1 if the font is not found.

@@ -22,7 +22,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation, int id) noexcept
+ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation) noexcept
     : Widget(parent),
       fImage(image),
       fId(id),
@@ -52,10 +52,9 @@ ImageKnob::ImageKnob(Window& parent, const Image& image, Orientation orientation
     setSize(fImgLayerSize, fImgLayerSize);
 }
 
-ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation, int id) noexcept
+ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation) noexcept
     : Widget(widget->getParentWindow()),
       fImage(image),
-      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),
@@ -85,7 +84,6 @@ ImageKnob::ImageKnob(Widget* widget, const Image& image, Orientation orientation
 ImageKnob::ImageKnob(const ImageKnob& imageKnob)
     : Widget(imageKnob.getParentWindow()),
       fImage(imageKnob.fImage),
-      fId(imageKnob.fId),
       fMinimum(imageKnob.fMinimum),
       fMaximum(imageKnob.fMaximum),
       fStep(imageKnob.fStep),
@@ -115,7 +113,6 @@ ImageKnob::ImageKnob(const ImageKnob& imageKnob)
 ImageKnob& ImageKnob::operator=(const ImageKnob& imageKnob)
 {
     fImage    = imageKnob.fImage;
-    fId       = imageKnob.fId;
     fMinimum  = imageKnob.fMinimum;
     fMaximum  = imageKnob.fMaximum;
     fStep     = imageKnob.fStep;
@@ -155,16 +152,6 @@ ImageKnob::~ImageKnob()
         glDeleteTextures(1, &fTextureId);
         fTextureId = 0;
     }
-}
-
-int ImageKnob::getId() const noexcept
-{
-    return fId;
-}
-
-void ImageKnob::setId(int id) noexcept
-{
-    fId = id;
 }
 
 float ImageKnob::getValue() const noexcept

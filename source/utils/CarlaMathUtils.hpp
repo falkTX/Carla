@@ -197,17 +197,13 @@ void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
 // Missing functions in OSX.
 
 namespace std {
-inline float
-  fmin(float __x, float __y)
+inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }
-inline float
-  fmax(float __x, float __y)
+inline float fmax(float __x, float __y)
   { return __builtin_fmaxf(__x, __y); }
-inline float
-  rint(float __x)
+inline float rint(float __x)
   { return __builtin_rintf(__x); }
-inline float
-  round(float __x)
+inline float round(float __x)
   { return __builtin_roundf(__x); }
 }
 #endif

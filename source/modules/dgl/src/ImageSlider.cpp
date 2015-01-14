@@ -22,10 +22,9 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-ImageSlider::ImageSlider(Window& parent, const Image& image, int id) noexcept
+ImageSlider::ImageSlider(Window& parent, const Image& image) noexcept
     : Widget(parent),
       fImage(image),
-      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),
@@ -44,10 +43,9 @@ ImageSlider::ImageSlider(Window& parent, const Image& image, int id) noexcept
     Widget::setNeedsFullViewport(true);
 }
 
-ImageSlider::ImageSlider(Widget* widget, const Image& image, int id) noexcept
+ImageSlider::ImageSlider(Widget* widget, const Image& image) noexcept
     : Widget(widget->getParentWindow()),
       fImage(image),
-      fId(id),
       fMinimum(0.0f),
       fMaximum(1.0f),
       fStep(0.0f),
@@ -69,7 +67,6 @@ ImageSlider::ImageSlider(Widget* widget, const Image& image, int id) noexcept
 ImageSlider::ImageSlider(const ImageSlider& imageSlider) noexcept
     : Widget(imageSlider.getParentWindow()),
       fImage(imageSlider.fImage),
-      fId(imageSlider.fId),
       fMinimum(imageSlider.fMinimum),
       fMaximum(imageSlider.fMaximum),
       fStep(imageSlider.fStep),
@@ -91,7 +88,6 @@ ImageSlider::ImageSlider(const ImageSlider& imageSlider) noexcept
 ImageSlider& ImageSlider::operator=(const ImageSlider& imageSlider) noexcept
 {
     fImage    = imageSlider.fImage;
-    fId       = imageSlider.fId;
     fMinimum  = imageSlider.fMinimum;
     fMaximum  = imageSlider.fMaximum;
     fStep     = imageSlider.fStep;
@@ -107,16 +103,6 @@ ImageSlider& ImageSlider::operator=(const ImageSlider& imageSlider) noexcept
     fSliderArea = imageSlider.fSliderArea;
 
     return *this;
-}
-
-int ImageSlider::getId() const noexcept
-{
-    return fId;
-}
-
-void ImageSlider::setId(int id) noexcept
-{
-    fId = id;
 }
 
 float ImageSlider::getValue() const noexcept

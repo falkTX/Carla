@@ -554,7 +554,7 @@ struct Window::PrivateData {
 #endif
     }
 
-    void setTransientWinId(const intptr_t winId)
+    void setTransientWinId(const uintptr_t winId)
     {
 #if defined(DISTRHO_OS_LINUX)
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
@@ -1010,7 +1010,7 @@ void Window::setTitle(const char* title)
     pData->setTitle(title);
 }
 
-void Window::setTransientWinId(intptr_t winId)
+void Window::setTransientWinId(uintptr_t winId)
 {
     pData->setTransientWinId(winId);
 }
@@ -1074,8 +1074,8 @@ void Window::onReshape(uint width, uint height)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0, width, height, 0, 0.0f, 1.0f);
-    glViewport(0, 0, width, height);
+    glOrtho(0.0, static_cast<GLdouble>(width), static_cast<GLdouble>(height), 0.0, 0.0, 1.0);
+    glViewport(0, 0, static_cast<GLsizei>(width), static_cast<GLsizei>(height));
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }

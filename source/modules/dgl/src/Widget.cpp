@@ -27,6 +27,7 @@ Widget::Widget(Window& parent)
       fNeedsFullViewport(false),
       fNeedsScaling(false),
       fVisible(true),
+      fId(0),
       fAbsolutePos(0, 0),
       fSize(0, 0),
       leakDetector_Widget()
@@ -198,6 +199,16 @@ bool Widget::contains(const Point<int>& pos) const noexcept
 void Widget::repaint() noexcept
 {
     fParent.repaint();
+}
+
+uint Widget::getId() const noexcept
+{
+    return fId;
+}
+
+void Widget::setId(uint id) noexcept
+{
+    fId = id;
 }
 
 bool Widget::onKeyboard(const KeyboardEvent&)

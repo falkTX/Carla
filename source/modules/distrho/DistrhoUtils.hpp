@@ -24,6 +24,9 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <cmath>
+#include <limits>
+
 #ifdef DISTRHO_PROPER_CPP11_SUPPORT
 # include <cstdint>
 #else
@@ -46,18 +49,28 @@ inline float round(float __x)
 // -----------------------------------------------------------------------
 // misc functions
 
+/*
+ * Return a 64-bit number from 4 8-bit numbers.
+ */
 static inline
-int64_t d_cconst(const int a, const int b, const int c, const int d) noexcept
+int64_t d_cconst(const uint8_t a, const uint8_t b, const uint8_t c, const uint8_t d) noexcept
 {
     return (a << 24) | (b << 16) | (c << 8) | (d << 0);
 }
 
+/*
+ * Dummy function.
+ */
 static inline
 void d_pass() noexcept {}
 
 // -----------------------------------------------------------------------
 // string print functions
 
+/*
+ * Print a string to stdout with newline (gray color).
+ * Does nothing if DEBUG is not defined.
+ */
 #ifndef DEBUG
 # define d_debug(...)
 #else
@@ -75,6 +88,9 @@ void d_debug(const char* const fmt, ...) noexcept
 }
 #endif
 
+/*
+ * Print a string to stdout with newline.
+ */
 static inline
 void d_stdout(const char* const fmt, ...) noexcept
 {
@@ -87,6 +103,9 @@ void d_stdout(const char* const fmt, ...) noexcept
     } catch (...) {}
 }
 
+/*
+ * Print a string to stderr with newline.
+ */
 static inline
 void d_stderr(const char* const fmt, ...) noexcept
 {
@@ -99,6 +118,9 @@ void d_stderr(const char* const fmt, ...) noexcept
     } catch (...) {}
 }
 
+/*
+ * Print a string to stderr with newline (red color).
+ */
 static inline
 void d_stderr2(const char* const fmt, ...) noexcept
 {
@@ -112,16 +134,56 @@ void d_stderr2(const char* const fmt, ...) noexcept
     } catch (...) {}
 }
 
+/*
+ * Print a safe assertion error message.
+ */
 static inline
 void d_safe_assert(const char* const assertion, const char* const file, const int line) noexcept
 {
     d_stderr2("assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
 }
 
+/*
+ * Print a safe exception error message.
+ */
 static inline
 void d_safe_exception(const char* const exception, const char* const file, const int line) noexcept
 {
     d_stderr2("exception caught: \"%s\" in file %s, line %i", exception, file, line);
+}
+
+// -----------------------------------------------------------------------
+// math functions
+
+/*
+ * Safely compare two floating point numbers.
+ * Returns true if they match.
+ */
+template<typename T>
+static inline
+bool d_isEqual(const T& v1, const T& v2)
+{
+    return std::abs(v1-v2) < std::numeric_limits<T>::epsilon();
+}
+
+/*
+ * Safely check if a floating point number is zero.
+ */
+template<typename T>
+static inline
+bool d_isZero(const T& value)
+{
+    return std::abs(value) < std::numeric_limits<T>::epsilon();
+}
+
+/*
+ * Safely check if a floating point number is not zero.
+ */
+template<typename T>
+static inline
+bool d_isNotZero(const T& value)
+{
+    return std::abs(value) >= std::numeric_limits<T>::epsilon();
 }
 
 // -----------------------------------------------------------------------

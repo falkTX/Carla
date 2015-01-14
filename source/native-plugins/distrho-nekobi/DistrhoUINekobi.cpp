@@ -41,7 +41,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     // slider
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
 
-    fSliderWaveform = new ImageSlider(this, sliderImage, DistrhoPluginNekobi::paramWaveform);
+    fSliderWaveform = new ImageSlider(this, sliderImage);
+    fSliderWaveform->setId(DistrhoPluginNekobi::paramWaveform);
     fSliderWaveform->setStartPos(133, 40);
     fSliderWaveform->setEndPos(133, 60);
     fSliderWaveform->setRange(0.0f, 1.0f);
@@ -53,7 +54,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     Image knobImage(DistrhoArtworkNekobi::knobData, DistrhoArtworkNekobi::knobWidth, DistrhoArtworkNekobi::knobHeight);
 
     // knob Tuning
-    fKnobTuning = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramTuning);
+    fKnobTuning = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobTuning->setId(DistrhoPluginNekobi::paramTuning);
     fKnobTuning->setAbsolutePos(41, 43);
     fKnobTuning->setRange(-12.0f, 12.0f);
     fKnobTuning->setDefault(0.0f);
@@ -62,7 +64,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobTuning->setCallback(this);
 
     // knob Cutoff
-    fKnobCutoff = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramCutoff);
+    fKnobCutoff = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobCutoff->setId(DistrhoPluginNekobi::paramCutoff);
     fKnobCutoff->setAbsolutePos(185, 43);
     fKnobCutoff->setRange(0.0f, 100.0f);
     fKnobCutoff->setDefault(25.0f);
@@ -71,7 +74,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobCutoff->setCallback(this);
 
     // knob Resonance
-    fKnobResonance = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramResonance);
+    fKnobResonance = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobResonance->setId(DistrhoPluginNekobi::paramResonance);
     fKnobResonance->setAbsolutePos(257, 43);
     fKnobResonance->setRange(0.0f, 95.0f);
     fKnobResonance->setDefault(25.0f);
@@ -80,7 +84,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobResonance->setCallback(this);
 
     // knob Env Mod
-    fKnobEnvMod = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramEnvMod);
+    fKnobEnvMod = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobEnvMod->setId(DistrhoPluginNekobi::paramEnvMod);
     fKnobEnvMod->setAbsolutePos(329, 43);
     fKnobEnvMod->setRange(0.0f, 100.0f);
     fKnobEnvMod->setDefault(50.0f);
@@ -89,7 +94,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobEnvMod->setCallback(this);
 
     // knob Decay
-    fKnobDecay = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramDecay);
+    fKnobDecay = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobDecay->setId(DistrhoPluginNekobi::paramDecay);
     fKnobDecay->setAbsolutePos(400, 43);
     fKnobDecay->setRange(0.0f, 100.0f);
     fKnobDecay->setDefault(75.0f);
@@ -98,7 +104,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobDecay->setCallback(this);
 
     // knob Accent
-    fKnobAccent = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramAccent);
+    fKnobAccent = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobAccent->setId(DistrhoPluginNekobi::paramAccent);
     fKnobAccent->setAbsolutePos(473, 43);
     fKnobAccent->setRange(0.0f, 100.0f);
     fKnobAccent->setDefault(25.0f);
@@ -107,7 +114,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobAccent->setCallback(this);
 
     // knob Volume
-    fKnobVolume = new ImageKnob(this, knobImage, ImageKnob::Vertical, DistrhoPluginNekobi::paramVolume);
+    fKnobVolume = new ImageKnob(this, knobImage, ImageKnob::Vertical);
+    fKnobVolume->setId(DistrhoPluginNekobi::paramVolume);
     fKnobVolume->setAbsolutePos(545, 43);
     fKnobVolume->setRange(0.0f, 100.0f);
     fKnobVolume->setDefault(75.0f);

@@ -128,12 +128,12 @@ void DistrhoPluginMVerb::d_initProgramName(uint32_t index, d_string& programName
 
 float DistrhoPluginMVerb::d_getParameterValue(uint32_t index) const
 {
-    return fVerb.getParameter(index) * 100.0f;
+    return fVerb.getParameter(static_cast<int>(index)) * 100.0f;
 }
 
 void DistrhoPluginMVerb::d_setParameterValue(uint32_t index, float value)
 {
-    fVerb.setParameter(index, value / 100.0f);
+    fVerb.setParameter(static_cast<int>(index), value / 100.0f);
 }
 
 void DistrhoPluginMVerb::d_setProgram(uint32_t index)
@@ -212,7 +212,7 @@ void DistrhoPluginMVerb::d_activate()
 
 void DistrhoPluginMVerb::d_run(const float** inputs, float** outputs, uint32_t frames)
 {
-    fVerb.process(inputs, outputs, frames);
+    fVerb.process(inputs, outputs, static_cast<int>(frames));
 }
 
 // -----------------------------------------------------------------------
