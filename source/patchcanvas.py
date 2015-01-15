@@ -1764,6 +1764,7 @@ class CanvasPort(QGraphicsItem):
         self.m_cursor_moving = False
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
+        self.setAcceptHoverEvents(True)
 
     def getGroupId(self):
         return self.m_group_id
@@ -1813,6 +1814,17 @@ class CanvasPort(QGraphicsItem):
 
     def type(self):
         return CanvasPortType
+
+    def hoverEnterEvent(self, event):
+        self.setSelected(True)
+        QGraphicsItem.hoverEnterEvent(self, event)
+
+    def hoverLeaveEvent(self, event):
+        self.setSelected(False)
+        QGraphicsItem.hoverLeaveEvent(self, event)
+
+    def hoverMoveEvent(self, event):
+        QGraphicsItem.hoverMoveEvent(self, event)
 
     def mousePressEvent(self, event):
         self.m_hover_item = None
