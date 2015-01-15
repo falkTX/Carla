@@ -6,7 +6,7 @@ To install Carla, simply run as usual: <br/>
 
 You can run it without installing, by using instead: <br/>
 `$ make` <br/>
-`$ python3 source/carla`
+`$ ./source/carla`
 
 Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, like this: <br/>
 `$ make install PREFIX=/usr DESTDIR=./test-dir`
@@ -17,12 +17,20 @@ Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, li
 --------------------------------
 The required build dependencies are: <i>(devel packages of these)</i>
 
- - liblo
- - Qt4/5
  - PyQt4/5 (python3 version)
- - X11 (Linux only)
 
-Optional for extended LV2 UIs support:
+Optional for extra engine features:
+
+ - libmagic (for auto-detection of binary types, needed for plugin-bridges)
+ - liblo    (for OSC support)
+
+Optional for extra Linux-only engine features:
+
+ - ALSA
+ - PulseAudio
+ - X11 (internal/LV2/VST2 X11 UI support)
+
+Optional for extended LV2 UIs support: (Linux only)
 
  - Gtk2
  - Gtk3
@@ -31,14 +39,16 @@ Optional for extended LV2 UIs support:
 
 Optional for extra samplers support:
 
- - FluidSynth
- - LinuxSampler
+ - FluidSynth   (SF2)
+ - LinuxSampler (GIG and SFZ)
 
 Optional for extra native plugins:
- - NTK
  - fftw3
  - mxml
  - zlib
+ - NTK
+ - OpenGL
+ - ProjectM
 
 Optional but recommended:
 
