@@ -376,6 +376,13 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
 
+ifeq ($(HAVE_DGL),true)
+NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
+ifeq ($(HAVE_PROJECTM),true)
+NATIVE_PLUGINS_LIBS  += $(PROJECTM_LIBS)
+endif
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)

@@ -154,7 +154,6 @@ NATIVE_LINK_FLAGS  += $(NATIVE_PLUGINS_LIBS)
 
 ifeq ($(HAVE_DGL),true)
 LIBS_native        += $(MODULEDIR)/dgl.a
-NATIVE_LINK_FLAGS  += $(DGL_LIBS)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

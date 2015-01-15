@@ -44,6 +44,10 @@ extern void carla_register_native_plugin_distrho_mverb(void);
 extern void carla_register_native_plugin_distrho_nekobi(void);
 extern void carla_register_native_plugin_distrho_pingpongpan(void);
 
+#ifdef WANT_DISTRHO_PROM
+extern void carla_register_native_plugin_distrho_prom(void);
+#endif
+
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
@@ -89,6 +93,10 @@ void carla_register_all_plugins(void)
     carla_register_native_plugin_distrho_mverb();
     carla_register_native_plugin_distrho_nekobi();
     carla_register_native_plugin_distrho_pingpongpan();
+
+#ifdef WANT_DISTRHO_PROM
+    carla_register_native_plugin_distrho_prom();
+#endif
 
     // External-UI plugins
     carla_register_native_plugin_bigmeter();

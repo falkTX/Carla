@@ -92,10 +92,6 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
 endif
 
-ifeq ($(HAVE_DGL),true)
-LINK_FLAGS += $(DGL_LIBS)
-endif
-
 ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
 endif

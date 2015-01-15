@@ -18,6 +18,13 @@ BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 
 ALL_C_FLAGS  = $(BUILD_C_FLAGS)
 
+# DISTRHO ProM
+ifeq ($(HAVE_DGL),true)
+ifeq ($(HAVE_PROJECTM),true)
+ALL_C_FLAGS += -DWANT_DISTRHO_PROM
+endif
+endif
+
 # ZynAddSubFX
 ifeq ($(HAVE_ZYN_DEPS),true)
 ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
@@ -76,6 +83,12 @@ OBJS += \
 	$(OBJDIR)/distrho-mverb.cpp.o \
 	$(OBJDIR)/distrho-nekobi.cpp.o \
 	$(OBJDIR)/distrho-pingpongpan.cpp.o
+
+ifeq ($(HAVE_DGL),true)
+ifeq ($(HAVE_PROJECTM),true)
+OBJS += $(OBJDIR)/distrho-prom.cpp.o
+endif
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
@@ -206,6 +219,11 @@ $(OBJDIR)/distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_PingPongPan -Idistrho-pingpongpan -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
+
+$(OBJDIR)/distrho-prom.cpp.o: distrho-prom.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_ProM -Idistrho-prom -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
