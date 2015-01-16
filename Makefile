@@ -139,16 +139,13 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-ifeq ($(LINUX),true)
 interposer:
 	@$(MAKE) -C source/interposer
-else
-interposer:
-endif
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
+# FIXME
 ifeq ($(HAVE_QT),true)
 theme:
 	@$(MAKE) -C source/theme
@@ -455,18 +452,10 @@ install:
 	# Install pkg-config file
 	install -m 644 data/carla-standalone.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 
-	# Install backend
+	# Install backend libs
 	install -m 644 \
-		bin/libcarla_standalone2.* \
-		bin/libcarla_utils.* \
+		bin/libcarla_*.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
-
-ifeq ($(LINUX),true)
-	# Install interposer
-	install -m 644 \
-		bin/libcarla_interposer.so \
-		$(DESTDIR)$(PREFIX)/lib/carla/
-endif
 
 	# Install lv2 plugin
 	install -m 644 \

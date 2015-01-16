@@ -21,20 +21,20 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
+BUILD_CXX_FLAGS += -I$(CWD)/includes -I$(CWD)/utils
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-OBJS = $(OBJDIR)/interposer.cpp.o
+OBJS    =
+TARGETS =
 
 ifeq ($(LINUX),true)
-TARGETS = $(BINDIR)/libcarla_interposer$(LIB_EXT)
-else
-TARGETS =
+OBJS    += $(OBJDIR)/interposer-safe.cpp.o
+TARGETS += $(BINDIR)/libcarla_interposer-safe$(LIB_EXT)
+ifeq ($(HAVE_X11),true)
+OBJS    += $(OBJDIR)/interposer-x11.cpp.o
+TARGETS += $(BINDIR)/libcarla_interposer-x11$(LIB_EXT)
 endif
-
-ifeq ($(UNIX),true)
-LINK_FLAGS += -ldl
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -51,17 +51,27 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/libcarla_interposer$(LIB_EXT): $(OBJS)
+$(BINDIR)/libcarla_interposer-safe$(LIB_EXT): $(OBJDIR)/interposer-safe.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking libcarla_interposer$(LIB_EXT)"
+	@echo "Linking libcarla_interposer-safe$(LIB_EXT)"
 	@$(CXX) $< $(SHARED) $(LINK_FLAGS) -o $@
+
+$(BINDIR)/libcarla_interposer-x11$(LIB_EXT): $(OBJDIR)/interposer-x11.cpp.o
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla_interposer-x11$(LIB_EXT)"
+	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(X11_LIBS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/%.cpp.o: %.cpp
+$(OBJDIR)/interposer-safe.cpp.o: interposer-safe.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/interposer-x11.cpp.o: interposer-x11.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
 
 -include $(OBJS:%.o=%.d)
 
