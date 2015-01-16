@@ -223,7 +223,7 @@ $(OBJDIR)/distrho-pingpongpan.cpp.o: distrho-pingpongpan.cpp
 $(OBJDIR)/distrho-prom.cpp.o: distrho-prom.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_ProM -Idistrho-prom -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_ProM -Idistrho-prom -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -246,6 +246,13 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(ZYN_CXX_FLAGS) -w -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/zita-jaaa.cpp.o: zita-jaaa.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DVERSION=\"0.8.4\" $(shell pkg-config --cflags freetype2 fftw3f x11) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

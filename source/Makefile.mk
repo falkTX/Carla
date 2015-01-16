@@ -392,6 +392,10 @@ NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif
 
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs freetype2 fftw3f x11) -lclthreads -lclxclient
+endif
+
 # --------------------------------------------------------------
 # Set app extension
 
