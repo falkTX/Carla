@@ -10,6 +10,8 @@
 # Temp files
 *~
 *.bak
+*.swp
+*.swo
 
 # Binary files
 *.7z
