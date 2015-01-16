@@ -32,11 +32,12 @@ extern void carla_register_native_plugin_midithrough(void);
 extern void carla_register_native_plugin_miditranspose(void);
 extern void carla_register_native_plugin_nekofilter(void);
 
-// Audio File
+// Audio file
 extern void carla_register_native_plugin_audiofile(void);
 
-// MIDI File
+// MIDI file and sequencer
 extern void carla_register_native_plugin_midifile(void);
+extern void carla_register_native_plugin_midisequencer(void);
 
 // Carla
 extern void carla_register_native_plugin_carla(void);
@@ -70,8 +71,6 @@ extern void carla_register_native_plugin_zita_jaaa(void);
 
 // -----------------------------------------------------------------------
 
-void carla_register_all_plugins(void);
-
 void carla_register_all_plugins(void)
 {
     // Simple plugins
@@ -83,11 +82,12 @@ void carla_register_all_plugins(void)
     carla_register_native_plugin_miditranspose();
     carla_register_native_plugin_nekofilter();
 
-    // Audio File
+    // Audio file
     carla_register_native_plugin_audiofile();
 
-    // MIDI File
+    // MIDI file and sequencer
     carla_register_native_plugin_midifile();
+    carla_register_native_plugin_midisequencer();
 
     // Carla
     carla_register_native_plugin_carla();

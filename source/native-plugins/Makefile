@@ -72,6 +72,7 @@ OBJS += \
 	$(OBJDIR)/audio-file.cpp.o \
 	$(OBJDIR)/bigmeter.cpp.o \
 	$(OBJDIR)/midi-file.cpp.o \
+	$(OBJDIR)/midi-sequencer.cpp.o \
 	$(OBJDIR)/notes.cpp.o
 
 # ----------------------------------------------------------------------------------------------------------------------------

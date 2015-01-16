@@ -187,6 +187,34 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // remove data
+
+    void removeRaw(const uint64_t time, const uint8_t* const data, const uint8_t size)
+    {
+        const CarlaMutexLocker sl(fMutex);
+
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
+
+            if (rawMidiEvent->time != time)
+                continue;
+            if (rawMidiEvent->size != size)
+                continue;
+            if (std::memcmp(rawMidiEvent->data, data, size) != 0)
+                continue;
+
+            delete rawMidiEvent;
+            fData.remove(it);
+
+            return;
+        }
+
+        carla_stderr("MidiPattern::removeRaw(" P_INT64 ", %p, %i) - unable to find event to remove", time, data, size);
+    }
+
+    // -------------------------------------------------------------------
     // clear
 
     void clear() noexcept
@@ -236,6 +264,19 @@ public:
     void setStartTime(const uint64_t time) noexcept
     {
         fStartTime = time;
+    }
+
+    // -------------------------------------------------------------------
+    // special
+
+    const CarlaMutex& getLock() const noexcept
+    {
+        return fMutex;
+    }
+
+    LinkedList<const RawMidiEvent*>::Itenerator iteneratorBegin() const noexcept
+    {
+        return fData.begin();
     }
 
     // -------------------------------------------------------------------
