@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -91,9 +91,7 @@ protected:
             return;
 
         if (const char* const filename = uiOpenFile(false, "Open Audio File", "MIDI Files *.mid;*.midi;;"))
-        {
             uiCustomDataChanged("file", filename);
-        }
 
         uiClosed();
     }
@@ -101,11 +99,11 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint64_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const uint64_t timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
-        midiEvent.port    = 0;
+        midiEvent.port    = port;
         midiEvent.time    = uint32_t(event->time-timePosFrame);
         midiEvent.size    = event->size;
         midiEvent.data[0] = event->data[0];
@@ -115,6 +113,8 @@ protected:
 
         NativePluginClass::writeMidiEvent(&midiEvent);
     }
+
+    // -------------------------------------------------------------------
 
 private:
     MidiPattern fMidiOut;

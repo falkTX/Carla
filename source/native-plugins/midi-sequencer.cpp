@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,8 @@
 
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
+
+// -----------------------------------------------------------------------
 
 class MidiSequencerPlugin : public NativePluginClass,
                             public AbstractMidiPlayer
@@ -172,12 +174,12 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void writeMidiEvent(const uint32_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const uint32_t timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
-        midiEvent.port    = 0;
-        midiEvent.time    = event->time-timePosFrame;
+        midiEvent.port    = port;
+        midiEvent.time    = uint32_t(event->time-timePosFrame);
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];
         midiEvent.data[2] = event->data[2];
