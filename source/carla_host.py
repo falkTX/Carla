@@ -565,6 +565,7 @@ class HostWindow(QMainWindow):
                 if ask != QMessageBox.Yes:
                     return
 
+            self.killTimers()
             self.removeAllPlugins()
             self.host.set_engine_about_to_close()
             self.host.remove_all_plugins()
