@@ -106,6 +106,7 @@ class options_t(object):
     __slots__ = [
         'theme_name',
         'auto_hide_groups',
+        'auto_select_items',
         'use_bezier_lines',
         'antialiasing',
         'eyecandy'
@@ -244,10 +245,11 @@ canvas.animation_list  = []
 
 options = options_t()
 options.theme_name = getDefaultThemeName()
-options.auto_hide_groups = False
-options.use_bezier_lines = True
-options.antialiasing = ANTIALIASING_SMALL
-options.eyecandy     = EYECANDY_SMALL
+options.auto_hide_groups  = False
+options.auto_select_items = False
+options.use_bezier_lines  = True
+options.antialiasing      = ANTIALIASING_SMALL
+options.eyecandy          = EYECANDY_SMALL
 
 features = features_t()
 features.group_info   = False
@@ -313,11 +315,12 @@ def split2str(split):
 # PatchCanvas API
 def setOptions(new_options):
     if canvas.initiated: return
-    options.theme_name       = new_options.theme_name
-    options.auto_hide_groups = new_options.auto_hide_groups
-    options.use_bezier_lines = new_options.use_bezier_lines
-    options.antialiasing = new_options.antialiasing
-    options.eyecandy     = new_options.eyecandy
+    options.theme_name        = new_options.theme_name
+    options.auto_hide_groups  = new_options.auto_hide_groups
+    options.auto_select_items = new_options.auto_select_items
+    options.use_bezier_lines  = new_options.use_bezier_lines
+    options.antialiasing      = new_options.antialiasing
+    options.eyecandy          = new_options.eyecandy
 
 def setFeatures(new_features):
     if canvas.initiated: return
@@ -1765,6 +1768,9 @@ class CanvasPort(QGraphicsItem):
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
 
+        if options.auto_select_items:
+            self.setAcceptHoverEvents(True)
+
     def getGroupId(self):
         return self.m_group_id
 
@@ -1813,6 +1819,16 @@ class CanvasPort(QGraphicsItem):
 
     def type(self):
         return CanvasPortType
+
+    def hoverEnterEvent(self, event):
+        if options.auto_select_items:
+            self.setSelected(True)
+        QGraphicsItem.hoverEnterEvent(self, event)
+
+    def hoverLeaveEvent(self, event):
+        if options.auto_select_items:
+            self.setSelected(False)
+        QGraphicsItem.hoverLeaveEvent(self, event)
 
     def mousePressEvent(self, event):
         self.m_hover_item = None
@@ -2153,6 +2169,9 @@ class CanvasBox(QGraphicsItem):
             self.setVisible(False)
 
         self.setFlag(QGraphicsItem.ItemIsFocusable, True)
+
+        if options.auto_select_items:
+            self.setAcceptHoverEvents(True)
 
         self.updatePositions()
 
@@ -2601,6 +2620,13 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
             return event.accept()
         QGraphicsItem.keyPressEvent(self, event)
+
+    def hoverEnterEvent(self, event):
+        if options.auto_select_items:
+            if len(canvas.scene.selectedItems()) > 0:
+                canvas.scene.clearSelection()
+            self.setSelected(True)
+        QGraphicsItem.hoverEnterEvent(self, event)
 
     def mouseDoubleClickEvent(self, event):
         if self.m_plugin_id >= 0:

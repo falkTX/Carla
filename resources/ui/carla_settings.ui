@@ -588,6 +588,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QCheckBox" name="cb_canvas_auto_select">
+              <property name="text">
+               <string>Auto-select items on hover</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="cb_canvas_eyecandy">
               <property name="text">
                <string>Fancy Eye-candy</string>
@@ -1410,7 +1417,7 @@ This mode is not available for VST plugins.</string>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
-  <include location="../../../Carla-stable/resources/resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
