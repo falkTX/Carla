@@ -393,7 +393,8 @@ endif
 endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs freetype2 fftw3f x11) -lclthreads -lclxclient
+NATIVE_PLUGINS_FLAGS += $(shell pkg-config --cflags fftw3f xft)
+NATIVE_PLUGINS_LIBS  += -lzita-convolver $(shell pkg-config --libs fftw3f xft) -lclthreads -lclxclient
 endif
 
 # --------------------------------------------------------------

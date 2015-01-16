@@ -20,6 +20,10 @@
 
 #include "CarlaNative.h"
 
+#include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,11 +85,29 @@ typedef struct {
 } jack_client_t;
 
 /* ------------------------------------------------------------------------------------------------------------
- * Client functions, defined in the plugin code */
+ * Client functions */
 
-jack_client_t* jack_client_open(const char* clientname, jack_options_t options, jack_status_t* status, ...);
+extern jack_client_t* gLastJackClient;
 
-int jack_client_close(jack_client_t* client);
+static inline
+jack_client_t* jack_client_open(const char* clientname, jack_options_t options, jack_status_t* status, ...)
+{
+    if (status != NULL)
+        *status = JackNoError;
+
+    return gLastJackClient;
+
+    // unused
+    (void)clientname;
+    (void)options;
+}
+
+static inline
+int jack_client_close(jack_client_t* client)
+{
+    memset(client, 0, sizeof(jack_client_t));
+    return 0;
+}
 
 /* ------------------------------------------------------------------------------------------------------------
  * Callback functions */
@@ -151,7 +173,7 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
     {
         if (ports[i] == port)
         {
-            ports[i] = nullptr;
+            ports[i] = NULL;
             return 0;
         }
     }
@@ -204,6 +226,18 @@ static inline
 jack_nframes_t jack_get_sample_rate(const jack_client_t* client)
 {
     return client->sampleRate;
+}
+
+/* ------------------------------------------------------------------------------------------------------------
+ * Misc */
+
+static inline
+pthread_t jack_client_thread_id(const jack_client_t* client)
+{
+    return pthread_self();
+
+    // unused
+    (void)client;
 }
 
 /* ------------------------------------------------------------------------------------------------------------ */

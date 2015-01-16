@@ -22,47 +22,63 @@
 
 #include "juce_audio_basics.h"
 
-#include "zita-jaaa/source/audio.cc"
-#include "zita-jaaa/source/rngen.cc"
-#include "zita-jaaa/source/spectwin.cc"
-#include "zita-jaaa/source/styles.cc"
+#include "zita-bls1/source/png2img.cc"
+#include "zita-bls1/source/guiclass.cc"
+#include "zita-bls1/source/hp3filt.cc"
+#include "zita-bls1/source/jclient.cc"
+#include "zita-bls1/source/lfshelf2.cc"
+#include "zita-bls1/source/mainwin.cc"
+#include "zita-bls1/source/rotary.cc"
+#include "zita-bls1/source/shuffler.cc"
+#include "zita-bls1/source/styles.cc"
 
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
 
 // -----------------------------------------------------------------------
-// Jaaa Plugin
+// BLS1 Plugin
 
-class JaaaPlugin : public NativePluginClass
+class BLS1Plugin : public NativePluginClass
 {
 public:
+#if 0
     enum Parameters {
         kParameterInput = 0,
         kParameterCount
     };
+#endif
 
-    JaaaPlugin(const NativeHostDescriptor* const host)
+    BLS1Plugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fJackClient(),
           fMutex(),
-          xrm(),
-          itcc(nullptr),
-          driver(nullptr),
+          xresman(),
+          jclient(nullptr),
           display(nullptr),
           rootwin(nullptr),
           mainwin(nullptr),
-          xhandler(nullptr),
-          leakDetector_JaaaPlugin()
+          handler(nullptr),
+          leakDetector_BLS1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
 
-        int   argc   = 1;
-        char* argv[] = { (char*)"jaaa" };
-        xrm.init(&argc, argv, (char*)"jaaa", nullptr, 0);
+        carla_zeroStruct(fJackClient);
+        gLastJackClient = &fJackClient;
 
-        fParameters[kParameterInput] = 1.0f;
+        fJackClient.clientName = "bls1";
+        fJackClient.bufferSize = getBufferSize();
+        fJackClient.sampleRate = getSampleRate();
+
+        int   argc   = 1;
+        char* argv[] = { (char*)"bls1" };
+        xresman.init(&argc, argv, (char*)"bls1", nullptr, 0);
+
+        jclient = new Jclient(xresman.rname(), nullptr);
+
+        //fParameters[kParameterInput] = 1.0f;
     }
 
+#if 0
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
@@ -123,28 +139,27 @@ public:
 
         fParameters[index] = value;
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin process calls
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        const CarlaMutexTryLocker cmtl(fMutex);
-
-        if (itcc == nullptr || ! fJackClient.active || ! cmtl.wasLocked())
+        if (! fJackClient.active)
         {
             const int iframes(static_cast<int>(frames));
 
-            for (int i=0; i<8; ++i)
+            for (int i=0; i<2; ++i)
                 FloatVectorOperations::clear(outBuffer[i], iframes);
 
             return;
         }
 
-        for (int i=0; i<8; ++i)
+        for (int i=0; i<2; ++i)
             fJackClient.portsAudioIn[i]->buffer = inBuffer[i];
 
-        for (int i=0; i<8; ++i)
+        for (int i=0; i<2; ++i)
             fJackClient.portsAudioOut[i]->buffer = outBuffer[i];
 
         fJackClient.processCallback(frames, fJackClient.processPtr);
@@ -159,106 +174,70 @@ public:
 
         if (show)
         {
-            if (itcc == nullptr)
+            if (display == nullptr)
             {
-                carla_zeroStruct(fJackClient);
-                gLastJackClient = &fJackClient;
-
-                fJackClient.clientName = getUiName();
-                fJackClient.bufferSize = getBufferSize();
-                fJackClient.sampleRate = getSampleRate();
-
-                itcc    = new ITC_ctrl();
-                driver  = new Audio(itcc, getUiName());
-                driver->init_jack(nullptr);
-
                 display = new X_display(nullptr);
 
                 if (display->dpy() == nullptr)
-                {
-                    driver = nullptr;
-                    itcc   = nullptr;
                     return hostUiUnavailable();
-                }
 
-                init_styles(display, &xrm);
+                styles_init(display, &xresman);
 
                 rootwin  = new X_rootwin(display);
-                mainwin  = new Spectwin(rootwin, &xrm, driver);
-                xhandler = new X_handler(display, itcc, EV_X11);
+                mainwin  = new Mainwin(rootwin, &xresman, 0, 0, jclient);
+                rootwin->handle_event();
+
+                handler = new X_handler(display, mainwin, EV_X11);
 
                 if (const uintptr_t winId = getUiParentId())
                     XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
             }
 
-            xhandler->next_event();
+            handler->next_event();
             XFlush(display->dpy());
         }
         else
         {
-            xhandler = nullptr;
+            handler = nullptr;
             mainwin  = nullptr;
             rootwin  = nullptr;
             display  = nullptr;
-            driver   = nullptr;
-            itcc     = nullptr;
-            carla_zeroStruct(fJackClient);
         }
     }
 
     void uiIdle() override
     {
-        if (itcc == nullptr)
+        if (display == nullptr)
             return;
 
-        //for (int i=3; --i>=0;)
+        int ev;
+
+        for (; (ev = mainwin->process()) == EV_X11;)
         {
-            switch (itcc->get_event())
-            {
-            case EV_TRIG:
-                mainwin->handle_trig();
-                rootwin->handle_event();
-                XFlush(display->dpy());
-                break;
-
-            case EV_MESG:
-                mainwin->handle_mesg(itcc->get_message());
-                rootwin->handle_event();
-                XFlush(display->dpy());
-                break;
-
-            case EV_X11:
-                rootwin->handle_event();
-                xhandler->next_event();
-                break;
-            }
+            rootwin->handle_event();
+            handler->next_event();
         }
 
+#if 0
         // check if parameters were updated
         if (mainwin->_input+1 != static_cast<int>(fParameters[kParameterInput]))
         {
             fParameters[kParameterInput] = mainwin->_input+1;
             uiParameterChanged(kParameterInput, fParameters[kParameterInput]);
         }
+#endif
 
-        // check if UI was closed
-        if (! mainwin->running())
+        if (ev == EV_EXIT)
         {
-            {
-                const CarlaMutexLocker cml(fMutex);
-                xhandler = nullptr;
-                mainwin  = nullptr;
-                rootwin  = nullptr;
-                display  = nullptr;
-                driver   = nullptr;
-                itcc     = nullptr;
-                carla_zeroStruct(fJackClient);
-            }
+            handler = nullptr;
+            mainwin = nullptr;
+            rootwin = nullptr;
+            display = nullptr;
             uiClosed();
-            return;
         }
     }
 
+#if 0
     void uiSetParameterValue(const uint32_t index, const float value) override
     {
         CARLA_SAFE_ASSERT_RETURN(index < kParameterCount,);
@@ -275,6 +254,7 @@ public:
             break;
         }
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
@@ -299,23 +279,22 @@ private:
     CarlaMutex fMutex;
 
     // Zita stuff (core)
-    X_resman xrm;
-    ScopedPointer<ITC_ctrl>  itcc;
-    ScopedPointer<Audio>     driver;
+    X_resman xresman;
+    ScopedPointer<Jclient>   jclient;
     ScopedPointer<X_display> display;
     ScopedPointer<X_rootwin> rootwin;
-    ScopedPointer<Spectwin>  mainwin;
-    ScopedPointer<X_handler> xhandler;
+    ScopedPointer<Mainwin>   mainwin;
+    ScopedPointer<X_handler> handler;
 
-    float fParameters[kParameterCount];
+    //float fParameters[kParameterCount];
 
-    PluginClassEND(JaaaPlugin)
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(JaaaPlugin)
+    PluginClassEND(BLS1Plugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BLS1Plugin)
 };
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor jaaaDesc = {
+static const NativePluginDescriptor bls1Desc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
@@ -323,28 +302,28 @@ static const NativePluginDescriptor jaaaDesc = {
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
-    /* audioIns  */ 8,
-    /* audioOuts */ 8,
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ JaaaPlugin::kParameterCount,
+    /* paramIns  */ 0, //JaaaPlugin::kParameterCount,
     /* paramOuts */ 0,
-    /* name      */ "Jaaa",
-    /* label     */ "jaaa",
+    /* name      */ "BLS1",
+    /* label     */ "bls1",
     /* maker     */ "Fons Adriaensen",
     /* copyright */ "GPL v2+",
-    PluginDescriptorFILL(JaaaPlugin)
+    PluginDescriptorFILL(BLS1Plugin)
 };
 
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_zita_jaaa();
+void carla_register_native_plugin_zita_bls1();
 
 CARLA_EXPORT
-void carla_register_native_plugin_zita_jaaa()
+void carla_register_native_plugin_zita_bls1()
 {
-    carla_register_native_plugin(&jaaaDesc);
+    carla_register_native_plugin(&bls1Desc);
 }
 
 // -----------------------------------------------------------------------

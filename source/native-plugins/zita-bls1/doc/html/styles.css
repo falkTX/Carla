@@ -1,0 +1,24 @@
+body
+{
+  font-family: sans-serif;
+  margin: 0;
+  color: #FFFFFF;
+  background-color: #383838;
+  background-image: url(emboss.png);
+  background-repeat: repeat;
+  background-attachment: scroll;
+  background-position: top left;
+}
+
+a:link     { font-size: 10pt; font-weight: bold; color: #60FF60; }
+a:visited  { font-size: 10pt; font-weight: bold; color: #8080FF; }
+h1 { font-size: 18pt; font-weight:bold; background-color: #0000E0; color: #FFFFFF; padding: 8pt; }
+h2 { font-size: 14pt; font-weight:normal; background-color: #0000E0; color: #FFFFFF; padding-left: 8pt; }
+h3 { font-size: 12pt; font-weight:normal; background-color: #FF0000; color: #FFFFFF; padding-left: 8pt; }
+
+.content  { font-size: 10pt; font-weight: normal; color: #FFFFFF; padding-bottom: 10pt; }
+.comment  { font-size: 10pt; font-weight: bold; color: #FFFF00; }
+.lborder  { font-size: 11pt; font-weight: bold; padding: 15pt; }
+.theader  { font-size: 10pt; font-weight: bold; color: #FFFF00; }
+
+

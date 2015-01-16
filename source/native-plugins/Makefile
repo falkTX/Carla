@@ -146,6 +146,7 @@ endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 OBJS += \
+	$(OBJDIR)/zita-bls1.cpp.o \
 	$(OBJDIR)/zita-jaaa.cpp.o
 endif
 
@@ -249,10 +250,15 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/zita-bls1.cpp.o: zita-bls1.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DSHARED=\"/usr/share/zita-bls1\" $(shell pkg-config --cflags xft) -c -o $@
+
 $(OBJDIR)/zita-jaaa.cpp.o: zita-jaaa.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DVERSION=\"0.8.4\" $(shell pkg-config --cflags freetype2 fftw3f x11) -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DVERSION=\"0.8.4\" $(shell pkg-config --cflags fftw3f xft) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

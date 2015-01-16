@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------
 //
 //  Copyright (C) 2004-2013 Fons Adriaensen <fons@linuxaudio.org>
-//    
+//
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -52,7 +52,7 @@ struct colors
 };
 
 
-struct fonts 
+struct fonts
 {
 };
 
@@ -75,7 +75,7 @@ struct xft_colors
 };
 
 
-struct xft_fonts 
+struct xft_fonts
 {
     XftFont   *about1;
     XftFont   *about2;
@@ -88,8 +88,8 @@ struct xft_fonts
 
 extern struct colors       Colors;
 extern struct fonts        Fonts;
-extern struct xft_colors   XftColors;
-extern struct xft_fonts    XftFonts;
+extern struct xft_colors   XftColors_jaaa;
+extern struct xft_fonts    XftFonts_jaaa;
 extern X_button_style      Bst0, Bst1, BstA, BstB, BstM;
 extern X_textln_style      Tst0, Tst1;
 

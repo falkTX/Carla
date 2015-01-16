@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------
 //
 //  Copyright (C) 2004-2013 Fons Adriaensen <fons@linuxaudio.org>
-//    
+//
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -57,7 +57,7 @@ Spectwin::Spectwin (X_window *parent, X_resman *xres, ITC_ctrl *audio) :
     H.rname (xres->rname ());
     H.rclas (xres->rclas ());
     H.input (True);
-    x_apply (&H); 
+    x_apply (&H);
 
     x_add_events (ExposureMask | ButtonMotionMask | ButtonPressMask | ButtonReleaseMask | StructureNotifyMask);
 
@@ -65,7 +65,7 @@ Spectwin::Spectwin (X_window *parent, X_resman *xres, ITC_ctrl *audio) :
     _plotmap = XCreatePixmap (dpy (), _plotwin->win (), XDEF - LMAR - RMAR, YDEF - TMAR - BMAR, disp ()->depth ());
     _plotgct = XCreateGC (dpy (), _plotmap, 0, NULL);
      XSetWindowBackgroundPixmap (dpy (), _plotwin->win (), _plotmap);
-    _plotwin->x_map ();     
+    _plotwin->x_map ();
 
     x = XDEF - RMAR + 3;
     y = 20;
@@ -82,7 +82,7 @@ Spectwin::Spectwin (X_window *parent, X_resman *xres, ITC_ctrl *audio) :
 
     Bst1.size.x = RMAR - 6;
     _butt [BANDW] = new X_tbutton (this, this, &Bst1, x, y, "Bandw",   0, BANDW);
-    y += Bst1.size.y;  
+    y += Bst1.size.y;
     _butt [VIDAV] = new X_tbutton (this, this, &Bst1, x, y, "Vid.Av",  0, VIDAV);
     y += Bst1.size.y;
     _butt [PEAKH] = new X_tbutton (this, this, &Bst1, x, y, "Pk Hold", 0, PEAKH);
@@ -159,7 +159,7 @@ Spectwin::Spectwin (X_window *parent, X_resman *xres, ITC_ctrl *audio) :
     _trbuf = (fftwf_complex *) fftwf_malloc ((FFT_MAX / 2 + 9) * sizeof (fftwf_complex));
     _power = new float [FFT_MAX + 1]; //!!!
 
-    _spect = new Spectdata (disp()->xsize() - LMAR - RMAR);    
+    _spect = new Spectdata (disp()->xsize() - LMAR - RMAR);
     _spect->_npix = XDEF - LMAR - RMAR;
     _spect->_bits = 0;
     _spect->_avcnt = 0;
@@ -193,19 +193,19 @@ void Spectwin::handle_event (XEvent *E)
     {
     case Expose:
         expose ((XExposeEvent *) E);
-        break;  
+        break;
 
     case ButtonPress:
         bpress ((XButtonEvent *) E);
-        break;  
+        break;
 
     case MotionNotify:
         motion ((XPointerMovedEvent *) E);
-        break;  
+        break;
 
     case ButtonRelease:
         brelse ((XButtonEvent *) E);
-        break;  
+        break;
 
     case ConfigureNotify:
         resize ((XConfigureEvent *) E);
@@ -292,9 +292,9 @@ void Spectwin::handle_callb (int k, X_window *W, _XEvent * /*E*/ )
         	B->set_stat (0);
                 _spect->_avcnt = 0;
 	    }
-            else 
+            else
      	    {
-		B->set_stat (2); 
+		B->set_stat (2);
 		_butt [PEAKH]->set_stat (0);
                 _spect->_avcnt = 1;
                 _spect->_bits &= ~Spectdata::PEAKH;
@@ -307,11 +307,11 @@ void Spectwin::handle_callb (int k, X_window *W, _XEvent * /*E*/ )
 		B->set_stat (0);
                 _spect->_bits &= ~Spectdata::PEAKH;
 	    }
-            else 
+            else
      	    {
 		B->set_stat (2);
 		_butt [VIDAV]->set_stat (0);
-                _spect->_bits |=  Spectdata::PEAKH;	
+                _spect->_bits |=  Spectdata::PEAKH;
                 _spect->_avcnt = 0;
             }
             break;
@@ -322,7 +322,7 @@ void Spectwin::handle_callb (int k, X_window *W, _XEvent * /*E*/ )
 		B->set_stat (0);
                 _spect->_bits &= ~Spectdata::FREEZE;
 	    }
-            else 
+            else
      	    {
 		B->set_stat (2);
                 _spect->_bits |= Spectdata::FREEZE;
@@ -386,7 +386,7 @@ void Spectwin::resize (XConfigureEvent *E)
     _ys = E->height;
     if (_xs > XMAX) _xs = XMAX;
     if (_ys > YMAX) _ys = YMAX;
-    _plotwin->x_resize (_xs - LMAR - RMAR, _ys - TMAR - BMAR); 
+    _plotwin->x_resize (_xs - LMAR - RMAR, _ys - TMAR - BMAR);
     XFreePixmap (dpy (), _plotmap);
     XFreeGC (dpy (), _plotgct);
     _plotmap = XCreatePixmap (dpy (), _plotwin->win (), _xs - LMAR - RMAR, _ys - TMAR - BMAR, disp ()->depth ());
@@ -403,9 +403,9 @@ void Spectwin::redraw (void)
 {
     X_draw D (dpy (), win (), dgc (), xft ());
 
-    D.setcolor (XftColors.main_fg);
-    D.setfont (XftFonts.button);
-    D.clearwin ();     
+    D.setcolor (XftColors_jaaa.main_fg);
+    D.setfont (XftFonts_jaaa.button);
+    D.clearwin ();
 
     D.move (_xs - RMAR + 2, 15);
     D.drawstring ("Input", -1);
@@ -432,7 +432,7 @@ void Spectwin::redraw (void)
 
 void Spectwin::update (void)
 {
-    calc_spect (_spect); 
+    calc_spect (_spect);
     plot_clear ();
     if (_spect->_bits & (Spectdata::YP_VAL | Spectdata::YM_VAL))
     {
@@ -589,11 +589,11 @@ void Spectwin::set_param (int i)
     case FMAX:  _p_val = _f1; break;
     case FCENT: _p_val = _fc; break;
     case FSPAN: _p_val = _f1 - _f0; break;
-    case AMAX:  _p_val = _a1; break;    
-    case ASPAN: _p_val = _a1 - _a0; break;    
+    case AMAX:  _p_val = _a1; break;
+    case ASPAN: _p_val = _a1 - _a0; break;
     case NSLEV: _p_val = _a_ns; break;
-    case SILEV: _p_val = _a_si; break;    
-    case SFREQ: _p_val = _f_si; break;    
+    case SILEV: _p_val = _a_si; break;
+    case SFREQ: _p_val = _f_si; break;
     default:    _p_val = 0;
     }
     show_param ();
@@ -679,8 +679,8 @@ void Spectwin::set_fc (float f)
 void Spectwin::set_fs (float f)
 {
     if (f < 0.001 * (_fmax - _fmin)) f = 0.001 * (_fmax - _fmin);
-    _f0 = _fc - 0.5 * f;   
-    _f1 = _fc + 0.5 * f;   
+    _f0 = _fc - 0.5 * f;
+    _f1 = _fc + 0.5 * f;
     if (_f0 < _fmin) { _f0 = _fmin; _f1 = 2 * _fc - _f0; }
     if (_f1 > _fmax) { _f1 = _fmax; _f0 = 2 * _fc - _f1; }
     _p_val = _f1 - _f0;
@@ -782,7 +782,7 @@ float Spectwin::calcfreq (int x)
 void Spectwin::show_param (void)
 {
     char  s [16];
-    
+
     *s = 0;
     switch (_p_ind)
     {
@@ -805,7 +805,7 @@ void Spectwin::show_param (void)
     case NSLEV:
     case SILEV:
         sprintf (s, "%2.1f dB", _p_val);
-        break; 
+        break;
     }
     _txt1->set_text (s);
     _txt1->clear_modified ();
@@ -816,13 +816,13 @@ void Spectwin::plot_fscale (void)
 {
     int   i, j, k0, k1, x;
     float f, g, xr;
-    char  s [16]; 
+    char  s [16];
     X_draw D (dpy (), win (), dgc (), xft ());
 
-    D.setcolor (XftColors.spect_sc);
-    D.setfont (XftFonts.scales);
+    D.setcolor (XftColors_jaaa.spect_sc);
+    D.setfont (XftFonts_jaaa.scales);
     D.setfunc (GXcopy);
- 
+
     xr = _xs - LMAR - RMAR - 1;
     if (! _ngx)
     {
@@ -849,7 +849,7 @@ void Spectwin::plot_fscale (void)
 	else if (f < 50)    _df = 50;
 	else if (f < 100)   _df = 100;
 	else if (f < 200)   _df = 200;
-        else                _df = 500; 
+        else                _df = 500;
 
 	if (_df < 1.0f) i++;
 	if (_df < 0.1f) i++;
@@ -864,14 +864,14 @@ void Spectwin::plot_fscale (void)
     for (i = k0; i <= k1; i++)
     {
 	f = i * _df;
-        x = (int)((f - _f0) / (_f1 - _f0) * xr + 0.5f);  
+        x = (int)((f - _f0) / (_f1 - _f0) * xr + 0.5f);
         sprintf (s, _fform, f / _funit);
         D.move (x + LMAR, _ys - BMAR);
         D.rdraw (0, 5);
         if (! (i & 1))
 	{
             if (! _ngx) _grx [j++] = x;
-            D.rmove (0, 10);        
+            D.rmove (0, 10);
             D.drawstring (s, 0);
 	}
     }
@@ -883,13 +883,13 @@ void Spectwin::plot_ascale (void)
 {
     int   i, j, k0, k1, y;
     float a, yr;
-    char  s [16]; 
+    char  s [16];
     X_draw D (dpy (), win (), dgc (), xft ());
 
-    D.setfont (XftFonts.scales);
-    D.setcolor (XftColors.spect_sc);
+    D.setfont (XftFonts_jaaa.scales);
+    D.setcolor (XftColors_jaaa.spect_sc);
     D.setfunc (GXcopy);
- 
+
     yr = _ys - TMAR - BMAR - 1;
     if (! _ngy)
     {
@@ -907,12 +907,12 @@ void Spectwin::plot_ascale (void)
     for (i = k0; i <= k1; i++)
     {
 	a = i * _da;
-        y = (int)(yr - (a - _a0) / (_a1 - _a0) * yr + 0.5);  
+        y = (int)(yr - (a - _a0) / (_a1 - _a0) * yr + 0.5);
         sprintf (s, "%1.0f", a);
         D.move (LMAR, y + TMAR);
         D.rdraw (-5, 0);
         if (! _ngy) _gry [j++] = y;
-        D.rmove (-3, 4);        
+        D.rmove (-3, 4);
         D.drawstring (s, 1);
     }
     if (! _ngy) _ngy = j;
@@ -935,7 +935,7 @@ void Spectwin::plot_grid (void)
     X_draw D (dpy (), _plotmap, _plotgct, 0);
 
     D.setcolor (Colors.spect_gr ^ Colors.spect_bg);
-    D.setfunc (GXxor); 
+    D.setfunc (GXxor);
     for (i = 0; i < _ngx; i++)
     {
 	D.move (_grx [i], 0);
@@ -953,7 +953,7 @@ void Spectwin::plot_spect (Spectdata *Z)
 {
     int i, n, x, y;
     XPoint P [XMAX - LMAR - RMAR];
-    float  sx, ry, sy, v; 
+    float  sx, ry, sy, v;
 
     X_draw D (dpy (), _plotmap, _plotgct, 0);
     D.setline (0);
@@ -970,7 +970,7 @@ void Spectwin::plot_spect (Spectdata *Z)
 	    {
 		v = 10 * log10f (Z->_ym [i] + 1e-30f);
 	        P [n].x = i;
-	        P [n++].y = (int)(ry - (v - _a0) * sy + 0.5f);  
+	        P [n++].y = (int)(ry - (v - _a0) * sy + 0.5f);
 	    }
 	}
         D.drawlines (n, P);
@@ -985,7 +985,7 @@ void Spectwin::plot_spect (Spectdata *Z)
 	    {
 		v = 10 * log10f (Z->_yp [i] + 1e-30f);
 	        P [n].x = i;
-	        P [n++].y = (int)(ry - (v - _a0) * sy + 0.5f);  
+	        P [n++].y = (int)(ry - (v - _a0) * sy + 0.5f);
 	    }
 	}
         D.drawlines (n, P);
@@ -1016,12 +1016,12 @@ void Spectwin::plot_spect (Spectdata *Z)
 void Spectwin::print_note (char *s, float f)
 {
     int n;
-    
+
     f = fmodf (12 * log2 (f / 440.0f) + 129, 12.0f);
-    n = (int)(floorf (f + 0.5f)); 
+    n = (int)(floorf (f + 0.5f));
     f -= n;
     if (n == 12) n = 0;
-    sprintf (s, "  %5s (%+2.0lf)", _notes [n], 100.0f * f);  
+    sprintf (s, "  %5s (%+2.0lf)", _notes [n], 100.0f * f);
 }
 
 
@@ -1033,17 +1033,17 @@ void Spectwin::plot_annot (Spectdata *Z)
 
     X_draw D (dpy (), _plotmap, _plotgct, xft ());
 
-    D.setcolor (XftColors.spect_an);
-    D.setfont (XftFonts.labels);
+    D.setcolor (XftColors_jaaa.spect_an);
+    D.setfont (XftFonts_jaaa.labels);
     D.setfunc (GXcopy);
 
-    sprintf (s, "BW = %4.2lf Hz = %5.2lf dBHz, VA = %d, Ptot = %5.2lf", 
-             Z->_bw, 
+    sprintf (s, "BW = %4.2lf Hz = %5.2lf dBHz, VA = %d, Ptot = %5.2lf",
+             Z->_bw,
              10 * log10 (Z->_bw),
              Z->_avcnt,
              10 * log10 (_ptot));
     D.move (10, 15);
-    D.drawstring (s, -1);        
+    D.drawstring (s, -1);
 
     if (Z->_bits & Spectdata::MK1_SET)
     {
@@ -1052,7 +1052,7 @@ void Spectwin::plot_annot (Spectdata *Z)
   	 v1 = 10 * log10 (Z->_mk1p * _fftlen / (2.02 * _fsamp));
          sprintf (s, "Mk1 = %8.1lf Hz, %7.2lf dB/Hz", Z->_mk1f, v1);
       }
-      else 
+      else
       {
   	 v1 = 10 * log10 (Z->_mk1p);
          k = sprintf (s, "Mk1 = %8.1lf Hz, %7.2lf dB", Z->_mk1f, v1);
@@ -1073,14 +1073,14 @@ void Spectwin::plot_annot (Spectdata *Z)
           {
   	     sprintf (s, "Del = %8.1lf Hz, %7.2lf dB", Z->_mk2f - Z->_mk1f, v2 - v1);
           }
-          else 
+          else
           {
   	     sprintf (s, "Del = %8.1lf Hz, %7.2lf dB/Hz", Z->_mk2f - Z->_mk1f, v2 - v1);
           }
           D.move (10, 69);
           D.drawstring (s, -1);
         }
-        else 
+        else
         {
           v2 = 10 * log10 (Z->_mk2p);
           k = sprintf (s, "Mk2 = %8.1lf Hz, %7.2lf dB", Z->_mk2f, v2);
@@ -1091,7 +1091,7 @@ void Spectwin::plot_annot (Spectdata *Z)
           {
   	     sprintf (s, "Del = %8.1lf Hz, %7.2lf dBHz", Z->_mk2f - Z->_mk1f, v2 - v1);
           }
-          else 
+          else
           {
   	     sprintf (s, "Del = %8.1lf Hz, %7.2lf dB, (%5.3lf)", Z->_mk2f - Z->_mk1f, v2 - v1, Z->_mk2f / Z->_mk1f);
           }
@@ -1110,7 +1110,7 @@ void Spectwin::alloc_fft (Spectdata *S)
 
     b = 1.41f * _fsamp / S->_bw;;
     k = FFT_MIN;
-    while ((k < FFT_MAX) && (k < b)) k *= 2; 
+    while ((k < FFT_MAX) && (k < b)) k *= 2;
     S->_bw = 2.00 * _fsamp / k;
     if (_fftlen != k)
     {
@@ -1134,7 +1134,7 @@ void Spectwin::handle_mesg (ITC_mesg *M)
         sprintf (s, "%s-%s  [%s]", PROGNAME, VERSION, Z->_jname);
         x_set_title (s);
         _ipcnt = 0;
-        _audio->put_event (EV_MESG, new M_buffp (_ipbuf, INP_MAX, INP_LEN));     
+        _audio->put_event (EV_MESG, new M_buffp (_ipbuf, INP_MAX, INP_LEN));
     }
     M->recover ();
 }
@@ -1150,7 +1150,7 @@ void Spectwin::handle_trig ()
     if (_ipcnt % _ipmod == 0)
     {
         if (_spect->_bits & Spectdata::FREEZE) return;
-        if (k < _fftlen) 
+        if (k < _fftlen)
 	{
 	    memcpy (_ipbuf + INP_MAX, _ipbuf, k * sizeof (float));
             k += INP_MAX;
@@ -1173,14 +1173,14 @@ void Spectwin::handle_trig ()
 	    memset (_power, 0, (FFT_MAX + 1) * sizeof (float));
 	    if (_spect->_avcnt) _spect->_avcnt = 1;
 	}
-        k = _spect->_avcnt; 
+        k = _spect->_avcnt;
         h = _spect->_bits & Spectdata::PEAKH;
         a = 1.0f;
         if (k)
 	{
             a = 1.0f / k;
             if (k < _spect->_avmax) _spect->_avcnt = k + 1;
-	} 
+	}
         b = 4.0f / ((float)_fftlen * (float)_fftlen);
         s = 0;
         pow = _power;
@@ -1254,19 +1254,19 @@ void Spectwin::calc_spect (Spectdata *S)
     if (dd > dc) S->_bits |=  Spectdata::YM_VAL;
     else         S->_bits &= ~Spectdata::YM_VAL;
     f0 = S->_f0 - 0.5 * dd;
-    j = (int)(ceil (f0 / dc)); 
+    j = (int)(ceil (f0 / dc));
     if (j < 0) j = 0;
 
     for (i = 0; i < S->_npix; i++)
     {
         fd = f0 + (i + 1) * dd;
-        fc = j * dc; 
+        fc = j * dc;
         pp = pm = 0;
         for (k = 0; fc < fd; j++, fc += dc)
         {
             if (j > _fftlen) break;
             p = _power [j];
-            if (p > pp) pp = p; 
+            if (p > pp) pp = p;
             pm += p;
             k++;
         }
@@ -1287,12 +1287,12 @@ void Spectwin::calc_spect (Spectdata *S)
         if (S->_bits & Spectdata::MK1_NSE) calc_noise (&(S->_mk1f), &(S->_mk1p));
         else calc_peak (&(S->_mk1f), &(S->_mk1p), dd / dc);
 
-    }    
+    }
     if (S->_bits & Spectdata::MK2_SET)
     {
         if (S->_bits & Spectdata::MK2_NSE) calc_noise (&(S->_mk2f), &(S->_mk2p));
         else calc_peak (&(S->_mk2f), &(S->_mk2p), dd / dc);
-    }    
+    }
 }
 
 
@@ -1300,7 +1300,7 @@ void Spectwin::calc_noise (float *f, float *p)
 {
     int    i, j;
     float  z;
-  
+
     j = (int)(floor ((*f) * 2 * _fftlen / _fsamp + 0.5));
     if (j < 10) j = 10;
     if (j > _fftlen - 10) j = _fftlen - 10;
@@ -1314,7 +1314,7 @@ void Spectwin::calc_peak (float *f, float *p, float r)
 {
     int    i, j, k, n;
     float  a, b, c, yl, yr, z;
-  
+
     j = (int)(floor ((*f) * 2 * _fftlen / _fsamp + 0.5));
     n = (int)(10 * r);
     if (n < 2) n = 2;
@@ -1338,8 +1338,8 @@ void Spectwin::calc_peak (float *f, float *p, float r)
     k += j;
 
     a  = sqrt (_power [k]);
-    yl = sqrt (_power [k - 1]);   
-    yr = sqrt (_power [k + 1]);   
+    yl = sqrt (_power [k - 1]);
+    yr = sqrt (_power [k + 1]);
     b = 0.5 * (yr - yl);
     c = 0.5 * (yr + yl) - a;
 
