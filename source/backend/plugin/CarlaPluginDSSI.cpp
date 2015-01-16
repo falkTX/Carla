@@ -148,19 +148,53 @@ public:
 #ifdef CARLA_OS_LINUX
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
+            // get current LD_PRELOAD, will restore it later
             const char* const oldPreload(std::getenv("LD_PRELOAD"));
 
+# ifdef HAVE_X11
+            // if the frontend uses winId parent, set LD_PRELOAD to auto-map the DSSI UI
+            const uintptr_t winId = kEngine->getOptions().frontendWinId;
+
+            if (winId != 0)
+            {
+                char strBuf[STR_MAX+1];
+                strBuf[STR_MAX] = '\0';
+                std::snprintf(strBuf, STR_MAX, P_UINTPTR, kEngine->getOptions().frontendWinId);
+                ::setenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID", strBuf, 1);
+
+                CarlaString interposerPath(CarlaString(kEngine->getOptions().binaryDir) +
+                                           CARLA_OS_SEP_STR "libcarla_interposer-x11.so");
+                ::setenv("LD_PRELOAD", interposerPath.buffer(), 1);
+            }
+            else
+# else
+            // if no X11 or winId set, simply unset LD_PRELOAD
+            // (it might be set to libcarla_interposer-safe)
             if (oldPreload != nullptr)
                 ::unsetenv("LD_PRELOAD");
-#endif
+# endif
+#endif // CARLA_OS_LINUX
 
+            // start the DSSI UI application
             carla_stdout("starting DSSI UI...");
             started = fProcess->start(arguments);
 
 #ifdef CARLA_OS_LINUX
+            // restore initial state
             if (oldPreload != nullptr)
+            {
                 ::setenv("LD_PRELOAD", oldPreload, 1);
-#endif
+            }
+# ifdef HAVE_X11
+            if (winId != 0)
+            {
+                ::unsetenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID");
+
+                if (oldPreload == nullptr)
+                    ::unsetenv("LD_PRELOAD");
+            }
+# endif
+#endif // CARLA_OS_LINUX
         }
 
         if (! started)
