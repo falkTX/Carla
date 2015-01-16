@@ -1,6 +1,6 @@
 /*
- * Carla Interposer
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Carla Interposer for audio-unsafe functions
+ * Copyright (C) 2014-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,9 @@
 #include <dlfcn.h>
 #include <sched.h>
 #include <spawn.h>
+
+// -----------------------------------------------------------------------
+// Our custom functions
 
 CARLA_EXPORT
 pid_t fork()
@@ -51,3 +54,5 @@ int posix_spawnp(pid_t*, const char*, const posix_spawn_file_actions_t*, const p
     carla_stdout("------------------------------- posix_spawnp called");
     return ENOSYS;
 }
+
+// -----------------------------------------------------------------------

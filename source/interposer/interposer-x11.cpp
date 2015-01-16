@@ -1,5 +1,5 @@
 /*
- * Carla Interposer for X11
+ * Carla Interposer for X11 Window Mapping
  * Copyright (C) 2014-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
