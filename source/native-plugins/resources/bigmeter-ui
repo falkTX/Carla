@@ -134,7 +134,6 @@ if __name__ == '__main__':
     pathBinaries, pathResources = getPaths()
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
     gCarla.utils.set_process_name("BigMeter")
-    #gCarla.utils.set_locale_C()
 
     app = CarlaApplication("BigMeter")
     gui = DistrhoUIBigMeter()

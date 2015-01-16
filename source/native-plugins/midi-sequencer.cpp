@@ -355,7 +355,7 @@ private:
         const CarlaMutexLocker cml1(getPipeLock());
         const CarlaMutexLocker cml2(fMidiOut.getLock());
 
-        writeMessage("midi-clear-all\n", 16);
+        writeMessage("midi-clear-all\n", 15);
 
         for (LinkedList<const RawMidiEvent*>::Itenerator it = fMidiOut.iteneratorBegin(); it.valid(); it.next())
         {
