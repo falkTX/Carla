@@ -65,11 +65,13 @@ int XMapWindow(Display* display, Window w)
     {
         CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0', real_XMapWindow(display, w));
 
-        const long long winId(std::strtoll(winIdStr, nullptr, 16));
-        CARLA_SAFE_ASSERT_RETURN(winId >= 0, real_XMapWindow(display, w));
+        const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
+        CARLA_SAFE_ASSERT_RETURN(winIdLL >= 0, real_XMapWindow(display, w));
+
+        const Window winId(static_cast<Window>(winIdLL));
+        XSetTransientForHint(display, w, static_cast<Window>(winId));
 
         carla_stdout("Transient hint correctly applied before mapping window");
-        XSetTransientForHint(display, w, static_cast<Window>(winId));
     }
 
     return real_XMapWindow(display, w);
