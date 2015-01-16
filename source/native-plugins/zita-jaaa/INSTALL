@@ -1,0 +1,16 @@
+To install, cd to this directory, make, sudo make install
+
+You need the shared libraries:
+
+  libzita-alsa-pcmi.0.2.0
+  libclthreads.so.2.4.0
+  libclxclient.so.3.9.0
+ 
+and the corresponding header files installed. These are available at
+<http://kokkinizita.linuxaudio.org/linuxaudio/downloads/index.html>
+
+You also need libfftw3f, which comes with most Linux distributions.
+
+-- 
+FA
+
