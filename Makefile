@@ -400,6 +400,11 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/at1/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+endif
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
@@ -505,6 +510,20 @@ install:
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/
+
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	install -m 644 \
+		bin/resources/at1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/at1/
+
+	install -m 644 \
+		bin/resources/bls1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
+
+	install -m 644 \
+		bin/resources/rev1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+endif
 
 	install -m 644 \
 		bin/resources/nekofilter/*.png \
