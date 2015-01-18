@@ -383,6 +383,11 @@ NATIVE_PLUGINS_LIBS  += $(PROJECTM_LIBS)
 endif
 endif
 
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+NATIVE_PLUGINS_FLAGS += -DHAVE_EXPERIMENTAL_PLUGINS
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo fftw3f libpng12 x11 xft) -lclthreads -lclxclient -lzita-convolver
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
@@ -390,11 +395,6 @@ ifeq ($(HAVE_ZYN_UI_DEPS),true)
 NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_UI_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
-endif
-
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-NATIVE_PLUGINS_FLAGS += $(shell pkg-config --cflags fftw3f xft)
-NATIVE_PLUGINS_LIBS  += -lzita-convolver $(shell pkg-config --libs fftw3f xft) -lclthreads -lclxclient
 endif
 
 # --------------------------------------------------------------
