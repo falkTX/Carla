@@ -41,17 +41,22 @@ using juce::ScopedPointer;
 class BLS1Plugin : public NativePluginClass
 {
 public:
-#if 0
+    static const uint32_t kNumInputs  = 2;
+    static const uint32_t kNumOutputs = 2;
+
     enum Parameters {
-        kParameterInput = 0,
-        kParameterCount
+        kParameterINPBAL,
+        kParameterHPFILT,
+        kParameterSHGAIN,
+        kParameterSHFREQ,
+        kParameterLFFREQ,
+        kParameterLFGAIN,
+        kParameterNROTARY
     };
-#endif
 
     BLS1Plugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fJackClient(),
-          fMutex(),
           xresman(),
           jclient(nullptr),
           display(nullptr),
@@ -75,21 +80,31 @@ public:
 
         jclient = new Jclient(xresman.rname(), nullptr);
 
-        //fParameters[kParameterInput] = 1.0f;
+        // set initial values
+        fParameters[kParameterINPBAL] = 0.0f;
+        fParameters[kParameterHPFILT] = 40.0f;
+        fParameters[kParameterSHGAIN] = 15.0f;
+        fParameters[kParameterSHFREQ] = 5e2f;
+        fParameters[kParameterLFFREQ] = 80.0f;
+        fParameters[kParameterLFGAIN] = 0.0f;
+
+        jclient->set_inpbal(fParameters[kParameterINPBAL]);
+        jclient->set_hpfilt(fParameters[kParameterHPFILT]);
+        jclient->shuffler()->prepare(fParameters[kParameterSHGAIN], fParameters[kParameterSHFREQ]);
+        jclient->set_loshelf(fParameters[kParameterLFGAIN], fParameters[kParameterLFFREQ]);
     }
 
-#if 0
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
     uint32_t getParameterCount() const override
     {
-        return kParameterCount;
+        return kParameterNROTARY;
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterNROTARY, nullptr);
 
         static NativeParameter param;
 
@@ -109,12 +124,44 @@ public:
 
         switch (index)
         {
-        case kParameterInput:
-            hints |= NATIVE_PARAMETER_IS_INTEGER;
-            param.name = "Input";
-            param.ranges.def = 1.0f;
-            param.ranges.min = 1.0f;
-            param.ranges.max = 8.0f;
+        case kParameterINPBAL:
+            param.name = "INPBAL";
+            param.ranges.def = 0.0f;
+            param.ranges.min = -3.0f;
+            param.ranges.max = 3.0f;
+            break;
+        case kParameterHPFILT:
+            hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
+            param.name = "HPFILT";
+            param.ranges.def = 40.0f;
+            param.ranges.min = 10.0f;
+            param.ranges.max = 320.0f;
+            break;
+        case kParameterSHGAIN:
+            param.name = "SHGAIN";
+            param.ranges.def = 15.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 24.0f;
+            break;
+        case kParameterSHFREQ:
+            hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
+            param.name = "SHFREQ";
+            param.ranges.def = 5e2f;
+            param.ranges.min = 125.0f;
+            param.ranges.max = 2e3f;
+            break;
+        case kParameterLFFREQ:
+            hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
+            param.name = "LFFREQ";
+            param.ranges.def = 80.0f;
+            param.ranges.min = 20.0f;
+            param.ranges.max = 320.0f;
+            break;
+        case kParameterLFGAIN:
+            param.name = "LFGAIN";
+            param.ranges.def = 0.0f;
+            param.ranges.min = -9.0f;
+            param.ranges.max = 9.0f;
             break;
         }
 
@@ -125,7 +172,7 @@ public:
 
     float getParameterValue(const uint32_t index) const override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount, 0.0f);
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterNROTARY, 0.0f);
 
         return fParameters[index];
     }
@@ -135,11 +182,32 @@ public:
 
     void setParameterValue(const uint32_t index, const float value) override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount,);
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterNROTARY,);
 
         fParameters[index] = value;
+
+        switch (index)
+        {
+        case kParameterINPBAL:
+            jclient->set_inpbal(value);
+            break;
+        case kParameterHPFILT:
+            jclient->set_hpfilt(value);
+            break;
+        case kParameterSHGAIN:
+            jclient->shuffler()->prepare(value, fParameters[kParameterSHFREQ]);
+            break;
+        case kParameterSHFREQ:
+            jclient->shuffler()->prepare(fParameters[kParameterSHGAIN], value);
+            break;
+        case kParameterLFFREQ:
+            jclient->set_loshelf(fParameters[kParameterLFGAIN], value);
+            break;
+        case kParameterLFGAIN:
+            jclient->set_loshelf(value, fParameters[kParameterLFFREQ]);
+            break;
+        }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin process calls
@@ -150,16 +218,16 @@ public:
         {
             const int iframes(static_cast<int>(frames));
 
-            for (int i=0; i<2; ++i)
+            for (uint32_t i=0; i<kNumInputs; ++i)
                 FloatVectorOperations::clear(outBuffer[i], iframes);
 
             return;
         }
 
-        for (int i=0; i<2; ++i)
+        for (uint32_t i=0; i<kNumInputs; ++i)
             fJackClient.portsAudioIn[i]->buffer = inBuffer[i];
 
-        for (int i=0; i<2; ++i)
+        for (uint32_t i=0; i<kNumOutputs; ++i)
             fJackClient.portsAudioOut[i]->buffer = outBuffer[i];
 
         fJackClient.processCallback(frames, fJackClient.processPtr);
@@ -170,8 +238,6 @@ public:
 
     void uiShow(const bool show) override
     {
-        const CarlaMutexLocker cml(fMutex);
-
         if (show)
         {
             if (display == nullptr)
@@ -183,9 +249,10 @@ public:
 
                 styles_init(display, &xresman);
 
-                rootwin  = new X_rootwin(display);
-                mainwin  = new Mainwin(rootwin, &xresman, 0, 0, jclient);
+                rootwin = new X_rootwin(display);
+                mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient);
                 rootwin->handle_event();
+                mainwin->x_set_title(getUiName());
 
                 handler = new X_handler(display, mainwin, EV_X11);
 
@@ -199,15 +266,15 @@ public:
         else
         {
             handler = nullptr;
-            mainwin  = nullptr;
-            rootwin  = nullptr;
-            display  = nullptr;
+            mainwin = nullptr;
+            rootwin = nullptr;
+            display = nullptr;
         }
     }
 
     void uiIdle() override
     {
-        if (display == nullptr)
+        if (mainwin == nullptr)
             return;
 
         int ev;
@@ -218,14 +285,19 @@ public:
             handler->next_event();
         }
 
-#if 0
         // check if parameters were updated
-        if (mainwin->_input+1 != static_cast<int>(fParameters[kParameterInput]))
+        float value;
+
+        for (uint32_t i=0; i<kParameterNROTARY; ++i)
         {
-            fParameters[kParameterInput] = mainwin->_input+1;
-            uiParameterChanged(kParameterInput, fParameters[kParameterInput]);
+            value = mainwin->_rotary[i]->value();
+
+            if (fParameters[i] == value)
+                continue;
+
+            fParameters[i] = value;
+            uiParameterChanged(i, value);
         }
-#endif
 
         if (ev == EV_EXIT)
         {
@@ -237,24 +309,15 @@ public:
         }
     }
 
-#if 0
     void uiSetParameterValue(const uint32_t index, const float value) override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount,);
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterNROTARY,);
 
-        const CarlaMutexLocker cml(fMutex);
-
-        if (itcc == nullptr)
+        if (mainwin == nullptr)
             return;
 
-        switch (index)
-        {
-        case kParameterInput:
-            mainwin->set_input(static_cast<int>(value)-1);
-            break;
-        }
+        mainwin->_rotary[index]->set_value(value);
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin dispatcher calls
@@ -269,14 +332,21 @@ public:
         fJackClient.sampleRate = sampleRate;
     }
 
+    void uiNameChanged(const char* const uiName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
+
+        if (mainwin == nullptr)
+            return;
+
+        mainwin->x_set_title(uiName);
+    }
+
     // -------------------------------------------------------------------
 
 private:
     // Fake jack client
     jack_client_t fJackClient;
-
-    // Mutex just in case
-    CarlaMutex fMutex;
 
     // Zita stuff (core)
     X_resman xresman;
@@ -286,7 +356,7 @@ private:
     ScopedPointer<Mainwin>   mainwin;
     ScopedPointer<X_handler> handler;
 
-    //float fParameters[kParameterCount];
+    float fParameters[kParameterNROTARY];
 
     PluginClassEND(BLS1Plugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BLS1Plugin)
@@ -302,11 +372,11 @@ static const NativePluginDescriptor bls1Desc = {
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
-    /* audioIns  */ 2,
-    /* audioOuts */ 2,
+    /* audioIns  */ BLS1Plugin::kNumInputs,
+    /* audioOuts */ BLS1Plugin::kNumOutputs,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 0, //JaaaPlugin::kParameterCount,
+    /* paramIns  */ BLS1Plugin::kParameterNROTARY,
     /* paramOuts */ 0,
     /* name      */ "BLS1",
     /* label     */ "bls1",

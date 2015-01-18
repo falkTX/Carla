@@ -61,11 +61,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     _rotary [LFGAIN] = new Rlinctl (this, this, &lfgain_img, 410, 0, 180, 5,  -9.0f,   9.0f,  0.0f, LFGAIN);
     for (i = 0; i < NROTARY; i++) _rotary [i]->x_map ();
 
-    _jclient->set_inpbal (_rotary [INPBAL]->value ());
-    _jclient->set_hpfilt (_rotary [HPFILT]->value ());
-    _jclient->set_loshelf (_rotary [LFGAIN]->value (),_rotary [LFFREQ]->value ());
-    _jclient->shuffler ()->prepare (_rotary [SHGAIN]->value (), _rotary [SHFREQ]->value ());
-
     _numtext = new X_textip (this, 0, &tstyle1, 0, 0, 45, 15, 15);
     _numtext->set_align (0);
     _parmind = -1;

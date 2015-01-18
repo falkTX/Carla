@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
-//    
+//
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -58,7 +58,7 @@ RotaryCtl::RotaryCtl (X_window     *parent,
 {
     x_add_events (  ExposureMask
                   | Button1MotionMask | ButtonPressMask | ButtonReleaseMask);
-} 
+}
 
 
 RotaryCtl::~RotaryCtl (void)
@@ -68,6 +68,9 @@ RotaryCtl::~RotaryCtl (void)
 
 void RotaryCtl::init (X_display *disp)
 {
+    if (_cairosurf != NULL)
+        return;
+
     _cairosurf = cairo_xlib_surface_create (disp->dpy (), 0, disp->dvi (), 50, 50);
     _cairotype = cairo_create (_cairosurf);
 }
@@ -75,8 +78,14 @@ void RotaryCtl::init (X_display *disp)
 
 void RotaryCtl::fini (void)
 {
+    if (_cairosurf == NULL)
+        return;
+
     cairo_destroy (_cairotype);
     cairo_surface_destroy (_cairosurf);
+
+    _cairotype = NULL;
+    _cairosurf = NULL;
 }
 
 
@@ -86,11 +95,11 @@ void RotaryCtl::handle_event (XEvent *E)
     {
     case Expose:
 	render ();
-	break;  
- 
+	break;
+
     case ButtonPress:
 	bpress ((XButtonEvent *) E);
-	break;  
+	break;
 
     case ButtonRelease:
 	brelse ((XButtonEvent *) E);
@@ -100,7 +109,7 @@ void RotaryCtl::handle_event (XEvent *E)
 	motion ((XMotionEvent *) E);
 	break;
 
-    default: 
+    default:
 	fprintf (stderr, "RotaryCtl: event %d\n", E->type );
     }
 }
@@ -126,11 +135,11 @@ void RotaryCtl::bpress (XButtonEvent *E)
     else if ((int)E->button == _wb_up)
     {
         r = handle_mwheel (1);
-    } 
-    else if ((int)E->button == _wb_dn) 
+    }
+    else if ((int)E->button == _wb_dn)
     {
         r = handle_mwheel (-1);
-    } 
+    }
     if (r)
     {
         callback (r);
@@ -170,7 +179,7 @@ void RotaryCtl::motion (XMotionEvent *E)
 
 void RotaryCtl::set_state (int s)
 {
-    _state = s;	
+    _state = s;
     render ();
 }
 

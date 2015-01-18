@@ -365,10 +365,7 @@ protected:
 
     virtual void uiNameChanged(const char* const uiName)
     {
-        return;
-
-        // unused
-        (void)uiName;
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
     }
 
     // -------------------------------------------------------------------

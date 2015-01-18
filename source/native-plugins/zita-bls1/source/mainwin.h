@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//    
+//
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -41,12 +41,12 @@ public:
     Mainwin& operator=(const Mainwin&);
 
     void stop (void) { _stop = true; }
-    int process (void); 
+    int process (void);
 
 private:
 
     enum { INPBAL, HPFILT, SHGAIN, SHFREQ, LFFREQ, LFGAIN, NROTARY  };
- 
+
     virtual void thr_main (void) {}
 
     void handle_time (void);
@@ -68,6 +68,8 @@ private:
     int             _parmind;
     int             _timeout;
     int             _touch;
+
+    friend class BLS1Plugin;
 };
 
 

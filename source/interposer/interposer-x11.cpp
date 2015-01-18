@@ -36,7 +36,7 @@ static int sMapWindowCounter = 0;
 
 static int real_XMapWindow(Display* display, Window w)
 {
-    static XMapWindowFunc func = (XMapWindowFunc)::dlsym(RTLD_NEXT, "XMapWindow");
+    static const XMapWindowFunc func = (XMapWindowFunc)::dlsym(RTLD_NEXT, "XMapWindow");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
     return func(display, w);
@@ -44,7 +44,7 @@ static int real_XMapWindow(Display* display, Window w)
 
 static int real_XUnmapWindow(Display* display, Window w)
 {
-    static XUnmapWindowFunc func = (XUnmapWindowFunc)::dlsym(RTLD_NEXT, "XUnmapWindow");
+    static const XUnmapWindowFunc func = (XUnmapWindowFunc)::dlsym(RTLD_NEXT, "XUnmapWindow");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
     return func(display, w);
@@ -66,7 +66,7 @@ int XMapWindow(Display* display, Window w)
         CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0', real_XMapWindow(display, w));
 
         const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
-        CARLA_SAFE_ASSERT_RETURN(winIdLL >= 0, real_XMapWindow(display, w));
+        CARLA_SAFE_ASSERT_RETURN(winIdLL > 0, real_XMapWindow(display, w));
 
         const Window winId(static_cast<Window>(winIdLL));
         XSetTransientForHint(display, w, static_cast<Window>(winId));
