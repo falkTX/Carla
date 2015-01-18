@@ -378,7 +378,7 @@ static const NativePluginDescriptor bls1Desc = {
     /* paramOuts */ 0,
     /* name      */ "BLS1",
     /* label     */ "bls1",
-    /* maker     */ "Fons Adriaensen",
+    /* maker     */ "falkTX, Fons Adriaensen",
     /* copyright */ "GPL v2+",
     PluginDescriptorFILL(BLS1Plugin)
 };
