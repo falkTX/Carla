@@ -16,21 +16,23 @@
  */
 
 #include "CarlaNative.hpp"
-
 #include "CarlaMutex.hpp"
+#include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 #include "juce_audio_basics.h"
 
-#include "zita-bls1/source/png2img.cc"
-#include "zita-bls1/source/guiclass.cc"
-#include "zita-bls1/source/hp3filt.cc"
-#include "zita-bls1/source/jclient.cc"
-#include "zita-bls1/source/lfshelf2.cc"
-#include "zita-bls1/source/mainwin.cc"
-#include "zita-bls1/source/rotary.cc"
-#include "zita-bls1/source/shuffler.cc"
-#include "zita-bls1/source/styles.cc"
+// this one needs to be first
+#include "zita-bls1/png2img.cc"
+
+#include "zita-bls1/guiclass.cc"
+#include "zita-bls1/hp3filt.cc"
+#include "zita-bls1/jclient.cc"
+#include "zita-bls1/lfshelf2.cc"
+#include "zita-bls1/mainwin.cc"
+#include "zita-bls1/rotary.cc"
+#include "zita-bls1/shuffler.cc"
+#include "zita-bls1/styles.cc"
 
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
@@ -38,7 +40,8 @@ using juce::ScopedPointer;
 // -----------------------------------------------------------------------
 // BLS1 Plugin
 
-class BLS1Plugin : public NativePluginClass
+class BLS1Plugin : public NativePluginClass,
+                   private Mainwin::ValueChangedCallback
 {
 public:
     static const uint32_t kNumInputs  = 2;
@@ -68,7 +71,6 @@ public:
         CARLA_SAFE_ASSERT(host != nullptr);
 
         carla_zeroStruct(fJackClient);
-        gLastJackClient = &fJackClient;
 
         fJackClient.clientName = "bls1";
         fJackClient.bufferSize = getBufferSize();
@@ -78,7 +80,7 @@ public:
         char* argv[] = { (char*)"bls1" };
         xresman.init(&argc, argv, (char*)"bls1", nullptr, 0);
 
-        jclient = new Jclient(xresman.rname(), nullptr);
+        jclient = new Jclient(xresman.rname(), &fJackClient);
 
         // set initial values
         fParameters[kParameterINPBAL] = 0.0f;
@@ -125,40 +127,41 @@ public:
         switch (index)
         {
         case kParameterINPBAL:
-            param.name = "INPBAL";
+            param.name = "Input balance";
+            //param.unit = "dB";
             param.ranges.def = 0.0f;
             param.ranges.min = -3.0f;
             param.ranges.max = 3.0f;
             break;
         case kParameterHPFILT:
             hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-            param.name = "HPFILT";
+            param.name = "Highpass filter";
             param.ranges.def = 40.0f;
             param.ranges.min = 10.0f;
             param.ranges.max = 320.0f;
             break;
         case kParameterSHGAIN:
-            param.name = "SHGAIN";
+            param.name = "Shuffler gain";
             param.ranges.def = 15.0f;
             param.ranges.min = 0.0f;
             param.ranges.max = 24.0f;
             break;
         case kParameterSHFREQ:
             hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-            param.name = "SHFREQ";
+            param.name = "Shuffler frequency";
             param.ranges.def = 5e2f;
             param.ranges.min = 125.0f;
             param.ranges.max = 2e3f;
             break;
         case kParameterLFFREQ:
             hints |= NATIVE_PARAMETER_IS_LOGARITHMIC;
-            param.name = "LFFREQ";
+            param.name = "LF shelf filter frequency";
             param.ranges.def = 80.0f;
             param.ranges.min = 20.0f;
             param.ranges.max = 320.0f;
             break;
         case kParameterLFGAIN:
-            param.name = "LFGAIN";
+            param.name = "LF shelf filter gain";
             param.ranges.def = 0.0f;
             param.ranges.min = -9.0f;
             param.ranges.max = 9.0f;
@@ -225,10 +228,10 @@ public:
         }
 
         for (uint32_t i=0; i<kNumInputs; ++i)
-            fJackClient.portsAudioIn[i]->buffer = inBuffer[i];
+            fJackClient.portsAudioIn[i].buffer = inBuffer[i];
 
         for (uint32_t i=0; i<kNumOutputs; ++i)
-            fJackClient.portsAudioOut[i]->buffer = outBuffer[i];
+            fJackClient.portsAudioOut[i].buffer = outBuffer[i];
 
         fJackClient.processCallback(frames, fJackClient.processPtr);
     }
@@ -247,10 +250,10 @@ public:
                 if (display->dpy() == nullptr)
                     return hostUiUnavailable();
 
-                styles_init(display, &xresman);
+                styles_init(display, &xresman, getResourceDir());
 
                 rootwin = new X_rootwin(display);
-                mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient);
+                mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
                 rootwin->handle_event();
                 mainwin->x_set_title(getUiName());
 
@@ -283,20 +286,6 @@ public:
         {
             rootwin->handle_event();
             handler->next_event();
-        }
-
-        // check if parameters were updated
-        float value;
-
-        for (uint32_t i=0; i<kParameterNROTARY; ++i)
-        {
-            value = mainwin->_rotary[i]->value();
-
-            if (fParameters[i] == value)
-                continue;
-
-            fParameters[i] = value;
-            uiParameterChanged(i, value);
         }
 
         if (ev == EV_EXIT)
@@ -343,6 +332,15 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // Mainwin callbacks
+
+    void valueChangedCallback(uint index, double value) override
+    {
+        fParameters[index] = value;
+        uiParameterChanged(index, value);
+    }
+
+    // -------------------------------------------------------------------
 
 private:
     // Fake jack client
@@ -365,7 +363,7 @@ private:
 // -----------------------------------------------------------------------
 
 static const NativePluginDescriptor bls1Desc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+    /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS

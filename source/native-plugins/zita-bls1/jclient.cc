@@ -23,9 +23,9 @@
 #include "jclient.h"
 
 
-Jclient::Jclient (const char *jname, const char *jserv) :
+Jclient::Jclient (const char *jname, jack_client_t *jclient) :
     A_thread ("Jclient"),
-    _jack_client (0),
+    _jack_client (jclient),
     _active (false),
     _jname (0),
     _inpbal0 (0),	
@@ -35,7 +35,7 @@ Jclient::Jclient (const char *jname, const char *jserv) :
     _da (0.0f),
     _db (0.0f)
 {
-    init_jack (jname, jserv);   
+    init_jack (jname);
 }
 
 
@@ -45,19 +45,11 @@ Jclient::~Jclient (void)
 }
 
 
-void Jclient::init_jack (const char *jname, const char *jserv)
+void Jclient::init_jack (const char *jname)
 {
-    jack_status_t       stat;
     struct sched_param  spar;
-    int                 options, abspri, policy, k;
+    int                 abspri, policy, k;
 
-    options = JackNoStartServer;
-    if (jserv) options |= JackServerName;
-    if ((_jack_client = jack_client_open (jname, (jack_options_t) options, &stat, jserv)) == 0)
-    {
-        fprintf (stderr, "Can't connect to JACK\n");
-        exit (1);
-    }
     jack_set_process_callback (_jack_client, jack_static_process, (void *) this);
     jack_on_shutdown (_jack_client, jack_static_shutdown, (void *) this);
 

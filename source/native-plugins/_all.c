@@ -15,11 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNativeJack.h"
-
-// -----------------------------------------------------------------------
-
-jack_client_t* gLastJackClient = NULL;
+#include "CarlaNative.h"
 
 // -----------------------------------------------------------------------
 

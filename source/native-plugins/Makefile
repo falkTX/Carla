@@ -253,7 +253,7 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 $(OBJDIR)/zita-bls1.cpp.o: zita-bls1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DSHARED=\"/usr/share/zita-bls1\" $(shell pkg-config --cflags cairo fftw3f libpng12 x11 xft) -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags cairo fftw3f libpng12 x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

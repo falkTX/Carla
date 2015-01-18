@@ -385,7 +385,7 @@ endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 NATIVE_PLUGINS_FLAGS += -DHAVE_EXPERIMENTAL_PLUGINS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo fftw3f libpng12 x11 xft) -lclthreads -lclxclient -lzita-convolver
+NATIVE_PLUGINS_LIBS  += -lzita-convolver $(shell pkg-config --libs cairo fftw3f libpng12 x11 xft) -lclthreads -lclxclient
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)

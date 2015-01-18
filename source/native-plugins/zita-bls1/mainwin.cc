@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -27,13 +27,14 @@
 #include "mainwin.h"
 
 
-Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient) :
+Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb) :
     A_thread ("Main"),
     X_window (parent, xp, yp, XSIZE, YSIZE, XftColors_bls1 [C_MAIN_BG]->pixel),
     _stop (false),
     _xres (xres),
     _jclient (jclient),
-    _touch (false)
+    _touch (false),
+    _valuecb (valuecb)
 {
     X_hints     H;
     char        s [1024];
@@ -50,7 +51,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     H.maxsize (XSIZE, YSIZE);
     H.rname (xres->rname ());
     H.rclas (xres->rclas ());
-    x_apply (&H);
+    x_apply (&H); 
 
     RotaryCtl::init (disp ());
     _rotary [INPBAL] = new Rlinctl (this, this, &inpbal_img,  20, 0, 120, 4,  -3.0f,   3.0f,  0.0f, INPBAL);
@@ -66,19 +67,19 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     _parmind = -1;
     _timeout = 0;
 
-    x_add_events (ExposureMask);
-    x_map ();
+    x_add_events (ExposureMask); 
+    x_map (); 
     set_time (0);
     inc_time (250000);
 }
 
-
+ 
 Mainwin::~Mainwin (void)
 {
     RotaryCtl::fini ();
 }
 
-
+ 
 int Mainwin::process (void)
 {
     int e;
@@ -102,8 +103,8 @@ void Mainwin::handle_event (XEvent *E)
     {
     case Expose:
 	expose ((XExposeEvent *) E);
-	break;
-
+	break;  
+ 
     case ClientMessage:
         clmesg ((XClientMessageEvent *) E);
         break;
@@ -133,9 +134,12 @@ void Mainwin::handle_time (void)
     inc_time (100000);
     XFlush (dpy ());
 
-    if (_touch && _jclient->shuffler ()->ready ())
+    if (_touch && _jclient->shuffler ()->ready ()) 
     {
-	_jclient->shuffler ()->prepare (_rotary [SHGAIN]->value (), _rotary [SHFREQ]->value ());
+        double v1 = _rotary [SHGAIN]->value (), v2 = _rotary [SHFREQ]->value ();
+	_jclient->shuffler ()->prepare (v1, v2);
+        _valuecb->valueChangedCallback (SHGAIN, v1);
+        _valuecb->valueChangedCallback (SHFREQ, v2);
 	_touch = 0;
     }
 }
@@ -147,10 +151,11 @@ void Mainwin::handle_stop (void)
 }
 
 
-void Mainwin::handle_callb (int type, X_window *W, XEvent * /*E*/)
+void Mainwin::handle_callb (int type, X_window *W, XEvent *E)
 {
     RotaryCtl  *R;
     int         k;
+    double      v, v2;
 
     switch (type)
     {
@@ -170,10 +175,14 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent * /*E*/)
 	switch (k)
 	{
 	case INPBAL:
-	    _jclient->set_inpbal (_rotary [INPBAL]->value ());
+            v = _rotary [INPBAL]->value ();
+	    _jclient->set_inpbal (v);
+            _valuecb->valueChangedCallback (INPBAL, v);
 	    break;
 	case HPFILT:
-	    _jclient->set_hpfilt (_rotary [HPFILT]->value ());
+            v = _rotary [HPFILT]->value ();
+	    _jclient->set_hpfilt (v);
+            _valuecb->valueChangedCallback (HPFILT, v);
 	    break;
 	case SHGAIN:
 	case SHFREQ:
@@ -181,7 +190,11 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent * /*E*/)
 	    break;
 	case LFFREQ:
 	case LFGAIN:
-	    _jclient->set_loshelf (_rotary [LFGAIN]->value (), _rotary [LFFREQ]->value ());
+            v  = _rotary [LFGAIN]->value ();
+            v2 = _rotary [LFFREQ]->value ();
+	    _jclient->set_loshelf (v, v2);
+            _valuecb->valueChangedCallback (LFGAIN, v);
+            _valuecb->valueChangedCallback (LFFREQ, v2);
 	    break;
 	}
 	break;
@@ -194,18 +207,17 @@ void Mainwin::redraw (void)
     XPutImage (dpy (), win (), dgc (), inputsect, 0, 0,  20, 0, 130, 75);
     XPutImage (dpy (), win (), dgc (), shuffsect, 0, 0, 190, 0, 170, 75);
     XPutImage (dpy (), win (), dgc (), lfshfsect, 0, 0, 410, 0, 105, 75);
-    XPutImage (dpy (), win (), dgc (), redzita_img, 0, 0, XSIZE - 35, 0, 35, 75);
 }
 
 
 void Mainwin::numdisp (int k)
 {
     int y = 0;
-
+    
     _timeout = 10;
     if (k >= 0) fmtfreq (k);
     if (k == _parmind) return;
-    if (k < 0)
+    if (k < 0) 
     {
 	_numtext->x_unmap ();
 	_parmind = -1;

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -38,7 +38,7 @@ class Jclient : public A_thread
 {
 public:
 
-    Jclient (const char *jname, const char *jserv);
+    Jclient (const char *jname, jack_client_t *jclient);
     ~Jclient (void);
 
     const char *jname (void) const { return _jname; }
@@ -65,7 +65,7 @@ public:
 
 private:
 
-    void  init_jack (const char *jname, const char *jserv);
+    void  init_jack (const char *jname);
     void  close_jack (void);
     void  jack_shutdown (void);
     int   jack_process (int nframes);
@@ -88,7 +88,7 @@ private:
     HP3filt         _hpfilt;
     LFshelf2        _lshelf;
     Shuffler        _shuffl;
-
+  
     static void jack_static_shutdown (void *arg);
     static int  jack_static_process (jack_nframes_t nframes, void *arg);
 };

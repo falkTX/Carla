@@ -68,7 +68,7 @@ public:
 
     virtual void set_state (int s);
     virtual void set_value (double v) = 0;
-    virtual void get_string (char * /*p*/, int /*n*/) {}
+    virtual void get_string (char *p, int n) {}
 
     static void init (X_display *disp);
     static void fini (void);

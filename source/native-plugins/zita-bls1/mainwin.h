@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -33,20 +33,25 @@ class Mainwin : public A_thread, public X_window, public X_callback
 {
 public:
 
-    enum { XSIZE = 640, YSIZE = 75 };
+    struct ValueChangedCallback {
+        virtual ~ValueChangedCallback() {}
+        virtual void valueChangedCallback(uint, double) = 0;
+    };
 
-    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient);
+    enum { XSIZE = 540, YSIZE = 75 };
+
+    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb);
     ~Mainwin (void);
     Mainwin (const Mainwin&);
     Mainwin& operator=(const Mainwin&);
 
     void stop (void) { _stop = true; }
-    int process (void);
+    int process (void); 
 
 private:
 
     enum { INPBAL, HPFILT, SHGAIN, SHFREQ, LFFREQ, LFGAIN, NROTARY  };
-
+ 
     virtual void thr_main (void) {}
 
     void handle_time (void);
@@ -68,6 +73,8 @@ private:
     int             _parmind;
     int             _timeout;
     int             _touch;
+
+    ValueChangedCallback* _valuecb;
 
     friend class BLS1Plugin;
 };

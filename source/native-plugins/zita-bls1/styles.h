@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -40,7 +40,7 @@ enum
 };
 
 
-extern int  styles_init (X_display *disp, X_resman *xrm);
+extern int  styles_init (X_display *disp, X_resman *xrm, const char *resdir);
 extern void styles_fini (X_display *disp);
 
 extern XftColor  *XftColors_bls1 [NXFTCOLORS];
@@ -51,7 +51,6 @@ extern X_textln_style tstyle1;
 extern XImage    *inputsect;
 extern XImage    *shuffsect;
 extern XImage    *lfshfsect;
-extern XImage    *redzita_img;
 extern RotaryImg  inpbal_img;
 extern RotaryImg  hpfilt_img;
 extern RotaryImg  shfreq_img;

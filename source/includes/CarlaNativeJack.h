@@ -46,25 +46,49 @@ typedef int  (*jack_process_callback)(jack_nframes_t nframes, void* ptr);
 /* ------------------------------------------------------------------------------------------------------------
  * Enums */
 
-typedef enum {
-    JackPortIsInput  = 1 << 0,
-    JackPortIsOutput = 1 << 1
-} jack___t;
+enum JackPortFlags {
+    JackPortIsInput    = 0x01,
+    JackPortIsOutput   = 0x02,
+    JackPortIsPhysical = 0x04,
+    JackPortCanMonitor = 0x08,
+    JackPortIsTerminal = 0x10
+};
 
-typedef enum {
-    JackNoStartServer = 0,
-    JackServerName
-} jack_options_t;
+enum JackOptions {
+    JackNullOption    = 0x00,
+    JackNoStartServer = 0x01,
+    JackUseExactName  = 0x02,
+    JackServerName    = 0x04,
+    JackLoadName      = 0x08,
+    JackLoadInit      = 0x10,
+    JackSessionID     = 0x20
+};
 
-typedef enum {
-    JackNoError = 0x0
-} jack_status_t;
+enum JackStatus {
+    JackFailure       = 0x0001,
+    JackInvalidOption = 0x0002,
+    JackNameNotUnique = 0x0004,
+    JackServerStarted = 0x0008,
+    JackServerFailed  = 0x0010,
+    JackServerError   = 0x0020,
+    JackNoSuchClient  = 0x0040,
+    JackLoadFailure   = 0x0080,
+    JackInitFailure   = 0x0100,
+    JackShmFailure    = 0x0200,
+    JackVersionError  = 0x0400,
+    JackBackendError  = 0x0800,
+    JackClientZombie  = 0x1000
+};
+
+typedef enum JackOptions jack_options_t;
+typedef enum JackStatus jack_status_t;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Structs */
 
 typedef struct {
-    bool  isInput;
+    bool  registered;
+    uint  flags;
     void* buffer;
 } jack_port_t;
 
@@ -80,22 +104,24 @@ typedef struct {
     void*                 processPtr;
 
     // ports
-    jack_port_t* portsAudioIn[8];
-    jack_port_t* portsAudioOut[8];
+    jack_port_t portsAudioIn[8];
+    jack_port_t portsAudioOut[8];
 } jack_client_t;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Client functions */
 
-extern jack_client_t* gLastJackClient;
-
+/*
+ * NOTE: This function purposefully returns NULL, as we *do not* want global variables.
+ *       The client pointer is passed into the plugin code directly.
+ */
 static inline
 jack_client_t* jack_client_open(const char* clientname, jack_options_t options, jack_status_t* status, ...)
 {
     if (status != NULL)
-        *status = JackNoError;
+        *status = JackFailure;
 
-    return gLastJackClient;
+    return NULL;
 
     // unused
     (void)clientname;
@@ -135,23 +161,20 @@ int jack_set_process_callback(jack_client_t* client, jack_process_callback callb
  * Port functions */
 
 static inline
-jack_port_t* jack_port_register(jack_client_t* client, const char* name, const char* type, jack___t hints, jack_nframes_t buffersize)
+jack_port_t* jack_port_register(jack_client_t* client, const char* name, const char* type, ulong flags, ulong buffersize)
 {
-    jack_port_t** const ports = (hints & JackPortIsInput) ? client->portsAudioIn : client->portsAudioOut;
+    jack_port_t* const ports = (flags & JackPortIsInput) ? client->portsAudioIn : client->portsAudioOut;
 
     for (int i=0; i<8; ++i)
     {
-        if (ports[i] != NULL)
+        jack_port_t* const port = &ports[i];
+
+        if (port->registered)
             continue;
 
-        jack_port_t* const port = (jack_port_t*)calloc(1, sizeof(jack_port_t));
-
-        if (port == NULL)
-            return NULL;
-
-        port->isInput = (hints & JackPortIsInput);
-
-        ports[i] = port;
+        port->registered = true;
+        port->flags      = flags;
+        port->buffer     = NULL;
 
         return port;
     }
@@ -167,13 +190,15 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* name, const c
 static inline
 int jack_port_unregister(jack_client_t* client, jack_port_t* port)
 {
-    jack_port_t** const ports = port->isInput ? client->portsAudioIn : client->portsAudioOut;
+    jack_port_t* const ports = (port->flags & JackPortIsInput) ? client->portsAudioIn : client->portsAudioOut;
 
     for (int i=0; i<8; ++i)
     {
-        if (ports[i] == port)
+        if (&ports[i] == port)
         {
-            ports[i] = NULL;
+            port->registered = false;
+            port->flags      = 0x0;
+            port->buffer     = NULL;
             return 0;
         }
     }

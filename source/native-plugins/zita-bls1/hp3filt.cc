@@ -102,7 +102,7 @@ void HP3filt::prepare (int nsamp)
 }
 
 
-float HP3filt::response (float /*f*/)
+float HP3filt::response (float f)
 {
     // Compute gain at frequency f from _c1 _c2, _c3, _g.
     // This is left as an exercise for the reader.
@@ -110,7 +110,7 @@ float HP3filt::response (float /*f*/)
 }
 
 
-void HP3filt::calcpar1 (int /*nsamp*/, float f)
+void HP3filt::calcpar1 (int nsamp, float f)
 {
     float a, b, t;
 

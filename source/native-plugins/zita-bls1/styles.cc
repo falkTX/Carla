@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -22,6 +22,7 @@
 #include "styles.h"
 #include "png2img.h"
 
+#include "CarlaString.hpp"
 
 XftColor      *XftColors_bls1 [NXFTCOLORS];
 XftFont       *XftFonts_bls1 [NXFTFONTS];
@@ -31,7 +32,6 @@ X_textln_style tstyle1;
 XImage    *inputsect;
 XImage    *shuffsect;
 XImage    *lfshfsect;
-XImage    *redzita_img;
 RotaryImg  inpbal_img;
 RotaryImg  hpfilt_img;
 RotaryImg  shfreq_img;
@@ -41,7 +41,7 @@ RotaryImg  lfgain_img;
 
 
 
-int styles_init (X_display *disp, X_resman *xrm)
+int styles_init (X_display *disp, X_resman *xrm, const char *resdir)
 {
     XftColors_bls1 [C_MAIN_BG] = disp->alloc_xftcolor (0.25f, 0.25f, 0.25f, 1.0f);
     XftColors_bls1 [C_MAIN_FG] = disp->alloc_xftcolor (1.0f, 1.0f, 1.0f, 1.0f);
@@ -54,11 +54,11 @@ int styles_init (X_display *disp, X_resman *xrm)
     tstyle1.color.normal.bgnd = XftColors_bls1 [C_TEXT_BG]->pixel;
     tstyle1.color.normal.text = XftColors_bls1 [C_TEXT_FG];
 
-    inputsect = png2img (SHARED"/inputsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
-    shuffsect = png2img (SHARED"/shuffsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
-    lfshfsect = png2img (SHARED"/lfshfsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
-    redzita_img  = png2img (SHARED"/redzita.png",  disp, XftColors_bls1 [C_MAIN_BG]);
-    if (!inputsect || !shuffsect || !lfshfsect || !redzita_img) return 1;
+    const CarlaString SHARED = CarlaString(resdir)+"/bls1";
+    inputsect = png2img (SHARED+"/inputsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
+    shuffsect = png2img (SHARED+"/shuffsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
+    lfshfsect = png2img (SHARED+"/lfshfsect.png", disp, XftColors_bls1 [C_MAIN_BG]);
+    if (!inputsect || !shuffsect || !lfshfsect) return 1;
 
     inpbal_img._backg = XftColors_bls1 [C_MAIN_BG];
     inpbal_img._image [0] = inputsect;
@@ -92,7 +92,7 @@ int styles_init (X_display *disp, X_resman *xrm)
     shgain_img._xref = 12.5;
     shgain_img._yref = 12.5;
     shgain_img._rad = 12;
-
+ 
     shfreq_img._backg = XftColors_bls1 [C_MAIN_BG];
     shfreq_img._image [0] = shuffsect;
     shfreq_img._lncol [0] = 0;
@@ -103,7 +103,7 @@ int styles_init (X_display *disp, X_resman *xrm)
     shfreq_img._xref = 12.5;
     shfreq_img._yref = 12.5;
     shfreq_img._rad = 12;
-
+ 
     lffreq_img._backg = XftColors_bls1 [C_MAIN_BG];
     lffreq_img._image [0] = lfshfsect;
     lffreq_img._lncol [0] = 0;
@@ -130,6 +130,6 @@ int styles_init (X_display *disp, X_resman *xrm)
 }
 
 
-void styles_fini (X_display * /*disp*/)
+void styles_fini (X_display *disp)
 {
 }

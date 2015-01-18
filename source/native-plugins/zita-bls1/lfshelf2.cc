@@ -119,7 +119,7 @@ void LFshelf2::prepare (int nsamp)
 }
 
 
-float LFshelf2::response (float /*f*/)
+float LFshelf2::response (float f)
 {
     // Compute gain at frequency f from _a0, _a1, _a2, _b1, _b2.
     // This is left as an exercise for the reader.
