@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include "global.h"
 
+namespace BLS1 {
+
 
 class LFshelf2
 {
@@ -85,5 +87,7 @@ private:
     float             _z2 [2];
 };
 
+
+}
 
 #endif

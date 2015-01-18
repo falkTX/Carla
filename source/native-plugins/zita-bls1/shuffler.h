@@ -27,6 +27,8 @@
 #include <zita-convolver.h>
 #include "global.h"
 
+namespace BLS1 {
+
 
 class Shuffler
 {
@@ -64,5 +66,7 @@ private:
     Convproc          _convproc;
 };
 
+
+}
 
 #endif

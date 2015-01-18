@@ -39,7 +39,6 @@ import ui_carla_plugin_default
 import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
 import ui_carla_plugin_sf2
-import ui_carla_plugin_zita
 import ui_carla_plugin_zynfx
 
 from carla_widgets import *
@@ -1578,150 +1577,6 @@ class PluginSlot_SF2(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_ZitaRev(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_zita.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setMinimumWidth(640)
-
-        self.setStyleSheet("""
-            PluginSlot_ZitaRev#PluginWidget {
-                background-color: #404040;
-                border: 2px solid transparent;
-            }
-            QWidget#w_revsect {
-                background-image: url(:/bitmaps/zita-rev/revsect.png);
-            }
-            QWidget#w_eq1sect {
-                background-image: url(:/bitmaps/zita-rev/eq1sect.png);
-            }
-            QWidget#w_eq2sect {
-                background-image: url(:/bitmaps/zita-rev/eq2sect.png);
-            }
-            QWidget#w_ambmixsect {
-                background-image: url(:/bitmaps/zita-rev/%s.png);
-            }
-            QWidget#w_redzita {
-                background-image: url(:/bitmaps/zita-rev/redzita.png);
-            }
-        """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
-
-        # -------------------------------------------------------------
-        # Set-up Knobs
-
-        self.fKnobDelay = PixmapDial(self, 0)
-        self.fKnobDelay.setPixmap(6)
-        self.fKnobDelay.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobDelay.setMinimum(0.02)
-        self.fKnobDelay.setMaximum(0.10)
-
-        self.fKnobXover = PixmapDial(self, 1)
-        self.fKnobXover.setPixmap(6)
-        self.fKnobXover.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobXover.setMinimum(50.0)
-        self.fKnobXover.setMaximum(1000.0)
-
-        self.fKnobRtLow = PixmapDial(self, 2)
-        self.fKnobRtLow.setPixmap(6)
-        self.fKnobRtLow.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobRtLow.setMinimum(1.0)
-        self.fKnobRtLow.setMaximum(8.0)
-
-        self.fKnobRtMid = PixmapDial(self, 3)
-        self.fKnobRtMid.setPixmap(6)
-        self.fKnobRtMid.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobRtMid.setMinimum(1.0)
-        self.fKnobRtMid.setMaximum(8.0)
-
-        self.fKnobDamping = PixmapDial(self, 4)
-        self.fKnobDamping.setPixmap(6)
-        self.fKnobDamping.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobDamping.setMinimum(1500.0)
-        self.fKnobDamping.setMaximum(24000.0)
-
-        self.fKnobEq1Freq = PixmapDial(self, 5)
-        self.fKnobEq1Freq.setPixmap(6)
-        self.fKnobEq1Freq.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq1Freq.setMinimum(40.0)
-        self.fKnobEq1Freq.setMaximum(10000.0)
-
-        self.fKnobEq1Gain = PixmapDial(self, 6)
-        self.fKnobEq1Gain.setPixmap(6)
-        self.fKnobEq1Gain.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq1Gain.setMinimum(-20.0)
-        self.fKnobEq1Gain.setMaximum(20.0)
-
-        self.fKnobEq2Freq = PixmapDial(self, 7)
-        self.fKnobEq2Freq.setPixmap(6)
-        self.fKnobEq2Freq.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq2Freq.setMinimum(40.0)
-        self.fKnobEq2Freq.setMaximum(10000.0)
-
-        self.fKnobEq2Gain = PixmapDial(self, 8)
-        self.fKnobEq2Gain.setPixmap(6)
-        self.fKnobEq2Gain.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq2Gain.setMinimum(-20.0)
-        self.fKnobEq2Gain.setMaximum(20.0)
-
-        self.fKnobMix = PixmapDial(self, 9)
-        self.fKnobMix.setPixmap(6)
-        self.fKnobMix.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobMix.setMinimum(0.0)
-        self.fKnobMix.setMaximum(1.0)
-
-        self.fParameterList.append([0, self.fKnobDelay])
-        self.fParameterList.append([1, self.fKnobXover])
-        self.fParameterList.append([2, self.fKnobRtLow])
-        self.fParameterList.append([3, self.fKnobRtMid])
-        self.fParameterList.append([4, self.fKnobDamping])
-        self.fParameterList.append([5, self.fKnobEq1Freq])
-        self.fParameterList.append([6, self.fKnobEq1Gain])
-        self.fParameterList.append([7, self.fKnobEq2Freq])
-        self.fParameterList.append([8, self.fKnobEq2Gain])
-        self.fParameterList.append([9, self.fKnobMix])
-
-        # -------------------------------------------------------------
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 79
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        AbstractPluginSlot.paintEvent(self, event)
-        self.drawOutline()
-
-    def resizeEvent(self, event):
-        self.fKnobDelay.move(self.ui.w_revsect.x()+31, self.ui.w_revsect.y()+33)
-        self.fKnobXover.move(self.ui.w_revsect.x()+93, self.ui.w_revsect.y()+18)
-        self.fKnobRtLow.move(self.ui.w_revsect.x()+148, self.ui.w_revsect.y()+18)
-        self.fKnobRtMid.move(self.ui.w_revsect.x()+208, self.ui.w_revsect.y()+18)
-        self.fKnobDamping.move(self.ui.w_revsect.x()+268, self.ui.w_revsect.y()+18)
-        self.fKnobEq1Freq.move(self.ui.w_eq1sect.x()+20, self.ui.w_eq1sect.y()+33)
-        self.fKnobEq1Gain.move(self.ui.w_eq1sect.x()+69, self.ui.w_eq1sect.y()+18)
-        self.fKnobEq2Freq.move(self.ui.w_eq2sect.x()+20, self.ui.w_eq2sect.y()+33)
-        self.fKnobEq2Gain.move(self.ui.w_eq2sect.x()+69, self.ui.w_eq2sect.y()+18)
-        self.fKnobMix.move(self.ui.w_ambmixsect.x()+24, self.ui.w_ambmixsect.y()+33)
-        AbstractPluginSlot.resizeEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
 class PluginSlot_ZynFX(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
         AbstractPluginSlot.__init__(self, parent, host, pluginId)
@@ -1968,8 +1823,6 @@ def createPluginSlot(parent, host, pluginId, useSkins):
             return PluginSlot_ZynFX(parent, host, pluginId)
 
     elif pluginInfo['type'] == PLUGIN_LADSPA:
-        if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
-            return PluginSlot_ZitaRev(parent, host, pluginId)
         if pluginLabel.startswith("Zyn") and pluginMaker.startswith("Josep Andreu"):
             return PluginSlot_ZynFX(parent, host, pluginId)
 

@@ -25,6 +25,8 @@
 #include <math.h>
 #include "rotary.h"
 
+namespace BLS1 {
+
 
 cairo_t         *RotaryCtl::_cairotype = 0;
 cairo_surface_t *RotaryCtl::_cairosurf = 0;
@@ -202,3 +204,4 @@ void RotaryCtl::render (void)
 }
 
 
+}

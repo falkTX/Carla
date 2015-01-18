@@ -29,6 +29,10 @@
 #include "jclient.h"
 #include "global.h"
 
+class BLS1Plugin;
+
+namespace BLS1 {
+
 
 class Mainwin : public A_thread, public X_window, public X_callback
 {
@@ -77,8 +81,10 @@ private:
 
     ValueChangedCallback* _valuecb;
 
-    friend class BLS1Plugin;
+    friend class ::BLS1Plugin;
 };
 
+
+}
 
 #endif

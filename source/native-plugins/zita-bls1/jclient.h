@@ -34,6 +34,8 @@
 #include "lfshelf2.h"
 #include "global.h"
 
+namespace BLS1 {
+
 
 class Jclient : public A_thread
 {
@@ -94,5 +96,7 @@ private:
     static int  jack_static_process (jack_nframes_t nframes, void *arg);
 };
 
+
+}
 
 #endif

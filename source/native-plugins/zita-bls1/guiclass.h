@@ -26,6 +26,8 @@
 
 #include "rotary.h"
 
+namespace BLS1 {
+
 
 class Rlinctl : public RotaryCtl
 {
@@ -94,5 +96,7 @@ private:
     const char *_form;
 };
 
+
+}
 
 #endif

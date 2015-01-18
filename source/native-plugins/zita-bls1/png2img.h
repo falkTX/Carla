@@ -26,8 +26,10 @@
 
 #include <clxclient.h>
 
+namespace BLS1 {
 
 extern XImage *png2img (const char *file, X_display *disp, XftColor *bgnd);
 
+}
 
 #endif

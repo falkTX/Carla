@@ -31,17 +31,26 @@ extern "C" {
 /* ------------------------------------------------------------------------------------------------------------
  * Macros */
 
-#define JACK_DEFAULT_AUDIO_TYPE "audio"
-#define JACK_DEFAULT_MIDI_TYPE  "midi"
+#define JACK_DEFAULT_AUDIO_TYPE "32 bit float mono audio"
+#define JACK_DEFAULT_MIDI_TYPE  "8 bit raw midi"
 
 /* ------------------------------------------------------------------------------------------------------------
  * Basic types */
 
 typedef float    jack_default_audio_sample_t;
+typedef uint8_t  jack_midi_data_t;
 typedef uint32_t jack_nframes_t;
 
 typedef void (*jack_shutdown_callback)(void* ptr);
 typedef int  (*jack_process_callback)(jack_nframes_t nframes, void* ptr);
+
+/*
+ * Helper struct for midi events.
+ */
+typedef struct {
+    uint32_t count;
+    NativeMidiEvent* events;
+} NativeMidiEventsBuffer;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Enums */
@@ -81,15 +90,20 @@ enum JackStatus {
 };
 
 typedef enum JackOptions jack_options_t;
-typedef enum JackStatus jack_status_t;
+typedef enum JackStatus  jack_status_t;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Structs */
 
 typedef struct {
     bool  registered;
+    bool  isAudio;
     uint  flags;
-    void* buffer;
+
+    union {
+        void* audio;
+        NativeMidiEventsBuffer midi;
+    } buffer;
 } jack_port_t;
 
 typedef struct {
@@ -104,9 +118,17 @@ typedef struct {
     void*                 processPtr;
 
     // ports
-    jack_port_t portsAudioIn[8];
-    jack_port_t portsAudioOut[8];
+    jack_port_t portsAudioIn [16];
+    jack_port_t portsAudioOut[16];
+    jack_port_t portsMidiIn  [16];
+    jack_port_t portsMidiOut [16];
 } jack_client_t;
+
+typedef struct {
+  uint32_t time;
+  uint32_t size;
+  uint8_t* buffer;
+} jack_midi_event_t;
 
 /* ------------------------------------------------------------------------------------------------------------
  * Client functions */
@@ -163,18 +185,31 @@ int jack_set_process_callback(jack_client_t* client, jack_process_callback callb
 static inline
 jack_port_t* jack_port_register(jack_client_t* client, const char* name, const char* type, ulong flags, ulong buffersize)
 {
-    jack_port_t* const ports = (flags & JackPortIsInput) ? client->portsAudioIn : client->portsAudioOut;
+    const bool isAudio = strcmp(type, JACK_DEFAULT_AUDIO_TYPE) == 0;
+    const bool isMIDI  = strcmp(type, JACK_DEFAULT_MIDI_TYPE ) == 0;
 
-    for (int i=0; i<8; ++i)
+    if (! (isAudio || isMIDI))
+        return NULL;
+
+    jack_port_t* ports;
+
+    if (isAudio)
+        ports = (flags & JackPortIsInput) ? client->portsAudioIn : client->portsAudioOut;
+    else
+        ports = (flags & JackPortIsInput) ? client->portsMidiIn : client->portsMidiOut;
+
+    for (int i=0; i<16; ++i)
     {
         jack_port_t* const port = &ports[i];
 
         if (port->registered)
             continue;
 
+        memset(port, 0, sizeof(jack_port_t));
+
         port->registered = true;
+        port->isAudio    = isAudio;
         port->flags      = flags;
-        port->buffer     = NULL;
 
         return port;
     }
@@ -196,9 +231,7 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
     {
         if (&ports[i] == port)
         {
-            port->registered = false;
-            port->flags      = 0x0;
-            port->buffer     = NULL;
+            memset(port, 0, sizeof(jack_port_t));
             return 0;
         }
     }
@@ -207,12 +240,42 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
 }
 
 static inline
-void* jack_port_get_buffer(const jack_port_t* port, jack_nframes_t nframes)
+void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t nframes)
 {
-    return port->buffer;
+    return port->isAudio ? port->buffer.audio : &port->buffer.midi;
 
     // unused
     (void)nframes;
+}
+
+/* ------------------------------------------------------------------------------------------------------------
+ * MIDI functions */
+
+static inline
+uint32_t jack_midi_get_event_count(void* port_buffer)
+{
+    NativeMidiEventsBuffer* const midi_buffer = (NativeMidiEventsBuffer*)port_buffer;
+
+    return midi_buffer->count;
+}
+
+static inline
+int jack_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint32_t event_index)
+{
+    NativeMidiEventsBuffer* const midi_buffer = (NativeMidiEventsBuffer*)port_buffer;
+
+    if (midi_buffer->count == 0)
+        return ENODATA;
+    if (event_index >= midi_buffer->count)
+        return 1; // FIXME
+
+    NativeMidiEvent* const midiEvent = &midi_buffer->events[event_index];
+
+    event->time   = midiEvent->time;
+    event->size   = midiEvent->size;
+    event->buffer = midiEvent->data;
+
+    return 0;
 }
 
 /* ------------------------------------------------------------------------------------------------------------

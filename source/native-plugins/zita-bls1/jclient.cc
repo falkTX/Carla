@@ -23,6 +23,8 @@
 #include <string.h>
 #include "jclient.h"
 
+namespace BLS1 {
+
 
 Jclient::Jclient (const char *jname, jack_client_t *jclient) :
     A_thread ("Jclient"),
@@ -185,3 +187,4 @@ int Jclient::jack_process (int frames)
 }
 
 
+}

@@ -40,7 +40,7 @@ public:
           fUiState(UiNone),
           leakDetector_CarlaExternalUI() {}
 
-    ~CarlaExternalUI() noexcept override
+    ~CarlaExternalUI() /*noexcept*/ override
     {
         CARLA_SAFE_ASSERT_INT(fUiState == UiNone, fUiState);
     }

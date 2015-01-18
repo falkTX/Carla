@@ -27,10 +27,12 @@
 #include "global.h"
 #include "mainwin.h"
 
+namespace BLS1 {
+
 
 Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb) :
     A_thread ("Main"),
-    X_window (parent, xp, yp, XSIZE, YSIZE, XftColors_bls1 [C_MAIN_BG]->pixel),
+    X_window (parent, xp, yp, XSIZE, YSIZE, XftColors [C_MAIN_BG]->pixel),
     _stop (false),
     _xres (xres),
     _jclient (jclient),
@@ -260,3 +262,5 @@ void Mainwin::fmtfreq (int k)
     _numtext->set_text (t);
 }
 
+
+}

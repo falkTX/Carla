@@ -26,6 +26,8 @@
 #include <clxclient.h>
 #include "rotary.h"
 
+namespace BLS1 {
+
 
 enum
 {
@@ -44,8 +46,8 @@ enum
 extern int  styles_init (X_display *disp, X_resman *xrm, const char *resdir);
 extern void styles_fini (X_display *disp);
 
-extern XftColor  *XftColors_bls1 [NXFTCOLORS];
-extern XftFont   *XftFonts_bls1 [NXFTFONTS];
+extern XftColor  *XftColors [NXFTCOLORS];
+extern XftFont   *XftFonts [NXFTFONTS];
 
 extern X_textln_style tstyle1;
 
@@ -59,5 +61,7 @@ extern RotaryImg  shgain_img;
 extern RotaryImg  lffreq_img;
 extern RotaryImg  lfgain_img;
 
+
+}
 
 #endif

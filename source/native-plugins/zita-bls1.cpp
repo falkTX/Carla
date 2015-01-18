@@ -16,26 +16,26 @@
  */
 
 #include "CarlaNative.hpp"
-#include "CarlaMutex.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 #include "juce_audio_basics.h"
 
-// this one needs to be first
-#include "zita-bls1/png2img.cc"
-
+#include "zita-common.hpp"
 #include "zita-bls1/guiclass.cc"
 #include "zita-bls1/hp3filt.cc"
 #include "zita-bls1/jclient.cc"
 #include "zita-bls1/lfshelf2.cc"
 #include "zita-bls1/mainwin.cc"
+#include "zita-bls1/png2img.cc"
 #include "zita-bls1/rotary.cc"
 #include "zita-bls1/shuffler.cc"
 #include "zita-bls1/styles.cc"
 
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
+
+using namespace BLS1;
 
 // -----------------------------------------------------------------------
 // BLS1 Plugin
@@ -66,6 +66,7 @@ public:
           rootwin(nullptr),
           mainwin(nullptr),
           handler(nullptr),
+          handlerThread(),
           leakDetector_BLS1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
@@ -228,10 +229,10 @@ public:
         }
 
         for (uint32_t i=0; i<kNumInputs; ++i)
-            fJackClient.portsAudioIn[i].buffer = inBuffer[i];
+            fJackClient.portsAudioIn[i].buffer.audio = inBuffer[i];
 
         for (uint32_t i=0; i<kNumOutputs; ++i)
-            fJackClient.portsAudioOut[i].buffer = outBuffer[i];
+            fJackClient.portsAudioOut[i].buffer.audio = outBuffer[i];
 
         fJackClient.processCallback(frames, fJackClient.processPtr);
     }
@@ -243,31 +244,36 @@ public:
     {
         if (show)
         {
-            if (display == nullptr)
-            {
-                display = new X_display(nullptr);
+            if (display != nullptr)
+                return;
 
-                if (display->dpy() == nullptr)
-                    return hostUiUnavailable();
+            display = new X_display(nullptr);
 
-                styles_init(display, &xresman, getResourceDir());
+            if (display->dpy() == nullptr)
+                return hostUiUnavailable();
 
-                rootwin = new X_rootwin(display);
-                mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
-                rootwin->handle_event();
-                mainwin->x_set_title(getUiName());
+            styles_init(display, &xresman, getResourceDir());
 
-                handler = new X_handler(display, mainwin, EV_X11);
+            rootwin = new X_rootwin(display);
+            mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
+            rootwin->handle_event();
+            mainwin->x_set_title(getUiName());
 
-                if (const uintptr_t winId = getUiParentId())
-                    XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
-            }
+            handler = new X_handler(display, mainwin, EV_X11);
+
+            if (const uintptr_t winId = getUiParentId())
+                XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
 
             handler->next_event();
             XFlush(display->dpy());
+
+            handlerThread.setupAndRun(handler, rootwin, mainwin);
         }
         else
         {
+            if (handlerThread.isThreadRunning())
+                handlerThread.stopThread();
+
             handler = nullptr;
             mainwin = nullptr;
             rootwin = nullptr;
@@ -280,20 +286,15 @@ public:
         if (mainwin == nullptr)
             return;
 
-        int ev;
-
-        for (; (ev = mainwin->process()) == EV_X11;)
+        if (handlerThread.wasClosed())
         {
-            rootwin->handle_event();
-            handler->next_event();
-        }
-
-        if (ev == EV_EXIT)
-        {
-            handler = nullptr;
-            mainwin = nullptr;
-            rootwin = nullptr;
-            display = nullptr;
+            {
+                const CarlaMutexLocker cml(handlerThread.getLock());
+                handler = nullptr;
+                mainwin = nullptr;
+                rootwin = nullptr;
+                display = nullptr;
+            }
             uiClosed();
         }
     }
@@ -304,6 +305,8 @@ public:
 
         if (mainwin == nullptr)
             return;
+
+        const CarlaMutexLocker cml(handlerThread.getLock());
 
         mainwin->_rotary[index]->set_value(value);
     }
@@ -327,6 +330,8 @@ public:
 
         if (mainwin == nullptr)
             return;
+
+        const CarlaMutexLocker cml(handlerThread.getLock());
 
         mainwin->x_set_title(uiName);
     }
@@ -353,6 +358,7 @@ private:
     ScopedPointer<X_rootwin> rootwin;
     ScopedPointer<Mainwin>   mainwin;
     ScopedPointer<X_handler> handler;
+    X_handler_thread<Mainwin> handlerThread;
 
     float fParameters[kParameterNROTARY];
 

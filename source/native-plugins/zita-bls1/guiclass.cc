@@ -23,6 +23,8 @@
 #include <math.h>
 #include "guiclass.h"
 
+namespace BLS1 {
+
 
 Rlinctl::Rlinctl (X_window   *parent,
                   X_callback *cbobj,
@@ -152,4 +154,7 @@ int Rlogctl::set_count (int u)
         return DELTA;
     }
     return 0;
+}
+
+
 }

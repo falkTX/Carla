@@ -24,6 +24,8 @@
 #include <string.h>
 #include "lfshelf2.h"
 
+namespace BLS1 {
+
 
 LFshelf2::LFshelf2 (void) :
     _touch0 (0),
@@ -247,3 +249,5 @@ void LFshelf2::process1 (int nsamp, int nchan, float *data[])
     }
 }
 
+
+}

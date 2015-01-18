@@ -26,6 +26,8 @@
 #include <math.h>
 #include "shuffler.h"
 
+namespace BLS1 {
+
 
 Shuffler::Shuffler (void) :
     _fsamp (0),
@@ -180,4 +182,7 @@ void Shuffler::process (int nsamp, float *inp [], float *out [])
     }
 
     _del_wind = wi;
+}
+
+
 }

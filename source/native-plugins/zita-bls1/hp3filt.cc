@@ -24,6 +24,8 @@
 #include <math.h>
 #include "hp3filt.h"
 
+namespace BLS1 {
+
 
 HP3filt::HP3filt (void) :
     _touch0 (0),
@@ -176,4 +178,7 @@ void HP3filt::process1 (int nsamp, int nchan, float *data[])
         _z3 [i] = z3;
     }
     if (_state == FADING) _a = a;
+}
+
+
 }

@@ -61,7 +61,9 @@ extern void carla_register_native_plugin_zynaddsubfx_synth(void);
 
 #ifdef WANT_EXPERIMENTAL_PLUGINS
 // Experimental plugins
+extern void carla_register_native_plugin_zita_at1(void);
 extern void carla_register_native_plugin_zita_bls1(void);
+extern void carla_register_native_plugin_zita_rev1(void);
 #endif
 
 // -----------------------------------------------------------------------
@@ -110,7 +112,9 @@ void carla_register_all_plugins(void)
 
 #ifdef WANT_EXPERIMENTAL_PLUGINS
     // Experimental plugins
+    carla_register_native_plugin_zita_at1();
     carla_register_native_plugin_zita_bls1();
+    carla_register_native_plugin_zita_rev1();
 #endif
 }
 

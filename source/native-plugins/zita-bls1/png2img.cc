@@ -23,6 +23,7 @@
 #include <png.h>
 #include <clxclient.h>
 
+namespace BLS1 {
 
 
 XImage *png2img (const char *file, X_display *disp, XftColor *bgnd)
@@ -129,4 +130,7 @@ XImage *png2img (const char *file, X_display *disp, XftColor *bgnd)
     fclose (F);
 
     return image;
+}
+
+
 }

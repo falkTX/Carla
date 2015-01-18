@@ -28,6 +28,8 @@
 #include <cairo/cairo-xlib.h>
 #include <clxclient.h>
 
+namespace BLS1 {
+
 
 class RotaryImg
 {
@@ -112,5 +114,7 @@ private:
     static cairo_surface_t  *_cairosurf;
 };
 
+
+}
 
 #endif

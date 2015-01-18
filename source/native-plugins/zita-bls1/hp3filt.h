@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include "global.h"
 
+namespace BLS1 {
+
 
 class HP3filt
 {
@@ -68,5 +70,7 @@ private:
     float             _z3 [2];
 };
 
+
+}
 
 #endif
