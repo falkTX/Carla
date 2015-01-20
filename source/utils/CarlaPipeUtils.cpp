@@ -1558,6 +1558,53 @@ void CarlaPipeClient::closePipeClient() noexcept
 
 // -----------------------------------------------------------------------
 
+ScopedEnvVar::ScopedEnvVar(const char* const key, const char* const value) noexcept
+    : fKey(nullptr),
+      fOrigValue(nullptr)
+{
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+
+    fKey = carla_strdup_safe(key);
+    CARLA_SAFE_ASSERT_RETURN(fKey != nullptr,);
+
+    if (const char* const origValue = std::getenv(key))
+    {
+        fOrigValue = carla_strdup_safe(origValue);
+        CARLA_SAFE_ASSERT_RETURN(fOrigValue != nullptr,);
+    }
+
+    if (value != nullptr)
+        carla_setenv(key, value);
+    else if (fOrigValue != nullptr)
+        carla_unsetenv(key);
+}
+
+ScopedEnvVar::~ScopedEnvVar() noexcept
+{
+    bool hasOrigValue = false;
+
+    if (fOrigValue != nullptr)
+    {
+        hasOrigValue = true;
+
+        carla_setenv(fKey, fOrigValue);
+
+        delete[] fOrigValue;
+        fOrigValue = nullptr;
+    }
+
+    if (fKey != nullptr)
+    {
+        if (! hasOrigValue)
+            carla_unsetenv(fKey);
+
+        delete[] fKey;
+        fKey = nullptr;
+    }
+}
+
+// -----------------------------------------------------------------------
+
 ScopedLocale::ScopedLocale() noexcept
     : fLocale(carla_strdup_safe(::setlocale(LC_NUMERIC, nullptr)))
 {

@@ -25,6 +25,7 @@
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBase64Utils.hpp"
+#include "CarlaEngineUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
@@ -393,8 +394,9 @@ public:
         UiCrashed
     };
 
-    CarlaPipeServerLV2(CarlaPluginLV2* const plugin)
-        : kPlugin(plugin),
+    CarlaPipeServerLV2(CarlaEngine* const engine, CarlaPluginLV2* const plugin)
+        : kEngine(engine),
+          kPlugin(plugin),
           fFilename(),
           fPluginURI(),
           fUiURI(),
@@ -422,6 +424,12 @@ public:
 
     bool startPipeServer() noexcept
     {
+        const ScopedEngineEnvironmentLocker _seel(kEngine);
+        const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
+#ifdef CARLA_OS_LINUX
+        const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
+#endif
+
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
     }
 
@@ -470,6 +478,7 @@ protected:
     bool msgReceived(const char* const msg) noexcept override;
 
 private:
+    CarlaEngine*    const kEngine;
     CarlaPluginLV2* const kPlugin;
 
     CarlaString fFilename;
@@ -506,7 +515,7 @@ public:
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
-          fPipeServer(this),
+          fPipeServer(engine, this),
           fCustomURIDs(),
           fFirstActive(true),
           fLastStateChunk(nullptr),
