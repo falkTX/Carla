@@ -478,6 +478,11 @@ endif
 		bin/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
+	# Install the real modgui bridge
+	install -m 755 \
+		data/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(PREFIX)/lib/carla/
+
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
@@ -540,6 +545,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_modgui.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_panels.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -601,6 +607,7 @@ endif
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
+		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
 
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
