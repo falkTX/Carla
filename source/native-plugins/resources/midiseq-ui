@@ -280,14 +280,28 @@ class piano_roll(ExternalUI, QGraphicsView):
         self.marquee_select = False
         self.insert_mode = False
         self.place_ghost = False
-        self.draw_piano()
-        self.draw_header()
-        self.draw_grid()
 
         # to be filled with note-on events, while waiting for their matching note-off
         self.fPendingNoteOns = [] # (channel, note, velocity, time)
 
+        # transport info
+        self.fTransportInfo = {
+            "playing": False,
+            "frame": 0,
+            "bar": 0,
+            "beat": 0,
+            "tick": 0,
+            "bpm": 120.0,
+            "sigNum": 4.0,
+            "sigDenom": 4.0
+        }
+
         self.fIdleTimer = self.startTimer(30)
+
+        self.draw_piano()
+        self.draw_header()
+        self.draw_grid()
+
         self.setWindowTitle(self.fUiName)
         self.ready()
 
@@ -362,6 +376,22 @@ class piano_roll(ExternalUI, QGraphicsView):
                 data.append(int(self.readlineblock()))
 
             self.handleMidiEvent(time, size, data)
+
+        elif msg == "transport":
+            playing = bool(self.readlineblock() == "true")
+            frame, bar, beat, tick = [int(i) for i in self.readlineblock().split(":")]
+            bpm, sigNum, sigDenom = [float(i) for i in self.readlineblock().split(":")]
+
+            self.fTransportInfo = {
+                "playing": playing,
+                "frame": frame,
+                "bar": bar,
+                "beat": beat,
+                "tick": tick,
+                "bpm": bpm,
+                "sigNum": sigNum,
+                "sigDenom": sigDenom
+            }
 
         elif msg == "show":
             self.uiShow()

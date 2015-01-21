@@ -32,6 +32,7 @@ public:
           fWasPlayingBefore(false),
           fInEvents(),
           fMidiOut(this),
+          fTimeInfo(),
           leakDetector_MidiSequencerPlugin()
     {
         // TEST SONG (unsorted to test RtList API)
@@ -125,6 +126,8 @@ public:
         fMidiOut.addNote(2304*m, 0, 64, 90, 650*m);
         fMidiOut.addNote(3072*m, 0, 62, 90, 325*m);
         fMidiOut.addNote(3456*m, 0, 62, 90, 325*m);
+
+        carla_zeroStruct(fTimeInfo);
     }
 
 protected:
@@ -137,24 +140,30 @@ protected:
 
         if (fWantInEvents)
         {
-            RawMidiEvent rawMidiEvent;
-
-            for (uint32_t i=0; i < midiEventCount; ++i)
+            if (midiEventCount > 0)
             {
-                const NativeMidiEvent* const midiEvent = &midiEvents[i];
+                RawMidiEvent rawMidiEvent;
 
-                rawMidiEvent.data[0] = midiEvent->data[0];
-                rawMidiEvent.data[1] = midiEvent->data[1];
-                rawMidiEvent.data[2] = midiEvent->data[2];
-                rawMidiEvent.data[3] = midiEvent->data[3];
-                rawMidiEvent.size    = midiEvent->size;
-                rawMidiEvent.time    = timePos->playing ? timePos->frame + midiEvent->time : 0;
+                for (uint32_t i=0; i < midiEventCount; ++i)
+                {
+                    const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
-                fInEvents.appendRT(rawMidiEvent);
+                    rawMidiEvent.data[0] = midiEvent->data[0];
+                    rawMidiEvent.data[1] = midiEvent->data[1];
+                    rawMidiEvent.data[2] = midiEvent->data[2];
+                    rawMidiEvent.data[3] = midiEvent->data[3];
+                    rawMidiEvent.size    = midiEvent->size;
+                    rawMidiEvent.time    = timePos->playing ? timePos->frame + midiEvent->time : 0;
+
+                    fInEvents.appendRT(rawMidiEvent);
+                }
             }
 
             fInEvents.trySplice();
         }
+
+        if (const NativeTimeInfo* const timeInfo = getTimeInfo())
+            fTimeInfo = *timeInfo;
 
         if (timePos->playing)
         {
@@ -193,6 +202,40 @@ protected:
 
         if (show)
             _sendEventsToUI();
+    }
+
+    void uiIdle() override
+    {
+        NativePluginAndUiClass::uiIdle();
+
+        // send transport
+        if (isPipeRunning())
+        {
+            char strBuf[0xff+1];
+            strBuf[0xff] = '\0';
+
+            const CarlaMutexLocker cml(getPipeLock());
+            const ScopedLocale csl;
+
+            writeAndFixMessage("transport");
+            writeMessage(fTimeInfo.playing ? "true\n" : "false\n");
+
+            if (fTimeInfo.bbt.valid)
+            {
+                std::sprintf(strBuf, P_UINT64 ":%i:%i:%i\n", fTimeInfo.frame, fTimeInfo.bbt.bar, fTimeInfo.bbt.beat, fTimeInfo.bbt.tick);
+                writeMessage(strBuf);
+                std::sprintf(strBuf, "%f:%f:%f\n", fTimeInfo.bbt.beatsPerMinute, fTimeInfo.bbt.beatsPerBar, fTimeInfo.bbt.beatType);
+                writeMessage(strBuf);
+            }
+            else
+            {
+                std::sprintf(strBuf, P_UINT64 ":0:0:0\n", fTimeInfo.frame);
+                writeMessage(strBuf);
+                writeMessage("120.0:4.0:4.0\n");
+            }
+
+            flushMessages();
+        }
     }
 
     // -------------------------------------------------------------------
@@ -345,7 +388,8 @@ private:
 
     } fInEvents;
 
-    MidiPattern fMidiOut;
+    MidiPattern    fMidiOut;
+    NativeTimeInfo fTimeInfo;
 
     void _sendEventsToUI() const noexcept
     {
