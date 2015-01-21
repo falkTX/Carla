@@ -1269,6 +1269,10 @@ public:
                 fPipeServer.writeUiOptionsMessage(pData->engine->getSampleRate(), true, true, fLv2Options.windowTitle, frontendWinId);
 
                 fPipeServer.writeShowMessage();
+#ifndef BUILD_BRIDGE
+                if (fUI.rdfDescriptor->Type == LV2_UI_MOD)
+                    pData->tryTransient();
+#endif
             }
             else
             {
@@ -4096,6 +4100,9 @@ public:
         case LV2_UI_OLD_EXTERNAL:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-external";
             break;
+        case LV2_UI_MOD:
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-modgui";
+            break;
         default:
             return nullptr;
         }
@@ -5034,8 +5041,8 @@ public:
         // ---------------------------------------------------------------
         // find the most appropriate ui
 
-        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
-        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, eMod, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = eMod = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
 #if defined(BUILD_BRIDGE)
         const bool preferUiBridges(false);
@@ -5090,6 +5097,9 @@ public:
                     eExt = ii;
                 iExt = ii;
                 break;
+            case LV2_UI_MOD:
+                eMod = ii;
+                break;
             default:
                 break;
             }
@@ -5123,6 +5133,8 @@ public:
 #endif
         //else if (eExt >= 0) // TODO
         //    iFinal = eExt;
+        else if (eMod >= 0)
+            iFinal = eMod;
 #ifndef LV2_UIS_ONLY_BRIDGES
 # ifdef CARLA_OS_MAC
         else if (iCocoa >= 0)
@@ -5216,7 +5228,8 @@ public:
 
         const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
-        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
+        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
+            iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt || iFinal == eMod)
         {
             // -----------------------------------------------------------
             // initialize ui-bridge

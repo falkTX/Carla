@@ -138,7 +138,7 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         return true;
     }
 
-    if (std::strcmp(msg, "mprogram") == 0)
+    if (std::strcmp(msg, "midiprogram") == 0)
     {
         uint32_t bank, program;
 
