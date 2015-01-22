@@ -7,4 +7,5 @@ else
 fi
 
 INSTALL_PREFIX="X-PREFIX-X"
+export CARLA_LIB_PREFIX="$INSTALL_PREFIX"
 exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla_modgui.py "$@"
