@@ -1268,6 +1268,10 @@ public:
 
                 fPipeServer.writeUiOptionsMessage(pData->engine->getSampleRate(), true, true, fLv2Options.windowTitle, frontendWinId);
 
+                // send control ports
+                for (uint32_t i=0; i < pData->param.count; ++i)
+                    fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[i].rindex), getParameterValue(i));
+
                 fPipeServer.writeShowMessage();
 #ifndef BUILD_BRIDGE
                 if (fUI.rdfDescriptor->Type == LV2_UI_MOD)

@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot, QThread, QUrl
+    from PyQt5.QtCore import pyqtSlot, QPoint, QThread, QUrl
     from PyQt5.QtWidgets import QMainWindow
-    from PyQt5.QtWebKitWidgets import QWebView
+    from PyQt5.QtWebKitWidgets import QWebElement, QWebSettings, QWebView
 else:
-    from PyQt4.QtCore import pyqtSlot, QPoint, QTimer, QThread, QUrl
+    from PyQt4.QtCore import pyqtSlot, QPoint, QThread, QUrl
     from PyQt4.QtGui import QMainWindow
     from PyQt4.QtWebKit import QWebElement, QWebSettings, QWebView
 
@@ -67,6 +67,9 @@ os.environ['MOD_PHANTOM_BINARY']        = "/usr/bin/phantomjs"
 os.environ['MOD_SCREENSHOT_JS']         = os.path.join(ROOT, "mod-ui", "screenshot.js")
 os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 
+# FIXME
+os.environ['MOD_DEFAULT_JACK_BUFSIZE']  = "0"
+
 #sys.path = [os.path.join(ROOT, "mod-ui")] + sys.path
 
 # ------------------------------------------------------------------------------------------------------------
@@ -87,8 +90,7 @@ class WebServerThread(QThread):
         QThread.__init__(self, parent)
 
     def run(self):
-        webserver.prepare()
-        webserver.start()
+        webserver.run()
 
     def stopWait(self):
         webserver.stop()
@@ -113,16 +115,22 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
+        self.fCurrentFrame = None
         self.fDocElemement = None
+        self.fCanSetValues = False
         self.fNeedsShow    = False
         self.fSizeSetup    = False
         self.fQuitReceived = False
+        self.fWasRepainted = False
 
-        self.fControlBypass = None
-        self.fControlPorts  = []
+        self.fPlugin      = PluginSerializer(URI)
+        self.fPorts       = self.fPlugin.data['ports']
+        self.fPortSymbols = {}
+        self.fPortValues  = {}
 
-        self.fPlugin = PluginSerializer(URI)
-        self.fPorts  = self.fPlugin.data['ports']
+        for port in self.fPorts['control']['input'] + self.fPorts['control']['output']:
+            self.fPortSymbols[port['index']] = port['symbol']
+            self.fPortValues [port['index']] = port['default']
 
         # ----------------------------------------------------------------------------------------------------
         # Init pipe
@@ -174,13 +182,23 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
-    @pyqtSlot(bool)
-    def slot_webviewLoadFinished(self, ok):
-        print("webview finished", ok, self.fWebview.title())
+    def closeExternalUI(self):
+        self.fWebServerThread.stopWait()
 
-        self.fDocElemement = self.fWebview.page().currentFrame().documentElement()
+        if self.fPipeClient is None:
+            return
 
-    def trySetSizeIfNeeded(self):
+        if not self.fQuitReceived:
+            self.send(["exiting"])
+
+        gCarla.utils.pipe_client_destroy(self.fPipeClient)
+        self.fPipeClient = None
+
+    def idleStuff(self):
+        if self.fPipeClient is not None:
+            gCarla.utils.pipe_client_idle(self.fPipeClient)
+            self.checkForRepaintChanges()
+
         if self.fSizeSetup:
             return
         if self.fDocElemement is None or self.fDocElemement.isNull():
@@ -200,58 +218,50 @@ class HostWindow(QMainWindow):
         self.fDocElemement = None
 
         self.setFixedSize(size)
-        self.fWebview.page().currentFrame().setScrollPosition(QPoint(15, 0))
+        self.fCurrentFrame.setScrollPosition(QPoint(15, 0))
+
+        # set initial values
+        for index in self.fPortValues.keys():
+            symbol = self.fPortSymbols[index]
+            value  = self.fPortValues[index]
+            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f)" % (symbol, value))
 
         if self.fNeedsShow:
             self.show()
 
-        for i in pedal.findAll("*"):
-            if "mod-port-symbol" in i.attributeNames():
-                if i.attribute("mod-role") == "input-control-port":
-                    self.fControlPorts.append((i.attribute("mod-port-symbol"), i))
+        self.fCanSetValues = True
 
-            elif "mod-role" in i.attributeNames():
-                if i.attribute("mod-role") == "bypass":
-                    self.fControlBypass = i
+    def checkForRepaintChanges(self):
+        if not self.fWasRepainted:
+            return
 
-    def getPortByIndex(self, index):
-        for port in self.fPorts['control']['input']:
-            if port['index'] == index:
-                return port
-        return None
+        self.fWasRepainted = False
 
-    def setKnobValue(self, port, value):
-        for portSymbol, portElem in self.fControlPorts:
-            if portSymbol != port['symbol']:
-                continue
+        if not self.fCanSetValues:
+            return
 
-            height = int(portElem.styleProperty("height", QWebElement.ComputedStyle).replace("px",""))
+        for index in self.fPortValues.keys():
+            symbol   = self.fPortSymbols[index]
+            oldValue = self.fPortValues[index]
+            newValue = self.fCurrentFrame.evaluateJavaScript("icongui.getPortValue('%s')" % (symbol,))
 
-            norm  = (value-port['minimum'])/(port['maximum']-port['minimum'])
-            real  = int(norm*height*64)
-            aprox = real-(real%height)
-
-            valueStr = "%s%ipx 0px" % ("-" if aprox > 0 else "", aprox)
-            portElem.setStyleProperty("background-position", valueStr)
-            break
+            if oldValue != newValue:
+                self.fPortValues[index] = newValue
+                self.send(["control", index, newValue])
 
     # --------------------------------------------------------------------------------------------------------
 
-    def closeExternalUI(self):
-        self.fWebServerThread.stopWait()
+    @pyqtSlot(bool)
+    def slot_webviewLoadFinished(self, ok):
+        page = self.fWebview.page()
+        page.repaintRequested.connect(self.slot_repaintRequested)
 
-        if self.fPipeClient is None:
-            return
+        self.fCurrentFrame = page.currentFrame()
+        self.fDocElemement = self.fCurrentFrame.documentElement()
 
-        if not self.fQuitReceived:
-            self.send(["exiting"])
-
-        gCarla.utils.pipe_client_destroy(self.fPipeClient)
-        self.fPipeClient = None
-
-    def idleExternalUI(self):
-        if self.fPipeClient is not None:
-            gCarla.utils.pipe_client_idle(self.fPipeClient)
+    def slot_repaintRequested(self):
+        if self.fCanSetValues:
+            self.fWasRepainted = True
 
     # --------------------------------------------------------------------------------------------------------
     # Callback
@@ -327,8 +337,11 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
 
     def dspParameterChanged(self, index, value):
-        print("dspParameterChanged", index, value)
-        self.setKnobValue(self.getPortByIndex(index), value)
+        self.fPortValues[index] = value
+
+        if self.fCurrentFrame is not None:
+            symbol = self.fPortSymbols[index]
+            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f)" % (symbol, value))
 
     def dspProgramChanged(self, index):
         return
@@ -380,8 +393,7 @@ class HostWindow(QMainWindow):
 
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimer:
-            self.trySetSizeIfNeeded()
-            self.idleExternalUI()
+            self.idleStuff()
 
         QMainWindow.timerEvent(self, event)
 
