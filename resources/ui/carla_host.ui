@@ -144,7 +144,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>19</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -217,6 +217,7 @@
     <property name="title">
      <string>&amp;Settings</string>
     </property>
+    <addaction name="act_settings_show_time_panel"/>
     <addaction name="act_settings_show_toolbar"/>
     <addaction name="act_settings_show_meters"/>
     <addaction name="act_settings_show_keyboard"/>
@@ -730,9 +731,6 @@
    <property name="checkable">
     <bool>true</bool>
    </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
    <property name="text">
     <string>Show &amp;Toolbar</string>
    </property>
@@ -791,6 +789,14 @@
    </property>
    <property name="text">
     <string>Show External</string>
+   </property>
+  </action>
+  <action name="act_settings_show_time_panel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Time Panel</string>
    </property>
   </action>
  </widget>

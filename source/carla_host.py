@@ -220,11 +220,9 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (panels)
 
-        self.fPanelTime = CarlaPanelTime(host, self)
-        self.fPanelTime.setEnabled(False)
-
-        if not host.isPlugin:
-            QTimer.singleShot(0, self.fPanelTime.show)
+        self.ui.panelTime = CarlaPanelTime(host, self)
+        self.ui.panelTime.setEnabled(False)
+        self.ui.panelTime.adjustSize()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
@@ -345,6 +343,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
+        self.ui.act_settings_show_time_panel.toggled.connect(self.slot_showTimePanel)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
@@ -366,6 +365,7 @@ class HostWindow(QMainWindow):
 
         self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
+        self.ui.panelTime.finished.connect(self.slot_timePanelClosed)
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
 
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
@@ -607,7 +607,7 @@ class HostWindow(QMainWindow):
                 self.ui.act_file_save.setEnabled(True)
                 self.ui.act_file_save_as.setEnabled(True)
 
-            self.fPanelTime.setEnabled(True)
+            self.ui.panelTime.setEnabled(True)
 
         self.startTimers()
 
@@ -631,7 +631,7 @@ class HostWindow(QMainWindow):
                 self.ui.act_file_save.setEnabled(False)
                 self.ui.act_file_save_as.setEnabled(False)
 
-            self.fPanelTime.setEnabled(False)
+            self.ui.panelTime.setEnabled(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -1217,8 +1217,11 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("TimePanelGeometry", self.ui.panelTime.saveGeometry())
+
         #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+        settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
+        settings.setValue("ShowToolbar",   self.ui.toolBar.isVisible())
 
         diskFolders = []
 
@@ -1237,6 +1240,11 @@ class HostWindow(QMainWindow):
 
         if firstTime:
             self.restoreGeometry(settings.value("Geometry", ""))
+            self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
+
+            showTimePanel = settings.value("ShowTimePanel", True, type=bool)
+            self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
+            self.ui.panelTime.setVisible(showTimePanel)
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
@@ -1305,6 +1313,10 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (menu actions)
+
+    @pyqtSlot(bool)
+    def slot_showTimePanel(self, yesNo):
+        self.ui.panelTime.setVisible(yesNo)
 
     @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
@@ -1538,6 +1550,10 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Misc
 
+    @pyqtSlot()
+    def slot_timePanelClosed(self):
+        self.ui.act_settings_show_time_panel.setChecked(False)
+
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
         if index != 1:
@@ -1709,7 +1725,7 @@ class HostWindow(QMainWindow):
 
     def idleFast(self):
         self.host.engine_idle()
-        self.fPanelTime.refreshTransport()
+        self.ui.panelTime.refreshTransport()
 
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
