@@ -51,7 +51,7 @@ PORTn = 8998 + int(random()*9000)
 
 PORT     = str(PORTn)
 ROOT     = "/usr/share"
-ROOT     = "/home/falktx/Personal/FOSS/Git-mine/mod-app/source/modules"
+#ROOT     = "/home/falktx/Personal/FOSS/Git-mine/mod-app/source/modules"
 DATA_DIR = os.path.expanduser("~/.local/share/mod-data/")
 
 os.environ['MOD_DEV_HOST'] = "1"
