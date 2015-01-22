@@ -25,11 +25,13 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSlot, QPoint, QThread, QUrl
+    from PyQt5.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
+    from PyQt4.QtGui import QImage, QPainter
     from PyQt5.QtWidgets import QMainWindow
     from PyQt5.QtWebKitWidgets import QWebElement, QWebSettings, QWebView
 else:
-    from PyQt4.QtCore import pyqtSlot, QPoint, QThread, QUrl
+    from PyQt4.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
+    from PyQt4.QtGui import QImage, QPainter
     from PyQt4.QtGui import QMainWindow
     from PyQt4.QtWebKit import QWebElement, QWebSettings, QWebView
 
@@ -153,7 +155,10 @@ class HostWindow(QMainWindow):
         self.setCentralWidget(self.fWebview)
         self.setContentsMargins(0, 0, 0, 0)
 
-        mainFrame = self.fWebview.page().mainFrame()
+        page = self.fWebview.page()
+        page.setViewportSize(QSize(980, 600))
+
+        mainFrame = page.mainFrame()
         mainFrame.setScrollBarPolicy(Qt.Horizontal, Qt.ScrollBarAlwaysOff)
         mainFrame.setScrollBarPolicy(Qt.Vertical, Qt.ScrollBarAlwaysOff)
 
@@ -214,11 +219,44 @@ class HostWindow(QMainWindow):
         if size.width() <= 10 or size.height() <= 10:
             return
 
-        self.fSizeSetup    = True
-        self.fDocElemement = None
+        # render web frame to image
+        image = QImage(self.fWebview.page().viewportSize(), QImage.Format_ARGB32_Premultiplied)
+        image.fill(Qt.transparent)
 
-        self.setFixedSize(size)
-        self.fCurrentFrame.setScrollPosition(QPoint(15, 0))
+        painter = QPainter(image)
+        self.fCurrentFrame.render(painter)
+        painter.end()
+
+        #image.save("/tmp/test.png")
+
+        # get coordinates and size from image
+        x = -1
+        #y = -1
+        lastx = -1
+        lasty = -1
+
+        for h in range(0, image.height()):
+            hasNonTransPixels = False
+
+            for w in range(0, image.width()):
+                if image.pixel(w, h) not in (0, 0xff070707):
+                    hasNonTransPixels = True
+                    if x == -1 or x > w:
+                        x = w
+                    lastx = max(lastx, w)
+
+            if hasNonTransPixels:
+                #if y == -1:
+                    #y = h
+                lasty = h
+
+        # set size and position accordingly
+        if -1 not in (x, lastx, lasty):
+            self.setFixedSize(lastx-x, lasty)
+            self.fCurrentFrame.setScrollPosition(QPoint(x, 0))
+        else:
+            self.setFixedSize(size)
+            self.fCurrentFrame.setScrollPosition(QPoint(15, 0))
 
         # set initial values
         for index in self.fPortValues.keys():
@@ -226,10 +264,13 @@ class HostWindow(QMainWindow):
             value  = self.fPortValues[index]
             self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f)" % (symbol, value))
 
+        # final setup
+        self.fCanSetValues = True
+        self.fSizeSetup    = True
+        self.fDocElemement = None
+
         if self.fNeedsShow:
             self.show()
-
-        self.fCanSetValues = True
 
     def checkForRepaintChanges(self):
         if not self.fWasRepainted:
