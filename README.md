@@ -1,3 +1,6 @@
+#![Carla Logo](https://raw.githubusercontent.com/falkTX/Carla/master/resources/128x128/carla.png) Carla Plugin Host
+[![Build Status](https://travis-ci.org/falkTX/Carla.png)](https://travis-ci.org/falkTX/Carla)
+
 # ---  README for Carla  ---
 
 Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats. <br/>
