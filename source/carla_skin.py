@@ -119,8 +119,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fIsActive   = bool(host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
-        self.fIsSelected = False
+        self.fIsActive    = bool(host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
+        self.fIsCollapsed = False
+        self.fIsSelected  = False
 
         self.fLastGreenLedState = False
         self.fLastBlueLedState  = False
@@ -164,6 +165,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.led_midi      = None
         self.led_audio_in  = None
         self.led_audio_out = None
+
+        self.line = None
 
         self.peak_in  = None
         self.peak_out = None
@@ -283,21 +286,28 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.peak_in.setChannelCount(self.fPeaksInputCount)
             self.peak_in.setMeterColor(DigitalPeakMeter.COLOR_GREEN)
             self.peak_in.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
-            if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Default):
+            if (self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Default)) or self.fIsCollapsed:
                 self.peak_in.hide()
 
         if self.peak_out is not None:
             self.peak_out.setChannelCount(self.fPeaksOutputCount)
             self.peak_out.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
             self.peak_out.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
-            if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default):
+            if (self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default)) or self.fIsCollapsed:
                 self.peak_out.hide()
+
+        if self.line is not None:
+            if self.fIsCollapsed:
+                self.line.hide()
 
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
             paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
+
+            if self.fIsCollapsed:
+                paramWidget.hide()
 
         self.setWindowTitle(self.fPluginInfo['name'])
 
@@ -997,10 +1007,16 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         else:
             self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
+        #if self.fIsCollapsed:
+            #self.ui.w_knobs.hide()
+            #self.ui.horizontalLayout_2.setContentsMargins(0,0,0,0)
+            #self.ui.horizontalLayout_2.setSpacing(0)
+            #self.ui.horizontalLayout_2.SetMaximumSize(0,0)
+
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = self.host.get_parameter_count(self.fPluginId) if not self.fIsCollapsed else 0
 
         index = 0
         for i in range(parameterCount):
@@ -1092,6 +1108,8 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.led_audio_in  = self.ui.led_audio_in
         self.led_audio_out = self.ui.led_audio_out
 
+        self.line = self.ui.line
+
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
@@ -1102,7 +1120,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 79
+        return 28 if self.fIsCollapsed else 79
 
     #------------------------------------------------------------------
 
@@ -1125,6 +1143,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
         AbstractPluginSlot.__init__(self, parent, host, pluginId)
         self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
         self.ui.setupUi(self)
+
+        # FIXME
+        self.fIsCollapsed = False
 
         audioCount = self.host.get_audio_port_count_info(self.fPluginId)
         midiCount  = self.host.get_midi_port_count_info(self.fPluginId)
@@ -1195,7 +1216,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = self.host.get_parameter_count(self.fPluginId) if not self.fIsCollapsed else 0
 
         index = 0
         limit = 7 if midiCount['ins'] == 0 else 6
@@ -1317,7 +1338,7 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = self.host.get_parameter_count(self.fPluginId) if not self.fIsCollapsed else 0
 
         index = 0
         for i in range(parameterCount):
@@ -1384,6 +1405,8 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
         self.led_audio_in  = self.ui.led_audio_in
         self.led_audio_out = self.ui.led_audio_out
 
+        self.line = self.ui.line
+
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
@@ -1394,7 +1417,7 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 79
+        return 28 if self.fIsCollapsed else 79
 
     #------------------------------------------------------------------
 
@@ -1494,7 +1517,7 @@ class PluginSlot_SF2(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = self.host.get_parameter_count(self.fPluginId) if not self.fIsCollapsed else 0
 
         index = 0
         for i in range(parameterCount):
@@ -1549,6 +1572,8 @@ class PluginSlot_SF2(AbstractPluginSlot):
         self.led_control   = self.ui.led_control
         self.led_midi      = self.ui.led_midi
         self.led_audio_out = self.ui.led_audio_out
+
+        self.line = self.ui.line
 
         self.peak_out = self.ui.peak_out
 
@@ -1616,7 +1641,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up parameters
 
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
+        parameterCount = self.host.get_parameter_count(self.fPluginId) if not self.fIsCollapsed else 0
 
         index = 0
         for i in range(parameterCount):
@@ -1771,6 +1796,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         self.led_audio_in  = self.ui.led_audio_in
         self.led_audio_out = self.ui.led_audio_out
 
+        self.line = self.ui.line
+
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
@@ -1782,7 +1809,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 77
+        return 30 if self.fIsCollapsed else 79
 
     #------------------------------------------------------------------
 
