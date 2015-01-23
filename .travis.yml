@@ -1,0 +1,11 @@
+language: cpp
+compiler: gcc
+before_install:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.before_install.sh
+install:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.install.sh
+before_script:
+    - make features
+script:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.script.sh
+    - make EXPERIMENTAL_PLUGINS=true -j4
