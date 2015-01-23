@@ -171,8 +171,8 @@ source/native-plugins/zynaddsubfx/UI/VirKeyboard.h
 # Other
 source/includes/asio/
 source/includes/rewire/
-source/includes/vst/
-source/includes/vst3/
+source/includes/vst2
+source/includes/vst3
 source/includes/config.h
 
 data/linux/*.gz
