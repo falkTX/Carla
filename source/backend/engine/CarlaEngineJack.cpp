@@ -25,13 +25,18 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#include "jackbridge/JackBridge.hpp"
 #include "jackey.h"
-
 #include "juce_audio_basics.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
+#endif
+
+// must be last
+#include "jackbridge/JackBridge.hpp"
+
+#ifndef __cdecl
+# define __cdecl
 #endif
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
@@ -2052,7 +2057,7 @@ private:
 
     #define handlePtr ((CarlaEngineJack*)arg)
 
-    static void carla_jack_thread_init_callback(void*)
+    static void __cdecl carla_jack_thread_init_callback(void*)
     {
 #ifdef __SSE2_MATH__
         // Set FTZ and DAZ flags
@@ -2060,65 +2065,65 @@ private:
 #endif
     }
 
-    static int carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
+    static int __cdecl carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
     {
         handlePtr->handleJackBufferSizeCallback(newBufferSize);
         return 0;
     }
 
-    static int carla_jack_srate_callback(jack_nframes_t newSampleRate, void* arg)
+    static int __cdecl carla_jack_srate_callback(jack_nframes_t newSampleRate, void* arg)
     {
         handlePtr->handleJackSampleRateCallback(newSampleRate);
         return 0;
     }
 
-    static void carla_jack_freewheel_callback(int starting, void* arg)
+    static void __cdecl carla_jack_freewheel_callback(int starting, void* arg)
     {
         handlePtr->handleJackFreewheelCallback(bool(starting));
     }
 
-    static int carla_jack_process_callback(jack_nframes_t nframes, void* arg)
+    static int __cdecl carla_jack_process_callback(jack_nframes_t nframes, void* arg)
     {
         handlePtr->handleJackProcessCallback(nframes);
         return 0;
     }
 
-    static void carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
+    static void __cdecl carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
     {
         handlePtr->handleJackLatencyCallback(mode);
     }
 
 #ifndef BUILD_BRIDGE
-    static void carla_jack_client_registration_callback(const char* name, int reg, void* arg)
+    static void __cdecl carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
         handlePtr->handleJackClientRegistrationCallback(name, (reg != 0));
     }
 
-    static void carla_jack_port_registration_callback(jack_port_id_t port, int reg, void* arg)
+    static void __cdecl carla_jack_port_registration_callback(jack_port_id_t port, int reg, void* arg)
     {
         handlePtr->handleJackPortRegistrationCallback(port, (reg != 0));
     }
 
-    static void carla_jack_port_connect_callback(jack_port_id_t a, jack_port_id_t b, int connect, void* arg)
+    static void __cdecl carla_jack_port_connect_callback(jack_port_id_t a, jack_port_id_t b, int connect, void* arg)
     {
         handlePtr->handleJackPortConnectCallback(a, b, (connect != 0));
     }
 
-    static int carla_jack_client_rename_callback(const char* oldName, const char* newName, void* arg)
+    static int __cdecl carla_jack_client_rename_callback(const char* oldName, const char* newName, void* arg)
     {
         handlePtr->handleJackClientRenameCallback(oldName, newName);
         return 0;
     }
 
     // NOTE: JACK1 returns void, JACK2 returns int
-    static int carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
+    static int __cdecl carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
     {
         handlePtr->handleJackPortRenameCallback(port, oldName, newName);
         return 0;
     }
 #endif
 
-    static void carla_jack_shutdown_callback(void* arg)
+    static void __cdecl carla_jack_shutdown_callback(void* arg)
     {
         handlePtr->handleJackShutdownCallback();
     }
@@ -2128,7 +2133,7 @@ private:
     // -------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-    static int carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg)
+    static int __cdecl carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg)
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);
@@ -2147,12 +2152,12 @@ private:
         return 0;
     }
 
-    static void carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
+    static void __cdecl carla_jack_latency_callback_plugin(jack_latency_callback_mode_t /*mode*/, void* /*arg*/)
     {
         // TODO
     }
 
-    static void carla_jack_shutdown_callback_plugin(void* arg)
+    static void __cdecl carla_jack_shutdown_callback_plugin(void* arg)
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);

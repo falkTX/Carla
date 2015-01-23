@@ -18,6 +18,8 @@
 
 // -----------------------------------------------------------------------------
 
+extern "C" {
+
 typedef void        (__cdecl *jackbridgesym_get_version)(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
 typedef const char* (__cdecl *jackbridgesym_get_version_string)(void);
 typedef jack_client_t* (__cdecl *jackbridgesym_client_open)(const char* client_name, jack_options_t options, jack_status_t* status);
@@ -115,6 +117,8 @@ typedef void (__cdecl *jackbridgesym_shm_init)(void* shm);
 typedef void (__cdecl *jackbridgesym_shm_attach)(void* shm, const char* name);
 typedef void (__cdecl *jackbridgesym_shm_close)(void* shm);
 typedef void* (__cdecl *jackbridgesym_shm_map)(void* shm, size_t size);
+
+} // extern "C"
 
 // -----------------------------------------------------------------------------
 
@@ -222,6 +226,10 @@ struct JackBridgeExportedFunctions {
 
 // -----------------------------------------------------------------------------
 
-typedef const JackBridgeExportedFunctions* (*jackbridge_exported_function_type)();
+extern "C" {
+
+typedef const JackBridgeExportedFunctions* (__cdecl *jackbridge_exported_function_type)();
+
+} // extern "C"
 
 // -----------------------------------------------------------------------------
