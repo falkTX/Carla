@@ -5135,8 +5135,6 @@ public:
 #endif
         //else if (eExt >= 0) // TODO
         //    iFinal = eExt;
-        else if (eMod >= 0)
-            iFinal = eMod;
 #ifndef LV2_UIS_ONLY_BRIDGES
 # ifdef CARLA_OS_MAC
         else if (iCocoa >= 0)
@@ -5178,8 +5176,14 @@ public:
 
             if (! hasShowInterface)
             {
-                carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
-                return;
+                if (eMod < 0)
+                {
+                    carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+                    return;
+                }
+
+                // use MODGUI as last resort
+                iFinal = eMod;
             }
         }
 
