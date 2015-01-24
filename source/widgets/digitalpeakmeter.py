@@ -319,6 +319,7 @@ class DigitalPeakMeter(QWidget):
         # draw levels
         for level in self.fChannelData:
             if level == 0.0:
+                meterPos += meterSize+meterPad
                 continue
 
             if self.fMeterOrientation == self.HORIZONTAL:
