@@ -507,6 +507,7 @@ public:
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fCanInit2(true),
+          fNeedsUiClose(false),
           fLatencyChanged(false),
           fLatencyIndex(-1),
           fAtomBufferIn(),
@@ -1305,7 +1306,7 @@ public:
             if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUI.type == UI::TYPE_EMBED)
+                if (fUI.type == UI::TYPE_EMBED && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
 
@@ -1353,12 +1354,11 @@ public:
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
                     if (fUI.window != nullptr)
-                    {
-                        fUI.window->setTitle(fLv2Options.windowTitle);
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
-                    }
                 }
 #endif
+                if (fUI.window != nullptr)
+                    fUI.window->setTitle(fLv2Options.windowTitle);
 
                 fUI.widget = nullptr;
                 fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
@@ -1520,7 +1520,13 @@ public:
             // TODO - detect if ui-bridge crashed
         }
 
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr)
+        if (fNeedsUiClose)
+        {
+            fNeedsUiClose = false;
+            showCustomUI(false);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        }
+        else if (fUI.handle != nullptr && fUI.descriptor != nullptr)
         {
             if (fUI.type == UI::TYPE_EXTERNAL && fUI.widget != nullptr)
                 LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUI.widget);
@@ -1528,12 +1534,11 @@ public:
             else if (fUI.type == UI::TYPE_EMBED && fUI.window != nullptr)
                 fUI.window->idle();
 
-            // note: UI might have been closed by ext-ui or window idle
-            if (fUI.type != UI::TYPE_EXTERNAL && fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
-            {
-                showCustomUI(false);
-                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
-            }
+            // note: UI might have been closed by window idle
+            if (fNeedsUiClose)
+                pass();
+            else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
+                fNeedsUiClose = true;
 #endif
         }
 
@@ -4458,14 +4463,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
         carla_debug("CarlaPluginLV2::handleExternalUIClosed()");
 
-        pData->transientTryCounter = 0;
-
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
-            fUI.descriptor->cleanup(fUI.handle);
-
-        fUI.handle = nullptr;
-        fUI.widget = nullptr;
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        fNeedsUiClose = true;
     }
 
     void handlePluginUIClosed() override
@@ -4474,16 +4472,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginLV2::handlePluginUIClosed()");
 
-        pData->transientTryCounter = 0;
-
-        fUI.window->hide();
-
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
-            fUI.descriptor->cleanup(fUI.handle);
-
-        fUI.handle = nullptr;
-        fUI.widget = nullptr;
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        fNeedsUiClose = true;
     }
 
     void handlePluginUIResized(const uint width, const uint height) override
@@ -5109,12 +5098,6 @@ public:
             }
         }
 
-       if (fRdfDescriptor->Author != nullptr && std::strcmp(fRdfDescriptor->Author, "rncbc aka. Rui Nuno Capela") == 0)
-       {
-          eExt = -1;
-          iExt = -1;
-       }
-
         if (eQt4 >= 0)
             iFinal = eQt4;
         else if (eQt5 >= 0)
@@ -5164,15 +5147,6 @@ public:
             for (uint32_t i=0; i < fRdfDescriptor->UICount && ! hasShowInterface; ++i)
             {
                 LV2_RDF_UI* const ui(&fRdfDescriptor->UIs[i]);
-
-                if (std::strcmp(ui->URI, "http://drumkv1.sourceforge.net/lv2#ui") == 0 ||
-                    std::strcmp(ui->URI, "http://samplv1.sourceforge.net/lv2#ui") == 0 ||
-                    std::strcmp(ui->URI, "http://synthv1.sourceforge.net/lv2#ui") == 0 )
-                {
-                    iFinal = static_cast<int>(i);
-                    hasShowInterface = true;
-                    break;
-                }
 
                 for (uint32_t j=0; j < ui->ExtensionCount; ++j)
                 {
@@ -5460,6 +5434,10 @@ public:
 
         if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
             fExt.uiprograms = nullptr;
+
+        // don't use uiidle if external
+        if (fUI.type == UI::TYPE_EXTERNAL)
+            fExt.uiidle = nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -5511,6 +5489,7 @@ private:
     float*  fParamBuffers;
 
     bool    fCanInit2; // some plugins don't like 2 instances
+    bool    fNeedsUiClose;
     bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
