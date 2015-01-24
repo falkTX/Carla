@@ -2427,7 +2427,7 @@ class CarlaHostDLL(CarlaHostMeta):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p)), options)
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p), options))
 
     def remove_plugin(self, pluginId):
         return bool(self.lib.carla_remove_plugin(pluginId))

@@ -1477,7 +1477,8 @@ public:
 
             uint32_t portIndex;
             const LV2_Atom* atom;
-            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr);
+            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr &&
+                                    fUI.descriptor->port_event != nullptr && ! fNeedsUiClose);
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
@@ -1540,7 +1541,11 @@ public:
             if (fNeedsUiClose)
                 pass();
             else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
-                fNeedsUiClose = true;
+            {
+                showCustomUI(false);
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                CARLA_SAFE_ASSERT(fUI.handle == nullptr);
+            }
 #endif
         }
 
@@ -3936,7 +3941,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && ! fNeedsUiClose)
             {
                 CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
                 fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
@@ -3956,7 +3961,7 @@ public:
         }
         else
         {
-            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr)
+            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr && ! fNeedsUiClose)
                 fExt.uiprograms->select_program(fUI.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
         }
     }
@@ -3975,7 +3980,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr && ! fNeedsUiClose)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
@@ -4002,7 +4007,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr && ! fNeedsUiClose)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
