@@ -109,7 +109,7 @@ public:
     /*!
      * Get the plugin's options (currently in use).
      *
-     * @see PluginOptions, getAvailableOptions() and setOption()
+     * @see PluginOptions, getOptionsAvailable() and setOption()
      */
     uint getOptionsEnabled() const noexcept;
 
@@ -154,7 +154,7 @@ public:
     /*!
      * Get the plugin's latency, in sample frames.
      */
-    uint32_t getLatencyInFrames() const noexcept;
+    virtual uint32_t getLatencyInFrames() const noexcept;
 
     // -------------------------------------------------------------------
     // Information (count)
@@ -266,7 +266,7 @@ public:
      * Get the complete plugin chunk data into @a dataPtr.
      *
      * @note Make sure to verify the plugin supports chunks before calling this function!
-     * \return The size of the chunk or 0 if invalid.
+     * @return The size of the chunk or 0 if invalid.
      *
      * @see setChunkData()
      */
@@ -326,6 +326,7 @@ public:
 
     /*!
      * Get the custom text of the parameter @a parameterId.
+     * @see PARAMETER_USES_CUSTOM_TEXT
      */
     virtual void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept;
 
@@ -436,7 +437,7 @@ public:
     /*!
      * Set a plugin's option.
      *
-     * @see getOptions() and getAvailableOptions()
+     * @see getOptions() and getOptionsAvailable()
      */
     virtual void setOption(const uint option, const bool yesNo, const bool sendCallback);
 

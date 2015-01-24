@@ -843,6 +843,7 @@ public:
             deactivate();
         }
 
+#if 0 // TODO
         // check latency
         if (pData->hints & PLUGIN_CAN_DRYWET)
         {
@@ -859,6 +860,7 @@ public:
             pData->recreateLatencyBuffers();
 #endif
         }
+#endif
 
         // special plugin fixes
         // 1. IL Harmless - disable threaded processing
@@ -1061,11 +1063,13 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
+#endif
 #endif
 
             pData->needsReset = false;

@@ -385,6 +385,73 @@ void CarlaPlugin::ProtectedData::ExternalNotes::clear() noexcept
 }
 
 // -----------------------------------------------------------------------
+// ProtectedData::Latency
+
+CarlaPlugin::ProtectedData::Latency::Latency() noexcept
+    : channels(0),
+      frames(0),
+      buffers(nullptr) {}
+
+CarlaPlugin::ProtectedData::Latency::~Latency() noexcept
+{
+    clearBuffers();
+}
+
+void CarlaPlugin::ProtectedData::Latency::clearBuffers() noexcept
+{
+    if (buffers != nullptr)
+    {
+        for (uint32_t i=0; i < channels; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(buffers[i] != nullptr);
+
+            delete[] buffers[i];
+            buffers[i] = nullptr;
+        }
+
+        delete[] buffers;
+        buffers = nullptr;
+    }
+
+    channels = 0;
+    frames   = 0;
+}
+
+void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChannels, const uint32_t newFrames)
+{
+    CARLA_SAFE_ASSERT_RETURN(channels != newChannels || frames != newFrames,);
+
+    // delete old buffer
+    if (buffers != nullptr)
+    {
+        for (uint32_t i=0; i < channels; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(buffers[i] != nullptr);
+
+            delete[] buffers[i];
+            buffers[i] = nullptr;
+        }
+
+        delete[] buffers;
+        buffers = nullptr;
+    }
+
+    channels = newChannels;
+    frames   = newFrames;
+
+    if (channels > 0 && frames > 0)
+    {
+        buffers = new float*[channels];
+
+        for (uint32_t i=0; i < channels; ++i)
+        {
+            buffers[i] = new float[frames];
+            FloatVectorOperations::clear(buffers[i], static_cast<int>(frames));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
 // ProtectedData::PostRtEvents
 
 CarlaPlugin::ProtectedData::PostRtEvents::PostRtEvents() noexcept
@@ -476,10 +543,6 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       ctrlChannel(0),
       extraHints(0x0),
       transientTryCounter(0),
-      latency(0),
-#ifndef BUILD_BRIDGE
-      latencyBuffers(nullptr),
-#endif
       name(nullptr),
       filename(nullptr),
       iconName(nullptr),
@@ -496,6 +559,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       singleMutex(),
       stateSave(),
       extNotes(),
+      latency(),
       postRtEvents(),
       postUiEvents(),
 #ifndef BUILD_BRIDGE
@@ -598,74 +662,14 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 
 void CarlaPlugin::ProtectedData::clearBuffers() noexcept
 {
-#ifndef BUILD_BRIDGE
-    if (latencyBuffers != nullptr)
-    {
-        CARLA_SAFE_ASSERT(audioIn.count > 0);
-
-        for (uint32_t i=0; i < audioIn.count; ++i)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
-
-            delete[] latencyBuffers[i];
-            latencyBuffers[i] = nullptr;
-        }
-
-        delete[] latencyBuffers;
-        latencyBuffers = nullptr;
-        latency = 0;
-    }
-    else
-    {
-        if (latency != 0)
-        {
-            carla_safe_assert_int("latency != 0", __FILE__, __LINE__, static_cast<int>(latency));
-            latency = 0;
-        }
-    }
-#else
-    latency = 0;
-#endif
-
     audioIn.clear();
     audioOut.clear();
     cvIn.clear();
     cvOut.clear();
     param.clear();
     event.clear();
+    latency.clearBuffers();
 }
-
-#ifndef BUILD_BRIDGE
-void CarlaPlugin::ProtectedData::recreateLatencyBuffers()
-{
-    if (latencyBuffers != nullptr)
-    {
-        CARLA_SAFE_ASSERT(audioIn.count > 0);
-
-        for (uint32_t i=0; i < audioIn.count; ++i)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(latencyBuffers[i] != nullptr);
-
-            delete[] latencyBuffers[i];
-            latencyBuffers[i] = nullptr;
-        }
-
-        delete[] latencyBuffers;
-        latencyBuffers = nullptr;
-    }
-
-    if (audioIn.count > 0 && latency > 0)
-    {
-        latencyBuffers = new float*[audioIn.count];
-
-        for (uint32_t i=0; i < audioIn.count; ++i)
-        {
-            latencyBuffers[i] = new float[latency];
-            FloatVectorOperations::clear(latencyBuffers[i], static_cast<int>(latency));
-        }
-    }
-}
-#endif
 
 // -----------------------------------------------------------------------
 // Post-poned events

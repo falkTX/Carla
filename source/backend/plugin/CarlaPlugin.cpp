@@ -162,7 +162,7 @@ int64_t CarlaPlugin::getUniqueId() const noexcept
 
 uint32_t CarlaPlugin::getLatencyInFrames() const noexcept
 {
-    return pData->latency;
+    return 0;
 }
 
 // -------------------------------------------------------------------
@@ -1397,6 +1397,17 @@ void CarlaPlugin::idle()
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool sendOsc(pData->engine->isOscControlRegistered());
 #endif
+    const uint32_t latency(getLatencyInFrames());
+
+    if (pData->latency.frames != latency)
+    {
+        carla_stdout("latency changed to %i", latency);
+
+        const ScopedSingleProcessLocker sspl(this, true);
+
+        pData->client->setLatency(latency);
+        pData->latency.recreateBuffers(pData->latency.channels, latency);
+    }
 
     const CarlaMutexLocker sl(pData->postRtEvents.mutex);
 

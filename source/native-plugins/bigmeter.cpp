@@ -160,10 +160,10 @@ protected:
         Range<float> range;
 
         range     = FloatVectorOperations::findMinAndMax(inputs[0], static_cast<int>(frames));
-        fOutLeft  = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+        fOutLeft  = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
         range     = FloatVectorOperations::findMinAndMax(inputs[1], static_cast<int>(frames));
-        fOutRight = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+        fOutRight = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
     }
 
 private:

@@ -1432,6 +1432,7 @@ public:
         }
     }
 
+#if 0 // TODO
     void idle() override
     {
         if (fLatencyChanged && fLatencyIndex != -1)
@@ -1463,6 +1464,7 @@ public:
 
         CarlaPlugin::idle();
     }
+#endif
 
     void uiIdle() override
     {
@@ -2361,6 +2363,7 @@ public:
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
 
+#if 0 // TODO
         // check latency
         if (fLatencyIndex >= 0)
         {
@@ -2429,6 +2432,7 @@ public:
 
             fLatencyChanged = false;
         }
+#endif
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -2730,11 +2734,13 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
+#endif
 #endif
 
             pData->needsReset = false;
@@ -3340,6 +3346,7 @@ public:
         } // End of Plugin processing (no events)
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
         // --------------------------------------------------------------------------------------------------------
         // Latency, save values for next callback
 
@@ -3368,6 +3375,7 @@ public:
                 }
             }
         }
+#endif
 #endif
 
         // --------------------------------------------------------------------------------------------------------
@@ -3614,11 +3622,13 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
+#if 0 // TODO
                         if (k < pData->latency)
                             bufValue = pData->latencyBuffers[isMono ? 0 : i][k];
                         else if (pData->latency < frames)
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k-pData->latency];
                         else
+#endif
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));

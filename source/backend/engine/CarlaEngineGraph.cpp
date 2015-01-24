@@ -646,10 +646,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
             if (oldAudioInCount > 0)
             {
                 range = FloatVectorOperations::findMinAndMax(inBuf0, iframes);
-                pluginData.insPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.insPeak[0] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
                 range = FloatVectorOperations::findMinAndMax(inBuf1, iframes);
-                pluginData.insPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.insPeak[1] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
             {
@@ -660,10 +660,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
             if (plugin->getAudioOutCount() > 0)
             {
                 range = FloatVectorOperations::findMinAndMax(outBuf[0], iframes);
-                pluginData.outsPeak[0] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.outsPeak[0] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
                 range = FloatVectorOperations::findMinAndMax(outBuf[1], iframes);
-                pluginData.outsPeak[1] = carla_max<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.outsPeak[1] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
             else
             {

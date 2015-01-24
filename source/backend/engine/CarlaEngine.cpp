@@ -845,7 +845,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
         return sname.dup();
     }
 
-    const size_t maxNameSize(carla_min<uint>(getMaxClientNameSize(), 0xff, 6) - 6); // 6 = strlen(" (10)") + 1
+    const std::size_t maxNameSize(carla_minWithBase<uint>(getMaxClientNameSize(), 0xff, 6U) - 6); // 6 = strlen(" (10)") + 1
 
     if (maxNameSize == 0 || ! isRunning())
         return sname.dup();
@@ -1454,7 +1454,11 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
 #ifndef BUILD_BRIDGE
-    pData->graph.setBufferSize(newBufferSize);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.setBufferSize(newBufferSize);
+    }
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1473,7 +1477,11 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
 #ifndef BUILD_BRIDGE
-    pData->graph.setSampleRate(newSampleRate);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.setSampleRate(newSampleRate);
+    }
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1492,7 +1500,11 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
     carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
 
 #ifndef BUILD_BRIDGE
-    pData->graph.setOffline(isOfflineNow);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.setOffline(isOfflineNow);
+    }
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
