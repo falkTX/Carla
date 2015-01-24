@@ -187,6 +187,7 @@ protected:
             const char* name;
             const char* label;
             int64_t uniqueId;
+            uint options;
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(btype), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(ptype), true);
@@ -194,6 +195,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsLong(uniqueId), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(options), true);
 
             if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
             {
@@ -207,7 +209,8 @@ protected:
                 name = nullptr;
             }
 
-            ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype), filename, name, label, uniqueId, nullptr);
+            ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype),
+                                    filename, name, label, uniqueId, nullptr, options);
 
             if (filename != nullptr)
                 delete[] filename;

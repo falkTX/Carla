@@ -1380,8 +1380,9 @@ class CarlaHostMeta(object):
     # @param label    Plugin label, if applicable
     # @param uniqueId Plugin unique Id, if applicable
     # @param extraPtr Extra pointer, defined per plugin type
+    # @param options  Initial plugin options
     @abstractmethod
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         raise NotImplementedError
 
     # Remove a plugin.
@@ -1892,7 +1893,7 @@ class CarlaHostNull(CarlaHostMeta):
     def get_max_plugin_number(self):
         return 0
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         return False
 
     def remove_plugin(self, pluginId):
@@ -2163,7 +2164,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_max_plugin_number.argtypes = None
         self.lib.carla_get_max_plugin_number.restype = c_uint32
 
-        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p]
+        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p, c_uint]
         self.lib.carla_add_plugin.restype = c_bool
 
         self.lib.carla_remove_plugin.argtypes = [c_uint]
@@ -2422,11 +2423,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_max_plugin_number(self):
         return int(self.lib.carla_get_max_plugin_number())
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p)))
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p)), options)
 
     def remove_plugin(self, pluginId):
         return bool(self.lib.carla_remove_plugin(pluginId))
@@ -2741,8 +2742,8 @@ class CarlaHostPlugin(CarlaHostMeta):
     def get_max_plugin_number(self):
         return self.fMaxPluginNumber
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
-        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId])
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
+        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId, options])
 
     def remove_plugin(self, pluginId):
         return self.sendMsgAndSetError(["remove_plugin", pluginId])

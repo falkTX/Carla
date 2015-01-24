@@ -68,6 +68,7 @@ struct CarlaStateSave {
     const char* label;
     const char* binary;
     int64_t     uniqueId;
+    uint        options;
 
 #ifndef BUILD_BRIDGE
     bool   active;
@@ -77,7 +78,6 @@ struct CarlaStateSave {
     float  balanceRight;
     float  panning;
     int8_t ctrlChannel;
-    uint   options;
 #endif
 
     int32_t     currentProgramIndex;

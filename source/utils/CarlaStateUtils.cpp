@@ -186,6 +186,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       label(nullptr),
       binary(nullptr),
       uniqueId(0),
+      options(0x0),
 #ifndef BUILD_BRIDGE
       active(false),
       dryWet(1.0f),
@@ -194,7 +195,6 @@ CarlaStateSave::CarlaStateSave() noexcept
       balanceRight(1.0f),
       panning(0.0f),
       ctrlChannel(-1),
-      options(0x0),
 #endif
       currentProgramIndex(-1),
       currentProgramName(nullptr),
@@ -243,6 +243,8 @@ void CarlaStateSave::clear() noexcept
     }
 
     uniqueId = 0;
+    options  = 0x0;
+
 #ifndef BUILD_BRIDGE
     active = false;
     dryWet = 1.0f;
@@ -251,8 +253,8 @@ void CarlaStateSave::clear() noexcept
     balanceRight = 1.0f;
     panning      = 0.0f;
     ctrlChannel  = -1;
-    options      = 0x0;
 #endif
+
     currentProgramIndex = -1;
     currentMidiBank     = -1;
     currentMidiProgram  = -1;

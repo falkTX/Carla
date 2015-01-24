@@ -1551,7 +1551,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
+    bool init(const char* const filename, const char* const name, const char* const label, const uint options,
+              const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1703,10 +1704,14 @@ public:
 
         pData->options = 0x0;
 
-        if (fLatencyIndex >= 0 || fIsDssiVst)
+        /**/ if (fLatencyIndex >= 0 || fIsDssiVst)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getOptions().forceStereo)
+        /**/ if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         return true;
@@ -1827,11 +1832,11 @@ private:
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
-    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, rdfDescriptor);
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
 
     CarlaPluginLADSPA* const plugin(new CarlaPluginLADSPA(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, rdfDescriptor))
+    if (! plugin->init(init.filename, init.name, init.label, init.options, rdfDescriptor))
     {
         delete plugin;
         return nullptr;

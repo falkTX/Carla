@@ -409,7 +409,7 @@ int main(int argc, char* argv[])
 
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, uniqueId, extraStuff))
+    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, uniqueId, extraStuff, 0x0))
     {
         ret = 0;
 

@@ -780,13 +780,17 @@ public:
      * Add new plugin.
      * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
-    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
+    bool addPlugin(const BinaryType btype, const PluginType ptype,
+                   const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
+                   const void* const extra, const uint options);
 
     /*!
-     * Add new plugin, using native binary type.
+     * Add new plugin, using native binary type and default options.
      * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
-    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
+    bool addPlugin(const PluginType ptype,
+                   const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
+                   const void* const extra);
 
     /*!
      * Remove plugin with id @a id.

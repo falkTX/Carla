@@ -883,6 +883,7 @@ public:
         const char* const name;
         const char* const label;
         const int64_t uniqueId;
+        const uint options; // see PluginOptions
     };
 
     static CarlaPlugin* newNative(const Initializer& init);

@@ -30,6 +30,7 @@
 #include "CarlaBinaryUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaStateUtils.hpp"
 #include "CarlaMIDI.h"
 
@@ -316,7 +317,9 @@ CarlaEngineClient* CarlaEngine::addClient(CarlaPlugin* const)
 // -----------------------------------------------------------------------
 // Plugin management
 
-bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
+bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
+                            const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
+                            const void* const extra, const uint options)
 {
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->isIdling == 0, "An operation is still being processed, please wait for it to finish");
     CARLA_SAFE_ASSERT_RETURN_ERR(pData->plugins != nullptr, "Invalid engine internal data");
@@ -325,7 +328,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
     CARLA_SAFE_ASSERT_RETURN_ERR(btype != BINARY_NONE, "Invalid plugin binary mode");
     CARLA_SAFE_ASSERT_RETURN_ERR(ptype != PLUGIN_NONE, "Invalid plugin type");
     CARLA_SAFE_ASSERT_RETURN_ERR((filename != nullptr && filename[0] != '\0') || (label != nullptr && label[0] != '\0'), "Invalid plugin filename and label");
-    carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra);
+    carla_debug("CarlaEngine::addPlugin(%i:%s, %i:%s, \"%s\", \"%s\", \"%s\", " P_INT64 ", %p, %u)", btype, BinaryType2Str(btype), ptype, PluginType2Str(ptype), filename, name, label, uniqueId, extra, options);
 
     uint id;
 
@@ -361,7 +364,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
         filename,
         name,
         label,
-        uniqueId
+        uniqueId,
+        options
     };
 
     CarlaPlugin* plugin = nullptr;
@@ -427,16 +431,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
                 "/usr/lib/dssi/dssi-vst.so",
                 name,
                 label2,
-                uniqueId
+                uniqueId,
+                options
             };
 
-            char* const oldVstPath(std::getenv("VST_PATH"));
-            carla_setenv("VST_PATH", file.getParentDirectory().getFullPathName().toRawUTF8());
+            ScopedEnvVar sev("VST_PATH", file.getParentDirectory().getFullPathName().toRawUTF8());
 
             plugin = CarlaPlugin::newDSSI(init2);
-
-            if (oldVstPath != nullptr)
-                carla_setenv("VST_PATH", oldVstPath);
         }
 # endif
         else
@@ -578,7 +579,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype, cons
 
 bool CarlaEngine::addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra)
 {
-    return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra);
+    return addPlugin(BINARY_NATIVE, ptype, filename, name, label, uniqueId, extra, 0x0);
 }
 
 bool CarlaEngine::removePlugin(const uint id)
@@ -726,7 +727,9 @@ bool CarlaEngine::clonePlugin(const uint id)
 
     const uint pluginCountBefore(pData->curPluginCount);
 
-    if (! addPlugin(plugin->getBinaryType(), plugin->getType(), plugin->getFilename(), plugin->getName(), label, plugin->getUniqueId(), plugin->getExtraStuff()))
+    if (! addPlugin(plugin->getBinaryType(), plugin->getType(),
+                    plugin->getFilename(), plugin->getName(), label, plugin->getUniqueId(),
+                    plugin->getExtraStuff(), plugin->getOptionsEnabled()))
         return false;
 
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginCountBefore+1 == pData->curPluginCount, "No new plugin found");
@@ -977,7 +980,7 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     if (extension == "xmz" || extension == "xiz")
     {
-#ifdef WANT_ZYNADDSUBFX
+#ifdef HAVE_ZYN_DEPS
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
@@ -1844,7 +1847,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
             // TODO - proper find&load plugins
 
-            if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff))
+            if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 {

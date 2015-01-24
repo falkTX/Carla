@@ -1874,10 +1874,10 @@ if __name__ == '__main__':
     loadHostSettings(host)
 
     host.engine_init("JACK", "Carla-Widgets")
-    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None)
+    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None, 0x0)
     host.set_active(0, True)
 
     gui = createPluginSlot(None, host, 0, True)

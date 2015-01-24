@@ -681,7 +681,7 @@ class HostWindow(QMainWindow):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
                 return
 
-        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr)
+        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0)
 
         if pluginToReplace >= 0:
             self.host.replace_plugin(self.host.get_max_plugin_number())
