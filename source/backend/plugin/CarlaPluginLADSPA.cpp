@@ -197,7 +197,7 @@ public:
             if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
                 pass();
             // if inputs or outputs are just 1, then yes we can force stereo
-            else if (pData->audioIn.count == 1 || pData->audioOut.count == 1)
+            else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
                 options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 

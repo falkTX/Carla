@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>501</width>
-    <height>431</height>
+    <width>509</width>
+    <height>443</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -350,7 +350,7 @@
           <item>
            <widget class="QCheckBox" name="ch_force_stereo">
             <property name="text">
-             <string>Force Stereo (needs restart)</string>
+             <string>Force Stereo (needs reload)</string>
             </property>
            </widget>
           </item>
