@@ -52,8 +52,20 @@ def getParameterShortName(paramName):
     paramName = paramName.split("/",1)[0].split(" (",1)[0].split(" [",1)[0].strip()
     paramLow  = paramName.lower()
 
+    # Cut useless prefix
     if paramLow.startswith("compressor "):
         paramName = paramName.replace("ompressor ", ".", 1)
+        paramLow  = paramName.lower()
+    elif paramLow.startswith("room "):
+        paramName = paramName.split(" ",1)[1]
+        paramLow  = paramName.lower()
+
+    # Cut useless suffix
+    if paramLow.endswith(" level"):
+        paramName = paramName.rsplit(" ",1)[0]
+        paramLow  = paramName.lower()
+    elif paramLow.endswith(" time"):
+        paramName = paramName.rsplit(" ",1)[0]
         paramLow  = paramName.lower()
 
     # Cut generic names
@@ -69,6 +81,8 @@ def getParameterShortName(paramName):
         paramName = paramName.replace("eedback", "b")
     elif "frequency" in paramLow:
         paramName = paramName.replace("requency", "req")
+    elif "input" in paramLow:
+        paramName = paramName.replace("nput", "n")
     elif "makeup" in paramLow:
         paramName = paramName.replace("akeup", "kUp" if "Make" in paramName else "kup")
     elif "output" in paramLow:
@@ -78,18 +92,18 @@ def getParameterShortName(paramName):
     elif "threshold" in paramLow:
         paramName = paramName.replace("hreshold", "hres")
 
-    # Cut useless prefix
-    elif paramLow.startswith("room "):
-        paramName = paramName.split(" ",1)[1]
+    # remove space if 1st last word is lowercase and the 2nd first is uppercase, or if 2nd is number
+    if " " in paramName:
+        name1, name2 = paramName.split(" ", 1)
+        if (name1[-1].islower() and name2[0].isupper()) or name2.isdigit():
+            paramName = paramName.replace(" ", "", 1)
 
-    # Cut useless suffix
-    elif paramLow.endswith(" level"):
-        paramName = paramName.rsplit(" ",1)[0]
-    elif paramLow.endswith(" time"):
-        paramName = paramName.rsplit(" ",1)[0]
-
+    # cut stuff if too big
     if len(paramName) > 7:
-        paramName = paramName[:7]
+        paramName = paramName.replace("a","").replace("e","").replace("i","").replace("o","").replace("u","")
+
+        if len(paramName) > 7:
+            paramName = paramName[:7]
 
     return paramName.strip()
 
@@ -1031,6 +1045,8 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
                 continue
             if paramData['hints'] & PARAMETER_IS_BOOLEAN:
                 continue
+            if paramData['hints'] & PARAMETER_IS_INTEGER:
+                continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
 
@@ -1232,6 +1248,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
                 continue
             if paramData['hints'] & PARAMETER_IS_BOOLEAN:
                 continue
+            if paramData['hints'] & PARAMETER_IS_INTEGER:
+                continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
 
@@ -1352,6 +1370,8 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
             if paramData['type'] != PARAMETER_INPUT:
                 continue
             if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if paramData['hints'] & PARAMETER_IS_INTEGER:
                 continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
@@ -1532,6 +1552,8 @@ class PluginSlot_SF2(AbstractPluginSlot):
                 continue
             if paramData['hints'] & PARAMETER_IS_BOOLEAN:
                 continue
+            if paramData['hints'] & PARAMETER_IS_INTEGER:
+                continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
 
@@ -1652,6 +1674,8 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             if paramData['type'] != PARAMETER_INPUT:
                 continue
             if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                continue
+            if paramData['hints'] & PARAMETER_IS_INTEGER:
                 continue
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 continue
