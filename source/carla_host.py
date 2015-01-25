@@ -1244,7 +1244,11 @@ class HostWindow(QMainWindow):
 
             showTimePanel = settings.value("ShowTimePanel", True, type=bool)
             self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
-            self.ui.panelTime.setVisible(showTimePanel)
+
+            if showTimePanel:
+                QTimer.singleShot(0, self.ui.panelTime.show)
+            else:
+                self.ui.panelTime.hide()
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)

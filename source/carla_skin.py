@@ -275,6 +275,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.b_remove.clicked.connect(self.slot_removePlugin)
 
         if self.label_name is not None:
+            self.label_name.setEnabled(self.fIsActive)
             self.label_name.setText(self.fPluginInfo['name'])
 
         if self.label_type is not None:
@@ -370,6 +371,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if active:
             self.fEditDialog.clearNotes()
             self.midiActivityChanged(False)
+
+        if self.label_name is not None:
+            self.label_name.setEnabled(self.fIsActive)
 
     # called from rack, checks if param is possible first
     def setInternalParameter(self, parameterId, value):
@@ -964,6 +968,9 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
         self.ui.setupUi(self)
 
+        if self.fPluginInfo['type'] == PLUGIN_INTERNAL and self.fPluginInfo['label'] == "midifile":
+            self.fIsCollapsed = True
+
         # -------------------------------------------------------------
         # Set-up GUI
 
@@ -1009,6 +1016,9 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
             QLabel#label_name {
                 color: #BBB;
             }
+            QLabel#label_name:disabled {
+                color: #555;
+            }
         """ % (r, g, b, bg))
 
         self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
@@ -1021,11 +1031,15 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         else:
             self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
-        #if self.fIsCollapsed:
-            #self.ui.w_knobs.hide()
-            #self.ui.horizontalLayout_2.setContentsMargins(0,0,0,0)
-            #self.ui.horizontalLayout_2.setSpacing(0)
-            #self.ui.horizontalLayout_2.SetMaximumSize(0,0)
+        if self.fIsCollapsed:
+            self.layout().setAlignment(Qt.AlignCenter)
+            self.layout().setContentsMargins(2,2,2,0)
+            self.ui.layout_leds.setContentsMargins(0,4,0,0)
+            self.ui.w_knobs.hide()
+            self.ui.w_screws_left.hide()
+            self.ui.w_screws_right.hide()
+            self.ui.label_name.setFixedHeight(self.ui.b_enable.height())
+            print("TO BOTTOM")
 
         # -------------------------------------------------------------
         # Set-up parameters
@@ -1145,7 +1159,7 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         painter.setBrush(Qt.transparent)
 
         painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 79-3)
+        painter.drawRect(0, 1, self.width()-1, self.getFixedHeight()-3)
 
         painter.setPen(QPen(QColor(60, 60, 60), 1))
         painter.drawLine(0, 0, self.width(), 0)
@@ -1174,7 +1188,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
         self.fButtonFont.setPointSize(8)
 
         # Use black for mono plugins
-        self.fBackgroundBlack = audioCount['ins'] == 1
+        self.fBackgroundBlack = bool("mono" in self.fPluginInfo["label"].lower())
 
         self.fButtonColorOn  = QColor( 18,  41,  87)
         self.fButtonColorOff = QColor(150, 150, 150)
@@ -1186,6 +1200,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
             QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
                 color: #BBB;
             }
+            QLabel#label_name:disabled {
+                color: #667;
+            }
             PluginSlot_Calf#PluginWidget {
                 background-image: url(:/bitmaps/background_calf_%s.png);
                 background-repeat: repeat-xy;
@@ -1193,6 +1210,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
             }
         """ % ("black" if self.fBackgroundBlack else "blue"))
 
+        self.ui.line.setStyleSheet("* { color: #FF5100; }")
+
+        self.ui.b_enable.setPixmaps(":/bitmaps/button_calf3.png", ":/bitmaps/button_calf3_down.png", ":/bitmaps/button_calf3.png")
         self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
         self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
         self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
@@ -1209,6 +1229,9 @@ class PluginSlot_Calf(AbstractPluginSlot):
         labelFont.setBold(True)
         labelFont.setPointSize(10)
         self.ui.label_name.setFont(labelFont)
+
+        self.ui.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
+        self.ui.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
 
         if audioCount['ins'] == 0:
             self.ui.label_audio_in.hide()
@@ -1272,12 +1295,15 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         # -------------------------------------------------------------
 
+        self.b_enable = self.ui.b_enable
         self.b_gui    = self.ui.b_gui
         self.b_edit   = self.ui.b_edit
         self.b_remove = self.ui.b_remove
 
         self.label_name = self.ui.label_name
         self.led_midi   = self.ui.led_midi
+
+        self.line = self.ui.line
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
@@ -1291,7 +1317,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 88
+        return 94 if max(self.peak_in.channelCount(), self.peak_out.channelCount()) < 2 else 106
 
     #------------------------------------------------------------------
 

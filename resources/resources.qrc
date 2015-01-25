@@ -59,8 +59,10 @@
         <file>bitmaps/background_zynfx.png</file>
         <file>bitmaps/button_calf1.png</file>
         <file>bitmaps/button_calf2.png</file>
+        <file>bitmaps/button_calf3.png</file>
         <file>bitmaps/button_calf1_down.png</file>
         <file>bitmaps/button_calf2_down.png</file>
+        <file>bitmaps/button_calf3_down.png</file>
         <file>bitmaps/button_calf1_hover.png</file>
         <file>bitmaps/button_calf2_hover.png</file>
         <file>bitmaps/button_distrho.png</file>
@@ -116,8 +118,9 @@
 
         <file>bitmaps/led_calf_off.png</file>
         <file>bitmaps/led_calf_on.png</file>
-
         <file>bitmaps/logo_calf.png</file>
+        <file>bitmaps/meter_calf_off.png</file>
+        <file>bitmaps/meter_calf_on.png</file>
 
         <file>bitmaps/rack_interior_left.png</file>
         <file>bitmaps/rack_interior_right.png</file>
