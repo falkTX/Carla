@@ -317,11 +317,14 @@ public:
     {
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (kIsGIG)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return options;
     }
@@ -1333,10 +1336,14 @@ public:
         // set default options
 
         pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (kIsGIG)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }
