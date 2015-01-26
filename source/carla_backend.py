@@ -21,7 +21,6 @@
 
 from abc import ABCMeta, abstractmethod
 from ctypes import *
-from os import environ
 from platform import architecture
 from sys import platform, maxsize
 
