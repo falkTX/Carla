@@ -1244,6 +1244,7 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
         settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
         settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
+        settings.setValue("PluginDatabase/SearchText", self.ui.lineEdit.text())
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1269,6 +1270,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
         self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
+        self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
 
         self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
 
