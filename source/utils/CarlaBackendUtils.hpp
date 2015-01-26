@@ -416,6 +416,38 @@ const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
 // -----------------------------------------------------------------------
 
 static inline
+BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', BINARY_NONE);
+    carla_debug("CarlaBackend::getBinaryTypeFromString(\"%s\")", ctype);
+
+    CarlaString stype(ctype);
+
+    if (stype.isEmpty())
+        return BINARY_NONE;
+
+    stype.toLower();
+
+    if (stype == "none")
+        return BINARY_NONE;
+    if (stype == "native")
+        return BINARY_NATIVE;
+    if (stype == "posix32" || stype == "linux32" || stype == "mac32")
+        return BINARY_POSIX32;
+    if (stype == "posix64" || stype == "linux64" || stype == "mac64")
+        return BINARY_POSIX64;
+    if (stype == "win32")
+        return BINARY_WIN32;
+    if (stype == "win64")
+        return BINARY_WIN64;
+
+    carla_stderr("CarlaBackend::getBinaryTypeFromString(\"%s\") - invalid string type", ctype);
+    return BINARY_NONE;
+}
+
+// -----------------------------------------------------------------------
+
+static inline
 const char* getPluginTypeAsString(const PluginType type) noexcept
 {
     carla_debug("CarlaBackend::getPluginTypeAsString(%i:%s)", type, PluginType2Str(type));

@@ -310,6 +310,20 @@ int main(int argc, char* argv[])
         label = nullptr;
 
     // ---------------------------------------------------------------------
+    // Check binary type
+
+    CarlaBackend::BinaryType btype = CarlaBackend::BINARY_NATIVE;
+
+    if (const char* const binaryTypeStr = std::getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE"))
+        btype = CarlaBackend::getBinaryTypeFromString(binaryTypeStr);
+
+    if (btype == CarlaBackend::BINARY_NONE)
+    {
+        carla_stderr("Invalid binary type '%i'", btype);
+        return 1;
+    }
+
+    // ---------------------------------------------------------------------
     // Check plugin type
 
     CarlaBackend::PluginType itype(CarlaBackend::getPluginTypeFromString(stype));
@@ -409,7 +423,7 @@ int main(int argc, char* argv[])
 
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, uniqueId, extraStuff, 0x0))
+    if (carla_add_plugin(btype, itype, filename, name, label, uniqueId, extraStuff, 0x0))
     {
         ret = 0;
 

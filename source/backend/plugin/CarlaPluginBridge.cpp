@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE) && defined(BRIDGE_PLUGIN)
 # error This file should be used under bridge mode
 #endif
 
@@ -1172,6 +1172,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
+#ifndef BUILD_BRIDGE
         if (yesNo)
         {
             pData->tryTransient();
@@ -1180,6 +1181,7 @@ public:
         {
             pData->transientTryCounter = 0;
         }
+#endif
     }
 
     void idle() override
@@ -1462,7 +1464,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
+#endif
 
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
@@ -1483,6 +1487,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter:
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1532,7 +1537,7 @@ public:
                                 break;
                             }
                         }
-
+#endif
                         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventParameter);
                         fShmRtClientControl.writeUInt(event.time);
                         fShmRtClientControl.writeByte(event.channel);
@@ -1576,11 +1581,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventAllNotesOff);
                             fShmRtClientControl.writeUInt(event.time);
@@ -1783,6 +1790,7 @@ public:
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
             FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1846,6 +1854,8 @@ public:
             }
 
         } // End of Post-processing
+
+#endif // BUILD_BRIDGE
 
         // --------------------------------------------------------------------------------------------------------
 

@@ -370,7 +370,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     CarlaPlugin* plugin = nullptr;
 
-#ifndef BUILD_BRIDGE
+#ifndef BRIDGE_PLUGIN
     CarlaString bridgeBinary(pData->options.binaryDir);
 
     if (bridgeBinary.isNotEmpty())
@@ -1233,7 +1233,11 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 
     case ENGINE_OPTION_PREFER_PLUGIN_BRIDGES:
+#ifdef BUILD_BRIDGE
+        CARLA_SAFE_ASSERT_RETURN(value == 0,);
+#else
         CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+#endif
         pData->options.preferPluginBridges = (value != 0);
         break;
 
