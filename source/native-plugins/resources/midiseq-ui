@@ -1057,7 +1057,7 @@ class MainWindow(ExternalUI, QWidget):
         msg = data[0]
         if msg == "midievent-remove":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * self.getSampleRate()
+            note_start = start * 60. / self.fTransportInfo["bpm"] * 4. / self.fTransportInfo["sigDenom"] * self.getSampleRate()
             note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.getSampleRate()
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
@@ -1172,7 +1172,7 @@ class MainWindow(ExternalUI, QWidget):
 
                 # found it
                 #print("{} {} {} {}\n".format(note, time_, time-time_, velo_))
-                start = time_ / 60. * self.fTransportInfo["bpm"]
+                start = time_ / 60. * self.fTransportInfo["bpm"] / 4. * self.fTransportInfo["sigDenom"]
                 length = (time - time_) / 60. * self.fTransportInfo["bpm"] / 4. / self.fTransportInfo["sigNum"] * self.fTransportInfo["sigDenom"]
                 self.piano.drawNote(note, start, length, velo_)
 
