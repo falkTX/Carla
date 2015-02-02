@@ -423,7 +423,7 @@ public:
     {
         uint32_t index = rindex;
 
-        if (kIsAmbisonic && rindex == Mainwin::NROTARY)
+        if (kIsAmbisonic && rindex == kParameterNROTARY)
             index = kParameterOPMIXorRGXYZ;
 
         fParameters[index] = value;
