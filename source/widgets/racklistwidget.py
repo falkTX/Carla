@@ -42,6 +42,7 @@ from carla_skin import *
 
 class RackListItem(QListWidgetItem):
     kRackItemType = QListWidgetItem.UserType + 1
+    kMinimumWidth = 620
 
     def __init__(self, parent, pluginId, useSkins):
         QListWidgetItem.__init__(self, parent, self.kRackItemType)
@@ -59,11 +60,15 @@ class RackListItem(QListWidgetItem):
 
         self.fParent   = parent
         self.fPluginId = pluginId
-        self.fUseSkins = useSkins
         self.fWidget   = None
 
+        self.fOptions = {
+            'compact':  False,
+            'useSkins': useSkins
+        }
+
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-        #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled)
+        #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
@@ -76,17 +81,21 @@ class RackListItem(QListWidgetItem):
         if self.fWidget is None:
             return
 
-        self.fWidget.fEditDialog.close()
-        self.fWidget.fEditDialog.setParent(None)
-        self.fWidget.fEditDialog.deleteLater()
-        del self.fWidget.fEditDialog
-
-        self.fWidget.close()
-        self.fWidget.setParent(None)
-        self.fWidget.deleteLater()
-        del self.fWidget
-
+        widget = self.fWidget
         self.fWidget = None
+
+        self.fParent.customClearSelection()
+        self.fParent.setItemWidget(self, None)
+
+        widget.fEditDialog.close()
+        widget.fEditDialog.setParent(None)
+        widget.fEditDialog.deleteLater()
+        del widget.fEditDialog
+
+        widget.close()
+        widget.setParent(None)
+        widget.deleteLater()
+        del widget
 
     def getEditDialog(self):
         if self.fWidget is None:
@@ -108,15 +117,24 @@ class RackListItem(QListWidgetItem):
         if self.fWidget is not None:
             self.fWidget.setPluginId(pluginId)
 
+    def setSelected(self, select):
+        if self.fWidget is not None:
+            self.fWidget.setSelected(select)
+
+        QListWidgetItem.setSelected(self, select)
+
     # --------------------------------------------------------------------------------------------------------
 
-    def recreateWidget(self):
+    def recreateWidget(self, invertCompactOption = False):
+        if invertCompactOption:
+            self.fOptions['compact'] = not self.fOptions['compact']
+
         self.close()
 
-        self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fUseSkins)
+        self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fOptions)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
 
-        self.setSizeHint(QSize(620, self.fWidget.getFixedHeight()))
+        self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
 
         self.fParent.setItemWidget(self, self.fWidget)
 
@@ -143,10 +161,15 @@ class RackListWidget(QListWidget):
         if not WINDOWS:
             exts.append(".so")
 
-        self.fSupportedExtensions = tuple(i.replace("*","") for i in exts)
+        self.fSupportedExtensions = tuple(i.replace("*","").lower() for i in exts)
+        self.fLastSelectedItem    = None
         self.fWasLastDragValid    = False
 
-        self.setMinimumWidth(640)
+        self.fPixmapL     = QPixmap(":/bitmaps/rack_interior_left.png")
+        self.fPixmapR     = QPixmap(":/bitmaps/rack_interior_right.png")
+        self.fPixmapWidth = self.fPixmapL.width()
+
+        self.setMinimumWidth(RackListItem.kMinimumWidth)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
         self.setSortingEnabled(False)
 
@@ -158,11 +181,6 @@ class RackListWidget(QListWidget):
         self.setFrameShape(QFrame.NoFrame)
         self.setFrameShadow(QFrame.Plain)
 
-        self.fPixmapL = QPixmap(":/bitmaps/rack_interior_left.png")
-        self.fPixmapR = QPixmap(":/bitmaps/rack_interior_right.png")
-
-        self.fPixmapWidth = self.fPixmapL.width()
-
     # --------------------------------------------------------------------------------------------------------
 
     def createItem(self, pluginId, useSkins):
@@ -173,13 +191,18 @@ class RackListWidget(QListWidget):
 
     # --------------------------------------------------------------------------------------------------------
 
+    def customClearSelection(self):
+        self.setCurrentRow(-1)
+        self.clearSelection()
+        self.clearFocus()
+
     def isDragUrlValid(self, url):
         filename = url.toLocalFile()
 
         if os.path.isdir(filename):
             if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 return True
-            if filename.lower().endswith((".vst", ".vst3")):
+            if MACOS and filename.lower().endswith((".vst", ".vst3")):
                 return True
 
         elif os.path.isfile(filename):
@@ -264,9 +287,9 @@ class RackListWidget(QListWidget):
     # --------------------------------------------------------------------------------------------------------
 
     def mousePressEvent(self, event):
-        if self.itemAt(event.pos()) is None:
+        if self.itemAt(event.pos()) is None and self.currentRow() != -1:
             event.accept()
-            self.setCurrentRow(-1)
+            self.customClearSelection()
             return
 
         QListWidget.mousePressEvent(self, event)
@@ -276,5 +299,20 @@ class RackListWidget(QListWidget):
         painter.drawTiledPixmap(0, 0, self.fPixmapWidth, self.height(), self.fPixmapL)
         painter.drawTiledPixmap(self.width()-self.fPixmapWidth-2, 0, self.fPixmapWidth, self.height(), self.fPixmapR)
         QListWidget.paintEvent(self, event)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def selectionChanged(self, selected, deselected):
+        for index in deselected.indexes():
+            item = self.itemFromIndex(index)
+            if item is not None:
+                item.setSelected(False)
+
+        for index in selected.indexes():
+            item = self.itemFromIndex(index)
+            if item is not None:
+                item.setSelected(True)
+
+        QListWidget.selectionChanged(self, selected, deselected)
 
 # ------------------------------------------------------------------------------------------------------------

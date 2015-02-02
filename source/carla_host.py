@@ -129,12 +129,6 @@ class HostWindow(QMainWindow):
             self.fSessionManagerName = ""
 
         # ----------------------------------------------------------------------------------------------------
-        # Internal stuff (rack)
-
-        self.fCurrentRow = -1
-        self.fLastSelectedItem = None
-
-        # ----------------------------------------------------------------------------------------------------
         # Internal stuff (patchbay)
 
         self.fExportImage   = QImage()
@@ -238,8 +232,6 @@ class HostWindow(QMainWindow):
         sb.valueChanged.connect(self.ui.rackScrollBar.setValue)
         self.ui.rackScrollBar.rangeChanged.connect(sb.setRange)
         self.ui.rackScrollBar.valueChanged.connect(sb.setValue)
-
-        self.ui.listWidget.currentRowChanged.connect(self.slot_currentRowChanged)
 
         self.ui.rack.setStyleSheet("""
           QLabel#pad_left {
@@ -419,6 +411,17 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Setup
+
+    def compactPlugin(self, pluginId):
+        if pluginId > self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+
+        if pitem is None:
+            return
+
+        pitem.recreateWidget(True)
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -1506,24 +1509,6 @@ class HostWindow(QMainWindow):
         self.updateCanvasInitialPos()
 
     # --------------------------------------------------------------------------------------------------------
-    # Rack stuff
-
-    @pyqtSlot(int)
-    def slot_currentRowChanged(self, row):
-        self.fCurrentRow = row
-
-        if self.fLastSelectedItem is not None:
-            self.fLastSelectedItem.setSelected(False)
-
-        if row < 0 or row >= self.fPluginCount or self.fPluginList[row] is None:
-            self.fLastSelectedItem = None
-            return
-
-        pitem = self.fPluginList[row]
-        pitem.getWidget().setSelected(True)
-        self.fLastSelectedItem = pitem.getWidget()
-
-    # --------------------------------------------------------------------------------------------------------
     # Timers
 
     def startTimers(self):
@@ -1574,10 +1559,7 @@ class HostWindow(QMainWindow):
         if pitem is None:
             return
 
-        self.ui.listWidget.setCurrentRow(-1)
-        self.fCurrentRow = -1
-        self.fLastSelectedItem = None
-
+        self.ui.listWidget.customClearSelection()
         pitem.recreateWidget()
 
     # --------------------------------------------------------------------------------------------------------

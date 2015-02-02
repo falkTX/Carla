@@ -24,6 +24,8 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+from math import sqrt
+
 if config_UseQt5:
     from PyQt5.QtCore import qCritical, Qt, QTimer, QSize
     from PyQt5.QtGui import QColor, QLinearGradient, QPainter, QPen, QPixmap
@@ -323,13 +325,9 @@ class DigitalPeakMeter(QWidget):
 
         # draw levels
         for level in self.fChannelData:
-            if level == 0.0:
-                meterPos += meterSize
-                continue
-
-            blevel = int(level*26.0)*3
-
-            painter.drawPixmap(5, meterPos, blevel, 4, self.fMeterPixmaps[1], 0, 0, blevel, 4)
+            if level != 0.0:
+                blevel = int(sqrt(level)*26.0)*3
+                painter.drawPixmap(5, meterPos, blevel, 4, self.fMeterPixmaps[1], 0, 0, blevel, 4)
             meterPos += meterSize
 
     def paintEvent(self, event):
@@ -371,16 +369,13 @@ class DigitalPeakMeter(QWidget):
         # draw levels
         for level in self.fChannelData:
             if level == 0.0:
-                meterPos += meterSize+meterPad
-                continue
-
-            if self.fMeterOrientation == self.HORIZONTAL:
-                painter.drawRect(0, meterPos, int(level * float(width)), meterSize)
-                meterPos += meterSize+meterPad
-
+                pass
+            elif self.fMeterOrientation == self.HORIZONTAL:
+                painter.drawRect(0, meterPos, int(sqrt(level) * float(width)), meterSize)
             elif self.fMeterOrientation == self.VERTICAL:
-                painter.drawRect(meterPos, height - int(level * float(height)), meterSize, height)
-                meterPos += meterSize+meterPad
+                painter.drawRect(meterPos, height - int(sqrt(level) * float(height)), meterSize, height)
+
+            meterPos += meterSize+meterPad
 
         if not self.fMeterLinesEnabled:
             return

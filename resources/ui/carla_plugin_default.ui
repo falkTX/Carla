@@ -16,6 +16,9 @@
   <property name="windowTitle">
    <string>Frame</string>
   </property>
+  <property name="lineWidth">
+   <number>0</number>
+  </property>
   <layout class="QHBoxLayout" name="horizontalLayout">
    <property name="spacing">
     <number>2</number>
