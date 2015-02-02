@@ -1738,38 +1738,39 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 
             widget = PixmapDial(self, i)
 
-            widget.setPixmap(5)
             widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
+            widget.setPixmap(5)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
 
-            self.ui.w_knobs_left.layout().insertWidget(index, widget)
-            index += 1
-
             self.fParameterList.append([i, widget])
+            self.ui.w_knobs_left.layout().addWidget(widget)
 
-        #self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
-        #self.ui.dial_drywet.setPixmap(5)
-        #self.ui.dial_drywet.setLabel("Wet")
-        #self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        #self.ui.dial_drywet.setMinimum(0.0)
-        #self.ui.dial_drywet.setMaximum(1.0)
-        #self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
+        if self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+            widget = PixmapDial(self, PARAMETER_DRYWET)
+            widget.setLabel("Wet")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.0)
+            widget.setPixmap(5)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
 
-        #self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        #self.ui.dial_vol.setPixmap(5)
-        #self.ui.dial_vol.setLabel("Vol")
-        #self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        #self.ui.dial_vol.setMinimum(0.0)
-        #self.ui.dial_vol.setMaximum(1.27)
-        #self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
+            self.fParameterList.append([PARAMETER_DRYWET, widget])
+            self.ui.w_knobs_right.layout().addWidget(widget)
 
-        #self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
-        #self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
+        if self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+            widget = PixmapDial(self, PARAMETER_VOLUME)
+            widget.setLabel("Volume")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.27)
+            widget.setPixmap(5)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+
+            self.fParameterList.append([PARAMETER_VOLUME, widget])
+            self.ui.w_knobs_right.layout().addWidget(widget)
 
         # -------------------------------------------------------------
         # Set-up MIDI programs
