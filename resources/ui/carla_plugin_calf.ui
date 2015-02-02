@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>563</width>
-    <height>89</height>
+    <width>622</width>
+    <height>90</height>
    </rect>
   </property>
   <property name="contextMenuPolicy">
@@ -24,57 +24,119 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
-    <number>2</number>
-   </property>
-   <property name="leftMargin">
-    <number>3</number>
-   </property>
-   <property name="topMargin">
     <number>0</number>
    </property>
-   <property name="rightMargin">
+   <property name="leftMargin">
+    <number>4</number>
+   </property>
+   <property name="topMargin">
     <number>3</number>
    </property>
+   <property name="rightMargin">
+    <number>6</number>
+   </property>
    <property name="bottomMargin">
-    <number>2</number>
+    <number>3</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_5">
+    <layout class="QHBoxLayout" name="layout_top">
      <property name="spacing">
-      <number>3</number>
-     </property>
-     <property name="leftMargin">
-      <number>10</number>
-     </property>
-     <property name="rightMargin">
-      <number>10</number>
+      <number>1</number>
      </property>
      <item>
-      <widget class="PixmapButton" name="b_enable">
-       <property name="text">
-        <string>Enable</string>
+      <widget class="QWidget" name="w_buttons" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>72</width>
+         <height>0</height>
+        </size>
        </property>
-       <property name="checkable">
-        <bool>true</bool>
+       <property name="maximumSize">
+        <size>
+         <width>72</width>
+         <height>16777215</height>
+        </size>
        </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_5">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+        <property name="margin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="PixmapButton" name="b_enable">
+          <property name="text">
+           <string>Enable</string>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_active">
+          <property name="text">
+           <string>On/Off</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_active">
-       <property name="text">
-        <string>On/Off</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <spacer name="horizontalSpacer_3">
+      <spacer name="spacer_namesep1">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
+         <width>6</width>
+         <height>1</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="Line" name="line_sep">
+       <property name="minimumSize">
+        <size>
+         <width>0</width>
          <height>20</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="lineWidth">
+        <number>0</number>
+       </property>
+       <property name="midLineWidth">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="spacer_namesep2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>8</width>
+         <height>1</height>
         </size>
        </property>
       </spacer>
@@ -88,7 +150,7 @@
         </font>
        </property>
        <property name="text">
-        <string>TextLabel</string>
+        <string>PluginName</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>
@@ -96,20 +158,20 @@
       </widget>
      </item>
      <item>
-      <spacer name="horizontalSpacer_2">
+      <spacer name="spacer_namesep3">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
        <property name="sizeHint" stdset="0">
         <size>
-         <width>40</width>
-         <height>20</height>
+         <width>20</width>
+         <height>1</height>
         </size>
        </property>
       </spacer>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
+      <layout class="QVBoxLayout" name="layout_midi">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -157,7 +219,7 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_2">
+      <layout class="QVBoxLayout" name="layout_peak_in">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -184,7 +246,7 @@
       </layout>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout_3">
+      <layout class="QVBoxLayout" name="layout_peak_out">
        <property name="spacing">
         <number>0</number>
        </property>
@@ -226,23 +288,23 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <layout class="QHBoxLayout" name="layout_bottom">
      <property name="spacing">
-      <number>0</number>
+      <number>1</number>
      </property>
      <property name="leftMargin">
-      <number>10</number>
+      <number>6</number>
+     </property>
+     <property name="topMargin">
+      <number>4</number>
      </property>
      <property name="rightMargin">
-      <number>10</number>
+      <number>6</number>
      </property>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout">
+      <layout class="QHBoxLayout" name="w_buttons2">
        <property name="spacing">
         <number>3</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
        </property>
        <item>
         <widget class="PixmapButton" name="b_gui">
@@ -274,86 +336,63 @@
       </layout>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <property name="spacing">
-        <number>0</number>
+      <spacer name="spacer_knobs">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
        </property>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QWidget" name="w_knobs" native="true">
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="spacing">
-           <number>2</number>
-          </property>
-          <property name="leftMargin">
-           <number>4</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>10</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="label_logo">
-         <property name="minimumSize">
-          <size>
-           <width>71</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>71</width>
-           <height>30</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="pixmap">
-          <pixmap resource="../resources.qrc">:/bitmaps/logo_calf.png</pixmap>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-       </item>
-      </layout>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QWidget" name="w_knobs" native="true">
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <property name="spacing">
+         <number>2</number>
+        </property>
+        <property name="leftMargin">
+         <number>4</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_logo">
+       <property name="minimumSize">
+        <size>
+         <width>71</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>71</width>
+         <height>30</height>
+        </size>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="pixmap">
+        <pixmap resource="../resources.qrc">:/bitmaps/logo_calf.png</pixmap>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

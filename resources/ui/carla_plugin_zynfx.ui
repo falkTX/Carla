@@ -410,7 +410,7 @@
       <number>4</number>
      </property>
      <property name="rightMargin">
-      <number>10</number>
+      <number>12</number>
      </property>
      <item>
       <widget class="QWidget" name="w_knobs_left" native="true">

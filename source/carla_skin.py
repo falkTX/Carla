@@ -1391,6 +1391,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
         # -------------------------------------------------------------
         # Set-up GUI
 
+        self.ui.label_active.setFont(self.fButtonFont)
+
         self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
 
         self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
