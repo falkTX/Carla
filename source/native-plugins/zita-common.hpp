@@ -91,6 +91,17 @@ public:
     {
         const CarlaMutexLocker cml(fParamMutex);
 
+        for (ParamList::Itenerator it = fParamChanges.begin(); it.valid(); it.next())
+        {
+            X_handler_Param& param(it.getValue());
+
+            if (param.index != index)
+                continue;
+
+            param.value = value;
+            return;
+        }
+
         const X_handler_Param param = { index, value };
         fParamChanges.append(param);
     }
