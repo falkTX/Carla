@@ -40,6 +40,7 @@ using namespace REV1;
 // REV1 Plugin
 
 class REV1Plugin : public NativePluginClass,
+                   public X_handler_thread<Mainwin>::SetValueCallback,
                    private Mainwin::ValueChangedCallback
 {
 public:
@@ -69,7 +70,7 @@ public:
           rootwin(nullptr),
           mainwin(nullptr),
           handler(nullptr),
-          handlerThread(),
+          handlerThread(this),
           leakDetector_REV1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
@@ -387,14 +388,7 @@ public:
         if (mainwin == nullptr)
             return;
 
-        uint32_t rindex = index;
-
-        if (kIsAmbisonic && index == kParameterOPMIXorRGXYZ)
-            rindex += 1;
-
-        const CarlaMutexLocker cml(handlerThread.getLock());
-
-        mainwin->_rotary[rindex]->set_value(value);
+        handlerThread.setParameterValueLater(index, value);
     }
 
     // -------------------------------------------------------------------
@@ -434,6 +428,21 @@ public:
 
         fParameters[index] = value;
         uiParameterChanged(index, value);
+    }
+
+    // -------------------------------------------------------------------
+    // X_handler_thread callbacks
+
+    void setParameterValueFromHandlerThread(uint32_t index, float value) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(mainwin != nullptr,);
+
+        uint32_t rindex = index;
+
+        if (kIsAmbisonic && index == kParameterOPMIXorRGXYZ)
+            rindex += 1;
+
+        mainwin->_rotary[rindex]->set_value(value);
     }
 
     // -------------------------------------------------------------------

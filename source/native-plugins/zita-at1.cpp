@@ -41,6 +41,7 @@ using namespace AT1;
 // AT1 Plugin
 
 class AT1Plugin : public NativePluginClass,
+                  public X_handler_thread<Mainwin>::SetValueCallback,
                   private Mainwin::ValueChangedCallback
 {
 public:
@@ -68,7 +69,7 @@ public:
           rootwin(nullptr),
           mainwin(nullptr),
           handler(nullptr),
-          handlerThread(),
+          handlerThread(this),
           leakDetector_AT1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
@@ -347,18 +348,7 @@ public:
         if (mainwin == nullptr)
             return;
 
-        const CarlaMutexLocker cml(handlerThread.getLock());
-
-        if (index < kParameterNROTARY)
-        {
-            mainwin->_rotary[index]->set_value(value);
-            return;
-        }
-        if (index == kParameterM_CHANNEL)
-        {
-            mainwin->setchan_ui(value);
-            return;
-        }
+        handlerThread.setParameterValueLater(index, value);
     }
 
     // -------------------------------------------------------------------
@@ -393,6 +383,25 @@ public:
     {
         fParameters[index] = value;
         uiParameterChanged(index, value);
+    }
+
+    // -------------------------------------------------------------------
+    // X_handler_thread callbacks
+
+    void setParameterValueFromHandlerThread(uint32_t index, float value) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(mainwin != nullptr,);
+
+        if (index < kParameterNROTARY)
+        {
+            mainwin->_rotary[index]->set_value(value);
+            return;
+        }
+        if (index == kParameterM_CHANNEL)
+        {
+            mainwin->setchan_ui(value);
+            return;
+        }
     }
 
     // -------------------------------------------------------------------

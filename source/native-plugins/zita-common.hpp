@@ -20,6 +20,7 @@
 
 #include "CarlaMutex.hpp"
 #include "CarlaThread.hpp"
+#include "LinkedList.hpp"
 
 #include <png.h>
 #include <clxclient.h>
@@ -29,17 +30,32 @@
 
 // -----------------------------------------------------------------------
 
+struct X_handler_Param {
+    uint32_t index;
+    float value;
+};
+
+typedef LinkedList<X_handler_Param> ParamList;
+
 template<class MainwinType>
 class X_handler_thread : public CarlaThread
 {
 public:
-    X_handler_thread()
+    struct SetValueCallback {
+        virtual ~SetValueCallback() {}
+        virtual void setParameterValueFromHandlerThread(const uint32_t index, const float value) = 0;
+    };
+
+    X_handler_thread(SetValueCallback* const cb)
         : CarlaThread("X_handler"),
+          fCallback(cb),
           fMutex(),
           fHandler(nullptr),
           fRootwin(nullptr),
           fMainwin(nullptr),
-          fClosed(false) {}
+          fClosed(false),
+          fParamMutex(),
+          fParamChanges() {}
 
     void setupAndRun(X_handler* const h, X_rootwin* const r, MainwinType* const m) noexcept
     {
@@ -71,6 +87,14 @@ public:
         return fMutex;
     }
 
+    void setParameterValueLater(const uint32_t index, const float value) noexcept
+    {
+        const CarlaMutexLocker cml(fParamMutex);
+
+        const X_handler_Param param = { index, value };
+        fParamChanges.append(param);
+    }
+
     bool wasClosed() noexcept
     {
         if (fClosed)
@@ -82,11 +106,16 @@ public:
     }
 
 private:
+    SetValueCallback* const fCallback;
+
     CarlaMutex    fMutex;
     X_handler*    fHandler;
     X_rootwin*    fRootwin;
     MainwinType*  fMainwin;
     volatile bool fClosed;
+
+    CarlaMutex fParamMutex;
+    ParamList  fParamChanges;
 
     void run() override
     {
@@ -98,6 +127,18 @@ private:
                 const CarlaMutexLocker cml(fMutex);
 
                 CARLA_SAFE_ASSERT_RETURN(fMainwin != nullptr,);
+
+                {
+                    const CarlaMutexLocker cml(fParamMutex);
+
+                    for (ParamList::Itenerator it = fParamChanges.begin(); it.valid(); it.next())
+                    {
+                        const X_handler_Param& param(it.getValue());
+                        fCallback->setParameterValueFromHandlerThread(param.index, param.value);
+                    }
+
+                    fParamChanges.clear();
+                }
 
                 for (; (ev = fMainwin->process()) == EV_X11;)
                 {
