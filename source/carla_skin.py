@@ -1741,8 +1741,10 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
-            widget.setPixmap(5)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+            widget.setPixmap(3)
+            widget.setCustomPaintColor(QColor(83, 173, 10))
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
+            widget.forceWhiteLabelGradientText()
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
@@ -1755,8 +1757,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             widget.setLabel("Wet")
             widget.setMinimum(0.0)
             widget.setMaximum(1.0)
-            widget.setPixmap(5)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+            widget.setPixmap(3)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
+            widget.forceWhiteLabelGradientText()
 
             self.fParameterList.append([PARAMETER_DRYWET, widget])
             self.ui.w_knobs_right.layout().addWidget(widget)
@@ -1766,8 +1769,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             widget.setLabel("Volume")
             widget.setMinimum(0.0)
             widget.setMaximum(1.27)
-            widget.setPixmap(5)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+            widget.setPixmap(3)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+            widget.forceWhiteLabelGradientText()
 
             self.fParameterList.append([PARAMETER_VOLUME, widget])
             self.ui.w_knobs_right.layout().addWidget(widget)
