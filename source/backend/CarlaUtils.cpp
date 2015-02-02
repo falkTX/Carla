@@ -230,6 +230,12 @@ const char* carla_get_complete_license_text()
         "<p>This current Carla build is using the following features and 3rd-party code:</p>"
         "<ul>"
 
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
+# define LS_NOTE_NO "2"
+#else
+# define LS_NOTE_NO "1"
+#endif
+
         // Plugin formats
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
@@ -251,12 +257,12 @@ const char* carla_get_complete_license_text()
         "<li>FluidSynth library for SF2 support</li>"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support [2]</li>"
+        "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
 #endif
 
         // Internal plugins
         "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
-#ifdef WANT_ZYNADDSUBFX
+#ifdef HAVE_ZYN_DEPS
         "<li>ZynAddSubFX plugin code</li>"
 #endif
 
@@ -282,7 +288,7 @@ const char* carla_get_complete_license_text()
 #endif
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
+        "&nbsp;[" LS_NOTE_NO "] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
 #endif
         "</p>"
         ;
@@ -329,7 +335,7 @@ const char* carla_get_supported_file_extensions()
         // linuxsampler (gig and sfz)
         ";*.gig;*.sfz"
 #endif
-#ifdef WANT_ZYNADDSUBFX
+#ifdef HAVE_ZYN_DEPS
         // zynaddsubfx presets
         ";*.xmz;*.xiz"
 #endif

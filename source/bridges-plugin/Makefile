@@ -126,7 +126,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-NATIVE_BUILD_FLAGS  =
+NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
 NATIVE_LINK_FLAGS   =
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -137,13 +137,6 @@ endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
 NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_BUILD_FLAGS += -DWANT_ZYNADDSUBFX_UI
-endif
 endif
 
 LIBS_native        += $(MODULEDIR)/juce_audio_formats.a
