@@ -899,16 +899,6 @@ CARLA_EXPORT const char* carla_get_library_filename();
  */
 CARLA_EXPORT const char* carla_get_library_folder();
 
-/*!
- * Initialize NSM (announce).
- */
-CARLA_EXPORT bool carla_nsm_init(int pid, const char* executableName);
-
-/*!
- * Allow NSM callbacks.
- */
-CARLA_EXPORT void carla_nsm_ready(int action);
-
 /** @} */
 
 #endif /* CARLA_HOST_H_INCLUDED */

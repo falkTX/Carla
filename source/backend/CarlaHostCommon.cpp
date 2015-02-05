@@ -16,6 +16,7 @@
  */
 
 #include "CarlaHost.h"
+#include "CarlaUtils.hpp"
 
 #include "juce_core.h"
 
@@ -105,7 +106,7 @@ const char* carla_get_library_filename()
 
     if (ret.isEmpty())
     {
-        using juce::File;
+        using namespace juce;
         ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
     }
 
@@ -120,7 +121,7 @@ const char* carla_get_library_folder()
 
     if (ret.isEmpty())
     {
-        using juce::File;
+        using namespace juce;
         ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
     }
 
