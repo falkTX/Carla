@@ -89,265 +89,339 @@ static CarlaBackendStandalone gStandalone;
 #define NSM_API_VERSION_MAJOR 1
 #define NSM_API_VERSION_MINOR 2
 
-//#define NSM_CLIENT_FEATURES ":switch:optional-gui:"
 #define NSM_CLIENT_FEATURES ":switch:"
+//#define NSM_CLIENT_FEATURES ":switch:optional-gui:"
 
 class CarlaNSM
 {
 public:
     CarlaNSM() noexcept
-        : fOscServer(nullptr),
-          fClientId(),
+        : fOscAddress(nullptr),
+          fOscServer(nullptr),
+          fOscServerThread(nullptr),
           fProjectPath(),
           fHasBroadcast(false),
-          fHasShowHideUI(false) {}
+          fHasOptionalGui(false),
+          fHasServerControl(false),
+          fStarted() {}
 
     ~CarlaNSM()
     {
-        if (fOscServer != nullptr)
+        if (fOscServerThread != nullptr)
         {
-            lo_server_del_method(fOscServer, "/reply", "ssss");
-            lo_server_del_method(fOscServer, "/nsm/client/open", "sss");
-            lo_server_del_method(fOscServer, "/nsm/client/save", "");
-            //lo_server_del_method(fOscServer, "/nsm/client/show_optional_gui", "");
-            //lo_server_del_method(fOscServer, "/nsm/client/hide_optional_gui", "");
-            lo_server_free(fOscServer);
+            lo_server_thread_stop(fOscServerThread);
+            lo_server_thread_free(fOscServerThread);
+            fOscServerThread = nullptr;
             fOscServer = nullptr;
+        }
+
+        if (fOscAddress != nullptr)
+        {
+            lo_address_free(fOscAddress);
+            fOscAddress = nullptr;
         }
     }
 
-    void announce(const int pid, const char* const initName)
+    bool announce(const int pid, const char* const executableName)
     {
+        CARLA_SAFE_ASSERT_RETURN(pid != 0, false);
+        CARLA_SAFE_ASSERT_RETURN(executableName != nullptr && executableName[0] != '\0', false);
+
         const char* const NSM_URL(std::getenv("NSM_URL"));
 
         if (NSM_URL == nullptr)
-            return;
+            return false;
 
         const lo_address addr = lo_address_new_from_url(NSM_URL);
-        CARLA_SAFE_ASSERT_RETURN(addr != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(addr != nullptr, false);
 
         const int proto = lo_address_get_protocol(addr);
 
-        if (fOscServer == nullptr)
+        if (fOscServerThread == nullptr)
         {
             // create new OSC server
-            fOscServer = lo_server_new_with_proto(nullptr, proto, _error_handler);
+            fOscServerThread = lo_server_thread_new_with_proto(nullptr, proto, _osc_error_handler);
+            CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr, false);
 
-            // register message handlers and start OSC thread
-            lo_server_add_method(fOscServer, "/reply",           "ssss", _reply_handler, this);
-            lo_server_add_method(fOscServer, "/nsm/client/open", "sss",  _open_handler,  this);
-            lo_server_add_method(fOscServer, "/nsm/client/save", "",     _save_handler,  this);
-            //lo_server_add_method(fOscServer, "/nsm/client/show_optional_gui", "", _show_gui_handler, this);
-            //lo_server_add_method(fOscServer, "/nsm/client/hide_optional_gui", "", _hide_gui_handler, this);
-            // /nsm/client/session_is_loaded
+            // register message handlers
+            lo_server_thread_add_method(fOscServerThread, "/error",                       "sis",    _error_handler,     this);
+            lo_server_thread_add_method(fOscServerThread, "/reply",                       "ssss",   _reply_handler,     this);
+            lo_server_thread_add_method(fOscServerThread, "/nsm/client/open",             "sss",    _open_handler,      this);
+            lo_server_thread_add_method(fOscServerThread, "/nsm/client/save",              "",      _save_handler,      this);
+            lo_server_thread_add_method(fOscServerThread, "/nsm/client/session_is_loaded", "",      _loaded_handler,    this);
+            lo_server_thread_add_method(fOscServerThread, "/nsm/client/show_optional_gui", "",      _show_gui_handler,  this);
+            lo_server_thread_add_method(fOscServerThread, "/nsm/client/hide_optional_gui", "",      _hide_gui_handler,  this);
+            lo_server_thread_add_method(fOscServerThread, nullptr,                         nullptr, _broadcast_handler, this);
+
+            fOscServer = lo_server_thread_get_server(fOscServerThread);
         }
 
 #ifndef BUILD_ANSI_TEST
         lo_send_from(addr, fOscServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                     "Carla", NSM_CLIENT_FEATURES, initName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+                     "Carla", NSM_CLIENT_FEATURES, executableName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 #endif
 
         lo_address_free(addr);
+
+        return true;
     }
 
-    void idle() noexcept
+    void start()
     {
-        if (fOscServer == nullptr)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(! fStarted,);
 
-        for (;;)
-        {
-            try {
-                if (lo_server_recv_noblock(fOscServer, 0) == 0)
-                    break;
-            } CARLA_SAFE_EXCEPTION_CONTINUE("NSM OSC idle")
-        }
+        fStarted = true;
+        lo_server_thread_start(fOscServerThread);
+    }
+
+    static CarlaNSM& getInstance()
+    {
+        static CarlaNSM sInstance;
+        return sInstance;
     }
 
 protected:
-    int handleReply(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    int handleError(const char* const method, const int code, const char* const message)
     {
-        carla_debug("CarlaNSM::handleReply(%s, %i, %p, %s, %p)", path, argc, argv, types, msg);
+        carla_stdout("CarlaNSM::handleError(\"%s\", %i, \"%s\")", method, code, message);
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 0, code, 0.0f, message);
+
+        return 1;
+
+        // may be unused
+        (void)method;
+    }
+
+    int handleReply(const char* const method, const char* const message, const char* const smName, const char* const features,
+                    const lo_message msg)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr, 1);
+        carla_stdout("CarlaNSM::handleReply(\"%s\", \"%s\", \"%s\", \"%s\")", method, message, smName, features);
+
+        if (std::strcmp(method, "/nsm/server/announce") == 0)
+        {
+            char* const addressURL(lo_address_get_url(lo_message_get_source(msg)));
+            CARLA_SAFE_ASSERT_RETURN(addressURL != nullptr, 0);
+
+            if (fOscAddress != nullptr)
+                lo_address_free(fOscAddress);
+
+            fOscAddress = lo_address_new_from_url(addressURL);
+            CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 0);
+
+            fHasBroadcast     = std::strstr(features, ":broadcast:")      != nullptr;
+            fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
+            fHasServerControl = std::strstr(features, ":server_control:") != nullptr;
+
+            carla_stdout("Carla started via '%s', message: %s", smName, message);
+
+            if (gStandalone.engineCallback != nullptr)
+                gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 1, 0, 0.0f, smName);
+
+            // UI starts visible
+            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+        }
+        else
+        {
+            carla_stdout("Got unknown NSM reply method '%s'", method);
+        }
+
+        return 0;
+    }
+
+    int handleOpen(const char* const projectPath, const char* const displayName, const char* const clientNameId)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        carla_stdout("CarlaNSM::handleOpen(\"%s\", \"%s\", \"%s\")", projectPath, displayName, clientNameId);
+
+        if (carla_is_engine_running())
+            carla_engine_close();
+
+        carla_engine_init("JACK", clientNameId);
+
+        fProjectPath  = projectPath;
+        fProjectPath += ".carxp";
+
+        using namespace juce;
+
+        const String jfilename = String(CharPointer_UTF8(fProjectPath));
+
+        if (File(jfilename).existsAsFile())
+            carla_load_project(fProjectPath);
+
+        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 2, 0, 0.0f, projectPath);
+
+        return 0;
+    }
+
+    int handleSave()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
+        carla_stdout("CarlaNSM::handleSave()");
+
+        carla_save_project(fProjectPath);
+
+        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 3, 0, 0.0f, nullptr);
+
+        return 0;
+    }
+
+    int handleSessionIsLoaded()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        carla_stdout("CarlaNSM::handleSessionIsLoaded()");
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 4, 0, 0.0f, nullptr);
+
+        return 0;
+    }
+
+    int handleShowOptionalGui()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        carla_stdout("CarlaNSM::handleShowOptionalGui()");
+
+        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 5, 0, 0.0f, nullptr);
+
+        return 0;
+    }
+
+    int handleHideOptionalGui()
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        carla_stdout("CarlaNSM::handleHideOptionalGui()");
+
+        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+
+        if (gStandalone.engineCallback != nullptr)
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 6, 0, 0.0f, nullptr);
+
+        return 0;
+    }
+
+    int handleBroadcast(const char* const types, lo_arg** const argv, const int argc)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        carla_stdout("CarlaNSM::handleBroadcast(%s, %p, %i)", types, argv, argc);
+
+        // TODO
+
+        return 0;
+    }
+
+private:
+    lo_address       fOscAddress;
+    lo_server        fOscServer;
+    lo_server_thread fOscServerThread;
+    CarlaString      fProjectPath;
+
+    bool fHasBroadcast;
+    bool fHasOptionalGui;
+    bool fHasServerControl;
+    bool fStarted;
+
+    #define handlePtr ((CarlaNSM*)data)
+
+    static void _osc_error_handler(int num, const char* msg, const char* path)
+    {
+        carla_stderr2("CarlaNSM::_osc_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
+    }
+
+    static int _error_handler(const char*, const char* types, lo_arg** argv, int argc, lo_message, void* data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(argc == 3, 1);
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "sis") == 0, 1);
+
+        const char* const method  = &argv[0]->s;
+        const int         code    =  argv[1]->i;
+        const char* const message = &argv[2]->s;
+
+        return handlePtr->handleError(method, code, message);
+    }
+
+    static int _reply_handler(const char*, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(argc == 4, 1);
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ssss") == 0, 1);
 
         const char* const method   = &argv[0]->s;
         const char* const message  = &argv[1]->s;
         const char* const smName   = &argv[2]->s;
         const char* const features = &argv[3]->s;
 
-        CARLA_SAFE_ASSERT_RETURN(std::strcmp(method, "/nsm/server/announce") == 0, 0);
-
-        fHasBroadcast  = std::strstr(features, ":broadcast:") != nullptr;
-        fHasShowHideUI = std::strstr(features, ":optional-gui:") != nullptr;
-
-        carla_stdout("'%s' started: %s", smName, message);
-
-        // TODO: send callback, disable open+save etc
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path; (void)types; (void)argc; (void)msg;
-#endif
+        return handlePtr->handleReply(method, message, smName, features, msg);
     }
 
-    // FIXME
-    int handleOpen(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    static int _open_handler(const char*, const char* types, lo_arg** argv, int argc, lo_message, void* data)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
-        carla_debug("CarlaNSM::handleOpen(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+        CARLA_SAFE_ASSERT_RETURN(argc == 3, 1);
+        CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "sss") == 0, 1);
 
-        const char* const projectPath = &argv[0]->s;
-        //const char* const displayName = &argv[1]->s;
-        const char* const clientId    = &argv[2]->s;
+        const char* const projectPath  = &argv[0]->s;
+        const char* const displayName  = &argv[1]->s;
+        const char* const clientNameId = &argv[2]->s;
 
-        if (! carla_is_engine_running())
-        {
-#ifndef BUILD_BRIDGE
-            gStandalone.engineOptions.processMode   = CB::ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
-            gStandalone.engineOptions.transportMode = CB::ENGINE_TRANSPORT_MODE_JACK;
-#endif
-
-            carla_engine_init("JACK", clientId);
-        }
-        else
-        {
-            CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
-
-            for (uint i=0, count=gStandalone.engine->getCurrentPluginCount(); i < count; ++i)
-                gStandalone.engine->removePlugin(i);
-        }
-
-        fClientId = clientId;
-
-        fProjectPath  = projectPath;
-        fProjectPath += ".carxp";
-
-        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
-
-        if (juce::File(fProjectPath.buffer()).existsAsFile())
-            gStandalone.engine->loadProject(fProjectPath);
-
-#ifndef BUILD_ANSI_TEST
-        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
-#endif
-
-#if 0
-        if (fHasBroadcast)
-        {
-            char* const url = lo_server_get_url(fOscServer);
-
-            lo_send(lo_message_get_source(msg), "/nsm/server/broadcast", "sssss",
-                            "/non/hello", url, "Carla", CARLA_VERSION_STRING, clientId);
-
-            //lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/nsm/server/broadcast", "sssss"
-            //             "/non/hello", url, "Carla", CARLA_VERSION_STRING, clientId);
-
-            lo_send(lo_message_get_source(msg), "/signal/created", "ssfff", "/path/somewhere", true ? "in" : "out", 0.0f, 1.0f, 0.5f);
-
-            std::free(url);
-
-            carla_stdout("Broadcast sent!");
-        }
-        else
-            carla_stdout("Broadcast NOT NOT NOT sent!");
-#endif
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path; (void)types; (void)argc; (void)msg;
-#endif
+        return handlePtr->handleOpen(projectPath, displayName, clientNameId);
     }
 
-    int handleSave(const char* const path, const char* const types, lo_arg** const argv, const int argc, const lo_message msg)
+    static int _save_handler(const char*, const char*, lo_arg**, int argc, lo_message, void* data)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
-        carla_debug("CarlaNSM::handleSave(\"%s\", \"%s\", %p, %i, %p)", path, types, argv, argc, msg);
+        CARLA_SAFE_ASSERT_RETURN(argc == 0, 1);
 
-        gStandalone.engine->saveProject(fProjectPath);
-
-#ifndef BUILD_ANSI_TEST
-        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
-#endif
-
-        return 0;
-
-#ifndef DEBUG
-        // unused
-        (void)path; (void)types; (void)argv; (void)argc; (void)msg;
-#endif
+        return handlePtr->handleSave();
     }
 
-#if 0
-    int handleShowHideGui(const lo_message msg, const bool show)
+    static int _loaded_handler(const char*, const char*, lo_arg**, int argc, lo_message, void* data)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, 0);
-        //CARLA_SAFE_ASSERT_RETURN(gStandalone.frontendWinId != 0, 0);
-        carla_debug("CarlaNSM::handleShowHideGui(%s)", bool2str(show));
+        CARLA_SAFE_ASSERT_RETURN(argc == 0, 1);
 
-#ifndef BUILD_ANSI_TEST
-        lo_send_from(lo_message_get_source(msg), fOscServer, LO_TT_IMMEDIATE, show ? "/nsm/client/gui_is_shown" : "/nsm/client/gui_is_hidden", "");
-#endif
-
-        return 0;
+        return handlePtr->handleSessionIsLoaded();
     }
-#endif
 
-private:
-    lo_server fOscServer;
-
-    CarlaString fClientId;
-    CarlaString fProjectPath;
-
-    bool fHasBroadcast;
-    bool fHasShowHideUI;
-
-    #define handlePtr ((CarlaNSM*)data)
-
-    static void _error_handler(int num, const char* msg, const char* path)
+    static int _show_gui_handler(const char*, const char*, lo_arg**, int argc, lo_message, void* data)
     {
-        carla_stderr2("CarlaNSM::_error_handler(%i, \"%s\", \"%s\")", num, msg, path);
+        CARLA_SAFE_ASSERT_RETURN(argc == 0, 1);
+
+        return handlePtr->handleShowOptionalGui();
     }
 
-    static int _reply_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    static int _hide_gui_handler(const char*, const char*, lo_arg**, int argc, lo_message, void* data)
     {
-        return handlePtr->handleReply(path, types, argv, argc, msg);
+        CARLA_SAFE_ASSERT_RETURN(argc == 0, 1);
+
+        return handlePtr->handleHideOptionalGui();
     }
 
-    static int _open_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
+    static int _broadcast_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message, void* data)
     {
-        return handlePtr->handleOpen(path, types, argv, argc, msg);
+        return handlePtr->handleBroadcast(types, argv, argc);
     }
-
-    static int _save_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
-    {
-        return handlePtr->handleSave(path, types, argv, argc, msg);
-    }
-
-#if 0
-    static int _show_gui_handler(const char*, const char*, lo_arg**, int, lo_message, void* data)
-    {
-        return handlePtr->handleShowHideGui(true);
-    }
-
-    static int _hide_gui_handler(const char*, const char*, lo_arg**, int, lo_message, void* data)
-    {
-        return handlePtr->handleShowHideGui(false);
-    }
-#endif
 
     #undef handlePtr
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaNSM)
 };
-
-static CarlaNSM gNSM;
 
 #endif // HAVE_LIBLO
 
@@ -685,9 +759,6 @@ void carla_engine_idle()
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
-#ifdef HAVE_LIBLO
-    gNSM.idle();
-#endif
     gStandalone.engine->idle();
 }
 
@@ -791,14 +862,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             delete[] gStandalone.engineOptions.audioDevice;
 
         gStandalone.engineOptions.audioDevice = carla_strdup_safe(valueStr);
-        break;
-
-    case CB:: ENGINE_OPTION_NSM_INIT:
-        CARLA_SAFE_ASSERT_RETURN(value != 0,);
-        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
-#ifdef HAVE_LIBLO
-        gNSM.announce(value, valueStr);
-#endif
         break;
 
     case CB::ENGINE_OPTION_PLUGIN_PATH:
@@ -2190,6 +2253,27 @@ const char* carla_get_host_osc_url_udp()
     return gStandalone.engine->getOscServerPathUDP();
 #else
     return nullptr;
+#endif
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+bool carla_nsm_init(int pid, const char* executableName)
+{
+#ifdef HAVE_LIBLO
+    return CarlaNSM::getInstance().announce(pid, executableName);
+#else
+    return false;
+
+    // unused
+    (void)pid; (void)executableName;
+#endif
+}
+
+void carla_nsm_ready()
+{
+#ifdef HAVE_LIBLO
+    CarlaNSM::getInstance().start();
 #endif
 }
 

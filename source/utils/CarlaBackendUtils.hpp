@@ -270,6 +270,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_BUFFER_SIZE_CHANGED";
     case ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         return "ENGINE_CALLBACK_SAMPLE_RATE_CHANGED";
+    case ENGINE_CALLBACK_NSM:
+        return "ENGINE_CALLBACK_NSM";
     case ENGINE_CALLBACK_IDLE:
         return "ENGINE_CALLBACK_IDLE";
     case ENGINE_CALLBACK_INFO:
@@ -315,8 +317,6 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
-    case ENGINE_OPTION_NSM_INIT:
-        return "ENGINE_OPTION_NSM_INIT";
     case ENGINE_OPTION_PLUGIN_PATH:
         return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:

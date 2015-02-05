@@ -915,28 +915,34 @@ typedef enum {
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
     /*!
+     * NSM callback.
+     * (Work in progress, values are not defined yet)
+     */
+    ENGINE_CALLBACK_NSM = 35,
+
+    /*!
      * Idle frontend.
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
-    ENGINE_CALLBACK_IDLE = 35,
+    ENGINE_CALLBACK_IDLE = 36,
 
     /*!
      * Show a message as information.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_INFO = 36,
+    ENGINE_CALLBACK_INFO = 37,
 
     /*!
      * Show a message as an error.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_ERROR = 37,
+    ENGINE_CALLBACK_ERROR = 38,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 38
+    ENGINE_CALLBACK_QUIT = 39
 
 } EngineCallbackOpcode;
 
@@ -1031,41 +1037,36 @@ typedef enum {
     ENGINE_OPTION_AUDIO_DEVICE = 12,
 
     /*!
-     * Set data needed for NSM support.
-     */
-    ENGINE_OPTION_NSM_INIT = 13,
-
-    /*!
      * Set path used for a specific plugin type.
      * Uses value as the plugin format, valueStr as actual path.
      * @see PluginType
      */
-    ENGINE_OPTION_PLUGIN_PATH = 14,
+    ENGINE_OPTION_PLUGIN_PATH = 13,
 
     /*!
      * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
-    ENGINE_OPTION_PATH_BINARIES = 15,
+    ENGINE_OPTION_PATH_BINARIES = 14,
 
     /*!
      * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 16,
+    ENGINE_OPTION_PATH_RESOURCES = 15,
 
     /*!
      * Prevent bad plugin and UI behaviour.
      * @note: Linux only
      */
-    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 17,
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 16,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 18
+    ENGINE_OPTION_FRONTEND_WIN_ID = 17
 
 } EngineOption;
 

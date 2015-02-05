@@ -121,9 +121,9 @@ class HostWindow(QMainWindow):
         elif LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
             self.fSessionManagerName = "LADISH"
-        elif NSM_URL:
-            self.fClientName         = "Carla" # "Carla.tmp"
-            self.fSessionManagerName = "Non Session Manager"
+        elif NSM_URL and host.nsmOK:
+            self.fClientName         = "Carla.tmp"
+            self.fSessionManagerName = "Non Session Manager TMP"
         else:
             self.fClientName         = CARLA_CLIENT_NAME or "Carla"
             self.fSessionManagerName = ""
@@ -387,6 +387,8 @@ class HostWindow(QMainWindow):
         host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
 
+        host.NSMCallback.connect(self.slot_handleNSMCallback)
+
         host.DebugCallback.connect(self.slot_handleDebugCallback)
         host.InfoCallback.connect(self.slot_handleInfoCallback)
         host.ErrorCallback.connect(self.slot_handleErrorCallback)
@@ -406,6 +408,13 @@ class HostWindow(QMainWindow):
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin:
             self.startTimers()
+
+        # For NSM we wait for the open message
+        if NSM_URL and host.nsmOK:
+            self.fFirstEngineInit = False
+            self.setEngineSettings()
+            host.nsm_ready()
+            return
 
         QTimer.singleShot(0, self.slot_engineStart)
 
@@ -429,7 +438,7 @@ class HostWindow(QMainWindow):
     def setProperWindowTitle(self):
         title = self.fClientName
 
-        if self.fProjectFilename:
+        if self.fProjectFilename and not self.host.nsmOK:
             title += " - %s" % os.path.basename(self.fProjectFilename)
         if self.fSessionManagerName:
             title += " (%s)" % self.fSessionManagerName
@@ -605,9 +614,11 @@ class HostWindow(QMainWindow):
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
 
+            canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
+            self.ui.act_file_save.setEnabled(canSave)
+
             if not self.fSessionManagerName:
                 self.ui.act_file_open.setEnabled(True)
-                self.ui.act_file_save.setEnabled(True)
                 self.ui.act_file_save_as.setEnabled(True)
 
             self.ui.panelTime.setEnabled(True)
@@ -1564,6 +1575,45 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
+    @pyqtSlot(int, int, str)
+    def slot_handleNSMCallback(self, value1, value2, valueStr):
+        print("--------------- NSM:", value1, value2, valueStr)
+
+        # Error
+        if value1 == 0:
+            pass
+
+        # Reply
+        elif value1 == 1:
+            self.fFirstEngineInit    = False
+            self.fSessionManagerName = valueStr
+            self.setProperWindowTitle()
+
+        # Open
+        elif value1 == 2:
+            self.fClientName      = os.path.basename(valueStr)
+            self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
+            self.setProperWindowTitle()
+            self.ui.act_file_save.setEnabled(True)
+
+        # Save
+        elif value1 == 3:
+            pass
+
+        # Session is Loaded
+        elif value1 == 4:
+            pass
+
+        # Show Optional Gui
+        elif value1 == 5:
+            self.show()
+
+        # Hide Optional Gui
+        elif value1 == 6:
+            self.hide()
+
+    # --------------------------------------------------------------------------------------------------------
+
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
         print("DEBUG:", pluginId, value1, value2, value3, valueStr)
@@ -1951,6 +2001,8 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         host.SampleRateChangedCallback.emit(value3)
+    elif action == ENGINE_CALLBACK_NSM:
+        host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:
         QApplication.instance().processEvents()
     elif action == ENGINE_CALLBACK_INFO:
@@ -2048,7 +2100,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
         host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources)
 
         if not isControl:
-            host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+            host.nsmOK = host.nsm_init(os.getpid(), initName)
 
     # --------------------------------------------------------------------------------------------------------
     # Init utils
