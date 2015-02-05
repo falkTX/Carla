@@ -104,10 +104,15 @@ public:
           fHasBroadcast(false),
           fHasOptionalGui(false),
           fHasServerControl(false),
-          fStarted() {}
+          fStarted(),
+          fReadyActionOpen(true),
+          fReadyActionSave(true) {}
 
     ~CarlaNSM()
     {
+        CARLA_SAFE_ASSERT(fReadyActionOpen);
+        CARLA_SAFE_ASSERT(fReadyActionSave);
+
         if (fOscServerThread != nullptr)
         {
             lo_server_thread_stop(fOscServerThread);
@@ -167,13 +172,47 @@ public:
         return true;
     }
 
-    void start()
+    void ready(const int action)
     {
         CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(! fStarted,);
 
-        fStarted = true;
-        lo_server_thread_start(fOscServerThread);
+        switch (action)
+        {
+        case -1: // init
+            CARLA_SAFE_ASSERT_BREAK(! fStarted);
+            fStarted = true;
+            lo_server_thread_start(fOscServerThread);
+            break;
+
+        case 0: // error
+            break;
+
+        case 1: // reply
+            break;
+
+        case 2: // open
+            fReadyActionOpen = true;
+            break;
+
+        case 3: // save
+            fReadyActionSave = true;
+            break;
+
+        case 4: // session loaded
+            break;
+
+        case 5: // show gui
+            CARLA_SAFE_ASSERT_BREAK(fOscAddress != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(fOscServer != nullptr);
+            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+            break;
+
+        case 6: // hide gui
+            CARLA_SAFE_ASSERT_BREAK(fOscAddress != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(fOscServer != nullptr);
+            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+            break;
+        }
     }
 
     static CarlaNSM& getInstance()
@@ -251,27 +290,35 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleOpen(\"%s\", \"%s\", \"%s\")", projectPath, displayName, clientNameId);
 
-        if (carla_is_engine_running())
-            carla_engine_close();
+        if (gStandalone.engineCallback != nullptr)
+        {
+            fReadyActionOpen = false;
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 2, 0, 0.0f, projectPath);
 
-        carla_engine_init("JACK", clientNameId);
+            for (; ! fReadyActionOpen;)
+                carla_msleep(10);
+        }
+        else
+        {
+            using namespace juce;
 
-        fProjectPath  = projectPath;
-        fProjectPath += ".carxp";
+            if (carla_is_engine_running())
+                carla_engine_close();
+
+            carla_engine_init("JACK", clientNameId);
+
+            fProjectPath  = projectPath;
+            fProjectPath += ".carxp";
+
+            const String jfilename = String(CharPointer_UTF8(fProjectPath));
+
+            if (File(jfilename).existsAsFile())
+                carla_load_project(fProjectPath);
+        }
 
         fClientNameId = clientNameId;
 
-        using namespace juce;
-
-        const String jfilename = String(CharPointer_UTF8(fProjectPath));
-
-        if (File(jfilename).existsAsFile())
-            carla_load_project(fProjectPath);
-
         lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
-
-        if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 2, 0, 0.0f, projectPath);
 
         // Broadcast ourselves
         if (fHasBroadcast)
@@ -301,15 +348,24 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
         carla_stdout("CarlaNSM::handleSave()");
 
-        carla_save_project(fProjectPath);
+        if (gStandalone.engineCallback != nullptr)
+        {
+            fReadyActionSave = false;
+            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 3, 0, 0.0f, nullptr);
+
+            for (; ! fReadyActionSave;)
+                carla_msleep(10);
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT_RETURN(fProjectPath.isNotEmpty(), 0);
+
+            carla_save_project(fProjectPath);
+        }
 
         lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
-
-        if (gStandalone.engineCallback != nullptr)
-            gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 3, 0, 0.0f, nullptr);
 
         return 0;
     }
@@ -332,8 +388,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleShowOptionalGui()");
 
-        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
-
         if (gStandalone.engineCallback != nullptr)
             gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 5, 0, 0.0f, nullptr);
 
@@ -345,8 +399,6 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleHideOptionalGui()");
-
-        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
 
         if (gStandalone.engineCallback != nullptr)
             gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 6, 0, 0.0f, nullptr);
@@ -590,6 +642,9 @@ private:
     bool fHasOptionalGui;
     bool fHasServerControl;
     bool fStarted;
+
+    volatile bool fReadyActionOpen;
+    volatile bool fReadyActionSave;
 
     #define handlePtr ((CarlaNSM*)data)
 
@@ -2521,10 +2576,10 @@ bool carla_nsm_init(int pid, const char* executableName)
 #endif
 }
 
-void carla_nsm_ready()
+void carla_nsm_ready(int action)
 {
 #ifdef HAVE_LIBLO
-    CarlaNSM::getInstance().start();
+    CarlaNSM::getInstance().ready(action);
 #endif
 }
 

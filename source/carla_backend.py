@@ -2348,7 +2348,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_nsm_init.argtypes = [c_int, c_char_p]
         self.lib.carla_nsm_init.restype = c_bool
 
-        self.lib.carla_nsm_ready.argtypes = None
+        self.lib.carla_nsm_ready.argtypes = [c_int]
         self.lib.carla_nsm_ready.restype = None
 
     # --------------------------------------------------------------------------------------------------------
@@ -2616,8 +2616,8 @@ class CarlaHostDLL(CarlaHostMeta):
     def nsm_init(self, pid, executableName):
         return bool(self.lib.carla_nsm_init(pid, executableName.encode("utf-8")))
 
-    def nsm_ready(self):
-        self.lib.carla_nsm_ready()
+    def nsm_ready(self, action):
+        self.lib.carla_nsm_ready(action)
 
 # ------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin

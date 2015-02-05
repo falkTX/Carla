@@ -411,9 +411,7 @@ class HostWindow(QMainWindow):
 
         # For NSM we wait for the open message
         if NSM_URL and host.nsmOK:
-            self.fFirstEngineInit = False
-            self.setEngineSettings()
-            host.nsm_ready()
+            host.nsm_ready(-1)
             return
 
         QTimer.singleShot(0, self.slot_engineStart)
@@ -1594,11 +1592,13 @@ class HostWindow(QMainWindow):
             self.fClientName      = os.path.basename(valueStr)
             self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
             self.setProperWindowTitle()
-            self.ui.act_file_save.setEnabled(True)
+            self.slot_engineStop(True)
+            self.slot_engineStart()
+            self.loadProjectNow()
 
         # Save
         elif value1 == 3:
-            pass
+            self.saveProjectNow()
 
         # Session is Loaded
         elif value1 == 4:
@@ -1611,6 +1611,8 @@ class HostWindow(QMainWindow):
         # Hide Optional Gui
         elif value1 == 6:
             self.hide()
+
+        self.host.nsm_ready(value1)
 
     # --------------------------------------------------------------------------------------------------------
 

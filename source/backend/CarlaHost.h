@@ -907,7 +907,7 @@ CARLA_EXPORT bool carla_nsm_init(int pid, const char* executableName);
 /*!
  * Allow NSM callbacks.
  */
-CARLA_EXPORT void carla_nsm_ready();
+CARLA_EXPORT void carla_nsm_ready(int action);
 
 /** @} */
 
