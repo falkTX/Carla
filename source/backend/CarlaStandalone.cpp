@@ -99,6 +99,7 @@ public:
         : fOscAddress(nullptr),
           fOscServer(nullptr),
           fOscServerThread(nullptr),
+          fClientNameId(),
           fProjectPath(),
           fHasBroadcast(false),
           fHasOptionalGui(false),
@@ -216,13 +217,25 @@ protected:
             fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
             fHasServerControl = std::strstr(features, ":server_control:") != nullptr;
 
+            // UI starts visible
+            if (fHasOptionalGui)
+                lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+
             carla_stdout("Carla started via '%s', message: %s", smName, message);
 
             if (gStandalone.engineCallback != nullptr)
-                gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 1, 0, 0.0f, smName);
+            {
+                int flags = 0;
 
-            // UI starts visible
-            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+                if (fHasBroadcast)
+                    flags |= 1 << 0;
+                if (fHasOptionalGui)
+                    flags |= 1 << 1;
+                if (fHasServerControl)
+                    flags |= 1 << 2;
+
+                gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 1, flags, 0.0f, smName);
+            }
         }
         else
         {
@@ -246,6 +259,8 @@ protected:
         fProjectPath  = projectPath;
         fProjectPath += ".carxp";
 
+        fClientNameId = clientNameId;
+
         using namespace juce;
 
         const String jfilename = String(CharPointer_UTF8(fProjectPath));
@@ -257,6 +272,27 @@ protected:
 
         if (gStandalone.engineCallback != nullptr)
             gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 2, 0, 0.0f, projectPath);
+
+        // Broadcast ourselves
+        if (fHasBroadcast)
+        {
+            char* const oscServerAddress(lo_server_get_url(fOscServer));
+
+            if (lo_message msg = lo_message_new())
+            {
+                lo_message_add(msg, "sssss",
+                                    "/non/hello",
+                                    oscServerAddress,
+                                    "Carla",
+                                    CARLA_VERSION_STRING,
+                                    fClientNameId.buffer());
+
+                lo_send_message_from(fOscAddress, fOscServer, "/nsm/server/broadcast", msg);
+                lo_message_free(msg);
+            }
+
+            std::free(oscServerAddress);
+        }
 
         return 0;
     }
@@ -318,13 +354,227 @@ protected:
         return 0;
     }
 
-    int handleBroadcast(const char* const types, lo_arg** const argv, const int argc)
+    int handleBroadcast(const char* const path, const char* const types, lo_arg** const argv, const int argc,
+                        const lo_message msg)
     {
         CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
-        carla_stdout("CarlaNSM::handleBroadcast(%s, %p, %i)", types, argv, argc);
+        CARLA_SAFE_ASSERT_RETURN(argc >= 0, 0);
+        carla_stdout("CarlaNSM::handleBroadcast(%s, %s, %p, %i)", path, types, argv, argc);
 
-        // TODO
+        if (std::strcmp(path, "/non/hello") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(argc == 4, 0);
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(types, "ssss") == 0, 0);
+
+            const char* const url  = &argv[0]->s;
+            //const char* const name     = &argv[1]->s;
+            //const char* const version  = &argv[2]->s;
+            //const char* const clientId = &argv[3]->s;
+
+            const lo_address targetAddress(lo_address_new_from_url(url));
+            CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
+
+            char* const oscServerAddress(lo_server_get_url(fOscServer));
+            CARLA_SAFE_ASSERT_RETURN(oscServerAddress != nullptr, 0);
+
+            if (lo_message msg2 = lo_message_new())
+            {
+                lo_message_add(msg2, "ss",
+                                    fClientNameId.buffer(),
+                                    oscServerAddress);
+
+                lo_send_message_from(targetAddress, fOscServer, "/signal/hello", msg2);
+
+                lo_message_free(msg2);
+
+                carla_stdout("CarlaNSM::handleBroadcast - sent hello");
+            }
+
+            lo_address_free(targetAddress);
+            std::free(oscServerAddress);
+
+            return 0;
+        }
+
+        if (std::strcmp(path, "/signal/hello") == 0)
+        {
+            carla_stdout("CarlaNSM::handleBroadcast - got hello");
+
+            //const char* const name = &argv[0]->s;
+            const char* const url  = &argv[1]->s;
+
+            const lo_address targetAddress(lo_address_new_from_url(url));
+            CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
+
+            char* const oscServerAddress(lo_server_get_url(fOscServer));
+            CARLA_SAFE_ASSERT_RETURN(oscServerAddress != nullptr, 0);
+
+            //lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/signal/list", "");
+
+            if (lo_message msg2 = lo_message_new())
+            {
+                lo_message_add(msg2, "ss",
+                                    fClientNameId.buffer(),
+                                    oscServerAddress);
+
+                lo_send_message_from(targetAddress, fOscServer, "/signal/hello", msg2);
+
+                lo_message_free(msg2);
+
+                carla_stdout("CarlaNSM::handleBroadcast - sent hello");
+            }
+
+            lo_address_free(targetAddress);
+            std::free(oscServerAddress);
+
+            return 0;
+        }
+
+        if (std::strcmp(path, "/signal/list") == 0)
+        {
+            carla_stdout("CarlaNSM::handleBroadcast - got list");
+            CARLA_SAFE_ASSERT_RETURN(carla_is_engine_running(), 0);
+
+            //const char* prefix = nullptr;
+
+            //if (argc > 0)
+                //prefix = &argv[0]->s;
+
+            const lo_address targetAddress(lo_message_get_source(msg));
+            CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
+
+            CarlaString stripName;
+
+            for (uint32_t i = 0, pluginCount = carla_get_current_plugin_count(); i < pluginCount; ++i)
+            {
+                const CarlaPluginInfo* const pluginInfo(carla_get_plugin_info(i));
+                CARLA_SAFE_ASSERT_CONTINUE(pluginInfo != nullptr);
+
+                for (uint32_t j=0, paramCount = carla_get_parameter_count(i); j < paramCount; ++j)
+                {
+                    const CarlaParameterInfo* const paramInfo(carla_get_parameter_info(i, j));
+                    CARLA_SAFE_ASSERT_CONTINUE(paramInfo != nullptr);
+
+                    const ParameterData* const paramData(carla_get_parameter_data(i, j));
+                    CARLA_SAFE_ASSERT_CONTINUE(paramData != nullptr);
+
+                    const ParameterRanges* const paramRanges(carla_get_parameter_ranges(i, j));
+                    CARLA_SAFE_ASSERT_CONTINUE(paramRanges != nullptr);
+
+                    if (paramData->type != CB::PARAMETER_INPUT && paramData->type != CB::PARAMETER_OUTPUT)
+                        continue;
+                    if ((paramData->hints & CB::PARAMETER_IS_ENABLED) == 0)
+                        continue;
+                    if ((paramData->hints & CB::PARAMETER_IS_AUTOMABLE) == 0)
+                        continue;
+                    if (paramData->hints & CB::PARAMETER_IS_READ_ONLY)
+                        continue;
+
+                    if (lo_message msg2 = lo_message_new())
+                    {
+                        stripName = fClientNameId + "/strip/Unnamed/" + pluginInfo->name + "/" + paramInfo->name;
+                        stripName.replace(' ','_');
+
+                        lo_message_add(msg2, "sssfff",
+                                              path,
+                                              stripName.buffer(),
+                                              paramData->type == CB::PARAMETER_INPUT ? "in" : "out",
+                                              paramRanges->min,
+                                              paramRanges->max,
+                                              paramRanges->def);
+                        lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
+                        lo_message_free(msg2);
+
+                        carla_stdout("CarlaNSM::handleBroadcast - sent list at %i : %i, path: %s", i+1, j+1, stripName.buffer());
+                    }
+
+#if 0
+                    if (prefix == nullptr /*|| strncmp(o->path(), prefix, std::strlen(prefix)) == 0*/)
+                    {
+                        lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "sssfff",
+                                     path,
+                                     paramInfo->name,
+                                     paramData->type == CB::PARAMETER_INPUT ? "in" : "out",
+                                     paramRanges->min,
+                                     paramRanges->max,
+                                     paramRanges->def);
+                    }
+#endif
+                }
+            }
+
+            if (lo_message msg2 = lo_message_new())
+            {
+                lo_message_add(msg2, "s", path);
+
+                lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
+
+                lo_message_free(msg2);
+
+                carla_stdout("CarlaNSM::handleBroadcast - sent list final");
+            }
+
+            //lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "s", path);
+
+            //return 0;
+        }
+
+#if 0
+        if (std::strcmp(path, "/reply") == 0)
+        {
+            CARLA_SAFE_ASSERT_RETURN(argc > 0, 0);
+
+            const char* const method = &argv[0]->s;
+
+            if (std::strcmp(method, "/signal/list") == 0)
+            {
+                carla_stdout("CarlaNSM::handleBroadcast - got new list");
+
+                if (argc == 1)
+                    return 0;
+                CARLA_SAFE_ASSERT_RETURN(argc == 6, 0);
+
+                const lo_address targetAddress(lo_message_get_source(msg));
+                CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
+
+                const char* const stripName   = &argv[1]->s;
+                const char* const orientation = &argv[2]->s;
+                const float min = argv[3]->f;
+                const float max = argv[4]->f;
+                const float def = argv[5]->f;
+
+                if (lo_message msg2 = lo_message_new())
+                {
+                    lo_message_add(msg2, "sssfff",
+                                          method,
+                                          stripName,
+                                          orientation,
+                                          min,
+                                          max,
+                                          def);
+                    lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
+                    lo_message_free(msg2);
+                }
+            }
+            else
+            {
+                CARLA_SAFE_ASSERT(false);
+            }
+
+            return 0;
+        }
+#endif
+
+        // check if all args are strings
+        for (int i=0; i<argc; ++i)
+        {
+            if (types[i] != 's')
+                return 0;
+        }
+
+        for (int i=0; i<argc; ++i)
+            carla_stdout("%i: %s", i+1, &argv[i]->s);
 
         return 0;
     }
@@ -333,6 +583,7 @@ private:
     lo_address       fOscAddress;
     lo_server        fOscServer;
     lo_server_thread fOscServerThread;
+    CarlaString      fClientNameId;
     CarlaString      fProjectPath;
 
     bool fHasBroadcast;
@@ -412,9 +663,9 @@ private:
         return handlePtr->handleHideOptionalGui();
     }
 
-    static int _broadcast_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message, void* data)
+    static int _broadcast_handler(const char* path, const char* types, lo_arg** argv, int argc, lo_message msg, void* data)
     {
-        return handlePtr->handleBroadcast(types, argv, argc);
+        return handlePtr->handleBroadcast(path, types, argv, argc, msg);
     }
 
     #undef handlePtr
