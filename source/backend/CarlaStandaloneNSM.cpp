@@ -49,9 +49,10 @@ class CarlaNSM
 {
 public:
     CarlaNSM() noexcept
-        : fOscAddress(nullptr),
-          fOscServer(nullptr),
-          fOscServerThread(nullptr),
+        : fReplyAddress(nullptr),
+          fServer(nullptr),
+          fServerThread(nullptr),
+          fServerURL(nullptr),
           fClientNameId(),
           fProjectPath(),
           fHasBroadcast(false),
@@ -66,18 +67,24 @@ public:
         CARLA_SAFE_ASSERT(fReadyActionOpen);
         CARLA_SAFE_ASSERT(fReadyActionSave);
 
-        if (fOscServerThread != nullptr)
+        if (fServerThread != nullptr)
         {
-            lo_server_thread_stop(fOscServerThread);
-            lo_server_thread_free(fOscServerThread);
-            fOscServerThread = nullptr;
-            fOscServer = nullptr;
+            lo_server_thread_stop(fServerThread);
+            lo_server_thread_free(fServerThread);
+            fServerThread = nullptr;
+            fServer = nullptr;
         }
 
-        if (fOscAddress != nullptr)
+        if (fServerURL != nullptr)
         {
-            lo_address_free(fOscAddress);
-            fOscAddress = nullptr;
+            std::free(fServerURL);
+            fServerURL = nullptr;
+        }
+
+        if (fReplyAddress != nullptr)
+        {
+            lo_address_free(fReplyAddress);
+            fReplyAddress = nullptr;
         }
     }
 
@@ -91,48 +98,49 @@ public:
         if (NSM_URL == nullptr)
             return false;
 
-        const lo_address addr = lo_address_new_from_url(NSM_URL);
-        CARLA_SAFE_ASSERT_RETURN(addr != nullptr, false);
+        const lo_address nsmAddress(lo_address_new_from_url(NSM_URL));
+        CARLA_SAFE_ASSERT_RETURN(nsmAddress != nullptr, false);
 
-        const int proto = lo_address_get_protocol(addr);
+        const int proto = lo_address_get_protocol(nsmAddress);
 
-        if (fOscServerThread == nullptr)
+        if (fServerThread == nullptr)
         {
             // create new OSC server
-            fOscServerThread = lo_server_thread_new_with_proto(nullptr, proto, _osc_error_handler);
-            CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr, false);
+            fServerThread = lo_server_thread_new_with_proto(nullptr, proto, _osc_error_handler);
+            CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr, false);
 
             // register message handlers
-            lo_server_thread_add_method(fOscServerThread, "/error",                       "sis",    _error_handler,     this);
-            lo_server_thread_add_method(fOscServerThread, "/reply",                       "ssss",   _reply_handler,     this);
-            lo_server_thread_add_method(fOscServerThread, "/nsm/client/open",             "sss",    _open_handler,      this);
-            lo_server_thread_add_method(fOscServerThread, "/nsm/client/save",              "",      _save_handler,      this);
-            lo_server_thread_add_method(fOscServerThread, "/nsm/client/session_is_loaded", "",      _loaded_handler,    this);
-            lo_server_thread_add_method(fOscServerThread, "/nsm/client/show_optional_gui", "",      _show_gui_handler,  this);
-            lo_server_thread_add_method(fOscServerThread, "/nsm/client/hide_optional_gui", "",      _hide_gui_handler,  this);
-            lo_server_thread_add_method(fOscServerThread, nullptr,                         nullptr, _broadcast_handler, this);
+            lo_server_thread_add_method(fServerThread, "/error",                       "sis",    _error_handler,     this);
+            lo_server_thread_add_method(fServerThread, "/reply",                       "ssss",   _reply_handler,     this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/open",             "sss",    _open_handler,      this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/save",              "",      _save_handler,      this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/session_is_loaded", "",      _loaded_handler,    this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/show_optional_gui", "",      _show_gui_handler,  this);
+            lo_server_thread_add_method(fServerThread, "/nsm/client/hide_optional_gui", "",      _hide_gui_handler,  this);
+            lo_server_thread_add_method(fServerThread, nullptr,                         nullptr, _broadcast_handler, this);
 
-            fOscServer = lo_server_thread_get_server(fOscServerThread);
+            fServer    = lo_server_thread_get_server(fServerThread);
+            fServerURL = lo_server_thread_get_url(fServerThread);
         }
 
-        lo_send_from(addr, fOscServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
+        lo_send_from(nsmAddress, fServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
                      "Carla", NSM_CLIENT_FEATURES, executableName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 
-        lo_address_free(addr);
+        lo_address_free(nsmAddress);
 
         return true;
     }
 
     void ready(const int action)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr,);
 
         switch (action)
         {
         case -1: // init
             CARLA_SAFE_ASSERT_BREAK(! fStarted);
             fStarted = true;
-            lo_server_thread_start(fOscServerThread);
+            lo_server_thread_start(fServerThread);
             break;
 
         case 0: // error
@@ -153,15 +161,15 @@ public:
             break;
 
         case 5: // show gui
-            CARLA_SAFE_ASSERT_BREAK(fOscAddress != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(fOscServer != nullptr);
-            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+            CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
             break;
 
         case 6: // hide gui
-            CARLA_SAFE_ASSERT_BREAK(fOscAddress != nullptr);
-            CARLA_SAFE_ASSERT_BREAK(fOscServer != nullptr);
-            lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
+            CARLA_SAFE_ASSERT_BREAK(fReplyAddress != nullptr);
+            CARLA_SAFE_ASSERT_BREAK(fServer != nullptr);
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_hidden", "");
             break;
         }
     }
@@ -189,19 +197,22 @@ protected:
     int handleReply(const char* const method, const char* const message, const char* const smName, const char* const features,
                     const lo_message msg)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscServerThread != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServerThread != nullptr, 1);
         carla_stdout("CarlaNSM::handleReply(\"%s\", \"%s\", \"%s\", \"%s\")", method, message, smName, features);
 
         if (std::strcmp(method, "/nsm/server/announce") == 0)
         {
-            char* const addressURL(lo_address_get_url(lo_message_get_source(msg)));
-            CARLA_SAFE_ASSERT_RETURN(addressURL != nullptr, 0);
+            const lo_address msgAddress(lo_message_get_source(msg));
+            CARLA_SAFE_ASSERT_RETURN(msgAddress != nullptr, 0);
 
-            if (fOscAddress != nullptr)
-                lo_address_free(fOscAddress);
+            char* const msgURL(lo_address_get_url(msgAddress));
+            CARLA_SAFE_ASSERT_RETURN(msgURL != nullptr, 0);
 
-            fOscAddress = lo_address_new_from_url(addressURL);
-            CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 0);
+            if (fReplyAddress != nullptr)
+                lo_address_free(fReplyAddress);
+
+            fReplyAddress = lo_address_new_from_url(msgURL);
+            CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 0);
 
             fHasBroadcast     = std::strstr(features, ":broadcast:")      != nullptr;
             fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
@@ -209,7 +220,7 @@ protected:
 
             // UI starts visible
             if (fHasOptionalGui)
-                lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+                lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
 
             carla_stdout("Carla started via '%s', message: %s", smName, message);
 
@@ -237,8 +248,8 @@ protected:
 
     int handleOpen(const char* const projectPath, const char* const displayName, const char* const clientNameId)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleOpen(\"%s\", \"%s\", \"%s\")", projectPath, displayName, clientNameId);
 
         if (gStandalone.engineCallback != nullptr)
@@ -269,27 +280,13 @@ protected:
 
         fClientNameId = clientNameId;
 
-        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
+        lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/open", "OK");
 
         // Broadcast ourselves
         if (fHasBroadcast)
         {
-            char* const oscServerAddress(lo_server_get_url(fOscServer));
-
-            if (lo_message msg = lo_message_new())
-            {
-                lo_message_add(msg, "sssss",
-                                    "/non/hello",
-                                    oscServerAddress,
-                                    "Carla",
-                                    CARLA_VERSION_STRING,
-                                    fClientNameId.buffer());
-
-                lo_send_message_from(fOscAddress, fOscServer, "/nsm/server/broadcast", msg);
-                lo_message_free(msg);
-            }
-
-            std::free(oscServerAddress);
+            lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/server/broadcast", "sssss",
+                         "/non/hello", fServerURL, "Carla", CARLA_VERSION_STRING, fClientNameId.buffer());
         }
 
         return 0;
@@ -297,8 +294,8 @@ protected:
 
     int handleSave()
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleSave()");
 
         if (gStandalone.engineCallback != nullptr)
@@ -316,15 +313,15 @@ protected:
             carla_save_project(fProjectPath);
         }
 
-        lo_send_from(fOscAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
+        lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/reply", "ss", "/nsm/client/save", "OK");
 
         return 0;
     }
 
     int handleSessionIsLoaded()
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleSessionIsLoaded()");
 
         if (gStandalone.engineCallback != nullptr)
@@ -335,8 +332,8 @@ protected:
 
     int handleShowOptionalGui()
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleShowOptionalGui()");
 
         if (gStandalone.engineCallback != nullptr)
@@ -347,8 +344,8 @@ protected:
 
     int handleHideOptionalGui()
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         carla_stdout("CarlaNSM::handleHideOptionalGui()");
 
         if (gStandalone.engineCallback != nullptr)
@@ -360,8 +357,8 @@ protected:
     int handleBroadcast(const char* const path, const char* const types, lo_arg** const argv, const int argc,
                         const lo_message msg)
     {
-        CARLA_SAFE_ASSERT_RETURN(fOscAddress != nullptr, 1);
-        CARLA_SAFE_ASSERT_RETURN(fOscServer != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fReplyAddress != nullptr, 1);
+        CARLA_SAFE_ASSERT_RETURN(fServer != nullptr, 1);
         CARLA_SAFE_ASSERT_RETURN(argc >= 0, 0);
         carla_stdout("CarlaNSM::handleBroadcast(%s, %s, %p, %i)", path, types, argv, argc);
 
@@ -378,58 +375,26 @@ protected:
             const lo_address targetAddress(lo_address_new_from_url(url));
             CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
 
-            char* const oscServerAddress(lo_server_get_url(fOscServer));
-            CARLA_SAFE_ASSERT_RETURN(oscServerAddress != nullptr, 0);
-
-            if (lo_message msg2 = lo_message_new())
-            {
-                lo_message_add(msg2, "ss",
-                                    fClientNameId.buffer(),
-                                    oscServerAddress);
-
-                lo_send_message_from(targetAddress, fOscServer, "/signal/hello", msg2);
-
-                lo_message_free(msg2);
-
-                carla_stdout("CarlaNSM::handleBroadcast - sent hello");
-            }
+            lo_send_from(targetAddress, fServer, LO_TT_IMMEDIATE, "/signal/hello", "ss",
+                         fClientNameId.buffer(), fServerURL);
 
             lo_address_free(targetAddress);
-            std::free(oscServerAddress);
 
             return 0;
         }
 
         if (std::strcmp(path, "/signal/hello") == 0)
         {
-            carla_stdout("CarlaNSM::handleBroadcast - got hello");
-
             //const char* const name = &argv[0]->s;
             const char* const url  = &argv[1]->s;
 
             const lo_address targetAddress(lo_address_new_from_url(url));
             CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
 
-            char* const oscServerAddress(lo_server_get_url(fOscServer));
-            CARLA_SAFE_ASSERT_RETURN(oscServerAddress != nullptr, 0);
-
-            //lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/signal/list", "");
-
-            if (lo_message msg2 = lo_message_new())
-            {
-                lo_message_add(msg2, "ss",
-                                    fClientNameId.buffer(),
-                                    oscServerAddress);
-
-                lo_send_message_from(targetAddress, fOscServer, "/signal/hello", msg2);
-
-                lo_message_free(msg2);
-
-                carla_stdout("CarlaNSM::handleBroadcast - sent hello");
-            }
+            lo_send_from(targetAddress, fServer, LO_TT_IMMEDIATE, "/signal/hello", "ss",
+                         fClientNameId.buffer(), fServerURL);
 
             lo_address_free(targetAddress);
-            std::free(oscServerAddress);
 
             return 0;
         }
@@ -444,15 +409,15 @@ protected:
             //if (argc > 0)
                 //prefix = &argv[0]->s;
 
-            const lo_address targetAddress(lo_message_get_source(msg));
-            CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
-
-            CarlaString stripName;
+            const lo_address msgAddress(lo_message_get_source(msg));
+            CARLA_SAFE_ASSERT_RETURN(msgAddress != nullptr, 0);
 
             for (uint32_t i = 0, pluginCount = carla_get_current_plugin_count(); i < pluginCount; ++i)
             {
                 const CarlaPluginInfo* const pluginInfo(carla_get_plugin_info(i));
                 CARLA_SAFE_ASSERT_CONTINUE(pluginInfo != nullptr);
+
+                /*const*/ CarlaString pluginNameId(fClientNameId + "/" + CarlaString(pluginInfo->name).toBasic() + "/");
 
                 for (uint32_t j=0, paramCount = carla_get_parameter_count(i); j < paramCount; ++j)
                 {
@@ -474,120 +439,37 @@ protected:
                     if (paramData->hints & CB::PARAMETER_IS_READ_ONLY)
                         continue;
 
-                    if (lo_message msg2 = lo_message_new())
+                    const char* const dir         = paramData->type == CB::PARAMETER_INPUT ? "in" : "out";
+                    const CarlaString paramNameId = pluginNameId + CarlaString(paramInfo->name).toBasic();
+
+                    //if (prefix == nullptr || std::strncmp(paramNameId, prefix, std::strlen(prefix)) == 0)
                     {
-                        stripName = fClientNameId + "/strip/Unnamed/" + pluginInfo->name + "/" + paramInfo->name;
-                        stripName.replace(' ','_');
-
-                        lo_message_add(msg2, "sssfff",
-                                              path,
-                                              stripName.buffer(),
-                                              paramData->type == CB::PARAMETER_INPUT ? "in" : "out",
-                                              paramRanges->min,
-                                              paramRanges->max,
-                                              paramRanges->def);
-                        lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
-                        lo_message_free(msg2);
-
-                        carla_stdout("CarlaNSM::handleBroadcast - sent list at %i : %i, path: %s", i+1, j+1, stripName.buffer());
+                        lo_send_from(msgAddress, fServer, LO_TT_IMMEDIATE, "/reply", "sssfff",
+                                     path, paramNameId.buffer(), dir, paramRanges->min, paramRanges->max, paramRanges->def);
                     }
-
-#if 0
-                    if (prefix == nullptr /*|| strncmp(o->path(), prefix, std::strlen(prefix)) == 0*/)
-                    {
-                        lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "sssfff",
-                                     path,
-                                     paramInfo->name,
-                                     paramData->type == CB::PARAMETER_INPUT ? "in" : "out",
-                                     paramRanges->min,
-                                     paramRanges->max,
-                                     paramRanges->def);
-                    }
-#endif
                 }
             }
 
-            if (lo_message msg2 = lo_message_new())
-            {
-                lo_message_add(msg2, "s", path);
-
-                lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
-
-                lo_message_free(msg2);
-
-                carla_stdout("CarlaNSM::handleBroadcast - sent list final");
-            }
-
-            //lo_send_from(targetAddress, fOscServer, LO_TT_IMMEDIATE, "/reply", "s", path);
+            lo_send_from(msgAddress, fServer, LO_TT_IMMEDIATE, "/reply", "s", path);
 
             //return 0;
         }
 
-#if 0
-        if (std::strcmp(path, "/reply") == 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(argc > 0, 0);
-
-            const char* const method = &argv[0]->s;
-
-            if (std::strcmp(method, "/signal/list") == 0)
-            {
-                carla_stdout("CarlaNSM::handleBroadcast - got new list");
-
-                if (argc == 1)
-                    return 0;
-                CARLA_SAFE_ASSERT_RETURN(argc == 6, 0);
-
-                const lo_address targetAddress(lo_message_get_source(msg));
-                CARLA_SAFE_ASSERT_RETURN(targetAddress != nullptr, 0);
-
-                const char* const stripName   = &argv[1]->s;
-                const char* const orientation = &argv[2]->s;
-                const float min = argv[3]->f;
-                const float max = argv[4]->f;
-                const float def = argv[5]->f;
-
-                if (lo_message msg2 = lo_message_new())
-                {
-                    lo_message_add(msg2, "sssfff",
-                                          method,
-                                          stripName,
-                                          orientation,
-                                          min,
-                                          max,
-                                          def);
-                    lo_send_message_from(targetAddress, fOscServer, "/reply", msg2);
-                    lo_message_free(msg2);
-                }
-            }
-            else
-            {
-                CARLA_SAFE_ASSERT(false);
-            }
-
-            return 0;
-        }
-#endif
-
-        // check if all args are strings
         for (int i=0; i<argc; ++i)
-        {
-            if (types[i] != 's')
-                return 0;
-        }
-
-        for (int i=0; i<argc; ++i)
-            carla_stdout("%i: %s", i+1, &argv[i]->s);
+            if (types[i] == 's')
+                carla_stdout("%i: %s", i+1, &argv[i]->s);
 
         return 0;
     }
 
 private:
-    lo_address       fOscAddress;
-    lo_server        fOscServer;
-    lo_server_thread fOscServerThread;
-    CarlaString      fClientNameId;
-    CarlaString      fProjectPath;
+    lo_address       fReplyAddress;
+    lo_server        fServer;
+    lo_server_thread fServerThread;
+    char*            fServerURL;
+
+    CarlaString fClientNameId;
+    CarlaString fProjectPath;
 
     bool fHasBroadcast;
     bool fHasOptionalGui;

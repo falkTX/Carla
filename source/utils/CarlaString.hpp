@@ -500,7 +500,7 @@ public:
     /*
      * Convert all non-basic characters to '_'.
      */
-    void toBasic() noexcept
+    CarlaString& toBasic() noexcept
     {
         for (std::size_t i=0; i < fBufferLen; ++i)
         {
@@ -515,6 +515,8 @@ public:
 
             fBuffer[i] = '_';
         }
+
+        return *this;
     }
 
     /*
