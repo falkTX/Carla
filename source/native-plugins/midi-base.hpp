@@ -84,7 +84,7 @@ public:
         RawMidiEvent* const ctrlEvent(new RawMidiEvent());
         ctrlEvent->time    = time;
         ctrlEvent->size    = 3;
-        ctrlEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F));
+        ctrlEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         ctrlEvent->data[1] = control;
         ctrlEvent->data[2] = value;
 
@@ -96,7 +96,7 @@ public:
         RawMidiEvent* const pressureEvent(new RawMidiEvent());
         pressureEvent->time    = time;
         pressureEvent->size    = 2;
-        pressureEvent->data[0] = uint8_t(MIDI_STATUS_CHANNEL_PRESSURE | (channel & 0x0F));
+        pressureEvent->data[0] = uint8_t(MIDI_STATUS_CHANNEL_PRESSURE | (channel & MIDI_CHANNEL_BIT));
         pressureEvent->data[1] = pressure;
 
         appendSorted(pressureEvent);
@@ -113,7 +113,7 @@ public:
         RawMidiEvent* const noteOnEvent(new RawMidiEvent());
         noteOnEvent->time    = time;
         noteOnEvent->size    = 3;
-        noteOnEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & 0x0F));
+        noteOnEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_ON | (channel & MIDI_CHANNEL_BIT));
         noteOnEvent->data[1] = pitch;
         noteOnEvent->data[2] = velocity;
 
@@ -125,7 +125,7 @@ public:
         RawMidiEvent* const noteOffEvent(new RawMidiEvent());
         noteOffEvent->time    = time;
         noteOffEvent->size    = 3;
-        noteOffEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & 0x0F));
+        noteOffEvent->data[0] = uint8_t(MIDI_STATUS_NOTE_OFF | (channel & MIDI_CHANNEL_BIT));
         noteOffEvent->data[1] = pitch;
         noteOffEvent->data[2] = velocity;
 
@@ -137,7 +137,7 @@ public:
         RawMidiEvent* const noteAfterEvent(new RawMidiEvent());
         noteAfterEvent->time    = time;
         noteAfterEvent->size    = 3;
-        noteAfterEvent->data[0] = uint8_t(MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (channel & 0x0F));
+        noteAfterEvent->data[0] = uint8_t(MIDI_STATUS_POLYPHONIC_AFTERTOUCH | (channel & MIDI_CHANNEL_BIT));
         noteAfterEvent->data[1] = pitch;
         noteAfterEvent->data[2] = pressure;
 
@@ -149,14 +149,14 @@ public:
         RawMidiEvent* const bankEvent(new RawMidiEvent());
         bankEvent->time    = time;
         bankEvent->size    = 3;
-        bankEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & 0x0F));
+        bankEvent->data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         bankEvent->data[1] = MIDI_CONTROL_BANK_SELECT;
         bankEvent->data[2] = bank;
 
         RawMidiEvent* const programEvent(new RawMidiEvent());
         programEvent->time    = time;
         programEvent->size    = 2;
-        programEvent->data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (channel & 0x0F));
+        programEvent->data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (channel & MIDI_CHANNEL_BIT));
         programEvent->data[1] = program;
 
         appendSorted(bankEvent);
@@ -168,7 +168,7 @@ public:
         RawMidiEvent* const pressureEvent(new RawMidiEvent());
         pressureEvent->time    = time;
         pressureEvent->size    = 3;
-        pressureEvent->data[0] = uint8_t(MIDI_STATUS_PITCH_WHEEL_CONTROL | (channel & 0x0F));
+        pressureEvent->data[0] = uint8_t(MIDI_STATUS_PITCH_WHEEL_CONTROL | (channel & MIDI_CHANNEL_BIT));
         pressureEvent->data[1] = lsb;
         pressureEvent->data[2] = msb;
 

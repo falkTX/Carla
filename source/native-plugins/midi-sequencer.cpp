@@ -136,7 +136,8 @@ protected:
 
     void process(float**, float**, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        const NativeTimeInfo* const timePos = getTimeInfo();
+        if (const NativeTimeInfo* const timeInfo = getTimeInfo())
+            fTimeInfo = *timeInfo;
 
         if (fWantInEvents)
         {
@@ -153,7 +154,7 @@ protected:
                     rawMidiEvent.data[2] = midiEvent->data[2];
                     rawMidiEvent.data[3] = midiEvent->data[3];
                     rawMidiEvent.size    = midiEvent->size;
-                    rawMidiEvent.time    = timePos->playing ? timePos->frame + midiEvent->time : 0;
+                    rawMidiEvent.time    = fTimeInfo.playing ? fTimeInfo.frame + midiEvent->time : 0;
 
                     fInEvents.appendRT(rawMidiEvent);
                 }
@@ -162,12 +163,10 @@ protected:
             fInEvents.trySplice();
         }
 
-        if (const NativeTimeInfo* const timeInfo = getTimeInfo())
-            fTimeInfo = *timeInfo;
-
-        if (timePos->playing)
+        if (fTimeInfo.playing)
         {
-            fMidiOut.play(timePos->frame, frames);
+            // TODO: convert frames to ticks, using 48 ticks per beat
+            fMidiOut.play(fTimeInfo.frame, frames);
         }
         else if (fWasPlayingBefore)
         {
@@ -175,22 +174,22 @@ protected:
 
             midiEvent.port    = 0;
             midiEvent.time    = 0;
-            midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE;
+            midiEvent.data[0] = 0;
             midiEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
             midiEvent.data[2] = 0;
             midiEvent.data[3] = 0;
             midiEvent.size    = 3;
 
-            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+            for (int channel=MAX_MIDI_CHANNELS; --channel >= 0;)
             {
-                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE+i);
+                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
                 NativePluginAndUiClass::writeMidiEvent(&midiEvent);
             }
 
             carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
         }
 
-        fWasPlayingBefore = timePos->playing;
+        fWasPlayingBefore = fTimeInfo.playing;
     }
 
     // -------------------------------------------------------------------
