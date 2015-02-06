@@ -52,7 +52,7 @@ class AbstractMidiPlayer
 {
 public:
     virtual ~AbstractMidiPlayer() {}
-    virtual void writeMidiEvent(const uint8_t port, const uint64_t timePosFrame, const RawMidiEvent* const event) = 0;
+    virtual void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) = 0;
 };
 
 // -----------------------------------------------------------------------
@@ -230,12 +230,18 @@ public:
     // -------------------------------------------------------------------
     // play on time
 
-    void play(uint64_t timePosFrame, const uint32_t frames)
+    void play(const uint64_t timePosFrame, const uint32_t frames)
+    {
+        play(static_cast<long double>(timePosFrame), static_cast<double>(frames));
+    }
+
+    void play(long double timePosFrame, const double frames)
     {
         if (! fMutex.tryLock())
             return;
 
-        timePosFrame += fStartTime;
+        if (fStartTime != 0)
+            timePosFrame += static_cast<long double>(fStartTime);
 
         for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
         {
@@ -247,7 +253,7 @@ public:
             if (timePosFrame + frames <= rawMidiEvent->time)
                 continue;
 
-            kPlayer->writeMidiEvent(fMidiPort, timePosFrame, rawMidiEvent);
+            kPlayer->writeMidiEvent(fMidiPort, static_cast<long double>(rawMidiEvent->time)-timePosFrame, rawMidiEvent);
         }
 
         fMutex.unlock();

@@ -99,12 +99,12 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint8_t port, const uint64_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
         midiEvent.port    = port;
-        midiEvent.time    = uint32_t(event->time-timePosFrame);
+        midiEvent.time    = uint32_t(timePosFrame);
         midiEvent.size    = event->size;
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];

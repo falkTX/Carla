@@ -26,106 +26,137 @@ class MidiSequencerPlugin : public NativePluginAndUiClass,
                             public AbstractMidiPlayer
 {
 public:
+    enum Parameters {
+        kParameterCount = 0
+    };
+
     MidiSequencerPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "midiseq-ui"),
           fWantInEvents(false),
           fWasPlayingBefore(false),
+          fTicksPerFrame(0.0),
           fInEvents(),
           fMidiOut(this),
           fTimeInfo(),
           leakDetector_MidiSequencerPlugin()
     {
-        // TEST SONG (unsorted to test RtList API)
+        // TEST SONG
 
-        uint32_t m = 44;
+        // assuming 4x4
+        const uint32_t onebeat = 48;        // 1 beat = 48 ticks
+        //const uint32_t onebar  = onebeat*4; // 1 bar  = 4 beats
 
-        fMidiOut.addControl(0*m, 0,  7, 99);
-        fMidiOut.addControl(0*m, 0, 10, 63);
-        fMidiOut.addProgram(0*m, 0,  0, 0);
-
-        // 6912 On ch=1 n=60 v=90
-        // 7237 Off ch=1 n=60 v=90
-        // 7296 On ch=1 n=62 v=90
-        // 7621 Off ch=1 n=62 v=90
-        // 7680 On ch=1 n=64 v=90
-        // 8005 Off ch=1 n=64 v=90
-        fMidiOut.addNote(6912*m, 0, 60, 90, 325*m);
-        fMidiOut.addNote(7680*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(7296*m, 0, 62, 90, 325*m);
-
-        // 1152 On ch=1 n=62 v=90
-        // 1477 Off ch=1 n=62 v=90
-        // 1536 On ch=1 n=64 v=90
-        // 1861 Off ch=1 n=64 v=90
-        // 1920 On ch=1 n=64 v=90
-        // 2245 Off ch=1 n=64 v=90
-        fMidiOut.addNote(1152*m, 0, 62, 90, 325*m);
-        fMidiOut.addNote(1920*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(1536*m, 0, 64, 90, 325*m);
-
-        // 3840 On ch=1 n=62 v=90
-        // 4491 Off ch=1 n=62 v=90
-        // 4608 On ch=1 n=64 v=90
-        // 4933 Off ch=1 n=64 v=90
-        // 4992 On ch=1 n=67 v=90
-        // 5317 Off ch=1 n=67 v=90
-        fMidiOut.addNote(3840*m, 0, 62, 90, 650*m);
-        fMidiOut.addNote(4992*m, 0, 67, 90, 325*m);
-        fMidiOut.addNote(4608*m, 0, 64, 90, 325*m);
-
-        // 0 On ch=1 n=64 v=90
+        // 0   On  ch=1 n=64 v=90
         // 325 Off ch=1 n=64 v=90
-        // 384 On ch=1 n=62 v=90
+        // 384 On  ch=1 n=62 v=90
         // 709 Off ch=1 n=62 v=90
-        // 768 On ch=1 n=60 v=90
+        // 768 On  ch=1 n=60 v=90
         //1093 Off ch=1 n=60 v=90
-        fMidiOut.addNote(  0*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(768*m, 0, 60, 90, 325*m);
-        fMidiOut.addNote(384*m, 0, 62, 90, 325*m);
+        uint32_t curTick = 0;
 
-        // 10752 On ch=1 n=60 v=90
-        // 12056 Off ch=1 n=60 v=90
-        fMidiOut.addNote(10752*m, 0, 60, 90, 650*m);
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 60, 90, onebeat-1);
+        curTick += onebeat;
 
-        // 5376 On ch=1 n=67 v=90
-        // 6027 Off ch=1 n=67 v=90
-        // 6144 On ch=1 n=64 v=90
-        // 6469 Off ch=1 n=64 v=90
-        // 6528 On ch=1 n=62 v=90
-        // 6853 Off ch=1 n=62 v=90
-        fMidiOut.addNote(5376*m, 0, 67, 90, 650*m);
-        fMidiOut.addNote(6144*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(6528*m, 0, 62, 90, 325*m);
+        // 1152 On  ch=1 n=62 v=90
+        // 1477 Off ch=1 n=62 v=90
+        // 1536 On  ch=1 n=64 v=90
+        // 1861 Off ch=1 n=64 v=90
+        // 1920 On  ch=1 n=64 v=90
+        // 2245 Off ch=1 n=64 v=90
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
 
-        // 8064 On ch=1 n=64 v=90
-        // 8389 Off ch=1 n=64 v=90
-        // 8448 On ch=1 n=64 v=90
-        // 9099 Off ch=1 n=64 v=90
-        // 9216 On ch=1 n=62 v=90
-        // 9541 Off ch=1 n=62 v=90
-        fMidiOut.addNote(8064*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(8448*m, 0, 64, 90, 650*m);
-        fMidiOut.addNote(9216*m, 0, 62, 90, 325*m);
-
-        // 9600 On ch=1 n=62 v=90
-        // 9925 Off ch=1 n=62 v=90
-        // 9984 On ch=1 n=64 v=90
-        // 10309 Off ch=1 n=64 v=90
-        // 10368 On ch=1 n=62 v=90
-        // 10693 Off ch=1 n=62 v=90
-        fMidiOut.addNote(9600*m, 0, 62, 90, 325*m);
-        fMidiOut.addNote(9984*m, 0, 64, 90, 325*m);
-        fMidiOut.addNote(10368*m, 0, 62, 90, 325*m);
-
-        // 2304 On ch=1 n=64 v=90
+        // 2304 On  ch=1 n=64 v=90
         // 2955 Off ch=1 n=64 v=90
-        // 3072 On ch=1 n=62 v=90
+
+        // 3072 On  ch=1 n=62 v=90
         // 3397 Off ch=1 n=62 v=90
-        // 3456 On ch=1 n=62 v=90
+        // 3456 On  ch=1 n=62 v=90
         // 3781 Off ch=1 n=62 v=90
-        fMidiOut.addNote(2304*m, 0, 64, 90, 650*m);
-        fMidiOut.addNote(3072*m, 0, 62, 90, 325*m);
-        fMidiOut.addNote(3456*m, 0, 62, 90, 325*m);
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat*2-1);
+        curTick += onebeat*2;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 3840 On  ch=1 n=62 v=90
+        // 4491 Off ch=1 n=62 v=90
+        // 4608 On  ch=1 n=64 v=90
+        // 4933 Off ch=1 n=64 v=90
+        // 4992 On  ch=1 n=67 v=90
+        // 5317 Off ch=1 n=67 v=90
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat*2-1);
+        curTick += onebeat*2;
+        fMidiOut.addNote(curTick, 0, 67, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 5376 On  ch=1 n=67 v=90
+        // 6027 Off ch=1 n=67 v=90
+        // 6144 On  ch=1 n=64 v=90
+        // 6469 Off ch=1 n=64 v=90
+        // 6528 On  ch=1 n=62 v=90
+        // 6853 Off ch=1 n=62 v=90
+        fMidiOut.addNote(curTick, 0, 67, 90, onebeat*2-1);
+        curTick += onebeat*2;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 6912 On  ch=1 n=60 v=90
+        // 7237 Off ch=1 n=60 v=90
+        // 7296 On  ch=1 n=62 v=90
+        // 7621 Off ch=1 n=62 v=90
+        // 7680 On  ch=1 n=64 v=90
+        // 8005 Off ch=1 n=64 v=90
+        fMidiOut.addNote(curTick, 0, 60, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 8064 On  ch=1 n=64 v=90
+        // 8389 Off ch=1 n=64 v=90
+        // 8448 On  ch=1 n=64 v=90
+        // 9099 Off ch=1 n=64 v=90
+        // 9216 On  ch=1 n=62 v=90
+        // 9541 Off ch=1 n=62 v=90
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat*2-1);
+        curTick += onebeat*2;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 9600 On  ch=1 n=62 v=90
+        // 9925 Off ch=1 n=62 v=90
+        // 9984 On  ch=1 n=64 v=90
+        // 10309 Off ch=1 n=64 v=90
+        // 10368 On  ch=1 n=62 v=90
+        // 10693 Off ch=1 n=62 v=90
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
+        curTick += onebeat;
+        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
+        curTick += onebeat;
+
+        // 10752 On  ch=1 n=60 v=90
+        // 12056 Off ch=1 n=60 v=90
+        fMidiOut.addNote(curTick, 0, 60, 90, onebeat*2-1);
+        curTick += onebeat*2;
 
         carla_zeroStruct(fTimeInfo);
     }
@@ -165,8 +196,13 @@ protected:
 
         if (fTimeInfo.playing)
         {
-            // TODO: convert frames to ticks, using 48 ticks per beat
-            fMidiOut.play(fTimeInfo.frame, frames);
+            if (! fTimeInfo.bbt.valid)
+                fTimeInfo.bbt.beatsPerMinute = 120.0;
+
+            fTicksPerFrame = 48.0 / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
+
+            fMidiOut.play(fTicksPerFrame*static_cast<long double>(fTimeInfo.frame),
+                          fTicksPerFrame*static_cast<double>(frames));
         }
         else if (fWasPlayingBefore)
         {
@@ -263,17 +299,20 @@ protected:
     // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint8_t port, const uint64_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
         midiEvent.port    = port;
-        midiEvent.time    = uint32_t(event->time-timePosFrame);
+        midiEvent.time    = uint32_t(timePosFrame/fTicksPerFrame);
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];
         midiEvent.data[2] = event->data[2];
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
+
+        carla_stdout("Playing at %i :: %03X:%03i:%03i",
+                     midiEvent.time, midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
 
         NativePluginAndUiClass::writeMidiEvent(&midiEvent);
     }
@@ -342,6 +381,8 @@ protected:
 private:
     bool fWantInEvents;
     bool fWasPlayingBefore;
+
+    double fTicksPerFrame;
 
     struct InRtEvents {
         CarlaMutex mutex;
@@ -438,7 +479,7 @@ static const NativePluginDescriptor midisequencerDesc = {
     /* audioOuts */ 0,
     /* midiIns   */ 1,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
+    /* paramIns  */ MidiSequencerPlugin::kParameterCount,
     /* paramOuts */ 0,
     /* name      */ "MIDI Sequencer",
     /* label     */ "midisequencer",
