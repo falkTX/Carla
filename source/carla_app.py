@@ -208,6 +208,11 @@ class CarlaApplication(object):
             self.fApp.setPalette(self.fPalBlue)
 
     def createApp(self, appName):
+        QApplication.setAttribute(Qt.AA_X11InitThreads)
+
+        if MACOS:
+            QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
+
         self.fApp = QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
@@ -217,9 +222,6 @@ class CarlaApplication(object):
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
-
-        if MACOS:
-            self.fApp.setAttribute(Qt.AA_DontShowIconsInMenus)
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())
 

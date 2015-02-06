@@ -88,7 +88,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     }
 
 
-    RotaryCtl::init (disp ());
     x = 270;
     _rotary [R_TUNE] = new Rlinctl (this, this, R_TUNE, &r_tune_geom, x, 0, 400,  5, 400.0, 480.0, 440.0);
     _rotary [R_BIAS] = new Rlinctl (this, this, R_BIAS, &r_bias_geom, x, 0, 270,  5,   0.0,   1.0,   0.5);
@@ -111,7 +110,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
  
 Mainwin::~Mainwin (void)
 {
-    RotaryCtl::fini ();
 }
 
  

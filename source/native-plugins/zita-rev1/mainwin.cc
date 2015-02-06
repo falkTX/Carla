@@ -56,7 +56,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     x_apply (&H); 
 
     _ambis = xres->getb (".ambisonic", false);
-    RotaryCtl::init (disp ());
     x = 0;
     _rotary [R_DELAY] = new Rlinctl (this, this, &r_delay_img, x, 0, 160, 5,  0.02,  0.100,  0.04, R_DELAY);
     _rotary [R_XOVER] = new Rlogctl (this, this, &r_xover_img, x, 0, 200, 5,  50.0, 1000.0, 200.0, R_XOVER);
@@ -79,13 +78,12 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     x_add_events (ExposureMask); 
     x_map (); 
     set_time (0);
-    inc_time (500000);
+    inc_time (250000);
 }
 
  
 Mainwin::~Mainwin (void)
 {
-    RotaryCtl::fini ();
 }
 
  
@@ -137,7 +135,7 @@ void Mainwin::clmesg (XClientMessageEvent *E)
 void Mainwin::handle_time (void)
 {
     inc_time (500000);
-//    XFlush (dpy ());
+    XFlush (dpy ());
 }
 
 

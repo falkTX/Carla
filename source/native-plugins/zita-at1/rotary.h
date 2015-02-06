@@ -72,9 +72,6 @@ public:
     virtual void set_value (double v) = 0;
     virtual void get_string (char *p, int n) {}
 
-    static void init (X_display *disp);
-    static void fini (void);
-
     static int  _wb_up;
     static int  _wb_dn;
 
@@ -109,8 +106,9 @@ private:
     virtual int handle_motion (int dx, int dy) = 0;
     virtual int handle_mwheel (int dw) = 0;
 
-    static cairo_t          *_cairotype;
-    static cairo_surface_t  *_cairosurf;
+    juce::SharedResourcePointer<x_cairo_t> _cairo;
+    cairo_t          *_cairotype;
+    cairo_surface_t  *_cairosurf;
 };
 
 

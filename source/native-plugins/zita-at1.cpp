@@ -298,14 +298,15 @@ public:
 
             rootwin = new X_rootwin(display);
             mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
-            rootwin->handle_event();
-            mainwin->x_set_title(getUiName());
 
-            handler = new X_handler(display, mainwin, EV_X11);
+            mainwin->x_set_title(getUiName());
 
             if (const uintptr_t winId = getUiParentId())
                 XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
 
+            rootwin->handle_event();
+
+            handler = new X_handler(display, mainwin, EV_X11);
             handler->next_event();
             XFlush(display->dpy());
 

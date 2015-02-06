@@ -56,7 +56,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     H.rclas (xres->rclas ());
     x_apply (&H); 
 
-    RotaryCtl::init (disp ());
     _rotary [INPBAL] = new Rlinctl (this, this, &inpbal_img,  20, 0, 120, 4,  -3.0f,   3.0f,  0.0f, INPBAL);
     _rotary [HPFILT] = new Rlogctl (this, this, &hpfilt_img,  20, 0, 120, 4,  10.0f, 320.0f, 40.0f, HPFILT);
     _rotary [SHGAIN] = new Rlinctl (this, this, &shgain_img, 190, 0, 120, 5,   0.0f,  24.0f, 15.0f, SHGAIN);
@@ -79,7 +78,6 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
  
 Mainwin::~Mainwin (void)
 {
-    RotaryCtl::fini ();
 }
 
  
@@ -134,8 +132,6 @@ void Mainwin::handle_time (void)
     {
 	if (--_timeout == 0) numdisp (-1);
     }
-    inc_time (100000);
-    XFlush (dpy ());
 
     if (_touch && _jclient->shuffler ()->ready ()) 
     {
@@ -145,6 +141,9 @@ void Mainwin::handle_time (void)
         _valuecb->valueChangedCallback (SHFREQ, v2);
 	_touch = 0;
     }
+
+    inc_time (50000);
+    XFlush (dpy ());
 }
 
 

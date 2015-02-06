@@ -25,8 +25,37 @@
 #include <png.h>
 #include <clxclient.h>
 
+#include <cairo/cairo.h>
+#include <cairo/cairo-xlib.h>
+
 #define EV_X11  16
 #define EV_EXIT 31
+
+// -----------------------------------------------------------------------
+
+struct x_cairo_t {
+    cairo_t        * type;
+    cairo_surface_t* surf;
+
+    x_cairo_t() noexcept
+        : type(nullptr),
+          surf(nullptr) {}
+
+    ~x_cairo_t()
+    {
+        cairo_destroy(type);
+        cairo_surface_destroy(surf);
+    }
+
+    void initIfNeeded(X_display* const disp)
+    {
+        if (surf != nullptr)
+            return;
+
+        surf = cairo_xlib_surface_create(disp->dpy(), 0, disp->dvi(), 50, 50);
+        type = cairo_create(surf);
+    }
+};
 
 // -----------------------------------------------------------------------
 
@@ -132,46 +161,41 @@ private:
     {
         for (; ! shouldThreadExit();)
         {
-            int ev;
+            const CarlaMutexLocker cml(fMutex);
+
+            CARLA_SAFE_ASSERT_RETURN(fMainwin != nullptr,);
 
             {
-                const CarlaMutexLocker cml(fMutex);
+                const CarlaMutexLocker cml(fParamMutex);
 
-                CARLA_SAFE_ASSERT_RETURN(fMainwin != nullptr,);
-
+                for (ParamList::Itenerator it = fParamChanges.begin(); it.valid(); it.next())
                 {
-                    const CarlaMutexLocker cml(fParamMutex);
-
-                    for (ParamList::Itenerator it = fParamChanges.begin(); it.valid(); it.next())
-                    {
-                        const X_handler_Param& param(it.getValue());
-                        fCallback->setParameterValueFromHandlerThread(param.index, param.value);
-                    }
-
-                    fParamChanges.clear();
+                    const X_handler_Param& param(it.getValue());
+                    fCallback->setParameterValueFromHandlerThread(param.index, param.value);
                 }
 
-                for (; (ev = fMainwin->process()) == EV_X11;)
-                {
-                    fRootwin->handle_event();
-                    fHandler->next_event();
-                }
-
-                if (ev == Esync::EV_TIME)
-                {
-                    fRootwin->handle_event();
-                }
-                else if (ev == EV_EXIT)
-                {
-                    fClosed  = true;
-                    fHandler = nullptr;
-                    fMainwin = nullptr;
-                    fRootwin = nullptr;
-                    return;
-                }
+                fParamChanges.clear();
             }
 
-            carla_msleep(10);
+            switch (fMainwin->process())
+            {
+            case EV_X11:
+                fRootwin->handle_event();
+                fHandler->next_event();
+                break;
+            case EV_EXIT:
+                fClosed  = true;
+                fHandler = nullptr;
+                fMainwin = nullptr;
+                fRootwin = nullptr;
+                return;
+            case Esync::EV_TIME:
+                fRootwin->handle_event();
+                break;
+            default:
+                carla_stdout("custom X11 event for zita plugs");
+                break;
+            }
         }
     }
 };
