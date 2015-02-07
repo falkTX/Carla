@@ -149,12 +149,19 @@ class HostWindow(QMainWindow):
         # Set up GUI (engine stopped)
 
         if self.host.isPlugin:
+            self.ui.act_file_save.setVisible(False)
+            self.ui.act_file_save_as.setText(self.tr("Export as..."))
             self.ui.act_engine_start.setEnabled(False)
+            self.ui.act_engine_start.setVisible(False)
+            self.ui.act_engine_stop.setEnabled(False)
+            self.ui.act_engine_stop.setVisible(False)
             self.ui.menu_Engine.setEnabled(False)
+            self.ui.menu_Engine.setVisible(False)
+            self.ui.menu_Engine.menuAction().setVisible(False)
         else:
             self.ui.act_engine_start.setEnabled(True)
 
-        if self.fSessionManagerName:
+        if self.fSessionManagerName and not self.host.isPlugin:
             self.ui.act_file_new.setEnabled(False)
 
         self.ui.act_file_open.setEnabled(False)
@@ -609,17 +616,15 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_external.blockSignals(False)
 
         if not self.host.isPlugin:
-            self.ui.act_engine_start.setEnabled(False)
-            self.ui.act_engine_stop.setEnabled(True)
-
             canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
             self.ui.act_file_save.setEnabled(canSave)
-
-            if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(True)
-                self.ui.act_file_save_as.setEnabled(True)
-
+            self.ui.act_engine_start.setEnabled(False)
+            self.ui.act_engine_stop.setEnabled(True)
             self.ui.panelTime.setEnabled(True)
+
+        if self.host.isPlugin or not self.fSessionManagerName:
+            self.ui.act_file_open.setEnabled(True)
+            self.ui.act_file_save_as.setEnabled(True)
 
         self.startTimers()
 
@@ -635,15 +640,14 @@ class HostWindow(QMainWindow):
         self.ui.menu_Canvas.setEnabled(False)
 
         if not self.host.isPlugin:
+            self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
-
-            if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(False)
-                self.ui.act_file_save.setEnabled(False)
-                self.ui.act_file_save_as.setEnabled(False)
-
             self.ui.panelTime.setEnabled(False)
+
+        if self.host.isPlugin or not self.fSessionManagerName:
+            self.ui.act_file_open.setEnabled(False)
+            self.ui.act_file_save_as.setEnabled(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
