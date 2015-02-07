@@ -1238,7 +1238,10 @@ class HostWindow(QMainWindow):
         settings.setValue("TimePanelGeometry", self.ui.panelTime.saveGeometry())
 
         #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
+
+        if not self.host.isPlugin:
+            settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
+
         settings.setValue("ShowToolbar",   self.ui.toolBar.isVisible())
 
         diskFolders = []
@@ -1258,15 +1261,17 @@ class HostWindow(QMainWindow):
 
         if firstTime:
             self.restoreGeometry(settings.value("Geometry", ""))
-            self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
 
-            showTimePanel = settings.value("ShowTimePanel", True, type=bool)
-            self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
+            if not self.host.isPlugin:
+                self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
 
-            if showTimePanel and not self.host.isPlugin:
-                QTimer.singleShot(0, self.ui.panelTime.show)
-            else:
-                self.ui.panelTime.hide()
+                showTimePanel = settings.value("ShowTimePanel", True, type=bool)
+                self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
+
+                if showTimePanel:
+                    QTimer.singleShot(0, self.ui.panelTime.show)
+                else:
+                    self.ui.panelTime.hide()
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
