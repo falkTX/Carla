@@ -47,7 +47,7 @@ from digitalpeakmeter import DigitalPeakMeter
 from pixmapdial import PixmapDial
 
 # ------------------------------------------------------------------------------------------------------------
-# Plugin Skin Rules
+# Plugin Skin Rules (WORK IN PROGRESS)
 
 # Base is a QFrame (NoFrame, Plain, 0-size lines), with "PluginWidget" as object name.
 # Spacing of the top-most layout must be 1px.
@@ -186,6 +186,42 @@ def getModColorFromCategory(category):
     return (40, 40, 40)
 
 # ------------------------------------------------------------------------------------------------------------
+#
+
+def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
+    if "calf" in skinStyle:
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        widget.setPixmap(7)
+
+    elif skinStyle == "mod":
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        widget.setPixmap(14)
+
+    elif skinStyle == "openav":
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        if parameterId == PARAMETER_DRYWET:
+            widget.setPixmap(13)
+        elif parameterId == PARAMETER_VOLUME:
+            widget.setPixmap(12)
+        else:
+            widget.setPixmap(11)
+
+    else:
+        if parameterId == PARAMETER_DRYWET:
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
+        elif parameterId == PARAMETER_VOLUME:
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+        else:
+            _r = 255 - int((float(parameterId)/float(parameterCount))*200.0)
+            _g =  55 + int((float(parameterId)/float(parameterCount))*200.0)
+            _b = 0 #(r-40)*4
+            widget.setCustomPaintColor(QColor(_r, _g, _b))
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
+
+        widget.setPixmap(3)
+        widget.forceWhiteLabelGradientText()
+
+# ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
 
 class AbstractPluginSlot(QFrame, PluginEditParentMeta):
@@ -261,6 +297,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.peak_in  = None
         self.peak_out = None
+
+        self.w_knobs_left  = None
+        self.w_knobs_right = None
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -447,12 +486,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default):
                 self.peak_out.hide()
 
-        for paramIndex, paramWidget in self.fParameterList:
-            paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
-            paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
-            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
-            paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
-
         # -------------------------------------------------------------
 
         if self.fSkinStyle == "mod":
@@ -495,6 +528,68 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             """ % styleSheet2
 
         self.setStyleSheet(styleSheet)
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        if self.w_knobs_left is not None:
+            parameterCount = self.host.get_parameter_count(self.fPluginId)
+
+            index = 0
+            for i in range(parameterCount):
+                if index >= 8:
+                    break
+
+                paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+                paramData   = self.host.get_parameter_data(self.fPluginId, i)
+                paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+
+                if paramData['type'] != PARAMETER_INPUT:
+                    continue
+                if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                    continue
+                if paramData['hints'] & PARAMETER_IS_INTEGER:
+                    continue
+                if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                    continue
+
+                paramName = getParameterShortName(paramInfo['name'])
+
+                widget = PixmapDial(self, i)
+                widget.setLabel(paramName)
+                widget.setMinimum(paramRanges['min'])
+                widget.setMaximum(paramRanges['max'])
+                setPixmapDialStyle(widget, i, parameterCount, self.fSkinStyle)
+
+                index += 1
+                self.fParameterList.append([i, widget])
+                self.w_knobs_left.layout().addWidget(widget)
+
+        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
+            widget = PixmapDial(self, PARAMETER_DRYWET)
+            widget.setLabel("Dry/Wet")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.0)
+            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, self.fSkinStyle)
+
+            self.fParameterList.append([PARAMETER_DRYWET, widget])
+            self.w_knobs_right.layout().addWidget(widget)
+
+        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) != 0:
+            widget = PixmapDial(self, PARAMETER_VOLUME)
+            widget.setLabel("Volume")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.27)
+            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, self.fSkinStyle)
+
+            self.fParameterList.append([PARAMETER_VOLUME, widget])
+            self.w_knobs_right.layout().addWidget(widget)
+
+        for paramIndex, paramWidget in self.fParameterList:
+            paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
+            paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
+            paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
+            paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
 
         # -------------------------------------------------------------
 
@@ -1219,113 +1314,6 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
-            if index >= 8:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if paramData['hints'] & PARAMETER_IS_INTEGER:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            #if self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
-                #_r =  55 + float(i)/8*200
-                #_g = 255 - float(i)/8*200
-                #_b = 127 - r*2
-            #elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
-                #_r = 127
-                #_g =  55 + float(i)/8*200
-                #_b = 255 - float(i)/8*200
-            #elif r < b < g:
-                #_r =  55 + float(i)/8*200
-                #_g = 127
-                #_b = 255 - float(i)/8*200
-            #else:
-            _r = 255 - float(index)/8*200
-            _g =  55 + float(index)/8*200
-            _b = 0 #(r-40)*4
-            index += 1
-
-            #if _r < 140: _r = 140
-            #if _g < 140: _g = 140
-            #if _b < 140: _b = 140
-
-            widget = PixmapDial(self, i)
-            widget.setLabel(paramName)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if skinStyle == "mod":
-                widget.setPixmap(14)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            elif skinStyle == "openav":
-                widget.setPixmap(11)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            else:
-                widget.setPixmap(3)
-                widget.setCustomPaintColor(QColor(_r, _g, _b))
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
-                widget.forceWhiteLabelGradientText()
-
-            self.fParameterList.append([i, widget])
-            self.ui.w_knobs_left.layout().addWidget(widget)
-
-        if self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
-            widget = PixmapDial(self, PARAMETER_DRYWET)
-            widget.setLabel("Dry/Wet")
-            widget.setMinimum(0.0)
-            widget.setMaximum(1.0)
-
-            if skinStyle == "mod":
-                widget.setPixmap(14)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            elif skinStyle == "openav":
-                widget.setPixmap(13)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            else:
-                widget.setPixmap(3)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
-                widget.forceWhiteLabelGradientText()
-
-            self.fParameterList.append([PARAMETER_DRYWET, widget])
-            self.ui.w_knobs_right.layout().addWidget(widget)
-
-        if self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
-            widget = PixmapDial(self, PARAMETER_VOLUME)
-            widget.setLabel("Volume")
-            widget.setMinimum(0.0)
-            widget.setMaximum(1.27)
-
-            if skinStyle == "mod":
-                widget.setPixmap(14)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            elif skinStyle == "openav":
-                widget.setPixmap(12)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            else:
-                widget.setPixmap(3)
-                widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-                widget.forceWhiteLabelGradientText()
-
-            self.fParameterList.append([PARAMETER_VOLUME, widget])
-            self.ui.w_knobs_right.layout().addWidget(widget)
-
-        # -------------------------------------------------------------
 
         self.b_enable = self.ui.b_enable
         self.b_gui    = self.ui.b_gui
@@ -1340,6 +1328,9 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
+
+        self.w_knobs_left  = self.ui.w_knobs_left
+        self.w_knobs_right = self.ui.w_knobs_right
 
         self.ready()
 
@@ -1418,47 +1409,6 @@ class PluginSlot_Calf(AbstractPluginSlot):
             self.ui.b_remove.setVisible(False)
 
         # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        limit = 7 if midiCount['ins'] == 0 else 6
-        for i in range(parameterCount):
-            if index >= limit:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if paramData['hints'] & PARAMETER_IS_INTEGER:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(7)
-            widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        # -------------------------------------------------------------
 
         self.b_enable = self.ui.b_enable
         self.b_gui    = self.ui.b_gui
@@ -1470,6 +1420,8 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
+
+        self.w_knobs_left  = self.ui.w_knobs
 
         self.ready()
 
@@ -1547,100 +1499,6 @@ class PluginSlot_Nekobi(AbstractPluginSlot):
         rightTarget = QRectF(self.fPixmapRightRect)
         rightTarget.moveLeft(self.width()-rightTarget.width())
         painter.drawPixmap(rightTarget, self.fPixmapRight, self.fPixmapRightRect)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_SF2(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
-        self.ui = ui_carla_plugin_sf2.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
-            if index >= 8:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if paramData['hints'] & PARAMETER_IS_INTEGER:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(3)
-            widget.setLabel(paramName)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(3)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.forceWhiteLabelGradientText()
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
-
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
-
-        # -------------------------------------------------------------
-
-        self.b_enable = self.ui.b_enable
-        self.b_edit   = self.ui.b_edit
-
-        self.label_name = self.ui.label_name
-
-        self.led_control   = self.ui.led_control
-        self.led_midi      = self.ui.led_midi
-        self.led_audio_out = self.ui.led_audio_out
-
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 80
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, self.height()-3)
-
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawLine(0, 0, self.width(), 0)
 
         AbstractPluginSlot.paintEvent(self, event)
 
