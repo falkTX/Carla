@@ -451,6 +451,7 @@ if __name__ == '__main__':
     host = initHost("Carla-Plugin", PluginHost, False, True, True)
     host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
     host.processModeForced = True
+    host.nextProcessMode   = host.processMode
     loadHostSettings(host)
 
     # -------------------------------------------------------------

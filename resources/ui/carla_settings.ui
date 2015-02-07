@@ -1132,11 +1132,6 @@ This mode is not available for VST plugins.</string>
              </item>
              <item>
               <property name="text">
-               <string>AU</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
                <string>GIG</string>
               </property>
              </item>
@@ -1172,7 +1167,7 @@ This mode is not available for VST plugins.</string>
            <item>
             <widget class="QStackedWidget" name="tw_paths">
              <property name="currentIndex">
-              <number>0</number>
+              <number>2</number>
              </property>
              <widget class="QWidget" name="tw_paths_ladspa">
               <layout class="QVBoxLayout" name="verticalLayout_11">
@@ -1239,7 +1234,7 @@ This mode is not available for VST plugins.</string>
                <item row="1" column="1">
                 <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string>Restart Carla to be able to load new found plugins</string>
+                  <string>Restart Carla to find new plugins</string>
                  </property>
                 </widget>
                </item>
@@ -1268,19 +1263,6 @@ This mode is not available for VST plugins.</string>
                </property>
                <item>
                 <widget class="QListWidget" name="lw_vst3"/>
-               </item>
-              </layout>
-             </widget>
-             <widget class="QWidget" name="tw_paths_au">
-              <layout class="QVBoxLayout" name="verticalLayout_10">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QListWidget" name="lw_au"/>
                </item>
               </layout>
              </widget>

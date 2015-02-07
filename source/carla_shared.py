@@ -215,7 +215,6 @@ CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
-CARLA_KEY_PATHS_AU     = "Paths/AU"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
@@ -280,7 +279,6 @@ DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
-DEFAULT_AU_PATH     = ""
 DEFAULT_GIG_PATH    = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
@@ -373,9 +371,6 @@ elif MACOS:
     DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
     DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
 
-    DEFAULT_AU_PATH      = HOME + "/Library/Audio/Plug-Ins/Components"
-    DEFAULT_AU_PATH     += ":/Library/Audio/Plug-Ins/Components"
-
 else:
     splitter = ":"
 
@@ -451,7 +446,6 @@ if readEnvVars:
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
     CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
-    CARLA_DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
     CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
@@ -462,7 +456,6 @@ else:
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
     CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
-    CARLA_DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
     CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
@@ -475,7 +468,6 @@ del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
 del DEFAULT_VST3_PATH
-del DEFAULT_AU_PATH
 del DEFAULT_GIG_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
