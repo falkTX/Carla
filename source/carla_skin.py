@@ -535,9 +535,14 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.w_knobs_left is not None:
             parameterCount = self.host.get_parameter_count(self.fPluginId)
 
+            if "calf" in self.fSkinStyle:
+                maxWidgets = 7
+            else:
+                maxWidgets = 8
+
             index = 0
             for i in range(parameterCount):
-                if index >= 8:
+                if index >= maxWidgets:
                     break
 
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
@@ -1694,10 +1699,10 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         painter = QPainter(self)
         painter.setBrush(Qt.transparent)
 
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
+        painter.setPen(QPen(QColor(50, 50, 50), 1))
         painter.drawRect(0, 1, self.width()-1, self.height()-3)
 
-        painter.setPen(QPen(QColor(94, 94, 94), 1))
+        painter.setPen(QPen(QColor(64, 64, 64), 1))
         painter.drawLine(0, 0, self.width(), 0)
 
         AbstractPluginSlot.paintEvent(self, event)
