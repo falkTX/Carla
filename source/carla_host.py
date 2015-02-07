@@ -418,6 +418,10 @@ class HostWindow(QMainWindow):
         if self.host.isPlugin:
             self.startTimers()
 
+        # Start in patchbay tab if using forced patchbay mode
+        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+            self.ui.tabWidget.setCurrentIndex(1)
+
         # For NSM we wait for the open message
         if NSM_URL and host.nsmOK:
             host.nsm_ready(-1)
