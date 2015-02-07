@@ -243,7 +243,6 @@ struct CARLA_API EngineOptions {
     const char* pathLV2;
     const char* pathVST2;
     const char* pathVST3;
-    const char* pathAU;
     const char* pathGIG;
     const char* pathSF2;
     const char* pathSFZ;

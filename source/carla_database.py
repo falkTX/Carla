@@ -1481,12 +1481,11 @@ class PluginDatabaseW(QDialog):
         if not self.host.isPlugin:
             settings = QSettings("falkTX", "Carla2")
             LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
-            AU_PATH  = splitter.join(toList(settings.value(CARLA_KEY_PATHS_AU,  CARLA_DEFAULT_AU_PATH)))
             del settings
 
             internalCountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_INTERNAL, "")
             lv2CountNew      = gCarla.utils.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
-            auCountNew       = gCarla.utils.get_cached_plugin_count(PLUGIN_AU, AU_PATH)
+            auCountNew       = gCarla.utils.get_cached_plugin_count(PLUGIN_AU, "")
 
             if internalCountNew != internalCount or (len(internalPlugins) > 0 and
                                                      len(internalPlugins[0]) > 0 and

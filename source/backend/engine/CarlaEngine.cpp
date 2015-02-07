@@ -1330,14 +1330,6 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             else
                 pData->options.pathVST3 = nullptr;
             break;
-        case PLUGIN_AU:
-            if (pData->options.pathAU != nullptr)
-                delete[] pData->options.pathAU;
-            if (valueStr != nullptr)
-                pData->options.pathAU = carla_strdup_safe(valueStr);
-            else
-                pData->options.pathAU = nullptr;
-            break;
         case PLUGIN_GIG:
             if (pData->options.pathGIG != nullptr)
                 delete[] pData->options.pathGIG;
@@ -1361,6 +1353,9 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
                 pData->options.pathSFZ = carla_strdup_safe(valueStr);
             else
                 pData->options.pathSFZ = nullptr;
+            break;
+        default:
+            return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Invalid plugin type", option, EngineOption2Str(option), value, valueStr);
             break;
         }
         break;
@@ -1594,7 +1589,6 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
         outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
         outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
         outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
-        outSettings << "  <AU_PATH>"     << xmlSafeString(options.pathAU,     true) << "</AU_PATH>\n";
         outSettings << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
         outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
         outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
@@ -1784,12 +1778,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
                     value    = PLUGIN_VST3;
-                    valueStr = text.toRawUTF8();
-                }
-                else if (tag.equalsIgnoreCase("AU_PATH"))
-                {
-                    option   = ENGINE_OPTION_PLUGIN_PATH;
-                    value    = PLUGIN_AU;
                     valueStr = text.toRawUTF8();
                 }
                 else if (tag.equalsIgnoreCase("GIG_PATH"))

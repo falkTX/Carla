@@ -205,7 +205,6 @@ EngineOptions::EngineOptions() noexcept
       pathLV2(nullptr),
       pathVST2(nullptr),
       pathVST3(nullptr),
-      pathAU(nullptr),
       pathGIG(nullptr),
       pathSF2(nullptr),
       pathSFZ(nullptr),
@@ -250,12 +249,6 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathVST3;
         pathVST3 = nullptr;
-    }
-
-    if (pathAU != nullptr)
-    {
-        delete[] pathAU;
-        pathAU = nullptr;
     }
 
     if (pathGIG != nullptr)

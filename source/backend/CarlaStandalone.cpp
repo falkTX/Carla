@@ -185,9 +185,6 @@ static void carla_engine_init_common()
     if (const char* const pathVST3 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST3"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST3, pathVST3);
 
-    if (const char* const pathAU = std::getenv("ENGINE_OPTION_PLUGIN_PATH_AU"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_AU, pathAU);
-
     if (const char* const pathGIG = std::getenv("ENGINE_OPTION_PLUGIN_PATH_GIG"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_GIG, pathGIG);
 
@@ -240,9 +237,6 @@ static void carla_engine_init_common()
 
     if (gStandalone.engineOptions.pathVST3 != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
-
-    if (gStandalone.engineOptions.pathAU != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_AU, gStandalone.engineOptions.pathAU);
 
     if (gStandalone.engineOptions.pathGIG != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_GIG, gStandalone.engineOptions.pathGIG);
@@ -551,11 +545,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             if (gStandalone.engineOptions.pathVST3 != nullptr)
                 delete[] gStandalone.engineOptions.pathVST3;
             gStandalone.engineOptions.pathVST3 = carla_strdup_safe(valueStr);
-            break;
-        case CB::PLUGIN_AU:
-            if (gStandalone.engineOptions.pathAU != nullptr)
-                delete[] gStandalone.engineOptions.pathAU;
-            gStandalone.engineOptions.pathAU = carla_strdup_safe(valueStr);
             break;
         case CB::PLUGIN_GIG:
             if (gStandalone.engineOptions.pathGIG != nullptr)
