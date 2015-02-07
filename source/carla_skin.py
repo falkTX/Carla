@@ -1742,8 +1742,8 @@ def getSkinStyle(host, pluginId):
         return "openav"
 
     # DISTRHO Plugins
-    if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO":
-        return pluginLabel
+    if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
+        return pluginLabel.replace("http://distrho.sf.net/plugins/","")
 
     return "default"
 
