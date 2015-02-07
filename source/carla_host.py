@@ -155,6 +155,8 @@ class HostWindow(QMainWindow):
             self.ui.act_engine_start.setVisible(False)
             self.ui.act_engine_stop.setEnabled(False)
             self.ui.act_engine_stop.setVisible(False)
+            self.ui.act_settings_show_time_panel.setEnabled(False)
+            self.ui.act_settings_show_time_panel.setVisible(False)
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
@@ -1261,7 +1263,7 @@ class HostWindow(QMainWindow):
             showTimePanel = settings.value("ShowTimePanel", True, type=bool)
             self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
 
-            if showTimePanel:
+            if showTimePanel and not self.host.isPlugin:
                 QTimer.singleShot(0, self.ui.panelTime.show)
             else:
                 self.ui.panelTime.hide()
