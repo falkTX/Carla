@@ -132,6 +132,9 @@ class RackListItem(QListWidgetItem):
 
         QListWidgetItem.setSelected(self, select)
 
+    def setUsingSkins(self, useSkins):
+        self.fOptions['useSkins'] = useSkins
+
     # --------------------------------------------------------------------------------------------------------
 
     def recreateWidget(self, invertCompactOption = False, firstInit = False):

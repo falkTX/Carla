@@ -1385,6 +1385,12 @@ class HostWindow(QMainWindow):
         elif self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+            pitem.setUsingSkins(self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
+            pitem.recreateWidget()
+
     # --------------------------------------------------------------------------------------------------------
     # About (menu actions)
 
