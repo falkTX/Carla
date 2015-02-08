@@ -585,10 +585,13 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         getParameterSymbol(i, strBuf);
         stateParameter->symbol = carla_strdup(strBuf);;
 
-        stateParameter->value = getParameterValue(i);
+        if (! dummy)
+        {
+            stateParameter->value = getParameterValue(i);
 
-        if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-            stateParameter->value /= sampleRate;
+            if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                stateParameter->value /= sampleRate;
+        }
 
         pData->stateSave.parameters.append(stateParameter);
     }
@@ -841,7 +844,6 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         if (availOptions & option)
             setOption(option, (stateSave.options & option) != 0, true);
-
     }
 
     setDryWet(stateSave.dryWet, true, true);
