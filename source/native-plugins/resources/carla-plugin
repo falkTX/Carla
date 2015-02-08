@@ -113,6 +113,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
     def uiQuit(self):
         self.closeExternalUI()
         self.close()
+
+        if self != gui:
+            gui.close()
+
         app.quit()
 
     def uiTitleChanged(self, uiTitle):
@@ -123,6 +127,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
     def closeEvent(self, event):
         self.closeExternalUI()
+
+        if self != gui:
+            gui.close()
+
         HostWindow.closeEvent(self, event)
 
     # -------------------------------------------------------------------
