@@ -103,9 +103,6 @@ class RackListItem(QListWidgetItem):
         widget.deleteLater()
         del widget
 
-    def isCompacted(self):
-        return self.fOptions['compact']
-
     def getEditDialog(self):
         if self.fWidget is None:
             return None
@@ -117,6 +114,12 @@ class RackListItem(QListWidgetItem):
 
     def getWidget(self):
         return self.fWidget
+
+    def isCompacted(self):
+        return self.fOptions['compact']
+
+    def isUsingSkins(self):
+        return self.fOptions['useSkins']
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -131,6 +134,11 @@ class RackListItem(QListWidgetItem):
             self.fWidget.setSelected(select)
 
         QListWidgetItem.setSelected(self, select)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def setCompacted(self, compact):
+        self.fOptions['compact'] = compact
 
     def setUsingSkins(self, useSkins):
         self.fOptions['useSkins'] = useSkins
@@ -170,12 +178,12 @@ class RackListWidget(QListWidget):
 
         exts = gCarla.utils.get_supported_file_extensions().split(";")
 
-        exts.append(".dll")
+        #exts.append(".dll")
 
-        if MACOS:
-            exts.append(".dylib")
-        if not WINDOWS:
-            exts.append(".so")
+        #if MACOS:
+            #exts.append(".dylib")
+        #if not WINDOWS:
+            #exts.append(".so")
 
         self.fSupportedExtensions = tuple(i.replace("*","").lower() for i in exts)
         self.fLastSelectedItem    = None
@@ -215,13 +223,13 @@ class RackListWidget(QListWidget):
     def isDragUrlValid(self, url):
         filename = url.toLocalFile()
 
-        if os.path.isdir(filename):
-            if os.path.exists(os.path.join(filename, "manifest.ttl")):
-                return True
-            if MACOS and filename.lower().endswith((".vst", ".vst3")):
-                return True
+        #if os.path.isdir(filename):
+            #if os.path.exists(os.path.join(filename, "manifest.ttl")):
+                #return True
+            #if MACOS and filename.lower().endswith((".vst", ".vst3")):
+                #return True
 
-        elif os.path.isfile(filename):
+        if os.path.isfile(filename):
             if filename.lower().endswith(self.fSupportedExtensions):
                 return True
 
