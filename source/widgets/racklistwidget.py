@@ -149,10 +149,18 @@ class RackListItem(QListWidgetItem):
         if invertCompactOption:
             self.fOptions['compact'] = not self.fOptions['compact']
 
+        wasGuiShown = None
+
+        if self.fWidget is not None and self.fWidget.b_gui is not None:
+            wasGuiShown = self.fWidget.b_gui.isChecked()
+
         self.close()
 
         self.fWidget = createPluginSlot(self.fParent, self.host, self.fPluginId, self.fOptions)
         self.fWidget.setFixedHeight(self.fWidget.getFixedHeight())
+
+        if wasGuiShown == True and self.fWidget.b_gui is not None:
+            self.fWidget.b_gui.setChecked(True)
 
         self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
 

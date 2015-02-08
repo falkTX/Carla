@@ -1968,6 +1968,12 @@ def canvasCallback(action, value1, value2, valueStr):
 
         host.show_custom_ui(pluginId, True)
 
+        # FIXME
+        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
+
+        if pwidget is not None and pwidget.b_gui is not None:
+            pwidget.b_gui.setChecked(True)
+
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
