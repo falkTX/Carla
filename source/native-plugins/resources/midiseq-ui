@@ -703,10 +703,14 @@ class PianoRoll(QGraphicsScene):
         for note in self.notes[:]:
             if note.note[1] >= (self.num_measures * self.time_sig[0]):
                 self.notes.remove(note)
+                self.midievent.emit(["midievent-remove", note.note[0], note.note[1], note.note[2], note.note[3]])
             elif note.note[2] > self.max_note_length:
-                new_note = note.note
+                new_note = note.note[:]
+                new_note[2] = self.max_note_length
                 self.notes.remove(note)
                 self.drawNote(new_note[0], new_note[1], self.max_note_length, new_note[3], False)
+                self.midievent.emit(["midievent-remove", note.note[0], note.note[1], note.note[2], note.note[3]])
+                self.midievent.emit(["midievent-add", new_note[0], new_note[1], new_note[2], new_note[3]])
         list(map(self.addItem, self.notes))
         if self.views():
             self.views()[0].setSceneRect(self.itemsBoundingRect())
