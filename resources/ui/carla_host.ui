@@ -802,15 +802,15 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>CanvasPreviewFrame</class>
-   <extends>QFrame</extends>
-   <header>canvaspreviewframe.h</header>
-   <container>1</container>
-  </customwidget>
-  <customwidget>
    <class>DigitalPeakMeter</class>
    <extends>QWidget</extends>
    <header>digitalpeakmeter.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>CanvasPreviewFrame</class>
+   <extends>QFrame</extends>
+   <header>canvaspreviewframe.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -836,22 +836,6 @@
     <hint type="destinationlabel">
      <x>189</x>
      <y>34</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>act_settings_show_toolbar</sender>
-   <signal>triggered(bool)</signal>
-   <receiver>toolBar</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>-1</x>
-     <y>-1</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>354</x>
-     <y>35</y>
     </hint>
    </hints>
   </connection>

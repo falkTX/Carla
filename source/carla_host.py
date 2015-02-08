@@ -345,6 +345,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
         self.ui.act_settings_show_time_panel.toggled.connect(self.slot_showTimePanel)
+        self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
@@ -1246,7 +1247,7 @@ class HostWindow(QMainWindow):
         if not self.host.isPlugin:
             settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
 
-        settings.setValue("ShowToolbar",   self.ui.toolBar.isVisible())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
 
         diskFolders = []
 
@@ -1279,6 +1280,7 @@ class HostWindow(QMainWindow):
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
             #if settings.contains("SplitterState"):
@@ -1348,6 +1350,11 @@ class HostWindow(QMainWindow):
     @pyqtSlot(bool)
     def slot_showTimePanel(self, yesNo):
         self.ui.panelTime.setVisible(yesNo)
+
+    @pyqtSlot(bool)
+    def slot_showToolbar(self, yesNo):
+        self.ui.toolBar.setEnabled(yesNo)
+        self.ui.toolBar.setVisible(yesNo)
 
     @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
