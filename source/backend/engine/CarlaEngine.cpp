@@ -1205,11 +1205,9 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     if (isRunning() && (option == ENGINE_OPTION_PROCESS_MODE || option == ENGINE_OPTION_AUDIO_NUM_PERIODS || option == ENGINE_OPTION_AUDIO_DEVICE))
         return carla_stderr("CarlaEngine::setOption(%i:%s, %i, \"%s\") - Cannot set this option while engine is running!", option, EngineOption2Str(option), value, valueStr);
 
-    if (option == ENGINE_OPTION_FORCE_STEREO && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        // do not un-force stereo for rack mode
-        CARLA_SAFE_ASSERT_RETURN(value == 1,);
-    }
+    // do not un-force stereo for rack mode
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && option == ENGINE_OPTION_FORCE_STEREO && value != 0)
+        return;
 
     switch (option)
     {

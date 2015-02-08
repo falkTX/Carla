@@ -345,6 +345,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
         self.ui.act_settings_show_time_panel.toggled.connect(self.slot_showTimePanel)
+        self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
@@ -1246,7 +1247,7 @@ class HostWindow(QMainWindow):
         if not self.host.isPlugin:
             settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
 
-        settings.setValue("ShowToolbar",   self.ui.toolBar.isVisible())
+        settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
 
         diskFolders = []
 
@@ -1279,6 +1280,7 @@ class HostWindow(QMainWindow):
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
             #if settings.contains("SplitterState"):
@@ -1350,6 +1352,11 @@ class HostWindow(QMainWindow):
         self.ui.panelTime.setVisible(yesNo)
 
     @pyqtSlot(bool)
+    def slot_showToolbar(self, yesNo):
+        self.ui.toolBar.setEnabled(yesNo)
+        self.ui.toolBar.setVisible(yesNo)
+
+    @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
         self.ui.peak_in.setVisible(yesNo)
         self.ui.peak_out.setVisible(yesNo)
@@ -1377,6 +1384,12 @@ class HostWindow(QMainWindow):
             pass
         elif self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
+
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+            pitem.setUsingSkins(self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
+            pitem.recreateWidget()
 
     # --------------------------------------------------------------------------------------------------------
     # About (menu actions)
@@ -1954,6 +1967,12 @@ def canvasCallback(action, value1, value2, valueStr):
         pluginId = value1
 
         host.show_custom_ui(pluginId, True)
+
+        # FIXME
+        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
+
+        if pwidget is not None and pwidget.b_gui is not None:
+            pwidget.b_gui.setChecked(True)
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback

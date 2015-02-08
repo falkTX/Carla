@@ -245,6 +245,9 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_process_mode_jack.setEnabled(False)
             self.ui.cb_engine_process_mode_other.setEnabled(False)
 
+            if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+                self.ui.ch_engine_force_stereo.setEnabled(False)
+
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
 
@@ -352,7 +355,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
         self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
-        self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo)
+        self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(self.host.preferPluginBridges)
 
         # ----------------------------------------------------------------------------------------------------
@@ -459,14 +462,18 @@ class CarlaSettingsW(QDialog):
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
 
-        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          self.host.forceStereo,         "")
+        if self.ui.ch_engine_force_stereo.isEnabled():
+            self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
+
         self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
         self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
         self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
         self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
         self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
 
-        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,          self.host.forceStereo)
+        if self.ui.ch_engine_force_stereo.isEnabled():
+            settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)
+
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)

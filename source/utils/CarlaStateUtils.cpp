@@ -116,7 +116,7 @@ static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 // StateParameter
 
 CarlaStateSave::Parameter::Parameter() noexcept
-    : isInput(true),
+    : dummy(true),
       index(-1),
       name(nullptr),
       symbol(nullptr),
@@ -426,9 +426,9 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         }
                         else if (pTag.equalsIgnoreCase("value"))
                         {
+                            stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
-
 #ifndef BUILD_BRIDGE
                         else if (pTag.equalsIgnoreCase("midichannel") || pTag.equalsIgnoreCase("midi-channel"))
                         {
@@ -590,9 +590,6 @@ String CarlaStateSave::toString() const
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
 
-        if (stateParameter->isInput)
-            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
-
 #ifndef BUILD_BRIDGE
         if (stateParameter->midiCC > 0)
         {
@@ -600,6 +597,9 @@ String CarlaStateSave::toString() const
             parameterXml << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
         }
 #endif
+
+        if (! stateParameter->dummy)
+            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
 
         parameterXml << "   </Parameter>\n";
 
