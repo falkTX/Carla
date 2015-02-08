@@ -624,15 +624,12 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         const char* const key(stateCustomData->key);
 
-        bool wantData = false;
-
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
-            wantData = true;
-        else if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
-            wantData = true;
+            continue;
+        if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
+            continue;
 
-        if (wantData)
-            setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+        setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
