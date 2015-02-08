@@ -2879,42 +2879,62 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def set_active(self, pluginId, onOff):
         self.sendMsg(["set_active", pluginId, onOff])
+        self.fPluginsInfo[pluginId].internalValues[0] = 1.0 if onOff else 0.0
 
     def set_drywet(self, pluginId, value):
         self.sendMsg(["set_drywet", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[1] = value
 
     def set_volume(self, pluginId, value):
         self.sendMsg(["set_volume", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[2] = value
 
     def set_balance_left(self, pluginId, value):
         self.sendMsg(["set_balance_left", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[3] = value
 
     def set_balance_right(self, pluginId, value):
         self.sendMsg(["set_balance_right", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[4] = value
 
     def set_panning(self, pluginId, value):
         self.sendMsg(["set_panning", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[5] = value
 
     def set_ctrl_channel(self, pluginId, channel):
         self.sendMsg(["set_ctrl_channel", pluginId, channel])
+        self.fPluginsInfo[pluginId].internalValues[6] = float(channel)
 
     def set_parameter_value(self, pluginId, parameterId, value):
         self.sendMsg(["set_parameter_value", pluginId, parameterId, value])
+        self.fPluginsInfo[pluginId].parameterValues[parameterId] = value
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = channel
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
         self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = cc
 
     def set_program(self, pluginId, programId):
         self.sendMsg(["set_program", pluginId, programId])
+        self.fPluginsInfo[pluginId].programCurrent = programId
 
     def set_midi_program(self, pluginId, midiProgramId):
         self.sendMsg(["set_midi_program", pluginId, midiProgramId])
+        self.fPluginsInfo[pluginId].midiProgramCurrent = midiProgramId
 
     def set_custom_data(self, pluginId, type_, key, value):
         self.sendMsg(["set_custom_data", pluginId, type_, key, value])
+
+        for cdata in self.fPluginsInfo[pluginId].customData:
+            if cdata['type'] != type_:
+                continue
+            if cdata['key'] != key:
+                continue
+            cdata['value'] = value
+            break
 
     def set_chunk_data(self, pluginId, chunkData):
         self.sendMsg(["set_chunk_data", pluginId, chunkData])
