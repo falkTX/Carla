@@ -67,13 +67,19 @@ class RackListItem(QListWidgetItem):
             'useSkins': useSkins
         }
 
+        for i in range(self.host.get_custom_data_count(pluginId)):
+            cdata = self.host.get_custom_data(pluginId, i)
+            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
+                self.fOptions['compact'] = bool(cdata['value'] == "true")
+                break
+
         self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         #self.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled|Qt.ItemIsDragEnabled)
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.recreateWidget()
+        self.recreateWidget(firstInit = True)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -96,6 +102,9 @@ class RackListItem(QListWidgetItem):
         widget.setParent(None)
         widget.deleteLater()
         del widget
+
+    def isCompacted(self):
+        return self.fOptions['compact']
 
     def getEditDialog(self):
         if self.fWidget is None:
@@ -125,7 +134,7 @@ class RackListItem(QListWidgetItem):
 
     # --------------------------------------------------------------------------------------------------------
 
-    def recreateWidget(self, invertCompactOption = False):
+    def recreateWidget(self, invertCompactOption = False, firstInit = False):
         if invertCompactOption:
             self.fOptions['compact'] = not self.fOptions['compact']
 
@@ -137,6 +146,10 @@ class RackListItem(QListWidgetItem):
         self.setSizeHint(QSize(self.kMinimumWidth, self.fWidget.getFixedHeight()))
 
         self.fParent.setItemWidget(self, self.fWidget)
+
+        if not firstInit:
+            self.host.set_custom_data(self.fPluginId, CUSTOM_DATA_TYPE_PROPERTY,
+                                      "CarlaSkinIsCompacted", "true" if self.fOptions['compact'] else "false")
 
 # ------------------------------------------------------------------------------------------------------------
 # Rack Widget

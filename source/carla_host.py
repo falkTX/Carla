@@ -386,6 +386,8 @@ class HostWindow(QMainWindow):
         host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
 
+        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
+
         host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
@@ -1496,6 +1498,32 @@ class HostWindow(QMainWindow):
             self.ui.keyboard.sendNoteOff(note, False)
 
     # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        pitem = self.getPluginItem(pluginId)
+
+        if pitem is None:
+            return
+
+        wasCompacted = pitem.isCompacted()
+        isCompacted  = wasCompacted
+
+        for i in range(self.host.get_custom_data_count(pluginId)):
+            cdata = self.host.get_custom_data(pluginId, i)
+
+            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
+                isCompacted = bool(cdata['value'] == "true")
+                break
+        else:
+            return
+
+        if wasCompacted == isCompacted:
+            return
+
+        pitem.recreateWidget(True)
+
+    # --------------------------------------------------------------------------------------------------------
     # MiniCanvas stuff
 
     @pyqtSlot()
@@ -1581,7 +1609,6 @@ class HostWindow(QMainWindow):
         if pitem is None:
             return
 
-        self.ui.listWidget.customClearSelection()
         pitem.recreateWidget()
 
     # --------------------------------------------------------------------------------------------------------

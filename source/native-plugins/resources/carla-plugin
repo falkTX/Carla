@@ -312,19 +312,17 @@ class CarlaMiniW(ExternalUI, HostWindow):
             name = self.readlineblock().replace("\r", "\n")
             self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
-        elif msg == "complete-license":
-            license = self.readlineblock().replace("\r", "\n")
-            self.host.fCompleteLicenseText = license
+        elif msg.startswith("CUSTOM_DATA_COUNT_"):
+            pluginId, count = [int(i) for i in msg.replace("CUSTOM_DATA_COUNT_", "").split(":")]
+            self.host._set_customDataCount(pluginId, count)
 
-        elif msg == "juce-version":
-            version = self.readlineblock().replace("\r", "\n")
-            self.host.fJuceVersion = version
+        elif msg.startswith("CUSTOM_DATA_"):
+            pluginId, customDataId = [int(i) for i in msg.replace("CUSTOM_DATA_", "").split(":")]
 
-        elif msg == "file-exts":
-            exts = self.readlineblock().replace("\r", "\n")
-            self.host.fSupportedFileExts = exts
-            # only now we know the supported extensions
-            self.fDirModel.setNameFilters(exts.split(";"))
+            type_ = self.readlineblock().replace("\r", "\n")
+            key   = self.readlineblock().replace("\r", "\n")
+            value = self.readlineblock().replace("\r", "\n")
+            self.host._set_customData(pluginId, customDataId, {'type': type_, 'key': key, 'value': value})
 
         elif msg == "max-plugin-number":
             maxnum = int(self.readlineblock())

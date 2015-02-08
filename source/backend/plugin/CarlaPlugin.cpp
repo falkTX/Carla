@@ -622,6 +622,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
+        const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
@@ -629,7 +630,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
 
-        setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+        setCustomData(type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
@@ -797,6 +798,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
+        const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
         if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
@@ -804,7 +806,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
 
-        setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+        setCustomData(type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
@@ -845,6 +847,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setCtrlChannel(stateSave.ctrlChannel, true, true);
     setActive(stateSave.active, true, true);
 #endif
+
+    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)

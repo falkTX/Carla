@@ -353,6 +353,11 @@ static const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/c
 static const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk";
 
 /*!
+ * Property type URI.
+ */
+static const char* const CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property";
+
+/*!
  * String type URI.
  */
 static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string";
@@ -369,11 +374,6 @@ static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/ca
  * @see CustomData::key
  * @{
  */
-
-/*!
- * Plugin options key.
- */
-static const char* const CUSTOM_DATA_KEY_PLUGIN_OPTIONS = "CarlaPluginOptions";
 
 /*!
  * UI position key.

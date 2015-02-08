@@ -312,6 +312,9 @@ CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean"
 # Chunk type URI.
 CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk"
 
+# Property type URI.
+CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property"
+
 # String type URI.
 CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"
 
@@ -2641,6 +2644,8 @@ class PluginStoreInfo(object):
         'midiProgramCount',
         'midiProgramCurrent',
         'midiProgramData',
+        'customDataCount',
+        'customData',
         'peaks'
     ]
 
@@ -2814,7 +2819,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]
 
     def get_custom_data(self, pluginId, customDataId):
-        return PyCustomData
+        return self.fPluginsInfo[pluginId].customData[customDataId]
 
     def get_chunk_data(self, pluginId):
         return ""
@@ -2829,7 +2834,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo[pluginId].midiProgramCount
 
     def get_custom_data_count(self, pluginId):
-        return 0
+        return self.fPluginsInfo[pluginId].customDataCount
 
     def get_parameter_text(self, pluginId, parameterId):
         return ""
@@ -2978,6 +2983,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         info.midiProgramCount   = 0
         info.midiProgramCurrent = -1
         info.midiProgramData    = []
+        info.customDataCount = 0
+        info.customData      = []
         info.peaks = [0.0, 0.0, 0.0, 0.0]
         self.fPluginsInfo.append(info)
 
@@ -3037,6 +3044,16 @@ class CarlaHostPlugin(CarlaHostMeta):
         for x in range(count):
             self.fPluginsInfo[pluginId].midiProgramData.append(PyMidiProgramData)
 
+    def _set_customDataCount(self, pluginId, count):
+        self.fPluginsInfo[pluginId].customDataCount = count
+
+        # clear
+        self.fPluginsInfo[pluginId].customData = []
+
+        # add placeholders
+        for x in range(count):
+            self.fPluginsInfo[pluginId].customData.append(PyCustomData)
+
     def _set_parameterInfo(self, pluginId, paramIndex, info):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterInfo[paramIndex] = info
@@ -3078,6 +3095,10 @@ class CarlaHostPlugin(CarlaHostMeta):
     def _set_midiProgramData(self, pluginId, mpIndex, data):
         if mpIndex < self.fPluginsInfo[pluginId].midiProgramCount:
             self.fPluginsInfo[pluginId].midiProgramData[mpIndex] = data
+
+    def _set_customData(self, pluginId, cdIndex, data):
+        if cdIndex < self.fPluginsInfo[pluginId].customDataCount:
+            self.fPluginsInfo[pluginId].customData[cdIndex] = data
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
         self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]

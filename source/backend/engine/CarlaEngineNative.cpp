@@ -889,6 +889,35 @@ protected:
         fUiServer.flushMessages();
     }
 
+    void uiServerSendPluginProperties(CarlaPlugin* const plugin)
+    {
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
+
+        const uint pluginId(plugin->getId());
+
+        uint32_t count = plugin->getCustomDataCount();
+        std::sprintf(fTmpBuf, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
+        fUiServer.writeMessage(fTmpBuf);
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            const CustomData& customData(plugin->getCustomData(i));
+            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
+
+            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
+                continue;
+
+            std::sprintf(fTmpBuf, "CUSTOM_DATA_%i:%i\n", pluginId, i);
+            fUiServer.writeMessage(fTmpBuf);
+
+            fUiServer.writeAndFixMessage(customData.type);
+            fUiServer.writeAndFixMessage(customData.key);
+            fUiServer.writeAndFixMessage(customData.value);
+        }
+
+        fUiServer.flushMessages();
+    }
+
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
         if (! fIsRunning)
@@ -900,6 +929,16 @@ protected:
 
         switch (action)
         {
+        case ENGINE_CALLBACK_UPDATE:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                uiServerSendPluginProperties(plugin);
+            }
+            break;
+
         case ENGINE_CALLBACK_RELOAD_INFO:
             plugin = getPlugin(pluginId);
 
@@ -940,6 +979,7 @@ protected:
                 uiServerSendPluginInfo(plugin);
                 uiServerSendPluginParameters(plugin);
                 uiServerSendPluginPrograms(plugin);
+                uiServerSendPluginProperties(plugin);
             }
             break;
 
