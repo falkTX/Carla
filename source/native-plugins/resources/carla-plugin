@@ -373,7 +373,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 # Embed plugin UI
 
 if LINUX and not config_UseQt5:
-    from PyQt4.QtGui import QHBoxLayout, QX11EmbedWidget
+    from PyQt4.QtGui import QHBoxLayout, QKeySequence, QX11EmbedWidget
 
     class CarlaEmbedW(QX11EmbedWidget):
         def __init__(self, host, winId):
@@ -391,20 +391,36 @@ if LINUX and not config_UseQt5:
             gui.hide()
 
             gui.ui.act_file_quit.setEnabled(False)
-            gui.ui.menu_File.setEnabled(False)
-            gui.ui.menu_File.setVisible(False)
-            #menuBar = gui.menuBar()
-            #menuBar.removeAction(gui.ui.menu_File.menuAction())
+            gui.ui.act_file_quit.setVisible(False)
 
-            self.addWidget(gui.menuBar())
+            self.fShortcutActions = []
+            self.addShortcutActions(gui.ui.menu_File.actions())
+            self.addShortcutActions(gui.ui.menu_Plugin.actions())
+            self.addShortcutActions(gui.ui.menu_PluginMacros.actions())
+            self.addShortcutActions(gui.ui.menu_Settings.actions())
+            self.addShortcutActions(gui.ui.menu_Help.actions())
+
+            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+                self.addShortcutActions(gui.ui.menu_Canvas.actions())
+                self.addShortcutActions(gui.ui.menu_Canvas_Zoom.actions())
+
+            self.addWidget(gui.ui.menubar)
             self.addLine()
             self.addWidget(gui.ui.toolBar)
-            self.addLine()
+
+            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+                self.addLine()
+
             self.addWidget(gui.centralWidget())
 
             self.setFixedSize(740, 512)
             self.embedInto(winId)
             self.show()
+
+        def addShortcutActions(self, actions):
+            for action in actions:
+                if not action.shortcut().isEmpty():
+                    self.fShortcutActions.append(action)
 
         def addWidget(self, widget):
             widget.setParent(self)
@@ -417,6 +433,33 @@ if LINUX and not config_UseQt5:
             line.setLineWidth(0)
             line.setMidLineWidth(1)
             self.fLayout.addWidget(line)
+
+        def keyPressEvent(self, event):
+            modifiers    = event.modifiers()
+            modifiersStr = ""
+
+            if (modifiers & Qt.ShiftModifier):
+                modifiersStr += "Shift+"
+            if (modifiers & Qt.ControlModifier):
+                modifiersStr += "Ctrl+"
+            if (modifiers & Qt.AltModifier):
+                modifiersStr += "Alt+"
+            if (modifiers & Qt.MetaModifier):
+                modifiersStr += "Meta+"
+
+            keyStr = QKeySequence(event.key()).toString()
+            keySeq = QKeySequence(modifiersStr + keyStr)
+
+            for action in self.fShortcutActions:
+                if not action.isEnabled():
+                    continue
+                if keySeq.matches(action.shortcut()) != QKeySequence.ExactMatch:
+                    continue
+                event.accept()
+                action.trigger()
+                return
+
+            QX11EmbedWidget.keyPressEvent(self, event)
 
         def showEvent(self, event):
             QX11EmbedWidget.showEvent(self, event)
