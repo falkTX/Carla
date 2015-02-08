@@ -1166,6 +1166,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
+    def mouseDoubleClickEvent(self, event):
+        QFrame.mouseDoubleClickEvent(self, event)
+
+        # FIXME
+        gCarla.gui.compactPlugin(self.fPluginId)
+
     def closeEvent(self, event):
         if self.fIdleTimerId != 0:
             self.killTimer(self.fIdleTimerId)
