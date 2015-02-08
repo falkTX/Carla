@@ -529,6 +529,25 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
             pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
 
             // Don't save anything else if using chunks
+            // Well, except properties
+
+            for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+            {
+                const CustomData& cData(it.getValue(kCustomDataFallback));
+                CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
+
+                if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
+                    continue;
+
+                CarlaStateSave::CustomData* stateCustomData(new CarlaStateSave::CustomData());
+
+                stateCustomData->type  = carla_strdup(cData.type);
+                stateCustomData->key   = carla_strdup(cData.key);
+                stateCustomData->value = carla_strdup(cData.value);
+
+                pData->stateSave.customData.append(stateCustomData);
+            }
+
             return pData->stateSave;
         }
     }
