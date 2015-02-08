@@ -29,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 struct CarlaStateSave {
     struct Parameter {
-        bool        isInput;
+        bool        dummy; // if true only midiChannel/CC are used
         int32_t     index;
         const char* name;
         const char* symbol;

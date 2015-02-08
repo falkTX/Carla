@@ -516,6 +516,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.ctrlChannel  = pData->ctrlChannel;
 #endif
 
+    bool usingChunk = false;
+
     // ---------------------------------------------------------------
     // Chunk
 
@@ -526,29 +528,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         if (data != nullptr && dataSize > 0)
         {
+            usingChunk = true;
             pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
-
-            // Don't save anything else if using chunks
-            // Well, except properties
-
-            for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
-            {
-                const CustomData& cData(it.getValue(kCustomDataFallback));
-                CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
-
-                if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
-                    continue;
-
-                CarlaStateSave::CustomData* stateCustomData(new CarlaStateSave::CustomData());
-
-                stateCustomData->type  = carla_strdup(cData.type);
-                stateCustomData->key   = carla_strdup(cData.key);
-                stateCustomData->value = carla_strdup(cData.value);
-
-                pData->stateSave.customData.append(stateCustomData);
-            }
-
-            return pData->stateSave;
         }
     }
 
@@ -584,10 +565,15 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
+        const bool dummy = paramData.type != PARAMETER_INPUT || usingChunk;
+
+        if (dummy && paramData.midiCC <= -1)
+            continue;
+
         CarlaStateSave::Parameter* const stateParameter(new CarlaStateSave::Parameter());
 
-        stateParameter->isInput = (paramData.type == PARAMETER_INPUT);
-        stateParameter->index   = paramData.index;
+        stateParameter->dummy = dummy;
+        stateParameter->index = paramData.index;
 #ifndef BUILD_BRIDGE
         stateParameter->midiCC      = paramData.midiCC;
         stateParameter->midiChannel = paramData.midiChannel;
@@ -633,7 +619,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
 
     // ---------------------------------------------------------------
-    // Part 1 - PRE-set custom data (only that which reload programs)
+    // Part 1 - PRE-set custom data (only those which reload programs)
 
     for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
@@ -780,7 +766,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         {
             //CARLA_SAFE_ASSERT(stateParameter->isInput == (pData
 
-            if (stateParameter->isInput)
+            if (! stateParameter->dummy)
             {
                 if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
                     stateParameter->value *= sampleRate;
