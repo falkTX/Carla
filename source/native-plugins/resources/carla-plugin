@@ -438,13 +438,13 @@ if LINUX and not config_UseQt5:
             modifiers    = event.modifiers()
             modifiersStr = ""
 
-            if (modifiers & Qt.ShiftModifier):
+            if modifiers & Qt.ShiftModifier:
                 modifiersStr += "Shift+"
-            if (modifiers & Qt.ControlModifier):
+            if modifiers & Qt.ControlModifier:
                 modifiersStr += "Ctrl+"
-            if (modifiers & Qt.AltModifier):
+            if modifiers & Qt.AltModifier:
                 modifiersStr += "Alt+"
-            if (modifiers & Qt.MetaModifier):
+            if modifiers & Qt.MetaModifier:
                 modifiersStr += "Meta+"
 
             keyStr = QKeySequence(event.key()).toString()
