@@ -351,7 +351,9 @@ public:
         {
             // get time
             needle = std::strchr(dataRead, ':');
-            CARLA_SAFE_ASSERT_RETURN(needle != nullptr,);
+
+            if (needle == nullptr)
+                return;
 
             tmpSize = needle - dataRead;
             CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);

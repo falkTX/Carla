@@ -97,6 +97,19 @@ protected:
     }
 
     // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() const override
+    {
+        return fMidiOut.getState();
+    }
+
+    void setState(const char* const data) override
+    {
+        fMidiOut.setState(data);
+    }
+
+    // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
     void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) override
@@ -200,6 +213,7 @@ static const NativePluginDescriptor midifileDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
