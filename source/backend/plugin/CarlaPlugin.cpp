@@ -528,8 +528,10 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 
         if (data != nullptr && dataSize > 0)
         {
-            usingChunk = true;
             pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
+
+            if (pluginType != PLUGIN_INTERNAL)
+                usingChunk = true;
         }
     }
 
@@ -621,6 +623,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     char strBuf[STR_MAX+1];
     const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
 
+    const PluginType pluginType(getType());
+
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only those which reload programs)
 
@@ -633,7 +637,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
-        if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+        if (pluginType == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
             continue;
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
@@ -685,7 +689,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     LinkedList<ParamSymbol*> paramSymbols;
 
-    if (getType() == PLUGIN_LADSPA || getType() == PLUGIN_LV2)
+    if (pluginType == PLUGIN_LADSPA || pluginType == PLUGIN_LV2)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
@@ -712,7 +716,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         int32_t index = -1;
 
-        if (getType() == PLUGIN_LADSPA)
+        if (pluginType == PLUGIN_LADSPA)
         {
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -735,7 +739,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             else
                 index = stateParameter->index;
         }
-        else if (getType() == PLUGIN_LV2)
+        else if (pluginType == PLUGIN_LV2)
         {
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -809,7 +813,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
-        if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+        if (pluginType == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
             continue;
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
@@ -820,7 +824,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 5x - set lv2 state
 
-    if (getType() == PLUGIN_LV2 && pData->custom.count() > 0)
+    if (pluginType == PLUGIN_LV2 && pData->custom.count() > 0)
         setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
 
     // ---------------------------------------------------------------

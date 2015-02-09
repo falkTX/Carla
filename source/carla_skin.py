@@ -553,7 +553,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                     continue
                 if paramData['hints'] & PARAMETER_IS_BOOLEAN:
                     continue
-                if paramData['hints'] & PARAMETER_IS_INTEGER:
+                if (paramData['hints'] & PARAMETER_IS_INTEGER) != 0 and paramRanges['max']-paramRanges['min'] <= 10.0:
                     continue
                 if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                     continue

@@ -65,9 +65,7 @@ void set_module_parameters(Fl_Widget* o)
     o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
     o->color(FL_BLACK);
     o->labeltype(FL_SHADOW_LABEL);
-
-    if (gModuleBackdrop != nullptr)
-        o->image(gModuleBackdrop);
+    o->image(gModuleBackdrop);
 }
 #endif
 
@@ -76,40 +74,38 @@ void set_module_parameters(Fl_Widget* o)
 class ZynAddSubFxPrograms
 {
 public:
-    ZynAddSubFxPrograms()
+    ZynAddSubFxPrograms() noexcept
         : fInitiated(false),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fRetProgram({0, 0, nullptr}),
 #endif
           fPrograms() {}
 
-    ~ZynAddSubFxPrograms()
+    ~ZynAddSubFxPrograms() noexcept
     {
         if (! fInitiated)
             return;
 
         for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin(); it.valid(); it.next())
         {
-            const ProgramInfo* const& pInfo(it.getValue());
+            const ProgramInfo* const& pInfo(it.getValue(nullptr));
             delete pInfo;
         }
 
         fPrograms.clear();
-
-        FFT_cleanup();
     }
 
-    void init()
+    void initIfNeeded()
     {
         if (fInitiated)
             return;
         fInitiated = true;
 
-        fPrograms.append(new ProgramInfo(0, 0, "default"));
-
         Master& master(Master::getInstance());
 
         pthread_mutex_lock(&master.mutex);
+
+        fPrograms.append(new ProgramInfo(0, 0, "default"));
 
         // refresh banks
         master.bank.rescanforbanks();
@@ -121,7 +117,7 @@ public:
 
             master.bank.loadbank(master.bank.banks[i].dir);
 
-            for (unsigned int instrument = 0; instrument < BANK_SIZE; ++instrument)
+            for (uint instrument = 0; instrument < BANK_SIZE; ++instrument)
             {
                 const std::string insName(master.bank.getname(instrument));
 
@@ -193,10 +189,10 @@ private:
       uint32_t prog;
       const char* name;
 
-      ProgramInfo(uint32_t bank_, uint32_t prog_, const char* name_) noexcept
-        : bank(bank_),
-          prog(prog_),
-          name(carla_strdup_safe(name_)) {}
+      ProgramInfo(uint32_t b, uint32_t p, const char* n) noexcept
+        : bank(b),
+          prog(p),
+          name(carla_strdup_safe(n)) {}
 
       ~ProgramInfo() noexcept
       {
@@ -232,9 +228,7 @@ class ZynAddSubFxInstanceCount
 {
 public:
     ZynAddSubFxInstanceCount()
-        : fCount(0)
-    {
-    }
+        : fCount(0) {}
 
     ~ZynAddSubFxInstanceCount()
     {
@@ -243,39 +237,39 @@ public:
 
     void addOne(const NativeHostDescriptor* const host)
     {
-        if (fCount++ == 0)
-        {
-            CARLA_ASSERT(synth == nullptr);
-            CARLA_ASSERT(denormalkillbuf == nullptr);
+        if (fCount++ != 0)
+            return;
 
-            reinit(host);
+        CARLA_SAFE_ASSERT(synth == nullptr);
+        CARLA_SAFE_ASSERT(denormalkillbuf == nullptr);
+
+        reinit(host);
 
 #ifdef WANT_ZYNADDSUBFX_UI
-            if (gPixmapPath.isEmpty())
-            {
-                gPixmapPath   = host->resourceDir;
-                gPixmapPath  += "/zynaddsubfx/";
-                gUiPixmapPath = gPixmapPath;
-            }
-#endif
+        if (gPixmapPath.isEmpty())
+        {
+            gPixmapPath   = host->resourceDir;
+            gPixmapPath  += "/zynaddsubfx/";
+            gUiPixmapPath = gPixmapPath;
         }
+#endif
     }
 
     void removeOne()
     {
-        if (--fCount == 0)
-        {
-            CARLA_ASSERT(synth != nullptr);
-            CARLA_ASSERT(denormalkillbuf != nullptr);
+        if (--fCount != 0)
+            return;
 
-            Master::deleteInstance();
+        CARLA_SAFE_ASSERT(synth != nullptr);
+        CARLA_SAFE_ASSERT(denormalkillbuf != nullptr);
 
-            delete[] denormalkillbuf;
-            denormalkillbuf = nullptr;
+        Master::deleteInstance();
 
-            delete synth;
-            synth = nullptr;
-        }
+        delete[] denormalkillbuf;
+        denormalkillbuf = nullptr;
+
+        delete synth;
+        synth = nullptr;
     }
 
     void reinit(const NativeHostDescriptor* const host)
@@ -319,8 +313,8 @@ public:
 
     void maybeReinit(const NativeHostDescriptor* const host)
     {
-        if (host->get_buffer_size(host->handle) == static_cast<uint32_t>(synth->buffersize) &&
-            carla_compareFloats(host->get_sample_rate(host->handle), static_cast<double>(synth->samplerate)))
+        if (static_cast< int>(host->get_buffer_size(host->handle)) == synth->buffersize &&
+            static_cast<uint>(host->get_sample_rate(host->handle)) == synth->samplerate)
             return;
 
         reinit(host);
@@ -352,32 +346,30 @@ public:
           fChangeProgram(false),
           fNextChannel(0),
           fNextBank(0),
-          fNextProgram(0)
-    {
-    }
+          fNextProgram(0) {}
 
     ~ZynAddSubFxThread()
     {
 #ifdef WANT_ZYNADDSUBFX_UI
         // must be closed by now
-        CARLA_ASSERT(fUi == nullptr);
+        CARLA_SAFE_ASSERT(fUi == nullptr);
 #endif
     }
 
     void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
-        fNextChannel = channel;
-        fNextBank    = bank;
-        fNextProgram = program;
+        fNextChannel   = channel;
+        fNextBank      = bank;
+        fNextProgram   = program;
         fChangeProgram = true;
     }
 
     void stopLoadProgramLater()
     {
         fChangeProgram = false;
-        fNextChannel = 0;
-        fNextBank    = 0;
-        fNextProgram = 0;
+        fNextChannel   = 0;
+        fNextBank      = 0;
+        fNextProgram   = 0;
     }
 
     void setMaster(Master* const master)
@@ -515,7 +507,7 @@ protected:
         }
 
 #ifdef WANT_ZYNADDSUBFX_UI
-        if (shouldThreadExit() || fUi != nullptr)
+        if (fUi != nullptr)
         {
             Fl::lock();
             delete fUi;
@@ -550,28 +542,104 @@ private:
 class ZynAddSubFxPlugin : public NativePluginClass
 {
 public:
+    enum Parameters {
+        kParamFilterCutoff = 0, // Filter Frequency
+        kParamFilterQ,          // Filter Resonance
+        kParamBandwidth,        // Bandwidth
+        kParamModAmp,           // FM Gain
+        kParamResCenter,        // Resonance center frequency
+        kParamResBandwidth,     // Resonance bandwidth
+        kParamCount
+    };
+
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
-          fMaster(new Master()),
+          fMaster(nullptr),
           fSampleRate(static_cast<uint>(getSampleRate())),
           fIsActive(false),
-          fThread(fMaster, host),
+          fThread(nullptr, host),
           leakDetector_ZynAddSubFxPlugin()
     {
-        fThread.startThread();
+        // init parameters to default
+        fParameters[kParamFilterCutoff] = 64.0f;
+        fParameters[kParamFilterQ]      = 64.0f;
+        fParameters[kParamBandwidth]    = 64.0f;
+        fParameters[kParamModAmp]       = 127.0f;
+        fParameters[kParamResCenter]    = 64.0f;
+        fParameters[kParamResBandwidth] = 64.0f;
 
-        for (int i = 0; i < NUM_MIDI_PARTS; ++i)
-            fMaster->partonoff(i, 1);
-
-        sPrograms.init();
+        _initMaster();
+        sPrograms.initIfNeeded();
     }
 
     ~ZynAddSubFxPlugin() override
     {
-        deleteMaster();
+        _deleteMaster();
     }
 
 protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() const final
+    {
+        return kParamCount;
+    }
+
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParamCount, nullptr);
+
+        static NativeParameter param;
+
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER|NATIVE_PARAMETER_IS_AUTOMABLE;
+
+        param.name = nullptr;
+        param.unit = nullptr;
+        param.ranges.def       = 64.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
+        param.scalePointCount  = 0;
+        param.scalePoints      = nullptr;
+
+        switch (index)
+        {
+        case kParamFilterCutoff:
+            param.name = "Filter Cutoff";
+            break;
+        case kParamFilterQ:
+            param.name = "Filter Q";
+            break;
+        case kParamBandwidth:
+            param.name = "Bandwidth";
+            break;
+        case kParamModAmp:
+            param.name = "FM Gain";
+            param.ranges.def = 127.0f;
+            break;
+        case kParamResCenter:
+            param.name = "Res Center Freq";
+            break;
+        case kParamResBandwidth:
+            param.name = "Res Bandwidth";
+            break;
+        }
+
+        param.hints = static_cast<NativeParameterHints>(hints);
+
+        return &param;
+    }
+
+    float getParameterValue(const uint32_t index) const final
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParamCount, 0.0f);
+
+        return fParameters[index];
+    }
+
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
@@ -588,6 +656,22 @@ protected:
     // -------------------------------------------------------------------
     // Plugin state calls
 
+    void setParameterValue(const uint32_t index, const float value) final
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParamCount,);
+
+        const uint zynIndex(getZynParameterFromIndex(index));
+        CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
+
+        fParameters[index] = value;
+
+        for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
+        {
+            if (fMaster->part[npart] != nullptr && fMaster->part[npart]->Penabled != 0)
+                fMaster->part[npart]->SetController(zynIndex, static_cast<int>(value));
+        }
+    }
+
     void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
         if (bank >= fMaster->bank.banks.size())
@@ -601,9 +685,10 @@ protected:
 #ifdef WANT_ZYNADDSUBFX_UI
             fThread.uiRepaint();
 #endif
+            return;
         }
-        else
-            fThread.loadProgramLater(channel, bank, program);
+
+        fThread.loadProgramLater(channel, bank, program);
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -613,7 +698,7 @@ protected:
 
         pthread_mutex_lock(&fMaster->mutex);
 
-        if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
+        /**/ if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
         {
             fMaster->defaults();
             fMaster->loadXML(value);
@@ -680,6 +765,10 @@ protected:
             }
             else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
             {
+                // skip controls which we map to parameters
+                if (getZynParameterFromIndex(midiEvent->data[1]) == C_NULL)
+                    continue;
+
                 const int control = midiEvent->data[1];
                 const int value   = midiEvent->data[2];
 
@@ -735,42 +824,38 @@ protected:
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    // TODO - save&load current state
-
     void bufferSizeChanged(const uint32_t) final
     {
-        deleteMaster();
+        char* const state(getState());
+
+        _deleteMaster();
         sInstanceCount.maybeReinit(getHostHandle());
-        initMaster();
+        _initMaster();
+
+        if (state != nullptr)
+        {
+            fMaster->putalldata(state, 0);
+            fMaster->applyparameters(true);
+            std::free(state);
+        }
     }
 
     void sampleRateChanged(const double sampleRate) final
     {
         fSampleRate = static_cast<uint>(sampleRate);
-        deleteMaster();
+
+        char* const state(getState());
+
+        _deleteMaster();
         sInstanceCount.maybeReinit(getHostHandle());
-        initMaster();
-    }
+        _initMaster();
 
-    void initMaster()
-    {
-        fMaster = new Master();
-        fThread.setMaster(fMaster);
-        fThread.startThread();
-
-        for (int i = 0; i < NUM_MIDI_PARTS; ++i)
-            fMaster->partonoff(i, 1);
-    }
-
-    void deleteMaster()
-    {
-        //ensure that everything has stopped
-        pthread_mutex_lock(&fMaster->mutex);
-        pthread_mutex_unlock(&fMaster->mutex);
-        fThread.stopThread(-1);
-
-        delete fMaster;
-        fMaster = nullptr;
+        if (state != nullptr)
+        {
+            fMaster->putalldata(state, 0);
+            fMaster->applyparameters(true);
+            std::free(state);
+        }
     }
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -786,8 +871,90 @@ private:
     Master* fMaster;
     uint    fSampleRate;
     bool    fIsActive;
+    float   fParameters[kParamCount];
 
     ZynAddSubFxThread fThread;
+
+    /*
+    static Parameters getParameterFromZynIndex(const MidiControllers index)
+    {
+        switch (index)
+        {
+        case C_filtercutoff:
+            return kParamFilterCutoff;
+        case C_filterq:
+            return kParamFilterQ;
+        case C_bandwidth:
+            return kParamBandwidth;
+        case C_fmamp:
+            return kParamModAmp;
+        case C_resonance_center:
+            return kParamResCenter;
+        case C_resonance_bandwidth:
+            return kParamResBandwidth;
+        default:
+            return kParamCount;
+        }
+    }
+    */
+
+    static uint getZynParameterFromIndex(const uint index)
+    {
+        switch (index)
+        {
+        case kParamFilterCutoff:
+            return C_filtercutoff;
+        case kParamFilterQ:
+            return C_filterq;
+        case kParamBandwidth:
+            return C_bandwidth;
+        case kParamModAmp:
+            return C_fmamp;
+        case kParamResCenter:
+            return C_resonance_center;
+        case kParamResBandwidth:
+            return C_resonance_bandwidth;
+        case kParamCount:
+            return C_NULL;
+        }
+
+        return C_NULL;
+    }
+
+    // -------------------------------------------------------------------
+
+    void _initMaster()
+    {
+        fMaster = new Master();
+        fThread.setMaster(fMaster);
+        fThread.startThread();
+
+        for (int i=0; i<NUM_MIDI_PARTS; ++i)
+        {
+            fMaster->partonoff(i, 1);
+
+            for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
+            {
+                fMaster->part[npart]->SetController(C_filtercutoff,        static_cast<int>(fParameters[kParamFilterCutoff]));
+                fMaster->part[npart]->SetController(C_filterq,             static_cast<int>(fParameters[kParamFilterQ]));
+                fMaster->part[npart]->SetController(C_bandwidth,           static_cast<int>(fParameters[kParamBandwidth]));
+                fMaster->part[npart]->SetController(C_fmamp,               static_cast<int>(fParameters[kParamModAmp]));
+                fMaster->part[npart]->SetController(C_resonance_center,    static_cast<int>(fParameters[kParamResCenter]));
+                fMaster->part[npart]->SetController(C_resonance_bandwidth, static_cast<int>(fParameters[kParamResBandwidth]));
+            }
+        }
+    }
+
+    void _deleteMaster()
+    {
+        //ensure that everything has stopped
+        pthread_mutex_lock(&fMaster->mutex);
+        pthread_mutex_unlock(&fMaster->mutex);
+        fThread.stopThread(-1);
+
+        delete fMaster;
+        fMaster = nullptr;
+    }
 
     // -------------------------------------------------------------------
 
@@ -797,6 +964,7 @@ public:
         sInstanceCount.addOne(host);
         return new ZynAddSubFxPlugin(host);
     }
+
     static void _cleanup(NativePluginHandle handle)
     {
         delete (ZynAddSubFxPlugin*)handle;
@@ -824,7 +992,7 @@ static const NativePluginDescriptor zynaddsubfxDesc = {
     /* audioOuts */ 2,
     /* midiIns   */ 1,
     /* midiOuts  */ 0,
-    /* paramIns  */ 0,
+    /* paramIns  */ ZynAddSubFxPlugin::kParamCount,
     /* paramOuts */ 0,
     /* name      */ "ZynAddSubFX",
     /* label     */ "zynaddsubfx",
