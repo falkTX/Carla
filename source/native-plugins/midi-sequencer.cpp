@@ -249,25 +249,30 @@ protected:
             char strBuf[0xff+1];
             strBuf[0xff] = '\0';
 
+            const float  beatsPerBar    = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerBar    : 4.0f;
+            const double beatsPerMinute = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatsPerMinute : 120.0;
+            const float  beatType       = fTimeInfo.bbt.valid ? fTimeInfo.bbt.beatType       : 4.0f;
+
+            const double ticksPerBeat   = 48.0;
+            const double ticksPerFrame  = ticksPerBeat / (60.0 / beatsPerMinute * getSampleRate());
+            const long double fullTicks = ticksPerFrame*static_cast<long double>(fTimeInfo.frame);
+            const      double fullBeats = fullTicks/ticksPerBeat;
+
+            const uint32_t tick = static_cast<uint32_t>(std::floor(std::fmod(fullTicks, ticksPerBeat)));
+            const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, beatsPerBar)));
+            const uint32_t bar  = static_cast<uint32_t>(std::floor(fullBeats/beatsPerBar));
+
             const CarlaMutexLocker cml(getPipeLock());
             const ScopedLocale csl;
 
             writeAndFixMessage("transport");
             writeMessage(fTimeInfo.playing ? "true\n" : "false\n");
 
-            if (fTimeInfo.bbt.valid)
-            {
-                std::sprintf(strBuf, P_UINT64 ":%i:%i:%i\n", fTimeInfo.frame, fTimeInfo.bbt.bar, fTimeInfo.bbt.beat, fTimeInfo.bbt.tick);
-                writeMessage(strBuf);
-                std::sprintf(strBuf, "%f:%f:%f\n", fTimeInfo.bbt.beatsPerMinute, fTimeInfo.bbt.beatsPerBar, fTimeInfo.bbt.beatType);
-                writeMessage(strBuf);
-            }
-            else
-            {
-                std::sprintf(strBuf, P_UINT64 ":0:0:0\n", fTimeInfo.frame);
-                writeMessage(strBuf);
-                writeMessage("120.0:4.0:4.0\n");
-            }
+            std::sprintf(strBuf, P_UINT64 ":%i:%i:%i\n", fTimeInfo.frame, bar, beat, tick);
+            writeMessage(strBuf);
+
+            std::sprintf(strBuf, "%f:%f:%f\n", beatsPerMinute, beatsPerBar, beatType);
+            writeMessage(strBuf);
 
             flushMessages();
         }
