@@ -40,124 +40,6 @@ public:
           fTimeInfo(),
           leakDetector_MidiSequencerPlugin()
     {
-        // TEST SONG
-
-        // assuming 4x4
-        const uint32_t onebeat = 48;        // 1 beat = 48 ticks
-        //const uint32_t onebar  = onebeat*4; // 1 bar  = 4 beats
-
-        // 0   On  ch=1 n=64 v=90
-        // 325 Off ch=1 n=64 v=90
-        // 384 On  ch=1 n=62 v=90
-        // 709 Off ch=1 n=62 v=90
-        // 768 On  ch=1 n=60 v=90
-        //1093 Off ch=1 n=60 v=90
-        uint32_t curTick = 0;
-
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 60, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 1152 On  ch=1 n=62 v=90
-        // 1477 Off ch=1 n=62 v=90
-        // 1536 On  ch=1 n=64 v=90
-        // 1861 Off ch=1 n=64 v=90
-        // 1920 On  ch=1 n=64 v=90
-        // 2245 Off ch=1 n=64 v=90
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 2304 On  ch=1 n=64 v=90
-        // 2955 Off ch=1 n=64 v=90
-
-        // 3072 On  ch=1 n=62 v=90
-        // 3397 Off ch=1 n=62 v=90
-        // 3456 On  ch=1 n=62 v=90
-        // 3781 Off ch=1 n=62 v=90
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat*2-1);
-        curTick += onebeat*2;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 3840 On  ch=1 n=62 v=90
-        // 4491 Off ch=1 n=62 v=90
-        // 4608 On  ch=1 n=64 v=90
-        // 4933 Off ch=1 n=64 v=90
-        // 4992 On  ch=1 n=67 v=90
-        // 5317 Off ch=1 n=67 v=90
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat*2-1);
-        curTick += onebeat*2;
-        fMidiOut.addNote(curTick, 0, 67, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 5376 On  ch=1 n=67 v=90
-        // 6027 Off ch=1 n=67 v=90
-        // 6144 On  ch=1 n=64 v=90
-        // 6469 Off ch=1 n=64 v=90
-        // 6528 On  ch=1 n=62 v=90
-        // 6853 Off ch=1 n=62 v=90
-        fMidiOut.addNote(curTick, 0, 67, 90, onebeat*2-1);
-        curTick += onebeat*2;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 6912 On  ch=1 n=60 v=90
-        // 7237 Off ch=1 n=60 v=90
-        // 7296 On  ch=1 n=62 v=90
-        // 7621 Off ch=1 n=62 v=90
-        // 7680 On  ch=1 n=64 v=90
-        // 8005 Off ch=1 n=64 v=90
-        fMidiOut.addNote(curTick, 0, 60, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 8064 On  ch=1 n=64 v=90
-        // 8389 Off ch=1 n=64 v=90
-        // 8448 On  ch=1 n=64 v=90
-        // 9099 Off ch=1 n=64 v=90
-        // 9216 On  ch=1 n=62 v=90
-        // 9541 Off ch=1 n=62 v=90
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat*2-1);
-        curTick += onebeat*2;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 9600 On  ch=1 n=62 v=90
-        // 9925 Off ch=1 n=62 v=90
-        // 9984 On  ch=1 n=64 v=90
-        // 10309 Off ch=1 n=64 v=90
-        // 10368 On  ch=1 n=62 v=90
-        // 10693 Off ch=1 n=62 v=90
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 64, 90, onebeat-1);
-        curTick += onebeat;
-        fMidiOut.addNote(curTick, 0, 62, 90, onebeat-1);
-        curTick += onebeat;
-
-        // 10752 On  ch=1 n=60 v=90
-        // 12056 Off ch=1 n=60 v=90
-        fMidiOut.addNote(curTick, 0, 60, 90, onebeat*2-1);
-        curTick += onebeat*2;
-
         carla_zeroStruct(fTimeInfo);
     }
 
@@ -283,22 +165,15 @@ protected:
 
     char* getState() const override
     {
-        // TODO: malloc list of events
-
-        return nullptr;
+        return fMidiOut.getState();
     }
 
     void setState(const char* const data) override
     {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+        fMidiOut.setState(data);
 
-        return;
-
-        fMidiOut.clear();
-
-        // TODO: set events according to data
-
-        _sendEventsToUI();
+        if (isPipeRunning())
+            _sendEventsToUI();
     }
 
     // -------------------------------------------------------------------

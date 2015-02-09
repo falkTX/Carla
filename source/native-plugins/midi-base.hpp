@@ -286,6 +286,138 @@ public:
     }
 
     // -------------------------------------------------------------------
+    // state
+
+    char* getState() const
+    {
+        static const std::size_t maxTimeSize = 20;                        // std::strlen("18446744073709551615");
+        static const std::size_t maxDataSize = 4 + 4*MAX_EVENT_DATA_SIZE; // std::strlen("0xFF:127:127:127");
+        static const std::size_t maxMsgSize  = maxTimeSize + 3 /* sep + size + sep */ + maxDataSize + 1 /* newline */;
+
+        const CarlaMutexLocker sl(fMutex);
+
+        if (fData.count() == 0)
+            return nullptr;
+
+        char* const data((char*)std::calloc(1, fData.count()*maxMsgSize));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        char* dataWrtn = data;
+        int wrtn;
+
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        {
+            const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
+
+            wrtn = std::snprintf(dataWrtn, maxTimeSize+4, P_INT64 ":%i:", rawMidiEvent->time, rawMidiEvent->size);
+            CARLA_SAFE_ASSERT_BREAK(wrtn > 0);
+            dataWrtn += wrtn;
+
+            wrtn = std::snprintf(dataWrtn, 5, "0x%02X", rawMidiEvent->data[0]);
+            CARLA_SAFE_ASSERT_BREAK(wrtn > 0);
+            dataWrtn += wrtn;
+
+            for (uint8_t i=1, size=rawMidiEvent->size; i<size; ++i)
+            {
+                wrtn = std::snprintf(dataWrtn, 5, ":%03u", rawMidiEvent->data[i]);
+                CARLA_SAFE_ASSERT_BREAK(wrtn > 0);
+                dataWrtn += wrtn;
+            }
+
+            *dataWrtn++ = '\n';
+        }
+
+        *dataWrtn = '\0';
+
+        return data;
+    }
+
+    void setState(const char* const data)
+    {
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+        const char* dataRead = data;
+        const char* needle;
+        RawMidiEvent midiEvent;
+        char    tmpBuf[24];
+        ssize_t tmpSize;
+
+        clear();
+
+        const CarlaMutexLocker sl(fMutex);
+
+        for (; *dataRead != '\0';)
+        {
+            // get time
+            needle = std::strchr(dataRead, ':');
+            CARLA_SAFE_ASSERT_RETURN(needle != nullptr,);
+
+            tmpSize = needle - dataRead;
+            CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);
+
+            std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
+            tmpBuf[tmpSize] = '\0';
+            dataRead += tmpSize+1;
+
+            const long long time = std::atoll(tmpBuf);
+            CARLA_SAFE_ASSERT_RETURN(time >= 0,);
+
+            midiEvent.time = static_cast<uint64_t>(time);
+
+            // get size
+            needle = std::strchr(dataRead, ':');
+            CARLA_SAFE_ASSERT_RETURN(needle != nullptr,);
+
+            tmpSize = needle - dataRead;
+            CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);
+
+            std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
+            tmpBuf[tmpSize] = '\0';
+            dataRead += tmpSize+1;
+
+            const int size = std::atoi(tmpBuf);
+            CARLA_SAFE_ASSERT_RETURN(size > 0 && size <= MAX_EVENT_DATA_SIZE,);
+
+            midiEvent.size = static_cast<uint8_t>(size);
+
+            // get events
+            for (int i=0; i<size; ++i)
+            {
+                CARLA_SAFE_ASSERT_RETURN(dataRead-data >= 4,);
+
+                tmpSize = i==0 ? 4 : 3;
+
+                std::strncpy(tmpBuf, dataRead, static_cast<size_t>(tmpSize));
+                tmpBuf[tmpSize] = '\0';
+                dataRead += tmpSize+1;
+
+                long mdata;
+
+                if (i == 0)
+                {
+                    mdata = std::strtol(tmpBuf, nullptr, 16);
+                    CARLA_SAFE_ASSERT_RETURN(mdata >= 0x80 && mdata <= 0xFF,);
+                }
+                else
+                {
+                    mdata = std::atoi(tmpBuf);
+                    CARLA_SAFE_ASSERT_RETURN(mdata >= 0 && mdata < MAX_MIDI_VALUE,);
+                }
+
+                midiEvent.data[i] = static_cast<uint8_t>(mdata);
+            }
+
+            for (int i=size; i<MAX_EVENT_DATA_SIZE; ++i)
+                midiEvent.data[i] = 0;
+
+            RawMidiEvent* const event(new RawMidiEvent());
+            carla_copyStruct(*event, midiEvent);
+            fData.append(event);
+        }
+    }
+
+    // -------------------------------------------------------------------
 
 private:
     AbstractMidiPlayer* const kPlayer;
