@@ -373,9 +373,11 @@ class PianoRoll(QGraphicsScene):
     # -------------------------------------------------------------------------
     # Callbacks
 
-    def movePlayHead(self, t):
-        total_duration = 1920 * self.time_sig[0] * self.num_measures 
-        pos = t['bar']*1920*self.time_sig[0] + t['beat']*1920 + t['tick']
+    def movePlayHead(self, transport_info):
+        # TODO: need conversion between frames and PPQ
+        x = 105. # works for 120bpm
+        total_duration = self.time_sig[0] * self.num_measures * x
+        pos = transport_info['frame'] / x
         frac = (pos % total_duration) / total_duration
         self.play_head.setPos(QPointF(frac * self.grid_width, 0))
 
@@ -703,10 +705,14 @@ class PianoRoll(QGraphicsScene):
         for note in self.notes[:]:
             if note.note[1] >= (self.num_measures * self.time_sig[0]):
                 self.notes.remove(note)
+                self.midievent.emit(["midievent-remove", note.note[0], note.note[1], note.note[2], note.note[3]])
             elif note.note[2] > self.max_note_length:
-                new_note = note.note
+                new_note = note.note[:]
+                new_note[2] = self.max_note_length
                 self.notes.remove(note)
                 self.drawNote(new_note[0], new_note[1], self.max_note_length, new_note[3], False)
+                self.midievent.emit(["midievent-remove", note.note[0], note.note[1], note.note[2], note.note[3]])
+                self.midievent.emit(["midievent-add", new_note[0], new_note[1], new_note[2], new_note[3]])
         list(map(self.addItem, self.notes))
         if self.views():
             self.views()[0].setSceneRect(self.itemsBoundingRect())
@@ -904,6 +910,8 @@ class MainWindow(ExternalUI, QWidget):
             "sigDenom": 4.0
         }
 
+        self.PPQ = 48.
+
         self.initUI()
         self.piano.midievent.connect(self.sendMsg)
         self.piano.measureupdate.connect(self.updateMeasureBox)
@@ -1057,15 +1065,15 @@ class MainWindow(ExternalUI, QWidget):
         msg = data[0]
         if msg == "midievent-remove":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * 4. / self.fTransportInfo["sigDenom"] * self.getSampleRate()
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.getSampleRate()
+            note_start = start * 60. / self.fTransportInfo["bpm"] * 4. / self.fTransportInfo["sigDenom"] * self.PPQ
+            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.PPQ
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
         elif msg == "midievent-add":
             note, start, length, vel = data[1:5]
-            note_start = start * 60. / self.fTransportInfo["bpm"] * self.getSampleRate()
-            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.getSampleRate()
+            note_start = start * 60. / self.fTransportInfo["bpm"] * self.PPQ
+            note_stop = note_start + length * 60. / self.fTransportInfo["bpm"] * 4. * self.fTransportInfo["sigNum"] / self.fTransportInfo["sigDenom"] * self.PPQ
             self.send([msg, note_start, 3, MIDI_STATUS_NOTE_ON, note, vel])
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
@@ -1102,6 +1110,8 @@ class MainWindow(ExternalUI, QWidget):
             if beat != self.fTransportInfo["beat"]:
                 print(beat)
 
+            old_frame = self.fTransportInfo['frame']
+
             self.fTransportInfo = {
                 "playing": playing,
                 "frame": frame,
@@ -1113,7 +1123,8 @@ class MainWindow(ExternalUI, QWidget):
                 "sigDenom": sigDenom
             }
 
-            #self.piano.movePlayHead(self.fTransportInfo)
+            if old_frame != frame:
+                self.piano.movePlayHead(self.fTransportInfo)
 
 
         elif msg == "show":
@@ -1146,7 +1157,7 @@ class MainWindow(ExternalUI, QWidget):
         #       we'll convert it to a smaller value for now (seconds)
         #       later on we can have time as PPQ or similar
 
-        time /= self.getSampleRate()
+        time /= self.PPQ
 
         status  = MIDI_GET_STATUS_FROM_DATA(data)
         channel = MIDI_GET_CHANNEL_FROM_DATA(data)
