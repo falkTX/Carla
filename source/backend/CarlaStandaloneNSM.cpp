@@ -419,7 +419,7 @@ protected:
                 const CarlaPluginInfo* const pluginInfo(carla_get_plugin_info(i));
                 CARLA_SAFE_ASSERT_CONTINUE(pluginInfo != nullptr);
 
-                /*const*/ CarlaString pluginNameId(fClientNameId + "/" + CarlaString(pluginInfo->name).toBasic() + "/");
+                /*const*/ CarlaString pluginNameId(fClientNameId + "/" + CarlaString(pluginInfo->name).replace('/','_') + "/");
 
                 for (uint32_t j=0, paramCount = carla_get_parameter_count(i); j < paramCount; ++j)
                 {
@@ -442,7 +442,7 @@ protected:
                         continue;
 
                     const char* const dir         = paramData->type == CB::PARAMETER_INPUT ? "in" : "out";
-                    const CarlaString paramNameId = pluginNameId + CarlaString(paramInfo->name).toBasic();
+                    const CarlaString paramNameId = pluginNameId + CarlaString(paramInfo->name).replace('/','_');
 
                     const float defNorm = paramRanges->getNormalizedValue(paramRanges->def);
 

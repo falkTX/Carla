@@ -472,29 +472,33 @@ public:
     /*
      * Replace all occurrences of character 'before' with character 'after'.
      */
-    void replace(const char before, const char after) noexcept
+    CarlaString& replace(const char before, const char after) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0', *this);
 
         for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] == before)
                 fBuffer[i] = after;
         }
+
+        return *this;
     }
 
     /*
      * Truncate the string to size 'n'.
      */
-    void truncate(const std::size_t n) noexcept
+    CarlaString& truncate(const std::size_t n) noexcept
     {
         if (n >= fBufferLen)
-            return;
+            return *this;
 
         for (std::size_t i=n; i < fBufferLen; ++i)
             fBuffer[i] = '\0';
 
         fBufferLen = n;
+
+        return *this;
     }
 
     /*
@@ -522,7 +526,7 @@ public:
     /*
      * Convert to all ascii characters to lowercase.
      */
-    void toLower() noexcept
+    CarlaString& toLower() noexcept
     {
         static const char kCharDiff('a' - 'A');
 
@@ -531,12 +535,14 @@ public:
             if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] + kCharDiff);
         }
+
+        return *this;
     }
 
     /*
      * Convert to all ascii characters to uppercase.
      */
-    void toUpper() noexcept
+    CarlaString& toUpper() noexcept
     {
         static const char kCharDiff('a' - 'A');
 
@@ -545,6 +551,8 @@ public:
             if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] - kCharDiff);
         }
+
+        return *this;
     }
 
     /*
