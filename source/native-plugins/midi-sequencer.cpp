@@ -32,6 +32,7 @@ public:
 
     MidiSequencerPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "midiseq-ui"),
+          fNeedsAllNotesOff(false),
           fWantInEvents(false),
           fWasPlayingBefore(false),
           fTicksPerFrame(0.0),
@@ -76,17 +77,13 @@ protected:
             fInEvents.trySplice();
         }
 
-        if (fTimeInfo.playing)
+        if (fWasPlayingBefore != fTimeInfo.playing)
         {
-            if (! fTimeInfo.bbt.valid)
-                fTimeInfo.bbt.beatsPerMinute = 120.0;
-
-            fTicksPerFrame = 48.0 / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
-
-            fMidiOut.play(fTicksPerFrame*static_cast<long double>(fTimeInfo.frame),
-                          fTicksPerFrame*static_cast<double>(frames));
+            fNeedsAllNotesOff = true;
+            fWasPlayingBefore = fTimeInfo.playing;
         }
-        else if (fWasPlayingBefore)
+
+        if (fNeedsAllNotesOff)
         {
             NativeMidiEvent midiEvent;
 
@@ -104,10 +101,19 @@ protected:
                 NativePluginAndUiClass::writeMidiEvent(&midiEvent);
             }
 
-            carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
+            fNeedsAllNotesOff = false;
         }
 
-        fWasPlayingBefore = fTimeInfo.playing;
+        if (fTimeInfo.playing)
+        {
+            if (! fTimeInfo.bbt.valid)
+                fTimeInfo.bbt.beatsPerMinute = 120.0;
+
+            fTicksPerFrame = 48.0 / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
+
+            fMidiOut.play(fTicksPerFrame*static_cast<long double>(fTimeInfo.frame),
+                          fTicksPerFrame*static_cast<double>(frames));
+        }
     }
 
     // -------------------------------------------------------------------
@@ -208,6 +214,7 @@ protected:
         if (std::strcmp(msg, "midi-clear-all") == 0)
         {
             fMidiOut.clear();
+            fNeedsAllNotesOff = true;
             return true;
         }
 
@@ -259,6 +266,7 @@ protected:
     // -------------------------------------------------------------------
 
 private:
+    bool fNeedsAllNotesOff;
     bool fWantInEvents;
     bool fWasPlayingBefore;
 

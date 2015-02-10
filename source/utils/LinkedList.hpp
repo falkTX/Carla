@@ -366,7 +366,9 @@ private:
 
     bool _add(const T& value, const bool inTail, ListHead* const queue) noexcept
     {
-        return _add_internal(_allocate(), value, inTail, queue);
+        if (Data* const data = _allocate())
+            return _add_internal(data, value, inTail, queue);
+        return false;
     }
 
     bool _add_internal(Data* const data, const T& value, const bool inTail, ListHead* const queue) noexcept

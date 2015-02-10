@@ -29,6 +29,7 @@ public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMidiOut(this),
+          fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
           leakDetector_MidiFilePlugin() {}
 
@@ -54,32 +55,35 @@ protected:
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 
-        if (timePos->playing)
+        if (fWasPlayingBefore != timePos->playing)
         {
-            fMidiOut.play(timePos->frame, frames);
+            fNeedsAllNotesOff = true;
+            fWasPlayingBefore = timePos->playing;
         }
-        else if (fWasPlayingBefore)
+
+        if (fNeedsAllNotesOff)
         {
             NativeMidiEvent midiEvent;
 
             midiEvent.port    = 0;
             midiEvent.time    = 0;
-            midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE;
+            midiEvent.data[0] = 0;
             midiEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
             midiEvent.data[2] = 0;
             midiEvent.data[3] = 0;
             midiEvent.size    = 3;
 
-            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+            for (int channel=MAX_MIDI_CHANNELS; --channel >= 0;)
             {
-                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE+i);
+                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
                 NativePluginClass::writeMidiEvent(&midiEvent);
             }
 
-            carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
+            fNeedsAllNotesOff = false;
         }
 
-        fWasPlayingBefore = timePos->playing;
+        if (fWasPlayingBefore)
+            fMidiOut.play(timePos->frame, frames);
     }
 
     // -------------------------------------------------------------------
@@ -131,6 +135,7 @@ protected:
 
 private:
     MidiPattern fMidiOut;
+    bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
 
     void _loadMidiFile(const char* const filename)
@@ -200,6 +205,8 @@ private:
                 fMidiOut.addRaw(static_cast<uint64_t>(time), midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
             }
         }
+
+        fNeedsAllNotesOff = true;
     }
 
     PluginClassEND(MidiFilePlugin)
