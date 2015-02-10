@@ -237,6 +237,8 @@ protected:
 
                 gStandalone.engineCallback(gStandalone.engineCallbackPtr, CB::ENGINE_CALLBACK_NSM, 0, 1, flags, 0.0f, smName);
             }
+
+            std::free(msgURL);
         }
         else
         {
@@ -404,10 +406,10 @@ protected:
             carla_stdout("CarlaNSM::handleBroadcast - got list");
             CARLA_SAFE_ASSERT_RETURN(carla_is_engine_running(), 0);
 
-            //const char* prefix = nullptr;
+            const char* prefix = nullptr;
 
-            //if (argc > 0)
-                //prefix = &argv[0]->s;
+            if (argc > 0)
+                prefix = &argv[0]->s;
 
             const lo_address msgAddress(lo_message_get_source(msg));
             CARLA_SAFE_ASSERT_RETURN(msgAddress != nullptr, 0);
@@ -430,7 +432,7 @@ protected:
                     const ParameterRanges* const paramRanges(carla_get_parameter_ranges(i, j));
                     CARLA_SAFE_ASSERT_CONTINUE(paramRanges != nullptr);
 
-                    if (paramData->type != CB::PARAMETER_INPUT && paramData->type != CB::PARAMETER_OUTPUT)
+                    if (paramData->type != CB::PARAMETER_INPUT /*&& paramData->type != CB::PARAMETER_OUTPUT*/)
                         continue;
                     if ((paramData->hints & CB::PARAMETER_IS_ENABLED) == 0)
                         continue;
@@ -442,10 +444,12 @@ protected:
                     const char* const dir         = paramData->type == CB::PARAMETER_INPUT ? "in" : "out";
                     const CarlaString paramNameId = pluginNameId + CarlaString(paramInfo->name).toBasic();
 
-                    //if (prefix == nullptr || std::strncmp(paramNameId, prefix, std::strlen(prefix)) == 0)
+                    const float defNorm = paramRanges->getNormalizedValue(paramRanges->def);
+
+                    if (prefix == nullptr || std::strncmp(paramNameId, prefix, std::strlen(prefix)) == 0)
                     {
                         lo_send_from(msgAddress, fServer, LO_TT_IMMEDIATE, "/reply", "sssfff",
-                                     path, paramNameId.buffer(), dir, paramRanges->min, paramRanges->max, paramRanges->def);
+                                     path, paramNameId.buffer(), dir, 0.0f, 1.0f, defNorm);
                     }
                 }
             }
