@@ -930,8 +930,10 @@ bool CarlaEngine::loadFile(const char* const filename)
     File file(jfilename);
     CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
 
-    CarlaString baseName(file.getFileName().toRawUTF8());
+    CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
     CarlaString extension(file.getFileExtension().replace(".","").toLowerCase().toRawUTF8());
+
+    const uint curPluginId(pData->nextPluginId < pData->curPluginCount ? pData->nextPluginId : pData->curPluginCount);
 
     // -------------------------------------------------------------------
 
@@ -955,7 +957,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     {
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "audiofile", 0, nullptr))
         {
-            if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+            if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
             return true;
         }
@@ -968,7 +970,7 @@ bool CarlaEngine::loadFile(const char* const filename)
     {
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "midifile", 0, nullptr))
         {
-            if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+            if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "file", filename, true);
             return true;
         }
@@ -983,7 +985,7 @@ bool CarlaEngine::loadFile(const char* const filename)
 #ifdef HAVE_ZYN_DEPS
         if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx", 0, nullptr))
         {
-            if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+            if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
             return true;
         }
