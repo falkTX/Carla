@@ -212,14 +212,57 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         if (event.type != kEngineEventTypeNull)
             continue;
 
-        event.type    = kEngineEventTypeMidi;
         event.time    = time;
         event.channel = channel;
 
+        const uint8_t status(uint8_t(MIDI_GET_STATUS_FROM_DATA(data)));
+
+        if (status == MIDI_STATUS_CONTROL_CHANGE)
+        {
+            CARLA_SAFE_ASSERT_RETURN(size >= 3, true);
+
+            switch (data[1])
+            {
+            case MIDI_CONTROL_BANK_SELECT:
+            case MIDI_CONTROL_BANK_SELECT__LSB:
+                event.type       = kEngineEventTypeControl;
+                event.ctrl.type  = kEngineControlEventTypeMidiBank;
+                event.ctrl.param = data[2];
+                event.ctrl.value = 0.0f;
+                return true;
+
+            case MIDI_CONTROL_ALL_SOUND_OFF:
+                event.type       = kEngineEventTypeControl;
+                event.ctrl.type  = kEngineControlEventTypeAllSoundOff;
+                event.ctrl.param = 0;
+                event.ctrl.value = 0.0f;
+                return true;
+
+            case MIDI_CONTROL_ALL_NOTES_OFF:
+                event.type       = kEngineEventTypeControl;
+                event.ctrl.type  = kEngineControlEventTypeAllNotesOff;
+                event.ctrl.param = 0;
+                event.ctrl.value = 0.0f;
+                return true;
+            }
+        }
+
+        if (status == MIDI_STATUS_PROGRAM_CHANGE)
+        {
+            CARLA_SAFE_ASSERT_RETURN(size == 2, true);
+
+            event.type       = kEngineEventTypeControl;
+            event.ctrl.type  = kEngineControlEventTypeMidiBank;
+            event.ctrl.param = data[1];
+            event.ctrl.value = 0.0f;
+            return true;
+        }
+
+        event.type      = kEngineEventTypeMidi;
         event.midi.port = port;
         event.midi.size = size;
 
-        event.midi.data[0] = uint8_t(MIDI_GET_STATUS_FROM_DATA(data));
+        event.midi.data[0] = status;
 
         uint8_t j=1;
         for (; j < size; ++j)
