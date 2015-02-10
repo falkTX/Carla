@@ -1748,6 +1748,8 @@ public:
                     pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
                 else if (port < fMidiOut.count)
                     fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
+                else
+                    carla_stdout("MIDI event output port out of bounds!");
             }
 
         } // End of Control and MIDI Output
@@ -2119,28 +2121,15 @@ protected:
 
     bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
-        CARLA_ASSERT(pData->enabled);
-        CARLA_ASSERT(fIsProcessing);
-        CARLA_ASSERT(fMidiOut.count > 0 || pData->event.portOut != nullptr);
-        CARLA_ASSERT(event != nullptr);
-        CARLA_ASSERT(event->data[0] != 0);
-
-        if (! pData->enabled)
-            return false;
-        if (fMidiOut.count == 0)
-            return false;
-        if (event == nullptr)
-            return false;
-        if (event->data[0] == 0)
-            return false;
-        if (! fIsProcessing)
-        {
-            carla_stderr2("CarlaPluginNative::handleWriteMidiEvent(%p) - received MIDI out event outside audio thread, ignoring", event);
-            return false;
-        }
+        CARLA_SAFE_ASSERT_RETURN(pData->enabled, false);
+        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
+        CARLA_SAFE_ASSERT_RETURN(fMidiOut.count > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(pData->event.portOut != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
         // reverse-find first free event, and put it there
-        for (uint32_t i=(kPluginMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
+        for (uint32_t i=(kPluginMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
         {
             if (fMidiEvents[i].data[0] == 0)
             {
@@ -2149,6 +2138,7 @@ protected:
             }
         }
 
+        carla_stdout("CarlaPluginNative::handleWriteMidiEvent(%p) - buffer full", event);
         return false;
     }
 
