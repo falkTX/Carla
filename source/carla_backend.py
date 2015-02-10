@@ -2081,12 +2081,8 @@ class CarlaHostNull(CarlaHostMeta):
 # Carla Host object using a DLL
 
 class CarlaHostDLL(CarlaHostMeta):
-    def __init__(self, libName = ""):
+    def __init__(self, libName):
         CarlaHostMeta.__init__(self)
-
-        # FIXME no idea what's going on...
-        if WINDOWS:
-            libName = "Z:\\home\\falktx\\Source\\falkTX\\Carla\\bin\\libcarla_standalone2.dll"
 
         # info about this host object
         self.isPlugin = False
