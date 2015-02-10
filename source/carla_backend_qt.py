@@ -88,8 +88,8 @@ class CarlaHostSignals(QObject):
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (dummy/null, does nothing)
 
-class CarlaHostQtNull(CarlaHostSignals, CarlaHostNull):
-#class CarlaHostQtDLL(CarlaHostSignals, CarlaHostNull, metaclass=PyQtMetaClass):
+class CarlaHostQtNull(CarlaHostNull, CarlaHostSignals):
+#class CarlaHostQtDLL(CarlaHostNull, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self):
         CarlaHostSignals.__init__(self)
         CarlaHostNull.__init__(self)
@@ -97,8 +97,8 @@ class CarlaHostQtNull(CarlaHostSignals, CarlaHostNull):
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object using a DLL
 
-class CarlaHostQtDLL(CarlaHostSignals, CarlaHostDLL):
-#class CarlaHostQtDLL(CarlaHostSignals, CarlaHostDLL, metaclass=PyQtMetaClass):
+class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals):
+#class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self, libName):
         CarlaHostSignals.__init__(self)
         CarlaHostDLL.__init__(self, libName)
@@ -106,8 +106,8 @@ class CarlaHostQtDLL(CarlaHostSignals, CarlaHostDLL):
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)
 
-class CarlaHostQtPlugin(CarlaHostSignals, CarlaHostPlugin):
-#class CarlaHostQtPlugin(CarlaHostSignals, CarlaHostPlugin, metaclass=PyQtMetaClass):
+class CarlaHostQtPlugin(CarlaHostPlugin, CarlaHostSignals):
+#class CarlaHostQtPlugin(CarlaHostPlugin, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self):
         CarlaHostSignals.__init__(self)
         CarlaHostPlugin.__init__(self)
