@@ -64,6 +64,7 @@ class CarlaEngineNativeUI : public CarlaExternalUI
 public:
     CarlaEngineNativeUI(CarlaEngine* const engine)
         : fEngine(engine),
+          fIsReady(false),
           leakDetector_CarlaEngineNativeUI()
     {
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
@@ -72,6 +73,11 @@ public:
     ~CarlaEngineNativeUI() noexcept override
     {
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
+    }
+
+    bool isReady() const noexcept
+    {
+        return fIsReady;
     }
 
 protected:
@@ -531,6 +537,10 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->showCustomUI(yesNo);
         }
+        else if (std::strcmp(msg, "ready") == 0)
+        {
+            fIsReady = true;
+        }
         else
         {
             carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
@@ -550,6 +560,7 @@ protected:
 
 private:
     CarlaEngine* const fEngine;
+    bool               fIsReady;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };
@@ -1484,6 +1495,16 @@ protected:
 
             if (kIsPatchbay)
                 patchbayRefresh(false);
+
+            if (std::getenv("CARLA_PLUGIN_EMBED_WINID") != nullptr)
+            {
+                carla_stdout("Using Carla plugin embedded, waiting for it to be ready...");
+
+                for (; fUiServer.isPipeRunning() && ! fUiServer.isReady();)
+                    fUiServer.idlePipe();
+
+                carla_stdout("Done!");
+            }
         }
         else
         {
