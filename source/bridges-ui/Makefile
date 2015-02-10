@@ -103,7 +103,11 @@ all: $(TARGETS)
 
 clean:
 	rm -f $(OBJDIR)/*.cpp $(OBJDIR)/*.moc $(OBJDIR)/*.o
-	rm -f $(BINDIR)/$(MODULENAME)-lv2-*
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-gtk*
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-qt*
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-cocoa
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-x11
+	rm -f $(BINDIR)/$(MODULENAME)-lv2-windows
 
 debug:
 	$(MAKE) DEBUG=true
