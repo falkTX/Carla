@@ -296,6 +296,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+#if defined(CARLA_OS_WIN) && ! defined(BUILDING_CARLA_FOR_WINDOWS)
     // ---------------------------------------------------------------------
     // Test if bridge is working
 
@@ -304,6 +305,7 @@ int main(int argc, char* argv[])
         carla_stderr("A JACK or Wine library is missing, cannot continue");
         return 1;
     }
+#endif
 
     // ---------------------------------------------------------------------
     // Get args
