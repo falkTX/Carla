@@ -39,7 +39,6 @@ import ui_carla_plugin_default
 import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
 import ui_carla_plugin_compact
-import ui_carla_plugin_sf2
 import ui_carla_plugin_zynfx
 
 from carla_widgets import *
