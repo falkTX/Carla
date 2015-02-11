@@ -26,13 +26,11 @@
 using juce::String;
 using juce::StringArray;
 
-// -----------------------------------------------------------------------
+CARLA_EXTERN_C
+std::size_t carla_getNativePluginCount() noexcept;
 
 CARLA_EXTERN_C
-std::size_t carla_getNativePluginCount();
-
-CARLA_EXTERN_C
-const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index);
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
 
 // -----------------------------------------------------------------------
 
@@ -43,21 +41,56 @@ void carla_register_native_plugin(const NativePluginDescriptor* desc)
     gPluginDescriptors.append(desc);
 }
 
-std::size_t carla_getNativePluginCount()
+// -----------------------------------------------------------------------
+
+static
+class NativePluginInitializer
 {
+public:
+    NativePluginInitializer() noexcept
+        : fNeedsInit(true) {}
+
+    ~NativePluginInitializer() noexcept
+    {
+        gPluginDescriptors.clear();
+    }
+
+    void initIfNeeded() noexcept
+    {
+        if (! fNeedsInit)
+            return;
+
+        fNeedsInit = false;
+
+        try {
+            carla_register_all_native_plugins();
+        } CARLA_SAFE_EXCEPTION("carla_register_all_native_plugins")
+    }
+
+private:
+    bool fNeedsInit;
+
+} sPluginInitializer;
+
+// -----------------------------------------------------------------------
+
+std::size_t carla_getNativePluginCount() noexcept
+{
+    sPluginInitializer.initIfNeeded();
     return gPluginDescriptors.count();
 }
 
-const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index)
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept
 {
+    sPluginInitializer.initIfNeeded();
     return gPluginDescriptors.getAt(index, nullptr);
 }
 
-// -----------------------------------------------------
+// -----------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -----------------------------------------------------
+// -----------------------------------------------------------------------
 
 struct NativePluginMidiData {
     uint32_t  count;
@@ -131,21 +164,6 @@ struct NativePluginMidiData {
 
     CARLA_DECLARE_NON_COPY_STRUCT(NativePluginMidiData)
 };
-
-// -----------------------------------------------------
-
-static const
-struct ScopedInitializer {
-    ScopedInitializer()
-    {
-        carla_register_all_plugins();
-    }
-
-    ~ScopedInitializer() noexcept
-    {
-        gPluginDescriptors.clear();
-    }
-} _si;
 
 // -----------------------------------------------------
 
@@ -2249,6 +2267,8 @@ public:
 
         // ---------------------------------------------------------------
         // get descriptor that matches label
+
+        sPluginInitializer.initIfNeeded();
 
         for (LinkedList<const NativePluginDescriptor*>::Itenerator it = gPluginDescriptors.begin(); it.valid(); it.next())
         {

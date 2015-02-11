@@ -258,7 +258,10 @@ typedef struct _NativePluginDescriptor {
 extern void carla_register_native_plugin(const NativePluginDescriptor* desc);
 
 /** Called once on host init */
-void carla_register_all_plugins(void);
+void carla_register_all_native_plugins(void);
+
+/** Get meta-data only */
+const NativePluginDescriptor* carla_get_native_plugins_data(uint32_t* count);
 
 /* ------------------------------------------------------------------------------------------------------------ */
 

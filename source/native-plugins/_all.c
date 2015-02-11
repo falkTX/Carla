@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,6 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "CarlaDefines.h"
 #include "CarlaNative.h"
 
 // -----------------------------------------------------------------------
@@ -44,31 +45,24 @@ extern void carla_register_native_plugin_distrho_3bandsplitter(void);
 extern void carla_register_native_plugin_distrho_mverb(void);
 extern void carla_register_native_plugin_distrho_nekobi(void);
 extern void carla_register_native_plugin_distrho_pingpongpan(void);
-
-#ifdef WANT_DISTRHO_PROM
 extern void carla_register_native_plugin_distrho_prom(void);
-#endif
 
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
 
-#ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
 extern void carla_register_native_plugin_zynaddsubfx_fx(void);
 extern void carla_register_native_plugin_zynaddsubfx_synth(void);
-#endif
 
-#ifdef WANT_EXPERIMENTAL_PLUGINS
 // Experimental plugins
 extern void carla_register_native_plugin_zita_at1(void);
 extern void carla_register_native_plugin_zita_bls1(void);
 extern void carla_register_native_plugin_zita_rev1(void);
-#endif
 
 // -----------------------------------------------------------------------
 
-void carla_register_all_plugins(void)
+void carla_register_all_native_plugins(void)
 {
     // Simple plugins
     carla_register_native_plugin_bypass();
@@ -84,10 +78,14 @@ void carla_register_all_plugins(void)
 
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
+#ifndef CARLA_OS_WIN
     carla_register_native_plugin_midisequencer();
+#endif
 
+#ifndef CARLA_OS_WIN
     // Carla
     carla_register_native_plugin_carla();
+#endif
 
     // DISTRHO Plugins
     carla_register_native_plugin_distrho_3bandeq();
@@ -95,22 +93,25 @@ void carla_register_all_plugins(void)
     carla_register_native_plugin_distrho_mverb();
     carla_register_native_plugin_distrho_nekobi();
     carla_register_native_plugin_distrho_pingpongpan();
-
-#ifdef WANT_DISTRHO_PROM
+#ifdef HAVE_DGL
+#ifdef HAVE_PROJECTM
     carla_register_native_plugin_distrho_prom();
 #endif
+#endif
 
+#ifndef CARLA_OS_WIN
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
+#endif
 
-#ifdef WANT_ZYNADDSUBFX
+#ifdef HAVE_ZYN_DEPS
     // ZynAddSubFX
     carla_register_native_plugin_zynaddsubfx_fx();
     carla_register_native_plugin_zynaddsubfx_synth();
 #endif
 
-#ifdef WANT_EXPERIMENTAL_PLUGINS
+#ifdef HAVE_EXPERIMENTAL_PLUGINS
     // Experimental plugins
     carla_register_native_plugin_zita_at1();
     carla_register_native_plugin_zita_bls1();

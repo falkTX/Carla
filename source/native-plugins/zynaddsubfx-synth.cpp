@@ -27,6 +27,10 @@
 #include "Misc/Part.h"
 #include "Misc/Util.h"
 
+#ifdef HAVE_ZYN_UI_DEPS
+# define WANT_ZYNADDSUBFX_UI
+#endif
+
 #ifdef WANT_ZYNADDSUBFX_UI
 # ifdef override
 #  define override_hack

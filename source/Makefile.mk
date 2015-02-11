@@ -58,6 +58,7 @@ endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 CARLA_VESTIGE_HEADER = false
+EXPERIMENTAL_PLUGINS = false
 endif
 
 # --------------------------------------------------------------
@@ -384,16 +385,16 @@ endif
 endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-NATIVE_PLUGINS_FLAGS += -DHAVE_EXPERIMENTAL_PLUGINS
+BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
 NATIVE_PLUGINS_LIBS  += -lclxclient -lclthreads -lzita-convolver -lzita-resampler
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo fftw3f libpng12 x11 xft)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_DEPS
+BASE_FLAGS           += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_UI_DEPS
+BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
 endif
 endif

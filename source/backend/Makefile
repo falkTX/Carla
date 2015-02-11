@@ -56,12 +56,6 @@ UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
-UTILS_LIBS += $(MODULEDIR)/native-plugins.a
-UTILS_LIBS += $(MODULEDIR)/rtmempool.a
-
-ifeq ($(HAVE_DGL),true)
-UTILS_LIBS += $(MODULEDIR)/dgl.a
-endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -112,8 +106,6 @@ UTILS_LINK_FLAGS  = $(JUCE_AUDIO_BASICS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
-UTILS_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
-UTILS_LINK_FLAGS += $(RTMEMPOOL_LIBS)
 
 ifneq ($(HAIKU),true)
 UTILS_LINK_FLAGS += -lpthread

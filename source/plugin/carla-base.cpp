@@ -36,10 +36,10 @@ using CarlaBackend::CarlaPlugin;
 // -----------------------------------------------------------------------
 
 CARLA_EXTERN_C
-std::size_t carla_getNativePluginCount();
+std::size_t carla_getNativePluginCount() noexcept;
 
 CARLA_EXTERN_C
-const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index);
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
 
 // -----------------------------------------------------------------------
 // Plugin List

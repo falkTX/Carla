@@ -213,7 +213,11 @@ all: native
 # ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJDIR)/*.o $(BINDIR)/$(MODULENAME)-*
+	rm -f $(OBJDIR)/*.o
+	rm -f $(BINDIR)/$(MODULENAME)-native
+	rm -f $(BINDIR)/$(MODULENAME)-posix32
+	rm -f $(BINDIR)/$(MODULENAME)-posix64
+	rm -f $(BINDIR)/$(MODULENAME)-win*.exe
 
 debug:
 	$(MAKE) DEBUG=true

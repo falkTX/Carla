@@ -31,7 +31,10 @@ START_NAMESPACE_DISTRHO
 
 static const NativePluginDescriptor promDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD|NATIVE_PLUGIN_USES_PARENT_ID),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,

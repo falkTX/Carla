@@ -14,28 +14,6 @@ BUILD_C_FLAGS   += -I..
 BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 
 # ----------------------------------------------------------------------------------------------------------------------------
-# Flags for _all.c
-
-ALL_C_FLAGS  = $(BUILD_C_FLAGS)
-
-# DISTRHO ProM
-ifeq ($(HAVE_DGL),true)
-ifeq ($(HAVE_PROJECTM),true)
-ALL_C_FLAGS += -DWANT_DISTRHO_PROM
-endif
-endif
-
-# ZynAddSubFX
-ifeq ($(HAVE_ZYN_DEPS),true)
-ALL_C_FLAGS += -DWANT_ZYNADDSUBFX
-endif
-
-# Experimental plugins
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-ALL_C_FLAGS += -DWANT_EXPERIMENTAL_PLUGINS
-endif
-
-# ----------------------------------------------------------------------------------------------------------------------------
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -45,7 +23,7 @@ ifneq ($(MACOS),true)
 ZYN_CXX_FLAGS += -DHAVE_SCHEDULER
 endif
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-ZYN_CXX_FLAGS += -DNTK_GUI -DWANT_ZYNADDSUBFX_UI
+ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
 endif
 endif
@@ -54,7 +32,8 @@ endif
 # Set objects
 
 OBJS = \
-	$(OBJDIR)/_all.c.o
+	$(OBJDIR)/_all.c.o \
+	$(OBJDIR)/_data.cpp.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Simple plugins
@@ -187,7 +166,7 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 $(OBJDIR)/_all.c.o: _all.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CC) $< $(ALL_C_FLAGS) -c -o $@
+	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 $(OBJDIR)/%.c.o: %.c
 	-@mkdir -p $(OBJDIR)

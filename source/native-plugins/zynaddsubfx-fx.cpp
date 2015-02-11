@@ -1334,7 +1334,9 @@ protected:
 
 static const NativePluginDescriptor fxAlienWahDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1351,7 +1353,9 @@ static const NativePluginDescriptor fxAlienWahDesc = {
 
 static const NativePluginDescriptor fxChorusDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1368,7 +1372,8 @@ static const NativePluginDescriptor fxChorusDesc = {
 
 static const NativePluginDescriptor fxDistortionDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1385,7 +1390,8 @@ static const NativePluginDescriptor fxDistortionDesc = {
 
 static const NativePluginDescriptor fxDynamicFilterDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1402,7 +1408,9 @@ static const NativePluginDescriptor fxDynamicFilterDesc = {
 
 static const NativePluginDescriptor fxEchoDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1419,7 +1427,8 @@ static const NativePluginDescriptor fxEchoDesc = {
 
 static const NativePluginDescriptor fxPhaserDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1436,7 +1445,8 @@ static const NativePluginDescriptor fxPhaserDesc = {
 
 static const NativePluginDescriptor fxReverbDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
