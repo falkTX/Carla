@@ -101,12 +101,6 @@ const char* carla_get_complete_license_text()
         "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
 #endif
 
-        // Internal plugins
-        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
-#ifdef HAVE_ZYN_DEPS
-        "<li>ZynAddSubFX plugin code</li>"
-#endif
-
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
 #ifdef CARLA_OS_MAC
@@ -117,6 +111,18 @@ const char* carla_get_complete_license_text()
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
         "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
+#endif
+
+        // Internal plugins
+#ifdef HAVE_EXPERIMENTAL_PLUGINS
+        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
+#endif
+        "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
+        "<li>MVerb plugin code by Martin Eastwood</li>"
+        "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
+        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
+#ifdef HAVE_ZYN_DEPS
+        "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
 #endif
 
         // end
