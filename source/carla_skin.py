@@ -35,11 +35,11 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import ui_carla_plugin_default
-import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
+import ui_carla_plugin_classic
 import ui_carla_plugin_compact
-import ui_carla_plugin_zynfx
+import ui_carla_plugin_default
+import ui_carla_plugin_presets
 
 from carla_widgets import *
 from digitalpeakmeter import DigitalPeakMeter
@@ -467,7 +467,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             elif self.fSkinStyle in ("mod", "openav", "zynfx"):
                 self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
 
-            if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Default):
+            if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_in.hide()
 
         if self.peak_out is not None:
@@ -482,7 +482,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             elif self.fSkinStyle in ("mod", "openav", "zynfx"):
                 self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
 
-            if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default):
+            if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_out.hide()
 
         # -------------------------------------------------------------
@@ -555,6 +555,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 if (paramData['hints'] & PARAMETER_IS_INTEGER) != 0 and paramRanges['max']-paramRanges['min'] <= 10.0:
                     continue
                 if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                    continue
+                if paramInfo['name'].startswith("unused"):
                     continue
 
                 paramName = getParameterShortName(paramInfo['name'])
@@ -1194,10 +1196,112 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Default(AbstractPluginSlot):
+class PluginSlot_Calf(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
+        midiCount  = self.host.get_midi_port_count_info(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fButtonFont = self.ui.b_gui.font()
+        self.fButtonFont.setBold(False)
+        self.fButtonFont.setPointSize(8)
+
+        self.fButtonColorOn  = QColor( 18,  41,  87)
+        self.fButtonColorOff = QColor(150, 150, 150)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.ui.label_active.setFont(self.fButtonFont)
+
+        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
+
+        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
+        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
+
+        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        if audioCount['ins'] == 0:
+            self.ui.label_audio_in.hide()
+
+        if audioCount['outs'] == 0:
+            self.ui.label_audio_out.hide()
+
+        if midiCount['ins'] == 0:
+            self.ui.label_midi.hide()
+            self.ui.led_midi.hide()
+
+        if self.fIdleTimerId != 0:
+            self.ui.b_remove.setEnabled(False)
+            self.ui.b_remove.setVisible(False)
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+        self.b_remove = self.ui.b_remove
+
+        self.label_name = self.ui.label_name
+        self.led_midi   = self.ui.led_midi
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.w_knobs_left  = self.ui.w_knobs
+
+        self.ready()
+
+        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 94 if max(self.peak_in.channelCount(), self.peak_out.channelCount()) < 2 else 106
+
+    #------------------------------------------------------------------
+
+    def editDialogPluginHintsChanged(self, pluginId, hints):
+        if hints & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        AbstractPluginSlot.editDialogPluginHintsChanged(self, pluginId, hints)
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        isBlack = bool(self.fSkinStyle == "calf_black")
+
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(20, 20, 20) if isBlack else QColor(75, 86, 99), 1))
+        painter.drawRect(0, 1, self.width()-1, self.height()-3)
+
+        painter.setPen(QPen(QColor(45, 45, 45) if isBlack else QColor(86, 99, 114), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
+class PluginSlot_Classic(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, "default")
-        self.ui = ui_carla_plugin_default.Ui_PluginWidget()
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, "classic")
+        self.ui = ui_carla_plugin_classic.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
@@ -1317,10 +1421,10 @@ class PluginSlot_Compact(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_BasicFX(AbstractPluginSlot):
+class PluginSlot_Default(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId, skinStyle):
         AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
-        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
+        self.ui = ui_carla_plugin_default.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
@@ -1370,163 +1474,91 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Calf(AbstractPluginSlot):
+class PluginSlot_Presets(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId, skinStyle):
         AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
-        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
+        self.ui = ui_carla_plugin_presets.Ui_PluginWidget()
         self.ui.setupUi(self)
 
-        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
-        midiCount  = self.host.get_midi_port_count_info(self.fPluginId)
+        usingMidiPrograms = bool(skinStyle != "presets")
 
         # -------------------------------------------------------------
-        # Internal stuff
+        # Set-up programs
 
-        self.fButtonFont = self.ui.b_gui.font()
-        self.fButtonFont.setBold(False)
-        self.fButtonFont.setPointSize(8)
-
-        self.fButtonColorOn  = QColor( 18,  41,  87)
-        self.fButtonColorOff = QColor(150, 150, 150)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.ui.label_active.setFont(self.fButtonFont)
-
-        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
-
-        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
-        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
-
-        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        if usingMidiPrograms:
+            programCount = self.host.get_midi_program_count(self.fPluginId)
         else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+            programCount = self.host.get_program_count(self.fPluginId)
 
-        if audioCount['ins'] == 0:
-            self.ui.label_audio_in.hide()
+        if programCount > 0:
+            self.ui.cb_presets.setEnabled(True)
+            self.ui.label_presets.setEnabled(True)
 
-        if audioCount['outs'] == 0:
-            self.ui.label_audio_out.hide()
+            for i in range(programCount):
+                if usingMidiPrograms:
+                    progName = self.host.get_midi_program_data(self.fPluginId, i)['name']
+                else:
+                    progName = self.host.get_program_name(self.fPluginId, i)
 
-        if midiCount['ins'] == 0:
-            self.ui.label_midi.hide()
-            self.ui.led_midi.hide()
+                self.ui.cb_presets.addItem(progName)
 
-        if self.fIdleTimerId != 0:
-            self.ui.b_remove.setEnabled(False)
-            self.ui.b_remove.setVisible(False)
+            if usingMidiPrograms:
+                curProg = self.host.get_current_midi_program_index(self.fPluginId)
+            else:
+                curProg = self.host.get_current_program_index(self.fPluginId)
+
+            self.ui.cb_presets.setCurrentIndex(curProg)
+
+        else:
+            self.ui.cb_presets.setEnabled(False)
+            self.ui.cb_presets.setVisible(False)
+            self.ui.label_presets.setEnabled(False)
+            self.ui.label_presets.setVisible(False)
 
         # -------------------------------------------------------------
 
         self.b_enable = self.ui.b_enable
         self.b_gui    = self.ui.b_gui
         self.b_edit   = self.ui.b_edit
-        self.b_remove = self.ui.b_remove
 
-        self.label_name = self.ui.label_name
-        self.led_midi   = self.ui.led_midi
+        self.cb_presets = self.ui.cb_presets
+
+        self.label_name    = self.ui.label_name
+        self.label_presets = self.ui.label_presets
+
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
 
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
-        self.w_knobs_left  = self.ui.w_knobs
+        if skinStyle == "zynfx":
+            self.setupZynFxParams()
+        else:
+            self.w_knobs_left  = self.ui.w_knobs_left
+            self.w_knobs_right = self.ui.w_knobs_right
 
         self.ready()
 
-        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
-
         self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
 
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 94 if max(self.peak_in.channelCount(), self.peak_out.channelCount()) < 2 else 106
-
-    #------------------------------------------------------------------
-
-    def editDialogPluginHintsChanged(self, pluginId, hints):
-        if hints & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        if usingMidiPrograms:
+            self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
         else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        AbstractPluginSlot.editDialogPluginHintsChanged(self, pluginId, hints)
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        isBlack = bool(self.fSkinStyle == "calf_black")
-
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(20, 20, 20) if isBlack else QColor(75, 86, 99), 1))
-        painter.drawRect(0, 1, self.width()-1, self.height()-3)
-
-        painter.setPen(QPen(QColor(45, 45, 45) if isBlack else QColor(86, 99, 114), 1))
-        painter.drawLine(0, 0, self.width(), 0)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_Nekobi(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
-        #self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
-        #self.ui.setupUi(self)
+            self.ui.cb_presets.currentIndexChanged.connect(self.slot_programChanged)
 
         # -------------------------------------------------------------
-        # Set-up GUI
 
-        self.fPixmapCenter = QPixmap(":/bitmaps/background_nekobi.png")
-
-        self.fPixmapLeft     = QPixmap(":/bitmaps/background_nekobi_left.png")
-        self.fPixmapLeftRect = QRectF(0, 0, self.fPixmapLeft.width(), self.fPixmapLeft.height())
-
-        self.fPixmapRight     = QPixmap(":/bitmaps/background_nekobi_right.png")
-        self.fPixmapRightRect = QRectF(0, 0, self.fPixmapRight.width(), self.fPixmapRight.height())
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 108
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-
-        # main bg (center)
-        painter.drawTiledPixmap(0, 0, self.width(), self.height(), self.fPixmapCenter)
-
-        # left side
-        painter.drawPixmap(self.fPixmapLeftRect, self.fPixmapLeft, self.fPixmapLeftRect)
-
-        # right side
-        rightTarget = QRectF(self.fPixmapRightRect)
-        rightTarget.moveLeft(self.width()-rightTarget.width())
-        painter.drawPixmap(rightTarget, self.fPixmapRight, self.fPixmapRightRect)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_ZynFX(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId, skinStyle):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
-        self.ui = ui_carla_plugin_zynfx.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
+    def setupZynFxParams(self):
         parameterCount = self.host.get_parameter_count(self.fPluginId)
 
         index = 0
         for i in range(parameterCount):
+            if index >= 8:
+                break
+
             paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
             paramData   = self.host.get_parameter_data(self.fPluginId, i)
             paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
@@ -1539,6 +1571,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 continue
 
             paramName = paramInfo['name']
+
+            if paramName.startswith("unused"):
+                continue
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1602,7 +1637,7 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 10: paramName = "I.del"
 
             else:
-                paramName = getParameterShortName(paramInfo['name'])
+                paramName = getParameterShortName(paramName)
 
             widget = PixmapDial(self, i)
 
@@ -1644,55 +1679,6 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
             self.fParameterList.append([PARAMETER_VOLUME, widget])
             self.ui.w_knobs_right.layout().addWidget(widget)
 
-        # -------------------------------------------------------------
-        # Set-up MIDI programs
-
-        midiProgramCount = self.host.get_midi_program_count(self.fPluginId)
-
-        if midiProgramCount > 0:
-            self.ui.cb_presets.setEnabled(True)
-            self.ui.label_presets.setEnabled(True)
-
-            for i in range(midiProgramCount):
-                mpData = self.host.get_midi_program_data(self.fPluginId, i)
-                mpName = mpData['name']
-
-                self.ui.cb_presets.addItem(mpName)
-
-            self.fCurrentMidiProgram = self.host.get_current_midi_program_index(self.fPluginId)
-            self.ui.cb_presets.setCurrentIndex(self.fCurrentMidiProgram)
-
-        else:
-            self.fCurrentMidiProgram = -1
-            self.ui.cb_presets.setEnabled(False)
-            self.ui.cb_presets.setVisible(False)
-            self.ui.label_presets.setEnabled(False)
-            self.ui.label_presets.setVisible(False)
-
-        # -------------------------------------------------------------
-
-        self.b_enable = self.ui.b_enable
-        self.b_gui    = self.ui.b_gui
-        self.b_edit   = self.ui.b_edit
-
-        self.cb_presets = self.ui.cb_presets
-
-        self.label_name    = self.ui.label_name
-        self.label_presets = self.ui.label_presets
-
-        self.led_control   = self.ui.led_control
-        self.led_midi      = self.ui.led_midi
-        self.led_audio_in  = self.ui.led_audio_in
-        self.led_audio_out = self.ui.led_audio_out
-
-        self.peak_in  = self.ui.peak_in
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-        self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
-
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
@@ -1715,11 +1701,23 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
 # ------------------------------------------------------------------------------------------------------------
 
 def getSkinStyle(host, pluginId):
+    if False:
+        # kdevelop likes this :)
+        host       = CarlaHostNull()
+        progCount  = 0
+        pluginInfo = PyCarlaPluginInfo
+        pluginName = ""
+
     pluginInfo  = host.get_plugin_info(pluginId)
     pluginName  = host.get_real_plugin_name(pluginId)
     pluginLabel = pluginInfo['label'].lower()
     pluginMaker = pluginInfo['maker']
     uniqueId    = pluginInfo['uniqueId']
+
+    if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
+        progCount = host.get_program_count(pluginId)
+    else:
+        progCount = host.get_midi_program_count(pluginId)
 
     # Samplers
     if pluginInfo['type'] == PLUGIN_GIG:
@@ -1728,6 +1726,18 @@ def getSkinStyle(host, pluginId):
         return "sf2"
     if pluginInfo['type'] == PLUGIN_SFZ:
         return "sfz"
+
+    # Calf
+    if pluginName.split(" ", 1)[0].lower() == "calf":
+        return "calf_black" if "mono" in pluginLabel else "calf_blue"
+
+    # MOD
+    if pluginLabel.startswith("http://portalmod.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
+        return "mod"
+
+    # OpenAV
+    if pluginMaker == "OpenAV Productions":
+        return "openav"
 
     # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
@@ -1738,15 +1748,17 @@ def getSkinStyle(host, pluginId):
         if pluginLabel.startswith("zyn") and pluginMaker.startswith("Josep Andreu"):
             return "zynfx"
 
-    # Groups
-    if pluginName.split(" ", 1)[0].lower() == "calf":
-        return "calf_black" if "mono" in pluginLabel else "calf_blue"
-    if pluginLabel.startswith("http://portalmod.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
-        return "mod"
-    if pluginMaker == "OpenAV Productions":
-        return "openav"
+    if pluginInfo['type'] == PLUGIN_LV2:
+        if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
+            return "zynfx"
 
-    # DISTRHO Plugins
+    # Presets
+    if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
+        if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
+            return "presets"
+        return "mpresets"
+
+    # DISTRHO Plugins (needs to be last)
     if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
         return pluginLabel.replace("http://distrho.sf.net/plugins/","")
 
@@ -1754,20 +1766,20 @@ def getSkinStyle(host, pluginId):
 
 def createPluginSlot(parent, host, pluginId, options):
     if not options['useSkins']:
-        return PluginSlot_Default(parent, host, pluginId)
+        return PluginSlot_Classic(parent, host, pluginId)
 
     skinStyle = getSkinStyle(host, pluginId)
 
-    if options['compact'] or "compact" in skinStyle:
+    if "compact" in skinStyle or options['compact']:
         return PluginSlot_Compact(parent, host, pluginId, skinStyle)
 
     if "calf" in skinStyle:
         return PluginSlot_Calf(parent, host, pluginId, skinStyle)
 
-    if skinStyle == "zynfx":
-        return PluginSlot_ZynFX(parent, host, pluginId, skinStyle)
+    if skinStyle in ("mpresets", "presets", "zynfx"):
+        return PluginSlot_Presets(parent, host, pluginId, skinStyle)
 
-    return PluginSlot_BasicFX(parent, host, pluginId, skinStyle)
+    return PluginSlot_Default(parent, host, pluginId, skinStyle)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing

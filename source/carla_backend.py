@@ -211,6 +211,10 @@ PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 # Plugin needs to receive all UI events in the main thread.
 PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
+# Plugin uses 1 program per MIDI channel.
+# @note: Only used in some internal plugins and gig+sf2 files.
+PLUGIN_USES_MULTI_PROGS = 0x400
+
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.

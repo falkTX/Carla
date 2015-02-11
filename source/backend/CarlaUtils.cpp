@@ -286,6 +286,8 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
             info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
         if (desc.hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             info.hints |= CB::PLUGIN_NEEDS_UI_MAIN_THREAD;
+        if (desc.hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
+            info.hints |= CB::PLUGIN_USES_MULTI_PROGS;
 
         info.audioIns      = desc.audioIns;
         info.audioOuts     = desc.audioOuts;

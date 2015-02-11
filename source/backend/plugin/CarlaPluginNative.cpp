@@ -1169,15 +1169,14 @@ public:
             pData->hints |= PLUGIN_NEEDS_FIXED_BUFFERS;
         if (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             pData->hints |= PLUGIN_NEEDS_UI_MAIN_THREAD;
+        if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
+            pData->hints |= PLUGIN_USES_MULTI_PROGS;
 
         // extra plugin hints
         pData->extraHints = 0x0;
 
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0) && mIns <= 1 && mOuts <= 1)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
-        if (fDescriptor->hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);

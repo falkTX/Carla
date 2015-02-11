@@ -621,7 +621,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
+    const bool usesMultiProgs(pData->hints & PLUGIN_USES_MULTI_PROGS);
 
     const PluginType pluginType(getType());
 
@@ -634,15 +634,18 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
-        const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
-        if (pluginType == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
-            continue;
-        if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
+        /**/ if (pluginType == PLUGIN_DSSI && (std::strcmp (key, "reloadprograms") == 0 ||
+                                               std::strcmp (key, "load"          ) == 0 ||
+                                               std::strncmp(key, "patches",     7) == 0 ))
+            pass();
+        else if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
+            pass();
+        else
             continue;
 
-        setCustomData(type, key, stateCustomData->value, true);
+        setCustomData(stateCustomData->type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
@@ -810,15 +813,16 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
-        const char* const type(stateCustomData->type);
         const char* const key(stateCustomData->key);
 
-        if (pluginType == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+        if (pluginType == PLUGIN_DSSI && (std::strcmp (key, "reloadprograms") == 0 ||
+                                          std::strcmp (key, "load"          ) == 0 ||
+                                          std::strncmp(key, "patches",     7) == 0 ))
             continue;
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
 
-        setCustomData(type, key, stateCustomData->value, true);
+        setCustomData(stateCustomData->type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------

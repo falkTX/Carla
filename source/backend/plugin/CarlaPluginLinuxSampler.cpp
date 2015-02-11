@@ -684,11 +684,11 @@ public:
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
+        if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
+            pData->hints |= PLUGIN_USES_MULTI_PROGS;
+
         if (! kUses16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
-        if (fInstrumentIds.size() > 1)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);

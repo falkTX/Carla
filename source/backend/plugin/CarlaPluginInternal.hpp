@@ -54,7 +54,6 @@ const ushort kPluginMaxMidiEvents = 512;
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
 const uint PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
-const uint PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
 
 // -----------------------------------------------------------------------
 // Special parameters

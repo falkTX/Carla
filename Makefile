@@ -280,12 +280,11 @@ RES = \
 	bin/resources/ui_carla_host.py \
 	bin/resources/ui_carla_panel_time.py \
 	bin/resources/ui_carla_parameter.py \
-	bin/resources/ui_carla_plugin_basic_fx.py \
 	bin/resources/ui_carla_plugin_calf.py \
+	bin/resources/ui_carla_plugin_classic.py \
 	bin/resources/ui_carla_plugin_compact.py \
 	bin/resources/ui_carla_plugin_default.py \
-	bin/resources/ui_carla_plugin_sf2.py \
-	bin/resources/ui_carla_plugin_zynfx.py \
+	bin/resources/ui_carla_plugin_presets.py \
 	bin/resources/ui_carla_refresh.py \
 	bin/resources/ui_carla_settings.py \
 	bin/resources/ui_carla_settings_driver.py \
@@ -326,12 +325,11 @@ UIs = \
 	source/ui_carla_host.py \
 	source/ui_carla_panel_time.py \
 	source/ui_carla_parameter.py \
-	source/ui_carla_plugin_basic_fx.py \
 	source/ui_carla_plugin_calf.py \
+	source/ui_carla_plugin_classic.py \
 	source/ui_carla_plugin_compact.py \
 	source/ui_carla_plugin_default.py \
-	source/ui_carla_plugin_sf2.py \
-	source/ui_carla_plugin_zynfx.py \
+	source/ui_carla_plugin_presets.py \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \
 	source/ui_carla_settings_driver.py \
@@ -573,12 +571,11 @@ endif
 	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_panel_time.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_parameter.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_basic_fx.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_compact.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_default.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_sf2.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zynfx.py    $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_presets.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_refresh.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/

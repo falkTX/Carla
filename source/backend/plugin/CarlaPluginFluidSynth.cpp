@@ -865,6 +865,7 @@ public:
         pData->hints  = 0x0;
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
+        pData->hints |= PLUGIN_USES_MULTI_PROGS;
 
         if (! kUse16Outs)
             pData->hints |= PLUGIN_CAN_BALANCE;
@@ -872,7 +873,6 @@ public:
         // extra plugin hints
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         if (kUse16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;

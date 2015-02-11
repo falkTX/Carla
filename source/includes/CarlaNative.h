@@ -59,7 +59,7 @@ typedef enum {
     NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS  = 1 <<  3,
     NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD = 1 <<  4,
     NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE   = 1 <<  6,
-    NATIVE_PLUGIN_USES_MULTI_PROGS     = 1 <<  7, /** has 1 patch per midi channel           */
+    NATIVE_PLUGIN_USES_MULTI_PROGS     = 1 <<  7, /** has 1 program per midi channel         */
     NATIVE_PLUGIN_USES_PANNING         = 1 <<  8, /** uses stereo balance if unset (default) */
     NATIVE_PLUGIN_USES_STATE           = 1 <<  9,
     NATIVE_PLUGIN_USES_TIME            = 1 << 10,
