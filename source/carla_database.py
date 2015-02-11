@@ -853,7 +853,7 @@ class PluginRefreshW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -1124,7 +1124,7 @@ class PluginDatabaseW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------

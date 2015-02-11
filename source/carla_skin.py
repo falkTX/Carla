@@ -231,7 +231,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------

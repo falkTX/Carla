@@ -51,7 +51,7 @@ class RackListItem(QListWidgetItem):
         if False:
             # kdevelop likes this :)
             parent = RackListWidget()
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
             self.fWidget = AbstractPluginSlot()
 
@@ -181,7 +181,7 @@ class RackListWidget(QListWidget):
         if False:
             # kdevelop likes this :)
             from carla_backend import CarlaHostMeta
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         exts = gCarla.utils.get_supported_file_extensions().split(";")

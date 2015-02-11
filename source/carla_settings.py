@@ -60,7 +60,7 @@ class DriverSettingsW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -214,7 +214,7 @@ class CarlaSettingsW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------

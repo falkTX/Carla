@@ -88,7 +88,7 @@ class HostWindow(QMainWindow):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         self._true = c_char_p("true".encode("utf-8"))
@@ -1979,7 +1979,7 @@ def canvasCallback(action, value1, value2, valueStr):
 
 def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     if action == ENGINE_CALLBACK_ENGINE_STARTED:
         host.processMode   = value1
@@ -2180,7 +2180,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
 def loadHostSettings(host):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     settings = QSettings("falkTX", "Carla2")
 
@@ -2245,7 +2245,7 @@ def loadHostSettings(host):
 
 def setHostSettings(host):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     # TEST
     #host.preventBadBehaviour = True

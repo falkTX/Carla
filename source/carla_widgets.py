@@ -64,7 +64,7 @@ class CarlaAboutW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
 
         if host.isControl:
             extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
@@ -205,7 +205,7 @@ class PluginParameter(QWidget):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------
@@ -429,7 +429,7 @@ class PluginEdit(QDialog):
         if False:
             # kdevelop likes this :)
             parent = PluginEditParentMeta()
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------
