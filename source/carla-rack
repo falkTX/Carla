@@ -71,6 +71,8 @@ if __name__ == '__main__':
 
         if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix="):
             pass
+        elif arg == "--gdb":
+            pass
         elif os.path.exists(arg):
             gui.loadProjectLater(arg)
 
