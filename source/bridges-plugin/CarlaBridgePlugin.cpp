@@ -25,6 +25,7 @@
 # include <signal.h>
 #endif
 
+#include "jackbridge/JackBridge.hpp"
 #include "juce_core.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
@@ -292,6 +293,15 @@ int main(int argc, char* argv[])
     if (argc != 4 && argc != 5)
     {
         carla_stdout("usage: %s <type> <filename> <label> [uniqueId]", argv[0]);
+        return 1;
+    }
+
+    // ---------------------------------------------------------------------
+    // Test if bridge is working
+
+    if (! jackbridge_is_ok())
+    {
+        carla_stderr("A JACK or Wine library is missing, cannot continue");
         return 1;
     }
 
