@@ -369,6 +369,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine::ProtectedData* const data, const
 ScopedActionLock::~ScopedActionLock() noexcept
 {
     CARLA_SAFE_ASSERT(fData->nextAction.opcode == kEnginePostActionNull);
+    fData->nextAction.mutex.tryLock();
     fData->nextAction.mutex.unlock();
 }
 
