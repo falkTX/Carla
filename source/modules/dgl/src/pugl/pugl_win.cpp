@@ -52,6 +52,7 @@ static HINSTANCE hInstance = NULL;
 LRESULT CALLBACK
 wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+#if 0
 extern "C" {
 BOOL WINAPI
 DllMain(HINSTANCE hInst, DWORD, LPVOID)
@@ -60,6 +61,7 @@ DllMain(HINSTANCE hInst, DWORD, LPVOID)
     return 1;
 }
 } // extern "C"
+#endif
 
 PuglInternals*
 puglInitInternals()
