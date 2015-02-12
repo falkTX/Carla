@@ -199,12 +199,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            setLastError("Patchbay process mode is not implemented yet for non-JACK drivers, sorry!");
-            return false;
-        }
-
         if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
         {
             setLastError("Invalid process mode");
