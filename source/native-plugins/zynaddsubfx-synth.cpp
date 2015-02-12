@@ -232,17 +232,20 @@ class ZynAddSubFxInstanceCount
 {
 public:
     ZynAddSubFxInstanceCount()
-        : fCount(0) {}
+        : fCount(0),
+          fMutex() {}
 
     ~ZynAddSubFxInstanceCount()
     {
-        CARLA_ASSERT(fCount == 0);
+        CARLA_SAFE_ASSERT(fCount == 0);
     }
 
     void addOne(const NativeHostDescriptor* const host)
     {
         if (fCount++ != 0)
             return;
+
+        const CarlaMutexLocker cml(fMutex);
 
         CARLA_SAFE_ASSERT(synth == nullptr);
         CARLA_SAFE_ASSERT(denormalkillbuf == nullptr);
@@ -264,6 +267,8 @@ public:
         if (--fCount != 0)
             return;
 
+        const CarlaMutexLocker cml(fMutex);
+
         CARLA_SAFE_ASSERT(synth != nullptr);
         CARLA_SAFE_ASSERT(denormalkillbuf != nullptr);
 
@@ -275,6 +280,26 @@ public:
         delete synth;
         synth = nullptr;
     }
+
+    void maybeReinit(const NativeHostDescriptor* const host)
+    {
+        if (static_cast< int>(host->get_buffer_size(host->handle)) == synth->buffersize &&
+            static_cast<uint>(host->get_sample_rate(host->handle)) == synth->samplerate)
+            return;
+
+        const CarlaMutexLocker cml(fMutex);
+
+        reinit(host);
+    }
+
+    CarlaMutex& getLock() noexcept
+    {
+        return fMutex;
+    }
+
+private:
+    int fCount;
+    CarlaMutex fMutex;
 
     void reinit(const NativeHostDescriptor* const host)
     {
@@ -314,18 +339,6 @@ public:
 
         Master::getInstance();
     }
-
-    void maybeReinit(const NativeHostDescriptor* const host)
-    {
-        if (static_cast< int>(host->get_buffer_size(host->handle)) == synth->buffersize &&
-            static_cast<uint>(host->get_sample_rate(host->handle)) == synth->samplerate)
-            return;
-
-        reinit(host);
-    }
-
-private:
-    int fCount;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxInstanceCount)
@@ -713,9 +726,9 @@ protected:
             fMaster->part[0]->loadXMLinstrument(value);
         }
 
-        pthread_mutex_unlock(&fMaster->mutex);
+        fMaster->applyparameters(false);
 
-        fMaster->applyparameters();
+        pthread_mutex_unlock(&fMaster->mutex);
     }
 
     // -------------------------------------------------------------------
@@ -733,7 +746,9 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        if (pthread_mutex_trylock(&fMaster->mutex) != 0)
+        const CarlaMutexTryLocker cmtl(sInstanceCount.getLock());
+
+        if (cmtl.wasNotLocked() || pthread_mutex_trylock(&fMaster->mutex) != 0)
         {
             FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
             FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
@@ -936,16 +951,12 @@ private:
         for (int i=0; i<NUM_MIDI_PARTS; ++i)
         {
             fMaster->partonoff(i, 1);
-
-            for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
-            {
-                fMaster->part[npart]->SetController(C_filtercutoff,        static_cast<int>(fParameters[kParamFilterCutoff]));
-                fMaster->part[npart]->SetController(C_filterq,             static_cast<int>(fParameters[kParamFilterQ]));
-                fMaster->part[npart]->SetController(C_bandwidth,           static_cast<int>(fParameters[kParamBandwidth]));
-                fMaster->part[npart]->SetController(C_fmamp,               static_cast<int>(fParameters[kParamModAmp]));
-                fMaster->part[npart]->SetController(C_resonance_center,    static_cast<int>(fParameters[kParamResCenter]));
-                fMaster->part[npart]->SetController(C_resonance_bandwidth, static_cast<int>(fParameters[kParamResBandwidth]));
-            }
+            fMaster->part[i]->SetController(C_filtercutoff,        static_cast<int>(fParameters[kParamFilterCutoff]));
+            fMaster->part[i]->SetController(C_filterq,             static_cast<int>(fParameters[kParamFilterQ]));
+            fMaster->part[i]->SetController(C_bandwidth,           static_cast<int>(fParameters[kParamBandwidth]));
+            fMaster->part[i]->SetController(C_fmamp,               static_cast<int>(fParameters[kParamModAmp]));
+            fMaster->part[i]->SetController(C_resonance_center,    static_cast<int>(fParameters[kParamResCenter]));
+            fMaster->part[i]->SetController(C_resonance_bandwidth, static_cast<int>(fParameters[kParamResBandwidth]));
         }
     }
 

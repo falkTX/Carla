@@ -995,6 +995,8 @@ bool CarlaEngine::loadFile(const char* const filename)
         //nicerName
         if (addPlugin(PLUGIN_INTERNAL, nullptr, nicerName, "zynaddsubfx", 0, nullptr))
         {
+            callback(ENGINE_CALLBACK_UI_STATE_CHANGED, curPluginId, 0, 0, 0.0f, nullptr);
+
             if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
             return true;

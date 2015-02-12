@@ -228,6 +228,11 @@ public:
         return fLocked;
     }
 
+    bool wasNotLocked() const noexcept
+    {
+        return !fLocked;
+    }
+
 private:
     const Mutex& fMutex;
     const bool   fLocked;
