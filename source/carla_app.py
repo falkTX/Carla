@@ -45,8 +45,8 @@ class CarlaApplication(object):
 
         pathBinaries, pathResources = getPaths(libPrefix)
 
-        # Needed for MacOS LV2 plugin
-        if MACOS and os.path.exists(CWD):
+        # Needed for MacOS and Windows
+        if os.path.exists(CWD) and (MACOS or WINDOWS):
             QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
