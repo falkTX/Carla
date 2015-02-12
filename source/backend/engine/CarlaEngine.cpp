@@ -983,7 +983,17 @@ bool CarlaEngine::loadFile(const char* const filename)
     if (extension == "xmz" || extension == "xiz")
     {
 #ifdef HAVE_ZYN_DEPS
-        if (addPlugin(PLUGIN_INTERNAL, nullptr, baseName, "zynaddsubfx", 0, nullptr))
+        CarlaString nicerName("Zyn - ");
+
+        const std::size_t sep(baseName.find('-')+1);
+
+        if (sep < baseName.length())
+            nicerName += baseName.buffer()+sep;
+        else
+            nicerName += baseName;
+
+        //nicerName
+        if (addPlugin(PLUGIN_INTERNAL, nullptr, nicerName, "zynaddsubfx", 0, nullptr))
         {
             if (CarlaPlugin* const plugin = getPlugin(curPluginId))
                 plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, (extension == "xmz") ? "CarlaAlternateFile1" : "CarlaAlternateFile2", filename, true);
