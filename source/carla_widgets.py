@@ -644,6 +644,34 @@ class PluginEdit(QDialog):
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
 
+        # and the internal ones too
+        self.ui.dial_drywet.blockSignals(True)
+        self.ui.dial_drywet.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_DRYWET))
+        self.ui.dial_drywet.blockSignals(False)
+
+        self.ui.dial_vol.blockSignals(True)
+        self.ui.dial_vol.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_VOLUME))
+        self.ui.dial_vol.blockSignals(False)
+
+        self.ui.dial_b_left.blockSignals(True)
+        self.ui.dial_b_left.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_BALANCE_LEFT))
+        self.ui.dial_b_left.blockSignals(False)
+
+        self.ui.dial_b_right.blockSignals(True)
+        self.ui.dial_b_right.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_BALANCE_RIGHT))
+        self.ui.dial_b_right.blockSignals(False)
+
+        self.ui.dial_pan.blockSignals(True)
+        self.ui.dial_pan.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_PANNING))
+        self.ui.dial_pan.blockSignals(False)
+
+        self.fControlChannel = int(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_CTRL_CHANNEL))
+        self.ui.sb_ctrl_channel.blockSignals(True)
+        self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
+        self.ui.sb_ctrl_channel.blockSignals(False)
+        self.ui.keyboard.allNotesOff()
+        self._updateCtrlPrograms()
+
         self.fParametersToUpdate = []
 
     #------------------------------------------------------------------
