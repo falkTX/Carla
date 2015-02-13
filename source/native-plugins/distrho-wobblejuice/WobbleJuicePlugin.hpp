@@ -99,7 +99,7 @@ protected:
         return 0x1000;
     }
 
-    long d_getUniqueId() const noexcept override
+    int64_t d_getUniqueId() const noexcept override
     {
         return d_cconst('W', 'b', 'l', 'J');
     }
