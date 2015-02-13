@@ -71,6 +71,12 @@ endif
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
+# DISTRHO plugins (Juice)
+
+OBJS += \
+	$(OBJDIR)/distrho-wobblejuice.cpp.o
+
+# ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -206,6 +212,13 @@ $(OBJDIR)/distrho-prom.cpp.o: distrho-prom.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_ProM -Idistrho-prom -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_WobbleJuice -Idistrho-wobblejuice -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

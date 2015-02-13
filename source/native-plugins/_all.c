@@ -47,6 +47,9 @@ extern void carla_register_native_plugin_distrho_nekobi(void);
 extern void carla_register_native_plugin_distrho_pingpongpan(void);
 extern void carla_register_native_plugin_distrho_prom(void);
 
+// DISTRHO plugins (Juice)
+extern void carla_register_native_plugin_distrho_wobblejuice(void);
+
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
@@ -98,6 +101,9 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_distrho_prom();
 #endif
 #endif
+
+    // DISTRHO plugins (Juice)
+    carla_register_native_plugin_distrho_wobblejuice();
 
 #ifndef CARLA_OS_WIN
     // External-UI plugins
