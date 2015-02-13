@@ -1,7 +1,7 @@
 /*
   Copyright 2012-2014 David Robillard <http://drobilla.net>
-  Copyright 2013 Robin Gareus <robin@gareus.org>
   Copyright 2011-2012 Ben Loftis, Harrison Consoles
+  Copyright 2013 Robin Gareus <robin@gareus.org>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -24,169 +24,100 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <X11/Xatom.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/keysym.h>
-
-#ifdef PUGL_HAVE_GL
 #include <GL/gl.h>
 #include <GL/glx.h>
-#endif
+#include <X11/Xatom.h>
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
 
-#ifdef PUGL_HAVE_CAIRO
-#include <cairo/cairo.h>
-#include <cairo/cairo-xlib.h>
-#endif
-
-#include "pugl/event.h"
-#include "pugl/pugl_internal.h"
+#include "pugl_internal.h"
 
 struct PuglInternalsImpl {
 	Display*   display;
 	int        screen;
 	Window     win;
-#ifdef PUGL_HAVE_CAIRO
-	cairo_t*   cr;
-#endif
-#ifdef PUGL_HAVE_GL
 	GLXContext ctx;
 	Bool       doubleBuffered;
-#endif
+};
+
+/**
+   Attributes for single-buffered RGBA with at least
+   4 bits per color and a 16 bit depth buffer.
+*/
+static int attrListSgl[] = {
+	GLX_RGBA,
+	GLX_RED_SIZE, 4,
+	GLX_GREEN_SIZE, 4,
+	GLX_BLUE_SIZE, 4,
+	GLX_DEPTH_SIZE, 16,
+	GLX_ARB_multisample, 1,
+	None
+};
+
+/**
+   Attributes for double-buffered RGBA with at least
+   4 bits per color and a 16 bit depth buffer.
+*/
+static int attrListDbl[] = {
+	GLX_RGBA, GLX_DOUBLEBUFFER,
+	GLX_RED_SIZE, 4,
+	GLX_GREEN_SIZE, 4,
+	GLX_BLUE_SIZE, 4,
+	GLX_DEPTH_SIZE, 16,
+	GLX_ARB_multisample, 1,
+	None
+};
+
+/**
+   Attributes for double-buffered RGBA with multi-sampling
+	 (antialiasing)
+*/
+static int attrListDblMS[] = {
+	GLX_RGBA,
+	GLX_DOUBLEBUFFER    , True,
+	GLX_RED_SIZE        , 4,
+	GLX_GREEN_SIZE      , 4,
+	GLX_BLUE_SIZE       , 4,
+	GLX_ALPHA_SIZE      , 4,
+	GLX_DEPTH_SIZE      , 16,
+	GLX_SAMPLE_BUFFERS  , 1,
+	GLX_SAMPLES         , 4,
+	None
 };
 
 PuglInternals*
-puglInitInternals()
+puglInitInternals(void)
 {
 	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
-}
-
-static XVisualInfo*
-getVisual(PuglView* view)
-{
-	PuglInternals* const impl = view->impl;
-	XVisualInfo*         vi   = NULL;
-
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL) {
-		// Try to create double-buffered visual
-		int double_attrs[] = { GLX_RGBA, GLX_DOUBLEBUFFER,
-		                       GLX_RED_SIZE,   4,
-		                       GLX_GREEN_SIZE, 4,
-		                       GLX_BLUE_SIZE,  4,
-		                       GLX_DEPTH_SIZE, 16,
-		                       None };
-		vi = glXChooseVisual(impl->display, impl->screen, double_attrs);
-		if (!vi) {
-			// Failed, create single-buffered visual
-			int single_attrs[] = { GLX_RGBA,
-			                       GLX_RED_SIZE,   4,
-			                       GLX_GREEN_SIZE, 4,
-			                       GLX_BLUE_SIZE,  4,
-			                       GLX_DEPTH_SIZE, 16,
-			                       None };
-			vi = glXChooseVisual(impl->display, impl->screen, single_attrs);
-			impl->doubleBuffered = False;
-		} else {
-			impl->doubleBuffered = True;
-		}
-#ifdef PUGL_VERBOSE
-		int glxMajor, glxMinor;
-		glXQueryVersion(impl->display, &glxMajor, &glxMinor);
-		PUGL_LOGF("GLX Version %d.%d\n", glxMajor, glxMinor);
-#endif
-	}
-#endif
-#ifdef PUGL_HAVE_CAIRO
-	if (view->ctx_type == PUGL_CAIRO) {
-		XVisualInfo pat;
-		int         n;
-		pat.screen = impl->screen;
-		vi         = XGetVisualInfo(impl->display, VisualScreenMask, &pat, &n);
-	}
-#endif
-
-	return vi;
-}
-
-static void
-createContext(PuglView* view, XVisualInfo* vi)
-{
-	PuglInternals* const impl = view->impl;
-
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL) {
-		impl->ctx = glXCreateContext(impl->display, vi, 0, GL_TRUE);
-#ifdef PUGL_VERBOSE
-		if (glXIsDirect(impl->display, impl->ctx)) {
-			PUGL_LOG("DRI enabled (to disable, set LIBGL_ALWAYS_INDIRECT=1\n");
-		} else {
-			PUGL_LOG("No DRI available\n");
-		}
-#endif
-	}
-#endif
-#ifdef PUGL_HAVE_CAIRO
-	if (view->ctx_type == PUGL_CAIRO) {
-		cairo_surface_t* surface = cairo_xlib_surface_create(
-			impl->display, impl->win, vi->visual, view->width, view->height);
-		if (!(impl->cr = cairo_create(surface))) {
-			fprintf(stderr, "failed to create cairo context\n");
-		}
-	}
-#endif
-}
-
-static void
-destroyContext(PuglView* view)
-{
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL) {
-		glXDestroyContext(view->impl->display, view->impl->ctx);
-	}
-#endif
-#ifdef PUGL_HAVE_CAIRO
-	if (view->ctx_type == PUGL_CAIRO) {
-		glXDestroyContext(view->impl->display, view->impl->ctx);
-	}
-#endif
-}
-
-void
-puglEnterContext(PuglView* view)
-{
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL) {
-		glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
-	}
-#endif
-}
-
-void
-puglLeaveContext(PuglView* view, bool flush)
-{
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL && flush) {
-		glFlush();
-		if (view->impl->doubleBuffered) {
-			glXSwapBuffers(view->impl->display, view->impl->win);
-		}
-	}
-#endif
 }
 
 int
 puglCreateWindow(PuglView* view, const char* title)
 {
-	PuglInternals* const impl = view->impl;
+	PuglInternals* impl = view->impl;
 
 	impl->display = XOpenDisplay(0);
 	impl->screen  = DefaultScreen(impl->display);
+	impl->doubleBuffered = True;
 
-	XVisualInfo* const vi = getVisual(view);
+	XVisualInfo* vi = glXChooseVisual(impl->display, impl->screen, attrListDblMS);
+
 	if (!vi) {
-		return 1;
+		vi = glXChooseVisual(impl->display, impl->screen, attrListDbl);
+		PUGL_LOG("multisampling (antialiasing) is not available\n");
 	}
+
+	if (!vi) {
+		vi = glXChooseVisual(impl->display, impl->screen, attrListSgl);
+		impl->doubleBuffered = False;
+		PUGL_LOG("singlebuffered rendering will be used, no doublebuffering available\n");
+	}
+
+	int glxMajor, glxMinor;
+	glXQueryVersion(impl->display, &glxMajor, &glxMinor);
+	PUGL_LOGF("GLX Version %d.%d\n", glxMajor, glxMinor);
+
+	impl->ctx = glXCreateContext(impl->display, vi, 0, GL_TRUE);
 
 	Window xParent = view->parent
 		? (Window)view->parent
@@ -197,21 +128,20 @@ puglCreateWindow(PuglView* view, const char* title)
 
 	XSetWindowAttributes attr;
 	memset(&attr, 0, sizeof(XSetWindowAttributes));
-	attr.background_pixel = BlackPixel(impl->display, impl->screen);
-	attr.border_pixel     = BlackPixel(impl->display, impl->screen);
-	attr.colormap         = cmap;
-	attr.event_mask       = (ExposureMask | StructureNotifyMask |
-	                         EnterWindowMask | LeaveWindowMask |
-	                         KeyPressMask | KeyReleaseMask |
-	                         ButtonPressMask | ButtonReleaseMask |
-	                         PointerMotionMask);
+	attr.colormap     = cmap;
+	attr.border_pixel = 0;
+
+	attr.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask
+		| ButtonPressMask | ButtonReleaseMask
+#ifdef PUGL_GRAB_FOCUS
+		| EnterWindowMask
+#endif
+		| PointerMotionMask | StructureNotifyMask;
 
 	impl->win = XCreateWindow(
 		impl->display, xParent,
 		0, 0, view->width, view->height, 0, vi->depth, InputOutput, vi->visual,
-		CWBackPixel | CWBorderPixel | CWColormap | CWEventMask, &attr);
-
-	createContext(view, vi);
+		CWBorderPixel | CWColormap | CWEventMask, &attr);
 
 	XSizeHints sizeHints;
 	memset(&sizeHints, 0, sizeof(sizeHints));
@@ -233,7 +163,15 @@ puglCreateWindow(PuglView* view, const char* title)
 		XSetWMProtocols(impl->display, impl->win, &wmDelete, 1);
 	}
 
+	if (glXIsDirect(impl->display, impl->ctx)) {
+		PUGL_LOG("DRI enabled (to disable, set LIBGL_ALWAYS_INDIRECT=1\n");
+	} else {
+		PUGL_LOG("No DRI available\n");
+	}
+
 	XFree(vi);
+
+	glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
 
 	return 0;
 }
@@ -241,13 +179,17 @@ puglCreateWindow(PuglView* view, const char* title)
 void
 puglShowWindow(PuglView* view)
 {
-	XMapRaised(view->impl->display, view->impl->win);
+	PuglInternals* impl = view->impl;
+
+	XMapRaised(impl->display, impl->win);
 }
 
 void
 puglHideWindow(PuglView* view)
 {
-	XUnmapWindow(view->impl->display, view->impl->win);
+	PuglInternals* impl = view->impl;
+
+	XUnmapWindow(impl->display, impl->win);
 }
 
 void
@@ -257,11 +199,44 @@ puglDestroy(PuglView* view)
 		return;
 	}
 
-	destroyContext(view);
+	glXDestroyContext(view->impl->display, view->impl->ctx);
 	XDestroyWindow(view->impl->display, view->impl->win);
 	XCloseDisplay(view->impl->display);
 	free(view->impl);
 	free(view);
+}
+
+static void
+puglReshape(PuglView* view, int width, int height)
+{
+	glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
+
+	if (view->reshapeFunc) {
+		view->reshapeFunc(view, width, height);
+	} else {
+		puglDefaultReshape(view, width, height);
+	}
+
+	view->width  = width;
+	view->height = height;
+}
+
+static void
+puglDisplay(PuglView* view)
+{
+	glXMakeCurrent(view->impl->display, view->impl->win, view->impl->ctx);
+
+	view->redisplay = false;
+
+	if (view->displayFunc) {
+		view->displayFunc(view);
+	}
+
+	glFlush();
+
+	if (view->impl->doubleBuffered) {
+		glXSwapBuffers(view->impl->display, view->impl->win);
+	}
 }
 
 static PuglKey
@@ -302,184 +277,145 @@ keySymToSpecial(KeySym sym)
 }
 
 static void
-translateKey(XEvent* xevent, PuglEvent* event)
+setModifiers(PuglView* view, unsigned xstate, unsigned xtime)
+{
+	view->event_timestamp_ms = xtime;
+
+	view->mods = 0;
+	view->mods |= (xstate & ShiftMask)   ? PUGL_MOD_SHIFT  : 0;
+	view->mods |= (xstate & ControlMask) ? PUGL_MOD_CTRL   : 0;
+	view->mods |= (xstate & Mod1Mask)    ? PUGL_MOD_ALT    : 0;
+	view->mods |= (xstate & Mod4Mask)    ? PUGL_MOD_SUPER  : 0;
+}
+
+static void
+dispatchKey(PuglView* view, XEvent* event, bool press)
 {
 	KeySym    sym;
 	char      str[5];
-	const int n = XLookupString(&xevent->xkey, str, 4, &sym, NULL);
-	if (n == 1) {
-		event->key.character = str[0];  // TODO: multi-byte support
+	const int n = XLookupString(&event->xkey, str, 4, &sym, NULL);
+
+	if (sym == XK_Escape && view->closeFunc && !press && !view->parent) {
+		view->closeFunc(view);
+		view->redisplay = false;
+		return;
 	}
-	event->key.special = keySymToSpecial(sym);
-}
-
-static unsigned
-translateModifiers(unsigned xstate)
-{
-	unsigned state = 0;
-	state |= (xstate & ShiftMask)   ? PUGL_MOD_SHIFT  : 0;
-	state |= (xstate & ControlMask) ? PUGL_MOD_CTRL   : 0;
-	state |= (xstate & Mod1Mask)    ? PUGL_MOD_ALT    : 0;
-	state |= (xstate & Mod4Mask)    ? PUGL_MOD_SUPER  : 0;
-	return state;
-}
-
-static PuglEvent
-translateEvent(PuglView* view, XEvent xevent)
-{
-	PuglEvent event;
-	memset(&event, 0, sizeof(event));
-
-	event.any.view       = view;
-	event.any.send_event = xevent.xany.send_event;
-
-	switch (xevent.type) {
-	case ConfigureNotify:
-		event.type             = PUGL_CONFIGURE;
-		event.configure.x      = xevent.xconfigure.x;
-		event.configure.y      = xevent.xconfigure.y;
-		event.configure.width  = xevent.xconfigure.width;
-		event.configure.height = xevent.xconfigure.height;
-		break;
-	case Expose:
-		event.type          = PUGL_EXPOSE;
-		event.expose.x      = xevent.xexpose.x;
-		event.expose.y      = xevent.xexpose.y;
-		event.expose.width  = xevent.xexpose.width;
-		event.expose.height = xevent.xexpose.height;
-		event.expose.count  = xevent.xexpose.count;
-		break;
-	case MotionNotify:
-		event.type           = PUGL_MOTION_NOTIFY;
-		event.motion.time    = xevent.xmotion.time;
-		event.motion.x       = xevent.xmotion.x;
-		event.motion.y       = xevent.xmotion.y;
-		event.motion.x_root  = xevent.xmotion.x_root;
-		event.motion.y_root  = xevent.xmotion.y_root;
-		event.motion.state   = translateModifiers(xevent.xmotion.state);
-		event.motion.is_hint = (xevent.xmotion.is_hint == NotifyHint);
-		break;
-	case ButtonPress:
-		if (xevent.xbutton.button >= 4 && xevent.xbutton.button <= 7) {
-			event.type           = PUGL_SCROLL;
-			event.scroll.time    = xevent.xbutton.time;
-			event.scroll.x       = xevent.xbutton.x;
-			event.scroll.y       = xevent.xbutton.y;
-			event.scroll.x_root  = xevent.xbutton.x_root;
-			event.scroll.y_root  = xevent.xbutton.y_root;
-			event.scroll.state   = translateModifiers(xevent.xbutton.state);
-			event.scroll.dx      = 0.0;
-			event.scroll.dy      = 0.0;
-			switch (xevent.xbutton.button) {
-			case 4: event.scroll.dy =  1.0f; break;
-			case 5: event.scroll.dy = -1.0f; break;
-			case 6: event.scroll.dx = -1.0f; break;
-			case 7: event.scroll.dx =  1.0f; break;
-			}
-		}
-		// nobreak
-	case ButtonRelease:
-		if (xevent.xbutton.button < 4 || xevent.xbutton.button > 7) {
-			event.button.type   = ((xevent.type == ButtonPress)
-			                       ? PUGL_BUTTON_PRESS
-			                       : PUGL_BUTTON_RELEASE);
-			event.button.time   = xevent.xbutton.time;
-			event.button.x      = xevent.xbutton.x;
-			event.button.y      = xevent.xbutton.y;
-			event.button.x_root = xevent.xbutton.x_root;
-			event.button.y_root = xevent.xbutton.y_root;
-			event.button.state  = translateModifiers(xevent.xbutton.state);
-			event.button.button = xevent.xbutton.button;
-		}
-		break;
-	case KeyPress:
-	case KeyRelease:
-		event.type       = ((xevent.type == KeyPress)
-		                    ? PUGL_KEY_PRESS
-		                    : PUGL_KEY_RELEASE);
-		event.key.time   = xevent.xbutton.time;
-		event.key.x      = xevent.xbutton.x;
-		event.key.y      = xevent.xbutton.y;
-		event.key.x_root = xevent.xbutton.x_root;
-		event.key.y_root = xevent.xbutton.y_root;
-		event.key.state  = translateModifiers(xevent.xbutton.state);
-		translateKey(&xevent, &event);
-		break;
-	case EnterNotify:
-	case LeaveNotify:
-		event.type            = ((xevent.type == EnterNotify)
-		                         ? PUGL_ENTER_NOTIFY
-		                         : PUGL_LEAVE_NOTIFY);
-		event.crossing.time   = xevent.xcrossing.time;
-		event.crossing.x      = xevent.xcrossing.x;
-		event.crossing.y      = xevent.xcrossing.y;
-		event.crossing.x_root = xevent.xcrossing.x_root;
-		event.crossing.y_root = xevent.xcrossing.y_root;
-		event.crossing.state  = translateModifiers(xevent.xcrossing.state);
-		event.crossing.mode   = PUGL_CROSSING_NORMAL;
-		if (xevent.xcrossing.mode == NotifyGrab) {
-			event.crossing.mode = PUGL_CROSSING_GRAB;
-		} else if (xevent.xcrossing.mode == NotifyUngrab) {
-			event.crossing.mode = PUGL_CROSSING_UNGRAB;
-		}
-		break;
-	default:
-		break;
+	if (n == 0) {
+		return;
+	}
+	if (n > 1) {
+		fprintf(stderr, "warning: Unsupported multi-byte key %X\n", (int)sym);
+		return;
 	}
 
-	return event;
-}
-
-void
-puglGrabFocus(PuglView* view)
-{
-	XSetInputFocus(
-		view->impl->display, view->impl->win, RevertToPointerRoot, CurrentTime);
+	const PuglKey special = keySymToSpecial(sym);
+	if (special && view->specialFunc) {
+		view->specialFunc(view, press, special);
+	} else if (!special && view->keyboardFunc) {
+		view->keyboardFunc(view, press, str[0]);
+	}
 }
 
 PuglStatus
 puglProcessEvents(PuglView* view)
 {
-	XEvent xevent;
+	XEvent event;
 	while (XPending(view->impl->display) > 0) {
-		XNextEvent(view->impl->display, &xevent);
-		bool ignore = false;
-		if (xevent.type == ClientMessage) {
-			// Handle close message
-			char* type = XGetAtomName(view->impl->display,
-			                          xevent.xclient.message_type);
-			if (!strcmp(type, "WM_PROTOCOLS") && view->closeFunc) {
-				view->closeFunc(view);
+		XNextEvent(view->impl->display, &event);
+		switch (event.type) {
+		case MapNotify:
+			puglReshape(view, view->width, view->height);
+			break;
+		case ConfigureNotify:
+			if ((event.xconfigure.width != view->width) ||
+			    (event.xconfigure.height != view->height)) {
+				puglReshape(view,
+				            event.xconfigure.width,
+				            event.xconfigure.height);
 			}
-			XFree(type);
-			continue;
-		} else if (xevent.type == KeyRelease) {
-			// Ignore key repeat if necessary
+			break;
+		case Expose:
+			if (event.xexpose.count != 0) {
+				break;
+			}
+			puglDisplay(view);
+			break;
+		case MotionNotify:
+			setModifiers(view, event.xmotion.state, event.xmotion.time);
+			if (view->motionFunc) {
+				view->motionFunc(view, event.xmotion.x, event.xmotion.y);
+			}
+			break;
+		case ButtonPress:
+			setModifiers(view, event.xbutton.state, event.xbutton.time);
+			if (event.xbutton.button >= 4 && event.xbutton.button <= 7) {
+				if (view->scrollFunc) {
+					float dx = 0, dy = 0;
+					switch (event.xbutton.button) {
+					case 4: dy =  1.0f; break;
+					case 5: dy = -1.0f; break;
+					case 6: dx = -1.0f; break;
+					case 7: dx =  1.0f; break;
+					}
+					view->scrollFunc(view, event.xbutton.x, event.xbutton.y, dx, dy);
+				}
+				break;
+			}
+			// nobreak
+		case ButtonRelease:
+			setModifiers(view, event.xbutton.state, event.xbutton.time);
+			if (view->mouseFunc &&
+			    (event.xbutton.button < 4 || event.xbutton.button > 7)) {
+				view->mouseFunc(view,
+				                event.xbutton.button, event.type == ButtonPress,
+				                event.xbutton.x, event.xbutton.y);
+			}
+			break;
+		case KeyPress:
+			setModifiers(view, event.xkey.state, event.xkey.time);
+			dispatchKey(view, &event, true);
+			break;
+		case KeyRelease: {
+			setModifiers(view, event.xkey.state, event.xkey.time);
+			bool repeated = false;
 			if (view->ignoreKeyRepeat &&
 			    XEventsQueued(view->impl->display, QueuedAfterReading)) {
 				XEvent next;
 				XPeekEvent(view->impl->display, &next);
 				if (next.type == KeyPress &&
-				    next.xkey.time == xevent.xkey.time &&
-				    next.xkey.keycode == xevent.xkey.keycode) {
-					XNextEvent(view->impl->display, &xevent);
-					ignore = true;
+				    next.xkey.time == event.xkey.time &&
+				    next.xkey.keycode == event.xkey.keycode) {
+					XNextEvent(view->impl->display, &event);
+					repeated = true;
 				}
 			}
-		}
-
-		if (!ignore) {
-			// Translate and dispatch event
-			const PuglEvent event = translateEvent(view, xevent);
-			puglDispatchEvent(view, &event);
+			if (!repeated) {
+				dispatchKey(view, &event, false);
+			}
+		}	break;
+		case ClientMessage: {
+			char* type = XGetAtomName(view->impl->display,
+			                          event.xclient.message_type);
+			if (!strcmp(type, "WM_PROTOCOLS")) {
+				if (view->closeFunc) {
+					view->closeFunc(view);
+					view->redisplay = false;
+				}
+			}
+			XFree(type);
+		}	break;
+#ifdef PUGL_GRAB_FOCUS
+		case EnterNotify:
+			XSetInputFocus(view->impl->display, view->impl->win, RevertToPointerRoot, CurrentTime);
+			break;
+#endif
+		default:
+			break;
 		}
 	}
 
 	if (view->redisplay) {
-		const PuglEventExpose expose = {
-			PUGL_EXPOSE, view, true, 0.0, 0.0, (double)view->width, (double)view->height, 0
-		};
-		puglDispatchEvent(view, (const PuglEvent*)&expose);
+		puglDisplay(view);
 	}
 
 	return PUGL_SUCCESS;
@@ -495,18 +431,4 @@ PuglNativeWindow
 puglGetNativeWindow(PuglView* view)
 {
 	return view->impl->win;
-}
-
-void*
-puglGetContext(PuglView* view)
-{
-#ifdef PUGL_HAVE_CAIRO
-	if (view->ctx_type == PUGL_CAIRO) {
-		return view->impl->cr;
-	}
-#endif
-	return NULL;
-
-	// possibly unused
-	(void)view;
 }

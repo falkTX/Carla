@@ -15,8 +15,7 @@
  */
 
 // we need this for now
-#define PUGL_HAVE_GL    1
-#define PUGL_GRAB_FOCUS 1
+//#define PUGL_GRAB_FOCUS 1
 
 #include "AppPrivateData.hpp"
 #include "../Widget.hpp"
@@ -63,7 +62,7 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
@@ -91,7 +90,7 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self, Window& parent)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
@@ -129,7 +128,7 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self, const intptr_t parentId)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(parentId != 0),
           fResizable(parentId == 0),
@@ -193,7 +192,6 @@ struct Window::PrivateData {
         puglSetCloseFunc(fView, onCloseCallback);
 
         puglCreateWindow(fView, nullptr);
-        puglEnterContext(fView);
 
         PuglInternals* impl = fView->impl;
 #if defined(DISTRHO_OS_WINDOWS)
@@ -458,7 +456,11 @@ struct Window::PrivateData {
 
         fResizable = yesNo;
 
-#ifdef CARLA_OS_MAC
+#if defined(DISTRHO_OS_WINDOWS)
+        const int winFlags = fResizable ? GetWindowLong(hwnd, GWL_STYLE) |  WS_SIZEBOX
+                                        : GetWindowLong(hwnd, GWL_STYLE) & ~WS_SIZEBOX;
+        SetWindowLong(hwnd, GWL_STYLE, winFlags);
+#elif defined(DISTRHO_OS_MAC)
         // FIXME?
         const uint flags(yesNo ? (NSViewWidthSizable|NSViewHeightSizable) : 0x0);
         [mView setAutoresizingMask:flags];
@@ -471,7 +473,7 @@ struct Window::PrivateData {
 
     void setSize(uint width, uint height, const bool forced = false)
     {
-        if (width == 0 || height == 0)
+        if (width <= 1 || height <= 1)
         {
             DBGp("Window setSize called with invalid value(s) %i %i, ignoring request\n", width, height);
             return;
@@ -486,18 +488,15 @@ struct Window::PrivateData {
         fWidth  = width;
         fHeight = height;
 
-        DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
+        DBGp("Window setSize called %s, size %i %i, resizable %s\n", forced ? "(forced)" : "(not forced)", width, height, fResizable?"true":"false");
 
 #if defined(DISTRHO_OS_WINDOWS)
-        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
-
-        if (fResizable)
-            winFlags |= WS_SIZEBOX;
-
+        const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (fResizable ? WS_SIZEBOX : 0x0);
         RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
-        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
+        AdjustWindowRectEx(&wr, fUsingEmbed ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
 
-        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top,
+                     SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
 
         if (! forced)
             UpdateWindow(hwnd);

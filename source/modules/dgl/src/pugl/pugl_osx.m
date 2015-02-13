@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2014 David Robillard <http://drobilla.net>
+  Copyright 2012 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "pugl/pugl_internal.h"
+#include "pugl_internal.h"
 
 @interface PuglWindow : NSWindow
 {
@@ -36,8 +36,6 @@
                      defer:(BOOL)flag;
 - (void) setPuglview:(PuglView*)view;
 - (BOOL) windowShouldClose:(id)sender;
-- (BOOL) canBecomeKeyWindow:(id)sender;
-- (BOOL) canBecomeMainWindow:(id)sender;
 @end
 
 @implementation PuglWindow
@@ -72,22 +70,6 @@
 {
 	if (puglview->closeFunc)
 		puglview->closeFunc(puglview);
-	return YES;
-
-	// unused
-	(void)sender;
-}
-
-- (BOOL) canBecomeKeyWindow:(id)sender
-{
-	return YES;
-
-	// unused
-	(void)sender;
-}
-
-- (BOOL) canBecomeMainWindow:(id)sender
-{
 	return YES;
 
 	// unused
@@ -214,6 +196,8 @@ puglDisplay(PuglView* view)
 
 	if (puglview->reshapeFunc) {
 		puglview->reshapeFunc(puglview, width, height);
+	} else {
+		puglDefaultReshape(puglview, width, height);
 	}
 
 	puglview->width  = width;
