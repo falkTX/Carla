@@ -6,7 +6,7 @@ else
   PYTHON=python
 fi
 
-if [ $1 = "--gdb" ]; then
+if [ "$1" = "--gdb" ]; then
   PYTHON="gdb --args $PYTHON"
 fi
 
