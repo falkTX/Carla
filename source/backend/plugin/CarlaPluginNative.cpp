@@ -328,9 +328,6 @@ public:
 
         uint options = 0x0;
 
-        if (hasMidiProgs && (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
-            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (getMidiInCount() == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
@@ -352,6 +349,11 @@ public:
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+        else if (hasMidiProgs)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return options;
     }
@@ -1628,7 +1630,6 @@ public:
                             NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
                             carla_zeroStruct(nativeEvent);
 
-                            nativeEvent.port    = 0;
                             nativeEvent.time    = sampleAccurate ? startTime : event.time;
                             nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
                             nativeEvent.data[1] = MIDI_CONTROL_ALL_SOUND_OFF;
@@ -2140,19 +2141,18 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->enabled, false);
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
-        CARLA_SAFE_ASSERT_RETURN(fMidiOut.count > 0, false);
-        CARLA_SAFE_ASSERT_RETURN(pData->event.portOut != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(fMidiOut.count > 0 || pData->event.portOut != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
         // reverse-find first free event, and put it there
         for (uint32_t i=(kPluginMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
         {
-            if (fMidiEvents[i].data[0] == 0)
-            {
-                std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
-                return true;
-            }
+            if (fMidiEvents[i].data[0] != 0)
+                continue;
+
+            std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
+            return true;
         }
 
         carla_stdout("CarlaPluginNative::handleWriteMidiEvent(%p) - buffer full", event);
@@ -2346,9 +2346,6 @@ public:
 
         pData->options = 0x0;
 
-        if (hasMidiProgs && (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES) == 0)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (getMidiInCount() > 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
@@ -2363,6 +2360,17 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)
+        {
+            CARLA_SAFE_ASSERT(! hasMidiProgs);
+            pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
+
+            if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        }
+        else if (hasMidiProgs)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }
