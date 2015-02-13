@@ -245,12 +245,12 @@ void DistrhoPlugin3BandSplitter::d_run(const float** inputs, float** outputs, ui
         out1HP = in1[i] - tmp1HP - kDC_ADD;
         out2HP = in2[i] - tmp2HP - kDC_ADD;
 
-        out1[i] = out1LP*lowVol * outVol;
-        out2[i] = out2LP*lowVol * outVol;
-        out3[i] = (in1[i] - out1LP - out1HP)*midVol * outVol;
-        out4[i] = (in2[i] - out2LP - out2HP)*midVol * outVol;
-        out5[i] = out1HP*highVol * outVol;
         out6[i] = out2HP*highVol * outVol;
+        out5[i] = out1HP*highVol * outVol;
+        out4[i] = (in2[i] - out2LP - out2HP)*midVol * outVol;
+        out3[i] = (in1[i] - out1LP - out1HP)*midVol * outVol;
+        out2[i] = out2LP*lowVol * outVol;
+        out1[i] = out1LP*lowVol * outVol;
     }
 }
 
