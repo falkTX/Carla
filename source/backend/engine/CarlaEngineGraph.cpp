@@ -929,6 +929,11 @@ public:
     {
     }
 
+    void invalidatePlugin() noexcept
+    {
+        fPlugin = nullptr;
+    }
+
     // -------------------------------------------------------------------
 
     void* getPlatformSpecificData() noexcept override
@@ -973,7 +978,7 @@ public:
 
     void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi)
     {
-        if (! fPlugin->isEnabled())
+        if (fPlugin == nullptr || ! fPlugin->isEnabled())
         {
             audio.clear();
             midi.clear();
@@ -1115,7 +1120,7 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    CarlaPlugin* const fPlugin;
+    CarlaPlugin* fPlugin;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginInstance)
 };
@@ -1241,6 +1246,8 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
         removeNodeFromPatchbay(engine, oldNode->nodeId, oldNode->getProcessor());
     }
 
+    ((CarlaPluginInstance*)oldNode->getProcessor())->invalidatePlugin();
+
     graph.removeNode(oldNode->nodeId);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(newPlugin));
@@ -1272,6 +1279,8 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
         disconnectGroup(engine, node->nodeId);
         removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
     }
+
+    ((CarlaPluginInstance*)node->getProcessor())->invalidatePlugin();
 
     // Fix plugin Ids properties
     for (uint i=plugin->getId()+1, count=engine->getCurrentPluginCount(); i<count; ++i)
@@ -1307,6 +1316,8 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
             disconnectGroup(engine, node->nodeId);
             removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
         }
+
+        ((CarlaPluginInstance*)node->getProcessor())->invalidatePlugin();
 
         graph.removeNode(node->nodeId);
     }
