@@ -93,6 +93,8 @@ class HostWindow(QMainWindow):
 
         self._true = c_char_p("true".encode("utf-8"))
 
+        self.fParentOrSelf = parent or self
+
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
@@ -685,7 +687,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_pluginAdd(self, pluginToReplace = -1):
-        dialog = PluginDatabaseW(self, self.host)
+        dialog = PluginDatabaseW(self.fParentOrSelf, self.host)
 
         if not dialog.exec_():
             return
@@ -1369,7 +1371,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        dialog = CarlaSettingsW(self, self.host, True, hasGL)
+        dialog = CarlaSettingsW(self.fParentOrSelf, self.host, True, hasGL)
         if not dialog.exec_():
             return
 
@@ -1396,11 +1398,11 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_aboutCarla(self):
-        CarlaAboutW(self, self.host).exec_()
+        CarlaAboutW(self.fParentOrSelf, self.host).exec_()
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        JuceAboutW(self).exec_()
+        JuceAboutW(self.fParentOrSelf).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):
@@ -1786,12 +1788,14 @@ class HostWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        winIdStr = "%x" % self.winId()
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+        if self.fParentOrSelf == self:
+            winIdStr = "%x" % self.winId()
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
         # disable parent
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+        if self.fParentOrSelf == self:
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
         QMainWindow.hideEvent(self, event)
 
