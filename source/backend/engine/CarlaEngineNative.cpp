@@ -1509,6 +1509,22 @@ protected:
         else
         {
             fUiServer.stopPipeServer(5000);
+
+            // hide all custom uis
+            for (uint i=0; i < pData->curPluginCount; ++i)
+            {
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+                if (plugin != nullptr && plugin->isEnabled())
+                {
+                    if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                    {
+                        try {
+                            plugin->showCustomUI(false);
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin showCustomUI (hide)");
+                    }
+                }
+            }
         }
     }
 

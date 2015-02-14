@@ -1788,13 +1788,13 @@ class HostWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        if self.fParentOrSelf == self:
+        if not self.host.isPlugin:
             winIdStr = "%x" % self.winId()
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
         # disable parent
-        if self.fParentOrSelf == self:
+        if not self.host.isPlugin:
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
         QMainWindow.hideEvent(self, event)
