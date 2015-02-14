@@ -27,7 +27,6 @@ export LDLAGS=-m64
 export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
 
-make clean
 make $JOBS
 
 ##############################################################################################
@@ -52,11 +51,10 @@ unset CXXFLAGS
 unset LDLAGS
 unset PKG_CONFIG_PATH
 
-rm -rf ./build
+rm -rf ./build/Carla
+rm -rf ./build/exe.*
 rm -rf ./build-lv2
 rm -f bin/carla-bridge-lv2-qt5 bin/carla.lv2/carla-bridge-lv2-qt5
-
-mkdir build
 
 cp ./source/carla               ./source/Carla.pyw
 cp ./bin/resources/carla-plugin ./source/carla-plugin.pyw
@@ -92,7 +90,7 @@ install_name_tool -change "/opt/carla/lib/QtWidgets.framework/Versions/5/QtWidge
 cd ../../../../..
 
 cp build/carla-plugin.app/Contents/MacOS/carla-plugin build/Carla.app/Contents/MacOS/resources/
-cp build/carla-plugin.app/Contents/MacOS/fcntl.so     build/Carla.app/Contents/MacOS/resources/
+cp build/carla-plugin.app/Contents/MacOS/fcntl.so     build/Carla.app/Contents/MacOS/resources/ || true
 cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui   build/Carla.app/Contents/MacOS/resources/
 cp build/notes-ui.app/Contents/MacOS/notes-ui         build/Carla.app/Contents/MacOS/resources/
 rm -rf build/carla-plugin.app build/bigmeter-ui.app build/notes-ui.app
