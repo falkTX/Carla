@@ -37,13 +37,6 @@ struct RawMidiEvent {
     uint64_t time;
     uint8_t  size;
     uint8_t  data[MAX_EVENT_DATA_SIZE];
-
-    RawMidiEvent() noexcept
-        : time(0),
-          size(0)
-    {
-        carla_zeroBytes(data, MAX_EVENT_DATA_SIZE);
-    }
 };
 
 // -----------------------------------------------------------------------
@@ -354,6 +347,8 @@ public:
 
             if (needle == nullptr)
                 return;
+
+            carla_zeroStruct(midiEvent);
 
             tmpSize = needle - dataRead;
             CARLA_SAFE_ASSERT_RETURN(tmpSize > 0 && tmpSize < 24,);

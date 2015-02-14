@@ -57,6 +57,15 @@ UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
 
+ifeq ($(MACOS),true)
+UTILS_LIBS += $(MODULEDIR)/juce_audio_processors.a
+UTILS_LIBS += $(MODULEDIR)/juce_data_structures.a
+UTILS_LIBS += $(MODULEDIR)/juce_events.a
+UTILS_LIBS += $(MODULEDIR)/juce_graphics.a
+UTILS_LIBS += $(MODULEDIR)/juce_gui_basics.a
+UTILS_LIBS += $(MODULEDIR)/juce_gui_extra.a
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LINK_FLAGS  = $(JACKBRIDGE_LIBS)
@@ -106,6 +115,15 @@ UTILS_LINK_FLAGS  = $(JUCE_AUDIO_BASICS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
+
+ifeq ($(MACOS),true)
+UTILS_LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
 
 ifneq ($(HAIKU),true)
 UTILS_LINK_FLAGS += -lpthread

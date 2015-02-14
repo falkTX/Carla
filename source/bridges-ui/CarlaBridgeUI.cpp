@@ -20,8 +20,12 @@
 
 #include "CarlaBase64Utils.hpp"
 
-#undef NULL
-#define NULL nullptr
+// needed for atom-util
+#ifndef nullptr
+# undef NULL
+# define NULL nullptr
+#endif
+
 #include "lv2/atom-util.h"
 
 CARLA_BRIDGE_START_NAMESPACE

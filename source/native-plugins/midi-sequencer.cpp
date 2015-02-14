@@ -61,14 +61,14 @@ protected:
 
                 for (uint32_t i=0; i < midiEventCount; ++i)
                 {
-                    const NativeMidiEvent* const midiEvent = &midiEvents[i];
+                    const NativeMidiEvent* const midiEvent(&midiEvents[i]);
 
+                    rawMidiEvent.time    = fTimeInfo.playing ? fTimeInfo.frame + midiEvent->time : 0;
+                    rawMidiEvent.size    = midiEvent->size;
                     rawMidiEvent.data[0] = midiEvent->data[0];
                     rawMidiEvent.data[1] = midiEvent->data[1];
                     rawMidiEvent.data[2] = midiEvent->data[2];
                     rawMidiEvent.data[3] = midiEvent->data[3];
-                    rawMidiEvent.size    = midiEvent->size;
-                    rawMidiEvent.time    = fTimeInfo.playing ? fTimeInfo.frame + midiEvent->time : 0;
 
                     fInEvents.appendRT(rawMidiEvent);
                 }
@@ -147,7 +147,7 @@ protected:
             const double fullBeats     = fullTicks/ticksPerBeat;
 
             const uint32_t tick = static_cast<uint32_t>(std::floor(std::fmod(fullTicks, ticksPerBeat)));
-            const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, beatsPerBar)));
+            const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, static_cast<double>(beatsPerBar))));
             const uint32_t bar  = static_cast<uint32_t>(std::floor(fullBeats/beatsPerBar));
 
             const CarlaMutexLocker cml(getPipeLock());

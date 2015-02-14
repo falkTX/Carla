@@ -19,11 +19,14 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
-// needed for atom-util
-#undef NULL
-#define NULL nullptr
-
 #include "juce_core.h"
+
+// needed for atom-util
+#ifndef nullptr
+# undef NULL
+# define NULL nullptr
+#endif
+
 #include "lv2/atom-util.h"
 
 #include <clocale>

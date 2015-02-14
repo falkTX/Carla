@@ -60,7 +60,7 @@ struct BridgeAudioPool {
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -137,12 +137,12 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     BridgeRtClientControl()
         : data(nullptr),
           filename(),
-          needsSemDestroy(false),
+          needsSemDestroy(false)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-          shm(shm_t_INIT) {}
+        , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -276,7 +276,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -391,7 +391,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
