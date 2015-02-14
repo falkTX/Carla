@@ -12,6 +12,10 @@ export MACOS="true"
 export CC=clang
 export CXX=clang++
 export CXFREEZE="/opt/carla/bin/cxfreeze --include-modules=re,sip,subprocess,inspect"
+export DEFAULT_QT=5
+export PYUIC5=/opt/carla/bin/pyuic5
+
+unset CPPFLAGS
 
 ##############################################################################################
 # Complete 64bit build
