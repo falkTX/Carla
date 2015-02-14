@@ -51,7 +51,7 @@ struct ERect {
     int16_t top, left, bottom, right;
 };
 #else
-# include "vst/aeffectx.h"
+# include "vst2/aeffectx.h"
 #endif
 
 using juce::ScopedJuceInitialiser_GUI;
@@ -248,6 +248,20 @@ public:
                 fDescriptor->ui_show(fHandle, true);
 
                 carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+
+                carla_zeroChar(strBuf, 0xff+1);
+                fAudioMaster(fEffect, audioMasterGetProductString, 0, 0, strBuf, 0);
+
+                if (std::strcmp(strBuf, "Tracktion") == 0)
+                {
+                    carla_stdout("Tracktion detected, delaying UI appearance so it works properly...");
+
+                    for (int x=10; --x>=0;)
+                    {
+                        fAudioMaster(fEffect, audioMasterIdle, 0, 0, nullptr, 0);
+                        carla_msleep(25);
+                    }
+                }
 
                 ret = 1;
             }
