@@ -524,6 +524,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     if (plugin == nullptr)
         return false;
 
+    plugin->reload();
+
     bool canRun = true;
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -558,8 +560,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         delete plugin;
         return false;
     }
-
-    plugin->reload();
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     plugin->registerToOscClient();
