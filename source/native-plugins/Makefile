@@ -74,6 +74,7 @@ endif
 # DISTRHO plugins (Juice)
 
 OBJS += \
+	$(OBJDIR)/distrho-vectorjuice.cpp.o \
 	$(OBJDIR)/distrho-wobblejuice.cpp.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -214,6 +215,11 @@ $(OBJDIR)/distrho-prom.cpp.o: distrho-prom.cpp
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(PROJECTM_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_ProM -Idistrho-prom -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/distrho-vectorjuice.cpp.o: distrho-vectorjuice.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_VectorJuice -Idistrho-vectorjuice -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
 
 $(OBJDIR)/distrho-wobblejuice.cpp.o: distrho-wobblejuice.cpp
 	-@mkdir -p $(OBJDIR)

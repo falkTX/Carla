@@ -499,6 +499,31 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GPL v2+",
     DESCFUNCS
 },
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
+#ifdef HAVE_DGL
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_PARENT_ID
+                                                  |NATIVE_PLUGIN_USES_TIME),
+#else
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+#endif
+    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* audioIns  */ 8,
+    /* audioOuts */ 2,
+    /* midiIns   */ 0,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 13,
+    /* paramOuts */ 4,
+    /* name      */ "VectorJuice",
+    /* label     */ "vectorjuice",
+    /* maker     */ "Andre Sklenar",
+    /* copyright */ "GPL v2+",
+    DESCFUNCS
+},
 
 // -----------------------------------------------------------------------
 // External-UI plugins

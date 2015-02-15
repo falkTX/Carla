@@ -72,7 +72,7 @@ struct PluginListManager {
                 std::strcmp(desc->label, "nekobi"       ) == 0 ||
                 std::strcmp(desc->label, "pingpongpan"  ) == 0 ||
                 std::strcmp(desc->label, "prom"         ) == 0 ||
-                std::strstr(desc->label, "Juice"        ) != nullptr ||
+                std::strstr(desc->label, "juice"        ) != nullptr ||
                 std::strstr(desc->label, "Zam"          ) != nullptr)
             {
                 continue;
