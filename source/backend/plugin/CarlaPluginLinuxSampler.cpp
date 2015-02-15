@@ -1431,8 +1431,6 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
         return nullptr;
     }
 
-    plugin->reload();
-
     return plugin;
 #else
     init.engine->setLastError("linuxsampler support not available");

@@ -1274,15 +1274,6 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
         return nullptr;
     }
 
-    plugin->reload();
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
-    {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo VST3 plugins, sorry!");
-        delete plugin;
-        return nullptr;
-    }
-
     return plugin;
 #else
     init.engine->setLastError("Juce plugin not available");

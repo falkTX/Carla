@@ -524,6 +524,43 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     if (plugin == nullptr)
         return false;
 
+    bool canRun = true;
+
+    /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        /**/ if (! plugin->canRunInRack())
+        {
+            setLastError("Carla's rack mode can only work with Mono or Stereo plugins, sorry!");
+            canRun = false;
+        }
+        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        {
+            setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
+            canRun = false;
+        }
+    }
+    else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        /**/ if (plugin->getMidiInCount() > 0 || plugin->getMidiOutCount() > 0)
+        {
+            setLastError("Carla's patchbay mode cannot work with plugins that have multiple MIDI ports, sorry!");
+            canRun = false;
+        }
+        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        {
+            setLastError("CV ports in patchbay mode is still TODO");
+            canRun = false;
+        }
+    }
+
+    if (! canRun)
+    {
+        delete plugin;
+        return false;
+    }
+
+    plugin->reload();
+
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     plugin->registerToOscClient();
 #endif

@@ -1697,8 +1697,6 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
         return nullptr;
     }
 
-    plugin->reload();
-
     return plugin;
 #else
     init.engine->setLastError("fluidsynth support not available");

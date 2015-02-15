@@ -1842,25 +1842,6 @@ CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_De
         return nullptr;
     }
 
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LADSPA plugins, sorry!");
-            canRun = false;
-        }
-    }
-
-    if (! canRun)
-    {
-        delete plugin;
-        return nullptr;
-    }
-
     return plugin;
 }
 

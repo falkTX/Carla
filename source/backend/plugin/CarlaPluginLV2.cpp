@@ -6181,35 +6181,6 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
         return nullptr;
     }
 
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LV2 plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
-    {
-        init.engine->setLastError("CV ports in patchbay mode is still TODO");
-        canRun = false;
-    }
-
-    if (! canRun)
-    {
-        delete plugin;
-        return nullptr;
-    }
-
     return plugin;
 }
 

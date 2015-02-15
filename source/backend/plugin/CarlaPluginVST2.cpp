@@ -2423,15 +2423,6 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
         return nullptr;
     }
 
-    plugin->reload();
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
-    {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo VST plugins, sorry!");
-        delete plugin;
-        return nullptr;
-    }
-
     return plugin;
 #endif
 }
