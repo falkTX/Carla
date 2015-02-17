@@ -329,7 +329,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 			ScreenToClient(view->impl->hwnd, &pt);
 			view->scrollFunc(
 				view, pt.x, pt.y,
-				GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA, 0);
+				0, GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
 		}
 		break;
 	case WM_MOUSEHWHEEL:
