@@ -660,29 +660,34 @@ endif
 features:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
-	@echo "Front-End:  $(ANS_YES) (Using $(FEV))"
+	@echo "Front-End:  $(ANS_YES)(Using $(FEV))"
 ifneq ($(WIN32),true)
 	@echo "LV2 plugin: $(ANS_YES)"
 else
-	@echo "LV2 plugin: $(ANS_NO)  $(mZ)Not available for Windows$(mE)"
+	@echo "LV2 plugin: $(ANS_NO) $(mZ)Not available for Windows$(mE)"
 endif
 ifeq ($(LINUX),true)
 ifeq ($(DEFAULT_QT),4)
 ifeq ($(HAVE_X11),true)
 	@echo "VST plugin: $(ANS_YES)"
 else # HAVE_X11
-	@echo "VST plugin: $(ANS_NO)  $(mS)X11 missing$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mS)X11 missing$(mE)"
 endif
 else # DEFAULT_QT
-	@echo "VST plugin: $(ANS_NO)  $(mZ)Qt4 only$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mZ)Qt4 only$(mE)"
 endif
 else # LINUX
-	@echo "VST plugin: $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mZ)Linux only$(mE)"
 endif
 else
-	@echo "Front-End:  $(ANS_NO)  $(mS)Missing PyQt$(mE)"
-	@echo "LV2 plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
-	@echo "VST plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
+	@echo "Front-End:  $(ANS_NO) $(mS)Missing PyQt$(mE)"
+	@echo "LV2 plugin: $(ANS_NO) $(mS)No front-end$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mS)No front-end$(mE)"
+endif
+ifeq ($(HAVE_LIBLO),true)
+	@echo "OSC support:$(ANS_YES)"
+else
+	@echo "OSC support:$(ANS_NO) $(mS)Missing liblo$(mE)"
 endif
 	@echo ""
 
@@ -692,28 +697,28 @@ ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
 	@echo "ALSA:       $(ANS_YES)"
 else
-	@echo "ALSA:       $(ANS_NO)  $(mS)Missing ALSA$(mE)"
+	@echo "ALSA:       $(ANS_NO) $(mS)Missing ALSA$(mE)"
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@echo "PulseAudio: $(ANS_YES)"
 else
-	@echo "PulseAudio: $(ANS_NO)  $(mS)Missing PulseAudio$(mE)"
+	@echo "PulseAudio: $(ANS_NO) $(mS)Missing PulseAudio$(mE)"
 endif
 else
-	@echo "ALSA:       $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "PulseAudio: $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "ALSA:       $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "PulseAudio: $(ANS_NO) $(mZ)Linux only$(mE)"
 endif
 ifeq ($(MACOS),true)
 	@echo "CoreAudio:  $(ANS_YES)"
 else
-	@echo "CoreAudio:  $(ANS_NO)  $(mZ)MacOS only$(mE)"
+	@echo "CoreAudio:  $(ANS_NO) $(mZ)MacOS only$(mE)"
 endif
 ifeq ($(WIN32),true)
 	@echo "ASIO:       $(ANS_YES)"
 	@echo "DirectSound:$(ANS_YES)"
 else
-	@echo "ASIO:       $(ANS_NO)  $(mZ)Windows only$(mE)"
-	@echo "DirectSound:$(ANS_NO)  $(mZ)Windows only$(mE)"
+	@echo "ASIO:       $(ANS_NO) $(mZ)Windows only$(mE)"
+	@echo "DirectSound:$(ANS_NO) $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 
@@ -723,66 +728,74 @@ endif
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
 ifeq ($(MACOS_OR_WIN32),true)
-	@echo "VST:     $(ANS_YES) (with UI)"
+	@echo "VST:     $(ANS_YES)(with UI)"
 else
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-	@echo "VST:     $(ANS_YES) (with UI)"
+	@echo "VST:     $(ANS_YES)(with UI)"
 else
-	@echo "VST:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)"
+	@echo "VST:     $(ANS_YES)(without UI) $(mS)Missing X11$(mE)"
 endif
 else # LINUX
-	@echo "VST:     $(ANS_YES) (without UI) $(mZ)Linux, Mac and Windows only$(mE)"
+	@echo "VST:     $(ANS_YES)(without UI) $(mZ)Linux, Mac and Windows only$(mE)"
 endif
 endif
 ifeq ($(MACOS_OR_WIN32),true)
 	@echo "VST3:    $(ANS_YES)"
 else
-	@echo "VST3:    $(ANS_NO)  $(mZ)Windows and MacOS only$(mE)"
+	@echo "VST3:    $(ANS_NO) $(mZ)Windows and MacOS only$(mE)"
 endif
 ifeq ($(MACOS),true)
 	@echo "AU:      $(ANS_YES)"
 else
-	@echo "AU:      $(ANS_NO)  $(mZ)MacOS only$(mE)"
+	@echo "AU:      $(ANS_NO) $(mZ)MacOS only$(mE)"
 endif
 	@echo ""
 
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
-	@echo "External:$(ANS_YES) (direct)"
+	@echo "External:$(ANS_YES)(direct)"
+ifeq ($(LINUX),true)
 ifeq ($(HAVE_GTK2),true)
-	@echo "Gtk2:    $(ANS_YES) (bridge)"
+	@echo "Gtk2:    $(ANS_YES)(bridge)"
 else
-	@echo "Gtk2:    $(ANS_NO)  $(mS)Gtk2 missing$(mE)"
+	@echo "Gtk2:    $(ANS_NO) $(mS)Gtk2 missing$(mE)"
 endif
 ifeq ($(HAVE_GTK3),true)
-	@echo "Gtk3:    $(ANS_YES) (bridge)"
+	@echo "Gtk3:    $(ANS_YES)(bridge)"
 else
-	@echo "Gtk3:    $(ANS_NO)  $(mS)Gtk3 missing$(mE)"
+	@echo "Gtk3:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4:     $(ANS_YES) (bridge)"
+	@echo "Qt4:     $(ANS_YES)(bridge)"
 else
-	@echo "Qt4:     $(ANS_NO)  $(mS)Qt4 missing$(mE)"
+	@echo "Qt4:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
 endif
 ifeq ($(HAVE_QT5),true)
-	@echo "Qt5:     $(ANS_YES) (bridge)"
+	@echo "Qt5:     $(ANS_YES)(bridge)"
 else
-	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
-endif
-ifeq ($(MACOS),true)
-	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
-else
-	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
-endif
-ifeq ($(WIN32),true)
-	@echo "Windows: $(ANS_YES) (direct+bridge)"
-else
-	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
+	@echo "Qt5:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
 endif
 ifeq ($(HAVE_X11),true)
-	@echo "X11:     $(ANS_YES) (direct+bridge)"
+	@echo "X11:     $(ANS_YES)(direct+bridge)"
 else
-	@echo "X11:     $(ANS_NO)  $(mS)X11 missing$(mE)"
+	@echo "X11:     $(ANS_NO) $(mS)X11 missing$(mE)"
+endif
+else # LINUX
+	@echo "Gtk2:    $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Gtk3:    $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Qt4:     $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Qt5:     $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "X11:     $(ANS_NO) $(mZ)Linux only$(mE)"
+endif # LINUX
+ifeq ($(MACOS),true)
+	@echo "Cocoa:   $(ANS_YES)(direct+bridge)"
+else
+	@echo "Cocoa:   $(ANS_NO) $(mZ)MacOS only$(mE)"
+endif
+ifeq ($(WIN32),true)
+	@echo "Windows: $(ANS_YES)(direct+bridge)"
+else
+	@echo "Windows: $(ANS_NO) $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 
@@ -809,27 +822,27 @@ ifneq ($(WIN32),true)
 	@echo "Carla-Patchbay: $(ANS_YES)"
 	@echo "Carla-Rack:     $(ANS_YES)"
 else
-	@echo "Carla-Patchbay: $(ANS_NO)  $(mS)Not available for Windows$(mE)"
-	@echo "Carla-Rack:     $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Patchbay: $(ANS_NO) $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Rack:     $(ANS_NO) $(mS)Not available for Windows$(mE)"
 endif
 ifeq ($(HAVE_DGL),true)
-	@echo "DISTRHO Plugins:$(ANS_YES) (with UI)"
+	@echo "DISTRHO Plugins:$(ANS_YES)(with UI)"
 else
-	@echo "DISTRHO Plugins:$(ANS_YES) (without UI)"
+	@echo "DISTRHO Plugins:$(ANS_YES)(without UI)"
 endif
 ifeq ($(HAVE_PROJECTM),true)
 	@echo "DISTRHO ProM:   $(ANS_YES)"
 else
-	@echo "DISTRHO ProM:   $(ANS_NO)  (missing libprojectM)"
+	@echo "DISTRHO ProM:   $(ANS_NO) (missing libprojectM)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	@echo "ZynAddSubFX:    $(ANS_YES) (with UI)"
+	@echo "ZynAddSubFX:    $(ANS_YES)(with UI)"
 else
-	@echo "ZynAddSubFX:    $(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_YES)(without UI) $(mS)NTK missing$(mE)"
 endif
 else
-	@echo "ZynAddSubFX:    $(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_NO) $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
