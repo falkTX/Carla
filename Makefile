@@ -392,8 +392,6 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	install -d $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
@@ -413,6 +411,8 @@ endif
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/mime/packages/
+
+	# --------------------------------------------------------------------------------------------------------------------
 
 	# Install script files
 	install -m 755 \
@@ -459,18 +459,6 @@ endif
 	install -m 644 \
 		bin/libcarla_*.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
-
-	# Install lv2 plugin
-	install -m 644 \
-		bin/carla.lv2/carla.* \
-		bin/carla.lv2/*.ttl \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-
-	# Install vst plugin
-	install -m 644 \
-		bin/CarlaRack*.* \
-		bin/CarlaPatchbay*.* \
-		$(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 
 	# Install other binaries
 	install -m 755 \
@@ -581,24 +569,6 @@ endif
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
 
-	# Link binaries for lv2 & vst plugin
-	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
-		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
-		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
-	done
-	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_standalone2.*
-	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
-
-	# Link styles for lv2 & vst plugin
-	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
-
-	# Link resources for lv2 & vst plugin
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
-	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/resources
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
-
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
@@ -609,8 +579,61 @@ endif
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
-
 # 		$(DESTDIR)$(PREFIX)/bin/carla-control \
+
+	# --------------------------------------------------------------------------------------------------------------------
+
+	# Install lv2 plugin
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	install -m 644 \
+		bin/carla.lv2/carla.* \
+		bin/carla.lv2/*.ttl \
+		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# Link binaries for lv2 plugin
+	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
+		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
+	done
+	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_standalone2.*
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
+
+	# Link styles for lv2 plugin
+	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# Link resources for lv2 plugin
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
+	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# --------------------------------------------------------------------------------------------------------------------
+
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_X11),true)
+ifeq ($(DEFAULT_QT),4)
+	# Install vst plugin
+	install -d $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+
+	install -m 644 \
+		bin/CarlaRack*.* \
+		bin/CarlaPatchbay*.* \
+		$(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+
+	# Link binaries for vst plugin
+	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
+	done
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
+
+	# Link styles for vst plugin
+	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+
+	# Link resources for vst plugin
+	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/resources
+	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+endif
+endif
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
