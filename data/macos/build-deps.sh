@@ -331,6 +331,25 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
+# fltk
+
+if [ ! -d fltk-1.3.3 ]; then
+curl -O http://fltk.org/pub/fltk/1.3.3/fltk-1.3.3-source.tar.gz
+tar -xf fltk-1.3.3-source.tar.gz
+fi
+
+if [ ! -f fltk-1.3.3/build-done ]; then
+cd fltk-1.3.3
+./configure --disable-shared --disable-debug --prefix=$PREFIX \
+--enable-threads --disable-gl \
+--enable-localjpeg --enable-localzlib  --enable-localpng
+make
+sudo make install
+touch build-done
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
 # fluidsynth
 
 if [ ! -d fluidsynth-1.1.6 ]; then
@@ -365,6 +384,7 @@ fi
 if [ ! -f fftw-3.3.4/build-done ]; then
 export CFLAGS="-O2 -mtune=generic -msse -msse2 -ffast-math -mfpmath=sse -m$ARCH -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m$ARCH"
 cd fftw-3.3.4
 ./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=$PREFIX
 make
