@@ -170,14 +170,21 @@ public:
     }
 
 protected:
+    // custom window reshape
     void onReshape(uint width, uint height) override
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
-        // custom window reshape
         fUI->d_uiReshape(width, height);
-
         fIsReady = true;
+    }
+
+    // custom file-browser selected
+    void fileBrowserSelected(const char* filename) override
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
+
+        fUI->d_uiFileBrowserSelected(filename);
     }
 
 private:
