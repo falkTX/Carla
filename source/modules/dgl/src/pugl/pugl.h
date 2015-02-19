@@ -220,6 +220,14 @@ typedef void (*PuglScrollFunc)(PuglView* view, int x, int y, float dx, float dy)
 typedef void (*PuglSpecialFunc)(PuglView* view, bool press, PuglKey key);
 
 /**
+   A function called when a filename is selected via file-browser.
+
+   @param view The view the event occured in.
+   @param filename The selected file name or NULL if the dialog was canceled.
+*/
+typedef void (*PuglFileSelectedFunc)(PuglView* view, const char* filename);
+
+/**
    Create a Pugl context.
 
    To create a window, call the various puglInit* functions as necessary, then
@@ -351,6 +359,12 @@ puglSetSpecialFunc(PuglView* view, PuglSpecialFunc specialFunc);
 */
 PUGL_API void
 puglSetReshapeFunc(PuglView* view, PuglReshapeFunc reshapeFunc);
+
+/**
+   Set the function to call on file-browser selections.
+*/
+PUGL_API void
+puglSetFileSelectedFunc(PuglView* view, PuglFileSelectedFunc fileSelectedFunc);
 
 /**
    Return the native window handle.

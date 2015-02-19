@@ -32,6 +32,10 @@
 
 #include "pugl_internal.h"
 
+#define SOFD_HAVE_X11
+#include "../sofd/libsofd.h"
+#include "../sofd/libsofd.c"
+
 struct PuglInternalsImpl {
 	Display*   display;
 	int        screen;
@@ -96,7 +100,7 @@ puglCreateWindow(PuglView* view, const char* title)
 {
 	PuglInternals* impl = view->impl;
 
-	impl->display = XOpenDisplay(0);
+	impl->display = XOpenDisplay(NULL);
 	impl->screen  = DefaultScreen(impl->display);
 	impl->doubleBuffered = True;
 
@@ -322,6 +326,26 @@ puglProcessEvents(PuglView* view)
 	XEvent event;
 	while (XPending(view->impl->display) > 0) {
 		XNextEvent(view->impl->display, &event);
+
+		if (x_fib_handle_events(view->impl->display, &event)) {
+			const int status = x_fib_status();
+
+			if (status > 0) {
+				char* const filename = x_fib_filename();
+				x_fib_close(view->impl->display);
+				if (view->fileSelectedFunc) {
+					view->fileSelectedFunc(view, filename);
+				}
+				free(filename);
+			} else if (status < 0) {
+				x_fib_close(view->impl->display);
+				if (view->fileSelectedFunc) {
+					view->fileSelectedFunc(view, NULL);
+				}
+			}
+			break;
+		}
+
 		switch (event.type) {
 		case MapNotify:
 			puglReshape(view, view->width, view->height);

@@ -51,6 +51,7 @@ struct PuglViewImpl {
 	PuglReshapeFunc  reshapeFunc;
 	PuglScrollFunc   scrollFunc;
 	PuglSpecialFunc  specialFunc;
+	PuglFileSelectedFunc fileSelectedFunc;
 
 	PuglInternals* impl;
 	PuglNativeWindow parent;
@@ -199,4 +200,10 @@ void
 puglSetSpecialFunc(PuglView* view, PuglSpecialFunc specialFunc)
 {
 	view->specialFunc = specialFunc;
+}
+
+void
+puglSetFileSelectedFunc(PuglView* view, PuglFileSelectedFunc fileSelectedFunc)
+{
+	view->fileSelectedFunc = fileSelectedFunc;
 }
