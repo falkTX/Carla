@@ -157,6 +157,7 @@ HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
+HAVE_NTK        = $(shell pkg-config --exists ntk ntk_images && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
@@ -170,12 +171,20 @@ HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
 HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
 
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
+# --------------------------------------------------------------
+# Check for optional libs (special non-pkgconfig unix tests)
 
 ifeq ($(UNIX),true)
+
 # libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
-HAVE_LIBMAGIC     = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+
+# fltk doesn't have a pkg-config file but has fltk-config instead.
+# Also, don't try looking for it if we already have NTK.
+ifneq ($(HAVE_NTK),true)
+HAVE_FLTK = $(shell which fltk-config 1>/dev/null 2>/dev/null && echo true)
+endif
+
 endif
 
 # --------------------------------------------------------------
@@ -377,6 +386,14 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
 
+HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+ifeq ($(HAVE_FLTK),true)
+HAVE_ZYN_UI_DEPS = true
+endif
+ifeq ($(HAVE_NTK),true)
+HAVE_ZYN_UI_DEPS = true
+endif
+
 ifeq ($(HAVE_DGL),true)
 NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
 ifeq ($(HAVE_PROJECTM),true)
@@ -395,7 +412,11 @@ BASE_FLAGS           += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
+ifeq ($(HAVE_NTK),true)
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
+else
+NATIVE_PLUGINS_LIBS  += $(shell fltk-config --use-images --ldstaticflags)
+endif
 endif
 endif
 

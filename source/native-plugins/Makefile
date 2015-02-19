@@ -23,8 +23,15 @@ ifneq ($(MACOS),true)
 ZYN_CXX_FLAGS += -DHAVE_SCHEDULER
 endif
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
+ifeq ($(HAVE_NTK),true)
+FLUID          = ntk-fluid
 ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
+else
+FLUID          = fluid
+ZYN_CXX_FLAGS += -DFLTK_GUI
+ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
+endif
 endif
 endif
 
@@ -162,11 +169,11 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 	@echo "Generating $@/h"
-	@ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
 zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 	@echo "Generating $@/cpp"
-	@ntk-fluid -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
+	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

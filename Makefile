@@ -860,9 +860,13 @@ else
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	@echo "ZynAddSubFX:    $(ANS_YES)(with UI)"
+ifeq ($(HAVE_NTK),true)
+	@echo "ZynAddSubFX:    $(ANS_YES)(with NTK UI)"
 else
-	@echo "ZynAddSubFX:    $(ANS_YES)(without UI) $(mS)NTK missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_YES)(with FLTK UI)"
+endif
+else
+	@echo "ZynAddSubFX:    $(ANS_YES)(without UI) $(mS)FLTK or NTK missing$(mE)"
 endif
 else
 	@echo "ZynAddSubFX:    $(ANS_NO) $(mS)fftw3, mxml or zlib missing$(mE)"

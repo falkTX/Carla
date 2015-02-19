@@ -37,11 +37,12 @@
 #  undef override
 # endif
 
-# include "UI/common.H"
 # include "UI/MasterUI.h"
 # include <FL/Fl_Shared_Image.H>
 # include <FL/Fl_Tiled_Image.H>
-# include <FL/Fl_Theme.H>
+# ifdef NTK_GUI
+#  include <FL/Fl_Theme.H>
+# endif
 
 # ifdef override_hack
 #  define override
@@ -57,19 +58,23 @@
 using juce::FloatVectorOperations;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-static Fl_Tiled_Image* gModuleBackdrop = nullptr;
 static CarlaString gPixmapPath;
 extern CarlaString gUiPixmapPath;
+# ifdef NTK_GUI
+static Fl_Tiled_Image* gModuleBackdrop = nullptr;
+# endif
 
 void set_module_parameters(Fl_Widget* o)
 {
-    CARLA_SAFE_ASSERT_RETURN(gModuleBackdrop != nullptr,);
-
     o->box(FL_DOWN_FRAME);
     o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
     o->color(FL_BLACK);
     o->labeltype(FL_SHADOW_LABEL);
+
+# ifdef NTK_GUI
+    CARLA_SAFE_ASSERT_RETURN(gModuleBackdrop != nullptr,);
     o->image(gModuleBackdrop);
+# endif
 }
 #endif
 
@@ -446,6 +451,7 @@ protected:
                     initialized = true;
                     fl_register_images();
 
+# ifdef NTK_GUI
                     Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 
                     if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "knob.png"))
@@ -454,7 +460,7 @@ protected:
                     if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "window_backdrop.png"))
                         Fl::scheme_bg(new Fl_Tiled_Image(img));
 
-                    if(Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
+                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
                         gModuleBackdrop = new Fl_Tiled_Image(img);
 
                     Fl::background(50, 50, 50);
@@ -462,6 +468,7 @@ protected:
                     Fl::foreground(255, 255, 255);
 
                     Fl_Theme::set("Cairo");
+# endif
                 }
 
                 if (fUi == nullptr)
