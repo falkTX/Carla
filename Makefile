@@ -377,7 +377,7 @@ clean:
 
 distclean: clean
 	rm -f bin/*.dll bin/*.so
-	rm -rf build
+	rm -rf build build-lv2
 
 debug:
 	$(MAKE) DEBUG=true
