@@ -92,6 +92,13 @@ lv2_atom_sequence_end(const LV2_Atom_Sequence_Body* body, uint32_t size)
 	return (const LV2_Atom_Event*)((const uint8_t*)body + lv2_atom_pad_size(size));
 }
 
+/** Get an iterator pointing to the end of a Sequence body. */
+static inline LV2_Atom_Event*
+lv2_atom_sequence_end2(const LV2_Atom_Sequence_Body* body, uint32_t size)
+{
+	return (LV2_Atom_Event*)((const uint8_t*)body + lv2_atom_pad_size(size));
+}
+
 /** Return true iff `i` has reached the end of `body`. */
 static inline bool
 lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
@@ -171,7 +178,7 @@ lv2_atom_sequence_append_event(LV2_Atom_Sequence*    seq,
 		return NULL;
 	}
 
-	LV2_Atom_Event* e = lv2_atom_sequence_end(&seq->body, seq->atom.size);
+	LV2_Atom_Event* e = lv2_atom_sequence_end2(&seq->body, seq->atom.size);
 	memcpy(e, event, total_size);
 
 	seq->atom.size += lv2_atom_pad_size(total_size);
