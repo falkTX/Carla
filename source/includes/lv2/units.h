@@ -15,9 +15,12 @@
 */
 
 /**
-   @file units.h
-   C definitions for the LV2 Units extension
-   <http://lv2plug.in/ns/extensions/units>.
+   @defgroup units Units
+
+   Units for LV2 values, see <http://lv2plug.in/ns/extensions/units> for
+   details.
+
+   @{
 */
 
 #ifndef LV2_UNITS_H
@@ -60,3 +63,7 @@
 #define LV2_UNITS__unit             LV2_UNITS_PREFIX "unit"
 
 #endif  /* LV2_UNITS_H */
+
+/**
+   @}
+*/

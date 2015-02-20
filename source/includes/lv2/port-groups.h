@@ -15,9 +15,12 @@
 */
 
 /**
-   @file port-groups.h
-   C definitions for the LV2 Port Groups extension
-   <http://lv2plug.in/ns/ext/port-groups>.
+   @defgroup port-groups Port Groups
+
+   Multi-channel groups of LV2 ports, see
+   <http://lv2plug.in/ns/ext/port-groups> for details.
+
+   @{
 */
 
 #ifndef LV2_PORT_GROUPS_H
@@ -62,3 +65,7 @@
 #define LV2_PORT_GROUPS__subGroupOf             LV2_PORT_GROUPS_PREFIX "subGroupOf"
 
 #endif  /* LV2_PORT_GROUPS_H */
+
+/**
+   @}
+*/

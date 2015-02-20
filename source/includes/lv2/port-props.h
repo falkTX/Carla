@@ -15,9 +15,11 @@
 */
 
 /**
-   @file port-props.h
-   C definitions for the LV2 Port Props extension
-   <http://lv2plug.in/ns/ext/port-props>.
+   @defgroup port-props Port Properties
+
+   Various port properties.
+
+   @{
 */
 
 #ifndef LV2_PORT_PROPS_H
@@ -40,3 +42,7 @@
 #define LV2_PORT_PROPS__trigger              LV2_PORT_PROPS_PREFIX "trigger"
 
 #endif  /* LV2_PORT_PROPS_H */
+
+/**
+   @}
+*/

@@ -15,11 +15,15 @@
 */
 
 /**
-   @file patch.h C header for the LV2 Patch extension
-   <http://lv2plug.in/ns/ext/patch>.
+   @defgroup patch Patch
 
-   The patch extension is purely data, this header merely defines URIs
-   for convenience.
+   Messages for accessing and manipulating properties, see
+   <http://lv2plug.in/ns/ext/patch> for details.
+
+   Note the patch extension is purely data, this header merely defines URIs for
+   convenience.
+
+   @{
 */
 
 #ifndef LV2_PATCH_H
@@ -30,6 +34,7 @@
 
 #define LV2_PATCH__Ack            LV2_PATCH_PREFIX "Ack"
 #define LV2_PATCH__Delete         LV2_PATCH_PREFIX "Delete"
+#define LV2_PATCH__Copy           LV2_PATCH_PREFIX "Copy"
 #define LV2_PATCH__Error          LV2_PATCH_PREFIX "Error"
 #define LV2_PATCH__Get            LV2_PATCH_PREFIX "Get"
 #define LV2_PATCH__Message        LV2_PATCH_PREFIX "Message"
@@ -54,3 +59,7 @@
 #define LV2_PATCH__writable       LV2_PATCH_PREFIX "writable"
 
 #endif  /* LV2_PATCH_H */
+
+/**
+   @}
+*/
