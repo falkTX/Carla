@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -15,8 +15,12 @@
 */
 
 /**
-   @file atom.h C header for the LV2 Atom extension
-   <http://lv2plug.in/ns/ext/atom>.
+   @defgroup atom Atom
+
+   A generic value container and several data types, see
+   <http://lv2plug.in/ns/ext/atom> for details.
+
+   @{
 */
 
 #ifndef LV2_ATOM_H
@@ -238,6 +242,10 @@ typedef struct {
 	LV2_Atom               atom;  /**< Atom header. */
 	LV2_Atom_Sequence_Body body;  /**< Body. */
 } LV2_Atom_Sequence;
+
+/**
+   @}
+*/
 
 #ifdef __cplusplus
 }  /* extern "C" */
