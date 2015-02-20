@@ -15,8 +15,10 @@
 */
 
 /**
-   @file midi.h
-   C definitions for the LV2 MIDI extension <http://lv2plug.in/ns/ext/midi>.
+   @defgroup midi MIDI
+
+   Definitions of standard MIDI messages, see <http://lv2plug.in/ns/ext/midi>
+   for details.
 */
 
 #ifndef LV2_MIDI_H
@@ -184,7 +186,7 @@ typedef enum {
 } LV2_Midi_Controller;
 
 /**
-   Return true iff @p msg is a MIDI voice message (which has a channel).
+   Return true iff `msg` is a MIDI voice message (which has a channel).
 */
 static inline bool
 lv2_midi_is_voice_message(const uint8_t* msg) {
@@ -192,7 +194,7 @@ lv2_midi_is_voice_message(const uint8_t* msg) {
 }
 
 /**
-   Return true iff @p msg is a MIDI system message (which has no channel).
+   Return true iff `msg` is a MIDI system message (which has no channel).
 */
 static inline bool
 lv2_midi_is_system_message(const uint8_t* msg) {
@@ -224,3 +226,7 @@ lv2_midi_message_type(const uint8_t* msg) {
 #endif
 
 #endif  /* LV2_MIDI_H */
+
+/**
+   @}
+*/

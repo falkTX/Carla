@@ -15,16 +15,19 @@
 */
 
 /**
-   @file time.h C header for the LV2 Time extension
-   <http://lv2plug.in/ns/ext/time>.
+   @defgroup time Time
+
+   Properties for describing time, see <http://lv2plug.in/ns/ext/time> for
+   details.
+
+   Note the time extension is purely data, this header merely defines URIs for
+   convenience.
+
+   @{
 */
 
 #ifndef LV2_TIME_H
 #define LV2_TIME_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #define LV2_TIME_URI "http://lv2plug.in/ns/ext/time"
 
@@ -42,8 +45,8 @@ extern "C" {
 #define LV2_TIME__framesPerSecond LV2_TIME_URI "#framesPerSecond"
 #define LV2_TIME__speed           LV2_TIME_URI "#speed"
 
-#ifdef __cplusplus
-}  /* extern "C" */
-#endif
+/**
+   @}
+*/
 
 #endif  /* LV2_TIME_H */

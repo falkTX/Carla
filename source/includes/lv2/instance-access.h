@@ -15,23 +15,22 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+/**
+   @defgroup instance-access Instance Access
+
+   Access to the LV2_Handle of a plugin for UIs; see
+   <http://lv2plug.in/ns/ext/instance-access> for details.
+
+   @{
+*/
+
 #ifndef LV2_INSTANCE_ACCESS_H
 #define LV2_INSTANCE_ACCESS_H
 
 #define LV2_INSTANCE_ACCESS_URI "http://lv2plug.in/ns/ext/instance-access"
 
-/**
-   @file instance-access.h
-   C header for the LV2 Instance Access extension
-   <http://lv2plug.in/ns/ext/instance-access>.
- 
-   This extension defines a method for (e.g.) plugin UIs to get a direct
-   handle to an LV2 plugin instance (LV2_Handle), if possible.
- 
-   To support this feature the host must pass an LV2_Feature struct to the
-   UI instantiate method with URI "http://lv2plug.in/ns/ext/instance-access"
-   and data pointed directly to the LV2_Handle of the plugin instance.
-*/
-
 #endif  /* LV2_INSTANCE_ACCESS_H */
 
+/**
+   @}
+*/
