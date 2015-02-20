@@ -162,9 +162,6 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
 
     String command;
 
-    // TESTING
-    command = "C:\\Python34\\python.exe ";
-
     for (int i=0; argv[i] != nullptr; ++i)
     {
         String arg(argv[i]);

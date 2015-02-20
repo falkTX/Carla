@@ -64,14 +64,11 @@ rm -rf ./data/windows/Carla
 cp ./source/carla ./source/Carla.pyw
 $PYTHON_EXE ./data/windows/app.py build_exe
 rm -f ./source/Carla.pyw
-mv build data/windows/Carla
 
 cd data/windows/
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
-mv Carla/exe.*/* Carla/
 rm Carla/carla-discovery-native.exe
-rmdir Carla/exe.*
 
 rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd
 
