@@ -248,6 +248,12 @@ class CarlaSettingsW(QDialog):
             if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
+        # FIXME, pipes on win32 not working
+        if WINDOWS:
+            self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
+            self.ui.ch_engine_prefer_ui_bridges.setEnabled(False)
+            self.ui.ch_engine_prefer_ui_bridges.setVisible(False)
+
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
 

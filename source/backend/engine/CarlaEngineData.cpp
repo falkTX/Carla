@@ -192,7 +192,11 @@ EngineOptions::EngineOptions() noexcept
 #endif
       forceStereo(false),
       preferPluginBridges(false),
+#ifdef CARLA_OS_WIN
+      preferUiBridges(false),
+#else
       preferUiBridges(true),
+#endif
       uisAlwaysOnTop(true),
       maxParameters(MAX_DEFAULT_PARAMETERS),
       uiBridgesTimeout(4000),
