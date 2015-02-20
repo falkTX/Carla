@@ -15,8 +15,12 @@
 */
 
 /**
-   @file worker.h C header for the LV2 Worker extension
-   <http://lv2plug.in/ns/ext/worker>.
+   @defgroup worker Worker
+
+   Support for non-realtime plugin operations, see
+   <http://lv2plug.in/ns/ext/worker> for details.
+
+   @{
 */
 
 #ifndef LV2_WORKER_H
@@ -37,7 +41,7 @@ extern "C" {
 #endif
 
 /**
-   A status code for worker functions.
+   Status code for worker functions.
 */
 typedef enum {
 	LV2_WORKER_SUCCESS       = 0,  /**< Completed successfully. */
@@ -45,12 +49,13 @@ typedef enum {
 	LV2_WORKER_ERR_NO_SPACE  = 2   /**< Failed due to lack of space. */
 } LV2_Worker_Status;
 
+/** Opaque handle for LV2_Worker_Interface::work(). */
 typedef void* LV2_Worker_Respond_Handle;
 
 /**
    A function to respond to run() from the worker method.
 
-   The @p data MUST be safe for the host to copy and later pass to
+   The `data` MUST be safe for the host to copy and later pass to
    work_response(), and the host MUST guarantee that it will be eventually
    passed to work_response() if this function returns LV2_WORKER_SUCCESS.
 */
@@ -60,7 +65,7 @@ typedef LV2_Worker_Status (*LV2_Worker_Respond_Function)(
 	const void*               data);
 
 /**
-   LV2 Plugin Worker Interface.
+   Plugin Worker Interface.
 
    This is the interface provided by the plugin to implement a worker method.
    The plugin's extension_data() method should return an LV2_Worker_Interface
@@ -71,14 +76,14 @@ typedef struct _LV2_Worker_Interface {
 	   The worker method.  This is called by the host in a non-realtime context
 	   as requested, possibly with an arbitrary message to handle.
 
-	   A response can be sent to run() using @p respond.  The plugin MUST NOT
+	   A response can be sent to run() using `respond`.  The plugin MUST NOT
 	   make any assumptions about which thread calls this method, other than
 	   the fact that there are no real-time requirements.
 
 	   @param instance The LV2 instance this is a method on.
 	   @param respond  A function for sending a response to run().
-	   @param handle   Must be passed to @p respond if it is called.
-	   @param size     The size of @p data.
+	   @param handle   Must be passed to `respond` if it is called.
+	   @param size     The size of `data`.
 	   @param data     Data from run(), or NULL.
 	*/
 	LV2_Worker_Status (*work)(LV2_Handle                  instance,
@@ -92,7 +97,7 @@ typedef struct _LV2_Worker_Interface {
 	   run() context when a response from the worker is ready.
 
 	   @param instance The LV2 instance this is a method on.
-	   @param size     The size of @p body.
+	   @param size     The size of `body`.
 	   @param body     Message body, or NULL.
 	*/
 	LV2_Worker_Status (*work_response)(LV2_Handle  instance,
@@ -112,8 +117,15 @@ typedef struct _LV2_Worker_Interface {
 	LV2_Worker_Status (*end_run)(LV2_Handle instance);
 } LV2_Worker_Interface;
 
+/** Opaque handle for LV2_Worker_Schedule. */
 typedef void* LV2_Worker_Schedule_Handle;
 
+/**
+   Schedule Worker Host Feature.
+
+   The host passes this feature to provide a schedule_work() function, which
+   the plugin can use to schedule a worker call from run().
+*/
 typedef struct _LV2_Worker_Schedule {
 	/**
 	   Opaque host data.
@@ -138,12 +150,12 @@ typedef struct _LV2_Worker_Schedule {
 	   immediately, and responses from the worker are delivered immediately,
 	   the effect of the work takes place immediately with sample accuracy.
 
-	   The @p data MUST be safe for the host to copy and later pass to work(),
+	   The `data` MUST be safe for the host to copy and later pass to work(),
 	   and the host MUST guarantee that it will be eventually passed to work()
 	   if this function returns LV2_WORKER_SUCCESS.
 
 	   @param handle The handle field of this struct.
-	   @param size   The size of @p data.
+	   @param size   The size of `data`.
 	   @param data   Message to pass to work(), or NULL.
 	*/
 	LV2_Worker_Status (*schedule_work)(LV2_Worker_Schedule_Handle handle,
@@ -156,3 +168,7 @@ typedef struct _LV2_Worker_Schedule {
 #endif
 
 #endif  /* LV2_WORKER_H */
+
+/**
+   @}
+*/

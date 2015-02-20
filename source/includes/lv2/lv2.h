@@ -19,9 +19,11 @@
 */
 
 /**
-   @file lv2.h
-   API for the LV2 specification <http://lv2plug.in/ns/lv2core>.
-   Revision: 12.0
+   @defgroup lv2core LV2 Core
+
+   Core LV2 specification, see <http://lv2plug.in/ns/lv2core> for details.
+
+   @{
 */
 
 #ifndef LV2_H_INCLUDED
@@ -135,7 +137,7 @@ typedef void * LV2_Handle;
 
    Features allow hosts to make additional functionality available to plugins
    without requiring modification to the LV2 API.  Extensions may define new
-   features and specify the @ref URI and @ref data to be used if necessary.
+   features and specify the `URI` and `data` to be used if necessary.
    Some features, such as lv2:isLive, do not require the host to pass data.
 */
 typedef struct _LV2_Feature {
@@ -150,7 +152,7 @@ typedef struct _LV2_Feature {
 	   Pointer to arbitrary data.
 
 	   The format of this data is defined by the extension which describes the
-	   feature with the given @ref URI.
+	   feature with the given `URI`.
 	*/
 	void * data;
 } LV2_Feature;
@@ -276,12 +278,12 @@ typedef struct _LV2_Descriptor {
 	   things that the plugin MUST NOT do within the run() function (see
 	   lv2core.ttl for details).
 
-	   As a special case, when @p sample_count == 0, the plugin should update
+	   As a special case, when `sample_count` is 0, the plugin should update
 	   any output ports that represent a single instant in time (e.g. control
 	   ports, but not audio ports). This is particularly useful for latent
 	   plugins, which should update their latency output port so hosts can
 	   pre-roll plugins to compute latency. Plugins MUST NOT crash when
-	   @p sample_count == 0.
+	   `sample_count` is 0.
 
 	   @param instance Instance to be run.
 
@@ -341,13 +343,22 @@ typedef struct _LV2_Descriptor {
 } LV2_Descriptor;
 
 /**
+   Helper macro needed for LV2_SYMBOL_EXPORT when using C++.
+*/
+#ifdef __cplusplus
+#    define LV2_SYMBOL_EXTERN extern "C"
+#else
+#    define LV2_SYMBOL_EXTERN
+#endif
+
+/**
    Put this (LV2_SYMBOL_EXPORT) before any functions that are to be loaded
    by the host as a symbol from the dynamic library.
 */
 #ifdef _WIN32
-#    define LV2_SYMBOL_EXPORT __declspec(dllexport)
+#    define LV2_SYMBOL_EXPORT LV2_SYMBOL_EXTERN __declspec(dllexport)
 #else
-#    define LV2_SYMBOL_EXPORT
+#    define LV2_SYMBOL_EXPORT LV2_SYMBOL_EXTERN __attribute__((visibility("default")))
 #endif
 
 /**
@@ -368,9 +379,9 @@ typedef struct _LV2_Descriptor {
    function to find the LV2_Descriptor for the desired plugin.  Plugins are
    accessed by index using values from 0 upwards.  This function MUST return
    NULL for out of range indices, so the host can enumerate plugins by
-   increasing @p index until NULL is returned.
+   increasing `index` until NULL is returned.
 
-   Note that @p index has no meaning, hosts MUST NOT depend on it remaining
+   Note that `index` has no meaning, hosts MUST NOT depend on it remaining
    consistent between loads of the plugin library.
 */
 LV2_SYMBOL_EXPORT
@@ -418,7 +429,7 @@ typedef struct {
 
 	   Plugins are accessed by index using values from 0 upwards.  Out of range
 	   indices MUST result in this function returning NULL, so the host can
-	   enumerate plugins by increasing @a index until NULL is returned.
+	   enumerate plugins by increasing `index` until NULL is returned.
 	*/
 	const LV2_Descriptor * (*get_plugin)(LV2_Lib_Handle handle,
 	                                     uint32_t       index);
@@ -440,6 +451,7 @@ typedef struct {
    be destroyed (using LV2_Lib_Descriptor::cleanup()) until all plugins loaded
    from that library have been destroyed.
 */
+LV2_SYMBOL_EXPORT
 const LV2_Lib_Descriptor *
 lv2_lib_descriptor(const char *               bundle_path,
                    const LV2_Feature *const * features);
@@ -456,3 +468,7 @@ typedef const LV2_Lib_Descriptor *
 #endif
 
 #endif /* LV2_H_INCLUDED */
+
+/**
+   @}
+*/
