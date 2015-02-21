@@ -2281,14 +2281,14 @@ bool RtApiJack :: probeDeviceOpen( unsigned int device, StreamMode mode, unsigne
   char label[64];
   if ( mode == OUTPUT ) {
     for ( unsigned int i=0; i<stream_.nUserChannels[0]; i++ ) {
-      snprintf( label, 64, "outport %d", i );
+      snprintf( label, 64, "audio-out%d", i+1 );
       handle->ports[0][i] = jackbridge_port_register( handle->client, (const char *)label,
                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0 );
     }
   }
   else {
     for ( unsigned int i=0; i<stream_.nUserChannels[1]; i++ ) {
-      snprintf( label, 64, "inport %d", i );
+      snprintf( label, 64, "audio-in%d", i+1 );
       handle->ports[1][i] = jackbridge_port_register( handle->client, (const char *)label,
                                                 JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0 );
     }
