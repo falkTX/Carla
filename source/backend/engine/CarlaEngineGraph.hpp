@@ -31,6 +31,18 @@ using juce::MidiBuffer;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+
+struct GraphPorts {
+    LinkedList<PortNameToId> ins;
+    LinkedList<PortNameToId> outs;
+    const char* getName(const bool isInput, const uint portId) const noexcept;
+    uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
+    GraphPorts() noexcept;
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(GraphPorts)
+};
+
+// -----------------------------------------------------------------------
 // Rack Graph stuff
 
 enum RackGraphGroupIds {
@@ -64,7 +76,7 @@ struct RackGraph {
     bool isOffline;
     mutable CharStringListPtr retCon;
 
-    struct Audio {
+    struct AudioBuffers {
         CarlaRecursiveMutex mutex;
         LinkedList<uint> connectedIn1;
         LinkedList<uint> connectedIn2;
@@ -73,22 +85,12 @@ struct RackGraph {
         float* inBuf[2];
         float* inBufTmp[2];
         float* outBuf[2];
-        // c++ compat stuff
-        Audio() noexcept;
+        AudioBuffers() noexcept;
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Audio)
-    } audio;
+        CARLA_DECLARE_NON_COPY_CLASS(AudioBuffers)
+    } audioBuffers;
 
-    struct MIDI {
-        LinkedList<PortNameToId> ins;
-        LinkedList<PortNameToId> outs;
-        const char* getName(const bool isInput, const uint portId) const noexcept;
-        uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
-        // c++ compat stuff
-        MIDI() noexcept;
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(MIDI)
-    } midi;
+    GraphPorts audioPorts, midiPorts;
 
     RackGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs) noexcept;
     ~RackGraph() noexcept;
@@ -98,8 +100,9 @@ struct RackGraph {
 
     bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(const uint connectionId) noexcept;
+    void clearPorts() noexcept;
     void clearConnections() noexcept;
-    void refreshConnections(const char* const deviceName);
+    void refresh(const char* const deviceName);
 
     const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
@@ -127,6 +130,8 @@ struct PatchbayGraph {
     bool ignorePathbay;
     mutable CharStringListPtr retCon;
 
+    GraphPorts audioPorts, midiPorts;
+
     PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
     ~PatchbayGraph();
 
@@ -142,8 +147,9 @@ struct PatchbayGraph {
     bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
     bool disconnect(const uint connectionId) noexcept;
     void disconnectGroup(const uint groupId) noexcept;
+    void clearPorts() noexcept;
     void clearConnections();
-    void refreshConnections(const char* const deviceName);
+    void refresh(const char* const deviceName);
 
     const char* const* getConnections() const;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;

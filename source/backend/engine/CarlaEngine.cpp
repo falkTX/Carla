@@ -543,7 +543,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     }
     else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        /**/ if (plugin->getMidiInCount() > 0 || plugin->getMidiOutCount() > 0)
+        /**/ if (plugin->getMidiInCount() > 1 || plugin->getMidiOutCount() > 1)
         {
             setLastError("Carla's patchbay mode cannot work with plugins that have multiple MIDI ports, sorry!");
             canRun = false;

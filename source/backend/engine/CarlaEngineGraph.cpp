@@ -34,6 +34,51 @@ using juce::jmax;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+// Graph Ports
+
+GraphPorts::GraphPorts() noexcept
+    : ins(),
+      outs() {}
+
+const char* GraphPorts::getName(const bool isInput, const uint portId) const noexcept
+{
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    {
+        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
+
+        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+        if (portNameToId.port == portId)
+            return portNameToId.name;
+    }
+
+    return nullptr;
+}
+
+uint GraphPorts::getPortId(const bool isInput, const char portName[], bool* const ok) const noexcept
+{
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    {
+        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
+
+        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+        if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
+        {
+            if (ok != nullptr)
+                *ok = true;
+            return portNameToId.port;
+        }
+    }
+
+    if (ok != nullptr)
+        *ok = false;
+    return 0;
+}
+
+// -----------------------------------------------------------------------
 // Rack Graph stuff
 
 static inline
@@ -83,9 +128,9 @@ const char* getCarlaRackFullPortNameFromId(const /*RackGraphCarlaPortIds*/ uint 
 }
 
 // -----------------------------------------------------------------------
-// RackGraph Audio
+// RackGraph Audio Buffers
 
-RackGraph::Audio::Audio() noexcept
+RackGraph::AudioBuffers::AudioBuffers() noexcept
     : mutex(),
       connectedIn1(),
       connectedIn2(),
@@ -104,51 +149,6 @@ RackGraph::Audio::Audio() noexcept
 #endif
 
 // -----------------------------------------------------------------------
-// RackGraph MIDI
-
-RackGraph::MIDI::MIDI() noexcept
-    : ins(),
-      outs() {}
-
-const char* RackGraph::MIDI::getName(const bool isInput, const uint portId) const noexcept
-{
-    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
-    {
-        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-        const PortNameToId& portNameToId(it.getValue(portNameFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
-
-        if (portNameToId.port == portId)
-            return portNameToId.name;
-    }
-
-    return nullptr;
-}
-
-uint RackGraph::MIDI::getPortId(const bool isInput, const char portName[], bool* const ok) const noexcept
-{
-    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
-    {
-        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-        const PortNameToId& portNameToId(it.getValue(portNameFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
-
-        if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
-        {
-            if (ok != nullptr)
-                *ok = true;
-            return portNameToId.port;
-        }
-    }
-
-    if (ok != nullptr)
-        *ok = false;
-    return 0;
-}
-
-// -----------------------------------------------------------------------
 // RackGraph
 
 RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs) noexcept
@@ -157,8 +157,9 @@ RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32
       outputs(outs),
       isOffline(false),
       retCon(),
-      audio(),
-      midi(),
+      audioBuffers(),
+      audioPorts(),
+      midiPorts(),
       kEngine(engine)
 {
     setBufferSize(engine->getBufferSize());
@@ -167,56 +168,57 @@ RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32
 RackGraph::~RackGraph() noexcept
 {
     clearConnections();
+    clearPorts();
 }
 
 void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
 {
     const int bufferSizei(static_cast<int>(bufferSize));
 
-    if (audio.inBuf[0]    != nullptr) { delete[] audio.inBuf[0];    audio.inBuf[0]    = nullptr; }
-    if (audio.inBuf[1]    != nullptr) { delete[] audio.inBuf[1];    audio.inBuf[1]    = nullptr; }
-    if (audio.inBufTmp[0] != nullptr) { delete[] audio.inBufTmp[0]; audio.inBufTmp[0] = nullptr; }
-    if (audio.inBufTmp[1] != nullptr) { delete[] audio.inBufTmp[1]; audio.inBufTmp[1] = nullptr; }
-    if (audio.outBuf[0]   != nullptr) { delete[] audio.outBuf[0];   audio.outBuf[0]   = nullptr; }
-    if (audio.outBuf[1]   != nullptr) { delete[] audio.outBuf[1];   audio.outBuf[1]   = nullptr; }
+    if (audioBuffers.inBuf[0]    != nullptr) { delete[] audioBuffers.inBuf[0];    audioBuffers.inBuf[0]    = nullptr; }
+    if (audioBuffers.inBuf[1]    != nullptr) { delete[] audioBuffers.inBuf[1];    audioBuffers.inBuf[1]    = nullptr; }
+    if (audioBuffers.inBufTmp[0] != nullptr) { delete[] audioBuffers.inBufTmp[0]; audioBuffers.inBufTmp[0] = nullptr; }
+    if (audioBuffers.inBufTmp[1] != nullptr) { delete[] audioBuffers.inBufTmp[1]; audioBuffers.inBufTmp[1] = nullptr; }
+    if (audioBuffers.outBuf[0]   != nullptr) { delete[] audioBuffers.outBuf[0];   audioBuffers.outBuf[0]   = nullptr; }
+    if (audioBuffers.outBuf[1]   != nullptr) { delete[] audioBuffers.outBuf[1];   audioBuffers.outBuf[1]   = nullptr; }
 
     CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
 
     try {
-        audio.inBufTmp[0] = new float[bufferSize];
-        audio.inBufTmp[1] = new float[bufferSize];
+        audioBuffers.inBufTmp[0] = new float[bufferSize];
+        audioBuffers.inBufTmp[1] = new float[bufferSize];
 
         if (inputs > 0 || outputs > 0)
         {
-            audio.inBuf[0]  = new float[bufferSize];
-            audio.inBuf[1]  = new float[bufferSize];
-            audio.outBuf[0] = new float[bufferSize];
-            audio.outBuf[1] = new float[bufferSize];
+            audioBuffers.inBuf[0]  = new float[bufferSize];
+            audioBuffers.inBuf[1]  = new float[bufferSize];
+            audioBuffers.outBuf[0] = new float[bufferSize];
+            audioBuffers.outBuf[1] = new float[bufferSize];
         }
     }
     catch(...) {
-        if (audio.inBufTmp[0] != nullptr) { delete[] audio.inBufTmp[0]; audio.inBufTmp[0] = nullptr; }
-        if (audio.inBufTmp[1] != nullptr) { delete[] audio.inBufTmp[1]; audio.inBufTmp[1] = nullptr; }
+        if (audioBuffers.inBufTmp[0] != nullptr) { delete[] audioBuffers.inBufTmp[0]; audioBuffers.inBufTmp[0] = nullptr; }
+        if (audioBuffers.inBufTmp[1] != nullptr) { delete[] audioBuffers.inBufTmp[1]; audioBuffers.inBufTmp[1] = nullptr; }
 
         if (inputs > 0 || outputs > 0)
         {
-            if (audio.inBuf[0]  != nullptr) { delete[] audio.inBuf[0];  audio.inBuf[0]  = nullptr; }
-            if (audio.inBuf[1]  != nullptr) { delete[] audio.inBuf[1];  audio.inBuf[1]  = nullptr; }
-            if (audio.outBuf[0] != nullptr) { delete[] audio.outBuf[0]; audio.outBuf[0] = nullptr; }
-            if (audio.outBuf[1] != nullptr) { delete[] audio.outBuf[1]; audio.outBuf[1] = nullptr; }
+            if (audioBuffers.inBuf[0]  != nullptr) { delete[] audioBuffers.inBuf[0];  audioBuffers.inBuf[0]  = nullptr; }
+            if (audioBuffers.inBuf[1]  != nullptr) { delete[] audioBuffers.inBuf[1];  audioBuffers.inBuf[1]  = nullptr; }
+            if (audioBuffers.outBuf[0] != nullptr) { delete[] audioBuffers.outBuf[0]; audioBuffers.outBuf[0] = nullptr; }
+            if (audioBuffers.outBuf[1] != nullptr) { delete[] audioBuffers.outBuf[1]; audioBuffers.outBuf[1] = nullptr; }
         }
         return;
     }
 
-    FloatVectorOperations::clear(audio.inBufTmp[0], bufferSizei);
-    FloatVectorOperations::clear(audio.inBufTmp[1], bufferSizei);
+    FloatVectorOperations::clear(audioBuffers.inBufTmp[0], bufferSizei);
+    FloatVectorOperations::clear(audioBuffers.inBufTmp[1], bufferSizei);
 
     if (inputs > 0 || outputs > 0)
     {
-        FloatVectorOperations::clear(audio.inBuf[0],  bufferSizei);
-        FloatVectorOperations::clear(audio.inBuf[1],  bufferSizei);
-        FloatVectorOperations::clear(audio.outBuf[0], bufferSizei);
-        FloatVectorOperations::clear(audio.outBuf[1], bufferSizei);
+        FloatVectorOperations::clear(audioBuffers.inBuf[0],  bufferSizei);
+        FloatVectorOperations::clear(audioBuffers.inBuf[1],  bufferSizei);
+        FloatVectorOperations::clear(audioBuffers.outBuf[0], bufferSizei);
+        FloatVectorOperations::clear(audioBuffers.outBuf[1], bufferSizei);
     }
 }
 
@@ -255,41 +257,41 @@ bool RackGraph::connect(const uint groupA, const uint portA, const uint groupB, 
     {
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_AUDIO_IN, false);
-        audio.mutex.lock();
-        makeConnection = audio.connectedIn1.append(otherPort);
-        audio.mutex.unlock();
+        audioBuffers.mutex.lock();
+        makeConnection = audioBuffers.connectedIn1.append(otherPort);
+        audioBuffers.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_AUDIO_IN, false);
-        audio.mutex.lock();
-        makeConnection = audio.connectedIn2.append(otherPort);
-        audio.mutex.unlock();
+        audioBuffers.mutex.lock();
+        makeConnection = audioBuffers.connectedIn2.append(otherPort);
+        audioBuffers.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_AUDIO_OUT, false);
-        audio.mutex.lock();
-        makeConnection = audio.connectedOut1.append(otherPort);
-        audio.mutex.unlock();
+        audioBuffers.mutex.lock();
+        makeConnection = audioBuffers.connectedOut1.append(otherPort);
+        audioBuffers.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_AUDIO_OUT, false);
-        audio.mutex.lock();
-        makeConnection = audio.connectedOut2.append(otherPort);
-        audio.mutex.unlock();
+        audioBuffers.mutex.lock();
+        makeConnection = audioBuffers.connectedOut2.append(otherPort);
+        audioBuffers.mutex.unlock();
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_IN:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_MIDI_IN, false);
-        if (const char* const portName = midi.getName(true, otherPort))
+        if (const char* const portName = midiPorts.getName(true, otherPort))
             makeConnection = kEngine->connectRackMidiInPort(portName);
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_MIDI_OUT, false);
-        if (const char* const portName = midi.getName(false, otherPort))
+        if (const char* const portName = midiPorts.getName(false, otherPort))
             makeConnection = kEngine->connectRackMidiOutPort(portName);
         break;
     }
@@ -354,36 +356,36 @@ bool RackGraph::disconnect(const uint connectionId) noexcept
         switch (carlaPort)
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
-            audio.mutex.lock();
-            makeDisconnection = audio.connectedIn1.removeOne(otherPort);
-            audio.mutex.unlock();
+            audioBuffers.mutex.lock();
+            makeDisconnection = audioBuffers.connectedIn1.removeOne(otherPort);
+            audioBuffers.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            audio.mutex.lock();
-            makeDisconnection = audio.connectedIn2.removeOne(otherPort);
-            audio.mutex.unlock();
+            audioBuffers.mutex.lock();
+            makeDisconnection = audioBuffers.connectedIn2.removeOne(otherPort);
+            audioBuffers.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
-            audio.mutex.lock();
-            makeDisconnection = audio.connectedOut1.removeOne(otherPort);
-            audio.mutex.unlock();
+            audioBuffers.mutex.lock();
+            makeDisconnection = audioBuffers.connectedOut1.removeOne(otherPort);
+            audioBuffers.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-            audio.mutex.lock();
-            makeDisconnection = audio.connectedOut2.removeOne(otherPort);
-            audio.mutex.unlock();
+            audioBuffers.mutex.lock();
+            makeDisconnection = audioBuffers.connectedOut2.removeOne(otherPort);
+            audioBuffers.mutex.unlock();
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-            if (const char* const portName = midi.getName(true, otherPort))
+            if (const char* const portName = midiPorts.getName(true, otherPort))
                 makeDisconnection = kEngine->disconnectRackMidiInPort(portName);
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
-            if (const char* const portName = midi.getName(false, otherPort))
+            if (const char* const portName = midiPorts.getName(false, otherPort))
                 makeDisconnection = kEngine->disconnectRackMidiOutPort(portName);
             break;
         }
@@ -404,22 +406,28 @@ bool RackGraph::disconnect(const uint connectionId) noexcept
     return false;
 }
 
+void RackGraph::clearPorts() noexcept
+{
+    audioPorts.ins.clear();
+    audioPorts.outs.clear();
+
+    midiPorts.ins.clear();
+    midiPorts.outs.clear();
+}
+
 void RackGraph::clearConnections() noexcept
 {
     connections.clear();
 
-    audio.mutex.lock();
-    audio.connectedIn1.clear();
-    audio.connectedIn2.clear();
-    audio.connectedOut1.clear();
-    audio.connectedOut2.clear();
-    audio.mutex.unlock();
-
-    midi.ins.clear();
-    midi.outs.clear();
+    audioBuffers.mutex.lock();
+    audioBuffers.connectedIn1.clear();
+    audioBuffers.connectedIn2.clear();
+    audioBuffers.connectedOut1.clear();
+    audioBuffers.connectedOut2.clear();
+    audioBuffers.mutex.unlock();
 }
 
-void RackGraph::refreshConnections(const char* const deviceName)
+void RackGraph::refresh(const char* const deviceName)
 {
     CARLA_SAFE_ASSERT_RETURN(deviceName != nullptr,);
 
@@ -437,9 +445,155 @@ void RackGraph::refreshConnections(const char* const deviceName)
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
     }
 
-    //char strBuf[STR_MAX+1];
-    //strBuf[STR_MAX] = '\0';
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
 
+    // Audio In
+    {
+        if (deviceName[0] != '\0')
+            std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName);
+        else
+            std::strncpy(strBuf, "Capture", STR_MAX);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
+
+        const CarlaString groupName(strBuf);
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupName + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, ++h,
+                              PATCHBAY_PORT_TYPE_AUDIO, 0.0f, portNameToId.name);
+        }
+    }
+
+    // Audio Out
+    {
+        if (deviceName[0] != '\0')
+            std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName);
+        else
+            std::strncpy(strBuf, "Playback", STR_MAX);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
+
+        const CarlaString groupName(strBuf);
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupName + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, ++h,
+                              PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
+        }
+    }
+
+    // MIDI In
+    {
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
+
+        const CarlaString groupNamePlus("Readable MIDI ports:");
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupNamePlus + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, ++h,
+                              PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
+        }
+    }
+
+    // MIDI Out
+    {
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
+
+        const CarlaString groupNamePlus("Writable MIDI ports:");
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupNamePlus + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, ++h,
+                              PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
+        }
+    }
+
+    // Connections
+    audioBuffers.mutex.lock();
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.ins.count());
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.ins.count());
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.outs.count());
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.outs.count());
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        connections.list.append(connectionToId);
+    }
+
+    audioBuffers.mutex.unlock();
 }
 
 const char* const* RackGraph::getConnections() const noexcept
@@ -485,26 +639,26 @@ const char* const* RackGraph::getConnections() const noexcept
         {
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_IN2:
-            std::snprintf(strBuf, STR_MAX, "AudioIn:%i", otherPort);
+            std::snprintf(strBuf, STR_MAX, "AudioIn:%s", audioPorts.getName(true, otherPort));
             connList.append(strBuf);
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             break;
 
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT1:
         case RACK_GRAPH_CARLA_PORT_AUDIO_OUT2:
-            std::snprintf(strBuf, STR_MAX, "AudioOut:%i", otherPort);
+            std::snprintf(strBuf, STR_MAX, "AudioOut:%s", audioPorts.getName(false, otherPort));
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             connList.append(strBuf);
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
-            std::snprintf(strBuf, STR_MAX, "MidiIn:%s", midi.getName(true, otherPort));
+            std::snprintf(strBuf, STR_MAX, "MidiIn:%s", midiPorts.getName(true, otherPort));
             connList.append(strBuf);
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
-            std::snprintf(strBuf, STR_MAX, "MidiOut:%s", midi.getName(false, otherPort));
+            std::snprintf(strBuf, STR_MAX, "MidiOut:%s", midiPorts.getName(false, otherPort));
             connList.append(getCarlaRackFullPortNameFromId(carlaPort));
             connList.append(strBuf);
             break;
@@ -535,20 +689,22 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
     {
         groupId = RACK_GRAPH_GROUP_AUDIO_IN;
 
-        if (const int portTest = std::atoi(fullPortName+8))
+        if (const char* const portName = fullPortName+8)
         {
-            portId = static_cast<uint>(portTest);
-            return true;
+            bool ok;
+            portId = audioPorts.getPortId(true, portName, &ok);
+            return ok;
         }
     }
     else if (std::strncmp(fullPortName, "AudioOut:", 9) == 0)
     {
         groupId = RACK_GRAPH_GROUP_AUDIO_OUT;
 
-        if (const int portTest = std::atoi(fullPortName+9))
+        if (const char* const portName = fullPortName+8)
         {
-            portId = static_cast<uint>(portTest);
-            return true;
+            bool ok;
+            portId = audioPorts.getPortId(false, portName, &ok);
+            return ok;
         }
     }
     else if (std::strncmp(fullPortName, "MidiIn:", 7) == 0)
@@ -558,7 +714,7 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
         if (const char* const portName = fullPortName+7)
         {
             bool ok;
-            portId = midi.getPortId(true, portName, &ok);
+            portId = midiPorts.getPortId(true, portName, &ok);
             return ok;
         }
     }
@@ -569,7 +725,7 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
         if (const char* const portName = fullPortName+8)
         {
             bool ok;
-            portId = midi.getPortId(false, portName, &ok);
+            portId = midiPorts.getPortId(false, portName, &ok);
             return ok;
         }
     }
@@ -699,18 +855,18 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
 void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
 {
-    CARLA_SAFE_ASSERT_RETURN(audio.outBuf[1] != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(audioBuffers.outBuf[1] != nullptr,);
 
     const int iframes(static_cast<int>(frames));
 
-    const CarlaRecursiveMutexLocker _cml(audio.mutex);
+    const CarlaRecursiveMutexLocker _cml(audioBuffers.mutex);
 
     if (inBuf != nullptr && inputs > 0)
     {
         bool noConnections = true;
 
         // connect input buffers
-        for (LinkedList<uint>::Itenerator it = audio.connectedIn1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port != 0);
@@ -718,21 +874,21 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
             if (noConnections)
             {
-                FloatVectorOperations::copy(audio.inBuf[0], inBuf[port], iframes);
+                FloatVectorOperations::copy(audioBuffers.inBuf[0], inBuf[port], iframes);
                 noConnections = false;
             }
             else
             {
-                FloatVectorOperations::add(audio.inBuf[0], inBuf[port], iframes);
+                FloatVectorOperations::add(audioBuffers.inBuf[0], inBuf[port], iframes);
             }
         }
 
         if (noConnections)
-            FloatVectorOperations::clear(audio.inBuf[0], iframes);
+            FloatVectorOperations::clear(audioBuffers.inBuf[0], iframes);
 
         noConnections = true;
 
-        for (LinkedList<uint>::Itenerator it = audio.connectedIn2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port != 0);
@@ -740,52 +896,52 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
             if (noConnections)
             {
-                FloatVectorOperations::copy(audio.inBuf[1], inBuf[port], iframes);
+                FloatVectorOperations::copy(audioBuffers.inBuf[1], inBuf[port], iframes);
                 noConnections = false;
             }
             else
             {
-                FloatVectorOperations::add(audio.inBuf[1], inBuf[port], iframes);
+                FloatVectorOperations::add(audioBuffers.inBuf[1], inBuf[port], iframes);
             }
         }
 
         if (noConnections)
-            FloatVectorOperations::clear(audio.inBuf[1], iframes);
+            FloatVectorOperations::clear(audioBuffers.inBuf[1], iframes);
     }
     else
     {
-        FloatVectorOperations::clear(audio.inBuf[0], iframes);
-        FloatVectorOperations::clear(audio.inBuf[1], iframes);
+        FloatVectorOperations::clear(audioBuffers.inBuf[0], iframes);
+        FloatVectorOperations::clear(audioBuffers.inBuf[1], iframes);
     }
 
-    FloatVectorOperations::clear(audio.outBuf[0], iframes);
-    FloatVectorOperations::clear(audio.outBuf[1], iframes);
+    FloatVectorOperations::clear(audioBuffers.outBuf[0], iframes);
+    FloatVectorOperations::clear(audioBuffers.outBuf[1], iframes);
 
     // process
-    process(data, const_cast<const float**>(audio.inBuf), audio.outBuf, frames);
+    process(data, const_cast<const float**>(audioBuffers.inBuf), audioBuffers.outBuf, frames);
 
     // connect output buffers
-    if (audio.connectedOut1.count() != 0)
+    if (audioBuffers.connectedOut1.count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = audio.connectedOut1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
             CARLA_SAFE_ASSERT_CONTINUE(port <= outputs);
 
-            FloatVectorOperations::add(outBuf[port-1], audio.outBuf[0], iframes);
+            FloatVectorOperations::add(outBuf[port-1], audioBuffers.outBuf[0], iframes);
         }
     }
 
-    if (audio.connectedOut2.count() != 0)
+    if (audioBuffers.connectedOut2.count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = audio.connectedOut2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
             CARLA_SAFE_ASSERT_CONTINUE(port <= outputs);
 
-            FloatVectorOperations::add(outBuf[port-1], audio.outBuf[1], iframes);
+            FloatVectorOperations::add(outBuf[port-1], audioBuffers.outBuf[1], iframes);
         }
     }
 }
@@ -1106,11 +1262,11 @@ public:
     void prepareToPlay(double, int) override {}
     void releaseResources() override {}
 
-    const String getParameterName(int)             override { return String(); }
-          String getParameterName(int, int)        override { return String(); }
-    const String getParameterText(int)             override { return String(); }
-          String getParameterText(int, int)        override { return String(); }
-    const String getProgramName(int)               override { return String(); }
+    const String getParameterName(int)         override { return String(); }
+          String getParameterName(int, int)    override { return String(); }
+    const String getParameterText(int)         override { return String(); }
+          String getParameterText(int, int)    override { return String(); }
+    const String getProgramName(int)           override { return String(); }
 
     double getTailLengthSeconds()        const override { return 0.0;  }
     float  getParameter(int)                   override { return 0.0f; }
@@ -1157,6 +1313,8 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
       outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
       ignorePathbay(false),
       retCon(),
+      audioPorts(),
+      midiPorts(),
       kEngine(engine)
 {
     const int    bufferSize(static_cast<int>(engine->getBufferSize()));
@@ -1176,7 +1334,9 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", true);
+        node->properties.set("isCV", false);
         node->properties.set("isMIDI", false);
+        node->properties.set("isOSC", false);
     }
 
     {
@@ -1185,7 +1345,9 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", true);
+        node->properties.set("isCV", false);
         node->properties.set("isMIDI", false);
+        node->properties.set("isOSC", false);
     }
 
     {
@@ -1194,7 +1356,9 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", false);
+        node->properties.set("isCV", false);
         node->properties.set("isMIDI", true);
+        node->properties.set("isOSC", false);
     }
 
     {
@@ -1203,13 +1367,16 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", true);
         node->properties.set("isAudio", false);
+        node->properties.set("isCV", false);
         node->properties.set("isMIDI", true);
+        node->properties.set("isOSC", false);
     }
 }
 
 PatchbayGraph::~PatchbayGraph()
 {
     clearConnections();
+    clearPorts();
     graph.releaseResources();
     graph.clear();
     audioBuffer.clear();
@@ -1434,6 +1601,15 @@ void PatchbayGraph::disconnectGroup(const uint groupId) noexcept
     }
 }
 
+void PatchbayGraph::clearPorts() noexcept
+{
+    audioPorts.ins.clear();
+    audioPorts.outs.clear();
+
+    midiPorts.ins.clear();
+    midiPorts.outs.clear();
+}
+
 void PatchbayGraph::clearConnections()
 {
     connections.clear();
@@ -1442,7 +1618,7 @@ void PatchbayGraph::clearConnections()
         graph.removeConnection(0);
 }
 
-void PatchbayGraph::refreshConnections(const char* const deviceName)
+void PatchbayGraph::refresh(const char* const deviceName)
 {
     CARLA_SAFE_ASSERT_RETURN(deviceName != nullptr,);
 
@@ -1461,12 +1637,60 @@ void PatchbayGraph::refreshConnections(const char* const deviceName)
 
             int clientId = -1;
 
+            // plugin node
             if (node->properties.getWithDefault("isPlugin", false) == juce::var(true))
+            {
                 clientId = node->properties.getWithDefault("pluginId", -1);
+            }
+#if 0
+            // hardware node
+            else
+            {
+                // skip hardware midi nodes
+                if (node->properties.getWithDefault("isMIDI", false) == juce::var(true))
+                    continue;
+            }
+#endif
 
             addNodeToPatchbay(kEngine, node->nodeId, clientId, proc);
         }
     }
+
+#if 0
+    // MIDI In
+    {
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
+
+        const CarlaString groupNamePlus("Readable MIDI ports:");
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupNamePlus + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, ++h,
+                              PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
+        }
+    }
+
+    // MIDI Out
+    {
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
+
+        const CarlaString groupNamePlus("Writable MIDI ports:");
+
+        int h = 0;
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin(); it.valid(); it.next())
+        {
+            PortNameToId& portNameToId(it.getValue());
+            portNameToId.setFullName(groupNamePlus + portNameToId.name);
+
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, ++h,
+                              PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
+        }
+    }
+#endif
 
     char strBuf[STR_MAX+1];
 
@@ -1572,30 +1796,29 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
             portId = kMidiInputPortOffset;
             return true;
         }
+
         if (portName == "events-out")
         {
             portId = kMidiOutputPortOffset;
             return true;
         }
-        else
+
+        for (int j=0, numInputs=proc->getNumInputChannels(); j<numInputs; ++j)
         {
-            for (int j=0, numInputs=proc->getNumInputChannels(); j<numInputs; ++j)
-            {
-                if (proc->getInputChannelName(j) != portName)
-                    continue;
+            if (proc->getInputChannelName(j) != portName)
+                continue;
 
-                portId = kAudioInputPortOffset+static_cast<uint>(j);
-                return true;
-            }
+            portId = kAudioInputPortOffset+static_cast<uint>(j);
+            return true;
+        }
 
-            for (int j=0, numOutputs=proc->getNumOutputChannels(); j<numOutputs; ++j)
-            {
-                if (proc->getOutputChannelName(j) != portName)
-                    continue;
+        for (int j=0, numOutputs=proc->getNumOutputChannels(); j<numOutputs; ++j)
+        {
+            if (proc->getOutputChannelName(j) != portName)
+                continue;
 
-                portId = kAudioOutputPortOffset+static_cast<uint>(j);
-                return true;
-            }
+            portId = kAudioOutputPortOffset+static_cast<uint>(j);
+            return true;
         }
     }
 
@@ -1882,12 +2105,14 @@ bool CarlaEngine::patchbayRefresh(const bool external)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         if (RackGraph* const graph = pData->graph.getRackGraph())
-            graph->refreshConnections("");
+            graph->refresh("");
     }
     else
     {
         if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            graph->refreshConnections("");
+        {
+            graph->refresh("");
+        }
     }
 
     return true;
