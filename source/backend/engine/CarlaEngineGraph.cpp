@@ -151,16 +151,17 @@ uint RackGraph::MIDI::getPortId(const bool isInput, const char portName[], bool*
 // -----------------------------------------------------------------------
 // RackGraph
 
-RackGraph::RackGraph(const uint32_t bufferSize, const uint32_t ins, const uint32_t outs) noexcept
+RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs) noexcept
     : connections(),
       inputs(ins),
       outputs(outs),
       isOffline(false),
       retCon(),
       audio(),
-      midi()
+      midi(),
+      kEngine(engine)
 {
-    setBufferSize(bufferSize);
+    setBufferSize(engine->getBufferSize());
 }
 
 RackGraph::~RackGraph() noexcept
@@ -224,10 +225,8 @@ void RackGraph::setOffline(const bool offline) noexcept
     isOffline = offline;
 }
 
-bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
+bool RackGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-
     uint otherGroup, otherPort, carlaPort;
 
     if (groupA == RACK_GRAPH_GROUP_CARLA)
@@ -285,19 +284,19 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
     case RACK_GRAPH_CARLA_PORT_MIDI_IN:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_MIDI_IN, false);
         if (const char* const portName = midi.getName(true, otherPort))
-            makeConnection = engine->connectRackMidiInPort(portName);
+            makeConnection = kEngine->connectRackMidiInPort(portName);
         break;
 
     case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == RACK_GRAPH_GROUP_MIDI_OUT, false);
         if (const char* const portName = midi.getName(false, otherPort))
-            makeConnection = engine->connectRackMidiOutPort(portName);
+            makeConnection = kEngine->connectRackMidiOutPort(portName);
         break;
     }
 
     if (! makeConnection)
     {
-        engine->setLastError("Invalid rack connection");
+        kEngine->setLastError("Invalid rack connection");
         return false;
     }
 
@@ -308,15 +307,14 @@ bool RackGraph::connect(CarlaEngine* const engine, const uint groupA, const uint
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+    kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;
 }
 
-bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) noexcept
+bool RackGraph::disconnect(const uint connectionId) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
     CARLA_SAFE_ASSERT_RETURN(connections.list.count() > 0, false);
 
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
@@ -381,28 +379,28 @@ bool RackGraph::disconnect(CarlaEngine* const engine, const uint connectionId) n
 
         case RACK_GRAPH_CARLA_PORT_MIDI_IN:
             if (const char* const portName = midi.getName(true, otherPort))
-                makeDisconnection = engine->disconnectRackMidiInPort(portName);
+                makeDisconnection = kEngine->disconnectRackMidiInPort(portName);
             break;
 
         case RACK_GRAPH_CARLA_PORT_MIDI_OUT:
             if (const char* const portName = midi.getName(false, otherPort))
-                makeDisconnection = engine->disconnectRackMidiOutPort(portName);
+                makeDisconnection = kEngine->disconnectRackMidiOutPort(portName);
             break;
         }
 
         if (! makeDisconnection)
         {
-            engine->setLastError("Invalid rack connection");
+            kEngine->setLastError("Invalid rack connection");
             return false;
         }
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
         return true;
     }
 
-    engine->setLastError("Failed to find connection");
+    kEngine->setLastError("Failed to find connection");
     return false;
 }
 
@@ -419,6 +417,29 @@ void RackGraph::clearConnections() noexcept
 
     midi.ins.clear();
     midi.outs.clear();
+}
+
+void RackGraph::refreshConnections(const char* const deviceName)
+{
+    CARLA_SAFE_ASSERT_RETURN(deviceName != nullptr,);
+
+    connections.clear();
+
+    // Main
+    {
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, kEngine->getName());
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
+    }
+
+    //char strBuf[STR_MAX+1];
+    //strBuf[STR_MAX] = '\0';
+
 }
 
 const char* const* RackGraph::getConnections() const noexcept
@@ -916,8 +937,9 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
 class CarlaPluginInstance : public AudioPluginInstance
 {
 public:
-    CarlaPluginInstance(CarlaPlugin* const plugin)
-        : fPlugin(plugin),
+    CarlaPluginInstance(CarlaEngine* const engine, CarlaPlugin* const plugin)
+        : kEngine(engine),
+          fPlugin(plugin),
           leakDetector_CarlaPluginInstance()
     {
         setPlayConfigDetails(static_cast<int>(fPlugin->getAudioInCount()),
@@ -985,10 +1007,7 @@ public:
             return;
         }
 
-        CarlaEngine* const engine(fPlugin->getEngine());
-        CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
-        if (! fPlugin->tryLock(engine->isOffline()))
+        if (! fPlugin->tryLock(kEngine->isOffline()))
         {
             audio.clear();
             midi.clear();
@@ -1049,7 +1068,7 @@ public:
                 }
             }
 
-            engine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
+            kEngine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
         }
         else
         {
@@ -1120,6 +1139,7 @@ public:
     // -------------------------------------------------------------------
 
 private:
+    CarlaEngine* const kEngine;
     CarlaPlugin* fPlugin;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginInstance)
@@ -1128,7 +1148,7 @@ private:
 // -----------------------------------------------------------------------
 // Patchbay Graph
 
-PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t ins, const uint32_t outs)
+PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs)
     : connections(),
       graph(),
       audioBuffer(),
@@ -1136,8 +1156,12 @@ PatchbayGraph::PatchbayGraph(const int bufferSize, const double sampleRate, cons
       inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
       outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
       ignorePathbay(false),
-      retCon()
+      retCon(),
+      kEngine(engine)
 {
+    const int    bufferSize(static_cast<int>(engine->getBufferSize()));
+    const double sampleRate(engine->getSampleRate());
+
     graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
     graph.prepareToPlay(sampleRate, bufferSize);
 
@@ -1194,14 +1218,14 @@ PatchbayGraph::~PatchbayGraph()
 void PatchbayGraph::setBufferSize(const int bufferSize)
 {
     graph.releaseResources();
-    graph.prepareToPlay(graph.getSampleRate(), bufferSize);
+    graph.prepareToPlay(kEngine->getSampleRate(), bufferSize);
     audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSize);
 }
 
 void PatchbayGraph::setSampleRate(const double sampleRate)
 {
     graph.releaseResources();
-    graph.prepareToPlay(sampleRate, graph.getBlockSize());
+    graph.prepareToPlay(sampleRate, static_cast<int>(kEngine->getBufferSize()));
 }
 
 void PatchbayGraph::setOffline(const bool offline)
@@ -1214,7 +1238,7 @@ void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::addPlugin(%p)", plugin);
 
-    CarlaPluginInstance* const instance(new CarlaPluginInstance(plugin));
+    CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
@@ -1234,23 +1258,20 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     CARLA_SAFE_ASSERT_RETURN(oldPlugin != newPlugin,);
     CARLA_SAFE_ASSERT_RETURN(oldPlugin->getId() == newPlugin->getId(),);
 
-    CarlaEngine* const engine(oldPlugin->getEngine());
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
     AudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(oldNode != nullptr,);
 
     if (! ignorePathbay)
     {
-        disconnectGroup(engine, oldNode->nodeId);
-        removeNodeFromPatchbay(engine, oldNode->nodeId, oldNode->getProcessor());
+        disconnectGroup(oldNode->nodeId);
+        removeNodeFromPatchbay(kEngine, oldNode->nodeId, oldNode->getProcessor());
     }
 
     ((CarlaPluginInstance*)oldNode->getProcessor())->invalidatePlugin();
 
     graph.removeNode(oldNode->nodeId);
 
-    CarlaPluginInstance* const instance(new CarlaPluginInstance(newPlugin));
+    CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, newPlugin));
     AudioProcessorGraph::Node* const node(graph.addNode(instance));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
@@ -1268,24 +1289,21 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::removePlugin(%p)", plugin);
 
-    CarlaEngine* const engine(plugin->getEngine());
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
     AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     if (! ignorePathbay)
     {
-        disconnectGroup(engine, node->nodeId);
-        removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+        disconnectGroup(node->nodeId);
+        removeNodeFromPatchbay(kEngine, node->nodeId, node->getProcessor());
     }
 
     ((CarlaPluginInstance*)node->getProcessor())->invalidatePlugin();
 
     // Fix plugin Ids properties
-    for (uint i=plugin->getId()+1, count=engine->getCurrentPluginCount(); i<count; ++i)
+    for (uint i=plugin->getId()+1, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
-        CarlaPlugin* const plugin2(engine->getPlugin(i));
+        CarlaPlugin* const plugin2(kEngine->getPlugin(i));
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
 
         if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
@@ -1298,14 +1316,13 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(graph.removeNode(node->nodeId),);
 }
 
-void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
+void PatchbayGraph::removeAllPlugins()
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-    carla_debug("PatchbayGraph::removeAllPlugins(%p)", engine);
+    carla_debug("PatchbayGraph::removeAllPlugins()");
 
-    for (uint i=0, count=engine->getCurrentPluginCount(); i<count; ++i)
+    for (uint i=0, count=kEngine->getCurrentPluginCount(); i<count; ++i)
     {
-        CarlaPlugin* const plugin(engine->getPlugin(i));
+        CarlaPlugin* const plugin(kEngine->getPlugin(i));
         CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
         AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
@@ -1313,8 +1330,8 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
 
         if (! ignorePathbay)
         {
-            disconnectGroup(engine, node->nodeId);
-            removeNodeFromPatchbay(engine, node->nodeId, node->getProcessor());
+            disconnectGroup(node->nodeId);
+            removeNodeFromPatchbay(kEngine, node->nodeId, node->getProcessor());
         }
 
         ((CarlaPluginInstance*)node->getProcessor())->invalidatePlugin();
@@ -1323,10 +1340,8 @@ void PatchbayGraph::removeAllPlugins(CarlaEngine* const engine)
     }
 }
 
-bool PatchbayGraph::connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
+bool PatchbayGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
 
@@ -1337,7 +1352,7 @@ bool PatchbayGraph::connect(CarlaEngine* const engine, const uint groupA, const 
 
     if (! graph.addConnection(groupA, static_cast<int>(adjustedPortA), groupB, static_cast<int>(adjustedPortB)))
     {
-        engine->setLastError("Failed from juce");
+        kEngine->setLastError("Failed from juce");
         return false;
     }
 
@@ -1348,16 +1363,14 @@ bool PatchbayGraph::connect(CarlaEngine* const engine, const uint groupA, const 
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+    kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;
 }
 
-bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint connectionId) noexcept
+bool PatchbayGraph::disconnect(const uint connectionId) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr, false);
-
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
@@ -1380,20 +1393,18 @@ bool PatchbayGraph::disconnect(CarlaEngine* const engine, const uint connectionI
                                      connectionToId.groupB, static_cast<int>(adjustedPortB)))
             return false;
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
         return true;
     }
 
-    engine->setLastError("Failed to find connection");
+    kEngine->setLastError("Failed to find connection");
     return false;
 }
 
-void PatchbayGraph::disconnectGroup(CarlaEngine* const engine, const uint groupId) noexcept
+void PatchbayGraph::disconnectGroup(const uint groupId) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
-
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
@@ -1417,7 +1428,7 @@ void PatchbayGraph::disconnectGroup(CarlaEngine* const engine, const uint groupI
                                connectionToId.groupB, static_cast<int>(adjustedPortB));
         */
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
     }
@@ -1431,28 +1442,30 @@ void PatchbayGraph::clearConnections()
         graph.removeConnection(0);
 }
 
-void PatchbayGraph::refreshConnections(CarlaEngine* const engine)
+void PatchbayGraph::refreshConnections(const char* const deviceName)
 {
-    CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(deviceName != nullptr,);
 
     connections.clear();
     graph.removeIllegalConnections();
 
-    for (int i=0, count=graph.getNumNodes(); i<count; ++i)
+    if (! ignorePathbay)
     {
-        AudioProcessorGraph::Node* const node(graph.getNode(i));
-        CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
+        for (int i=0, count=graph.getNumNodes(); i<count; ++i)
+        {
+            AudioProcessorGraph::Node* const node(graph.getNode(i));
+            CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
-        AudioProcessor* const proc(node->getProcessor());
-        CARLA_SAFE_ASSERT_CONTINUE(proc != nullptr);
+            AudioProcessor* const proc(node->getProcessor());
+            CARLA_SAFE_ASSERT_CONTINUE(proc != nullptr);
 
-        int clientId = -1;
+            int clientId = -1;
 
-        if (node->properties.getWithDefault("isPlugin", false) == juce::var(true))
-            clientId = node->properties.getWithDefault("pluginId", -1);
+            if (node->properties.getWithDefault("isPlugin", false) == juce::var(true))
+                clientId = node->properties.getWithDefault("pluginId", -1);
 
-        if (! ignorePathbay)
-            addNodeToPatchbay(engine, node->nodeId, clientId, proc);
+            addNodeToPatchbay(kEngine, node->nodeId, clientId, proc);
+        }
     }
 
     char strBuf[STR_MAX+1];
@@ -1486,7 +1499,7 @@ void PatchbayGraph::refreshConnections(CarlaEngine* const engine)
         std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", groupA, portA, groupB, portB);
         strBuf[STR_MAX] = '\0';
 
-        engine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
         connections.list.append(connectionToId);
     }
@@ -1633,9 +1646,10 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 // -----------------------------------------------------------------------
 // InternalGraph
 
-EngineInternalGraph::EngineInternalGraph() noexcept
+EngineInternalGraph::EngineInternalGraph(CarlaEngine* const engine) noexcept
     : fIsRack(true),
-      fIsReady(false)
+      fIsReady(false),
+      kEngine(engine)
 {
     fRack = nullptr;
 }
@@ -1646,19 +1660,19 @@ EngineInternalGraph::~EngineInternalGraph() noexcept
     CARLA_SAFE_ASSERT(fRack == nullptr);
 }
 
-void EngineInternalGraph::create(const bool isRack, const double sampleRate, const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs)
+void EngineInternalGraph::create(const uint32_t inputs, const uint32_t outputs)
 {
-    fIsRack = isRack;
+    fIsRack = (kEngine->getOptions().processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
 
-    if (isRack)
+    if (fIsRack)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack == nullptr,);
-        fRack = new RackGraph(bufferSize, inputs, outputs);
+        fRack = new RackGraph(kEngine, inputs, outputs);
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
-        fPatchbay = new PatchbayGraph(static_cast<int>(bufferSize), sampleRate, inputs, outputs);
+        fPatchbay = new PatchbayGraph(kEngine, inputs, outputs);
     }
 
     fIsReady = true;
@@ -1672,8 +1686,6 @@ void EngineInternalGraph::destroy() noexcept
         return;
     }
 
-    fIsReady = false;
-
     if (fIsRack)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack != nullptr,);
@@ -1686,6 +1698,8 @@ void EngineInternalGraph::destroy() noexcept
         delete fPatchbay;
         fPatchbay = nullptr;
     }
+
+    fIsReady = false;
 }
 
 void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
@@ -1797,10 +1811,10 @@ void EngineInternalGraph::removePlugin(CarlaPlugin* const plugin)
     fPatchbay->removePlugin(plugin);
 }
 
-void EngineInternalGraph::removeAllPlugins(CarlaEngine* const engine)
+void EngineInternalGraph::removeAllPlugins()
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-    fPatchbay->removeAllPlugins(engine);
+    fPatchbay->removeAllPlugins();
 }
 
 void EngineInternalGraph::setIgnorePatchbay(const bool ignore) noexcept
@@ -1821,12 +1835,12 @@ bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uin
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         if (RackGraph* const graph = pData->graph.getRackGraph())
-            return graph->connect(this, groupA, portA, groupB, portB);
+            return graph->connect(groupA, portA, groupB, portB);
     }
     else
     {
         if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->connect(this, groupA, portA, groupB, portB);
+            return graph->connect(groupA, portA, groupB, portB);
     }
 
     return false;
@@ -1841,12 +1855,12 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         if (RackGraph* const graph = pData->graph.getRackGraph())
-            return graph->disconnect(this, connectionId);
+            return graph->disconnect(connectionId);
     }
     else
     {
         if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->disconnect(this, connectionId);
+            return graph->disconnect(connectionId);
     }
 
     return false;
@@ -1857,6 +1871,7 @@ bool CarlaEngine::patchbayRefresh(const bool external)
     // subclasses should handle this
     CARLA_SAFE_ASSERT_RETURN(! external, false);
 
+    // FIXME
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         // This is implemented in engine subclasses for MIDI support
@@ -1864,12 +1879,16 @@ bool CarlaEngine::patchbayRefresh(const bool external)
         return false;
     }
 
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
-
-    PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
-    CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-
-    graph->refreshConnections(this);
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    {
+        if (RackGraph* const graph = pData->graph.getRackGraph())
+            graph->refreshConnections("");
+    }
+    else
+    {
+        if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
+            graph->refreshConnections("");
+    }
 
     return true;
 }
@@ -1895,12 +1914,12 @@ const char* const* CarlaEngine::getPatchbayConnections() const
     return nullptr;
 }
 
-void CarlaEngine::restorePatchbayConnection(const char* const connSource, const char* const connTarget)
+void CarlaEngine::restorePatchbayConnection(const char* const sourcePort, const char* const targetPort)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
-    CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
-    CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
-    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
+    CARLA_SAFE_ASSERT_RETURN(sourcePort != nullptr && sourcePort[0] != '\0',);
+    CARLA_SAFE_ASSERT_RETURN(targetPort != nullptr && targetPort[0] != '\0',);
+    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", sourcePort, targetPort);
 
     uint groupA, portA;
     uint groupB, portB;
@@ -1910,9 +1929,9 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
         RackGraph* const graph = pData->graph.getRackGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
-        if (! graph->getGroupAndPortIdFromFullName(connSource, groupA, portA))
+        if (! graph->getGroupAndPortIdFromFullName(sourcePort, groupA, portA))
             return;
-        if (! graph->getGroupAndPortIdFromFullName(connTarget, groupB, portB))
+        if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))
             return;
     }
     else
@@ -1920,9 +1939,9 @@ void CarlaEngine::restorePatchbayConnection(const char* const connSource, const 
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
-        if (! graph->getGroupAndPortIdFromFullName(connSource, groupA, portA))
+        if (! graph->getGroupAndPortIdFromFullName(sourcePort, groupA, portA))
             return;
-        if (! graph->getGroupAndPortIdFromFullName(connTarget, groupB, portB))
+        if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))
             return;
     }
 

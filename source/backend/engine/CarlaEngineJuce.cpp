@@ -73,6 +73,7 @@ static void initJuceDevicesIfNeeded()
 // Juce Engine
 
 class CarlaEngineJuce : public CarlaEngine,
+                        public CarlaEngineGraphImpl,
                         public AudioIODeviceCallback,
                         public MidiInputCallback
 {
@@ -175,7 +176,7 @@ public:
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        pData->graph.create(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, pData->sampleRate, pData->bufferSize, static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
+        pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
 
         fDevice->start(this);
 
@@ -280,27 +281,15 @@ public:
         RackGraph* const graph(pData->graph.getRackGraph());
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
-        graph->connections.clear();
-
-        char strBuf[STR_MAX+1];
-        strBuf[STR_MAX] = '\0';
-
-        // Main
-        {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, getName());
-
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
-        }
-
         String deviceName(fDevice->getName());
 
         if (deviceName.isNotEmpty())
             deviceName = deviceName.dropLastCharacters(deviceName.fromFirstOccurrenceOf(", ", true, false).length());
+
+        graph->refreshConnections(this, deviceName.toRawUTF8());
+
+        char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
 
         // Audio In
         {

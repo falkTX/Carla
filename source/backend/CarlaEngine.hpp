@@ -1072,9 +1072,9 @@ protected:
      */
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
+    friend class PendingRtEventsRunner;
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
-    friend class PendingRtEventsRunner;
     friend struct PatchbayGraph;
     friend struct RackGraph;
 
@@ -1098,13 +1098,6 @@ protected:
     void offlineModeChanged(const bool isOffline);
 
     /*!
-     * Run any pending RT events.
-     * Must always be called at the end of audio processing.
-     * @note RT call
-     */
-    void runPendingRtEvents() noexcept;
-
-    /*!
      * Set a plugin (stereo) peak values.
      * @note RT call
      */
@@ -1119,12 +1112,6 @@ protected:
      * Common load project function for main engine and plugin.
      */
     bool loadProjectInternal(juce::XmlDocument& xmlDoc);
-
-    /*!
-     * Lock/Unlock environment mutex, to prevent simultaneous changes from different threads.
-     */
-    void lockEnvironment() const noexcept;
-    void unlockEnvironment() const noexcept;
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
@@ -1186,10 +1173,10 @@ public:
 # endif
 #endif
 
-    // -------------------------------------------------------------------
-    // Bridge/Controller OSC stuff
-
 #ifndef BUILD_BRIDGE
+    // -------------------------------------------------------------------
+    // OSC Controller stuff
+
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
     void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
     void oscSend_control_remove_plugin(const uint pluginId) const noexcept;

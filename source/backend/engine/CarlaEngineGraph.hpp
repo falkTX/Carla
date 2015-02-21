@@ -90,15 +90,16 @@ struct RackGraph {
         CARLA_DECLARE_NON_COPY_CLASS(MIDI)
     } midi;
 
-    RackGraph(const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs) noexcept;
+    RackGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs) noexcept;
     ~RackGraph() noexcept;
 
     void setBufferSize(const uint32_t bufferSize) noexcept;
     void setOffline(const bool offline) noexcept;
 
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
+    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(const uint connectionId) noexcept;
     void clearConnections() noexcept;
+    void refreshConnections(const char* const deviceName);
 
     const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
@@ -108,12 +109,15 @@ struct RackGraph {
 
     // extended, will call process() in the middle
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+
+    CarlaEngine* const kEngine;
+    CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
 };
 
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-struct PatchbayGraph  {
+struct PatchbayGraph {
     PatchbayConnectionList connections;
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
@@ -123,7 +127,7 @@ struct PatchbayGraph  {
     bool ignorePathbay;
     mutable CharStringListPtr retCon;
 
-    PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
+    PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
     ~PatchbayGraph();
 
     void setBufferSize(const int bufferSize);
@@ -133,18 +137,21 @@ struct PatchbayGraph  {
     void addPlugin(CarlaPlugin* const plugin);
     void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
     void removePlugin(CarlaPlugin* const plugin);
-    void removeAllPlugins(CarlaEngine* const engine);
+    void removeAllPlugins();
 
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
-    void disconnectGroup(CarlaEngine* const engine, const uint groupId) noexcept;
+    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(const uint connectionId) noexcept;
+    void disconnectGroup(const uint groupId) noexcept;
     void clearConnections();
-    void refreshConnections(CarlaEngine* const engine);
+    void refreshConnections(const char* const deviceName);
 
     const char* const* getConnections() const;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
+
+    CarlaEngine* const kEngine;
+    CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)
 };
 
 // -----------------------------------------------------------------------

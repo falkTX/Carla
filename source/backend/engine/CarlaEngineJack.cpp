@@ -437,7 +437,7 @@ private:
 // Jack Engine client
 
 class CarlaEngineJackClient : public CarlaEngineClient,
-                                     JackPortDeletionCallback
+                              private JackPortDeletionCallback
 {
 public:
     CarlaEngineJackClient(const CarlaEngine& engine, jack_client_t* const jackClient)
@@ -816,11 +816,11 @@ public:
 
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
+                pData->graph.create(0, 0);
             }
             else
             {
-                pData->graph.create(false, pData->sampleRate, pData->bufferSize, 2, 2);
+                pData->graph.create(2, 2);
                 patchbayRefresh(false);
             }
         }
@@ -1701,6 +1701,8 @@ protected:
 
     void handleJackShutdownCallback()
     {
+        const PendingRtEventsRunner prt(this);
+
         for (uint i=0; i < pData->curPluginCount; ++i)
         {
             if (CarlaPlugin* const plugin = pData->plugins[i].plugin)
@@ -1718,7 +1720,6 @@ protected:
 #ifndef BUILD_BRIDGE
         carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
-        runPendingRtEvents();
 
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
     }

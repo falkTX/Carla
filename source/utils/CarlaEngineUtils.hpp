@@ -200,19 +200,11 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
 class ScopedEngineEnvironmentLocker
 {
 public:
-      ScopedEngineEnvironmentLocker(CarlaEngine* const engine) noexcept
-          : kEngine(engine)
-      {
-          kEngine->lockEnvironment();
-      }
-
-      ~ScopedEngineEnvironmentLocker() noexcept
-      {
-          kEngine->unlockEnvironment();
-      }
+      ScopedEngineEnvironmentLocker(CarlaEngine* const engine) noexcept;
+      ~ScopedEngineEnvironmentLocker() noexcept;
 
 private:
-    CarlaEngine* const kEngine;
+    CarlaEngine::ProtectedData* const pData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ScopedEngineEnvironmentLocker)

@@ -640,7 +640,7 @@ bool CarlaEngine::removePlugin(const uint id)
         pData->graph.removePlugin(plugin);
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
-    const ScopedActionLock sal(pData, kEnginePostActionRemovePlugin, id, 0, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
     /*
     for (uint i=id; i < pData->curPluginCount; ++i)
@@ -684,13 +684,13 @@ bool CarlaEngine::removeAllPlugins()
 
 #ifndef BUILD_BRIDGE
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removeAllPlugins(this);
+        pData->graph.removeAllPlugins();
 #endif
 
     const uint32_t curPluginCount(pData->curPluginCount);
 
     const bool lockWait(isRunning());
-    const ScopedActionLock sal(pData, kEnginePostActionZeroCount, 0, 0, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0, lockWait);
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -831,7 +831,7 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     }
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
-    const ScopedActionLock sal(pData, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
+    const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
     /*
     CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
@@ -1486,16 +1486,6 @@ EngineEvent* CarlaEngine::getInternalEventBuffer(const bool isInput) const noexc
     return isInput ? pData->events.in : pData->events.out;
 }
 
-void CarlaEngine::lockEnvironment() const noexcept
-{
-    pData->envMutex.lock();
-}
-
-void CarlaEngine::unlockEnvironment() const noexcept
-{
-    pData->envMutex.unlock();
-}
-
 // -----------------------------------------------------------------------
 // Internal stuff
 
@@ -1563,20 +1553,6 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
 
         if (plugin != nullptr && plugin->isEnabled())
             plugin->offlineModeChanged(isOfflineNow);
-    }
-}
-
-void CarlaEngine::runPendingRtEvents() noexcept
-{
-    pData->doNextPluginAction(true);
-
-    if (pData->time.playing)
-        pData->time.frame += pData->bufferSize;
-
-    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-    {
-        pData->timeInfo.playing = pData->time.playing;
-        pData->timeInfo.frame   = pData->time.frame;
     }
 }
 
