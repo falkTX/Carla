@@ -533,7 +533,7 @@ void RackGraph::refresh(const char* const deviceName)
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.ins.count());
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.ins.count()); // FIXME <=
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1);
@@ -549,7 +549,7 @@ void RackGraph::refresh(const char* const deviceName)
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.ins.count());
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.ins.count()); // FIXME <=
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2);
@@ -565,7 +565,7 @@ void RackGraph::refresh(const char* const deviceName)
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.outs.count());
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.outs.count()); // FIXME <=
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
@@ -581,7 +581,7 @@ void RackGraph::refresh(const char* const deviceName)
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId < audioPorts.outs.count());
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.outs.count()); // FIXME <=
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
@@ -700,7 +700,7 @@ bool RackGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, ui
     {
         groupId = RACK_GRAPH_GROUP_AUDIO_OUT;
 
-        if (const char* const portName = fullPortName+8)
+        if (const char* const portName = fullPortName+9)
         {
             bool ok;
             portId = audioPorts.getPortId(false, portName, &ok);
@@ -2127,15 +2127,18 @@ const char* const* CarlaEngine::getPatchbayConnections(const bool external) cons
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        if (external)
-            return nullptr;
-        if (RackGraph* const graph = pData->graph.getRackGraph())
-            return graph->getConnections();
+        RackGraph* const graph = pData->graph.getRackGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(external, nullptr);
+
+        return graph->getConnections();
     }
     else
     {
-        if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->getConnections(external);
+        PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, nullptr);
+
+        return graph->getConnections(external);
     }
 
     return nullptr;
@@ -2155,9 +2158,8 @@ void CarlaEngine::restorePatchbayConnection(const bool external, const char* con
     {
         RackGraph* const graph = pData->graph.getRackGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(external,);
 
-        if (external)
-            return;
         if (! graph->getGroupAndPortIdFromFullName(sourcePort, groupA, portA))
             return;
         if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))
