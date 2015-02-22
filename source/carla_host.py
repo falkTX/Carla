@@ -612,7 +612,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
 
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and driverName == "JACK":
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not self.host.isPlugin:
             self.ui.act_canvas_show_internal.setChecked(True)
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)

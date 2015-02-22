@@ -86,7 +86,7 @@ public:
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 
-    void setIgnorePatchbay(const bool ignore) noexcept;
+    void setUsingExternal(const bool usingExternal) noexcept;
 
 private:
     bool fIsRack;

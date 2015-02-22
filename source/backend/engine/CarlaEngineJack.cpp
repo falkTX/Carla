@@ -817,6 +817,7 @@ public:
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 pData->graph.create(0, 0);
+                patchbayRefresh(true);
             }
             else
             {
@@ -1154,7 +1155,7 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             fExternalPatchbay = external;
-            pData->graph.setIgnorePatchbay(external);
+            pData->graph.setUsingExternal(external);
 
             if (! external)
                 return CarlaEngine::patchbayRefresh(false);
