@@ -739,9 +739,18 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiInPort(\"%s\")", portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            RackGraph* const graph(pData->graph.getRackGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        }
+        else
+        {
+            PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        }
 
         CarlaString newRtMidiPortName;
         newRtMidiPortName += getName();
@@ -794,9 +803,18 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::connectRackMidiOutPort(\"%s\")", portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            RackGraph* const graph(pData->graph.getRackGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.outs.count() > 0, false);
+        }
+        else
+        {
+            PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.outs.count() > 0, false);
+        }
 
         CarlaString newRtMidiPortName;
         newRtMidiPortName += getName();
@@ -849,9 +867,18 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiInPort(\"%s\")", portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            RackGraph* const graph(pData->graph.getRackGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        }
+        else
+        {
+            PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.ins.count() > 0, false);
+        }
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
@@ -879,9 +906,18 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.outs.count() > 0, false);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            RackGraph* const graph(pData->graph.getRackGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.outs.count() > 0, false);
+        }
+        else
+        {
+            PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
+            CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(graph->extGraph.midiPorts.outs.count() > 0, false);
+        }
 
         const CarlaMutexLocker cml(fMidiOutMutex);
 

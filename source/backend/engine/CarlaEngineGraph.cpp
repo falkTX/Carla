@@ -1564,6 +1564,9 @@ void PatchbayGraph::removeAllPlugins()
 
 bool PatchbayGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
+    if (usingExternal)
+        return extGraph.connect(groupA, portA, groupB, portB);
+
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
 
@@ -1593,6 +1596,9 @@ bool PatchbayGraph::connect(const uint groupA, const uint portA, const uint grou
 
 bool PatchbayGraph::disconnect(const uint connectionId) noexcept
 {
+    if (usingExternal)
+        return extGraph.disconnect(connectionId);
+
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
@@ -1627,6 +1633,8 @@ bool PatchbayGraph::disconnect(const uint connectionId) noexcept
 
 void PatchbayGraph::disconnectGroup(const uint groupId) noexcept
 {
+    CARLA_SAFE_ASSERT(! usingExternal);
+
     for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
