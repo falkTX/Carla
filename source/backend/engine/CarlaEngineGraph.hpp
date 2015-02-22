@@ -151,7 +151,7 @@ struct PatchbayGraph {
     void clearConnections();
     void refresh(const char* const deviceName);
 
-    const char* const* getConnections() const;
+    const char* const* getConnections(const bool external) const;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);

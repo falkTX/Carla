@@ -1657,24 +1657,12 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
             plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
-    bool saveConnections = true;
+    bool saveExternalConnections = true;
 
-    // if we're running inside some session-manager, let them handle the connections
-    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    // save internal connections
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-            saveConnections = false;
-        else if (std::getenv("LADISH_APP_NAME") != nullptr)
-            saveConnections = false;
-        else if (std::getenv("NSM_URL") != nullptr)
-            saveConnections = false;
-        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
-            saveConnections = false;
-    }
-
-    if (saveConnections)
-    {
-        if (const char* const* const patchbayConns = getPatchbayConnections())
+        if (const char* const* const patchbayConns = getPatchbayConnections(false))
         {
             MemoryOutputStream outPatchbay(2048);
 
@@ -1695,6 +1683,45 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
             }
 
             outPatchbay << " </Patchbay>\n";
+            outStream << outPatchbay;
+        }
+    }
+    // if we're running inside some session-manager, let them handle the connections
+    else
+    {
+        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+            saveExternalConnections = false;
+        else if (std::getenv("LADISH_APP_NAME") != nullptr)
+            saveExternalConnections = false;
+        else if (std::getenv("NSM_URL") != nullptr)
+            saveExternalConnections = false;
+        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+            saveExternalConnections = false;
+    }
+
+    if (saveExternalConnections)
+    {
+        if (const char* const* const patchbayConns = getPatchbayConnections(true))
+        {
+            MemoryOutputStream outPatchbay(2048);
+
+            outPatchbay << "\n <ExternalPatchbay>\n";
+
+            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            {
+                const char* const connSource(patchbayConns[i]);
+                const char* const connTarget(patchbayConns[i+1]);
+
+                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+                outPatchbay << "  <Connection>\n";
+                outPatchbay << "   <Source>" << connSource << "</Source>\n";
+                outPatchbay << "   <Target>" << connTarget << "</Target>\n";
+                outPatchbay << "  </Connection>\n";
+            }
+
+            outPatchbay << " </ExternalPatchbay>\n";
             outStream << outPatchbay;
         }
     }
@@ -1896,20 +1923,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
-    // if we're running inside some session-manager, let them handle the connections
-    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-            return true;
-        else if (std::getenv("LADISH_APP_NAME") != nullptr)
-            return true;
-        else if (std::getenv("NSM_URL") != nullptr)
-            return true;
-        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
-            return true;
-    }
-
-    // now handle connections
+    // handle connections (internal)
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
         const String& tagName(elem->getTagName());
@@ -1941,10 +1955,63 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             }
 
             if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                restorePatchbayConnection(sourcePort, targetPort);
+                restorePatchbayConnection(false, sourcePort, targetPort);
         }
         break;
     }
+
+    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+    // if we're running inside some session-manager, let them handle the external connections
+    if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        /**/ if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+            return true;
+        else if (std::getenv("LADISH_APP_NAME") != nullptr)
+            return true;
+        else if (std::getenv("NSM_URL") != nullptr)
+            return true;
+        else if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+            return true;
+    }
+
+    // handle connections (external)
+    for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+    {
+        const String& tagName(elem->getTagName());
+
+        if (! tagName.equalsIgnoreCase("externalpatchbay"))
+            continue;
+
+        CarlaString sourcePort, targetPort;
+
+        for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+        {
+            const String& patchTag(patchElem->getTagName());
+
+            sourcePort.clear();
+            targetPort.clear();
+
+            if (! patchTag.equalsIgnoreCase("connection"))
+                continue;
+
+            for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
+            {
+                const String& tag(connElem->getTagName());
+                const String  text(connElem->getAllSubText().trim());
+
+                /**/ if (tag.equalsIgnoreCase("source"))
+                    sourcePort = text.toRawUTF8();
+                else if (tag.equalsIgnoreCase("target"))
+                    targetPort = text.toRawUTF8();
+            }
+
+            if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                restorePatchbayConnection(true, sourcePort, targetPort);
+        }
+        break;
+    }
+
 #endif
 
     return true;

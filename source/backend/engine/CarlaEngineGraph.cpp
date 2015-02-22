@@ -1729,9 +1729,9 @@ void PatchbayGraph::refresh(const char* const deviceName)
     }
 }
 
-const char* const* PatchbayGraph::getConnections() const
+const char* const* PatchbayGraph::getConnections(const bool external) const
 {
-    if (connections.list.count() == 0)
+    if (connections.list.count() == 0 || external)
         return nullptr;
 
     CarlaStringList connList;
@@ -2120,31 +2120,33 @@ bool CarlaEngine::patchbayRefresh(const bool external)
 
 // -----------------------------------------------------------------------
 
-const char* const* CarlaEngine::getPatchbayConnections() const
+const char* const* CarlaEngine::getPatchbayConnections(const bool external) const
 {
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), nullptr);
-    carla_debug("CarlaEngine::getPatchbayConnections()");
+    carla_debug("CarlaEngine::getPatchbayConnections(%s)", bool2str(external));
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
+        if (external)
+            return nullptr;
         if (RackGraph* const graph = pData->graph.getRackGraph())
             return graph->getConnections();
     }
     else
     {
         if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->getConnections();
+            return graph->getConnections(external);
     }
 
     return nullptr;
 }
 
-void CarlaEngine::restorePatchbayConnection(const char* const sourcePort, const char* const targetPort)
+void CarlaEngine::restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
     CARLA_SAFE_ASSERT_RETURN(sourcePort != nullptr && sourcePort[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(targetPort != nullptr && targetPort[0] != '\0',);
-    carla_debug("CarlaEngine::restorePatchbayConnection(\"%s\", \"%s\")", sourcePort, targetPort);
+    carla_debug("CarlaEngine::restorePatchbayConnection(%s, \"%s\", \"%s\")", bool2str(external), sourcePort, targetPort);
 
     uint groupA, portA;
     uint groupB, portB;
@@ -2154,6 +2156,8 @@ void CarlaEngine::restorePatchbayConnection(const char* const sourcePort, const 
         RackGraph* const graph = pData->graph.getRackGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
+        if (external)
+            return;
         if (! graph->getGroupAndPortIdFromFullName(sourcePort, groupA, portA))
             return;
         if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))
@@ -2164,6 +2168,7 @@ void CarlaEngine::restorePatchbayConnection(const char* const sourcePort, const 
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
+        // TODO external
         if (! graph->getGroupAndPortIdFromFullName(sourcePort, groupA, portA))
             return;
         if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))

@@ -1215,13 +1215,13 @@ public:
     // -------------------------------------------------------------------
     // Patchbay stuff
 
-    const char* const* getPatchbayConnections() const override
+    const char* const* getPatchbayConnections(const bool external) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
-        carla_debug("CarlaEngineJack::getPatchbayConnections()");
+        carla_debug("CarlaEngineJack::getPatchbayConnections(%s)", bool2str(external));
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            return CarlaEngine::getPatchbayConnections();
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::getPatchbayConnections(external);
 
         CarlaStringList connList;
 
@@ -1257,15 +1257,15 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const char* const connSource, const char* const connTarget) override
+    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
         carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            return CarlaEngine::restorePatchbayConnection(connSource, connTarget);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget);
 
         if (const jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
         {
