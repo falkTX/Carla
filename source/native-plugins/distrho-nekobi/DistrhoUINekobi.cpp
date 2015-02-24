@@ -23,8 +23,10 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
-    : UI(),
-      fAboutWindow(this)
+    : UI()
+#ifndef DISTRHO_OS_MAC
+    , fAboutWindow(this)
+#endif
 {
     // FIXME
     fNeko.setTimerSpeed(5);
@@ -35,8 +37,10 @@ DistrhoUINekobi::DistrhoUINekobi()
     // background
     fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
 
+#ifndef DISTRHO_OS_MAC
     Image aboutImage(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
+#endif
 
     // slider
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
@@ -182,7 +186,9 @@ void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
+#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
+#endif
 }
 
 void DistrhoUINekobi::imageKnobDragStarted(ImageKnob* knob)

@@ -22,8 +22,10 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 DistrhoUIPingPongPan::DistrhoUIPingPongPan()
-    : UI(),
-      fAboutWindow(this)
+    : UI()
+#ifndef DISTRHO_OS_MAC
+    , fAboutWindow(this)
+#endif
 {
     // set UI size
     setSize(DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight);
@@ -31,8 +33,10 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     // background
     fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGR);
 
+#ifndef DISTRHO_OS_MAC
     Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGR);
     fAboutWindow.setImage(imageAbout);
+#endif
 
     // knobs
     Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
@@ -100,7 +104,9 @@ void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
+#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
+#endif
 }
 
 void DistrhoUIPingPongPan::imageKnobDragStarted(ImageKnob* knob)

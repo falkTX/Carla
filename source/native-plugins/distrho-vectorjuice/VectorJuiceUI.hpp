@@ -74,7 +74,9 @@ private:
     Image fImgRoundlet;
     Image fImgOrbit;
     Image fImgSubOrbit;
+#ifndef DISTRHO_OS_MAC
     ImageAboutWindow fAboutWindow;
+#endif
 
     ScopedPointer<ImageButton> fButtonAbout;
 

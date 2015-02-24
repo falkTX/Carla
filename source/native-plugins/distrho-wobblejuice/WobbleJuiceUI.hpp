@@ -61,7 +61,9 @@ protected:
 
 private:
     Image fImgBackground;
+#ifndef DISTRHO_OS_MAC
     ImageAboutWindow fAboutWindow;
+#endif
 
     ScopedPointer<ImageButton> fButtonAbout;
     ScopedPointer<ImageKnob>   fKnobDivision, fKnobResonance, fKnobRange;

@@ -24,8 +24,10 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
-    : UI(),
-      fAboutWindow(this)
+    : UI()
+#ifndef DISTRHO_OS_MAC
+    , fAboutWindow(this)
+#endif
 {
     // set UI size
     setSize(DistrhoArtwork3BandSplitter::backgroundWidth, DistrhoArtwork3BandSplitter::backgroundHeight);
@@ -33,9 +35,11 @@ DistrhoUI3BandSplitter::DistrhoUI3BandSplitter()
     // background
     fImgBackground = Image(DistrhoArtwork3BandSplitter::backgroundData, DistrhoArtwork3BandSplitter::backgroundWidth, DistrhoArtwork3BandSplitter::backgroundHeight, GL_BGR);
 
+#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(DistrhoArtwork3BandSplitter::aboutData, DistrhoArtwork3BandSplitter::aboutWidth, DistrhoArtwork3BandSplitter::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
+#endif
 
     // sliders
     Image sliderImage(DistrhoArtwork3BandSplitter::sliderData, DistrhoArtwork3BandSplitter::sliderWidth, DistrhoArtwork3BandSplitter::sliderHeight);
@@ -157,7 +161,9 @@ void DistrhoUI3BandSplitter::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
+#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
+#endif
 }
 
 void DistrhoUI3BandSplitter::imageKnobDragStarted(ImageKnob* knob)

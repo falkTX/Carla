@@ -23,17 +23,21 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 WobbleJuiceUI::WobbleJuiceUI()
-    : UI(),
-      fAboutWindow(this)
+    : UI()
+#ifndef DISTRHO_OS_MAC
+    , fAboutWindow(this)
+#endif
 {
     setSize(WobbleJuiceArtwork::backgroundWidth, WobbleJuiceArtwork::backgroundHeight);
 
     // background
     fImgBackground = Image(WobbleJuiceArtwork::backgroundData, WobbleJuiceArtwork::backgroundWidth, WobbleJuiceArtwork::backgroundHeight, GL_BGR);
 
+#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(WobbleJuiceArtwork::aboutData, WobbleJuiceArtwork::aboutWidth, WobbleJuiceArtwork::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
+#endif
 
     // knobs
     Image knobImage(WobbleJuiceArtwork::knobData, WobbleJuiceArtwork::knobWidth, WobbleJuiceArtwork::knobHeight);
@@ -154,7 +158,9 @@ void WobbleJuiceUI::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
+#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
+#endif
 }
 
 void WobbleJuiceUI::imageKnobDragStarted(ImageKnob* knob)

@@ -71,7 +71,9 @@ protected:
 
 private:
     Image            fImgBackground;
+#ifndef DISTRHO_OS_MAC
     ImageAboutWindow fAboutWindow;
+#endif
     NekoWidget       fNeko;
 
     ScopedPointer<ImageButton> fButtonAbout;

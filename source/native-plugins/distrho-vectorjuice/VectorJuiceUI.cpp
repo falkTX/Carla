@@ -25,8 +25,10 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 VectorJuiceUI::VectorJuiceUI()
-    : UI(),
-      fAboutWindow(this)
+    : UI()
+#ifndef DISTRHO_OS_MAC
+    , fAboutWindow(this)
+#endif
 {
     setSize(VectorJuiceArtwork::backgroundWidth, VectorJuiceArtwork::backgroundHeight);
 
@@ -55,9 +57,11 @@ VectorJuiceUI::VectorJuiceUI()
     //subOrbit
     fImgSubOrbit = Image(VectorJuiceArtwork::subOrbitData, VectorJuiceArtwork::subOrbitWidth, VectorJuiceArtwork::subOrbitHeight);
 
+#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(VectorJuiceArtwork::aboutData, VectorJuiceArtwork::aboutWidth, VectorJuiceArtwork::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
+#endif
 
     // about button
     Image aboutImageNormal(VectorJuiceArtwork::aboutButtonNormalData, VectorJuiceArtwork::aboutButtonNormalWidth, VectorJuiceArtwork::aboutButtonNormalHeight);
@@ -303,7 +307,9 @@ void VectorJuiceUI::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
+#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
+#endif
 }
 
 void VectorJuiceUI::imageKnobDragStarted(ImageKnob* knob)
