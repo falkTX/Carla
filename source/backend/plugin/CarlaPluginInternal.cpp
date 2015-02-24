@@ -27,7 +27,6 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const MidiProgramData kMidiProgramDataNull  = { 0, 0, nullptr };
-static const CustomData      kCustomDataFallback   = { nullptr, nullptr, nullptr };
 static /* */ CustomData      kCustomDataFallbackNC = { nullptr, nullptr, nullptr };
 
 // -----------------------------------------------------------------------

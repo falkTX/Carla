@@ -2083,7 +2083,7 @@ private:
         handlePtr->handleJackFreewheelCallback(bool(starting));
     }
 
-    static int __cdecl carla_jack_process_callback(jack_nframes_t nframes, void* arg)
+    static int __cdecl carla_jack_process_callback(jack_nframes_t nframes, void* arg) __attribute__((annotate("realtime")))
     {
         handlePtr->handleJackProcessCallback(nframes);
         return 0;
@@ -2134,7 +2134,7 @@ private:
     // -------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-    static int __cdecl carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg)
+    static int __cdecl carla_jack_process_callback_plugin(jack_nframes_t nframes, void* arg) __attribute__((annotate("realtime")))
     {
         CarlaPlugin* const plugin((CarlaPlugin*)arg);
         CARLA_SAFE_ASSERT_RETURN(plugin != nullptr && plugin->isEnabled(), 0);

@@ -385,6 +385,14 @@ debug:
 doxygen:
 	$(MAKE) doxygen -C source/backend
 
+stoat:
+	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png
+
+# 	stoat --recursive ./build/ \
+# 	--suppression ./data/stoat-supression.txt \
+# 	--whitelist   ./data/stoat-whitelist.txt  \
+# 	--graph-view  ./data/stoat-callgraph.png
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 install:

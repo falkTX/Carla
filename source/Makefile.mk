@@ -94,6 +94,13 @@ ifneq ($(WIN32),true)
 BASE_FLAGS += -fPIC -DPIC
 endif
 
+ifeq ($(STOAT),true)
+CC  = clang
+CXX = clang++
+BASE_FLAGS += -emit-llvm
+BASE_OPTS  += -O0
+endif
+
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
 ifeq ($(WIN32),true)
