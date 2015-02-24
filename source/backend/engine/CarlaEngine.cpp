@@ -1928,6 +1928,8 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     // handle connections (internal)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
+        const bool isUsingExternal(pData->graph.isUsingExternal());
+
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
             const String& tagName(elem->getTagName());
@@ -1959,7 +1961,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(false, sourcePort, targetPort);
+                    restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
             }
             break;
         }
@@ -1986,6 +1988,8 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     // handle connections (external)
     if (loadExternalConnections)
     {
+        const bool isUsingExternal(pData->graph.isUsingExternal());
+
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
             const String& tagName(elem->getTagName());
@@ -2019,7 +2023,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(true, sourcePort, targetPort);
+                    restorePatchbayConnection(true, sourcePort, targetPort, isUsingExternal);
             }
             break;
         }

@@ -1043,19 +1043,17 @@ public:
     // Helper functions
 
     /*!
-     * Return internal data, needed for EventPorts when used in Rack and Bridge modes.
+     * Return internal data, needed for EventPorts when used in Rack, Patchbay and Bridge modes.
      * @note RT call
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Virtual functions for handling MIDI ports in the rack graph.
+     * Virtual functions for handling external graph ports.
      */
-    virtual bool connectRackMidiInPort(const char* const)     { return false; }
-    virtual bool connectRackMidiOutPort(const char* const)    { return false; }
-    virtual bool disconnectRackMidiInPort(const char* const)  { return false; }
-    virtual bool disconnectRackMidiOutPort(const char* const) { return false; }
+    virtual bool connectExternalGraphPort(const uint, const uint, const char* const);
+    virtual bool disconnectExternalGraphPort(const uint, const uint, const char* const);
 #endif
 
     // -------------------------------------------------------------------
@@ -1122,7 +1120,7 @@ protected:
      * Do not free returned data.
      */
     virtual const char* const* getPatchbayConnections(const bool external) const;
-    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort);
+    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort, const bool sendCallback);
 #endif
 
     // -------------------------------------------------------------------

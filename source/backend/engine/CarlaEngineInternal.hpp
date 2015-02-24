@@ -86,6 +86,7 @@ public:
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 
+    bool isUsingExternal() const noexcept;
     void setUsingExternal(const bool usingExternal) noexcept;
 
 private:

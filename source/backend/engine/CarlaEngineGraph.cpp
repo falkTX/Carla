@@ -84,79 +84,6 @@ const char* getExternalGraphFullPortNameFromId(const /*RackGraphCarlaPortIds*/ u
 
 // -----------------------------------------------------------------------
 
-ExternalGraphBuffers::ExternalGraphBuffers() noexcept
-    : mutex(),
-      connectedIn1(),
-      connectedIn2(),
-      connectedOut1(),
-      connectedOut2()
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-    , inBuf{nullptr, nullptr},
-      inBufTmp{nullptr, nullptr},
-      outBuf{nullptr, nullptr} {}
-#else
-    {
-        inBuf[0]    = inBuf[1]    = nullptr;
-        inBufTmp[0] = inBufTmp[1] = nullptr;
-        outBuf[0]   = outBuf[1]   = nullptr;
-    }
-#endif
-
-void ExternalGraphBuffers::setBufferSize(const uint32_t bufferSize, const bool createBuffers) noexcept
-{
-    const int bufferSizei(static_cast<int>(bufferSize));
-
-    const CarlaRecursiveMutexLocker cml(mutex);
-
-    if (inBuf[0]    != nullptr) { delete[] inBuf[0];    inBuf[0]    = nullptr; }
-    if (inBuf[1]    != nullptr) { delete[] inBuf[1];    inBuf[1]    = nullptr; }
-    if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
-    if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
-    if (outBuf[0]   != nullptr) { delete[] outBuf[0];   outBuf[0]   = nullptr; }
-    if (outBuf[1]   != nullptr) { delete[] outBuf[1];   outBuf[1]   = nullptr; }
-
-    CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-
-    try {
-        inBufTmp[0] = new float[bufferSize];
-        inBufTmp[1] = new float[bufferSize];
-
-        if (createBuffers)
-        {
-            inBuf[0]  = new float[bufferSize];
-            inBuf[1]  = new float[bufferSize];
-            outBuf[0] = new float[bufferSize];
-            outBuf[1] = new float[bufferSize];
-        }
-    }
-    catch(...) {
-        if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
-        if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
-
-        if (createBuffers)
-        {
-            if (inBuf[0]  != nullptr) { delete[] inBuf[0];  inBuf[0]  = nullptr; }
-            if (inBuf[1]  != nullptr) { delete[] inBuf[1];  inBuf[1]  = nullptr; }
-            if (outBuf[0] != nullptr) { delete[] outBuf[0]; outBuf[0] = nullptr; }
-            if (outBuf[1] != nullptr) { delete[] outBuf[1]; outBuf[1] = nullptr; }
-        }
-        return;
-    }
-
-    FloatVectorOperations::clear(inBufTmp[0], bufferSizei);
-    FloatVectorOperations::clear(inBufTmp[1], bufferSizei);
-
-    if (createBuffers)
-    {
-        FloatVectorOperations::clear(inBuf[0],  bufferSizei);
-        FloatVectorOperations::clear(inBuf[1],  bufferSizei);
-        FloatVectorOperations::clear(outBuf[0], bufferSizei);
-        FloatVectorOperations::clear(outBuf[1], bufferSizei);
-    }
-}
-
-// -----------------------------------------------------------------------
-
 ExternalGraphPorts::ExternalGraphPorts() noexcept
     : ins(),
       outs() {}
@@ -203,32 +130,21 @@ uint ExternalGraphPorts::getPortId(const bool isInput, const char portName[], bo
 
 ExternalGraph::ExternalGraph(CarlaEngine* const engine) noexcept
     : connections(),
-      audioBuffers(),
       audioPorts(),
       midiPorts(),
       retCon(),
       kEngine(engine) {}
 
-void ExternalGraph::clearConnections() noexcept
+void ExternalGraph::clear() noexcept
 {
-    audioBuffers.mutex.lock();
-    audioBuffers.connectedIn1.clear();
-    audioBuffers.connectedIn2.clear();
-    audioBuffers.connectedOut1.clear();
-    audioBuffers.connectedOut2.clear();
-    audioBuffers.mutex.unlock();
     connections.clear();
-}
-
-void ExternalGraph::clearPorts() noexcept
-{
     audioPorts.ins.clear();
     audioPorts.outs.clear();
     midiPorts.ins.clear();
     midiPorts.outs.clear();
 }
 
-bool ExternalGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
+bool ExternalGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback) noexcept
 {
     uint otherGroup, otherPort, carlaPort;
 
@@ -258,42 +174,34 @@ bool ExternalGraph::connect(const uint groupA, const uint portA, const uint grou
     {
     case kExternalGraphCarlaPortAudioIn1:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupAudioIn, false);
-        audioBuffers.mutex.lock();
-        makeConnection = audioBuffers.connectedIn1.append(otherPort);
-        audioBuffers.mutex.unlock();
+        makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionAudioIn1, otherPort, nullptr);
         break;
 
     case kExternalGraphCarlaPortAudioIn2:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupAudioIn, false);
-        audioBuffers.mutex.lock();
-        makeConnection = audioBuffers.connectedIn2.append(otherPort);
-        audioBuffers.mutex.unlock();
+        makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionAudioIn2, otherPort, nullptr);
         break;
 
     case kExternalGraphCarlaPortAudioOut1:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupAudioOut, false);
-        audioBuffers.mutex.lock();
-        makeConnection = audioBuffers.connectedOut1.append(otherPort);
-        audioBuffers.mutex.unlock();
+        makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionAudioOut1, otherPort, nullptr);
         break;
 
     case kExternalGraphCarlaPortAudioOut2:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupAudioOut, false);
-        audioBuffers.mutex.lock();
-        makeConnection = audioBuffers.connectedOut2.append(otherPort);
-        audioBuffers.mutex.unlock();
+        makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionAudioOut2, otherPort, nullptr);
         break;
 
     case kExternalGraphCarlaPortMidiIn:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupMidiIn, false);
         if (const char* const portName = midiPorts.getName(true, otherPort))
-            makeConnection = kEngine->connectRackMidiInPort(portName);
+            makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionMidiInput, 0, portName);
         break;
 
     case kExternalGraphCarlaPortMidiOut:
         CARLA_SAFE_ASSERT_RETURN(otherGroup == kExternalGraphGroupMidiOut, false);
         if (const char* const portName = midiPorts.getName(false, otherPort))
-            makeConnection = kEngine->connectRackMidiOutPort(portName);
+            makeConnection = kEngine->connectExternalGraphPort(kExternalGraphConnectionMidiOutput, 0, portName);
         break;
     }
 
@@ -310,7 +218,8 @@ bool ExternalGraph::connect(const uint groupA, const uint portA, const uint grou
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+    if (sendCallback)
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;
@@ -357,37 +266,29 @@ bool ExternalGraph::disconnect(const uint connectionId) noexcept
         switch (carlaPort)
         {
         case kExternalGraphCarlaPortAudioIn1:
-            audioBuffers.mutex.lock();
-            makeDisconnection = audioBuffers.connectedIn1.removeOne(otherPort);
-            audioBuffers.mutex.unlock();
+            makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionAudioIn1, otherPort, nullptr);
             break;
 
         case kExternalGraphCarlaPortAudioIn2:
-            audioBuffers.mutex.lock();
-            makeDisconnection = audioBuffers.connectedIn2.removeOne(otherPort);
-            audioBuffers.mutex.unlock();
+            makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionAudioIn2, otherPort, nullptr);
             break;
 
         case kExternalGraphCarlaPortAudioOut1:
-            audioBuffers.mutex.lock();
-            makeDisconnection = audioBuffers.connectedOut1.removeOne(otherPort);
-            audioBuffers.mutex.unlock();
+            makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionAudioOut1, otherPort, nullptr);
             break;
 
         case kExternalGraphCarlaPortAudioOut2:
-            audioBuffers.mutex.lock();
-            makeDisconnection = audioBuffers.connectedOut2.removeOne(otherPort);
-            audioBuffers.mutex.unlock();
+            makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionAudioOut2, otherPort, nullptr);
             break;
 
         case kExternalGraphCarlaPortMidiIn:
             if (const char* const portName = midiPorts.getName(true, otherPort))
-                makeDisconnection = kEngine->disconnectRackMidiInPort(portName);
+                makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionMidiInput, 0, portName);
             break;
 
         case kExternalGraphCarlaPortMidiOut:
             if (const char* const portName = midiPorts.getName(false, otherPort))
-                makeDisconnection = kEngine->disconnectRackMidiOutPort(portName);
+                makeDisconnection = kEngine->disconnectExternalGraphPort(kExternalGraphConnectionMidiOutput, 0, portName);
             break;
         }
 
@@ -411,16 +312,20 @@ void ExternalGraph::refresh(const char* const deviceName)
 {
     CARLA_SAFE_ASSERT_RETURN(deviceName != nullptr,);
 
-    connections.clear();
+    const bool isRack(kEngine->getOptions().processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
 
     // Main
     {
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, kExternalGraphGroupCarla, PATCHBAY_ICON_CARLA, -1, 0.0f, kEngine->getName());
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+        if (isRack)
+        {
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
+        }
+
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiIn,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiOut,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
     }
@@ -429,6 +334,7 @@ void ExternalGraph::refresh(const char* const deviceName)
     strBuf[STR_MAX] = '\0';
 
     // Audio In
+    if (isRack)
     {
         if (deviceName[0] != '\0')
             std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName);
@@ -451,6 +357,7 @@ void ExternalGraph::refresh(const char* const deviceName)
     }
 
     // Audio Out
+    if (isRack)
     {
         if (deviceName[0] != '\0')
             std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName);
@@ -505,75 +412,6 @@ void ExternalGraph::refresh(const char* const deviceName)
                               PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
         }
     }
-
-    // Connections
-    audioBuffers.mutex.lock();
-
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
-    {
-        const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.ins.count()); // FIXME <=
-
-        ConnectionToId connectionToId;
-        connectionToId.setData(++(connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn1);
-
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-        connections.list.append(connectionToId);
-    }
-
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
-    {
-        const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.ins.count()); // FIXME <=
-
-        ConnectionToId connectionToId;
-        connectionToId.setData(++(connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn2);
-
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-        connections.list.append(connectionToId);
-    }
-
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
-    {
-        const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.outs.count()); // FIXME <=
-
-        ConnectionToId connectionToId;
-        connectionToId.setData(++(connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut1, kExternalGraphGroupAudioOut, portId);
-
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-        connections.list.append(connectionToId);
-    }
-
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
-    {
-        const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= audioPorts.outs.count()); // FIXME <=
-
-        ConnectionToId connectionToId;
-        connectionToId.setData(++(connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut2, kExternalGraphGroupAudioOut, portId);
-
-        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-        connections.list.append(connectionToId);
-    }
-
-    audioBuffers.mutex.unlock();
 }
 
 const char* const* ExternalGraph::getConnections() const noexcept
@@ -656,6 +494,7 @@ const char* const* ExternalGraph::getConnections() const noexcept
 bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0', false);
+    carla_stdout("%s", fullPortName);
 
     if (std::strncmp(fullPortName, "Carla:", 6) == 0)
     {
@@ -695,6 +534,7 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         {
             bool ok;
             portId = midiPorts.getPortId(true, portName, &ok);
+            carla_stdout("test %s %s", bool2str(ok), portName);
             return ok;
         }
     }
@@ -714,6 +554,97 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
 }
 
 // -----------------------------------------------------------------------
+// RackGraph Buffers
+
+RackGraph::Buffers::Buffers() noexcept
+    : mutex(),
+      connectedIn1(),
+      connectedIn2(),
+      connectedOut1(),
+      connectedOut2()
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    , inBuf{nullptr, nullptr},
+      inBufTmp{nullptr, nullptr},
+      outBuf{nullptr, nullptr} {}
+#else
+    {
+        inBuf[0]    = inBuf[1]    = nullptr;
+        inBufTmp[0] = inBufTmp[1] = nullptr;
+        outBuf[0]   = outBuf[1]   = nullptr;
+    }
+#endif
+
+RackGraph::Buffers::~Buffers() noexcept
+{
+    const CarlaRecursiveMutexLocker cml(mutex);
+
+    if (inBuf[0]    != nullptr) { delete[] inBuf[0];    inBuf[0]    = nullptr; }
+    if (inBuf[1]    != nullptr) { delete[] inBuf[1];    inBuf[1]    = nullptr; }
+    if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
+    if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
+    if (outBuf[0]   != nullptr) { delete[] outBuf[0];   outBuf[0]   = nullptr; }
+    if (outBuf[1]   != nullptr) { delete[] outBuf[1];   outBuf[1]   = nullptr; }
+
+    connectedIn1.clear();
+    connectedIn2.clear();
+    connectedOut1.clear();
+    connectedOut2.clear();
+}
+
+void RackGraph::Buffers::setBufferSize(const uint32_t bufferSize, const bool createBuffers) noexcept
+{
+    const int bufferSizei(static_cast<int>(bufferSize));
+
+    const CarlaRecursiveMutexLocker cml(mutex);
+
+    if (inBuf[0]    != nullptr) { delete[] inBuf[0];    inBuf[0]    = nullptr; }
+    if (inBuf[1]    != nullptr) { delete[] inBuf[1];    inBuf[1]    = nullptr; }
+    if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
+    if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
+    if (outBuf[0]   != nullptr) { delete[] outBuf[0];   outBuf[0]   = nullptr; }
+    if (outBuf[1]   != nullptr) { delete[] outBuf[1];   outBuf[1]   = nullptr; }
+
+    CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
+
+    try {
+        inBufTmp[0] = new float[bufferSize];
+        inBufTmp[1] = new float[bufferSize];
+
+        if (createBuffers)
+        {
+            inBuf[0]  = new float[bufferSize];
+            inBuf[1]  = new float[bufferSize];
+            outBuf[0] = new float[bufferSize];
+            outBuf[1] = new float[bufferSize];
+        }
+    }
+    catch(...) {
+        if (inBufTmp[0] != nullptr) { delete[] inBufTmp[0]; inBufTmp[0] = nullptr; }
+        if (inBufTmp[1] != nullptr) { delete[] inBufTmp[1]; inBufTmp[1] = nullptr; }
+
+        if (createBuffers)
+        {
+            if (inBuf[0]  != nullptr) { delete[] inBuf[0];  inBuf[0]  = nullptr; }
+            if (inBuf[1]  != nullptr) { delete[] inBuf[1];  inBuf[1]  = nullptr; }
+            if (outBuf[0] != nullptr) { delete[] outBuf[0]; outBuf[0] = nullptr; }
+            if (outBuf[1] != nullptr) { delete[] outBuf[1]; outBuf[1] = nullptr; }
+        }
+        return;
+    }
+
+    FloatVectorOperations::clear(inBufTmp[0], bufferSizei);
+    FloatVectorOperations::clear(inBufTmp[1], bufferSizei);
+
+    if (createBuffers)
+    {
+        FloatVectorOperations::clear(inBuf[0],  bufferSizei);
+        FloatVectorOperations::clear(inBuf[1],  bufferSizei);
+        FloatVectorOperations::clear(outBuf[0], bufferSizei);
+        FloatVectorOperations::clear(outBuf[1], bufferSizei);
+    }
+}
+
+// -----------------------------------------------------------------------
 // RackGraph
 
 RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs) noexcept
@@ -721,6 +652,7 @@ RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32
       inputs(ins),
       outputs(outs),
       isOffline(false),
+      audioBuffers(),
       kEngine(engine)
 {
     setBufferSize(engine->getBufferSize());
@@ -728,13 +660,12 @@ RackGraph::RackGraph(CarlaEngine* const engine, const uint32_t ins, const uint32
 
 RackGraph::~RackGraph() noexcept
 {
-    extGraph.clearConnections();
-    extGraph.clearPorts();
+    extGraph.clear();
 }
 
 void RackGraph::setBufferSize(const uint32_t bufferSize) noexcept
 {
-    extGraph.audioBuffers.setBufferSize(bufferSize, (inputs > 0 || outputs > 0));
+    audioBuffers.setBufferSize(bufferSize, (inputs > 0 || outputs > 0));
 }
 
 void RackGraph::setOffline(const bool offline) noexcept
@@ -744,7 +675,7 @@ void RackGraph::setOffline(const bool offline) noexcept
 
 bool RackGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
 {
-    return extGraph.connect(groupA, portA, groupB, portB);
+    return extGraph.connect(groupA, portA, groupB, portB, true);
 }
 
 bool RackGraph::disconnect(const uint connectionId) noexcept
@@ -752,19 +683,79 @@ bool RackGraph::disconnect(const uint connectionId) noexcept
     return extGraph.disconnect(connectionId);
 }
 
-void RackGraph::clearPorts() noexcept
-{
-    extGraph.clearPorts();
-}
-
-void RackGraph::clearConnections() noexcept
-{
-    extGraph.clearConnections();
-}
-
 void RackGraph::refresh(const char* const deviceName)
 {
     extGraph.refresh(deviceName);
+
+    char strBuf[STR_MAX+1];
+    strBuf[STR_MAX] = '\0';
+
+    // Connections
+    const CarlaRecursiveMutexLocker cml(audioBuffers.mutex);
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count()); // FIXME <=
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn1);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        extGraph.connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count()); // FIXME <=
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn2);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        extGraph.connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count()); // FIXME <=
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut1, kExternalGraphGroupAudioOut, portId);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        extGraph.connections.list.append(connectionToId);
+    }
+
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
+    {
+        const uint& portId(it.getValue(0));
+        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count()); // FIXME <=
+
+        ConnectionToId connectionToId;
+        connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut2, kExternalGraphGroupAudioOut, portId);
+
+        std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
+
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+
+        extGraph.connections.list.append(connectionToId);
+    }
 }
 
 const char* const* RackGraph::getConnections() const noexcept
@@ -899,9 +890,6 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
 void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames)
 {
-    // FIXME
-    ExternalGraphBuffers& audioBuffers(extGraph.audioBuffers);
-
     CARLA_SAFE_ASSERT_RETURN(audioBuffers.outBuf[1] != nullptr,);
 
     const int iframes(static_cast<int>(frames));
@@ -1363,19 +1351,16 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
       extGraph(engine),
       kEngine(engine)
 {
-    const uint32_t bufferSize(engine->getBufferSize());
-    const int      bufferSizei(static_cast<int>(bufferSize));
-    const double   sampleRate(engine->getSampleRate());
+    const int    bufferSize(static_cast<int>(engine->getBufferSize()));
+    const double sampleRate(engine->getSampleRate());
 
-    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSizei);
-    graph.prepareToPlay(sampleRate, bufferSizei);
+    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
+    graph.prepareToPlay(sampleRate, bufferSize);
 
-    audioBuffer.setSize(static_cast<int>(jmax(inputs, outputs)), bufferSizei);
+    audioBuffer.setSize(static_cast<int>(jmax(inputs, outputs)), bufferSize);
 
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
-
-    extGraph.audioBuffers.setBufferSize(bufferSize, (inputs > 0 || outputs > 0));
 
     {
         AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
@@ -1424,9 +1409,8 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
 
 PatchbayGraph::~PatchbayGraph()
 {
-    clearInternalConnections();
-    extGraph.clearConnections();
-    extGraph.clearPorts();
+    connections.clear();
+    extGraph.clear();
 
     graph.releaseResources();
     graph.clear();
@@ -1440,8 +1424,6 @@ void PatchbayGraph::setBufferSize(const uint32_t bufferSize)
     graph.releaseResources();
     graph.prepareToPlay(kEngine->getSampleRate(), bufferSizei);
     audioBuffer.setSize(audioBuffer.getNumChannels(), bufferSizei);
-
-    extGraph.audioBuffers.setBufferSize(bufferSize, (inputs > 0 || outputs > 0));
 }
 
 void PatchbayGraph::setSampleRate(const double sampleRate)
@@ -1485,7 +1467,7 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
 
     if (! usingExternal)
     {
-        disconnectGroup(oldNode->nodeId);
+        disconnectInternalGroup(oldNode->nodeId);
         removeNodeFromPatchbay(kEngine, oldNode->nodeId, oldNode->getProcessor());
     }
 
@@ -1516,7 +1498,7 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
 
     if (! usingExternal)
     {
-        disconnectGroup(node->nodeId);
+        disconnectInternalGroup(node->nodeId);
         removeNodeFromPatchbay(kEngine, node->nodeId, node->getProcessor());
     }
 
@@ -1552,7 +1534,7 @@ void PatchbayGraph::removeAllPlugins()
 
         if (! usingExternal)
         {
-            disconnectGroup(node->nodeId);
+            disconnectInternalGroup(node->nodeId);
             removeNodeFromPatchbay(kEngine, node->nodeId, node->getProcessor());
         }
 
@@ -1562,10 +1544,10 @@ void PatchbayGraph::removeAllPlugins()
     }
 }
 
-bool PatchbayGraph::connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept
+bool PatchbayGraph::connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback)
 {
-    if (usingExternal)
-        return extGraph.connect(groupA, portA, groupB, portB);
+    if (external)
+        return extGraph.connect(groupA, portA, groupB, portB, sendCallback);
 
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
@@ -1588,13 +1570,14 @@ bool PatchbayGraph::connect(const uint groupA, const uint portA, const uint grou
     strBuf[STR_MAX] = '\0';
     std::snprintf(strBuf, STR_MAX, "%u:%u:%u:%u", groupA, portA, groupB, portB);
 
-    kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+    if (sendCallback)
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
     connections.list.append(connectionToId);
     return true;
 }
 
-bool PatchbayGraph::disconnect(const uint connectionId) noexcept
+bool PatchbayGraph::disconnect(const uint connectionId)
 {
     if (usingExternal)
         return extGraph.disconnect(connectionId);
@@ -1631,7 +1614,7 @@ bool PatchbayGraph::disconnect(const uint connectionId) noexcept
     return false;
 }
 
-void PatchbayGraph::disconnectGroup(const uint groupId) noexcept
+void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
 {
     CARLA_SAFE_ASSERT(! usingExternal);
 
@@ -1658,18 +1641,11 @@ void PatchbayGraph::disconnectGroup(const uint groupId) noexcept
                                connectionToId.groupB, static_cast<int>(adjustedPortB));
         */
 
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+        if (! usingExternal)
+            kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
 
         connections.list.remove(it);
     }
-}
-
-void PatchbayGraph::clearInternalConnections()
-{
-    connections.clear();
-
-    for (int i=0, count=graph.getNumConnections(); i<count; ++i)
-        graph.removeConnection(0);
 }
 
 void PatchbayGraph::refresh(const char* const deviceName)
@@ -2053,6 +2029,15 @@ void EngineInternalGraph::removeAllPlugins()
     fPatchbay->removeAllPlugins();
 }
 
+bool EngineInternalGraph::isUsingExternal() const noexcept
+{
+    if (fIsRack)
+        return true;
+
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr, false);
+    return fPatchbay->usingExternal;
+}
+
 void EngineInternalGraph::setUsingExternal(const bool usingExternal) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
@@ -2070,13 +2055,17 @@ bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uin
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        if (RackGraph* const graph = pData->graph.getRackGraph())
-            return graph->connect(groupA, portA, groupB, portB);
+        RackGraph* const graph = pData->graph.getRackGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+        return graph->connect(groupA, portA, groupB, portB);
     }
     else
     {
-        if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->connect(groupA, portA, groupB, portB);
+        PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+        return graph->connect(graph->usingExternal, groupA, portA, groupB, portB, true);
     }
 
     return false;
@@ -2090,13 +2079,17 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
-        if (RackGraph* const graph = pData->graph.getRackGraph())
-            return graph->disconnect(connectionId);
+        RackGraph* const graph = pData->graph.getRackGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+        return graph->disconnect(connectionId);
     }
     else
     {
-        if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            return graph->disconnect(connectionId);
+        PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+        return graph->disconnect(connectionId);
     }
 
     return false;
@@ -2116,9 +2109,10 @@ bool CarlaEngine::patchbayRefresh(const bool external)
 
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        if (PatchbayGraph* const graph = pData->graph.getPatchbayGraph())
-            graph->refresh("");
+        PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
+        graph->refresh("");
         return true;
     }
 
@@ -2152,12 +2146,12 @@ const char* const* CarlaEngine::getPatchbayConnections(const bool external) cons
     return nullptr;
 }
 
-void CarlaEngine::restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort)
+void CarlaEngine::restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort, const bool sendCallback)
 {
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
     CARLA_SAFE_ASSERT_RETURN(sourcePort != nullptr && sourcePort[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(targetPort != nullptr && targetPort[0] != '\0',);
-    carla_debug("CarlaEngine::restorePatchbayConnection(%s, \"%s\", \"%s\")", bool2str(external), sourcePort, targetPort);
+    carla_stdout("CarlaEngine::restorePatchbayConnection(%s, \"%s\", \"%s\")", bool2str(external), sourcePort, targetPort);
 
     uint groupA, portA;
     uint groupB, portB;
@@ -2172,6 +2166,8 @@ void CarlaEngine::restorePatchbayConnection(const bool external, const char* con
             return;
         if (! graph->getGroupAndPortIdFromFullName(targetPort, groupB, portB))
             return;
+
+        graph->connect(groupA, portA, groupB, portB);
     }
     else
     {
@@ -2182,9 +2178,61 @@ void CarlaEngine::restorePatchbayConnection(const bool external, const char* con
             return;
         if (! graph->getGroupAndPortIdFromFullName(external, targetPort, groupB, portB))
             return;
+
+        graph->connect(external, groupA, portA, groupB, portB, sendCallback);
+    }
+}
+
+// -----------------------------------------------------------------------
+
+bool CarlaEngine::connectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName)
+{
+    CARLA_SAFE_ASSERT_RETURN(connectionType != 0 || (portName != nullptr && portName[0] != '\0'), false);
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, false);
+
+    RackGraph* const graph(pData->graph.getRackGraph());
+    CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+    const CarlaRecursiveMutexLocker cml(graph->audioBuffers.mutex);
+
+    switch (connectionType)
+    {
+    case kExternalGraphConnectionAudioIn1:
+        return graph->audioBuffers.connectedIn1.append(portId);
+    case kExternalGraphConnectionAudioIn2:
+        return graph->audioBuffers.connectedIn2.append(portId);
+    case kExternalGraphConnectionAudioOut1:
+        return graph->audioBuffers.connectedOut1.append(portId);
+    case kExternalGraphConnectionAudioOut2:
+        return graph->audioBuffers.connectedOut2.append(portId);
     }
 
-    patchbayConnect(groupA, portA, groupB, portB);
+    return false;
+}
+
+bool CarlaEngine::disconnectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName)
+{
+    CARLA_SAFE_ASSERT_RETURN(connectionType != 0 || (portName != nullptr && portName[0] != '\0'), false);
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, false);
+
+    RackGraph* const graph(pData->graph.getRackGraph());
+    CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
+
+    const CarlaRecursiveMutexLocker cml(graph->audioBuffers.mutex);
+
+    switch (connectionType)
+    {
+    case kExternalGraphConnectionAudioIn1:
+        return graph->audioBuffers.connectedIn1.removeOne(portId);
+    case kExternalGraphConnectionAudioIn2:
+        return graph->audioBuffers.connectedIn2.removeOne(portId);
+    case kExternalGraphConnectionAudioOut1:
+        return graph->audioBuffers.connectedOut1.removeOne(portId);
+    case kExternalGraphConnectionAudioOut2:
+        return graph->audioBuffers.connectedOut2.removeOne(portId);
+    }
+
+    return false;
 }
 
 // -----------------------------------------------------------------------

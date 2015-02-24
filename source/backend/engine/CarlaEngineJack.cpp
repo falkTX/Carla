@@ -817,7 +817,6 @@ public:
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 pData->graph.create(0, 0);
-                patchbayRefresh(true);
             }
             else
             {
@@ -1258,7 +1257,7 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget) override
+    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
@@ -1266,7 +1265,7 @@ public:
         carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
-            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget);
+            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget, sendCallback);
 
         if (const jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
         {
