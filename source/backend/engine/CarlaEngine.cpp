@@ -1997,8 +1997,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             if (! tagName.equalsIgnoreCase("externalpatchbay"))
                 continue;
 
-            carla_stdout("%s", tagName.toRawUTF8());
-
             CarlaString sourcePort, targetPort;
 
             for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())

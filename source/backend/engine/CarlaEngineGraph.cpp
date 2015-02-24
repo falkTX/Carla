@@ -494,7 +494,6 @@ const char* const* ExternalGraph::getConnections() const noexcept
 bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0', false);
-    carla_stdout("%s", fullPortName);
 
     if (std::strncmp(fullPortName, "Carla:", 6) == 0)
     {
@@ -534,7 +533,6 @@ bool ExternalGraph::getGroupAndPortIdFromFullName(const char* const fullPortName
         {
             bool ok;
             portId = midiPorts.getPortId(true, portName, &ok);
-            carla_stdout("test %s %s", bool2str(ok), portName);
             return ok;
         }
     }
@@ -2151,7 +2149,7 @@ void CarlaEngine::restorePatchbayConnection(const bool external, const char* con
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(),);
     CARLA_SAFE_ASSERT_RETURN(sourcePort != nullptr && sourcePort[0] != '\0',);
     CARLA_SAFE_ASSERT_RETURN(targetPort != nullptr && targetPort[0] != '\0',);
-    carla_stdout("CarlaEngine::restorePatchbayConnection(%s, \"%s\", \"%s\")", bool2str(external), sourcePort, targetPort);
+    carla_debug("CarlaEngine::restorePatchbayConnection(%s, \"%s\", \"%s\")", bool2str(external), sourcePort, targetPort);
 
     uint groupA, portA;
     uint groupB, portB;
