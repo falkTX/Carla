@@ -82,7 +82,7 @@ void carla_register_all_native_plugins(void)
 
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_LINUX
     carla_register_native_plugin_midisequencer();
 #endif
 

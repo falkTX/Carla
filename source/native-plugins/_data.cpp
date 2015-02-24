@@ -193,7 +193,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_LINUX
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
