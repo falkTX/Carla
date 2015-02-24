@@ -182,7 +182,11 @@ HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c 
 # fltk doesn't have a pkg-config file but has fltk-config instead.
 # Also, don't try looking for it if we already have NTK.
 ifneq ($(HAVE_NTK),true)
-HAVE_FLTK = $(shell which fltk-config 1>/dev/null 2>/dev/null && echo true)
+ifeq ($(shell which fltk-config 1>/dev/null 2>/dev/null && echo true),true)
+ifeq ($(shell which fluid 1>/dev/null 2>/dev/null && echo true),true)
+HAVE_FLTK = true
+endif
+endif
 endif
 
 endif
