@@ -459,6 +459,11 @@ class PluginEdit(QDialog):
         # -------------------------------------------------------------
         # Set-up GUI
 
+        labelPluginFont = self.ui.label_plugin.font()
+        labelPluginFont.setPixelSize(15)
+        labelPluginFont.setWeight(75)
+        self.ui.label_plugin.setFont(labelPluginFont)
+
         self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
         self.ui.dial_drywet.setLabel("Dry/Wet")
@@ -506,7 +511,9 @@ class PluginEdit(QDialog):
 
         # todo
         self.ui.rb_balance.setEnabled(False)
+        self.ui.rb_balance.setVisible(False)
         self.ui.rb_pan.setEnabled(False)
+        self.ui.rb_pan.setVisible(False)
 
         self.reloadAll()
 
