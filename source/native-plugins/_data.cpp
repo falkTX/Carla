@@ -692,12 +692,13 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+# ifdef CARLA_OS_LINUX
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-#ifdef HAVE_ZYN_UI_DEPS
+#  ifdef HAVE_ZYN_UI_DEPS
                                                   |NATIVE_PLUGIN_HAS_UI
-#endif
+#  endif
                                                   |NATIVE_PLUGIN_USES_MULTI_PROGS
                                                   |NATIVE_PLUGIN_USES_STATE),
     /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES
@@ -716,6 +717,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+# endif // CARLA_OS_LINUX
 #endif // HAVE_ZYN_DEPS
 
 

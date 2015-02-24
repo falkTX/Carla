@@ -116,7 +116,9 @@ void carla_register_all_native_plugins(void)
 #ifdef HAVE_ZYN_DEPS
     // ZynAddSubFX
     carla_register_native_plugin_zynaddsubfx_fx();
+# ifdef CARLA_OS_LINUX
     carla_register_native_plugin_zynaddsubfx_synth();
+# endif
 #endif
 
 #ifdef HAVE_EXPERIMENTAL_PLUGINS
