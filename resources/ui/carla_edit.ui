@@ -452,13 +452,6 @@
          </item>
          <item>
           <widget class="QLabel" name="label_plugin">
-           <property name="font">
-            <font>
-             <pointsize>11</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-            </font>
-           </property>
            <property name="text">
             <string>
 Plugin Name
