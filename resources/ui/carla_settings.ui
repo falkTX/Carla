@@ -750,7 +750,7 @@
                   </item>
                   <item>
                    <property name="text">
-                    <string>Patchbay (EXPERIMENTAL)</string>
+                    <string>Patchbay</string>
                    </property>
                   </item>
                  </widget>
@@ -774,7 +774,7 @@
                   </item>
                   <item>
                    <property name="text">
-                    <string>Patchbay (EXPERIMENTAL)</string>
+                    <string>Patchbay</string>
                    </property>
                   </item>
                  </widget>
