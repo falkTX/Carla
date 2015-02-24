@@ -547,7 +547,7 @@ public:
                 return CarlaEngine::patchbayRefresh(false);
         }
 
-        return true;
+        return false;
     }
 
     // -------------------------------------------------------------------
