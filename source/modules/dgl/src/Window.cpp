@@ -466,7 +466,6 @@ struct Window::PrivateData {
                                         : GetWindowLong(hwnd, GWL_STYLE) & ~WS_SIZEBOX;
         SetWindowLong(hwnd, GWL_STYLE, winFlags);
 #elif defined(DISTRHO_OS_MAC)
-        // FIXME?
         const uint flags(yesNo ? (NSViewWidthSizable|NSViewHeightSizable) : 0x0);
         [mView setAutoresizingMask:flags];
 #endif
@@ -510,7 +509,21 @@ struct Window::PrivateData {
 
         if (mWindow != nullptr)
         {
-            [mWindow setContentSize:NSMakeSize(width, height)];
+            const NSSize size = NSMakeSize(width, height);
+            [mWindow setContentSize:size];
+
+            if (fResizable)
+            {
+                [mWindow setContentMinSize:NSMakeSize(1, 1)];
+                [mWindow setContentMaxSize:NSMakeSize(99999, 99999)];
+                [[mWindow standardWindowButton:NSWindowZoomButton] setHidden:NO];
+            }
+            else
+            {
+                [mWindow setContentMinSize:size];
+                [mWindow setContentMaxSize:size];
+                [[mWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+            }
         }
 #elif defined(DISTRHO_OS_LINUX)
         XResizeWindow(xDisplay, xWindow, width, height);
