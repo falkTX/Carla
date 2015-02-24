@@ -417,23 +417,23 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if self.fSkinStyle == "openav":
                 QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
                 nameFont.setFamily("Uranium")
-                nameFont.setPointSize(13)
+                nameFont.setPixelSize(15)
                 nameFont.setCapitalization(QFont.AllUppercase)
 
             elif "calf" in self.fSkinStyle:
                 nameFont.setBold(True)
-                nameFont.setPointSize(10)
+                nameFont.setPixelSize(12)
 
             else:
                 nameFont.setBold(True)
-                nameFont.setPointSize(9)
+                nameFont.setPixelSize(11)
 
             self.label_name.setFont(nameFont)
 
         if self.label_presets is not None:
             presetFont = self.label_presets.font()
             presetFont.setBold(True)
-            presetFont.setPointSize(8)
+            presetFont.setPixelSize(10)
             self.label_presets.setFont(presetFont)
 
         if self.label_type is not None:
@@ -1210,7 +1210,7 @@ class PluginSlot_Calf(AbstractPluginSlot):
 
         self.fButtonFont = self.ui.b_gui.font()
         self.fButtonFont.setBold(False)
-        self.fButtonFont.setPointSize(8)
+        self.fButtonFont.setPixelSize(10)
 
         self.fButtonColorOn  = QColor( 18,  41,  87)
         self.fButtonColorOff = QColor(150, 150, 150)

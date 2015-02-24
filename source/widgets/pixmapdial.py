@@ -83,7 +83,7 @@ class PixmapDial(QDial):
         self.fLabel     = ""
         self.fLabelPos  = QPointF(0.0, 0.0)
         self.fLabelFont = QFont(self.font())
-        self.fLabelFont.setPointSize(6)
+        self.fLabelFont.setPixelSize(8)
         self.fLabelWidth  = 0
         self.fLabelHeight = 0
 
