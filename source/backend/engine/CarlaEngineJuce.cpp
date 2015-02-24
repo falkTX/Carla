@@ -385,6 +385,8 @@ public:
         }
 
         fMidiOutMutex.unlock();
+
+        return true;
     }
 
     bool patchbayRefresh(const bool external) override
@@ -613,6 +615,8 @@ protected:
             return true;
         }   break;
         }
+
+        return false;
     }
 
     bool disconnectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName) override

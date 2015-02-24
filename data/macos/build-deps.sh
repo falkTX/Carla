@@ -6,6 +6,11 @@
 set -e
 
 # ------------------------------------------------------------------------------------
+# check for needed binaries
+
+# TODO, check for binaries like /opt/local/bin/7z
+
+# ------------------------------------------------------------------------------------
 # cd to correct path
 
 if [ -f Makefile ]; then
