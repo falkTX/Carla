@@ -90,6 +90,7 @@ carla-discovery-posix64
 carla-frontend
 carla-lv2-export
 
+data/stoat-callgraph.png
 data/linux/unzipfx2cat32
 data/linux/unzipfx2cat64
 data/macos/*-svn/
