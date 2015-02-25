@@ -263,10 +263,10 @@ public:
             fInstance->setStateInformation(data, static_cast<int>(dataSize));
         }
 
-#ifdef BUILD_BRIDGE
-        const bool sendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool sendOsc(pData->engine->isOscControlRegistered());
+#else
+        const bool sendOsc(false);
 #endif
         pData->updateParameterValues(this, sendOsc, true, false);
     }
@@ -588,7 +588,7 @@ public:
                 pData->prog.names[i] = carla_strdup(fInstance->getProgramName(i).toRawUTF8());
         }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
         if (pData->engine->isOscControlRegistered())
         {
