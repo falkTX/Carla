@@ -747,7 +747,7 @@ protected:
     bool connectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName) override
     {
         CARLA_SAFE_ASSERT_RETURN(connectionType != 0 || (portName != nullptr && portName[0] != '\0'), false);
-        carla_stdout("CarlaEngineRtAudio::connectExternalGraphPort(%u, %u, \"%s\")", connectionType, portId, portName);
+        carla_debug("CarlaEngineRtAudio::connectExternalGraphPort(%u, %u, \"%s\")", connectionType, portId, portName);
 
         switch (connectionType)
         {

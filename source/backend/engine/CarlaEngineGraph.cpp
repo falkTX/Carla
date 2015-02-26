@@ -95,7 +95,7 @@ const char* ExternalGraphPorts::getName(const bool isInput, const uint portId) c
         static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
         const PortNameToId& portNameToId(it.getValue(portNameFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
 
         if (portNameToId.port == portId)
             return portNameToId.name;
@@ -111,7 +111,7 @@ uint ExternalGraphPorts::getPortId(const bool isInput, const char portName[], bo
         static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
         const PortNameToId& portNameToId(it.getValue(portNameFallback));
-        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
 
         if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
         {
@@ -234,7 +234,7 @@ bool ExternalGraph::disconnect(const uint connectionId) noexcept
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
         const ConnectionToId& connectionToId(it.getValue(fallback));
-        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
         if (connectionToId.id != connectionId)
             continue;
@@ -429,7 +429,7 @@ const char* const* ExternalGraph::getConnections() const noexcept
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
         const ConnectionToId& connectionToId(it.getValue(fallback));
-        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
         uint otherGroup, otherPort, carlaPort;
 
@@ -694,8 +694,8 @@ void RackGraph::refresh(const char* const deviceName)
     for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count()); // FIXME <=
+        CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count());
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn1);
@@ -710,8 +710,8 @@ void RackGraph::refresh(const char* const deviceName)
     for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count()); // FIXME <=
+        CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.ins.count());
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupAudioIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioIn2);
@@ -726,8 +726,8 @@ void RackGraph::refresh(const char* const deviceName)
     for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count()); // FIXME <=
+        CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count());
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut1, kExternalGraphGroupAudioOut, portId);
@@ -742,8 +742,8 @@ void RackGraph::refresh(const char* const deviceName)
     for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
-        CARLA_SAFE_ASSERT_CONTINUE(portId != 0);
-        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count()); // FIXME <=
+        CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
+        CARLA_SAFE_ASSERT_CONTINUE(portId <= extGraph.audioPorts.outs.count());
 
         ConnectionToId connectionToId;
         connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortAudioOut2, kExternalGraphGroupAudioOut, portId);
@@ -902,8 +902,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
-            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
-            CARLA_SAFE_ASSERT_CONTINUE(port < inputs);
+            CARLA_SAFE_ASSERT_CONTINUE(port > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(port <= inputs);
 
             if (noConnections)
             {
@@ -924,17 +924,17 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
-            CARLA_SAFE_ASSERT_CONTINUE(port != 0);
-            CARLA_SAFE_ASSERT_CONTINUE(port < inputs);
+            CARLA_SAFE_ASSERT_CONTINUE(port > 0);
+            CARLA_SAFE_ASSERT_CONTINUE(port <= inputs);
 
             if (noConnections)
             {
-                FloatVectorOperations::copy(audioBuffers.inBuf[1], inBuf[port], iframes);
+                FloatVectorOperations::copy(audioBuffers.inBuf[1], inBuf[port-1], iframes);
                 noConnections = false;
             }
             else
             {
-                FloatVectorOperations::add(audioBuffers.inBuf[1], inBuf[port], iframes);
+                FloatVectorOperations::add(audioBuffers.inBuf[1], inBuf[port-1], iframes);
             }
         }
 
@@ -1585,7 +1585,7 @@ bool PatchbayGraph::disconnect(const uint connectionId)
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
         const ConnectionToId& connectionToId(it.getValue(fallback));
-        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
         if (connectionToId.id != connectionId)
             continue;
@@ -1621,7 +1621,7 @@ void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
         const ConnectionToId& connectionToId(it.getValue(fallback));
-        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
         if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
             continue;
@@ -1725,7 +1725,7 @@ const char* const* PatchbayGraph::getConnections(const bool external) const
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
         const ConnectionToId& connectionToId(it.getValue(fallback));
-        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+        CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
         AudioProcessorGraph::Node* const nodeA(graph.getNodeForId(connectionToId.groupA));
         CARLA_SAFE_ASSERT_CONTINUE(nodeA != nullptr);
