@@ -79,6 +79,12 @@ class DriverSettingsW(QDialog):
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
 
+        if driverName != "ALSA":
+            self.ui.label_numperiods.setEnabled(False)
+            self.ui.label_numperiods.setVisible(False)
+            self.ui.sb_numperiods.setEnabled(False)
+            self.ui.sb_numperiods.setVisible(False)
+
         # ----------------------------------------------------------------------------------------------------
         # Load settings
 
