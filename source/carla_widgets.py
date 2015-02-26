@@ -96,20 +96,21 @@ class CarlaAboutW(QDialog):
             self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
             self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
 
-        self.ui.l_osc_cmds.setText(""
-                                    " /set_active                 <i-value>\n"
-                                    " /set_drywet                 <f-value>\n"
-                                    " /set_volume                 <f-value>\n"
-                                    " /set_balance_left           <f-value>\n"
-                                    " /set_balance_right          <f-value>\n"
-                                    " /set_panning                <f-value>\n"
-                                    " /set_parameter_value        <i-index> <f-value>\n"
-                                    " /set_parameter_midi_cc      <i-index> <i-cc>\n"
-                                    " /set_parameter_midi_channel <i-index> <i-channel>\n"
-                                    " /set_program                <i-index>\n"
-                                    " /set_midi_program           <i-index>\n"
-                                    " /note_on                    <i-note> <i-velo>\n"
-                                    " /note_off                   <i-note>\n"
+        self.ui.l_osc_cmds.setText("<table>"
+                                   "<tr><td>" "/set_active"                 "&nbsp;</td><td>&lt;" "i-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_drywet"                 "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_volume"                 "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_balance_left"           "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_balance_right"          "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_panning"                "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_parameter_value"        "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "f-value"   "&gt;</td></tr>"
+                                   "<tr><td>" "/set_parameter_midi_cc"      "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "i-cc"      "&gt;</td></tr>"
+                                   "<tr><td>" "/set_parameter_midi_channel" "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "i-channel" "&gt;</td></tr>"
+                                   "<tr><td>" "/set_program"                "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_midi_program"           "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/note_on"                    "&nbsp;</td><td>&lt;" "i-note"  "&gt;</td><td>&lt;" "i-velo"    "&gt;</td></tr>"
+                                   "<tr><td>" "/note_off"                   "&nbsp;</td><td>&lt;" "i-note"  "&gt;</td><td>"                     "</td></tr>"
+                                   "</table>"
                                   )
 
         self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
