@@ -21,6 +21,8 @@
 #include "CarlaEngine.hpp"
 #include "CarlaUtils.hpp"
 
+#include "CarlaMIDI.h"
+
 #include "juce_audio_basics.h"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -157,6 +159,7 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
     uint8_t        size     = 0;
     uint8_t        mdata[3] = { 0, 0, 0 };
     const uint8_t* mdataPtr = mdata;
+    uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
 
     for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
     {
@@ -180,9 +183,18 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
             size = midiEvent.size;
 
             if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+            {
                 mdataPtr = midiEvent.dataExt;
+            }
             else
-                mdataPtr = midiEvent.data;
+            {
+                // copy
+                carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
+                // add channel
+                mdataTmp[0] |= (engineEvent.channel & MIDI_CHANNEL_BIT);
+                // done
+                mdataPtr = mdataTmp;
+            }
         }
         else
         {
