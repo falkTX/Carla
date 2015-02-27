@@ -39,7 +39,9 @@ static NativePluginHandle midichanfilter_instantiate(const NativeHostDescriptor*
         return NULL;
 
     handle->host = host;
-    memset(handle->channels, 0, sizeof(bool)*MAX_MIDI_CHANNELS);
+
+    for (int i=MAX_MIDI_CHANNELS; --i>=0;)
+        handle->channels[i] = 1.0f;
 
     return handle;
 }
@@ -65,19 +67,20 @@ static const NativeParameter* midichanfilter_get_parameter_info(NativePluginHand
         return NULL;
 
     static NativeParameter param;
+    static const NativeParameterScalePoint scalePoints[2] = { { "Off", 0.0f }, { "On", 1.0f } };
     static char paramName[24];
 
-    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN;
+    param.hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_BOOLEAN|NATIVE_PARAMETER_USES_SCALEPOINTS;
     param.name  = paramName;
     param.unit  = NULL;
     param.ranges.def       = 1.0f;
     param.ranges.min       = 0.0f;
-    param.ranges.max       = 0.0f;
+    param.ranges.max       = 1.0f;
     param.ranges.step      = 1.0f;
     param.ranges.stepSmall = 1.0f;
     param.ranges.stepLarge = 1.0f;
-    param.scalePointCount  = 0;
-    param.scalePoints      = NULL;
+    param.scalePointCount  = 2;
+    param.scalePoints      = scalePoints;
 
     snprintf(paramName, 24, "%u", index+1);
 

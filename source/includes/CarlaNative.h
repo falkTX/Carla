@@ -134,7 +134,7 @@ typedef struct {
     NativeParameterRanges ranges;
 
     uint32_t scalePointCount;
-    NativeParameterScalePoint* scalePoints;
+    const NativeParameterScalePoint* scalePoints;
 } NativeParameter;
 
 typedef struct {
