@@ -208,7 +208,13 @@ class CarlaApplication(object):
             self.fApp.setPalette(self.fPalBlue)
 
     def createApp(self, appName):
-        QApplication.setAttribute(Qt.AA_X11InitThreads)
+        if LINUX:
+            # AA_X11InitThreads is not available on old PyQt versions
+            try:
+                attr = Qt.AA_X11InitThreads
+            except:
+                attr = 10
+            QApplication.setAttribute(attr)
 
         if MACOS:
             QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
