@@ -1536,9 +1536,7 @@ protected:
 
             if (plugin != nullptr && plugin->isEnabled())
             {
-                const uint hints(plugin->getHints());
-
-                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
                 {
                     try {
                         plugin->uiIdle();
@@ -1551,10 +1549,10 @@ protected:
         pData->osc.idle();
 #endif
 
-        fUiServer.idlePipe();
-
         if (fUiServer.isPipeRunning())
         {
+            fUiServer.idlePipe();
+
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 #ifndef CARLA_OS_WIN
             const EngineTimeInfo& timeInfo(pData->timeInfo);

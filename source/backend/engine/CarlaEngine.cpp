@@ -286,6 +286,7 @@ void CarlaEngine::idle() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,); // FIXME REMOVE
     CARLA_SAFE_ASSERT_RETURN(pData->nextPluginId == pData->maxPluginNumber,);
+    CARLA_SAFE_ASSERT_RETURN(getType() != kEngineTypePlugin,);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
