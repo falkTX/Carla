@@ -1397,7 +1397,6 @@ void LookAndFeel_V2::drawRotarySlider (Graphics& g, int x, int y, int width, int
             g.fillPath (filledArc);
         }
 
-        if (thickness > 0)
         {
             const float innerRadius = radius * 0.2f;
             Path p;
@@ -1456,24 +1455,20 @@ Label* LookAndFeel_V2::createSliderTextBox (Slider& slider)
     Label* const l = new SliderLabelComp();
 
     l->setJustificationType (Justification::centred);
+    l->setKeyboardType (TextInputTarget::decimalKeyboard);
 
     l->setColour (Label::textColourId, slider.findColour (Slider::textBoxTextColourId));
-
     l->setColour (Label::backgroundColourId,
                   (slider.getSliderStyle() == Slider::LinearBar || slider.getSliderStyle() == Slider::LinearBarVertical)
                             ? Colours::transparentBlack
                             : slider.findColour (Slider::textBoxBackgroundColourId));
     l->setColour (Label::outlineColourId, slider.findColour (Slider::textBoxOutlineColourId));
-
     l->setColour (TextEditor::textColourId, slider.findColour (Slider::textBoxTextColourId));
-
     l->setColour (TextEditor::backgroundColourId,
                   slider.findColour (Slider::textBoxBackgroundColourId)
                         .withAlpha ((slider.getSliderStyle() == Slider::LinearBar || slider.getSliderStyle() == Slider::LinearBarVertical)
                                         ? 0.7f : 1.0f));
-
     l->setColour (TextEditor::outlineColourId, slider.findColour (Slider::textBoxOutlineColourId));
-
     l->setColour (TextEditor::highlightColourId, slider.findColour (Slider::textBoxHighlightColourId));
 
     return l;
@@ -2509,7 +2504,7 @@ void LookAndFeel_V2::layoutFileBrowserComponent (FileBrowserComponent& browserCo
     filenameBox->setBounds (x + 50, y, w - 50, controlsHeight);
 }
 
-// Pulls a drawable out of compressed valuetree data..
+// Pulls a drawable out of compressed ValueTree data..
 static Drawable* loadDrawableFromData (const void* data, size_t numBytes)
 {
     MemoryInputStream m (data, numBytes, false);

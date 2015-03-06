@@ -411,9 +411,9 @@ public:
         if (NSWindow* const viewWindow = [view window])
         {
             const NSRect windowFrame = [viewWindow frame];
-            const NSPoint windowPoint = [view convertPoint: NSMakePoint (localPos.x, localPos.y) toView: nil];
+            const NSPoint windowPoint = [view convertPoint: NSMakePoint (localPos.x, viewFrame.size.height - localPos.y) toView: nil];
             const NSPoint screenPoint = NSMakePoint (windowFrame.origin.x + windowPoint.x,
-                                                     windowFrame.origin.y + windowFrame.size.height - windowPoint.y);
+                                                     windowFrame.origin.y + windowPoint.y);
 
             if (! isWindowAtPoint (viewWindow, screenPoint))
                 return false;
@@ -574,7 +574,15 @@ public:
     {
         currentModifiers = currentModifiers.withoutMouseButtons();
 
-        if (isWindowAtPoint ([ev window], [[ev window] convertBaseToScreen: [ev locationInWindow]]))
+        NSPoint windowPos = [ev locationInWindow];
+
+       #if defined (MAC_OS_X_VERSION_10_7) && MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_7
+        NSPoint screenPos = [[ev window] convertRectToScreen: NSMakeRect (windowPos.x, windowPos.y, 1.0f, 1.0f)].origin;
+       #else
+        NSPoint screenPos = [[ev window] convertBaseToScreen: windowPos];
+       #endif
+
+        if (isWindowAtPoint ([ev window], screenPos))
             sendMouseEvent (ev);
         else
             // moved into another window which overlaps this one, so trigger an exit
@@ -634,8 +642,8 @@ public:
            #endif
             if ([ev respondsToSelector: @selector (deviceDeltaX)])
             {
-                wheel.deltaX = checkDeviceDeltaReturnValue ((float) objc_msgSend_fpret (ev, @selector (deviceDeltaX)));
-                wheel.deltaY = checkDeviceDeltaReturnValue ((float) objc_msgSend_fpret (ev, @selector (deviceDeltaY)));
+                wheel.deltaX = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaX)));
+                wheel.deltaY = checkDeviceDeltaReturnValue ((float) getMsgSendFPRetFn() (ev, @selector (deviceDeltaY)));
             }
         }
         @catch (...)
@@ -1483,7 +1491,7 @@ private:
             if ((! owner->textWasInserted) && (owner == nullptr || ! owner->redirectKeyDown (ev)))
             {
                 objc_super s = { self, [NSView class] };
-                objc_msgSendSuper (&s, @selector (keyDown:), ev);
+                getMsgSendSuperFn() (&s, @selector (keyDown:), ev);
             }
         }
     }
@@ -1495,7 +1503,7 @@ private:
         if (owner == nullptr || ! owner->redirectKeyUp (ev))
         {
             objc_super s = { self, [NSView class] };
-            objc_msgSendSuper (&s, @selector (keyUp:), ev);
+            getMsgSendSuperFn() (&s, @selector (keyUp:), ev);
         }
     }
 
@@ -1636,7 +1644,7 @@ private:
                 return true;
 
         objc_super s = { self, [NSView class] };
-        return objc_msgSendSuper (&s, @selector (performKeyEquivalent:), ev) != nil;
+        return getMsgSendSuperFn() (&s, @selector (performKeyEquivalent:), ev) != nil;
     }
     #endif
 
@@ -1786,7 +1794,9 @@ private:
 
     static void windowDidExitFullScreen (id, SEL, NSNotification*)
     {
+       #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
         [NSApp setPresentationOptions: NSApplicationPresentationDefault];
+       #endif
     }
 
     static void zoom (id self, SEL, id sender)
@@ -1795,7 +1805,7 @@ private:
         {
             owner->isZooming = true;
             objc_super s = { self, [NSWindow class] };
-            objc_msgSendSuper (&s, @selector (zoom:), sender);
+            getMsgSendSuperFn() (&s, @selector (zoom:), sender);
             owner->isZooming = false;
 
             owner->redirectMovedOrResized();

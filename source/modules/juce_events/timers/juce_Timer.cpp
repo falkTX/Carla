@@ -186,7 +186,7 @@ public:
 
 private:
     Timer* volatile firstTimer;
-    Atomic <int> callbackNeeded;
+    Atomic<int> callbackNeeded;
 
     struct CallTimersMessage  : public MessageManager::MessageBase
     {
@@ -330,6 +330,14 @@ void Timer::startTimer (const int interval) noexcept
     {
         TimerThread::resetCounter (this, interval);
     }
+}
+
+void Timer::startTimerHz (int timerFrequencyHz) noexcept
+{
+    if (timerFrequencyHz > 0)
+        startTimer (1000 / timerFrequencyHz);
+    else
+        stopTimer();
 }
 
 void Timer::stopTimer() noexcept

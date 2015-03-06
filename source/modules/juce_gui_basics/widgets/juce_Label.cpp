@@ -30,6 +30,7 @@ Label::Label (const String& name, const String& labelText)
       justification (Justification::centredLeft),
       border (1, 5, 1, 5),
       minimumHorizontalScale (0.7f),
+      keyboardType (TextEditor::textKeyboard),
       editSingleClick (false),
       editDoubleClick (false),
       lossOfFocusDiscardsChanges (false)
@@ -208,6 +209,7 @@ void Label::showEditor()
     {
         addAndMakeVisible (editor = createEditorComponent());
         editor->setText (getText(), false);
+        editor->setKeyboardType (keyboardType);
         editor->addListener (this);
         editor->grabKeyboardFocus();
 
@@ -322,6 +324,7 @@ void Label::paint (Graphics& g)
 void Label::mouseUp (const MouseEvent& e)
 {
     if (editSingleClick
+         && isEnabled()
          && e.mouseWasClicked()
          && contains (e.getPosition())
          && ! e.mods.isPopupMenu())
@@ -332,7 +335,9 @@ void Label::mouseUp (const MouseEvent& e)
 
 void Label::mouseDoubleClick (const MouseEvent& e)
 {
-    if (editDoubleClick && ! e.mods.isPopupMenu())
+    if (editDoubleClick
+         && isEnabled()
+         && ! e.mods.isPopupMenu())
         showEditor();
 }
 
@@ -344,7 +349,9 @@ void Label::resized()
 
 void Label::focusGained (FocusChangeType cause)
 {
-    if (editSingleClick && cause == focusChangedByTabKey)
+    if (editSingleClick
+         && isEnabled()
+         && cause == focusChangedByTabKey)
         showEditor();
 }
 
