@@ -2,8 +2,8 @@
 
 set -e
 
-JUCE_MODULES_DIR="/home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO/libs/juce/source/modules/"
-CARLA_MODULES_DIR="/home/falktx/FOSS/GIT-mine/Carla/source/modules/"
+JUCE_MODULES_DIR="/home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO-Ports/libs/juce/source/modules/"
+CARLA_MODULES_DIR="/home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/"
 
 MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra")
 
