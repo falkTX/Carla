@@ -55,6 +55,7 @@
 #include <string>
 
 #include "juce_audio_basics.h"
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -687,7 +688,7 @@ protected:
         const uint zynIndex(getZynParameterFromIndex(index));
         CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
 
-        fParameters[index] = value;
+        fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
 
         for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
         {

@@ -247,7 +247,23 @@ void PluginParameterData::clear() noexcept
 float PluginParameterData::getFixedValue(const uint32_t parameterId, const float& value) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < count, 0.0f);
-    return ranges[parameterId].getFixedValue(value);
+
+    const uint             paramHints (data[parameterId].hints);
+    const ParameterRanges& paramRanges(ranges[parameterId]);
+
+    // if boolean, return either min or max
+    if (paramHints & PARAMETER_IS_BOOLEAN)
+    {
+        const float middlePoint = paramRanges.min + (paramRanges.max-paramRanges.min)/2.0f;
+        return value >= middlePoint ? paramRanges.min : paramRanges.max;
+    }
+
+    // if integer, round first
+    if (paramHints & PARAMETER_IS_INTEGER)
+        return paramRanges.getFixedValue(std::round(value));
+
+    // normal mode
+    return paramRanges.getFixedValue(value);
 }
 
 // -----------------------------------------------------------------------

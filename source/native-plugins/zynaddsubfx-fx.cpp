@@ -27,6 +27,7 @@
 #include "Effects/Reverb.h"
 
 #include "juce_audio_basics.h"
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 
 // -----------------------------------------------------------------------
@@ -99,7 +100,9 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) final
     {
-        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(carla_fixValue(0.0f, 127.0f, value)));
+        const int ivalue(roundToIntAccurate(carla_fixValue(0.0f, 127.0f, value)));
+
+        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(ivalue));
     }
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final

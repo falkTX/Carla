@@ -21,6 +21,7 @@
 #include "CarlaNativeExtUI.hpp"
 
 #include "juce_audio_basics.h"
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::Range;
 
@@ -136,10 +137,10 @@ protected:
         switch (index)
         {
         case 0:
-            fColor = int(value);
+            fColor = roundToIntAccurate(value);
             break;
         case 1:
-            fStyle = int(value);
+            fStyle = roundToIntAccurate(value);
             break;
         default:
             break;
