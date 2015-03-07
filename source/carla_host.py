@@ -2022,7 +2022,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
         host.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        host.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
+        host.NoteOnCallback.emit(pluginId, value1, value2, round(value3))
     elif action == ENGINE_CALLBACK_NOTE_OFF:
         host.NoteOffCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_UPDATE:

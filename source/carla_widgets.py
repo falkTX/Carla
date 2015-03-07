@@ -442,7 +442,7 @@ class PluginEdit(QDialog):
         self.fPluginInfo = None
 
         self.fCurrentStateFilename = None
-        self.fControlChannel = int(host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL))
+        self.fControlChannel = round(host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL))
         self.fFirstInit      = True
 
         self.fParameterList      = [] # (type, id, widget)
@@ -673,7 +673,7 @@ class PluginEdit(QDialog):
         self.ui.dial_pan.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_PANNING))
         self.ui.dial_pan.blockSignals(False)
 
-        self.fControlChannel = int(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_CTRL_CHANNEL))
+        self.fControlChannel = round(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_CTRL_CHANNEL))
         self.ui.sb_ctrl_channel.blockSignals(True)
         self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
         self.ui.sb_ctrl_channel.blockSignals(False)
@@ -1100,7 +1100,7 @@ class PluginEdit(QDialog):
                 self.ui.dial_pan.blockSignals(False)
 
             elif index == PARAMETER_CTRL_CHANNEL:
-                self.fControlChannel = int(value)
+                self.fControlChannel = round(value)
                 self.ui.sb_ctrl_channel.blockSignals(True)
                 self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
@@ -1365,7 +1365,9 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
-        knobName = self.sender().objectName()
+        sender   = self.sender()
+        knobName = sender.objectName()
+
         if knobName == "dial_drywet":
             minimum = 0.0
             maximum = 1.0
@@ -1397,8 +1399,6 @@ class PluginEdit(QDialog):
             default = 0.5
             label   = "Unknown"
 
-        current = self.sender().value() / 10
-
         menu = QMenu(self)
         actReset = menu.addAction(self.tr("Reset (%i%%)" % (default*100)))
         menu.addSeparator()
@@ -1414,10 +1414,11 @@ class PluginEdit(QDialog):
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3)
-            if valueTry[1]:
-                value = valueTry[0] * 10
-            else:
+            current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
+            value, ok = QInputDialog.getInteger(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
+            if ok: value = float(value)/100.0
+
+            if not ok:
                 return
 
         elif actSelected == actMinimum:

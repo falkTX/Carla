@@ -258,8 +258,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         audioCountInfo = host.get_audio_port_count_info(self.fPluginId)
 
-        self.fPeaksInputCount  = int(audioCountInfo['ins'])
-        self.fPeaksOutputCount = int(audioCountInfo['outs'])
+        self.fPeaksInputCount  = audioCountInfo['ins']
+        self.fPeaksOutputCount = audioCountInfo['outs']
 
         if self.fPeaksInputCount > 2:
             self.fPeaksInputCount = 2
@@ -1083,32 +1083,52 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         current = sender.fRealValue
         label   = sender.fLabel
 
-        if index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
-            default   = 1.0
-            resetText = self.tr("Reset (%i%%)" % int(default*100.0))
-            minimText = self.tr("Set to Minimum (%i%%)" % int(minimum*100.0))
-            maximText = self.tr("Set to Maximum (%i%%)" % int(maximum*100.0))
+        if index in (PARAMETER_NULL, PARAMETER_CTRL_CHANNEL) or index <= PARAMETER_MAX:
+            return
+        elif index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
+            default = 1.0
+        elif index == PARAMETER_BALANCE_LEFT:
+            default = -1.0
+        elif index == PARAMETER_BALANCE_RIGHT:
+            default = 1.0
+        elif index == PARAMETER_PANNING:
+            default = 0.0
         else:
-            default   = self.host.get_default_parameter_value(self.fPluginId, index)
-            resetText = self.tr("Reset (%f)" % default)
-            minimText = self.tr("Set to Minimum (%f)" % minimum)
-            maximText = self.tr("Set to Maximum (%f)" % maximum)
+            default = self.host.get_default_parameter_value(self.fPluginId, index)
+
+        if index < PARAMETER_NULL:
+            # show in integer percentage
+            textReset = self.tr("Reset (%i%%)"          % round(default*100.0))
+            textMinim = self.tr("Set to Minimum (%i%%)" % round(minimum*100.0))
+            textMaxim = self.tr("Set to Maximum (%i%%)" % round(maximum*100.0))
+        else:
+            # show in full float value
+            textReset = self.tr("Reset (%f)"          % default)
+            textMinim = self.tr("Set to Minimum (%f)" % minimum)
+            textMaxim = self.tr("Set to Maximum (%f)" % maximum)
 
         menu = QMenu(self)
-        actReset = menu.addAction(resetText)
+        actReset = menu.addAction(textReset)
         menu.addSeparator()
-        actMinimum = menu.addAction(minimText)
-        actMaximum = menu.addAction(maximText)
+        actMinimum = menu.addAction(textMinim)
+        actCenter  = menu.addAction(self.tr("Set to Center"))
+        actMaximum = menu.addAction(textMaxim)
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value..."))
+
+        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING):
+            menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3) # FIXME - 3 decimals
-            if valueTry[1]:
-                value = valueTry[0] * 10
+            if index < PARAMETER_NULL:
+                value, ok = QInputDialog.getInteger(self, self.tr("Set value"), label, round(current*100), round(minimum*100), round(maximum*100), 1)
+                if ok: value = float(value)/100.0
             else:
+                value, ok = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3) # FIXME - 3 decimals
+
+            if not ok:
                 return
 
         elif actSelected == actMinimum:
@@ -1117,6 +1137,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             value = maximum
         elif actSelected == actReset:
             value = default
+        elif actSelected == actCenter:
+            value = 0.0
         else:
             return
 
