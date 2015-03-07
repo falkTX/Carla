@@ -43,6 +43,7 @@ import ui_carla_parameter
 
 from carla_shared import *
 from carla_utils import *
+from paramspinbox import CustomInputDialog
 from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
@@ -1408,14 +1409,14 @@ class PluginEdit(QDialog):
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value..."))
 
-        if label not in ("Balance-Left", "Balance-Right"):
+        if label not in ("Balance-Left", "Balance-Right", "Panning"):
             menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
             current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
-            value, ok = QInputDialog.getInteger(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
+            value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
             if ok: value = float(value)/100.0
 
             if not ok:

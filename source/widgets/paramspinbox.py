@@ -24,7 +24,7 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
-from math import isnan
+from math import isnan, modf
 from random import random
 
 if config_UseQt5:
@@ -59,16 +59,31 @@ def geFixedValue(name, value, minimum, maximum):
 # Custom InputDialog with Scale Points support
 
 class CustomInputDialog(QDialog):
-    def __init__(self, parent, label, current, minimum, maximum, step, scalePoints):
+    def __init__(self, parent, label, current, minimum, maximum, step, stepSmall, scalePoints):
         QDialog.__init__(self, parent)
         self.ui = ui_inputdialog_value.Ui_Dialog()
         self.ui.setupUi(self)
 
+        # calculate num decimals from stepSmall
+        if stepSmall >= 1.0:
+            decimals = 0
+        elif step >= 1.0:
+            decimals = 2
+        else:
+            decfrac, decwhole = modf(stepSmall)
+
+            if "000" in str(decfrac):
+                decfrac = round(decfrac, str(decfrac).find("000"))
+            else:
+                decfrac = round(decfrac, 12)
+
+            decimals = abs(len(str(decfrac))-len(str(decwhole))-1)
+
         self.ui.label.setText(label)
-        self.ui.doubleSpinBox.setMinimum(minimum)
-        self.ui.doubleSpinBox.setMaximum(maximum)
-        self.ui.doubleSpinBox.setValue(current)
+        self.ui.doubleSpinBox.setDecimals(decimals)
+        self.ui.doubleSpinBox.setRange(minimum, maximum)
         self.ui.doubleSpinBox.setSingleStep(step)
+        self.ui.doubleSpinBox.setValue(current)
 
         if not scalePoints:
             self.ui.groupBox.setVisible(False)
@@ -316,11 +331,11 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setScalePoints(self, scalePoints, useScalePoints):
         if len(scalePoints) == 0:
-            self.fScalePoints     = None
+            self.fScalePoints    = None
             self.fUseScalePoints = False
             return
 
-        self.fScalePoints     = scalePoints
+        self.fScalePoints    = scalePoints
         self.fUseScalePoints = useScalePoints
 
         if not useScalePoints:
@@ -482,7 +497,8 @@ class ParamSpinBox(QAbstractSpinBox):
             self.setValue(pasteValue)
 
         elif actSel == actSet:
-            dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum, self.fStep, self.fScalePoints)
+            dialog = CustomInputDialog(self, self.fName, self.fValue, self.fMinimum, self.fMaximum,
+                                             self.fStep, self.fStepSmall, self.fScalePoints)
             if dialog.exec_():
                 value = dialog.returnValue()
                 self.setValue(value)

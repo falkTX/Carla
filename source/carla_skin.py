@@ -1123,13 +1123,28 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         if actSelected == actSet:
             if index < PARAMETER_NULL:
-                value, ok = QInputDialog.getInteger(self, self.tr("Set value"), label, round(current*100), round(minimum*100), round(maximum*100), 1)
-                if ok: value = float(value)/100.0
-            else:
-                value, ok = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3) # FIXME - 3 decimals
+                value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100), round(minimum*100), round(maximum*100), 1)
 
-            if not ok:
-                return
+                if not ok:
+                    return
+
+                value = float(value)/100.0
+
+            else:
+                paramInfo   = self.host.get_parameter_info(self.fPluginId, index)
+                paramRanges = self.host.get_parameter_ranges(self.fPluginId, index)
+                scalePoints = []
+
+                for i in range(paramInfo['scalePointCount']):
+                    scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, i))
+
+                dialog = CustomInputDialog(self, label, current, minimum, maximum,
+                                                 paramRanges['step'], paramRanges['stepSmall'], scalePoints)
+
+                if not dialog.exec_():
+                    return
+
+                value = dialog.returnValue()
 
         elif actSelected == actMinimum:
             value = minimum
