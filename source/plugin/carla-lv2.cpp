@@ -171,7 +171,9 @@ public:
         else if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             fUI.portOffset += 1;
 
+#if 0 // TODO
         fUI.portOffset += desc->midiOuts;
+#endif
         fUI.portOffset += 1; // freewheel
         fUI.portOffset += desc->audioIns;
         fUI.portOffset += desc->audioOuts;
@@ -1157,6 +1159,7 @@ private:
                 }
             }
 
+#if 0 // TODO
             for (uint32_t i=0; i < desc->midiOuts; ++i)
             {
                 if (port == index++)
@@ -1165,6 +1168,7 @@ private:
                     return;
                 }
             }
+#endif
 
             if (port == index++)
             {

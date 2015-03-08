@@ -352,6 +352,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "    ] , [\n";
     }
 
+#if 0 // TODO
     // -------------------------------------------------------------------
     // MIDI outputs
 
@@ -381,6 +382,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         else
             text += "    ] , [\n";
     }
+#endif
 
     // -------------------------------------------------------------------
     // Freewheel port
