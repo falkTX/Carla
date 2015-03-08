@@ -612,6 +612,14 @@ public:
             return;
 
         fDescriptor->set_midi_program(fHandle, 0, bank, program);
+
+        for (uint32_t i=0; i < fPorts.paramCount; ++i)
+        {
+            fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
+
+            if (fPorts.paramsPtr[i] != nullptr)
+                *fPorts.paramsPtr[i] = fPorts.paramsLast[i];
+        }
     }
 
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
