@@ -85,7 +85,7 @@ protected:
     }
 
 private:
-    bool fInitializing;
+    volatile bool fInitializing;
     CriticalSection fLock;
     ReferenceCountedArray<MessageManager::MessageBase> fQueue;
 
@@ -133,7 +133,9 @@ void MessageManager::doPlatformSpecificShutdown()
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
 
-    if (! juceEventsThread.isInitializing())
+    if (juceEventsThread.isInitializing())
+        juceEventsThread.signalThreadShouldExit();
+    else
         juceEventsThread.stopThread(-1);
 }
 
@@ -141,6 +143,12 @@ bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
     return juceEventsThread.postMessage(message);
+}
+
+bool MessageManager::dispatchNextMessageOnSystemQueue(bool)
+{
+    carla_stderr2("MessageManager::dispatchNextMessageOnSystemQueue() unsupported");
+    return false;
 }
 
 } // namespace juce

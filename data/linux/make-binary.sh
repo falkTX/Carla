@@ -6,7 +6,7 @@ if [ -f Makefile ]; then
   cd data/linux
 fi
 
-VERSION="1.9.5~git20150307"
+VERSION="1.9.5~git20150308"
 
 if [ ! -f carla-git-static_"$VERSION"_amd64.deb ]; then
     wget -c https://launchpad.net/~kxstudio-debian/+archive/ubuntu/testing/+files/carla-git-static_"$VERSION"_amd64.deb
