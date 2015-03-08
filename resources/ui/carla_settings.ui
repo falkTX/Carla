@@ -1167,7 +1167,7 @@ This mode is not available for VST plugins.</string>
            <item>
             <widget class="QStackedWidget" name="tw_paths">
              <property name="currentIndex">
-              <number>2</number>
+              <number>0</number>
              </property>
              <widget class="QWidget" name="tw_paths_ladspa">
               <layout class="QVBoxLayout" name="verticalLayout_11">
