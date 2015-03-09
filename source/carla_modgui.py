@@ -62,17 +62,15 @@ os.environ['MOD_DESKTOP']  = "1"
 os.environ['MOD_LOG']      = "0"
 
 os.environ['MOD_DATA_DIR']           = DATA_DIR
+os.environ['MOD_KEY_PATH']           = os.path.join(DATA_DIR, "keys")
+os.environ['MOD_CLOUD_PUB']          = os.path.join(ROOT, "mod-ui", "keys", "cloud_key.pub")
 os.environ['MOD_HTML_DIR']           = os.path.join(ROOT, "mod-ui", "html")
-os.environ['MOD_PLUGIN_LIBRARY_DIR'] = os.path.join(DATA_DIR, 'lib')
+os.environ['MOD_PLUGIN_LIBRARY_DIR'] = os.path.join(DATA_DIR, "lib")
 
+os.environ['MOD_DEFAULT_JACK_BUFSIZE']  = "0"
 os.environ['MOD_PHANTOM_BINARY']        = "/usr/bin/phantomjs"
 os.environ['MOD_SCREENSHOT_JS']         = os.path.join(ROOT, "mod-ui", "screenshot.js")
 os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
-
-# FIXME
-os.environ['MOD_DEFAULT_JACK_BUFSIZE']  = "0"
-
-#sys.path = [os.path.join(ROOT, "mod-ui")] + sys.path
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
