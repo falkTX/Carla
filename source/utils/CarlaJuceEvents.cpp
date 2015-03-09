@@ -125,18 +125,23 @@ void MessageManager::doPlatformSpecificInitialisation()
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
 
-    if (! juceEventsThread.isInitializing())
-        juceEventsThread.startThread();
+    // TESTING
+    CARLA_SAFE_ASSERT(! juceEventsThread.isInitializing());
+
+    juceEventsThread.startThread();
+
+    for (; juceEventsThread.isInitializing();)
+        carla_msleep(5);
 }
 
 void MessageManager::doPlatformSpecificShutdown()
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
 
-    if (juceEventsThread.isInitializing())
-        juceEventsThread.signalThreadShouldExit();
-    else
-        juceEventsThread.stopThread(-1);
+    // TESTING
+    CARLA_SAFE_ASSERT(! juceEventsThread.isInitializing());
+
+    juceEventsThread.stopThread(-1);
 }
 
 bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const message)
