@@ -56,9 +56,9 @@ sem_t* carla_sem_create() noexcept
     return sem;
 #elif defined(CARLA_OS_MAC)
     static ulong sCounter = 0;
-    ++sCounter;
 
-    std::srand(static_cast<uint>(std::time(nullptr)));
+    if (++sCounter == 1)
+        std::srand(static_cast<uint>(std::time(nullptr)));
 
     char strBuf[0xff+1];
     carla_zeroChar(strBuf, 0xff+1);

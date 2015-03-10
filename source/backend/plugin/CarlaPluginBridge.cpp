@@ -80,8 +80,7 @@ struct BridgeAudioPool {
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         filename = tmpFileBase;
         return true;
@@ -162,8 +161,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         if (! mapData())
         {
@@ -296,8 +294,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         if (! mapData())
         {
