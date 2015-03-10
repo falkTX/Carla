@@ -2169,7 +2169,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
     # Init utils
 
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
-    gCarla.utils.set_process_name(initName)
+    gCarla.utils.set_process_name(os.path.basename(initName))
     #gCarla.utils.set_locale_C()
 
     # --------------------------------------------------------------------------------------------------------

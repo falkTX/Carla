@@ -252,6 +252,7 @@ public:
                 carla_zeroChar(strBuf, 0xff+1);
                 fAudioMaster(fEffect, audioMasterGetProductString, 0, 0, strBuf, 0);
 
+#if 1
                 if (std::strcmp(strBuf, "Tracktion") == 0)
                 {
                     carla_stdout("Tracktion detected, delaying UI appearance so it works properly...");
@@ -262,6 +263,7 @@ public:
                         carla_msleep(25);
                     }
                 }
+#endif
 
                 ret = 1;
             }
