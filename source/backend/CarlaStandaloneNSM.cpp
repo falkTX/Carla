@@ -218,9 +218,11 @@ protected:
             fHasOptionalGui   = std::strstr(features, ":optional-gui:")   != nullptr;
             fHasServerControl = std::strstr(features, ":server_control:") != nullptr;
 
+#if 0
             // UI starts visible
             if (fHasOptionalGui)
                 lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/client/gui_is_shown", "");
+#endif
 
             carla_stdout("Carla started via '%s', message: %s", smName, message);
 
@@ -364,6 +366,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(argc >= 0, 0);
         carla_stdout("CarlaNSM::handleBroadcast(%s, %s, %p, %i)", path, types, argv, argc);
 
+#if 0
         if (std::strcmp(path, "/non/hello") == 0)
         {
             CARLA_SAFE_ASSERT_RETURN(argc == 4, 0);
@@ -462,8 +465,12 @@ protected:
         for (int i=0; i<argc; ++i)
             if (types[i] == 's')
                 carla_stdout("%i: %s", i+1, &argv[i]->s);
+#endif
 
         return 0;
+
+        // unused
+        (void)msg;
     }
 
 private:

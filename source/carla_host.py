@@ -1630,8 +1630,6 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, int, str)
     def slot_handleNSMCallback(self, value1, value2, valueStr):
-        print("--------------- NSM:", value1, value2, valueStr)
-
         # Error
         if value1 == 0:
             pass
