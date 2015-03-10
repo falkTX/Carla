@@ -25,7 +25,9 @@
 #include <cassert>
 #include <math.h>
 #include <stdio.h>
+#ifndef CARLA_OS_WIN
 #include <err.h>
+#endif
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -24,7 +24,9 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
+#ifndef CARLA_OS_WIN
 #include <err.h>
+#endif
 #include "../Misc/Util.h"
 #include "SVFilter.h"
 

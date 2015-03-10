@@ -17,6 +17,11 @@
 
 #include "CarlaDefines.h"
 
+#ifdef CARLA_OS_WIN
+#define errx(...)
+#define warnx(...)
+#endif
+
 // zynaddsubfx includes
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
 #include "zynaddsubfx/DSP/FFTwrapper.cpp"

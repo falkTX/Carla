@@ -21,7 +21,9 @@
 
 #include <cmath>
 #include <cstring>
+#ifndef CARLA_OS_WIN
 #include <err.h>
+#endif
 
 #include "Unison.h"
 

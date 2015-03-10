@@ -251,6 +251,7 @@ int Bank::loadbank(string bankdirname)
  */
 int Bank::newbank(string newbankdirname)
 {
+#ifndef CARLA_OS_WIN
     string bankdir;
     bankdir = config.cfg.bankRootDirList[0];
 
@@ -268,6 +269,9 @@ int Bank::newbank(string newbankdirname)
     fclose(tmpfile);
 
     return loadbank(bankdir);
+#else
+    return -1;
+#endif
 }
 
 /*
