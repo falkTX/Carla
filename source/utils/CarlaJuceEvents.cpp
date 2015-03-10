@@ -68,6 +68,11 @@ public:
 protected:
     void run() override
     {
+        /*
+         * We need to know when we're initializing because MessageManager::setCurrentThreadAsMessageThread()
+         * calls doPlatformSpecificInitialisation/Shutdown, in which we started this thread previously.
+         * To avoid a deadlock we do not call start/stopThread if still initializing.
+         */
         fInitializing = true;
 
         if (MessageManager* const msgMgr = MessageManager::getInstance())
@@ -125,23 +130,16 @@ void MessageManager::doPlatformSpecificInitialisation()
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
 
-    // TESTING
-    CARLA_SAFE_ASSERT(! juceEventsThread.isInitializing());
-
-    juceEventsThread.startThread();
-
-    for (; juceEventsThread.isInitializing();)
-        carla_msleep(5);
+    if (! juceEventsThread.isInitializing())
+        juceEventsThread.startThread();
 }
 
 void MessageManager::doPlatformSpecificShutdown()
 {
     JuceEventsThread& juceEventsThread(getJuceEventsThreadInstance());
 
-    // TESTING
-    CARLA_SAFE_ASSERT(! juceEventsThread.isInitializing());
-
-    juceEventsThread.stopThread(-1);
+    if (! juceEventsThread.isInitializing())
+        juceEventsThread.stopThread(-1);
 }
 
 bool MessageManager::postMessageToSystemQueue(MessageManager::MessageBase* const message)

@@ -27,9 +27,6 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 
-#ifdef HAVE_LIBLO
-#endif
-
 #include "juce_audio_formats.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
