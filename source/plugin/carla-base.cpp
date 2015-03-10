@@ -66,7 +66,8 @@ struct PluginListManager {
                 continue;
 
             // skip some plugins
-            if (std::strcmp(desc->label, "3bandeq"      ) == 0 ||
+            if (std::strcmp(desc->label, "bypass"       ) == 0 ||
+                std::strcmp(desc->label, "3bandeq"      ) == 0 ||
                 std::strcmp(desc->label, "3bandsplitter") == 0 ||
                 std::strcmp(desc->label, "mverb"        ) == 0 ||
                 std::strcmp(desc->label, "nekobi"       ) == 0 ||
