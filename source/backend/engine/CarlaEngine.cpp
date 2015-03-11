@@ -1676,8 +1676,8 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
                 CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
 
                 outPatchbay << "  <Connection>\n";
-                outPatchbay << "   <Source>" << connSource << "</Source>\n";
-                outPatchbay << "   <Target>" << connTarget << "</Target>\n";
+                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
+                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
                 outPatchbay << "  </Connection>\n";
             }
 
@@ -1719,8 +1719,8 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
                 CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
 
                 outPatchbay << "  <Connection>\n";
-                outPatchbay << "   <Source>" << connSource << "</Source>\n";
-                outPatchbay << "   <Target>" << connTarget << "</Target>\n";
+                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
+                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
                 outPatchbay << "  </Connection>\n";
             }
 
@@ -1956,9 +1956,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     const String  text(connElem->getAllSubText().trim());
 
                     /**/ if (tag.equalsIgnoreCase("source"))
-                        sourcePort = text.toRawUTF8();
+                        sourcePort = xmlSafeString(text, false).toRawUTF8();
                     else if (tag.equalsIgnoreCase("target"))
-                        targetPort = text.toRawUTF8();
+                        targetPort = xmlSafeString(text, false).toRawUTF8();
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
@@ -2016,9 +2016,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     const String  text(connElem->getAllSubText().trim());
 
                     /**/ if (tag.equalsIgnoreCase("source"))
-                        sourcePort = text.toRawUTF8();
+                        sourcePort = xmlSafeString(text, false).toRawUTF8();
                     else if (tag.equalsIgnoreCase("target"))
-                        targetPort = text.toRawUTF8();
+                        targetPort = xmlSafeString(text, false).toRawUTF8();
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
