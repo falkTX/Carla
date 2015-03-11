@@ -374,7 +374,7 @@ public:
 
     void initIfNeeded(const char* const LV2_PATH)
     {
-        CARLA_SAFE_ASSERT_RETURN(LV2_PATH != nullptr && LV2_PATH[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(LV2_PATH != nullptr,);
 
         if (! needsInit)
             return;
