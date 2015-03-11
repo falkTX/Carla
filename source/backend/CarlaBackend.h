@@ -968,7 +968,7 @@ typedef enum {
 
     /*!
      * Set the engine processing mode.
-     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_PATCHBAY for all other OSes.
      * @see EngineProcessMode
      */
     ENGINE_OPTION_PROCESS_MODE = 1,
