@@ -134,7 +134,7 @@ class HostWindow(QMainWindow):
         # Internal stuff (patchbay)
 
         self.fExportImage   = QImage()
-        self.fExportPrinter = QPrinter()
+        self.fExportPrinter = None
 
         self.fPeaksCleared = True
 
@@ -987,6 +987,10 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_canvasPrint(self):
         self.scene.clearSelection()
+
+        if self.fExportPrinter is None:
+            self.fExportPrinter = QPrinter()
+
         dialog = QPrintDialog(self.fExportPrinter, self)
 
         if dialog.exec_():
