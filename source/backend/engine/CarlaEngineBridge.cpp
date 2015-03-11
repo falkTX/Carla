@@ -794,9 +794,9 @@ public:
             handleNonRtData();
         } CARLA_SAFE_EXCEPTION("handleNonRtData");
 
-        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 5000 && ! wasFirstIdle)
+        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
-            carla_stderr("Did not receive ping message from server for 5 secs, closing...");
+            carla_stderr("Did not receive ping message from server for 30 secs, closing...");
             callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
         }
     }
