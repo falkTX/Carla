@@ -56,13 +56,12 @@ rm Carla/carla-lv2-export.exe
 
 # FIXME
 rm Carla/carla-bridge-lv2-windows.exe
+rm Carla/carla-bridge-native.exe
 
-rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd
+rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd Carla/PyQt5.QtXml.pyd
 
 cp $WINEPREFIX/drive_c/Python34/python34.dll                                Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icudt49.dll         Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icuin49.dll         Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icuuc49.dll         Carla/
+cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icu*.dll            Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/libEGL.dll          Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/libGLESv2.dll       Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Core.dll         Carla/
@@ -73,6 +72,7 @@ cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5PrintSupport.dll Carl
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/
 
 # Build unzipfx
+make -C unzipfx-carla -f Makefile.win32 clean
 make -C unzipfx-carla -f Makefile.win32
 
 # Create zip of Carla

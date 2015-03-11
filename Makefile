@@ -376,7 +376,7 @@ clean:
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
 distclean: clean
-	rm -f bin/*.dll bin/*.so
+	rm -f bin/*.exe bin/*.dll bin/*.dylib bin/*.so
 	rm -rf build build-lv2
 
 debug:
