@@ -1150,18 +1150,16 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
     if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
         uiParameterChange(parameterId, value);
 
-#ifndef BUILD_BRIDGE
-# ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(parameterId), value);
-# endif
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
-#endif
 
     // may be unused
-    return; (void)sendOsc; (void)sendCallback;
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
