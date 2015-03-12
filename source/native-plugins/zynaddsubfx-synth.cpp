@@ -793,7 +793,7 @@ protected:
             else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
             {
                 // skip controls which we map to parameters
-                if (getZynParameterFromIndex(midiEvent->data[1]) == C_NULL)
+                if (getZynParameterFromIndex(midiEvent->data[1]) != C_NULL)
                     continue;
 
                 const int control = midiEvent->data[1];
