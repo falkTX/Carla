@@ -338,6 +338,9 @@ fi
 # ------------------------------------------------------------------------------------
 # fltk
 
+ignore1()
+{
+
 if [ ! -d fltk-1.3.3 ]; then
 curl -O http://fltk.org/pub/fltk/1.3.3/fltk-1.3.3-source.tar.gz
 tar -xf fltk-1.3.3-source.tar.gz
@@ -353,6 +356,8 @@ sudo make install
 touch build-done
 cd ..
 fi
+
+}
 
 # ------------------------------------------------------------------------------------
 # fluidsynth
@@ -499,6 +504,50 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
+# qt5-multimedia
+
+ignore2()
+{
+
+if [ ! -d qtmultimedia-opensource-src-5.3.2 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.2/submodules/qtmultimedia-opensource-src-5.3.2.tar.gz -o qtmultimedia-opensource-src-5.3.2.tar.gz
+tar -xf qtmultimedia-opensource-src-5.3.2.tar.gz
+fi
+
+if [ ! -f qtmultimedia-opensource-src-5.3.2/build-done ]; then
+cd qtmultimedia-opensource-src-5.3.2
+qmake
+make -j 2
+sudo make install
+touch build-done
+cd ..
+fi
+
+}
+
+# ------------------------------------------------------------------------------------
+# qt5-webkit
+
+ignore3()
+{
+
+if [ ! -d qtwebkit-opensource-src-5.3.2 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.3/5.3.2/submodules/qtwebkit-opensource-src-5.3.2.tar.gz -o qtwebkit-opensource-src-5.3.2.tar.gz
+tar -xf qtwebkit-opensource-src-5.3.2.tar.gz
+fi
+
+if [ ! -f qtwebkit-opensource-src-5.3.2/build-done ]; then
+cd qtwebkit-opensource-src-5.3.2
+qmake
+make -j 2
+sudo make install
+touch build-done
+cd ..
+fi
+
+}
+
+# ------------------------------------------------------------------------------------
 # python
 
 if [ ! -d Python-3.4.2 ]; then
@@ -543,7 +592,8 @@ fi
 if [ ! -f PyQt-gpl-5.3.2/build-done ]; then
 cd PyQt-gpl-5.3.2
 sed -i -e "s/# Read the details./pylib_dir = ''/" configure.py
-python3 configure.py --confirm-license
+sed -i -e "s/qmake_QT=['webkitwidgets']/qmake_QT=['webkitwidgets', 'printsupport']/" configure.py
+python3 configure.py --confirm-license -c
 make
 sudo make install
 touch build-done
