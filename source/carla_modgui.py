@@ -64,7 +64,7 @@ PORTn = 8998 + int(random()*9000)
 
 PORT     = str(PORTn)
 ROOT     = "/usr/share"
-ROOT     = "/home/falktx/FOSS/GIT-mine/MOD/mod-app/source/modules"
+#ROOT     = "/home/falktx/FOSS/GIT-mine/MOD/mod-app/source/modules"
 DATA_DIR = os.path.expanduser("~/.local/share/mod-data/")
 HTML_DIR = os.path.join(ROOT, "mod-ui", "html")
 
