@@ -414,13 +414,23 @@ endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
+# Prefer static libs of the next libs
+NATIVE_PLUGINS_LIBS  += -Wl,-Bstatic
 NATIVE_PLUGINS_LIBS  += -lclxclient -lclthreads -lzita-convolver -lzita-resampler
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo fftw3f libpng12 x11 xft)
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs libpng12 fftw3f)
+# Back to normal
+NATIVE_PLUGINS_LIBS  += -Wl,-Bdynamic
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo x11 xft)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_DEPS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
+# Prefer fftw3 as static lib
+NATIVE_PLUGINS_LIBS  += -Wl,-Bstatic
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3)
+# Back to normal
+NATIVE_PLUGINS_LIBS  += -Wl,-Bdynamic
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
 ifeq ($(HAVE_NTK),true)
