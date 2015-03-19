@@ -266,7 +266,7 @@ $(OBJDIR)/zita-at1.cpp.o: zita-at1.cpp
 $(OBJDIR)/zita-bls1.cpp.o: zita-bls1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags cairo fftw3f libpng12 x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
 
 $(OBJDIR)/zita-rev1.cpp.o: zita-rev1.cpp
 	-@mkdir -p $(OBJDIR)
