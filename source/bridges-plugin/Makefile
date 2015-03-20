@@ -127,7 +127,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
-NATIVE_LINK_FLAGS   =
+NATIVE_LINK_FLAGS   = -lm
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)

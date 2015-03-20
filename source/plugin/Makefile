@@ -56,6 +56,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 # Link flags
 
+LINK_FLAGS += -lm
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
