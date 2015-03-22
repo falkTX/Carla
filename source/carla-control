@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Carla plugin host
+# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of
+# the License, or any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# For a full copy of the GNU General Public License see the doc/GPL.txt file.
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Custom Stuff)
+
+from carla_host import *
+
+# ------------------------------------------------------------------------------------------------------------
+# Main
+
+if __name__ == '__main__':
+    # -------------------------------------------------------------
+    # Read CLI args
+
+    initName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
+    libPrefix = None
+
+    for arg in sys.argv:
+        if arg.startswith("--with-appname="):
+            initName = os.path.basename(arg.replace("--with-initname=", ""))
+
+        elif arg.startswith("--with-libprefix="):
+            libPrefix = arg.replace("--with-libprefix=", "")
+
+    # -------------------------------------------------------------
+    # App initialization
+
+    app = CarlaApplication("Carla2", libPrefix)
+
+    # -------------------------------------------------------------
+    # Set-up custom signal handling
+
+    setUpSignals()
+
+    # -------------------------------------------------------------
+    # Init host backend
+
+    host = initHost(initName, libPrefix, True, False, True)
+    loadHostSettings(host)
+
+    # -------------------------------------------------------------
+    # Create GUI
+
+    gui = HostWindow(host, True)
+
+    # -------------------------------------------------------------
+    # Show GUI
+
+    gui.show()
+
+    # -------------------------------------------------------------
+    # App-Loop
+
+    app.exit_exec()

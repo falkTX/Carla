@@ -9,6 +9,9 @@ include Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+OBJS_control = \
+	$(OBJDIR)/CarlaControl.cpp.o
+
 OBJS_standalone = \
 	$(OBJDIR)/CarlaStandalone.cpp.o \
 	$(OBJDIR)/CarlaStandaloneNSM.cpp.o
@@ -20,7 +23,13 @@ TARGETS = \
 	$(BINDIR)/libcarla_standalone2$(LIB_EXT) \
 	$(BINDIR)/libcarla_utils$(LIB_EXT)
 
+ifeq ($(HAVE_LIBLO),true)
+TARGETS += $(BINDIR)/libcarla_control2$(LIB_EXT)
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
+
+CONTROL_LIBS = $(MODULEDIR)/juce_core.a
 
 STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
 STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
@@ -67,6 +76,9 @@ UTILS_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
+
+CONTROL_LINK_FLAGS  = $(JUCE_CORE_LIBS)
+CONTROL_LINK_FLAGS += $(LIBLO_LIBS)
 
 STANDALONE_LINK_FLAGS  = $(JACKBRIDGE_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
@@ -147,6 +159,11 @@ doxygen: CarlaBackend.doxygen
 	doxygen $^
 
 # ----------------------------------------------------------------------------------------------------------------------------
+
+$(BINDIR)/libcarla_control2$(LIB_EXT): $(OBJS_control) $(CONTROL_LIBS)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking libcarla_control2$(LIB_EXT)"
+	@$(CXX) $(OBJS_control) $(LIBS_START) $(CONTROL_LIBS) $(LIBS_END) $(LINK_FLAGS) $(CONTROL_LINK_FLAGS) $(SHARED) -o $@
 
 $(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJS_standalone) $(STANDALONE_LIBS)
 	-@mkdir -p $(BINDIR)
