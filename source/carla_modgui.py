@@ -208,15 +208,15 @@ class EffectResource(StaticFileHandler, EffectSearcher):
             except:
                 raise HTTPError(404)
 
-            super(EffectResource, self).initialize(document_root)
-            super(EffectResource, self).get(path)
+            StaticFileHandler.initialize(self, document_root)
+            StaticFileHandler.get(self, path)
 
         except HTTPError as e:
             if e.status_code != 404:
                 raise e
 
-            super(EffectResource, self).initialize(os.path.join(HTML_DIR, 'resources'))
-            super(EffectResource, self).get(path)
+            StaticFileHandler.initialize(self, os.path.join(HTML_DIR, 'resources'))
+            StaticFileHandler.get(self, path)
 
 # ------------------------------------------------------------------------------------------------------------
 # WebServer Thread
