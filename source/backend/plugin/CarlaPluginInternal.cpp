@@ -255,7 +255,7 @@ float PluginParameterData::getFixedValue(const uint32_t parameterId, const float
     if (paramHints & PARAMETER_IS_BOOLEAN)
     {
         const float middlePoint = paramRanges.min + (paramRanges.max-paramRanges.min)/2.0f;
-        return value >= middlePoint ? paramRanges.min : paramRanges.max;
+        return value >= middlePoint ? paramRanges.max : paramRanges.min;
     }
 
     // if integer, round first
