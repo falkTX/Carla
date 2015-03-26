@@ -19,6 +19,7 @@
 #include "CarlaLibUtils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
+#include "LinkedList.hpp"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # define USE_JUCE_PROCESSORS
@@ -164,21 +165,19 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case audioMasterCurrentId:
-        if (gVstCurrentUniqueId == 0) DISCOVERY_OUT("warning", "Plugin asked for uniqueId, but it's currently 0");
-
         ret = gVstCurrentUniqueId;
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterWantMidi):
-        if (gVstWantsMidi) DISCOVERY_OUT("warning", "Plugin requested MIDI more than once");
+        if (gVstWantsMidi) { DISCOVERY_OUT("warning", "Plugin requested MIDI more than once"); }
 
         gVstWantsMidi = true;
         ret = 1;
         break;
 
     case audioMasterGetTime:
-        if (! gVstIsProcessing) DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process");
-        if (! gVstWantsTime)    DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\"");
+        if (! gVstIsProcessing) { DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process"); }
+        if (! gVstWantsTime)    { DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\""); }
 
         carla_zeroStruct<VstTimeInfo>(timeInfo);
         timeInfo.sampleRate = kSampleRate;
@@ -208,7 +207,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         break;
 
     case DECLARE_VST_DEPRECATED(audioMasterNeedIdle):
-        if (gVstNeedsIdle) DISCOVERY_OUT("warning", "Plugin requested idle more than once");
+        if (gVstNeedsIdle) { DISCOVERY_OUT("warning", "Plugin requested idle more than once"); }
 
         gVstNeedsIdle = true;
         ret = 1;
@@ -1158,7 +1157,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         }
     }
 
-    AEffect* const effect = vstFn(vstHostCallback);
+    AEffect* effect = vstFn(vstHostCallback);
 
     if (effect == nullptr || effect->magic != kEffectMagic)
     {
@@ -1173,8 +1172,6 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         return;
     }
 
-    gVstCurrentUniqueId = effect->uniqueID;
-
     effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
     effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRate);
     effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
@@ -1182,40 +1179,70 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
     effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
     effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
-    effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
+
+    if (effect->numPrograms > 0)
+        effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
+
+    const bool isShell  = (effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f) == kPlugCategShell);
+    gVstCurrentUniqueId =  effect->uniqueID;
 
     char strBuf[STR_MAX+1];
     CarlaString cName;
     CarlaString cProduct;
     CarlaString cVendor;
+    LinkedList<intptr_t> uniqueIds;
 
-    const intptr_t vstCategory = effect->dispatcher(effect, effGetPlugCategory, 0, 0, nullptr, 0.0f);
-
-    //for (int32_t i = effect->numInputs;  --i >= 0;) effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effConnectInput),  i, 1, 0, 0);
-    //for (int32_t i = effect->numOutputs; --i >= 0;) effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effConnectOutput), i, 1, 0, 0);
-
-    carla_zeroChar(strBuf, STR_MAX+1);
-
-    if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
-        cVendor = strBuf;
-
-    carla_zeroChar(strBuf, STR_MAX+1);
-
-    if (vstCategory == kPlugCategShell)
+    if (isShell)
     {
-        gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
+        for (;;)
+        {
+            carla_zeroChar(strBuf, STR_MAX+1);
 
-        CARLA_SAFE_ASSERT_RETURN(gVstCurrentUniqueId != 0,);
-        cName = strBuf;
+            gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
+
+            if (gVstCurrentUniqueId == 0)
+                break;
+
+            uniqueIds.append(gVstCurrentUniqueId);
+        }
+
+        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+        effect = nullptr;
     }
     else
     {
-        if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
-            cName = strBuf;
+        uniqueIds.append(gVstCurrentUniqueId);
     }
 
-    for (;;)
+    for (LinkedList<intptr_t>::Itenerator it = uniqueIds.begin(); it.valid(); it.next())
     {
+        gVstCurrentUniqueId = it.getValue(0);
+
+        if (effect == nullptr)
+        {
+            effect = vstFn(vstHostCallback);
+
+            effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
+            effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRate);
+            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
+            effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
+            effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+
+            effect->dispatcher(effect, effOpen, 0, 0, nullptr, 0.0f);
+
+            if (effect->numPrograms > 0)
+                effect->dispatcher(effect, effSetProgram, 0, 0, nullptr, 0.0f);
+        }
+
+        // get name
+        carla_zeroChar(strBuf, STR_MAX+1);
+
+        if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
+            cName = strBuf;
+        else
+            cName.clear();
+
+        // get product
         carla_zeroChar(strBuf, STR_MAX+1);
 
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
@@ -1223,6 +1250,15 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         else
             cProduct.clear();
 
+        // get vendor
+        carla_zeroChar(strBuf, STR_MAX+1);
+
+        if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
+            cVendor = strBuf;
+        else
+            cVendor.clear();
+
+        // get everything else
         uint hints = 0x0;
         int audioIns = effect->numInputs;
         int audioOuts = effect->numOutputs;
@@ -1352,21 +1388,20 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         DISCOVERY_OUT("parameters.ins", parameters);
         DISCOVERY_OUT("end", "------------");
 
-        if (vstCategory != kPlugCategShell)
-            break;
-
         gVstWantsMidi = false;
         gVstWantsTime = false;
 
-        carla_zeroChar(strBuf, STR_MAX+1);
-
-        gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
-
-        if (gVstCurrentUniqueId != 0)
-            cName = strBuf;
-        else
+        if (! isShell)
             break;
+
+        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+        effect = nullptr;
     }
+
+    uniqueIds.clear();
+
+    if (effect == nullptr)
+        return;
 
     if (gVstNeedsIdle)
         effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
