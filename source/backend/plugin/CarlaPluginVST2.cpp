@@ -862,19 +862,6 @@ public:
         }
 #endif
 
-        // special plugin fixes
-        // 1. IL Harmless - disable threaded processing
-        if (fEffect->uniqueID == 1229484653)
-        {
-            char strBuf[STR_MAX+1] = { '\0' };
-            getLabel(strBuf);
-
-            if (std::strcmp(strBuf, "IL Harmless") == 0)
-            {
-                // TODO - disable threaded processing
-            }
-        }
-
         //bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
 
@@ -1742,8 +1729,7 @@ protected:
         }
 
         case audioMasterCurrentId:
-            // TODO
-            // if using old sdk, return effect->uniqueID
+            ret = fEffect->uniqueID;
             break;
 
         case audioMasterIdle:
@@ -2116,9 +2102,13 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 1)
 
+        sCurrentUniqueId     = uniqueId;
         sLastCarlaPluginVST2 = this;
+
         fEffect = vstFn(carla_vst_audioMasterCallback);
+
         sLastCarlaPluginVST2 = nullptr;
+        sCurrentUniqueId     = 0;
 
         if (fEffect == nullptr)
         {
@@ -2268,6 +2258,7 @@ private:
 
     int fUnique2;
 
+    static intptr_t         sCurrentUniqueId;
     static CarlaPluginVST2* sLastCarlaPluginVST2;
 
     // -------------------------------------------------------------------
@@ -2327,6 +2318,11 @@ private:
         {
         case audioMasterVersion:
             return kVstVersion;
+
+        case audioMasterCurrentId:
+            if (sCurrentUniqueId != 0)
+                return sCurrentUniqueId;
+            break;
 
         case audioMasterGetVendorString:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
@@ -2398,6 +2394,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginVST2)
 };
 
+intptr_t         CarlaPluginVST2::sCurrentUniqueId     = 0;
 CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
