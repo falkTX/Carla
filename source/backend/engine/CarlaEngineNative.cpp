@@ -700,6 +700,14 @@ protected:
         return "Plugin";
     }
 
+    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
+    {
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
+
+        if (action == ENGINE_CALLBACK_IDLE)
+            pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
+    }
+
     // -------------------------------------------------------------------
 
     const char* renamePlugin(const uint id, const char* const newName) override

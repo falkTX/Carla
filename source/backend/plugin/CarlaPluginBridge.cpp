@@ -2531,10 +2531,15 @@ public:
 #endif
         sFirstInit = false;
 
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+
         for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            pData->engine->idle();
+
+            if (needsEngineIdle)
+                pData->engine->idle();
+
             idle();
 
             if (fInitiated)

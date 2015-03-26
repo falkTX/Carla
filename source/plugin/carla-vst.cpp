@@ -512,10 +512,27 @@ protected:
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
-        return 0;
+
+        switch (opcode)
+        {
+        case NATIVE_HOST_OPCODE_NULL:
+        case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
+        case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+        case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
+        case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+        case NATIVE_HOST_OPCODE_RELOAD_ALL:
+        case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
+            break;
+
+        case NATIVE_HOST_OPCODE_HOST_IDLE:
+            fAudioMaster(fEffect, audioMasterIdle, 0, 0, nullptr, 0.0f);
+            break;
+        }
 
         // unused for now
-        (void)opcode; (void)index; (void)value; (void)ptr; (void)opt;
+        return 0;
+
+        (void)index; (void)value; (void)ptr; (void)opt;
     }
 
 private:

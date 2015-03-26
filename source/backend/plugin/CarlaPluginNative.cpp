@@ -2219,6 +2219,9 @@ protected:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
             fIsUiVisible = false;
             break;
+        case NATIVE_HOST_OPCODE_HOST_IDLE:
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+            break;
         }
 
         return ret;
