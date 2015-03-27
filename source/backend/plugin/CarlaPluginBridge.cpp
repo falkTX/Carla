@@ -743,6 +743,7 @@ public:
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
           fInfo(),
+          fUniqueId(0),
           fParams(nullptr),
           leakDetector_CarlaPluginBridge()
     {
@@ -815,7 +816,7 @@ public:
 
     int64_t getUniqueId() const noexcept override
     {
-        return fInfo.uniqueId;
+        return fUniqueId;
     }
 
     // -------------------------------------------------------------------
@@ -2003,11 +2004,12 @@ public:
                 const uint32_t optionEn = fShmNonRtServerControl.readUInt();
                 const  int64_t uniqueId = fShmNonRtServerControl.readLong();
 
+                CARLA_SAFE_ASSERT_INT2(fUniqueId == uniqueId, fUniqueId, uniqueId);
+
                 pData->hints   = hints | PLUGIN_IS_BRIDGE;
                 pData->options = optionEn;
 
                 fInfo.category = static_cast<PluginCategory>(category);
-                fInfo.uniqueId = uniqueId;
                 fInfo.optionsAvailable = optionAv;
             }   break;
 
@@ -2413,7 +2415,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
+    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const bridgeBinary)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2443,6 +2445,7 @@ public:
         else
             pData->filename = carla_strdup("");
 
+        fUniqueId     = uniqueId;
         fBridgeBinary = bridgeBinary;
 
         std::srand(static_cast<uint>(std::time(nullptr)));
@@ -2608,7 +2611,6 @@ private:
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
-        int64_t uniqueId;
         CarlaString name;
         CarlaString label;
         CarlaString maker;
@@ -2624,13 +2626,14 @@ private:
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
               optionsAvailable(0),
-              uniqueId(0),
               name(),
               label(),
               maker(),
               copyright(),
               chunk() {}
     } fInfo;
+
+    int64_t fUniqueId;
 
     BridgeParamInfo* fParams;
 
@@ -2686,7 +2689,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-    if (! plugin->init(init.filename, init.name, init.label, bridgeBinary))
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, bridgeBinary))
     {
         delete plugin;
         return nullptr;
