@@ -1222,8 +1222,10 @@ public:
 
         pData->options  = 0x0;
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        if (fDesc.isInstrument)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fInstance->acceptsMidi())
         {

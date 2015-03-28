@@ -2372,7 +2372,7 @@ public:
             if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         }
-        else if (hasMidiProgs)
+        else if (hasMidiProgs && fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;

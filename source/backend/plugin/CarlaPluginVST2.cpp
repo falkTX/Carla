@@ -2184,7 +2184,9 @@ public:
         // set default options
 
         pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fEffect->flags & effFlagsIsSynth)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fEffect->flags & effFlagsProgramChunks)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;

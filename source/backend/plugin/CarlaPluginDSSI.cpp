@@ -2645,15 +2645,15 @@ public:
         if (fUsesCustomData)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (fDssiDescriptor->run_synth == nullptr)
                 carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");

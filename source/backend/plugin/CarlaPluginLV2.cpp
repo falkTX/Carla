@@ -5019,7 +5019,7 @@ public:
 
         pData->options  = 0x0;
 
-        if (fExt.programs != nullptr)
+        if (fExt.programs != nullptr && getCategory() == PLUGIN_CATEGORY_SYNTH)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
