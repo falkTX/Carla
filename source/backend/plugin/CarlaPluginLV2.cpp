@@ -3206,7 +3206,7 @@ public:
                         {
                             if (event.channel == pData->ctrlChannel)
                             {
-                                const uint32_t nextProgramId = ctrlEvent.param;
+                                const uint32_t nextProgramId(ctrlEvent.param);
 
                                 for (uint32_t k=0; k < pData->midiprog.count; ++k)
                                 {

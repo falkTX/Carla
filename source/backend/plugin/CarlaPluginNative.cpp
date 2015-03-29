@@ -1592,32 +1592,65 @@ public:
                     }
 
                     case kEngineControlEventTypeMidiBank:
-                        if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
-                            nextBankId = ctrlEvent.param;
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                        {
+                            if (event.channel == pData->ctrlChannel)
+                                nextBankId = ctrlEvent.param;
+                        }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                                continue;
+
+                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(nativeEvent);
+
+                            nativeEvent.time    = sampleAccurate ? startTime : event.time;
+                            nativeEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            nativeEvent.data[1] = MIDI_CONTROL_BANK_SELECT;
+                            nativeEvent.data[2] = uint8_t(ctrlEvent.param);
+                            nativeEvent.size    = 3;
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
-                        if (event.channel < MAX_MIDI_CHANNELS && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
+                        if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
                         {
-                            const uint32_t nextProgramId(ctrlEvent.param);
-
-                            for (uint32_t k=0; k < pData->midiprog.count; ++k)
+                            if (event.channel < MAX_MIDI_CHANNELS)
                             {
-                                if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                const uint32_t nextProgramId(ctrlEvent.param);
+
+                                for (uint32_t k=0; k < pData->midiprog.count; ++k)
                                 {
-                                    fDescriptor->set_midi_program(fHandle, event.channel, nextBankId, nextProgramId);
+                                    if (pData->midiprog.data[k].bank == nextBankId && pData->midiprog.data[k].program == nextProgramId)
+                                    {
+                                        fDescriptor->set_midi_program(fHandle, event.channel, nextBankId, nextProgramId);
 
-                                    if (fHandle2 != nullptr)
-                                        fDescriptor->set_midi_program(fHandle2, event.channel, nextBankId, nextProgramId);
+                                        if (fHandle2 != nullptr)
+                                            fDescriptor->set_midi_program(fHandle2, event.channel, nextBankId, nextProgramId);
 
-                                    fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
+                                        fCurMidiProgs[event.channel] = static_cast<int32_t>(k);
 
-                                    if (event.channel == pData->ctrlChannel)
-                                        pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
+                                        if (event.channel == pData->ctrlChannel)
+                                            pData->postponeRtEvent(kPluginPostRtEventMidiProgramChange, static_cast<int32_t>(k), 0, 0.0f);
 
-                                    break;
+                                        break;
+                                    }
                                 }
                             }
+                        }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                                continue;
+
+                            NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(nativeEvent);
+
+                            nativeEvent.time    = sampleAccurate ? startTime : event.time;
+                            nativeEvent.data[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            nativeEvent.data[1] = uint8_t(ctrlEvent.param);
+                            nativeEvent.size    = 2;
                         }
                         break;
 
