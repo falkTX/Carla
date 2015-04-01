@@ -479,10 +479,12 @@ endif
 		data/carla-bridge-lv2-modgui \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
+ifeq ($(HAVE_QT),true)
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
 		$(DESTDIR)$(PREFIX)/lib/carla/styles/
+endif
 
 	# Install python code
 	install -m 644 \
