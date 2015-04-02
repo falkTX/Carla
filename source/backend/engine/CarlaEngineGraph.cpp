@@ -29,6 +29,7 @@ using juce::FloatVectorOperations;
 using juce::MemoryBlock;
 using juce::PluginDescription;
 using juce::String;
+using juce::jmin;
 using juce::jmax;
 
 CARLA_BACKEND_START_NAMESPACE
@@ -1218,7 +1219,7 @@ public:
 
         // TODO - CV support
 
-        const uint32_t bufferSize(static_cast<uint32_t>(audio.getNumSamples()));
+        const int numSamples(audio.getNumSamples());
 
         if (const int numChan = audio.getNumChannels())
         {
@@ -1232,36 +1233,27 @@ public:
 
             float inPeaks[2] = { 0.0f };
             float outPeaks[2] = { 0.0f };
+            juce::Range<float> range;
 
-            for (int i=0; i<numChan; ++i)
+            for (int i=jmin(fPlugin->getAudioInCount(), 2U); --i>=0;)
             {
-                for (uint32_t j=0; j < bufferSize; ++j)
-                {
-                    const float absV(std::abs(audioBuffers[i][j]));
-
-                    if (absV > inPeaks[i])
-                        inPeaks[i] = absV;
-                }
+                range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
+                inPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
 
-            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, bufferSize);
+            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, static_cast<uint32_t>(numSamples));
 
-            for (int i=0; i<numChan; ++i)
+            for (int i=jmin(fPlugin->getAudioOutCount(), 2U); --i>=0;)
             {
-                for (uint32_t j=0; j < bufferSize; ++j)
-                {
-                    const float absV(std::abs(audioBuffers[i][j]));
-
-                    if (absV > outPeaks[i])
-                        outPeaks[i] = absV;
-                }
+                range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
+                outPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
             }
 
             kEngine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
         }
         else
         {
-            fPlugin->process(nullptr, nullptr, nullptr, nullptr, bufferSize);
+            fPlugin->process(nullptr, nullptr, nullptr, nullptr, static_cast<uint32_t>(numSamples));
         }
 
         midi.clear();
