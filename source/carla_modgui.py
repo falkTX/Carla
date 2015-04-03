@@ -308,6 +308,7 @@ class HostWindow(QMainWindow):
         self.fWebview = QWebView(self)
         self.setCentralWidget(self.fWebview)
         self.setContentsMargins(0, 0, 0, 0)
+        #self.fWebview.settings().setAttribute(7, True)
 
         page = self.fWebview.page()
         page.setViewportSize(QSize(980, 600))
@@ -417,7 +418,7 @@ class HostWindow(QMainWindow):
         for index in self.fPortValues.keys():
             symbol = self.fPortSymbols[index]
             value  = self.fPortValues[index]
-            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f)" % (symbol, value))
+            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
 
         # final setup
         self.fCanSetValues = True
@@ -535,9 +536,9 @@ class HostWindow(QMainWindow):
     def dspParameterChanged(self, index, value):
         self.fPortValues[index] = value
 
-        if self.fCurrentFrame is not None:
+        if self.fCurrentFrame is not None and self.fCanSetValues:
             symbol = self.fPortSymbols[index]
-            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f)" % (symbol, value))
+            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
 
     def dspProgramChanged(self, index):
         return
