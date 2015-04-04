@@ -588,6 +588,9 @@ class HostWindow(QMainWindow):
         self.closeExternalUI()
         QMainWindow.closeEvent(self, event)
 
+        # there might be other qt windows open which will block carla-modgui from quitting
+        app.quit()
+
     def timerEvent(self, event):
         if event.timerId() == self.fIdleTimer:
             self.idleStuff()

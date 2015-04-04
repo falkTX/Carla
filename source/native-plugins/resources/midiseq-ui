@@ -106,7 +106,7 @@ class NoteExpander(QGraphicsRectItem):
         self.orig_brush = QColor(0, 0, 0, 0)
         self.hover_brush = QColor(200, 200, 200)
         self.stretch = False
-        
+
     def mousePressEvent(self, event):
         QGraphicsRectItem.mousePressEvent(self, event)
         self.stretch = True
@@ -133,7 +133,7 @@ class NoteItem(QGraphicsRectItem):
     '''a note on the pianoroll sequencer'''
     def __init__(self, height, length, note_info):
         QGraphicsRectItem.__init__(self, 0, 0, length, height)
-        
+
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -145,7 +145,7 @@ class NoteItem(QGraphicsRectItem):
         self.hover_brush = QColor(note_info[3] + 100, 200, 100)
         self.select_brush = QColor(note_info[3] + 100, 100, 100)
         self.setBrush(self.orig_brush)
-            
+
         self.note = note_info
         self.length = length
         self.piano = self.scene
@@ -233,7 +233,7 @@ class NoteItem(QGraphicsRectItem):
         self.back.setPos(new_x - 5, 0)
         rect.setRight(new_x)
         self.setRect(rect)
-    
+
     def updateNoteInfo(self, pos_x, pos_y):
         self.note[0] = self.piano().get_note_num_from_y(pos_y)
         self.note[1] = self.piano().get_note_start_from_x(pos_x)
@@ -347,7 +347,7 @@ class PianoRoll(QGraphicsScene):
         self.total_height = self.piano_height - self.note_height + self.header_height
         #not sure why note_height is subtracted
 
-        ## width 
+        ## width
         self.full_note_width = 250 # i.e. a 4/4 note
         self.snap_value = None
         self.quantize_val = quantize_val
@@ -489,7 +489,7 @@ class PianoRoll(QGraphicsScene):
 
     def mousePressEvent(self, event):
         QGraphicsScene.mousePressEvent(self, event)
-        if not (any(key.pressed for key in self.piano_keys) 
+        if not (any(key.pressed for key in self.piano_keys)
                 or any(note.pressed for note in self.notes)):
             for note in self.selected_notes:
                 note.setSelected(False)
@@ -531,7 +531,7 @@ class PianoRoll(QGraphicsScene):
                 #self.adjust_note_vel(event)
             else:
                 m_pos = self.enforce_bounds(m_pos)
-                    
+
                 if self.insert_mode: #ghostnote follows mouse around
                     (m_new_x, m_new_y) = self.snap(m_pos.x(), m_pos.y())
                     self.ghost_rect.moveTo(m_new_x, m_new_y)
@@ -560,7 +560,7 @@ class PianoRoll(QGraphicsScene):
                     for note in self.notes:
                         if note in self.selected_notes: note.setSelected(True)
                         else: note.setSelected(False)
-                
+
                 elif self.velocity_mode:
                     if Qt.LeftButton == event.buttons():
                         for note in self.selected_notes:
@@ -574,7 +574,7 @@ class PianoRoll(QGraphicsScene):
                         elif any(note.front.stretch for note in self.selected_notes):
                             y = True
                         for note in self.selected_notes:
-                            note.back.stretch = x 
+                            note.back.stretch = x
                             note.front.stretch = y
                             note.moveEvent(event)
 
@@ -688,7 +688,7 @@ class PianoRoll(QGraphicsScene):
                         line.setPen(line_pen)
 
     def drawPlayHead(self):
-        self.play_head = QGraphicsLineItem(self.piano_width, self.header_height, self.piano_width, self.total_height) 
+        self.play_head = QGraphicsLineItem(self.piano_width, self.header_height, self.piano_width, self.total_height)
         self.play_head.setPen(QPen(QColor(255,255,255,50), 2))
         self.play_head.setZValue(1.)
         self.addItem(self.play_head)
@@ -839,14 +839,14 @@ class PianoRoll(QGraphicsScene):
 class PianoRollView(QGraphicsView):
     def __init__(self, time_sig = '4/4', num_measures = 4, quantize_val = '1/8'):
         QGraphicsView.__init__(self)
-        self.piano = PianoRoll(time_sig, num_measures, quantize_val) 
+        self.piano = PianoRoll(time_sig, num_measures, quantize_val)
         self.setScene(self.piano)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         x = 0   * self.sceneRect().width() + self.sceneRect().left()
         y = 0.4 * self.sceneRect().height() + self.sceneRect().top()
         self.centerOn(x, y)
-        
+
         self.setAlignment(Qt.AlignLeft)
         self.o_transform = self.transform()
         self.zoom_x = 1
@@ -925,7 +925,7 @@ class MainWindow(ExternalUI, QWidget):
     def initUI(self):
         self.view = PianoRollView(
                 time_sig = "{}/{}".format(
-                    int(self.fTransportInfo["sigNum"]), 
+                    int(self.fTransportInfo["sigNum"]),
                     int(self.fTransportInfo["sigNum"])),
                 num_measures = 4,
                 quantize_val = '1/8')
@@ -1054,6 +1054,9 @@ class MainWindow(ExternalUI, QWidget):
     def closeEvent(self, event):
         self.closeExternalUI()
         QGraphicsView.closeEvent(self, event)
+
+        # there might be other qt windows open which will block the UI from quitting
+        app.quit()
 
     # -------------------------------------------------------------------
     # Custom callback

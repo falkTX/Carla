@@ -127,6 +127,9 @@ class DistrhoUIBigMeter(ExternalUI, DigitalPeakMeter):
         self.closeExternalUI()
         DigitalPeakMeter.closeEvent(self, event)
 
+        # there might be other qt windows open which will block the UI from quitting
+        app.quit()
+
 #--------------- main ------------------
 if __name__ == '__main__':
     import resources_rc
