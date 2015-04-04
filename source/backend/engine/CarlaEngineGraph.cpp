@@ -793,8 +793,9 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
     bool processed = false;
 
-    uint32_t oldAudioInCount = 0;
-    uint32_t oldMidiOutCount = 0;
+    uint32_t oldAudioInCount  = 0;
+    uint32_t oldAudioOutCount = 0;
+    uint32_t oldMidiOutCount  = 0;
 
     // process plugins
     for (uint i=0; i < data->curPluginCount; ++i)
@@ -833,8 +834,9 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
             }
         }
 
-        oldAudioInCount = plugin->getAudioInCount();
-        oldMidiOutCount = plugin->getMidiOutCount();
+        oldAudioInCount  = plugin->getAudioInCount();
+        oldAudioOutCount = plugin->getAudioOutCount();
+        oldMidiOutCount  = plugin->getMidiOutCount();
 
         // process
         plugin->initBuffers();
@@ -846,6 +848,12 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         {
             FloatVectorOperations::add(outBuf[0], inBuf0, iframes);
             FloatVectorOperations::add(outBuf[1], inBuf1, iframes);
+        }
+
+        // if plugin only has 1 output, copy it to the 2nd
+        if (oldAudioOutCount == 1)
+        {
+            FloatVectorOperations::copy(outBuf[1], outBuf[0], iframes);
         }
 
         // set peaks
@@ -868,7 +876,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
                 pluginData.insPeak[1] = 0.0f;
             }
 
-            if (plugin->getAudioOutCount() > 0)
+            if (oldAudioOutCount > 0)
             {
                 range = FloatVectorOperations::findMinAndMax(outBuf[0], iframes);
                 pluginData.outsPeak[0] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
