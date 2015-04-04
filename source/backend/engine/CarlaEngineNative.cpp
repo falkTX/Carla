@@ -705,7 +705,7 @@ protected:
     {
         CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
 
-        if (action == ENGINE_CALLBACK_IDLE)
+        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose)
             pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
     }
 
@@ -1517,7 +1517,7 @@ protected:
         }
         else
         {
-            fUiServer.stopPipeServer(5000);
+            fUiServer.stopPipeServer(2000);
 
             // hide all custom uis
             for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1625,7 +1625,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
-            fUiServer.stopPipeServer(2000);
+            fUiServer.stopPipeServer(1000);
             break;
         }
     }

@@ -729,10 +729,12 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effClose:
         if (VstObject* const obj = vstObjectPtr)
         {
-            if (obj->plugin != nullptr)
+            NativePlugin* const plugin(obj->plugin);
+
+            if (plugin != nullptr)
             {
-                delete obj->plugin;
                 obj->plugin = nullptr;
+                delete plugin;
             }
 
 #if 0
