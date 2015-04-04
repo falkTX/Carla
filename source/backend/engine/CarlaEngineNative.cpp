@@ -1290,7 +1290,7 @@ protected:
     void activate()
     {
 #if 0
-        for (uint32_t i=0; i < pData->curPluginCount; ++i)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -1307,7 +1307,7 @@ protected:
     {
         fIsActive = false;
 #if 0
-        for (uint32_t i=0; i < pData->curPluginCount; ++i)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -1642,7 +1642,11 @@ protected:
 
     void setState(const char* const data)
     {
-        // remove all plugins first, no lock
+        // remove all plugins from UI side
+        for (int i=pData->curPluginCount; --i >= 0;)
+            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, i, 0, 0, 0.0f, nullptr);
+
+        // remove all plugins from backend, no lock
         fIsRunning = false;
         removeAllPlugins();
         fIsRunning = true;

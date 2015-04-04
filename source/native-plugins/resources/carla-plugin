@@ -133,6 +133,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
 
         HostWindow.closeEvent(self, event)
 
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
+
     # -------------------------------------------------------------------
     # Custom callback
 
