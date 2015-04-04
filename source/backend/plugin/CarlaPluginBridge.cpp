@@ -928,13 +928,16 @@ public:
 
         // TODO: only wait 1 minute for NI plugins
         const uint32_t timeoutEnd(Time::getMillisecondCounter() + 60*1000); // 60 secs, 1 minute
+        const bool needsEngineIdle(pData->engine->getType() != kEngineTypePlugin);
 
         carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
 
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            pData->engine->idle();
+
+            if (needsEngineIdle)
+                pData->engine->idle();
 
             if (fSaved)
                 break;

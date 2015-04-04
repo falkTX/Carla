@@ -64,6 +64,7 @@ public:
           fNeedIdle(false),
           fLastChunk(nullptr),
           fIsProcessing(false),
+          fMainThread(pthread_self()),
 #ifdef PTW32_DLLPORT
           fProcThread({nullptr, 0}),
 #else
@@ -81,13 +82,6 @@ public:
 
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
-
-#ifdef CARLA_OS_WIN
-        fProcThread.p = nullptr;
-        fProcThread.x = 0;
-#else
-        fProcThread = 0;
-#endif
 
         // make plugin valid
         srand(id);
@@ -1733,8 +1727,13 @@ protected:
             break;
 
         case audioMasterIdle:
-            //pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            //pData->engine->idle();
+            if (pthread_equal(pthread_self(), fMainThread))
+            {
+                pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+                if (pData->engine->getType() != kEngineTypePlugin)
+                    pData->engine->idle();
+            }
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -2219,6 +2218,7 @@ private:
     void* fLastChunk;
 
     bool      fIsProcessing;
+    pthread_t fMainThread;
     pthread_t fProcThread;
 
     struct FixedVstEvents {
@@ -2300,9 +2300,9 @@ private:
         if (std::strcmp(feature, "startStopProcess") == 0)
             return 1;
         if (std::strcmp(feature, "supportShell") == 0)
-            return -1;
+            return 1;
         if (std::strcmp(feature, "shellCategory") == 0)
-            return -1;
+            return 1;
 
         // unimplemented
         carla_stderr("carla_vst_hostCanDo(\"%s\") - unknown feature", feature);
