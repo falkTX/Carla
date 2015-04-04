@@ -578,6 +578,7 @@ public:
           fIsRunning(false),
           fUiServer(this),
           fOptionsForced(false),
+          fWaitForReadyMsg(false),
           leakDetector_CarlaEngineNative()
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -1504,9 +1505,9 @@ protected:
             if (kIsPatchbay)
                 patchbayRefresh(false);
 
-            if (std::getenv("CARLA_PLUGIN_EMBED_WINID") != nullptr)
+            if (fWaitForReadyMsg)
             {
-                carla_stdout("Using Carla plugin embedded, waiting for it to be ready...");
+                carla_stdout("Using Carla plugin embedded in Tracktion, waiting for it to be ready...");
 
                 for (; fUiServer.isPipeRunning() && ! fUiServer.isReady();)
                     fUiServer.idlePipe();
@@ -1771,6 +1772,8 @@ public:
         switch(opcode)
         {
         case NATIVE_PLUGIN_OPCODE_NULL:
+            if (static_cast<uint32_t>(index) == 0xDEADF00D && value == 0xC0C0B00B)
+                handlePtr->fWaitForReadyMsg = true;
             return 0;
         case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
@@ -1814,6 +1817,7 @@ private:
     CarlaEngineNativeUI fUiServer;
 
     bool fOptionsForced;
+    bool fWaitForReadyMsg;
     char fTmpBuf[STR_MAX+1];
 
     CarlaPlugin* _getFirstPlugin() const noexcept

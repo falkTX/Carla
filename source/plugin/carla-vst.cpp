@@ -243,17 +243,29 @@ public:
                 strBuf[0xff] = '\0';
                 std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
 
+                // set CARLA_PLUGIN_EMBED_WINID for external process
                 carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
 
-                fDescriptor->ui_show(fHandle, true);
-
-                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
-
+                // check if vst host is tracktion
                 carla_zeroChar(strBuf, 0xff+1);
                 fAudioMaster(fEffect, audioMasterGetProductString, 0, 0, strBuf, 0);
 
-#if 1
-                if (std::strcmp(strBuf, "Tracktion") == 0)
+                const bool isTracktion(std::strcmp(strBuf, "Tracktion") == 0);
+
+                // if vst host is tracktion, delay UI appearance for a bit (part 1)
+                if (isTracktion)
+                {
+                    fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, 0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
+                }
+
+                // show UI now
+                fDescriptor->ui_show(fHandle, true);
+
+                // reset CARLA_PLUGIN_EMBED_WINID just in case
+                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+
+                // if vst host is tracktion, delay UI appearance for a bit (part 2)
+                if (isTracktion)
                 {
                     carla_stdout("Tracktion detected, delaying UI appearance so it works properly...");
 
@@ -263,7 +275,6 @@ public:
                         carla_msleep(25);
                     }
                 }
-#endif
 
                 ret = 1;
             }
