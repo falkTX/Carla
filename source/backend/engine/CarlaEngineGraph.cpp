@@ -791,11 +791,11 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     // initialize event outputs (zero)
     carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
 
-    bool processed = false;
-
     uint32_t oldAudioInCount  = 0;
     uint32_t oldAudioOutCount = 0;
     uint32_t oldMidiOutCount  = 0;
+    bool processed = false;
+    juce::Range<float> range;
 
     // process plugins
     for (uint i=0; i < data->curPluginCount; ++i)
@@ -859,8 +859,6 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
         // set peaks
         {
             EnginePluginData& pluginData(data->plugins[i]);
-
-            juce::Range<float> range;
 
             if (oldAudioInCount > 0)
             {
