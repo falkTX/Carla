@@ -2,7 +2,7 @@
 Name=Carla Control
 GenericName=Carla OSC Control
 Comment=Audio Plugin Host (OSC Control)
-Exec=carla-control
+Exec=carla-control %u
 Icon=carla-control
 Terminal=false
 Type=Application

@@ -253,6 +253,7 @@ RES = \
 	bin/resources/carla_backend.py \
 	bin/resources/carla_backend_qt.py \
 	bin/resources/carla_config.py \
+	bin/resources/carla_control.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
 	bin/resources/carla_panels.py \
@@ -317,7 +318,6 @@ endif
 
 ifeq ($(HAVE_PYQT),true)
 UIs = \
-	source/ui_carla_control.py \
 	source/ui_carla_about.py \
 	source/ui_carla_about_juce.py \
 	source/ui_carla_database.py \
@@ -541,6 +541,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_backend_qt.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_control.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_modgui.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -582,6 +583,7 @@ endif
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
 		$(DESTDIR)$(PREFIX)/bin/carla \
+		$(DESTDIR)$(PREFIX)/bin/carla-control \
 		$(DESTDIR)$(PREFIX)/bin/carla-database \
 		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
 		$(DESTDIR)$(PREFIX)/bin/carla-rack \
@@ -589,7 +591,6 @@ endif
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
 		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
-# 		$(DESTDIR)$(PREFIX)/bin/carla-control \
 
 	# --------------------------------------------------------------------------------------------------------------------
 
