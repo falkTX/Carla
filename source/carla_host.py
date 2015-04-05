@@ -182,6 +182,12 @@ class HostWindow(QMainWindow):
         else:
             self.ui.act_engine_start.setEnabled(True)
 
+        if not self.host.isControl:
+            self.ui.act_file_connect.setEnabled(False)
+            self.ui.act_file_connect.setVisible(False)
+            self.ui.act_file_refresh.setEnabled(False)
+            self.ui.act_file_refresh.setVisible(False)
+
         if self.fSessionManagerName and not self.host.isPlugin:
             self.ui.act_file_new.setEnabled(False)
 

@@ -363,76 +363,105 @@ class HostWindowOSC(HostWindow):
         self.fOscServer  = None
 
         # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (not connected)
+
+        self.ui.act_file_refresh.setEnabled(False)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Connect actions to functions
+
+        self.ui.act_file_connect.triggered.connect(self.slot_fileConnect)
+        self.ui.act_file_refresh.triggered.connect(self.slot_fileRefresh)
+
+        # ----------------------------------------------------------------------------------------------------
         # Final setup
 
         if oscAddr:
-            QTimer.singleShot(0, self.connectNow)
+            QTimer.singleShot(0, self.connectOsc)
 
-    def connectNow(self):
+    def connectOsc(self, addr = None):
         global lo_target, lo_target_name
+
+        if addr is not None:
+            self.fOscAddress = addr
 
         lo_target      = Address(self.fOscAddress)
         lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
         print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, lo_target_name))
 
-        #try:
-        self.fOscServer = CarlaControlServerThread(self.host, LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP)
-        #except: # ServerError, err:
-            #print("Connecting error!")
-            #print str(err)
-            #QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
-            #return
+        try:
+            self.fOscServer = CarlaControlServerThread(self.host, LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP)
+        except: # ServerError as err:
+            QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
+            return
 
-        if self.fOscServer:
-            self.fOscServer.start()
-            lo_send(lo_target, "/register", self.fOscServer.getFullURL())
-            #self.ui.act_file_refresh.setEnabled(True)
+        self.fOscServer.start()
+        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
 
         self.startTimers()
+        self.ui.act_file_refresh.setEnabled(True)
+
+    def disconnectOsc(self):
+        global lo_target, lo_target_name
+
+        self.killTimers()
+        self.ui.act_file_refresh.setEnabled(False)
+
+        if lo_target is not None:
+            lo_send(lo_target, "/unregister")
+
+        if self.fOscServer is not None:
+            self.fOscServer.stop()
+            self.fOscServer = None
+
+        self.removeAllPlugins()
+
+        lo_target        = None
+        lo_target_name   = ""
+        self.fOscAddress = ""
+
+    def removeAllPlugins(self):
+        self.host.fPluginsInfo = []
+        HostWindow.removeAllPlugins(self)
 
     @pyqtSlot()
     def slot_fileConnect(self):
-        global lo_target, lo_targetName
+        global lo_target, lo_target_name
 
         if lo_target and self.fOscServer:
             urlText = self.fOscAddress
         else:
             urlText = "osc.tcp://127.0.0.1:19000/Carla"
 
-        askValue = QInputDialog.getText(self, self.tr("Carla Control - Connect"), self.tr("Address"), text=urlText)
+        addr, ok = QInputDialog.getText(self, self.tr("Carla Control - Connect"), self.tr("Address"), text=urlText)
 
-        if not askValue[1]:
+        if not ok:
             return
 
-        self.slot_handleExit()
-
-        self.connectToAddr(askValue[0])
+        self.disconnectOsc()
+        self.connectOsc(addr)
 
     @pyqtSlot()
     def slot_fileRefresh(self):
         global lo_target
 
-        if lo_target is not None and self.fOscServer is not None:
-            self.removeAll()
-            lo_send(lo_target, "/unregister")
-            lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+        if lo_target is None or self.fOscServer is None:
+            return
+
+        self.killTimers()
+        lo_send(lo_target, "/unregister")
+        self.removeAllPlugins()
+        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+        self.startTimers()
 
     @pyqtSlot()
-    def slot_handleExit(self):
-        self.removeAll()
-
-        if self.fOscServer:
-            self.fOscServer.stop()
-            self.fOscServer = None
-            self.ui.act_file_refresh.setEnabled(False)
-
-        global lo_target, lo_targetName
-        lo_target        = None
-        lo_target_name   = ""
-        self.fOscAddress = ""
+    def slot_handleQuitCallback(self):
+        self.disconnectOsc()
 
     def closeEvent(self, event):
         global lo_target
+
+        self.killTimers()
 
         if lo_target is not None and self.fOscServer is not None:
             lo_send(lo_target, "/unregister")

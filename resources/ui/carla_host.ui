@@ -151,6 +151,8 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="act_file_connect"/>
+    <addaction name="act_file_refresh"/>
     <addaction name="act_file_new"/>
     <addaction name="act_file_open"/>
     <addaction name="act_file_save"/>
@@ -262,6 +264,8 @@
    <addaction name="act_file_open"/>
    <addaction name="act_file_save"/>
    <addaction name="act_file_save_as"/>
+   <addaction name="act_file_connect"/>
+   <addaction name="act_file_refresh"/>
    <addaction name="separator"/>
    <addaction name="act_plugin_add2"/>
    <addaction name="act_plugin_remove_all"/>
@@ -797,6 +801,24 @@
    </property>
    <property name="text">
     <string>Show Time Panel</string>
+   </property>
+  </action>
+  <action name="act_file_connect">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/network-connect.png</normaloff>:/16x16/network-connect.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Connect...</string>
+   </property>
+  </action>
+  <action name="act_file_refresh">
+   <property name="icon">
+    <iconset resource="../resources.qrc">
+     <normaloff>:/16x16/view-refresh.png</normaloff>:/16x16/view-refresh.png</iconset>
+   </property>
+   <property name="text">
+    <string>&amp;Refresh</string>
    </property>
   </action>
  </widget>
