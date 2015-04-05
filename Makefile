@@ -425,6 +425,7 @@ endif
 	# Install script files
 	install -m 755 \
 		data/carla \
+		data/carla-control \
 		data/carla-database \
 		data/carla-patchbay \
 		data/carla-rack \
