@@ -1037,6 +1037,10 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
+        fUiServer.writeAndFixMessage("osc-urls");
+        fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP());
+        fUiServer.writeAndFixMessage(pData->osc.getServerPathUDP());
+
         fUiServer.writeAndFixMessage("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
         fUiServer.writeMessage(fTmpBuf);

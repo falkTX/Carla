@@ -2682,6 +2682,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         # some other vars
         self.fBufferSize = 0
         self.fSampleRate = 0.0
+        self.fOscTCP = ""
+        self.fOscUDP = ""
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2965,10 +2967,10 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fLastError
 
     def get_host_osc_url_tcp(self):
-        return ""
+        return self.fOscTCP
 
     def get_host_osc_url_udp(self):
-        return ""
+        return self.fOscUDP
 
     # --------------------------------------------------------------------------------------------------------
 

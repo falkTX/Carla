@@ -85,12 +85,9 @@ class CarlaAboutW(QDialog):
             self.ui.tabWidget.removeTab(2)
             self.ui.tabWidget.removeTab(1)
 
-        elif host.isPlugin:
-            self.ui.tabWidget.removeTab(2)
-
         self.ui.l_extended.setText(gCarla.utils.get_complete_license_text())
 
-        if host.is_engine_running() and not (host.isControl or host.isPlugin):
+        if host.is_engine_running() and not host.isControl:
             self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
             self.ui.le_osc_url_udp.setText(host.get_host_osc_url_udp())
         else:

@@ -71,11 +71,17 @@ void CarlaEngineOsc::init(const char* const name) noexcept
     fName = name;
     fName.toBasic();
 
-#ifndef BUILD_BRIDGE
-    const char* tcpPort = std::getenv("CARLA_OSC_TCP_PORT");
-#else
     const char* tcpPort = nullptr;
+    const char* udpPort = nullptr;
+
+#ifndef BUILD_BRIDGE
+    if (fEngine->getType() != kEngineTypePlugin)
+    {
+        tcpPort = std::getenv("CARLA_OSC_TCP_PORT");
+        udpPort = std::getenv("CARLA_OSC_UDP_PORT");
+    }
 #endif
+
     fServerTCP = lo_server_new_with_proto(tcpPort, LO_TCP, osc_error_handler_TCP);
 
     if (fServerTCP != nullptr)
@@ -90,11 +96,6 @@ void CarlaEngineOsc::init(const char* const name) noexcept
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
     }
 
-#ifndef BUILD_BRIDGE
-    const char* udpPort = std::getenv("CARLA_OSC_UDP_PORT");
-#else
-    const char* udpPort = nullptr;
-#endif
     fServerUDP = lo_server_new_with_proto(udpPort, LO_UDP, osc_error_handler_UDP);
 
     if (fServerUDP != nullptr)

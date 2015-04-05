@@ -331,6 +331,12 @@ class CarlaMiniW(ExternalUI, HostWindow):
             value = self.readlineblock().replace("\r", "\n")
             self.host._set_customData(pluginId, customDataId, {'type': type_, 'key': key, 'value': value})
 
+        elif msg == "osc-urls":
+            tcp = self.readlineblock().replace("\r", "\n")
+            udp = self.readlineblock().replace("\r", "\n")
+            self.host.fOscTCP = tcp
+            self.host.fOscUDP = udp
+
         elif msg == "max-plugin-number":
             maxnum = int(self.readlineblock())
             self.host.fMaxPluginNumber = maxnum
