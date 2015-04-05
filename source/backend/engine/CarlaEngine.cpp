@@ -683,12 +683,20 @@ bool CarlaEngine::removeAllPlugins()
 
     pData->thread.stopThread(500);
 
+    const uint curPluginCount(pData->curPluginCount);
+
 #ifndef BUILD_BRIDGE
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         pData->graph.removeAllPlugins();
-#endif
 
-    const uint32_t curPluginCount(pData->curPluginCount);
+# ifdef HAVE_LIBLO
+    if (isOscControlRegistered())
+    {
+        for (int i=curPluginCount; --i >= 0;)
+            oscSend_control_remove_plugin(i);
+    }
+# endif
+#endif
 
     const bool lockWait(isRunning());
     const ScopedActionLock sal(this, kEnginePostActionZeroCount, 0, 0, lockWait);

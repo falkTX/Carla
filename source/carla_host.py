@@ -117,7 +117,10 @@ class HostWindow(QMainWindow):
         # to be filled with key-value pairs of current settings
         self.fSavedSettings = {}
 
-        if host.isPlugin:
+        if host.isControl:
+            self.fClientName         = "Carla-Control"
+            self.fSessionManagerName = "Control"
+        elif host.isPlugin:
             self.fClientName         = "Carla-Plugin"
             self.fSessionManagerName = "Plugin"
         elif LADISH_APP_NAME:
@@ -150,9 +153,8 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
-        if self.host.isPlugin:
+        if self.host.isPlugin or self.host.isControl:
             self.ui.act_file_save.setVisible(False)
-            self.ui.act_file_save_as.setText(self.tr("Export as..."))
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_start.setVisible(False)
             self.ui.act_engine_stop.setEnabled(False)
@@ -162,6 +164,21 @@ class HostWindow(QMainWindow):
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
+
+            if self.host.isControl:
+                self.ui.act_file_new.setVisible(False)
+                self.ui.act_file_open.setVisible(False)
+                self.ui.act_file_save.setVisible(False)
+                self.ui.act_file_save_as.setVisible(False)
+                self.ui.act_plugin_add.setVisible(False)
+                self.ui.act_plugin_add2.setVisible(False)
+                self.ui.act_plugin_remove_all.setVisible(False)
+                self.ui.menu_Plugin.setEnabled(False)
+                self.ui.menu_Plugin.setVisible(False)
+                self.ui.menu_Plugin.menuAction().setVisible(False)
+            else:
+                self.ui.act_file_save_as.setText(self.tr("Export as..."))
+
         else:
             self.ui.act_engine_start.setEnabled(True)
 
@@ -424,7 +441,7 @@ class HostWindow(QMainWindow):
             self.startTimers()
 
         # Start in patchbay tab if using forced patchbay mode
-        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
             self.ui.tabWidget.setCurrentIndex(1)
 
         # For NSM we wait for the open message
@@ -612,7 +629,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
 
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not self.host.isPlugin:
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not (self.host.isControl or self.host.isPlugin):
             self.ui.act_canvas_show_internal.setChecked(True)
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)
@@ -626,7 +643,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(False)
         self.ui.act_canvas_show_external.blockSignals(False)
 
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
             canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
@@ -650,7 +667,7 @@ class HostWindow(QMainWindow):
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
             self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
@@ -960,7 +977,7 @@ class HostWindow(QMainWindow):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
-        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
+        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and (self.host.isControl or self.host.isPlugin):
             return
 
         if self.host.is_engine_running():
@@ -1161,6 +1178,14 @@ class HostWindow(QMainWindow):
     # Settings
 
     def setEngineSettings(self):
+        # ----------------------------------------------------------------------------------------------------
+        # do nothing if control
+
+        if self.host.isControl:
+            return "Control"
+
+        # ----------------------------------------------------------------------------------------------------
+
         settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
@@ -1250,7 +1275,7 @@ class HostWindow(QMainWindow):
 
         #settings.setValue("SplitterState", self.ui.splitter.saveState())
 
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
             settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
 
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
@@ -1273,7 +1298,7 @@ class HostWindow(QMainWindow):
         if firstTime:
             self.restoreGeometry(settings.value("Geometry", ""))
 
-            if not self.host.isPlugin:
+            if not (self.host.isControl or self.host.isPlugin):
                 self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
 
                 showTimePanel = settings.value("ShowTimePanel", True, type=bool)
@@ -1790,13 +1815,13 @@ class HostWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
             winIdStr = "%x" % self.winId()
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
         # disable parent
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
         QMainWindow.hideEvent(self, event)
@@ -1892,7 +1917,7 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.saveSettings()
 
-        if self.host.is_engine_running() and not self.host.isPlugin:
+        if self.host.is_engine_running() and not (self.host.isControl or self.host.isPlugin):
             self.slot_engineStop(True)
 
         QMainWindow.closeEvent(self, event)

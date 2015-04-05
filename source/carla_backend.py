@@ -20,6 +20,7 @@
 # Imports (Global)
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from ctypes import *
 from platform import architecture
 from sys import platform, maxsize
@@ -2986,13 +2987,13 @@ class CarlaHostPlugin(CarlaHostMeta):
             return
 
         info = PluginStoreInfo()
-        info.pluginInfo     = PyCarlaPluginInfo
+        info.pluginInfo     = deepcopy(PyCarlaPluginInfo)
         info.pluginRealName = ""
         info.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
-        info.audioCountInfo = PyCarlaPortCountInfo
-        info.midiCountInfo  = PyCarlaPortCountInfo
+        info.audioCountInfo = deepcopy(PyCarlaPortCountInfo)
+        info.midiCountInfo  = deepcopy(PyCarlaPortCountInfo)
         info.parameterCount = 0
-        info.parameterCountInfo = PyCarlaPortCountInfo
+        info.parameterCountInfo = deepcopy(PyCarlaPortCountInfo)
         info.parameterInfo   = []
         info.parameterData   = []
         info.parameterRanges = []
@@ -3010,6 +3011,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def _set_pluginInfo(self, pluginId, info):
         self.fPluginsInfo[pluginId].pluginInfo = info
+
+    def _set_pluginInfoUpdate(self, pluginId, info):
+        self.fPluginsInfo[pluginId].pluginInfo.update(info)
 
     def _set_pluginName(self, pluginId, name):
         self.fPluginsInfo[pluginId].pluginInfo['name'] = name
@@ -3039,9 +3043,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].parameterInfo.append(PyCarlaParameterInfo)
-            self.fPluginsInfo[pluginId].parameterData.append(PyParameterData)
-            self.fPluginsInfo[pluginId].parameterRanges.append(PyParameterRanges)
+            self.fPluginsInfo[pluginId].parameterInfo.append(deepcopy(PyCarlaParameterInfo))
+            self.fPluginsInfo[pluginId].parameterData.append(deepcopy(PyParameterData))
+            self.fPluginsInfo[pluginId].parameterRanges.append(deepcopy(PyParameterRanges))
             self.fPluginsInfo[pluginId].parameterValues.append(0.0)
 
     def _set_programCount(self, pluginId, count):
@@ -3062,7 +3066,7 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].midiProgramData.append(PyMidiProgramData)
+            self.fPluginsInfo[pluginId].midiProgramData.append(deepcopy(PyMidiProgramData))
 
     def _set_customDataCount(self, pluginId, count):
         self.fPluginsInfo[pluginId].customDataCount = count
@@ -3085,6 +3089,10 @@ class CarlaHostPlugin(CarlaHostMeta):
     def _set_parameterRanges(self, pluginId, paramIndex, ranges):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterRanges[paramIndex] = ranges
+
+    def _set_parameterRangesUpdate(self, pluginId, paramIndex, ranges):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterRanges[paramIndex].update(ranges)
 
     def _set_parameterValue(self, pluginId, paramIndex, value):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
