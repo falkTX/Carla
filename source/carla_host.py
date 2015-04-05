@@ -225,6 +225,9 @@ class HostWindow(QMainWindow):
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.tabBar().hide()
 
+            if host.isControl:
+                self.ui.dockWidget.hide()
+
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
@@ -856,9 +859,6 @@ class HostWindow(QMainWindow):
 
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
-
-        if not self.fIsProjectLoading:
-            pitem.getWidget().setActive(True, True, True)
 
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 

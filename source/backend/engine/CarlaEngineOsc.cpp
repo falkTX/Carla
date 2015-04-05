@@ -288,6 +288,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
 #ifndef BUILD_BRIDGE
     // Internal methods
+    if (std::strcmp(method, "set_option") == 0)
+        return 0; //handleMsgSetOption(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_active") == 0)
         return handleMsgSetActive(plugin, argc, argv, types);
     if (std::strcmp(method, "set_drywet") == 0)
@@ -300,6 +302,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgSetBalanceRight(plugin, argc, argv, types);
     if (std::strcmp(method, "set_panning") == 0)
         return handleMsgSetPanning(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_ctrl_channel") == 0)
+        return 0; //handleMsgSetControlChannel(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_parameter_value") == 0)
         return handleMsgSetParameterValue(plugin, argc, argv, types);
     if (std::strcmp(method, "set_parameter_midi_cc") == 0)
@@ -310,6 +314,10 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgSetProgram(plugin, argc, argv, types);
     if (std::strcmp(method, "set_midi_program") == 0)
         return handleMsgSetMidiProgram(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_custom_data") == 0)
+        return 0; //handleMsgSetCustomData(plugin, argc, argv, types); // TODO
+    if (std::strcmp(method, "set_chunk") == 0)
+        return 0; //handleMsgSetChunk(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "note_on") == 0)
         return handleMsgNoteOn(plugin, argc, argv, types);
     if (std::strcmp(method, "note_off") == 0)

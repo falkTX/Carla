@@ -595,14 +595,15 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         if (plugin->getHints() & PLUGIN_CAN_VOLUME)
             plugin->setVolume(oldVolume, true, true);
 
-        if (wasActive)
-            plugin->setActive(true, true, true);
+        plugin->setActive(wasActive, true, true);
 
         callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, nullptr);
     }
     else
 #endif
     {
+        plugin->setActive(true, true, false);
+
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
 
