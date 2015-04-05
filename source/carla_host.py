@@ -2106,14 +2106,7 @@ def fileCallback(ptr, action, isDir, title, filter):
 # ------------------------------------------------------------------------------------------------------------
 # Init host
 
-def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
-    if isPlugin:
-        PluginClass = libPrefixOrPluginClass
-        libPrefix   = None
-    else:
-        PluginClass = None
-        libPrefix   = libPrefixOrPluginClass
-
+def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = None):
     pathBinaries, pathResources = getPaths(libPrefix)
 
     # --------------------------------------------------------------------------------------------------------
@@ -2146,10 +2139,10 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
     if failError:
         # no try
-        host = PluginClass() if isPlugin else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+        host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
     else:
         try:
-            host = PluginClass() if isPlugin else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+            host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
         except:
             host = CarlaHostQtNull()
 

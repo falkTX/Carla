@@ -496,6 +496,9 @@ if not CWD:
 # make it work with cxfreeze
 if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
+    CXFREEZE = True
+else:
+    CXFREEZE = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Set DLL_EXTENSION

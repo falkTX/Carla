@@ -45,12 +45,16 @@ from carla_shared import *
 # ------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
 
-try:
-    import ladspa_rdf
-    import json
-    haveLRDF = True
-except:
-    qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
+if not CXFREEZE:
+    try:
+        import ladspa_rdf
+        import json
+        haveLRDF = True
+    except:
+        qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
+        haveLRDF = False
+else:
+    qWarning("LRDF Support disabled for static build (LADSPA-RDF will be disabled)")
     haveLRDF = False
 
 # ------------------------------------------------------------------------------------------------------------
