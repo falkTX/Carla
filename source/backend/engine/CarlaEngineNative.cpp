@@ -1558,10 +1558,6 @@ protected:
             }
         }
 
-#ifdef HAVE_LIBLO
-        pData->osc.idle();
-#endif
-
         if (fUiServer.isPipeRunning())
         {
             fUiServer.idlePipe();

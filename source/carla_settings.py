@@ -237,7 +237,12 @@ class CarlaSettingsW(QDialog):
         if WINDOWS and not config_UseQt5:
             self.ui.group_main_theme.setEnabled(False)
 
-        if not hasCanvas:
+        if host.isControl:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
+
+        elif not hasCanvas:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
 
         elif not hasCanvasGL:
@@ -309,7 +314,7 @@ class CarlaSettingsW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSettings()
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -332,6 +337,10 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
+
+        # ----------------------------------------------------------------------------------------------------
+
+        settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -427,7 +436,7 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSettings()
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -450,6 +459,10 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
+
+        # ----------------------------------------------------------------------------------------------------
+
+        settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Engine

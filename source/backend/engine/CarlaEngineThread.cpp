@@ -47,6 +47,9 @@ void CarlaEngineThread::run() noexcept
 #endif
     carla_debug("CarlaEngineThread::run()");
 
+#ifdef HAVE_LIBLO
+    const bool isPlugin(kEngine->getType() == kEngineTypePlugin);
+#endif
     float value;
 
 #ifdef BUILD_BRIDGE
@@ -59,6 +62,11 @@ void CarlaEngineThread::run() noexcept
         const bool oscRegisted = kEngine->isOscControlRegistered();
 #else
         const bool oscRegisted = false;
+#endif
+
+#ifdef HAVE_LIBLO
+        if (isPlugin)
+            kEngine->idleOsc();
 #endif
 
         for (uint i=0, count = kEngine->getCurrentPluginCount(); i < count; ++i)
