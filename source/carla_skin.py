@@ -241,13 +241,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.fPluginInfo = host.get_plugin_info(self.fPluginId)
         self.fSkinStyle  = skinStyle
 
-        #if not gCarla.isLocal:
-            #self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
-
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fIsActive   = bool(host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
+        self.fIsActive   = False
         self.fIsSelected = False
 
         self.fLastGreenLedState = False
@@ -369,6 +366,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     #------------------------------------------------------------------
 
     def ready(self):
+        self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
+
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
