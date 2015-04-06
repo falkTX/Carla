@@ -29,6 +29,8 @@ from liblo import send as lo_send
 from liblo import TCP as LO_TCP
 from liblo import UDP as LO_UDP
 
+from random import random
+
 # ------------------------------------------------------------------------------------------------------------
 # Global liblo objects
 
@@ -137,7 +139,7 @@ class CarlaHostOSC(CarlaHostQtPlugin):
 
 class CarlaControlServerThread(ServerThread):
     def __init__(self, host, mode):
-        ServerThread.__init__(self, 8087, mode)
+        ServerThread.__init__(self, 8998 + int(random()*9000), mode)
 
         self.host = host
 
