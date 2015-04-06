@@ -298,7 +298,6 @@ class CarlaControlServerThread(ServerThread):
 
     @make_method('/carla-control/set_parameter_value', 'iif')
     def set_parameter_value_callback(self, path, args):
-        print(path, args)
         pluginId, paramId, paramValue = args
 
         if paramId < 0:
@@ -355,7 +354,6 @@ class CarlaControlServerThread(ServerThread):
 
     @make_method('/carla-control/set_peaks', 'iffff')
     def set_peaks_callback(self, path, args):
-        print(path, args)
         pluginId, in1, in2, out1, out2 = args
         self.host._set_peaks(pluginId, in1, in2, out1, out2)
 

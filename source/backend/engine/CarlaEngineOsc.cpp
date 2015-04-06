@@ -350,17 +350,10 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
     {
         const char* host = lo_address_get_hostname(source);
         const char* port = lo_address_get_port(source);
-        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
-    }
 
-    {
-        char* host = lo_url_get_hostname(url);
-        char* port = lo_url_get_port(url);
+        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
         fControlData.path   = carla_strdup_free(lo_url_get_path(url));
         fControlData.target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
-
-        std::free(host);
-        std::free(port);
     }
 
     for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)
