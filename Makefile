@@ -490,6 +490,7 @@ endif
 	# Install python code
 	install -m 644 \
 		source/carla \
+		source/carla-control \
 		source/carla-patchbay \
 		source/carla-rack \
 		source/*.py \
