@@ -677,7 +677,7 @@ public:
         {
             fUI.isVisible = true;
 
-            intptr_t parentId;
+            intptr_t parentId = 0;
 
             for (int i=0; features[i] != nullptr; ++i)
             {
