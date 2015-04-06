@@ -1,14 +1,13 @@
 #!/bin/bash
 
+# NOTE: You need the following packages installed via MacPorts:
+# automake, autoconf, bison, flex, libtool
+# p5-libxml-perl, p5-xml-libxml, p7zip, pkgconfig
+
 # ------------------------------------------------------------------------------------
 # stop on error
 
 set -e
-
-# ------------------------------------------------------------------------------------
-# check for needed binaries
-
-# TODO, check for binaries like /opt/local/bin/7z
 
 # ------------------------------------------------------------------------------------
 # cd to correct path
