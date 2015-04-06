@@ -581,6 +581,30 @@ cd ..
 fi
 
 # ------------------------------------------------------------------------------------
+# pyliblo
+
+if [ ! -d pyliblo-0.9.2 ]; then
+curl -O http://das.nasophon.de/download/pyliblo-0.9.2.tar.gz
+tar -xf pyliblo-0.9.2.tar.gz
+fi
+
+if [ ! -f pyliblo-0.9.2/build-done ]; then
+cd pyliblo-0.9.2
+export OLD_CFLAGS="$CFLAGS"
+export OLD_LDFLAGS="$LDFLAGS"
+export CFLAGS="$CFLAGS -I/opt/carla64/include"
+export LDFLAGS="$LDFLAGS -L/opt/carla64/lib"
+python3 setup.py build
+sudo python3 setup.py install --prefix=$PREFIX
+touch build-done
+export CFLAGS="$OLD_CFLAGS"
+export LDFLAGS="$OLD_LDFLAGS"
+unset OLD_CFLAGS
+unset OLD_LDFLAGS
+cd ..
+fi
+
+# ------------------------------------------------------------------------------------
 # pyqt5
 
 if [ ! -d PyQt-gpl-5.3.2 ]; then
