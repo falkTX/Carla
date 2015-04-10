@@ -871,11 +871,13 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
-    MemoryOutputStream out;
+    MemoryOutputStream out, streamState;
+    getStateSave().dumpToMemoryStream(streamState);
+
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
-    out << getStateSave().toString();
+    out << streamState;
     out << "</CARLA-PRESET>\n";
 
     const String jfilename = String(CharPointer_UTF8(filename));

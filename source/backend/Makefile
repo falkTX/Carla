@@ -165,6 +165,7 @@ $(OBJDIR)/%.cpp.o: %.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
--include $(OBJS:%.o=%.d)
+-include $(OBJS_standalone:%.o=%.d)
+-include $(OBJS_utils:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

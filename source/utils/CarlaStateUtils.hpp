@@ -94,7 +94,7 @@ struct CarlaStateSave {
     void clear() noexcept;
 
     bool fillFromXmlElement(const juce::XmlElement* const xmlElement);
-    juce::String toString() const;
+    void dumpToMemoryStream(juce::MemoryOutputStream& stream) const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaStateSave)
 };

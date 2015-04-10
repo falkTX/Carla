@@ -19,6 +19,7 @@
 #define CARLA_STRING_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 namespace std {
 #ifdef CARLA_OS_HAIKU
@@ -591,14 +592,16 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
+        const std::size_t kTmpBufSize = carla_nextPowerOf2(dataSize/3);
+
         const uchar* bytesToEncode((const uchar*)data);
 
         uint i=0, j=0;
         uint charArray3[3], charArray4[4];
 
-        char strBuf[0xff+1];
-        strBuf[0xff] = '\0';
-        int strBufIndex = 0;
+        char strBuf[kTmpBufSize+1];
+        strBuf[kTmpBufSize] = '\0';
+        std::size_t strBufIndex = 0;
 
         CarlaString ret;
 
@@ -616,7 +619,7 @@ public:
                 for (i=0; i<4; ++i)
                     strBuf[strBufIndex++] = kBase64Chars[charArray4[i]];
 
-                if (strBufIndex >= 0xff-7)
+                if (strBufIndex >= kTmpBufSize-7)
                 {
                     strBuf[strBufIndex] = '\0';
                     strBufIndex = 0;

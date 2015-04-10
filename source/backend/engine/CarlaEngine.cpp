@@ -1640,7 +1640,8 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
 
         if (plugin != nullptr && plugin->isEnabled())
         {
-            MemoryOutputStream outPlugin(4096);
+            MemoryOutputStream outPlugin(4096), streamPlugin;
+            plugin->getStateSave(false).dumpToMemoryStream(streamPlugin);
 
             outPlugin << "\n";
 
@@ -1651,7 +1652,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
                 outPlugin << " <!-- " << xmlSafeString(strBuf, true) << " -->\n";
 
             outPlugin << " <Plugin>\n";
-            outPlugin << plugin->getStateSave(false).toString();
+            outPlugin << streamPlugin;
             outPlugin << " </Plugin>\n";
             outStream << outPlugin;
         }
