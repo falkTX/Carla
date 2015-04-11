@@ -76,8 +76,10 @@ std::vector<uint8_t> carla_getChunkFromBase64String(const char* const base64stri
 
         if (c == '\0' || c == '=')
             break;
-        if (c == ' ' || c == '\n' || ! CarlaBase64Helpers::isBase64Char(c))
+        if (c == ' ' || c == '\n')
             continue;
+
+         CARLA_SAFE_ASSERT_CONTINUE(CarlaBase64Helpers::isBase64Char(c));
 
         charArray4[i++] = static_cast<uint>(c);
 
