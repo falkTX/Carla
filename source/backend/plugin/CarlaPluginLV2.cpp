@@ -2692,6 +2692,7 @@ public:
             if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
             {
                 const uint32_t j = fEventsIn.ctrlIndex;
+                CARLA_SAFE_ASSERT(j < fEventsIn.count);
 
                 if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
