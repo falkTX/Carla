@@ -1037,9 +1037,11 @@ protected:
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
 
+#ifdef HAVE_LIBLO
         fUiServer.writeAndFixMessage("osc-urls");
         fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP());
         fUiServer.writeAndFixMessage(pData->osc.getServerPathUDP());
+#endif
 
         fUiServer.writeAndFixMessage("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
