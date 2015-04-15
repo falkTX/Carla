@@ -892,6 +892,8 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
 {
+    // TODO set errors
+
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
@@ -908,10 +910,13 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     xmlElement = xml.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
 
-    if (pData->stateSave.fillFromXmlElement(xmlElement->getFirstChildElement()))
+    if (pData->stateSave.fillFromXmlElement(xmlElement))
+    {
         loadStateSave(pData->stateSave);
+        return true;
+    }
 
-    return true;
+    return false;
 }
 
 // -------------------------------------------------------------------
