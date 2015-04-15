@@ -101,11 +101,11 @@ std::vector<uint8_t> carla_getChunkFromBase64String(const char* const base64stri
 
     if (i != 0)
     {
+        for (j=0; j<i && j<4; ++j)
+            charArray4[j] = CarlaBase64Helpers::findBase64CharIndex(static_cast<char>(charArray4[j]));
+
         for (j=i; j<4; ++j)
             charArray4[j] = 0;
-
-        for (j=0; j<4; ++j)
-            charArray4[j] = CarlaBase64Helpers::findBase64CharIndex(static_cast<char>(charArray4[j]));
 
         charArray3[0] =  (charArray4[0] << 2)        + ((charArray4[1] & 0x30) >> 4);
         charArray3[1] = ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);
