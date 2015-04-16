@@ -446,7 +446,12 @@ int main(int argc, char* argv[])
             if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
             {
                 if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
-                    carla_show_custom_ui(0, true);
+                {
+#ifdef CARLA_OS_LINUX
+                    if (std::getenv("DISPLAY") != nullptr)
+#endif
+                        carla_show_custom_ui(0, true);
+                }
             }
         }
 
