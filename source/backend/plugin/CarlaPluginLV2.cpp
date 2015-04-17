@@ -4062,8 +4062,10 @@ public:
 #ifndef LV2_UIS_ONLY_INPROCESS
         const LV2_RDF_UI* const rdfUI(&fRdfDescriptor->UIs[uiId]);
 
+        // Calf UIs are mostly useless without their special graphs
+        // but they can be crashy under certain conditions, so follow user preferences
         if (std::strstr(rdfUI->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
-            return false;
+            return pData->engine->getOptions().preferUiBridges;
 
         for (uint32_t i=0; i < rdfUI->FeatureCount; ++i)
         {
