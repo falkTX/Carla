@@ -1,3 +1,4 @@
+sudo: true
 language: cpp
 compiler: gcc
 #matrix:
