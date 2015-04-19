@@ -1,6 +1,6 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,10 +23,8 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
-    : UI()
-#ifndef DISTRHO_OS_MAC
-    , fAboutWindow(this)
-#endif
+    : UI(),
+      fAboutWindow(this)
 {
     // FIXME
     fNeko.setTimerSpeed(5);
@@ -37,10 +35,9 @@ DistrhoUINekobi::DistrhoUINekobi()
     // background
     fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
 
-#ifndef DISTRHO_OS_MAC
+    // about
     Image aboutImage(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
-#endif
 
     // slider
     Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
@@ -186,9 +183,7 @@ void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
-#endif
 }
 
 void DistrhoUINekobi::imageKnobDragStarted(ImageKnob* knob)
