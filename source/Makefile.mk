@@ -62,19 +62,22 @@ EXPERIMENTAL_PLUGINS = false
 endif
 
 # --------------------------------------------------------------
-# Common build and link flags
+# Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -fdata-sections -ffunction-sections
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
-LINK_OPTS += -Wl,--strip-all
 
 ifneq ($(MACOS),true)
 # MacOS doesn't support this
 BASE_OPTS += -mfpmath=sse
-else
+endif
+
+ifeq ($(MACOS),true)
 # MacOS linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
+else
+# Common linker flags
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 ifeq ($(RASPPI),true)
@@ -84,9 +87,14 @@ LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 ifeq ($(PANDORA),true)
-# OpenPandora flags
+# OpenPandora optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
+ifneq ($(NOOPT),true)
+# No optimization flags
+BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
 ifneq ($(WIN32),true)
