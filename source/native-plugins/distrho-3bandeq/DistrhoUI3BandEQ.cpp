@@ -1,6 +1,6 @@
 /*
  * DISTRHO 3BandEQ Plugin, based on 3BandEQ by Michael Gruhn
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,10 +24,8 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 DistrhoUI3BandEQ::DistrhoUI3BandEQ()
-    : UI()
-#ifndef DISTRHO_OS_MAC
-    , fAboutWindow(this)
-#endif
+    : UI(),
+      fAboutWindow(this)
 {
     // set UI size
     setSize(DistrhoArtwork3BandEQ::backgroundWidth, DistrhoArtwork3BandEQ::backgroundHeight);
@@ -35,11 +33,9 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     // background
     fImgBackground = Image(DistrhoArtwork3BandEQ::backgroundData, DistrhoArtwork3BandEQ::backgroundWidth, DistrhoArtwork3BandEQ::backgroundHeight, GL_BGR);
 
-#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(DistrhoArtwork3BandEQ::aboutData, DistrhoArtwork3BandEQ::aboutWidth, DistrhoArtwork3BandEQ::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
-#endif
 
     // sliders
     Image sliderImage(DistrhoArtwork3BandEQ::sliderData, DistrhoArtwork3BandEQ::sliderWidth, DistrhoArtwork3BandEQ::sliderHeight);
@@ -161,9 +157,7 @@ void DistrhoUI3BandEQ::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
-#endif
 }
 
 void DistrhoUI3BandEQ::imageKnobDragStarted(ImageKnob* knob)
