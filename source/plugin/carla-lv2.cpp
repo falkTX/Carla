@@ -287,13 +287,13 @@ public:
 
                 if (event == nullptr)
                     continue;
-                if (event->body.size > 4)
-                    continue;
-                if (event->time.frames >= frames)
-                    break;
 
                 if (event->body.type == fURIs.midiEvent)
                 {
+                    if (event->body.size > 4)
+                        continue;
+                    if (event->time.frames >= frames)
+                        continue;
                     if (fMidiEventCount >= kMaxMidiEvents*2)
                         continue;
 
