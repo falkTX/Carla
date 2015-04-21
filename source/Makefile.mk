@@ -80,6 +80,12 @@ else
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
+ifeq ($(MODDUO),true)
+# MOD Duo optimization flags
+BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mtune=cortex-a7 -mfpu=neon -mfloat-abi=hard
+LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
