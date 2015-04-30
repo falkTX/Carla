@@ -106,6 +106,8 @@ const T& carla_fixValue(const T& min, const T& max, const T& value) noexcept
 static inline
 uint32_t carla_nextPowerOf2(uint32_t size) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(size > 0, 0);
+
     // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     --size;
     size |= size >> 1;
