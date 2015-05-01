@@ -16,6 +16,7 @@
  */
 
 #include "CarlaNative.h"
+#include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
 #undef DESCFUNCS
@@ -100,7 +101,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
-    /* midiIns   */ 16,
+    /* midiIns   */ MAX_MIDI_CHANNELS,
     /* midiOuts  */ 1,
     /* paramIns  */ 0,
     /* paramOuts */ 0,
@@ -117,7 +118,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 1,
-    /* midiOuts  */ 16,
+    /* midiOuts  */ MAX_MIDI_CHANNELS,
     /* paramIns  */ 0,
     /* paramOuts */ 0,
     /* name      */ "MIDI Split",
