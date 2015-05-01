@@ -630,7 +630,7 @@ protected:
                 else
                     engineEvent.time = static_cast<uint32_t>(midiEvent.time - pData->timeInfo.frame);
 
-                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data, 0);
 
                 if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;

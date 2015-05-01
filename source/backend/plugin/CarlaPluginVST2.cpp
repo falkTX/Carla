@@ -582,7 +582,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -607,7 +607,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -768,7 +768,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -784,7 +784,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // plugin hints
@@ -1442,7 +1442,7 @@ public:
                 midiData[1] = static_cast<uint8_t>(vstMidiEvent.midiData[1]);
                 midiData[2] = static_cast<uint8_t>(vstMidiEvent.midiData[2]);
 
-                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), MIDI_GET_CHANNEL_FROM_DATA(midiData), 0, 3, midiData);
+                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), 3, midiData);
             }
 
         } // End of MIDI Output

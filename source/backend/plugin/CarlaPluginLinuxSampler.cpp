@@ -579,7 +579,7 @@ public:
 
                 portName.truncate(portNameSize);
 
-                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, i);
                 pData->audioOut.ports[i].rindex = i;
             }
         }
@@ -597,7 +597,7 @@ public:
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 0);
             pData->audioOut.ports[0].rindex = 0;
 
             // out-right
@@ -612,7 +612,7 @@ public:
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
             pData->audioOut.ports[1].rindex = 1;
         }
 
@@ -631,7 +631,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         // ---------------------------------------

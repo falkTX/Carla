@@ -214,7 +214,7 @@ struct CARLA_API EngineEvent {
     /*!
      * Fill this event from MIDI data.
      */
-    void fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept;
+    void fillFromMidiData(const uint8_t size, const uint8_t* const data, const uint8_t midiPortOffset) noexcept;
 };
 
 // -----------------------------------------------------------------------
@@ -319,7 +319,7 @@ protected:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
 public:
     /*!
@@ -356,7 +356,8 @@ public:
 #ifndef DOXYGEN
 protected:
     const CarlaEngineClient& kClient;
-    const bool kIsInput;
+    const bool     kIsInput;
+    const uint32_t kIndexOffset;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
 #endif
@@ -372,7 +373,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -419,7 +420,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -466,7 +467,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -533,7 +534,7 @@ public:
      * Arguments are the same as in the EngineMidiEvent struct.
      * @note You must only call this for output ports.
      */
-    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept;
+    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t size, const uint8_t* const data) noexcept;
 
 #ifndef DOXYGEN
 protected:
@@ -605,7 +606,7 @@ public:
      * Add a new port of type @a portType.
      * @note This function does nothing in rack processing mode since ports are static there.
      */
-    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput, const uint32_t indexOffset);
 
     /*!
      * Get this client's engine.

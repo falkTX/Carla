@@ -50,6 +50,7 @@ OBJS += \
 	$(OBJDIR)/lfo.c.o \
 	$(OBJDIR)/midi-channel-filter.c.o \
 	$(OBJDIR)/midi-gain.c.o \
+	$(OBJDIR)/midi-join.c.o \
 	$(OBJDIR)/midi-split.c.o \
 	$(OBJDIR)/midi-through.c.o \
 	$(OBJDIR)/midi-transpose.c.o \

@@ -419,7 +419,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -444,7 +444,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -503,7 +503,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -519,7 +519,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // plugin hints

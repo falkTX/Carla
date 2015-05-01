@@ -561,26 +561,26 @@ public:
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
                     const uint32_t j = iAudioIn++;
-                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
                     pData->audioIn.ports[j].rindex = i;
 
                     if (forcedStereoIn)
                     {
                         portName += "_2";
-                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, 1);
                         pData->audioIn.ports[1].rindex = i;
                     }
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
                     const uint32_t j = iAudioOut++;
-                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
                     pData->audioOut.ports[j].rindex = i;
 
                     if (forcedStereoOut)
                     {
                         portName += "_2";
-                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
                         pData->audioOut.ports[1].rindex = i;
                     }
                 }
@@ -753,7 +753,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -769,7 +769,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         if (forcedStereoIn || forcedStereoOut)

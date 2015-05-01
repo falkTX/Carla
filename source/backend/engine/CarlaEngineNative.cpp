@@ -1386,7 +1386,7 @@ protected:
                 EngineEvent&           engineEvent(pData->events.in[engineEventIndex++]);
 
                 engineEvent.time = midiEvent.time;
-                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data, 0);
 
                 if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;

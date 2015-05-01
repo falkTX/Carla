@@ -84,7 +84,7 @@ void EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t& size,
 // -----------------------------------------------------------------------
 // EngineEvent
 
-void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept
+void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data, const uint8_t midiPortOffset) noexcept
 {
     if (size == 0 || data == nullptr || data[0] < MIDI_STATUS_NOTE_OFF)
     {
@@ -156,7 +156,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
     {
         type = kEngineEventTypeMidi;
 
-        midi.port = 0;
+        midi.port = midiPortOffset;
         midi.size = size;
 
         if (size > EngineMidiEvent::kDataSize)

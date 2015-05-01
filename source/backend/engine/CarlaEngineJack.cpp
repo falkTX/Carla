@@ -75,8 +75,8 @@ struct JackPortDeletionCallback {
 class CarlaEngineJackAudioPort : public CarlaEngineAudioPort
 {
 public:
-    CarlaEngineJackAudioPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
-        : CarlaEngineAudioPort(client, isInputPort),
+    CarlaEngineJackAudioPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
+        : CarlaEngineAudioPort(client, isInputPort, indexOffset),
           fJackClient(jackClient),
           fJackPort(jackPort),
           kDeletionCallback(delCallback),
@@ -168,8 +168,8 @@ private:
 class CarlaEngineJackCVPort : public CarlaEngineCVPort
 {
 public:
-    CarlaEngineJackCVPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
-        : CarlaEngineCVPort(client, isInputPort),
+    CarlaEngineJackCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
+        : CarlaEngineCVPort(client, isInputPort, indexOffset),
           fJackClient(jackClient),
           fJackPort(jackPort),
           kDeletionCallback(delCallback),
@@ -259,8 +259,8 @@ private:
 class CarlaEngineJackEventPort : public CarlaEngineEventPort
 {
 public:
-    CarlaEngineJackEventPort(const CarlaEngineClient& client, const bool isInputPort, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
-        : CarlaEngineEventPort(client, isInputPort),
+    CarlaEngineJackEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset, jack_client_t* const jackClient, jack_port_t* const jackPort, JackPortDeletionCallback* const delCallback) noexcept
+        : CarlaEngineEventPort(client, isInputPort, indexOffset),
           fJackClient(jackClient),
           fJackPort(jackPort),
           fJackBuffer(nullptr),
@@ -354,10 +354,22 @@ public:
         if (! test)
             return kFallbackJackEngineEvent;
 
-        CARLA_SAFE_ASSERT_RETURN(jackEvent.size < UINT8_MAX, kFallbackJackEngineEvent);
+        CARLA_SAFE_ASSERT_RETURN(jackEvent.size < 0xFF /* uint8_t max */, kFallbackJackEngineEvent);
+
+        uint8_t port;
+
+        if (kIndexOffset < 0xFF /* uint8_t max */)
+        {
+            port = kIndexOffset;
+        }
+        else
+        {
+            port = 0;
+            carla_safe_assert_int("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
+        }
 
         fRetEvent.time = jackEvent.time;
-        fRetEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
+        fRetEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer, port);
 
         return fRetEvent;
     }
@@ -392,10 +404,10 @@ public:
         } CARLA_SAFE_EXCEPTION_RETURN("jack_midi_event_write", false);
     }
 
-    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept override
+    bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t size, const uint8_t* const data) noexcept override
     {
         if (fJackPort == nullptr)
-            return CarlaEngineEventPort::writeMidiEvent(time, channel, port, size, data);
+            return CarlaEngineEventPort::writeMidiEvent(time, channel, size, data);
 
         CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
         CARLA_SAFE_ASSERT_RETURN(fJackBuffer != nullptr, false);
@@ -514,7 +526,7 @@ public:
         return CarlaEngineClient::isOk();
     }
 
-    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput) override
+    CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput, const uint32_t indexOffset) override
     {
         carla_debug("CarlaEngineJackClient::addPort(%i:%s, \"%s\", %s)", portType, EnginePortType2Str(portType), name, bool2str(isInput));
 
@@ -552,21 +564,21 @@ public:
         case kEnginePortTypeAudio: {
             _addAudioPortName(isInput, realName);
             if (realName != name) delete[] realName;
-            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(*this, isInput, fJackClient, jackPort, this));
+            CarlaEngineJackAudioPort* const enginePort(new CarlaEngineJackAudioPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fAudioPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeCV: {
             _addCVPortName(isInput, realName);
             if (realName != name) delete[] realName;
-            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(*this, isInput, fJackClient, jackPort, this));
+            CarlaEngineJackCVPort* const enginePort(new CarlaEngineJackCVPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fCVPorts.append(enginePort);
             return enginePort;
         }
         case kEnginePortTypeEvent: {
             _addEventPortName(isInput, realName);
             if (realName != name) delete[] realName;
-            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(*this, isInput, fJackClient, jackPort, this));
+            CarlaEngineJackEventPort* const enginePort(new CarlaEngineJackEventPort(*this, isInput, indexOffset, fJackClient, jackPort, this));
             fEventPorts.append(enginePort);
             return enginePort;
         }
@@ -1436,12 +1448,12 @@ protected:
                     if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
                         continue;
 
-                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size <= 0xFF /* uint8_t max */);
+                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size < 0xFF /* uint8_t max */);
 
                     EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
 
                     engineEvent.time = jackEvent.time;
-                    engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer);
+                    engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer, 0);
 
                     if (engineEventIndex >= kMaxEngineEventInternalCount)
                         break;

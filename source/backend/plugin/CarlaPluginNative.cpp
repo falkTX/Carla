@@ -23,6 +23,7 @@
 
 #include "juce_core.h"
 
+using juce::jmax;
 using juce::String;
 using juce::StringArray;
 
@@ -920,13 +921,13 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
 
             if (forcedStereoIn)
             {
                 portName += "_2";
-                pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, 1);
                 pData->audioIn.ports[1].rindex = j;
                 break;
             }
@@ -953,13 +954,13 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
 
             if (forcedStereoOut)
             {
                 portName += "_2";
-                pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
                 pData->audioOut.ports[1].rindex = j;
                 break;
             }
@@ -982,9 +983,11 @@ public:
                 portName += CarlaString(j+1);
                 portName.truncate(portNameSize);
 
-                fMidiIn.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+                fMidiIn.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
                 fMidiIn.indexes[j] = j;
             }
+
+            pData->event.portIn = fMidiIn.ports[0];
         }
 
         // MIDI Output (only if multiple)
@@ -1004,9 +1007,11 @@ public:
                 portName += CarlaString(j+1);
                 portName.truncate(portNameSize);
 
-                fMidiOut.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+                fMidiOut.ports[j]   = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
                 fMidiOut.indexes[j] = j;
             }
+
+            pData->event.portOut = fMidiOut.ports[0];
         }
 
         for (j=0; j < params; ++j)
@@ -1111,7 +1116,7 @@ public:
             pData->param.ranges[j].stepLarge = stepLarge;
         }
 
-        if (needsCtrlIn)
+        if (needsCtrlIn && mIns <= 1)
         {
             portName.clear();
 
@@ -1124,10 +1129,10 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
-        if (needsCtrlOut)
+        if (needsCtrlOut && mOuts <= 1)
         {
             portName.clear();
 
@@ -1140,7 +1145,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         if (forcedStereoIn || forcedStereoOut)
@@ -1450,9 +1455,13 @@ public:
             else
                 nextBankId = 0;
 
-            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
+            for (uint32_t m=0, max=jmax(1U, fMidiIn.count); m < max; ++m)
             {
-                const EngineEvent& event(pData->event.portIn->getEvent(i));
+                CarlaEngineEventPort* const eventPort(m == 0 ? pData->event.portIn : fMidiIn.ports[m]);
+
+            for (uint32_t i=0, numEvents=eventPort->getEventCount(); i < numEvents; ++i)
+            {
+                const EngineEvent& event(eventPort->getEvent(i));
 
                 if (event.time >= frames)
                     continue;
@@ -1751,6 +1760,8 @@ public:
             if (frames > timeOffset)
                 processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
 
+            } // eventPort
+
         } // End of Event Input and Processing
 
         // --------------------------------------------------------------------------------------------------------
@@ -1765,7 +1776,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Control and MIDI Output
 
-        if (fMidiOut.count > 0 || pData->event.portOut != nullptr)
+        if (pData->event.portOut != nullptr)
         {
 #ifndef BUILD_BRIDGE
             float value, curValue;
@@ -1795,12 +1806,10 @@ public:
                 const uint8_t channel = uint8_t(MIDI_GET_CHANNEL_FROM_DATA(fMidiEvents[k].data));
                 const uint8_t port    = fMidiEvents[k].port;
 
-                if (pData->event.portOut != nullptr)
-                    pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
-                else if (port < fMidiOut.count)
-                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, port, fMidiEvents[k].size, fMidiEvents[k].data);
+                if (fMidiOut.count > 1 && port < fMidiOut.count)
+                    fMidiOut.ports[port]->writeMidiEvent(fMidiEvents[k].time, channel, fMidiEvents[k].size, fMidiEvents[k].data);
                 else
-                    carla_stdout("MIDI event output port out of bounds!");
+                    pData->event.portOut->writeMidiEvent(fMidiEvents[k].time, channel, fMidiEvents[k].size, fMidiEvents[k].data);
             }
 
         } // End of Control and MIDI Output
@@ -2076,6 +2085,12 @@ public:
             delete[] fAudioOutBuffers;
             fAudioOutBuffers = nullptr;
         }
+
+        if (fMidiIn.count > 1)
+            pData->event.portIn = nullptr;
+
+        if (fMidiOut.count > 1)
+            pData->event.portOut = nullptr;
 
         fMidiIn.clear();
         fMidiOut.clear();

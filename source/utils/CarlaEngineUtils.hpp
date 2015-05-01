@@ -140,14 +140,12 @@ void fillEngineEventsFromJuceMidiBuffer(EngineEvent engineEvents[kMaxEngineEvent
     {
         CARLA_SAFE_ASSERT_CONTINUE(numBytes > 0);
         CARLA_SAFE_ASSERT_CONTINUE(sampleNumber >= 0);
-
-        if (numBytes > UINT8_MAX)
-            continue;
+        CARLA_SAFE_ASSERT_CONTINUE(numBytes < 0xFF /* uint8_t max */);
 
         EngineEvent& engineEvent(engineEvents[engineEventIndex++]);
 
         engineEvent.time = static_cast<uint32_t>(sampleNumber);
-        engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
+        engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData, 0);
     }
 }
 

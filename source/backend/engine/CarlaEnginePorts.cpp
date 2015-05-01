@@ -29,9 +29,10 @@ static const EngineEvent kFallbackEngineEvent = { kEngineEventTypeNull, 0, 0, {{
 // -----------------------------------------------------------------------
 // Carla Engine port (Abstract)
 
-CarlaEnginePort::CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept
+CarlaEnginePort::CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
     : kClient(client),
-      kIsInput(isInputPort)
+      kIsInput(isInputPort),
+      kIndexOffset(indexOffset)
 {
     carla_debug("CarlaEnginePort::CarlaEnginePort(%s)", bool2str(isInputPort));
 }
@@ -44,8 +45,8 @@ CarlaEnginePort::~CarlaEnginePort() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine Audio port
 
-CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
-    : CarlaEnginePort(client, isInputPort),
+CarlaEngineAudioPort::CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
+    : CarlaEnginePort(client, isInputPort, indexOffset),
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineAudioPort::CarlaEngineAudioPort(%s)", bool2str(isInputPort));
@@ -63,8 +64,8 @@ void CarlaEngineAudioPort::initBuffer() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine CV port
 
-CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
-    : CarlaEnginePort(client, isInputPort),
+CarlaEngineCVPort::CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
+    : CarlaEnginePort(client, isInputPort, indexOffset),
       fBuffer(nullptr)
 {
     carla_debug("CarlaEngineCVPort::CarlaEngineCVPort(%s)", bool2str(isInputPort));
@@ -82,8 +83,8 @@ void CarlaEngineCVPort::initBuffer() noexcept
 // -----------------------------------------------------------------------
 // Carla Engine Event port
 
-CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept
-    : CarlaEnginePort(client, isInputPort),
+CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept
+    : CarlaEnginePort(client, isInputPort, indexOffset),
       fBuffer(nullptr),
       kProcessMode(client.getEngine().getProccessMode())
 {
@@ -188,15 +189,16 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
 bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t size, const uint8_t* const data) noexcept
 {
-    return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), 0, size, data);
+    return writeMidiEvent(time, uint8_t(MIDI_GET_CHANNEL_FROM_DATA(data)), size, data);
 }
 
 bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const EngineMidiEvent& midi) noexcept
 {
-    return writeMidiEvent(time, channel, midi.port, midi.size, midi.data);
+    CARLA_SAFE_ASSERT(midi.port == kIndexOffset);
+    return writeMidiEvent(time, channel, midi.size, midi.data);
 }
 
-bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept
+bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t size, const uint8_t* const data) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(! kIsInput, false);
     CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr, false);
@@ -259,8 +261,17 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
         }
 
         event.type      = kEngineEventTypeMidi;
-        event.midi.port = port;
         event.midi.size = size;
+
+        if (kIndexOffset < 0xFF /* uint8_t max */)
+        {
+            event.midi.port = kIndexOffset;
+        }
+        else
+        {
+            event.midi.port = 0;
+            carla_safe_assert_int("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
+        }
 
         event.midi.data[0] = status;
 
