@@ -56,7 +56,6 @@ static void midijoin_process(NativePluginHandle handle, float** inBuffer, float*
     {
         const NativeMidiEvent* const midiEvent = &midiEvents[i];
 
-        printf("midijoin_process %i\n", midiEvent->port);
         if (midiEvent->port >= MAX_MIDI_CHANNELS)
             continue;
 
