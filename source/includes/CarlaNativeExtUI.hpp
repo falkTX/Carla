@@ -83,7 +83,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
-            CarlaExternalUI::stopPipeServer(2000);
+            //CarlaExternalUI::stopPipeServer(2000);
             break;
         }
     }
@@ -91,6 +91,8 @@ protected:
     void uiSetParameterValue(const uint32_t index, const float value) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(),);
+
+        // TODO writeControlMessage and others
 
         char tmpBuf[0xff+1];
         tmpBuf[0xff] = '\0';
