@@ -210,8 +210,6 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
     case -1: { // error
         CarlaString error(std::strerror(errno));
         carla_stderr2("fork() failed: %s", error.buffer());
-
-        _exit(0); // this is not noexcept safe but doesn't matter anyway
     }   break;
     }
 
