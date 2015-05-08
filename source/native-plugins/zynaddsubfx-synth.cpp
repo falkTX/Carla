@@ -327,11 +327,6 @@ private:
         synth->buffersize = static_cast<int>(host->get_buffer_size(host->handle));
         synth->samplerate = static_cast<uint>(host->get_sample_rate(host->handle));
 
-        if (synth->buffersize > 32)
-            synth->buffersize = 32;
-
-        synth->alias();
-
         config.init();
         config.cfg.SoundBufferSize = synth->buffersize;
         config.cfg.SampleRate      = static_cast<int>(synth->samplerate);
@@ -342,6 +337,11 @@ private:
         denormalkillbuf = new float[synth->buffersize];
         for (int i=0; i < synth->buffersize; ++i)
             denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
+
+        if (synth->buffersize > 32)
+            synth->buffersize = 32;
+
+        synth->alias();
 
         Master::getInstance();
     }
