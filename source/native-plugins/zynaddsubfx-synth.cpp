@@ -221,22 +221,12 @@ class ZynAddSubFxPlugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
-        kParamPart01Enabled = 0,
-        kParamPart02Enabled,
-        kParamPart03Enabled,
-        kParamPart04Enabled,
-        kParamPart05Enabled,
-        kParamPart06Enabled,
-        kParamPart07Enabled,
-        kParamPart08Enabled,
-        kParamPart09Enabled,
-        kParamPart10Enabled,
-        kParamPart11Enabled,
-        kParamPart12Enabled,
-        kParamPart13Enabled,
-        kParamPart14Enabled,
-        kParamPart15Enabled,
-        kParamPart16Enabled,
+        kParamPart01Enabled ,
+        kParamPart16Enabled = kParamPart01Enabled + 15,
+        kParamPart01Volume,
+        kParamPart16Volume = kParamPart01Volume + 15,
+        kParamPart01Panning,
+        kParamPart16Panning = kParamPart01Panning + 15,
         kParamFilterCutoff,  // Filter Frequency
         kParamFilterQ,       // Filter Resonance
         kParamBandwidth,     // Bandwidth
@@ -259,21 +249,16 @@ public:
 
         // init parameters to default
         fParameters[kParamPart01Enabled] = 1.0f;
-        fParameters[kParamPart02Enabled] = 0.0f;
-        fParameters[kParamPart03Enabled] = 0.0f;
-        fParameters[kParamPart04Enabled] = 0.0f;
-        fParameters[kParamPart05Enabled] = 0.0f;
-        fParameters[kParamPart06Enabled] = 0.0f;
-        fParameters[kParamPart07Enabled] = 0.0f;
-        fParameters[kParamPart08Enabled] = 0.0f;
-        fParameters[kParamPart09Enabled] = 0.0f;
-        fParameters[kParamPart10Enabled] = 0.0f;
-        fParameters[kParamPart11Enabled] = 0.0f;
-        fParameters[kParamPart12Enabled] = 0.0f;
-        fParameters[kParamPart13Enabled] = 0.0f;
-        fParameters[kParamPart14Enabled] = 0.0f;
-        fParameters[kParamPart15Enabled] = 0.0f;
-        fParameters[kParamPart16Enabled] = 0.0f;
+
+        for (int i=kParamPart16Enabled+1; --i>kParamPart01Enabled;)
+            fParameters[i] = 0.0f;
+
+        for (int i=kParamPart16Volume+1; --i>=kParamPart01Volume;)
+            fParameters[i] = 100.0f;
+
+        for (int i=kParamPart16Panning+1; --i>=kParamPart01Panning;)
+            fParameters[i] = 64.0f;
+
         fParameters[kParamFilterCutoff] = 64.0f;
         fParameters[kParamFilterQ]      = 64.0f;
         fParameters[kParamBandwidth]    = 64.0f;
@@ -317,6 +302,12 @@ protected:
 
         param.name = nullptr;
         param.unit = nullptr;
+        param.ranges.def       = 64.0f;
+        param.ranges.min       = 0.0f;
+        param.ranges.max       = 127.0f;
+        param.ranges.step      = 1.0f;
+        param.ranges.stepSmall = 1.0f;
+        param.ranges.stepLarge = 20.0f;
         param.scalePointCount  = 0;
         param.scalePoints      = nullptr;
 
@@ -330,8 +321,8 @@ protected:
             param.ranges.stepSmall = 1.0f;
             param.ranges.stepLarge = 1.0f;
 
-            #define PARAM_PART_ENABLE_DESC(N)                                \
-            case CARLA_JOIN_MACRO(CARLA_JOIN_MACRO(kParamPart, N), Enabled:) \
+            #define PARAM_PART_ENABLE_DESC(N) \
+            case kParamPart01Enabled + N - 1: \
                 param.name = "Part " #N " Enabled"; break;
 
             switch (index)
@@ -340,14 +331,75 @@ protected:
                 param.name = "Part 01 Enabled";
                 param.ranges.def = 1.0f;
                 break;
-            PARAM_PART_ENABLE_DESC(02)
-            PARAM_PART_ENABLE_DESC(03)
-            PARAM_PART_ENABLE_DESC(04)
-            PARAM_PART_ENABLE_DESC(05)
-            PARAM_PART_ENABLE_DESC(06)
-            PARAM_PART_ENABLE_DESC(07)
-            PARAM_PART_ENABLE_DESC(08)
-            PARAM_PART_ENABLE_DESC(09)
+            PARAM_PART_ENABLE_DESC( 2)
+            PARAM_PART_ENABLE_DESC( 3)
+            PARAM_PART_ENABLE_DESC( 4)
+            PARAM_PART_ENABLE_DESC( 5)
+            PARAM_PART_ENABLE_DESC( 6)
+            PARAM_PART_ENABLE_DESC( 7)
+            PARAM_PART_ENABLE_DESC( 8)
+            PARAM_PART_ENABLE_DESC( 9)
+            PARAM_PART_ENABLE_DESC(10)
+            PARAM_PART_ENABLE_DESC(11)
+            PARAM_PART_ENABLE_DESC(12)
+            PARAM_PART_ENABLE_DESC(13)
+            PARAM_PART_ENABLE_DESC(14)
+            PARAM_PART_ENABLE_DESC(15)
+            PARAM_PART_ENABLE_DESC(16)
+            }
+
+            #undef PARAM_PART_ENABLE_DESC
+        }
+        else if (index <= kParamPart16Volume)
+        {
+            hints |= NATIVE_PARAMETER_IS_INTEGER;
+            param.ranges.def = 100.0f;
+
+            #define PARAM_PART_ENABLE_DESC(N) \
+            case kParamPart01Volume + N - 1: \
+                param.name = "Part " #N " Volume"; break;
+
+            switch (index)
+            {
+            PARAM_PART_ENABLE_DESC( 1)
+            PARAM_PART_ENABLE_DESC( 2)
+            PARAM_PART_ENABLE_DESC( 3)
+            PARAM_PART_ENABLE_DESC( 4)
+            PARAM_PART_ENABLE_DESC( 5)
+            PARAM_PART_ENABLE_DESC( 6)
+            PARAM_PART_ENABLE_DESC( 7)
+            PARAM_PART_ENABLE_DESC( 8)
+            PARAM_PART_ENABLE_DESC( 9)
+            PARAM_PART_ENABLE_DESC(10)
+            PARAM_PART_ENABLE_DESC(11)
+            PARAM_PART_ENABLE_DESC(12)
+            PARAM_PART_ENABLE_DESC(13)
+            PARAM_PART_ENABLE_DESC(14)
+            PARAM_PART_ENABLE_DESC(15)
+            PARAM_PART_ENABLE_DESC(16)
+            }
+
+            #undef PARAM_PART_ENABLE_DESC
+        }
+        else if (index <= kParamPart16Panning)
+        {
+            hints |= NATIVE_PARAMETER_IS_INTEGER;
+
+            #define PARAM_PART_ENABLE_DESC(N) \
+            case kParamPart01Panning + N - 1: \
+                param.name = "Part " #N " Panning"; break;
+
+            switch (index)
+            {
+            PARAM_PART_ENABLE_DESC( 1)
+            PARAM_PART_ENABLE_DESC( 2)
+            PARAM_PART_ENABLE_DESC( 3)
+            PARAM_PART_ENABLE_DESC( 4)
+            PARAM_PART_ENABLE_DESC( 5)
+            PARAM_PART_ENABLE_DESC( 6)
+            PARAM_PART_ENABLE_DESC( 7)
+            PARAM_PART_ENABLE_DESC( 8)
+            PARAM_PART_ENABLE_DESC( 9)
             PARAM_PART_ENABLE_DESC(10)
             PARAM_PART_ENABLE_DESC(11)
             PARAM_PART_ENABLE_DESC(12)
@@ -362,12 +414,6 @@ protected:
         else if (index <= kParamResBandwidth)
         {
             hints |= NATIVE_PARAMETER_IS_INTEGER;
-            param.ranges.def       = 64.0f;
-            param.ranges.min       = 0.0f;
-            param.ranges.max       = 127.0f;
-            param.ranges.step      = 1.0f;
-            param.ranges.stepSmall = 1.0f;
-            param.ranges.stepLarge = 20.0f;
 
             switch (index)
             {
@@ -430,8 +476,24 @@ protected:
             fParameters[index] = (value >= 0.5f) ? 1.0f : 0.0f;
 
             char msg[24];
-            std::sprintf(msg, "/part%i/Penabled", index);
+            std::sprintf(msg, "/part%i/Penabled", index-kParamPart01Enabled);
             fMiddleWare->transmitMsg(msg, (value >= 0.5f) ? "T" : "F");
+        }
+        else if (index <= kParamPart16Volume)
+        {
+            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+
+            char msg[24];
+            std::sprintf(msg, "/part%i/Pvolume", index-kParamPart01Volume);
+            fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[index]));
+        }
+        else if (index <= kParamPart16Panning)
+        {
+            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+
+            char msg[24];
+            std::sprintf(msg, "/part%i/Ppanning", index-kParamPart01Panning);
+            fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[index]));
         }
         else if (index <= kParamResBandwidth)
         {
@@ -714,11 +776,25 @@ private:
 
     void _setMasterParameters()
     {
-        for (int i=16; --i>=0;)
+        for (int i=kParamPart16Enabled+1; --i>=kParamPart01Enabled;)
         {
             char msg[24];
-            std::sprintf(msg, "/part%i/Penabled", i);
+            std::sprintf(msg, "/part%i/Penabled", i-kParamPart01Enabled);
             fMiddleWare->transmitMsg(msg, (fParameters[i] >= 0.5f) ? "T" : "F");
+        }
+
+        for (int i=kParamPart16Volume+1; --i>=kParamPart01Volume;)
+        {
+            char msg[24];
+            std::sprintf(msg, "/part%i/Pvolume", i-kParamPart01Volume);
+            fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[i]));
+        }
+
+        for (int i=kParamPart16Panning+1; --i>=kParamPart01Panning;)
+        {
+            char msg[24];
+            std::sprintf(msg, "/part%i/Ppanning", i-kParamPart01Panning);
+            fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[i]));
         }
 
         for (int i=0; i<NUM_MIDI_PARTS; ++i)
