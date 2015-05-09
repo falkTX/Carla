@@ -191,7 +191,7 @@ public:
             fSampleRate = opt;
 
             if (fDescriptor->dispatcher != nullptr)
-                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, opt);
             break;
 
         case effSetBlockSize:
@@ -211,9 +211,31 @@ public:
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
                 // tell host we want MIDI events
-                fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
+                masterCallback(audioMasterWantMidi);
 
-                CARLA_SAFE_ASSERT_BREAK(! fIsActive);
+                // deactivate for possible changes
+                if (fDescriptor->deactivate != nullptr && fIsActive)
+                    fDescriptor->deactivate(fHandle);
+
+                // check if something changed
+                const uint32_t bufferSize = static_cast<uint32_t>(masterCallback(audioMasterGetBlockSize));
+                const double   sampleRate = static_cast<double>(masterCallback(audioMasterGetSampleRate));
+
+                if (fBufferSize != bufferSize)
+                {
+                    fBufferSize = bufferSize;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, (int32_t)value, nullptr, 0.0f);
+                }
+
+                if (! carla_compareFloats(fSampleRate, sampleRate))
+                {
+                    fSampleRate = sampleRate;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)sampleRate);
+                }
 
                 if (fDescriptor->activate != nullptr)
                     fDescriptor->activate(fHandle);
@@ -248,14 +270,14 @@ public:
 
                 // check if vst host is tracktion
                 carla_zeroChar(strBuf, 0xff+1);
-                fAudioMaster(fEffect, audioMasterGetProductString, 0, 0, strBuf, 0);
+                masterCallback(audioMasterGetProductString, 0, 0, strBuf, 0.0f);
 
                 const bool isTracktion(std::strcmp(strBuf, "Tracktion") == 0);
 
                 // if vst host is tracktion, delay UI appearance for a bit (part 1)
                 if (isTracktion)
                 {
-                    fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, 0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
+                    fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
                 }
 
                 // show UI now
@@ -271,7 +293,7 @@ public:
 
                     for (int x=10; --x>=0;)
                     {
-                        fAudioMaster(fEffect, audioMasterIdle, 0, 0, nullptr, 0);
+                        masterCallback(audioMasterIdle);
                         carla_msleep(25);
                     }
                 }
@@ -401,7 +423,7 @@ public:
 
         static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
 
-        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)fAudioMaster(fEffect, audioMasterGetTime, 0, kWantVstTimeFlags, nullptr, 0.0f))
+        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)masterCallback(audioMasterGetTime, 0, kWantVstTimeFlags))
         {
             fTimeInfo.frame     = static_cast<uint64_t>(vstTimeInfo->samplePos);
             fTimeInfo.playing   =  (vstTimeInfo->flags & kVstTransportPlaying);
@@ -447,7 +469,7 @@ public:
         fMidiEventCount = 0;
 
         if (fMidiOutEvents.numEvents > 0)
-            fAudioMaster(fEffect, audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
+            masterCallback(audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
     }
 
 protected:
@@ -536,7 +558,7 @@ protected:
             break;
 
         case NATIVE_HOST_OPCODE_HOST_IDLE:
-            fAudioMaster(fEffect, audioMasterIdle, 0, 0, nullptr, 0.0f);
+            masterCallback(audioMasterIdle);
             break;
         }
 
@@ -566,6 +588,16 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
+
+    // host callback
+    intptr_t masterCallback(const int32_t opcode,
+                            const int32_t index = 0,
+                            const intptr_t value = 0,
+                            void* const ptr = nullptr,
+                            const float opt = 0.0f)
+    {
+        return fAudioMaster(fEffect, opcode, index, value, ptr, opt);
+    }
 
     struct FixedVstEvents {
         int32_t numEvents;

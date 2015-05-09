@@ -53,6 +53,10 @@ ifeq ($(MACOS),true)
 LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 
+ifeq ($(HAVE_ZYN_DEPS),true)
+LIBS += $(MODULEDIR)/rtosc.a
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 # Link flags
 
