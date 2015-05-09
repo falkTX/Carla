@@ -204,11 +204,15 @@ void refreshBankView(const Bank &bank, unsigned loc, Fl_Osc_Interface *osc)
         errx(1, "Failure to handle bank update properly...");
 
 
-    osc->tryLink(response);
+    if (osc)
+        osc->tryLink(response);
 }
 
 void bankList(Bank &bank, Fl_Osc_Interface *osc)
 {
+    if (! osc)
+        return;
+
     char response[2048];
     int i = 0;
 
@@ -242,7 +246,8 @@ void bankPos(Bank &bank, Fl_Osc_Interface *osc)
 
     if(!rtosc_message(response, 2048, "/loadbank", "i", bank.bankpos))
         errx(1, "Failure to handle bank update properly...");
-    osc->tryLink(response);
+    if (osc)
+        osc->tryLink(response);
 }
 
 /*****************************************************************************
@@ -1289,8 +1294,13 @@ void MiddleWare::activeUrl(std::string u)
 {
     impl->last_url = u;
 }
-        
+
 const SYNTH_T &MiddleWare::getSynth(void) const
 {
     return impl->synth;
+}
+
+const char* MiddleWare::getServerAddress(void) const
+{
+    return lo_server_get_url(impl->server);
 }

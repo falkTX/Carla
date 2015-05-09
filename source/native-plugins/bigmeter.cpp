@@ -31,7 +31,7 @@ class BigMeterPlugin : public NativePluginAndUiClass
 {
 public:
     BigMeterPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "bigmeter-ui"),
+        : NativePluginAndUiClass(host, "bigmeter-ui"),
           fColor(1),
           fStyle(1),
           fOutLeft(0.0f),

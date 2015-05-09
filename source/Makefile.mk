@@ -411,7 +411,7 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
 
-HAVE_ZYN_DEPS    = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
+HAVE_ZYN_DEPS    = $(shell pkg-config --exists liblo fftw3 mxml zlib && echo true)
 ifeq ($(HAVE_FLTK),true)
 HAVE_ZYN_UI_DEPS = true
 endif
@@ -434,14 +434,14 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_DEPS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs liblo fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
-ifeq ($(HAVE_NTK),true)
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
-else
-NATIVE_PLUGINS_LIBS  += $(shell fltk-config --use-images --ldstaticflags)
-endif
+# ifeq ($(HAVE_NTK),true)
+# NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
+# else
+# NATIVE_PLUGINS_LIBS  += $(shell fltk-config --use-images --ldstaticflags)
+# endif
 endif
 endif
 

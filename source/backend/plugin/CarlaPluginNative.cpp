@@ -178,6 +178,7 @@ public:
           fHost(),
           fDescriptor(nullptr),
           fIsProcessing(false),
+          fIsUiAvailable(false),
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
@@ -744,12 +745,12 @@ public:
         if (fDescriptor->ui_show == nullptr)
             return;
 
-        const bool oldIsUiVisible(fIsUiVisible);
+        fIsUiAvailable = true;
 
         fDescriptor->ui_show(fHandle, yesNo);
 
         // UI might not be available, see NATIVE_HOST_OPCODE_UI_UNAVAILABLE
-        if (fIsUiVisible == yesNo || fIsUiVisible != oldIsUiVisible)
+        if (yesNo && ! fIsUiAvailable)
             return;
 
         fIsUiVisible = yesNo;
@@ -2265,7 +2266,7 @@ protected:
             break;
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
             pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, nullptr);
-            fIsUiVisible = false;
+            fIsUiAvailable = false;
             break;
         case NATIVE_HOST_OPCODE_HOST_IDLE:
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
@@ -2434,6 +2435,7 @@ private:
     const NativePluginDescriptor* fDescriptor;
 
     bool fIsProcessing;
+    bool fIsUiAvailable;
     bool fIsUiVisible;
 
     float**         fAudioInBuffers;

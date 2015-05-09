@@ -1,7 +1,4 @@
-
-#ifndef ALLOCATOR_H
-#define ALLOCATOR_H
-
+#pragma once
 #include <cstdlib>
 #include <utility>
 
@@ -109,5 +106,3 @@ extern Allocator DummyAlloc;
  *     * A new one is constructed with a deep copy
  *     * The old one is returned to middleware for deallocation
  */
-
-#endif

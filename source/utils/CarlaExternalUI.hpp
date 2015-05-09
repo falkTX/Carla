@@ -35,8 +35,8 @@ public:
 
     CarlaExternalUI() noexcept
         : fFilename(),
-          fSampleRate(),
-          fUiTitle(),
+          fArg1(),
+          fArg2(),
           fUiState(UiNone),
           leakDetector_CarlaExternalUI() {}
 
@@ -52,16 +52,23 @@ public:
         return uiState;
     }
 
+    void setData(const char* const filename, const char* const arg1, const char* const arg2) noexcept
+    {
+        fFilename = filename;
+        fArg1     = arg1;
+        fArg2     = arg2;
+    }
+
     void setData(const char* const filename, const double sampleRate, const char* const uiTitle) noexcept
     {
-        fFilename   = filename;
-        fSampleRate = CarlaString(sampleRate);
-        fUiTitle    = uiTitle;
+        fFilename = filename;
+        fArg1     = CarlaString(sampleRate);
+        fArg2     = uiTitle;
     }
 
     bool startPipeServer(const bool show = true) noexcept
     {
-        if (CarlaPipeServer::startPipeServer(fFilename, fSampleRate, fUiTitle))
+        if (CarlaPipeServer::startPipeServer(fFilename, fArg1, fArg2))
         {
             if (show)
                 writeShowMessage();
@@ -87,8 +94,8 @@ protected:
 
 private:
     CarlaString fFilename;
-    CarlaString fSampleRate;
-    CarlaString fUiTitle;
+    CarlaString fArg1;
+    CarlaString fArg2;
     UiState     fUiState;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaExternalUI)

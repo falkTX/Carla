@@ -273,9 +273,6 @@ const Ports &ADnoteParameters::ports  = adPorts;
 const Ports &ADnoteVoiceParam::ports  = voicePorts;
 const Ports &ADnoteGlobalParam::ports = globalPorts;
 
-int ADnote_unison_sizes[] =
-{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
-
 ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_)
     :PresetsArray()
 {

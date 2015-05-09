@@ -29,7 +29,8 @@
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PITCH_MOD
 };
-extern int ADnote_unison_sizes[];
+static const int ADnote_unison_sizes[] =
+{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
 
 /*****************************************************************/
 /*                    GLOBAL PARAMETERS                          */

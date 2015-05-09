@@ -19,20 +19,28 @@ BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
+ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ifeq ($(HAVE_NTK),true)
 FLUID          = ntk-fluid
 ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
+ZYN_LD_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
 else # HAVE_NTK
 FLUID          = fluid
 ZYN_CXX_FLAGS += -DFLTK_GUI
 ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
+ZYN_LD_FLAGS  += $(shell fltk-config --use-images --ldstaticflags)
 endif # HAVE_NTK
 else  # HAVE_ZYN_UI_DEPS
 ZYN_CXX_FLAGS += -DNO_UI
 endif # HAVE_ZYN_UI_DEPS
 endif # HAVE_ZYN_DEPS
+
+# ----------------------------------------------------------------------------------------------------------------------------
+# Set targets
+
+TARGETS = $(MODULEDIR)/$(MODULENAME).a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Set objects
@@ -95,8 +103,7 @@ OBJS += \
 	$(OBJDIR)/zynaddsubfx-src.cpp.o
 
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-OBJS += \
-	$(OBJDIR)/zynaddsubfx-ui.cpp.o
+TARGETS += resources/zynaddsubfx-ui$(APP_EXT)
 
 ZYN_UI_FILES_CPP = \
 	zynaddsubfx/UI/ADnoteUI.cpp \
@@ -148,7 +155,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-all: $(MODULEDIR)/$(MODULENAME).a
+all: $(TARGETS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -165,6 +172,11 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	@echo "Creating $(MODULENAME).a"
 	@rm -f $@
 	@$(AR) crs $@ $^
+
+resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o $(MODULEDIR)/rtosc.a
+	-@mkdir -p $(OBJDIR)
+	@echo "Linking zynaddsubfx-ui"
+	@$(CXX) $^ $(ZYN_LD_FLAGS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -283,5 +295,6 @@ $(OBJDIR)/%.cpp.o: %.cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJDIR)/zynaddsubfx-ui.cpp.d
 
 # ----------------------------------------------------------------------------------------------------------------------------

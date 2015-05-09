@@ -91,6 +91,7 @@ extern "C" {
 // SYNTH_T* synth = nullptr;
 class WavFile;
 namespace Nio {
+   void masterSwap(Master*){}
 //    bool start(void){return 1;}
 //    void stop(void){}
 //    bool setSource(std::string){return true;}

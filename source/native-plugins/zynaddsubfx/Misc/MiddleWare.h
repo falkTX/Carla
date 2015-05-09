@@ -35,6 +35,8 @@ class MiddleWare
         void activeUrl(std::string u);
         //View Synthesis Parameters
         const SYNTH_T &getSynth(void) const;
+        //liblo stuff
+        const char* getServerAddress(void) const;
     private:
         class MiddleWareImpl *impl;
 };

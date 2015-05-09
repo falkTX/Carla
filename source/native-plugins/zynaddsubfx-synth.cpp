@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
+#include "CarlaNativeExtUI.hpp"
 #include "CarlaMIDI.h"
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
@@ -24,30 +24,12 @@
 
 #include "DSP/FFTwrapper.h"
 #include "Misc/Master.h"
+#include "Misc/MiddleWare.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
 
 #ifdef HAVE_ZYN_UI_DEPS
-# define WANT_ZYNADDSUBFX_UI
-#endif
-
-#ifdef WANT_ZYNADDSUBFX_UI
-# ifdef override
-#  define override_hack
-#  undef override
-# endif
-
-# include "UI/MasterUI.h"
-# include <FL/Fl_Shared_Image.H>
-# include <FL/Fl_Tiled_Image.H>
-# ifdef NTK_GUI
-#  include <FL/Fl_Theme.H>
-# endif
-
-# ifdef override_hack
-#  define override
-#  undef override_hack
-# endif
+# include "UI/Connection.h"
 #endif
 
 #include <ctime>
@@ -58,8 +40,34 @@
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 
-#ifdef WANT_ZYNADDSUBFX_UI
-extern CarlaString gUiPixmapPath;
+// -----------------------------------------------------------------------
+
+#ifdef HAVE_ZYN_UI_DEPS
+namespace GUI {
+Fl_Osc_Interface* genOscInterface(MiddleWare*)
+{
+    return nullptr;
+}
+void raiseUi(ui_handle_t, const char *)
+{
+}
+#if 0
+ui_handle_t createUi(Fl_Osc_Interface*, void *exit)
+{
+    return nullptr;
+}
+void destroyUi(ui_handle_t)
+{
+}
+void raiseUi(ui_handle_t, const char *, const char *, ...)
+{
+}
+void tickUi(ui_handle_t)
+{
+    //usleep(100000);
+}
+#endif
+};
 #endif
 
 // -----------------------------------------------------------------------
@@ -227,30 +235,16 @@ static ZynAddSubFxPrograms sPrograms;
 class ZynAddSubFxThread : public CarlaThread
 {
 public:
-    ZynAddSubFxThread(Master* const master, CarlaMutex& mutex, const NativeHostDescriptor* const host)
+    ZynAddSubFxThread(Master* const master, CarlaMutex& mutex) noexcept
         : CarlaThread("ZynAddSubFxThread"),
           fMaster(master),
           fMutex(mutex),
-          kHost(host),
-#ifdef WANT_ZYNADDSUBFX_UI
-          fUi(nullptr),
-          fUiClosed(0),
-          fNextUiAction(-1),
-#endif
           fChangeProgram(false),
           fNextChannel(0),
           fNextBank(0),
           fNextProgram(0) {}
 
-    ~ZynAddSubFxThread()
-    {
-#ifdef WANT_ZYNADDSUBFX_UI
-        // must be closed by now
-        CARLA_SAFE_ASSERT(fUi == nullptr);
-#endif
-    }
-
-    void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program)
+    void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program) noexcept
     {
         fNextChannel   = channel;
         fNextBank      = bank;
@@ -258,7 +252,7 @@ public:
         fChangeProgram = true;
     }
 
-    void stopLoadProgramLater()
+    void stopLoadProgramLater() noexcept
     {
         fChangeProgram = false;
         fNextChannel   = 0;
@@ -266,89 +260,16 @@ public:
         fNextProgram   = 0;
     }
 
-    void setMaster(Master* const master)
+    void setMaster(Master* const master) noexcept
     {
         fMaster = master;
     }
-
-#ifdef WANT_ZYNADDSUBFX_UI
-    void uiHide()
-    {
-        fNextUiAction = 0;
-    }
-
-    void uiShow()
-    {
-        fNextUiAction = 1;
-    }
-
-    void uiRepaint()
-    {
-        if (fUi != nullptr)
-            fNextUiAction = 2;
-    }
-
-    void uiChangeName(const char* const name)
-    {
-        if (fUi != nullptr)
-        {
-            Fl::lock();
-            fUi->masterwindow->label(name);
-            Fl::unlock();
-        }
-    }
-#endif
 
 protected:
     void run() override
     {
         while (! shouldThreadExit())
         {
-#ifdef WANT_ZYNADDSUBFX_UI
-            Fl::lock();
-
-            if (fNextUiAction == 2) // repaint
-            {
-                CARLA_ASSERT(fUi != nullptr);
-
-                if (fUi != nullptr)
-                    fUi->refresh_master_ui();
-            }
-            else if (fNextUiAction == 1) // init/show
-            {
-                if (fUi == nullptr)
-                {
-                    fUiClosed = 0;
-                    fUi = new MasterUI(&fUiClosed, &fOscIface);
-                    fUi->masterwindow->label(kHost->uiName);
-                }
-
-                fUi->showUI(1);
-            }
-            else if (fNextUiAction == 0) // close
-            {
-                CARLA_ASSERT(fUi != nullptr);
-
-                if (fUi != nullptr)
-                {
-                    delete fUi;
-                    fUi = nullptr;
-                }
-            }
-
-            fNextUiAction = -1;
-
-            if (fUiClosed != 0)
-            {
-                fUiClosed     = 0;
-                fNextUiAction = 0;
-                kHost->ui_closed(kHost->handle);
-            }
-
-            Fl::check();
-            Fl::unlock();
-#endif
-
             if (fChangeProgram)
             {
                 fChangeProgram = false;
@@ -357,15 +278,6 @@ protected:
                 fNextBank    = 0;
                 fNextProgram = 0;
 
-#ifdef WANT_ZYNADDSUBFX_UI
-                if (fUi != nullptr)
-                {
-                    Fl::lock();
-                    fUi->refresh_master_ui();
-                    Fl::unlock();
-                }
-#endif
-
                 carla_msleep(15);
             }
             else
@@ -373,30 +285,11 @@ protected:
                 carla_msleep(30);
             }
         }
-
-#ifdef WANT_ZYNADDSUBFX_UI
-        if (fUi != nullptr)
-        {
-            Fl::lock();
-            delete fUi;
-            fUi = nullptr;
-            Fl::check();
-            Fl::unlock();
-        }
-#endif
     }
 
 private:
     Master* fMaster;
     CarlaMutex& fMutex;
-    const NativeHostDescriptor* const kHost;
-
-#ifdef WANT_ZYNADDSUBFX_UI
-    MasterUI* fUi;
-    int       fUiClosed;
-    volatile int fNextUiAction;
-    Fl_Osc_Interface fOscIface;
-#endif
 
     volatile bool     fChangeProgram;
     volatile uint8_t  fNextChannel;
@@ -409,7 +302,7 @@ private:
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxPlugin : public NativePluginClass
+class ZynAddSubFxPlugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
@@ -423,12 +316,13 @@ public:
     };
 
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
-        : NativePluginClass(host),
+        : NativePluginAndUiClass(host, "zynaddsubfx-ui"),
+          fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),
           fIsActive(false),
           fMutex(),
-          fThread(nullptr, fMutex, host),
+          fThread(nullptr, fMutex),
           leakDetector_ZynAddSubFxPlugin()
     {
         // init parameters to default
@@ -446,9 +340,6 @@ public:
         //    fSynth.buffersize = 32;
 
         fSynth.alias();
-
-        // FIXME
-        fSynth.samplerate_f = getSampleRate();
 
         _initMaster();
 
@@ -565,9 +456,6 @@ protected:
         if (isOffline() || ! fIsActive)
         {
             sPrograms.load(fMaster, fMutex, channel, bank, program);
-#ifdef WANT_ZYNADDSUBFX_UI
-            fThread.uiRepaint();
-#endif
             return;
         }
 
@@ -674,16 +562,44 @@ protected:
         fMutex.unlock();
     }
 
-#ifdef WANT_ZYNADDSUBFX_UI
     // -------------------------------------------------------------------
     // Plugin UI calls
 
+#ifdef HAVE_ZYN_UI_DEPS
     void uiShow(const bool show) override
     {
         if (show)
-            fThread.uiShow();
+        {
+            if (isPipeRunning())
+            {
+                const CarlaMutexLocker cml(getPipeLock());
+                writeMessage("focus\n", 6);
+                flushMessages();
+                return;
+            }
+
+            carla_stdout("Trying to start UI using \"%s\"", getExtUiPath());
+
+            CarlaExternalUI::setData(getExtUiPath(), fMiddleWare->getServerAddress(), getUiName());
+
+            if (! CarlaExternalUI::startPipeServer(true))
+            {
+                uiClosed();
+                hostUiUnavailable();
+            }
+        }
         else
-            fThread.uiHide();
+        {
+            CarlaExternalUI::stopPipeServer(2000);
+        }
+    }
+
+    void uiIdle() override
+    {
+        NativePluginAndUiClass::uiIdle();
+
+        if (isPipeRunning())
+            fMiddleWare->tick();
     }
 #endif
 
@@ -738,9 +654,6 @@ protected:
         fSynth.samplerate = static_cast<uint>(sampleRate);
         fSynth.alias();
 
-        // FIXME
-        fSynth.samplerate_f = sampleRate;
-
         _initMaster();
 
         if (state != nullptr)
@@ -751,20 +664,15 @@ protected:
         }
     }
 
-#ifdef WANT_ZYNADDSUBFX_UI
-    void uiNameChanged(const char* const uiName) override
-    {
-        fThread.uiChangeName(uiName);
-    }
-#endif
-
     // -------------------------------------------------------------------
 
 private:
-    Master* fMaster;
-    SYNTH_T fSynth;
-    bool    fIsActive;
-    float   fParameters[kParamCount];
+    MiddleWare* fMiddleWare;
+    Master*     fMaster;
+    SYNTH_T     fSynth;
+
+    bool  fIsActive;
+    float fParameters[kParamCount];
 
     CarlaMutex        fMutex;
     ZynAddSubFxThread fThread;
@@ -796,7 +704,8 @@ private:
 
     void _initMaster()
     {
-        fMaster = new Master(fSynth);
+        fMiddleWare = new MiddleWare(fSynth);
+        fMaster     = fMiddleWare->spawnMaster();
         fThread.setMaster(fMaster);
         fThread.startThread();
 
@@ -817,8 +726,9 @@ private:
         //ensure that everything has stopped
         fThread.stopThread(-1);
 
-        delete fMaster;
         fMaster = nullptr;
+        delete fMiddleWare;
+        fMiddleWare = nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -839,10 +749,6 @@ public:
             denormalkillbuf = new float[8192];
             for (int i=0; i < 8192; ++i)
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
-
-#ifdef WANT_ZYNADDSUBFX_UI
-            gUiPixmapPath = CarlaString(host->resourceDir) + CARLA_OS_SEP_STR "zynaddsubfx" CARLA_OS_SEP_STR;
-#endif
         }
 
         return new ZynAddSubFxPlugin(host);
@@ -861,7 +767,7 @@ public:
 static const NativePluginDescriptor zynaddsubfxDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-#ifdef WANT_ZYNADDSUBFX_UI
+#ifdef HAVE_ZYN_UI_DEPS
                                                   |NATIVE_PLUGIN_HAS_UI
 #endif
                                                   |NATIVE_PLUGIN_USES_MULTI_PROGS

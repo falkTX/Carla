@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaString.hpp"
+#include "CarlaPipeUtils.cpp"
 
 #ifdef CARLA_OS_WIN
 #define errx(...)
@@ -23,10 +23,10 @@
 #endif
 
 #define PLUGINVERSION
-#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+#define SOURCE_DIR "/usr/share/zynaddsubfx"
 #undef override
 
-CarlaString gUiPixmapPath;
+CarlaString gUiPixmapPath("/usr/share/carla/resources/zynaddsubfx/");
 
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"
@@ -35,7 +35,7 @@ CarlaString gUiPixmapPath;
 #include "zynaddsubfx/UI/BankUI.cpp"
 #include "zynaddsubfx/UI/BankView.cpp"
 #include "zynaddsubfx/UI/ConfigUI.cpp"
-#include "zynaddsubfx/UI/Connection.cpp"
+// #include "zynaddsubfx/UI/Connection.cpp"
 #include "zynaddsubfx/UI/EffUI.cpp"
 #include "zynaddsubfx/UI/EnvelopeFreeEdit.cpp"
 #include "zynaddsubfx/UI/EnvelopeUI.cpp"
@@ -69,3 +69,167 @@ CarlaString gUiPixmapPath;
 #include "zynaddsubfx/UI/ResonanceUI.cpp"
 #include "zynaddsubfx/UI/SUBnoteUI.cpp"
 #include "zynaddsubfx/UI/VirKeyboard.cpp"
+#include "zynaddsubfx/UI/guimain.cpp"
+
+class ZynPipeClient : public CarlaPipeClient
+{
+public:
+    ZynPipeClient() noexcept
+        : CarlaPipeClient(),
+          fQuitReceived(false) {}
+
+    ~ZynPipeClient() noexcept override
+    {
+        if (fQuitReceived)
+            return;
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("exiting\n");
+        flushMessages();
+    }
+
+protected:
+    bool msgReceived(const char* const msg) noexcept override
+    {
+        if (std::strcmp(msg, "show") == 0)
+        {
+            try {
+                GUI::raiseUi(gui, "/show", "i", 1);
+            } CARLA_SAFE_EXCEPTION("msgReceived show");
+            return true;
+        }
+
+        if (std::strcmp(msg, "hide") == 0)
+        {
+            try {
+                GUI::raiseUi(gui, "/hide", "");
+            } CARLA_SAFE_EXCEPTION("msgReceived hide");
+            return true;
+        }
+
+        if (std::strcmp(msg, "focus") == 0)
+        {
+            try {
+                GUI::raiseUi(gui, "/focus", "");
+            } CARLA_SAFE_EXCEPTION("msgReceived focus");
+            return true;
+        }
+
+        if (std::strcmp(msg, "uiTitle") == 0)
+        {
+            const char* uiTitle;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uiTitle), true);
+
+            try {
+                GUI::raiseUi(gui, "/title", "s", uiTitle);
+            } CARLA_SAFE_EXCEPTION("msgReceived uiTitle");
+            return true;
+        }
+
+        if (std::strcmp(msg, "quit") == 0)
+        {
+            fQuitReceived = true;
+
+            try {
+                GUI::raiseUi(gui, "/close-ui", "");
+            } CARLA_SAFE_EXCEPTION("msgReceived quit");
+            return true;
+        }
+
+        carla_stderr("ZynPipeClient::msgReceived : %s", msg);
+    }
+
+private:
+    bool fQuitReceived;
+};
+
+int main(int argc, const char* argv[])
+{
+    ZynPipeClient pipe;
+    const char* uiTitle = nullptr;
+
+    // Startup Liblo Link
+    if (argc > 1) {
+        sendtourl = argv[1];
+        uiTitle   = argv[2];
+
+        if (! pipe.initPipeClient(argv))
+            return 1;
+
+        server = lo_server_new_with_proto(NULL, LO_UDP, liblo_error_cb);
+        lo_server_add_method(server, NULL, NULL, handler_function, 0);
+    }
+
+    gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
+
+    if (argc == 1)
+        GUI::raiseUi(gui, "/show", "i", 1);
+
+    while(Pexitprogram == 0) {
+        if(server)
+            while(lo_server_recv_noblock(server, 0));
+        pipe.idlePipe();
+        GUI::tickUi(gui);
+    }
+
+    GUI::destroyUi(gui);
+    gui = nullptr;
+    return 0;
+}
+
+// --------------------------------------------------------------------------------------------
+// we need juce::Time::getMillisecondCounter()
+
+#ifdef CARLA_OS_WIN
+ #include <ctime>
+#else
+ #include <sys/time.h>
+#endif
+
+namespace juce {
+
+#include "juce_core/native/juce_BasicNativeHeaders.h"
+#include "juce_core/juce_core.h"
+
+static uint32 lastMSCounterValue = 0;
+
+#ifdef CARLA_OS_WIN
+uint32 juce_millisecondsSinceStartup() noexcept
+{
+    return (uint32) timeGetTime();
+}
+#else
+uint32 juce_millisecondsSinceStartup() noexcept
+{
+    timespec t;
+    clock_gettime (CLOCK_MONOTONIC, &t);
+
+    return t.tv_sec * 1000 + t.tv_nsec / 1000000;
+}
+#endif
+
+uint32 Time::getMillisecondCounter() noexcept
+{
+    const uint32 now = juce_millisecondsSinceStartup();
+
+    if (now < lastMSCounterValue)
+    {
+        // in multi-threaded apps this might be called concurrently, so
+        // make sure that our last counter value only increases and doesn't
+        // go backwards..
+        if (now < lastMSCounterValue - 1000)
+            lastMSCounterValue = now;
+    }
+    else
+    {
+        lastMSCounterValue = now;
+    }
+
+    return now;
+}
+
+} // namespace juce
+
+// --------------------------------------------------------------------------------------------

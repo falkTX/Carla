@@ -612,7 +612,6 @@ void Master::AudioOut(float *outl, float *outr)
     while(uToB && uToB->hasNext() && events < 10) {
         const char *msg = uToB->read();
 
-#ifndef PLUGINVERSION
         if(!strcmp(msg, "/load-master")) {
             Master *this_master = this;
             Master *new_master  = *(Master**)rtosc_argument(msg, 0).b.data;
@@ -621,7 +620,6 @@ void Master::AudioOut(float *outl, float *outr)
             bToU->write("/free", "sb", "Master", sizeof(Master*), &this_master);
             return;
         }
-#endif
 
         //XXX yes, this is not realtime safe, but it is useful...
         if(strcmp(msg, "/get-vu") && false) {
@@ -650,7 +648,7 @@ void Master::AudioOut(float *outl, float *outr)
     }
     if(events>1 && false)
         fprintf(stderr, "backend: %d events per cycle\n",events);
-        
+
 
     //Swaps the Left channel with Right Channel
     if(swaplr)

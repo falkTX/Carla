@@ -31,7 +31,7 @@ public:
     };
 
     MidiSequencerPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "midiseq-ui"),
+        : NativePluginAndUiClass(host, "midiseq-ui"),
           fNeedsAllNotesOff(false),
           fWantInEvents(false),
           fWasPlayingBefore(false),

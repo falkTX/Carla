@@ -36,10 +36,17 @@ public:
     NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const extUiPath)
         : NativePluginClass(host),
           CarlaExternalUI(),
-          fExtUiPath(extUiPath),
-          leakDetector_NativePluginAndUiClass() {}
+          fExtUiPath(getResourceDir()),
+          leakDetector_NativePluginAndUiClass()
+    {
+        fExtUiPath += CARLA_OS_SEP_STR;
+        fExtUiPath += extUiPath;
+    }
 
-    //~NativePluginAndUiClass() noexcept override {}
+    const char* getExtUiPath() const noexcept
+    {
+        return fExtUiPath;
+    }
 
 protected:
     // -------------------------------------------------------------------
@@ -57,15 +64,19 @@ protected:
                 return;
             }
 
-            CarlaString path(getResourceDir() + fExtUiPath);
-            carla_stdout("Trying to start UI using \"%s\"", path.buffer());
+            carla_stdout("Trying to start UI using \"%s\"", fExtUiPath.buffer());
 
-            CarlaExternalUI::setData(path, getSampleRate(), getUiName());
-            CarlaExternalUI::startPipeServer(true);
+            CarlaExternalUI::setData(fExtUiPath, getSampleRate(), getUiName());
+
+            if (! CarlaExternalUI::startPipeServer(true))
+            {
+                uiClosed();
+                hostUiUnavailable();
+            }
         }
         else
         {
-            CarlaExternalUI::stopPipeServer(5000);
+            CarlaExternalUI::stopPipeServer(2000);
         }
     }
 
@@ -79,11 +90,12 @@ protected:
         case CarlaExternalUI::UiShow:
             break;
         case CarlaExternalUI::UiCrashed:
+            uiClosed();
             hostUiUnavailable();
             break;
         case CarlaExternalUI::UiHide:
             uiClosed();
-            //CarlaExternalUI::stopPipeServer(2000);
+            CarlaExternalUI::stopPipeServer(1000);
             break;
         }
     }
@@ -150,6 +162,17 @@ protected:
         writeAndFixMessage(key);
         writeAndFixMessage(value);
 
+        flushMessages();
+    }
+
+    void uiNameChanged(const char* const uiName) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("uiTitle\n", 10);
+        writeAndFixMessage(uiName);
         flushMessages();
     }
 
