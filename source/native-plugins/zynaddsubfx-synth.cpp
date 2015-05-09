@@ -102,59 +102,33 @@ public:
             return;
         fInitiated = true;
 
-        fPrograms.append(new ProgramInfo(0, 0, "default"));
+        fPrograms.append(new ProgramInfo(0, 0, "default", ""));
 
-        Master& master(getMasterInstance());
+        SYNTH_T synth;
+        Master  master(synth);
 
         // refresh banks
         master.bank.rescanforbanks();
 
-        for (uint32_t i=0, size=static_cast<uint32_t>(master.bank.banks.size()); i<size; ++i)
+        for (std::size_t i=0, size=master.bank.banks.size(); i<size; ++i)
         {
-            if (master.bank.banks[i].dir.empty())
+            const std::string dir(master.bank.banks[i].dir);
+
+            if (dir.empty())
                 continue;
 
-            master.bank.loadbank(master.bank.banks[i].dir);
+            master.bank.loadbank(dir);
 
-            for (uint instrument = 0; instrument < BANK_SIZE; ++instrument)
+            for (uint ninstrument = 0; ninstrument < BANK_SIZE; ++ninstrument)
             {
-                const std::string insName(master.bank.getname(instrument));
+                const Bank::ins_t& instrument(master.bank.ins[ninstrument]);
 
-                if (insName.empty() || insName[0] == '\0' || insName[0] == ' ')
+                if (instrument.name.empty() || instrument.name[0] == ' ')
                     continue;
 
-                fPrograms.append(new ProgramInfo(i+1, instrument, insName.c_str()));
+                fPrograms.append(new ProgramInfo(i+1, ninstrument, instrument.name.c_str(), instrument.filename.c_str()));
             }
         }
-    }
-
-    void load(Master* const master, CarlaMutex& mutex, const uint8_t channel, const uint32_t bank, const uint32_t program)
-    {
-        if (bank == 0)
-        {
-            if (program != 0)
-                return;
-
-            const CarlaMutexLocker cml(mutex);
-
-            master->partonoff(channel, 1);
-            master->part[channel]->defaults();
-            master->part[channel]->applyparameters(false);
-            return;
-        }
-
-        const Master&      gmaster(getMasterInstance());
-        const std::string& bankdir(gmaster.bank.banks[bank-1].dir);
-
-        if (bankdir.empty())
-            return;
-
-        const CarlaMutexLocker cml(mutex);
-
-        master->partonoff(channel, 1);
-        master->bank.loadbank(bankdir);
-        master->bank.loadfromslot(program, master->part[channel]);
-        master->part[channel]->applyparameters(false);
     }
 
     uint32_t getNativeMidiProgramCount() const noexcept
@@ -177,11 +151,21 @@ public:
         return &fRetProgram;
     }
 
-    uint32_t getZynBankCount() const
+    const char* getZynProgramFilename(const uint32_t bank, const uint32_t program) const noexcept
     {
-        const Master& master(getMasterInstance());
+        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin(); it.valid(); it.next())
+        {
+            const ProgramInfo* const& pInfo(it.getValue(nullptr));
 
-        return master.bank.banks.size();
+            if (pInfo->bank != bank)
+                continue;
+            if (pInfo->prog != program)
+                continue;
+
+            return pInfo->filename;
+        }
+
+        return nullptr;
     }
 
 private:
@@ -189,11 +173,13 @@ private:
       uint32_t bank;
       uint32_t prog;
       const char* name;
+      const char* filename;
 
-      ProgramInfo(uint32_t b, uint32_t p, const char* n) noexcept
+      ProgramInfo(uint32_t b, uint32_t p, const char* n, const char* fn) noexcept
         : bank(b),
           prog(p),
-          name(carla_strdup_safe(n)) {}
+          name(carla_strdup_safe(n)),
+          filename(carla_strdup_safe(fn)) {}
 
       ~ProgramInfo() noexcept
       {
@@ -201,6 +187,12 @@ private:
           {
               delete[] name;
               name = nullptr;
+          }
+
+          if (filename != nullptr)
+          {
+              delete[] filename;
+              filename = nullptr;
           }
       }
 
@@ -217,13 +209,6 @@ private:
     mutable NativeMidiProgram fRetProgram;
     LinkedList<const ProgramInfo*> fPrograms;
 
-    static Master& getMasterInstance()
-    {
-        static SYNTH_T synth;
-        static Master  master(synth);
-        return master;
-    }
-
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };
@@ -232,86 +217,34 @@ static ZynAddSubFxPrograms sPrograms;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxThread : public CarlaThread
-{
-public:
-    ZynAddSubFxThread(Master* const master, CarlaMutex& mutex) noexcept
-        : CarlaThread("ZynAddSubFxThread"),
-          fMaster(master),
-          fMutex(mutex),
-          fChangeProgram(false),
-          fNextChannel(0),
-          fNextBank(0),
-          fNextProgram(0) {}
-
-    void loadProgramLater(const uint8_t channel, const uint32_t bank, const uint32_t program) noexcept
-    {
-        fNextChannel   = channel;
-        fNextBank      = bank;
-        fNextProgram   = program;
-        fChangeProgram = true;
-    }
-
-    void stopLoadProgramLater() noexcept
-    {
-        fChangeProgram = false;
-        fNextChannel   = 0;
-        fNextBank      = 0;
-        fNextProgram   = 0;
-    }
-
-    void setMaster(Master* const master) noexcept
-    {
-        fMaster = master;
-    }
-
-protected:
-    void run() override
-    {
-        while (! shouldThreadExit())
-        {
-            if (fChangeProgram)
-            {
-                fChangeProgram = false;
-                sPrograms.load(fMaster, fMutex, fNextChannel, fNextBank, fNextProgram);
-                fNextChannel = 0;
-                fNextBank    = 0;
-                fNextProgram = 0;
-
-                carla_msleep(15);
-            }
-            else
-            {
-                carla_msleep(30);
-            }
-        }
-    }
-
-private:
-    Master* fMaster;
-    CarlaMutex& fMutex;
-
-    volatile bool     fChangeProgram;
-    volatile uint8_t  fNextChannel;
-    volatile uint32_t fNextBank;
-    volatile uint32_t fNextProgram;
-
-    CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxThread)
-};
-
-// -----------------------------------------------------------------------
-
 class ZynAddSubFxPlugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
+        kParamPart01Enabled = 0,
+        kParamPart02Enabled,
+        kParamPart03Enabled,
+        kParamPart04Enabled,
+        kParamPart05Enabled,
+        kParamPart06Enabled,
+        kParamPart07Enabled,
+        kParamPart08Enabled,
+        kParamPart09Enabled,
+        kParamPart10Enabled,
+        kParamPart11Enabled,
+        kParamPart12Enabled,
+        kParamPart13Enabled,
+        kParamPart14Enabled,
+        kParamPart15Enabled,
+        kParamPart16Enabled,
+        /*
         kParamFilterCutoff = 0, // Filter Frequency
         kParamFilterQ,          // Filter Resonance
         kParamBandwidth,        // Bandwidth
         kParamModAmp,           // FM Gain
         kParamResCenter,        // Resonance center frequency
         kParamResBandwidth,     // Resonance bandwidth
+        */
         kParamCount
     };
 
@@ -322,16 +255,35 @@ public:
           fSynth(),
           fIsActive(false),
           fMutex(),
-          fThread(nullptr, fMutex),
           leakDetector_ZynAddSubFxPlugin()
     {
+        sPrograms.initIfNeeded();
+
         // init parameters to default
+        fParameters[kParamPart01Enabled] = 1.0f;
+        fParameters[kParamPart02Enabled] = 0.0f;
+        fParameters[kParamPart03Enabled] = 0.0f;
+        fParameters[kParamPart04Enabled] = 0.0f;
+        fParameters[kParamPart05Enabled] = 0.0f;
+        fParameters[kParamPart06Enabled] = 0.0f;
+        fParameters[kParamPart07Enabled] = 0.0f;
+        fParameters[kParamPart08Enabled] = 0.0f;
+        fParameters[kParamPart09Enabled] = 0.0f;
+        fParameters[kParamPart10Enabled] = 0.0f;
+        fParameters[kParamPart11Enabled] = 0.0f;
+        fParameters[kParamPart12Enabled] = 0.0f;
+        fParameters[kParamPart13Enabled] = 0.0f;
+        fParameters[kParamPart14Enabled] = 0.0f;
+        fParameters[kParamPart15Enabled] = 0.0f;
+        fParameters[kParamPart16Enabled] = 0.0f;
+#if 0
         fParameters[kParamFilterCutoff] = 64.0f;
         fParameters[kParamFilterQ]      = 64.0f;
         fParameters[kParamBandwidth]    = 64.0f;
         fParameters[kParamModAmp]       = 127.0f;
         fParameters[kParamResCenter]    = 64.0f;
         fParameters[kParamResBandwidth] = 64.0f;
+#endif
 
         fSynth.buffersize = static_cast<int>(getBufferSize());
         fSynth.samplerate = static_cast<uint>(getSampleRate());
@@ -342,8 +294,7 @@ public:
         fSynth.alias();
 
         _initMaster();
-
-        sPrograms.initIfNeeded();
+        _setMasterParameters();
     }
 
     ~ZynAddSubFxPlugin() override
@@ -366,40 +317,84 @@ protected:
 
         static NativeParameter param;
 
-        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_INTEGER|NATIVE_PARAMETER_IS_AUTOMABLE;
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE;
 
         param.name = nullptr;
         param.unit = nullptr;
-        param.ranges.def       = 64.0f;
-        param.ranges.min       = 0.0f;
-        param.ranges.max       = 127.0f;
-        param.ranges.step      = 1.0f;
-        param.ranges.stepSmall = 1.0f;
-        param.ranges.stepLarge = 20.0f;
         param.scalePointCount  = 0;
         param.scalePoints      = nullptr;
 
-        switch (index)
+        if (index <= kParamPart16Enabled)
         {
-        case kParamFilterCutoff:
-            param.name = "Filter Cutoff";
-            break;
-        case kParamFilterQ:
-            param.name = "Filter Q";
-            break;
-        case kParamBandwidth:
-            param.name = "Bandwidth";
-            break;
-        case kParamModAmp:
-            param.name = "FM Gain";
-            param.ranges.def = 127.0f;
-            break;
-        case kParamResCenter:
-            param.name = "Res Center Freq";
-            break;
-        case kParamResBandwidth:
-            param.name = "Res Bandwidth";
-            break;
+            hints |= NATIVE_PARAMETER_IS_BOOLEAN;
+            param.ranges.def       = 0.0f;
+            param.ranges.min       = 0.0f;
+            param.ranges.max       = 1.0f;
+            param.ranges.step      = 1.0f;
+            param.ranges.stepSmall = 1.0f;
+            param.ranges.stepLarge = 1.0f;
+
+            #define PARAM_PART_ENABLE_DESC(N)                                \
+            case CARLA_JOIN_MACRO(CARLA_JOIN_MACRO(kParamPart, N), Enabled:) \
+                param.name = "Part " #N " Enabled"; break;
+
+            switch (index)
+            {
+            case kParamPart01Enabled:
+                param.name = "Part 01 Enabled";
+                param.ranges.def = 1.0f;
+                break;
+            PARAM_PART_ENABLE_DESC(02)
+            PARAM_PART_ENABLE_DESC(03)
+            PARAM_PART_ENABLE_DESC(04)
+            PARAM_PART_ENABLE_DESC(05)
+            PARAM_PART_ENABLE_DESC(06)
+            PARAM_PART_ENABLE_DESC(07)
+            PARAM_PART_ENABLE_DESC(08)
+            PARAM_PART_ENABLE_DESC(09)
+            PARAM_PART_ENABLE_DESC(10)
+            PARAM_PART_ENABLE_DESC(11)
+            PARAM_PART_ENABLE_DESC(12)
+            PARAM_PART_ENABLE_DESC(13)
+            PARAM_PART_ENABLE_DESC(14)
+            PARAM_PART_ENABLE_DESC(15)
+            PARAM_PART_ENABLE_DESC(16)
+            }
+        }
+        else
+        {
+            hints |= NATIVE_PARAMETER_IS_INTEGER;
+            param.ranges.def       = 64.0f;
+            param.ranges.min       = 0.0f;
+            param.ranges.max       = 127.0f;
+            param.ranges.step      = 1.0f;
+            param.ranges.stepSmall = 1.0f;
+            param.ranges.stepLarge = 20.0f;
+
+#if 0
+            switch (index)
+            {
+            case kParamFilterCutoff:
+                param.name = "Filter Cutoff";
+                break;
+            case kParamFilterQ:
+                param.name = "Filter Q";
+                break;
+            case kParamBandwidth:
+                param.name = "Bandwidth";
+                break;
+            case kParamModAmp:
+                param.name = "FM Gain";
+                param.ranges.def = 127.0f;
+                break;
+            case kParamResCenter:
+                param.name = "Res Center Freq";
+                break;
+            case kParamResBandwidth:
+                param.name = "Res Bandwidth";
+                break;
+            }
+#endif
         }
 
         param.hints = static_cast<NativeParameterHints>(hints);
@@ -434,32 +429,46 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(index < kParamCount,);
 
-        const uint zynIndex(getZynParameterFromIndex(index));
-        CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
-
-        fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
-
-        for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
+        if (index <= kParamPart16Enabled)
         {
-            if (fMaster->part[npart] != nullptr && fMaster->part[npart]->Penabled != 0)
-                fMaster->part[npart]->SetController(zynIndex, static_cast<int>(value));
+            fParameters[index] = (value >= 0.5f) ? 1.0f : 0.0f;
+
+            char msg[24];
+            std::sprintf(msg, "/part%i/Penabled", index);
+            fMiddleWare->transmitMsg(msg, (value >= 0.5f) ? "T" : "F");
+        }
+        else
+        {
+#if 0
+            const uint zynIndex(getZynParameterFromIndex(index));
+            CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
+
+            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+
+            for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
+            {
+                if (fMaster->part[npart] != nullptr)
+                    fMaster->part[npart]->SetController(zynIndex, static_cast<int>(value));
+            }
+#endif
         }
     }
 
     void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
-        if (bank >= sPrograms.getZynBankCount())
-            return;
-        if (program >= BANK_SIZE)
-            return;
+        CARLA_SAFE_ASSERT_RETURN(program < BANK_SIZE,);
 
-        if (isOffline() || ! fIsActive)
+        if (bank == 0)
         {
-            sPrograms.load(fMaster, fMutex, channel, bank, program);
+            // reset part to default
+            // TODO
             return;
         }
 
-        fThread.loadProgramLater(channel, bank, program);
+        const char* const filename(sPrograms.getZynProgramFilename(bank, program));
+        CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0',);
+
+        fMiddleWare->transmitMsg("/load-part", "is", channel, filename);
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -467,20 +476,14 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        const CarlaMutexLocker cml(fMutex);
-
         /**/ if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
         {
-            fMaster->defaults();
-            fMaster->loadXML(value);
+            fMiddleWare->transmitMsg("/load_xmz", "s", value);
         }
         else if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
         {
-            fMaster->part[0]->defaultsinstrument();
-            fMaster->part[0]->loadXMLinstrument(value);
+            fMiddleWare->transmitMsg("/load_xiz", "is", 0, value);
         }
-
-        fMaster->applyparameters();
     }
 
     // -------------------------------------------------------------------
@@ -609,18 +612,40 @@ protected:
     char* getState() const override
     {
         char* data = nullptr;
-        fMaster->getalldata(&data);
+
+        carla_stdout("getState, valid:%s enabled:%s", bool2str(fMaster->part[0] != nullptr),
+                                                      bool2str(fMaster->part[0] != nullptr && fMaster->part[0]->Penabled));
+
+        if (fIsActive)
+        {
+            fMiddleWare->doReadOnlyOp([this, &data]{
+                fMaster->getalldata(&data);
+            });
+        }
+        else
+        {
+            fMaster->getalldata(&data);
+        }
+
         return data;
     }
 
     void setState(const char* const data) override
     {
-        fThread.stopLoadProgramLater();
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
         const CarlaMutexLocker cml(fMutex);
 
         fMaster->putalldata(const_cast<char*>(data), 0);
         fMaster->applyparameters();
+
+        fMiddleWare->updateResources(fMaster);
+
+        _setMasterParameters();
+
+        carla_stdout("setState, valid:%s enabled:%s", bool2str(fMaster->part[0] != nullptr),
+                                                      bool2str(fMaster->part[0] != nullptr && fMaster->part[0]->Penabled));
+
     }
 
     // -------------------------------------------------------------------
@@ -637,12 +662,8 @@ protected:
 
         _initMaster();
 
-        if (state != nullptr)
-        {
-            fMaster->putalldata(state, 0);
-            fMaster->applyparameters();
-            std::free(state);
-        }
+        setState(state);
+        std::free(state);
     }
 
     void sampleRateChanged(const double sampleRate) final
@@ -656,12 +677,8 @@ protected:
 
         _initMaster();
 
-        if (state != nullptr)
-        {
-            fMaster->putalldata(state, 0);
-            fMaster->applyparameters();
-            std::free(state);
-        }
+        setState(state);
+        std::free(state);
     }
 
     // -------------------------------------------------------------------
@@ -674,13 +691,13 @@ private:
     bool  fIsActive;
     float fParameters[kParamCount];
 
-    CarlaMutex        fMutex;
-    ZynAddSubFxThread fThread;
+    CarlaMutex fMutex;
 
     static uint getZynParameterFromIndex(const uint index)
     {
         switch (index)
         {
+#if 0
         case kParamFilterCutoff:
             return C_filtercutoff;
         case kParamFilterQ:
@@ -693,6 +710,7 @@ private:
             return C_resonance_center;
         case kParamResBandwidth:
             return C_resonance_bandwidth;
+#endif
         case kParamCount:
             return C_NULL;
         }
@@ -706,12 +724,20 @@ private:
     {
         fMiddleWare = new MiddleWare(fSynth);
         fMaster     = fMiddleWare->spawnMaster();
-        fThread.setMaster(fMaster);
-        fThread.startThread();
+    }
 
+    void _setMasterParameters()
+    {
+        for (int i=16; --i>=0;)
+        {
+            char msg[24];
+            std::sprintf(msg, "/part%i/Penabled", i);
+            fMiddleWare->transmitMsg(msg, (fParameters[i] >= 0.5f) ? "T" : "F");
+        }
+
+#if 0
         for (int i=0; i<NUM_MIDI_PARTS; ++i)
         {
-            fMaster->partonoff(i, 1);
             fMaster->part[i]->SetController(C_filtercutoff,        static_cast<int>(fParameters[kParamFilterCutoff]));
             fMaster->part[i]->SetController(C_filterq,             static_cast<int>(fParameters[kParamFilterQ]));
             fMaster->part[i]->SetController(C_bandwidth,           static_cast<int>(fParameters[kParamBandwidth]));
@@ -719,13 +745,11 @@ private:
             fMaster->part[i]->SetController(C_resonance_center,    static_cast<int>(fParameters[kParamResCenter]));
             fMaster->part[i]->SetController(C_resonance_bandwidth, static_cast<int>(fParameters[kParamResBandwidth]));
         }
+#endif
     }
 
     void _deleteMaster()
     {
-        //ensure that everything has stopped
-        fThread.stopThread(-1);
-
         fMaster = nullptr;
         delete fMiddleWare;
         fMiddleWare = nullptr;
