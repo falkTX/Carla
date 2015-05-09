@@ -4283,11 +4283,12 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
+        static const char* const sFallback = "urn:null";
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), sFallback);
         carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid, nullptr);
+        return fCustomURIDs.getAt(urid, sFallback);
     }
 
     // -------------------------------------------------------------------
@@ -5724,8 +5725,8 @@ private:
 
     static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(""));
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', strdup(""));
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
         // may already be an abstract path
@@ -5737,8 +5738,9 @@ private:
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        const char* const cwd(File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8());
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(cwd));
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', strdup(cwd));
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
         // may already be an absolute path
