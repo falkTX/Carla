@@ -30,8 +30,8 @@ using namespace std;
 #include "../Misc/Master.h"
 #include "AudioOut.h"
 
-AudioOut::AudioOut()
-    :samplerate(synth->samplerate), bufferSize(synth->buffersize)
+AudioOut::AudioOut(const SYNTH_T &synth_)
+    :synth(synth_), samplerate(synth.samplerate), bufferSize(synth.buffersize)
 {}
 
 AudioOut::~AudioOut()

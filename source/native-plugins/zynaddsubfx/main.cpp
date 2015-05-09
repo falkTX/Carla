@@ -20,11 +20,10 @@
 
 */
 
-#include <FL/Fl.H>
-
-#include "UI/common.H"
 
 #include <iostream>
+#include <fstream>
+#include <map>
 #include <cmath>
 #include <cctype>
 #include <algorithm>
@@ -35,43 +34,31 @@
 
 #include <getopt.h>
 
+#include <lo/lo.h>
+#include <rtosc/ports.h>
+#include <rtosc/thread-link.h>
+#include "Params/PADnoteParameters.h"
+
 #include "DSP/FFTwrapper.h"
+#include "Misc/PresetExtractor.h"
 #include "Misc/Master.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
-#include "Misc/Dump.h"
-extern Dump dump;
-
 
 //Nio System
 #include "Nio/Nio.h"
 
-#ifndef DISABLE_GUI
-#ifdef QT_GUI
+//GUI System
+#include "UI/Connection.h"
+GUI::ui_handle_t gui;
 
-#include <QApplication>
-#include "masterui.h"
-QApplication *app;
-
-#elif defined FLTK_GUI
-#include "UI/MasterUI.h"
-#elif defined NTK_GUI
-#include "UI/MasterUI.h"
-#include <FL/Fl_Shared_Image.H>
-#include <FL/Fl_Tiled_Image.H>
-#include <FL/Fl_Dial.H>
-#include <FL/Fl_Tooltip.H>
-#endif // FLTK_GUI
-
-MasterUI *ui;
-
-#endif //DISABLE_GUI
+//Glue Layer
+#include "Misc/MiddleWare.h"
+MiddleWare *middleware;
 
 using namespace std;
 
-pthread_t thr4;
 Master   *master;
-SYNTH_T  *synth;
 int       swaplr = 0; //1 for left-right swapping
 
 int Pexitprogram = 0;     //if the UI set this to 1, the program will exit
@@ -91,55 +78,28 @@ char *instance_name = 0;
 
 void exitprogram();
 
+extern pthread_t main_thread;
+
 //cleanup on signaled exit
 void sigterm_exit(int /*sig*/)
 {
+    if(Pexitprogram)
+        exit(1);
     Pexitprogram = 1;
 }
-
-
-#ifndef DISABLE_GUI
-
-#ifdef NTK_GUI
-static Fl_Tiled_Image *module_backdrop;
-#endif
-
-void
-set_module_parameters ( Fl_Widget *o )
-{
-#ifdef NTK_GUI
-    o->box( FL_DOWN_FRAME );
-    o->align( o->align() | FL_ALIGN_IMAGE_BACKDROP );
-    o->color( FL_BLACK );
-    o->image( module_backdrop );
-    o->labeltype( FL_SHADOW_LABEL );
-#else
-    o->box( FL_PLASTIC_UP_BOX );
-    o->color( FL_CYAN );
-    o->labeltype( FL_EMBOSSED_LABEL );
-#endif
-}
-#endif
 
 /*
  * Program initialisation
  */
-void initprogram(void)
+void initprogram(SYNTH_T synth, int prefered_port)
 {
-    cerr.precision(1);
-    cerr << std::fixed;
-    cerr << "\nSample Rate = \t\t" << synth->samplerate << endl;
-    cerr << "Sound Buffer Size = \t" << synth->buffersize << " samples" << endl;
-    cerr << "Internal latency = \t" << synth->buffersize_f * 1000.0f
-    / synth->samplerate_f << " ms" << endl;
-    cerr << "ADsynth Oscil.Size = \t" << synth->oscilsize << " samples" << endl;
-
-
-    master = &Master::getInstance();
+    middleware = new MiddleWare(synth, prefered_port);
+    master = middleware->spawnMaster();
     master->swaplr = swaplr;
 
     signal(SIGINT, sigterm_exit);
     signal(SIGTERM, sigterm_exit);
+    Nio::init(master->synth, master);
 }
 
 /*
@@ -147,15 +107,11 @@ void initprogram(void)
  */
 void exitprogram()
 {
-    //ensure that everything has stopped with the mutex wait
-    pthread_mutex_lock(&master->mutex);
-    pthread_mutex_unlock(&master->mutex);
-
     Nio::stop();
+    config.save();
 
-#ifndef DISABLE_GUI
-    delete ui;
-#endif
+    GUI::destroyUi(gui);
+    delete middleware;
 #if LASH
     if(lash)
         delete lash;
@@ -167,17 +123,16 @@ void exitprogram()
 
     delete [] denormalkillbuf;
     FFT_cleanup();
-    Master::deleteInstance();
 }
 
 int main(int argc, char *argv[])
 {
-    synth = new SYNTH_T;
+    main_thread = pthread_self();
+    SYNTH_T synth;
     config.init();
-    dump.startnow();
     int noui = 0;
     cerr
-    << "\nZynAddSubFX - Copyright (c) 2002-2011 Nasca Octavian Paul and others"
+    << "\nZynAddSubFX - Copyright (c) 2002-2013 Nasca Octavian Paul and others"
     << endl;
     cerr
     << "                Copyright (c) 2009-2014 Mark McCurry [active maintainer]"
@@ -189,14 +144,14 @@ int main(int argc, char *argv[])
         cerr << "Try 'zynaddsubfx --help' for command-line options." << endl;
 
     /* Get the settings from the Config*/
-    synth->samplerate = config.cfg.SampleRate;
-    synth->buffersize = config.cfg.SoundBufferSize;
-    synth->oscilsize  = config.cfg.OscilSize;
+    synth.samplerate = config.cfg.SampleRate;
+    synth.buffersize = config.cfg.SoundBufferSize;
+    synth.oscilsize  = config.cfg.OscilSize;
     swaplr = config.cfg.SwapStereo;
 
-    Nio::preferedSampleRate(synth->samplerate);
+    Nio::preferedSampleRate(synth.samplerate);
 
-    synth->alias(); //build aliases
+    synth.alias(); //build aliases
 
     sprng(time(NULL));
 
@@ -216,9 +171,6 @@ int main(int argc, char *argv[])
         },
         {
             "oscil-size", 2, NULL, 'o'
-        },
-        {
-            "dump", 2, NULL, 'D'
         },
         {
             "swap", 2, NULL, 'S'
@@ -242,6 +194,12 @@ int main(int argc, char *argv[])
             "auto-connect", 0, NULL, 'a'
         },
         {
+            "pid-in-client-name", 0, NULL, 'p'
+        },
+        {
+            "prefered-port", 1, NULL, 'P',
+        },
+        {
             "output", 1, NULL, 'O'
         },
         {
@@ -251,11 +209,15 @@ int main(int argc, char *argv[])
             "exec-after-init", 1, NULL, 'e'
         },
         {
+            "dump-oscdoc", 2, NULL, 'd'
+        },
+        {
             0, 0, 0, 0
         }
     };
     opterr = 0;
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
+    int prefered_port = -1;
 
     string loadfile, loadinstrument, execAfterInit;
 
@@ -265,7 +227,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:hvaSDUY",
+                          "l:L:r:b:o:I:O:N:e:P:hvapSDUY",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -303,16 +265,16 @@ int main(int argc, char *argv[])
                 GETOP(loadinstrument);
                 break;
             case 'r':
-                GETOPNUM(synth->samplerate);
-                if(synth->samplerate < 4000) {
+                GETOPNUM(synth.samplerate);
+                if(synth.samplerate < 4000) {
                     cerr << "ERROR:Incorrect sample rate: " << optarguments
                          << endl;
                     exit(1);
                 }
                 break;
             case 'b':
-                GETOPNUM(synth->buffersize);
-                if(synth->buffersize < 2) {
+                GETOPNUM(synth.buffersize);
+                if(synth.buffersize < 2) {
                     cerr << "ERROR:Incorrect buffer size: " << optarguments
                          << endl;
                     exit(1);
@@ -320,23 +282,20 @@ int main(int argc, char *argv[])
                 break;
             case 'o':
                 if(optarguments)
-                    synth->oscilsize = tmp = atoi(optarguments);
-                if(synth->oscilsize < MAX_AD_HARMONICS * 2)
-                    synth->oscilsize = MAX_AD_HARMONICS * 2;
-                synth->oscilsize =
+                    synth.oscilsize = tmp = atoi(optarguments);
+                if(synth.oscilsize < MAX_AD_HARMONICS * 2)
+                    synth.oscilsize = MAX_AD_HARMONICS * 2;
+                synth.oscilsize =
                     (int) powf(2,
-                               ceil(logf(synth->oscilsize - 1.0f) / logf(2.0f)));
-                if(tmp != synth->oscilsize)
+                               ceil(logf(synth.oscilsize - 1.0f) / logf(2.0f)));
+                if(tmp != synth.oscilsize)
                     cerr
                     <<
-                    "synth->oscilsize is wrong (must be 2^n) or too small. Adjusting to "
-                    << synth->oscilsize << "." << endl;
+                    "synth.oscilsize is wrong (must be 2^n) or too small. Adjusting to "
+                    << synth.oscilsize << "." << endl;
                 break;
             case 'S':
                 swaplr = 1;
-                break;
-            case 'D':
-                dump.startnow();
                 break;
             case 'N':
                 Nio::setPostfix(optarguments);
@@ -352,8 +311,29 @@ int main(int argc, char *argv[])
             case 'a':
                 Nio::autoConnect = true;
                 break;
+            case 'p':
+                Nio::pidInClientName = true;
+                break;
+            case 'P':
+                if(optarguments)
+                    prefered_port = atoi(optarguments);
+                break;
             case 'e':
                 GETOP(execAfterInit);
+                break;
+            case 'd':
+                if(optarguments)
+                {
+                    rtosc::OscDocFormatter s;
+                    ofstream outfile(optarguments);
+                    s.prog_name    = "ZynAddSubFX";
+                    s.p            = &Master::ports;
+                    s.uri          = "http://example.com/fake/";
+                    s.doc_origin   = "http://example.com/fake/url.xml";
+                    s.author_first = "Mark";
+                    s.author_last  = "McCurry";
+                    outfile << s;
+                }
                 break;
             case '?':
                 cerr << "ERROR:Bad option or parameter.\n" << endl;
@@ -362,7 +342,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    synth->alias();
+    synth.alias();
 
     if(exitwithversion) {
         cout << "Version: " << VERSION << endl;
@@ -379,25 +359,28 @@ int main(int argc, char *argv[])
         "  -b BS, --buffer-size=SR\t\t Set the buffer size (granularity)\n"
              << "  -o OS, --oscil-size=OS\t\t Set the ADsynth oscil. size\n"
              << "  -S , --swap\t\t\t\t Swap Left <--> Right\n"
-             << "  -D , --dump\t\t\t\t Dumps midi note ON/OFF commands\n"
              <<
         "  -U , --no-gui\t\t\t\t Run ZynAddSubFX without user interface\n"
              << "  -N , --named\t\t\t\t Postfix IO Name when possible\n"
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
+             << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
+                "client name\n"
+             << "  -P , --prefered-port\t\t\t Prefered OSC Port\n"
              << "  -O , --output\t\t\t\t Set Output Engine\n"
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"
+             << "  -d , --dump-oscdoc=FILE\t\t Dump oscdoc xml to file\n"
              << endl;
 
         return 0;
     }
 
     //produce denormal buf
-    denormalkillbuf = new float [synth->buffersize];
-    for(int i = 0; i < synth->buffersize; ++i)
+    denormalkillbuf = new float [synth.buffersize];
+    for(int i = 0; i < synth.buffersize; ++i)
         denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
 
-    initprogram();
+    initprogram(synth, prefered_port);
 
     if(!loadfile.empty()) {
         int tmp = master->loadXML(loadfile.c_str());
@@ -423,12 +406,20 @@ int main(int argc, char *argv[])
         }
         else {
             master->part[loadtopart]->applyparameters();
+            master->part[loadtopart]->initialize_rt();
             cout << "Instrument file loaded." << endl;
         }
     }
 
     //Run the Nio system
     bool ioGood = Nio::start();
+    
+    cerr.precision(1);
+    cerr << std::fixed;
+    cerr << "\nSample Rate = \t\t" << synth.samplerate << endl;
+    cerr << "Sound Buffer Size = \t" << synth.buffersize << " samples" << endl;
+    cerr << "Internal latency = \t" << synth.dt() * 1000.0f << " ms" << endl;
+    cerr << "ADsynth Oscil.Size = \t" << synth.oscilsize << " samples" << endl;
 
     if(!execAfterInit.empty()) {
         cout << "Executing user supplied command: " << execAfterInit << endl;
@@ -437,49 +428,20 @@ int main(int argc, char *argv[])
     }
 
 
-#ifndef DISABLE_GUI
+    gui = NULL;
+    if(!noui)
+        gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
+    middleware->setUiCallback(GUI::raiseUi, gui);
+    middleware->setIdleCallback([](){GUI::tickUi(gui);});
 
-#ifdef NTK_GUI
-    fl_register_images();
-
-    Fl_Tooltip::textcolor(0x0);
-
-    Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
-        Fl_Dial::default_image(img);
-    else
-        Fl_Dial::default_image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/knob.png"));
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
-        Fl::scheme_bg(new Fl_Tiled_Image(img));
-    else
-        Fl::scheme_bg(new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/window_backdrop.png")));
-
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
-        module_backdrop = new Fl_Tiled_Image(img);
-    else
-        module_backdrop = new Fl_Tiled_Image(Fl_Shared_Image::get(SOURCE_DIR "/../pixmaps/module_backdrop.png"));
-
-    Fl::background(  50, 50, 50 );
-    Fl::background2(  70, 70, 70 );
-    Fl::foreground( 255,255,255 );
-#endif
-
-    ui = new MasterUI(master, &Pexitprogram);
-    
-    if ( !noui) 
+    if(!noui)
     {
-        ui->showUI();
-
+        GUI::raiseUi(gui, "/show",  "i", config.cfg.UserInterfaceMode);
         if(!ioGood)
-            fl_alert(
-                "Default IO did not initialize.\nDefaulting to NULL backend.");
+            GUI::raiseUi(gui, "/alert", "s",
+                    "Default IO did not initialize.\nDefaulting to NULL backend.");
     }
 
-#endif
-
-#ifndef DISABLE_GUI
 #if USE_NSM
     char *nsm_url = getenv("NSM_URL");
 
@@ -494,7 +456,6 @@ int main(int argc, char *argv[])
         }
     }
 #endif
-#endif
 
 #if USE_NSM
     if(!nsm)
@@ -502,17 +463,11 @@ int main(int argc, char *argv[])
     {
 #if LASH
         lash = new LASHClient(&argc, &argv);
-#ifndef DISABLE_GUI
-        ui->sm_indicator1->value(1);
-        ui->sm_indicator2->value(1);
-        ui->sm_indicator1->tooltip("LASH");
-        ui->sm_indicator2->tooltip("LASH");
-#endif
+        GUI::raiseUi(gui, "/session-type", "s", "LASH");
 #endif
     }
 
     while(Pexitprogram == 0) {
-#ifndef DISABLE_GUI
 #if USE_NSM
         if(nsm) {
             nsm->check();
@@ -524,11 +479,11 @@ int main(int argc, char *argv[])
             string filename;
             switch(lash->checkevents(filename)) {
                 case LASHClient::Save:
-                    ui->do_save_master(filename.c_str());
+                    GUI::raiseUi(gui, "/save-master", "s", filename.c_str());
                     lash->confirmevent(LASHClient::Save);
                     break;
                 case LASHClient::Restore:
-                    ui->do_load_master(filename.c_str());
+                    GUI::raiseUi(gui, "/load-master", "s", filename.c_str());
                     lash->confirmevent(LASHClient::Restore);
                     break;
                 case LASHClient::Quit:
@@ -542,11 +497,8 @@ int main(int argc, char *argv[])
 #if USE_NSM
 done:
 #endif
-
-        Fl::wait(0.02f);
-#else
-        usleep(100000);
-#endif
+        GUI::tickUi(gui);
+        middleware->tick();
     }
 
     exitprogram();

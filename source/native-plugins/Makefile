@@ -19,21 +19,20 @@ BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
-ifneq ($(MACOS),true)
-ZYN_CXX_FLAGS += -DHAVE_SCHEDULER
-endif
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ifeq ($(HAVE_NTK),true)
 FLUID          = ntk-fluid
 ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
-else
+else # HAVE_NTK
 FLUID          = fluid
 ZYN_CXX_FLAGS += -DFLTK_GUI
 ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
-endif
-endif
-endif
+endif # HAVE_NTK
+else  # HAVE_ZYN_UI_DEPS
+ZYN_CXX_FLAGS += -DNO_UI
+endif # HAVE_ZYN_UI_DEPS
+endif # HAVE_ZYN_DEPS
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Set objects

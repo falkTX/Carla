@@ -30,7 +30,7 @@
 class AudioOut:public virtual Engine
 {
     public:
-        AudioOut();
+        AudioOut(const SYNTH_T &synth);
         virtual ~AudioOut();
 
         /**Sets the Sample Rate of this Output
@@ -54,6 +54,7 @@ class AudioOut:public virtual Engine
          * (has nsamples sampled at a rate of samplerate)*/
         const Stereo<float *> getNext();
 
+        const SYNTH_T &synth;
         int samplerate;
         int bufferSize;
 };

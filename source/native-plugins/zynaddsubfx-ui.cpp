@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,21 +24,21 @@
 CarlaString gUiPixmapPath;
 
 // zynaddsubfx ui includes
-#include "zynaddsubfx/UI/NioUI.cpp"
-#include "zynaddsubfx/UI/WidgetPDial.cpp"
-#include "zynaddsubfx/UI/ADnoteUI.cpp"
-#include "zynaddsubfx/UI/BankUI.cpp"
-#include "zynaddsubfx/UI/ConfigUI.cpp"
-#include "zynaddsubfx/UI/EffUI.cpp"
-#include "zynaddsubfx/UI/EnvelopeUI.cpp"
-#include "zynaddsubfx/UI/FilterUI.cpp"
-#include "zynaddsubfx/UI/LFOUI.cpp"
-#include "zynaddsubfx/UI/MasterUI.cpp"
-#include "zynaddsubfx/UI/MicrotonalUI.cpp"
-#include "zynaddsubfx/UI/OscilGenUI.cpp"
-#include "zynaddsubfx/UI/PADnoteUI.cpp"
-#include "zynaddsubfx/UI/PartUI.cpp"
-#include "zynaddsubfx/UI/PresetsUI.cpp"
-#include "zynaddsubfx/UI/ResonanceUI.cpp"
-#include "zynaddsubfx/UI/SUBnoteUI.cpp"
-#include "zynaddsubfx/UI/VirKeyboard.cpp"
+// #include "zynaddsubfx/UI/NioUI.cpp"
+// #include "zynaddsubfx/UI/WidgetPDial.cpp"
+// #include "zynaddsubfx/UI/ADnoteUI.cpp"
+// #include "zynaddsubfx/UI/BankUI.cpp"
+// #include "zynaddsubfx/UI/ConfigUI.cpp"
+// #include "zynaddsubfx/UI/EffUI.cpp"
+// #include "zynaddsubfx/UI/EnvelopeUI.cpp"
+// #include "zynaddsubfx/UI/FilterUI.cpp"
+// #include "zynaddsubfx/UI/LFOUI.cpp"
+// #include "zynaddsubfx/UI/MasterUI.cpp"
+// #include "zynaddsubfx/UI/MicrotonalUI.cpp"
+// #include "zynaddsubfx/UI/OscilGenUI.cpp"
+// #include "zynaddsubfx/UI/PADnoteUI.cpp"
+// #include "zynaddsubfx/UI/PartUI.cpp"
+// #include "zynaddsubfx/UI/PresetsUI.cpp"
+// #include "zynaddsubfx/UI/ResonanceUI.cpp"
+// #include "zynaddsubfx/UI/SUBnoteUI.cpp"
+// #include "zynaddsubfx/UI/VirKeyboard.cpp"

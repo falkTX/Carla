@@ -20,14 +20,16 @@
 
 */
 
-#include <math.h>
-#include <stdio.h>
+#include <cmath>
+#include <cstdio>
+#include <cassert>
 
 #include "Filter.h"
 #include "AnalogFilter.h"
 #include "FormantFilter.h"
 #include "SVFilter.h"
 #include "../Params/FilterParams.h"
+#include "../Misc/Allocator.h"
 
 Filter::Filter(unsigned int srate, int bufsize)
     : outgain(1.0f),
@@ -37,12 +39,11 @@ Filter::Filter(unsigned int srate, int bufsize)
     alias();
 }
 
-Filter *Filter::generate(FilterParams *pars, unsigned int srate, int bufsize)
+Filter *Filter::generate(Allocator &memory, FilterParams *pars,
+        unsigned int srate, int bufsize)
 {
-    if (srate == 0)
-        srate = synth->samplerate;
-    if (bufsize == 0)
-        bufsize = synth->buffersize;
+    assert(srate != 0);
+    assert(bufsize != 0);
 
     unsigned char Ftype   = pars->Ptype;
     unsigned char Fstages = pars->Pstages;
@@ -50,16 +51,16 @@ Filter *Filter::generate(FilterParams *pars, unsigned int srate, int bufsize)
     Filter *filter;
     switch(pars->Pcategory) {
         case 1:
-            filter = new FormantFilter(pars, srate, bufsize);
+            filter = memory.alloc<FormantFilter>(pars, &memory, srate, bufsize);
             break;
         case 2:
-            filter = new SVFilter(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
+            filter = memory.alloc<SVFilter>(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
             filter->outgain = dB2rap(pars->getgain());
             if(filter->outgain > 1.0f)
                 filter->outgain = sqrt(filter->outgain);
             break;
         default:
-            filter = new AnalogFilter(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
+            filter = memory.alloc<AnalogFilter>(Ftype, 1000.0f, pars->getq(), Fstages, srate, bufsize);
             if((Ftype >= 6) && (Ftype <= 8))
                 filter->setgain(pars->getgain());
             else

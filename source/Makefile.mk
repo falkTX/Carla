@@ -419,6 +419,9 @@ ifeq ($(HAVE_NTK),true)
 HAVE_ZYN_UI_DEPS = true
 endif
 
+# TESTING
+HAVE_ZYN_UI_DEPS = false
+
 ifeq ($(HAVE_DGL),true)
 NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
 ifeq ($(HAVE_PROJECTM),true)
@@ -429,7 +432,7 @@ endif
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
 NATIVE_PLUGINS_LIBS  += -lclxclient -lclthreads -lzita-convolver -lzita-resampler
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo libpng12 fftw3f x11 xft)
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo libpng12 fftw3f x11 xft zlib)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)

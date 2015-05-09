@@ -1,6 +1,7 @@
 #include "EngineMgr.h"
 #include <algorithm>
 #include <iostream>
+#include <cassert>
 #include "Nio.h"
 #include "InMgr.h"
 #include "OutMgr.h"
@@ -9,12 +10,14 @@
 #include "NulEngine.h"
 #if OSS
 #include "OssEngine.h"
+#include "OssMultiEngine.h"
 #endif
 #if ALSA
 #include "AlsaEngine.h"
 #endif
 #if JACK
 #include "JackEngine.h"
+#include "JackMultiEngine.h"
 #endif
 #if PORTAUDIO
 #include "PaEngine.h"
@@ -22,29 +25,32 @@
 
 using namespace std;
 
-EngineMgr &EngineMgr::getInstance()
+EngineMgr &EngineMgr::getInstance(const SYNTH_T *synth)
 {
-    static EngineMgr instance;
+    static EngineMgr instance(synth);
     return instance;
 }
 
-EngineMgr::EngineMgr()
+EngineMgr::EngineMgr(const SYNTH_T *synth)
 {
-    Engine *defaultEng = new NulEngine();
+    assert(synth);
+    Engine *defaultEng = new NulEngine(*synth);
 
     //conditional compiling mess (but contained)
     engines.push_back(defaultEng);
 #if OSS
-    engines.push_back(new OssEngine());
+    engines.push_back(new OssEngine(*synth));
+    engines.push_back(new OssMultiEngine(*synth));
 #endif
 #if ALSA
-    engines.push_back(new AlsaEngine());
+    engines.push_back(new AlsaEngine(*synth));
 #endif
 #if JACK
-    engines.push_back(new JackEngine());
+    engines.push_back(new JackEngine(*synth));
+    engines.push_back(new JackMultiEngine(*synth));
 #endif
 #if PORTAUDIO
-    engines.push_back(new PaEngine());
+    engines.push_back(new PaEngine(*synth));
 #endif
 
     defaultOut = dynamic_cast<AudioOut *>(defaultEng);

@@ -23,9 +23,8 @@
 #ifndef PRESETS_H
 #define PRESETS_H
 
-#include "../Misc/XMLwrapper.h"
-
-#include "PresetsStore.h"
+#include "../globals.h"
+class PresetsStore;
 
 /**Presets and Clipboard management*/
 class Presets
@@ -35,22 +34,19 @@ class Presets
         Presets();
         virtual ~Presets();
 
-        virtual void copy(const char *name); /**<if name==NULL, the clipboard is used*/
-        virtual void paste(int npreset); //npreset==0 for clipboard
-        virtual bool checkclipboardtype();
-        void deletepreset(int npreset);
+        virtual void copy(PresetsStore &ps, const char *name); /**<if name==NULL, the clipboard is used*/
+        //virtual void paste(PresetsStore &ps, int npreset); //npreset==0 for clipboard
+        virtual bool checkclipboardtype(PresetsStore &ps);
+        void deletepreset(PresetsStore &ps, int npreset);
 
         char type[MAX_PRESETTYPE_SIZE];
         //void setelement(int n);
-
-        void rescanforpresets();
-
     protected:
         void setpresettype(const char *type);
     private:
         virtual void add2XML(XMLwrapper *xml)    = 0;
-        virtual void getfromXML(XMLwrapper *xml) = 0;
-        virtual void defaults() = 0;
+        //virtual void getfromXML(XMLwrapper *xml) = 0;
+        //virtual void defaults() = 0;
 };
 
 #endif

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -111,11 +111,9 @@ public:
             return;
         fInitiated = true;
 
-        Master& master(Master::getInstance());
-
-        pthread_mutex_lock(&master.mutex);
-
         fPrograms.append(new ProgramInfo(0, 0, "default"));
+
+        Master& master(getMasterInstance());
 
         // refresh banks
         master.bank.rescanforbanks();
@@ -137,48 +135,43 @@ public:
                 fPrograms.append(new ProgramInfo(i+1, instrument, insName.c_str()));
             }
         }
-
-        pthread_mutex_unlock(&master.mutex);
     }
 
-    void load(Master* const master, const uint8_t channel, const uint32_t bank, const uint32_t program)
+    void load(Master* const master, CarlaMutex& mutex, const uint8_t channel, const uint32_t bank, const uint32_t program)
     {
         if (bank == 0)
         {
-            pthread_mutex_lock(&master->mutex);
+            if (program != 0)
+                return;
+
+            const CarlaMutexLocker cml(mutex);
 
             master->partonoff(channel, 1);
             master->part[channel]->defaults();
             master->part[channel]->applyparameters(false);
-
-            pthread_mutex_unlock(&master->mutex);
-
             return;
         }
 
-        const std::string& bankdir(master->bank.banks[bank-1].dir);
+        const Master&      gmaster(getMasterInstance());
+        const std::string& bankdir(gmaster.bank.banks[bank-1].dir);
 
-        if (! bankdir.empty())
-        {
-            pthread_mutex_lock(&master->mutex);
+        if (bankdir.empty())
+            return;
 
-            master->partonoff(channel, 1);
+        const CarlaMutexLocker cml(mutex);
 
-            master->bank.loadbank(bankdir);
-            master->bank.loadfromslot(program, master->part[channel]);
-
-            master->part[channel]->applyparameters(false);
-
-            pthread_mutex_unlock(&master->mutex);
-        }
+        master->partonoff(channel, 1);
+        master->bank.loadbank(bankdir);
+        master->bank.loadfromslot(program, master->part[channel]);
+        master->part[channel]->applyparameters(false);
     }
 
-    uint32_t count() const noexcept
+    uint32_t getNativeMidiProgramCount() const noexcept
     {
         return static_cast<uint32_t>(fPrograms.count());
     }
 
-    const NativeMidiProgram* getInfo(const uint32_t index) const noexcept
+    const NativeMidiProgram* getNativeMidiProgramInfo(const uint32_t index) const noexcept
     {
         if (index >= fPrograms.count())
             return nullptr;
@@ -191,6 +184,13 @@ public:
         fRetProgram.name    = pInfo->name;
 
         return &fRetProgram;
+    }
+
+    uint32_t getZynBankCount() const
+    {
+        const Master& master(getMasterInstance());
+
+        return master.bank.banks.size();
     }
 
 private:
@@ -226,6 +226,13 @@ private:
     mutable NativeMidiProgram fRetProgram;
     LinkedList<const ProgramInfo*> fPrograms;
 
+    static Master& getMasterInstance()
+    {
+        static SYNTH_T synth;
+        static Master  master(synth);
+        return master;
+    }
+
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)
 };
@@ -234,132 +241,13 @@ static ZynAddSubFxPrograms sPrograms;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxInstanceCount
-{
-public:
-    ZynAddSubFxInstanceCount()
-        : fCount(0),
-          fMutex() {}
-
-    ~ZynAddSubFxInstanceCount()
-    {
-        CARLA_SAFE_ASSERT(fCount == 0);
-    }
-
-    void addOne(const NativeHostDescriptor* const host)
-    {
-        if (fCount++ != 0)
-            return;
-
-        const CarlaMutexLocker cml(fMutex);
-
-        CARLA_SAFE_ASSERT(synth == nullptr);
-        CARLA_SAFE_ASSERT(denormalkillbuf == nullptr);
-
-        reinit(host);
-
-#ifdef WANT_ZYNADDSUBFX_UI
-        if (gPixmapPath.isEmpty())
-        {
-            gPixmapPath   = host->resourceDir;
-            gPixmapPath  += "/zynaddsubfx/";
-            gUiPixmapPath = gPixmapPath;
-        }
-#endif
-    }
-
-    void removeOne()
-    {
-        if (--fCount != 0)
-            return;
-
-        const CarlaMutexLocker cml(fMutex);
-
-        CARLA_SAFE_ASSERT(synth != nullptr);
-        CARLA_SAFE_ASSERT(denormalkillbuf != nullptr);
-
-        Master::deleteInstance();
-
-        delete[] denormalkillbuf;
-        denormalkillbuf = nullptr;
-
-        delete synth;
-        synth = nullptr;
-    }
-
-    void maybeReinit(const NativeHostDescriptor* const host)
-    {
-        if (static_cast< int>(host->get_buffer_size(host->handle)) == synth->buffersize &&
-            static_cast<uint>(host->get_sample_rate(host->handle)) == synth->samplerate)
-            return;
-
-        const CarlaMutexLocker cml(fMutex);
-
-        reinit(host);
-    }
-
-    CarlaMutex& getLock() noexcept
-    {
-        return fMutex;
-    }
-
-private:
-    int fCount;
-    CarlaMutex fMutex;
-
-    void reinit(const NativeHostDescriptor* const host)
-    {
-        Master::deleteInstance();
-
-        if (denormalkillbuf != nullptr)
-        {
-            delete[] denormalkillbuf;
-            denormalkillbuf = nullptr;
-        }
-
-        if (synth != nullptr)
-        {
-            delete synth;
-            synth = nullptr;
-        }
-
-        synth = new SYNTH_T();
-        synth->buffersize = static_cast<int>(host->get_buffer_size(host->handle));
-        synth->samplerate = static_cast<uint>(host->get_sample_rate(host->handle));
-
-        config.init();
-        config.cfg.SoundBufferSize = synth->buffersize;
-        config.cfg.SampleRate      = static_cast<int>(synth->samplerate);
-        config.cfg.GzipCompression = 0;
-
-        sprng(static_cast<prng_t>(std::time(nullptr)));
-
-        denormalkillbuf = new float[synth->buffersize];
-        for (int i=0; i < synth->buffersize; ++i)
-            denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
-
-        if (synth->buffersize > 32)
-            synth->buffersize = 32;
-
-        synth->alias();
-
-        Master::getInstance();
-    }
-
-    CARLA_PREVENT_HEAP_ALLOCATION
-    CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxInstanceCount)
-};
-
-static ZynAddSubFxInstanceCount sInstanceCount;
-
-// -----------------------------------------------------------------------
-
 class ZynAddSubFxThread : public CarlaThread
 {
 public:
-    ZynAddSubFxThread(Master* const master, const NativeHostDescriptor* const host)
+    ZynAddSubFxThread(Master* const master, CarlaMutex& mutex, const NativeHostDescriptor* const host)
         : CarlaThread("ZynAddSubFxThread"),
           fMaster(master),
+          fMutex(mutex),
           kHost(host),
 #ifdef WANT_ZYNADDSUBFX_UI
           fUi(nullptr),
@@ -475,12 +363,11 @@ protected:
                 if (fUi == nullptr)
                 {
                     fUiClosed = 0;
-                    fUi = new MasterUI(fMaster, &fUiClosed);
+                    fUi = new MasterUI(&fUiClosed, &fOscIface);
                     fUi->masterwindow->label(kHost->uiName);
-                    fUi->showUI();
                 }
-                else
-                    fUi->showUI();
+
+                fUi->showUI(1);
             }
             else if (fNextUiAction == 0) // close
             {
@@ -509,7 +396,7 @@ protected:
             if (fChangeProgram)
             {
                 fChangeProgram = false;
-                sPrograms.load(fMaster, fNextChannel, fNextBank, fNextProgram);
+                sPrograms.load(fMaster, fMutex, fNextChannel, fNextBank, fNextProgram);
                 fNextChannel = 0;
                 fNextBank    = 0;
                 fNextProgram = 0;
@@ -545,12 +432,14 @@ protected:
 
 private:
     Master* fMaster;
+    CarlaMutex& fMutex;
     const NativeHostDescriptor* const kHost;
 
 #ifdef WANT_ZYNADDSUBFX_UI
     MasterUI* fUi;
     int       fUiClosed;
     volatile int fNextUiAction;
+    Fl_Osc_Interface fOscIface;
 #endif
 
     volatile bool     fChangeProgram;
@@ -580,9 +469,10 @@ public:
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMaster(nullptr),
-          fSampleRate(static_cast<uint>(getSampleRate())),
+          fSynth(),
           fIsActive(false),
-          fThread(nullptr, host),
+          fMutex(),
+          fThread(nullptr, fMutex, host),
           leakDetector_ZynAddSubFxPlugin()
     {
         // init parameters to default
@@ -593,7 +483,19 @@ public:
         fParameters[kParamResCenter]    = 64.0f;
         fParameters[kParamResBandwidth] = 64.0f;
 
+        fSynth.buffersize = static_cast<int>(getBufferSize());
+        fSynth.samplerate = static_cast<uint>(getSampleRate());
+
+        //if (fSynth.buffersize > 32)
+        //    fSynth.buffersize = 32;
+
+        fSynth.alias();
+
+        // FIXME
+        fSynth.samplerate_f = getSampleRate();
+
         _initMaster();
+
         sPrograms.initIfNeeded();
     }
 
@@ -668,14 +570,14 @@ protected:
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
-    uint32_t getMidiProgramCount() const override
+    uint32_t getMidiProgramCount() const noexcept override
     {
-        return sPrograms.count();
+        return sPrograms.getNativeMidiProgramCount();
     }
 
-    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const override
+    const NativeMidiProgram* getMidiProgramInfo(const uint32_t index) const noexcept override
     {
-        return sPrograms.getInfo(index);
+        return sPrograms.getNativeMidiProgramInfo(index);
     }
 
     // -------------------------------------------------------------------
@@ -699,14 +601,14 @@ protected:
 
     void setMidiProgram(const uint8_t channel, const uint32_t bank, const uint32_t program) override
     {
-        if (bank >= fMaster->bank.banks.size())
+        if (bank >= sPrograms.getZynBankCount())
             return;
         if (program >= BANK_SIZE)
             return;
 
         if (isOffline() || ! fIsActive)
         {
-            sPrograms.load(fMaster, channel, bank, program);
+            sPrograms.load(fMaster, fMutex, channel, bank, program);
 #ifdef WANT_ZYNADDSUBFX_UI
             fThread.uiRepaint();
 #endif
@@ -721,7 +623,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        pthread_mutex_lock(&fMaster->mutex);
+        const CarlaMutexLocker cml(fMutex);
 
         /**/ if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
         {
@@ -734,9 +636,7 @@ protected:
             fMaster->part[0]->loadXMLinstrument(value);
         }
 
-        fMaster->applyparameters(false);
-
-        pthread_mutex_unlock(&fMaster->mutex);
+        fMaster->applyparameters();
     }
 
     // -------------------------------------------------------------------
@@ -754,13 +654,15 @@ protected:
 
     void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
-        const CarlaMutexTryLocker cmtl(sInstanceCount.getLock());
-
-        if (cmtl.wasNotLocked() || pthread_mutex_trylock(&fMaster->mutex) != 0)
+        if (! fMutex.tryLock())
         {
-            FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
-            FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
-            return;
+            if (! isOffline())
+            {
+                FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
+                FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
+                return;
+            }
+            fMutex.lock();
         }
 
         for (uint32_t i=0; i < midiEventCount; ++i)
@@ -811,9 +713,9 @@ protected:
             }
         }
 
-        fMaster->GetAudioOutSamples(frames, fSampleRate, outBuffer[0], outBuffer[1]);
+        fMaster->GetAudioOutSamples(frames, fSynth.samplerate, outBuffer[0], outBuffer[1]);
 
-        pthread_mutex_unlock(&fMaster->mutex);
+        fMutex.unlock();
     }
 
 #ifdef WANT_ZYNADDSUBFX_UI
@@ -834,8 +736,6 @@ protected:
 
     char* getState() const override
     {
-        config.save();
-
         char* data = nullptr;
         fMaster->getalldata(&data);
         return data;
@@ -844,43 +744,53 @@ protected:
     void setState(const char* const data) override
     {
         fThread.stopLoadProgramLater();
+
+        const CarlaMutexLocker cml(fMutex);
+
         fMaster->putalldata(const_cast<char*>(data), 0);
-        fMaster->applyparameters(true);
+        fMaster->applyparameters();
     }
 
     // -------------------------------------------------------------------
     // Plugin dispatcher
 
-    void bufferSizeChanged(const uint32_t) final
+    void bufferSizeChanged(const uint32_t bufferSize) final
     {
         char* const state(getState());
 
         _deleteMaster();
-        sInstanceCount.maybeReinit(getHostHandle());
+
+        fSynth.buffersize = static_cast<int>(bufferSize);
+        fSynth.alias();
+
         _initMaster();
 
         if (state != nullptr)
         {
             fMaster->putalldata(state, 0);
-            fMaster->applyparameters(true);
+            fMaster->applyparameters();
             std::free(state);
         }
     }
 
     void sampleRateChanged(const double sampleRate) final
     {
-        fSampleRate = static_cast<uint>(sampleRate);
-
         char* const state(getState());
 
         _deleteMaster();
-        sInstanceCount.maybeReinit(getHostHandle());
+
+        fSynth.samplerate = static_cast<uint>(sampleRate);
+        fSynth.alias();
+
+        // FIXME
+        fSynth.samplerate_f = sampleRate;
+
         _initMaster();
 
         if (state != nullptr)
         {
             fMaster->putalldata(state, 0);
-            fMaster->applyparameters(true);
+            fMaster->applyparameters();
             std::free(state);
         }
     }
@@ -896,34 +806,12 @@ protected:
 
 private:
     Master* fMaster;
-    uint    fSampleRate;
+    SYNTH_T fSynth;
     bool    fIsActive;
     float   fParameters[kParamCount];
 
+    CarlaMutex        fMutex;
     ZynAddSubFxThread fThread;
-
-    /*
-    static Parameters getParameterFromZynIndex(const MidiControllers index)
-    {
-        switch (index)
-        {
-        case C_filtercutoff:
-            return kParamFilterCutoff;
-        case C_filterq:
-            return kParamFilterQ;
-        case C_bandwidth:
-            return kParamBandwidth;
-        case C_fmamp:
-            return kParamModAmp;
-        case C_resonance_center:
-            return kParamResCenter;
-        case C_resonance_bandwidth:
-            return kParamResBandwidth;
-        default:
-            return kParamCount;
-        }
-    }
-    */
 
     static uint getZynParameterFromIndex(const uint index)
     {
@@ -952,7 +840,7 @@ private:
 
     void _initMaster()
     {
-        fMaster = new Master();
+        fMaster = new Master(fSynth);
         fThread.setMaster(fMaster);
         fThread.startThread();
 
@@ -971,8 +859,6 @@ private:
     void _deleteMaster()
     {
         //ensure that everything has stopped
-        pthread_mutex_lock(&fMaster->mutex);
-        pthread_mutex_unlock(&fMaster->mutex);
         fThread.stopThread(-1);
 
         delete fMaster;
@@ -984,14 +870,33 @@ private:
 public:
     static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
     {
-        sInstanceCount.addOne(host);
+        static bool needsInit = true;
+
+        if (needsInit)
+        {
+            needsInit = false;
+            config.init();
+
+            sprng(static_cast<prng_t>(std::time(nullptr)));
+
+            // FIXME - kill this
+            denormalkillbuf = new float[8192];
+            for (int i=0; i < 8192; ++i)
+                denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
+
+#ifdef WANT_ZYNADDSUBFX_UI
+            gPixmapPath   = host->resourceDir;
+            gPixmapPath  += "/zynaddsubfx/";
+            gUiPixmapPath = gPixmapPath;
+#endif
+        }
+
         return new ZynAddSubFxPlugin(host);
     }
 
     static void _cleanup(NativePluginHandle handle)
     {
         delete (ZynAddSubFxPlugin*)handle;
-        sInstanceCount.removeOne();
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)

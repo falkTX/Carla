@@ -25,8 +25,8 @@
 
 using namespace std;
 
-PaEngine::PaEngine()
-    :stream(NULL)
+PaEngine::PaEngine(const SYNTH_T &synth)
+    :AudioOut(synth), stream(NULL)
 {
     name = "PA";
 }
@@ -60,8 +60,8 @@ bool PaEngine::Start()
     Pa_OpenStream(&stream,
                   NULL,
                   &outputParameters,
-                  synth->samplerate,
-                  synth->buffersize,
+                  synth.samplerate,
+                  synth.buffersize,
                   0,
                   PAprocess,
                   (void *) this);

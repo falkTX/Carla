@@ -30,7 +30,7 @@
 class PaEngine:public AudioOut
 {
     public:
-        PaEngine();
+        PaEngine(const SYNTH_T &synth);
         ~PaEngine();
 
         bool Start();

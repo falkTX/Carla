@@ -25,11 +25,8 @@
 
 #include <string>
 #include <vector>
-#include "../Misc/XMLwrapper.h"
-#include "../Misc/Config.h"
 
-#define MAX_PRESETTYPE_SIZE 30
-
+class XMLwrapper;
 class PresetsStore
 {
     public:
@@ -37,30 +34,29 @@ class PresetsStore
         ~PresetsStore();
 
         //Clipboard stuff
-        void copyclipboard(XMLwrapper *xml, char *type);
-        bool pasteclipboard(XMLwrapper *xml);
+        void copyclipboard(XMLwrapper &xml, char *type);
+        bool pasteclipboard(XMLwrapper &xml);
         bool checkclipboardtype(const char *type);
 
         //presets stuff
-        void copypreset(XMLwrapper *xml, char *type, std::string name);
-        bool pastepreset(XMLwrapper *xml, unsigned int npreset);
+        void copypreset(XMLwrapper &xml, char *type, std::string name);
+        bool pastepreset(XMLwrapper &xml, unsigned int npreset);
         void deletepreset(unsigned int npreset);
+        void deletepreset(std::string file);
 
         struct presetstruct {
-            presetstruct(std::string _file, std::string _name)
-                :file(_file), name(_name) {}
             bool operator<(const presetstruct &b) const;
             std::string file;
             std::string name;
+            std::string type;
         };
         std::vector<presetstruct> presets;
 
-        void rescanforpresets(const std::string &type);
+        void scanforpresets();
 
-    private:
         struct {
-            char *data;
-            char  type[MAX_PRESETTYPE_SIZE];
+            std::string data;
+            std::string type;
         } clipboard;
 
         void clearpresets();

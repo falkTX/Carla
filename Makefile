@@ -73,6 +73,10 @@ ALL_LIBS += $(MODULEDIR)/rtaudio.a
 ALL_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
+ifeq ($(HAVE_ZYN_DEPS),true)
+ALL_LIBS += $(MODULEDIR)/rtosc.a
+endif
+
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt4.a
 endif
@@ -534,9 +538,13 @@ endif
 		bin/resources/nekofilter/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+endif
+endif
 
 	# Install resources (re-use python files)
 	$(LINK) $(PREFIX)/share/carla/carla_app.py                $(DESTDIR)$(PREFIX)/share/carla/resources/

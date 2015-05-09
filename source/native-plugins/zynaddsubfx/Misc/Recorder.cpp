@@ -23,10 +23,11 @@
 #include <sys/stat.h>
 #include "Recorder.h"
 #include "WavFile.h"
+#include "../globals.h"
 #include "../Nio/Nio.h"
 
-Recorder::Recorder()
-    :status(0), notetrigger(0)
+Recorder::Recorder(const SYNTH_T &synth_)
+    :status(0), notetrigger(0),synth(synth_)
 {}
 
 Recorder::~Recorder()
@@ -45,7 +46,7 @@ int Recorder::preparefile(std::string filename_, int overwrite)
             return 1;
     }
 
-    Nio::waveNew(new WavFile(filename_, synth->samplerate, 2));
+    Nio::waveNew(new WavFile(filename_, synth.samplerate, 2));
 
     status = 1; //ready
 

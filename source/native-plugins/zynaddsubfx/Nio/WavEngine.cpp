@@ -25,8 +25,8 @@
 
 using namespace std;
 
-WavEngine::WavEngine()
-    :AudioOut(), file(NULL), buffer(synth->samplerate * 4), pThread(NULL)
+WavEngine::WavEngine(const SYNTH_T &synth_)
+    :AudioOut(synth_), file(NULL), buffer(synth.samplerate * 4), pThread(NULL)
 {
     work.init(PTHREAD_PROCESS_PRIVATE, 0);
 }
@@ -110,10 +110,10 @@ void *WavEngine::_AudioThread(void *arg)
 
 void *WavEngine::AudioThread()
 {
-    short *recordbuf_16bit = new short[2 * synth->buffersize];
+    short *recordbuf_16bit = new short[2 * synth.buffersize];
 
     while(!work.wait() && pThread) {
-        for(int i = 0; i < synth->buffersize; ++i) {
+        for(int i = 0; i < synth.buffersize; ++i) {
             float left = 0.0f, right = 0.0f;
             buffer.pop(left);
             buffer.pop(right);
@@ -124,7 +124,7 @@ void *WavEngine::AudioThread()
                                                -32768,
                                                32767);
         }
-        file->writeStereoSamples(synth->buffersize, recordbuf_16bit);
+        file->writeStereoSamples(synth.buffersize, recordbuf_16bit);
     }
 
     delete[] recordbuf_16bit;

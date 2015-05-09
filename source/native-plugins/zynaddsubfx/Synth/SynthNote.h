@@ -22,12 +22,34 @@
 #ifndef SYNTH_NOTE_H
 #define SYNTH_NOTE_H
 #include "../globals.h"
-#include "../Params/FilterParams.h"
+
+class Allocator;
+class Controller;
+struct SynthParams
+{
+    Allocator &memory;   //Memory Allocator for the Note to use
+    Controller &ctl;
+    const SYNTH_T    &synth;
+    float     frequency; //Note base frequency
+    float     velocity;  //Velocity of the Note
+    bool      portamento;//True if portamento is used for this note
+    int       note;      //Integer value of the note
+    bool      quiet;     //Initial output condition for legato notes
+};
+
+struct LegatoParams
+{
+    float frequency;
+    float velocity;
+    bool portamento;
+    int midinote;
+    bool externcall;
+};
 
 class SynthNote
 {
     public:
-        SynthNote(float freq, float vel, int port, int note, bool quiet);
+        SynthNote(SynthParams &pars);
         virtual ~SynthNote() {}
 
         /**Compute Output Samples
@@ -36,15 +58,13 @@ class SynthNote
 
         //TODO fix this spelling error [noisey commit]
         /**Release the key for the note and start release portion of envelopes.*/
-        virtual void relasekey() = 0;
+        virtual void releasekey() = 0;
 
         /**Return if note is finished.
          * @return finished=1 unfinished=0*/
         virtual int finished() const = 0;
 
-        virtual void legatonote(float freq, float velocity,
-                                int portamento_, int midinote_,
-                                bool externcall) = 0;
+        virtual void legatonote(LegatoParams pars) = 0;
         /* For polyphonic aftertouch needed */
         void setVelocity(float velocity_);
     protected:
@@ -52,12 +72,11 @@ class SynthNote
         class Legato
         {
             public:
-                Legato(float freq, float vel, int port,
+                Legato(const SYNTH_T &synth_, float freq, float vel, int port,
                        int note, bool quiet);
 
                 void apply(SynthNote &note, float *outl, float *outr);
-                int update(float freq, float velocity, int portamento_,
-                           int midinote_, bool externalcall);
+                int update(LegatoParams pars);
 
             private:
                 bool      silent;
@@ -70,17 +89,24 @@ class SynthNote
                 } fade;
                 struct { // Note parameters
                     float freq, vel;
-                    int   portamento, midinote;
+                    bool  portamento;
+                    int   midinote;
                 } param;
+                const SYNTH_T &synth;
 
             public: /* Some get routines for legatonote calls (aftertouch feature)*/
                 float getFreq() {return param.freq; }
                 float getVelocity() {return param.vel; }
-                int getPortamento() {return param.portamento; }
+                bool  getPortamento() {return param.portamento; }
                 int getMidinote() {return param.midinote; }
                 void setSilent(bool silent_) {silent = silent_; }
                 void setDecounter(int decounter_) {decounter = decounter_; }
         } legato;
+
+        //Realtime Safe Memory Allocator For notes
+        class Allocator  &memory;
+        const Controller &ctl;
+        const SYNTH_T    &synth;
 };
 
 #endif

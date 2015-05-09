@@ -12,26 +12,39 @@ using std::set;
 using std::cerr;
 using std::endl;
 
+#ifndef IN_DEFAULT
+#define IN_DEFAULT "NULL"
+#endif
+#ifndef OUT_DEFAULT
+#define OUT_DEFAULT "NULL"
+#endif
+
 InMgr     *in  = NULL;
 OutMgr    *out = NULL;
 EngineMgr *eng = NULL;
 string     postfix;
 
-bool   Nio::autoConnect   = false;
-string Nio::defaultSource = IN_DEFAULT;
-string Nio::defaultSink   = OUT_DEFAULT;
+bool   Nio::autoConnect     = false;
+bool   Nio::pidInClientName = false;
+string Nio::defaultSource   = IN_DEFAULT;
+string Nio::defaultSink     = OUT_DEFAULT;
 
-void Nio::init(void)
+void Nio::init(const SYNTH_T &synth, class Master *master)
 {
     in  = &InMgr::getInstance(); //Enable input wrapper
-    out = &OutMgr::getInstance(); //Initialize the Output Systems
-    eng = &EngineMgr::getInstance(); //Initialize The Engines
+    out = &OutMgr::getInstance(&synth); //Initialize the Output Systems
+    eng = &EngineMgr::getInstance(&synth); //Initialize The Engines
+
+    in->setMaster(master);
+    out->setMaster(master);
 }
 
 bool Nio::start()
 {
-    init();
-    return eng->start();
+    if(eng)
+        return eng->start();
+    else
+        return false;
 }
 
 void Nio::stop()
@@ -105,6 +118,10 @@ string Nio::getSink()
 #include <jack/jack.h>
 void Nio::preferedSampleRate(unsigned &rate)
 {
+    //XXX hello non portable code
+    if(system("ps aux | grep jack"))
+        return;
+
     jack_client_t *client = jack_client_open("temp-client",
                                              JackNoStartServer, 0);
     if(client) {
@@ -116,6 +133,12 @@ void Nio::preferedSampleRate(unsigned &rate)
 void Nio::preferedSampleRate(unsigned &)
 {}
 #endif
+
+void Nio::masterSwap(Master *master)
+{
+    in->setMaster(master);
+    out->setMaster(master);
+}
 
 void Nio::waveNew(class WavFile *wave)
 {

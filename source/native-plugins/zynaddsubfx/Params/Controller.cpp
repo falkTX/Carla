@@ -21,13 +21,59 @@
 */
 
 #include "Controller.h"
-#include <math.h>
-#include <stdio.h>
+#include "../Misc/Util.h"
+#include "../Misc/XMLwrapper.h"
+#include <cmath>
+#include <cstdio>
 
-Controller::Controller()
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+using namespace rtosc;
+
+#define rObject Controller
+const rtosc::Ports Controller::ports = {
+    rParamZyn(panning.depth, "Depth of Panning MIDI Control"),
+    rParamZyn(filtercutoff.depth, "Depth of Filter Cutoff MIDI Control"),
+    rParamZyn(filterq.depth, "Depth of Filter Q MIDI Control"),
+    rParamZyn(bandwidth.depth, "Depth of Bandwidth MIDI Control"),
+    rToggle(bandwidth.exponential, "Bandwidth Exponential Mode"),
+    rParamZyn(modwheel.depth, "Depth of Modwheel MIDI Control"),
+    rToggle(modwheel.exponential, "Modwheel Exponential Mode"),
+    rToggle(pitchwheel.is_split, "If PitchWheel Has unified blendrange or not"),
+    rParamI(pitchwheel.bendrange, "Range of MIDI Pitch Wheel"),
+    rParamI(pitchwheel.bendrange_down, "Lower Range of MIDI Pitch Wheel"),
+    rToggle(expression.receive, "Expression MIDI Receive"),
+    rToggle(fmamp.receive,      "FM amplitude MIDI Receive"),
+    rToggle(volume.receive,     "Volume MIDI Receive"),
+    rToggle(sustain.receive,    "Sustain MIDI Receive"),
+    rToggle(portamento.receive, "Portamento MIDI Receive"),
+    rToggle(portamento.portamento, "UNDOCUMENTED"),
+    rParamZyn(portamento.time, "Portamento Length"),
+    rToggle(portamento.proportional, "If all portamentos are proportional to the distance they span"),
+    rParamZyn(portamento.propRate, "Portamento proportional rate"),
+    rParamZyn(portamento.propDepth, "Portamento proportional depth"),
+    rParamZyn(portamento.pitchthresh, "Threshold for portamento"),
+    rToggle(portamento.pitchthreshtype, "Type of threshold"),
+    rParamZyn(portamento.updowntimestretch, "UNDOCUMENTED"),
+    rParamZyn(resonancecenter.depth, "Resonance Center MIDI Depth"),
+    rParamZyn(resonancebandwidth.depth, "Resonance Bandwidth MIDI Depth"),
+    rToggle(NRPN.receive, "NRPN MIDI Enable"),
+    rAction(defaults),
+};
+
+
+Controller::Controller(const SYNTH_T &synth_)
+    :synth(synth_)
 {
     defaults();
     resetall();
+}
+
+Controller &Controller::operator=(const Controller &c)
+{
+    //just pretend that undefined behavior doesn't exist...
+    memcpy(this, &c, sizeof(Controller));
+    return *this;
 }
 
 Controller::~Controller()
@@ -35,7 +81,9 @@ Controller::~Controller()
 
 void Controller::defaults()
 {
-    setpitchwheelbendrange(200); //2 halftones
+    pitchwheel.bendrange = 200; //2 halftones
+    pitchwheel.bendrange_down = 0; //Unused by default
+    pitchwheel.is_split   = false;
     expression.receive    = 1;
     panning.depth         = 64;
     filtercutoff.depth    = 64;
@@ -93,14 +141,12 @@ void Controller::setpitchwheel(int value)
 {
     pitchwheel.data = value;
     float cents = value / 8192.0f;
-    cents *= pitchwheel.bendrange;
+    if(pitchwheel.is_split && cents < 0)
+        cents *= pitchwheel.bendrange_down;
+    else
+        cents *= pitchwheel.bendrange;
     pitchwheel.relfreq = powf(2, cents / 1200.0f);
     //fprintf(stderr,"%ld %ld -> %.3f\n",pitchwheel.bendrange,pitchwheel.data,pitchwheel.relfreq);fflush(stderr);
-}
-
-void Controller::setpitchwheelbendrange(unsigned short int value)
-{
-    pitchwheel.bendrange = value;
 }
 
 void Controller::setexpression(int value)
@@ -248,7 +294,7 @@ int Controller::initportamento(float oldfreq,
 
     //printf("%f->%f : Time %f\n",oldfreq,newfreq,portamentotime);
 
-    portamento.dx = synth->buffersize_f / (portamentotime * synth->samplerate_f);
+    portamento.dx = synth.buffersize_f / (portamentotime * synth.samplerate_f);
     portamento.origfreqrap = oldfreq / newfreq;
 
     float tmprap = ((portamento.origfreqrap > 1.0f) ?
@@ -341,6 +387,8 @@ void Controller::setparameternumber(unsigned int type, int value)
 void Controller::add2XML(XMLwrapper *xml)
 {
     xml->addpar("pitchwheel_bendrange", pitchwheel.bendrange);
+    xml->addpar("pitchwheel_bendrange_down", pitchwheel.bendrange_down);
+    xml->addparbool("pitchwheel_split", pitchwheel.is_split);
 
     xml->addparbool("expression_receive", expression.receive);
     xml->addpar("panning_depth", panning.depth);
@@ -373,6 +421,12 @@ void Controller::getfromXML(XMLwrapper *xml)
                                        pitchwheel.bendrange,
                                        -6400,
                                        6400);
+    pitchwheel.bendrange_down = xml->getpar("pitchwheel_bendrange_down",
+                                       pitchwheel.bendrange_down,
+                                       -6400,
+                                       6400);
+    pitchwheel.is_split = xml->getparbool("pitchwheel_split",
+                                          pitchwheel.is_split);
 
     expression.receive = xml->getparbool("expression_receive",
                                          expression.receive);

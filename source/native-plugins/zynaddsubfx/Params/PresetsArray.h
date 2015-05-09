@@ -34,26 +34,18 @@ class PresetsArray:public Presets
         PresetsArray();
         virtual ~PresetsArray();
 
-        void copy(const char *name); /**<if name==NULL, the clipboard is used*/
-        void paste(int npreset); //npreset==0 for clipboard
-        bool checkclipboardtype();
-        // INHERITED - void deletepreset(int npreset);
-
-        // INHERITED - char type[MAX_PRESETTYPE_SIZE];
-        void setelement(int n);
-
-        void rescanforpresets();
-
+        void copy(PresetsStore &ps, const char *name); /**<if name==NULL, the clipboard is used*/
+        void copy(PresetsStore &ps, int elm, const char *name); /**<if name==NULL, the clipboard is used*/
+        //void paste(PresetsStore &ps, int npreset); //npreset==0 for clipboard
+        //bool checkclipboardtype(PresetsStore &ps);
+        //void setelement(int n);
     protected:
         void setpresettype(const char *type);
     private:
-        virtual void add2XML(XMLwrapper *xml)    = 0;
-        virtual void getfromXML(XMLwrapper *xml) = 0;
-        virtual void defaults() = 0;
         virtual void add2XMLsection(XMLwrapper *xml, int n)    = 0;
-        virtual void getfromXMLsection(XMLwrapper *xml, int n) = 0;
-        virtual void defaults(int n) = 0;
-        int nelement;
+        //virtual void getfromXMLsection(XMLwrapper *xml, int n) = 0;
+        //virtual void defaults() = 0;
+        //virtual void defaults(int n) = 0;
 };
 
 #endif
