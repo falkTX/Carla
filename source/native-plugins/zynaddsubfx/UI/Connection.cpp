@@ -69,23 +69,38 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 
     Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "knob.png"))
+        Fl_Dial::default_image(img);
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/knob.png"))
         Fl_Dial::default_image(img);
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/knob.png"))
         Fl_Dial::default_image(img);
     else
         errx(1, "ERROR: Cannot find pixmaps/knob.png");
 
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "window_backdrop.png"))
+        Fl::scheme_bg(new Fl_Tiled_Image(img));
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
         Fl::scheme_bg(new Fl_Tiled_Image(img));
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/window_backdrop.png"))
         Fl::scheme_bg(new Fl_Tiled_Image(img));
     else
         errx(1, "ERROR: Cannot find pixmaps/window_backdrop.png");
 
+#ifdef CARLA_VERSION_STRING
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "module_backdrop.png"))
+        module_backdrop = new Fl_Tiled_Image(img);
+#else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
         module_backdrop = new Fl_Tiled_Image(img);
+#endif
     else if(Fl_Shared_Image *img = Fl_Shared_Image::get(SOURCE_DIR "/pixmaps/module_backdrop.png"))
         module_backdrop = new Fl_Tiled_Image(img);
     else

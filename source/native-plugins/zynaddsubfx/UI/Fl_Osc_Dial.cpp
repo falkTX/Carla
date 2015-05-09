@@ -8,7 +8,7 @@
 #include <cassert>
 #include <sstream>
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_dial(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Dial*)w)->cb();
 }
@@ -28,7 +28,7 @@ Fl_Osc_Dial::Fl_Osc_Dial(int X, int Y, int W, int H, const char *label)
     :WidgetPDial(X,Y,W,H, label), Fl_Osc_Widget(this), alt_style(false), dead(false)
 {
     bounds(0.0, 127.0f);
-    WidgetPDial::callback(callback_fn);
+    WidgetPDial::callback(callback_fn_dial);
 }
 
 

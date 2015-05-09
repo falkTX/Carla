@@ -1,3 +1,4 @@
+#pragma once
 #include <FL/Fl_Box.H>
 #include "../Params/EnvelopeParams.h"
 #include "Fl_Osc_Widget.H"

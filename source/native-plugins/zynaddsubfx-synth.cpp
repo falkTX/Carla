@@ -59,24 +59,7 @@ using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-static CarlaString gPixmapPath;
 extern CarlaString gUiPixmapPath;
-# ifdef NTK_GUI
-static Fl_Tiled_Image* gModuleBackdrop = nullptr;
-# endif
-
-void set_module_parameters(Fl_Widget* o)
-{
-    o->box(FL_DOWN_FRAME);
-    o->align(o->align() | FL_ALIGN_IMAGE_BACKDROP);
-    o->color(FL_BLACK);
-    o->labeltype(FL_SHADOW_LABEL);
-
-# ifdef NTK_GUI
-    CARLA_SAFE_ASSERT_RETURN(gModuleBackdrop != nullptr,);
-    o->image(gModuleBackdrop);
-# endif
-}
 #endif
 
 // -----------------------------------------------------------------------
@@ -333,33 +316,6 @@ protected:
             }
             else if (fNextUiAction == 1) // init/show
             {
-                static bool initialized = false;
-
-                if (! initialized)
-                {
-                    initialized = true;
-                    fl_register_images();
-
-# ifdef NTK_GUI
-                    Fl_Dial::default_style(Fl_Dial::PIXMAP_DIAL);
-
-                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "knob.png"))
-                        Fl_Dial::default_image(img);
-
-                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "window_backdrop.png"))
-                        Fl::scheme_bg(new Fl_Tiled_Image(img));
-
-                    if (Fl_Shared_Image* const img = Fl_Shared_Image::get(gPixmapPath + "module_backdrop.png"))
-                        gModuleBackdrop = new Fl_Tiled_Image(img);
-
-                    Fl::background(50, 50, 50);
-                    Fl::background2(70, 70, 70);
-                    Fl::foreground(255, 255, 255);
-
-                    Fl_Theme::set("Cairo");
-# endif
-                }
-
                 if (fUi == nullptr)
                 {
                     fUiClosed = 0;
@@ -885,9 +841,7 @@ public:
                 denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
 
 #ifdef WANT_ZYNADDSUBFX_UI
-            gPixmapPath   = host->resourceDir;
-            gPixmapPath  += "/zynaddsubfx/";
-            gUiPixmapPath = gPixmapPath;
+            gUiPixmapPath = CarlaString(host->resourceDir) + CARLA_OS_SEP_STR "zynaddsubfx" CARLA_OS_SEP_STR;
 #endif
         }
 

@@ -5,7 +5,7 @@
 #include <cassert>
 #include <sstream>
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_roller(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Roller*)w)->cb();
 }
@@ -13,7 +13,7 @@ static void callback_fn(Fl_Widget *w, void *)
 Fl_Osc_Roller::Fl_Osc_Roller(int X, int Y, int W, int H, const char *label)
     :Fl_Roller(X,Y,W,H, label), Fl_Osc_Widget(this)
 {
-    Fl_Roller::callback(callback_fn);
+    Fl_Roller::callback(callback_fn_roller);
     bounds(0.0, 127.0f);
 }
 

@@ -18,7 +18,7 @@ B string_cast(const A &a)
     return b;
 }
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_dialf(Fl_Widget *w, void *)
 {
     ((Fl_Osc_DialF*)w)->cb();
 }
@@ -27,7 +27,7 @@ Fl_Osc_DialF::Fl_Osc_DialF(int X, int Y, int W, int H, const char *label)
     :WidgetPDial(X,Y,W,H, label), Fl_Osc_Widget()
 {
     //bounds(0.0, 127.0f);
-    WidgetPDial::callback(callback_fn);
+    WidgetPDial::callback(callback_fn_dialf);
 }
 
 

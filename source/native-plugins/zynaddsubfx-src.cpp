@@ -23,6 +23,8 @@
 #endif
 
 #define PLUGINVERSION
+#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+#undef override
 
 #include "zynaddsubfx/tlsf/tlsf.h"
 extern "C" {

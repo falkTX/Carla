@@ -5,7 +5,7 @@
 #include <cassert>
 #include <sstream>
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_output(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Output*)w)->cb();
 }
@@ -13,7 +13,7 @@ static void callback_fn(Fl_Widget *w, void *)
 Fl_Osc_Output::Fl_Osc_Output(int X, int Y, int W, int H, const char *label)
     :Fl_Value_Output(X,Y,W,H, label), Fl_Osc_Widget(this)
 {
-    Fl_Value_Output::callback(callback_fn);
+    Fl_Value_Output::callback(callback_fn_output);
 }
 
 

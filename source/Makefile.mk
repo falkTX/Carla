@@ -419,9 +419,6 @@ ifeq ($(HAVE_NTK),true)
 HAVE_ZYN_UI_DEPS = true
 endif
 
-# TESTING
-HAVE_ZYN_UI_DEPS = false
-
 ifeq ($(HAVE_DGL),true)
 NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
 ifeq ($(HAVE_PROJECTM),true)

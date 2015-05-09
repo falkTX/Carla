@@ -1,6 +1,6 @@
 #include "Fl_Osc_Counter.H"
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_counter(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Counter*)w)->cb();
 }
@@ -8,7 +8,7 @@ static void callback_fn(Fl_Widget *w, void *)
 Fl_Osc_Counter::Fl_Osc_Counter(int x, int y, int w, int h, const char *label)
     :Fl_Counter(x,y,w,h,label), Fl_Osc_Widget(this), offset(0)
 {
-    Fl_Counter::callback(callback_fn);
+    Fl_Counter::callback(callback_fn_counter);
 }
 
 void Fl_Osc_Counter::update(void)

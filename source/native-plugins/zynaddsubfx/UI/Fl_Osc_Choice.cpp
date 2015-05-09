@@ -7,7 +7,7 @@
 #include <cassert>
 #include <sstream>
 
-static void callback_fn(Fl_Widget *w, void *)
+static void callback_fn_choice(Fl_Widget *w, void *)
 {
     ((Fl_Osc_Choice*)w)->cb();
 }
@@ -16,7 +16,7 @@ Fl_Osc_Choice::Fl_Osc_Choice(int X, int Y, int W, int H, const char *label)
     :Fl_Choice(X,Y,W,H, label), Fl_Osc_Widget(this), cb_data(NULL, NULL)
 {
     min = 0;
-    Fl_Choice::callback(callback_fn, NULL);
+    Fl_Choice::callback(callback_fn_choice, NULL);
 }
 
 void Fl_Osc_Choice::init(std::string path_, int base)
