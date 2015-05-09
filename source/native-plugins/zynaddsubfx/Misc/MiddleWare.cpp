@@ -826,8 +826,8 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port
     lo_server_add_method(server, NULL, NULL, handler_function, mw);
     fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
 
-    clean_up_tmp_nams();
-    create_tmp_file((unsigned)lo_server_get_port(server));
+    //clean_up_tmp_nams();
+    //create_tmp_file((unsigned)lo_server_get_port(server));
 
     //dummy callback for starters
     cb = [](void*, const char*){};

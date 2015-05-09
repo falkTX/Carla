@@ -237,14 +237,12 @@ public:
         kParamPart14Enabled,
         kParamPart15Enabled,
         kParamPart16Enabled,
-        /*
-        kParamFilterCutoff = 0, // Filter Frequency
-        kParamFilterQ,          // Filter Resonance
-        kParamBandwidth,        // Bandwidth
-        kParamModAmp,           // FM Gain
-        kParamResCenter,        // Resonance center frequency
-        kParamResBandwidth,     // Resonance bandwidth
-        */
+        kParamFilterCutoff,  // Filter Frequency
+        kParamFilterQ,       // Filter Resonance
+        kParamBandwidth,     // Bandwidth
+        kParamModAmp,        // FM Gain
+        kParamResCenter,     // Resonance center frequency
+        kParamResBandwidth,  // Resonance bandwidth
         kParamCount
     };
 
@@ -276,14 +274,12 @@ public:
         fParameters[kParamPart14Enabled] = 0.0f;
         fParameters[kParamPart15Enabled] = 0.0f;
         fParameters[kParamPart16Enabled] = 0.0f;
-#if 0
         fParameters[kParamFilterCutoff] = 64.0f;
         fParameters[kParamFilterQ]      = 64.0f;
         fParameters[kParamBandwidth]    = 64.0f;
         fParameters[kParamModAmp]       = 127.0f;
         fParameters[kParamResCenter]    = 64.0f;
         fParameters[kParamResBandwidth] = 64.0f;
-#endif
 
         fSynth.buffersize = static_cast<int>(getBufferSize());
         fSynth.samplerate = static_cast<uint>(getSampleRate());
@@ -360,8 +356,10 @@ protected:
             PARAM_PART_ENABLE_DESC(15)
             PARAM_PART_ENABLE_DESC(16)
             }
+
+            #undef PARAM_PART_ENABLE_DESC
         }
-        else
+        else if (index <= kParamResBandwidth)
         {
             hints |= NATIVE_PARAMETER_IS_INTEGER;
             param.ranges.def       = 64.0f;
@@ -371,7 +369,6 @@ protected:
             param.ranges.stepSmall = 1.0f;
             param.ranges.stepLarge = 20.0f;
 
-#if 0
             switch (index)
             {
             case kParamFilterCutoff:
@@ -394,7 +391,6 @@ protected:
                 param.name = "Res Bandwidth";
                 break;
             }
-#endif
         }
 
         param.hints = static_cast<NativeParameterHints>(hints);
@@ -437,9 +433,8 @@ protected:
             std::sprintf(msg, "/part%i/Penabled", index);
             fMiddleWare->transmitMsg(msg, (value >= 0.5f) ? "T" : "F");
         }
-        else
+        else if (index <= kParamResBandwidth)
         {
-#if 0
             const uint zynIndex(getZynParameterFromIndex(index));
             CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
 
@@ -450,7 +445,6 @@ protected:
                 if (fMaster->part[npart] != nullptr)
                     fMaster->part[npart]->SetController(zynIndex, static_cast<int>(value));
             }
-#endif
         }
     }
 
@@ -613,9 +607,6 @@ protected:
     {
         char* data = nullptr;
 
-        carla_stdout("getState, valid:%s enabled:%s", bool2str(fMaster->part[0] != nullptr),
-                                                      bool2str(fMaster->part[0] != nullptr && fMaster->part[0]->Penabled));
-
         if (fIsActive)
         {
             fMiddleWare->doReadOnlyOp([this, &data]{
@@ -642,9 +633,6 @@ protected:
         fMiddleWare->updateResources(fMaster);
 
         _setMasterParameters();
-
-        carla_stdout("setState, valid:%s enabled:%s", bool2str(fMaster->part[0] != nullptr),
-                                                      bool2str(fMaster->part[0] != nullptr && fMaster->part[0]->Penabled));
 
     }
 
@@ -697,7 +685,6 @@ private:
     {
         switch (index)
         {
-#if 0
         case kParamFilterCutoff:
             return C_filtercutoff;
         case kParamFilterQ:
@@ -710,7 +697,6 @@ private:
             return C_resonance_center;
         case kParamResBandwidth:
             return C_resonance_bandwidth;
-#endif
         case kParamCount:
             return C_NULL;
         }
@@ -735,7 +721,6 @@ private:
             fMiddleWare->transmitMsg(msg, (fParameters[i] >= 0.5f) ? "T" : "F");
         }
 
-#if 0
         for (int i=0; i<NUM_MIDI_PARTS; ++i)
         {
             fMaster->part[i]->SetController(C_filtercutoff,        static_cast<int>(fParameters[kParamFilterCutoff]));
@@ -745,7 +730,6 @@ private:
             fMaster->part[i]->SetController(C_resonance_center,    static_cast<int>(fParameters[kParamResCenter]));
             fMaster->part[i]->SetController(C_resonance_bandwidth, static_cast<int>(fParameters[kParamResBandwidth]));
         }
-#endif
     }
 
     void _deleteMaster()
