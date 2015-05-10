@@ -465,8 +465,8 @@ endif
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
-	# Install pkg-config file
-	install -m 644 data/carla-standalone.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	# Install pkg-config files
+	install -m 644 data/*.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 
 	# Install backend libs
 	install -m 644 \
@@ -504,6 +504,7 @@ endif
 	install -m 644 \
 		source/backend/CarlaBackend.h \
 		source/backend/CarlaHost.h \
+		source/backend/CarlaUtils.h \
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
 		source/includes/CarlaNative.h \
@@ -540,6 +541,10 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	install -m 755 \
+		bin/resources/zynaddsubfx-ui \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/
+
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
@@ -600,7 +605,8 @@ endif
 		$(DESTDIR)$(PREFIX)/bin/carla-single \
 		$(DESTDIR)$(PREFIX)/bin/carla-settings \
 		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
+		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-utils.pc
 
 	# --------------------------------------------------------------------------------------------------------------------
 
