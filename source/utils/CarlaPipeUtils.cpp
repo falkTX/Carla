@@ -19,8 +19,6 @@
 #include "CarlaString.hpp"
 #include "CarlaMIDI.h"
 
-#include "juce_core.h"
-
 // needed for atom-util
 #ifndef nullptr
 # undef NULL
@@ -150,6 +148,40 @@ ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* 
 #endif // CARLA_OS_WIN
 
 // -----------------------------------------------------------------------
+// getMillisecondCounter
+
+static uint32_t lastMSCounterValue = 0;
+
+static inline
+uint32_t getMillisecondCounter() noexcept
+{
+    uint32_t now;
+
+#ifdef CARLA_OS_WIN
+    now = static_cast<uint32_t>(timeGetTime());
+#else
+    timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    now =  t.tv_sec * 1000 + t.tv_nsec / 1000000;
+#endif
+
+    if (now < lastMSCounterValue)
+    {
+        // in multi-threaded apps this might be called concurrently, so
+        // make sure that our last counter value only increases and doesn't
+        // go backwards..
+        if (now < lastMSCounterValue - 1000)
+            lastMSCounterValue = now;
+    }
+    else
+    {
+        lastMSCounterValue = now;
+    }
+
+    return now;
+}
+
+// -----------------------------------------------------------------------
 // startProcess
 
 #ifdef CARLA_OS_WIN
@@ -234,7 +266,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
 
     char c;
     ssize_t ret;
-    const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
@@ -254,7 +286,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
             if (errno == EAGAIN)
 #endif
             {
-                if (juce::Time::getMillisecondCounter() < timeoutEnd)
+                if (getMillisecondCounter() < timeoutEnd)
                 {
                     carla_msleep(5);
                     continue;
@@ -306,14 +338,14 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
 
     // TODO - this code is completly wrong...
 
-    const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
         if (WaitForSingleObject(processInfo.hProcess, 0) == WAIT_OBJECT_0)
             return true;
 
-        if (juce::Time::getMillisecondCounter() >= timeoutEnd)
+        if (getMillisecondCounter() >= timeoutEnd)
             break;
 
         carla_msleep(5);
@@ -347,7 +379,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds) noe
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     pid_t ret;
-    const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
@@ -372,7 +404,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds) noe
             break;
 
         case 0:
-            if (juce::Time::getMillisecondCounter() < timeoutEnd)
+            if (getMillisecondCounter() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
@@ -1024,14 +1056,14 @@ const char* CarlaPipeCommon::_readline() const noexcept
 
 const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) const noexcept
 {
-    const uint32_t timeoutEnd(juce::Time::getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
         if (const char* const msg = _readline())
             return msg;
 
-        if (juce::Time::getMillisecondCounter() >= timeoutEnd)
+        if (getMillisecondCounter() >= timeoutEnd)
             break;
 
         carla_msleep(5);

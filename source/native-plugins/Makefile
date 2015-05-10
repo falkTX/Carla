@@ -160,7 +160,7 @@ all: $(TARGETS)
 # ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
+	rm -f $(OBJDIR)/*.o $(MODULEDIR)/$(MODULENAME)*.a $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP) $(TARGETS)
 
 debug:
 	$(MAKE) DEBUG=true

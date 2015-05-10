@@ -150,8 +150,8 @@ int main(int argc, const char* argv[])
     ZynPipeClient pipe;
     const char* uiTitle = nullptr;
 
-    // Startup Liblo Link
-    if (argc > 1) {
+    if (argc > 1)
+    {
         sendtourl = argv[1];
         uiTitle   = argv[2];
 
@@ -167,9 +167,12 @@ int main(int argc, const char* argv[])
     if (argc == 1)
         GUI::raiseUi(gui, "/show", "i", 1);
 
-    while(Pexitprogram == 0) {
-        if(server)
-            while(lo_server_recv_noblock(server, 0));
+    for (; Pexitprogram == 0;)
+    {
+        if (server != nullptr) {
+            for (; lo_server_recv_noblock(server, 0);) {}
+        }
+
         pipe.idlePipe();
         GUI::tickUi(gui);
     }
@@ -178,58 +181,5 @@ int main(int argc, const char* argv[])
     gui = nullptr;
     return 0;
 }
-
-// --------------------------------------------------------------------------------------------
-// we need juce::Time::getMillisecondCounter()
-
-#ifdef CARLA_OS_WIN
- #include <ctime>
-#else
- #include <sys/time.h>
-#endif
-
-namespace juce {
-
-#include "juce_core/native/juce_BasicNativeHeaders.h"
-#include "juce_core/juce_core.h"
-
-static uint32 lastMSCounterValue = 0;
-
-#ifdef CARLA_OS_WIN
-uint32 juce_millisecondsSinceStartup() noexcept
-{
-    return (uint32) timeGetTime();
-}
-#else
-uint32 juce_millisecondsSinceStartup() noexcept
-{
-    timespec t;
-    clock_gettime (CLOCK_MONOTONIC, &t);
-
-    return t.tv_sec * 1000 + t.tv_nsec / 1000000;
-}
-#endif
-
-uint32 Time::getMillisecondCounter() noexcept
-{
-    const uint32 now = juce_millisecondsSinceStartup();
-
-    if (now < lastMSCounterValue)
-    {
-        // in multi-threaded apps this might be called concurrently, so
-        // make sure that our last counter value only increases and doesn't
-        // go backwards..
-        if (now < lastMSCounterValue - 1000)
-            lastMSCounterValue = now;
-    }
-    else
-    {
-        lastMSCounterValue = now;
-    }
-
-    return now;
-}
-
-} // namespace juce
 
 // --------------------------------------------------------------------------------------------
