@@ -191,8 +191,9 @@ protected:
         fIdling = false;
     }
 
-    void handlePluginUIResized(uint,uint) override
+    void handlePluginUIResized(const uint width, const uint height) override
     {
+        ui->uiResized(width, height);
     }
 
     // ---------------------------------------------------------------------

@@ -88,6 +88,11 @@ public:
     virtual void* getWidget() const noexcept = 0;
 
     /*!
+     * TESTING
+     */
+    virtual void uiResized(const uint width, const uint height) = 0;
+
+    /*!
      * Options.
      */
     struct Options {
