@@ -52,10 +52,6 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 endif
 
-ifeq ($(HAVE_ZYN_DEPS),true)
-STANDALONE_LIBS += $(MODULEDIR)/rtosc.a
-endif
-
 UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a

@@ -173,7 +173,7 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	@rm -f $@
 	@$(AR) crs $@ $^
 
-resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o $(MODULEDIR)/rtosc.a
+resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zynaddsubfx-ui"
 	@$(CXX) $^ $(ZYN_LD_FLAGS) -o $@

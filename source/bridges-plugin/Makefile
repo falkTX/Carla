@@ -114,10 +114,6 @@ LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
-ifeq ($(HAVE_ZYN_DEPS),true)
-LIBS_native  += $(MODULEDIR)/rtosc.a
-endif
-
 LINK_FLAGS += $(LIBLO_LIBS)
 
 ifeq ($(HAVE_X11),true)
