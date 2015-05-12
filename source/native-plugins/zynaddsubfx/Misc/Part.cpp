@@ -57,6 +57,9 @@ static const Ports partPorts = {
 #define rChangeCb obj->setPvolume(obj->Pvolume);
     rParamZyn(Pvolume, "Part Volume"),
 #undef rChangeCb
+#define rChangeCb obj->setPpanning(obj->Ppanning);
+    rParamZyn(Ppanning, "Set Panning"),
+#undef rChangeCb
 #define rChangeCb obj->setkeylimit(obj->Pkeylimit);
     rParamI(Pkeylimit, rProp(parameter), rMap(min,0), rMap(max, POLYPHONY), "Key limit per part"),
 #undef rChangeCb
@@ -65,7 +68,6 @@ static const Ports partPorts = {
     rParamZyn(Pmaxkey, "Max Used Key"),
     rParamZyn(Pkeyshift, "Part keyshift"),
     rParamZyn(Prcvchn,  "Active MIDI channel"),
-    rParamZyn(Ppanning, "Set Panning"),
     rParamZyn(Pvelsns,   "Velocity sensing"),
     rParamZyn(Pveloffs,  "Velocity offset"),
     rToggle(Pnoteon,  "If the channel accepts note on events"),
@@ -106,6 +108,20 @@ static const Ports partPorts = {
                 p->Ppolymode = 0;
                 p->Plegatomode = 1;
             }}},
+    {"clear:", rProp(internal) rDoc("Reset Part To Defaults"), 0, [](const char *, RtData &d)
+        {
+            //XXX todo forward this event for middleware to handle
+            //Part *p = (Part*)d.obj;
+            //p->defaults();
+            //char part_loc[128];
+            //strcpy(part_loc, d.loc);
+            //char *end = strrchr(part_loc, '/');
+            //if(end)
+            //    end[1] = 0;
+
+            //d.broadcast("/damage", "s", part_loc);
+        }},
+
 
     //{"kit#16::T:F", "::Enables or disables kit item", 0,
     //    [](const char *m, RtData &d) {
@@ -615,7 +631,7 @@ void Part::NoteOn(unsigned char note,
 
                 // Spawn another note (but silent) if legatomodevalid==true
                 if(legatomodevalid) {
-                    auto &note2 = partnote[pos].kititem[ci];
+                    auto &note2 = partnote[posb].kititem[ci];
                     note2.sendtoparteffect = limit((int)kit[item].Psendtoparteffect, 0, NUM_PART_EFX);
 
                     pars.quiet = true;

@@ -186,8 +186,17 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
     if(!gui)
         return;
     MasterUI *mui = (MasterUI*)gui;
-    if(string("/damage") == message && rtosc_type(message, 0) == 's')
+    if(string("/damage") == message && rtosc_type(message, 0) == 's') {
+        string damage_str = rtosc_argument(message,0).s;
+        int npart = -1;
+        if(sscanf(damage_str.c_str(), "/part%d", &npart) == 1 && damage_str.size() < 10) {
+            if(mui->npartcounter->value()-1 == npart) {
+                mui->partui->showparameters(0,-1);
+                mui->npartcounter->do_callback();
+            }
+        }
         mui->osc->damage(rtosc_argument(message,0).s);
+    }
     mui->osc->tryLink(message);
     //printf("got message for UI '%s'\n", message);
     char buffer[1024];

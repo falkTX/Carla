@@ -279,10 +279,9 @@ class PartUI {open : {public Fl_Osc_Group}
           label {Grand Piano}
           callback {int event=Fl::event_button();
 if (event==FL_RIGHT_MOUSE){
-   fprintf(stderr, "Unimplemented...\\n");
    const char *tmp=fl_input("Instrument name:",o->label());
-   o->oscWrite("Pname", "s", tmp);
-   /*if (tmp!=NULL) snprintf((char *)part->Pname,PART_MAX_NAME_LEN,"%s",tmp);*/
+   if (tmp!=NULL)
+       o->oscWrite("Pname", "s", tmp);
 } else {
   if (event==FL_LEFT_MOUSE) bankui->show();
        else instrumenteditwindow->show();

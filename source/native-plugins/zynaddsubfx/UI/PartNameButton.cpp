@@ -9,4 +9,5 @@ void PartNameButton::OSC_value(const char *label_)
 {
     the_string = label_;
     label(the_string.c_str());
+    redraw();
 }

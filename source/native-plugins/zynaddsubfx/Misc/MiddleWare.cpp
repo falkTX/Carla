@@ -220,6 +220,7 @@ void bankList(Bank &bank, Fl_Osc_Interface *osc)
         if(!rtosc_message(response, 2048, "/bank-list", "iss",
                     i++, elm.name.c_str(), elm.dir.c_str()))
             errx(1, "Failure to handle bank update properly...");
+    if (osc)
         osc->tryLink(response);
     }
 }
@@ -647,8 +648,25 @@ public:
         //Give it to the backend and wait for the old part to return for
         //deallocation
         uToB->write("/load-part", "ib", npart, sizeof(Part*), &p);
-        if(osc)
-            osc->damage(("/part"+to_s(npart)+"/").c_str());
+        GUI::raiseUi(ui, "/damage", "s", ("/part"+to_s(npart)+"/").c_str());
+    }
+
+    //Load a new cleared Part instance
+    void loadClearPart(int npart)
+    {
+        if(npart == -1)
+            return;
+        Part *p = new Part(*master->memory, synth, &master->microtonal, master->fft);
+        p->applyparameters();
+        obj_store.extractPart(p, npart);
+        kits.extractPart(p, npart);
+
+        //Give it to the backend and wait for the old part to return for
+        //deallocation
+        uToB->write("/load-part", "ib", npart, sizeof(Part*), &p);
+        GUI::raiseUi(ui, "/damage", "s", ("/part"+to_s(npart)+"/").c_str());
+        //if(osc)
+        //    osc->damage(("/part"+to_s(npart)+"/").c_str());
     }
 
     //Well, you don't get much crazier than changing out all of your RT
@@ -826,8 +844,10 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port
     lo_server_add_method(server, NULL, NULL, handler_function, mw);
     fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
 
-    //clean_up_tmp_nams();
-    //create_tmp_file((unsigned)lo_server_get_port(server));
+#ifndef CARLA_VERSION_STRING
+    clean_up_tmp_nams();
+    create_tmp_file((unsigned)lo_server_get_port(server));
+#endif
 
     //dummy callback for starters
     cb = [](void*, const char*){};
@@ -1122,6 +1142,8 @@ void MiddleWareImpl::handleMsg(const char *msg)
     //printf("watching '%s' go by\n", msg);
     //Get the object resource locator
     string obj_rl(msg, last_path+1);
+    int npart = -1;
+    char testchr = 0;
 
     if(!strcmp(msg, "/refresh_bank") && !strcmp(rtosc_argument_string(msg), "i")) {
         refreshBankView(master->bank, rtosc_argument(msg,0).i, osc);
@@ -1180,6 +1202,8 @@ void MiddleWareImpl::handleMsg(const char *msg)
     } else if(strstr(msg, "Padenabled") || strstr(msg, "Ppadenabled") || strstr(msg, "Psubenabled")) {
         kitEnable(msg);
         uToB->raw_write(msg);
+    } else if(sscanf(msg, "/part%d/clea%c", &npart, &testchr) == 2 && testchr == 'r') {
+        loadClearPart(npart);
     } else if(!strcmp(msg, "/undo")) {
         undo.seekHistory(-1);
     } else if(!strcmp(msg, "/redo")) {

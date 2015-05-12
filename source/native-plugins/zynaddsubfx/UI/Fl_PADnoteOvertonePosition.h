@@ -21,6 +21,8 @@ class PADnoteOvertonePosition: public Fl_Box, Fl_Osc_Widget
 
         ~PADnoteOvertonePosition(void)
         {
+            osc->removeLink("/oscilsize",
+                    (Fl_Osc_Widget*) this);
             osc->removeLink(base_path + "oscilgen/spectrum",
                     (Fl_Osc_Widget*) this);
             osc->removeLink(base_path + "nhr",
