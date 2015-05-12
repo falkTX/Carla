@@ -178,3 +178,5 @@ char *ThreadLink::buffer(void) {return write_buffer;}
 size_t ThreadLink::buffer_size(void) const {return BufferSize;}
 
 };
+
+#undef static

@@ -1,3 +1,4 @@
+#pragma once
 #include <cstddef>
 
 namespace rtosc{struct Ports; struct RtData;}

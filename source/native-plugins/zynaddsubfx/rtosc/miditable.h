@@ -22,6 +22,7 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#pragma once
 #include "ports.h"
 #include <string.h>
 #include <algorithm>

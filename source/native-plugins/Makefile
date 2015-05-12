@@ -17,7 +17,7 @@ BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx -Izynaddsubfx/rtosc
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)

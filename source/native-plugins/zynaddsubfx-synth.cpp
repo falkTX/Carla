@@ -22,15 +22,10 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include "DSP/FFTwrapper.h"
 #include "Misc/Master.h"
 #include "Misc/MiddleWare.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
-
-#ifdef HAVE_ZYN_UI_DEPS
-# include "UI/Connection.h"
-#endif
 
 #include <ctime>
 #include <set>
@@ -39,36 +34,6 @@
 #include "juce_audio_basics.h"
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
-
-// -----------------------------------------------------------------------
-
-#ifdef HAVE_ZYN_UI_DEPS
-namespace GUI {
-Fl_Osc_Interface* genOscInterface(MiddleWare*)
-{
-    return nullptr;
-}
-void raiseUi(ui_handle_t, const char *)
-{
-}
-#if 0
-ui_handle_t createUi(Fl_Osc_Interface*, void *exit)
-{
-    return nullptr;
-}
-void destroyUi(ui_handle_t)
-{
-}
-void raiseUi(ui_handle_t, const char *, const char *, ...)
-{
-}
-void tickUi(ui_handle_t)
-{
-    //usleep(100000);
-}
-#endif
-};
-#endif
 
 // -----------------------------------------------------------------------
 

@@ -28,6 +28,23 @@
 
 CarlaString gUiPixmapPath("/usr/share/carla/resources/zynaddsubfx/");
 
+// base c-style headers
+#include "zynaddsubfx/rtosc/rtosc.h"
+
+// rtosc c includes
+extern "C" {
+#include "zynaddsubfx/rtosc/dispatch.c"
+#include "zynaddsubfx/rtosc/rtosc.c"
+}
+
+// rtosc c++ includes
+#include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
+#include "zynaddsubfx/rtosc/cpp/miditable.cpp"
+#include "zynaddsubfx/rtosc/cpp/ports.cpp"
+#include "zynaddsubfx/rtosc/cpp/subtree-serialize.cpp"
+#include "zynaddsubfx/rtosc/cpp/thread-link.cpp"
+#include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
+
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"
 #include "zynaddsubfx/UI/WidgetPDial.cpp"

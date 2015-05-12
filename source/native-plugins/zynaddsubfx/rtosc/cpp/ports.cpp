@@ -255,7 +255,7 @@ bool has(T &t, Z&z)
     return false;
 }
 
-int max(int a, int b) { return a<b?b:a;}
+int rtosc_max(int a, int b) { return a<b?b:a;}
 
 ivec_t find_pos(words_t &strs)
 {
@@ -263,7 +263,7 @@ ivec_t find_pos(words_t &strs)
     int current_dups = strs.size();
     int N = 0;
     for(auto w:strs)
-        N = max(N,w.length());
+        N = rtosc_max(N,w.length());
 
     int pos_best = -1;
     int pos_best_val = INT_MAX;
@@ -362,7 +362,7 @@ ivec_t find_remap(words_t &strs, ivec_t &pos, ivec_t &assoc)
     //    printf("%d) '%s'\n", hashed[i], strs[i].c_str());
     int N = 0;
     for(auto h:hashed)
-        N = max(N,h+1);
+        N = rtosc_max(N,h+1);
     for(int i=0; i<N; ++i)
         remap.push_back(0);
     for(int i=0; i<(int)hashed.size(); ++i)

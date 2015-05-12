@@ -26,10 +26,24 @@
 #define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
 #undef override
 
+// base c-style headers
 #include "zynaddsubfx/tlsf/tlsf.h"
+#include "zynaddsubfx/rtosc/rtosc.h"
+
+// C-code includes
 extern "C" {
 #include "zynaddsubfx/tlsf/tlsf.c"
+#include "zynaddsubfx/rtosc/dispatch.c"
+#include "zynaddsubfx/rtosc/rtosc.c"
 }
+
+// rtosc includes
+#include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
+#include "zynaddsubfx/rtosc/cpp/miditable.cpp"
+#include "zynaddsubfx/rtosc/cpp/ports.cpp"
+#include "zynaddsubfx/rtosc/cpp/subtree-serialize.cpp"
+#include "zynaddsubfx/rtosc/cpp/thread-link.cpp"
+#include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
 // zynaddsubfx includes
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
@@ -81,10 +95,7 @@ extern "C" {
 #include "zynaddsubfx/Synth/Resonance.cpp"
 #include "zynaddsubfx/Synth/SUBnote.cpp"
 #include "zynaddsubfx/Synth/SynthNote.cpp"
-
-#ifdef NO_UI
 #include "zynaddsubfx/UI/ConnectionDummy.cpp"
-#endif
 
 // Dummy variables and functions for linking purposes
 // const char* instance_name = nullptr;
