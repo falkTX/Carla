@@ -422,6 +422,7 @@ public:
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
         // embed UIs can only be resizable if they provide resize extension
         fUiOptions.isResizable = false;
+        // TODO: put this trick into main carla
 
         for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
         {
