@@ -428,8 +428,6 @@ if LINUX and not config_UseQt5:
             self.embedInto(winId)
             self.show()
 
-            self.gui.send(["ready"])
-
         def addShortcutActions(self, actions):
             for action in actions:
                 if not action.shortcut().isEmpty():

@@ -64,7 +64,6 @@ class CarlaEngineNativeUI : public CarlaExternalUI
 public:
     CarlaEngineNativeUI(CarlaEngine* const engine)
         : fEngine(engine),
-          fIsReady(false),
           leakDetector_CarlaEngineNativeUI()
     {
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
@@ -73,11 +72,6 @@ public:
     ~CarlaEngineNativeUI() noexcept override
     {
         carla_debug("CarlaEngineNativeUI::~CarlaEngineNativeUI()");
-    }
-
-    bool isReady() const noexcept
-    {
-        return fIsReady;
     }
 
 protected:
@@ -537,10 +531,6 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
                 plugin->showCustomUI(yesNo);
         }
-        else if (std::strcmp(msg, "ready") == 0)
-        {
-            fIsReady = true;
-        }
         else
         {
             carla_stderr("CarlaEngineNativeUI::msgReceived : %s", msg);
@@ -560,7 +550,6 @@ protected:
 
 private:
     CarlaEngine* const fEngine;
-    bool               fIsReady;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };
@@ -578,7 +567,6 @@ public:
           fIsRunning(false),
           fUiServer(this),
           fOptionsForced(false),
-          fWaitForReadyMsg(false),
           leakDetector_CarlaEngineNative()
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
@@ -1510,16 +1498,6 @@ protected:
 
             if (kIsPatchbay)
                 patchbayRefresh(false);
-
-            if (fWaitForReadyMsg)
-            {
-                carla_stdout("Using Carla plugin embedded in Tracktion, waiting for it to be ready...");
-
-                for (; fUiServer.isPipeRunning() && ! fUiServer.isReady();)
-                    fUiServer.idlePipe();
-
-                carla_stdout("Done!");
-            }
         }
         else
         {
@@ -1778,8 +1756,6 @@ public:
         switch(opcode)
         {
         case NATIVE_PLUGIN_OPCODE_NULL:
-            if (static_cast<uint32_t>(index) == 0xDEADF00D && value == 0xC0C0B00B)
-                handlePtr->fWaitForReadyMsg = true;
             return 0;
         case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
@@ -1823,7 +1799,6 @@ private:
     CarlaEngineNativeUI fUiServer;
 
     bool fOptionsForced;
-    bool fWaitForReadyMsg;
     char fTmpBuf[STR_MAX+1];
 
     CarlaPlugin* _getFirstPlugin() const noexcept
