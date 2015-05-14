@@ -29,7 +29,7 @@ ifeq ($(HAVE_NTK),true)
 FLUID          = ntk-fluid
 ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
-ZYN_LD_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
+ZYN_LD_FLAGS  += $(shell pkg-config --libs ntk_images ntk) -ldl
 else # HAVE_NTK
 FLUID          = fluid
 ZYN_CXX_FLAGS += -DFLTK_GUI
