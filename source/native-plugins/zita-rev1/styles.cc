@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -24,6 +24,7 @@
 #include "png2img.h"
 
 #include "CarlaString.hpp"
+#include <dlfcn.h>
 
 namespace REV1 {
 
@@ -47,23 +48,34 @@ RotaryImg  r_opmix_img;
 RotaryImg  r_rgxyz_img;
 
 
-int styles_init (X_display *disp, X_resman *xrm, const char *resdir)
+static CarlaString getResourceDir()
 {
+    Dl_info exeInfo;
+    dladdr((void*)getResourceDir, &exeInfo);
+
+    CarlaString filename(exeInfo.dli_fname);
+    return filename.truncate(filename.rfind("-ui"));
+}
+
+
+void styles_init (X_display *disp, X_resman *xrm)
+{
+    CarlaString resourceDir(getResourceDir());
+
     XftColors [C_MAIN_BG] = disp->alloc_xftcolor (0.25f, 0.25f, 0.25f, 1.0f);
     XftColors [C_MAIN_FG] = disp->alloc_xftcolor (1.0f, 1.0f, 1.0f, 1.0f);
 
-    const CarlaString SHARED = CarlaString(resdir)+"/rev1";
-    revsect_img = png2img (SHARED+"/revsect.png", disp, XftColors [C_MAIN_BG]);
-    eq1sect_img = png2img (SHARED+"/eq1sect.png", disp, XftColors [C_MAIN_BG]);
-    eq2sect_img = png2img (SHARED+"/eq2sect.png", disp, XftColors [C_MAIN_BG]);
-    mixsect_img = png2img (SHARED+"/mixsect.png", disp, XftColors [C_MAIN_BG]);
-    ambsect_img = png2img (SHARED+"/ambsect.png", disp, XftColors [C_MAIN_BG]);
+    revsect_img = png2img (resourceDir+"/revsect.png", disp, XftColors [C_MAIN_BG]);
+    eq1sect_img = png2img (resourceDir+"/eq1sect.png", disp, XftColors [C_MAIN_BG]);
+    eq2sect_img = png2img (resourceDir+"/eq2sect.png", disp, XftColors [C_MAIN_BG]);
+    mixsect_img = png2img (resourceDir+"/mixsect.png", disp, XftColors [C_MAIN_BG]); 
+    ambsect_img = png2img (resourceDir+"/ambsect.png", disp, XftColors [C_MAIN_BG]); 
 
-    if (!revsect_img || !mixsect_img || !ambsect_img
+    if    (!revsect_img || !mixsect_img || !ambsect_img
         || !eq1sect_img || !eq2sect_img)
     {
-	fprintf (stderr, "Can't load images from '%s'.\n", SHARED.buffer());
-	return 1;
+	fprintf (stderr, "Can't load images from '%s'.\n", resourceDir.buffer());
+	exit (1);
     }
 
     r_delay_img._backg = XftColors [C_MAIN_BG];
@@ -164,13 +176,21 @@ int styles_init (X_display *disp, X_resman *xrm, const char *resdir)
     r_rgxyz_img._xref = 11.5;
     r_rgxyz_img._yref = 11.5;
     r_rgxyz_img._rad = 11;
-
-    return 0;
 }
 
 
 void styles_fini (X_display *disp)
 {
+    revsect_img->data = 0;
+    mixsect_img->data = 0;
+    ambsect_img->data = 0;
+    eq1sect_img->data = 0;
+    eq2sect_img->data = 0;
+    XDestroyImage (revsect_img);
+    XDestroyImage (mixsect_img);
+    XDestroyImage (ambsect_img);
+    XDestroyImage (eq1sect_img);
+    XDestroyImage (eq2sect_img);
 }
 
 

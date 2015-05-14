@@ -15,21 +15,14 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
-#include "CarlaMathUtils.hpp"
+#include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
 
 #include "juce_audio_basics.h"
 
-#include "zita-common.hpp"
-#include "zita-rev1/guiclass.cc"
 #include "zita-rev1/jclient.cc"
-#include "zita-rev1/mainwin.cc"
 #include "zita-rev1/pareq.cc"
-#include "zita-rev1/png2img.cc"
 #include "zita-rev1/reverb.cc"
-#include "zita-rev1/rotary.cc"
-#include "zita-rev1/styles.cc"
 
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
@@ -39,9 +32,7 @@ using namespace REV1;
 // -----------------------------------------------------------------------
 // REV1 Plugin
 
-class REV1Plugin : public NativePluginClass,
-                   public X_handler_thread<Mainwin>::SetValueCallback,
-                   private Mainwin::ValueChangedCallback
+class REV1Plugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
@@ -59,18 +50,12 @@ public:
     };
 
     REV1Plugin(const NativeHostDescriptor* const host, const bool isAmbisonic)
-        : NativePluginClass(host),
+        : NativePluginAndUiClass(host, "rev1-ui"),
           kIsAmbisonic(isAmbisonic),
           kNumInputs(2),
           kNumOutputs(isAmbisonic ? 4 : 2),
           fJackClient(),
-          xresman(),
           jclient(nullptr),
-          display(nullptr),
-          rootwin(nullptr),
-          mainwin(nullptr),
-          handler(nullptr),
-          handlerThread(this),
           leakDetector_REV1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
@@ -81,11 +66,7 @@ public:
         fJackClient.bufferSize = getBufferSize();
         fJackClient.sampleRate = getSampleRate();
 
-        int   argc   = 1;
-        char* argv[] = { (char*)"rev1" };
-        xresman.init(&argc, argv, (char*)"rev1", nullptr, 0);
-
-        jclient = new Jclient(xresman.rname(), &fJackClient, isAmbisonic);
+        jclient = new Jclient(&fJackClient, isAmbisonic);
 
         // set initial values
         fParameters[kParameterDELAY] = 0.04f;
@@ -320,78 +301,6 @@ public:
     }
 
     // -------------------------------------------------------------------
-    // Plugin UI calls
-
-    void uiShow(const bool show) override
-    {
-        if (show)
-        {
-            if (display != nullptr)
-                return;
-
-            display = new X_display(nullptr);
-
-            if (display->dpy() == nullptr)
-                return hostUiUnavailable();
-
-            styles_init(display, &xresman, getResourceDir());
-
-            rootwin = new X_rootwin(display);
-            mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
-            rootwin->handle_event();
-            mainwin->x_set_title(getUiName());
-
-            handler = new X_handler(display, mainwin, EV_X11);
-
-            if (const uintptr_t winId = getUiParentId())
-                XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
-
-            handler->next_event();
-            XFlush(display->dpy());
-
-            handlerThread.setupAndRun(handler, rootwin, mainwin);
-        }
-        else
-        {
-            if (handlerThread.isThreadRunning())
-                handlerThread.stopThread();
-
-            handler = nullptr;
-            mainwin = nullptr;
-            rootwin = nullptr;
-            display = nullptr;
-        }
-    }
-
-    void uiIdle() override
-    {
-        if (mainwin == nullptr)
-            return;
-
-        if (handlerThread.wasClosed())
-        {
-            {
-                const CarlaMutexLocker cml(handlerThread.getLock());
-                handler = nullptr;
-                mainwin = nullptr;
-                rootwin = nullptr;
-                display = nullptr;
-            }
-            uiClosed();
-        }
-    }
-
-    void uiSetParameterValue(const uint32_t index, const float value) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(index < kParameterNROTARY,);
-
-        if (mainwin == nullptr)
-            return;
-
-        handlerThread.setParameterValueLater(index, value);
-    }
-
-    // -------------------------------------------------------------------
     // Plugin dispatcher calls
 
     void bufferSizeChanged(const uint32_t bufferSize) override
@@ -404,45 +313,35 @@ public:
         fJackClient.sampleRate = sampleRate;
     }
 
-    void uiNameChanged(const char* const uiName) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
-
-        if (mainwin == nullptr)
-            return;
-
-        const CarlaMutexLocker cml(handlerThread.getLock());
-
-        mainwin->x_set_title(uiName);
-    }
-
     // -------------------------------------------------------------------
-    // Mainwin callbacks
+    // Plugin UI calls
 
-    void valueChangedCallback(uint rindex, double value) override
+    void uiShow(const bool show) override
     {
-        uint32_t index = rindex;
+        if (show)
+        {
+            if (isPipeRunning())
+            {
+                const CarlaMutexLocker cml(getPipeLock());
+                writeMessage("focus\n", 6);
+                flushMessages();
+                return;
+            }
 
-        if (kIsAmbisonic && rindex == kParameterNROTARY)
-            index = kParameterOPMIXorRGXYZ;
+            carla_stdout("Trying to start UI using \"%s\"", getExtUiPath());
 
-        fParameters[index] = value;
-        uiParameterChanged(index, value);
-    }
+            CarlaExternalUI::setData(getExtUiPath(), kIsAmbisonic ? "true" : "false", getUiName());
 
-    // -------------------------------------------------------------------
-    // X_handler_thread callbacks
-
-    void setParameterValueFromHandlerThread(uint32_t index, float value) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(mainwin != nullptr,);
-
-        uint32_t rindex = index;
-
-        if (kIsAmbisonic && index == kParameterOPMIXorRGXYZ)
-            rindex += 1;
-
-        mainwin->_rotary[rindex]->set_value(value);
+            if (! CarlaExternalUI::startPipeServer(true))
+            {
+                uiClosed();
+                hostUiUnavailable();
+            }
+        }
+        else
+        {
+            CarlaExternalUI::stopPipeServer(2000);
+        }
     }
 
     // -------------------------------------------------------------------
@@ -456,13 +355,7 @@ private:
     jack_client_t fJackClient;
 
     // Zita stuff (core)
-    X_resman xresman;
-    ScopedPointer<Jclient>   jclient;
-    ScopedPointer<X_display> display;
-    ScopedPointer<X_rootwin> rootwin;
-    ScopedPointer<Mainwin>   mainwin;
-    ScopedPointer<X_handler> handler;
-    X_handler_thread<Mainwin> handlerThread;
+    ScopedPointer<Jclient> jclient;
 
     float fParameters[kParameterNROTARY];
 
@@ -492,8 +385,7 @@ static const NativePluginDescriptor rev1AmbisonicDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 4,
@@ -534,8 +426,7 @@ static const NativePluginDescriptor rev1StereoDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

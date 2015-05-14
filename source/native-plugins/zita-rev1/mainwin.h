@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -29,7 +29,7 @@
 #include "jclient.h"
 #include "global.h"
 
-class REV1Plugin;
+class ZitaPipeClient;
 
 namespace REV1 {
 
@@ -44,9 +44,9 @@ public:
     };
 
 
-    enum { XSIZE = 540, YSIZE = 75 };
+    enum { XSIZE = 620, YSIZE = 75 };
 
-    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb);
+    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, bool ambisonic, ValueChangedCallback* valuecb);
     ~Mainwin (void);
     Mainwin (const Mainwin&);
     Mainwin& operator=(const Mainwin&);
@@ -74,12 +74,11 @@ private:
     bool            _stop;
     bool            _ambis;
     X_resman       *_xres;
-    Jclient        *_jclient;
     RotaryCtl      *_rotary [NROTARY];
 
     ValueChangedCallback* _valuecb;
 
-    friend class ::REV1Plugin;
+    friend class ::ZitaPipeClient;
 };
 
 

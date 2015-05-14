@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -25,14 +25,13 @@
 namespace REV1 {
 
 
-Jclient::Jclient (const char *jname, jack_client_t *jclient, bool ambis) :
+Jclient::Jclient (jack_client_t *jclient, bool ambis) :
     A_thread ("Jclient"),
     _jack_client (jclient),
     _active (false),
-    _jname (0),
     _ambis (ambis)
 {
-    init_jack (jname);
+    init_jack ();
 }
 
 
@@ -42,16 +41,11 @@ Jclient::~Jclient (void)
 }
 
 
-void Jclient::init_jack (const char *jname)
+void Jclient::init_jack (void)
 {
     jack_set_process_callback (_jack_client, jack_static_process, (void *) this);
     jack_on_shutdown (_jack_client, jack_static_shutdown, (void *) this);
-    if (jack_activate (_jack_client))
-    {
-        fprintf(stderr, "Can't activate JACK.\n");
-        exit (1);
-    }
-    _jname = jack_get_client_name (_jack_client);
+    jack_activate (_jack_client);
     _fsamp = jack_get_sample_rate (_jack_client);
 
     _fragm = 1024;

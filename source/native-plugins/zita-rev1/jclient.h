@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -36,15 +36,14 @@ class Jclient : public A_thread
 {
 public:
 
-    Jclient (const char *jname, jack_client_t *jclient, bool ambis);
+    Jclient (jack_client_t *jclient, bool ambis);
     ~Jclient (void);
 
-    const char *jname  (void) const { return _jname; }
     Reverb     *reverb (void) const { return (Reverb *) &_reverb; }
 
 private:
 
-    void  init_jack (const char *jname);
+    void  init_jack (void);
     void  close_jack (void);
     void  jack_shutdown (void);
     int   jack_process (int nframes);
@@ -55,7 +54,6 @@ private:
     jack_port_t    *_inpports [2];
     jack_port_t    *_outports [4];
     bool            _active;
-    const char     *_jname;
     unsigned int    _fsamp;
     bool            _ambis;
     int             _fragm;

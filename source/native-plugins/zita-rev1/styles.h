@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -43,7 +43,7 @@ enum
 };
 
 
-extern int  styles_init (X_display *disp, X_resman *xrm, const char *resdir);
+extern void styles_init (X_display *disp, X_resman *xrm);
 extern void styles_fini (X_display *disp);
 
 extern XftColor  *XftColors [NXFTCOLORS];

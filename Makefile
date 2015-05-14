@@ -529,6 +529,10 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 	install -m 644 \
 		bin/resources/rev1/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+
+	install -m 755 \
+		bin/resources/rev1-ui \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/
 endif
 
 	install -m 644 \

@@ -2,7 +2,7 @@
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
 //  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -27,7 +27,6 @@
 #include <cairo/cairo.h>
 #include <cairo/cairo-xlib.h>
 #include <clxclient.h>
-
 
 namespace REV1 {
 
@@ -72,6 +71,9 @@ public:
     virtual void set_value (double v) = 0;
     virtual void get_string (char *p, int n) {}
 
+    static void init (X_display *disp);
+    static void fini (void);
+
     static int  _wb_up;
     static int  _wb_dn;
 
@@ -106,9 +108,8 @@ private:
     virtual int handle_motion (int dx, int dy) = 0;
     virtual int handle_mwheel (int dw) = 0;
 
-    juce::SharedResourcePointer<x_cairo_t> _cairo;
-    cairo_t          *_cairotype;
-    cairo_surface_t  *_cairosurf;
+    static cairo_t          *_cairotype;
+    static cairo_surface_t  *_cairosurf;
 };
 
 

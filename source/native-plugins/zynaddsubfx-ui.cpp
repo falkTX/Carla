@@ -180,6 +180,7 @@ protected:
         }
 
         carla_stderr("ZynPipeClient::msgReceived : %s", msg);
+        return false;
     }
 
 private:

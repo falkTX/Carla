@@ -29,7 +29,7 @@ ifeq ($(HAVE_NTK),true)
 FLUID          = ntk-fluid
 ZYN_CXX_FLAGS += -DNTK_GUI
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags ntk_images ntk)
-ZYN_LD_FLAGS  += $(shell pkg-config --libs ntk_images ntk) -ldl
+ZYN_LD_FLAGS  += $(shell pkg-config --libs ntk_images ntk)
 else # HAVE_NTK
 FLUID          = fluid
 ZYN_CXX_FLAGS += -DFLTK_GUI
@@ -155,6 +155,8 @@ OBJS += \
 	$(OBJDIR)/zita-at1.cpp.o \
 	$(OBJDIR)/zita-bls1.cpp.o \
 	$(OBJDIR)/zita-rev1.cpp.o
+
+TARGETS += resources/rev1-ui$(APP_EXT)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -177,10 +179,15 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	@rm -f $@
 	@$(AR) crs $@ $^
 
+resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
+	-@mkdir -p $(OBJDIR)
+	@echo "Linking zita-rev1-ui"
+	@$(CXX) $^ $(LINK_FLAGS) -lclxclient -lclthreads $(shell pkg-config --libs cairo libpng12 x11 xft zlib) -ldl -lpthread -o $@
+
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zynaddsubfx-ui"
-	@$(CXX) $^ $(ZYN_LD_FLAGS) -o $@
+	@$(CXX) $^ $(ZYN_LD_FLAGS) -ldl -lpthread -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -287,7 +294,12 @@ $(OBJDIR)/zita-bls1.cpp.o: zita-bls1.cpp
 $(OBJDIR)/zita-rev1.cpp.o: zita-rev1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f) -Wno-unused-parameter -c -o $@
+
+$(OBJDIR)/zita-rev1-ui.cpp.o: zita-rev1-ui.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags cairo libpng12 x11 xft zlib) -Wno-unused-parameter -Wno-ignored-qualifiers -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -299,6 +311,7 @@ $(OBJDIR)/%.cpp.o: %.cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJDIR)/zita-rev-ui.cpp.d
 -include $(OBJDIR)/zynaddsubfx-ui.cpp.d
 
 # ----------------------------------------------------------------------------------------------------------------------------
