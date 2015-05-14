@@ -20,6 +20,10 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -isystem zynaddsubfx -Izynaddsubfx/rtosc
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
+ifeq ($(HAVE_X11),true)
+ZYN_CXX_FLAGS += $(shell pkg-config --cflags x11)
+ZYN_LD_FLAGS  += $(shell pkg-config --libs x11)
+endif
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ifeq ($(HAVE_NTK),true)
 FLUID          = ntk-fluid
