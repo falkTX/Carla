@@ -440,13 +440,22 @@ protected:
         {
             fParameters[index] = (value >= 0.5f) ? 1.0f : 0.0f;
 
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
+
             char msg[24];
             std::sprintf(msg, "/part%i/Penabled", index-kParamPart01Enabled);
             fMiddleWare->transmitMsg(msg, (value >= 0.5f) ? "T" : "F");
         }
         else if (index <= kParamPart16Volume)
         {
+            if (carla_compareFloats(fParameters[index], value))
+                return;
+
             fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
 
             char msg[24];
             std::sprintf(msg, "/part%i/Pvolume", index-kParamPart01Volume);
@@ -454,7 +463,13 @@ protected:
         }
         else if (index <= kParamPart16Panning)
         {
+            if (carla_compareFloats(fParameters[index], value))
+                return;
+
             fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
 
             char msg[24];
             std::sprintf(msg, "/part%i/Ppanning", index-kParamPart01Panning);
@@ -530,6 +545,7 @@ protected:
                 FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
                 return;
             }
+
             fMutex.lock();
         }
 
@@ -654,7 +670,7 @@ protected:
 
         const CarlaMutexLocker cml(fMutex);
 
-        fMaster->putalldata(const_cast<char*>(data), 0);
+        fMaster->putalldata(data);
         fMaster->applyparameters();
 
         fMiddleWare->updateResources(fMaster);
@@ -737,10 +753,17 @@ private:
     {
         fMiddleWare = new MiddleWare(fSynth);
         fMaster     = fMiddleWare->spawnMaster();
+
+        fMiddleWare->setIdleCallback(_idleCallback, this);
+        fMiddleWare->setUiCallback(__uiCallback, this);
+        fMiddleWare->setMasterChangedCallback(_masterChangedCallback, this);
     }
 
     void _setMasterParameters()
     {
+        fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+        fMiddleWare->activeUrl("");
+
         for (int i=kParamPart16Enabled+1; --i>=kParamPart01Enabled;)
         {
             char msg[24];
@@ -778,6 +801,71 @@ private:
         fMaster = nullptr;
         delete fMiddleWare;
         fMiddleWare = nullptr;
+    }
+
+    void _uiCallback(const char* const msg)
+    {
+        if (std::strncmp(msg, "/part", 5) != 0)
+            return;
+
+        const char* msgtmp = msg;
+        msgtmp += 5;
+        CARLA_SAFE_ASSERT_RETURN( msgtmp[0] >= '0' && msgtmp[0] <= '9',);
+        CARLA_SAFE_ASSERT_RETURN((msgtmp[1] >= '0' && msgtmp[1] <= '9') || msgtmp[1] == '/',);
+
+        char partnstr[3] = { '\0', '\0', '\0' };
+
+        partnstr[0] = msgtmp[0];
+        ++msgtmp;
+
+        if (msgtmp[0] >= '0' && msgtmp[0] <= '9')
+        {
+            partnstr[1] = msgtmp[0];
+            ++msgtmp;
+        }
+
+        const int partn = std::atoi(partnstr);
+        ++msgtmp;
+
+        /**/ if (std::strcmp(msgtmp, "Penabled") == 0)
+        {
+            const int index = kParamPart01Enabled+partn;
+            const bool enbl = rtosc_argument(msg,0).T;
+
+            fParameters[index] = enbl ? 1.0f : 0.0f;
+            uiParameterChanged(kParamPart01Enabled+partn, enbl ? 1.0f : 0.0f);
+        }
+        else if (std::strcmp(msgtmp, "Pvolume") == 0)
+        {
+            const int index = kParamPart01Volume+partn;
+            const int value = rtosc_argument(msg,0).i;
+
+            fParameters[index] = value;
+            uiParameterChanged(kParamPart01Volume+partn, value);
+        }
+        else if (std::strcmp(msgtmp, "Ppanning") == 0)
+        {
+            const int index = kParamPart01Panning+partn;
+            const int value = rtosc_argument(msg,0).i;
+
+            fParameters[index] = value;
+            uiParameterChanged(kParamPart01Panning+partn, value);
+        }
+    }
+
+    static void _idleCallback(void* ptr)
+    {
+        ((ZynAddSubFxPlugin*)ptr)->hostGiveIdle();
+    }
+
+    static void __uiCallback(void* ptr, const char* msg)
+    {
+        ((ZynAddSubFxPlugin*)ptr)->_uiCallback(msg);
+    }
+
+    static void _masterChangedCallback(void* ptr, Master* m)
+    {
+        ((ZynAddSubFxPlugin*)ptr)->fMaster = m;
     }
 
     // -------------------------------------------------------------------

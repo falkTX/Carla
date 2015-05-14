@@ -78,11 +78,11 @@ class Master
 
         void getfromXML(XMLwrapper *xml);
 
-        /**get all data to a newly allocated array (used for VST)
+        /**get all data to a newly allocated array (used for plugin)
          * @return the datasize*/
         int getalldata(char **data) NONREALTIME;
-        /**put all data from the *data array to zynaddsubfx parameters (used for VST)*/
-        void putalldata(char *data, int size);
+        /**put all data from the *data array to zynaddsubfx parameters (used for plugin)*/
+        void putalldata(const char *data);
 
         //Midi IN
         void noteOn(char chan, char note, char velocity);

@@ -220,10 +220,14 @@ rtosc::Ports uiPorts::ports = {
         ui->do_load_master(a0.s);
     } END
     BEGIN("vu-meter:bb") {
+#ifdef DEBUG
         printf("Vu meter handler...\n");
+#endif
         if(a0.b.len == sizeof(vuData) &&
                 a1.b.len == sizeof(float)*NUM_MIDI_PARTS) {
+#ifdef DEBUG
             printf("Normal behavior...\n");
+#endif
             //Refresh the primary VU meters
             ui->simplemastervu->update((vuData*)a0.b.data);
             ui->mastervu->update((vuData*)a0.b.data);
@@ -245,7 +249,9 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
         return;
     MasterUI *mui = (MasterUI*)gui;
     mui->osc->tryLink(message);
+#ifdef DEBUG
     printf("got message for UI '%s:%s'\n", message, rtosc_argument_string(message));
+#endif
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
     rtosc::RtData d;

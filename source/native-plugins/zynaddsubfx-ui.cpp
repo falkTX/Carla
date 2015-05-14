@@ -109,6 +109,17 @@ public:
 protected:
     bool msgReceived(const char* const msg) noexcept override
     {
+        if (std::strcmp(msg, "control") == 0)
+        {
+            uint index;
+            float value;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
+
+            // TODO
+            return true;
+        }
+
         if (std::strcmp(msg, "show") == 0)
         {
             try {

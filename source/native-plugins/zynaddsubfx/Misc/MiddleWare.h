@@ -18,7 +18,9 @@ class MiddleWare
         //Set callback to push UI events to
         void setUiCallback(void(*cb)(void*,const char *),void *ui);
         //Set callback to run while busy
-        void setIdleCallback(void(*cb)(void));
+        void setIdleCallback(void(*cb)(void*),void *ptr);
+        //Set callback to run when master changed
+        void setMasterChangedCallback(void(*cb)(void*,Master*),void *ptr);
         //Handle events
         void tick(void);
         //Do A Readonly Operation (For Parameter Copy)
