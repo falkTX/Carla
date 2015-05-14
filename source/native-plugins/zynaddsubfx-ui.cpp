@@ -26,7 +26,20 @@
 #define SOURCE_DIR "/usr/share/zynaddsubfx"
 #undef override
 
-CarlaString gUiPixmapPath("/usr/share/carla/resources/zynaddsubfx/");
+#ifdef NTK_GUI
+# include <dlfcn.h>
+
+static CarlaString getResourceDir()
+{
+    Dl_info exeInfo;
+    dladdr((void*)getResourceDir, &exeInfo);
+
+    CarlaString filename(exeInfo.dli_fname);
+    return filename.truncate(filename.rfind("-ui"));
+}
+
+CarlaString gUiPixmapPath(getResourceDir());
+#endif
 
 // base c-style headers
 #include "zynaddsubfx/rtosc/rtosc.h"

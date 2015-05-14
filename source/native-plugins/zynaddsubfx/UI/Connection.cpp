@@ -83,7 +83,7 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 
 
 #ifdef CARLA_VERSION_STRING
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "window_backdrop.png"))
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "/window_backdrop.png"))
         Fl::scheme_bg(new Fl_Tiled_Image(img));
 #else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/window_backdrop.png"))
@@ -95,7 +95,7 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
         errx(1, "ERROR: Cannot find pixmaps/window_backdrop.png");
 
 #ifdef CARLA_VERSION_STRING
-    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "module_backdrop.png"))
+    if(Fl_Shared_Image *img = Fl_Shared_Image::get(gUiPixmapPath + "/module_backdrop.png"))
         module_backdrop = new Fl_Tiled_Image(img);
 #else
     if(Fl_Shared_Image *img = Fl_Shared_Image::get(PIXMAP_PATH "/module_backdrop.png"))
