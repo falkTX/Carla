@@ -182,7 +182,7 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zita-rev1-ui"
-	@$(CXX) $^ $(LINK_FLAGS) -lclxclient -lclthreads $(shell pkg-config --libs cairo libpng12 x11 xft zlib) -ldl -lpthread -o $@
+	@$(CXX) $^ $(LINK_FLAGS) -lclxclient -lclthreads $(shell pkg-config --libs cairo libpng12 x11 xft zlib) -ldl -lpthread -lrt -o $@
 
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
