@@ -332,6 +332,9 @@ Master::Master(const SYNTH_T &synth_)
     {
         fprintf(stderr, "MIDI- got an error '%s' -- '%s'\n",a,b);
     };
+
+    mastercb = 0;
+    mastercb_ptr = 0;
 }
 
 void Master::applyOscEvent(const char *msg)
@@ -535,6 +538,12 @@ void Master::partonoff(int npart, int what)
     }
 }
 
+void Master::setMasterChangedCallback(void(*cb)(void*,Master*), void *ptr)
+{
+    mastercb     = cb;
+    mastercb_ptr = ptr;
+}
+
 #if 0
 template <class T>
 struct def_skip
@@ -617,6 +626,8 @@ void Master::AudioOut(float *outl, float *outr)
             Master *new_master  = *(Master**)rtosc_argument(msg, 0).b.data;
             new_master->AudioOut(outl, outr);
             Nio::masterSwap(new_master);
+            if (mastercb)
+                mastercb(mastercb_ptr, new_master);
             bToU->write("/free", "sb", "Master", sizeof(Master*), &this_master);
             return;
         }

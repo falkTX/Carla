@@ -676,7 +676,6 @@ protected:
         fMiddleWare->updateResources(fMaster);
 
         _setMasterParameters();
-
     }
 
     // -------------------------------------------------------------------
@@ -752,11 +751,9 @@ private:
     void _initMaster()
     {
         fMiddleWare = new MiddleWare(fSynth);
-        fMaster     = fMiddleWare->spawnMaster();
-
-        fMiddleWare->setIdleCallback(_idleCallback, this);
         fMiddleWare->setUiCallback(__uiCallback, this);
-        fMiddleWare->setMasterChangedCallback(_masterChangedCallback, this);
+        fMiddleWare->setIdleCallback(_idleCallback, this);
+        _masterChangedCallback(fMiddleWare->spawnMaster());
     }
 
     void _setMasterParameters()
@@ -801,6 +798,17 @@ private:
         fMaster = nullptr;
         delete fMiddleWare;
         fMiddleWare = nullptr;
+    }
+
+    void _masterChangedCallback(Master* m)
+    {
+        fMaster = m;
+        fMaster->setMasterChangedCallback(__masterChangedCallback, this);
+    }
+
+    static void __masterChangedCallback(void* ptr, Master* m)
+    {
+        ((ZynAddSubFxPlugin*)ptr)->_masterChangedCallback(m);
     }
 
     void _uiCallback(const char* const msg)
@@ -853,19 +861,14 @@ private:
         }
     }
 
-    static void _idleCallback(void* ptr)
-    {
-        ((ZynAddSubFxPlugin*)ptr)->hostGiveIdle();
-    }
-
     static void __uiCallback(void* ptr, const char* msg)
     {
         ((ZynAddSubFxPlugin*)ptr)->_uiCallback(msg);
     }
 
-    static void _masterChangedCallback(void* ptr, Master* m)
+    static void _idleCallback(void* ptr)
     {
-        ((ZynAddSubFxPlugin*)ptr)->fMaster = m;
+        ((ZynAddSubFxPlugin*)ptr)->hostGiveIdle();
     }
 
     // -------------------------------------------------------------------

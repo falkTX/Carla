@@ -686,9 +686,6 @@ public:
 
         master = m;
 
-        if (mastercb)
-            mastercb(mastercb_ptr, m);
-
         //Give it to the backend and wait for the old part to return for
         //deallocation
         uToB->write("/load-master", "b", sizeof(Master*), &m);
@@ -815,10 +812,6 @@ public:
     void(*idle)(void*);
     void* idle_ptr;
 
-    //Callback When Master changes
-    void(*mastercb)(void*,Master*);
-    void* mastercb_ptr;
-
     //General UI callback
     cb_t cb;
     //UI handle
@@ -862,8 +855,6 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port
     cb = [](void*, const char*){};
     idle = 0;
     idle_ptr = 0;
-    mastercb = 0;
-    mastercb_ptr = 0;
 
     the_bToU = bToU;
     master = new Master(synth);
@@ -1310,12 +1301,6 @@ void MiddleWare::setIdleCallback(void(*cb)(void*), void *ptr)
 {
     impl->idle     = cb;
     impl->idle_ptr = ptr;
-}
-
-void MiddleWare::setMasterChangedCallback(void(*cb)(void*,Master*), void *ptr)
-{
-    impl->mastercb     = cb;
-    impl->mastercb_ptr = ptr;
 }
 
 void MiddleWare::transmitMsg(const char *msg)
