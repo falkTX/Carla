@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2010-2012 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -27,6 +27,9 @@
 
 namespace AT1 {
 
+
+cairo_t         *RotaryCtl::_cairotype = 0;
+cairo_surface_t *RotaryCtl::_cairosurf = 0;
 
 
 int RotaryCtl::_wb_up = 4;
@@ -59,10 +62,6 @@ RotaryCtl::RotaryCtl (X_window     *parent,
 {
     x_add_events (  ExposureMask
                   | Button1MotionMask | ButtonPressMask | ButtonReleaseMask);
-
-    _cairo->initIfNeeded(parent->disp());
-    _cairotype = _cairo->type;
-    _cairosurf = _cairo->surf;
 } 
 
 
@@ -70,6 +69,19 @@ RotaryCtl::~RotaryCtl (void)
 {
 }
 
+
+void RotaryCtl::init (X_display *disp)
+{
+    _cairosurf = cairo_xlib_surface_create (disp->dpy (), 0, disp->dvi (), 50, 50);
+    _cairotype = cairo_create (_cairosurf);
+}
+
+
+void RotaryCtl::fini (void)
+{
+    cairo_destroy (_cairotype);
+    cairo_surface_destroy (_cairosurf);
+}
 
 
 void RotaryCtl::handle_event (XEvent *E)

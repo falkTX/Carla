@@ -98,6 +98,7 @@ protected:
         if (std::strcmp(msg, "quit") == 0)
         {
             fQuitReceived = true;
+            mainwin->stop();
             return true;
         }
 

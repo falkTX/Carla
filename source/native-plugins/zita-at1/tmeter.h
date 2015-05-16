@@ -1,7 +1,7 @@
 /*
     Copyright (C) 2009-2010 Fons Adriaensen <fons@linuxaudio.org>
-    Modified by falkTX on Jan 2015 for inclusion in Carla
-
+    Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+    
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or

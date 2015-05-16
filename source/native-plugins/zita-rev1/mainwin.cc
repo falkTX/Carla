@@ -72,8 +72,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, bool ambiso
     if (_ambis) _rotary [R_RGXYZ]->x_map ();
     else        _rotary [R_OPMIX]->x_map ();
 
-    x_add_events (ExposureMask); 
-    x_map (); 
+    x_add_events (ExposureMask);
     set_time (0);
     inc_time (50000);
 }

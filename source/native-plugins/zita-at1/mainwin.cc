@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2010-2014 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -30,24 +30,23 @@
 namespace AT1 {
 
 
-Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb) :
+Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, ValueChangedCallback* valuecb) :
     A_thread ("Main"),
     X_window (parent, xp, yp, XSIZE, YSIZE, XftColors [C_MAIN_BG]->pixel),
     _stop (false),
     _xres (xres),
-    _jclient (jclient),
+    z_error (0.0f),
+    z_noteset (0),
+    z_midiset (0),
     _valuecb (valuecb)
 {
     X_hints     H;
-    char        s [256];
     int         i, j, x, y;
 
     _atom = XInternAtom (dpy (), "WM_DELETE_WINDOW", True);
     XSetWMProtocols (dpy (), win (), &_atom, 1);
     _atom = XInternAtom (dpy (), "WM_PROTOCOLS", True);
 
-    sprintf (s, "%s", jclient->jname ());
-    x_set_title (s);
     H.position (xp, yp);
     H.minsize (XSIZE, YSIZE);
     H.maxsize (XSIZE, YSIZE);
@@ -88,6 +87,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     }
 
 
+    RotaryCtl::init (disp ());
     x = 270;
     _rotary [R_TUNE] = new Rlinctl (this, this, R_TUNE, &r_tune_geom, x, 0, 400,  5, 400.0, 480.0, 440.0);
     _rotary [R_BIAS] = new Rlinctl (this, this, R_BIAS, &r_bias_geom, x, 0, 270,  5,   0.0,   1.0,   0.5);
@@ -99,10 +99,9 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     _textln = new X_textip (this, 0, &tstyle1, 0, 0, 50, 15, 15);
     _textln->set_align (0);
     _ttimer = 0;
-    _notes  = 0xFFF;
+    _notes = 0xFFF;
 
-    x_add_events (ExposureMask); 
-    x_map (); 
+    x_add_events (ExposureMask);
     set_time (0);
     inc_time (500000);
 }
@@ -110,6 +109,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
  
 Mainwin::~Mainwin (void)
 {
+    RotaryCtl::fini ();
 }
 
  
@@ -130,6 +130,14 @@ int Mainwin::process (void)
 }
 
 
+void Mainwin::setdata_ui (float error, int noteset, int midiset)
+{
+    z_error = error;
+    z_noteset = noteset;
+    z_midiset = midiset;
+}
+
+
 void Mainwin::setchan_ui (int chan)
 {
     char s [16];
@@ -142,6 +150,15 @@ void Mainwin::setchan_ui (int chan)
         _bchan->set_text (s, 0);
     }
     else _bchan->set_text ("Omni", 0);
+}
+
+
+void Mainwin::setmask_ui (int mask)
+{
+    _notes = mask;
+
+    for (int i = 0; i < 12; i++)
+         _bnote [i]->set_state ( (_notes & (1 << i)) != 0 ? 1 : 0 );
 }
 
 
@@ -178,9 +195,9 @@ void Mainwin::handle_time (void)
     int   i, k, s;
     float v;
 
-    v = _jclient->retuner ()->get_error ();
+    v = z_error;
     _tmeter->update (v, v);
-    k = _jclient->retuner ()->get_noteset ();
+    k = z_noteset;
     for (i = 0; i < 12; i++)
     {
 	s = _bnote [i]->state ();
@@ -189,14 +206,14 @@ void Mainwin::handle_time (void)
         _bnote [i]->set_state (s);
 	k >>= 1;
     }
-    k = _jclient->get_midiset();
+    k = z_midiset;
     if (k) _bmidi->set_state (_bmidi->state () | 1);
     else   _bmidi->set_state (_bmidi->state () & ~1);
     if (_ttimer)
     {
 	if (--_ttimer == 0) _textln->x_unmap ();
     }
-    inc_time (50000);
+    inc_time (5000);
     XFlush (dpy ());
 }
 
@@ -246,11 +263,11 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent *E)
 	    k = 1 << k;
 	    if (B->state () & 1) _notes |=  k;
 	    else                 _notes &= ~k;
-	    _jclient->set_notemask (_notes);
+	    _valuecb->noteMaskChangedCallback (_notes);
 	}
 	else if (k == B_MIDI)
 	{
-	    _jclient->clr_midimask ();
+	    _valuecb->noteMaskChangedCallback (-1);
 	}
 	break;
 
@@ -273,28 +290,23 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent *E)
 	{
         case R_TUNE:
             v = _rotary [R_TUNE]->value ();
-            _jclient->retuner ()->set_refpitch (v);
             _valuecb->valueChangedCallback (R_TUNE, v);
 	    showval (k);
 	    break;
 	case R_BIAS:   
             v = _rotary [R_BIAS]->value ();
-            _jclient->retuner ()->set_notebias (v);
             _valuecb->valueChangedCallback (R_BIAS, v);
 	    break;
 	case R_FILT:   
             v = _rotary [R_FILT]->value ();
-            _jclient->retuner ()->set_corrfilt (v);
             _valuecb->valueChangedCallback (R_FILT, v);
 	    break;
 	case R_CORR:   
             v = _rotary [R_CORR]->value ();
-            _jclient->retuner ()->set_corrgain (v);
             _valuecb->valueChangedCallback (R_CORR, v);
 	    break;
 	case R_OFFS:   
             v = _rotary [R_OFFS]->value ();
-            _jclient->retuner ()->set_corroffs (v);
             _valuecb->valueChangedCallback (R_OFFS, v);
 	    showval (k);
 	    break;
@@ -317,7 +329,6 @@ void Mainwin::setchan (int d)
 	_bchan->set_text (s, 0);
     }
     else _bchan->set_text ("Omni", 0);
-    _jclient->set_midichan (_midich - 1);
     _valuecb->valueChangedCallback (NROTARY, _midich);
 }   
 

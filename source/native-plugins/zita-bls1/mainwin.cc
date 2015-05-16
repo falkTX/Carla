@@ -66,8 +66,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, ValueChange
     _parmind = -1;
     _timeout = 0;
 
-    x_add_events (ExposureMask); 
-    x_map (); 
+    x_add_events (ExposureMask);
     set_time (0);
     inc_time (250000);
 }

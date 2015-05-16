@@ -17,13 +17,15 @@
 
 #include "CarlaPipeUtils.cpp"
 
-#include "zita-rev1/png2img.cc"
-#include "zita-rev1/guiclass.cc"
-#include "zita-rev1/mainwin.cc"
-#include "zita-rev1/rotary.cc"
-#include "zita-rev1/styles.cc"
+#include "zita-at1/png2img.cc"
+#include "zita-at1/button.cc"
+#include "zita-at1/guiclass.cc"
+#include "zita-at1/mainwin.cc"
+#include "zita-at1/rotary.cc"
+#include "zita-at1/styles.cc"
+#include "zita-at1/tmeter.cc"
 
-using namespace REV1;
+using namespace AT1;
 
 static Mainwin* mainwin = nullptr;
 
@@ -56,6 +58,27 @@ public:
 protected:
     bool msgReceived(const char* const msg) noexcept override
     {
+        if (std::strcmp(msg, "zita-data") == 0)
+        {
+            float error;
+            int noteset, midiset;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(error), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(noteset), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(midiset), true);
+
+            mainwin->setdata_ui(error, noteset, midiset);
+            return true;
+        }
+
+        if (std::strcmp(msg, "zita-mask") == 0)
+        {
+            uint mask;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(mask), true);
+
+            mainwin->setmask_ui(mask);
+            return true;
+        }
+
         if (std::strcmp(msg, "control") == 0)
         {
             uint index;
@@ -63,10 +86,11 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
 
-            if (index == Mainwin::R_OPMIX && mainwin->_ambis)
-                index = Mainwin::R_RGXYZ;
+            if (index < Mainwin::NROTARY)
+                mainwin->_rotary[index]->set_value(value);
+            else if (index == Mainwin::NROTARY) // == kParameterM_CHANNEL
+                mainwin->setchan_ui(value);
 
-            mainwin->_rotary[index]->set_value(value);
             return true;
         }
 
@@ -109,13 +133,28 @@ protected:
         return false;
     }
 
-    void valueChangedCallback(uint index, double value) override
+    void noteMaskChangedCallback(int mask)
     {
-        if (index == Mainwin::R_RGXYZ)
-            index = Mainwin::R_OPMIX;
+        if (! isPipeRunning())
+            return;
 
-        if (isPipeRunning())
-            writeControlMessage(index, value);
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+        std::snprintf(tmpBuf, 0xff, "%i\n", mask);
+
+        const CarlaMutexLocker cml(getPipeLock());
+
+        writeMessage("zita-mask\n", 10);
+        writeMessage(tmpBuf);
+        flushMessages();
+    }
+
+    void valueChangedCallback(uint index, float value) override
+    {
+        if (! isPipeRunning())
+            return;
+
+        writeControlMessage(index, value);
     }
 
 private:
@@ -145,13 +184,11 @@ int main(int argc, const char* argv[])
     }
 
     ZitaPipeClient pipe;
-    bool ambisonic      = false;
     const char* uiTitle = "Test UI";
 
     if (argc > 1)
     {
-        ambisonic = std::strcmp(argv[1], "true") == 0;
-        uiTitle   = argv[2];
+        uiTitle = argv[2];
 
         if (! pipe.initPipeClient(argv))
             return 1;
@@ -164,7 +201,7 @@ int main(int argc, const char* argv[])
 
     styles_init(display, &xresman);
     rootwin = new X_rootwin(display);
-    mainwin = new Mainwin(rootwin, &xresman, xp, yp, ambisonic, &pipe);
+    mainwin = new Mainwin(rootwin, &xresman, xp, yp, &pipe);
     mainwin->x_set_title(uiTitle);
     rootwin->handle_event();
     handler = new X_handler(display, mainwin, EV_X11);

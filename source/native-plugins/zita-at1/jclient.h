@@ -1,8 +1,8 @@
 // -----------------------------------------------------------------------
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -35,10 +35,9 @@ class Jclient : public A_thread
 {
 public:
 
-    Jclient (const char *jname, jack_client_t *jclient);
+    Jclient (jack_client_t *jclient);
     ~Jclient (void);
 
-    const char *jname (void) { return _jname; }
     unsigned int fsize (void) const { return _fsize; } 
     unsigned int fsamp (void) const { return _fsamp; } 
     Retuner *retuner (void) { return _retuner; }
@@ -52,7 +51,7 @@ private:
 
     virtual void thr_main (void) {}
 
-    void init_jack (const char *jname);
+    void init_jack (void);
     void close_jack (void);
     void jack_shutdown (void);
     int  jack_process (int nframes);
@@ -63,7 +62,6 @@ private:
     jack_port_t    *_aout_port;
     jack_port_t    *_midi_port;
     bool            _active;
-    const char     *_jname;
     unsigned int    _fsamp;
     unsigned int    _fsize;
     Retuner        *_retuner;

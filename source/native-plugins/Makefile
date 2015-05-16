@@ -170,6 +170,7 @@ OBJS += \
 	$(OBJDIR)/zita-rev1.cpp.o
 
 TARGETS += \
+	resources/at1-ui$(APP_EXT) \
 	resources/bls1-ui$(APP_EXT) \
 	resources/rev1-ui$(APP_EXT)
 endif
@@ -194,14 +195,19 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	@rm -f $@
 	@$(AR) crs $@ $^
 
+resources/at1-ui$(APP_EXT): $(OBJDIR)/zita-at1-ui.cpp.o
+	-@mkdir -p $(OBJDIR)
+	@echo "Linking at1-ui"
+	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
+
 resources/bls1-ui$(APP_EXT): $(OBJDIR)/zita-bls1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
-	@echo "Linking zita-bls1-ui"
+	@echo "Linking bls1-ui"
 	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
-	@echo "Linking zita-rev1-ui"
+	@echo "Linking rev1-ui"
 	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
@@ -301,12 +307,6 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-# TODO
-$(OBJDIR)/zita-at1.cpp.o: zita-at1.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
-
 $(OBJDIR)/zita-%-ui.cpp.o: zita-%-ui.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
@@ -327,6 +327,7 @@ $(OBJDIR)/%.cpp.o: %.cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
+-include $(OBJDIR)/zita-at1-ui.cpp.d
 -include $(OBJDIR)/zita-bls1-ui.cpp.d
 -include $(OBJDIR)/zita-rev1-ui.cpp.d
 -include $(OBJDIR)/zynaddsubfx-ui.cpp.d

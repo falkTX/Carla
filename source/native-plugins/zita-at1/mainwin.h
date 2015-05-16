@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2010-2014 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -30,7 +30,7 @@
 #include "tmeter.h"
 #include "global.h"
 
-class AT1Plugin;
+class ZitaPipeClient;
 
 namespace AT1 {
 
@@ -41,12 +41,14 @@ public:
 
     struct ValueChangedCallback {
         virtual ~ValueChangedCallback() {}
+        virtual void noteMaskChangedCallback(int) = 0;
         virtual void valueChangedCallback(uint, float) = 0;
     };
 
-    enum { XSIZE = 600, YSIZE = 75 };
 
-    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb);
+    enum { XSIZE = 580, YSIZE = 75 };
+
+    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, ValueChangedCallback* valuecb);
     ~Mainwin (void);
     Mainwin (const Mainwin&);
     Mainwin& operator=(const Mainwin&);
@@ -54,7 +56,9 @@ public:
     void stop (void) { _stop = true; }
     int process (void); 
 
+    void setdata_ui (float error, int noteset, int midiset);
     void setchan_ui (int chan);
+    void setmask_ui (int mask);
 
 private:
 
@@ -77,7 +81,6 @@ private:
     bool            _stop;
     bool            _ambis;
     X_resman       *_xres;
-    Jclient        *_jclient;
     int             _notes;
     PushButton     *_bmidi;
     PushButton     *_bnote [12];
@@ -88,9 +91,12 @@ private:
     int             _midich;
     int             _ttimer;
 
+    float z_error;
+    int z_noteset, z_midiset;
+
     ValueChangedCallback* _valuecb;
 
-    friend class ::AT1Plugin;
+    friend class ::ZitaPipeClient;
 };
 
 

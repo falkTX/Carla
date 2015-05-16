@@ -535,6 +535,7 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
 
 	install -m 755 \
+		bin/resources/at1-ui \
 		bin/resources/bls1-ui \
 		bin/resources/rev1-ui \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/

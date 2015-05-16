@@ -15,23 +15,15 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaNative.hpp"
-#include "CarlaMathUtils.hpp"
+#include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
 
 #include "juce_audio_basics.h"
 
-#include "zita-common.hpp"
-#include "zita-at1/button.cc"
-#include "zita-at1/guiclass.cc"
 #include "zita-at1/jclient.cc"
-#include "zita-at1/mainwin.cc"
-#include "zita-at1/png2img.cc"
 #include "zita-at1/retuner.cc"
-#include "zita-at1/rotary.cc"
-#include "zita-at1/styles.cc"
-#include "zita-at1/tmeter.cc"
 
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
 
@@ -40,9 +32,7 @@ using namespace AT1;
 // -----------------------------------------------------------------------
 // AT1 Plugin
 
-class AT1Plugin : public NativePluginClass,
-                  public X_handler_thread<Mainwin>::SetValueCallback,
-                  private Mainwin::ValueChangedCallback
+class AT1Plugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
@@ -61,30 +51,18 @@ public:
     };
 
     AT1Plugin(const NativeHostDescriptor* const host)
-        : NativePluginClass(host),
+        : NativePluginAndUiClass(host, "at1-ui"),
           fJackClient(),
-          xresman(),
           jclient(nullptr),
-          display(nullptr),
-          rootwin(nullptr),
-          mainwin(nullptr),
-          handler(nullptr),
-          handlerThread(this),
+          notemask(0xfff),
           leakDetector_AT1Plugin()
     {
         CARLA_SAFE_ASSERT(host != nullptr);
 
         carla_zeroStruct(fJackClient);
 
-        fJackClient.clientName = "at1";
         fJackClient.bufferSize = getBufferSize();
         fJackClient.sampleRate = getSampleRate();
-
-        int   argc   = 1;
-        char* argv[] = { (char*)"at1" };
-        xresman.init(&argc, argv, (char*)"at1", nullptr, 0);
-
-        jclient = new Jclient(xresman.rname(), &fJackClient);
 
         // set initial values
         fParameters[kParameterR_TUNE] = 440.0f;
@@ -92,17 +70,9 @@ public:
         fParameters[kParameterR_BIAS] = 0.5f;
         fParameters[kParameterR_CORR] = 1.0f;
         fParameters[kParameterR_OFFS] = 0.0f;
-
         fParameters[kParameterM_CHANNEL] = 0.0f;
 
-        Retuner* const retuner(jclient->retuner());
-
-        jclient->set_midichan(-1);
-        retuner->set_refpitch(fParameters[kParameterR_TUNE]);
-        retuner->set_corrfilt(fParameters[kParameterR_FILT]);
-        retuner->set_notebias(fParameters[kParameterR_BIAS]);
-        retuner->set_corrgain(fParameters[kParameterR_CORR]);
-        retuner->set_corroffs(fParameters[kParameterR_OFFS]);
+        _recreateZitaClient();
     }
 
     // -------------------------------------------------------------------
@@ -162,7 +132,7 @@ public:
             param.ranges.max = 1.0f;
             break;
         case kParameterR_OFFS:
-            param.name = "OfOfset";
+            param.name = "Offset";
             param.ranges.def = 0.0f;
             param.ranges.min = -2.0f;
             param.ranges.max = 2.0f;
@@ -284,72 +254,74 @@ public:
 
     void uiShow(const bool show) override
     {
-        if (show)
+        NativePluginAndUiClass::uiShow(show);
+
+        if (show && isPipeRunning())
         {
-            if (display != nullptr)
-                return;
+            char tmpBuf[0xff+1];
+            tmpBuf[0xff] = '\0';
 
-            display = new X_display(nullptr);
+            const CarlaMutexLocker cml(getPipeLock());
 
-            if (display->dpy() == nullptr)
-                return hostUiUnavailable();
+            writeMessage("zita-mask\n", 10);
 
-            styles_init(display, &xresman, getResourceDir());
+            std::snprintf(tmpBuf, 0xff, "%i\n", notemask);
+            writeMessage(tmpBuf);
 
-            rootwin = new X_rootwin(display);
-            mainwin = new Mainwin(rootwin, &xresman, 0, 0, jclient, this);
-
-            mainwin->x_set_title(getUiName());
-
-            if (const uintptr_t winId = getUiParentId())
-                XSetTransientForHint(display->dpy(), mainwin->win(), static_cast<Window>(winId));
-
-            rootwin->handle_event();
-
-            handler = new X_handler(display, mainwin, EV_X11);
-            handler->next_event();
-            XFlush(display->dpy());
-
-            handlerThread.setupAndRun(handler, rootwin, mainwin);
-        }
-        else
-        {
-            if (handlerThread.isThreadRunning())
-                handlerThread.stopThread();
-
-            handler = nullptr;
-            mainwin = nullptr;
-            rootwin = nullptr;
-            display = nullptr;
+            flushMessages();
         }
     }
 
     void uiIdle() override
     {
-        if (mainwin == nullptr)
+        NativePluginAndUiClass::uiIdle();
+
+        if (! isPipeRunning())
             return;
 
-        if (handlerThread.wasClosed())
-        {
-            {
-                const CarlaMutexLocker cml(handlerThread.getLock());
-                handler = nullptr;
-                mainwin = nullptr;
-                rootwin = nullptr;
-                display = nullptr;
-            }
-            uiClosed();
-        }
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+
+        const CarlaMutexLocker cmlc(fClientMutex);
+        const CarlaMutexLocker cmlp(getPipeLock());
+        const ScopedLocale csl;
+
+        Retuner* const retuner(jclient->retuner());
+
+        writeMessage("zita-data\n", 10);
+
+        std::snprintf(tmpBuf, 0xff, "%f\n", retuner->get_error());
+        writeMessage(tmpBuf);
+
+        std::snprintf(tmpBuf, 0xff, "%i\n", retuner->get_noteset());
+        writeMessage(tmpBuf);
+
+        std::snprintf(tmpBuf, 0xff, "%i\n", jclient->get_midiset());
+        writeMessage(tmpBuf);
+
+        flushMessages();
     }
 
-    void uiSetParameterValue(const uint32_t index, const float value) override
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() const override
     {
-        CARLA_SAFE_ASSERT_RETURN(index < kNumParameters,);
+        char tmpBuf[0xff+1];
+        tmpBuf[0xff] = '\0';
+        std::snprintf(tmpBuf, 0xff, "%i", notemask);
 
-        if (mainwin == nullptr)
-            return;
+        return strdup(tmpBuf);
+    }
 
-        handlerThread.setParameterValueLater(index, value);
+    void setState(const char* const data) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr && data[0] != '\0',);
+
+        notemask = std::atoi(data);
+
+        const CarlaMutexLocker cml(fClientMutex);
+        jclient->set_notemask(notemask);
     }
 
     // -------------------------------------------------------------------
@@ -358,51 +330,47 @@ public:
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
         fJackClient.bufferSize = bufferSize;
+        // _recreateZitaClient(); // FIXME
     }
 
     void sampleRateChanged(const double sampleRate) override
     {
         fJackClient.sampleRate = sampleRate;
-    }
-
-    void uiNameChanged(const char* const uiName) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
-
-        if (mainwin == nullptr)
-            return;
-
-        const CarlaMutexLocker cml(handlerThread.getLock());
-
-        mainwin->x_set_title(uiName);
+        // _recreateZitaClient(); // FIXME
     }
 
     // -------------------------------------------------------------------
-    // Mainwin callbacks
+    // Pipe Server calls
 
-    void valueChangedCallback(uint index, float value) override
+    bool msgReceived(const char* const msg) noexcept override
     {
-        fParameters[index] = value;
-        uiParameterChanged(index, value);
-    }
+        if (NativePluginAndUiClass::msgReceived(msg))
+            return true;
 
-    // -------------------------------------------------------------------
-    // X_handler_thread callbacks
-
-    void setParameterValueFromHandlerThread(uint32_t index, float value) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(mainwin != nullptr,);
-
-        if (index < kParameterNROTARY)
+        if (std::strcmp(msg, "zita-mask") == 0)
         {
-            mainwin->_rotary[index]->set_value(value);
-            return;
+            int mask;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(mask), true);
+
+            const CarlaMutexLocker cml(fClientMutex);
+
+            try {
+                if (mask < 0)
+                {
+                    jclient->clr_midimask();
+                }
+                else
+                {
+                    notemask = static_cast<uint>(mask);
+                    jclient->set_notemask(mask);
+                }
+            } CARLA_SAFE_EXCEPTION("msgReceived, zita-mask");
+
+            return true;
         }
-        if (index == kParameterM_CHANNEL)
-        {
-            mainwin->setchan_ui(value);
-            return;
-        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------
@@ -412,15 +380,30 @@ private:
     jack_client_t fJackClient;
 
     // Zita stuff (core)
-    X_resman xresman;
-    ScopedPointer<Jclient>   jclient;
-    ScopedPointer<X_display> display;
-    ScopedPointer<X_rootwin> rootwin;
-    ScopedPointer<Mainwin>   mainwin;
-    ScopedPointer<X_handler> handler;
-    X_handler_thread<Mainwin> handlerThread;
+    ScopedPointer<Jclient> jclient;
+    uint notemask;
 
+    // Parameters
     float fParameters[kNumParameters];
+
+    // mutex to make sure jclient is always valid
+    CarlaMutex fClientMutex;
+
+    void _recreateZitaClient()
+    {
+        const CarlaMutexLocker cml(fClientMutex);
+
+        jclient = new Jclient(&fJackClient);
+        jclient->set_notemask(notemask);
+        jclient->set_midichan(roundToIntAccurate(fParameters[kParameterM_CHANNEL])-1);
+
+        Retuner* const retuner(jclient->retuner());
+        retuner->set_refpitch(fParameters[kParameterR_TUNE]);
+        retuner->set_corrfilt(fParameters[kParameterR_FILT]);
+        retuner->set_notebias(fParameters[kParameterR_BIAS]);
+        retuner->set_corrgain(fParameters[kParameterR_CORR]);
+        retuner->set_corroffs(fParameters[kParameterR_OFFS]);
+    }
 
     PluginClassEND(AT1Plugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AT1Plugin)
@@ -433,8 +416,7 @@ static const NativePluginDescriptor at1Desc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_USES_STATE),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 1,
     /* audioOuts */ 1,

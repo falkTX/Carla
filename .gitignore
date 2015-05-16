@@ -90,6 +90,7 @@ carla-discovery-posix64
 carla-frontend
 carla-lv2-export
 
+at1-ui
 bls1-ui
 rev1-ui
 zynaddsubfx-ui

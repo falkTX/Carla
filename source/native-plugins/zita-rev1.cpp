@@ -62,7 +62,6 @@ public:
 
         carla_zeroStruct(fJackClient);
 
-        fJackClient.clientName = "rev1";
         fJackClient.bufferSize = getBufferSize();
         fJackClient.sampleRate = getSampleRate();
 
@@ -284,13 +283,13 @@ public:
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
         fJackClient.bufferSize = bufferSize;
-        _recreateZitaClient();
+        // _recreateZitaClient(); // FIXME
     }
 
     void sampleRateChanged(const double sampleRate) override
     {
         fJackClient.sampleRate = sampleRate;
-        _recreateZitaClient();
+        // _recreateZitaClient(); // FIXME
     }
 
     // -------------------------------------------------------------------

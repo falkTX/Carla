@@ -1,8 +1,8 @@
 // -----------------------------------------------------------------------
 //
 //  Copyright (C) 2010 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -29,13 +29,12 @@
 namespace AT1 {
 
 
-Jclient::Jclient (const char *jname, jack_client_t *jclient) :
+Jclient::Jclient (jack_client_t *jclient) :
     A_thread ("jclient"),
     _jack_client (jclient),
-    _active (false),
-    _jname (0)
+    _active (false)
 {
-    init_jack (jname);
+    init_jack ();
 }
 
 
@@ -45,17 +44,12 @@ Jclient::~Jclient (void)
 }
 
 
-void Jclient::init_jack (const char *jname)
+void Jclient::init_jack (void)
 {
     jack_on_shutdown (_jack_client, jack_static_shutdown, (void *) this);
     jack_set_process_callback (_jack_client, jack_static_process, (void *) this);
-    if (jack_activate (_jack_client))
-    {
-        fprintf(stderr, "Can't activate JACK.\n");
-        exit (1);
-    }
+    jack_activate (_jack_client);
 
-    _jname = jack_get_client_name (_jack_client);
     _fsamp = jack_get_sample_rate (_jack_client);
     _fsize = jack_get_buffer_size (_jack_client);
 
@@ -115,19 +109,20 @@ void Jclient::midi_process (int nframes)
 
     p = jack_port_get_buffer (_midi_port, nframes);
     i = 0;
-    while (jack_midi_event_get (&E, p, i) == 0)
+    while (jack_midi_event_get (&E, p, i) == 0 && E.size == 3)
     {
 	t = E.buffer [0];
         n = E.buffer [1];
 	v = E.buffer [2];
 	if ((_midichan < 0) || ((t & 0x0F) == _midichan))
 	{
+	    const int n12 = n % 12;
   	    switch (t & 0xF0)
 	    {
 	    case 0x80:
 	    case 0x90:
-	        if (v && (t & 0x10))_notes [n % 12] += 1;
-  	        else _notes [n % 12] -= 1;
+	        if (v && (t & 0x10))_notes [n12] += 1;
+  	        else if (_notes [n12] > 0) _notes [n12] -= 1;
 	        break;
   	    }
 	}

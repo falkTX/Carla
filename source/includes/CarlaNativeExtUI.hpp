@@ -233,7 +233,6 @@ protected:
             return true;
         }
 
-        carla_stderr("NativePluginAndUiClass::msgReceived : %s", msg);
         return false;
     }
 

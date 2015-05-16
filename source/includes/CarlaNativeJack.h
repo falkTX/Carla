@@ -109,7 +109,6 @@ typedef struct {
 typedef struct {
     // current state
     bool           active;
-    const char*    clientName;
     jack_nframes_t bufferSize;
     jack_nframes_t sampleRate;
 
@@ -153,7 +152,12 @@ jack_client_t* jack_client_open(const char* clientname, jack_options_t options, 
 static inline
 int jack_client_close(jack_client_t* client)
 {
+    // keep bufsize and srate
+    const jack_nframes_t bufferSize = client->bufferSize;
+    const jack_nframes_t sampleRate = client->sampleRate;
     memset(client, 0, sizeof(jack_client_t));
+    client->bufferSize = bufferSize;
+    client->sampleRate = sampleRate;
     return 0;
 }
 
@@ -299,12 +303,6 @@ int jack_deactivate(jack_client_t* client)
  * Get data functions */
 
 static inline
-const char* jack_get_client_name(const jack_client_t* client)
-{
-    return client->clientName;
-}
-
-static inline
 jack_nframes_t jack_get_buffer_size(const jack_client_t* client)
 {
     return client->bufferSize;
@@ -314,18 +312,6 @@ static inline
 jack_nframes_t jack_get_sample_rate(const jack_client_t* client)
 {
     return client->sampleRate;
-}
-
-/* ------------------------------------------------------------------------------------------------------------
- * Misc */
-
-static inline
-pthread_t jack_client_thread_id(const jack_client_t* client)
-{
-    return pthread_self();
-
-    // unused
-    (void)client;
 }
 
 /* ------------------------------------------------------------------------------------------------------------ */
