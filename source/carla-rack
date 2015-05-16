@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla plugin host
+# Carla plugin host (executable - rack mode)
 # Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
@@ -16,72 +16,6 @@
 #
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom Stuff)
-
-from carla_host import *
-
-# ------------------------------------------------------------------------------------------------------------
-# Main
-
 if __name__ == '__main__':
-    # -------------------------------------------------------------
-    # Read CLI args
-
-    initName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
-    libPrefix = None
-
-    for arg in sys.argv:
-        if arg.startswith("--with-appname="):
-            initName = os.path.basename(arg.replace("--with-initname=", ""))
-
-        elif arg.startswith("--with-libprefix="):
-            libPrefix = arg.replace("--with-libprefix=", "")
-
-    # -------------------------------------------------------------
-    # App initialization
-
-    app = CarlaApplication("Carla2-Rack", libPrefix)
-
-    # -------------------------------------------------------------
-    # Set-up custom signal handling
-
-    setUpSignals()
-
-    # -------------------------------------------------------------
-    # Init host backend
-
-    host = initHost(initName, libPrefix, False, False, True)
-    host.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
-    host.processModeForced = True
-    loadHostSettings(host)
-
-    # -------------------------------------------------------------
-    # Create GUI
-
-    gui = HostWindow(host, not(LADISH_APP_NAME or NSM_URL))
-
-    # -------------------------------------------------------------
-    # Load project file if set
-
-    args = app.arguments()
-
-    if len(args) > 1:
-        arg = args[-1]
-
-        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix="):
-            pass
-        elif arg == "--gdb":
-            pass
-        elif os.path.exists(arg):
-            gui.loadProjectLater(arg)
-
-    # -------------------------------------------------------------
-    # Show GUI
-
-    gui.show()
-
-    # -------------------------------------------------------------
-    # App-Loop
-
-    app.exit_exec()
+    from carla_main import start, MODE_RACK
+    start(MODE_RACK)
