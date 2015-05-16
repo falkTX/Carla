@@ -25,6 +25,7 @@
 #include "CarlaLv2Utils.hpp"
 
 #include "CarlaBase64Utils.hpp"
+#include "CarlaEngineUtils.hpp"
 #include "CarlaPipeUtils.hpp"
 #include "CarlaPluginUI.hpp"
 #include "Lv2AtomRingBuffer.hpp"
@@ -393,8 +394,9 @@ public:
         UiCrashed
     };
 
-    CarlaPipeServerLV2(CarlaPluginLV2* const plugin)
-        : kPlugin(plugin),
+    CarlaPipeServerLV2(CarlaEngine* const engine, CarlaPluginLV2* const plugin)
+        : kEngine(engine),
+          kPlugin(plugin),
           fFilename(),
           fPluginURI(),
           fUiURI(),
@@ -422,6 +424,12 @@ public:
 
     bool startPipeServer() noexcept
     {
+        const ScopedEngineEnvironmentLocker _seel(kEngine);
+        const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
+#ifdef CARLA_OS_LINUX
+        const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
+#endif
+
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
     }
 
@@ -470,6 +478,7 @@ protected:
     bool msgReceived(const char* const msg) noexcept override;
 
 private:
+    CarlaEngine*    const kEngine;
     CarlaPluginLV2* const kPlugin;
 
     CarlaString fFilename;
@@ -498,6 +507,7 @@ public:
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fCanInit2(true),
+          fNeedsUiClose(false),
           fLatencyChanged(false),
           fLatencyIndex(-1),
           fAtomBufferIn(),
@@ -506,7 +516,7 @@ public:
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
-          fPipeServer(this),
+          fPipeServer(engine, this),
           fCustomURIDs(),
           fFirstActive(true),
           fLastStateChunk(nullptr),
@@ -1125,6 +1135,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("CarlaPluginLV2::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
         // we should only call state restore once
         // so inject this in CarlaPlugin::loadSaveState
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "CarlaLoadLv2StateNow") == 0 && std::strcmp(value, "true") == 0)
@@ -1259,7 +1272,15 @@ public:
 
                 fPipeServer.writeUiOptionsMessage(pData->engine->getSampleRate(), true, true, fLv2Options.windowTitle, frontendWinId);
 
+                // send control ports
+                for (uint32_t i=0; i < pData->param.count; ++i)
+                    fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[i].rindex), getParameterValue(i));
+
                 fPipeServer.writeShowMessage();
+#ifndef BUILD_BRIDGE
+                if (fUI.rdfDescriptor->Type == LV2_UI_MOD)
+                    pData->tryTransient();
+#endif
             }
             else
             {
@@ -1288,7 +1309,7 @@ public:
             if (fUI.handle == nullptr)
             {
 #ifndef LV2_UIS_ONLY_BRIDGES
-                if (fUI.type == UI::TYPE_EMBED)
+                if (fUI.type == UI::TYPE_EMBED && fUI.window == nullptr)
                 {
                     const char* msg = nullptr;
 
@@ -1336,12 +1357,11 @@ public:
                         return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, msg);
 
                     if (fUI.window != nullptr)
-                    {
-                        fUI.window->setTitle(fLv2Options.windowTitle);
                         fFeatures[kFeatureIdUiParent]->data = fUI.window->getPtr();
-                    }
                 }
 #endif
+                if (fUI.window != nullptr)
+                    fUI.window->setTitle(fLv2Options.windowTitle);
 
                 fUI.widget = nullptr;
                 fUI.handle = fUI.descriptor->instantiate(fUI.descriptor, fRdfDescriptor->URI, fUI.rdfDescriptor->Bundle,
@@ -1415,6 +1435,7 @@ public:
         }
     }
 
+#if 0 // TODO
     void idle() override
     {
         if (fLatencyChanged && fLatencyIndex != -1)
@@ -1446,6 +1467,7 @@ public:
 
         CarlaPlugin::idle();
     }
+#endif
 
     void uiIdle() override
     {
@@ -1458,7 +1480,8 @@ public:
 
             uint32_t portIndex;
             const LV2_Atom* atom;
-            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr);
+            const bool hasPortEvent(fUI.handle != nullptr && fUI.descriptor != nullptr &&
+                                    fUI.descriptor->port_event != nullptr && ! fNeedsUiClose);
 
             for (; tmpRingBuffer.get(atom, portIndex);)
             {
@@ -1503,7 +1526,13 @@ public:
             // TODO - detect if ui-bridge crashed
         }
 
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr)
+        if (fNeedsUiClose)
+        {
+            fNeedsUiClose = false;
+            showCustomUI(false);
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        }
+        else if (fUI.handle != nullptr && fUI.descriptor != nullptr)
         {
             if (fUI.type == UI::TYPE_EXTERNAL && fUI.widget != nullptr)
                 LV2_EXTERNAL_UI_RUN((LV2_External_UI_Widget*)fUI.widget);
@@ -1511,11 +1540,14 @@ public:
             else if (fUI.type == UI::TYPE_EMBED && fUI.window != nullptr)
                 fUI.window->idle();
 
-            // note: UI might have been closed by ext-ui or window idle
-            if (fUI.type != UI::TYPE_EXTERNAL && fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
+            // note: UI might have been closed by window idle
+            if (fNeedsUiClose)
+                pass();
+            else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                CARLA_SAFE_ASSERT(fUI.handle == nullptr);
             }
 #endif
         }
@@ -1756,26 +1788,26 @@ public:
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
                     const uint32_t j = iAudioIn++;
-                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
                     pData->audioIn.ports[j].rindex = i;
 
                     if (forcedStereoIn)
                     {
                         portName += "_2";
-                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, 1);
                         pData->audioIn.ports[1].rindex = i;
                     }
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
                     const uint32_t j = iAudioOut++;
-                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
                     pData->audioOut.ports[j].rindex = i;
 
                     if (forcedStereoOut)
                     {
                         portName += "_2";
-                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
                         pData->audioOut.ports[1].rindex = i;
                     }
                 }
@@ -1787,13 +1819,13 @@ public:
                 if (LV2_IS_PORT_INPUT(portTypes))
                 {
                     const uint32_t j = iCvIn++;
-                    pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true);
+                    pData->cvIn.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, true, j);
                     pData->cvIn.ports[j].rindex = i;
                 }
                 else if (LV2_IS_PORT_OUTPUT(portTypes))
                 {
                     const uint32_t j = iCvOut++;
-                    pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false);
+                    pData->cvOut.ports[j].port   = (CarlaEngineCVPort*)pData->client->addPort(kEnginePortTypeCV, portName, false, j);
                     pData->cvOut.ports[j].rindex = i;
                 }
                 else
@@ -1830,7 +1862,7 @@ public:
                     else
                     {
                         if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -1868,7 +1900,7 @@ public:
                     else
                     {
                         if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -1911,7 +1943,7 @@ public:
                     else
                     {
                         if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+                            fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -1949,7 +1981,7 @@ public:
                     else
                     {
                         if (portTypes & LV2_PORT_DATA_MIDI_EVENT)
-                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+                            fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -1983,7 +2015,7 @@ public:
                     }
                     else
                     {
-                        fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+                        fEventsIn.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -2012,7 +2044,7 @@ public:
                     }
                     else
                     {
-                        fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+                        fEventsOut.data[j].port = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, j);
 
                         if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
                         {
@@ -2259,7 +2291,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -2275,7 +2307,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsIn.count > 0 && (fEventsIn.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
@@ -2339,6 +2371,7 @@ public:
                 pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
         }
 
+#if 0 // TODO
         // check latency
         if (fLatencyIndex >= 0)
         {
@@ -2407,6 +2440,7 @@ public:
 
             fLatencyChanged = false;
         }
+#endif
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -2472,7 +2506,7 @@ public:
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_midi_program_count(pData->id, newCount);
 
@@ -2658,6 +2692,7 @@ public:
             if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
             {
                 const uint32_t j = fEventsIn.ctrlIndex;
+                CARLA_SAFE_ASSERT(j < fEventsIn.count);
 
                 if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
@@ -2708,11 +2743,13 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
+#endif
 #endif
 
             pData->needsReset = false;
@@ -3170,7 +3207,7 @@ public:
                         {
                             if (event.channel == pData->ctrlChannel)
                             {
-                                const uint32_t nextProgramId = ctrlEvent.param;
+                                const uint32_t nextProgramId(ctrlEvent.param);
 
                                 for (uint32_t k=0; k < pData->midiprog.count; ++k)
                                 {
@@ -3318,6 +3355,7 @@ public:
         } // End of Plugin processing (no events)
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
         // --------------------------------------------------------------------------------------------------------
         // Latency, save values for next callback
 
@@ -3346,6 +3384,7 @@ public:
                 }
             }
         }
+#endif
 #endif
 
         // --------------------------------------------------------------------------------------------------------
@@ -3592,11 +3631,13 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
+#if 0 // TODO
                         if (k < pData->latency)
                             bufValue = pData->latencyBuffers[isMono ? 0 : i][k];
                         else if (pData->latency < frames)
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k-pData->latency];
                         else
+#endif
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -3904,7 +3945,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && ! fNeedsUiClose)
             {
                 CARLA_SAFE_ASSERT_RETURN(pData->param.data[index].rindex >= 0,);
                 fUI.descriptor->port_event(fUI.handle, static_cast<uint32_t>(pData->param.data[index].rindex), sizeof(float), CARLA_URI_MAP_ID_NULL, &value);
@@ -3924,7 +3965,7 @@ public:
         }
         else
         {
-            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr)
+            if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program != nullptr && ! fNeedsUiClose)
                 fExt.uiprograms->select_program(fUI.handle, pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
         }
     }
@@ -3943,7 +3984,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr && ! fNeedsUiClose)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
@@ -3970,7 +4011,7 @@ public:
         }
         else
         {
-            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr)
+            if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->port_event != nullptr && fEventsIn.ctrl != nullptr && ! fNeedsUiClose)
             {
                 LV2_Atom_MidiEvent midiEv;
                 midiEv.atom.type = CARLA_URI_MAP_ID_MIDI_EVENT;
@@ -4021,8 +4062,10 @@ public:
 #ifndef LV2_UIS_ONLY_INPROCESS
         const LV2_RDF_UI* const rdfUI(&fRdfDescriptor->UIs[uiId]);
 
+        // Calf UIs are mostly useless without their special graphs
+        // but they can be crashy under certain conditions, so follow user preferences
         if (std::strstr(rdfUI->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
-            return false;
+            return pData->engine->getOptions().preferUiBridges;
 
         for (uint32_t i=0; i < rdfUI->FeatureCount; ++i)
         {
@@ -4086,6 +4129,9 @@ public:
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-external";
+            break;
+        case LV2_UI_MOD:
+            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-modgui";
             break;
         default:
             return nullptr;
@@ -4237,11 +4283,12 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
+        static const char* const sFallback = "urn:null";
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), sFallback);
         carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid, nullptr);
+        return fCustomURIDs.getAt(urid, sFallback);
     }
 
     // -------------------------------------------------------------------
@@ -4438,14 +4485,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.type == UI::TYPE_EXTERNAL,);
         carla_debug("CarlaPluginLV2::handleExternalUIClosed()");
 
-        pData->transientTryCounter = 0;
-
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
-            fUI.descriptor->cleanup(fUI.handle);
-
-        fUI.handle = nullptr;
-        fUI.widget = nullptr;
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        fNeedsUiClose = true;
     }
 
     void handlePluginUIClosed() override
@@ -4454,16 +4494,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fUI.window != nullptr,);
         carla_debug("CarlaPluginLV2::handlePluginUIClosed()");
 
-        pData->transientTryCounter = 0;
-
-        fUI.window->hide();
-
-        if (fUI.handle != nullptr && fUI.descriptor != nullptr && fUI.descriptor->cleanup != nullptr)
-            fUI.descriptor->cleanup(fUI.handle);
-
-        fUI.handle = nullptr;
-        fUI.widget = nullptr;
-        pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+        fNeedsUiClose = true;
     }
 
     void handlePluginUIResized(const uint width, const uint height) override
@@ -4992,7 +5023,7 @@ public:
 
         pData->options  = 0x0;
 
-        if (fExt.programs != nullptr)
+        if (fExt.programs != nullptr && getCategory() == PLUGIN_CATEGORY_SYNTH)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
@@ -5025,8 +5056,8 @@ public:
         // ---------------------------------------------------------------
         // find the most appropriate ui
 
-        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
-        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, eMod, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = eMod = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
 #if defined(BUILD_BRIDGE)
         const bool preferUiBridges(false);
@@ -5081,16 +5112,13 @@ public:
                     eExt = ii;
                 iExt = ii;
                 break;
+            case LV2_UI_MOD:
+                eMod = ii;
+                break;
             default:
                 break;
             }
         }
-
-       if (fRdfDescriptor->Author != nullptr && std::strcmp(fRdfDescriptor->Author, "rncbc aka. Rui Nuno Capela") == 0)
-       {
-          eExt = -1;
-          iExt = -1;
-       }
 
         if (eQt4 >= 0)
             iFinal = eQt4;
@@ -5140,15 +5168,6 @@ public:
             {
                 LV2_RDF_UI* const ui(&fRdfDescriptor->UIs[i]);
 
-                if (std::strcmp(ui->URI, "http://drumkv1.sourceforge.net/lv2#ui") == 0 ||
-                    std::strcmp(ui->URI, "http://samplv1.sourceforge.net/lv2#ui") == 0 ||
-                    std::strcmp(ui->URI, "http://synthv1.sourceforge.net/lv2#ui") == 0 )
-                {
-                    iFinal = static_cast<int>(i);
-                    hasShowInterface = true;
-                    break;
-                }
-
                 for (uint32_t j=0; j < ui->ExtensionCount; ++j)
                 {
                     CARLA_SAFE_ASSERT_CONTINUE(ui->Extensions[j] != nullptr);
@@ -5164,8 +5183,14 @@ public:
 
             if (! hasShowInterface)
             {
-                carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
-                return;
+                if (eMod < 0)
+                {
+                    carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+                    return;
+                }
+
+                // use MODGUI as last resort
+                iFinal = eMod;
             }
         }
 
@@ -5207,7 +5232,8 @@ public:
 
         const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
-        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 || iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
+        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
+            iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt || iFinal == eMod)
         {
             // -----------------------------------------------------------
             // initialize ui-bridge
@@ -5434,6 +5460,10 @@ public:
 
         if (fExt.uiprograms != nullptr && fExt.uiprograms->select_program == nullptr)
             fExt.uiprograms = nullptr;
+
+        // don't use uiidle if external
+        if (fUI.type == UI::TYPE_EXTERNAL)
+            fExt.uiidle = nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -5485,6 +5515,7 @@ private:
     float*  fParamBuffers;
 
     bool    fCanInit2; // some plugins don't like 2 instances
+    bool    fNeedsUiClose;
     bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
@@ -5694,8 +5725,8 @@ private:
 
     static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(""));
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', strdup(""));
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
         // may already be an abstract path
@@ -5707,8 +5738,9 @@ private:
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        const char* const cwd(File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8());
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(cwd));
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', strdup(cwd));
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
         // may already be an absolute path
@@ -6149,35 +6181,6 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
 
     if (! plugin->init(init.name, init.label))
-    {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LV2 plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
-    {
-        init.engine->setLastError("CV ports in patchbay mode is still TODO");
-        canRun = false;
-    }
-
-    if (! canRun)
     {
         delete plugin;
         return nullptr;

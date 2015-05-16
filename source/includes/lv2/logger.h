@@ -15,13 +15,14 @@
 */
 
 /**
-   @file logger.h Convenience API for easy logging in plugin code.
+   @defgroup logger Logger
+   @ingroup log
 
-   This file provides simple wrappers for the most common log operations for
-   use in plugin implementations.  If host support for logging is not
-   available, then these functions will print to stderr instead.
+   Convenience API for easy logging in plugin code.  This API provides simple
+   wrappers for logging from a plugin, which automatically fall back to
+   printing to stderr if host support is unavailabe.
 
-   This header is non-normative, it is provided for convenience.
+   @{
 */
 
 #ifndef LV2_ATOM_LOGGER_H
@@ -49,10 +50,10 @@ typedef struct {
 } LV2_Log_Logger;
 
 /**
-   Initialise @p logger.
+   Initialise `logger`.
 
-   URIs will be mapped using @p map and stored, a reference to @p map itself is
-   not held.  Both @p map and @p log may be NULL when unsupported by the host,
+   URIs will be mapped using `map` and stored, a reference to `map` itself is
+   not held.  Both `map` and `log` may be NULL when unsupported by the host,
    in which case the implementation will fall back to printing to stderr.
 */
 static inline void
@@ -135,12 +136,12 @@ lv2_log_warning(LV2_Log_Logger* logger, const char* fmt, ...)
 	return ret;
 }
 
-/**
-   @}
-*/
-
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif
 
 #endif  /* LV2_LOG_LOGGER_H */
+
+/**
+   @}
+*/

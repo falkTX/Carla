@@ -33,10 +33,247 @@
 #include "../Synth/Resonance.h"
 #include "FilterParams.h"
 
-int ADnote_unison_sizes[] =
-{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+using rtosc::Ports;
+using rtosc::RtData;
 
-ADnoteParameters::ADnoteParameters(FFTwrapper *fft_)
+#define EXPAND(x) x
+#define rObject ADnoteVoiceParam
+
+static const Ports voicePorts = {
+    rRecurp(OscilSmp, "Primary Oscillator"),
+    rRecurp(FMSmp,    "Modulating Oscillator"),
+    rRecurp(FreqLfo, "Frequency LFO"),
+    rRecurp(AmpLfo, "Amplitude LFO"),
+    rRecurp(FilterLfo, "Filter LFO"),
+    rRecurp(FreqEnvelope,   "Frequency Envelope"),
+    rRecurp(AmpEnvelope,    "Amplitude Envelope"),
+    rRecurp(FilterEnvelope, "Filter Envelope"),
+    rRecurp(FMFreqEnvelope, "Modulator Frequency Envelope"),
+    rRecurp(FMAmpEnvelope,  "Modulator Amplitude Envelope"),
+    rRecurp(VoiceFilter,    "Optional Voice Filter"),
+
+    rToggle(Enabled, "Voice Enable"),
+    rParamZyn(Unison_size, "Number of subvoices"),
+    rParamZyn(Unison_phase_randomness, "Phase Randomness"),
+    rParamZyn(Unison_frequency_spread, "Subvoice detune"),
+    rParamZyn(Unison_stereo_spread, "Subvoice L/R Separation"),
+    rParamZyn(Unison_vibratto, "Subvoice vibratto"),
+    rParamZyn(Unison_vibratto_speed, "Subvoice vibratto speed"),
+    rOption(Unison_invert_phase, rOptions(none, random, 50%, 33%, 25%), "Subvoice Phases"),
+    rOption(Type, rOptions(Sound,Noise), "Type of Sound"),
+    rParamZyn(PDelay, "Voice Startup Delay"),
+    rToggle(Presonance, "Resonance Enable"),
+    rParamZyn(Pextoscil, "External Oscilator Selection"),
+    rParamZyn(PextFMoscil, "External FM Oscilator Selection"),
+    rParamZyn(Poscilphase, "Oscillator Phase"),
+    rParamZyn(PFMoscilphase, "FM Oscillator Phase"),
+    rToggle(Pfilterbypass, "Filter Bypass"),
+
+    //Freq Stuff
+    rToggle(Pfixedfreq,           "If frequency is fixed"),
+    rParamZyn(PfixedfreqET,          "Equal Tempermant Parameter"),
+    rParamI(PDetune,              "Fine Detune"),
+    rParamI(PCoarseDetune,        "Coarse Detune"),
+    rParamZyn(PDetuneType,           "Magnitude of Detune"),
+    rToggle(PFreqEnvelopeEnabled, "Frequency Envelope Enable"),
+    rToggle(PFreqLfoEnabled,      "Frequency LFO Enable"),
+
+    //Amplitude Stuff
+    rParamZyn(PPanning,                  "Panning"),
+    rParamZyn(PVolume,                   "Volume"),
+    rToggle(PVolumeminus,             "Signal Inverter"), //do we really need this??
+    rParamZyn(PAmpVelocityScaleFunction, "Velocity Sensing"),
+    rToggle(PAmpEnvelopeEnabled,      "Amplitude Envelope Enable"),
+    rToggle(PAmpLfoEnabled,           "Amplitude LFO Enable"),
+
+    //Filter Stuff
+    rToggle(PFilterEnabled,         "Filter Enable"),
+    rToggle(PFilterEnvelopeEnabled, "Filter Envelope Enable"),
+    rToggle(PFilterLfoEnabled,      "Filter LFO Enable"),
+
+
+    //Modulator Stuff
+    rParamZyn(PFMEnabled,              "Modulator Enable/Type"),
+    rParamI(PFMVoice,                "Modulator Oscillator Selection"),
+    rParamZyn(PFMVolume,                "Modulator Magnitude"),
+    rParamZyn(PFMVolumeDamp,            "Modulator HF dampening"),
+    rParamZyn(PFMVelocityScaleFunction, "Modulator Velocity Function"),
+    rParamI(PFMDetune,               "Modulator Fine Detune"),
+    rParamI(PFMCoarseDetune,         "Modulator Coarse Detune"),
+    rParamZyn(PFMDetuneType,            "Modulator Detune Magnitude"),
+    rToggle(PFMFreqEnvelopeEnabled,  "Modulator Frequency Envelope"),
+    rToggle(PFMAmpEnvelopeEnabled,   "Modulator Amplitude Envelope"),
+
+    
+    //weird stuff for PCoarseDetune
+    {"detunevalue:", NULL, NULL, [](const char *, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            //TODO check if this is accurate or if PCoarseDetune is utilized
+            //TODO do the same for the other engines
+            d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
+        }},
+    {"octave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PCoarseDetune/1024;
+                if (k>=8) k-=16;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=16;
+                obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
+            }
+        }},
+    {"coarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PCoarseDetune%1024;
+                if (k>=512) k-=1024;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=1024;
+                obj->PCoarseDetune = k + (obj->PCoarseDetune/1024)*1024;
+            }
+        }},
+    
+    //weird stuff for PCoarseDetune
+    {"FMdetunevalue:", NULL, NULL, [](const char *, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            //TODO check if this is accurate or if PCoarseDetune is utilized
+            //TODO do the same for the other engines
+            d.reply(d.loc, "f", getdetune(obj->PFMDetuneType, 0, obj->PFMDetune));
+        }},
+    {"FMoctave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PFMCoarseDetune/1024;
+                if (k>=8) k-=16;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=16;
+                obj->PFMCoarseDetune = k*1024 + obj->PFMCoarseDetune%1024;
+            }
+        }},
+    {"FMcoarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PFMCoarseDetune%1024;
+                if (k>=512) k-=1024;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=1024;
+                obj->PFMCoarseDetune = k + (obj->PFMCoarseDetune/1024)*1024;
+            }
+        }},
+
+    //Reader
+    {"unisonFrequencySpreadCents:", NULL, NULL, [](const char *, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            d.reply(d.loc, "f", obj->getUnisonFrequencySpreadCents());
+        }},
+};
+
+#undef  rObject
+#define rObject ADnoteGlobalParam
+
+static const Ports globalPorts = {
+    rParamZyn(PPanning, "Panning (0 random, 1 left, 127 right)"),
+    rRecurp(Reson, "Resonance"),
+    rRecurp(FreqLfo, "Frequency LFO"),
+    rRecurp(AmpLfo, "Amplitude LFO"),
+    rRecurp(FilterLfo, "Filter LFO"),
+    rRecurp(FreqEnvelope, "Frequency Envelope"),
+    rRecurp(AmpEnvelope, "Frequency Envelope"),
+    rRecurp(FilterEnvelope, "Frequency Envelope"),
+    rRecurp(GlobalFilter, "Filter"),
+    rToggle(PStereo, "Mono/Stereo Enable"),
+
+    //Frequency
+    rParamI(PDetune,       "Fine Detune"),
+    rParamI(PCoarseDetune, "Coarse Detune"),
+    rParamZyn(PDetuneType,   "Detune Scaling Type"),
+    rParamZyn(PBandwidth,    "Relative Fine Detune Gain"),
+
+    //Amplitude
+    rParamZyn(PPanning, "Panning of ADsynth"),
+    rParamZyn(PVolume, "volume control"),
+    rParamZyn(PAmpVelocityScaleFunction, "Volume Velocity Control"),
+
+    rParamZyn(PPunchStrength, "Punch Strength"),
+    rParamZyn(PPunchTime, "UNKNOWN"),
+    rParamZyn(PPunchStretch, "How Punch changes with note frequency"),
+    rParamZyn(PPunchVelocitySensing, "Punch Velocity control"),
+
+    //Filter
+    rParamZyn(PFilterVelocityScale, "Filter Velocity Magnitude"),
+    rParamZyn(PFilterVelocityScaleFunction, "Filter Velocity Function Shape"),
+
+
+    //Resonance
+    rParamZyn(Hrandgrouping, "How randomness is applied to multiple voices using the same oscil"),
+
+    //weird stuff for PCoarseDetune
+    {"detunevalue:", NULL, NULL, [](const char *, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
+        }},
+    {"octave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PCoarseDetune/1024;
+                if (k>=8) k-=16;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=16;
+                obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
+            }
+        }},
+    {"coarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+        {
+            rObject *obj = (rObject *)d.obj;
+            if(!rtosc_narguments(msg)) {
+                int k=obj->PCoarseDetune%1024;
+                if (k>=512) k-=1024;
+                d.reply(d.loc, "i", k);
+            } else {
+                int k=(int) rtosc_argument(msg, 0).i;
+                if (k<0) k+=1024;
+                obj->PCoarseDetune = k + (obj->PCoarseDetune/1024)*1024;
+            }
+        }},
+
+};
+
+#undef  rObject
+#define rObject ADnoteParameters
+static const Ports adPorts = {//XXX 16 should not be hard coded
+    rSelf(ADnoteParameters),
+    rPaste,
+    rArrayPaste,
+    rRecurs(VoicePar, NUM_VOICES),
+    rRecur(GlobalPar, "Adnote Parameters"),
+};
+
+const Ports &ADnoteParameters::ports  = adPorts;
+const Ports &ADnoteVoiceParam::ports  = voicePorts;
+const Ports &ADnoteGlobalParam::ports = globalPorts;
+
+ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_)
     :PresetsArray()
 {
     setpresettype("Padsynth");
@@ -44,7 +281,7 @@ ADnoteParameters::ADnoteParameters(FFTwrapper *fft_)
 
 
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
-        EnableVoice(nvoice);
+        EnableVoice(synth, nvoice);
 
     defaults();
 }
@@ -189,15 +426,15 @@ void ADnoteVoiceParam::defaults()
 /*
  * Init the voice parameters
  */
-void ADnoteParameters::EnableVoice(int nvoice)
+void ADnoteParameters::EnableVoice(const SYNTH_T &synth, int nvoice)
 {
-    VoicePar[nvoice].enable(fft, GlobalPar.Reson);
+    VoicePar[nvoice].enable(synth, fft, GlobalPar.Reson);
 }
 
-void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
+void ADnoteVoiceParam::enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson)
 {
-    OscilSmp = new OscilGen(fft, Reson);
-    FMSmp    = new OscilGen(fft, NULL);
+    OscilSmp = new OscilGen(synth, fft, Reson);
+    FMSmp    = new OscilGen(synth, fft, NULL);
 
     AmpEnvelope = new EnvelopeParams(64, 1);
     AmpEnvelope->ADSRinit_dB(0, 100, 127, 100);
@@ -221,7 +458,7 @@ void ADnoteVoiceParam::enable(FFTwrapper *fft, Resonance *Reson)
 /*
  * Get the Multiplier of the fine detunes of the voices
  */
-float ADnoteParameters::getBandwidthDetuneMultiplier()
+float ADnoteParameters::getBandwidthDetuneMultiplier() const
 {
     float bw = (GlobalPar.PBandwidth - 64.0f) / 64.0f;
     bw = powf(2.0f, bw * powf(fabs(bw), 0.2f) * 5.0f);
@@ -233,10 +470,13 @@ float ADnoteParameters::getBandwidthDetuneMultiplier()
  * Get the unison spread in cents for a voice
  */
 
-float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) {
-    float unison_spread = VoicePar[nvoice].Unison_frequency_spread / 127.0f;
-    unison_spread = powf(unison_spread * 2.0f, 2.0f) * 50.0f; //cents
-    return unison_spread;
+float ADnoteParameters::getUnisonFrequencySpreadCents(int nvoice) const
+{
+    return VoicePar[nvoice].getUnisonFrequencySpreadCents();
+}
+
+float ADnoteVoiceParam::getUnisonFrequencySpreadCents(void) const {
+    return powf(Unison_frequency_spread / 127.0 * 2.0f, 2.0f) * 50.0f; //cents
 }
 
 /*
@@ -285,7 +525,8 @@ ADnoteParameters::~ADnoteParameters()
         KillVoice(nvoice);
 }
 
-int ADnoteParameters::get_unison_size_index(int nvoice) {
+int ADnoteParameters::get_unison_size_index(int nvoice) const
+{
     int index = 0;
     if(nvoice >= NUM_VOICES)
         return 0;
@@ -652,6 +893,139 @@ void ADnoteParameters::getfromXMLsection(XMLwrapper *xml, int n)
     VoicePar[nvoice].getfromXML(xml, nvoice);
 }
 
+void ADnoteParameters::paste(ADnoteParameters &a)
+{
+    this->GlobalPar.paste(a.GlobalPar);
+    for(int i=0; i<NUM_VOICES; ++i)
+        this->VoicePar[i].paste(a.VoicePar[i]);
+}
+
+void ADnoteParameters::pasteArray(ADnoteParameters &a, int nvoice)
+{
+    if(nvoice >= NUM_VOICES)
+        return;
+
+    VoicePar[nvoice].paste(a.VoicePar[nvoice]);
+}
+
+#define copy(x) this->x = a.x
+#define RCopy(x) this->x->paste(*a.x)
+void ADnoteVoiceParam::paste(ADnoteVoiceParam &a)
+{
+    //Come on C++ get some darn reflection, this is horrible
+
+    copy(Enabled);
+    copy(Unison_size);
+    copy(Unison_frequency_spread);
+    copy(Unison_stereo_spread);
+    copy(Unison_vibratto);
+    copy(Unison_vibratto_speed);
+    copy(Unison_invert_phase);
+    copy(Unison_phase_randomness);
+    copy(Type);
+    copy(PDelay);
+    copy(Presonance);
+    copy(Pextoscil);
+    copy(PextFMoscil);
+    copy(Poscilphase);
+    copy(PFMoscilphase);
+    copy(PFilterEnabled);
+    copy(Pfilterbypass);
+    copy(PFMEnabled);
+
+    RCopy(OscilSmp);
+
+
+    copy(PPanning);
+    copy(PVolume);
+    copy(PVolumeminus);
+    copy(PAmpVelocityScaleFunction);
+    copy(PAmpEnvelopeEnabled);
+
+    RCopy(AmpEnvelope);
+
+    copy(PAmpLfoEnabled);
+
+    RCopy(AmpLfo);
+
+    copy(Pfixedfreq);
+    copy(PfixedfreqET);
+    copy(PDetune);
+    copy(PCoarseDetune);
+    copy(PDetuneType);
+    copy(PFreqEnvelopeEnabled);
+
+    RCopy(FreqEnvelope);
+
+    copy(PFreqLfoEnabled);
+
+    RCopy(FreqLfo);
+
+    RCopy(VoiceFilter);
+
+    copy(PFilterEnvelopeEnabled);
+
+    RCopy(FilterEnvelope);
+
+    copy(PFilterLfoEnabled);
+
+    RCopy(FilterLfo);
+
+    copy(PFMVoice);
+    copy(PFMVolume);
+    copy(PFMVolumeDamp);
+    copy(PFMVelocityScaleFunction);
+
+    copy(PFMAmpEnvelopeEnabled);
+
+    RCopy(FMAmpEnvelope);
+
+    copy(PFMDetune);
+    copy(PFMCoarseDetune);
+    copy(PFMDetuneType);
+    copy(PFMFreqEnvelopeEnabled);
+
+
+    RCopy(FMFreqEnvelope);
+
+    RCopy(FMSmp);
+}
+
+void ADnoteGlobalParam::paste(ADnoteGlobalParam &a)
+{
+    copy(PStereo);
+
+    copy(PVolume);
+    copy(PPanning);
+    copy(PAmpVelocityScaleFunction);
+
+    copy(PPunchStrength);
+    copy(PPunchTime);
+    copy(PPunchStretch);
+    copy(PPunchVelocitySensing);
+    copy(Hrandgrouping);
+
+    RCopy(AmpEnvelope);
+    RCopy(AmpLfo);
+
+    copy(PDetune);
+    copy(PCoarseDetune);
+    copy(PDetuneType);
+    copy(PBandwidth);
+
+    RCopy(FreqEnvelope);
+    RCopy(FreqLfo);
+
+    copy(PFilterVelocityScale);
+    copy(PFilterVelocityScaleFunction);
+
+    RCopy(GlobalFilter);
+    RCopy(FilterEnvelope);
+    RCopy(FilterLfo);
+    RCopy(Reson);
+}
+#undef copy
+#undef RCopy
 
 void ADnoteVoiceParam::getfromXML(XMLwrapper *xml, unsigned nvoice)
 {

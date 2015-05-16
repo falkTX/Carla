@@ -28,8 +28,8 @@
 
 using namespace std;
 
-NulEngine::NulEngine()
-    :AudioOut(), pThread(NULL)
+NulEngine::NulEngine(const SYNTH_T &synth_)
+    :AudioOut(synth_), pThread(NULL)
 {
     name = "NULL";
     playing_until.tv_sec  = 0;
@@ -62,8 +62,8 @@ void *NulEngine::AudioThread()
             if(remaining < 0)
                 cerr << "WARNING - too late" << endl;
         }
-        playing_until.tv_usec += synth->buffersize * 1000000
-                                 / synth->samplerate;
+        playing_until.tv_usec += synth.buffersize * 1000000
+                                 / synth.samplerate;
         if(remaining < 0)
             playing_until.tv_usec -= remaining;
         playing_until.tv_sec  += playing_until.tv_usec / 1000000;

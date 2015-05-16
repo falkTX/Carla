@@ -15,12 +15,12 @@
  */
 
 // we need this for now
-#define PUGL_HAVE_GL    1
-#define PUGL_GRAB_FOCUS 1
+//#define PUGL_GRAB_FOCUS 1
 
 #include "AppPrivateData.hpp"
 #include "../Widget.hpp"
 #include "../Window.hpp"
+#include "../../distrho/extra/d_string.hpp"
 
 #include "pugl/pugl.h"
 
@@ -63,13 +63,14 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
           fUsingEmbed(false),
           fWidth(1),
           fHeight(1),
+          fTitle(nullptr),
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
@@ -91,13 +92,14 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self, Window& parent)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(false),
           fResizable(true),
           fUsingEmbed(false),
           fWidth(1),
           fHeight(1),
+          fTitle(nullptr),
           fWidgets(),
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
@@ -129,13 +131,14 @@ struct Window::PrivateData {
     PrivateData(App& app, Window* const self, const intptr_t parentId)
         : fApp(app),
           fSelf(self),
-          fView(puglInit(nullptr, nullptr)),
+          fView(puglInit()),
           fFirstInit(true),
           fVisible(parentId != 0),
           fResizable(parentId == 0),
           fUsingEmbed(parentId != 0),
           fWidth(1),
           fHeight(1),
+          fTitle(nullptr),
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
@@ -144,7 +147,7 @@ struct Window::PrivateData {
           xDisplay(nullptr),
           xWindow(0),
 #elif defined(DISTRHO_OS_MAC)
-          fNeedsIdle(false),
+          fNeedsIdle(parentId == 0),
           mView(nullptr),
           mWindow(nullptr),
 #endif
@@ -191,9 +194,9 @@ struct Window::PrivateData {
         puglSetSpecialFunc(fView, onSpecialCallback);
         puglSetReshapeFunc(fView, onReshapeCallback);
         puglSetCloseFunc(fView, onCloseCallback);
+        puglSetFileSelectedFunc(fView, fileBrowserSelectedCallback);
 
         puglCreateWindow(fView, nullptr);
-        puglEnterContext(fView);
 
         PuglInternals* impl = fView->impl;
 #if defined(DISTRHO_OS_WINDOWS)
@@ -458,8 +461,11 @@ struct Window::PrivateData {
 
         fResizable = yesNo;
 
-#ifdef CARLA_OS_MAC
-        // FIXME?
+#if defined(DISTRHO_OS_WINDOWS)
+        const int winFlags = fResizable ? GetWindowLong(hwnd, GWL_STYLE) |  WS_SIZEBOX
+                                        : GetWindowLong(hwnd, GWL_STYLE) & ~WS_SIZEBOX;
+        SetWindowLong(hwnd, GWL_STYLE, winFlags);
+#elif defined(DISTRHO_OS_MAC)
         const uint flags(yesNo ? (NSViewWidthSizable|NSViewHeightSizable) : 0x0);
         [mView setAutoresizingMask:flags];
 #endif
@@ -471,7 +477,7 @@ struct Window::PrivateData {
 
     void setSize(uint width, uint height, const bool forced = false)
     {
-        if (width == 0 || height == 0)
+        if (width <= 1 || height <= 1)
         {
             DBGp("Window setSize called with invalid value(s) %i %i, ignoring request\n", width, height);
             return;
@@ -486,18 +492,15 @@ struct Window::PrivateData {
         fWidth  = width;
         fHeight = height;
 
-        DBGp("Window setSize called %s, size %i %i\n", forced ? "(forced)" : "(not forced)", width, height);
+        DBGp("Window setSize called %s, size %i %i, resizable %s\n", forced ? "(forced)" : "(not forced)", width, height, fResizable?"true":"false");
 
 #if defined(DISTRHO_OS_WINDOWS)
-        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
-
-        if (fResizable)
-            winFlags |= WS_SIZEBOX;
-
+        const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (fResizable ? WS_SIZEBOX : 0x0);
         RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
-        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
+        AdjustWindowRectEx(&wr, fUsingEmbed ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
 
-        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top, SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+        SetWindowPos(hwnd, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top,
+                     SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
 
         if (! forced)
             UpdateWindow(hwnd);
@@ -506,7 +509,21 @@ struct Window::PrivateData {
 
         if (mWindow != nullptr)
         {
-            [mWindow setContentSize:NSMakeSize(width, height)];
+            const NSSize size = NSMakeSize(width, height);
+            [mWindow setContentSize:size];
+
+            if (fResizable)
+            {
+                [mWindow setContentMinSize:NSMakeSize(1, 1)];
+                [mWindow setContentMaxSize:NSMakeSize(99999, 99999)];
+                [[mWindow standardWindowButton:NSWindowZoomButton] setHidden:NO];
+            }
+            else
+            {
+                [mWindow setContentMinSize:size];
+                [mWindow setContentMaxSize:size];
+                [[mWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+            }
         }
 #elif defined(DISTRHO_OS_LINUX)
         XResizeWindow(xDisplay, xWindow, width, height);
@@ -536,9 +553,21 @@ struct Window::PrivateData {
 
     // -------------------------------------------------------------------
 
+    const char* getTitle() const noexcept
+    {
+        static const char* const kFallback = "";
+
+        return fTitle != nullptr ? fTitle : kFallback;
+    }
+
     void setTitle(const char* const title)
     {
         DBGp("Window setTitle \"%s\"\n", title);
+
+        if (fTitle != nullptr)
+            std::free(fTitle);
+
+        fTitle = strdup(title);
 
 #if defined(DISTRHO_OS_WINDOWS)
         SetWindowTextA(hwnd, title);
@@ -841,6 +870,7 @@ struct Window::PrivateData {
     bool fUsingEmbed;
     uint fWidth;
     uint fHeight;
+    char* fTitle;
     std::list<Widget*> fWidgets;
 
     struct Modal {
@@ -923,6 +953,11 @@ struct Window::PrivateData {
         handlePtr->onPuglClose();
     }
 
+    static void fileBrowserSelectedCallback(PuglView* view, const char* filename)
+    {
+        handlePtr->fSelf->fileBrowserSelected(filename);
+    }
+
     #undef handlePtr
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PrivateData)
@@ -978,6 +1013,78 @@ void Window::repaint() noexcept
     puglPostRedisplay(pData->fView);
 }
 
+// static int fib_filter_filename_filter(const char* const name)
+// {
+//     return 1;
+//     (void)name;
+// }
+
+bool Window::openFileBrowser(const FileBrowserOptions& options)
+{
+#ifdef SOFD_HAVE_X11
+    using DISTRHO_NAMESPACE::d_string;
+
+    // --------------------------------------------------------------------------
+    // configure start dir
+
+    // TODO: get abspath if needed
+    // TODO: cross-platform
+
+    d_string startDir(options.startDir);
+
+    if (startDir.isEmpty())
+    {
+        if (char* const dir_name = get_current_dir_name())
+        {
+            startDir = dir_name;
+            std::free(dir_name);
+        }
+    }
+
+    DISTRHO_SAFE_ASSERT_RETURN(startDir.isNotEmpty(), false);
+
+    if (! startDir.endsWith('/'))
+        startDir += "/";
+
+    DISTRHO_SAFE_ASSERT_RETURN(x_fib_configure(0, startDir) == 0, false);
+
+    // --------------------------------------------------------------------------
+    // configure title
+
+    d_string title(options.title);
+
+    if (title.isEmpty())
+    {
+        title = pData->getTitle();
+
+        if (title.isEmpty())
+            title = "FileBrowser";
+    }
+
+    DISTRHO_SAFE_ASSERT_RETURN(x_fib_configure(1, title) == 0, false);
+
+    // --------------------------------------------------------------------------
+    // configure filters
+
+    x_fib_cfg_filter_callback(nullptr); //fib_filter_filename_filter);
+
+    // --------------------------------------------------------------------------
+    // configure buttons
+
+    x_fib_cfg_buttons(3, options.buttons.listAllFiles-1);
+    x_fib_cfg_buttons(1, options.buttons.showHidden-1);
+    x_fib_cfg_buttons(2, options.buttons.showPlaces-1);
+
+    // --------------------------------------------------------------------------
+    // show
+
+    return (x_fib_show(pData->xDisplay, pData->xWindow, /*options.width*/0, /*options.height*/0) == 0);
+#else
+    // not implemented
+    return false;
+#endif
+}
+
 bool Window::isVisible() const noexcept
 {
     return pData->fVisible;
@@ -1021,6 +1128,11 @@ void Window::setSize(uint width, uint height)
 void Window::setSize(Size<uint> size)
 {
     pData->setSize(size.getWidth(), size.getHeight());
+}
+
+const char* Window::getTitle() const noexcept
+{
+    return pData->getTitle();
 }
 
 void Window::setTitle(const char* title)
@@ -1099,6 +1211,10 @@ void Window::onReshape(uint width, uint height)
 }
 
 void Window::onClose()
+{
+}
+
+void Window::fileBrowserSelected(const char*)
 {
 }
 

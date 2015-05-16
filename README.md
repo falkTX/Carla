@@ -1,13 +1,19 @@
-# ---  README for Carla  ---
+#![Carla Logo](https://raw.githubusercontent.com/falkTX/Carla/master/resources/48x48/carla.png) Carla Plugin Host
+[![Build Status](https://travis-ci.org/falkTX/Carla.png)](https://travis-ci.org/falkTX/Carla)
 
-Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats. <br/>
-It has some nice features like automation of parameters via MIDI CC (and send output back as MIDI too) and full OSC control.
+What is Carla?
+---------------
 
-Carla currently supports LADSPA, DSSI, LV2, VST2/3 and AU plugin formats, plus GIG, SF2 and SFZ file support. <br/>
-It uses JACK as the default and preferred audio driver but also supports native drivers like ALSA, ASIO, DirectSound or CoreAudio.
+Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.
 
-Carla-Control is an OSC Control UI for Carla (you get the OSC address from the Carla's about dialog, and connect to it). <br/>
-It supports controlling main UI components (Dry/Wet, Volume and Balance), and all plugins parameters. <br/>
-Peak values and control outputs are displayed as well.
+Features
+---------
 
-<br/>
+* LADSPA, DSSI, LV2, VST2, VST3 and AU plugin formats
+* GIG, SF2 and SFZ sound banks
+* Internal audio and midi file player
+* Automation of plugin parameters via MIDI CC
+* Full OSC control
+* Plugin bridge support (such as running 32bit plugins on a 64bit Carla)
+* Rack and Patchbay engine modes, plus Single and Multi-Client if using JACK
+* Native audio drivers (ALSA, DirectSound, CoreAudio) and low-latency (ASIO and JACK)

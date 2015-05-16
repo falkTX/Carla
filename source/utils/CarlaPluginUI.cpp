@@ -716,7 +716,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
     XSetTransientForHint(sd.display, lastGoodWindow, hostWinId);
 
-    if (centerUI)
+    if (centerUI && false /* moving the window after being shown isn't pretty... */)
     {
         int hostX, hostY, pluginX, pluginY;
         uint hostWidth, hostHeight, pluginWidth, pluginHeight, border, depth;

@@ -30,18 +30,22 @@ class CarlaPluginLADSPA : public CarlaPlugin
 public:
     CarlaPluginLADSPA(CarlaEngine* const engine, const uint id) noexcept
         : CarlaPlugin(engine, id),
-          fHandle(nullptr),
-          fHandle2(nullptr),
+          fHandles(),
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
+          fExtraStereoBuffer(),
           fParamBuffers(nullptr),
-          fLatencyChanged(false),
           fLatencyIndex(-1),
+          fIsDssiVst(false),
+          fForcedStereoIn(false),
+          fForcedStereoOut(false),
           leakDetector_CarlaPluginLADSPA()
     {
         carla_debug("CarlaPluginLADSPA::CarlaPluginLADSPA(%p, %i)", engine, id);
+
+        carla_zeroPointers(fExtraStereoBuffer, 2);
     }
 
     ~CarlaPluginLADSPA() noexcept override
@@ -64,23 +68,18 @@ public:
         {
             if (fDescriptor->cleanup != nullptr)
             {
-                if (fHandle != nullptr)
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
                 {
-                    try {
-                        fDescriptor->cleanup(fHandle);
-                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
-                }
+                    LADSPA_Handle const handle(it.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
 
-                if (fHandle2 != nullptr)
-                {
                     try {
-                        fDescriptor->cleanup(fHandle2);
-                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup #2");
+                        fDescriptor->cleanup(handle);
+                    } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
                 }
             }
 
-            fHandle     = nullptr;
-            fHandle2    = nullptr;
+            fHandles.clear();
             fDescriptor = nullptr;
         }
 
@@ -146,6 +145,17 @@ public:
         return static_cast<int64_t>(fDescriptor->UniqueID);
     }
 
+    uint32_t getLatencyInFrames() const noexcept override
+    {
+        if (fLatencyIndex < 0 || fParamBuffers == nullptr)
+            return 0;
+
+        const float latency(fParamBuffers[fLatencyIndex]);
+        CARLA_SAFE_ASSERT_RETURN(latency >= 0.0f, 0);
+
+        return static_cast<uint32_t>(latency);
+    }
+
     // -------------------------------------------------------------------
     // Information (count)
 
@@ -154,6 +164,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      0);
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -174,26 +185,20 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
-#ifdef __USE_GNU
-        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
-#else
-        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
-#endif
-
         uint options = 0x0;
 
-        if (! isDssiVst)
+        if (! fIsDssiVst)
         {
+            // can't disable fixed buffers if using latency
             if (fLatencyIndex == -1)
                 options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            {
-                if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
-                    options |= PLUGIN_OPTION_FORCE_STEREO;
-                else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
-                    options |= PLUGIN_OPTION_FORCE_STEREO;
-            }
+            // can't disable forced stereo if in rack mode
+            if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+                pass();
+            // if inputs or outputs are just 1, then yes we can force stereo
+            else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
+                options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
         return options;
@@ -204,6 +209,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr,         0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
+        // bad plugins might have set output values out of bounds
+        if (pData->param.data[parameterId].type == PARAMETER_OUTPUT)
+            return pData->param.ranges[parameterId].getFixedValue(fParamBuffers[parameterId]);
+
+        // not output, should be fine
         return fParamBuffers[parameterId];
     }
 
@@ -213,6 +223,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      0.0f);
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -220,7 +231,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, 0.0f);
 
             const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
-            return scalePoint->Value;
+            return pData->param.ranges[parameterId].getFixedValue(scalePoint->Value);
         }
 
         return 0.0f;
@@ -276,6 +287,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
 
         CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
@@ -291,6 +303,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -313,6 +326,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -345,6 +359,7 @@ public:
         }
 
         CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
 
         if (getSeparatedParameterNameOrUnit(fDescriptor->PortNames[rindex], strBuf, false))
             return;
@@ -358,6 +373,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
 
         if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
@@ -401,37 +417,7 @@ public:
     // -------------------------------------------------------------------
     // Misc
 
-    void idle() override
-    {
-        if (fLatencyChanged && fLatencyIndex != -1)
-        {
-            fLatencyChanged = false;
-
-            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
-
-            if (latency >= 0)
-            {
-                const uint32_t ulatency(static_cast<uint32_t>(latency));
-
-                if (pData->latency != ulatency)
-                {
-                    carla_stdout("latency changed to %i", latency);
-
-                    const ScopedSingleProcessLocker sspl(this, true);
-
-                    pData->latency = ulatency;
-                    pData->client->setLatency(ulatency);
-#ifndef BUILD_BRIDGE
-                    pData->recreateLatencyBuffers();
-#endif
-                }
-            }
-            else
-                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
-        }
-
-        CarlaPlugin::idle();
-    }
+    // nothing
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -440,7 +426,6 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         carla_debug("CarlaPluginLADSPA::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
@@ -480,23 +465,15 @@ public:
                 params += 1;
         }
 
-        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1))
+        if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
         {
-            if (fHandle2 == nullptr)
-            {
-                try {
-                    fHandle2 = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(sampleRate));
-                } CARLA_SAFE_EXCEPTION("LADSPA instantiate #2");
-            }
-
-            if (fHandle2 != nullptr)
+            if ((aIns == 1 || aOuts == 1) && fHandles.count() == 1 && addInstance())
             {
                 if (aIns == 1)
                 {
                     aIns = 2;
                     forcedStereoIn = true;
                 }
-
                 if (aOuts == 1)
                 {
                     aOuts = 2;
@@ -584,26 +561,26 @@ public:
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
                     const uint32_t j = iAudioIn++;
-                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
                     pData->audioIn.ports[j].rindex = i;
 
                     if (forcedStereoIn)
                     {
                         portName += "_2";
-                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, 1);
                         pData->audioIn.ports[1].rindex = i;
                     }
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
                     const uint32_t j = iAudioOut++;
-                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
                     pData->audioOut.ports[j].rindex = i;
 
                     if (forcedStereoOut)
                     {
                         portName += "_2";
-                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
                         pData->audioOut.ports[1].rindex = i;
                     }
                 }
@@ -704,8 +681,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
-                        CARLA_SAFE_ASSERT(fLatencyIndex == -1);
-                        fLatencyIndex = static_cast<int32_t>(j);
+                        CARLA_SAFE_ASSERT(fLatencyIndex == static_cast<int32_t>(j));
                     }
                     else
                     {
@@ -737,15 +713,14 @@ public:
                 // Start parameters in their default values
                 fParamBuffers[j] = def;
 
-                try {
-                    fDescriptor->connect_port(fHandle, i, &fParamBuffers[j]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port parameter");
-
-                if (fHandle2 != nullptr)
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
                 {
+                    LADSPA_Handle const handle(it.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                     try {
-                        fDescriptor->connect_port(fHandle2, i, &fParamBuffers[j]);
-                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port parameter #2");
+                        fDescriptor->connect_port(handle, i, &fParamBuffers[j]);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port (parameter)");
                 }
             }
             else
@@ -753,15 +728,14 @@ public:
                 // Not Audio or Control
                 carla_stderr2("ERROR - Got a broken Port (neither Audio or Control)");
 
-                try {
-                    fDescriptor->connect_port(fHandle, i, nullptr);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port null");
-
-                if (fHandle2 != nullptr)
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
                 {
+                    LADSPA_Handle const handle(it.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                     try {
-                        fDescriptor->connect_port(fHandle2, i, nullptr);
-                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port null #2");
+                        fDescriptor->connect_port(handle, i, nullptr);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port (null)");
                 }
             }
         }
@@ -779,7 +753,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -795,7 +769,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         if (forcedStereoIn || forcedStereoOut)
@@ -821,79 +795,14 @@ public:
 #endif
 
         // extra plugin hints
-        pData->extraHints = 0x0;
+        pData->extraHints  = 0x0;
+        pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
-        if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
-            pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
+        // check initial latency
+        findInitialLatencyValue(aIns, aOuts);
 
-        // check latency
-        if (fLatencyIndex >= 0)
-        {
-            // we need to pre-run the plugin so it can update its latency control-port
-
-            float tmpIn [(aIns > 0)  ? aIns  : 1][2];
-            float tmpOut[(aOuts > 0) ? aOuts : 1][2];
-
-            for (uint32_t j=0; j < aIns; ++j)
-            {
-                tmpIn[j][0] = 0.0f;
-                tmpIn[j][1] = 0.0f;
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port latency input");
-            }
-
-            for (uint32_t j=0; j < aOuts; ++j)
-            {
-                tmpOut[j][0] = 0.0f;
-                tmpOut[j][1] = 0.0f;
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port latency output");
-            }
-
-            if (fDescriptor->activate != nullptr)
-            {
-                try {
-                    fDescriptor->activate(fHandle);
-                } CARLA_SAFE_EXCEPTION("LADSPA latency activate");
-            }
-
-            try {
-                fDescriptor->run(fHandle, 2);
-            } CARLA_SAFE_EXCEPTION("LADSPA latency run");
-
-            if (fDescriptor->deactivate != nullptr)
-            {
-                try {
-                    fDescriptor->deactivate(fHandle);
-                } CARLA_SAFE_EXCEPTION("LADSPA latency deactivate");
-            }
-
-            const int32_t latency(static_cast<int32_t>(fParamBuffers[fLatencyIndex]));
-
-            if (latency >= 0)
-            {
-                const uint32_t ulatency(static_cast<uint32_t>(latency));
-
-                if (pData->latency != ulatency)
-                {
-                    carla_stdout("latency = %i", latency);
-
-                    pData->latency = ulatency;
-                    pData->client->setLatency(ulatency);
-#ifndef BUILD_BRIDGE
-                    pData->recreateLatencyBuffers();
-#endif
-                }
-            }
-            else
-                carla_safe_assert_int("latency >= 0", __FILE__, __LINE__, latency);
-
-            fLatencyChanged = false;
-        }
+        fForcedStereoIn  = forcedStereoIn;
+        fForcedStereoOut = forcedStereoOut;
 
         bufferSizeChanged(pData->engine->getBufferSize());
 
@@ -903,25 +812,81 @@ public:
         carla_debug("CarlaPluginLADSPA::reload() - end");
     }
 
+    void findInitialLatencyValue(const uint32_t aIns, const uint32_t aOuts) const
+    {
+        if (fLatencyIndex < 0 || fHandles.count() == 0)
+            return;
+
+        // we need to pre-run the plugin so it can update its latency control-port
+        const LADSPA_Handle handle(fHandles.getFirst(nullptr));
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
+        float tmpIn [(aIns > 0)  ? aIns  : 1][2];
+        float tmpOut[(aOuts > 0) ? aOuts : 1][2];
+
+        for (uint32_t j=0; j < aIns; ++j)
+        {
+            tmpIn[j][0] = 0.0f;
+            tmpIn[j][1] = 0.0f;
+
+            try {
+                fDescriptor->connect_port(handle, pData->audioIn.ports[j].rindex, tmpIn[j]);
+            } CARLA_SAFE_EXCEPTION("LADSPA connect_port (latency input)");
+        }
+
+        for (uint32_t j=0; j < aOuts; ++j)
+        {
+            tmpOut[j][0] = 0.0f;
+            tmpOut[j][1] = 0.0f;
+
+            try {
+                fDescriptor->connect_port(handle, pData->audioOut.ports[j].rindex, tmpOut[j]);
+            } CARLA_SAFE_EXCEPTION("LADSPA connect_port (latency output)");
+        }
+
+        if (fDescriptor->activate != nullptr)
+        {
+            try {
+                fDescriptor->activate(handle);
+            } CARLA_SAFE_EXCEPTION("LADSPA latency activate");
+        }
+
+        try {
+            fDescriptor->run(handle, 2);
+        } CARLA_SAFE_EXCEPTION("LADSPA latency run");
+
+        if (fDescriptor->deactivate != nullptr)
+        {
+            try {
+                fDescriptor->deactivate(handle);
+            } CARLA_SAFE_EXCEPTION("LADSPA latency deactivate");
+        }
+
+        // done, let's get the value
+        if (const uint32_t latency = getLatencyInFrames())
+        {
+            pData->client->setLatency(latency);
+            pData->latency.recreateBuffers(std::max(aIns, aOuts), latency);
+        }
+    }
+
     // -------------------------------------------------------------------
     // Plugin processing
 
     void activate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->activate != nullptr)
         {
-            try {
-                fDescriptor->activate(fHandle);
-            } CARLA_SAFE_EXCEPTION("LADSPA activate");
-
-            if (fHandle2 != nullptr)
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
             {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                 try {
-                    fDescriptor->activate(fHandle2);
-                } CARLA_SAFE_EXCEPTION("LADSPA activate #2");
+                    fDescriptor->activate(handle);
+                } CARLA_SAFE_EXCEPTION("LADSPA activate");
             }
         }
     }
@@ -929,24 +894,22 @@ public:
     void deactivate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
 
         if (fDescriptor->deactivate != nullptr)
         {
-            try {
-                fDescriptor->deactivate(fHandle);
-            } CARLA_SAFE_EXCEPTION("LADSPA deactivate");
-
-            if (fHandle2 != nullptr)
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
             {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                 try {
-                    fDescriptor->deactivate(fHandle2);
-                } CARLA_SAFE_EXCEPTION("LADSPA deactivate #2");
+                    fDescriptor->deactivate(handle);
+                } CARLA_SAFE_EXCEPTION("LADSPA deactivate");
             }
         }
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float** const, float** const, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -956,25 +919,7 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
             return;
-        }
-
-        // --------------------------------------------------------------------------------------------------------
-        // Check if needs reset
-
-        if (pData->needsReset)
-        {
-#ifndef BUILD_BRIDGE
-            if (pData->latency > 0)
-            {
-                for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
-            }
-#endif
-
-            pData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1001,7 +946,7 @@ public:
 
                 if (isSampleAccurate && event.time > timeOffset)
                 {
-                    if (processSingle(audioIn, audioOut, cvIn, cvOut, event.time - timeOffset, timeOffset))
+                    if (processSingle(audioIn, audioOut, event.time - timeOffset, timeOffset))
                         timeOffset = event.time;
                 }
 
@@ -1120,7 +1065,7 @@ public:
             pData->postRtEvents.trySplice();
 
             if (frames > timeOffset)
-                processSingle(audioIn, audioOut, cvIn, cvOut, frames - timeOffset, timeOffset);
+                processSingle(audioIn, audioOut, frames - timeOffset, timeOffset);
 
         } // End of Event Input and Processing
 
@@ -1129,39 +1074,9 @@ public:
 
         else
         {
-            processSingle(audioIn, audioOut, cvIn, cvOut, frames, 0);
+            processSingle(audioIn, audioOut, frames, 0);
 
         } // End of Plugin processing (no events)
-
-#ifndef BUILD_BRIDGE
-        // --------------------------------------------------------------------------------------------------------
-        // Latency, save values for next callback
-
-        if (fLatencyIndex != -1)
-        {
-            if (pData->latency != static_cast<uint32_t>(fParamBuffers[fLatencyIndex]))
-            {
-                fLatencyChanged = true;
-            }
-            else if (pData->latency > 0)
-            {
-                if (pData->latency <= frames)
-                {
-                    for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                        FloatVectorOperations::copy(pData->latencyBuffers[i], audioIn[i]+(frames-pData->latency), static_cast<int>(pData->latency));
-                }
-                else
-                {
-                    for (uint32_t i=0, j, k; i < pData->audioIn.count; ++i)
-                    {
-                        for (k=0; k < pData->latency-frames; ++k)
-                            pData->latencyBuffers[i][k] = pData->latencyBuffers[i][k+frames];
-                        for (j=0; k < pData->latency; ++j, ++k)
-                            pData->latencyBuffers[i][k] = audioIn[i][j];
-                    }
-                }
-            }
-        }
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1188,10 +1103,9 @@ public:
                 }
             }
         } // End of Control Output
-#endif
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames, const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1202,14 +1116,6 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
-        }
-        if (pData->cvIn.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
-        }
-        if (pData->cvOut.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -1226,47 +1132,76 @@ public:
                 for (uint32_t k=0; k < frames; ++k)
                     audioOut[i][k+timeOffset] = 0.0f;
             }
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            {
-                for (uint32_t k=0; k < frames; ++k)
-                    cvOut[i][k+timeOffset] = 0.0f;
-            }
 
             return false;
+        }
+
+        const int iframes(static_cast<int>(frames));
+
+        // --------------------------------------------------------------------------------------------------------
+        // Handle needsReset
+
+        if (pData->needsReset)
+        {
+            if (pData->latency.frames > 0)
+            {
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                    FloatVectorOperations::clear(pData->latency.buffers[i], static_cast<int>(pData->latency.frames));
+            }
+
+            pData->needsReset = false;
         }
 
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
+        const bool customMonoOut   = pData->audioOut.count == 2 && fForcedStereoOut && ! fForcedStereoIn;
+        const bool customStereoOut = pData->audioOut.count == 2 && fForcedStereoIn  && ! fForcedStereoOut;
+
+        if (! customMonoOut)
+        {
+            for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                FloatVectorOperations::clear(fAudioOutBuffers[i], iframes);
+        }
+
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, static_cast<int>(frames));
-
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::clear(fAudioOutBuffers[i], static_cast<int>(frames));
-
-#if 0
-        // --------------------------------------------------------------------------------------------------------
-        // Set CV buffers
-
-        for (uint32_t i=0; i < pData->cvIn.count; ++i)
-            FloatVectorOperations::copy(fCvInBuffers[i], cvIn[i]+timeOffset, static_cast<int>(frames));
-
-        for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            FloatVectorOperations::clear(fCvOutBuffers[i], static_cast<int>(frames));
-#endif
+            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, iframes);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
 
-        try {
-            fDescriptor->run(fHandle, frames);
-        } CARLA_SAFE_EXCEPTION("LADSPA run");
-
-        if (fHandle2 != nullptr)
+        uint instn = 0;
+        for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next(), ++instn)
         {
+            LADSPA_Handle const handle(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+            // ----------------------------------------------------------------------------------------------------
+            // Mixdown for forced stereo
+
+            if (customMonoOut)
+                FloatVectorOperations::clear(fAudioOutBuffers[instn], iframes);
+
+            // ----------------------------------------------------------------------------------------------------
+            // Run it
+
             try {
-                fDescriptor->run(fHandle2, frames);
-            } CARLA_SAFE_EXCEPTION("LADSPA run #2");
+                fDescriptor->run(handle, frames);
+            } CARLA_SAFE_EXCEPTION("LADSPA run");
+
+            // ----------------------------------------------------------------------------------------------------
+            // Mixdown for forced stereo
+
+            if (customMonoOut)
+                FloatVectorOperations::multiply(fAudioOutBuffers[instn], 0.5f, iframes);
+            else if (customStereoOut)
+                FloatVectorOperations::copy(fExtraStereoBuffer[instn], fAudioOutBuffers[instn], iframes);
+        }
+
+        if (customStereoOut)
+        {
+            FloatVectorOperations::copy(fAudioOutBuffers[0], fExtraStereoBuffer[0], iframes);
+            FloatVectorOperations::copy(fAudioOutBuffers[1], fExtraStereoBuffer[1], iframes);
         }
 
 #ifndef BUILD_BRIDGE
@@ -1286,14 +1221,16 @@ public:
                 // Dry/Wet
                 if (doDryWet)
                 {
+                    const uint32_t c = isMono ? 0 : i;
+
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        if (k < pData->latency)
-                            bufValue = pData->latencyBuffers[isMono ? 0 : i][k];
-                        else if (pData->latency < frames)
-                            bufValue = fAudioInBuffers[isMono ? 0 : i][k-pData->latency];
+                        if (k < pData->latency.frames)
+                            bufValue = pData->latency.buffers[c][k];
+                        else if (pData->latency.frames < frames)
+                            bufValue = fAudioInBuffers[c][k-pData->latency.frames];
                         else
-                            bufValue = fAudioInBuffers[isMono ? 0 : i][k];
+                            bufValue = fAudioInBuffers[c][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
@@ -1307,7 +1244,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], static_cast<int>(frames));
+                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], iframes);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1347,13 +1284,34 @@ public:
         }
 #endif
 
-#if 0
-        for (uint32_t i=0; i < pData->cvOut.count; ++i)
+        // --------------------------------------------------------------------------------------------------------
+        // Save latency values for next callback
+
+        if (const uint32_t latframes = pData->latency.frames)
         {
-            for (uint32_t k=0; k < frames; ++k)
-                cvOut[i][k+timeOffset] = fCvOutBuffers[i][k];
+            CARLA_SAFE_ASSERT(timeOffset == 0);
+
+            if (latframes <= frames)
+            {
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                    FloatVectorOperations::copy(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+            }
+            else
+            {
+                const uint32_t diff = pData->latency.frames-frames;
+
+                for (uint32_t i=0, k; i<pData->audioIn.count; ++i)
+                {
+                    // push back buffer by 'frames'
+                    for (k=0; k < diff; ++k)
+                        pData->latency.buffers[i][k] = pData->latency.buffers[i][k+frames];
+
+                    // put current input at the end
+                    for (uint32_t j=0; k < latframes; ++j, ++k)
+                        pData->latency.buffers[i][k] = audioIn[i][j];
+                }
+            }
         }
-#endif
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -1366,72 +1324,47 @@ public:
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginLADSPA::bufferSizeChanged(%i) - start", newBufferSize);
 
+        const int iBufferSize(static_cast<int>(newBufferSize));
+
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
         {
             if (fAudioInBuffers[i] != nullptr)
                 delete[] fAudioInBuffers[i];
+
             fAudioInBuffers[i] = new float[newBufferSize];
+            FloatVectorOperations::clear(fAudioInBuffers[i], iBufferSize);
         }
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
         {
             if (fAudioOutBuffers[i] != nullptr)
                 delete[] fAudioOutBuffers[i];
+
             fAudioOutBuffers[i] = new float[newBufferSize];
+            FloatVectorOperations::clear(fAudioOutBuffers[i], iBufferSize);
         }
 
-        if (fHandle2 == nullptr)
+        if (fExtraStereoBuffer[0] != nullptr)
         {
-            for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            {
-                CARLA_ASSERT(fAudioInBuffers[i] != nullptr);
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input");
-            }
-
-            for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            {
-                CARLA_ASSERT(fAudioOutBuffers[i] != nullptr);
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output");
-            }
+            delete[] fExtraStereoBuffer[0];
+            fExtraStereoBuffer[0] = nullptr;
         }
-        else
+
+        if (fExtraStereoBuffer[1] != nullptr)
         {
-            if (pData->audioIn.count > 0)
-            {
-                CARLA_ASSERT(pData->audioIn.count == 2);
-                CARLA_ASSERT(fAudioInBuffers[0] != nullptr);
-                CARLA_ASSERT(fAudioInBuffers[1] != nullptr);
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input #1");
-
-                try {
-                    fDescriptor->connect_port(fHandle2, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio input #2");
-            }
-
-            if (pData->audioOut.count > 0)
-            {
-                CARLA_ASSERT(pData->audioOut.count == 2);
-                CARLA_ASSERT(fAudioOutBuffers[0] != nullptr);
-                CARLA_ASSERT(fAudioOutBuffers[1] != nullptr);
-
-                try {
-                    fDescriptor->connect_port(fHandle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output #1");
-
-                try {
-                    fDescriptor->connect_port(fHandle2, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port audio output #2");
-            }
+            delete[] fExtraStereoBuffer[1];
+            fExtraStereoBuffer[1] = nullptr;
         }
+
+        if (fForcedStereoIn && pData->audioOut.count == 2)
+        {
+            fExtraStereoBuffer[0] = new float[newBufferSize];
+            fExtraStereoBuffer[1] = new float[newBufferSize];
+            FloatVectorOperations::clear(fExtraStereoBuffer[0], iBufferSize);
+            FloatVectorOperations::clear(fExtraStereoBuffer[1], iBufferSize);
+        }
+
+        reconnectAudioPorts();
 
         carla_debug("CarlaPluginLADSPA::bufferSizeChanged(%i) - end", newBufferSize);
     }
@@ -1439,12 +1372,104 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
-        carla_debug("CarlaPluginLADSPA::sampleRateChanged(%g) - start", newSampleRate);
+        carla_stdout("CarlaPluginLADSPA::sampleRateChanged(%g) - start", newSampleRate);
 
-        // TODO
-        (void)newSampleRate;
+        if (pData->active)
+            deactivate();
 
-        carla_debug("CarlaPluginLADSPA::sampleRateChanged(%g) - end", newSampleRate);
+        const std::size_t instanceCount(fHandles.count());
+
+        if (fDescriptor->cleanup == nullptr)
+        {
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+                try {
+                    fDescriptor->cleanup(handle);
+                } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
+            }
+        }
+
+        fHandles.clear();
+
+        for (std::size_t i=0; i<instanceCount; ++i)
+            addInstance();
+
+        reconnectAudioPorts();
+
+        if (pData->active)
+            activate();
+
+        carla_stdout("CarlaPluginLADSPA::sampleRateChanged(%g) - end", newSampleRate);
+    }
+
+    void reconnectAudioPorts() const noexcept
+    {
+        if (fForcedStereoIn)
+        {
+            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            {
+                try {
+                    fDescriptor->connect_port(handle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input)");
+            }
+
+            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            {
+                try {
+                    fDescriptor->connect_port(handle, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input)");
+            }
+        }
+        else
+        {
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                {
+                    try {
+                        fDescriptor->connect_port(handle, pData->audioIn.ports[i].rindex, fAudioInBuffers[i]);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port (audio input)");
+                }
+            }
+        }
+
+        if (fForcedStereoOut)
+        {
+            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            {
+                try {
+                    fDescriptor->connect_port(handle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output)");
+            }
+
+            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            {
+                try {
+                    fDescriptor->connect_port(handle, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output)");
+            }
+        }
+        else
+        {
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+                for (uint32_t i=0; i < pData->audioOut.count; ++i)
+                {
+                    try {
+                        fDescriptor->connect_port(handle, pData->audioOut.ports[i].rindex, fAudioOutBuffers[i]);
+                    } CARLA_SAFE_EXCEPTION("LADSPA connect_port (audio output)");
+                }
+            }
+        }
     }
 
     // -------------------------------------------------------------------
@@ -1484,6 +1509,18 @@ public:
             fAudioOutBuffers = nullptr;
         }
 
+        if (fExtraStereoBuffer[0] != nullptr)
+        {
+            delete[] fExtraStereoBuffer[0];
+            fExtraStereoBuffer[0] = nullptr;
+        }
+
+        if (fExtraStereoBuffer[1] != nullptr)
+        {
+            delete[] fExtraStereoBuffer[1];
+            fExtraStereoBuffer[1] = nullptr;
+        }
+
         if (fParamBuffers != nullptr)
         {
             delete[] fParamBuffers;
@@ -1499,7 +1536,7 @@ public:
 
     void* getNativeHandle() const noexcept override
     {
-        return fHandle;
+        return nullptr; // fHandle;
     }
 
     const void* getNativeDescriptor() const noexcept override
@@ -1514,7 +1551,8 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const LADSPA_RDF_Descriptor* const rdfDescriptor)
+    bool init(const char* const filename, const char* const name, const char* const label, const uint options,
+              const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1539,6 +1577,8 @@ public:
             return false;
         }
 
+        fIsDssiVst = CarlaString(filename).contains("dssi-vst", true);
+
         // ---------------------------------------------------------------
         // open DLL
 
@@ -1562,12 +1602,10 @@ public:
         // ---------------------------------------------------------------
         // get descriptor that matches label
 
-        ulong i = 0;
-
-        for (;;)
+        for (ulong d=0;; ++d)
         {
             try {
-                fDescriptor = descFn(i++);
+                fDescriptor = descFn(d);
             }
             catch(...) {
                 carla_stderr2("Caught exception when trying to get LADSPA descriptor");
@@ -1632,31 +1670,48 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin
 
-        try {
-            fHandle = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(pData->engine->getSampleRate()));
-        } CARLA_SAFE_EXCEPTION("LADSPA instantiate");
-
-        if (fHandle == nullptr)
-        {
-            pData->engine->setLastError("Plugin failed to initialize");
+        if (! addInstance())
             return false;
+
+        // ---------------------------------------------------------------
+        // find latency port index
+
+        for (uint32_t i=0, iCtrl=0, count=getSafePortCount(); i<count; ++i)
+        {
+            const int portType(fDescriptor->PortDescriptors[i]);
+
+            if (! LADSPA_IS_PORT_CONTROL(portType))
+                continue;
+
+            const uint32_t index(iCtrl++);
+
+            if (! LADSPA_IS_PORT_OUTPUT(portType))
+                continue;
+
+            const char* const portName(fDescriptor->PortNames[i]);
+            CARLA_SAFE_ASSERT_BREAK(portName != nullptr);
+
+            if (std::strcmp(portName, "latency")  == 0 ||
+                std::strcmp(portName, "_latency") == 0)
+            {
+                fLatencyIndex = static_cast<int32_t>(index);
+                break;
+            }
         }
 
         // ---------------------------------------------------------------
         // set default options
 
-#ifdef __USE_GNU
-        const bool isDssiVst(strcasestr(pData->filename, "dssi-vst") != nullptr);
-#else
-        const bool isDssiVst(std::strstr(pData->filename, "dssi-vst") != nullptr);
-#endif
-
         pData->options = 0x0;
 
-        if (fLatencyIndex >= 0 || isDssiVst)
+        /**/ if (fLatencyIndex >= 0 || fIsDssiVst)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getOptions().forceStereo)
+        /**/ if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+         else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         return true;
@@ -1665,19 +1720,50 @@ public:
     // -------------------------------------------------------------------
 
 private:
-    LADSPA_Handle fHandle;
-    LADSPA_Handle fHandle2;
+    LinkedList<LADSPA_Handle>    fHandles;
     const LADSPA_Descriptor*     fDescriptor;
     const LADSPA_RDF_Descriptor* fRdfDescriptor;
 
     float** fAudioInBuffers;
     float** fAudioOutBuffers;
+    float*  fExtraStereoBuffer[2]; // used only if forcedStereoIn and audioOut == 2
     float*  fParamBuffers;
 
-    bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
+    bool    fIsDssiVst;
+    bool    fForcedStereoIn;
+    bool    fForcedStereoOut;
 
     // -------------------------------------------------------------------
+
+    bool addInstance()
+    {
+        LADSPA_Handle handle;
+
+        try {
+            handle = fDescriptor->instantiate(fDescriptor, static_cast<ulong>(pData->engine->getSampleRate()));
+        } CARLA_SAFE_EXCEPTION_RETURN_ERR("LADSPA instantiate", "Plugin failed to initialize");
+
+        for (uint32_t i=0, count=pData->param.count; i<count; ++i)
+        {
+            const int32_t rindex(pData->param.data[i].rindex);
+            CARLA_SAFE_ASSERT_CONTINUE(rindex >= 0);
+
+            try {
+                fDescriptor->connect_port(handle, static_cast<ulong>(rindex), &fParamBuffers[i]);
+            } CARLA_SAFE_EXCEPTION("LADSPA connect_port");
+        }
+
+        if (fHandles.append(handle))
+            return true;
+
+        try {
+            fDescriptor->cleanup(handle);
+        } CARLA_SAFE_EXCEPTION("LADSPA cleanup");
+
+        pData->engine->setLastError("Out of memory");
+        return false;
+    }
 
     uint32_t getSafePortCount() const noexcept
     {
@@ -1700,7 +1786,7 @@ private:
         return false;
     }
 
-    bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf, const bool wantName, const bool useBracket) const noexcept
+    static bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf, const bool wantName, const bool useBracket) noexcept
     {
         const char* const sepBracketStart(std::strstr(paramName, useBracket ? " [" : " ("));
 
@@ -1712,15 +1798,15 @@ private:
         if (sepBracketEnd == nullptr)
             return false;
 
-        const size_t unitSize(static_cast<size_t>(sepBracketEnd-sepBracketStart-2));
+        const std::size_t unitSize(static_cast<std::size_t>(sepBracketEnd-sepBracketStart-2));
 
         if (unitSize > 7) // very unlikely to have such big unit
             return false;
 
-        const size_t sepIndex(std::strlen(paramName)-unitSize-3);
+        const std::size_t sepIndex(std::strlen(paramName)-unitSize-3);
 
         // just in case
-        if (sepIndex > STR_MAX)
+        if (sepIndex >= STR_MAX)
             return false;
 
         if (wantName)
@@ -1746,40 +1832,11 @@ private:
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
-    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 "}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, rdfDescriptor);
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
 
     CarlaPluginLADSPA* const plugin(new CarlaPluginLADSPA(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, rdfDescriptor))
-    {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo LADSPA plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
-    {
-        init.engine->setLastError("CV ports in patchbay mode is still TODO");
-        canRun = false;
-    }
-
-    if (! canRun)
+    if (! plugin->init(init.filename, init.name, init.label, init.options, rdfDescriptor))
     {
         delete plugin;
         return nullptr;

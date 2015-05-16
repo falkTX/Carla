@@ -1,21 +1,22 @@
 /*
-    AlsaEngine.cpp
+  ZynAddSubFX - a software synthesizer
+  AlsaEngine.cpp - ALSA Driver
 
-    Copyright 2009, Alan Calvert
-              2010, Mark McCurry
+  Copyright 2009, Alan Calvert
+            2014, Mark McCurry
 
-    This file is part of ZynAddSubFX, which is free software: you can
-    redistribute it and/or modify it under the terms of the GNU General
-    Public License as published by the Free Software Foundation, either
-    version 3 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of version 2 of the GNU General Public License
+  as published by the Free Software Foundation.
 
-    ZynAddSubFX is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License (version 2 or later) for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with ZynAddSubFX.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License (version 2)
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
 #include <iostream>
@@ -28,10 +29,10 @@ using namespace std;
 #include "InMgr.h"
 #include "AlsaEngine.h"
 
-AlsaEngine::AlsaEngine()
-    :AudioOut()
+AlsaEngine::AlsaEngine(const SYNTH_T &synth)
+    :AudioOut(synth)
 {
-    audio.buffer = new short[synth->buffersize * 2];
+    audio.buffer = new short[synth.buffersize * 2];
     name = "ALSA";
     audio.handle = NULL;
 
@@ -295,7 +296,7 @@ bool AlsaEngine::openAudio()
     /* Two channels (stereo) */
     snd_pcm_hw_params_set_channels(audio.handle, audio.params, 2);
 
-    audio.sampleRate = synth->samplerate;
+    audio.sampleRate = synth.samplerate;
     snd_pcm_hw_params_set_rate_near(audio.handle, audio.params,
                                     &audio.sampleRate, NULL);
 
@@ -320,7 +321,7 @@ bool AlsaEngine::openAudio()
     /* latency = periodsize * periods / (rate * bytes_per_frame)     */
     snd_pcm_hw_params_set_buffer_size(audio.handle,
                                       audio.params,
-                                      synth->buffersize);
+                                      synth.buffersize);
 
     //snd_pcm_hw_params_get_period_size(audio.params, &audio.frames, NULL);
     //snd_pcm_hw_params_get_period_time(audio.params, &val, NULL);
@@ -352,7 +353,7 @@ void *AlsaEngine::processAudio()
     while(audio.handle) {
         audio.buffer = interleave(getNext());
         snd_pcm_t *handle = audio.handle;
-        int rc = snd_pcm_writei(handle, audio.buffer, synth->buffersize);
+        int rc = snd_pcm_writei(handle, audio.buffer, synth.buffersize);
         if(rc == -EPIPE) {
             /* EPIPE means underrun */
             cerr << "underrun occurred" << endl;

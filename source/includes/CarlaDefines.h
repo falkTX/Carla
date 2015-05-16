@@ -97,7 +97,7 @@
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
-#elif defined(CARLA_OS_MAC) && defined(__LP64__)
+#elif defined(CARLA_OS_MAC)
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"
 # define P_INTPTR  "%li"

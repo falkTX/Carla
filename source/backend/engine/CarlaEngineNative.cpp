@@ -187,6 +187,7 @@ protected:
             const char* name;
             const char* label;
             int64_t uniqueId;
+            uint options;
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(btype), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(ptype), true);
@@ -194,6 +195,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(name), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(label), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsLong(uniqueId), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(options), true);
 
             if (filename != nullptr && std::strcmp(filename, "(null)") == 0)
             {
@@ -207,7 +209,8 @@ protected:
                 name = nullptr;
             }
 
-            ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype), filename, name, label, uniqueId, nullptr);
+            ok = fEngine->addPlugin(static_cast<BinaryType>(btype), static_cast<PluginType>(ptype),
+                                    filename, name, label, uniqueId, nullptr, options);
 
             if (filename != nullptr)
                 delete[] filename;
@@ -590,7 +593,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(false, pData->sampleRate, pData->bufferSize, inChan, outChan);
+            pData->graph.create(inChan, outChan);
         }
         else
         {
@@ -602,7 +605,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
-            pData->graph.create(true, pData->sampleRate, pData->bufferSize, 0, 0);
+            pData->graph.create(0, 0);
         }
 
         if (pData->options.resourceDir != nullptr)
@@ -684,6 +687,14 @@ protected:
     const char* getCurrentDriverName() const noexcept override
     {
         return "Plugin";
+    }
+
+    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
+    {
+        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
+
+        if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose)
+            pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
     }
 
     // -------------------------------------------------------------------
@@ -886,6 +897,35 @@ protected:
         fUiServer.flushMessages();
     }
 
+    void uiServerSendPluginProperties(CarlaPlugin* const plugin)
+    {
+        const CarlaMutexLocker cml(fUiServer.getPipeLock());
+
+        const uint pluginId(plugin->getId());
+
+        uint32_t count = plugin->getCustomDataCount();
+        std::sprintf(fTmpBuf, "CUSTOM_DATA_COUNT_%i:%i\n", pluginId, count);
+        fUiServer.writeMessage(fTmpBuf);
+
+        for (uint32_t i=0; i<count; ++i)
+        {
+            const CustomData& customData(plugin->getCustomData(i));
+            CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
+
+            if (std::strcmp(customData.type, CUSTOM_DATA_TYPE_PROPERTY) != 0)
+                continue;
+
+            std::sprintf(fTmpBuf, "CUSTOM_DATA_%i:%i\n", pluginId, i);
+            fUiServer.writeMessage(fTmpBuf);
+
+            fUiServer.writeAndFixMessage(customData.type);
+            fUiServer.writeAndFixMessage(customData.key);
+            fUiServer.writeAndFixMessage(customData.value);
+        }
+
+        fUiServer.flushMessages();
+    }
+
     void uiServerCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
         if (! fIsRunning)
@@ -897,6 +937,16 @@ protected:
 
         switch (action)
         {
+        case ENGINE_CALLBACK_UPDATE:
+            plugin = getPlugin(pluginId);
+
+            if (plugin != nullptr && plugin->isEnabled())
+            {
+                CARLA_SAFE_ASSERT_BREAK(plugin->getId() == pluginId);
+                uiServerSendPluginProperties(plugin);
+            }
+            break;
+
         case ENGINE_CALLBACK_RELOAD_INFO:
             plugin = getPlugin(pluginId);
 
@@ -937,6 +987,7 @@ protected:
                 uiServerSendPluginInfo(plugin);
                 uiServerSendPluginParameters(plugin);
                 uiServerSendPluginPrograms(plugin);
+                uiServerSendPluginProperties(plugin);
             }
             break;
 
@@ -973,6 +1024,12 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fUiServer.isPipeRunning(),);
 
         const CarlaMutexLocker cml(fUiServer.getPipeLock());
+
+#ifdef HAVE_LIBLO
+        fUiServer.writeAndFixMessage("osc-urls");
+        fUiServer.writeAndFixMessage(pData->osc.getServerPathTCP());
+        fUiServer.writeAndFixMessage(pData->osc.getServerPathUDP());
+#endif
 
         fUiServer.writeAndFixMessage("max-plugin-number");
         std::sprintf(fTmpBuf, "%i\n", pData->maxPluginNumber);
@@ -1227,7 +1284,7 @@ protected:
     void activate()
     {
 #if 0
-        for (uint32_t i=0; i < pData->curPluginCount; ++i)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -1244,7 +1301,7 @@ protected:
     {
         fIsActive = false;
 #if 0
-        for (uint32_t i=0; i < pData->curPluginCount; ++i)
+        for (uint i=0; i < pData->curPluginCount; ++i)
         {
             CarlaPlugin* const plugin(pData->plugins[i].plugin);
 
@@ -1317,7 +1374,7 @@ protected:
                 EngineEvent&           engineEvent(pData->events.in[engineEventIndex++]);
 
                 engineEvent.time = midiEvent.time;
-                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data, 0);
 
                 if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;
@@ -1444,7 +1501,23 @@ protected:
         }
         else
         {
-            fUiServer.stopPipeServer(5000);
+            fUiServer.stopPipeServer(2000);
+
+            // hide all custom uis
+            for (uint i=0; i < pData->curPluginCount; ++i)
+            {
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+                if (plugin != nullptr && plugin->isEnabled())
+                {
+                    if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                    {
+                        try {
+                            plugin->showCustomUI(false);
+                        } CARLA_SAFE_EXCEPTION_CONTINUE("Plugin showCustomUI (hide)");
+                    }
+                }
+            }
         }
     }
 
@@ -1456,9 +1529,7 @@ protected:
 
             if (plugin != nullptr && plugin->isEnabled())
             {
-                const uint hints(plugin->getHints());
-
-                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
+                if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
                 {
                     try {
                         plugin->uiIdle();
@@ -1467,14 +1538,10 @@ protected:
             }
         }
 
-#ifdef HAVE_LIBLO
-        pData->osc.idle();
-#endif
-
-        fUiServer.idlePipe();
-
         if (fUiServer.isPipeRunning())
         {
+            fUiServer.idlePipe();
+
             const CarlaMutexLocker cml(fUiServer.getPipeLock());
 #ifndef CARLA_OS_WIN
             const EngineTimeInfo& timeInfo(pData->timeInfo);
@@ -1538,7 +1605,7 @@ protected:
             break;
         case CarlaExternalUI::UiHide:
             pHost->ui_closed(pHost->handle);
-            fUiServer.stopPipeServer(2000);
+            fUiServer.stopPipeServer(1000);
             break;
         }
     }
@@ -1555,7 +1622,11 @@ protected:
 
     void setState(const char* const data)
     {
-        // remove all plugins first, no lock
+        // remove all plugins from UI side
+        for (int i=pData->curPluginCount; --i >= 0;)
+            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, i, 0, 0, 0.0f, nullptr);
+
+        // remove all plugins from backend, no lock
         fIsRunning = false;
         removeAllPlugins();
         fIsRunning = true;

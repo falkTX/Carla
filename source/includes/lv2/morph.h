@@ -14,13 +14,17 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+/**
+   @defgroup morph Morph
+
+   Ports that can dynamically change type, see <http://lv2plug.in/ns/ext/morph>
+   for details.
+
+   @{
+*/
+
 #ifndef LV2_MORPH_H
 #define LV2_MORPH_H
-
-#include <stdint.h>
-
-#include "lv2.h"
-#include "urid.h"
 
 #define LV2_MORPH_URI    "http://lv2plug.in/ns/ext/morph"
 #define LV2_MORPH_PREFIX LV2_MORPH_URI "#"
@@ -32,3 +36,7 @@
 #define LV2_MORPH__currentType   LV2_MORPH_PREFIX "currentType"
 
 #endif  /* LV2_MORPH_H */
+
+/**
+   @}
+*/

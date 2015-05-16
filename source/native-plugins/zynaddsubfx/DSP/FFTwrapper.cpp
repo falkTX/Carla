@@ -23,13 +23,24 @@
 #include <cmath>
 #include <cassert>
 #include <cstring>
+#include <pthread.h>
 #include "FFTwrapper.h"
+
+static pthread_mutex_t *mutex = NULL;
 
 FFTwrapper::FFTwrapper(int fftsize_)
 {
+    //first one will spawn the mutex (yeah this may be a race itself)
+    if(!mutex) {
+        mutex = new pthread_mutex_t;
+        pthread_mutex_init(mutex, NULL);
+    }
+
+
     fftsize  = fftsize_;
     time     = new fftw_real[fftsize];
     fft      = new fftw_complex[fftsize + 1];
+    pthread_mutex_lock(mutex);
     planfftw = fftw_plan_dft_r2c_1d(fftsize,
                                     time,
                                     fft,
@@ -38,12 +49,15 @@ FFTwrapper::FFTwrapper(int fftsize_)
                                         fft,
                                         time,
                                         FFTW_ESTIMATE);
+    pthread_mutex_unlock(mutex);
 }
 
 FFTwrapper::~FFTwrapper()
 {
+    pthread_mutex_lock(mutex);
     fftw_destroy_plan(planfftw);
     fftw_destroy_plan(planfftw_inv);
+    pthread_mutex_unlock(mutex);
 
     delete [] time;
     delete [] fft;
@@ -82,4 +96,7 @@ void FFTwrapper::freqs2smps(const fft_t *freqs, float *smps)
 void FFT_cleanup()
 {
     fftw_cleanup();
+    pthread_mutex_destroy(mutex);
+    delete mutex;
+    mutex = NULL;
 }

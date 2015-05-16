@@ -29,7 +29,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 struct CarlaStateSave {
     struct Parameter {
-        bool        isInput;
+        bool        dummy; // if true only midiChannel/CC are used
         int32_t     index;
         const char* name;
         const char* symbol;
@@ -68,6 +68,7 @@ struct CarlaStateSave {
     const char* label;
     const char* binary;
     int64_t     uniqueId;
+    uint        options;
 
 #ifndef BUILD_BRIDGE
     bool   active;
@@ -77,7 +78,6 @@ struct CarlaStateSave {
     float  balanceRight;
     float  panning;
     int8_t ctrlChannel;
-    uint   options;
 #endif
 
     int32_t     currentProgramIndex;
@@ -94,7 +94,7 @@ struct CarlaStateSave {
     void clear() noexcept;
 
     bool fillFromXmlElement(const juce::XmlElement* const xmlElement);
-    juce::String toString() const;
+    void dumpToMemoryStream(juce::MemoryOutputStream& stream) const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaStateSave)
 };

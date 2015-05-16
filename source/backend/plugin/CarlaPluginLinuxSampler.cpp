@@ -317,11 +317,14 @@ public:
     {
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         options |= PLUGIN_OPTION_SEND_PITCHBEND;
         options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (kIsGIG)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return options;
     }
@@ -425,6 +428,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
         carla_debug("CarlaPluginLinuxSampler::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
+
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
 
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("CarlaPluginLinuxSampler::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
@@ -573,7 +579,7 @@ public:
 
                 portName.truncate(portNameSize);
 
-                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, i);
                 pData->audioOut.ports[i].rindex = i;
             }
         }
@@ -591,7 +597,7 @@ public:
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 0);
             pData->audioOut.ports[0].rindex = 0;
 
             // out-right
@@ -606,7 +612,7 @@ public:
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
             pData->audioOut.ports[1].rindex = 1;
         }
 
@@ -625,7 +631,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         // ---------------------------------------
@@ -678,11 +684,11 @@ public:
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
 
+        if (kMaxChannels > 1 && fInstrumentIds.size() > 1)
+            pData->hints |= PLUGIN_USES_MULTI_PROGS;
+
         if (! kUses16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
-
-        if (fInstrumentIds.size() > 1)
-            pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -714,7 +720,7 @@ public:
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_program_count(pData->id, count);
 
@@ -1333,10 +1339,14 @@ public:
         // set default options
 
         pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
+        pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
         pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+        if (kIsGIG)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
     }
@@ -1420,8 +1430,6 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
         delete plugin;
         return nullptr;
     }
-
-    plugin->reload();
 
     return plugin;
 #else

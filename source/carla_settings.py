@@ -60,7 +60,7 @@ class DriverSettingsW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -78,6 +78,12 @@ class DriverSettingsW(QDialog):
 
         for name in self.fDeviceNames:
             self.ui.cb_device.addItem(name)
+
+        if driverName != "ALSA":
+            self.ui.label_numperiods.setEnabled(False)
+            self.ui.label_numperiods.setVisible(False)
+            self.ui.sb_numperiods.setEnabled(False)
+            self.ui.sb_numperiods.setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Load settings
@@ -195,10 +201,9 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_LV2    = 2
     PATH_INDEX_VST2   = 3
     PATH_INDEX_VST3   = 4
-    PATH_INDEX_AU     = 5 if MACOS else -2
-    PATH_INDEX_GIG    = 6 if MACOS else 5
-    PATH_INDEX_SF2    = 7 if MACOS else 6
-    PATH_INDEX_SFZ    = 8 if MACOS else 7
+    PATH_INDEX_GIG    = 5
+    PATH_INDEX_SF2    = 6
+    PATH_INDEX_SFZ    = 7
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,
@@ -215,7 +220,7 @@ class CarlaSettingsW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -232,12 +237,12 @@ class CarlaSettingsW(QDialog):
         if WINDOWS and not config_UseQt5:
             self.ui.group_main_theme.setEnabled(False)
 
-        if not MACOS:
-            auIndex = self.ui.cb_paths.findText("AU")
-            self.ui.cb_paths.removeItem(auIndex)
-            self.ui.tw_paths.removeWidget(self.ui.tw_paths.widget(auIndex))
+        if host.isControl:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
 
-        if not hasCanvas:
+        elif not hasCanvas:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
 
         elif not hasCanvasGL:
@@ -250,6 +255,15 @@ class CarlaSettingsW(QDialog):
         if host.processModeForced:
             self.ui.cb_engine_process_mode_jack.setEnabled(False)
             self.ui.cb_engine_process_mode_other.setEnabled(False)
+
+            if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+                self.ui.ch_engine_force_stereo.setEnabled(False)
+
+        # FIXME, pipes on win32 not working
+        if WINDOWS:
+            self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
+            self.ui.ch_engine_prefer_ui_bridges.setEnabled(False)
+            self.ui.ch_engine_prefer_ui_bridges.setVisible(False)
 
         # FIXME, not implemented yet
         self.ui.ch_engine_uis_always_on_top.hide()
@@ -279,7 +293,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_lv2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_vst3.currentRowChanged.connect(self.slot_pluginPathRowChanged)
-        self.ui.lw_au.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_gig.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
@@ -292,7 +305,6 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_lv2.setCurrentRow(0)
         self.ui.lw_vst.setCurrentRow(0)
         self.ui.lw_vst3.setCurrentRow(0)
-        self.ui.lw_au.setCurrentRow(0)
         self.ui.lw_gig.setCurrentRow(0)
         self.ui.lw_sf2.setCurrentRow(0)
         self.ui.lw_sfz.setCurrentRow(0)
@@ -302,7 +314,7 @@ class CarlaSettingsW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSettings()
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -320,10 +332,15 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_size.setCurrentIndex(self.ui.cb_canvas_size.findText(settings.value(CARLA_KEY_CANVAS_SIZE, CARLA_DEFAULT_CANVAS_SIZE, type=str)))
         self.ui.cb_canvas_bezier_lines.setChecked(settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool))
         self.ui.cb_canvas_hide_groups.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool))
+        self.ui.cb_canvas_auto_select.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool))
         self.ui.cb_canvas_eyecandy.setCheckState(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, type=int))
         self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
+
+        # ----------------------------------------------------------------------------------------------------
+
+        settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -359,7 +376,7 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
         self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
-        self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo)
+        self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(self.host.preferPluginBridges)
 
         # ----------------------------------------------------------------------------------------------------
@@ -370,7 +387,6 @@ class CarlaSettingsW(QDialog):
         lv2s    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
         vst2s   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
         vst3s   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        aus     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
         gigs    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
         sf2s    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
         sfzs    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
@@ -380,7 +396,6 @@ class CarlaSettingsW(QDialog):
         lv2s.sort()
         vst2s.sort()
         vst3s.sort()
-        aus.sort()
         gigs.sort()
         sf2s.sort()
         sfzs.sort()
@@ -405,10 +420,6 @@ class CarlaSettingsW(QDialog):
             if not vst3: continue
             self.ui.lw_vst3.addItem(vst3)
 
-        for au in aus:
-            if not au: continue
-            self.ui.lw_au.addItem(au)
-
         for gig in gigs:
             if not gig: continue
             self.ui.lw_gig.addItem(gig)
@@ -425,7 +436,7 @@ class CarlaSettingsW(QDialog):
 
     @pyqtSlot()
     def slot_saveSettings(self):
-        settings = QSettings("falkTX", "Carla2")
+        settings = QSettings()
 
         # ----------------------------------------------------------------------------------------------------
         # Main
@@ -439,14 +450,19 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Canvas
 
-        settings.setValue(CARLA_KEY_CANVAS_THEME,            self.ui.cb_canvas_theme.currentText())
-        settings.setValue(CARLA_KEY_CANVAS_SIZE,             self.ui.cb_canvas_size.currentText())
-        settings.setValue(CARLA_KEY_CANVAS_USE_BEZIER_LINES, self.ui.cb_canvas_bezier_lines.isChecked())
-        settings.setValue(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, self.ui.cb_canvas_hide_groups.isChecked())
-        settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,        self.ui.cb_canvas_eyecandy.checkState()) # 0, 1, 2 match their enum variants
-        settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,       self.ui.cb_canvas_use_opengl.isChecked())
-        settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  self.ui.cb_canvas_render_hq_aa.isChecked())
-        settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,     self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
+        settings.setValue(CARLA_KEY_CANVAS_THEME,             self.ui.cb_canvas_theme.currentText())
+        settings.setValue(CARLA_KEY_CANVAS_SIZE,              self.ui.cb_canvas_size.currentText())
+        settings.setValue(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  self.ui.cb_canvas_bezier_lines.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  self.ui.cb_canvas_hide_groups.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, self.ui.cb_canvas_auto_select.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         self.ui.cb_canvas_eyecandy.checkState()) # 0, 1, 2 match their enum variants
+        settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
+
+        # ----------------------------------------------------------------------------------------------------
+
+        settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -471,14 +487,18 @@ class CarlaSettingsW(QDialog):
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
 
-        self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          self.host.forceStereo,         "")
+        if self.ui.ch_engine_force_stereo.isEnabled():
+            self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
+
         self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
         self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
         self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
         self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
         self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
 
-        settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,          self.host.forceStereo)
+        if self.ui.ch_engine_force_stereo.isEnabled():
+            settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)
+
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
@@ -493,7 +513,6 @@ class CarlaSettingsW(QDialog):
         lv2s    = []
         vst2s   = []
         vst3s   = []
-        aus     = []
         gigs    = []
         sf2s    = []
         sfzs    = []
@@ -513,9 +532,6 @@ class CarlaSettingsW(QDialog):
         for i in range(self.ui.lw_vst3.count()):
             vst3s.append(self.ui.lw_vst3.item(i).text())
 
-        for i in range(self.ui.lw_au.count()):
-            aus.append(self.ui.lw_au.item(i).text())
-
         for i in range(self.ui.lw_gig.count()):
             gigs.append(self.ui.lw_gig.item(i).text())
 
@@ -530,7 +546,6 @@ class CarlaSettingsW(QDialog):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(lv2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(vst2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(vst3s))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(aus))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(gigs))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(sf2s))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(sfzs))
@@ -540,7 +555,6 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_LV2,    lv2s)
         settings.setValue(CARLA_KEY_PATHS_VST2,   vst2s)
         settings.setValue(CARLA_KEY_PATHS_VST3,   vst3s)
-        settings.setValue(CARLA_KEY_PATHS_AU,     aus)
         settings.setValue(CARLA_KEY_PATHS_GIG,    gigs)
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
@@ -567,6 +581,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_size.setCurrentIndex(self.ui.cb_canvas_size.findText(CARLA_DEFAULT_CANVAS_SIZE))
             self.ui.cb_canvas_bezier_lines.setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES)
             self.ui.cb_canvas_hide_groups.setChecked(CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS)
+            self.ui.cb_canvas_auto_select.setChecked(CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS)
             self.ui.cb_canvas_eyecandy.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_EYE_CANDY
             self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_ANTIALIASING
@@ -645,15 +660,6 @@ class CarlaSettingsW(QDialog):
                     if not path: continue
                     self.ui.lw_vst3.addItem(path)
 
-            elif curIndex == self.PATH_INDEX_AU:
-                paths = CARLA_DEFAULT_AU_PATH
-                paths.sort()
-                self.ui.lw_au.clear()
-
-                for path in paths:
-                    if not path: continue
-                    self.ui.lw_au.addItem(path)
-
             elif curIndex == self.PATH_INDEX_GIG:
                 paths = CARLA_DEFAULT_GIG_PATH
                 paths.sort()
@@ -726,8 +732,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst.addItem(newPath)
         elif curIndex == self.PATH_INDEX_VST3:
             self.ui.lw_vst3.addItem(newPath)
-        elif curIndex == self.PATH_INDEX_AU:
-            self.ui.lw_au.addItem(newPath)
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.addItem(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
@@ -749,8 +753,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst.takeItem(self.ui.lw_vst.currentRow())
         elif curIndex == self.PATH_INDEX_VST3:
             self.ui.lw_vst3.takeItem(self.ui.lw_vst3.currentRow())
-        elif curIndex == self.PATH_INDEX_AU:
-            self.ui.lw_au.takeItem(self.ui.lw_au.currentRow())
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.takeItem(self.ui.lw_gig.currentRow())
         elif curIndex == self.PATH_INDEX_SF2:
@@ -772,8 +774,6 @@ class CarlaSettingsW(QDialog):
             currentPath = self.ui.lw_vst.currentItem().text()
         elif curIndex == self.PATH_INDEX_VST3:
             currentPath = self.ui.lw_vst3.currentItem().text()
-        elif curIndex == self.PATH_INDEX_AU:
-            currentPath = self.ui.lw_au.currentItem().text()
         elif curIndex == self.PATH_INDEX_GIG:
             currentPath = self.ui.lw_gig.currentItem().text()
         elif curIndex == self.PATH_INDEX_SF2:
@@ -798,8 +798,6 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_vst.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_VST3:
             self.ui.lw_vst3.currentItem().setText(newPath)
-        elif curIndex == self.PATH_INDEX_AU:
-            self.ui.lw_au.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_GIG:
             self.ui.lw_gig.currentItem().setText(newPath)
         elif curIndex == self.PATH_INDEX_SF2:
@@ -821,8 +819,6 @@ class CarlaSettingsW(QDialog):
             row = self.ui.lw_vst.currentRow()
         elif index == self.PATH_INDEX_VST3:
             row = self.ui.lw_vst3.currentRow()
-        elif index == self.PATH_INDEX_AU:
-            row = self.ui.lw_au.currentRow()
         elif index == self.PATH_INDEX_GIG:
             row = self.ui.lw_gig.currentRow()
         elif index == self.PATH_INDEX_SF2:

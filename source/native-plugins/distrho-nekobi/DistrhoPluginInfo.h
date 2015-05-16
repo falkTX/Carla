@@ -1,6 +1,6 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,7 @@
 #define DISTRHO_PLUGIN_NUM_INPUTS    0
 #define DISTRHO_PLUGIN_NUM_OUTPUTS   1
 
+#define DISTRHO_PLUGIN_IS_RT_SAFE    1
 #define DISTRHO_PLUGIN_WANT_LATENCY  0
 #define DISTRHO_PLUGIN_WANT_PROGRAMS 0
 #define DISTRHO_PLUGIN_WANT_STATE    0

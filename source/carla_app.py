@@ -45,12 +45,12 @@ class CarlaApplication(object):
 
         pathBinaries, pathResources = getPaths(libPrefix)
 
-        # Needed for MacOS LV2 plugin
-        if MACOS and os.path.exists(CWD):
+        # Needed for MacOS and Windows
+        if os.path.exists(CWD) and (MACOS or WINDOWS):
             QApplication.addLibraryPath(CWD)
 
         # Needed for local wine build
-        if WINDOWS and (CWD.endswith("source") or os.getenv("CXFREEZE") is not None):
+        if WINDOWS and CWD.endswith("source") and os.getenv("CXFREEZE") is None:
             QApplication.addLibraryPath("C:\\Python34\\Lib\\site-packages\\PyQt5\\plugins")
 
         # Use binary dir as library path (except in Windows)
@@ -208,6 +208,17 @@ class CarlaApplication(object):
             self.fApp.setPalette(self.fPalBlue)
 
     def createApp(self, appName):
+        if LINUX:
+            # AA_X11InitThreads is not available on old PyQt versions
+            try:
+                attr = Qt.AA_X11InitThreads
+            except:
+                attr = 10
+            QApplication.setAttribute(attr)
+
+        if MACOS:
+            QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
+
         self.fApp = QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
@@ -217,9 +228,6 @@ class CarlaApplication(object):
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
-
-        if MACOS:
-            self.fApp.setAttribute(Qt.AA_DontShowIconsInMenus)
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())
 

@@ -588,6 +588,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QCheckBox" name="cb_canvas_auto_select">
+              <property name="text">
+               <string>Auto-select items on hover</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="cb_canvas_eyecandy">
               <property name="text">
                <string>Fancy Eye-candy</string>
@@ -743,7 +750,7 @@
                   </item>
                   <item>
                    <property name="text">
-                    <string>Patchbay (EXPERIMENTAL)</string>
+                    <string>Patchbay</string>
                    </property>
                   </item>
                  </widget>
@@ -767,7 +774,7 @@
                   </item>
                   <item>
                    <property name="text">
-                    <string>Patchbay (EXPERIMENTAL)</string>
+                    <string>Patchbay</string>
                    </property>
                   </item>
                  </widget>
@@ -1125,11 +1132,6 @@ This mode is not available for VST plugins.</string>
              </item>
              <item>
               <property name="text">
-               <string>AU</string>
-              </property>
-             </item>
-             <item>
-              <property name="text">
                <string>GIG</string>
               </property>
              </item>
@@ -1232,7 +1234,7 @@ This mode is not available for VST plugins.</string>
                <item row="1" column="1">
                 <widget class="QLabel" name="label_5">
                  <property name="text">
-                  <string>Restart Carla to be able to load new found plugins</string>
+                  <string>Restart Carla to find new plugins</string>
                  </property>
                 </widget>
                </item>
@@ -1261,19 +1263,6 @@ This mode is not available for VST plugins.</string>
                </property>
                <item>
                 <widget class="QListWidget" name="lw_vst3"/>
-               </item>
-              </layout>
-             </widget>
-             <widget class="QWidget" name="tw_paths_au">
-              <layout class="QVBoxLayout" name="verticalLayout_10">
-               <property name="spacing">
-                <number>0</number>
-               </property>
-               <property name="margin">
-                <number>0</number>
-               </property>
-               <item>
-                <widget class="QListWidget" name="lw_au"/>
                </item>
               </layout>
              </widget>
@@ -1410,7 +1399,7 @@ This mode is not available for VST plugins.</string>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
   <include location="../resources.qrc"/>
-  <include location="../../../Carla-stable/resources/resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

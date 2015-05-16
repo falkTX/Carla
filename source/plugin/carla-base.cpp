@@ -36,10 +36,10 @@ using CarlaBackend::CarlaPlugin;
 // -----------------------------------------------------------------------
 
 CARLA_EXTERN_C
-std::size_t carla_getNativePluginCount();
+std::size_t carla_getNativePluginCount() noexcept;
 
 CARLA_EXTERN_C
-const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index);
+const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t index) noexcept;
 
 // -----------------------------------------------------------------------
 // Plugin List
@@ -66,12 +66,15 @@ struct PluginListManager {
                 continue;
 
             // skip some plugins
-            if (std::strcmp(desc->label, "3bandeq"      ) == 0 ||
+            if (std::strcmp(desc->label, "bypass"       ) == 0 ||
+                std::strcmp(desc->label, "3bandeq"      ) == 0 ||
                 std::strcmp(desc->label, "3bandsplitter") == 0 ||
                 std::strcmp(desc->label, "mverb"        ) == 0 ||
                 std::strcmp(desc->label, "nekobi"       ) == 0 ||
                 std::strcmp(desc->label, "pingpongpan"  ) == 0 ||
-                std::strcmp(desc->label, "vexsynth"     ) == 0)
+                std::strcmp(desc->label, "prom"         ) == 0 ||
+                std::strstr(desc->label, "juice"        ) != nullptr ||
+                std::strstr(desc->label, "Zam"          ) != nullptr)
             {
                 continue;
             }

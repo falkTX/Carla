@@ -258,6 +258,23 @@ void carla_setenv(const char* const key, const char* const value) noexcept
 #endif
 }
 
+/*
+ * Unset environment variable 'key'.
+ */
+static inline
+void carla_unsetenv(const char* const key) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+
+#ifdef CARLA_OS_WIN
+    try {
+        ::SetEnvironmentVariableA(key, nullptr);
+    } CARLA_SAFE_EXCEPTION("carla_unsetenv");
+#else
+    ::unsetenv(key);
+#endif
+}
+
 // -----------------------------------------------------------------------
 // carla_strdup
 

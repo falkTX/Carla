@@ -22,7 +22,7 @@
 #include "juce_audio_basics.h"
 #include "juce_audio_formats.h"
 
-#if JUCE_MAC || JUCE_WINDOWS
+#if 1 //JUCE_MAC || JUCE_WINDOWS
 # include "juce_audio_devices/AppConfig.h"
 # include "juce_audio_devices/juce_audio_devices.h"
 #endif

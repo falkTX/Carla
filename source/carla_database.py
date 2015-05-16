@@ -45,12 +45,16 @@ from carla_shared import *
 # ------------------------------------------------------------------------------------------------------------
 # Try Import LADSPA-RDF
 
-try:
-    import ladspa_rdf
-    import json
-    haveLRDF = True
-except:
-    qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
+if not CXFREEZE:
+    try:
+        import ladspa_rdf
+        import json
+        haveLRDF = True
+    except:
+        qWarning("LRDF Support not available (LADSPA-RDF will be disabled)")
+        haveLRDF = False
+else:
+    qWarning("LRDF Support disabled for static build (LADSPA-RDF will be disabled)")
     haveLRDF = False
 
 # ------------------------------------------------------------------------------------------------------------
@@ -853,7 +857,7 @@ class PluginRefreshW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -1124,7 +1128,7 @@ class PluginDatabaseW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------
@@ -1224,7 +1228,7 @@ class PluginDatabaseW(QDialog):
     def slot_saveSettings(self):
         settings = QSettings("falkTX", "CarlaDatabase2")
         settings.setValue("PluginDatabase/Geometry", self.saveGeometry())
-        settings.setValue("PluginDatabase/TableGeometry%s" % ("5" if config_UseQt5 else "4"), self.ui.tableWidget.horizontalHeader().saveState())
+        settings.setValue("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), self.ui.tableWidget.horizontalHeader().saveState())
         settings.setValue("PluginDatabase/ShowFilters", (self.ui.tb_filters.arrowType() == Qt.UpArrow))
         settings.setValue("PluginDatabase/ShowEffects", self.ui.ch_effects.isChecked())
         settings.setValue("PluginDatabase/ShowInstruments", self.ui.ch_instruments.isChecked())
@@ -1244,13 +1248,14 @@ class PluginDatabaseW(QDialog):
         settings.setValue("PluginDatabase/ShowRtSafe", self.ui.ch_rtsafe.isChecked())
         settings.setValue("PluginDatabase/ShowHasGUI", self.ui.ch_gui.isChecked())
         settings.setValue("PluginDatabase/ShowStereoOnly", self.ui.ch_stereo.isChecked())
+        settings.setValue("PluginDatabase/SearchText", self.ui.lineEdit.text())
 
     # --------------------------------------------------------------------------------------------------------
 
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaDatabase2")
         self.restoreGeometry(settings.value("PluginDatabase/Geometry", ""))
-        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else ""), ""))
+        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), ""))
         self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
         self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
         self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))
@@ -1269,6 +1274,7 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_rtsafe.setChecked(settings.value("PluginDatabase/ShowRtSafe", False, type=bool))
         self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
+        self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
 
         self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
 
@@ -1457,91 +1463,104 @@ class PluginDatabaseW(QDialog):
         auCount     = 0
         kitCount    = 0
 
+        settings = QSettings("falkTX", "Carla2")
+        LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
+        del settings
+
         # ----------------------------------------------------------------------------------------------------
-        # Cached plugins
+        # Cached plugins (Internal)
 
         internalPlugins = toList(settingsDB.value("Plugins/Internal", []))
 
         for plugins in internalPlugins:
             internalCount += len(plugins)
 
+        internalCountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_INTERNAL, "")
+
+        if internalCountNew != internalCount or (len(internalPlugins) > 0 and
+                                                 len(internalPlugins[0]) > 0 and
+                                                 internalPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+            internalCount   = internalCountNew
+            internalPlugins = []
+
+            for i in range(internalCountNew):
+                descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_INTERNAL, i)
+                plugins  = checkPluginCached(descInfo, PLUGIN_INTERNAL)
+
+                if plugins:
+                    internalPlugins.append(plugins)
+
+            settingsDB.setValue("Plugins/Internal", internalPlugins)
+
+        for plugins in internalPlugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, self.tr("Internal"))
+
+        del internalCountNew
+        del internalPlugins
+
+        # ----------------------------------------------------------------------------------------------------
+        # Cached plugins (LV2)
+
         lv2Plugins = toList(settingsDB.value("Plugins/LV2", []))
 
         for plugins in lv2Plugins:
             lv2Count += len(plugins)
+
+        lv2CountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
+
+        if lv2CountNew != lv2Count or (len(lv2Plugins) > 0 and
+                                       len(lv2Plugins[0]) > 0 and
+                                       lv2Plugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+            lv2Count   = lv2CountNew
+            lv2Plugins = []
+
+            for i in range(lv2CountNew):
+                descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_LV2, i)
+                plugins  = checkPluginCached(descInfo, PLUGIN_LV2)
+
+                if plugins:
+                    lv2Plugins.append(plugins)
+
+            settingsDB.setValue("Plugins/LV2", lv2Plugins)
+
+        for plugins in lv2Plugins:
+            for plugin in plugins:
+                self._addPluginToTable(plugin, "LV2")
+
+        del lv2CountNew
+        del lv2Plugins
+
+        # ----------------------------------------------------------------------------------------------------
+        # Cached plugins (AU)
 
         auPlugins = toList(settingsDB.value("Plugins/AU", []))
 
         for plugins in auPlugins:
             auCount += len(plugins)
 
-        # Can't update cached plugins in carla-plugin
-        if not self.host.isPlugin:
-            settings = QSettings("falkTX", "Carla2")
-            LV2_PATH = splitter.join(toList(settings.value(CARLA_KEY_PATHS_LV2, CARLA_DEFAULT_LV2_PATH)))
-            AU_PATH  = splitter.join(toList(settings.value(CARLA_KEY_PATHS_AU,  CARLA_DEFAULT_AU_PATH)))
-            del settings
+        auCountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_AU, "")
 
-            internalCountNew = gCarla.utils.get_cached_plugin_count(PLUGIN_INTERNAL, "")
-            lv2CountNew      = gCarla.utils.get_cached_plugin_count(PLUGIN_LV2, LV2_PATH)
-            auCountNew       = gCarla.utils.get_cached_plugin_count(PLUGIN_AU, AU_PATH)
+        if auCountNew != auCount or (len(auPlugins) > 0 and
+                                     len(auPlugins[0]) > 0 and
+                                     auPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
+            auCount   = auCountNew
+            auPlugins = []
 
-            if internalCountNew != internalCount or (len(internalPlugins) > 0 and
-                                                     len(internalPlugins[0]) > 0 and
-                                                     internalPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
-                internalPlugins = []
+            for i in range(auCountNew):
+                descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_AU, i)
+                plugins  = checkPluginCached(descInfo, PLUGIN_AU)
 
-                for i in range(internalCountNew):
-                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_INTERNAL, i)
-                    plugins  = checkPluginCached(descInfo, PLUGIN_INTERNAL)
+                if plugins:
+                    auPlugins.append(plugins)
 
-                    if plugins:
-                        internalPlugins.append(plugins)
-
-                settingsDB.setValue("Plugins/Internal", internalPlugins)
-
-            if lv2CountNew != lv2Count or (len(lv2Plugins) > 0 and
-                                           len(lv2Plugins[0]) > 0 and
-                                           lv2Plugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
-                lv2Plugins = []
-
-                for i in range(lv2CountNew):
-                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_LV2, i)
-                    plugins  = checkPluginCached(descInfo, PLUGIN_LV2)
-
-                    if plugins:
-                        lv2Plugins.append(plugins)
-
-                settingsDB.setValue("Plugins/LV2", lv2Plugins)
-
-            if auCountNew != auCount or (len(auPlugins) > 0 and
-                                         len(auPlugins[0]) > 0 and
-                                         auPlugins[0][0]['API'] != PLUGIN_QUERY_API_VERSION):
-                auPlugins = []
-
-                for i in range(auCountNew):
-                    descInfo = gCarla.utils.get_cached_plugin_info(PLUGIN_AU, i)
-                    plugins  = checkPluginCached(descInfo, PLUGIN_AU)
-
-                    if plugins:
-                        auPlugins.append(plugins)
-
-                settingsDB.setValue("Plugins/AU", auPlugins)
-
-        for plugins in internalPlugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, self.tr("Internal"))
-
-        for plugins in lv2Plugins:
-            for plugin in plugins:
-                self._addPluginToTable(plugin, "LV2")
+            settingsDB.setValue("Plugins/AU", auPlugins)
 
         for plugins in auPlugins:
             for plugin in plugins:
                 self._addPluginToTable(plugin, "AU")
 
-        del internalPlugins
-        del lv2Plugins
+        del auCountNew
         del auPlugins
 
         # ----------------------------------------------------------------------------------------------------

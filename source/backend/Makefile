@@ -9,8 +9,11 @@ include Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-OBJS = \
+OBJS_standalone = \
 	$(OBJDIR)/CarlaStandalone.cpp.o \
+	$(OBJDIR)/CarlaStandaloneNSM.cpp.o
+
+OBJS_utils = \
 	$(OBJDIR)/CarlaUtils.cpp.o
 
 TARGETS = \
@@ -53,10 +56,14 @@ UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
-UTILS_LIBS += $(MODULEDIR)/native-plugins.a
 
-ifeq ($(HAVE_DGL),true)
-UTILS_LIBS += $(MODULEDIR)/dgl.a
+ifeq ($(MACOS),true)
+UTILS_LIBS += $(MODULEDIR)/juce_audio_processors.a
+UTILS_LIBS += $(MODULEDIR)/juce_data_structures.a
+UTILS_LIBS += $(MODULEDIR)/juce_events.a
+UTILS_LIBS += $(MODULEDIR)/juce_graphics.a
+UTILS_LIBS += $(MODULEDIR)/juce_gui_basics.a
+UTILS_LIBS += $(MODULEDIR)/juce_gui_extra.a
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -108,7 +115,15 @@ UTILS_LINK_FLAGS  = $(JUCE_AUDIO_BASICS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
-UTILS_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
+
+ifeq ($(MACOS),true)
+UTILS_LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_EVENTS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
+UTILS_LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
+endif
 
 ifneq ($(HAIKU),true)
 UTILS_LINK_FLAGS += -lpthread
@@ -121,7 +136,7 @@ all: $(TARGETS)
 # ----------------------------------------------------------------------------------------------------------------------------
 
 clean:
-	rm -f $(OBJS) $(TARGETS)
+	rm -f $(OBJS_standalone) $(OBJS_utils) $(TARGETS)
 	$(MAKE) clean -C engine
 	$(MAKE) clean -C plugin
 
@@ -133,15 +148,15 @@ doxygen: CarlaBackend.doxygen
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJDIR)/CarlaStandalone.cpp.o $(STANDALONE_LIBS)
+$(BINDIR)/libcarla_standalone2$(LIB_EXT): $(OBJS_standalone) $(STANDALONE_LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_standalone2$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
+	@$(CXX) $(OBJS_standalone) $(LIBS_START) $(STANDALONE_LIBS) $(LIBS_END) $(LINK_FLAGS) $(STANDALONE_LINK_FLAGS) $(SHARED) -o $@
 
-$(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJDIR)/CarlaUtils.cpp.o $(UTILS_LIBS)
+$(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS_utils) $(UTILS_LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking libcarla_utils$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_LINK_FLAGS) $(SHARED) -o $@
+	@$(CXX) $(OBJS_utils) $(LIBS_START) $(UTILS_LIBS) $(LIBS_END) $(LINK_FLAGS) $(UTILS_LINK_FLAGS) $(SHARED) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -150,6 +165,7 @@ $(OBJDIR)/%.cpp.o: %.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
--include $(OBJS:%.o=%.d)
+-include $(OBJS_standalone:%.o=%.d)
+-include $(OBJS_utils:%.o=%.d)
 
 # ----------------------------------------------------------------------------------------------------------------------------

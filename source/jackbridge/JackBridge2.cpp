@@ -28,13 +28,17 @@
 
 bool jackbridge_sem_init(void* sem) noexcept
 {
-#if defined(JACKBRIDGE_DUMMY)
+#ifdef JACKBRIDGE_DUMMY
     return false;
 #else
     sem_t* const sema(carla_sem_create());
     CARLA_SAFE_ASSERT_RETURN(sema != nullptr, false);
 
+# ifdef CARLA_OS_MAC
+    std::memcpy(sem, &sema, sizeof(sem_t*));
+# else
     std::memcpy(sem, sema, sizeof(sem_t));
+# endif
     return (sema != nullptr);
 #endif
 }
@@ -58,6 +62,7 @@ bool jackbridge_sem_post(void* sem) noexcept
 bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(timedOut != nullptr, false);
+
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
@@ -76,6 +81,7 @@ bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept
 bool jackbridge_shm_is_valid(const void* shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr, false);
+
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else

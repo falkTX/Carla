@@ -23,22 +23,14 @@
 #ifndef AD_NOTE_PARAMETERS_H
 #define AD_NOTE_PARAMETERS_H
 
-
 #include "../globals.h"
-#include "../Misc/Util.h"
 #include "PresetsArray.h"
-
-class EnvelopeParams;
-class LFOParams;
-class FilterParams;
-class Resonance;
-class OscilGen;
-class FFTwrapper;
 
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PITCH_MOD
 };
-extern int ADnote_unison_sizes[];
+static const int ADnote_unison_sizes[] =
+{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
 
 /*****************************************************************/
 /*                    GLOBAL PARAMETERS                          */
@@ -50,6 +42,7 @@ struct ADnoteGlobalParam {
     void defaults();
     void add2XML(XMLwrapper *xml);
     void getfromXML(XMLwrapper *xml);
+    void paste(ADnoteGlobalParam &a);
     /* The instrument type  - MONO/STEREO
     If the mode is MONO, the panning of voices are not used
     Stereo=1, Mono=0. */
@@ -111,6 +104,8 @@ struct ADnoteGlobalParam {
 
     //how the randomness is applied to the harmonics on more voices using the same oscillator
     unsigned char Hrandgrouping;
+
+    static const rtosc::Ports &ports;
 };
 
 
@@ -121,9 +116,11 @@ struct ADnoteGlobalParam {
 struct ADnoteVoiceParam {
     void getfromXML(XMLwrapper *xml, unsigned nvoice);
     void add2XML(XMLwrapper *xml, bool fmoscilused);
-    void defaults();
-    void enable(FFTwrapper *fft, Resonance *Reson);
-    void kill();
+    void paste(ADnoteVoiceParam &p);
+    void defaults(void);
+    void enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson);
+    void kill(void);
+    float getUnisonFrequencySpreadCents(void) const;
     /** If the voice is enabled */
     unsigned char Enabled;
 
@@ -286,12 +283,14 @@ struct ADnoteVoiceParam {
     /* Frequency Envelope of the Modullator */
     unsigned char   PFMAmpEnvelopeEnabled;
     EnvelopeParams *FMAmpEnvelope;
+
+    static const rtosc::Ports &ports;
 };
 
 class ADnoteParameters:public PresetsArray
 {
     public:
-        ADnoteParameters(FFTwrapper *fft_);
+        ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_);
         ~ADnoteParameters();
 
         ADnoteGlobalParam GlobalPar;
@@ -301,19 +300,23 @@ class ADnoteParameters:public PresetsArray
         void add2XML(XMLwrapper *xml);
         void getfromXML(XMLwrapper *xml);
 
-        float getBandwidthDetuneMultiplier();
-        float getUnisonFrequencySpreadCents(int nvoice);
-        int get_unison_size_index(int nvoice);
+        void paste(ADnoteParameters &a);
+        void pasteArray(ADnoteParameters &a, int section);
+
+
+        float getBandwidthDetuneMultiplier() const;
+        float getUnisonFrequencySpreadCents(int nvoice) const;
+        int get_unison_size_index(int nvoice) const;
         void set_unison_size_index(int nvoice, int index);
-    private:
+        static const rtosc::Ports &ports;
         void defaults(int n); //n is the nvoice
-
-        void EnableVoice(int nvoice);
-        void KillVoice(int nvoice);
-        FFTwrapper *fft;
-
         void add2XMLsection(XMLwrapper *xml, int n);
         void getfromXMLsection(XMLwrapper *xml, int n);
+    private:
+
+        void EnableVoice(const SYNTH_T &synth, int nvoice);
+        void KillVoice(int nvoice);
+        FFTwrapper *fft;
 };
 
 #endif

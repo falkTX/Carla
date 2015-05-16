@@ -12,27 +12,26 @@
 
 using namespace std;
 
-OutMgr &OutMgr::getInstance()
+OutMgr &OutMgr::getInstance(const SYNTH_T *synth)
 {
-    static OutMgr instance;
+    static OutMgr instance(synth);
     return instance;
 }
 
-OutMgr::OutMgr()
-    :wave(new WavEngine()),
+OutMgr::OutMgr(const SYNTH_T *synth_)
+    :wave(new WavEngine(*synth_)),
       priBuf(new float[4096],
              new float[4096]), priBuffCurrent(priBuf),
-      master(Master::getInstance())
+      master(NULL), stales(0), synth(*synth_)
 {
+    assert(synth_);
     currentOut = NULL;
-    stales     = 0;
-    master     = Master::getInstance();
 
     //init samples
-    outr = new float[synth->buffersize];
-    outl = new float[synth->buffersize];
-    memset(outl, 0, synth->bufferbytes);
-    memset(outr, 0, synth->bufferbytes);
+    outr = new float[synth.buffersize];
+    outl = new float[synth.buffersize];
+    memset(outl, 0, synth.bufferbytes);
+    memset(outr, 0, synth.bufferbytes);
 }
 
 OutMgr::~OutMgr()
@@ -61,13 +60,9 @@ const Stereo<float *> OutMgr::tick(unsigned int frameSize)
     int i=0;
     while(frameSize > storedSmps()) {
         if(!midi.empty()) {
-            pthread_mutex_lock(&(master.mutex));
-            midi.flush(i*synth->buffersize, (i+1)*synth->buffersize);
-            pthread_mutex_unlock(&(master.mutex));
+            midi.flush(i*synth.buffersize, (i+1)*synth.buffersize);
         }
-        pthread_mutex_lock(&(master.mutex));
-        master.AudioOut(outl, outr);
-        pthread_mutex_unlock(&(master.mutex));
+        master->AudioOut(outl, outr);
         addSmps(outl, outr);
         i++;
     }
@@ -118,6 +113,16 @@ string OutMgr::getSink() const
     return "ERROR";
 }
 
+void OutMgr::setMaster(Master *master_)
+{
+    master=master_;
+}
+
+void OutMgr::applyOscEventRt(const char *msg)
+{
+    master->applyOscEvent(msg);
+}
+
 //perform a cheap linear interpolation for resampling
 //This will result in some distortion at frame boundries
 //returns number of samples produced
@@ -138,27 +143,27 @@ static size_t resample(float *dest,
 void OutMgr::addSmps(float *l, float *r)
 {
     //allow wave file to syphon off stream
-    wave->push(Stereo<float *>(l, r), synth->buffersize);
+    wave->push(Stereo<float *>(l, r), synth.buffersize);
 
     const int s_out = currentOut->getSampleRate(),
-              s_sys = synth->samplerate;
+              s_sys = synth.samplerate;
 
     if(s_out != s_sys) { //we need to resample
         const size_t steps = resample(priBuffCurrent.l,
                                       l,
                                       s_sys,
                                       s_out,
-                                      synth->buffersize);
-        resample(priBuffCurrent.r, r, s_sys, s_out, synth->buffersize);
+                                      synth.buffersize);
+        resample(priBuffCurrent.r, r, s_sys, s_out, synth.buffersize);
 
         priBuffCurrent.l += steps;
         priBuffCurrent.r += steps;
     }
     else { //just copy the samples
-        memcpy(priBuffCurrent.l, l, synth->bufferbytes);
-        memcpy(priBuffCurrent.r, r, synth->bufferbytes);
-        priBuffCurrent.l += synth->buffersize;
-        priBuffCurrent.r += synth->buffersize;
+        memcpy(priBuffCurrent.l, l, synth.bufferbytes);
+        memcpy(priBuffCurrent.r, r, synth.bufferbytes);
+        priBuffCurrent.l += synth.buffersize;
+        priBuffCurrent.r += synth.buffersize;
     }
 }
 

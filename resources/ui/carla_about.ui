@@ -284,16 +284,14 @@
        </item>
        <item row="3" column="1">
         <widget class="QLabel" name="l_osc_cmds">
-         <property name="font">
-          <font>
-           <family>DejaVu Sans Mono</family>
-          </font>
-         </property>
          <property name="text">
           <string>valid osc commands here</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+         </property>
+         <property name="textInteractionFlags">
+          <set>Qt::TextSelectableByMouse</set>
          </property>
         </widget>
        </item>
@@ -309,11 +307,6 @@
        </item>
        <item row="4" column="1">
         <widget class="QLabel" name="l_example">
-         <property name="font">
-          <font>
-           <family>DejaVu Sans Mono</family>
-          </font>
-         </property>
          <property name="text">
           <string>TextLabel</string>
          </property>

@@ -19,6 +19,7 @@
 #define CARLA_STRING_HPP_INCLUDED
 
 #include "CarlaJuceUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 namespace std {
 #ifdef CARLA_OS_HAIKU
@@ -472,35 +473,39 @@ public:
     /*
      * Replace all occurrences of character 'before' with character 'after'.
      */
-    void replace(const char before, const char after) noexcept
+    CarlaString& replace(const char before, const char after) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(before != '\0' && after != '\0', *this);
 
         for (std::size_t i=0; i < fBufferLen; ++i)
         {
             if (fBuffer[i] == before)
                 fBuffer[i] = after;
         }
+
+        return *this;
     }
 
     /*
      * Truncate the string to size 'n'.
      */
-    void truncate(const std::size_t n) noexcept
+    CarlaString& truncate(const std::size_t n) noexcept
     {
         if (n >= fBufferLen)
-            return;
+            return *this;
 
         for (std::size_t i=n; i < fBufferLen; ++i)
             fBuffer[i] = '\0';
 
         fBufferLen = n;
+
+        return *this;
     }
 
     /*
      * Convert all non-basic characters to '_'.
      */
-    void toBasic() noexcept
+    CarlaString& toBasic() noexcept
     {
         for (std::size_t i=0; i < fBufferLen; ++i)
         {
@@ -515,12 +520,14 @@ public:
 
             fBuffer[i] = '_';
         }
+
+        return *this;
     }
 
     /*
      * Convert to all ascii characters to lowercase.
      */
-    void toLower() noexcept
+    CarlaString& toLower() noexcept
     {
         static const char kCharDiff('a' - 'A');
 
@@ -529,12 +536,14 @@ public:
             if (fBuffer[i] >= 'A' && fBuffer[i] <= 'Z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] + kCharDiff);
         }
+
+        return *this;
     }
 
     /*
      * Convert to all ascii characters to uppercase.
      */
-    void toUpper() noexcept
+    CarlaString& toUpper() noexcept
     {
         static const char kCharDiff('a' - 'A');
 
@@ -543,6 +552,8 @@ public:
             if (fBuffer[i] >= 'a' && fBuffer[i] <= 'z')
                 fBuffer[i] = static_cast<char>(fBuffer[i] - kCharDiff);
         }
+
+        return *this;
     }
 
     /*
@@ -581,14 +592,16 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
+        const std::size_t kTmpBufSize = carla_nextPowerOf2(dataSize/3);
+
         const uchar* bytesToEncode((const uchar*)data);
 
         uint i=0, j=0;
         uint charArray3[3], charArray4[4];
 
-        char strBuf[0xff+1];
-        strBuf[0xff] = '\0';
-        int strBufIndex = 0;
+        char strBuf[kTmpBufSize+1];
+        strBuf[kTmpBufSize] = '\0';
+        std::size_t strBufIndex = 0;
 
         CarlaString ret;
 
@@ -606,7 +619,7 @@ public:
                 for (i=0; i<4; ++i)
                     strBuf[strBufIndex++] = kBase64Chars[charArray4[i]];
 
-                if (strBufIndex >= 0xff-7)
+                if (strBufIndex >= kTmpBufSize-7)
                 {
                     strBuf[strBufIndex] = '\0';
                     strBufIndex = 0;

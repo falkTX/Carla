@@ -97,7 +97,6 @@
   #define _WIN32_IE 0x0500
  #endif
 
- #include <winsock2.h>
  #include <windows.h>
  #include <shellapi.h>
  #include <tchar.h>

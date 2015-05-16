@@ -21,6 +21,8 @@
 */
 
 #include "Presets.h"
+#include "../Misc/XMLwrapper.h"
+#include "PresetsStore.h"
 #include <string.h>
 
 
@@ -37,13 +39,13 @@ void Presets::setpresettype(const char *type)
     strcpy(this->type, type);
 }
 
-void Presets::copy(const char *name)
+void Presets::copy(PresetsStore &ps, const char *name)
 {
-    XMLwrapper *xml = new XMLwrapper();
+    XMLwrapper xml;
 
     //used only for the clipboard
     if(name == NULL)
-        xml->minimal = false;
+        xml.minimal = false;
 
     char type[MAX_PRESETTYPE_SIZE];
     strcpy(type, this->type);
@@ -52,19 +54,18 @@ void Presets::copy(const char *name)
         if(strstr(type, "Plfo") != NULL)
             strcpy(type, "Plfo");
 
-    xml->beginbranch(type);
-    add2XML(xml);
-    xml->endbranch();
+    xml.beginbranch(type);
+    add2XML(&xml);
+    xml.endbranch();
 
     if(name == NULL)
-        presetsstore.copyclipboard(xml, type);
+        ps.copyclipboard(xml, type);
     else
-        presetsstore.copypreset(xml, type, name);
-
-    delete (xml);
+        ps.copypreset(xml, type, name);
 }
 
-void Presets::paste(int npreset)
+#if 0
+void Presets::paste(PresetsStore &ps, int npreset)
 {
     char type[MAX_PRESETTYPE_SIZE];
     strcpy(type, this->type);
@@ -74,46 +75,32 @@ void Presets::paste(int npreset)
         if(strstr(type, "Plfo") != NULL)
             strcpy(type, "Plfo");
 
-    XMLwrapper *xml = new XMLwrapper();
+    XMLwrapper xml;
     if(npreset == 0) {
-        if(!checkclipboardtype()) {
-            delete (xml);
+        if(!checkclipboardtype(ps))
             return;
-        }
-        if(!presetsstore.pasteclipboard(xml)) {
-            delete (xml);
+        if(!ps.pasteclipboard(xml))
             return;
-        }
-    }
-    else
-    if(!presetsstore.pastepreset(xml, npreset)) {
-        delete (xml);
+    } else if(!ps.pastepreset(xml, npreset))
         return;
-    }
 
-    if(xml->enterbranch(type) == 0)
+    if(xml.enterbranch(type) == 0)
         return;
 
     defaults();
-    getfromXML(xml);
+    getfromXML(&xml);
 
-    xml->exitbranch();
-
-    delete (xml);
+    xml.exitbranch();
 }
+#endif
 
-bool Presets::checkclipboardtype()
+bool Presets::checkclipboardtype(PresetsStore &ps)
 {
-    return presetsstore.checkclipboardtype(type);
-}
-
-void Presets::rescanforpresets()
-{
-    presetsstore.rescanforpresets(type);
+    return ps.checkclipboardtype(type);
 }
 
 
-void Presets::deletepreset(int npreset)
+void Presets::deletepreset(PresetsStore &ps, int npreset)
 {
-    presetsstore.deletepreset(npreset);
+    ps.deletepreset(npreset);
 }

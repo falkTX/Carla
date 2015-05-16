@@ -208,6 +208,13 @@ protected:
         pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_UI_UNAVAILABLE, 0, 0, nullptr, 0.0f);
     }
 
+    void hostGiveIdle() const
+    {
+        CARLA_SAFE_ASSERT_RETURN(pHost != nullptr,);
+
+        pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
+    }
+
     // -------------------------------------------------------------------
     // Plugin parameter calls
 
@@ -365,10 +372,7 @@ protected:
 
     virtual void uiNameChanged(const char* const uiName)
     {
-        return;
-
-        // unused
-        (void)uiName;
+        CARLA_SAFE_ASSERT_RETURN(uiName != nullptr && uiName[0] != '\0',);
     }
 
     // -------------------------------------------------------------------

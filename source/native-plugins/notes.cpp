@@ -25,7 +25,7 @@ class NotesPlugin : public NativePluginAndUiClass
 {
 public:
     NotesPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "notes-ui"),
+        : NativePluginAndUiClass(host, "notes-ui"),
           fCurPage(1),
           leakDetector_NotesPlugin() {}
 
@@ -99,7 +99,8 @@ private:
 
 static const NativePluginDescriptor notesDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

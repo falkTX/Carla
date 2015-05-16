@@ -23,6 +23,7 @@
 
 #include <string>
 
+using juce::MemoryOutputStream;
 using juce::String;
 using juce::XmlElement;
 
@@ -31,25 +32,23 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // getNewLineSplittedString
 
-static String getNewLineSplittedString(const String& string)
+static void getNewLineSplittedString(MemoryOutputStream& stream, const String& string)
 {
     static const int kLineWidth = 120;
 
-    int i=0;
-    const int length=string.length();
+    int i = 0;
+    const int length = string.length();
+    const char* const raw = string.toUTF8();
 
-    String newString;
-    newString.preallocateBytes(static_cast<size_t>(length + length/120 + 2));
+    stream.preallocate(static_cast<std::size_t>(length + length/kLineWidth + 3));
 
     for (; i+kLineWidth < length; i += kLineWidth)
     {
-        newString += string.substring(i, i+kLineWidth);
-        newString += "\n";
+        stream.write(raw+i, kLineWidth);
+        stream.writeByte('\n');
     }
 
-    newString += string.substring(i);
-
-    return newString;
+    stream << (raw+i);
 }
 
 // -----------------------------------------------------------------------
@@ -116,7 +115,7 @@ static const char* xmlSafeStringCharDup(const String& string, const bool toXml)
 // StateParameter
 
 CarlaStateSave::Parameter::Parameter() noexcept
-    : isInput(true),
+    : dummy(true),
       index(-1),
       name(nullptr),
       symbol(nullptr),
@@ -186,6 +185,7 @@ CarlaStateSave::CarlaStateSave() noexcept
       label(nullptr),
       binary(nullptr),
       uniqueId(0),
+      options(0x0),
 #ifndef BUILD_BRIDGE
       active(false),
       dryWet(1.0f),
@@ -194,7 +194,6 @@ CarlaStateSave::CarlaStateSave() noexcept
       balanceRight(1.0f),
       panning(0.0f),
       ctrlChannel(-1),
-      options(0x0),
 #endif
       currentProgramIndex(-1),
       currentProgramName(nullptr),
@@ -243,6 +242,8 @@ void CarlaStateSave::clear() noexcept
     }
 
     uniqueId = 0;
+    options  = 0x0;
+
 #ifndef BUILD_BRIDGE
     active = false;
     dryWet = 1.0f;
@@ -251,8 +252,8 @@ void CarlaStateSave::clear() noexcept
     balanceRight = 1.0f;
     panning      = 0.0f;
     ctrlChannel  = -1;
-    options      = 0x0;
 #endif
+
     currentProgramIndex = -1;
     currentMidiBank     = -1;
     currentMidiProgram  = -1;
@@ -424,9 +425,9 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                         }
                         else if (pTag.equalsIgnoreCase("value"))
                         {
+                            stateParameter->dummy = false;
                             stateParameter->value = pText.getFloatValue();
                         }
-
 #ifndef BUILD_BRIDGE
                         else if (pTag.equalsIgnoreCase("midichannel") || pTag.equalsIgnoreCase("midi-channel"))
                         {
@@ -477,8 +478,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 
                 else if (tag.equalsIgnoreCase("chunk"))
                 {
-                    const String nText(text.replace("\n", ""));
-                    chunk = xmlSafeStringCharDup(nText, false);
+                    chunk = carla_strdup(text.toRawUTF8());
                 }
             }
         }
@@ -490,13 +490,12 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
 // -----------------------------------------------------------------------
 // fillXmlStringFromStateSave
 
-String CarlaStateSave::toString() const
+void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 {
-    String content;
-
     {
-        String infoXml("  <Info>\n");
+        MemoryOutputStream infoXml;
 
+        infoXml << "  <Info>\n";
         infoXml << "   <Type>" << String(type != nullptr ? type : "") << "</Type>\n";
         infoXml << "   <Name>" << xmlSafeString(name, true) << "</Name>\n";
 
@@ -510,7 +509,7 @@ String CarlaStateSave::toString() const
         case PLUGIN_LADSPA:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
             infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
-            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <UniqueID>" << juce::int64(uniqueId)       << "</UniqueID>\n";
             break;
         case PLUGIN_DSSI:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
@@ -521,7 +520,7 @@ String CarlaStateSave::toString() const
             break;
         case PLUGIN_VST2:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "   <UniqueID>" << uniqueId                    << "</UniqueID>\n";
+            infoXml << "   <UniqueID>" << juce::int64(uniqueId)       << "</UniqueID>\n";
             break;
         case PLUGIN_VST3:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
@@ -549,7 +548,7 @@ String CarlaStateSave::toString() const
 
 #ifndef BUILD_BRIDGE
     {
-        String dataXml;
+        MemoryOutputStream dataXml;
 
         dataXml << "   <Active>" << (active ? "Yes" : "No") << "</Active>\n";
 
@@ -580,16 +579,15 @@ String CarlaStateSave::toString() const
         Parameter* const stateParameter(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateParameter != nullptr);
 
-        String parameterXml("\n""   <Parameter>\n");
+        MemoryOutputStream parameterXml;
 
+        parameterXml << "\n";
+        parameterXml << "   <Parameter>\n";
         parameterXml << "    <Index>" << String(stateParameter->index)             << "</Index>\n";
         parameterXml << "    <Name>"  << xmlSafeString(stateParameter->name, true) << "</Name>\n";
 
         if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             parameterXml << "    <Symbol>" << xmlSafeString(stateParameter->symbol, true) << "</Symbol>\n";
-
-        if (stateParameter->isInput)
-            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
 
 #ifndef BUILD_BRIDGE
         if (stateParameter->midiCC > 0)
@@ -598,6 +596,9 @@ String CarlaStateSave::toString() const
             parameterXml << "    <MidiChannel>" << stateParameter->midiChannel+1 << "</MidiChannel>\n";
         }
 #endif
+
+        if (! stateParameter->dummy)
+            parameterXml << "    <Value>" << String(stateParameter->value, 15) << "</Value>\n";
 
         parameterXml << "   </Parameter>\n";
 
@@ -609,7 +610,9 @@ String CarlaStateSave::toString() const
         // ignore 'default' program
         if (currentProgramIndex > 0 || ! String(currentProgramName).equalsIgnoreCase("default"))
         {
-            String programXml("\n");
+            MemoryOutputStream programXml;
+
+            programXml << "\n";
             programXml << "   <CurrentProgramIndex>" << currentProgramIndex+1                   << "</CurrentProgramIndex>\n";
             programXml << "   <CurrentProgramName>"  << xmlSafeString(currentProgramName, true) << "</CurrentProgramName>\n";
 
@@ -619,7 +622,9 @@ String CarlaStateSave::toString() const
 
     if (currentMidiBank >= 0 && currentMidiProgram >= 0)
     {
-        String midiProgramXml("\n");
+        MemoryOutputStream midiProgramXml;
+
+        midiProgramXml << "\n";
         midiProgramXml << "   <CurrentMidiBank>"    << currentMidiBank+1    << "</CurrentMidiBank>\n";
         midiProgramXml << "   <CurrentMidiProgram>" << currentMidiProgram+1 << "</CurrentMidiProgram>\n";
 
@@ -632,7 +637,10 @@ String CarlaStateSave::toString() const
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData->isValid());
 
-        String customDataXml("\n""   <CustomData>\n");
+        MemoryOutputStream customDataXml;
+
+        customDataXml << "\n";
+        customDataXml << "   <CustomData>\n";
         customDataXml << "    <Type>" << xmlSafeString(stateCustomData->type, true) << "</Type>\n";
         customDataXml << "    <Key>"  << xmlSafeString(stateCustomData->key, true)  << "</Key>\n";
 
@@ -656,15 +664,17 @@ String CarlaStateSave::toString() const
 
     if (chunk != nullptr && chunk[0] != '\0')
     {
-        String chunkXml("\n""   <Chunk>\n");
-        chunkXml << getNewLineSplittedString(chunk) << "\n   </Chunk>\n";
+        MemoryOutputStream chunkXml, chunkSplt;
+        getNewLineSplittedString(chunkSplt, chunk);
+
+        chunkXml << "\n   <Chunk>\n";
+        chunkXml << chunkSplt;
+        chunkXml << "\n   </Chunk>\n";
 
         content << chunkXml;
     }
 
     content << "  </Data>\n";
-
-    return content;
 }
 
 // -----------------------------------------------------------------------

@@ -139,16 +139,13 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-ifeq ($(LINUX),true)
 interposer:
 	@$(MAKE) -C source/interposer
-else
-interposer:
-endif
 
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
+# FIXME
 ifeq ($(HAVE_QT),true)
 theme:
 	@$(MAKE) -C source/theme
@@ -256,6 +253,7 @@ RES = \
 	bin/resources/carla_backend.py \
 	bin/resources/carla_backend_qt.py \
 	bin/resources/carla_config.py \
+	bin/resources/carla_control.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
 	bin/resources/carla_panels.py \
@@ -283,12 +281,11 @@ RES = \
 	bin/resources/ui_carla_host.py \
 	bin/resources/ui_carla_panel_time.py \
 	bin/resources/ui_carla_parameter.py \
-	bin/resources/ui_carla_plugin_basic_fx.py \
 	bin/resources/ui_carla_plugin_calf.py \
+	bin/resources/ui_carla_plugin_classic.py \
+	bin/resources/ui_carla_plugin_compact.py \
 	bin/resources/ui_carla_plugin_default.py \
-	bin/resources/ui_carla_plugin_sf2.py \
-	bin/resources/ui_carla_plugin_zita.py \
-	bin/resources/ui_carla_plugin_zynfx.py \
+	bin/resources/ui_carla_plugin_presets.py \
 	bin/resources/ui_carla_refresh.py \
 	bin/resources/ui_carla_settings.py \
 	bin/resources/ui_carla_settings_driver.py \
@@ -321,7 +318,6 @@ endif
 
 ifeq ($(HAVE_PYQT),true)
 UIs = \
-	source/ui_carla_control.py \
 	source/ui_carla_about.py \
 	source/ui_carla_about_juce.py \
 	source/ui_carla_database.py \
@@ -329,12 +325,11 @@ UIs = \
 	source/ui_carla_host.py \
 	source/ui_carla_panel_time.py \
 	source/ui_carla_parameter.py \
-	source/ui_carla_plugin_basic_fx.py \
 	source/ui_carla_plugin_calf.py \
+	source/ui_carla_plugin_classic.py \
+	source/ui_carla_plugin_compact.py \
 	source/ui_carla_plugin_default.py \
-	source/ui_carla_plugin_sf2.py \
-	source/ui_carla_plugin_zita.py \
-	source/ui_carla_plugin_zynfx.py \
+	source/ui_carla_plugin_presets.py \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \
 	source/ui_carla_settings_driver.py \
@@ -381,14 +376,22 @@ clean:
 	rm -f *~ source/*~ source/*.pyc source/*_rc.py source/ui_*.py
 
 distclean: clean
-	rm -f bin/*.dll bin/*.so
-	rm -rf build
+	rm -f bin/*.exe bin/*.dll bin/*.dylib bin/*.so
+	rm -rf build build-lv2
 
 debug:
 	$(MAKE) DEBUG=true
 
 doxygen:
 	$(MAKE) doxygen -C source/backend
+
+stoat:
+	stoat --recursive ./build/ --suppression ./data/stoat-supression.txt --whitelist ./data/stoat-whitelist.txt --graph-view ./data/stoat-callgraph.png
+
+# 	stoat --recursive ./build/ \
+# 	--suppression ./data/stoat-supression.txt \
+# 	--whitelist   ./data/stoat-whitelist.txt  \
+# 	--graph-view  ./data/stoat-callgraph.png
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -397,14 +400,17 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/bin/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	install -d $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/at1/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
+	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+endif
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
@@ -414,9 +420,12 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/mime/packages/
 
+	# --------------------------------------------------------------------------------------------------------------------
+
 	# Install script files
 	install -m 755 \
 		data/carla \
+		data/carla-control \
 		data/carla-database \
 		data/carla-patchbay \
 		data/carla-rack \
@@ -452,33 +461,13 @@ install:
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
 
-	# Install pkg-config file
-	install -m 644 data/carla-standalone.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	# Install pkg-config files
+	install -m 644 data/*.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
 
-	# Install backend
+	# Install backend libs
 	install -m 644 \
-		bin/libcarla_standalone2.* \
-		bin/libcarla_utils.* \
+		bin/libcarla_*.* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
-
-ifeq ($(LINUX),true)
-	# Install interposer
-	install -m 644 \
-		bin/libcarla_interposer.so \
-		$(DESTDIR)$(PREFIX)/lib/carla/
-endif
-
-	# Install lv2 plugin
-	install -m 644 \
-		bin/carla.lv2/carla.* \
-		bin/carla.lv2/*.ttl \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-
-	# Install vst plugin
-	install -m 644 \
-		bin/CarlaRack*.* \
-		bin/CarlaPatchbay*.* \
-		$(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 
 	# Install other binaries
 	install -m 755 \
@@ -486,14 +475,22 @@ endif
 		bin/carla-discovery-* \
 		$(DESTDIR)$(PREFIX)/lib/carla/
 
+	# Install the real modgui bridge
+	install -m 755 \
+		data/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(PREFIX)/lib/carla/
+
+ifeq ($(HAVE_QT),true)
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
 		$(DESTDIR)$(PREFIX)/lib/carla/styles/
+endif
 
 	# Install python code
 	install -m 644 \
 		source/carla \
+		source/carla-control \
 		source/carla-patchbay \
 		source/carla-rack \
 		source/*.py \
@@ -503,6 +500,7 @@ endif
 	install -m 644 \
 		source/backend/CarlaBackend.h \
 		source/backend/CarlaHost.h \
+		source/backend/CarlaUtils.h \
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
 		source/includes/CarlaNative.h \
@@ -519,21 +517,49 @@ endif
 		bin/resources/*-ui \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/
 
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	install -m 644 \
+		bin/resources/at1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/at1/
+
+	install -m 644 \
+		bin/resources/bls1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
+
+	install -m 644 \
+		bin/resources/rev1/*.png \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+
+	install -m 755 \
+		bin/resources/rev1-ui \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/
+endif
+
 	install -m 644 \
 		bin/resources/nekofilter/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	install -m 755 \
+		bin/resources/zynaddsubfx-ui \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/
+
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+endif
+endif
 
 	# Install resources (re-use python files)
 	$(LINK) $(PREFIX)/share/carla/carla_app.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_backend_qt.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_control.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/carla_modgui.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_panels.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -559,18 +585,40 @@ endif
 	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_panel_time.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_parameter.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_basic_fx.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_compact.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_default.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_sf2.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zita.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_zynfx.py    $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_presets.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_refresh.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
 
-	# Link binaries for lv2 & vst plugin
+	# Adjust PREFIX value in script files
+	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
+		$(DESTDIR)$(PREFIX)/bin/carla \
+		$(DESTDIR)$(PREFIX)/bin/carla-control \
+		$(DESTDIR)$(PREFIX)/bin/carla-database \
+		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
+		$(DESTDIR)$(PREFIX)/bin/carla-rack \
+		$(DESTDIR)$(PREFIX)/bin/carla-single \
+		$(DESTDIR)$(PREFIX)/bin/carla-settings \
+		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-utils.pc
+
+	# --------------------------------------------------------------------------------------------------------------------
+
+	# Install lv2 plugin
+	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	install -m 644 \
+		bin/carla.lv2/carla.* \
+		bin/carla.lv2/*.ttl \
+		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# Link binaries for lv2 plugin
 	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
 		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
 		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
@@ -578,27 +626,41 @@ endif
 	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_standalone2.*
 	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
 
-	# Link styles for lv2 & vst plugin
+	# Link styles for lv2 plugin
 	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# Link resources for lv2 plugin
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
+	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+
+	# --------------------------------------------------------------------------------------------------------------------
+
+ifeq ($(LINUX),true)
+ifeq ($(HAVE_X11),true)
+ifeq ($(DEFAULT_QT),4)
+	# Install vst plugin
+	install -d $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+
+	install -m 644 \
+		bin/CarlaRack*.* \
+		bin/CarlaPatchbay*.* \
+		$(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+
+	# Link binaries for vst plugin
+	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
+	done
+	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
+
+	# Link styles for vst plugin
 	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 
-	# Link resources for lv2 & vst plugin
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
+	# Link resources for vst plugin
 	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/resources
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
 	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
-
-	# Adjust PREFIX value in script files
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
-		$(DESTDIR)$(PREFIX)/bin/carla \
-		$(DESTDIR)$(PREFIX)/bin/carla-database \
-		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
-		$(DESTDIR)$(PREFIX)/bin/carla-rack \
-		$(DESTDIR)$(PREFIX)/bin/carla-single \
-		$(DESTDIR)$(PREFIX)/bin/carla-settings \
-		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
-
-# 		$(DESTDIR)$(PREFIX)/bin/carla-control \
+endif
+endif
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -648,29 +710,34 @@ endif
 features:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
-	@echo "Front-End:  $(ANS_YES) (Using $(FEV))"
+	@echo "Front-End:  $(ANS_YES)(Using $(FEV))"
 ifneq ($(WIN32),true)
 	@echo "LV2 plugin: $(ANS_YES)"
 else
-	@echo "LV2 plugin: $(ANS_NO)  $(mZ)Not available for Windows$(mE)"
+	@echo "LV2 plugin: $(ANS_NO) $(mZ)Not available for Windows$(mE)"
 endif
 ifeq ($(LINUX),true)
 ifeq ($(DEFAULT_QT),4)
 ifeq ($(HAVE_X11),true)
 	@echo "VST plugin: $(ANS_YES)"
 else # HAVE_X11
-	@echo "VST plugin: $(ANS_NO)  $(mS)X11 missing$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mS)X11 missing$(mE)"
 endif
 else # DEFAULT_QT
-	@echo "VST plugin: $(ANS_NO)  $(mZ)Qt4 only$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mZ)Qt4 only$(mE)"
 endif
 else # LINUX
-	@echo "VST plugin: $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mZ)Linux only$(mE)"
 endif
 else
-	@echo "Front-End:  $(ANS_NO)  $(mS)Missing PyQt$(mE)"
-	@echo "LV2 plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
-	@echo "VST plugin: $(ANS_NO)  $(mS)No front-end$(mE)"
+	@echo "Front-End:  $(ANS_NO) $(mS)Missing PyQt$(mE)"
+	@echo "LV2 plugin: $(ANS_NO) $(mS)No front-end$(mE)"
+	@echo "VST plugin: $(ANS_NO) $(mS)No front-end$(mE)"
+endif
+ifeq ($(HAVE_LIBLO),true)
+	@echo "OSC support:$(ANS_YES)"
+else
+	@echo "OSC support:$(ANS_NO) $(mS)Missing liblo$(mE)"
 endif
 	@echo ""
 
@@ -680,28 +747,28 @@ ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
 	@echo "ALSA:       $(ANS_YES)"
 else
-	@echo "ALSA:       $(ANS_NO)  $(mS)Missing ALSA$(mE)"
+	@echo "ALSA:       $(ANS_NO) $(mS)Missing ALSA$(mE)"
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@echo "PulseAudio: $(ANS_YES)"
 else
-	@echo "PulseAudio: $(ANS_NO)  $(mS)Missing PulseAudio$(mE)"
+	@echo "PulseAudio: $(ANS_NO) $(mS)Missing PulseAudio$(mE)"
 endif
 else
-	@echo "ALSA:       $(ANS_NO)  $(mZ)Linux only$(mE)"
-	@echo "PulseAudio: $(ANS_NO)  $(mZ)Linux only$(mE)"
+	@echo "ALSA:       $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "PulseAudio: $(ANS_NO) $(mZ)Linux only$(mE)"
 endif
 ifeq ($(MACOS),true)
 	@echo "CoreAudio:  $(ANS_YES)"
 else
-	@echo "CoreAudio:  $(ANS_NO)  $(mZ)MacOS only$(mE)"
+	@echo "CoreAudio:  $(ANS_NO) $(mZ)MacOS only$(mE)"
 endif
 ifeq ($(WIN32),true)
 	@echo "ASIO:       $(ANS_YES)"
 	@echo "DirectSound:$(ANS_YES)"
 else
-	@echo "ASIO:       $(ANS_NO)  $(mZ)Windows only$(mE)"
-	@echo "DirectSound:$(ANS_NO)  $(mZ)Windows only$(mE)"
+	@echo "ASIO:       $(ANS_NO) $(mZ)Windows only$(mE)"
+	@echo "DirectSound:$(ANS_NO) $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 
@@ -711,66 +778,74 @@ endif
 	@echo "DSSI:    $(ANS_YES)"
 	@echo "LV2:     $(ANS_YES)"
 ifeq ($(MACOS_OR_WIN32),true)
-	@echo "VST:     $(ANS_YES) (with UI)"
+	@echo "VST:     $(ANS_YES)(with UI)"
 else
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-	@echo "VST:     $(ANS_YES) (with UI)"
+	@echo "VST:     $(ANS_YES)(with UI)"
 else
-	@echo "VST:     $(ANS_YES) (without UI) $(mS)Missing X11$(mE)"
+	@echo "VST:     $(ANS_YES)(without UI) $(mS)Missing X11$(mE)"
 endif
 else # LINUX
-	@echo "VST:     $(ANS_YES) (without UI) $(mZ)Linux, Mac and Windows only$(mE)"
+	@echo "VST:     $(ANS_YES)(without UI) $(mZ)Linux, Mac and Windows only$(mE)"
 endif
 endif
 ifeq ($(MACOS_OR_WIN32),true)
 	@echo "VST3:    $(ANS_YES)"
 else
-	@echo "VST3:    $(ANS_NO)  $(mZ)Windows and MacOS only$(mE)"
+	@echo "VST3:    $(ANS_NO) $(mZ)Windows and MacOS only$(mE)"
 endif
 ifeq ($(MACOS),true)
 	@echo "AU:      $(ANS_YES)"
 else
-	@echo "AU:      $(ANS_NO)  $(mZ)MacOS only$(mE)"
+	@echo "AU:      $(ANS_NO) $(mZ)MacOS only$(mE)"
 endif
 	@echo ""
 
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
-	@echo "External:$(ANS_YES) (direct)"
+	@echo "External:$(ANS_YES)(direct)"
+ifeq ($(LINUX),true)
 ifeq ($(HAVE_GTK2),true)
-	@echo "Gtk2:    $(ANS_YES) (bridge)"
+	@echo "Gtk2:    $(ANS_YES)(bridge)"
 else
-	@echo "Gtk2:    $(ANS_NO)  $(mS)Gtk2 missing$(mE)"
+	@echo "Gtk2:    $(ANS_NO) $(mS)Gtk2 missing$(mE)"
 endif
 ifeq ($(HAVE_GTK3),true)
-	@echo "Gtk3:    $(ANS_YES) (bridge)"
+	@echo "Gtk3:    $(ANS_YES)(bridge)"
 else
-	@echo "Gtk3:    $(ANS_NO)  $(mS)Gtk3 missing$(mE)"
+	@echo "Gtk3:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4:     $(ANS_YES) (bridge)"
+	@echo "Qt4:     $(ANS_YES)(bridge)"
 else
-	@echo "Qt4:     $(ANS_NO)  $(mS)Qt4 missing$(mE)"
+	@echo "Qt4:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
 endif
 ifeq ($(HAVE_QT5),true)
-	@echo "Qt5:     $(ANS_YES) (bridge)"
+	@echo "Qt5:     $(ANS_YES)(bridge)"
 else
-	@echo "Qt5:     $(ANS_NO)  $(mS)Qt5 missing$(mE)"
-endif
-ifeq ($(MACOS),true)
-	@echo "Cocoa:   $(ANS_YES) (direct+bridge)"
-else
-	@echo "Cocoa:   $(ANS_NO)  $(mZ)MacOS only$(mE)"
-endif
-ifeq ($(WIN32),true)
-	@echo "Windows: $(ANS_YES) (direct+bridge)"
-else
-	@echo "Windows: $(ANS_NO)  $(mZ)Windows only$(mE)"
+	@echo "Qt5:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
 endif
 ifeq ($(HAVE_X11),true)
-	@echo "X11:     $(ANS_YES) (direct+bridge)"
+	@echo "X11:     $(ANS_YES)(direct+bridge)"
 else
-	@echo "X11:     $(ANS_NO)  $(mS)X11 missing$(mE)"
+	@echo "X11:     $(ANS_NO) $(mS)X11 missing$(mE)"
+endif
+else # LINUX
+	@echo "Gtk2:    $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Gtk3:    $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Qt4:     $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Qt5:     $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "X11:     $(ANS_NO) $(mZ)Linux only$(mE)"
+endif # LINUX
+ifeq ($(MACOS),true)
+	@echo "Cocoa:   $(ANS_YES)(direct+bridge)"
+else
+	@echo "Cocoa:   $(ANS_NO) $(mZ)MacOS only$(mE)"
+endif
+ifeq ($(WIN32),true)
+	@echo "Windows: $(ANS_YES)(direct+bridge)"
+else
+	@echo "Windows: $(ANS_NO) $(mZ)Windows only$(mE)"
 endif
 	@echo ""
 
@@ -797,27 +872,31 @@ ifneq ($(WIN32),true)
 	@echo "Carla-Patchbay: $(ANS_YES)"
 	@echo "Carla-Rack:     $(ANS_YES)"
 else
-	@echo "Carla-Patchbay: $(ANS_NO)  $(mS)Not available for Windows$(mE)"
-	@echo "Carla-Rack:     $(ANS_NO)  $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Patchbay: $(ANS_NO) $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Rack:     $(ANS_NO) $(mS)Not available for Windows$(mE)"
 endif
 ifeq ($(HAVE_DGL),true)
-	@echo "DISTRHO Plugins:$(ANS_YES) (with UI)"
+	@echo "DISTRHO Plugins:$(ANS_YES)(with UI)"
 else
-	@echo "DISTRHO Plugins:$(ANS_YES) (without UI)"
+	@echo "DISTRHO Plugins:$(ANS_YES)(without UI)"
 endif
 ifeq ($(HAVE_PROJECTM),true)
 	@echo "DISTRHO ProM:   $(ANS_YES)"
 else
-	@echo "DISTRHO ProM:   $(ANS_NO)  (missing libprojectM)"
+	@echo "DISTRHO ProM:   $(ANS_NO) (missing libprojectM)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	@echo "ZynAddSubFX:    $(ANS_YES) (with UI)"
+ifeq ($(HAVE_NTK),true)
+	@echo "ZynAddSubFX:    $(ANS_YES)(with NTK UI)"
 else
-	@echo "ZynAddSubFX:    $(ANS_YES) (without UI) $(mS)NTK missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_YES)(with FLTK UI)"
 endif
 else
-	@echo "ZynAddSubFX:    $(ANS_NO)  $(mS)fftw3, mxml or zlib missing$(mE)"
+	@echo "ZynAddSubFX:    $(ANS_YES)(without UI) $(mS)FLTK or NTK missing$(mE)"
+endif
+else
+	@echo "ZynAddSubFX:    $(ANS_NO) $(mS)fftw3, mxml or zlib missing$(mE)"
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

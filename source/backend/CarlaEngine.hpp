@@ -214,7 +214,7 @@ struct CARLA_API EngineEvent {
     /*!
      * Fill this event from MIDI data.
      */
-    void fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept;
+    void fillFromMidiData(const uint8_t size, const uint8_t* const data, const uint8_t midiPortOffset) noexcept;
 };
 
 // -----------------------------------------------------------------------
@@ -243,7 +243,6 @@ struct CARLA_API EngineOptions {
     const char* pathLV2;
     const char* pathVST2;
     const char* pathVST3;
-    const char* pathAU;
     const char* pathGIG;
     const char* pathSF2;
     const char* pathSFZ;
@@ -320,7 +319,7 @@ protected:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEnginePort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
 public:
     /*!
@@ -357,7 +356,8 @@ public:
 #ifndef DOXYGEN
 protected:
     const CarlaEngineClient& kClient;
-    const bool kIsInput;
+    const bool     kIsInput;
+    const uint32_t kIndexOffset;
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEnginePort)
 #endif
@@ -373,7 +373,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineAudioPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -420,7 +420,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineCVPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -467,7 +467,7 @@ public:
      * The constructor.
      * All constructor parameters are constant and will never change in the lifetime of the port.
      */
-    CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort) noexcept;
+    CarlaEngineEventPort(const CarlaEngineClient& client, const bool isInputPort, const uint32_t indexOffset) noexcept;
 
     /*!
      * The destructor.
@@ -534,7 +534,7 @@ public:
      * Arguments are the same as in the EngineMidiEvent struct.
      * @note You must only call this for output ports.
      */
-    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t port, const uint8_t size, const uint8_t* const data) noexcept;
+    virtual bool writeMidiEvent(const uint32_t time, const uint8_t channel, const uint8_t size, const uint8_t* const data) noexcept;
 
 #ifndef DOXYGEN
 protected:
@@ -606,7 +606,7 @@ public:
      * Add a new port of type @a portType.
      * @note This function does nothing in rack processing mode since ports are static there.
      */
-    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput);
+    virtual CarlaEnginePort* addPort(const EnginePortType portType, const char* const name, const bool isInput, const uint32_t indexOffset);
 
     /*!
      * Get this client's engine.
@@ -780,13 +780,17 @@ public:
      * Add new plugin.
      * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
-    bool addPlugin(const BinaryType btype, const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
+    bool addPlugin(const BinaryType btype, const PluginType ptype,
+                   const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
+                   const void* const extra, const uint options);
 
     /*!
-     * Add new plugin, using native binary type.
+     * Add new plugin, using native binary type and default options.
      * @see ENGINE_CALLBACK_PLUGIN_ADDED
      */
-    bool addPlugin(const PluginType ptype, const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const void* const extra);
+    bool addPlugin(const PluginType ptype,
+                   const char* const filename, const char* const name, const char* const label, const int64_t uniqueId,
+                   const void* const extra);
 
     /*!
      * Remove plugin with id @a id.
@@ -1040,19 +1044,17 @@ public:
     // Helper functions
 
     /*!
-     * Return internal data, needed for EventPorts when used in Rack and Bridge modes.
+     * Return internal data, needed for EventPorts when used in Rack, Patchbay and Bridge modes.
      * @note RT call
      */
     EngineEvent* getInternalEventBuffer(const bool isInput) const noexcept;
 
 #ifndef BUILD_BRIDGE
     /*!
-     * Virtual functions for handling MIDI ports in the rack graph.
+     * Virtual functions for handling external graph ports.
      */
-    virtual bool connectRackMidiInPort(const char* const)     { return false; }
-    virtual bool connectRackMidiOutPort(const char* const)    { return false; }
-    virtual bool disconnectRackMidiInPort(const char* const)  { return false; }
-    virtual bool disconnectRackMidiOutPort(const char* const) { return false; }
+    virtual bool connectExternalGraphPort(const uint, const uint, const char* const);
+    virtual bool disconnectExternalGraphPort(const uint, const uint, const char* const);
 #endif
 
     // -------------------------------------------------------------------
@@ -1069,9 +1071,9 @@ protected:
      */
     friend class CarlaPluginInstance;
     friend class EngineInternalGraph;
+    friend class PendingRtEventsRunner;
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
-    friend class PendingRtEventsRunner;
     friend struct PatchbayGraph;
     friend struct RackGraph;
 
@@ -1095,13 +1097,6 @@ protected:
     void offlineModeChanged(const bool isOffline);
 
     /*!
-     * Run any pending RT events.
-     * Must always be called at the end of audio processing.
-     * @note RT call
-     */
-    void runPendingRtEvents() noexcept;
-
-    /*!
      * Set a plugin (stereo) peak values.
      * @note RT call
      */
@@ -1117,12 +1112,6 @@ protected:
      */
     bool loadProjectInternal(juce::XmlDocument& xmlDoc);
 
-    /*!
-     * Lock/Unlock environment mutex, to prevent simultaneous changes from different threads.
-     */
-    void lockEnvironment() const noexcept;
-    void unlockEnvironment() const noexcept;
-
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------
     // Patchbay stuff
@@ -1131,8 +1120,8 @@ protected:
      * Virtual functions for handling patchbay state.
      * Do not free returned data.
      */
-    virtual const char* const* getPatchbayConnections() const;
-    virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);
+    virtual const char* const* getPatchbayConnections(const bool external) const;
+    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort, const bool sendCallback);
 #endif
 
     // -------------------------------------------------------------------
@@ -1183,10 +1172,10 @@ public:
 # endif
 #endif
 
-    // -------------------------------------------------------------------
-    // Bridge/Controller OSC stuff
-
 #ifndef BUILD_BRIDGE
+    // -------------------------------------------------------------------
+    // OSC Controller stuff
+
     void oscSend_control_add_plugin_start(const uint pluginId, const char* const pluginName) const noexcept;
     void oscSend_control_add_plugin_end(const uint pluginId) const noexcept;
     void oscSend_control_remove_plugin(const uint pluginId) const noexcept;

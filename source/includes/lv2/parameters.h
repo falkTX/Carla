@@ -14,6 +14,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+/**
+   @defgroup parameters Parameters
+
+   Common parameters for audio processing, see
+   <http://lv2plug.in/ns/ext/parameters>.
+
+   @{
+*/
+
 #ifndef LV2_PARAMETERS_H
 #define LV2_PARAMETERS_H
 
@@ -47,3 +56,7 @@
 #define LV2_PARAMETERS__wetLevel           LV2_PARAMETERS_PREFIX "wetLevel"
 
 #endif  /* LV2_PARAMETERS_H */
+
+/**
+   @}
+*/

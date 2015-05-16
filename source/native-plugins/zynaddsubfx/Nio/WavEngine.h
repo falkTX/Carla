@@ -32,7 +32,7 @@ class WavFile;
 class WavEngine:public AudioOut
 {
     public:
-        WavEngine();
+        WavEngine(const SYNTH_T &synth);
         ~WavEngine();
 
         bool openAudio();

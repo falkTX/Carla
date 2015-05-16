@@ -23,14 +23,14 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 #include <string>
-#include "../globals.h"
 
+struct SYNTH_T;
 /**Records sound to a file*/
 class Recorder
 {
     public:
 
-        Recorder();
+        Recorder(const SYNTH_T &synth);
         ~Recorder();
         /**Prepare the given file.
          * @returns 1 if the file exists */
@@ -49,6 +49,7 @@ class Recorder
 
     private:
         int notetrigger;
+        const SYNTH_T &synth;
 };
 
 #endif

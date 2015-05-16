@@ -270,6 +270,8 @@ const char* EngineCallbackOpcode2Str(const EngineCallbackOpcode opcode) noexcept
         return "ENGINE_CALLBACK_BUFFER_SIZE_CHANGED";
     case ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         return "ENGINE_CALLBACK_SAMPLE_RATE_CHANGED";
+    case ENGINE_CALLBACK_NSM:
+        return "ENGINE_CALLBACK_NSM";
     case ENGINE_CALLBACK_IDLE:
         return "ENGINE_CALLBACK_IDLE";
     case ENGINE_CALLBACK_INFO:
@@ -315,8 +317,6 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_AUDIO_SAMPLE_RATE";
     case ENGINE_OPTION_AUDIO_DEVICE:
         return "ENGINE_OPTION_AUDIO_DEVICE";
-    case ENGINE_OPTION_NSM_INIT:
-        return "ENGINE_OPTION_NSM_INIT";
     case ENGINE_OPTION_PLUGIN_PATH:
         return "ENGINE_OPTION_PLUGIN_PATH";
     case ENGINE_OPTION_PATH_BINARIES:
@@ -411,6 +411,38 @@ const char* PatchbayIcon2Str(const PatchbayIcon icon) noexcept
 
     carla_stderr("CarlaBackend::PatchbayIcon2Str(%i) - invalid icon", icon);
     return nullptr;
+}
+
+// -----------------------------------------------------------------------
+
+static inline
+BinaryType getBinaryTypeFromString(const char* const ctype) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(ctype != nullptr && ctype[0] != '\0', BINARY_NONE);
+    carla_debug("CarlaBackend::getBinaryTypeFromString(\"%s\")", ctype);
+
+    CarlaString stype(ctype);
+
+    if (stype.isEmpty())
+        return BINARY_NONE;
+
+    stype.toLower();
+
+    if (stype == "none")
+        return BINARY_NONE;
+    if (stype == "native")
+        return BINARY_NATIVE;
+    if (stype == "posix32" || stype == "linux32" || stype == "mac32")
+        return BINARY_POSIX32;
+    if (stype == "posix64" || stype == "linux64" || stype == "mac64")
+        return BINARY_POSIX64;
+    if (stype == "win32")
+        return BINARY_WIN32;
+    if (stype == "win64")
+        return BINARY_WIN64;
+
+    carla_stderr("CarlaBackend::getBinaryTypeFromString(\"%s\") - invalid string type", ctype);
+    return BINARY_NONE;
 }
 
 // -----------------------------------------------------------------------

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,6 +16,34 @@
  */
 
 #include "CarlaDefines.h"
+
+#ifdef CARLA_OS_WIN
+#define errx(...)
+#define warnx(...)
+#endif
+
+#define PLUGINVERSION
+#define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
+#undef override
+
+// base c-style headers
+#include "zynaddsubfx/tlsf/tlsf.h"
+#include "zynaddsubfx/rtosc/rtosc.h"
+
+// C-code includes
+extern "C" {
+#include "zynaddsubfx/tlsf/tlsf.c"
+#include "zynaddsubfx/rtosc/dispatch.c"
+#include "zynaddsubfx/rtosc/rtosc.c"
+}
+
+// rtosc includes
+#include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
+#include "zynaddsubfx/rtosc/cpp/miditable.cpp"
+#include "zynaddsubfx/rtosc/cpp/ports.cpp"
+#include "zynaddsubfx/rtosc/cpp/subtree-serialize.cpp"
+#include "zynaddsubfx/rtosc/cpp/thread-link.cpp"
+#include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
 // zynaddsubfx includes
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
@@ -35,12 +63,14 @@
 #include "zynaddsubfx/Effects/EQ.cpp"
 #include "zynaddsubfx/Effects/Phaser.cpp"
 #include "zynaddsubfx/Effects/Reverb.cpp"
+#include "zynaddsubfx/Misc/Allocator.cpp"
 #include "zynaddsubfx/Misc/Bank.cpp"
 #include "zynaddsubfx/Misc/Config.cpp"
-#include "zynaddsubfx/Misc/Dump.cpp"
 #include "zynaddsubfx/Misc/Master.cpp"
 #include "zynaddsubfx/Misc/Microtonal.cpp"
+#include "zynaddsubfx/Misc/MiddleWare.cpp"
 #include "zynaddsubfx/Misc/Part.cpp"
+#include "zynaddsubfx/Misc/PresetExtractor.cpp"
 #include "zynaddsubfx/Misc/Recorder.cpp"
 //#include "zynaddsubfx/Misc/Stereo.cpp"
 #include "zynaddsubfx/Misc/Util.cpp"
@@ -65,22 +95,24 @@
 #include "zynaddsubfx/Synth/Resonance.cpp"
 #include "zynaddsubfx/Synth/SUBnote.cpp"
 #include "zynaddsubfx/Synth/SynthNote.cpp"
+#include "zynaddsubfx/UI/ConnectionDummy.cpp"
 
 // Dummy variables and functions for linking purposes
-const char* instance_name = nullptr;
-SYNTH_T* synth = nullptr;
+// const char* instance_name = nullptr;
+// SYNTH_T* synth = nullptr;
 class WavFile;
 namespace Nio {
-   bool start(void){return 1;}
-   void stop(void){}
-   bool setSource(std::string){return true;}
-   bool setSink(std::string){return true;}
-   std::set<std::string> getSources(void){return std::set<std::string>();}
-   std::set<std::string> getSinks(void){return std::set<std::string>();}
-   std::string getSource(void){return "";}
-   std::string getSink(void){return "";}
+   void masterSwap(Master*){}
+//    bool start(void){return 1;}
+//    void stop(void){}
+//    bool setSource(std::string){return true;}
+//    bool setSink(std::string){return true;}
+//    std::set<std::string> getSources(void){return std::set<std::string>();}
+//    std::set<std::string> getSinks(void){return std::set<std::string>();}
+//    std::string getSource(void){return "";}
+//    std::string getSink(void){return "";}
    void waveNew(WavFile*){}
-   void waveStart(void){}
-   void waveStop(void){}
-   void waveEnd(void){}
+   void waveStart(){}
+   void waveStop(){}
+//    void waveEnd(void){}
 }

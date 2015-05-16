@@ -35,16 +35,42 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
-import ui_carla_plugin_default
-import ui_carla_plugin_basic_fx
 import ui_carla_plugin_calf
-import ui_carla_plugin_sf2
-import ui_carla_plugin_zita
-import ui_carla_plugin_zynfx
+import ui_carla_plugin_classic
+import ui_carla_plugin_compact
+import ui_carla_plugin_default
+import ui_carla_plugin_presets
 
 from carla_widgets import *
 from digitalpeakmeter import DigitalPeakMeter
 from pixmapdial import PixmapDial
+
+# ------------------------------------------------------------------------------------------------------------
+# Plugin Skin Rules (WORK IN PROGRESS)
+
+# Base is a QFrame (NoFrame, Plain, 0-size lines), with "PluginWidget" as object name.
+# Spacing of the top-most layout must be 1px.
+# Top and bottom margins must be 3px (can be splitted between different qt layouts).
+# Left and right margins must be 6px (can be splitted between different qt layouts).
+# If the left or right side has built-in margins, say a transparent png border,
+# those margins must be taken into consideration.
+#
+# There's a top and bottom layout, separated by a horizontal line.
+# Compacted skins do not have the bottom layout and separating line.
+
+#  T O P  A R E A
+#
+#  -----------------------------------------------------------------
+# |         <> | <>                            [ WIDGETS ] [ LEDS ] |
+# | BUTTONS <> | <> PLUGIN NAME   < spacer >   [ WIDGETS ] [ LEDS ] |
+# |         <> | <>                            [ WIDGETS ] [ LEDS ] |
+#  -----------------------------------------------------------------
+#
+# Buttons area has size fixed. (TBA)
+# Spacers at the left of the plugin name must be 8x1 in size (fixed).
+# The line before the plugin name must be height-10px (fixed).
+# WIDGETS area can be extended to the left, if using meters they should have 80px.
+# WIDGETS margins are 4px for left+right and 2px for top+bottom, with 4px spacing.
 
 # ------------------------------------------------------------------------------------------------------------
 # Try to "shortify" a parameter name
@@ -53,8 +79,20 @@ def getParameterShortName(paramName):
     paramName = paramName.split("/",1)[0].split(" (",1)[0].split(" [",1)[0].strip()
     paramLow  = paramName.lower()
 
+    # Cut useless prefix
     if paramLow.startswith("compressor "):
         paramName = paramName.replace("ompressor ", ".", 1)
+        paramLow  = paramName.lower()
+    elif paramLow.startswith("room "):
+        paramName = paramName.split(" ",1)[1]
+        paramLow  = paramName.lower()
+
+    # Cut useless suffix
+    if paramLow.endswith(" level"):
+        paramName = paramName.rsplit(" ",1)[0]
+        paramLow  = paramName.lower()
+    elif paramLow.endswith(" time"):
+        paramName = paramName.rsplit(" ",1)[0]
         paramLow  = paramName.lower()
 
     # Cut generic names
@@ -70,6 +108,8 @@ def getParameterShortName(paramName):
         paramName = paramName.replace("eedback", "b")
     elif "frequency" in paramLow:
         paramName = paramName.replace("requency", "req")
+    elif "input" in paramLow:
+        paramName = paramName.replace("nput", "n")
     elif "makeup" in paramLow:
         paramName = paramName.replace("akeup", "kUp" if "Make" in paramName else "kup")
     elif "output" in paramLow:
@@ -79,33 +119,119 @@ def getParameterShortName(paramName):
     elif "threshold" in paramLow:
         paramName = paramName.replace("hreshold", "hres")
 
-    # Cut useless prefix
-    elif paramLow.startswith("room "):
-        paramName = paramName.split(" ",1)[1]
+    # remove space if 1st last word is lowercase and the 2nd first is uppercase, or if 2nd is number
+    if " " in paramName:
+        name1, name2 = paramName.split(" ", 1)
+        if (name1[-1].islower() and name2[0].isupper()) or name2.isdigit():
+            paramName = paramName.replace(" ", "", 1)
 
-    # Cut useless suffix
-    elif paramLow.endswith(" level"):
-        paramName = paramName.rsplit(" ",1)[0]
-    elif paramLow.endswith(" time"):
-        paramName = paramName.rsplit(" ",1)[0]
-
+    # cut stuff if too big
     if len(paramName) > 7:
-        paramName = paramName[:7]
+        paramName = paramName.replace("a","").replace("e","").replace("i","").replace("o","").replace("u","")
+
+        if len(paramName) > 7:
+            paramName = paramName[:7]
 
     return paramName.strip()
+
+# ------------------------------------------------------------------------------------------------------------
+# Get RGB colors for a plugin category
+
+def getColorFromCategory(category):
+    r = 40
+    g = 40
+    b = 40
+
+    if category == PLUGIN_CATEGORY_MODULATOR:
+        r += 10
+    elif category == PLUGIN_CATEGORY_EQ:
+        g += 10
+    elif category == PLUGIN_CATEGORY_FILTER:
+        b += 10
+    elif category == PLUGIN_CATEGORY_DELAY:
+        r += 15
+        b -= 15
+    elif category == PLUGIN_CATEGORY_DISTORTION:
+        g += 10
+        b += 10
+    elif category == PLUGIN_CATEGORY_DYNAMICS:
+        r += 10
+        b += 10
+    elif category == PLUGIN_CATEGORY_UTILITY:
+        r += 10
+        g += 10
+
+    return (r, g, b)
+
+def getModColorFromCategory(category):
+    if category == PLUGIN_CATEGORY_NONE:
+        return (40, 40, 40)
+    if category == PLUGIN_CATEGORY_SYNTH:
+        return (30, 150, 49)
+    if category == PLUGIN_CATEGORY_DELAY:
+        return (47, 47, 47)
+    if category in (PLUGIN_CATEGORY_EQ, PLUGIN_CATEGORY_FILTER):
+        return (255, 220, 25)
+    if category == PLUGIN_CATEGORY_DISTORTION:
+        return (255, 127, 25)
+    if category == PLUGIN_CATEGORY_DYNAMICS:
+        return (255, 25, 25)
+    if category == PLUGIN_CATEGORY_MODULATOR:
+        return (109, 31, 142)
+    if category == PLUGIN_CATEGORY_UTILITY:
+        return (95, 95, 95)
+    if category == PLUGIN_CATEGORY_OTHER:
+        return (92, 210, 254)
+    return (40, 40, 40)
+
+# ------------------------------------------------------------------------------------------------------------
+#
+
+def setPixmapDialStyle(widget, parameterId, parameterCount, skinStyle):
+    if "calf" in skinStyle:
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        widget.setPixmap(7)
+
+    elif skinStyle == "mod":
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        widget.setPixmap(14)
+
+    elif skinStyle == "openav":
+        widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
+        if parameterId == PARAMETER_DRYWET:
+            widget.setPixmap(13)
+        elif parameterId == PARAMETER_VOLUME:
+            widget.setPixmap(12)
+        else:
+            widget.setPixmap(11)
+
+    else:
+        if parameterId == PARAMETER_DRYWET:
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
+        elif parameterId == PARAMETER_VOLUME:
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+        else:
+            _r = 255 - int((float(parameterId)/float(parameterCount))*200.0)
+            _g =  55 + int((float(parameterId)/float(parameterCount))*200.0)
+            _b = 0 #(r-40)*4
+            widget.setCustomPaintColor(QColor(_r, _g, _b))
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
+
+        widget.setPixmap(3)
+        widget.forceWhiteLabelGradientText()
 
 # ------------------------------------------------------------------------------------------------------------
 # Abstract plugin slot
 
 class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 #class AbstractPluginSlot(QFrame, PluginEditParentMeta, metaclass=PyQtMetaClass):
-    def __init__(self, parent, host, pluginId):
+    def __init__(self, parent, host, pluginId, skinStyle):
         QFrame.__init__(self, parent)
         self.host = host
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------
@@ -113,14 +239,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.fPluginId   = pluginId
         self.fPluginInfo = host.get_plugin_info(self.fPluginId)
-
-        #if not gCarla.isLocal:
-            #self.fPluginInfo['hints'] &= ~PLUGIN_HAS_CUSTOM_UI
+        self.fSkinStyle  = skinStyle
 
         # -------------------------------------------------------------
         # Internal stuff
 
-        self.fIsActive   = bool(host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
+        self.fIsActive   = False
         self.fIsSelected = False
 
         self.fLastGreenLedState = False
@@ -131,8 +255,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         audioCountInfo = host.get_audio_port_count_info(self.fPluginId)
 
-        self.fPeaksInputCount  = int(audioCountInfo['ins'])
-        self.fPeaksOutputCount = int(audioCountInfo['outs'])
+        self.fPeaksInputCount  = audioCountInfo['ins']
+        self.fPeaksOutputCount = audioCountInfo['outs']
 
         if self.fPeaksInputCount > 2:
             self.fPeaksInputCount = 2
@@ -158,8 +282,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.cb_presets = None
 
-        self.label_name = None
-        self.label_type = None
+        self.label_name    = None
+        self.label_presets = None
+        self.label_type    = None
 
         self.led_control   = None
         self.led_midi      = None
@@ -168,6 +293,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.peak_in  = None
         self.peak_out = None
+
+        self.w_knobs_left  = None
+        self.w_knobs_right = None
 
         # -------------------------------------------------------------
         # Set-up connections
@@ -220,7 +348,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fPluginId == pluginId:
             self.setProgram(index, True)
 
-
     @pyqtSlot(int, int)
     def slot_handleMidiProgramChangedCallback(self, pluginId, index):
         if self.fPluginId == pluginId:
@@ -239,27 +366,74 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
     #------------------------------------------------------------------
 
     def ready(self):
+        self.fIsActive = bool(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_ACTIVE) >= 0.5)
+
         if self.b_enable is not None:
             self.b_enable.setChecked(self.fIsActive)
             self.b_enable.clicked.connect(self.slot_enableClicked)
+
+            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+                self.b_enable.setPixmaps(":/bitmaps/button_calf3.png", ":/bitmaps/button_calf3_down.png", ":/bitmaps/button_calf3.png")
+            else:
+                self.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
 
         if self.b_gui is not None:
             self.b_gui.clicked.connect(self.slot_showCustomUi)
             self.b_gui.setEnabled(bool(self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI))
 
-        if self.b_edit is None:
-            # Edit dialog *must* be available
+            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+                self.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+            elif self.fPluginInfo['iconName'] == "distrho" or self.fSkinStyle in ("3bandeq","3bandsplitter","pingpongpan"):
+                self.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
+            elif self.fPluginInfo['iconName'] == "file":
+                self.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
+            else:
+                self.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
+
+        if self.b_edit is not None:
+            self.b_edit.clicked.connect(self.slot_showEditDialog)
+
+            if "calf" in self.fSkinStyle and not isinstance(self, PluginSlot_Compact):
+                self.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
+            else:
+                self.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+
+        else:
+            # Edit button *must* be available
             self.b_edit = QPushButton(self)
             self.b_edit.setCheckable(True)
             self.b_edit.hide()
-
-        self.b_edit.clicked.connect(self.slot_showEditDialog)
 
         if self.b_remove is not None:
             self.b_remove.clicked.connect(self.slot_removePlugin)
 
         if self.label_name is not None:
+            self.label_name.setEnabled(self.fIsActive)
             self.label_name.setText(self.fPluginInfo['name'])
+
+            nameFont = self.label_name.font()
+
+            if self.fSkinStyle == "openav":
+                QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
+                nameFont.setFamily("Uranium")
+                nameFont.setPixelSize(15)
+                nameFont.setCapitalization(QFont.AllUppercase)
+
+            elif "calf" in self.fSkinStyle:
+                nameFont.setBold(True)
+                nameFont.setPixelSize(12)
+
+            else:
+                nameFont.setBold(True)
+                nameFont.setPixelSize(11)
+
+            self.label_name.setFont(nameFont)
+
+        if self.label_presets is not None:
+            presetFont = self.label_presets.font()
+            presetFont.setBold(True)
+            presetFont.setPixelSize(10)
+            self.label_presets.setFont(presetFont)
 
         if self.label_type is not None:
             self.label_type.setText(getPluginTypeAsString(self.fPluginInfo['type']))
@@ -284,21 +458,145 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             self.peak_in.setChannelCount(self.fPeaksInputCount)
             self.peak_in.setMeterColor(DigitalPeakMeter.COLOR_GREEN)
             self.peak_in.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
-            if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Default):
+
+            if "calf" in self.fSkinStyle:
+                self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
+            elif self.fSkinStyle == "rncbc":
+                self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
+            elif self.fSkinStyle in ("mod", "openav", "zynfx"):
+                self.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+
+            if self.fPeaksInputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_in.hide()
 
         if self.peak_out is not None:
             self.peak_out.setChannelCount(self.fPeaksOutputCount)
             self.peak_out.setMeterColor(DigitalPeakMeter.COLOR_BLUE)
             self.peak_out.setMeterOrientation(DigitalPeakMeter.HORIZONTAL)
-            if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Default):
+
+            if "calf" in self.fSkinStyle:
+                self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_CALF)
+            elif self.fSkinStyle == "rncbc":
+                self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_RNCBC)
+            elif self.fSkinStyle in ("mod", "openav", "zynfx"):
+                self.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
+
+            if self.fPeaksOutputCount == 0 and not isinstance(self, PluginSlot_Classic):
                 self.peak_out.hide()
+
+        # -------------------------------------------------------------
+
+        if self.fSkinStyle == "mod":
+            styleSheet = """
+                QFrame#PluginWidget {
+                    background-color: rgb(%i, %i, %i);
+                }
+                QLabel#label_name          { color: #FFFFFF; }
+                QLabel#label_name:disabled { color: #505050; }
+            """ % getModColorFromCategory(self.fPluginInfo['category'])
+
+        elif self.fSkinStyle == "openav":
+            styleSheet = """
+                QFrame#PluginWidget {
+                    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
+                                                      stop: 0 #303030, stop: %f #111111, stop: 1.0 #111111);
+                }
+                QLabel#label_name          { color: #FF5100; }
+                QLabel#label_name:disabled { color: #505050; }
+            """ % (0.95 if isinstance(self, PluginSlot_Compact) else 0.35)
+
+        else:
+            if self.fSkinStyle in ("3bandeq", "calf_black", "calf_blue", "nekobi", "zynfx"):
+                styleSheet2  = "background-image: url(:/bitmaps/background_%s.png);" % self.fSkinStyle
+            else:
+                styleSheet2  = "background-color: rgb(%i, %i, %i);" % getColorFromCategory(self.fPluginInfo['category'])
+                styleSheet2 += "background-image: url(:/bitmaps/background_noise1.png);"
+
+            styleSheet = """
+                QFrame#PluginWidget {
+                    %s
+                    background-repeat: repeat-xy;
+                }
+                QLabel#label_name,
+                QLabel#label_audio_in,
+                QLabel#label_audio_out,
+                QLabel#label_midi,
+                QLabel#label_presets       { color: #BBB; }
+                QLabel#label_name:disabled { color: #555; }
+            """ % styleSheet2
+
+        self.setStyleSheet(styleSheet)
+
+        # -------------------------------------------------------------
+        # Set-up parameters
+
+        if self.w_knobs_left is not None:
+            parameterCount = self.host.get_parameter_count(self.fPluginId)
+
+            if "calf" in self.fSkinStyle:
+                maxWidgets = 7
+            else:
+                maxWidgets = 8
+
+            index = 0
+            for i in range(parameterCount):
+                if index >= maxWidgets:
+                    break
+
+                paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
+                paramData   = self.host.get_parameter_data(self.fPluginId, i)
+                paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+
+                if paramData['type'] != PARAMETER_INPUT:
+                    continue
+                if paramData['hints'] & PARAMETER_IS_BOOLEAN:
+                    continue
+                if (paramData['hints'] & PARAMETER_IS_INTEGER) != 0 and paramRanges['max']-paramRanges['min'] <= 10.0:
+                    continue
+                if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                    continue
+                if paramInfo['name'].startswith("unused"):
+                    continue
+
+                paramName = getParameterShortName(paramInfo['name'])
+
+                widget = PixmapDial(self, i)
+                widget.setLabel(paramName)
+                widget.setMinimum(paramRanges['min'])
+                widget.setMaximum(paramRanges['max'])
+                setPixmapDialStyle(widget, i, parameterCount, self.fSkinStyle)
+
+                index += 1
+                self.fParameterList.append([i, widget])
+                self.w_knobs_left.layout().addWidget(widget)
+
+        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET) != 0:
+            widget = PixmapDial(self, PARAMETER_DRYWET)
+            widget.setLabel("Dry/Wet")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.0)
+            setPixmapDialStyle(widget, PARAMETER_DRYWET, 0, self.fSkinStyle)
+
+            self.fParameterList.append([PARAMETER_DRYWET, widget])
+            self.w_knobs_right.layout().addWidget(widget)
+
+        if self.w_knobs_right is not None and (self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME) != 0:
+            widget = PixmapDial(self, PARAMETER_VOLUME)
+            widget.setLabel("Volume")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.27)
+            setPixmapDialStyle(widget, PARAMETER_VOLUME, 0, self.fSkinStyle)
+
+            self.fParameterList.append([PARAMETER_VOLUME, widget])
+            self.w_knobs_right.layout().addWidget(widget)
 
         for paramIndex, paramWidget in self.fParameterList:
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
             paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
+
+        # -------------------------------------------------------------
 
         self.setWindowTitle(self.fPluginInfo['name'])
 
@@ -347,6 +645,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if active:
             self.fEditDialog.clearNotes()
             self.midiActivityChanged(False)
+
+        if self.label_name is not None:
+            self.label_name.setEnabled(self.fIsActive)
 
     # called from rack, checks if param is possible first
     def setInternalParameter(self, parameterId, value):
@@ -609,88 +910,6 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             painter.setBrush(Qt.black)
             painter.drawLine(0, self.height()-1, self.width(), self.height()-1)
 
-    def showDefaultCustomMenu(self, isEnabled, bEdit = None, bGui = None):
-        menu = QMenu(self)
-
-        actActive = menu.addAction(self.tr("Disable") if isEnabled else self.tr("Enable"))
-        menu.addSeparator()
-
-        actReset  = menu.addAction(self.tr("Reset parameters"))
-        actRandom = menu.addAction(self.tr("Randomize parameters"))
-        menu.addSeparator()
-
-        if bEdit is not None:
-            actEdit = menu.addAction(self.tr("Edit"))
-            actEdit.setCheckable(True)
-            actEdit.setChecked(bEdit.isChecked())
-        else:
-            actEdit = None
-
-        if bGui is not None:
-            actGui = menu.addAction(self.tr("Show Custom UI"))
-            actGui.setCheckable(True)
-            actGui.setChecked(bGui.isChecked())
-            actGui.setEnabled(bGui.isEnabled())
-        else:
-            actGui = None
-
-        menu.addSeparator()
-        actClone   = menu.addAction(self.tr("Clone"))
-        actReplace = menu.addAction(self.tr("Replace..."))
-        actRename  = menu.addAction(self.tr("Rename..."))
-        actRemove  = menu.addAction(self.tr("Remove"))
-
-        if self.fIdleTimerId != 0:
-            actRemove.setVisible(False)
-
-        actSel = menu.exec_(QCursor.pos())
-
-        if not actSel:
-            return
-
-        if actSel == actActive:
-            self.setActive(not isEnabled, True, True)
-
-        elif actSel == actReset:
-            self.host.reset_parameters(self.fPluginId)
-
-        elif actSel == actRandom:
-            self.host.randomize_parameters(self.fPluginId)
-
-        elif actSel == actGui:
-            bGui.click()
-
-        elif actSel == actEdit:
-            bEdit.click()
-
-        elif actSel == actClone:
-            if not self.host.clone_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actRename:
-            oldName    = self.fPluginInfo['name']
-            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
-
-            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
-                return
-
-            newName = newNameTry[0]
-
-            if self.host.rename_plugin(self.fPluginId, newName):
-                self.setName(newName)
-            else:
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-        elif actSel == actReplace:
-            gCarla.gui.slot_pluginAdd(self.fPluginId)
-
-        elif actSel == actRemove:
-            if not self.host.remove_plugin(self.fPluginId):
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
     def updateParameterValues(self):
         for paramIndex, paramWidget in self.fParameterList:
             if paramIndex < 0:
@@ -708,7 +927,151 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     @pyqtSlot()
     def slot_showDefaultCustomMenu(self):
-        self.showDefaultCustomMenu(self.fIsActive, self.b_edit, self.b_gui)
+        menu = QMenu(self)
+
+        # -------------------------------------------------------------
+        # Expand/Minimize
+
+        actCompact = menu.addAction(self.tr("Expand") if isinstance(self, PluginSlot_Compact) else self.tr("Minimize"))
+        menu.addSeparator()
+
+        # -------------------------------------------------------------
+        # Bypass and Enable/Disable
+
+        actBypass = menu.addAction(self.tr("Bypass"))
+        actEnable = menu.addAction(self.tr("Disable") if self.fIsActive else self.tr("Enable"))
+        menu.addSeparator()
+
+        if self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+            actBypass.setCheckable(True)
+            actBypass.setChecked(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_DRYWET) == 0.0)
+        else:
+            actBypass.setVisible(False)
+
+        # -------------------------------------------------------------
+        # Reset and Randomize parameters
+
+        actReset  = menu.addAction(self.tr("Reset parameters"))
+        actRandom = menu.addAction(self.tr("Randomize parameters"))
+        menu.addSeparator()
+
+        # -------------------------------------------------------------
+        # Edit and Show Custom UI
+
+        actEdit = menu.addAction(self.tr("Edit"))
+        actGui  = menu.addAction(self.tr("Show Custom UI"))
+        menu.addSeparator()
+
+        if self.b_edit is not None:
+            actEdit.setCheckable(True)
+            actEdit.setChecked(self.b_edit.isChecked())
+        else:
+            actEdit.setVisible(False)
+
+        if self.b_gui is not None:
+            actGui.setCheckable(True)
+            actGui.setChecked(self.b_gui.isChecked())
+            actGui.setEnabled(self.b_gui.isEnabled())
+        else:
+            actGui.setVisible(False)
+
+        # -------------------------------------------------------------
+        # Other stuff
+
+        actClone   = menu.addAction(self.tr("Clone"))
+        actReplace = menu.addAction(self.tr("Replace..."))
+        actRename  = menu.addAction(self.tr("Rename..."))
+        actRemove  = menu.addAction(self.tr("Remove"))
+
+        if self.fIdleTimerId != 0:
+            actRemove.setVisible(False)
+
+        # -------------------------------------------------------------
+        # exec
+
+        actSel = menu.exec_(QCursor.pos())
+
+        if not actSel:
+            return
+
+        # -------------------------------------------------------------
+        # Expand/Minimize
+
+        elif actSel == actCompact:
+            # FIXME
+            gCarla.gui.compactPlugin(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Bypass and Enable/Disable
+
+        elif actSel == actBypass:
+            value = 0.0 if actBypass.isChecked() else 1.0
+            self.host.set_drywet(self.fPluginId, value)
+            self.setParameterValue(PARAMETER_DRYWET, value, True)
+
+        elif actSel == actEnable:
+            self.setActive(not self.fIsActive, True, True)
+
+        # -------------------------------------------------------------
+        # Reset and Randomize parameters
+
+        elif actSel == actReset:
+            self.host.reset_parameters(self.fPluginId)
+
+        elif actSel == actRandom:
+            self.host.randomize_parameters(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Edit and Show Custom UI
+
+        elif actSel == actEdit:
+            self.b_edit.click()
+
+        elif actSel == actGui:
+            self.b_gui.click()
+
+        # -------------------------------------------------------------
+        # Clone
+
+        elif actSel == actClone:
+            if not self.host.clone_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        # -------------------------------------------------------------
+        # Rename
+
+        elif actSel == actRename:
+            oldName    = self.fPluginInfo['name']
+            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
+
+            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
+                return
+
+            newName = newNameTry[0]
+
+            if self.host.rename_plugin(self.fPluginId, newName):
+                self.setName(newName)
+            else:
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        # -------------------------------------------------------------
+        # Replace
+
+        elif actSel == actReplace:
+            # FIXME
+            gCarla.gui.slot_pluginAdd(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Remove
+
+        elif actSel == actRemove:
+            if not self.host.remove_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        # -------------------------------------------------------------
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
@@ -719,33 +1082,68 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         current = sender.fRealValue
         label   = sender.fLabel
 
-        if index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
-            default   = 1.0
-            resetText = self.tr("Reset (%i%%)" % int(default*100.0))
-            minimText = self.tr("Set to Minimum (%i%%)" % int(minimum*100.0))
-            maximText = self.tr("Set to Maximum (%i%%)" % int(maximum*100.0))
+        if index in (PARAMETER_NULL, PARAMETER_CTRL_CHANNEL) or index <= PARAMETER_MAX:
+            return
+        elif index in (PARAMETER_DRYWET, PARAMETER_VOLUME):
+            default = 1.0
+        elif index == PARAMETER_BALANCE_LEFT:
+            default = -1.0
+        elif index == PARAMETER_BALANCE_RIGHT:
+            default = 1.0
+        elif index == PARAMETER_PANNING:
+            default = 0.0
         else:
-            default   = self.host.get_default_parameter_value(self.fPluginId, index)
-            resetText = self.tr("Reset (%f)" % default)
-            minimText = self.tr("Set to Minimum (%f)" % minimum)
-            maximText = self.tr("Set to Maximum (%f)" % maximum)
+            default = self.host.get_default_parameter_value(self.fPluginId, index)
+
+        if index < PARAMETER_NULL:
+            # show in integer percentage
+            textReset = self.tr("Reset (%i%%)"          % round(default*100.0))
+            textMinim = self.tr("Set to Minimum (%i%%)" % round(minimum*100.0))
+            textMaxim = self.tr("Set to Maximum (%i%%)" % round(maximum*100.0))
+        else:
+            # show in full float value
+            textReset = self.tr("Reset (%f)"          % default)
+            textMinim = self.tr("Set to Minimum (%f)" % minimum)
+            textMaxim = self.tr("Set to Maximum (%f)" % maximum)
 
         menu = QMenu(self)
-        actReset = menu.addAction(resetText)
+        actReset = menu.addAction(textReset)
         menu.addSeparator()
-        actMinimum = menu.addAction(minimText)
-        actMaximum = menu.addAction(maximText)
+        actMinimum = menu.addAction(textMinim)
+        actCenter  = menu.addAction(self.tr("Set to Center"))
+        actMaximum = menu.addAction(textMaxim)
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value..."))
+
+        if index > PARAMETER_NULL or index not in (PARAMETER_BALANCE_LEFT, PARAMETER_BALANCE_RIGHT, PARAMETER_PANNING):
+            menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3) # FIXME - 3 decimals
-            if valueTry[1]:
-                value = valueTry[0] * 10
+            if index < PARAMETER_NULL:
+                value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100), round(minimum*100), round(maximum*100), 1)
+
+                if not ok:
+                    return
+
+                value = float(value)/100.0
+
             else:
-                return
+                paramInfo   = self.host.get_parameter_info(self.fPluginId, index)
+                paramRanges = self.host.get_parameter_ranges(self.fPluginId, index)
+                scalePoints = []
+
+                for i in range(paramInfo['scalePointCount']):
+                    scalePoints.append(self.host.get_parameter_scalepoint_info(self.fPluginId, index, i))
+
+                dialog = CustomInputDialog(self, label, current, minimum, maximum,
+                                                 paramRanges['step'], paramRanges['stepSmall'], scalePoints)
+
+                if not dialog.exec_():
+                    return
+
+                value = dialog.returnValue()
 
         elif actSelected == actMinimum:
             value = minimum
@@ -753,6 +1151,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             value = maximum
         elif actSelected == actReset:
             value = default
+        elif actSelected == actCenter:
+            value = 0.0
         else:
             return
 
@@ -803,6 +1203,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
+    def mouseDoubleClickEvent(self, event):
+        QFrame.mouseDoubleClickEvent(self, event)
+
+        # FIXME
+        gCarla.gui.compactPlugin(self.fPluginId)
+
     def closeEvent(self, event):
         if self.fIdleTimerId != 0:
             self.killTimer(self.fIdleTimerId)
@@ -826,10 +1232,112 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Default(AbstractPluginSlot):
+class PluginSlot_Calf(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
+        self.ui.setupUi(self)
+
+        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
+        midiCount  = self.host.get_midi_port_count_info(self.fPluginId)
+
+        # -------------------------------------------------------------
+        # Internal stuff
+
+        self.fButtonFont = self.ui.b_gui.font()
+        self.fButtonFont.setBold(False)
+        self.fButtonFont.setPixelSize(10)
+
+        self.fButtonColorOn  = QColor( 18,  41,  87)
+        self.fButtonColorOff = QColor(150, 150, 150)
+
+        # -------------------------------------------------------------
+        # Set-up GUI
+
+        self.ui.label_active.setFont(self.fButtonFont)
+
+        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
+
+        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
+        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
+
+        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        if audioCount['ins'] == 0:
+            self.ui.label_audio_in.hide()
+
+        if audioCount['outs'] == 0:
+            self.ui.label_audio_out.hide()
+
+        if midiCount['ins'] == 0:
+            self.ui.label_midi.hide()
+            self.ui.led_midi.hide()
+
+        if self.fIdleTimerId != 0:
+            self.ui.b_remove.setEnabled(False)
+            self.ui.b_remove.setVisible(False)
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+        self.b_remove = self.ui.b_remove
+
+        self.label_name = self.ui.label_name
+        self.led_midi   = self.ui.led_midi
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        self.w_knobs_left  = self.ui.w_knobs
+
+        self.ready()
+
+        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+    #------------------------------------------------------------------
+
+    def getFixedHeight(self):
+        return 94 if max(self.peak_in.channelCount(), self.peak_out.channelCount()) < 2 else 106
+
+    #------------------------------------------------------------------
+
+    def editDialogPluginHintsChanged(self, pluginId, hints):
+        if hints & PLUGIN_HAS_CUSTOM_UI:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
+        else:
+            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
+
+        AbstractPluginSlot.editDialogPluginHintsChanged(self, pluginId, hints)
+
+    #------------------------------------------------------------------
+
+    def paintEvent(self, event):
+        isBlack = bool(self.fSkinStyle == "calf_black")
+
+        painter = QPainter(self)
+        painter.setBrush(Qt.transparent)
+
+        painter.setPen(QPen(QColor(20, 20, 20) if isBlack else QColor(75, 86, 99), 1))
+        painter.drawRect(0, 1, self.width()-1, self.height()-3)
+
+        painter.setPen(QPen(QColor(45, 45, 45) if isBlack else QColor(86, 99, 114), 1))
+        painter.drawLine(0, 0, self.width(), 0)
+
+        AbstractPluginSlot.paintEvent(self, event)
+
+# ------------------------------------------------------------------------------------------------------------
+
+class PluginSlot_Classic(AbstractPluginSlot):
     def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_default.Ui_PluginWidget()
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, "classic")
+        self.ui = ui_carla_plugin_classic.Ui_PluginWidget()
         self.ui.setupUi(self)
 
         # -------------------------------------------------------------
@@ -838,25 +1346,6 @@ class PluginSlot_Default(AbstractPluginSlot):
         self.fColorTop    = QColor(60, 60, 60)
         self.fColorBottom = QColor(47, 47, 47)
         self.fColorSeprtr = QColor(70, 70, 70)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-            QLabel#label_name {
-                color: #BBB;
-            }
-        """)
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-        if self.fPluginInfo['iconName'] == "distrho":
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-        elif self.fPluginInfo['iconName'] == "file":
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
-        else:
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
 
         # -------------------------------------------------------------
 
@@ -935,152 +1424,11 @@ class PluginSlot_Default(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_BasicFX(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
+class PluginSlot_Compact(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+        self.ui = ui_carla_plugin_compact.Ui_PluginWidget()
         self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        labelFont = self.ui.label_name.font()
-        labelFont.setBold(True)
-        labelFont.setPointSize(9)
-        self.ui.label_name.setFont(labelFont)
-
-        r = 40
-        g = 40
-        b = 40
-
-        if self.fPluginInfo['category'] == PLUGIN_CATEGORY_MODULATOR:
-            r += 10
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_EQ:
-            g += 10
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
-            b += 10
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
-            r += 15
-            b -= 15
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DISTORTION:
-            g += 10
-            b += 10
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DYNAMICS:
-            r += 10
-            b += 10
-        elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_UTILITY:
-            r += 10
-            g += 10
-
-        bg = "noise1"
-
-        if self.fPluginInfo['maker'] in ("falkTX, Michael Gruhn", "DISTRHO") and "3bandeq" in self.fPluginInfo['label'].lower():
-            bg = "3bandeq"
-
-        self.setStyleSheet("""
-            PluginSlot_BasicFX#PluginWidget {
-                background-color: rgb(%i, %i, %i);
-                background-image: url(:/bitmaps/background_%s.png);
-                background-repeat: repeat-xy;
-            }
-            QLabel#label_name {
-                color: #BBB;
-            }
-        """ % (r, g, b, bg))
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-        if self.fPluginInfo['iconName'] == "distrho":
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_distrho.png", ":/bitmaps/button_distrho_down.png", ":/bitmaps/button_distrho_hover.png")
-        elif self.fPluginInfo['iconName'] == "file":
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_file.png", ":/bitmaps/button_file_down.png", ":/bitmaps/button_file_hover.png")
-        else:
-            self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
-            if index >= 8:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            #if self.fPluginInfo['category'] == PLUGIN_CATEGORY_FILTER:
-                #_r =  55 + float(i)/8*200
-                #_g = 255 - float(i)/8*200
-                #_b = 127 - r*2
-            #elif self.fPluginInfo['category'] == PLUGIN_CATEGORY_DELAY:
-                #_r = 127
-                #_g =  55 + float(i)/8*200
-                #_b = 255 - float(i)/8*200
-            #elif r < b < g:
-                #_r =  55 + float(i)/8*200
-                #_g = 127
-                #_b = 255 - float(i)/8*200
-            #else:
-            _r = 255 - float(index)/8*200
-            _g =  55 + float(index)/8*200
-            _b =  (r-40)*4
-
-            #if _r < 140: _r = 140
-            #if _g < 140: _g = 140
-            #if _b < 140: _b = 140
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(3)
-            widget.setLabel(paramName)
-            widget.setCustomPaintColor(QColor(_r, _g, _b))
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
-            widget.forceWhiteLabelGradientText()
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
-        self.ui.dial_drywet.setPixmap(3)
-        self.ui.dial_drywet.setLabel("Dry/Wet")
-        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.0)
-        self.ui.dial_drywet.forceWhiteLabelGradientText()
-        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
-
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(3)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.forceWhiteLabelGradientText()
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
-
-        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
-
-        # -------------------------------------------------------------
 
         self.b_enable = self.ui.b_enable
         self.b_gui    = self.ui.b_gui
@@ -1103,274 +1451,17 @@ class PluginSlot_BasicFX(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 79
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 79-3)
-
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawLine(0, 0, self.width(), 0)
-
-        AbstractPluginSlot.paintEvent(self, event)
+        if self.fSkinStyle == "calf_blue":
+            return 36
+        return 30
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Calf(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_calf.Ui_PluginWidget()
+class PluginSlot_Default(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+        self.ui = ui_carla_plugin_default.Ui_PluginWidget()
         self.ui.setupUi(self)
-
-        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
-        midiCount  = self.host.get_midi_port_count_info(self.fPluginId)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        self.fButtonFont = self.ui.b_gui.font()
-        self.fButtonFont.setBold(False)
-        self.fButtonFont.setPointSize(8)
-
-        # Use black for mono plugins
-        self.fBackgroundBlack = audioCount['ins'] == 1
-
-        self.fButtonColorOn  = QColor( 18,  41,  87)
-        self.fButtonColorOff = QColor(150, 150, 150)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-            QLabel#label_name, QLabel#label_audio_in, QLabel#label_audio_out, QLabel#label_midi {
-                color: #BBB;
-            }
-            PluginSlot_Calf#PluginWidget {
-                background-image: url(:/bitmaps/background_calf_%s.png);
-                background-repeat: repeat-xy;
-                border: 2px;
-            }
-        """ % ("black" if self.fBackgroundBlack else "blue"))
-
-        self.ui.b_gui.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_calf2.png", ":/bitmaps/button_calf2_down.png", ":/bitmaps/button_calf2_hover.png")
-        self.ui.b_remove.setPixmaps(":/bitmaps/button_calf1.png", ":/bitmaps/button_calf1_down.png", ":/bitmaps/button_calf1_hover.png")
-
-        self.ui.b_edit.setTopText(self.tr("Edit"), self.fButtonColorOn, self.fButtonFont)
-        self.ui.b_remove.setTopText(self.tr("Remove"), self.fButtonColorOn, self.fButtonFont)
-
-        if self.fPluginInfo['hints'] & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
-        else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        labelFont = self.ui.label_name.font()
-        labelFont.setBold(True)
-        labelFont.setPointSize(10)
-        self.ui.label_name.setFont(labelFont)
-
-        if audioCount['ins'] == 0:
-            self.ui.label_audio_in.hide()
-            self.ui.peak_in.hide()
-
-            if audioCount['outs'] > 0:
-                self.ui.peak_out.setMinimumWidth(200)
-
-        if audioCount['outs'] == 0:
-            self.ui.label_audio_out.hide()
-            self.ui.peak_out.hide()
-
-        if midiCount['ins'] == 0:
-            self.ui.label_midi.hide()
-            self.ui.led_midi.hide()
-
-        if self.fIdleTimerId != 0:
-            self.ui.b_remove.setEnabled(False)
-            self.ui.b_remove.setVisible(False)
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        limit = 7 if midiCount['ins'] == 0 else 6
-        for i in range(parameterCount):
-            if index >= limit:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(7)
-            widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        # -------------------------------------------------------------
-
-        self.b_gui    = self.ui.b_gui
-        self.b_edit   = self.ui.b_edit
-        self.b_remove = self.ui.b_remove
-
-        self.label_name = self.ui.label_name
-        self.led_midi   = self.ui.led_midi
-
-        self.peak_in  = self.ui.peak_in
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.ui.led_midi.setColor(self.ui.led_midi.CALF)
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 88
-
-    #------------------------------------------------------------------
-
-    def editDialogPluginHintsChanged(self, pluginId, hints):
-        if hints & PLUGIN_HAS_CUSTOM_UI:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOn, self.fButtonFont)
-        else:
-            self.ui.b_gui.setTopText(self.tr("GUI"), self.fButtonColorOff, self.fButtonFont)
-
-        AbstractPluginSlot.editDialogPluginHintsChanged(self, pluginId, hints)
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(20, 20, 20) if self.fBackgroundBlack else QColor(75, 86, 99), 1))
-        painter.drawRect(0, 1, self.width()-1, 88-3)
-
-        painter.setPen(QPen(QColor(45, 45, 45) if self.fBackgroundBlack else QColor(86, 99, 114), 1))
-        painter.drawLine(0, 0, self.width(), 0)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_OpenAV(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        QFontDatabase.addApplicationFont(":/fonts/uranium.ttf")
-
-        labelFont = QFont()
-        labelFont.setFamily("Uranium")
-        labelFont.setPointSize(13)
-        labelFont.setCapitalization(QFont.AllUppercase)
-        self.ui.label_name.setFont(labelFont)
-
-        self.setStyleSheet("""
-            PluginSlot_OpenAV#PluginWidget {
-                background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                                  stop: 0 #303030, stop: 0.35 #111111, stop: 1.0 #111111);
-            }
-        """)
-
-        self.ui.label_name.setStyleSheet("* { color: #FF5100; }")
-        #self.ui.line.setStyleSheet("* { background-color: #FF5100; color: #FF5100; }")
-
-        self.ui.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
-        self.ui.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-        self.ui.b_gui.setPixmaps(":/bitmaps/button_gui.png", ":/bitmaps/button_gui_down.png", ":/bitmaps/button_gui_hover.png")
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
-            if index >= 8:
-                break
-
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(11)
-            widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
-        self.ui.dial_drywet.setPixmap(13)
-        self.ui.dial_drywet.setLabel("Dry/Wet")
-        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.0)
-        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
-
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(12)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
-
-        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
 
         # -------------------------------------------------------------
 
@@ -1388,6 +1479,9 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
         self.peak_in  = self.ui.peak_in
         self.peak_out = self.ui.peak_out
 
+        self.w_knobs_left  = self.ui.w_knobs_left
+        self.w_knobs_right = self.ui.w_knobs_right
+
         self.ready()
 
         self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
@@ -1395,7 +1489,10 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 79
+        if self.fSkinStyle == "mod":
+            return 86
+
+        return 80
 
     #------------------------------------------------------------------
 
@@ -1404,7 +1501,7 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
         painter.setBrush(Qt.transparent)
 
         painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 79-3)
+        painter.drawRect(0, 1, self.width()-1, self.getFixedHeight()-3)
 
         painter.setPen(QPen(QColor(60, 60, 60), 1))
         painter.drawLine(0, 0, self.width(), 0)
@@ -1413,88 +1510,84 @@ class PluginSlot_OpenAV(AbstractPluginSlot):
 
 # ------------------------------------------------------------------------------------------------------------
 
-class PluginSlot_Nekobi(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        #self.ui = ui_carla_plugin_basic_fx.Ui_PluginWidget()
-        #self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.fPixmapCenter = QPixmap(":/bitmaps/background_nekobi.png")
-
-        self.fPixmapLeft     = QPixmap(":/bitmaps/background_nekobi_left.png")
-        self.fPixmapLeftRect = QRectF(0, 0, self.fPixmapLeft.width(), self.fPixmapLeft.height())
-
-        self.fPixmapRight     = QPixmap(":/bitmaps/background_nekobi_right.png")
-        self.fPixmapRightRect = QRectF(0, 0, self.fPixmapRight.width(), self.fPixmapRight.height())
-
-        #self.setStyleSheet("""
-            #PluginSlot_Nekobi#PluginWidget {
-                #background-image: url(:/bitmaps/background_nekobi.png);
-                #background-repeat: repeat-xy;
-            #}
-            #QLabel#label_name {
-                #color: #BBB;
-            #}
-        #""")
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 108
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-
-        # main bg (center)
-        painter.drawTiledPixmap(0, 0, self.width(), self.height(), self.fPixmapCenter)
-
-        # left side
-        painter.drawPixmap(self.fPixmapLeftRect, self.fPixmapLeft, self.fPixmapLeftRect)
-
-        # right side
-        rightTarget = QRectF(self.fPixmapRightRect)
-        rightTarget.moveLeft(self.width()-rightTarget.width())
-        painter.drawPixmap(rightTarget, self.fPixmapRight, self.fPixmapRightRect)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_SF2(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_sf2.Ui_PluginWidget()
+class PluginSlot_Presets(AbstractPluginSlot):
+    def __init__(self, parent, host, pluginId, skinStyle):
+        AbstractPluginSlot.__init__(self, parent, host, pluginId, skinStyle)
+        self.ui = ui_carla_plugin_presets.Ui_PluginWidget()
         self.ui.setupUi(self)
 
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        #labelFont = self.ui.label_name.font()
-        #labelFont.setBold(True)
-        #labelFont.setPointSize(9)
-        #self.ui.label_name.setFont(labelFont)
-
-        self.setStyleSheet("""
-            PluginSlot_SF2#PluginWidget {
-                background-image: url(:/bitmaps/background_3bandeq.png);
-                background-repeat: repeat-xy;
-            }
-            QLabel#label_name {
-                color: #BBB;
-            }
-        """)
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
+        usingMidiPrograms = bool(skinStyle != "presets")
 
         # -------------------------------------------------------------
-        # Set-up parameters
+        # Set-up programs
 
+        if usingMidiPrograms:
+            programCount = self.host.get_midi_program_count(self.fPluginId)
+        else:
+            programCount = self.host.get_program_count(self.fPluginId)
+
+        if programCount > 0:
+            self.ui.cb_presets.setEnabled(True)
+            self.ui.label_presets.setEnabled(True)
+
+            for i in range(programCount):
+                if usingMidiPrograms:
+                    progName = self.host.get_midi_program_data(self.fPluginId, i)['name']
+                else:
+                    progName = self.host.get_program_name(self.fPluginId, i)
+
+                self.ui.cb_presets.addItem(progName)
+
+            if usingMidiPrograms:
+                curProg = self.host.get_current_midi_program_index(self.fPluginId)
+            else:
+                curProg = self.host.get_current_program_index(self.fPluginId)
+
+            self.ui.cb_presets.setCurrentIndex(curProg)
+
+        else:
+            self.ui.cb_presets.setEnabled(False)
+            self.ui.cb_presets.setVisible(False)
+            self.ui.label_presets.setEnabled(False)
+            self.ui.label_presets.setVisible(False)
+
+        # -------------------------------------------------------------
+
+        self.b_enable = self.ui.b_enable
+        self.b_gui    = self.ui.b_gui
+        self.b_edit   = self.ui.b_edit
+
+        self.cb_presets = self.ui.cb_presets
+
+        self.label_name    = self.ui.label_name
+        self.label_presets = self.ui.label_presets
+
+        self.led_control   = self.ui.led_control
+        self.led_midi      = self.ui.led_midi
+        self.led_audio_in  = self.ui.led_audio_in
+        self.led_audio_out = self.ui.led_audio_out
+
+        self.peak_in  = self.ui.peak_in
+        self.peak_out = self.ui.peak_out
+
+        if skinStyle == "zynfx":
+            self.setupZynFxParams()
+        else:
+            self.w_knobs_left  = self.ui.w_knobs_left
+            self.w_knobs_right = self.ui.w_knobs_right
+
+        self.ready()
+
+        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
+
+        if usingMidiPrograms:
+            self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
+        else:
+            self.ui.cb_presets.currentIndexChanged.connect(self.slot_programChanged)
+
+        # -------------------------------------------------------------
+
+    def setupZynFxParams(self):
         parameterCount = self.host.get_parameter_count(self.fPluginId)
 
         index = 0
@@ -1502,269 +1595,6 @@ class PluginSlot_SF2(AbstractPluginSlot):
             if index >= 8:
                 break
 
-            paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
-            paramData   = self.host.get_parameter_data(self.fPluginId, i)
-            paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
-            if paramData['type'] != PARAMETER_INPUT:
-                continue
-            if paramData['hints'] & PARAMETER_IS_BOOLEAN:
-                continue
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                continue
-
-            paramName = getParameterShortName(paramInfo['name'])
-
-            widget = PixmapDial(self, i)
-            widget.setPixmap(3)
-            widget.setLabel(paramName)
-            widget.setMinimum(paramRanges['min'])
-            widget.setMaximum(paramRanges['max'])
-
-            if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
-                widget.setEnabled(False)
-
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
-            self.fParameterList.append([i, widget])
-
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(3)
-        self.ui.dial_vol.setLabel("Volume")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.forceWhiteLabelGradientText()
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
-
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
-
-        # -------------------------------------------------------------
-
-        self.b_enable = self.ui.b_enable
-        self.b_edit   = self.ui.b_edit
-
-        self.label_name = self.ui.label_name
-
-        self.led_control   = self.ui.led_control
-        self.led_midi      = self.ui.led_midi
-        self.led_audio_out = self.ui.led_audio_out
-
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 79
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setBrush(Qt.transparent)
-
-        painter.setPen(QPen(QColor(42, 42, 42), 1))
-        painter.drawRect(0, 1, self.width()-1, 79-3)
-
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
-        painter.drawLine(0, 0, self.width(), 0)
-
-        AbstractPluginSlot.paintEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_ZitaRev(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_zita.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Internal stuff
-
-        audioCount = self.host.get_audio_port_count_info(self.fPluginId)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setMinimumWidth(640)
-
-        self.setStyleSheet("""
-            PluginSlot_ZitaRev#PluginWidget {
-                background-color: #404040;
-                border: 2px solid transparent;
-            }
-            QWidget#w_revsect {
-                background-image: url(:/bitmaps/zita-rev/revsect.png);
-            }
-            QWidget#w_eq1sect {
-                background-image: url(:/bitmaps/zita-rev/eq1sect.png);
-            }
-            QWidget#w_eq2sect {
-                background-image: url(:/bitmaps/zita-rev/eq2sect.png);
-            }
-            QWidget#w_ambmixsect {
-                background-image: url(:/bitmaps/zita-rev/%s.png);
-            }
-            QWidget#w_redzita {
-                background-image: url(:/bitmaps/zita-rev/redzita.png);
-            }
-        """ % ("mixsect" if audioCount['outs'] == 2 else "ambsect"))
-
-        # -------------------------------------------------------------
-        # Set-up Knobs
-
-        self.fKnobDelay = PixmapDial(self, 0)
-        self.fKnobDelay.setPixmap(6)
-        self.fKnobDelay.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobDelay.setMinimum(0.02)
-        self.fKnobDelay.setMaximum(0.10)
-
-        self.fKnobXover = PixmapDial(self, 1)
-        self.fKnobXover.setPixmap(6)
-        self.fKnobXover.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobXover.setMinimum(50.0)
-        self.fKnobXover.setMaximum(1000.0)
-
-        self.fKnobRtLow = PixmapDial(self, 2)
-        self.fKnobRtLow.setPixmap(6)
-        self.fKnobRtLow.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobRtLow.setMinimum(1.0)
-        self.fKnobRtLow.setMaximum(8.0)
-
-        self.fKnobRtMid = PixmapDial(self, 3)
-        self.fKnobRtMid.setPixmap(6)
-        self.fKnobRtMid.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobRtMid.setMinimum(1.0)
-        self.fKnobRtMid.setMaximum(8.0)
-
-        self.fKnobDamping = PixmapDial(self, 4)
-        self.fKnobDamping.setPixmap(6)
-        self.fKnobDamping.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobDamping.setMinimum(1500.0)
-        self.fKnobDamping.setMaximum(24000.0)
-
-        self.fKnobEq1Freq = PixmapDial(self, 5)
-        self.fKnobEq1Freq.setPixmap(6)
-        self.fKnobEq1Freq.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq1Freq.setMinimum(40.0)
-        self.fKnobEq1Freq.setMaximum(10000.0)
-
-        self.fKnobEq1Gain = PixmapDial(self, 6)
-        self.fKnobEq1Gain.setPixmap(6)
-        self.fKnobEq1Gain.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq1Gain.setMinimum(-20.0)
-        self.fKnobEq1Gain.setMaximum(20.0)
-
-        self.fKnobEq2Freq = PixmapDial(self, 7)
-        self.fKnobEq2Freq.setPixmap(6)
-        self.fKnobEq2Freq.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq2Freq.setMinimum(40.0)
-        self.fKnobEq2Freq.setMaximum(10000.0)
-
-        self.fKnobEq2Gain = PixmapDial(self, 8)
-        self.fKnobEq2Gain.setPixmap(6)
-        self.fKnobEq2Gain.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobEq2Gain.setMinimum(-20.0)
-        self.fKnobEq2Gain.setMaximum(20.0)
-
-        self.fKnobMix = PixmapDial(self, 9)
-        self.fKnobMix.setPixmap(6)
-        self.fKnobMix.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_ZITA)
-        self.fKnobMix.setMinimum(0.0)
-        self.fKnobMix.setMaximum(1.0)
-
-        self.fParameterList.append([0, self.fKnobDelay])
-        self.fParameterList.append([1, self.fKnobXover])
-        self.fParameterList.append([2, self.fKnobRtLow])
-        self.fParameterList.append([3, self.fKnobRtMid])
-        self.fParameterList.append([4, self.fKnobDamping])
-        self.fParameterList.append([5, self.fKnobEq1Freq])
-        self.fParameterList.append([6, self.fKnobEq1Gain])
-        self.fParameterList.append([7, self.fKnobEq2Freq])
-        self.fParameterList.append([8, self.fKnobEq2Gain])
-        self.fParameterList.append([9, self.fKnobMix])
-
-        # -------------------------------------------------------------
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-
-    #------------------------------------------------------------------
-
-    def getFixedHeight(self):
-        return 79
-
-    #------------------------------------------------------------------
-
-    def paintEvent(self, event):
-        AbstractPluginSlot.paintEvent(self, event)
-        self.drawOutline()
-
-    def resizeEvent(self, event):
-        self.fKnobDelay.move(self.ui.w_revsect.x()+31, self.ui.w_revsect.y()+33)
-        self.fKnobXover.move(self.ui.w_revsect.x()+93, self.ui.w_revsect.y()+18)
-        self.fKnobRtLow.move(self.ui.w_revsect.x()+148, self.ui.w_revsect.y()+18)
-        self.fKnobRtMid.move(self.ui.w_revsect.x()+208, self.ui.w_revsect.y()+18)
-        self.fKnobDamping.move(self.ui.w_revsect.x()+268, self.ui.w_revsect.y()+18)
-        self.fKnobEq1Freq.move(self.ui.w_eq1sect.x()+20, self.ui.w_eq1sect.y()+33)
-        self.fKnobEq1Gain.move(self.ui.w_eq1sect.x()+69, self.ui.w_eq1sect.y()+18)
-        self.fKnobEq2Freq.move(self.ui.w_eq2sect.x()+20, self.ui.w_eq2sect.y()+33)
-        self.fKnobEq2Gain.move(self.ui.w_eq2sect.x()+69, self.ui.w_eq2sect.y()+18)
-        self.fKnobMix.move(self.ui.w_ambmixsect.x()+24, self.ui.w_ambmixsect.y()+33)
-        AbstractPluginSlot.resizeEvent(self, event)
-
-# ------------------------------------------------------------------------------------------------------------
-
-class PluginSlot_ZynFX(AbstractPluginSlot):
-    def __init__(self, parent, host, pluginId):
-        AbstractPluginSlot.__init__(self, parent, host, pluginId)
-        self.ui = ui_carla_plugin_zynfx.Ui_PluginWidget()
-        self.ui.setupUi(self)
-
-        # -------------------------------------------------------------
-        # Set-up GUI
-
-        self.setStyleSheet("""
-            PluginSlot_ZynFX#PluginWidget {
-                background-image: url(:/bitmaps/background_zynfx.png);
-                background-repeat: repeat-xy;
-                border: 2px;
-            }
-            QLabel#label_name, QLabel#label_presets {
-                color: #BBB;
-            }
-        """)
-
-        self.ui.b_enable.setPixmaps(":/bitmaps/button_off.png", ":/bitmaps/button_on.png", ":/bitmaps/button_off.png")
-        self.ui.b_edit.setPixmaps(":/bitmaps/button_edit.png", ":/bitmaps/button_edit_down.png", ":/bitmaps/button_edit_hover.png")
-
-        labelFont = self.ui.label_name.font()
-        labelFont.setBold(True)
-        labelFont.setPointSize(9)
-        self.ui.label_name.setFont(labelFont)
-
-        presetFont = self.ui.label_presets.font()
-        presetFont.setBold(True)
-        presetFont.setPointSize(8)
-        self.ui.label_presets.setFont(presetFont)
-
-        self.ui.peak_in.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
-        self.ui.peak_out.setMeterStyle(DigitalPeakMeter.STYLE_OPENAV)
-
-        # -------------------------------------------------------------
-        # Set-up parameters
-
-        parameterCount = self.host.get_parameter_count(self.fPluginId)
-
-        index = 0
-        for i in range(parameterCount):
             paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
             paramData   = self.host.get_parameter_data(self.fPluginId, i)
             paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
@@ -1777,6 +1607,9 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 continue
 
             paramName = paramInfo['name']
+
+            if paramName.startswith("unused"):
+                continue
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1840,94 +1673,52 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
                 elif i == 10: paramName = "I.del"
 
             else:
-                paramName = getParameterShortName(paramInfo['name'])
+                paramName = getParameterShortName(paramName)
 
             widget = PixmapDial(self, i)
 
-            widget.setPixmap(5)
             widget.setLabel(paramName)
-            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
+            widget.setPixmap(3)
+            widget.setCustomPaintColor(QColor(83, 173, 10))
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)
+            widget.forceWhiteLabelGradientText()
 
             if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
                 widget.setEnabled(False)
 
-            self.ui.w_knobs.layout().insertWidget(index, widget)
-            index += 1
-
             self.fParameterList.append([i, widget])
+            self.ui.w_knobs_left.layout().addWidget(widget)
 
-        self.ui.dial_drywet.setIndex(PARAMETER_DRYWET)
-        self.ui.dial_drywet.setPixmap(5)
-        self.ui.dial_drywet.setLabel("Wet")
-        self.ui.dial_drywet.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_drywet.setMinimum(0.0)
-        self.ui.dial_drywet.setMaximum(1.0)
-        self.ui.dial_drywet.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET)
+        if self.fPluginInfo['hints'] & PLUGIN_CAN_DRYWET:
+            widget = PixmapDial(self, PARAMETER_DRYWET)
+            widget.setLabel("Wet")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.0)
+            widget.setPixmap(3)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_WET)
+            widget.forceWhiteLabelGradientText()
 
-        self.ui.dial_vol.setIndex(PARAMETER_VOLUME)
-        self.ui.dial_vol.setPixmap(5)
-        self.ui.dial_vol.setLabel("Vol")
-        self.ui.dial_vol.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_NO_GRADIENT)
-        self.ui.dial_vol.setMinimum(0.0)
-        self.ui.dial_vol.setMaximum(1.27)
-        self.ui.dial_vol.setVisible(self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME)
+            self.fParameterList.append([PARAMETER_DRYWET, widget])
+            self.ui.w_knobs_right.layout().addWidget(widget)
 
-        self.fParameterList.append([PARAMETER_DRYWET, self.ui.dial_drywet])
-        self.fParameterList.append([PARAMETER_VOLUME, self.ui.dial_vol])
+        if self.fPluginInfo['hints'] & PLUGIN_CAN_VOLUME:
+            widget = PixmapDial(self, PARAMETER_VOLUME)
+            widget.setLabel("Volume")
+            widget.setMinimum(0.0)
+            widget.setMaximum(1.27)
+            widget.setPixmap(3)
+            widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_CARLA_VOL)
+            widget.forceWhiteLabelGradientText()
 
-        # -------------------------------------------------------------
-        # Set-up MIDI programs
-
-        midiProgramCount = self.host.get_midi_program_count(self.fPluginId)
-
-        if midiProgramCount > 0:
-            self.ui.cb_presets.setEnabled(True)
-            self.ui.label_presets.setEnabled(True)
-
-            for i in range(midiProgramCount):
-                mpData = self.host.get_midi_program_data(self.fPluginId, i)
-                mpName = mpData['name']
-
-                self.ui.cb_presets.addItem(mpName)
-
-            self.fCurrentMidiProgram = self.host.get_current_midi_program_index(self.fPluginId)
-            self.ui.cb_presets.setCurrentIndex(self.fCurrentMidiProgram)
-
-        else:
-            self.fCurrentMidiProgram = -1
-            self.ui.cb_presets.setEnabled(False)
-            self.ui.cb_presets.setVisible(False)
-            self.ui.label_presets.setEnabled(False)
-            self.ui.label_presets.setVisible(False)
-
-        # -------------------------------------------------------------
-
-        self.b_enable = self.ui.b_enable
-        self.b_edit   = self.ui.b_edit
-
-        self.cb_presets = self.ui.cb_presets
-
-        self.label_name = self.ui.label_name
-
-        self.led_control   = self.ui.led_control
-        self.led_midi      = self.ui.led_midi
-        self.led_audio_in  = self.ui.led_audio_in
-        self.led_audio_out = self.ui.led_audio_out
-
-        self.peak_in  = self.ui.peak_in
-        self.peak_out = self.ui.peak_out
-
-        self.ready()
-
-        self.customContextMenuRequested.connect(self.slot_showDefaultCustomMenu)
-        self.ui.cb_presets.currentIndexChanged.connect(self.slot_midiProgramChanged)
+            self.fParameterList.append([PARAMETER_VOLUME, widget])
+            self.ui.w_knobs_right.layout().addWidget(widget)
 
     #------------------------------------------------------------------
 
     def getFixedHeight(self):
-        return 77
+        return 80
 
     #------------------------------------------------------------------
 
@@ -1935,51 +1726,96 @@ class PluginSlot_ZynFX(AbstractPluginSlot):
         painter = QPainter(self)
         painter.setBrush(Qt.transparent)
 
-        painter.setPen(QPen(QColor(60, 60, 60), 1))
+        painter.setPen(QPen(QColor(50, 50, 50), 1))
         painter.drawRect(0, 1, self.width()-1, self.height()-3)
 
-        painter.setPen(QPen(QColor(94, 94, 94), 1))
+        painter.setPen(QPen(QColor(64, 64, 64), 1))
         painter.drawLine(0, 0, self.width(), 0)
 
         AbstractPluginSlot.paintEvent(self, event)
 
 # ------------------------------------------------------------------------------------------------------------
 
-def createPluginSlot(parent, host, pluginId, useSkins):
-    if not useSkins:
-        return PluginSlot_Default(parent, host, pluginId)
+def getSkinStyle(host, pluginId):
+    if False:
+        # kdevelop likes this :)
+        host       = CarlaHostNull()
+        progCount  = 0
+        pluginInfo = PyCarlaPluginInfo
+        pluginName = ""
 
     pluginInfo  = host.get_plugin_info(pluginId)
     pluginName  = host.get_real_plugin_name(pluginId)
-    pluginLabel = pluginInfo['label']
+    pluginLabel = pluginInfo['label'].lower()
     pluginMaker = pluginInfo['maker']
     uniqueId    = pluginInfo['uniqueId']
 
-    #pluginIcon  = pluginInfo['iconName']
+    if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
+        progCount = host.get_program_count(pluginId)
+    else:
+        progCount = host.get_midi_program_count(pluginId)
 
+    # Samplers
+    if pluginInfo['type'] == PLUGIN_GIG:
+        return "gig"
     if pluginInfo['type'] == PLUGIN_SF2:
-        return PluginSlot_SF2(parent, host, pluginId)
+        return "sf2"
+    if pluginInfo['type'] == PLUGIN_SFZ:
+        return "sfz"
 
+    # Calf
+    if pluginName.split(" ", 1)[0].lower() == "calf":
+        return "calf_black" if "mono" in pluginLabel else "calf_blue"
+
+    # MOD
+    #if pluginLabel.startswith("http://portalmod.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
+        #return "mod"
+
+    # OpenAV
     if pluginMaker == "OpenAV Productions":
-        return PluginSlot_OpenAV(parent, host, pluginId)
+        return "openav"
 
+    # ZynFX
     if pluginInfo['type'] == PLUGIN_INTERNAL:
         if pluginLabel.startswith("zyn") and pluginInfo['category'] != PLUGIN_CATEGORY_SYNTH:
-            return PluginSlot_ZynFX(parent, host, pluginId)
+            return "zynfx"
 
-    elif pluginInfo['type'] == PLUGIN_LADSPA:
-        if (pluginLabel == "zita-reverb" and uniqueId == 3701) or (pluginLabel == "zita-reverb-amb" and uniqueId == 3702):
-            return PluginSlot_ZitaRev(parent, host, pluginId)
-        if pluginLabel.startswith("Zyn") and pluginMaker.startswith("Josep Andreu"):
-            return PluginSlot_ZynFX(parent, host, pluginId)
+    if pluginInfo['type'] == PLUGIN_LADSPA:
+        if pluginLabel.startswith("zyn") and pluginMaker.startswith("Josep Andreu"):
+            return "zynfx"
 
-    if pluginName.split(" ", 1)[0].lower() == "calf":
-        return PluginSlot_Calf(parent, host, pluginId)
+    if pluginInfo['type'] == PLUGIN_LV2:
+        if pluginLabel.startswith("http://kxstudio.sf.net/carla/plugins/zyn") and pluginName != "ZynAddSubFX":
+            return "zynfx"
 
-    #if pluginName.lower() == "nekobi":
-        #return PluginSlot_Nekobi(parent, pluginId)
+    # Presets
+    if progCount > 1 and (pluginInfo['hints'] & PLUGIN_USES_MULTI_PROGS) == 0:
+        if pluginInfo['type'] in (PLUGIN_VST2, PLUGIN_VST3, PLUGIN_AU):
+            return "presets"
+        return "mpresets"
 
-    return PluginSlot_BasicFX(parent, host, pluginId)
+    # DISTRHO Plugins (needs to be last)
+    if pluginMaker.startswith("falkTX, ") or pluginMaker == "DISTRHO" or pluginLabel.startswith("http://distrho.sf.net/plugins/"):
+        return pluginLabel.replace("http://distrho.sf.net/plugins/","")
+
+    return "default"
+
+def createPluginSlot(parent, host, pluginId, options):
+    if not options['useSkins']:
+        return PluginSlot_Classic(parent, host, pluginId)
+
+    skinStyle = getSkinStyle(host, pluginId)
+
+    if "compact" in skinStyle or options['compact']:
+        return PluginSlot_Compact(parent, host, pluginId, skinStyle)
+
+    if "calf" in skinStyle:
+        return PluginSlot_Calf(parent, host, pluginId, skinStyle)
+
+    if skinStyle in ("mpresets", "presets", "zynfx"):
+        return PluginSlot_Presets(parent, host, pluginId, skinStyle)
+
+    return PluginSlot_Default(parent, host, pluginId, skinStyle)
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Testing
@@ -1994,13 +1830,14 @@ if __name__ == '__main__':
     loadHostSettings(host)
 
     host.engine_init("JACK", "Carla-Widgets")
-    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None)
-    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None)
+    host.add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, "", "", "zynreverb", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://www.openavproductions.com/sorcer", 0, None, 0x0)
+    #host.add_plugin(BINARY_NATIVE, PLUGIN_LV2, "", "", "http://calf.sourceforge.net/plugins/Compressor", 0, None, 0x0)
     host.set_active(0, True)
 
-    gui = createPluginSlot(None, host, 0, True)
+    #gui = createPluginSlot(None, host, 0, True)
+    gui = PluginSlot_Compact(None, host, 0, "default")
     gui.testTimer()
     gui.show()
 

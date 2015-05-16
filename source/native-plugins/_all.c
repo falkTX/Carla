@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,23 +16,27 @@
  */
 
 #include "CarlaDefines.h"
+#include "CarlaNative.h"
 
 // -----------------------------------------------------------------------
 
 // Simple plugins
 extern void carla_register_native_plugin_bypass(void);
 extern void carla_register_native_plugin_lfo(void);
+extern void carla_register_native_plugin_midichanfilter(void);
 extern void carla_register_native_plugin_midigain(void);
+extern void carla_register_native_plugin_midijoin(void);
 extern void carla_register_native_plugin_midisplit(void);
 extern void carla_register_native_plugin_midithrough(void);
 extern void carla_register_native_plugin_miditranspose(void);
 extern void carla_register_native_plugin_nekofilter(void);
 
-// Audio File
+// Audio file
 extern void carla_register_native_plugin_audiofile(void);
 
-// MIDI File
+// MIDI file and sequencer
 extern void carla_register_native_plugin_midifile(void);
+extern void carla_register_native_plugin_midisequencer(void);
 
 // Carla
 extern void carla_register_native_plugin_carla(void);
@@ -43,49 +47,53 @@ extern void carla_register_native_plugin_distrho_3bandsplitter(void);
 extern void carla_register_native_plugin_distrho_mverb(void);
 extern void carla_register_native_plugin_distrho_nekobi(void);
 extern void carla_register_native_plugin_distrho_pingpongpan(void);
-
-#ifdef WANT_DISTRHO_PROM
 extern void carla_register_native_plugin_distrho_prom(void);
-#endif
+
+// DISTRHO plugins (Juice)
+extern void carla_register_native_plugin_distrho_vectorjuice(void);
+extern void carla_register_native_plugin_distrho_wobblejuice(void);
 
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
 
-#ifdef WANT_ZYNADDSUBFX
 // ZynAddSubFX
 extern void carla_register_native_plugin_zynaddsubfx_fx(void);
 extern void carla_register_native_plugin_zynaddsubfx_synth(void);
-#endif
 
-#ifdef WANT_EXPERIMENTAL_PLUGINS
 // Experimental plugins
-extern void carla_register_native_plugin_zita_jaaa(void);
-#endif
+extern void carla_register_native_plugin_zita_at1(void);
+extern void carla_register_native_plugin_zita_bls1(void);
+extern void carla_register_native_plugin_zita_rev1(void);
 
 // -----------------------------------------------------------------------
 
-void carla_register_all_plugins(void);
-
-void carla_register_all_plugins(void)
+void carla_register_all_native_plugins(void)
 {
     // Simple plugins
     carla_register_native_plugin_bypass();
     carla_register_native_plugin_lfo();
+    carla_register_native_plugin_midichanfilter();
     carla_register_native_plugin_midigain();
+    carla_register_native_plugin_midijoin();
     carla_register_native_plugin_midisplit();
     carla_register_native_plugin_midithrough();
     carla_register_native_plugin_miditranspose();
     carla_register_native_plugin_nekofilter();
 
-    // Audio File
+    // Audio file
     carla_register_native_plugin_audiofile();
 
-    // MIDI File
+    // MIDI file and sequencer
     carla_register_native_plugin_midifile();
+#ifdef CARLA_OS_LINUX
+    carla_register_native_plugin_midisequencer();
+#endif
 
+#ifndef CARLA_OS_WIN
     // Carla
     carla_register_native_plugin_carla();
+#endif
 
     // DISTRHO Plugins
     carla_register_native_plugin_distrho_3bandeq();
@@ -93,24 +101,35 @@ void carla_register_all_plugins(void)
     carla_register_native_plugin_distrho_mverb();
     carla_register_native_plugin_distrho_nekobi();
     carla_register_native_plugin_distrho_pingpongpan();
-
-#ifdef WANT_DISTRHO_PROM
+#ifdef HAVE_DGL
+#ifdef HAVE_PROJECTM
     carla_register_native_plugin_distrho_prom();
 #endif
+#endif
 
+    // DISTRHO plugins (Juice)
+    carla_register_native_plugin_distrho_vectorjuice();
+    carla_register_native_plugin_distrho_wobblejuice();
+
+#ifndef CARLA_OS_WIN
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
-
-#ifdef WANT_ZYNADDSUBFX
-    // ZynAddSubFX
-    carla_register_native_plugin_zynaddsubfx_fx();
-    carla_register_native_plugin_zynaddsubfx_synth();
 #endif
 
-#ifdef WANT_EXPERIMENTAL_PLUGINS
+#ifdef HAVE_ZYN_DEPS
+    // ZynAddSubFX
+    carla_register_native_plugin_zynaddsubfx_fx();
+# ifdef CARLA_OS_LINUX
+    carla_register_native_plugin_zynaddsubfx_synth();
+# endif
+#endif
+
+#ifdef HAVE_EXPERIMENTAL_PLUGINS
     // Experimental plugins
-    carla_register_native_plugin_zita_jaaa();
+    carla_register_native_plugin_zita_at1();
+    carla_register_native_plugin_zita_bls1();
+    carla_register_native_plugin_zita_rev1();
 #endif
 }
 

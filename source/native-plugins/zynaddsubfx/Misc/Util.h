@@ -26,8 +26,12 @@
 #include <string>
 #include <sstream>
 #include <stdint.h>
+#include <algorithm>
 #include "Config.h"
 #include "../globals.h"
+
+using std::min;
+using std::max;
 
 //Velocity Sensing function
 extern float VelF(float velocity, unsigned char scaling);
@@ -48,6 +52,9 @@ void set_realtime();
 /**Os independent sleep in microsecond*/
 void os_sleep(long length);
 
+//! returns pid padded to maximum pid lenght, posix conform
+std::string os_pid_as_padded_string();
+
 std::string legalizeFilename(std::string filename);
 
 extern float *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
@@ -65,6 +72,12 @@ std::string stringFrom(T x)
 }
 
 template<class T>
+std::string to_s(T x)
+{
+    return stringFrom(x);
+}
+
+template<class T>
 T stringTo(const char *x)
 {
     std::string str = x != NULL ? x : "0"; //should work for the basic float/int
@@ -74,10 +87,29 @@ T stringTo(const char *x)
     return ans;
 }
 
+
+
 template<class T>
 T limit(T val, T min, T max)
 {
     return val < min ? min : (val > max ? max : val);
+}
+
+template<class T>
+bool inRange(T val, T min, T max)
+{
+    return val >= min && val <= max;
+}
+
+template<class T>
+T array_max(const T *data, size_t len)
+{
+    T max = 0;
+
+    for(unsigned i = 0; i < len; ++i)
+        if(max < data[i])
+            max = data[i];
+    return max;
 }
 
 //Random number generator
@@ -105,14 +137,52 @@ inline void sprng(prng_t p)
  * The random generator (0.0f..1.0f)
  */
 #ifndef INT32_MAX
-# define INT32_MAX      (2147483647)
+#define INT32_MAX      (2147483647)
 #endif
-#define RND (float(prng()) / float(INT32_MAX))
+#define RND (prng() / (INT32_MAX * 1.0f))
 
 //Linear Interpolation
 float interpolate(const float *data, size_t len, float pos);
 
 //Linear circular interpolation
 float cinterpolate(const float *data, size_t len, float pos);
+
+template<class T>
+static inline void nullify(T &t) {delete t; t = NULL; }
+template<class T>
+static inline void arrayNullify(T &t) {delete [] t; t = NULL; }
+
+/**
+ * Port macros - these produce easy and regular port definitions for common
+ * types
+ */
+#define rParamZyn(name, ...) \
+  {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamICb(name)}
+
+#define rSelf(type) \
+{"self", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
+    [](const char *, rtosc::RtData &d){ \
+        d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
+
+#define rPaste \
+{"preset-type", rProp(internal), 0, \
+    [](const char *, rtosc::RtData &d){ \
+        rObject *obj = (rObject*)d.obj; \
+        d.reply(d.loc, "s", obj->type);}},\
+{"paste:b", rProp(internal) rDoc("paste port"), 0, \
+    [](const char *m, rtosc::RtData &d){ \
+        printf("rPaste...\n"); \
+        rObject &paste = **(rObject **)rtosc_argument(m,0).b.data; \
+        rObject &o = *(rObject*)d.obj;\
+        o.paste(paste);}}
+
+#define rArrayPaste \
+{"paste-array:bi", rProp(internal) rDoc("array paste port"), 0, \
+    [](const char *m, rtosc::RtData &d){ \
+        printf("rArrayPaste...\n"); \
+        rObject &paste = **(rObject **)rtosc_argument(m,0).b.data; \
+        int field = rtosc_argument(m,1).i; \
+        rObject &o = *(rObject*)d.obj;\
+        o.pasteArray(paste,field);}}
 
 #endif

@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2014 David Robillard <http://drobilla.net>
+  Copyright 2012 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -22,7 +22,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include "pugl/pugl_internal.h"
+#include "pugl_internal.h"
 
 @interface PuglWindow : NSWindow
 {
@@ -35,9 +35,8 @@
                    backing:(NSBackingStoreType)bufferingType
                      defer:(BOOL)flag;
 - (void) setPuglview:(PuglView*)view;
+- (BOOL) canBecomeKeyWindow;
 - (BOOL) windowShouldClose:(id)sender;
-- (BOOL) canBecomeKeyWindow:(id)sender;
-- (BOOL) canBecomeMainWindow:(id)sender;
 @end
 
 @implementation PuglWindow
@@ -68,26 +67,15 @@
 	[self setContentSize:NSMakeSize(view->width, view->height)];
 }
 
+- (BOOL)canBecomeKeyWindow
+{
+	return YES;
+}
+
 - (BOOL)windowShouldClose:(id)sender
 {
 	if (puglview->closeFunc)
 		puglview->closeFunc(puglview);
-	return YES;
-
-	// unused
-	(void)sender;
-}
-
-- (BOOL) canBecomeKeyWindow:(id)sender
-{
-	return YES;
-
-	// unused
-	(void)sender;
-}
-
-- (BOOL) canBecomeMainWindow:(id)sender
-{
 	return YES;
 
 	// unused
@@ -99,6 +87,7 @@
 static void
 puglDisplay(PuglView* view)
 {
+	view->redisplay = false;
 	if (view->displayFunc) {
 		view->displayFunc(view);
 	}
@@ -109,15 +98,17 @@ puglDisplay(PuglView* view)
 @public
 	PuglView* puglview;
 	NSTrackingArea* trackingArea;
+	bool doubleBuffered;
 }
 
 - (BOOL) acceptsFirstMouse:(NSEvent*)e;
+- (BOOL) acceptsFirstResponder;
 - (BOOL) isFlipped;
 - (BOOL) isOpaque;
 - (BOOL) preservesContentInLiveResize;
 - (id)   initWithFrame:(NSRect)frame;
 - (void) reshape;
-- (void) drawRect:(NSRect)rect;
+- (void) drawRect:(NSRect)r;
 - (void) cursorUpdate:(NSEvent*)e;
 - (void) updateTrackingAreas;
 - (void) viewWillMoveToWindow:(NSWindow*)newWindow;
@@ -148,6 +139,11 @@ puglDisplay(PuglView* view)
 	(void)e;
 }
 
+- (BOOL) acceptsFirstResponder
+{
+	return YES;
+}
+
 - (BOOL) isFlipped
 {
 	return YES;
@@ -165,16 +161,16 @@ puglDisplay(PuglView* view)
 
 - (id) initWithFrame:(NSRect)frame
 {
-	puglview     = nil;
-	trackingArea = nil;
+	puglview       = nil;
+	trackingArea   = nil;
+	doubleBuffered = true;
 
-	NSOpenGLPixelFormatAttribute pixelAttribs[16] = {
+	NSOpenGLPixelFormatAttribute pixelAttribs[] = {
+		NSOpenGLPFAColorSize, 24,
+		NSOpenGLPFAAlphaSize, 8,
+		NSOpenGLPFADepthSize, 16,
 		NSOpenGLPFADoubleBuffer,
 		NSOpenGLPFAAccelerated,
-		NSOpenGLPFAColorSize,
-		8,
-		NSOpenGLPFADepthSize,
-		8,
 		0
 	};
 
@@ -184,12 +180,20 @@ puglDisplay(PuglView* view)
 	if (pixelFormat) {
 		self = [super initWithFrame:frame pixelFormat:pixelFormat];
 		[pixelFormat release];
+		printf("Is doubleBuffered? TRUE\n");
 	} else {
 		self = [super initWithFrame:frame];
+		doubleBuffered = false;
+		printf("Is doubleBuffered? FALSE\n");
 	}
 
-	if (self) {
-		[[self openGLContext] makeCurrentContext];
+	if (self) {	
+		NSOpenGLContext* context = [self openGLContext];
+		[context makeCurrentContext];
+
+		GLint swapInterval = 1;
+		[context setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
+
 		[self reshape];
 	}
 
@@ -214,19 +218,27 @@ puglDisplay(PuglView* view)
 
 	if (puglview->reshapeFunc) {
 		puglview->reshapeFunc(puglview, width, height);
+	} else {
+		puglDefaultReshape(puglview, width, height);
 	}
 
 	puglview->width  = width;
 	puglview->height = height;
 }
 
-- (void) drawRect:(NSRect)rect
+- (void) drawRect:(NSRect)r
 {
 	puglDisplay(puglview);
-	glFlush();
-	glSwapAPPLE();
 
-	[super drawRect:rect];
+	if (doubleBuffered) {
+	    [[self openGLContext] flushBuffer];
+	} else {
+	    glFlush();
+	    //glSwapAPPLE();
+	}
+
+	// unused
+	return; (void)r;
 }
 
 - (void) cursorUpdate:(NSEvent*)e
@@ -437,6 +449,7 @@ puglCreateWindow(PuglView* view, const char* title)
 	}
 
 	if (view->parent) {
+		[impl->glview retain];
 		NSView* pview = (NSView*)view->parent;
 		[pview addSubview:impl->glview];
 	 	return 0;
@@ -513,9 +526,10 @@ puglDestroy(PuglView* view)
 PuglStatus
 puglProcessEvents(PuglView* view)
 {
-	[view->impl->glview setNeedsDisplay:YES];
-	view->redisplay = false;
 	return PUGL_SUCCESS;
+
+	// unused
+	(void)view;
 }
 
 void

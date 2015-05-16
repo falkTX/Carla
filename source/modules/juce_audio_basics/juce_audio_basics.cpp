@@ -78,6 +78,7 @@ namespace juce
 #include "effects/juce_IIRFilter.cpp"
 #include "effects/juce_IIRFilterOld.cpp"
 #include "effects/juce_LagrangeInterpolator.cpp"
+#include "effects/juce_FFT.cpp"
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiFile.cpp"
 #include "midi/juce_MidiKeyboardState.cpp"

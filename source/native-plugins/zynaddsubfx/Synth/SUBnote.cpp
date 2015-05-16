@@ -26,21 +26,18 @@
 #include <cassert>
 #include "../globals.h"
 #include "SUBnote.h"
+#include "Envelope.h"
+#include "../Params/Controller.h"
+#include "../Params/SUBnoteParameters.h"
+#include "../Params/FilterParams.h"
 #include "../Misc/Util.h"
+#include "../Misc/Allocator.h"
 
-SUBnote::SUBnote(SUBnoteParameters *parameters,
-                 Controller *ctl_,
-                 float freq,
-                 float velocity,
-                 int portamento_,
-                 int midinote,
-                 bool besilent)
-    :SynthNote(freq, velocity, portamento_, midinote, besilent)
+SUBnote::SUBnote(SUBnoteParameters *parameters, SynthParams &spars)
+    :SynthNote(spars), pars(*parameters)
 {
-    pars = parameters;
-    ctl  = ctl_;
     NoteEnabled = ON;
-    setup(freq, velocity, portamento_, midinote);
+    setup(spars.frequency, spars.velocity, spars.portamento, spars.note);
 }
 
 void SUBnote::setup(float freq,
@@ -51,29 +48,27 @@ void SUBnote::setup(float freq,
 {
     portamento  = portamento_;
     NoteEnabled = ON;
-    volume      = powf(0.1f, 3.0f * (1.0f - pars->PVolume / 96.0f)); //-60 dB .. 0 dB
-    volume     *= VelF(velocity, pars->PAmpVelocityScaleFunction);
-    if(pars->PPanning != 0)
-        panning = pars->PPanning / 127.0f;
+    volume      = powf(0.1f, 3.0f * (1.0f - pars.PVolume / 96.0f)); //-60 dB .. 0 dB
+    volume     *= VelF(velocity, pars.PAmpVelocityScaleFunction);
+    if(pars.PPanning != 0)
+        panning = pars.PPanning / 127.0f;
     else
         panning = RND;
     if(!legato) {
-        numstages = pars->Pnumstages;
-        stereo    = pars->Pstereo;
-        start     = pars->Pstart;
+        numstages = pars.Pnumstages;
+        stereo    = pars.Pstereo;
+        start     = pars.Pstart;
         firsttick = 1;
     }
     int pos[MAX_SUB_HARMONICS];
 
-    if(pars->Pfixedfreq == 0)
+    if(pars.Pfixedfreq == 0)
         basefreq = freq;
     else {
         basefreq = 440.0f;
-        int fixedfreqET = pars->PfixedfreqET;
-        if(fixedfreqET != 0) { //if the frequency varies according the keyboard note
-            float tmp =
-                (midinote
-                 - 69.0f) / 12.0f
+        int fixedfreqET = pars.PfixedfreqET;
+        if(fixedfreqET) { //if the frequency varies according the keyboard note
+            float tmp = (midinote - 69.0f) / 12.0f
                 * (powf(2.0f, (fixedfreqET - 1) / 63.0f) - 1.0f);
             if(fixedfreqET <= 64)
                 basefreq *= powf(2.0f, tmp);
@@ -81,18 +76,18 @@ void SUBnote::setup(float freq,
                 basefreq *= powf(3.0f, tmp);
         }
     }
-    float detune = getdetune(pars->PDetuneType,
-                             pars->PCoarseDetune,
-                             pars->PDetune);
+    float detune = getdetune(pars.PDetuneType,
+                             pars.PCoarseDetune,
+                             pars.PDetune);
     basefreq *= powf(2.0f, detune / 1200.0f); //detune
-//    basefreq*=ctl->pitchwheel.relfreq;//pitch wheel
+//    basefreq*=ctl.pitchwheel.relfreq;//pitch wheel
 
     //global filter
-    GlobalFilterCenterPitch = pars->GlobalFilter->getfreq() //center freq
-                              + (pars->PGlobalFilterVelocityScale / 127.0f
+    GlobalFilterCenterPitch = pars.GlobalFilter->getfreq() //center freq
+                              + (pars.PGlobalFilterVelocityScale / 127.0f
                                  * 6.0f)                                           //velocity sensing
                               * (VelF(velocity,
-                                      pars->PGlobalFilterVelocityScaleFunction)
+                                      pars.PGlobalFilterVelocityScaleFunction)
                                  - 1);
 
     if(!legato) {
@@ -105,7 +100,7 @@ void SUBnote::setup(float freq,
 
     //select only harmonics that desire to compute
     for(int n = 0; n < MAX_SUB_HARMONICS; ++n) {
-        if(pars->Phmag[n] == 0)
+        if(pars.Phmag[n] == 0)
             continue;
         pos[harmonics++] = n;
     }
@@ -126,28 +121,28 @@ void SUBnote::setup(float freq,
 
 
     if(!legato) {
-        lfilter = new bpfilter[numstages * numharmonics];
-        if(stereo != 0)
-            rfilter = new bpfilter[numstages * numharmonics];
+        lfilter = memory.valloc<bpfilter>(numstages * numharmonics);
+        if(stereo)
+            rfilter = memory.valloc<bpfilter>(numstages * numharmonics);
     }
 
     //how much the amplitude is normalised (because the harmonics)
     float reduceamp = 0.0f;
 
     for(int n = 0; n < numharmonics; ++n) {
-        float freq =  basefreq * pars->POvertoneFreqMult[pos[n]];
+        float freq =  basefreq * pars.POvertoneFreqMult[pos[n]];
         overtone_freq[n] = freq;
         overtone_rolloff[n] = computerolloff(freq);
 
         //the bandwidth is not absolute(Hz); it is relative to frequency
         float bw =
-            powf(10, (pars->Pbandwidth - 127.0f) / 127.0f * 4) * numstages;
+            powf(10, (pars.Pbandwidth - 127.0f) / 127.0f * 4) * numstages;
 
         //Bandwidth Scale
-        bw *= powf(1000 / freq, (pars->Pbwscale - 64.0f) / 64.0f * 3.0f);
+        bw *= powf(1000 / freq, (pars.Pbwscale - 64.0f) / 64.0f * 3.0f);
 
         //Relative BandWidth
-        bw *= powf(100, (pars->Phrelbw[pos[n]] - 64.0f) / 64.0f);
+        bw *= powf(100, (pars.Phrelbw[pos[n]] - 64.0f) / 64.0f);
 
         if(bw > 25.0f)
             bw = 25.0f;
@@ -155,10 +150,10 @@ void SUBnote::setup(float freq,
         //try to keep same amplitude on all freqs and bw. (empirically)
         float gain = sqrt(1500.0f / (bw * freq));
 
-        float hmagnew = 1.0f - pars->Phmag[pos[n]] / 127.0f;
+        float hmagnew = 1.0f - pars.Phmag[pos[n]] / 127.0f;
         float hgain;
 
-        switch(pars->Phmagtype) {
+        switch(pars.Phmagtype) {
             case 1:
                 hgain = expf(hmagnew * logf(0.01f));
                 break;
@@ -182,7 +177,7 @@ void SUBnote::setup(float freq,
             if(nph == 0)
                 amp = gain;
             initfilter(lfilter[nph + n * numstages], freq, bw, amp, hgain);
-            if(stereo != 0)
+            if(stereo)
                 initfilter(rfilter[nph + n * numstages], freq, bw, amp, hgain);
         }
     }
@@ -194,20 +189,20 @@ void SUBnote::setup(float freq,
     oldpitchwheel = 0;
     oldbandwidth  = 64;
     if(!legato) {
-        if(pars->Pfixedfreq == 0)
+        if(pars.Pfixedfreq == 0)
             initparameters(basefreq);
         else
             initparameters(basefreq / 440.0f * freq);
     }
     else {
-        if(pars->Pfixedfreq == 0)
+        if(pars.Pfixedfreq == 0)
             freq = basefreq;
         else
             freq *= basefreq / 440.0f;
 
-        if(pars->PGlobalFilterEnabled != 0) {
-            globalfiltercenterq      = pars->GlobalFilter->getq();
-            GlobalFilterFreqTracking = pars->GlobalFilter->getfreqtracking(
+        if(pars.PGlobalFilterEnabled) {
+            globalfiltercenterq      = pars.GlobalFilter->getq();
+            GlobalFilterFreqTracking = pars.GlobalFilter->getfreqtracking(
                 basefreq);
         }
     }
@@ -215,14 +210,14 @@ void SUBnote::setup(float freq,
     oldamplitude = newamplitude;
 }
 
-void SUBnote::legatonote(float freq, float velocity, int portamento_,
-                         int midinote, bool externcall)
+void SUBnote::legatonote(LegatoParams pars)
 {
     // Manage legato stuff
-    if(legato.update(freq, velocity, portamento_, midinote, externcall))
+    if(legato.update(pars))
         return;
 
-    setup(freq, velocity, portamento_, midinote, true);
+    setup(pars.frequency, pars.velocity, pars.portamento, pars.midinote,
+            true);
 }
 
 SUBnote::~SUBnote()
@@ -237,17 +232,15 @@ SUBnote::~SUBnote()
 void SUBnote::KillNote()
 {
     if(NoteEnabled != OFF) {
-        delete [] lfilter;
-        lfilter = NULL;
-        if(stereo != 0)
-            delete [] rfilter;
-        rfilter = NULL;
-        delete AmpEnvelope;
-        delete FreqEnvelope;
-        delete BandWidthEnvelope;
-        delete GlobalFilterL;
-        delete GlobalFilterR;
-        delete GlobalFilterEnvelope;
+        memory.devalloc(numstages * numharmonics, lfilter);
+        if(stereo)
+            memory.devalloc(numstages * numharmonics, rfilter);
+        memory.dealloc(AmpEnvelope);
+        memory.dealloc(FreqEnvelope);
+        memory.dealloc(BandWidthEnvelope);
+        memory.dealloc(GlobalFilterL);
+        memory.dealloc(GlobalFilterR);
+        memory.dealloc(GlobalFilterEnvelope);
         NoteEnabled = OFF;
     }
 }
@@ -261,11 +254,11 @@ void SUBnote::computefiltercoefs(bpfilter &filter,
                                  float bw,
                                  float gain)
 {
-    if(freq > synth->samplerate_f / 2.0f - 200.0f)
-        freq = synth->samplerate_f / 2.0f - 200.0f;
+    if(freq > synth.samplerate_f / 2.0f - 200.0f)
+        freq = synth.samplerate_f / 2.0f - 200.0f;
 
 
-    float omega = 2.0f * PI * freq / synth->samplerate_f;
+    float omega = 2.0f * PI * freq / synth.samplerate_f;
     float sn    = sinf(omega);
     float cs    = cosf(omega);
     float alpha = sn * sinh(LOG_2 / 2.0f * bw * omega / sn);
@@ -304,11 +297,11 @@ void SUBnote::initfilter(bpfilter &filter,
         if(start == 1)
             a *= RND;
         filter.yn1 = a * cosf(p);
-        filter.yn2 = a * cosf(p + freq * 2.0f * PI / synth->samplerate_f);
+        filter.yn2 = a * cosf(p + freq * 2.0f * PI / synth.samplerate_f);
 
         //correct the error of computation the start amplitude
         //at very high frequencies
-        if(freq > synth->samplerate_f * 0.96f) {
+        if(freq > synth.samplerate_f * 0.96f) {
             filter.yn1 = 0.0f;
             filter.yn2 = 0.0f;
         }
@@ -342,11 +335,11 @@ inline void SubFilterB(const float coeff[4], float &src, float work[4])
 //in quite a bit of wasted time
 void SUBnote::filter(bpfilter &filter, float *smps)
 {
-    assert(synth->buffersize % 8 == 0);
+    assert(synth.buffersize % 8 == 0);
     float coeff[4] = {filter.b0, filter.b2,  -filter.a1, -filter.a2};
     float work[4]  = {filter.xn1, filter.xn2, filter.yn1, filter.yn2};
 
-    for(int i = 0; i < synth->buffersize; i += 8) {
+    for(int i = 0; i < synth.buffersize; i += 8) {
         SubFilterA(coeff, smps[i + 0], work);
         SubFilterB(coeff, smps[i + 1], work);
         SubFilterA(coeff, smps[i + 2], work);
@@ -367,23 +360,24 @@ void SUBnote::filter(bpfilter &filter, float *smps)
  */
 void SUBnote::initparameters(float freq)
 {
-    AmpEnvelope = new Envelope(pars->AmpEnvelope, freq);
-    if(pars->PFreqEnvelopeEnabled != 0)
-        FreqEnvelope = new Envelope(pars->FreqEnvelope, freq);
+    AmpEnvelope = memory.alloc<Envelope>(*pars.AmpEnvelope, freq, synth.dt());
+    if(pars.PFreqEnvelopeEnabled)
+        FreqEnvelope = memory.alloc<Envelope>(*pars.FreqEnvelope, freq, synth.dt());
     else
         FreqEnvelope = NULL;
-    if(pars->PBandWidthEnvelopeEnabled != 0)
-        BandWidthEnvelope = new Envelope(pars->BandWidthEnvelope, freq);
+    if(pars.PBandWidthEnvelopeEnabled)
+        BandWidthEnvelope = memory.alloc<Envelope>(*pars.BandWidthEnvelope, freq, synth.dt());
     else
         BandWidthEnvelope = NULL;
-    if(pars->PGlobalFilterEnabled != 0) {
-        globalfiltercenterq = pars->GlobalFilter->getq();
-        GlobalFilterL = Filter::generate(pars->GlobalFilter);
+    if(pars.PGlobalFilterEnabled) {
+        globalfiltercenterq = pars.GlobalFilter->getq();
+        GlobalFilterL = Filter::generate(memory, pars.GlobalFilter,
+                    synth.samplerate, synth.buffersize);
         if(stereo)
-            GlobalFilterR = Filter::generate(pars->GlobalFilter);
-        GlobalFilterEnvelope = new Envelope(pars->GlobalFilterEnvelope,
-                                            freq);
-        GlobalFilterFreqTracking = pars->GlobalFilter->getfreqtracking(basefreq);
+            GlobalFilterR = Filter::generate(memory, pars.GlobalFilter,
+                    synth.samplerate, synth.buffersize);
+        GlobalFilterEnvelope = memory.alloc<Envelope>(*pars.GlobalFilterEnvelope, freq, synth.dt());
+        GlobalFilterFreqTracking = pars.GlobalFilter->getfreqtracking(basefreq);
     }
     computecurrentparameters();
 }
@@ -396,7 +390,7 @@ float SUBnote::computerolloff(float freq)
     const float lower_limit = 10.0f;
     const float lower_width = 10.0f;
     const float upper_width = 200.0f;
-    float upper_limit = synth->samplerate / 2.0f;
+    float upper_limit = synth.samplerate / 2.0f;
 
     if (freq > lower_limit + lower_width &&
             freq < upper_limit - upper_width)
@@ -413,31 +407,30 @@ float SUBnote::computerolloff(float freq)
  */
 void SUBnote::computecurrentparameters()
 {
-    if((FreqEnvelope != NULL) || (BandWidthEnvelope != NULL)
-       || (oldpitchwheel != ctl->pitchwheel.data)
-       || (oldbandwidth != ctl->bandwidth.data)
-       || (portamento != 0)) {
+    if(FreqEnvelope || BandWidthEnvelope
+       || (oldpitchwheel != ctl.pitchwheel.data)
+       || (oldbandwidth != ctl.bandwidth.data)
+       || portamento) {
         float envfreq = 1.0f;
         float envbw   = 1.0f;
         float gain    = 1.0f;
 
-        if(FreqEnvelope != NULL) {
+        if(FreqEnvelope) {
             envfreq = FreqEnvelope->envout() / 1200;
             envfreq = powf(2.0f, envfreq);
         }
-        envfreq *= ctl->pitchwheel.relfreq; //pitch wheel
-        if(portamento != 0) { //portamento is used
-            envfreq *= ctl->portamento.freqrap;
-            if(ctl->portamento.used == 0) //the portamento has finished
-                portamento = 0;  //this note is no longer "portamented"
-            ;
+        envfreq *= ctl.pitchwheel.relfreq; //pitch wheel
+        if(portamento) { //portamento is used
+            envfreq *= ctl.portamento.freqrap;
+            if(!ctl.portamento.used) //the portamento has finished
+                portamento = false;  //this note is no longer "portamented"
         }
 
-        if(BandWidthEnvelope != NULL) {
+        if(BandWidthEnvelope) {
             envbw = BandWidthEnvelope->envout();
             envbw = powf(2, envbw);
         }
-        envbw *= ctl->bandwidth.relbw; //bandwidth controller
+        envbw *= ctl.bandwidth.relbw; //bandwidth controller
 
         float tmpgain = 1.0f / sqrt(envbw * envfreq);
 
@@ -455,7 +448,7 @@ void SUBnote::computecurrentparameters()
                                    lfilter[nph + n * numstages].bw * envbw,
                                    gain);
             }
-        if(stereo != 0)
+        if(stereo)
             for(int n = 0; n < numharmonics; ++n)
                 for(int nph = 0; nph < numstages; ++nph) {
                     if(nph == 0)
@@ -464,15 +457,14 @@ void SUBnote::computecurrentparameters()
                         gain = 1.0f;
                     computefiltercoefs(
                         rfilter[nph + n * numstages],
-                        rfilter[nph + n
-                                * numstages].freq * envfreq,
+                        rfilter[nph + n * numstages].freq * envfreq,
                         rfilter[nph + n * numstages].bw * envbw,
                         gain);
                 }
 
 
-        oldbandwidth  = ctl->bandwidth.data;
-        oldpitchwheel = ctl->pitchwheel.data;
+        oldbandwidth  = ctl.bandwidth.data;
+        oldpitchwheel = ctl.pitchwheel.data;
     }
     newamplitude = volume * AmpEnvelope->envout_dB() * 2.0f;
 
@@ -480,17 +472,17 @@ void SUBnote::computecurrentparameters()
     if(GlobalFilterL != NULL) {
         float globalfilterpitch = GlobalFilterCenterPitch
                                   + GlobalFilterEnvelope->envout();
-        float filterfreq = globalfilterpitch + ctl->filtercutoff.relfreq
+        float filterfreq = globalfilterpitch + ctl.filtercutoff.relfreq
                            + GlobalFilterFreqTracking;
         filterfreq = Filter::getrealfreq(filterfreq);
 
         GlobalFilterL->setfreq_and_q(filterfreq,
-                                     globalfiltercenterq * ctl->filterq.relq);
+                                     globalfiltercenterq * ctl.filterq.relq);
         if(GlobalFilterR != NULL)
             GlobalFilterR->setfreq_and_q(
                 filterfreq,
                 globalfiltercenterq
-                * ctl->filterq.relq);
+                * ctl.filterq.relq);
     }
 }
 
@@ -499,23 +491,23 @@ void SUBnote::computecurrentparameters()
  */
 int SUBnote::noteout(float *outl, float *outr)
 {
-    memcpy(outl, denormalkillbuf, synth->bufferbytes);
-    memcpy(outr, denormalkillbuf, synth->bufferbytes);
+    memcpy(outl, denormalkillbuf, synth.bufferbytes);
+    memcpy(outr, denormalkillbuf, synth.bufferbytes);
 
     if(NoteEnabled == OFF)
         return 0;
 
-    float tmprnd[synth->buffersize];
-    float tmpsmp[synth->buffersize];
+    float tmprnd[synth.buffersize];
+    float tmpsmp[synth.buffersize];
     //left channel
-    for(int i = 0; i < synth->buffersize; ++i)
+    for(int i = 0; i < synth.buffersize; ++i)
         tmprnd[i] = RND * 2.0f - 1.0f;
     for(int n = 0; n < numharmonics; ++n) {
         float rolloff = overtone_rolloff[n];
-        memcpy(tmpsmp, tmprnd, synth->bufferbytes);
+        memcpy(tmpsmp, tmprnd, synth.bufferbytes);
         for(int nph = 0; nph < numstages; ++nph)
             filter(lfilter[nph + n * numstages], tmpsmp);
-        for(int i = 0; i < synth->buffersize; ++i)
+        for(int i = 0; i < synth.buffersize; ++i)
             outl[i] += tmpsmp[i] * rolloff;
     }
 
@@ -523,27 +515,27 @@ int SUBnote::noteout(float *outl, float *outr)
         GlobalFilterL->filterout(&outl[0]);
 
     //right channel
-    if(stereo != 0) {
-        for(int i = 0; i < synth->buffersize; ++i)
+    if(stereo) {
+        for(int i = 0; i < synth.buffersize; ++i)
             tmprnd[i] = RND * 2.0f - 1.0f;
         for(int n = 0; n < numharmonics; ++n) {
             float rolloff = overtone_rolloff[n];
-            memcpy(tmpsmp, tmprnd, synth->bufferbytes);
+            memcpy(tmpsmp, tmprnd, synth.bufferbytes);
             for(int nph = 0; nph < numstages; ++nph)
                 filter(rfilter[nph + n * numstages], tmpsmp);
-            for(int i = 0; i < synth->buffersize; ++i)
+            for(int i = 0; i < synth.buffersize; ++i)
                 outr[i] += tmpsmp[i] * rolloff;
         }
         if(GlobalFilterR != NULL)
             GlobalFilterR->filterout(&outr[0]);
     }
     else
-        memcpy(outr, outl, synth->bufferbytes);
+        memcpy(outr, outl, synth.bufferbytes);
 
     if(firsttick != 0) {
         int n = 10;
-        if(n > synth->buffersize)
-            n = synth->buffersize;
+        if(n > synth.buffersize)
+            n = synth.buffersize;
         for(int i = 0; i < n; ++i) {
             float ampfadein = 0.5f - 0.5f * cosf(
                 (float) i / (float) n * PI);
@@ -555,16 +547,16 @@ int SUBnote::noteout(float *outl, float *outr)
 
     if(ABOVE_AMPLITUDE_THRESHOLD(oldamplitude, newamplitude))
         // Amplitude interpolation
-        for(int i = 0; i < synth->buffersize; ++i) {
+        for(int i = 0; i < synth.buffersize; ++i) {
             float tmpvol = INTERPOLATE_AMPLITUDE(oldamplitude,
                                                  newamplitude,
                                                  i,
-                                                 synth->buffersize);
+                                                 synth.buffersize);
             outl[i] *= tmpvol * panning;
             outr[i] *= tmpvol * (1.0f - panning);
         }
     else
-        for(int i = 0; i < synth->buffersize; ++i) {
+        for(int i = 0; i < synth.buffersize; ++i) {
             outl[i] *= newamplitude * panning;
             outr[i] *= newamplitude * (1.0f - panning);
         }
@@ -577,8 +569,8 @@ int SUBnote::noteout(float *outl, float *outr)
 
     // Check if the note needs to be computed more
     if(AmpEnvelope->finished() != 0) {
-        for(int i = 0; i < synth->buffersize; ++i) { //fade-out
-            float tmp = 1.0f - (float)i / synth->buffersize_f;
+        for(int i = 0; i < synth.buffersize; ++i) { //fade-out
+            float tmp = 1.0f - (float)i / synth.buffersize_f;
             outl[i] *= tmp;
             outr[i] *= tmp;
         }
@@ -588,17 +580,17 @@ int SUBnote::noteout(float *outl, float *outr)
 }
 
 /*
- * Relase Key (Note Off)
+ * Release Key (Note Off)
  */
-void SUBnote::relasekey()
+void SUBnote::releasekey()
 {
-    AmpEnvelope->relasekey();
+    AmpEnvelope->releasekey();
     if(FreqEnvelope)
-        FreqEnvelope->relasekey();
+        FreqEnvelope->releasekey();
     if(BandWidthEnvelope)
-        BandWidthEnvelope->relasekey();
+        BandWidthEnvelope->releasekey();
     if(GlobalFilterEnvelope)
-        GlobalFilterEnvelope->relasekey();
+        GlobalFilterEnvelope->releasekey();
 }
 
 /*

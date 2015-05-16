@@ -90,6 +90,10 @@ void UI::d_sampleRateChanged(double) {}
 /* ------------------------------------------------------------------------------------------------------------
  * UI Callbacks (optional) */
 
+void UI::d_uiFileBrowserSelected(const char*)
+{
+}
+
 void UI::d_uiReshape(uint width, uint height)
 {
     glEnable(GL_BLEND);

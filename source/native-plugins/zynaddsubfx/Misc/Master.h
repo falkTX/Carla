@@ -23,23 +23,17 @@
 
 #ifndef MASTER_H
 #define MASTER_H
-#include <pthread.h>
-
 #include "../globals.h"
 #include "Microtonal.h"
+#include <rtosc/miditable.h>
+#include <rtosc/ports.h>
 
 #include "Bank.h"
 #include "Recorder.h"
-#include "Dump.h"
-#include "XMLwrapper.h"
 
 #include "../Params/Controller.h"
 
-typedef enum {
-    MUTEX_TRYLOCK, MUTEX_LOCK, MUTEX_UNLOCK
-} lockset;
-
-extern Dump dump;
+class Allocator;
 
 struct vuData {
     vuData(void);
@@ -55,12 +49,11 @@ class Master
 {
     public:
         /** Constructor TODO make private*/
-        Master();
+        Master(const SYNTH_T &synth);
         /** Destructor*/
         ~Master();
 
-        static Master &getInstance();
-        static void deleteInstance();
+        void applyOscEvent(const char *event);
 
         /**Saves all settings to a XML file
          * @return 0 for ok or <0 if there is an error*/
@@ -75,28 +68,27 @@ class Master
         /**loads all settings from a XML file
          * @return 0 for ok or -1 if there is an error*/
         int loadXML(const char *filename);
-        void applyparameters(bool lockmutex = true);
+
+        /**Regenerate PADsynth and other non-RT parameters
+         * It is NOT SAFE to call this from a RT context*/
+        void applyparameters(void) NONREALTIME;
+
+        //This must be called prior-to/at-the-time-of RT insertion
+        void initialize_rt(void) REALTIME;
 
         void getfromXML(XMLwrapper *xml);
 
-        /**get all data to a newly allocated array (used for VST)
+        /**get all data to a newly allocated array (used for plugin)
          * @return the datasize*/
-        int getalldata(char **data);
-        /**put all data from the *data array to zynaddsubfx parameters (used for VST)*/
-        void putalldata(char *data, int size);
-
-        //Mutex control
-        /**Control the Master's mutex state.
-         * @param lockset either trylock, lock, or unlock.
-         * @return true when successful false otherwise.*/
-        bool mutexLock(lockset request);
+        int getalldata(char **data) NONREALTIME;
+        /**put all data from the *data array to zynaddsubfx parameters (used for plugin)*/
+        void putalldata(const char *data);
 
         //Midi IN
         void noteOn(char chan, char note, char velocity);
         void noteOff(char chan, char note);
         void polyphonicAftertouch(char chan, char note, char velocity);
         void setController(char chan, int type, int par);
-        void setProgram(char chan, unsigned int pgm);
         //void NRPN...
 
 
@@ -106,12 +98,12 @@ class Master
         void vuUpdate(const float *outl, const float *outr);
 
         /**Audio Output*/
-        void AudioOut(float *outl, float *outr);
+        void AudioOut(float *outl, float *outr) REALTIME;
         /**Audio Output (for callback mode). This allows the program to be controled by an external program*/
         void GetAudioOutSamples(size_t nsamples,
                                 unsigned samplerate,
                                 float *outl,
-                                float *outr);
+                                float *outr) REALTIME;
 
 
         void partonoff(int npart, int what);
@@ -146,11 +138,8 @@ class Master
 
         //peaks for VU-meter
         void vuresetpeaks();
-        //get VU-meter data
-        vuData getVuData();
 
         //peaks for part VU-meters
-        /**\todo synchronize this with a mutex*/
         float vuoutpeakpart[NUM_MIDI_PARTS];
         unsigned char fakepeakpart[NUM_MIDI_PARTS]; //this is used to compute the "peak" when the part is disabled
 
@@ -159,16 +148,27 @@ class Master
 
         //other objects
         Microtonal microtonal;
-        Bank       bank;
+
+        //Strictly Non-RT instrument bank object
+        Bank bank;
 
         class FFTwrapper * fft;
-        pthread_mutex_t mutex;
-        pthread_mutex_t vumutex;
 
-
-    private:
-        vuData vu;
+        static const rtosc::Ports &ports;
         float  volume;
+
+        //Statistics on output levels
+        vuData vu;
+
+        rtosc::MidiTable midi;//<1024,64>
+
+        bool   frozenState;//read-only parameters for threadsafe actions
+        Allocator *memory;
+        rtosc::ThreadLink *bToU;
+        rtosc::ThreadLink *uToB;
+        bool pendingMemory;
+        const SYNTH_T &synth;
+    private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
         int    keyshift;

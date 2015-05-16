@@ -57,11 +57,6 @@
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <item>
       <widget class="QLabel" name="l_text1">
-       <property name="font">
-        <font>
-         <pointsize>8</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>&lt;b&gt;About JUCE&lt;/b&gt;</string>
        </property>
@@ -128,6 +123,12 @@ One module (the juce_core module) is permissively licensed under the ISC.</strin
        </property>
        <property name="sizeType">
         <enum>QSizePolicy::Expanding</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
        </property>
       </spacer>
      </item>

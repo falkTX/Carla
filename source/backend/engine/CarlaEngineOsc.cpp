@@ -71,7 +71,18 @@ void CarlaEngineOsc::init(const char* const name) noexcept
     fName = name;
     fName.toBasic();
 
-    fServerTCP = lo_server_new_with_proto(nullptr, LO_TCP, osc_error_handler_TCP);
+    const char* tcpPort = nullptr;
+    const char* udpPort = nullptr;
+
+#ifndef BUILD_BRIDGE
+    if (fEngine->getType() != kEngineTypePlugin)
+    {
+        tcpPort = std::getenv("CARLA_OSC_TCP_PORT");
+        udpPort = std::getenv("CARLA_OSC_UDP_PORT");
+    }
+#endif
+
+    fServerTCP = lo_server_new_with_proto(tcpPort, LO_TCP, osc_error_handler_TCP);
 
     if (fServerTCP != nullptr)
     {
@@ -85,7 +96,7 @@ void CarlaEngineOsc::init(const char* const name) noexcept
         lo_server_add_method(fServerTCP, nullptr, nullptr, osc_message_handler_TCP, this);
     }
 
-    fServerUDP = lo_server_new_with_proto(nullptr, LO_UDP, osc_error_handler_UDP);
+    fServerUDP = lo_server_new_with_proto(udpPort, LO_UDP, osc_error_handler_UDP);
 
     if (fServerUDP != nullptr)
     {
@@ -100,8 +111,6 @@ void CarlaEngineOsc::init(const char* const name) noexcept
     }
 
     CARLA_SAFE_ASSERT(fName.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerPathTCP.isNotEmpty());
-    CARLA_SAFE_ASSERT(fServerPathUDP.isNotEmpty());
     CARLA_SAFE_ASSERT(fServerTCP != nullptr);
     CARLA_SAFE_ASSERT(fServerUDP != nullptr);
 }
@@ -176,12 +185,12 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
     }
 #endif
 
-    //if (isTCP)
+    if (isTCP)
     {
         CARLA_SAFE_ASSERT_RETURN(fServerPathTCP.isNotEmpty(), 1);
         CARLA_SAFE_ASSERT_RETURN(fServerTCP != nullptr, 1);
     }
-    //else
+    else
     {
         CARLA_SAFE_ASSERT_RETURN(fServerPathUDP.isNotEmpty(), 1);
         CARLA_SAFE_ASSERT_RETURN(fServerUDP != nullptr, 1);
@@ -279,6 +288,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 
 #ifndef BUILD_BRIDGE
     // Internal methods
+    if (std::strcmp(method, "set_option") == 0)
+        return 0; //handleMsgSetOption(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_active") == 0)
         return handleMsgSetActive(plugin, argc, argv, types);
     if (std::strcmp(method, "set_drywet") == 0)
@@ -291,6 +302,8 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgSetBalanceRight(plugin, argc, argv, types);
     if (std::strcmp(method, "set_panning") == 0)
         return handleMsgSetPanning(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_ctrl_channel") == 0)
+        return 0; //handleMsgSetControlChannel(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "set_parameter_value") == 0)
         return handleMsgSetParameterValue(plugin, argc, argv, types);
     if (std::strcmp(method, "set_parameter_midi_cc") == 0)
@@ -301,6 +314,10 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
         return handleMsgSetProgram(plugin, argc, argv, types);
     if (std::strcmp(method, "set_midi_program") == 0)
         return handleMsgSetMidiProgram(plugin, argc, argv, types);
+    if (std::strcmp(method, "set_custom_data") == 0)
+        return 0; //handleMsgSetCustomData(plugin, argc, argv, types); // TODO
+    if (std::strcmp(method, "set_chunk") == 0)
+        return 0; //handleMsgSetChunk(plugin, argc, argv, types); // TODO
     if (std::strcmp(method, "note_on") == 0)
         return handleMsgNoteOn(plugin, argc, argv, types);
     if (std::strcmp(method, "note_off") == 0)
@@ -333,17 +350,10 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
     {
         const char* host = lo_address_get_hostname(source);
         const char* port = lo_address_get_port(source);
-        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
-    }
 
-    {
-        char* host = lo_url_get_hostname(url);
-        char* port = lo_url_get_port(url);
+        fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
         fControlData.path   = carla_strdup_free(lo_url_get_path(url));
         fControlData.target = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
-
-        std::free(host);
-        std::free(port);
     }
 
     for (uint i=0, count=fEngine->getCurrentPluginCount(); i < count; ++i)

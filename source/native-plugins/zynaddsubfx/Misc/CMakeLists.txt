@@ -3,7 +3,6 @@ include_directories(${MXML_INCLUDE_DIR})
 set(zynaddsubfx_misc_SRCS
 	Misc/Bank.cpp
 	Misc/Config.cpp
-	Misc/Dump.cpp
 	Misc/Master.cpp
 	Misc/Microtonal.cpp
 	Misc/Part.cpp
@@ -12,6 +11,9 @@ set(zynaddsubfx_misc_SRCS
 	Misc/Recorder.cpp
 	Misc/WavFile.cpp
 	Misc/WaveShapeSmps.cpp
+    Misc/MiddleWare.cpp
+    Misc/PresetExtractor.cpp
+    Misc/Allocator.cpp
 )
 
 

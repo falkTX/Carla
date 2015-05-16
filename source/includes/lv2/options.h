@@ -14,13 +14,22 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
+/**
+   @defgroup options Options
+
+   Instantiation time options, see <http://lv2plug.in/ns/ext/options> for
+   details.
+
+   @{
+*/
+
 #ifndef LV2_OPTIONS_H
 #define LV2_OPTIONS_H
 
 #include <stdint.h>
 
-#include "urid.h"
 #include "lv2.h"
+#include "urid.h"
 
 #define LV2_OPTIONS_URI    "http://lv2plug.in/ns/ext/options"
 #define LV2_OPTIONS_PREFIX LV2_OPTIONS_URI "#"
@@ -130,3 +139,7 @@ typedef struct _LV2_Options_Interface {
 #endif
 
 #endif  /* LV2_OPTIONS_H */
+
+/**
+   @}
+*/

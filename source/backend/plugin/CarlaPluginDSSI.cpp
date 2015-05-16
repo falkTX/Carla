@@ -26,6 +26,7 @@
 
 #ifdef HAVE_LIBLO
 # include "CarlaOscUtils.hpp"
+# include "CarlaPipeUtils.hpp"
 # include "CarlaThread.hpp"
 #endif
 
@@ -146,21 +147,33 @@ public:
 
         {
 #ifdef CARLA_OS_LINUX
+            /*
+             * If the frontend uses winId parent, set LD_PRELOAD to auto-map the DSSI UI.
+             * If not, unset LD_PRELOAD.
+             */
+            const uintptr_t winId(kEngine->getOptions().frontendWinId);
+
+            // for CARLA_ENGINE_OPTION_FRONTEND_WIN_ID
+            char winIdStr[STR_MAX+1];
+            winIdStr[STR_MAX] = '\0';
+
+            // for LD_PRELOAD
+            CarlaString ldPreloadValue;
+
+            if (winId != 0)
+            {
+                std::snprintf(winIdStr, STR_MAX, P_UINTPTR, kEngine->getOptions().frontendWinId);
+                ldPreloadValue = (CarlaString(kEngine->getOptions().binaryDir) + CARLA_OS_SEP_STR "libcarla_interposer-x11.so");
+            }
+
             const ScopedEngineEnvironmentLocker _seel(kEngine);
+            const ScopedEnvVar _sev1("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID", winIdStr[0] != '\0' ? winIdStr : nullptr);
+            const ScopedEnvVar _sev2("LD_PRELOAD", ldPreloadValue.isNotEmpty() ? ldPreloadValue.buffer() : nullptr);
+#endif // CARLA_OS_LINUX
 
-            const char* const oldPreload(std::getenv("LD_PRELOAD"));
-
-            if (oldPreload != nullptr)
-                ::unsetenv("LD_PRELOAD");
-#endif
-
+            // start the DSSI UI application
             carla_stdout("starting DSSI UI...");
             started = fProcess->start(arguments);
-
-#ifdef CARLA_OS_LINUX
-            if (oldPreload != nullptr)
-                ::setenv("LD_PRELOAD", oldPreload, 1);
-#endif
         }
 
         if (! started)
@@ -554,6 +567,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
         carla_debug("CarlaPluginDSSI::setCustomData(%s, %s, %s, %s)", type, key, value, bool2str(sendGui));
 
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("CarlaPluginDSSI::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
@@ -668,6 +684,7 @@ public:
     }
 #endif
 
+#if 0 // TODO
     void idle() override
     {
         if (fLatencyChanged && fLatencyIndex != -1)
@@ -699,6 +716,7 @@ public:
 
         CarlaPlugin::idle();
     }
+#endif
 
     // -------------------------------------------------------------------
     // Plugin state
@@ -857,26 +875,26 @@ public:
                 if (LADSPA_IS_PORT_INPUT(portType))
                 {
                     const uint32_t j = iAudioIn++;
-                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                    pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
                     pData->audioIn.ports[j].rindex = i;
 
                     if (forcedStereoIn)
                     {
                         portName += "_2";
-                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+                        pData->audioIn.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, 1);
                         pData->audioIn.ports[1].rindex = i;
                     }
                 }
                 else if (LADSPA_IS_PORT_OUTPUT(portType))
                 {
                     const uint32_t j = iAudioOut++;
-                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                    pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
                     pData->audioOut.ports[j].rindex = i;
 
                     if (forcedStereoOut)
                     {
                         portName += "_2";
-                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                        pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
                         pData->audioOut.ports[1].rindex = i;
                     }
                 }
@@ -1057,7 +1075,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -1073,7 +1091,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         if (forcedStereoIn || forcedStereoOut)
@@ -1112,6 +1130,7 @@ public:
         if (aIns <= 2 && aOuts <= 2 && (aIns == aOuts || aIns == 0 || aOuts == 0))
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
 
+#if 0 // TODO
         // check latency
         if (fLatencyIndex >= 0)
         {
@@ -1180,6 +1199,7 @@ public:
 
             fLatencyChanged = false;
         }
+#endif
 
         bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -1226,7 +1246,7 @@ public:
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_midi_program_count(pData->id, newCount);
 
@@ -1376,11 +1396,13 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
+#endif
 #endif
 
             pData->needsReset = false;
@@ -1762,6 +1784,7 @@ public:
         } // End of Plugin processing (no events)
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
         // --------------------------------------------------------------------------------------------------------
         // Latency, save values for next callback
 
@@ -1790,6 +1813,7 @@ public:
                 }
             }
         }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
         // Control Output
@@ -1930,11 +1954,13 @@ public:
                 {
                     for (uint32_t k=0; k < frames; ++k)
                     {
+#if 0 // TODO
                         if (k < pData->latency)
                             bufValue = pData->latencyBuffers[isMono ? 0 : i][k];
                         else if (pData->latency < frames)
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k-pData->latency];
                         else
+#endif
                             bufValue = fAudioInBuffers[isMono ? 0 : i][k];
 
                         fAudioOutBuffers[i][k] = (fAudioOutBuffers[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
@@ -2619,15 +2645,15 @@ public:
         if (fUsesCustomData)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fDssiDescriptor->run_synth != nullptr || fDssiDescriptor->run_multiple_synths != nullptr)
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
             if (fDssiDescriptor->run_synth == nullptr)
                 carla_stderr("WARNING: Plugin can ONLY use run_multiple_synths!");
@@ -2784,35 +2810,6 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label))
-    {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Mono or Stereo DSSI plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
-    {
-        init.engine->setLastError("CV ports in patchbay mode is still TODO");
-        canRun = false;
-    }
-
-    if (! canRun)
     {
         delete plugin;
         return nullptr;

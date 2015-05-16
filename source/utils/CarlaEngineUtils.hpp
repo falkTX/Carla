@@ -21,6 +21,8 @@
 #include "CarlaEngine.hpp"
 #include "CarlaUtils.hpp"
 
+#include "CarlaMIDI.h"
+
 #include "juce_audio_basics.h"
 
 CARLA_BACKEND_START_NAMESPACE
@@ -138,14 +140,12 @@ void fillEngineEventsFromJuceMidiBuffer(EngineEvent engineEvents[kMaxEngineEvent
     {
         CARLA_SAFE_ASSERT_CONTINUE(numBytes > 0);
         CARLA_SAFE_ASSERT_CONTINUE(sampleNumber >= 0);
-
-        if (numBytes > UINT8_MAX)
-            continue;
+        CARLA_SAFE_ASSERT_CONTINUE(numBytes < 0xFF /* uint8_t max */);
 
         EngineEvent& engineEvent(engineEvents[engineEventIndex++]);
 
         engineEvent.time = static_cast<uint32_t>(sampleNumber);
-        engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData);
+        engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData, 0);
     }
 }
 
@@ -157,6 +157,7 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
     uint8_t        size     = 0;
     uint8_t        mdata[3] = { 0, 0, 0 };
     const uint8_t* mdataPtr = mdata;
+    uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
 
     for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
     {
@@ -180,9 +181,18 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
             size = midiEvent.size;
 
             if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+            {
                 mdataPtr = midiEvent.dataExt;
+            }
             else
-                mdataPtr = midiEvent.data;
+            {
+                // copy
+                carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
+                // add channel
+                mdataTmp[0] |= (engineEvent.channel & MIDI_CHANNEL_BIT);
+                // done
+                mdataPtr = mdataTmp;
+            }
         }
         else
         {
@@ -200,19 +210,11 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
 class ScopedEngineEnvironmentLocker
 {
 public:
-      ScopedEngineEnvironmentLocker(CarlaEngine* const engine) noexcept
-          : kEngine(engine)
-      {
-          kEngine->lockEnvironment();
-      }
-
-      ~ScopedEngineEnvironmentLocker() noexcept
-      {
-          kEngine->unlockEnvironment();
-      }
+      ScopedEngineEnvironmentLocker(CarlaEngine* const engine) noexcept;
+      ~ScopedEngineEnvironmentLocker() noexcept;
 
 private:
-    CarlaEngine* const kEngine;
+    CarlaEngine::ProtectedData* const pData;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ScopedEngineEnvironmentLocker)

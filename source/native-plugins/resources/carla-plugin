@@ -113,6 +113,10 @@ class CarlaMiniW(ExternalUI, HostWindow):
     def uiQuit(self):
         self.closeExternalUI()
         self.close()
+
+        if self != gui:
+            gui.close()
+
         app.quit()
 
     def uiTitleChanged(self, uiTitle):
@@ -124,6 +128,9 @@ class CarlaMiniW(ExternalUI, HostWindow):
     def closeEvent(self, event):
         self.closeExternalUI()
         HostWindow.closeEvent(self, event)
+
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
 
     # -------------------------------------------------------------------
     # Custom callback
@@ -312,19 +319,23 @@ class CarlaMiniW(ExternalUI, HostWindow):
             name = self.readlineblock().replace("\r", "\n")
             self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
-        elif msg == "complete-license":
-            license = self.readlineblock().replace("\r", "\n")
-            self.host.fCompleteLicenseText = license
+        elif msg.startswith("CUSTOM_DATA_COUNT_"):
+            pluginId, count = [int(i) for i in msg.replace("CUSTOM_DATA_COUNT_", "").split(":")]
+            self.host._set_customDataCount(pluginId, count)
 
-        elif msg == "juce-version":
-            version = self.readlineblock().replace("\r", "\n")
-            self.host.fJuceVersion = version
+        elif msg.startswith("CUSTOM_DATA_"):
+            pluginId, customDataId = [int(i) for i in msg.replace("CUSTOM_DATA_", "").split(":")]
 
-        elif msg == "file-exts":
-            exts = self.readlineblock().replace("\r", "\n")
-            self.host.fSupportedFileExts = exts
-            # only now we know the supported extensions
-            self.fDirModel.setNameFilters(exts.split(";"))
+            type_ = self.readlineblock().replace("\r", "\n")
+            key   = self.readlineblock().replace("\r", "\n")
+            value = self.readlineblock().replace("\r", "\n")
+            self.host._set_customData(pluginId, customDataId, {'type': type_, 'key': key, 'value': value})
+
+        elif msg == "osc-urls":
+            tcp = self.readlineblock().replace("\r", "\n")
+            udp = self.readlineblock().replace("\r", "\n")
+            self.host.fOscTCP = tcp
+            self.host.fOscUDP = udp
 
         elif msg == "max-plugin-number":
             maxnum = int(self.readlineblock())
@@ -373,7 +384,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 # Embed plugin UI
 
 if LINUX and not config_UseQt5:
-    from PyQt4.QtGui import QHBoxLayout, QX11EmbedWidget
+    from PyQt4.QtGui import QHBoxLayout, QKeySequence, QX11EmbedWidget
 
     class CarlaEmbedW(QX11EmbedWidget):
         def __init__(self, host, winId):
@@ -387,24 +398,40 @@ if LINUX and not config_UseQt5:
             self.fLayout.setSpacing(0)
             self.setLayout(self.fLayout)
 
-            gui = CarlaMiniW(host, self)
-            gui.hide()
+            self.gui = CarlaMiniW(host, self)
+            self.gui.hide()
 
-            gui.ui.act_file_quit.setEnabled(False)
-            gui.ui.menu_File.setEnabled(False)
-            gui.ui.menu_File.setVisible(False)
-            #menuBar = gui.menuBar()
-            #menuBar.removeAction(gui.ui.menu_File.menuAction())
+            self.gui.ui.act_file_quit.setEnabled(False)
+            self.gui.ui.act_file_quit.setVisible(False)
 
-            self.addWidget(gui.menuBar())
+            self.fShortcutActions = []
+            self.addShortcutActions(self.gui.ui.menu_File.actions())
+            self.addShortcutActions(self.gui.ui.menu_Plugin.actions())
+            self.addShortcutActions(self.gui.ui.menu_PluginMacros.actions())
+            self.addShortcutActions(self.gui.ui.menu_Settings.actions())
+            self.addShortcutActions(self.gui.ui.menu_Help.actions())
+
+            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+                self.addShortcutActions(self.gui.ui.menu_Canvas.actions())
+                self.addShortcutActions(self.gui.ui.menu_Canvas_Zoom.actions())
+
+            self.addWidget(self.gui.ui.menubar)
             self.addLine()
-            self.addWidget(gui.ui.toolBar)
-            self.addLine()
-            self.addWidget(gui.centralWidget())
+            self.addWidget(self.gui.ui.toolBar)
+
+            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+                self.addLine()
+
+            self.addWidget(self.gui.centralWidget())
 
             self.setFixedSize(740, 512)
             self.embedInto(winId)
             self.show()
+
+        def addShortcutActions(self, actions):
+            for action in actions:
+                if not action.shortcut().isEmpty():
+                    self.fShortcutActions.append(action)
 
         def addWidget(self, widget):
             widget.setParent(self)
@@ -418,6 +445,33 @@ if LINUX and not config_UseQt5:
             line.setMidLineWidth(1)
             self.fLayout.addWidget(line)
 
+        def keyPressEvent(self, event):
+            modifiers    = event.modifiers()
+            modifiersStr = ""
+
+            if modifiers & Qt.ShiftModifier:
+                modifiersStr += "Shift+"
+            if modifiers & Qt.ControlModifier:
+                modifiersStr += "Ctrl+"
+            if modifiers & Qt.AltModifier:
+                modifiersStr += "Alt+"
+            if modifiers & Qt.MetaModifier:
+                modifiersStr += "Meta+"
+
+            keyStr = QKeySequence(event.key()).toString()
+            keySeq = QKeySequence(modifiersStr + keyStr)
+
+            for action in self.fShortcutActions:
+                if not action.isEnabled():
+                    continue
+                if keySeq.matches(action.shortcut()) != QKeySequence.ExactMatch:
+                    continue
+                event.accept()
+                action.trigger()
+                return
+
+            QX11EmbedWidget.keyPressEvent(self, event)
+
         def showEvent(self, event):
             QX11EmbedWidget.showEvent(self, event)
 
@@ -430,6 +484,14 @@ if LINUX and not config_UseQt5:
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
             QX11EmbedWidget.hideEvent(self, event)
+
+        def closeEvent(self, event):
+            self.gui.close()
+            self.gui.closeExternalUI()
+            QX11EmbedWidget.closeEvent(self, event)
+
+            # there might be other qt windows open which will block carla-plugin from quitting
+            app.quit()
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
@@ -448,9 +510,10 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Init host backend
 
-    host = initHost("Carla-Plugin", PluginHost, False, True, True)
+    host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
     host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
     host.processModeForced = True
+    host.nextProcessMode   = host.processMode
     loadHostSettings(host)
 
     # -------------------------------------------------------------

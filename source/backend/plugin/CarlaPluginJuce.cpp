@@ -263,10 +263,10 @@ public:
             fInstance->setStateInformation(data, static_cast<int>(dataSize));
         }
 
-#ifdef BUILD_BRIDGE
-        const bool sendOsc(false);
-#else
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         const bool sendOsc(pData->engine->isOscControlRegistered());
+#else
+        const bool sendOsc(false);
 #endif
         pData->updateParameterValues(this, sendOsc, true, false);
     }
@@ -419,7 +419,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -444,7 +444,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -503,7 +503,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -519,7 +519,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // plugin hints
@@ -588,9 +588,9 @@ public:
                 pData->prog.names[i] = carla_strdup(fInstance->getProgramName(i).toRawUTF8());
         }
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_program_count(pData->id, newCount);
 
@@ -1222,8 +1222,10 @@ public:
 
         pData->options  = 0x0;
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         pData->options |= PLUGIN_OPTION_USE_CHUNKS;
+
+        if (fDesc.isInstrument)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fInstance->acceptsMidi())
         {
@@ -1270,15 +1272,6 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 
     if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
     {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
-    {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo VST3 plugins, sorry!");
         delete plugin;
         return nullptr;
     }

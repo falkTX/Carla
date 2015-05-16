@@ -462,6 +462,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
         carla_debug("CarlaPluginFluidSynth::setCustomData(%s, \"%s\", \"%s\", %s)", type, key, value, bool2str(sendGui));
 
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("CarlaPluginFluidSynth::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
@@ -585,7 +588,7 @@ public:
 
                 portName.truncate(portNameSize);
 
-                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+                pData->audioOut.ports[i].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, i);
                 pData->audioOut.ports[i].rindex = i;
             }
 
@@ -608,7 +611,7 @@ public:
             portName += "out-left";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[0].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 0);
             pData->audioOut.ports[0].rindex = 0;
 
             // out-right
@@ -623,7 +626,7 @@ public:
             portName += "out-right";
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[1].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, 1);
             pData->audioOut.ports[1].rindex = 1;
         }
 
@@ -642,7 +645,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         // ---------------------------------------
@@ -660,7 +663,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // ---------------------------------------
@@ -862,6 +865,7 @@ public:
         pData->hints  = 0x0;
         pData->hints |= PLUGIN_IS_SYNTH;
         pData->hints |= PLUGIN_CAN_VOLUME;
+        pData->hints |= PLUGIN_USES_MULTI_PROGS;
 
         if (! kUse16Outs)
             pData->hints |= PLUGIN_CAN_BALANCE;
@@ -869,7 +873,6 @@ public:
         // extra plugin hints
         pData->extraHints  = 0x0;
         pData->extraHints |= PLUGIN_EXTRA_HINT_HAS_MIDI_IN;
-        pData->extraHints |= PLUGIN_EXTRA_HINT_USES_MULTI_PROGS;
 
         if (kUse16Outs)
             pData->extraHints |= PLUGIN_EXTRA_HINT_CAN_RUN_RACK;
@@ -948,7 +951,7 @@ public:
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
@@ -1693,8 +1696,6 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
         delete plugin;
         return nullptr;
     }
-
-    plugin->reload();
 
     return plugin;
 #else

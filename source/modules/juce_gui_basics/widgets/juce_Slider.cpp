@@ -521,9 +521,7 @@ public:
     void setTextBoxIsEditable (const bool shouldBeEditable)
     {
         editableText = shouldBeEditable;
-
-        if (valueBox != nullptr)
-            valueBox->setEditable (shouldBeEditable && owner.isEnabled());
+        updateTextBoxEnablement();
     }
 
     void showTextBox()
@@ -554,6 +552,17 @@ public:
         }
     }
 
+    void updateTextBoxEnablement()
+    {
+        if (valueBox != nullptr)
+        {
+            const bool shouldBeEditable = editableText && owner.isEnabled();
+
+            if (valueBox->isEditable() != shouldBeEditable) // (to avoid changing the single/double click flags unless we need to)
+                valueBox->setEditable (shouldBeEditable);
+        }
+    }
+
     void lookAndFeelChanged (LookAndFeel& lf)
     {
         if (textBoxPos != NoTextBox)
@@ -567,10 +576,7 @@ public:
             valueBox->setWantsKeyboardFocus (false);
             valueBox->setText (previousTextBoxContent, dontSendNotification);
             valueBox->setTooltip (owner.getTooltip());
-
-            if (valueBox->isEditable() != editableText) // (avoid overriding the single/double click flags unless we have to)
-                valueBox->setEditable (editableText && owner.isEnabled());
-
+            updateTextBoxEnablement();
             valueBox->addListener (this);
 
             if (style == LinearBar || style == LinearBarVertical)
@@ -1450,7 +1456,7 @@ Component* Slider::getCurrentPopupDisplay() const noexcept      { return pimpl->
 //==============================================================================
 void Slider::colourChanged()        { lookAndFeelChanged(); }
 void Slider::lookAndFeelChanged()   { pimpl->lookAndFeelChanged (getLookAndFeel()); }
-void Slider::enablementChanged()    { repaint(); }
+void Slider::enablementChanged()    { repaint(); pimpl->updateTextBoxEnablement(); }
 
 //==============================================================================
 double Slider::getMaximum() const noexcept      { return pimpl->maximum; }
@@ -1497,11 +1503,8 @@ void Slider::setDoubleClickReturnValue (bool isDoubleClickEnabled,  double value
     pimpl->doubleClickReturnValue = valueToSetOnDoubleClick;
 }
 
-double Slider::getDoubleClickReturnValue (bool& isEnabledResult) const
-{
-    isEnabledResult = pimpl->doubleClickToValue;
-    return pimpl->doubleClickReturnValue;
-}
+double Slider::getDoubleClickReturnValue() const noexcept       { return pimpl->doubleClickReturnValue; }
+bool Slider::isDoubleClickReturnEnabled() const noexcept        { return pimpl->doubleClickToValue; }
 
 void Slider::updateText()
 {
@@ -1576,10 +1579,11 @@ void Slider::valueChanged() {}
 void Slider::setPopupMenuEnabled (const bool menuEnabled)   { pimpl->menuEnabled = menuEnabled; }
 void Slider::setScrollWheelEnabled (const bool enabled)     { pimpl->scrollWheelEnabled = enabled; }
 
-bool Slider::isHorizontal() const noexcept   { return pimpl->isHorizontal(); }
-bool Slider::isVertical() const noexcept     { return pimpl->isVertical(); }
+bool Slider::isHorizontal() const noexcept                  { return pimpl->isHorizontal(); }
+bool Slider::isVertical() const noexcept                    { return pimpl->isVertical(); }
+bool Slider::isRotary() const noexcept                      { return pimpl->isRotary(); }
 
-float Slider::getPositionOfValue (const double value)   { return pimpl->getPositionOfValue (value); }
+float Slider::getPositionOfValue (const double value)       { return pimpl->getPositionOfValue (value); }
 
 //==============================================================================
 void Slider::paint (Graphics& g)        { pimpl->paint (g, getLookAndFeel()); }

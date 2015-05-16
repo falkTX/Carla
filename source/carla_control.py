@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Carla OSC controller
-# Copyright (C) 2011-2013 Filipe Coelho <falktx@falktx.com>
+# Carla Backend code (OSC stuff)
+# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,488 +17,352 @@
 # For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
 # ------------------------------------------------------------------------------------------------------------
-# Imports (Global)
+# Imports (Custom)
 
-from PyQt4.QtCore import QLibrary
-from PyQt4.QtGui import QApplication, QInputDialog, QMainWindow
+from carla_host import *
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (liblo)
+
 from liblo import make_method, Address, ServerError, ServerThread
 from liblo import send as lo_send
 from liblo import TCP as LO_TCP
 from liblo import UDP as LO_UDP
 
-# ------------------------------------------------------------------------------------------------------------
-# Imports (Custom)
-
-import ui_carla_control
-from carla_shared import *
-
-global lo_target, lo_targetName
-lo_target     = None
-lo_targetName = ""
-
-Carla.isControl = True
-Carla.isLocal   = False
+from random import random
 
 # ------------------------------------------------------------------------------------------------------------
-# Helper class
+# Global liblo objects
 
-class ControlPluginInfo(object):
-    __slots__ = [
-        'pluginInfo',
-        'pluginRealName',
-        'audioCountInfo',
-        'midiCountInfo',
-        'parameterCountInfo',
-        'parameterInfoS',
-        'parameterDataS',
-        'parameterRangeS',
-        'parameterValueS',
-        'programCount',
-        'programCurrent',
-        'programNameS',
-        'midiProgramCount',
-        'midiProgramCurrent',
-        'midiProgramDataS',
-        'peaks'
-    ]
+global lo_target, lo_target_name
+lo_target      = None
+lo_target_name = ""
 
 # ------------------------------------------------------------------------------------------------------------
-# Python Object class compatible to 'Host' on the Carla Backend code
+# Host OSC object
 
-class Host(object):
+class CarlaHostOSC(CarlaHostQtPlugin):
     def __init__(self):
-        object.__init__(self)
+        CarlaHostQtPlugin.__init__(self)
+
+    # -------------------------------------------------------------------
+
+    def printAndReturnError(self, error):
+        print(error)
+        self.fLastError = error
+        return False
+
+    def sendMsg(self, lines):
+        global lo_target, lo_target_name
+
+        if lo_target is None:
+            return self.printAndReturnError("lo_target is None")
+        if lo_target_name is None:
+            return self.printAndReturnError("lo_target_name is None")
+        if len(lines) < 2:
+            return self.printAndReturnError("not enough arguments")
+
+        method = lines.pop(0)
+
+        if method not in (
+                          #"set_option",
+                          "set_active",
+                          "set_drywet",
+                          "set_volume",
+                          "set_balance_left",
+                          "set_balance_right",
+                          "set_panning",
+                          #"set_ctrl_channel",
+                          "set_parameter_value",
+                          "set_parameter_midi_channel",
+                          "set_parameter_midi_cc",
+                          "set_program",
+                          "set_midi_program",
+                          #"set_custom_data",
+                          #"set_chunk_data",
+                          #"prepare_for_save",
+                          #"reset_parameters",
+                          #"randomize_parameters",
+                          "send_midi_note"
+                          ):
+            return self.printAndReturnError("invalid method '%s'" % method)
+
+        pluginId = lines.pop(0)
+
+        args = []
+
+        if method == "send_midi_note":
+            channel, note, velocity = lines
+
+            if velocity:
+                method = "note_on"
+                args   = [channel, note, velocity]
+            else:
+                method = "note_off"
+                args   = [channel, note]
 
-        self.fPluginsInfo = []
-
-    def _add(self, pluginId):
-        if len(self.fPluginsInfo) != pluginId:
-            return
-
-        info = ControlPluginInfo()
-        info.pluginInfo = CarlaPluginInfo
-        info.pluginRealName = None
-        info.audioCountInfo = CarlaPortCountInfo
-        info.midiCountInfo  = CarlaPortCountInfo
-        info.parameterCountInfo = CarlaPortCountInfo
-        info.parameterInfoS  = []
-        info.parameterDataS  = []
-        info.parameterRangeS = []
-        info.parameterValueS = []
-        info.programCount = 0
-        info.programCurrent = -1
-        info.programNameS = []
-        info.midiProgramCount = 0
-        info.midiProgramCurrent = -1
-        info.midiProgramDataS = []
-        info.peaks = [0.0, 0.0, 0.0, 0.0]
-        self.fPluginsInfo.append(info)
-
-    def _set_pluginInfo(self, index, info):
-        self.fPluginsInfo[index].pluginInfo = info
-
-    def _set_pluginRealName(self, index, realName):
-        self.fPluginsInfo[index].pluginRealName = realName
-
-    def _set_audioCountInfo(self, index, info):
-        self.fPluginsInfo[index].audioCountInfo = info
-
-    def _set_midiCountInfo(self, index, info):
-        self.fPluginsInfo[index].midiCountInfo = info
-
-    def _set_parameterCountInfo(self, index, info):
-        self.fPluginsInfo[index].parameterCountInfo = info
-
-        # clear
-        self.fPluginsInfo[index].parameterInfoS  = []
-        self.fPluginsInfo[index].parameterDataS  = []
-        self.fPluginsInfo[index].parameterRangeS = []
-        self.fPluginsInfo[index].parameterValueS = []
-
-        # add placeholders
-        for x in range(info['total']):
-            self.fPluginsInfo[index].parameterInfoS.append(CarlaParameterInfo)
-            self.fPluginsInfo[index].parameterDataS.append(ParameterData)
-            self.fPluginsInfo[index].parameterRangeS.append(ParameterRanges)
-            self.fPluginsInfo[index].parameterValueS.append(0.0)
-
-    def _set_programCount(self, index, count):
-        self.fPluginsInfo[index].programCount = count
-
-        # clear
-        self.fPluginsInfo[index].programNameS = []
-
-        # add placeholders
-        for x in range(count):
-            self.fPluginsInfo[index].programNameS.append(None)
-
-    def _set_midiProgramCount(self, index, count):
-        self.fPluginsInfo[index].midiProgramCount = count
-
-        # clear
-        self.fPluginsInfo[index].midiProgramDataS = []
-
-        # add placeholders
-        for x in range(count):
-            self.fPluginsInfo[index].midiProgramDataS.append(MidiProgramData)
-
-    def _set_parameterInfoS(self, index, paramIndex, data):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterInfoS[paramIndex] = data
-
-    def _set_parameterDataS(self, index, paramIndex, data):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterDataS[paramIndex] = data
-
-    def _set_parameterRangeS(self, index, paramIndex, data):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterRangeS[paramIndex] = data
-
-    def _set_parameterValueS(self, index, paramIndex, value):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterValueS[paramIndex] = value
-
-    def _set_parameterDefaultValue(self, index, paramIndex, value):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterRangeS[paramIndex]['def'] = value
-
-    def _set_parameterMidiCC(self, index, paramIndex, cc):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterDataS[paramIndex]['midiCC'] = cc
-
-    def _set_parameterMidiChannel(self, index, paramIndex, channel):
-        if paramIndex < self.fPluginsInfo[index].parameterCountInfo['total']:
-            self.fPluginsInfo[index].parameterDataS[paramIndex]['midiChannel'] = channel
-
-    def _set_currentProgram(self, index, pIndex):
-        self.fPluginsInfo[index].programCurrent = pIndex
-
-    def _set_currentMidiProgram(self, index, mpIndex):
-        self.fPluginsInfo[index].midiProgramCurrent = mpIndex
-
-    def _set_programNameS(self, index, pIndex, data):
-        if pIndex < self.fPluginsInfo[index].programCount:
-            self.fPluginsInfo[index].programNameS[pIndex] = data
-
-    def _set_midiProgramDataS(self, index, mpIndex, data):
-        if mpIndex < self.fPluginsInfo[index].midiProgramCount:
-            self.fPluginsInfo[index].midiProgramDataS[mpIndex] = data
-
-    def _set_peaks(self, index, in1, in2, out1, out2):
-        self.fPluginsInfo[index].peaks = [in1, in2, out1, out2]
-
-    # get_extended_license_text
-    # get_supported_file_types
-    # get_engine_driver_count
-    # get_engine_driver_name
-    # get_engine_driver_device_names
-    # get_cached_plugin_count
-    # get_cached_plugin_info
-    # engine_init
-    # engine_close
-    # engine_idle
-    # is_engine_running
-    # set_engine_about_to_close
-    # set_engine_callback
-    # set_engine_option
-    # load_filename
-    # load_project
-    # save_project
-    # patchbay_connect
-    # patchbay_disconnect
-    # patchbay_refresh
-    # transport_play
-    # transport_pause
-    # transport_relocate
-    # get_current_transport_frame
-    # get_transport_info
-    # add_plugin
-    # remove_plugin
-    # remove_all_plugins
-    # rename_plugin
-    # clone_plugin
-    # replace_plugin
-    # switch_plugins
-    # load_plugin_state
-    # save_plugin_state
-
-    def get_plugin_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].pluginInfo
-
-    def get_audio_port_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].audioCountInfo
-
-    def get_midi_port_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiCountInfo
-
-    def get_parameter_count_info(self, pluginId):
-        return self.fPluginsInfo[pluginId].parameterCountInfo
-
-    def get_parameter_info(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterInfoS[parameterId]
-
-    def get_parameter_scalepoint_info(self, pluginId, parameterId, scalepoint_id):
-        return CarlaScalePointInfo
-
-    def get_parameter_data(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterDataS[parameterId]
-
-    def get_parameter_ranges(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterRangeS[parameterId]
-
-    def get_midi_program_data(self, pluginId, midiProgramId):
-        return self.fPluginsInfo[pluginId].midiProgramDataS[midiProgramId]
-
-    def get_custom_data(self, pluginId, custom_data_id):
-        return CustomData
-
-    def get_chunk_data(self, pluginId):
-        return None
-
-    def get_parameter_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].parameterCountInfo['total']
-
-    def get_program_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].programCount
-
-    def get_midi_program_count(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiProgramCount
-
-    def get_custom_data_count(self, pluginId):
-        return 0
-
-    def get_parameter_text(self, pluginId, parameterId):
-        return None
-
-    def get_program_name(self, pluginId, programId):
-        return self.fPluginsInfo[pluginId].programNameS[programId]
-
-    def get_midi_program_name(self, pluginId, midiProgramId):
-        return self.fPluginsInfo[pluginId].midiProgramDataS[midiProgramId]['label']
-
-    def get_real_plugin_name(self, pluginId):
-        return self.fPluginsInfo[pluginId].pluginRealName
-
-    def get_current_program_index(self, pluginId):
-        return self.fPluginsInfo[pluginId].programCurrent
-
-    def get_current_midi_program_index(self, pluginId):
-        return self.fPluginsInfo[pluginId].midiProgramCurrent
-
-    def get_default_parameter_value(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterRangeS[parameterId]['def']
-
-    def get_current_parameter_value(self, pluginId, parameterId):
-        return self.fPluginsInfo[pluginId].parameterValueS[parameterId]
-
-    def get_input_peak_value(self, pluginId, portId):
-        return self.fPluginsInfo[pluginId].peaks[portId-1]
-
-    def get_output_peak_value(self, pluginId, portId):
-        return self.fPluginsInfo[pluginId].peaks[portId+1]
-
-    def set_option(self, pluginId, option, yesNo):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_option" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, option, yesNo)
-
-    def set_active(self, pluginId, onoff):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_active" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, 1 if onoff else 0)
-
-    def set_drywet(self, pluginId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_drywet" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, value)
-
-    def set_volume(self, pluginId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_volume" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, value)
-
-    def set_balance_left(self, pluginId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_balance_left" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, value)
-
-    def set_balance_right(self, pluginId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_balance_right" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, value)
-
-    def set_panning(self, pluginId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_panning" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, value)
-
-    def set_ctrl_channel(self, pluginId, channel):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_ctrl_channel" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, channel)
-
-    def set_parameter_value(self, pluginId, parameterId, value):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_parameter_value" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, parameterId, value)
-
-    def set_parameter_midi_cc(self, pluginId, parameterId, midi_cc):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_parameter_midi_cc" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, parameterId, midi_cc)
-
-    def set_parameter_midi_channel(self, pluginId, parameterId, channel):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_parameter_midi_channel" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, parameterId, channel)
-
-    def set_program(self, pluginId, programId):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_program" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, programId)
-
-    def set_midi_program(self, pluginId, midiProgramId):
-        global to_target, lo_targetName
-        lo_path = "/%s/%i/set_midi_program" % (lo_targetName, pluginId)
-        lo_send(lo_target, lo_path, midiProgramId)
-
-    # set_custom_data
-    # set_chunk_data
-    # prepare_for_save
-
-    def send_midi_note(self, pluginId, channel, note, velocity):
-        global to_target, lo_targetName
-        if velocity:
-            lo_path = "/%s/%i/note_on" % (lo_targetName, pluginId)
-            lo_send(lo_target, lo_path, channel, note, velocity)
         else:
-            lo_path = "/%s/%i/note_off" % (lo_targetName, pluginId)
-            lo_send(lo_target, lo_path, channel, note)
+            for line in lines:
+                if isinstance(line, bool):
+                    args.append(int(line))
+                else:
+                    args.append(line)
 
-    # show_gui
-    # get_buffer_size
-    # get_sample_rate
-    # get_last_error
-    # get_host_osc_url
-    # nsm_announce
-    # nsm_reply_open
-    # nsm_reply_save
+        path = "/%s/%i/%s" % (lo_target_name, pluginId, method)
+
+        print(path, args)
+
+        lo_send(lo_target, path, *args)
+        return True
+
+    # -------------------------------------------------------------------
+
+    def engine_init(self, driverName, clientName):
+        global lo_target
+        return lo_target is not None
+
+    def engine_close(self):
+        return True
+
+    def engine_idle(self):
+        return
+
+    def is_engine_running(self):
+        global lo_target
+        return lo_target is not None
+
+    def set_engine_about_to_close(self):
+        return
 
 # ------------------------------------------------------------------------------------------------------------
 # OSC Control server
 
-class ControlServer(ServerThread):
-    def __init__(self, parent, mode):
-        ServerThread.__init__(self, 8087, mode)
+class CarlaControlServerThread(ServerThread):
+    def __init__(self, host, mode):
+        ServerThread.__init__(self, 8998 + int(random()*9000), mode)
 
-        self.fParent = parent
+        self.host = host
 
     def getFullURL(self):
         return "%scarla-control" % self.get_url()
 
-    @make_method('/carla-control/add_plugin_start', 'is')
+    @make_method('/carla-control/add_plugin_start', 'is') # FIXME skip name
     def add_plugin_start_callback(self, path, args):
+        print(path, args)
         pluginId, pluginName = args
-        self.fParent.emit(SIGNAL("AddPluginStart(int, QString)"), pluginId, pluginName)
+        self.host._add(pluginId)
+        self.host._set_pluginInfoUpdate(pluginId, {'name': pluginName})
 
-    @make_method('/carla-control/add_plugin_end', 'i')
+    @make_method('/carla-control/add_plugin_end', 'i') # FIXME skip name
     def add_plugin_end_callback(self, path, args):
+        print(path, args)
         pluginId, = args
-        self.fParent.emit(SIGNAL("AddPluginEnd(int)"), pluginId)
+        self.host.PluginAddedCallback.emit(pluginId, "") #self.fPluginsInfo[pluginId].pluginInfo['name'])
 
     @make_method('/carla-control/remove_plugin', 'i')
     def remove_plugin_callback(self, path, args):
+        print(path, args)
         pluginId, = args
-        self.fParent.emit(SIGNAL("RemovePlugin(int)"), pluginId)
+        self.host.PluginRemovedCallback.emit(pluginId)
 
-    @make_method('/carla-control/set_plugin_data', 'iiiissssh')
-    def set_plugin_data_callback(self, path, args):
-        pluginId, ptype, category, hints, realName, label, maker, copyright_, uniqueId = args
-        self.fParent.emit(SIGNAL("SetPluginData(int, int, int, int, QString, QString, QString, QString, int)"), pluginId, ptype, category, hints, realName, label, maker, copyright_, uniqueId)
+    @make_method('/carla-control/set_plugin_info1', 'iiiih')
+    def set_plugin_info1_callback(self, path, args):
+        print(path, args)
+        pluginId, type_, category, hints, uniqueId = args # , optsAvail, optsEnabled
+        optsAvail = optsEnabled = 0x0 # FIXME
 
-    @make_method('/carla-control/set_plugin_ports', 'iiiiiiii')
-    def set_plugin_ports_callback(self, path, args):
-        pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals = args
-        self.fParent.emit(SIGNAL("SetPluginPorts(int, int, int, int, int, int, int, int)"), pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals)
+        hints &= ~PLUGIN_HAS_CUSTOM_UI
 
-    @make_method('/carla-control/set_parameter_data', 'iiiissf')
-    def set_parameter_data_callback(self, path, args):
-        pluginId, index, type_, hints, name, label, current = args
-        self.fParent.emit(SIGNAL("SetParameterData(int, int, int, int, QString, QString, double)"), pluginId, index, type_, hints, name, label, current)
+        pinfo = {
+            'type': type_,
+            'category': category,
+            'hints': hints,
+            'optionsAvailable': optsAvail,
+            'optionsEnabled': optsEnabled,
+            'uniqueId': uniqueId
+        }
 
-    @make_method('/carla-control/set_parameter_ranges', 'iiffffff')
-    def set_parameter_ranges_callback(self, path, args):
-        pluginId, index, min_, max_, def_, step, stepSmall, stepLarge = args
-        self.fParent.emit(SIGNAL("SetParameterRanges(int, int, double, double, double, double, double, double)"), pluginId, index, min_, max_, def_, step, stepSmall, stepLarge)
+        self.host._set_pluginInfoUpdate(pluginId, pinfo)
 
-    @make_method('/carla-control/set_parameter_midi_cc', 'iii')
-    def set_parameter_midi_cc_callback(self, path, args):
-        pluginId, index, cc = args
-        self.fParent.emit(SIGNAL("SetParameterMidiCC(int, int, int)"), pluginId, index, cc)
+    @make_method('/carla-control/set_plugin_info2', 'issss')
+    def set_plugin_info2_callback(self, path, args):
+        print(path, args)
+        pluginId, realName, label, maker, copyright = args # , filename, name, iconName
+        filename = name = iconName = "" # FIXME
 
-    @make_method('/carla-control/set_parameter_midi_channel', 'iii')
-    def set_parameter_midi_channel_callback(self, path, args):
-        pluginId, index, channel = args
-        self.fParent.emit(SIGNAL("SetParameterMidiChannel(int, int, int)"), pluginId, index, channel)
+        pinfo = {
+            'filename': filename,
+            #'name':  name, # FIXME
+            'label': label,
+            'maker': maker,
+            'copyright': copyright,
+            'iconName': iconName
+        }
 
-    @make_method('/carla-control/set_parameter_value', 'iif')
-    def set_parameter_value_callback(self, path, args):
-        pluginId, index, value = args
-        self.fParent.emit(SIGNAL("SetParameterValue(int, int, double)"), pluginId, index, value)
+        self.host._set_pluginInfoUpdate(pluginId, pinfo)
+        self.host._set_pluginRealName(pluginId, realName)
 
-    @make_method('/carla-control/set_default_value', 'iif')
-    def set_default_value_callback(self, path, args):
-        pluginId, index, value = args
-        self.fParent.emit(SIGNAL("SetDefaultValue(int, int, double)"), pluginId, index, value)
+    @make_method('/carla-control/set_audio_count', 'iii')
+    def set_audio_count_callback(self, path, args):
+        print(path, args)
+        pluginId, ins, outs = args
+        self.host._set_audioCountInfo(pluginId, {'ins': ins, 'outs': outs})
 
-    @make_method('/carla-control/set_program', 'ii')
-    def set_program_callback(self, path, args):
-        pluginId, index = args
-        self.fParent.emit(SIGNAL("SetProgram(int, int)"), pluginId, index)
+    @make_method('/carla-control/set_midi_count', 'iii')
+    def set_midi_count_callback(self, path, args):
+        print(path, args)
+        pluginId, ins, outs = args
+        self.host._set_midiCountInfo(pluginId, {'ins': ins, 'outs': outs})
+
+    @make_method('/carla-control/set_parameter_count', 'iii') # FIXME
+    def set_parameter_count_callback(self, path, args):
+        print(path, args)
+        pluginId, ins, outs = args # , count
+        count = ins + outs
+        self.host._set_parameterCountInfo(pluginId, count, {'ins': ins, 'outs': outs})
 
     @make_method('/carla-control/set_program_count', 'ii')
     def set_program_count_callback(self, path, args):
+        print(path, args)
         pluginId, count = args
-        self.fParent.emit(SIGNAL("SetProgramCount(int, int)"), pluginId, count)
-
-    @make_method('/carla-control/set_program_name', 'iis')
-    def set_program_name_callback(self, path, args):
-        pluginId, index, name = args
-        self.fParent.emit(SIGNAL("SetProgramName(int, int, QString)"), pluginId, index, name)
-
-    @make_method('/carla-control/set_midi_program', 'ii')
-    def set_midi_program_callback(self, path, args):
-        pluginId, index = args
-        self.fParent.emit(SIGNAL("SetMidiProgram(int, int)"), pluginId, index)
+        self.host._set_programCount(pluginId, count)
 
     @make_method('/carla-control/set_midi_program_count', 'ii')
     def set_midi_program_count_callback(self, path, args):
+        print(path, args)
         pluginId, count = args
-        self.fParent.emit(SIGNAL("SetMidiProgramCount(int, int)"), pluginId, count)
+        self.host._set_midiProgramCount(pluginId, count)
+
+    @make_method('/carla-control/set_parameter_data', 'iiiiss')
+    def set_parameter_data_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, type_, hints, name, unit = args
+
+        hints &= ~(PARAMETER_USES_SCALEPOINTS | PARAMETER_USES_CUSTOM_TEXT)
+
+        paramInfo = {
+            'name': name,
+            'symbol': "",
+            'unit': unit,
+            'scalePointCount': 0,
+        }
+        self.host._set_parameterInfo(pluginId, paramId, paramInfo)
+
+        paramData = {
+            'type': type_,
+            'hints': hints,
+            'index': paramId,
+            'rindex': -1,
+            'midiCC': -1,
+            'midiChannel': 0
+        }
+        self.host._set_parameterData(pluginId, paramId, paramData)
+
+    @make_method('/carla-control/set_parameter_ranges1', 'iifff')
+    def set_parameter_ranges1_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, def_, min_, max_ = args
+
+        paramRanges = {
+            'def': def_,
+            'min': min_,
+            'max': max_
+        }
+
+        self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
+
+    @make_method('/carla-control/set_parameter_ranges2', 'iifff')
+    def set_parameter_ranges2_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, step, stepSmall, stepLarge = args
+
+        paramRanges = {
+            'step': step,
+            'stepSmall': stepSmall,
+            'stepLarge': stepLarge
+        }
+
+        self.host._set_parameterRangesUpdate(pluginId, paramId, paramRanges)
+
+    @make_method('/carla-control/set_parameter_midi_cc', 'iii')
+    def set_parameter_midi_cc_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, cc = args
+        self.host._set_parameterMidiCC(pluginId, paramId, cc)
+        self.host.ParameterMidiCcChangedCallback.emit(pluginId, paramId, cc)
+
+    @make_method('/carla-control/set_parameter_midi_channel', 'iii')
+    def set_parameter_midi_channel_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, channel = args
+        self.host._set_parameterMidiChannel(pluginId, paramId, channel)
+        self.host.ParameterMidiChannelChangedCallback.emit(pluginId, paramId, channel)
+
+    @make_method('/carla-control/set_parameter_value', 'iif')
+    def set_parameter_value_callback(self, path, args):
+        pluginId, paramId, paramValue = args
+
+        if paramId < 0:
+            self.host._set_internalValue(pluginId, paramId, paramValue)
+        else:
+            self.host._set_parameterValue(pluginId, paramId, paramValue)
+
+        self.host.ParameterValueChangedCallback.emit(pluginId, paramId, paramValue)
+
+    @make_method('/carla-control/set_default_value', 'iif')
+    def set_default_value_callback(self, path, args):
+        print(path, args)
+        pluginId, paramId, paramValue = args
+        self.host._set_parameterDefault(pluginId, paramId, paramValue)
+        self.host.ParameterDefaultChangedCallback.emit(pluginId, paramId, paramValue)
+
+    @make_method('/carla-control/set_current_program', 'ii')
+    def set_current_program_callback(self, path, args):
+        print(path, args)
+        pluginId, current = args
+        self.host._set_currentProgram(pluginId, current)
+        self.host.ProgramChangedCallback.emit(current)
+
+    @make_method('/carla-control/set_current_midi_program', 'ii')
+    def set_current_midi_program_callback(self, path, args):
+        print(path, args)
+        pluginId, current = args
+        self.host._set_currentMidiProgram(pluginId, current)
+        #self.host.MidiProgramChangedCallback.emit() # FIXME
+
+    @make_method('/carla-control/set_program_name', 'iis')
+    def set_program_name_callback(self, path, args):
+        print(path, args)
+        pluginId, progId, progName = args
+        self.host._set_programName(pluginId, progId, progName)
 
     @make_method('/carla-control/set_midi_program_data', 'iiiis')
     def set_midi_program_data_callback(self, path, args):
-        pluginId, index, bank, program, name = args
-        self.fParent.emit(SIGNAL("SetMidiProgramData(int, int, int, int, QString)"), pluginId, index, bank, program, name)
+        print(path, args)
+        pluginId, midiProgId, bank, program, name = args
+        self.host._set_midiProgramData(pluginId, midiProgId, {'bank': bank, 'program': program, 'name': name})
 
     @make_method('/carla-control/note_on', 'iiii')
-    def note_on_callback(self, path, args):
-        pluginId, channel, note, velo = args
-        self.fParent.emit(SIGNAL("NoteOn(int, int, int, int)"), pluginId, channel, note, velo)
+    def set_note_on_callback(self, path, args):
+        print(path, args)
+        pluginId, channel, note, velocity = args
+        self.host.NoteOnCallback.emit(pluginId, channel, note, velocity)
 
     @make_method('/carla-control/note_off', 'iii')
-    def note_off_callback(self, path, args):
+    def set_note_off_callback(self, path, args):
+        print(path, args)
         pluginId, channel, note = args
-        self.fParent.emit(SIGNAL("NoteOff(int, int, int)"), pluginId, channel, note)
+        self.host.NoteOffCallback.emit(pluginId, channel, note)
 
     @make_method('/carla-control/set_peaks', 'iffff')
-    def set_output_peak_value_callback(self, path, args):
+    def set_peaks_callback(self, path, args):
         pluginId, in1, in2, out1, out2 = args
-        self.fParent.emit(SIGNAL("SetPeaks(int, double, double, double, double)"), pluginId, in1, in2, out1, out2)
+        self.host._set_peaks(pluginId, in1, in2, out1, out2)
 
     @make_method('/carla-control/exit', '')
-    def exit_callback(self, path, args):
-        self.fParent.emit(SIGNAL("Exit()"))
+    def set_exit_callback(self, path, args):
+        print(path, args)
+        self.host.QuitCallback.emit()
 
     @make_method(None, None)
     def fallback(self, path, args):
@@ -507,506 +371,126 @@ class ControlServer(ServerThread):
 # ------------------------------------------------------------------------------------------------------------
 # Main Window
 
-class CarlaControlW(QMainWindow):
-    def __init__(self, oscAddr=None):
-        QMainWindow.__init__(self, None)
-        self.ui = ui_carla_control.Ui_CarlaControlW()
-        self.ui.setupUi(self)
+class HostWindowOSC(HostWindow):
+    def __init__(self, host, oscAddr):
+        HostWindow.__init__(self, host, False)
+        self.host = host
 
-        if MACOS:
-            self.setUnifiedTitleAndToolBarOnMac(True)
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostPlugin()
+            self.host = host
 
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
-        self.fProjectFilename = None
-        self.fProjectLoading  = False
+        self.fOscAddress = oscAddr
+        self.fOscServer  = None
 
-        self.fPluginCount = 0
-        self.fPluginList  = []
-
-        self.fIdleTimerFast = 0
-        self.fIdleTimerSlow = 0
-
-        self.fLastPluginName = ""
-
-        self.lo_address = ""
-        self.lo_server  = None
-
-        # -------------------------------------------------------------
-        # Load Settings
-
-        self.loadSettings()
-
-        # -------------------------------------------------------------
-        # Set-up GUI stuff
+        # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (not connected)
 
         self.ui.act_file_refresh.setEnabled(False)
-        #self.ui.act_plugin_remove_all.setEnabled(False)
 
-        self.resize(self.width(), 0)
-
-        # -------------------------------------------------------------
+        # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
 
-        #self.connect(self.ui.act_file_connect, SIGNAL("triggered()"), SLOT("slot_fileConnect()"))
-        #self.connect(self.ui.act_file_refresh, SIGNAL("triggered()"), SLOT("slot_fileRefresh()"))
+        self.ui.act_file_connect.triggered.connect(self.slot_fileConnect)
+        self.ui.act_file_refresh.triggered.connect(self.slot_fileRefresh)
 
-        #self.connect(self.ui.act_plugin_add, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
-        #self.connect(self.ui.act_plugin_add2, SIGNAL("triggered()"), SLOT("slot_pluginAdd()"))
-        #self.connect(self.ui.act_plugin_refresh, SIGNAL("triggered()"), SLOT("slot_pluginRefresh()"))
-        #self.connect(self.ui.act_plugin_remove_all, SIGNAL("triggered()"), SLOT("slot_pluginRemoveAll()"))
-
-        #self.connect(self.ui.act_settings_show_toolbar, SIGNAL("triggered(bool)"), SLOT("slot_toolbarShown()"))
-        #self.connect(self.ui.act_settings_configure, SIGNAL("triggered()"), SLOT("slot_configureCarla()"))
-
-        #self.connect(self.ui.act_help_about, SIGNAL("triggered()"), SLOT("slot_aboutCarlaControl()"))
-        #self.connect(self.ui.act_help_about_qt, SIGNAL("triggered()"), app, SLOT("aboutQt()"))
-
-        #self.connect(self, SIGNAL("SIGTERM()"), SLOT("slot_handleSIGTERM()"))
-
-        #self.connect(self, SIGNAL("AddPluginStart(int, QString)"), SLOT("slot_handleAddPluginStart(int, QString)"))
-        #self.connect(self, SIGNAL("AddPluginEnd(int)"), SLOT("slot_handleAddPluginEnd(int)"))
-        #self.connect(self, SIGNAL("RemovePlugin(int)"), SLOT("slot_handleRemovePlugin(int)"))
-        #self.connect(self, SIGNAL("SetPluginData(int, int, int, int, QString, QString, QString, QString, int)"), SLOT("slot_handleSetPluginData(int, int, int, int, QString, QString, QString, QString, int)"))
-        #self.connect(self, SIGNAL("SetPluginPorts(int, int, int, int, int, int, int, int)"), SLOT("slot_handleSetPluginPorts(int, int, int, int, int, int, int, int)"))
-        #self.connect(self, SIGNAL("SetParameterData(int, int, int, int, QString, QString, double)"), SLOT("slot_handleSetParameterData(int, int, int, int, QString, QString, double)"))
-        #self.connect(self, SIGNAL("SetParameterRanges(int, int, double, double, double, double, double, double)"), SLOT("slot_handleSetParameterRanges(int, int, double, double, double, double, double, double)"))
-        #self.connect(self, SIGNAL("SetParameterMidiCC(int, int, int)"), SLOT("slot_handleSetParameterMidiCC(int, int, int)"))
-        #self.connect(self, SIGNAL("SetParameterMidiChannel(int, int, int)"), SLOT("slot_handleSetParameterMidiChannel(int, int, int)"))
-        #self.connect(self, SIGNAL("SetParameterValue(int, int, double)"), SLOT("slot_handleSetParameterValue(int, int, double)"))
-        #self.connect(self, SIGNAL("SetDefaultValue(int, int, double)"), SLOT("slot_handleSetDefaultValue(int, int, double)"))
-        #self.connect(self, SIGNAL("SetProgram(int, int)"), SLOT("slot_handleSetProgram(int, int)"))
-        #self.connect(self, SIGNAL("SetProgramCount(int, int)"), SLOT("slot_handleSetProgramCount(int, int)"))
-        #self.connect(self, SIGNAL("SetProgramName(int, int, QString)"), SLOT("slot_handleSetProgramName(int, int, QString)"))
-        #self.connect(self, SIGNAL("SetMidiProgram(int, int)"), SLOT("slot_handleSetMidiProgram(int, int)"))
-        #self.connect(self, SIGNAL("SetMidiProgramCount(int, int)"), SLOT("slot_handleSetMidiProgramCount(int, int)"))
-        #self.connect(self, SIGNAL("SetMidiProgramData(int, int, int, int, QString)"), SLOT("slot_handleSetMidiProgramData(int, int, int, int, QString)"))
-        #self.connect(self, SIGNAL("NoteOn(int, int, int, int)"), SLOT("slot_handleNoteOn(int, int, int, int)"))
-        #self.connect(self, SIGNAL("NoteOff(int, int, int)"), SLOT("slot_handleNoteOff(int, int, int)"))
-        #self.connect(self, SIGNAL("SetPeaks(int, double, double, double, double)"), SLOT("slot_handleSetPeaks(int, double, double, double, double)"))
-        #self.connect(self, SIGNAL("Exit()"), SLOT("slot_handleExit()"))
+        # ----------------------------------------------------------------------------------------------------
+        # Final setup
 
         if oscAddr:
-            self.connectToAddr(oscAddr)
+            QTimer.singleShot(0, self.connectOsc)
 
-    def connectToAddr(self, addr):
-        global lo_target, lo_targetName
+    def connectOsc(self, addr = None):
+        global lo_target, lo_target_name
 
-        self.lo_address = addr
-        lo_target       = Address(self.lo_address)
-        lo_targetName   = self.lo_address.rsplit("/", 1)[-1]
-        print("Connecting to \"%s\" as '%s'..." % (self.lo_address, lo_targetName))
+        if addr is not None:
+            self.fOscAddress = addr
+
+        lo_target      = Address(self.fOscAddress)
+        lo_target_name = self.fOscAddress.rsplit("/", 1)[-1]
+        print("Connecting to \"%s\" as '%s'..." % (self.fOscAddress, lo_target_name))
 
         try:
-            self.lo_server = ControlServer(self, LO_UDP if self.lo_address.startswith("osc.udp") else LO_TCP)
-        except: # ServerError, err:
-            print("Connecting error!")
-            #print str(err)
+            self.fOscServer = CarlaControlServerThread(self.host, LO_UDP if self.fOscAddress.startswith("osc.udp") else LO_TCP)
+        except: # ServerError as err:
             QMessageBox.critical(self, self.tr("Error"), self.tr("Failed to connect, operation failed."))
             return
 
-        if self.lo_server:
-            self.lo_server.start()
-            self.ui.act_file_refresh.setEnabled(True)
-            lo_send(lo_target, "/register", self.lo_server.getFullURL())
+        self.fOscServer.start()
+        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
 
-        self.fIdleTimerFast = self.startTimer(60)
-        self.fIdleTimerSlow = self.startTimer(60*2)
+        self.startTimers()
+        self.ui.act_file_refresh.setEnabled(True)
 
-    def removeAll(self):
-        self.killTimer(self.fIdleTimerFast)
-        self.killTimer(self.fIdleTimerSlow)
-        self.fIdleTimerFast = 0
-        self.fIdleTimerSlow = 0
+    def disconnectOsc(self):
+        global lo_target, lo_target_name
 
-        for i in range(self.fPluginCount):
-            pwidget = self.fPluginList[i]
+        self.killTimers()
+        self.ui.act_file_refresh.setEnabled(False)
 
-            if pwidget is None:
-                break
+        if lo_target is not None:
+            lo_send(lo_target, "/unregister")
 
-            pwidget.ui.edit_dialog.close()
-            pwidget.close()
-            pwidget.deleteLater()
-            del pwidget
+        if self.fOscServer is not None:
+            self.fOscServer.stop()
+            self.fOscServer = None
 
-        self.fPluginCount = 0
-        self.fPluginList  = []
-        gCarla.host.fPluginsInfo = []
+        self.removeAllPlugins()
 
-        self.fIdleTimerFast = self.startTimer(60)
-        self.fIdleTimerSlow = self.startTimer(60*2)
+        lo_target        = None
+        lo_target_name   = ""
+        self.fOscAddress = ""
 
-    @pyqtSlot()
-    def slot_handleSIGTERM(self):
-        print("Got SIGTERM -> Closing now")
-        self.close()
+    def removeAllPlugins(self):
+        self.host.fPluginsInfo = []
+        HostWindow.removeAllPlugins(self)
 
     @pyqtSlot()
     def slot_fileConnect(self):
-        global lo_target, lo_targetName
+        global lo_target, lo_target_name
 
-        if lo_target and self.lo_server:
-            urlText = self.lo_address
+        if lo_target and self.fOscServer:
+            urlText = self.fOscAddress
         else:
             urlText = "osc.tcp://127.0.0.1:19000/Carla"
 
-        askValue = QInputDialog.getText(self, self.tr("Carla Control - Connect"), self.tr("Address"), text=urlText)
+        addr, ok = QInputDialog.getText(self, self.tr("Carla Control - Connect"), self.tr("Address"), text=urlText)
 
-        if not askValue[1]:
+        if not ok:
             return
 
-        self.slot_handleExit()
-
-        self.connectToAddr(askValue[0])
+        self.disconnectOsc()
+        self.connectOsc(addr)
 
     @pyqtSlot()
     def slot_fileRefresh(self):
         global lo_target
-        if lo_target and self.lo_server:
-            self.removeAll()
-            lo_send(lo_target, "/unregister")
-            lo_send(lo_target, "/register", self.lo_server.getFullURL())
+
+        if lo_target is None or self.fOscServer is None:
+            return
+
+        self.killTimers()
+        lo_send(lo_target, "/unregister")
+        self.removeAllPlugins()
+        lo_send(lo_target, "/register", self.fOscServer.getFullURL())
+        self.startTimers()
 
     @pyqtSlot()
-    def slot_aboutCarlaControl(self):
-        CarlaAboutW(self).exec_()
-
-    @pyqtSlot(int, str)
-    def slot_handleAddPluginStart(self, pluginId, pluginName):
-        self.fLastPluginName = pluginName
-        gCarla.host._add(pluginId)
-
-    @pyqtSlot(int)
-    def slot_handleAddPluginEnd(self, pluginId):
-        pwidget = PluginWidget(self, pluginId)
-
-        self.ui.w_plugins.layout().addWidget(pwidget)
-
-        self.fPluginCount += 1
-        self.fPluginList.append(pwidget)
-
-    @pyqtSlot(int)
-    def slot_handleRemovePlugin(self, pluginId):
-        if pluginId >= self.fPluginCount:
-            print("handleRemovePlugin(%i) - invalid plugin id" % pluginId)
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            print("handleRemovePlugin(%i) - invalid plugin" % pluginId)
-            return
-
-        self.fPluginList.pop(pluginId)
-        self.fPluginCount -= 1
-
-        self.ui.w_plugins.layout().removeWidget(pwidget)
-
-        pwidget.ui.edit_dialog.close()
-        pwidget.close()
-        pwidget.deleteLater()
-        del pwidget
-
-        # push all plugins 1 slot back
-        for i in range(pluginId, self.fPluginCount):
-            self.fPluginList[i].setId(i)
-
-        gCarla.host.fPluginsInfo.pop(pluginId)
-
-    @pyqtSlot(int, int, int, int, str, str, str, str, int)
-    def slot_handleSetPluginData(self, pluginId, type_, category, hints, realName, label, maker, copyright, uniqueId):
-        info = deepcopy(CarlaPluginInfo)
-        info['type']      = type_
-        info['category']  = category
-        info['hints']     = hints
-        info['name']      = self.fLastPluginName
-        info['label']     = label
-        info['maker']     = maker
-        info['copyright'] = copyright
-        info['uniqueId']  = uniqueId
-        gCarla.host._set_pluginInfo(pluginId, info)
-        gCarla.host._set_pluginRealName(pluginId, realName)
-
-    @pyqtSlot(int, int, int, int, int, int, int, int)
-    def slot_handleSetPluginPorts(self, pluginId, audioIns, audioOuts, midiIns, midiOuts, cIns, cOuts, cTotals):
-        audioInfo = deepcopy(CarlaPortCountInfo)
-        midiInfo  = deepcopy(CarlaPortCountInfo)
-        paramInfo = deepcopy(CarlaPortCountInfo)
-
-        audioInfo['ins']   = audioIns
-        audioInfo['outs']  = audioOuts
-        audioInfo['total'] = audioIns + audioOuts
-
-        midiInfo['ins']   = midiIns
-        midiInfo['outs']  = midiOuts
-        midiInfo['total'] = midiIns + midiOuts
-
-        paramInfo['ins']   = cIns
-        paramInfo['outs']  = cOuts
-        paramInfo['total'] = cTotals
-
-        gCarla.host._set_audioCountInfo(pluginId, audioInfo)
-        gCarla.host._set_midiCountInfo(pluginId, midiInfo)
-        gCarla.host._set_parameterCountInfo(pluginId, paramInfo)
-
-    @pyqtSlot(int, int, int, int, str, str, float)
-    def slot_handleSetParameterData(self, pluginId, index, type_, hints, name, label, current):
-        # remove hints not possible in bridge mode
-        hints &= ~(PARAMETER_USES_SCALEPOINTS | PARAMETER_USES_CUSTOM_TEXT)
-
-        data = deepcopy(ParameterData)
-        data['type']   = type_
-        data['index']  = index
-        data['rindex'] = index
-        data['hints']  = hints
-
-        info = deepcopy(CarlaParameterInfo)
-        info['name']  = name
-        info['label'] = label
-
-        gCarla.host._set_parameterDataS(pluginId, index, data)
-        gCarla.host._set_parameterInfoS(pluginId, index, info)
-        gCarla.host._set_parameterValueS(pluginId, index, current)
-
-    @pyqtSlot(int, int, float, float, float, float, float, float)
-    def slot_handleSetParameterRanges(self, pluginId, index, min_, max_, def_, step, stepSmall, stepLarge):
-        ranges = deepcopy(ParameterRanges)
-        ranges['min'] = min_
-        ranges['max'] = max_
-        ranges['def'] = def_
-        ranges['step'] = step
-        ranges['stepSmall'] = stepSmall
-        ranges['stepLarge'] = stepLarge
-
-        gCarla.host._set_parameterRangeS(pluginId, index, ranges)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleSetParameterValue(self, pluginId, parameterId, value):
-        if parameterId >= 0:
-            gCarla.host._set_parameterValueS(pluginId, parameterId, value)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setParameterValue(parameterId, value)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleSetDefaultValue(self, pluginId, parameterId, value):
-        gCarla.host._set_parameterDefaultValue(pluginId, parameterId, value)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setParameterDefault(parameterId, value)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleSetParameterMidiCC(self, pluginId, index, cc):
-        gCarla.host._set_parameterMidiCC(pluginId, index, cc)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setParameterMidiControl(index, cc)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleSetParameterMidiChannel(self, pluginId, index, channel):
-        gCarla.host._set_parameterMidiChannel(pluginId, index, channel)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setParameterMidiChannel(index, channel)
-
-    @pyqtSlot(int, int)
-    def slot_handleSetProgram(self, pluginId, index):
-        gCarla.host._set_currentProgram(pluginId, index)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setProgram(index)
-
-    @pyqtSlot(int, int)
-    def slot_handleSetProgramCount(self, pluginId, count):
-        gCarla.host._set_programCount(pluginId, count)
-
-    @pyqtSlot(int, int, str)
-    def slot_handleSetProgramName(self, pluginId, index, name):
-        gCarla.host._set_programNameS(pluginId, index, name)
-
-    @pyqtSlot(int, int)
-    def slot_handleSetMidiProgram(self, pluginId, index):
-        gCarla.host._set_currentMidiProgram(pluginId, index)
-
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.setMidiProgram(index)
-
-    @pyqtSlot(int, int)
-    def slot_handleSetMidiProgramCount(self, pluginId, count):
-        gCarla.host._set_midiProgramCount(pluginId, count)
-
-    @pyqtSlot(int, int, int, int, str)
-    def slot_handleSetMidiProgramData(self, pluginId, index, bank, program, name):
-        data = deepcopy(MidiProgramData)
-        data['bank']    = bank
-        data['program'] = program
-        data['label']   = name
-        gCarla.host._set_midiProgramDataS(pluginId, index, data)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleSetInputPeakValue(self, pluginId, portId, value):
-        gCarla.host._set_inPeak(pluginId, portId-1, value)
-
-    @pyqtSlot(int, int, float)
-    def slot_handleSetOutputPeakValue(self, pluginId, portId, value):
-        gCarla.host._set_outPeak(pluginId, portId-1, value)
-
-    @pyqtSlot(int, int, int, int)
-    def slot_handleNoteOn(self, pluginId, channel, note, velo):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.sendNoteOn(channel, note)
-
-    @pyqtSlot(int, int, int)
-    def slot_handleNoteOff(self, pluginId, channel, note):
-        if pluginId >= self.fPluginCount:
-            return
-
-        pwidget = self.fPluginList[pluginId]
-        if pwidget is None:
-            return
-
-        pwidget.sendNoteOff(channel, note)
-
-    @pyqtSlot(int, float, float, float, float)
-    def slot_handleSetPeaks(self, pluginId, in1, in2, out1, out2):
-        gCarla.host._set_peaks(pluginId, in1, in2, out1, out2)
-
-    @pyqtSlot()
-    def slot_handleExit(self):
-        self.removeAll()
-
-        if self.lo_server:
-            self.lo_server.stop()
-            self.lo_server = None
-            self.ui.act_file_refresh.setEnabled(False)
-
-        global lo_target, lo_targetName
-        lo_target     = None
-        lo_targetName = ""
-        self.lo_address = ""
-
-    def saveSettings(self):
-        settings = QSettings()
-        settings.setValue("Geometry", self.saveGeometry())
-        #settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
-
-    def loadSettings(self):
-        settings = QSettings()
-        self.restoreGeometry(settings.value("Geometry", ""))
-
-        #showToolbar = settings.value("ShowToolbar", True, type=bool)
-        #self.ui.act_settings_show_toolbar.setChecked(showToolbar)
-        #self.ui.toolBar.setVisible(showToolbar)
-
-    def timerEvent(self, event):
-        if event.timerId() == self.fIdleTimerFast:
-            for pwidget in self.fPluginList:
-                if pwidget is None:
-                    break
-                pwidget.idleFast()
-
-        elif event.timerId() == self.fIdleTimerSlow:
-            for pwidget in self.fPluginList:
-                if pwidget is None:
-                    break
-                pwidget.idleSlow()
-
-        QMainWindow.timerEvent(self, event)
+    def slot_handleQuitCallback(self):
+        self.disconnectOsc()
 
     def closeEvent(self, event):
-        self.saveSettings()
-
         global lo_target
-        if lo_target and self.lo_server:
+
+        self.killTimers()
+
+        if lo_target is not None and self.fOscServer is not None:
             lo_send(lo_target, "/unregister")
 
-        QMainWindow.closeEvent(self, event)
+        HostWindow.closeEvent(self, event)
 
-#--------------- main ------------------
-if __name__ == '__main__':
-
-    # App initialization
-    app = QApplication(sys.argv)
-    app.setApplicationName("Carla-Control")
-    app.setApplicationVersion(VERSION)
-    app.setOrganizationName("Cadence")
-    app.setWindowIcon(QIcon(":/scalable/carla-control.svg"))
-
-    libPrefix = None
-    oscAddr = None
-
-    argv = app.arguments()
-    argc = len(argv)
-
-    for i in range(argc):
-        if i == 0: continue
-        argument = argv[i]
-
-        if argument.startswith("--with-libprefix="):
-            libPrefix = argument.replace("--with-libprefix=", "")
-
-        elif argument.startswith("osc."):
-            oscAddr = argument
-
-    if libPrefix is not None:
-        libName = os.path.join(libPrefix, "lib", "carla", carla_libname)
-    else:
-        libName = carla_library_filename
-
-    # Init backend (OSC bridge version)
-    gCarla.host = Host()
-
-    # Create GUI
-    gCarla.gui = CarlaControlW(oscAddr)
-
-    # Set-up custom signal handling
-    setUpSignals()
-
-    # Show GUI
-    gCarla.gui.show()
-
-    # App-Loop
-    sys.exit(app.exec_())
+# ------------------------------------------------------------------------------------------------------------

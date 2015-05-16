@@ -44,11 +44,17 @@ START_NAMESPACE_DISTRHO
 static const NativePluginDescriptor nekobiDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
 #ifdef HAVE_DGL
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_IS_SYNTH|NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD|NATIVE_PLUGIN_USES_PARENT_ID),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
 #else
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_IS_SYNTH),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH),
 #endif
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES|NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES
+                                                     |NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF),
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 1,

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,12 +25,16 @@
 #include "Effects/Echo.h"
 #include "Effects/Phaser.h"
 #include "Effects/Reverb.h"
+#include "Misc/Allocator.h"
 
 #include "juce_audio_basics.h"
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
+using juce::SharedResourcePointer;
 
 // -----------------------------------------------------------------------
 
+template<class ZynFX>
 class FxAbstractPlugin : public NativePluginClass
 {
 protected:
@@ -38,18 +42,21 @@ protected:
         : NativePluginClass(host),
           fParamCount(paramCount-2), // volume and pan handled by host
           fProgramCount(programCount),
+          fBufferSize(getBufferSize()),
+          fSampleRate(getSampleRate()),
           fEffect(nullptr),
           efxoutl(nullptr),
           efxoutr(nullptr),
           leakDetector_FxAbstractPlugin()
     {
-        const int bufferSize(static_cast<int>(getBufferSize()));
+        const int ibufferSize(static_cast<int>(fBufferSize));
 
-        efxoutl = new float[bufferSize];
-        efxoutr = new float[bufferSize];
+        efxoutl = new float[fBufferSize];
+        efxoutr = new float[fBufferSize];
+        FloatVectorOperations::clear(efxoutl, ibufferSize);
+        FloatVectorOperations::clear(efxoutr, ibufferSize);
 
-        FloatVectorOperations::clear(efxoutl, bufferSize);
-        FloatVectorOperations::clear(efxoutr, bufferSize);
+        doReinit(true);
     }
 
     ~FxAbstractPlugin() override
@@ -99,7 +106,9 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) final
     {
-        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(carla_fixValue(0.0f, 127.0f, value)));
+        const int ivalue(roundToIntAccurate(carla_fixValue(0.0f, 127.0f, value)));
+
+        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(ivalue));
     }
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
@@ -144,7 +153,11 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) final
     {
-        const int ibufferSize(static_cast<int>(getBufferSize()));
+        if (fBufferSize == bufferSize)
+            return;
+
+        fBufferSize = bufferSize;
+        const int ibufferSize(static_cast<int>(fBufferSize));
 
         delete[] efxoutl;
         delete[] efxoutr;
@@ -153,52 +166,75 @@ protected:
         FloatVectorOperations::clear(efxoutl, ibufferSize);
         FloatVectorOperations::clear(efxoutr, ibufferSize);
 
-        doReinit(getSampleRate(), bufferSize);
+        doReinit(false);
     }
 
     void sampleRateChanged(const double sampleRate) final
     {
-        doReinit(sampleRate, getBufferSize());
+        if (fSampleRate == sampleRate)
+            return;
+
+        fSampleRate = sampleRate;
+
+        doReinit(false);
     }
 
-    void doReinit(const double sampleRate, const uint32_t bufferSize)
+    void doReinit(const bool firstInit)
     {
         uchar params[fParamCount];
 
-        for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
-            params[i] = fEffect->getpar(i+2);
+        if (fEffect != nullptr)
+        {
+            for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
+                params[i] = fEffect->getpar(i+2);
 
-        reinit(static_cast<uint>(sampleRate), static_cast<int>(bufferSize));
+            delete fEffect;
+        }
 
-        for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
-            fEffect->changepar(i+2, params[i]);
+        EffectParams pars(fAllocator.getObject(), false, efxoutl, efxoutr, 0, static_cast<uint>(fSampleRate), static_cast<int>(fBufferSize));
+        fEffect = new ZynFX(pars);
+
+        if (firstInit)
+        {
+            fEffect->setpreset(0);
+        }
+        else
+        {
+            for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
+                fEffect->changepar(i+2, params[i]);
+        }
+
+        // reset volume and pan
+        fEffect->changepar(0, 127);
+        fEffect->changepar(1, 64);
     }
-
-    virtual void reinit(const uint sampleRate, const int bufferSize) = 0;
 
     // -------------------------------------------------------------------
 
     const uint32_t fParamCount;
     const uint32_t fProgramCount;
 
+    uint32_t fBufferSize;
+    double   fSampleRate;
+
     Effect* fEffect;
     float*  efxoutl;
     float*  efxoutr;
+
+    // FIXME - is this thread-safe?
+    SharedResourcePointer<Allocator> fAllocator;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAbstractPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxAlienWahPlugin : public FxAbstractPlugin
+class FxAlienWahPlugin : public FxAbstractPlugin<Alienwah>
 {
 public:
     FxAlienWahPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 11, 4),
-          leakDetector_FxAlienWahPlugin()
-    {
-        fEffect = new Alienwah(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxAlienWahPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -324,27 +360,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Alienwah(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxAlienWahPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAlienWahPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxChorusPlugin : public FxAbstractPlugin
+class FxChorusPlugin : public FxAbstractPlugin<Chorus>
 {
 public:
     FxChorusPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 12, 10),
-          leakDetector_FxChorusPlugin()
-    {
-        fEffect = new Chorus(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxChorusPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -494,27 +521,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Chorus(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxChorusPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxChorusPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxDistortionPlugin : public FxAbstractPlugin
+class FxDistortionPlugin : public FxAbstractPlugin<Distorsion>
 {
 public:
     FxDistortionPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 11, 6),
-          leakDetector_FxDistortionPlugin()
-    {
-        fEffect = new Distorsion(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxDistortionPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -672,27 +690,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Distorsion(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxDistortionPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxDistortionPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxDynamicFilterPlugin : public FxAbstractPlugin
+class FxDynamicFilterPlugin : public FxAbstractPlugin<DynamicFilter>
 {
 public:
     FxDynamicFilterPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 10, 5),
-          leakDetector_FxDynamicFilterPlugin()
-    {
-        fEffect = new DynamicFilter(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxDynamicFilterPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -816,27 +825,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new DynamicFilter(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxDynamicFilterPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxDynamicFilterPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxEchoPlugin : public FxAbstractPlugin
+class FxEchoPlugin : public FxAbstractPlugin<Echo>
 {
 public:
     FxEchoPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 7, 9),
-          leakDetector_FxEchoPlugin()
-    {
-        fEffect = new Echo(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxEchoPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -948,27 +948,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Echo(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxEchoPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxEchoPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxPhaserPlugin : public FxAbstractPlugin
+class FxPhaserPlugin : public FxAbstractPlugin<Phaser>
 {
 public:
     FxPhaserPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 15, 12),
-          leakDetector_FxPhaserPlugin()
-    {
-        fEffect = new Phaser(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxPhaserPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -1141,27 +1132,18 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Phaser(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxPhaserPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxPhaserPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-class FxReverbPlugin : public FxAbstractPlugin
+class FxReverbPlugin : public FxAbstractPlugin<Reverb>
 {
 public:
     FxReverbPlugin(const NativeHostDescriptor* const host)
         : FxAbstractPlugin(host, 13, 13),
-          leakDetector_FxReverbPlugin()
-    {
-        fEffect = new Reverb(false, efxoutl, efxoutr, static_cast<uint>(getSampleRate()), static_cast<int>(getBufferSize()));
-    }
+          leakDetector_FxReverbPlugin() {}
 
 protected:
     // -------------------------------------------------------------------
@@ -1320,12 +1302,6 @@ protected:
 
     // -------------------------------------------------------------------
 
-    void reinit(const uint sampleRate, const int bufferSize) override
-    {
-        delete fEffect;
-        fEffect = new Reverb(false, efxoutl, efxoutr, sampleRate, bufferSize);
-    }
-
     PluginClassEND(FxReverbPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxReverbPlugin)
 };
@@ -1334,7 +1310,9 @@ protected:
 
 static const NativePluginDescriptor fxAlienWahDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1351,7 +1329,9 @@ static const NativePluginDescriptor fxAlienWahDesc = {
 
 static const NativePluginDescriptor fxChorusDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1368,7 +1348,8 @@ static const NativePluginDescriptor fxChorusDesc = {
 
 static const NativePluginDescriptor fxDistortionDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1385,7 +1366,8 @@ static const NativePluginDescriptor fxDistortionDesc = {
 
 static const NativePluginDescriptor fxDynamicFilterDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1402,7 +1384,9 @@ static const NativePluginDescriptor fxDynamicFilterDesc = {
 
 static const NativePluginDescriptor fxEchoDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1419,7 +1403,8 @@ static const NativePluginDescriptor fxEchoDesc = {
 
 static const NativePluginDescriptor fxPhaserDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -1436,7 +1421,8 @@ static const NativePluginDescriptor fxPhaserDesc = {
 
 static const NativePluginDescriptor fxReverbDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

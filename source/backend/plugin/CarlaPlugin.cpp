@@ -162,7 +162,7 @@ int64_t CarlaPlugin::getUniqueId() const noexcept
 
 uint32_t CarlaPlugin::getLatencyInFrames() const noexcept
 {
-    return pData->latency;
+    return 0;
 }
 
 // -------------------------------------------------------------------
@@ -516,6 +516,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     pData->stateSave.ctrlChannel  = pData->ctrlChannel;
 #endif
 
+    bool usingChunk = false;
+
     // ---------------------------------------------------------------
     // Chunk
 
@@ -528,8 +530,8 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         {
             pData->stateSave.chunk = CarlaString::asBase64(data, dataSize).dup();
 
-            // Don't save anything else if using chunks
-            return pData->stateSave;
+            if (pluginType != PLUGIN_INTERNAL)
+                usingChunk = true;
         }
     }
 
@@ -565,10 +567,15 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         if ((paramData.hints & PARAMETER_IS_ENABLED) == 0)
             continue;
 
+        const bool dummy = paramData.type != PARAMETER_INPUT || usingChunk;
+
+        if (dummy && paramData.midiCC <= -1)
+            continue;
+
         CarlaStateSave::Parameter* const stateParameter(new CarlaStateSave::Parameter());
 
-        stateParameter->isInput = (paramData.type == PARAMETER_INPUT);
-        stateParameter->index   = paramData.index;
+        stateParameter->dummy = dummy;
+        stateParameter->index = paramData.index;
 #ifndef BUILD_BRIDGE
         stateParameter->midiCC      = paramData.midiCC;
         stateParameter->midiChannel = paramData.midiChannel;
@@ -580,10 +587,13 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
         getParameterSymbol(i, strBuf);
         stateParameter->symbol = carla_strdup(strBuf);;
 
-        stateParameter->value = getParameterValue(i);
+        if (! dummy)
+        {
+            stateParameter->value = getParameterValue(i);
 
-        if (paramData.hints & PARAMETER_USES_SAMPLERATE)
-            stateParameter->value /= sampleRate;
+            if (paramData.hints & PARAMETER_USES_SAMPLERATE)
+                stateParameter->value /= sampleRate;
+        }
 
         pData->stateSave.parameters.append(stateParameter);
     }
@@ -611,10 +621,12 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
 void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 {
     char strBuf[STR_MAX+1];
-    const bool usesMultiProgs(pData->extraHints & PLUGIN_EXTRA_HINT_USES_MULTI_PROGS);
+    const bool usesMultiProgs(pData->hints & PLUGIN_USES_MULTI_PROGS);
+
+    const PluginType pluginType(getType());
 
     // ---------------------------------------------------------------
-    // Part 1 - PRE-set custom data (only that which reload programs)
+    // Part 1 - PRE-set custom data (only those which reload programs)
 
     for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
     {
@@ -624,15 +636,16 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         const char* const key(stateCustomData->key);
 
-        bool wantData = false;
-
-        if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
-            wantData = true;
+        /**/ if (pluginType == PLUGIN_DSSI && (std::strcmp (key, "reloadprograms") == 0 ||
+                                               std::strcmp (key, "load"          ) == 0 ||
+                                               std::strncmp(key, "patches",     7) == 0 ))
+            pass();
         else if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
-            wantData = true;
+            pass();
+        else
+            continue;
 
-        if (wantData)
-            setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+        setCustomData(stateCustomData->type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
@@ -679,7 +692,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     LinkedList<ParamSymbol*> paramSymbols;
 
-    if (getType() == PLUGIN_LADSPA || getType() == PLUGIN_LV2)
+    if (pluginType == PLUGIN_LADSPA || pluginType == PLUGIN_LV2)
     {
         for (uint32_t i=0; i < pData->param.count; ++i)
         {
@@ -706,7 +719,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         int32_t index = -1;
 
-        if (getType() == PLUGIN_LADSPA)
+        if (pluginType == PLUGIN_LADSPA)
         {
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -729,7 +742,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             else
                 index = stateParameter->index;
         }
-        else if (getType() == PLUGIN_LV2)
+        else if (pluginType == PLUGIN_LV2)
         {
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
@@ -763,7 +776,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
         {
             //CARLA_SAFE_ASSERT(stateParameter->isInput == (pData
 
-            if (stateParameter->isInput)
+            if (! stateParameter->dummy)
             {
                 if (pData->param.data[index].hints & PARAMETER_USES_SAMPLERATE)
                     stateParameter->value *= sampleRate;
@@ -802,18 +815,20 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         const char* const key(stateCustomData->key);
 
-        if (getType() == PLUGIN_DSSI && (std::strcmp(key, "reloadprograms") == 0 || std::strcmp(key, "load") == 0 || std::strncmp(key, "patches", 7) == 0))
+        if (pluginType == PLUGIN_DSSI && (std::strcmp (key, "reloadprograms") == 0 ||
+                                          std::strcmp (key, "load"          ) == 0 ||
+                                          std::strncmp(key, "patches",     7) == 0 ))
             continue;
         if (usesMultiProgs && std::strcmp(key, "midiPrograms") == 0)
             continue;
 
-        setCustomData(stateCustomData->type, stateCustomData->key, stateCustomData->value, true);
+        setCustomData(stateCustomData->type, key, stateCustomData->value, true);
     }
 
     // ---------------------------------------------------------------
     // Part 5x - set lv2 state
 
-    if (getType() == PLUGIN_LV2 && pData->custom.count() > 0)
+    if (pluginType == PLUGIN_LV2 && pData->custom.count() > 0)
         setCustomData(CUSTOM_DATA_TYPE_STRING, "CarlaLoadLv2StateNow", "true", true);
 
     // ---------------------------------------------------------------
@@ -837,7 +852,6 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
         if (availOptions & option)
             setOption(option, (stateSave.options & option) != 0, true);
-
     }
 
     setDryWet(stateSave.dryWet, true, true);
@@ -848,6 +862,8 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     setCtrlChannel(stateSave.ctrlChannel, true, true);
     setActive(stateSave.active, true, true);
 #endif
+
+    pData->engine->callback(ENGINE_CALLBACK_UPDATE, pData->id, 0, 0, 0.0f, nullptr);
 }
 
 bool CarlaPlugin::saveStateToFile(const char* const filename)
@@ -855,11 +871,13 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::saveStateToFile(\"%s\")", filename);
 
-    MemoryOutputStream out;
+    MemoryOutputStream out, streamState;
+    getStateSave().dumpToMemoryStream(streamState);
+
     out << "<?xml version='1.0' encoding='UTF-8'?>\n";
     out << "<!DOCTYPE CARLA-PRESET>\n";
     out << "<CARLA-PRESET VERSION='2.0'>\n";
-    out << getStateSave().toString();
+    out << streamState;
     out << "</CARLA-PRESET>\n";
 
     const String jfilename = String(CharPointer_UTF8(filename));
@@ -874,6 +892,8 @@ bool CarlaPlugin::saveStateToFile(const char* const filename)
 
 bool CarlaPlugin::loadStateFromFile(const char* const filename)
 {
+    // TODO set errors
+
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', false);
     carla_debug("CarlaPlugin::loadStateFromFile(\"%s\")", filename);
 
@@ -890,10 +910,13 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     xmlElement = xml.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN(xmlElement != nullptr, false);
 
-    if (pData->stateSave.fillFromXmlElement(xmlElement->getFirstChildElement()))
+    if (pData->stateSave.fillFromXmlElement(xmlElement))
+    {
         loadStateSave(pData->stateSave);
+        return true;
+    }
 
-    return true;
+    return false;
 }
 
 // -------------------------------------------------------------------
@@ -1134,18 +1157,16 @@ void CarlaPlugin::setParameterValue(const uint32_t parameterId, const float valu
     if (sendGui && (pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0)
         uiParameterChange(parameterId, value);
 
-#ifndef BUILD_BRIDGE
-# ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (sendOsc && pData->engine->isOscControlRegistered())
         pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(parameterId), value);
-# endif
+#endif
 
     if (sendCallback)
         pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, static_cast<int>(parameterId), 0, value, nullptr);
-#endif
 
     // may be unused
-    return; (void)sendOsc; (void)sendCallback;
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float value, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1397,6 +1418,17 @@ void CarlaPlugin::idle()
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool sendOsc(pData->engine->isOscControlRegistered());
 #endif
+    const uint32_t latency(getLatencyInFrames());
+
+    if (pData->latency.frames != latency)
+    {
+        carla_stdout("latency changed to %i", latency);
+
+        const ScopedSingleProcessLocker sspl(this, true);
+
+        pData->client->setLatency(latency);
+        pData->latency.recreateBuffers(pData->latency.channels, latency);
+    }
 
     const CarlaMutexLocker sl(pData->postRtEvents.mutex);
 

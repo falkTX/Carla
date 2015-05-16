@@ -98,7 +98,9 @@ class CarlaRingBufferControl
 {
 public:
     CarlaRingBufferControl() noexcept
-        : fBuffer(nullptr) {}
+        : fBuffer(nullptr),
+          fErrorReading(false),
+          fErrorWriting(false) {}
 
     virtual ~CarlaRingBufferControl() noexcept {}
 
@@ -336,7 +338,11 @@ protected:
 
         if (size > wrap + head - tail)
         {
-            carla_stderr2("CarlaRingBuffer::tryRead(%p, " P_SIZE "): failed, not enough space", buf, size);
+            if (! fErrorReading)
+            {
+                fErrorReading = true;
+                carla_stderr2("CarlaRingBuffer::tryRead(%p, " P_SIZE "): failed, not enough space", buf, size);
+            }
             return false;
         }
 
@@ -358,6 +364,7 @@ protected:
         }
 
         fBuffer->tail = readto;
+        fErrorReading = false;
         return true;
     }
 
@@ -376,7 +383,11 @@ protected:
 
         if (size >= wrap + tail - wrtn)
         {
-            carla_stderr2("CarlaRingBuffer::tryWrite(%p, " P_SIZE "): failed, not enough space", buf, size);
+            if (! fErrorWriting)
+            {
+                fErrorWriting = true;
+                carla_stderr2("CarlaRingBuffer::tryWrite(%p, " P_SIZE "): failed, not enough space", buf, size);
+            }
             fBuffer->invalidateCommit = true;
             return false;
         }
@@ -399,11 +410,16 @@ protected:
         }
 
         fBuffer->wrtn = writeto;
+        fErrorWriting = false;
         return true;
     }
 
 private:
     BufferStruct* fBuffer;
+
+    // wherever read/write errors have been printed to terminal
+    bool fErrorReading;
+    bool fErrorWriting;
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaRingBufferControl)

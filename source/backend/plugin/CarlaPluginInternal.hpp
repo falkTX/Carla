@@ -35,6 +35,15 @@ using juce::FloatVectorOperations;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+// Engine helper macro, sets lastError and returns false/NULL
+
+#define CARLA_SAFE_ASSERT_RETURN_ERR(cond, err)  if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); pData->engine->setLastError(err); return false;   }
+#define CARLA_SAFE_ASSERT_RETURN_ERRN(cond, err) if (! (cond)) { carla_safe_assert(#cond, __FILE__, __LINE__); pData->engine->setLastError(err); return nullptr; }
+
+#define CARLA_SAFE_EXCEPTION_RETURN_ERR(excptMsg, errMsg)  catch(...) { carla_safe_exception(excptMsg, __FILE__, __LINE__); pData->engine->setLastError(errMsg); return false;   }
+#define CARLA_SAFE_EXCEPTION_RETURN_ERRN(excptMsg, errMsg) catch(...) { carla_safe_exception(excptMsg, __FILE__, __LINE__); pData->engine->setLastError(errMsg); return nullptr; }
+
+// -----------------------------------------------------------------------
 // Maximum pre-allocated events for some plugin types
 
 const ushort kPluginMaxMidiEvents = 512;
@@ -45,7 +54,6 @@ const ushort kPluginMaxMidiEvents = 512;
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_IN      = 0x01;
 const uint PLUGIN_EXTRA_HINT_HAS_MIDI_OUT     = 0x02;
 const uint PLUGIN_EXTRA_HINT_CAN_RUN_RACK     = 0x04;
-const uint PLUGIN_EXTRA_HINT_USES_MULTI_PROGS = 0x08;
 
 // -----------------------------------------------------------------------
 // Special parameters
@@ -225,12 +233,6 @@ struct CarlaPlugin::ProtectedData {
     uint   extraHints;
     uint   transientTryCounter;
 
-    // latency
-    uint32_t latency;
-#ifndef BUILD_BRIDGE
-    float**  latencyBuffers;
-#endif
-
     // data 1
     const char* name;
     const char* filename;
@@ -265,6 +267,20 @@ struct CarlaPlugin::ProtectedData {
         CARLA_DECLARE_NON_COPY_STRUCT(ExternalNotes)
 
     } extNotes;
+
+    struct Latency {
+        uint32_t channels;
+        uint32_t frames;
+        float**  buffers;
+
+        Latency() noexcept;
+        ~Latency() noexcept;
+        void clearBuffers() noexcept;
+        void recreateBuffers(const uint32_t newChannels, const uint32_t newFrames);
+
+        CARLA_DECLARE_NON_COPY_STRUCT(Latency)
+
+    } latency;
 
     struct PostRtEvents {
         CarlaMutex mutex;
@@ -317,9 +333,6 @@ struct CarlaPlugin::ProtectedData {
     // Buffer functions
 
     void clearBuffers() noexcept;
-#ifndef BUILD_BRIDGE
-    void recreateLatencyBuffers();
-#endif
 
     // -------------------------------------------------------------------
     // Post-poned events

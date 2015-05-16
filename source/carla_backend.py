@@ -20,8 +20,8 @@
 # Imports (Global)
 
 from abc import ABCMeta, abstractmethod
+from copy import deepcopy
 from ctypes import *
-from os import environ
 from platform import architecture
 from sys import platform, maxsize
 
@@ -212,6 +212,10 @@ PLUGIN_NEEDS_FIXED_BUFFERS = 0x100
 # Plugin needs to receive all UI events in the main thread.
 PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 
+# Plugin uses 1 program per MIDI channel.
+# @note: Only used in some internal plugins and gig+sf2 files.
+PLUGIN_USES_MULTI_PROGS = 0x400
+
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.
@@ -312,6 +316,9 @@ CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/carla/boolean"
 
 # Chunk type URI.
 CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk"
+
+# Property type URI.
+CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property"
 
 # String type URI.
 CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string"
@@ -672,21 +679,25 @@ ENGINE_CALLBACK_BUFFER_SIZE_CHANGED = 33
 # @a value3 New sample rate
 ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34
 
+# NSM callback.
+# (Work in progress, values are not defined yet)
+ENGINE_CALLBACK_NSM = 35
+
 # Idle frontend.
 # This is used by the engine during long operations that might block the frontend,
 # giving it the possibility to idle while the operation is still in place.
-ENGINE_CALLBACK_IDLE = 35
+ENGINE_CALLBACK_IDLE = 36
 
 # Show a message as information.
 # @a valueStr The message
-ENGINE_CALLBACK_INFO = 36
+ENGINE_CALLBACK_INFO = 37
 
 # Show a message as an error.
 # @a valueStr The message
-ENGINE_CALLBACK_ERROR = 37
+ENGINE_CALLBACK_ERROR = 38
 
 # The engine has crashed or malfunctioned and will no longer work.
-ENGINE_CALLBACK_QUIT = 38
+ENGINE_CALLBACK_QUIT = 39
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Option
@@ -698,7 +709,7 @@ ENGINE_CALLBACK_QUIT = 38
 ENGINE_OPTION_DEBUG = 0
 
 # Set the engine processing mode.
-# Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+# Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_PATCHBAY for all other OSes.
 # @see EngineProcessMode
 ENGINE_OPTION_PROCESS_MODE = 1
 
@@ -749,30 +760,27 @@ ENGINE_OPTION_AUDIO_SAMPLE_RATE = 11
 # Default unset.
 ENGINE_OPTION_AUDIO_DEVICE = 12
 
-# Set data needed for NSM support.
-ENGINE_OPTION_NSM_INIT = 13
-
 # Set path used for a specific plugin type.
 # Uses value as the plugin format, valueStr as actual path.
 # @see PluginType
-ENGINE_OPTION_PLUGIN_PATH = 14
+ENGINE_OPTION_PLUGIN_PATH = 13
 
 # Set path to the binary files.
 # Default unset.
 # @note Must be set for plugin and UI bridges to work
-ENGINE_OPTION_PATH_BINARIES = 15
+ENGINE_OPTION_PATH_BINARIES = 14
 
 # Set path to the resource files.
 # Default unset.
 # @note Must be set for some internal plugins to work
-ENGINE_OPTION_PATH_RESOURCES = 16
+ENGINE_OPTION_PATH_RESOURCES = 15
 
 # Prevent bad plugin and UI behaviour.
 # @note: Linux only
-ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 17
+ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 16
 
 # Set frontend winId, used to define as parent window for plugin UIs.
-ENGINE_OPTION_FRONTEND_WIN_ID = 18
+ENGINE_OPTION_FRONTEND_WIN_ID = 17
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
@@ -1195,11 +1203,12 @@ class CarlaHostMeta(object):
         # info about this host object
         self.isControl = False
         self.isPlugin  = False
+        self.nsmOK     = False
 
         # settings
-        self.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+        self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
-        self.nextProcessMode   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+        self.nextProcessMode   = ENGINE_PROCESS_MODE_PATCHBAY
         self.processModeForced = False
 
         # settings
@@ -1380,8 +1389,9 @@ class CarlaHostMeta(object):
     # @param label    Plugin label, if applicable
     # @param uniqueId Plugin unique Id, if applicable
     # @param extraPtr Extra pointer, defined per plugin type
+    # @param options  Initial plugin options
     @abstractmethod
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         raise NotImplementedError
 
     # Remove a plugin.
@@ -1892,7 +1902,7 @@ class CarlaHostNull(CarlaHostMeta):
     def get_max_plugin_number(self):
         return 0
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         return False
 
     def remove_plugin(self, pluginId):
@@ -2076,12 +2086,8 @@ class CarlaHostNull(CarlaHostMeta):
 # Carla Host object using a DLL
 
 class CarlaHostDLL(CarlaHostMeta):
-    def __init__(self, libName = ""):
+    def __init__(self, libName):
         CarlaHostMeta.__init__(self)
-
-        # FIXME no idea what's going on...
-        if WINDOWS:
-            libName = "Z:\\home\\falktx\\Source\\falkTX\\Carla\\bin\\libcarla_standalone2.dll"
 
         # info about this host object
         self.isPlugin = False
@@ -2163,7 +2169,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_max_plugin_number.argtypes = None
         self.lib.carla_get_max_plugin_number.restype = c_uint32
 
-        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p]
+        self.lib.carla_add_plugin.argtypes = [c_enum, c_enum, c_char_p, c_char_p, c_char_p, c_int64, c_void_p, c_uint]
         self.lib.carla_add_plugin.restype = c_bool
 
         self.lib.carla_remove_plugin.argtypes = [c_uint]
@@ -2343,6 +2349,12 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_host_osc_url_udp.argtypes = None
         self.lib.carla_get_host_osc_url_udp.restype = c_char_p
 
+        self.lib.carla_nsm_init.argtypes = [c_int, c_char_p]
+        self.lib.carla_nsm_init.restype = c_bool
+
+        self.lib.carla_nsm_ready.argtypes = [c_int]
+        self.lib.carla_nsm_ready.restype = None
+
     # --------------------------------------------------------------------------------------------------------
 
     def get_engine_driver_count(self):
@@ -2422,11 +2434,11 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_max_plugin_number(self):
         return int(self.lib.carla_get_max_plugin_number())
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
         cfilename = filename.encode("utf-8") if filename else None
         cname     = name.encode("utf-8") if name else None
         clabel    = label.encode("utf-8") if label else None
-        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p)))
+        return bool(self.lib.carla_add_plugin(btype, ptype, cfilename, cname, clabel, uniqueId, cast(extraPtr, c_void_p), options))
 
     def remove_plugin(self, pluginId):
         return bool(self.lib.carla_remove_plugin(pluginId))
@@ -2605,6 +2617,12 @@ class CarlaHostDLL(CarlaHostMeta):
     def get_host_osc_url_udp(self):
         return charPtrToString(self.lib.carla_get_host_osc_url_udp())
 
+    def nsm_init(self, pid, executableName):
+        return bool(self.lib.carla_nsm_init(pid, executableName.encode("utf-8")))
+
+    def nsm_ready(self, action):
+        self.lib.carla_nsm_ready(action)
+
 # ------------------------------------------------------------------------------------------------------------
 # Helper object for CarlaHostPlugin
 
@@ -2627,6 +2645,8 @@ class PluginStoreInfo(object):
         'midiProgramCount',
         'midiProgramCurrent',
         'midiProgramData',
+        'customDataCount',
+        'customData',
         'peaks'
     ]
 
@@ -2662,6 +2682,8 @@ class CarlaHostPlugin(CarlaHostMeta):
         # some other vars
         self.fBufferSize = 0
         self.fSampleRate = 0.0
+        self.fOscTCP = ""
+        self.fOscUDP = ""
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2741,8 +2763,8 @@ class CarlaHostPlugin(CarlaHostMeta):
     def get_max_plugin_number(self):
         return self.fMaxPluginNumber
 
-    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr):
-        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId])
+    def add_plugin(self, btype, ptype, filename, name, label, uniqueId, extraPtr, options):
+        return self.sendMsgAndSetError(["add_plugin", btype, ptype, filename, name, label, uniqueId, options])
 
     def remove_plugin(self, pluginId):
         return self.sendMsgAndSetError(["remove_plugin", pluginId])
@@ -2800,7 +2822,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo[pluginId].midiProgramData[midiProgramId]
 
     def get_custom_data(self, pluginId, customDataId):
-        return PyCustomData
+        return self.fPluginsInfo[pluginId].customData[customDataId]
 
     def get_chunk_data(self, pluginId):
         return ""
@@ -2815,7 +2837,7 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fPluginsInfo[pluginId].midiProgramCount
 
     def get_custom_data_count(self, pluginId):
-        return 0
+        return self.fPluginsInfo[pluginId].customDataCount
 
     def get_parameter_text(self, pluginId, parameterId):
         return ""
@@ -2860,42 +2882,62 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def set_active(self, pluginId, onOff):
         self.sendMsg(["set_active", pluginId, onOff])
+        self.fPluginsInfo[pluginId].internalValues[0] = 1.0 if onOff else 0.0
 
     def set_drywet(self, pluginId, value):
         self.sendMsg(["set_drywet", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[1] = value
 
     def set_volume(self, pluginId, value):
         self.sendMsg(["set_volume", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[2] = value
 
     def set_balance_left(self, pluginId, value):
         self.sendMsg(["set_balance_left", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[3] = value
 
     def set_balance_right(self, pluginId, value):
         self.sendMsg(["set_balance_right", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[4] = value
 
     def set_panning(self, pluginId, value):
         self.sendMsg(["set_panning", pluginId, value])
+        self.fPluginsInfo[pluginId].internalValues[5] = value
 
     def set_ctrl_channel(self, pluginId, channel):
         self.sendMsg(["set_ctrl_channel", pluginId, channel])
+        self.fPluginsInfo[pluginId].internalValues[6] = float(channel)
 
     def set_parameter_value(self, pluginId, parameterId, value):
         self.sendMsg(["set_parameter_value", pluginId, parameterId, value])
+        self.fPluginsInfo[pluginId].parameterValues[parameterId] = value
 
     def set_parameter_midi_channel(self, pluginId, parameterId, channel):
         self.sendMsg(["set_parameter_midi_channel", pluginId, parameterId, channel])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = channel
 
     def set_parameter_midi_cc(self, pluginId, parameterId, cc):
         self.sendMsg(["set_parameter_midi_cc", pluginId, parameterId, cc])
+        self.fPluginsInfo[pluginId].parameterData[parameterId]['midiCC'] = cc
 
     def set_program(self, pluginId, programId):
         self.sendMsg(["set_program", pluginId, programId])
+        self.fPluginsInfo[pluginId].programCurrent = programId
 
     def set_midi_program(self, pluginId, midiProgramId):
         self.sendMsg(["set_midi_program", pluginId, midiProgramId])
+        self.fPluginsInfo[pluginId].midiProgramCurrent = midiProgramId
 
     def set_custom_data(self, pluginId, type_, key, value):
         self.sendMsg(["set_custom_data", pluginId, type_, key, value])
+
+        for cdata in self.fPluginsInfo[pluginId].customData:
+            if cdata['type'] != type_:
+                continue
+            if cdata['key'] != key:
+                continue
+            cdata['value'] = value
+            break
 
     def set_chunk_data(self, pluginId, chunkData):
         self.sendMsg(["set_chunk_data", pluginId, chunkData])
@@ -2925,10 +2967,10 @@ class CarlaHostPlugin(CarlaHostMeta):
         return self.fLastError
 
     def get_host_osc_url_tcp(self):
-        return ""
+        return self.fOscTCP
 
     def get_host_osc_url_udp(self):
-        return ""
+        return self.fOscUDP
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -2947,13 +2989,13 @@ class CarlaHostPlugin(CarlaHostMeta):
             return
 
         info = PluginStoreInfo()
-        info.pluginInfo     = PyCarlaPluginInfo
+        info.pluginInfo     = deepcopy(PyCarlaPluginInfo)
         info.pluginRealName = ""
         info.internalValues = [0.0, 1.0, 1.0, -1.0, 1.0, 0.0, -1.0]
-        info.audioCountInfo = PyCarlaPortCountInfo
-        info.midiCountInfo  = PyCarlaPortCountInfo
+        info.audioCountInfo = deepcopy(PyCarlaPortCountInfo)
+        info.midiCountInfo  = deepcopy(PyCarlaPortCountInfo)
         info.parameterCount = 0
-        info.parameterCountInfo = PyCarlaPortCountInfo
+        info.parameterCountInfo = deepcopy(PyCarlaPortCountInfo)
         info.parameterInfo   = []
         info.parameterData   = []
         info.parameterRanges = []
@@ -2964,11 +3006,16 @@ class CarlaHostPlugin(CarlaHostMeta):
         info.midiProgramCount   = 0
         info.midiProgramCurrent = -1
         info.midiProgramData    = []
+        info.customDataCount = 0
+        info.customData      = []
         info.peaks = [0.0, 0.0, 0.0, 0.0]
         self.fPluginsInfo.append(info)
 
     def _set_pluginInfo(self, pluginId, info):
         self.fPluginsInfo[pluginId].pluginInfo = info
+
+    def _set_pluginInfoUpdate(self, pluginId, info):
+        self.fPluginsInfo[pluginId].pluginInfo.update(info)
 
     def _set_pluginName(self, pluginId, name):
         self.fPluginsInfo[pluginId].pluginInfo['name'] = name
@@ -2998,9 +3045,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].parameterInfo.append(PyCarlaParameterInfo)
-            self.fPluginsInfo[pluginId].parameterData.append(PyParameterData)
-            self.fPluginsInfo[pluginId].parameterRanges.append(PyParameterRanges)
+            self.fPluginsInfo[pluginId].parameterInfo.append(deepcopy(PyCarlaParameterInfo))
+            self.fPluginsInfo[pluginId].parameterData.append(deepcopy(PyParameterData))
+            self.fPluginsInfo[pluginId].parameterRanges.append(deepcopy(PyParameterRanges))
             self.fPluginsInfo[pluginId].parameterValues.append(0.0)
 
     def _set_programCount(self, pluginId, count):
@@ -3021,7 +3068,17 @@ class CarlaHostPlugin(CarlaHostMeta):
 
         # add placeholders
         for x in range(count):
-            self.fPluginsInfo[pluginId].midiProgramData.append(PyMidiProgramData)
+            self.fPluginsInfo[pluginId].midiProgramData.append(deepcopy(PyMidiProgramData))
+
+    def _set_customDataCount(self, pluginId, count):
+        self.fPluginsInfo[pluginId].customDataCount = count
+
+        # clear
+        self.fPluginsInfo[pluginId].customData = []
+
+        # add placeholders
+        for x in range(count):
+            self.fPluginsInfo[pluginId].customData.append(PyCustomData)
 
     def _set_parameterInfo(self, pluginId, paramIndex, info):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
@@ -3034,6 +3091,10 @@ class CarlaHostPlugin(CarlaHostMeta):
     def _set_parameterRanges(self, pluginId, paramIndex, ranges):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
             self.fPluginsInfo[pluginId].parameterRanges[paramIndex] = ranges
+
+    def _set_parameterRangesUpdate(self, pluginId, paramIndex, ranges):
+        if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
+            self.fPluginsInfo[pluginId].parameterRanges[paramIndex].update(ranges)
 
     def _set_parameterValue(self, pluginId, paramIndex, value):
         if pluginId < len(self.fPluginsInfo) and paramIndex < self.fPluginsInfo[pluginId].parameterCount:
@@ -3064,6 +3125,10 @@ class CarlaHostPlugin(CarlaHostMeta):
     def _set_midiProgramData(self, pluginId, mpIndex, data):
         if mpIndex < self.fPluginsInfo[pluginId].midiProgramCount:
             self.fPluginsInfo[pluginId].midiProgramData[mpIndex] = data
+
+    def _set_customData(self, pluginId, cdIndex, data):
+        if cdIndex < self.fPluginsInfo[pluginId].customDataCount:
+            self.fPluginsInfo[pluginId].customData[cdIndex] = data
 
     def _set_peaks(self, pluginId, in1, in2, out1, out2):
         self.fPluginsInfo[pluginId].peaks = [in1, in2, out1, out2]

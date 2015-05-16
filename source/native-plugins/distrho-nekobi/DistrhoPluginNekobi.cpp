@@ -1,7 +1,7 @@
 /*
  * DISTRHO Nekobi Plugin, based on Nekobee by Sean Bolton and others.
  * Copyright (C) 2004 Sean Bolton and others
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,11 +45,6 @@ bool dssp_voicelist_mutex_trylock(nekobee_synth_t* const synth)
     }
 
     return true;
-}
-
-bool dssp_voicelist_mutex_lock(nekobee_synth_t* const synth)
-{
-    return (pthread_mutex_lock(&synth->voicelist_mutex) == 0);
 }
 
 bool dssp_voicelist_mutex_unlock(nekobee_synth_t* const synth)

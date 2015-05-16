@@ -43,6 +43,7 @@ import ui_carla_parameter
 
 from carla_shared import *
 from carla_utils import *
+from paramspinbox import CustomInputDialog
 from pixmapkeyboard import PixmapKeyboardHArea
 
 # ------------------------------------------------------------------------------------------------------------
@@ -64,7 +65,7 @@ class CarlaAboutW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
 
         if host.isControl:
             extraInfo = " - <b>%s</b>" % self.tr("OSC Bridge Version")
@@ -84,32 +85,30 @@ class CarlaAboutW(QDialog):
             self.ui.tabWidget.removeTab(2)
             self.ui.tabWidget.removeTab(1)
 
-        elif host.isPlugin:
-            self.ui.tabWidget.removeTab(2)
-
         self.ui.l_extended.setText(gCarla.utils.get_complete_license_text())
 
-        if host.is_engine_running() and not (host.isControl or host.isPlugin):
+        if host.is_engine_running() and not host.isControl:
             self.ui.le_osc_url_tcp.setText(host.get_host_osc_url_tcp())
             self.ui.le_osc_url_udp.setText(host.get_host_osc_url_udp())
         else:
             self.ui.le_osc_url_tcp.setText(self.tr("(Engine not running)"))
             self.ui.le_osc_url_udp.setText(self.tr("(Engine not running)"))
 
-        self.ui.l_osc_cmds.setText(""
-                                    " /set_active                 <i-value>\n"
-                                    " /set_drywet                 <f-value>\n"
-                                    " /set_volume                 <f-value>\n"
-                                    " /set_balance_left           <f-value>\n"
-                                    " /set_balance_right          <f-value>\n"
-                                    " /set_panning                <f-value>\n"
-                                    " /set_parameter_value        <i-index> <f-value>\n"
-                                    " /set_parameter_midi_cc      <i-index> <i-cc>\n"
-                                    " /set_parameter_midi_channel <i-index> <i-channel>\n"
-                                    " /set_program                <i-index>\n"
-                                    " /set_midi_program           <i-index>\n"
-                                    " /note_on                    <i-note> <i-velo>\n"
-                                    " /note_off                   <i-note>\n"
+        self.ui.l_osc_cmds.setText("<table>"
+                                   "<tr><td>" "/set_active"                 "&nbsp;</td><td>&lt;" "i-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_drywet"                 "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_volume"                 "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_balance_left"           "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_balance_right"          "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_panning"                "&nbsp;</td><td>&lt;" "f-value" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_parameter_value"        "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "f-value"   "&gt;</td></tr>"
+                                   "<tr><td>" "/set_parameter_midi_cc"      "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "i-cc"      "&gt;</td></tr>"
+                                   "<tr><td>" "/set_parameter_midi_channel" "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>&lt;" "i-channel" "&gt;</td></tr>"
+                                   "<tr><td>" "/set_program"                "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/set_midi_program"           "&nbsp;</td><td>&lt;" "i-index" "&gt;</td><td>"                     "</td></tr>"
+                                   "<tr><td>" "/note_on"                    "&nbsp;</td><td>&lt;" "i-note"  "&gt;</td><td>&lt;" "i-velo"    "&gt;</td></tr>"
+                                   "<tr><td>" "/note_off"                   "&nbsp;</td><td>&lt;" "i-note"  "&gt;</td><td>"                     "</td></tr>"
+                                   "</table>"
                                   )
 
         self.ui.l_example.setText("/Carla/2/set_parameter_value 5 1.0")
@@ -205,7 +204,7 @@ class PluginParameter(QWidget):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------
@@ -236,15 +235,15 @@ class PluginParameter(QWidget):
         self.ui.widget.setStepLarge(pInfo['stepLarge'])
         self.ui.widget.setScalePoints(pInfo['scalePoints'], bool(pHints & PARAMETER_USES_SCALEPOINTS))
 
-        if not pHints & PARAMETER_IS_AUTOMABLE:
-            self.ui.sb_control.setEnabled(False)
-            self.ui.sb_channel.setEnabled(False)
-
         if pType == PARAMETER_INPUT:
             if not pHints & PARAMETER_IS_ENABLED:
                 self.ui.label.setEnabled(False)
                 self.ui.widget.setEnabled(False)
                 self.ui.widget.setReadOnly(True)
+                self.ui.sb_control.setEnabled(False)
+                self.ui.sb_channel.setEnabled(False)
+
+            elif not pHints & PARAMETER_IS_AUTOMABLE:
                 self.ui.sb_control.setEnabled(False)
                 self.ui.sb_channel.setEnabled(False)
 
@@ -429,7 +428,7 @@ class PluginEdit(QDialog):
         if False:
             # kdevelop likes this :)
             parent = PluginEditParentMeta()
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # -------------------------------------------------------------
@@ -441,7 +440,7 @@ class PluginEdit(QDialog):
         self.fPluginInfo = None
 
         self.fCurrentStateFilename = None
-        self.fControlChannel = int(host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL))
+        self.fControlChannel = round(host.get_internal_parameter_value(pluginId, PARAMETER_CTRL_CHANNEL))
         self.fFirstInit      = True
 
         self.fParameterList      = [] # (type, id, widget)
@@ -458,6 +457,11 @@ class PluginEdit(QDialog):
 
         # -------------------------------------------------------------
         # Set-up GUI
+
+        labelPluginFont = self.ui.label_plugin.font()
+        labelPluginFont.setPixelSize(15)
+        labelPluginFont.setWeight(75)
+        self.ui.label_plugin.setFont(labelPluginFont)
 
         self.ui.dial_drywet.setCustomPaintMode(self.ui.dial_drywet.CUSTOM_PAINT_MODE_CARLA_WET)
         self.ui.dial_drywet.setPixmap(3)
@@ -506,7 +510,9 @@ class PluginEdit(QDialog):
 
         # todo
         self.ui.rb_balance.setEnabled(False)
+        self.ui.rb_balance.setVisible(False)
         self.ui.rb_pan.setEnabled(False)
+        self.ui.rb_pan.setVisible(False)
 
         self.reloadAll()
 
@@ -560,9 +566,6 @@ class PluginEdit(QDialog):
         host.ReloadParametersCallback.connect(self.slot_handleReloadParametersCallback)
         host.ReloadProgramsCallback.connect(self.slot_handleReloadProgramsCallback)
         host.ReloadAllCallback.connect(self.slot_handleReloadAllCallback)
-
-        # TODO
-        self.ui.ch_force_stereo.hide()
 
     #------------------------------------------------------------------
 
@@ -646,6 +649,34 @@ class PluginEdit(QDialog):
             paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_current_parameter_value(self.fPluginId, paramId))
             paramWidget.blockSignals(False)
+
+        # and the internal ones too
+        self.ui.dial_drywet.blockSignals(True)
+        self.ui.dial_drywet.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_DRYWET))
+        self.ui.dial_drywet.blockSignals(False)
+
+        self.ui.dial_vol.blockSignals(True)
+        self.ui.dial_vol.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_VOLUME))
+        self.ui.dial_vol.blockSignals(False)
+
+        self.ui.dial_b_left.blockSignals(True)
+        self.ui.dial_b_left.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_BALANCE_LEFT))
+        self.ui.dial_b_left.blockSignals(False)
+
+        self.ui.dial_b_right.blockSignals(True)
+        self.ui.dial_b_right.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_BALANCE_RIGHT))
+        self.ui.dial_b_right.blockSignals(False)
+
+        self.ui.dial_pan.blockSignals(True)
+        self.ui.dial_pan.setValue(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_PANNING))
+        self.ui.dial_pan.blockSignals(False)
+
+        self.fControlChannel = round(self.host.get_internal_parameter_value(self.fPluginId, PARAMETER_CTRL_CHANNEL))
+        self.ui.sb_ctrl_channel.blockSignals(True)
+        self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
+        self.ui.sb_ctrl_channel.blockSignals(False)
+        self.ui.keyboard.allNotesOff()
+        self._updateCtrlPrograms()
 
         self.fParametersToUpdate = []
 
@@ -1067,7 +1098,7 @@ class PluginEdit(QDialog):
                 self.ui.dial_pan.blockSignals(False)
 
             elif index == PARAMETER_CTRL_CHANNEL:
-                self.fControlChannel = int(value)
+                self.fControlChannel = round(value)
                 self.ui.sb_ctrl_channel.blockSignals(True)
                 self.ui.sb_ctrl_channel.setValue(self.fControlChannel+1)
                 self.ui.sb_ctrl_channel.blockSignals(False)
@@ -1332,7 +1363,9 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_knobCustomMenu(self):
-        knobName = self.sender().objectName()
+        sender   = self.sender()
+        knobName = sender.objectName()
+
         if knobName == "dial_drywet":
             minimum = 0.0
             maximum = 1.0
@@ -1364,8 +1397,6 @@ class PluginEdit(QDialog):
             default = 0.5
             label   = "Unknown"
 
-        current = self.sender().value() / 10
-
         menu = QMenu(self)
         actReset = menu.addAction(self.tr("Reset (%i%%)" % (default*100)))
         menu.addSeparator()
@@ -1375,16 +1406,17 @@ class PluginEdit(QDialog):
         menu.addSeparator()
         actSet = menu.addAction(self.tr("Set value..."))
 
-        if label not in ("Balance-Left", "Balance-Right"):
+        if label not in ("Balance-Left", "Balance-Right", "Panning"):
             menu.removeAction(actCenter)
 
         actSelected = menu.exec_(QCursor.pos())
 
         if actSelected == actSet:
-            valueTry = QInputDialog.getDouble(self, self.tr("Set value"), label, current, minimum, maximum, 3)
-            if valueTry[1]:
-                value = valueTry[0] * 10
-            else:
+            current   = minimum + (maximum-minimum)*(float(sender.value())/10000)
+            value, ok = QInputDialog.getInt(self, self.tr("Set value"), label, round(current*100.0), round(minimum*100.0), round(maximum*100.0), 1)
+            if ok: value = float(value)/100.0
+
+            if not ok:
                 return
 
         elif actSelected == actMinimum:
@@ -1542,7 +1574,7 @@ if __name__ == '__main__':
     loadHostSettings(host)
 
     host.engine_init("JACK", "Carla-Widgets")
-    host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None)
+    host.add_plugin(BINARY_NATIVE, PLUGIN_DSSI, "/usr/lib/dssi/karplong.so", "karplong", "karplong", 0, None, 0x0)
     host.set_active(0, True)
 
     gui1 = CarlaAboutW(None, host)

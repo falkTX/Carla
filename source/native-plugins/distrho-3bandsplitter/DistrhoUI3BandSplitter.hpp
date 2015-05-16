@@ -1,6 +1,6 @@
 /*
  * DISTRHO 3BandSplitter Plugin, based on 3BandSplitter by Michael Gruhn
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

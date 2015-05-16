@@ -20,7 +20,7 @@
 // -----------------------------------------------------------------------
 // Ignore some warnings if debugging
 
-#ifdef DEBUG
+#if 0 //def DEBUG
 # define NANOVG_GL3   0
 # define NANOVG_GLES2 0
 # define NANOVG_GLES3 0
@@ -63,7 +63,7 @@
 // -----------------------------------------------------------------------
 // Restore normal state if debugging
 
-#ifdef DEBUG
+#if 0//def DEBUG
 # if defined(__clang__)
 #  pragma clang diagnostic pop
 # elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))

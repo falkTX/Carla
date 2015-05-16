@@ -458,8 +458,11 @@ CARLA_EXPORT uint32_t carla_get_max_plugin_number();
  * @param label    Plugin label, if applicable
  * @param uniqueId Plugin unique Id, if applicable
  * @param extraPtr Extra pointer, defined per plugin type
+ * @param options  Initial plugin options
  */
-CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype, const char* filename, const char* name, const char* label, int64_t uniqueId, const void* extraPtr);
+CARLA_EXPORT bool carla_add_plugin(BinaryType btype, PluginType ptype,
+                                   const char* filename, const char* name, const char* label, int64_t uniqueId,
+                                   const void* extraPtr, uint options);
 
 /*!
  * Remove one plugin.

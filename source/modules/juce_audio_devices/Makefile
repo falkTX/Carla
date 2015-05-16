@@ -13,7 +13,8 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -w
 
 ifeq ($(WIN32),true)
-BUILD_CXX_FLAGS += -I$(CWD)/includes/asio
+# BUILD_CXX_FLAGS += -I$(CWD)/includes/asio
+BUILD_CXX_FLAGS += -I$(CWD)/modules/rtaudio/include
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

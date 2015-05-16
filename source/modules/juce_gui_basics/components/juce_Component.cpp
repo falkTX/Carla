@@ -784,6 +784,7 @@ public:
             validArea.clear();
         }
 
+        if (! validArea.containsRectangle (compBounds))
         {
             Graphics imG (image);
             LowLevelGraphicsContext& lg = imG.getInternalContext();
@@ -791,18 +792,15 @@ public:
             for (const Rectangle<int>* i = validArea.begin(), * const e = validArea.end(); i != e; ++i)
                 lg.excludeClipRectangle (*i);
 
-            if (! lg.isClipEmpty())
+            if (! owner.isOpaque())
             {
-                if (! owner.isOpaque())
-                {
-                    lg.setFill (Colours::transparentBlack);
-                    lg.fillRect (imageBounds, true);
-                    lg.setFill (Colours::black);
-                }
-
-                lg.addTransform (AffineTransform::scale (scale));
-                owner.paintEntireComponent (imG, true);
+                lg.setFill (Colours::transparentBlack);
+                lg.fillRect (imageBounds, true);
+                lg.setFill (Colours::black);
             }
+
+            lg.addTransform (AffineTransform::scale (scale));
+            owner.paintEntireComponent (imG, true);
         }
 
         validArea = imageBounds;
@@ -2311,16 +2309,15 @@ void Component::internalModalInputAttempt()
 //==============================================================================
 void Component::postCommandMessage (const int commandId)
 {
-    class CustomCommandMessage   : public CallbackMessage
+    struct CustomCommandMessage   : public CallbackMessage
     {
-    public:
         CustomCommandMessage (Component* const c, const int command)
             : target (c), commandId (command) {}
 
         void messageCallback() override
         {
-            if (target.get() != nullptr)  // (get() required for VS2003 bug)
-                target->handleCommandMessage (commandId);
+            if (Component* c = target.get())
+                c->handleCommandMessage (commandId);
         }
 
     private:

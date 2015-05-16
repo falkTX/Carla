@@ -31,40 +31,78 @@ using juce::MidiBuffer;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
-// Rack Graph stuff
+// External Graph stuff
 
-enum RackGraphGroupIds {
-    RACK_GRAPH_GROUP_NULL      = 0,
-    RACK_GRAPH_GROUP_CARLA     = 1,
-    RACK_GRAPH_GROUP_AUDIO_IN  = 2,
-    RACK_GRAPH_GROUP_AUDIO_OUT = 3,
-    RACK_GRAPH_GROUP_MIDI_IN   = 4,
-    RACK_GRAPH_GROUP_MIDI_OUT  = 5,
-    RACK_GRAPH_GROUP_MAX       = 6
+enum ExternalGraphGroupIds {
+    kExternalGraphGroupNull     = 0,
+    kExternalGraphGroupCarla    = 1,
+    kExternalGraphGroupAudioIn  = 2,
+    kExternalGraphGroupAudioOut = 3,
+    kExternalGraphGroupMidiIn   = 4,
+    kExternalGraphGroupMidiOut  = 5,
+    kExternalGraphGroupMax      = 6
 };
 
-enum RackGraphCarlaPortIds {
-    RACK_GRAPH_CARLA_PORT_NULL       = 0,
-    RACK_GRAPH_CARLA_PORT_AUDIO_IN1  = 1,
-    RACK_GRAPH_CARLA_PORT_AUDIO_IN2  = 2,
-    RACK_GRAPH_CARLA_PORT_AUDIO_OUT1 = 3,
-    RACK_GRAPH_CARLA_PORT_AUDIO_OUT2 = 4,
-    RACK_GRAPH_CARLA_PORT_MIDI_IN    = 5,
-    RACK_GRAPH_CARLA_PORT_MIDI_OUT   = 6,
-    RACK_GRAPH_CARLA_PORT_MAX        = 7
+enum ExternalGraphCarlaPortIds {
+    kExternalGraphCarlaPortNull      = 0,
+    kExternalGraphCarlaPortAudioIn1  = 1,
+    kExternalGraphCarlaPortAudioIn2  = 2,
+    kExternalGraphCarlaPortAudioOut1 = 3,
+    kExternalGraphCarlaPortAudioOut2 = 4,
+    kExternalGraphCarlaPortMidiIn    = 5,
+    kExternalGraphCarlaPortMidiOut   = 6,
+    kExternalGraphCarlaPortMax       = 7
+};
+
+enum ExternalGraphConnectionType {
+    kExternalGraphConnectionNull       = 0,
+    kExternalGraphConnectionAudioIn1   = 1,
+    kExternalGraphConnectionAudioIn2   = 2,
+    kExternalGraphConnectionAudioOut1  = 3,
+    kExternalGraphConnectionAudioOut2  = 4,
+    kExternalGraphConnectionMidiInput  = 5,
+    kExternalGraphConnectionMidiOutput = 6
+};
+
+struct ExternalGraphPorts {
+    LinkedList<PortNameToId> ins;
+    LinkedList<PortNameToId> outs;
+    const char* getName(const bool isInput, const uint portId) const noexcept;
+    uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
+    ExternalGraphPorts() noexcept;
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(ExternalGraphPorts)
+};
+
+struct ExternalGraph {
+    PatchbayConnectionList connections;
+    ExternalGraphPorts audioPorts, midiPorts;
+    mutable CharStringListPtr retCon;
+    ExternalGraph(CarlaEngine* const engine) noexcept;
+
+    void clear() noexcept;
+    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback) noexcept;
+    bool disconnect(const uint connectionId) noexcept;
+    void refresh(const char* const deviceName);
+
+    const char* const* getConnections() const noexcept;
+    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
+
+    CarlaEngine* const kEngine;
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(ExternalGraph)
 };
 
 // -----------------------------------------------------------------------
 // RackGraph
 
 struct RackGraph {
-    PatchbayConnectionList connections;
+    ExternalGraph extGraph;
     const uint32_t inputs;
     const uint32_t outputs;
     bool isOffline;
-    mutable CharStringListPtr retCon;
 
-    struct Audio {
+    struct Buffers {
         CarlaRecursiveMutex mutex;
         LinkedList<uint> connectedIn1;
         LinkedList<uint> connectedIn2;
@@ -73,32 +111,22 @@ struct RackGraph {
         float* inBuf[2];
         float* inBufTmp[2];
         float* outBuf[2];
-        // c++ compat stuff
-        Audio() noexcept;
+        Buffers() noexcept;
+        ~Buffers() noexcept;
+        void setBufferSize(const uint32_t bufferSize, const bool createBuffers) noexcept;
         CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(Audio)
-    } audio;
+        CARLA_DECLARE_NON_COPY_CLASS(Buffers)
+    } audioBuffers;
 
-    struct MIDI {
-        LinkedList<PortNameToId> ins;
-        LinkedList<PortNameToId> outs;
-        const char* getName(const bool isInput, const uint portId) const noexcept;
-        uint getPortId(const bool isInput, const char portName[], bool* const ok = nullptr) const noexcept;
-        // c++ compat stuff
-        MIDI() noexcept;
-        CARLA_PREVENT_HEAP_ALLOCATION
-        CARLA_DECLARE_NON_COPY_CLASS(MIDI)
-    } midi;
-
-    RackGraph(const uint32_t bufferSize, const uint32_t inputs, const uint32_t outputs) noexcept;
+    RackGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs) noexcept;
     ~RackGraph() noexcept;
 
     void setBufferSize(const uint32_t bufferSize) noexcept;
     void setOffline(const bool offline) noexcept;
 
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
-    void clearConnections() noexcept;
+    bool connect(const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
+    bool disconnect(const uint connectionId) noexcept;
+    void refresh(const char* const deviceName);
 
     const char* const* getConnections() const noexcept;
     bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const noexcept;
@@ -108,43 +136,50 @@ struct RackGraph {
 
     // extended, will call process() in the middle
     void processHelper(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
+
+    CarlaEngine* const kEngine;
+    CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
 };
 
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-struct PatchbayGraph  {
+struct PatchbayGraph {
     PatchbayConnectionList connections;
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
     MidiBuffer midiBuffer;
     const uint32_t inputs;
     const uint32_t outputs;
-    bool ignorePathbay;
     mutable CharStringListPtr retCon;
+    bool usingExternal;
 
-    PatchbayGraph(const int bufferSize, const double sampleRate, const uint32_t inputs, const uint32_t outputs);
+    ExternalGraph extGraph;
+
+    PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
     ~PatchbayGraph();
 
-    void setBufferSize(const int bufferSize);
+    void setBufferSize(const uint32_t bufferSize);
     void setSampleRate(const double sampleRate);
     void setOffline(const bool offline);
 
     void addPlugin(CarlaPlugin* const plugin);
     void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
     void removePlugin(CarlaPlugin* const plugin);
-    void removeAllPlugins(CarlaEngine* const engine);
+    void removeAllPlugins();
 
-    bool connect(CarlaEngine* const engine, const uint groupA, const uint portA, const uint groupB, const uint portB) noexcept;
-    bool disconnect(CarlaEngine* const engine, const uint connectionId) noexcept;
-    void disconnectGroup(CarlaEngine* const engine, const uint groupId) noexcept;
-    void clearConnections();
-    void refreshConnections(CarlaEngine* const engine);
+    bool connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback);
+    bool disconnect(const uint connectionId);
+    void disconnectInternalGroup(const uint groupId) noexcept;
+    void refresh(const char* const deviceName);
 
-    const char* const* getConnections() const;
-    bool getGroupAndPortIdFromFullName(const char* const fullPortName, uint& groupId, uint& portId) const;
+    const char* const* getConnections(const bool external) const;
+    bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
+
+    CarlaEngine* const kEngine;
+    CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)
 };
 
 // -----------------------------------------------------------------------

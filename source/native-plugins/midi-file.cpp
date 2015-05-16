@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -29,6 +29,7 @@ public:
     MidiFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
           fMidiOut(this),
+          fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
           leakDetector_MidiFilePlugin() {}
 
@@ -54,32 +55,35 @@ protected:
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 
-        if (timePos->playing)
+        if (fWasPlayingBefore != timePos->playing)
         {
-            fMidiOut.play(timePos->frame, frames);
+            fNeedsAllNotesOff = true;
+            fWasPlayingBefore = timePos->playing;
         }
-        else if (fWasPlayingBefore)
+
+        if (fNeedsAllNotesOff)
         {
             NativeMidiEvent midiEvent;
 
             midiEvent.port    = 0;
             midiEvent.time    = 0;
-            midiEvent.data[0] = MIDI_STATUS_CONTROL_CHANGE;
+            midiEvent.data[0] = 0;
             midiEvent.data[1] = MIDI_CONTROL_ALL_NOTES_OFF;
             midiEvent.data[2] = 0;
             midiEvent.data[3] = 0;
             midiEvent.size    = 3;
 
-            for (int i=0; i < MAX_MIDI_CHANNELS; ++i)
+            for (int channel=MAX_MIDI_CHANNELS; --channel >= 0;)
             {
-                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE+i);
+                midiEvent.data[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
                 NativePluginClass::writeMidiEvent(&midiEvent);
             }
 
-            carla_stdout("WAS PLAYING BEFORE, NOW STOPPED");
+            fNeedsAllNotesOff = false;
         }
 
-        fWasPlayingBefore = timePos->playing;
+        if (fWasPlayingBefore)
+            fMidiOut.play(timePos->frame, frames);
     }
 
     // -------------------------------------------------------------------
@@ -91,22 +95,33 @@ protected:
             return;
 
         if (const char* const filename = uiOpenFile(false, "Open Audio File", "MIDI Files *.mid;*.midi;;"))
-        {
             uiCustomDataChanged("file", filename);
-        }
 
         uiClosed();
     }
 
     // -------------------------------------------------------------------
+    // Plugin state calls
+
+    char* getState() const override
+    {
+        return fMidiOut.getState();
+    }
+
+    void setState(const char* const data) override
+    {
+        fMidiOut.setState(data);
+    }
+
+    // -------------------------------------------------------------------
     // AbstractMidiPlayer calls
 
-    void writeMidiEvent(const uint64_t timePosFrame, const RawMidiEvent* const event) override
+    void writeMidiEvent(const uint8_t port, const long double timePosFrame, const RawMidiEvent* const event) override
     {
         NativeMidiEvent midiEvent;
 
-        midiEvent.port    = 0;
-        midiEvent.time    = uint32_t(event->time-timePosFrame);
+        midiEvent.port    = port;
+        midiEvent.time    = uint32_t(timePosFrame);
         midiEvent.size    = event->size;
         midiEvent.data[0] = event->data[0];
         midiEvent.data[1] = event->data[1];
@@ -116,8 +131,11 @@ protected:
         NativePluginClass::writeMidiEvent(&midiEvent);
     }
 
+    // -------------------------------------------------------------------
+
 private:
     MidiPattern fMidiOut;
+    bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
 
     void _loadMidiFile(const char* const filename)
@@ -187,6 +205,8 @@ private:
                 fMidiOut.addRaw(static_cast<uint64_t>(time), midiMessage.getRawData(), static_cast<uint8_t>(dataSize));
             }
         }
+
+        fNeedsAllNotesOff = true;
     }
 
     PluginClassEND(MidiFilePlugin)
@@ -199,7 +219,9 @@ static const NativePluginDescriptor midifileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 0,
     /* audioOuts */ 0,

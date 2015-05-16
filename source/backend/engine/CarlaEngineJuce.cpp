@@ -106,12 +106,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineJuce::init(\"%s\")", clientName);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
-            setLastError("Patchbay process mode is not implemented yet for non-JACK drivers, sorry!");
-            return false;
-        }
-
         if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
         {
             setLastError("Invalid process mode");
@@ -181,11 +175,14 @@ public:
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
 
-        pData->graph.create(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, pData->sampleRate, pData->bufferSize, static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
+        pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
 
         fDevice->start(this);
 
         patchbayRefresh(false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
         callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
         return true;
@@ -267,95 +264,58 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayRefresh(const bool /*external*/) override
+    template<class Graph>
+    bool refreshExternalGraphPorts(Graph* const graph, const bool sendCallback)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
-
-        //fUsedMidiPorts.clear();
-
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-            patchbayRefreshRack();
-        else
-            patchbayRefreshPatchbay();
-
-        return true;
-    }
-
-    void patchbayRefreshRack()
-    {
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
-
-        graph->connections.clear();
+        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
         char strBuf[STR_MAX+1];
         strBuf[STR_MAX] = '\0';
 
-        // Main
-        {
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_CARLA, PATCHBAY_ICON_CARLA, -1, 0.0f, getName());
+        ExternalGraph& extGraph(graph->extGraph);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2,  PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, "audio-in2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out1");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, PATCHBAY_PORT_TYPE_AUDIO,                        0.0f, "audio-out2");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN,    PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT,  0.0f, "midi-in");
-            callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT,   PATCHBAY_PORT_TYPE_MIDI,                         0.0f, "midi-out");
-        }
+        // ---------------------------------------------------------------
+        // clear last ports
 
-        String deviceName(fDevice->getName());
+        extGraph.clear();
 
-        if (deviceName.isNotEmpty())
-            deviceName = deviceName.dropLastCharacters(deviceName.fromFirstOccurrenceOf(", ", true, false).length());
+        // ---------------------------------------------------------------
+        // fill in new ones
 
         // Audio In
         {
             StringArray inputNames(fDevice->getInputChannelNames());
 
-            if (deviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName.toRawUTF8());
-            else
-                std::strncpy(strBuf, "Capture", STR_MAX);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
-
             for (int i=0, count=inputNames.size(); i<count; ++i)
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_IN, static_cast<int>(i)+1, PATCHBAY_PORT_TYPE_AUDIO, 0.0f, inputNames[i].toRawUTF8());
+            {
+                PortNameToId portNameToId;
+                portNameToId.setData(kExternalGraphGroupAudioIn, uint(i+1), inputNames[i].toRawUTF8(), "");
+
+                extGraph.audioPorts.ins.append(portNameToId);
+            }
         }
 
         // Audio Out
         {
             StringArray outputNames(fDevice->getOutputChannelNames());
 
-            if (deviceName.isNotEmpty())
-                std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName.toRawUTF8());
-            else
-                std::strncpy(strBuf, "Playback", STR_MAX);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
-
             for (int i=0, count=outputNames.size(); i<count; ++i)
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, RACK_GRAPH_GROUP_AUDIO_OUT, static_cast<int>(i)+1, PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, outputNames[i].toRawUTF8());
+            {
+                PortNameToId portNameToId;
+                portNameToId.setData(kExternalGraphGroupAudioOut, uint(i+1), outputNames[i].toRawUTF8(), "");
+            }
         }
 
         // MIDI In
         {
             StringArray midiIns(MidiInput::getDevices());
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_IN, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Readable MIDI ports");
-
             for (int i=0, count=midiIns.size(); i<count; ++i)
             {
-                String portName(midiIns[i]);
-
-                std::snprintf(strBuf, STR_MAX, "Readable MIDI ports:%s", portName.toRawUTF8());
-
                 PortNameToId portNameToId;
-                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_IN, static_cast<uint>(i)+1, portName.toRawUTF8(), strBuf);
+                portNameToId.setData(kExternalGraphGroupMidiIn, uint(i+1), midiIns[i].toRawUTF8(), "");
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI, 0.0f, portNameToId.name);
-
-                graph->midi.ins.append(portNameToId);
+                extGraph.midiPorts.ins.append(portNameToId);
             }
         }
 
@@ -363,103 +323,46 @@ public:
         {
             StringArray midiOuts(MidiOutput::getDevices());
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, RACK_GRAPH_GROUP_MIDI_OUT, PATCHBAY_ICON_HARDWARE, -1, 0.0f, "Writable MIDI ports");
-
             for (int i=0, count=midiOuts.size(); i<count; ++i)
             {
-                String portName(midiOuts[i]);
-
-                std::snprintf(strBuf, STR_MAX, "Writable MIDI ports:%s", portName.toRawUTF8());
-
                 PortNameToId portNameToId;
-                portNameToId.setData(RACK_GRAPH_GROUP_MIDI_OUT, static_cast<uint>(i)+1, portName.toRawUTF8(), strBuf);
+                portNameToId.setData(kExternalGraphGroupMidiOut, uint(i+1), midiOuts[i].toRawUTF8(), "");
 
-                callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, portNameToId.group, static_cast<int>(portNameToId.port), PATCHBAY_PORT_TYPE_MIDI|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
-
-                graph->midi.outs.append(portNameToId);
+                extGraph.midiPorts.outs.append(portNameToId);
             }
         }
 
-        // Connections
-        graph->audio.mutex.lock();
+        // ---------------------------------------------------------------
+        // now refresh
 
-        for (LinkedList<uint>::Itenerator it = graph->audio.connectedIn1.begin(); it.valid(); it.next())
+        if (sendCallback)
         {
-            const uint& portId(it.getValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
+            String deviceName(fDevice->getName());
 
-            ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN1);
+            if (deviceName.isNotEmpty())
+                deviceName = deviceName.dropLastCharacters(deviceName.fromFirstOccurrenceOf(", ", true, false).length());
 
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-            graph->connections.list.append(connectionToId);
+            graph->refresh(deviceName.toRawUTF8());
         }
 
-        for (LinkedList<uint>::Itenerator it = graph->audio.connectedIn2.begin(); it.valid(); it.next())
-        {
-            const uint& portId(it.getValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioInCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_AUDIO_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_IN2);
-
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-            graph->connections.list.append(connectionToId);
-        }
-
-        for (LinkedList<uint>::Itenerator it = graph->audio.connectedOut1.begin(); it.valid(); it.next())
-        {
-            const uint& portId(it.getValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT1, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
-
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-            graph->connections.list.append(connectionToId);
-        }
-
-        for (LinkedList<uint>::Itenerator it = graph->audio.connectedOut2.begin(); it.valid(); it.next())
-        {
-            const uint& portId(it.getValue());
-            //CARLA_SAFE_ASSERT_CONTINUE(portId < fAudioOutCount);
-
-            ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_AUDIO_OUT2, RACK_GRAPH_GROUP_AUDIO_OUT, portId);
-
-            std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
-
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
-
-            graph->connections.list.append(connectionToId);
-        }
-
-        graph->audio.mutex.unlock();
+        // ---------------------------------------------------------------
+        // add midi connections
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
         {
             const MidiInPort& inPort(it.getValue());
 
-            const uint portId(graph->midi.getPortId(true, inPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < graph->midi.ins.count());
+            const uint portId(extGraph.midiPorts.getPortId(true, inPort.name));
+            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.ins.count());
 
             ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_MIDI_IN, portId, RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_IN);
+            connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupMidiIn, portId, kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiIn);
 
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
-            graph->connections.list.append(connectionToId);
+            extGraph.connections.list.append(connectionToId);
         }
 
         fMidiOutMutex.lock();
@@ -468,28 +371,43 @@ public:
         {
             const MidiOutPort& outPort(it.getValue());
 
-            const uint portId(graph->midi.getPortId(false, outPort.name));
-            CARLA_SAFE_ASSERT_CONTINUE(portId < graph->midi.outs.count());
+            const uint portId(extGraph.midiPorts.getPortId(false, outPort.name));
+            CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.outs.count());
 
             ConnectionToId connectionToId;
-            connectionToId.setData(++(graph->connections.lastId), RACK_GRAPH_GROUP_CARLA, RACK_GRAPH_CARLA_PORT_MIDI_OUT, RACK_GRAPH_GROUP_MIDI_OUT, portId);
+            connectionToId.setData(++(extGraph.connections.lastId), kExternalGraphGroupCarla, kExternalGraphCarlaPortMidiOut, kExternalGraphGroupMidiOut, portId);
 
             std::snprintf(strBuf, STR_MAX, "%i:%i:%i:%i", connectionToId.groupA, connectionToId.portA, connectionToId.groupB, connectionToId.portB);
 
             callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
 
-            graph->connections.list.append(connectionToId);
+            extGraph.connections.list.append(connectionToId);
         }
 
         fMidiOutMutex.unlock();
+
+        return true;
     }
 
-    void patchbayRefreshPatchbay() noexcept
+    bool patchbayRefresh(const bool external) override
     {
-        PatchbayGraph* const graph(pData->graph.getPatchbayGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
 
-        graph->refreshConnections(this);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        {
+            return refreshExternalGraphPorts<RackGraph>(pData->graph.getRackGraph(), true);
+        }
+        else
+        {
+            pData->graph.setUsingExternal(external);
+
+            if (external)
+                return refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), true);
+            else
+                return CarlaEngine::patchbayRefresh(false);
+        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------
@@ -537,7 +455,7 @@ protected:
                 else
                     engineEvent.time = static_cast<uint32_t>(midiEvent.time - pData->timeInfo.frame);
 
-                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data);
+                engineEvent.fillFromMidiData(midiEvent.size, midiEvent.data, 0);
 
                 if (engineEventIndex >= kMaxEngineEventInternalCount)
                     break;
@@ -644,113 +562,111 @@ protected:
 
     // -------------------------------------------------------------------
 
-    bool connectRackMidiInPort(const char* const portName) override
+    bool connectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName) override
     {
-        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
-        carla_debug("CarlaEngineJuce::connectRackMidiInPort(\"%s\")", portName);
+        CARLA_SAFE_ASSERT_RETURN(connectionType != 0 || (portName != nullptr && portName[0] != '\0'), false);
+        carla_stdout("CarlaEngineJuce::connectExternalGraphPort(%u, %u, \"%s\")", connectionType, portId, portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->midi.ins.count() > 0, false);
-
-        StringArray midiIns(MidiInput::getDevices());
-
-        if (! midiIns.contains(portName))
-            return false;
-
-        MidiInput* const juceMidiIn(MidiInput::openDevice(midiIns.indexOf(portName), this));
-        juceMidiIn->start();
-
-        MidiInPort midiPort;
-        midiPort.port = juceMidiIn;
-
-        std::strncpy(midiPort.name, portName, STR_MAX);
-        midiPort.name[STR_MAX] = '\0';
-
-        fMidiIns.append(midiPort);
-        return true;
-    }
-
-    bool connectRackMidiOutPort(const char* const portName) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
-        carla_debug("CarlaEngineJuce::connectRackMidiOutPort(\"%s\")", portName);
-
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->midi.ins.count() > 0, false);
-
-        StringArray midiOuts(MidiOutput::getDevices());
-
-        if (! midiOuts.contains(portName))
-            return false;
-
-        MidiOutput* const juceMidiOut(MidiOutput::openDevice(midiOuts.indexOf(portName)));
-        juceMidiOut->startBackgroundThread();
-
-        MidiOutPort midiPort;
-        midiPort.port = juceMidiOut;
-
-        std::strncpy(midiPort.name, portName, STR_MAX);
-        midiPort.name[STR_MAX] = '\0';
-
-        const CarlaMutexLocker cml(fMidiOutMutex);
-
-        fMidiOuts.append(midiPort);
-        return true;
-    }
-
-    bool disconnectRackMidiInPort(const char* const portName) override
-    {
-        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
-        carla_debug("CarlaEngineRtAudio::disconnectRackMidiInPort(\"%s\")", portName);
-
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->midi.ins.count() > 0, false);
-
-        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        switch (connectionType)
         {
-            MidiInPort& inPort(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
+        case kExternalGraphConnectionAudioIn1:
+        case kExternalGraphConnectionAudioIn2:
+        case kExternalGraphConnectionAudioOut1:
+        case kExternalGraphConnectionAudioOut2:
+            return CarlaEngine::connectExternalGraphPort(connectionType, portId, portName);
 
-            if (std::strcmp(inPort.name, portName) != 0)
-                continue;
+        case kExternalGraphConnectionMidiInput: {
+            StringArray midiIns(MidiInput::getDevices());
 
-            inPort.port->stop();
-            delete inPort.port;
+            if (! midiIns.contains(portName))
+                return false;
 
-            fMidiIns.remove(it);
+            MidiInput* const juceMidiIn(MidiInput::openDevice(midiIns.indexOf(portName), this));
+            juceMidiIn->start();
+
+            MidiInPort midiPort;
+            midiPort.port = juceMidiIn;
+
+            std::strncpy(midiPort.name, portName, STR_MAX);
+            midiPort.name[STR_MAX] = '\0';
+
+            fMidiIns.append(midiPort);
             return true;
+        }   break;
+
+        case kExternalGraphConnectionMidiOutput: {
+            StringArray midiOuts(MidiOutput::getDevices());
+
+            if (! midiOuts.contains(portName))
+                return false;
+
+            MidiOutput* const juceMidiOut(MidiOutput::openDevice(midiOuts.indexOf(portName)));
+            juceMidiOut->startBackgroundThread();
+
+            MidiOutPort midiPort;
+            midiPort.port = juceMidiOut;
+
+            std::strncpy(midiPort.name, portName, STR_MAX);
+            midiPort.name[STR_MAX] = '\0';
+
+            const CarlaMutexLocker cml(fMidiOutMutex);
+
+            fMidiOuts.append(midiPort);
+            return true;
+        }   break;
         }
 
         return false;
     }
 
-    bool disconnectRackMidiOutPort(const char* const portName) override
+    bool disconnectExternalGraphPort(const uint connectionType, const uint portId, const char* const portName) override
     {
-        CARLA_SAFE_ASSERT_RETURN(portName != nullptr && portName[0] != '\0', false);
-        carla_debug("CarlaEngineRtAudio::disconnectRackMidiOutPort(\"%s\")", portName);
+        CARLA_SAFE_ASSERT_RETURN(connectionType != 0 || (portName != nullptr && portName[0] != '\0'), false);
+        carla_debug("CarlaEngineJuce::disconnectExternalGraphPort(%u, %u, \"%s\")", connectionType, portId, portName);
 
-        RackGraph* const graph(pData->graph.getRackGraph());
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(graph->midi.outs.count() > 0, false);
-
-        const CarlaMutexLocker cml(fMidiOutMutex);
-
-        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        switch (connectionType)
         {
-            MidiOutPort& outPort(it.getValue());
-            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+        case kExternalGraphConnectionAudioIn1:
+        case kExternalGraphConnectionAudioIn2:
+        case kExternalGraphConnectionAudioOut1:
+        case kExternalGraphConnectionAudioOut2:
+            return CarlaEngine::disconnectExternalGraphPort(connectionType, portId, portName);
 
-            if (std::strcmp(outPort.name, portName) != 0)
-                continue;
+        case kExternalGraphConnectionMidiInput:
+            for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+            {
+                MidiInPort& inPort(it.getValue());
+                CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
-            outPort.port->stopBackgroundThread();
-            delete outPort.port;
+                if (std::strcmp(inPort.name, portName) != 0)
+                    continue;
 
-            fMidiOuts.remove(it);
-            return true;
+                inPort.port->stop();
+                delete inPort.port;
+
+                fMidiIns.remove(it);
+                return true;
+            }
+            break;
+
+        case kExternalGraphConnectionMidiOutput: {
+            const CarlaMutexLocker cml(fMidiOutMutex);
+
+            for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+            {
+                MidiOutPort& outPort(it.getValue());
+                CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
+
+                if (std::strcmp(outPort.name, portName) != 0)
+                    continue;
+
+                outPort.port->stopBackgroundThread();
+                delete outPort.port;
+
+                fMidiOuts.remove(it);
+                return true;
+            }
+        }   break;
         }
 
         return false;

@@ -20,8 +20,12 @@
 
 #include "CarlaBase64Utils.hpp"
 
-#undef NULL
-#define NULL nullptr
+// needed for atom-util
+#ifndef nullptr
+# undef NULL
+# define NULL nullptr
+#endif
+
 #include "lv2/atom-util.h"
 
 CARLA_BRIDGE_START_NAMESPACE
@@ -138,7 +142,7 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         return true;
     }
 
-    if (std::strcmp(msg, "mprogram") == 0)
+    if (std::strcmp(msg, "midiprogram") == 0)
     {
         uint32_t bank, program;
 

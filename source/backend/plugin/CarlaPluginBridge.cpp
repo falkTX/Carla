@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef BUILD_BRIDGE
+#if defined(BUILD_BRIDGE) && defined(BRIDGE_PLUGIN)
 # error This file should be used under bridge mode
 #endif
 
@@ -60,7 +60,7 @@ struct BridgeAudioPool {
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -80,8 +80,7 @@ struct BridgeAudioPool {
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         filename = tmpFileBase;
         return true;
@@ -137,12 +136,12 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     BridgeRtClientControl()
         : data(nullptr),
           filename(),
-          needsSemDestroy(false),
+          needsSemDestroy(false)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-          shm(shm_t_INIT) {}
+        , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -162,8 +161,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         if (! mapData())
         {
@@ -276,7 +274,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -296,8 +294,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 
         shm = carla_shm_create_temp(tmpFileBase);
 
-        if (! carla_is_shm_valid(shm))
-            return false;
+        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
 
         if (! mapData())
         {
@@ -391,7 +388,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         , shm(shm_t_INIT) {}
 #else
     {
-        shm = shm_t_INIT;
+        carla_shm_init(shm);
     }
 #endif
 
@@ -622,11 +619,6 @@ protected:
             else
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_VST3", "");
 
-            if (options.pathAU != nullptr)
-                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", options.pathAU);
-            else
-                carla_setenv("ENGINE_OPTION_PLUGIN_PATH_AU", "");
-
             if (options.pathGIG != nullptr)
                 carla_setenv("ENGINE_OPTION_PLUGIN_PATH_GIG", options.pathGIG);
             else
@@ -751,6 +743,7 @@ public:
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
           fInfo(),
+          fUniqueId(0),
           fParams(nullptr),
           leakDetector_CarlaPluginBridge()
     {
@@ -823,7 +816,7 @@ public:
 
     int64_t getUniqueId() const noexcept override
     {
-        return fInfo.uniqueId;
+        return fUniqueId;
     }
 
     // -------------------------------------------------------------------
@@ -935,13 +928,16 @@ public:
 
         // TODO: only wait 1 minute for NI plugins
         const uint32_t timeoutEnd(Time::getMillisecondCounter() + 60*1000); // 60 secs, 1 minute
+        const bool needsEngineIdle(pData->engine->getType() != kEngineTypePlugin);
 
         carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
 
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            pData->engine->idle();
+
+            if (needsEngineIdle)
+                pData->engine->idle();
 
             if (fSaved)
                 break;
@@ -1085,6 +1081,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "__CarlaPingOnOff__") == 0)
         {
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1172,6 +1171,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
+#ifndef BUILD_BRIDGE
         if (yesNo)
         {
             pData->tryTransient();
@@ -1180,6 +1180,7 @@ public:
         {
             pData->transientTryCounter = 0;
         }
+#endif
     }
 
     void idle() override
@@ -1278,7 +1279,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -1303,7 +1304,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -1322,7 +1323,7 @@ public:
             portName += "event-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -1338,7 +1339,7 @@ public:
             portName += "event-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // extra plugin hints
@@ -1462,7 +1463,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
+#endif
 
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
@@ -1483,6 +1486,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter:
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -1532,7 +1536,7 @@ public:
                                 break;
                             }
                         }
-
+#endif
                         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventParameter);
                         fShmRtClientControl.writeUInt(event.time);
                         fShmRtClientControl.writeByte(event.channel);
@@ -1576,11 +1580,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventAllNotesOff);
                             fShmRtClientControl.writeUInt(event.time);
@@ -1783,6 +1789,7 @@ public:
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
             FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1846,6 +1853,8 @@ public:
             }
 
         } // End of Post-processing
+
+#endif // BUILD_BRIDGE
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -1998,11 +2007,12 @@ public:
                 const uint32_t optionEn = fShmNonRtServerControl.readUInt();
                 const  int64_t uniqueId = fShmNonRtServerControl.readLong();
 
+                CARLA_SAFE_ASSERT_INT2(fUniqueId == uniqueId, fUniqueId, uniqueId);
+
                 pData->hints   = hints | PLUGIN_IS_BRIDGE;
                 pData->options = optionEn;
 
                 fInfo.category = static_cast<PluginCategory>(category);
-                fInfo.uniqueId = uniqueId;
                 fInfo.optionsAvailable = optionAv;
             }   break;
 
@@ -2408,7 +2418,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const char* const bridgeBinary)
+    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const bridgeBinary)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2438,6 +2448,7 @@ public:
         else
             pData->filename = carla_strdup("");
 
+        fUniqueId     = uniqueId;
         fBridgeBinary = bridgeBinary;
 
         std::srand(static_cast<uint>(std::time(nullptr)));
@@ -2526,10 +2537,15 @@ public:
 #endif
         sFirstInit = false;
 
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+
         for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            pData->engine->idle();
+
+            if (needsEngineIdle)
+                pData->engine->idle();
+
             idle();
 
             if (fInitiated)
@@ -2598,7 +2614,6 @@ private:
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
-        int64_t uniqueId;
         CarlaString name;
         CarlaString label;
         CarlaString maker;
@@ -2614,13 +2629,14 @@ private:
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
               optionsAvailable(0),
-              uniqueId(0),
               name(),
               label(),
               maker(),
               copyright(),
               chunk() {}
     } fInfo;
+
+    int64_t fUniqueId;
 
     BridgeParamInfo* fParams;
 
@@ -2676,36 +2692,7 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
     CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
-    if (! plugin->init(init.filename, init.name, init.label, bridgeBinary))
-    {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    bool canRun = true;
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-    {
-        if (! plugin->canRunInRack())
-        {
-            init.engine->setLastError("Carla's rack mode can only work with Stereo Bridged plugins, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            init.engine->setLastError("Carla's rack mode cannot work with plugins that have CV ports, sorry!");
-            canRun = false;
-        }
-    }
-    else if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_PATCHBAY && (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0))
-    {
-        init.engine->setLastError("CV ports in patchbay mode is still TODO");
-        canRun = false;
-    }
-
-    if (! canRun)
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, bridgeBinary))
     {
         delete plugin;
         return nullptr;

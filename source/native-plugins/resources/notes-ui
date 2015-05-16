@@ -91,11 +91,10 @@ class DistrhoUINotes(ExternalUI, QWidget):
         self.fProgressBar.valueChanged.connect(self.slot_progressBarValueChanged)
         self.fTextEdit.textChanged.connect(self.slot_textChanged)
 
-        self.resize(300, 200)
-        self.setWindowTitle(self.fUiName)
-
         self.fIdleTimer = self.startTimer(50)
 
+        self.resize(300, 200)
+        self.setWindowTitle(self.fUiName)
         self.ready()
 
     def saveCurrentTextState(self):
@@ -244,6 +243,9 @@ class DistrhoUINotes(ExternalUI, QWidget):
         self.closeExternalUI()
         QWidget.closeEvent(self, event)
 
+        # there might be other qt windows open which will block the UI from quitting
+        app.quit()
+
 #--------------- main ------------------
 if __name__ == '__main__':
     import resources_rc
@@ -251,7 +253,6 @@ if __name__ == '__main__':
     pathBinaries, pathResources = getPaths()
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, "libcarla_utils." + DLL_EXTENSION))
     gCarla.utils.set_process_name("Notes")
-    #gCarla.utils.set_locale_C()
 
     app = CarlaApplication("Notes")
     gui = DistrhoUINotes()

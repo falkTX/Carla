@@ -566,9 +566,9 @@ struct HashGenerator
     enum { multiplier = sizeof (Type) > 4 ? 101 : 31 };
 };
 
-int String::hashCode() const noexcept       { return HashGenerator<int>        ::calculate (text); }
-int64 String::hashCode64() const noexcept   { return HashGenerator<int64>      ::calculate (text); }
-std::size_t String::hash() const noexcept   { return HashGenerator<std::size_t>::calculate (text); }
+int String::hashCode() const noexcept       { return HashGenerator<int>    ::calculate (text); }
+int64 String::hashCode64() const noexcept   { return HashGenerator<int64>  ::calculate (text); }
+size_t String::hash() const noexcept        { return HashGenerator<size_t> ::calculate (text); }
 
 //==============================================================================
 JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const String& s2) noexcept            { return s1.compare (s2) == 0; }
@@ -720,7 +720,8 @@ int String::compareNatural (StringRef other) const noexcept
 //==============================================================================
 void String::append (const String& textToAppend, size_t maxCharsToTake)
 {
-    appendCharPointer (textToAppend.text, maxCharsToTake);
+    appendCharPointer (this == &textToAppend ? String (textToAppend).text
+                                             : textToAppend.text, maxCharsToTake);
 }
 
 void String::appendCharPointer (const CharPointerType textToAppend)
@@ -764,6 +765,9 @@ String& String::operator+= (const String& other)
 {
     if (isEmpty())
         return operator= (other);
+
+    if (this == &other)
+        return operator+= (String (*this));
 
     appendCharPointer (other.text);
     return *this;

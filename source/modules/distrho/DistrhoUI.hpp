@@ -141,6 +141,12 @@ protected:
     virtual void d_uiIdle() {}
 
    /**
+      File browser selected function.
+      @see Window::fileBrowserSelected(const char*)
+    */
+    virtual void d_uiFileBrowserSelected(const char* filename);
+
+   /**
       OpenGL window reshape function, called when parent window is resized.
       You can reimplement this function for a custom OpenGL state.
       @see Window::onReshape(uint,uint)

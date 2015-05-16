@@ -6,6 +6,10 @@ else
   PYTHON=python
 fi
 
+if [ "$1" = "--gdb" ]; then
+  PYTHON="gdb --args $PYTHON"
+fi
+
 INSTALL_PREFIX="X-PREFIX-X"
 export PATH="$INSTALL_PREFIX"/lib/carla:$PATH
 exec $PYTHON "$INSTALL_PREFIX"/share/carla/carla-patchbay --with-appname="$0" --with-libprefix="$INSTALL_PREFIX" "$@"

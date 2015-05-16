@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -96,8 +96,8 @@ typedef struct {
 } LV2_Event_Iterator;
 
 
-/** Reset an iterator to point to the start of @a buf.
- * @return True if @a iter is valid, otherwise false (buffer is empty) */
+/** Reset an iterator to point to the start of `buf`.
+ * @return True if `iter` is valid, otherwise false (buffer is empty) */
 static inline bool
 lv2_event_begin(LV2_Event_Iterator* iter,
                 LV2_Event_Buffer*   buf)
@@ -108,8 +108,8 @@ lv2_event_begin(LV2_Event_Iterator* iter,
 }
 
 
-/** Check if @a iter is valid.
- * @return True if @a iter is valid, otherwise false (past end of buffer) */
+/** Check if `iter` is valid.
+ * @return True if `iter` is valid, otherwise false (past end of buffer) */
 static inline bool
 lv2_event_is_valid(LV2_Event_Iterator* iter)
 {
@@ -117,9 +117,9 @@ lv2_event_is_valid(LV2_Event_Iterator* iter)
 }
 
 
-/** Advance @a iter forward one event.
- * @a iter must be valid.
- * @return True if @a iter is valid, otherwise false (reached end of buffer) */
+/** Advance `iter` forward one event.
+ * `iter` must be valid.
+ * @return True if `iter` is valid, otherwise false (reached end of buffer) */
 static inline bool
 lv2_event_increment(LV2_Event_Iterator* iter)
 {
@@ -138,11 +138,11 @@ lv2_event_increment(LV2_Event_Iterator* iter)
 
 
 /** Dereference an event iterator (get the event currently pointed at).
- * @a iter must be valid.
- * @a data if non-NULL, will be set to point to the contents of the event
+ * `iter` must be valid.
+ * `data` if non-NULL, will be set to point to the contents of the event
  *         returned.
- * @return A Pointer to the event @a iter is currently pointing at, or NULL
- *         if the end of the buffer is reached (in which case @a data is
+ * @return A Pointer to the event `iter` is currently pointing at, or NULL
+ *         if the end of the buffer is reached (in which case `data` is
  *         also set to NULL). */
 static inline LV2_Event*
 lv2_event_get(LV2_Event_Iterator* iter,
@@ -162,8 +162,8 @@ lv2_event_get(LV2_Event_Iterator* iter,
 }
 
 
-/** Write an event at @a iter.
- * The event (if any) pointed to by @a iter will be overwritten, and @a iter
+/** Write an event at `iter`.
+ * The event (if any) pointed to by `iter` will be overwritten, and `iter`
  * incremented to point to the following event (i.e. several calls to this
  * function can be done in sequence without twiddling iter in-between).
  * @return True if event was written, otherwise false (buffer is full). */
@@ -230,8 +230,8 @@ lv2_event_reserve(LV2_Event_Iterator* iter,
 }
 
 
-/** Write an event at @a iter.
- * The event (if any) pointed to by @a iter will be overwritten, and @a iter
+/** Write an event at `iter`.
+ * The event (if any) pointed to by `iter` will be overwritten, and `iter`
  * incremented to point to the following event (i.e. several calls to this
  * function can be done in sequence without twiddling iter in-between).
  * @return True if event was written, otherwise false (buffer is full). */
@@ -263,4 +263,3 @@ lv2_event_write_event(LV2_Event_Iterator* iter,
 #endif
 
 #endif /* LV2_EVENT_HELPERS_H */
-

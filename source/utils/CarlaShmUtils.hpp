@@ -282,6 +282,7 @@ shm_t carla_shm_create_temp(char* const fileBase) noexcept
 #else
         if (errno == EEXIST)
             continue;
+        carla_stderr("carla_shm_create_temp(%s) - failed, error code %i", fileBase, errno);
 #endif
 
         // some unknown error occurred, return null

@@ -17,7 +17,9 @@ from carla_host import VERSION
 options  = {
   "packages": ["re", "sip", "subprocess", "inspect"],
   "create_shared_zip":    False,
-  "append_script_to_exe": True
+  "append_script_to_exe": True,
+  "optimize":   True,
+  "compressed": True
 }
 
 boptions = {

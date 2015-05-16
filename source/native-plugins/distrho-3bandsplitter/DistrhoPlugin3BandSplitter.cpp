@@ -1,7 +1,7 @@
 /*
  * DISTRHO 3BandSplitter Plugin, based on 3BandSplitter by Michael Gruhn
  * Copyright (C) 2007 Michael Gruhn <michael-gruhn@web.de>
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -208,6 +208,12 @@ void DistrhoPlugin3BandSplitter::d_activate()
     const float sr = (float)d_getSampleRate();
 
     xLP  = std::exp(-2.0f * kPI * freqLP / sr);
+
+#ifdef DISTRHO_OS_WINDOWS
+    // don't ask me why, but this fixes a crash/exception below on windows...
+    printf("%f\n", -xLP);
+#endif
+
     a0LP = 1.0f - xLP;
     b1LP = -xLP;
 
@@ -245,12 +251,12 @@ void DistrhoPlugin3BandSplitter::d_run(const float** inputs, float** outputs, ui
         out1HP = in1[i] - tmp1HP - kDC_ADD;
         out2HP = in2[i] - tmp2HP - kDC_ADD;
 
-        out1[i] = out1LP*lowVol * outVol;
-        out2[i] = out2LP*lowVol * outVol;
-        out3[i] = (in1[i] - out1LP - out1HP)*midVol * outVol;
-        out4[i] = (in2[i] - out2LP - out2HP)*midVol * outVol;
-        out5[i] = out1HP*highVol * outVol;
         out6[i] = out2HP*highVol * outVol;
+        out5[i] = out1HP*highVol * outVol;
+        out4[i] = (in2[i] - out2LP - out2HP)*midVol * outVol;
+        out3[i] = (in1[i] - out1LP - out1HP)*midVol * outVol;
+        out2[i] = out2LP*lowVol * outVol;
+        out1[i] = out1LP*lowVol * outVol;
     }
 }
 

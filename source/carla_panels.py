@@ -50,7 +50,7 @@ class CarlaPanelTime(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         # ----------------------------------------------------------------------------------------------------

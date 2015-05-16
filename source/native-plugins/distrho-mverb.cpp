@@ -16,9 +16,10 @@
  */
 
 // config fix
+#include "CarlaDefines.h"
 #include "distrho-mverb/DistrhoPluginInfo.h"
 
-#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+#if DISTRHO_PLUGIN_HAS_UI && (defined(CARLA_OS_WIN) || ! defined(HAVE_DGL))
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
@@ -26,7 +27,7 @@
 // Plugin Code
 #include "distrho-mverb/DistrhoArtworkMVerb.cpp"
 #include "distrho-mverb/DistrhoPluginMVerb.cpp"
-#ifdef HAVE_DGL
+#if DISTRHO_PLUGIN_HAS_UI
 #include "distrho-mverb/DistrhoUIMVerb.cpp"
 #include "distrho-mverb/font/Kh-Kangrey.cpp"
 #endif
@@ -34,7 +35,7 @@
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
 #include "DistrhoPluginMain.cpp"
-#ifdef HAVE_DGL
+#if DISTRHO_PLUGIN_HAS_UI
 #include "DistrhoUIMain.cpp"
 #endif
 
@@ -44,8 +45,11 @@ START_NAMESPACE_DISTRHO
 
 static const NativePluginDescriptor _mverbDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-#ifdef HAVE_DGL
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE|NATIVE_PLUGIN_HAS_UI|NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD|NATIVE_PLUGIN_USES_PARENT_ID),
+#if DISTRHO_PLUGIN_HAS_UI
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
 #else
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
 #endif

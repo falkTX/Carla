@@ -88,10 +88,12 @@ class HostWindow(QMainWindow):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostMeta()
+            host = CarlaHostNull()
             self.host = host
 
         self._true = c_char_p("true".encode("utf-8"))
+
+        self.fParentOrSelf = parent or self
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
@@ -115,30 +117,27 @@ class HostWindow(QMainWindow):
         # to be filled with key-value pairs of current settings
         self.fSavedSettings = {}
 
-        if host.isPlugin:
+        if host.isControl:
+            self.fClientName         = "Carla-Control"
+            self.fSessionManagerName = "Control"
+        elif host.isPlugin:
             self.fClientName         = "Carla-Plugin"
             self.fSessionManagerName = "Plugin"
         elif LADISH_APP_NAME:
             self.fClientName         = LADISH_APP_NAME
             self.fSessionManagerName = "LADISH"
-        elif NSM_URL:
-            self.fClientName         = "Carla" # "Carla.tmp"
-            self.fSessionManagerName = "Non Session Manager"
+        elif NSM_URL and host.nsmOK:
+            self.fClientName         = "Carla.tmp"
+            self.fSessionManagerName = "Non Session Manager TMP"
         else:
             self.fClientName         = CARLA_CLIENT_NAME or "Carla"
             self.fSessionManagerName = ""
 
         # ----------------------------------------------------------------------------------------------------
-        # Internal stuff (rack)
-
-        self.fCurrentRow = -1
-        self.fLastSelectedItem = None
-
-        # ----------------------------------------------------------------------------------------------------
         # Internal stuff (patchbay)
 
         self.fExportImage   = QImage()
-        self.fExportPrinter = QPrinter()
+        self.fExportPrinter = None
 
         self.fPeaksCleared = True
 
@@ -154,13 +153,42 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (engine stopped)
 
-        if self.host.isPlugin:
+        if self.host.isPlugin or self.host.isControl:
+            self.ui.act_file_save.setVisible(False)
             self.ui.act_engine_start.setEnabled(False)
+            self.ui.act_engine_start.setVisible(False)
+            self.ui.act_engine_stop.setEnabled(False)
+            self.ui.act_engine_stop.setVisible(False)
+            self.ui.act_settings_show_time_panel.setEnabled(False)
+            self.ui.act_settings_show_time_panel.setVisible(False)
             self.ui.menu_Engine.setEnabled(False)
+            self.ui.menu_Engine.setVisible(False)
+            self.ui.menu_Engine.menuAction().setVisible(False)
+
+            if self.host.isControl:
+                self.ui.act_file_new.setVisible(False)
+                self.ui.act_file_open.setVisible(False)
+                self.ui.act_file_save.setVisible(False)
+                self.ui.act_file_save_as.setVisible(False)
+                self.ui.act_plugin_add.setVisible(False)
+                self.ui.act_plugin_add2.setVisible(False)
+                self.ui.act_plugin_remove_all.setVisible(False)
+                self.ui.menu_Plugin.setEnabled(False)
+                self.ui.menu_Plugin.setVisible(False)
+                self.ui.menu_Plugin.menuAction().setVisible(False)
+            else:
+                self.ui.act_file_save_as.setText(self.tr("Export as..."))
+
         else:
             self.ui.act_engine_start.setEnabled(True)
 
-        if self.fSessionManagerName:
+        if not self.host.isControl:
+            self.ui.act_file_connect.setEnabled(False)
+            self.ui.act_file_connect.setVisible(False)
+            self.ui.act_file_refresh.setEnabled(False)
+            self.ui.act_file_refresh.setVisible(False)
+
+        if self.fSessionManagerName and not self.host.isPlugin:
             self.ui.act_file_new.setEnabled(False)
 
         self.ui.act_file_open.setEnabled(False)
@@ -203,6 +231,9 @@ class HostWindow(QMainWindow):
             self.ui.tabWidget.removeTab(1)
             self.ui.tabWidget.tabBar().hide()
 
+            if host.isControl:
+                self.ui.dockWidget.hide()
+
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (disk)
 
@@ -220,11 +251,9 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (panels)
 
-        self.fPanelTime = CarlaPanelTime(host, self)
-        self.fPanelTime.setEnabled(False)
-
-        if not host.isPlugin:
-            QTimer.singleShot(0, self.fPanelTime.show)
+        self.ui.panelTime = CarlaPanelTime(host, self)
+        self.ui.panelTime.setEnabled(False)
+        self.ui.panelTime.adjustSize()
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
@@ -240,8 +269,6 @@ class HostWindow(QMainWindow):
         sb.valueChanged.connect(self.ui.rackScrollBar.setValue)
         self.ui.rackScrollBar.rangeChanged.connect(sb.setRange)
         self.ui.rackScrollBar.valueChanged.connect(sb.setValue)
-
-        self.ui.listWidget.currentRowChanged.connect(self.slot_currentRowChanged)
 
         self.ui.rack.setStyleSheet("""
           QLabel#pad_left {
@@ -345,6 +372,8 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
+        self.ui.act_settings_show_time_panel.toggled.connect(self.slot_showTimePanel)
+        self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
@@ -366,6 +395,7 @@ class HostWindow(QMainWindow):
 
         self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
+        self.ui.panelTime.finished.connect(self.slot_timePanelClosed)
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
 
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
@@ -385,6 +415,8 @@ class HostWindow(QMainWindow):
         host.NoteOnCallback.connect(self.slot_handleNoteOnCallback)
         host.NoteOffCallback.connect(self.slot_handleNoteOffCallback)
 
+        host.UpdateCallback.connect(self.slot_handleUpdateCallback)
+
         host.PatchbayClientAddedCallback.connect(self.slot_handlePatchbayClientAddedCallback)
         host.PatchbayClientRemovedCallback.connect(self.slot_handlePatchbayClientRemovedCallback)
         host.PatchbayClientRenamedCallback.connect(self.slot_handlePatchbayClientRenamedCallback)
@@ -394,6 +426,8 @@ class HostWindow(QMainWindow):
         host.PatchbayPortRenamedCallback.connect(self.slot_handlePatchbayPortRenamedCallback)
         host.PatchbayConnectionAddedCallback.connect(self.slot_handlePatchbayConnectionAddedCallback)
         host.PatchbayConnectionRemovedCallback.connect(self.slot_handlePatchbayConnectionRemovedCallback)
+
+        host.NSMCallback.connect(self.slot_handleNSMCallback)
 
         host.DebugCallback.connect(self.slot_handleDebugCallback)
         host.InfoCallback.connect(self.slot_handleInfoCallback)
@@ -415,10 +449,30 @@ class HostWindow(QMainWindow):
         if self.host.isPlugin:
             self.startTimers()
 
+        # Start in patchbay tab if using forced patchbay mode
+        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
+            self.ui.tabWidget.setCurrentIndex(1)
+
+        # For NSM we wait for the open message
+        if NSM_URL and host.nsmOK:
+            host.nsm_ready(-1)
+            return
+
         QTimer.singleShot(0, self.slot_engineStart)
 
     # --------------------------------------------------------------------------------------------------------
     # Setup
+
+    def compactPlugin(self, pluginId):
+        if pluginId > self.fPluginCount:
+            return
+
+        pitem = self.fPluginList[pluginId]
+
+        if pitem is None:
+            return
+
+        pitem.recreateWidget(True)
 
     def setLoadRDFsNeeded(self):
         self.fLadspaRdfNeedsUpdate = True
@@ -426,7 +480,7 @@ class HostWindow(QMainWindow):
     def setProperWindowTitle(self):
         title = self.fClientName
 
-        if self.fProjectFilename:
+        if self.fProjectFilename and not self.host.nsmOK:
             title += " - %s" % os.path.basename(self.fProjectFilename)
         if self.fSessionManagerName:
             title += " (%s)" % self.fSessionManagerName
@@ -565,6 +619,7 @@ class HostWindow(QMainWindow):
                 if ask != QMessageBox.Yes:
                     return
 
+            self.killTimers()
             self.removeAllPlugins()
             self.host.set_engine_about_to_close()
             self.host.remove_all_plugins()
@@ -583,7 +638,7 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(True)
         self.ui.act_canvas_show_external.blockSignals(True)
 
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and driverName == "JACK":
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not (self.host.isControl or self.host.isPlugin):
             self.ui.act_canvas_show_internal.setChecked(True)
             self.ui.act_canvas_show_internal.setVisible(True)
             self.ui.act_canvas_show_external.setChecked(False)
@@ -597,16 +652,16 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_show_internal.blockSignals(False)
         self.ui.act_canvas_show_external.blockSignals(False)
 
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
+            canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
+            self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
+            self.ui.panelTime.setEnabled(True)
 
-            if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(True)
-                self.ui.act_file_save.setEnabled(True)
-                self.ui.act_file_save_as.setEnabled(True)
-
-            self.fPanelTime.setEnabled(True)
+        if self.host.isPlugin or not self.fSessionManagerName:
+            self.ui.act_file_open.setEnabled(True)
+            self.ui.act_file_save_as.setEnabled(True)
 
         self.startTimers()
 
@@ -621,16 +676,15 @@ class HostWindow(QMainWindow):
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
-        if not self.host.isPlugin:
+        if not (self.host.isControl or self.host.isPlugin):
+            self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
+            self.ui.panelTime.setEnabled(False)
 
-            if not self.fSessionManagerName:
-                self.ui.act_file_open.setEnabled(False)
-                self.ui.act_file_save.setEnabled(False)
-                self.ui.act_file_save_as.setEnabled(False)
-
-            self.fPanelTime.setEnabled(False)
+        if self.host.isPlugin or not self.fSessionManagerName:
+            self.ui.act_file_open.setEnabled(False)
+            self.ui.act_file_save_as.setEnabled(False)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -659,7 +713,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_pluginAdd(self, pluginToReplace = -1):
-        dialog = PluginDatabaseW(self, self.host)
+        dialog = PluginDatabaseW(self.fParentOrSelf, self.host)
 
         if not dialog.exec_():
             return
@@ -680,7 +734,7 @@ class HostWindow(QMainWindow):
                 CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
                 return
 
-        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr)
+        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0)
 
         if pluginToReplace >= 0:
             self.host.replace_plugin(self.host.get_max_plugin_number())
@@ -812,9 +866,6 @@ class HostWindow(QMainWindow):
         self.fPluginList.append(pitem)
         self.fPluginCount += 1
 
-        if not self.fIsProjectLoading:
-            pitem.getWidget().setActive(True, True, True)
-
         self.ui.act_plugin_remove_all.setEnabled(self.fPluginCount > 0)
 
     @pyqtSlot(int)
@@ -860,11 +911,12 @@ class HostWindow(QMainWindow):
 
     def setupCanvas(self):
         pOptions = patchcanvas.options_t()
-        pOptions.theme_name       = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
-        pOptions.auto_hide_groups = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
-        pOptions.use_bezier_lines = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
-        pOptions.antialiasing     = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        pOptions.eyecandy         = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
+        pOptions.theme_name        = self.fSavedSettings[CARLA_KEY_CANVAS_THEME]
+        pOptions.auto_hide_groups  = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS]
+        pOptions.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
+        pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
+        pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
+        pOptions.eyecandy          = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
 
         pFeatures = patchcanvas.features_t()
         pFeatures.group_info   = False
@@ -931,7 +983,7 @@ class HostWindow(QMainWindow):
     def slot_canvasRefresh(self):
         patchcanvas.clear()
 
-        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
+        if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and (self.host.isControl or self.host.isPlugin):
             return
 
         if self.host.is_engine_running():
@@ -958,6 +1010,10 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_canvasPrint(self):
         self.scene.clearSelection()
+
+        if self.fExportPrinter is None:
+            self.fExportPrinter = QPrinter()
+
         dialog = QPrintDialog(self.fExportPrinter, self)
 
         if dialog.exec_():
@@ -1128,6 +1184,14 @@ class HostWindow(QMainWindow):
     # Settings
 
     def setEngineSettings(self):
+        # ----------------------------------------------------------------------------------------------------
+        # do nothing if control
+
+        if self.host.isControl:
+            return "Control"
+
+        # ----------------------------------------------------------------------------------------------------
+
         settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
@@ -1143,7 +1207,6 @@ class HostWindow(QMainWindow):
         LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
         VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
         VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        AU_PATH     = toList(settings.value(CARLA_KEY_PATHS_AU,     CARLA_DEFAULT_AU_PATH))
         GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
         SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
         SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
@@ -1153,7 +1216,6 @@ class HostWindow(QMainWindow):
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_AU,     splitter.join(AU_PATH))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
         self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
@@ -1215,8 +1277,14 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("TimePanelGeometry", self.ui.panelTime.saveGeometry())
+
         #settings.setValue("SplitterState", self.ui.splitter.saveState())
-        settings.setValue("ShowToolbar", self.ui.toolBar.isVisible())
+
+        if not (self.host.isControl or self.host.isPlugin):
+            settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
+
+        settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
 
         diskFolders = []
 
@@ -1236,8 +1304,20 @@ class HostWindow(QMainWindow):
         if firstTime:
             self.restoreGeometry(settings.value("Geometry", ""))
 
+            if not (self.host.isControl or self.host.isPlugin):
+                self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
+
+                showTimePanel = settings.value("ShowTimePanel", True, type=bool)
+                self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
+
+                if showTimePanel:
+                    QTimer.singleShot(0, self.ui.panelTime.show)
+                else:
+                    self.ui.panelTime.hide()
+
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
+            self.ui.toolBar.setEnabled(showToolbar)
             self.ui.toolBar.setVisible(showToolbar)
 
             #if settings.contains("SplitterState"):
@@ -1271,19 +1351,20 @@ class HostWindow(QMainWindow):
         # TODO - complete this
 
         self.fSavedSettings = {
-            CARLA_KEY_MAIN_PROJECT_FOLDER:     settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,     CARLA_DEFAULT_MAIN_PROJECT_FOLDER,     type=str),
-            CARLA_KEY_MAIN_REFRESH_INTERVAL:   settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,   CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,   type=int),
-            CARLA_KEY_MAIN_USE_CUSTOM_SKINS:   settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,   CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,   type=bool),
-            CARLA_KEY_CANVAS_THEME:            settings.value(CARLA_KEY_CANVAS_THEME,            CARLA_DEFAULT_CANVAS_THEME,            type=str),
-            CARLA_KEY_CANVAS_SIZE:             settings.value(CARLA_KEY_CANVAS_SIZE,             CARLA_DEFAULT_CANVAS_SIZE,             type=str),
-            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS: settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool),
-            CARLA_KEY_CANVAS_USE_BEZIER_LINES: settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool),
-            CARLA_KEY_CANVAS_EYE_CANDY:        settings.value(CARLA_KEY_CANVAS_EYE_CANDY,        CARLA_DEFAULT_CANVAS_EYE_CANDY,        type=int),
-            CARLA_KEY_CANVAS_USE_OPENGL:       settings.value(CARLA_KEY_CANVAS_USE_OPENGL,       CARLA_DEFAULT_CANVAS_USE_OPENGL,       type=bool),
-            CARLA_KEY_CANVAS_ANTIALIASING:     settings.value(CARLA_KEY_CANVAS_ANTIALIASING,     CARLA_DEFAULT_CANVAS_ANTIALIASING,     type=int),
-            CARLA_KEY_CANVAS_HQ_ANTIALIASING:  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,  CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,  type=bool),
-            CARLA_KEY_CUSTOM_PAINTING:        (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, True, type=bool) and
-                                               settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
+            CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
+            CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
+            CARLA_KEY_MAIN_USE_CUSTOM_SKINS:    settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,    CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,    type=bool),
+            CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             type=str),
+            CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              type=str),
+            CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS:  settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,  type=bool),
+            CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS: settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool),
+            CARLA_KEY_CANVAS_USE_BEZIER_LINES:  settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,  type=bool),
+            CARLA_KEY_CANVAS_EYE_CANDY:         settings.value(CARLA_KEY_CANVAS_EYE_CANDY,         CARLA_DEFAULT_CANVAS_EYE_CANDY,         type=int),
+            CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
+            CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
+            CARLA_KEY_CANVAS_HQ_ANTIALIASING :  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
+            CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   type=bool) and
+                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] == patchcanvas.EYECANDY_FULL else 0
@@ -1304,6 +1385,15 @@ class HostWindow(QMainWindow):
     # Settings (menu actions)
 
     @pyqtSlot(bool)
+    def slot_showTimePanel(self, yesNo):
+        self.ui.panelTime.setVisible(yesNo)
+
+    @pyqtSlot(bool)
+    def slot_showToolbar(self, yesNo):
+        self.ui.toolBar.setEnabled(yesNo)
+        self.ui.toolBar.setVisible(yesNo)
+
+    @pyqtSlot(bool)
     def slot_showCanvasMeters(self, yesNo):
         self.ui.peak_in.setVisible(yesNo)
         self.ui.peak_out.setVisible(yesNo)
@@ -1316,7 +1406,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_configureCarla(self):
-        dialog = CarlaSettingsW(self, self.host, True, hasGL)
+        dialog = CarlaSettingsW(self.fParentOrSelf, self.host, True, hasGL)
         if not dialog.exec_():
             return
 
@@ -1332,16 +1422,22 @@ class HostWindow(QMainWindow):
         elif self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+            pitem.setUsingSkins(self.fSavedSettings[CARLA_KEY_MAIN_USE_CUSTOM_SKINS])
+            pitem.recreateWidget()
+
     # --------------------------------------------------------------------------------------------------------
     # About (menu actions)
 
     @pyqtSlot()
     def slot_aboutCarla(self):
-        CarlaAboutW(self, self.host).exec_()
+        CarlaAboutW(self.fParentOrSelf, self.host).exec_()
 
     @pyqtSlot()
     def slot_aboutJuce(self):
-        JuceAboutW(self).exec_()
+        JuceAboutW(self.fParentOrSelf).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):
@@ -1452,6 +1548,32 @@ class HostWindow(QMainWindow):
             self.ui.keyboard.sendNoteOff(note, False)
 
     # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int)
+    def slot_handleUpdateCallback(self, pluginId):
+        pitem = self.getPluginItem(pluginId)
+
+        if pitem is None:
+            return
+
+        wasCompacted = pitem.isCompacted()
+        isCompacted  = wasCompacted
+
+        for i in range(self.host.get_custom_data_count(pluginId)):
+            cdata = self.host.get_custom_data(pluginId, i)
+
+            if cdata['type'] == CUSTOM_DATA_TYPE_PROPERTY and cdata['key'] == "CarlaSkinIsCompacted":
+                isCompacted = bool(cdata['value'] == "true")
+                break
+        else:
+            return
+
+        if wasCompacted == isCompacted:
+            return
+
+        pitem.recreateWidget(True)
+
+    # --------------------------------------------------------------------------------------------------------
     # MiniCanvas stuff
 
     @pyqtSlot()
@@ -1487,24 +1609,6 @@ class HostWindow(QMainWindow):
         self.updateCanvasInitialPos()
 
     # --------------------------------------------------------------------------------------------------------
-    # Rack stuff
-
-    @pyqtSlot(int)
-    def slot_currentRowChanged(self, row):
-        self.fCurrentRow = row
-
-        if self.fLastSelectedItem is not None:
-            self.fLastSelectedItem.setSelected(False)
-
-        if row < 0 or row >= self.fPluginCount or self.fPluginList[row] is None:
-            self.fLastSelectedItem = None
-            return
-
-        pitem = self.fPluginList[row]
-        pitem.getWidget().setSelected(True)
-        self.fLastSelectedItem = pitem.getWidget()
-
-    # --------------------------------------------------------------------------------------------------------
     # Timers
 
     def startTimers(self):
@@ -1535,6 +1639,10 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Misc
 
+    @pyqtSlot()
+    def slot_timePanelClosed(self):
+        self.ui.act_settings_show_time_panel.setChecked(False)
+
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
         if index != 1:
@@ -1551,11 +1659,48 @@ class HostWindow(QMainWindow):
         if pitem is None:
             return
 
-        self.ui.listWidget.setCurrentRow(-1)
-        self.fCurrentRow = -1
-        self.fLastSelectedItem = None
-
         pitem.recreateWidget()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(int, int, str)
+    def slot_handleNSMCallback(self, value1, value2, valueStr):
+        # Error
+        if value1 == 0:
+            pass
+
+        # Reply
+        elif value1 == 1:
+            self.fFirstEngineInit    = False
+            self.fSessionManagerName = valueStr
+            self.setProperWindowTitle()
+
+        # Open
+        elif value1 == 2:
+            self.fClientName      = os.path.basename(valueStr)
+            self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
+            self.setProperWindowTitle()
+            self.slot_engineStop(True)
+            self.slot_engineStart()
+            self.loadProjectNow()
+
+        # Save
+        elif value1 == 3:
+            self.saveProjectNow()
+
+        # Session is Loaded
+        elif value1 == 4:
+            pass
+
+        # Show Optional Gui
+        elif value1 == 5:
+            self.show()
+
+        # Hide Optional Gui
+        elif value1 == 6:
+            self.hide()
+
+        self.host.nsm_ready(value1)
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -1676,12 +1821,14 @@ class HostWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        winIdStr = "%x" % self.winId()
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+        if not (self.host.isControl or self.host.isPlugin):
+            winIdStr = "%x" % self.winId()
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
         # disable parent
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+        if not (self.host.isControl or self.host.isPlugin):
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
 
         QMainWindow.hideEvent(self, event)
 
@@ -1706,7 +1853,7 @@ class HostWindow(QMainWindow):
 
     def idleFast(self):
         self.host.engine_idle()
-        self.fPanelTime.refreshTransport()
+        self.ui.panelTime.refreshTransport()
 
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return
@@ -1776,7 +1923,7 @@ class HostWindow(QMainWindow):
         self.killTimers()
         self.saveSettings()
 
-        if self.host.is_engine_running() and not self.host.isPlugin:
+        if self.host.is_engine_running() and not (self.host.isControl or self.host.isPlugin):
             self.slot_engineStop(True)
 
         QMainWindow.closeEvent(self, event)
@@ -1858,12 +2005,18 @@ def canvasCallback(action, value1, value2, valueStr):
 
         host.show_custom_ui(pluginId, True)
 
+        # FIXME
+        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
+
+        if pwidget is not None and pwidget.b_gui is not None:
+            pwidget.b_gui.setChecked(True)
+
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback
 
 def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     if action == ENGINE_CALLBACK_ENGINE_STARTED:
         host.processMode   = value1
@@ -1902,7 +2055,7 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
     elif action == ENGINE_CALLBACK_UI_STATE_CHANGED:
         host.UiStateChangedCallback.emit(pluginId, value1)
     elif action == ENGINE_CALLBACK_NOTE_ON:
-        host.NoteOnCallback.emit(pluginId, value1, value2, int(value3))
+        host.NoteOnCallback.emit(pluginId, value1, value2, round(value3))
     elif action == ENGINE_CALLBACK_NOTE_OFF:
         host.NoteOffCallback.emit(pluginId, value1, value2)
     elif action == ENGINE_CALLBACK_UPDATE:
@@ -1946,6 +2099,8 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         host.SampleRateChangedCallback.emit(value3)
+    elif action == ENGINE_CALLBACK_NSM:
+        host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:
         QApplication.instance().processEvents()
     elif action == ENGINE_CALLBACK_INFO:
@@ -1982,14 +2137,7 @@ def fileCallback(ptr, action, isDir, title, filter):
 # ------------------------------------------------------------------------------------------------------------
 # Init host
 
-def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
-    if isPlugin:
-        PluginClass = libPrefixOrPluginClass
-        libPrefix   = None
-    else:
-        PluginClass = None
-        libPrefix   = libPrefixOrPluginClass
-
+def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = None):
     pathBinaries, pathResources = getPaths(libPrefix)
 
     # --------------------------------------------------------------------------------------------------------
@@ -2022,10 +2170,10 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
     if failError:
         # no try
-        host = PluginClass() if isPlugin else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+        host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
     else:
         try:
-            host = PluginClass() if isPlugin else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+            host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
         except:
             host = CarlaHostQtNull()
 
@@ -2043,13 +2191,13 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
         host.set_engine_option(ENGINE_OPTION_PATH_RESOURCES, 0, pathResources)
 
         if not isControl:
-            host.set_engine_option(ENGINE_OPTION_NSM_INIT, os.getpid(), initName)
+            host.nsmOK = host.nsm_init(os.getpid(), initName)
 
     # --------------------------------------------------------------------------------------------------------
     # Init utils
 
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
-    gCarla.utils.set_process_name(initName)
+    gCarla.utils.set_process_name(os.path.basename(initName))
     #gCarla.utils.set_locale_C()
 
     # --------------------------------------------------------------------------------------------------------
@@ -2062,7 +2210,7 @@ def initHost(initName, libPrefixOrPluginClass, isControl, isPlugin, failError):
 
 def loadHostSettings(host):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     settings = QSettings("falkTX", "Carla2")
 
@@ -2127,7 +2275,7 @@ def loadHostSettings(host):
 
 def setHostSettings(host):
     # kdevelop likes this :)
-    if False: host = CarlaHostMeta()
+    if False: host = CarlaHostNull()
 
     # TEST
     #host.preventBadBehaviour = True

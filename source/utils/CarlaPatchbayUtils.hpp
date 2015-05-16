@@ -104,6 +104,12 @@ struct PortNameToId {
         rename(n, fn);
     }
 
+    void setFullName(const char fn[]) noexcept
+    {
+        std::strncpy(fullName, fn, STR_MAX);
+        fullName[STR_MAX] = '\0';
+    }
+
     void rename(const char n[], const char fn[]) noexcept
     {
         std::strncpy(name, n, STR_MAX);

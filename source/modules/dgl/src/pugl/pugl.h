@@ -23,8 +23,19 @@
 
 #include <stdint.h>
 
-#include "pugl/common.h"
-#include "pugl/event.h"
+/*
+  This API is pure portable C and contains no platform specific elements, or
+  even a GL dependency.  However, unfortunately GL includes vary across
+  platforms so they are included here to allow for pure portable programs.
+*/
+#ifdef __APPLE__
+#    include "OpenGL/gl.h"
+#else
+#    ifdef _WIN32
+#        include <windows.h>  /* Broken Windows GL headers require this */
+#    endif
+#    include "GL/gl.h"
+#endif
 
 #ifdef PUGL_SHARED
 #    ifdef _WIN32
@@ -40,7 +51,11 @@
 #        define PUGL_API PUGL_LIB_IMPORT
 #    endif
 #else
-#    define PUGL_API
+#    ifdef _WIN32
+#        define PUGL_API
+#    else
+#        define PUGL_API __attribute__((visibility("hidden")))
+#    endif
 #endif
 
 #ifdef __cplusplus
@@ -56,9 +71,80 @@ extern "C" {
 */
 
 /**
-   A function called when an event occurs.
+   An OpenGL view.
 */
-typedef void (*PuglEventFunc)(PuglView* view, const PuglEvent* event);
+typedef struct PuglViewImpl PuglView;
+
+/**
+   A native window handle.
+
+   On X11, this is a Window.
+   On OSX, this is an NSView*.
+   On Windows, this is a HWND.
+*/
+typedef intptr_t PuglNativeWindow;
+
+/**
+   Return status code.
+*/
+typedef enum {
+	PUGL_SUCCESS = 0
+} PuglStatus;
+
+/**
+   Convenience symbols for ASCII control characters.
+*/
+typedef enum {
+	PUGL_CHAR_BACKSPACE = 0x08,
+	PUGL_CHAR_ESCAPE    = 0x1B,
+	PUGL_CHAR_DELETE    = 0x7F
+} PuglChar;
+
+/**
+   Special (non-Unicode) keyboard keys.
+*/
+typedef enum {
+	PUGL_KEY_F1 = 1,
+	PUGL_KEY_F2,
+	PUGL_KEY_F3,
+	PUGL_KEY_F4,
+	PUGL_KEY_F5,
+	PUGL_KEY_F6,
+	PUGL_KEY_F7,
+	PUGL_KEY_F8,
+	PUGL_KEY_F9,
+	PUGL_KEY_F10,
+	PUGL_KEY_F11,
+	PUGL_KEY_F12,
+	PUGL_KEY_LEFT,
+	PUGL_KEY_UP,
+	PUGL_KEY_RIGHT,
+	PUGL_KEY_DOWN,
+	PUGL_KEY_PAGE_UP,
+	PUGL_KEY_PAGE_DOWN,
+	PUGL_KEY_HOME,
+	PUGL_KEY_END,
+	PUGL_KEY_INSERT,
+	PUGL_KEY_SHIFT,
+	PUGL_KEY_CTRL,
+	PUGL_KEY_ALT,
+	PUGL_KEY_SUPER
+} PuglKey;
+
+/**
+   Keyboard modifier flags.
+*/
+typedef enum {
+	PUGL_MOD_SHIFT = 1,       /**< Shift key */
+	PUGL_MOD_CTRL  = 1 << 1,  /**< Control key */
+	PUGL_MOD_ALT   = 1 << 2,  /**< Alt/Option key */
+	PUGL_MOD_SUPER = 1 << 3   /**< Mod4/Command/Windows key */
+} PuglMod;
+
+/**
+   Handle for opaque user data.
+*/
+typedef void* PuglHandle;
 
 /**
    A function called when the window is closed.
@@ -114,19 +200,18 @@ typedef void (*PuglReshapeFunc)(PuglView* view, int width, int height);
    so programs should handle any value gracefully.
 
    @param view The view being scrolled.
+   @param x The window-relative x coordinate of the pointer.
+   @param y The window-relative y coordinate of the pointer.
    @param dx The scroll x distance.
    @param dx The scroll y distance.
 */
-typedef void (*PuglScrollFunc)(PuglView* view,
-                               int       x,
-                               int       y,
-                               float     dx,
-                               float     dy);
+typedef void (*PuglScrollFunc)(PuglView* view, int x, int y, float dx, float dy);
 
 /**
    A function called when a special key is pressed or released.
 
    This callback allows the use of keys that do not have unicode points.
+   Note that some are non-printable keys.
 
    @param view The view the event occured in.
    @param press True if the key was pressed, false if released.
@@ -135,22 +220,21 @@ typedef void (*PuglScrollFunc)(PuglView* view,
 typedef void (*PuglSpecialFunc)(PuglView* view, bool press, PuglKey key);
 
 /**
-   @name Initialization
-   Configuration functions which must be called before creating a window.
-   @{
+   A function called when a filename is selected via file-browser.
+
+   @param view The view the event occured in.
+   @param filename The selected file name or NULL if the dialog was canceled.
 */
+typedef void (*PuglFileSelectedFunc)(PuglView* view, const char* filename);
 
 /**
    Create a Pugl context.
 
    To create a window, call the various puglInit* functions as necessary, then
    call puglCreateWindow().
-
-   @param pargc Pointer to argument count (unused, for GLUT compatibility).
-   @param argv  Arguments (unused, for GLUT compatibility).
 */
 PUGL_API PuglView*
-puglInit(int* pargc, char** argv);
+puglInit(void);
 
 /**
    Set the parent window before creating a window (for embedding).
@@ -168,23 +252,7 @@ puglInitWindowSize(PuglView* view, int width, int height);
    Enable or disable resizing before creating a window.
 */
 PUGL_API void
-puglInitResizable(PuglView* view, bool resizable);
-
-/**
-   Set the context type before creating a window.
-*/
-PUGL_API void
-puglInitContextType(PuglView* view, PuglContextType type);
-
-/**
-   @}
-*/
-
-/**
-   @name Windows
-   Window management functions.
-   @{
-*/
+puglInitUserResizable(PuglView* view, bool resizable);
 
 /**
    Create a window with the settings given by the various puglInit functions.
@@ -207,16 +275,6 @@ PUGL_API void
 puglHideWindow(PuglView* view);
 
 /**
-   Return the native window handle.
-*/
-PUGL_API PuglNativeWindow
-puglGetNativeWindow(PuglView* view);
-
-/**
-   @}
-*/
-
-/**
    Set the handle to be passed to all callbacks.
 
    This is generally a pointer to a struct which contains all necessary state.
@@ -233,15 +291,6 @@ puglSetHandle(PuglView* view, PuglHandle handle);
 */
 PUGL_API PuglHandle
 puglGetHandle(PuglView* view);
-
-/**
-   Get the drawing context.
-
-   For PUGL_GL contexts, this is unused and returns NULL.
-   For PUGL_CAIRO contexts, this returns a pointer to a cairo_t.
-*/
-PUGL_API void*
-puglGetContext(PuglView* view);
 
 /**
    Return the timestamp (if any) of the currently-processing event.
@@ -262,18 +311,6 @@ puglGetModifiers(PuglView* view);
 */
 PUGL_API void
 puglIgnoreKeyRepeat(PuglView* view, bool ignore);
-
-/**
-   @name Event Callbacks
-   Functions to set event callbacks for handling user input.
-   @{
-*/
-
-/**
-   Set the function to call when an event occurs.
-*/
-PUGL_API void
-puglSetEventFunc(PuglView* view, PuglEventFunc eventFunc);
 
 /**
    Set the function to call when the window is closed.
@@ -324,14 +361,16 @@ PUGL_API void
 puglSetReshapeFunc(PuglView* view, PuglReshapeFunc reshapeFunc);
 
 /**
-   @}
-*/
-
-/**
-   Grab the input focus.
+   Set the function to call on file-browser selections.
 */
 PUGL_API void
-puglGrabFocus(PuglView* view);
+puglSetFileSelectedFunc(PuglView* view, PuglFileSelectedFunc fileSelectedFunc);
+
+/**
+   Return the native window handle.
+*/
+PUGL_API PuglNativeWindow
+puglGetNativeWindow(PuglView* view);
 
 /**
    Process all pending window events.

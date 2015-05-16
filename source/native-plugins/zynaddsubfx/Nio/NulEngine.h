@@ -32,7 +32,7 @@
 class NulEngine:public AudioOut, MidiIn
 {
     public:
-        NulEngine();
+        NulEngine(const SYNTH_T &synth_);
         ~NulEngine();
 
         bool Start();

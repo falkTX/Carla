@@ -27,11 +27,11 @@
 // math functions (base)
 
 /*
- * Return the lower of 2 values, with 'min' as the minimum possible value.
+ * Return the lower of 2 values, with 'min' as the minimum possible value (ie, base).
  */
 template<typename T>
 static inline
-const T& carla_min(const T& v1, const T& v2, const T& min) noexcept
+const T& carla_minWithBase(const T& v1, const T& v2, const T& min) noexcept
 {
     return ((v1 <= min || v2 <= min) ? min : (v1 < v2 ? v1 : v2));
 }
@@ -56,11 +56,11 @@ T carla_minPositive(const T& v1, const T& v2) noexcept
 }
 
 /*
- * Return the higher of 2 values, with 'max' as the maximum possible value.
+ * Return the higher of 2 values, with 'max' as the maximum possible value (ie, limit).
  */
 template<typename T>
 static inline
-const T& carla_max(const T& v1, const T& v2, const T& max) noexcept
+const T& carla_maxLimited(const T& v1, const T& v2, const T& max) noexcept
 {
     return ((v1 >= max || v2 >= max) ? max : (v1 > v2 ? v1 : v2));
 }
@@ -106,6 +106,8 @@ const T& carla_fixValue(const T& min, const T& max, const T& value) noexcept
 static inline
 uint32_t carla_nextPowerOf2(uint32_t size) noexcept
 {
+    CARLA_SAFE_ASSERT_RETURN(size > 0, 0);
+
     // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
     --size;
     size |= size >> 1;

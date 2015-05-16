@@ -189,14 +189,15 @@ CARLA_KEY_MAIN_PRO_THEME_COLOR  = "Main/ProThemeColor"   # str
 CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 CARLA_KEY_MAIN_USE_CUSTOM_SKINS = "Main/UseCustomSkins"  # bool
 
-CARLA_KEY_CANVAS_THEME            = "Canvas/Theme"          # str
-CARLA_KEY_CANVAS_SIZE             = "Canvas/Size"           # str "NxN"
-CARLA_KEY_CANVAS_USE_BEZIER_LINES = "Canvas/UseBezierLines" # bool
-CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS = "Canvas/AutoHideGroups" # bool
-CARLA_KEY_CANVAS_EYE_CANDY        = "Canvas/EyeCandy"       # enum
-CARLA_KEY_CANVAS_USE_OPENGL       = "Canvas/UseOpenGL"      # bool
-CARLA_KEY_CANVAS_ANTIALIASING     = "Canvas/Antialiasing"   # enum
-CARLA_KEY_CANVAS_HQ_ANTIALIASING  = "Canvas/HQAntialiasing" # bool
+CARLA_KEY_CANVAS_THEME             = "Canvas/Theme"           # str
+CARLA_KEY_CANVAS_SIZE              = "Canvas/Size"            # str "NxN"
+CARLA_KEY_CANVAS_USE_BEZIER_LINES  = "Canvas/UseBezierLines"  # bool
+CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS  = "Canvas/AutoHideGroups"  # bool
+CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS = "Canvas/AutoSelectItems" # bool
+CARLA_KEY_CANVAS_EYE_CANDY         = "Canvas/EyeCandy"        # enum
+CARLA_KEY_CANVAS_USE_OPENGL        = "Canvas/UseOpenGL"       # bool
+CARLA_KEY_CANVAS_ANTIALIASING      = "Canvas/Antialiasing"    # enum
+CARLA_KEY_CANVAS_HQ_ANTIALIASING   = "Canvas/HQAntialiasing"  # bool
 
 CARLA_KEY_ENGINE_DRIVER_PREFIX         = "Engine/Driver-"
 CARLA_KEY_ENGINE_AUDIO_DRIVER          = "Engine/AudioDriver"         # str
@@ -214,7 +215,6 @@ CARLA_KEY_PATHS_DSSI   = "Paths/DSSI"
 CARLA_KEY_PATHS_LV2    = "Paths/LV2"
 CARLA_KEY_PATHS_VST2   = "Paths/VST2"
 CARLA_KEY_PATHS_VST3   = "Paths/VST3"
-CARLA_KEY_PATHS_AU     = "Paths/AU"
 CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
@@ -233,21 +233,22 @@ CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
 CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
 
 # Canvas
-CARLA_DEFAULT_CANVAS_THEME            = "Modern Dark"
-CARLA_DEFAULT_CANVAS_SIZE             = "3100x2400"
-CARLA_DEFAULT_CANVAS_SIZE_WIDTH       = 3100
-CARLA_DEFAULT_CANVAS_SIZE_HEIGHT      = 2400
-CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES = True
-CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS = True
-CARLA_DEFAULT_CANVAS_EYE_CANDY        = CANVAS_EYECANDY_SMALL
-CARLA_DEFAULT_CANVAS_USE_OPENGL       = False
-CARLA_DEFAULT_CANVAS_ANTIALIASING     = CANVAS_ANTIALIASING_SMALL
-CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING  = False
+CARLA_DEFAULT_CANVAS_THEME             = "Modern Dark"
+CARLA_DEFAULT_CANVAS_SIZE              = "3100x2400"
+CARLA_DEFAULT_CANVAS_SIZE_WIDTH        = 3100
+CARLA_DEFAULT_CANVAS_SIZE_HEIGHT       = 2400
+CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES  = True
+CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS  = True
+CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS = False
+CARLA_DEFAULT_CANVAS_EYE_CANDY         = CANVAS_EYECANDY_SMALL
+CARLA_DEFAULT_CANVAS_USE_OPENGL        = False
+CARLA_DEFAULT_CANVAS_ANTIALIASING      = CANVAS_ANTIALIASING_SMALL
+CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING   = False
 
 # Engine
 CARLA_DEFAULT_FORCE_STEREO          = False
 CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES = False
-CARLA_DEFAULT_PREFER_UI_BRIDGES     = True
+CARLA_DEFAULT_PREFER_UI_BRIDGES     = bool(not WINDOWS)
 CARLA_DEFAULT_UIS_ALWAYS_ON_TOP     = False
 CARLA_DEFAULT_MAX_PARAMETERS        = MAX_DEFAULT_PARAMETERS
 CARLA_DEFAULT_UI_BRIDGES_TIMEOUT    = 4000
@@ -267,7 +268,7 @@ if LINUX:
     CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_JACK
 else:
-    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_PATCHBAY
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
 # ------------------------------------------------------------------------------------------------------------
@@ -278,7 +279,6 @@ DEFAULT_DSSI_PATH   = ""
 DEFAULT_LV2_PATH    = ""
 DEFAULT_VST2_PATH   = ""
 DEFAULT_VST3_PATH   = ""
-DEFAULT_AU_PATH     = ""
 DEFAULT_GIG_PATH    = ""
 DEFAULT_SF2_PATH    = ""
 DEFAULT_SFZ_PATH    = ""
@@ -371,9 +371,6 @@ elif MACOS:
     DEFAULT_VST3_PATH    = HOME + "/Library/Audio/Plug-Ins/VST3"
     DEFAULT_VST3_PATH   += ":/Library/Audio/Plug-Ins/VST3"
 
-    DEFAULT_AU_PATH      = HOME + "/Library/Audio/Plug-Ins/Components"
-    DEFAULT_AU_PATH     += ":/Library/Audio/Plug-Ins/Components"
-
 else:
     splitter = ":"
 
@@ -449,7 +446,6 @@ if readEnvVars:
     CARLA_DEFAULT_LV2_PATH    = os.getenv("LV2_PATH",    DEFAULT_LV2_PATH).split(splitter)
     CARLA_DEFAULT_VST2_PATH   = os.getenv("VST_PATH",    DEFAULT_VST2_PATH).split(splitter)
     CARLA_DEFAULT_VST3_PATH   = os.getenv("VST3_PATH",   DEFAULT_VST3_PATH).split(splitter)
-    CARLA_DEFAULT_AU_PATH     = os.getenv("AU_PATH",     DEFAULT_AU_PATH).split(splitter)
     CARLA_DEFAULT_GIG_PATH    = os.getenv("GIG_PATH",    DEFAULT_GIG_PATH).split(splitter)
     CARLA_DEFAULT_SF2_PATH    = os.getenv("SF2_PATH",    DEFAULT_SF2_PATH).split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = os.getenv("SFZ_PATH",    DEFAULT_SFZ_PATH).split(splitter)
@@ -460,7 +456,6 @@ else:
     CARLA_DEFAULT_LV2_PATH    = DEFAULT_LV2_PATH.split(splitter)
     CARLA_DEFAULT_VST2_PATH   = DEFAULT_VST2_PATH.split(splitter)
     CARLA_DEFAULT_VST3_PATH   = DEFAULT_VST3_PATH.split(splitter)
-    CARLA_DEFAULT_AU_PATH     = DEFAULT_AU_PATH.split(splitter)
     CARLA_DEFAULT_GIG_PATH    = DEFAULT_GIG_PATH.split(splitter)
     CARLA_DEFAULT_SF2_PATH    = DEFAULT_SF2_PATH.split(splitter)
     CARLA_DEFAULT_SFZ_PATH    = DEFAULT_SFZ_PATH.split(splitter)
@@ -473,7 +468,6 @@ del DEFAULT_DSSI_PATH
 del DEFAULT_LV2_PATH
 del DEFAULT_VST2_PATH
 del DEFAULT_VST3_PATH
-del DEFAULT_AU_PATH
 del DEFAULT_GIG_PATH
 del DEFAULT_SF2_PATH
 del DEFAULT_SFZ_PATH
@@ -502,6 +496,9 @@ if not CWD:
 # make it work with cxfreeze
 if os.path.isfile(CWD):
     CWD = os.path.dirname(CWD)
+    CXFREEZE = True
+else:
+    CXFREEZE = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Set DLL_EXTENSION

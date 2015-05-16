@@ -17,7 +17,11 @@
 
 #include "CarlaUtils.hpp"
 
-#include <cstdint>
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+# include <cstdint>
+#else
+# include <stdint.h>
+#endif
 
 // -----------------------------------------------------------------------
 

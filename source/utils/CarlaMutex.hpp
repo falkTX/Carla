@@ -223,6 +223,16 @@ public:
             fMutex.unlock();
     }
 
+    bool wasLocked() const noexcept
+    {
+        return fLocked;
+    }
+
+    bool wasNotLocked() const noexcept
+    {
+        return !fLocked;
+    }
+
 private:
     const Mutex& fMutex;
     const bool   fLocked;

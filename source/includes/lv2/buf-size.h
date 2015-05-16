@@ -17,6 +17,15 @@
 #ifndef LV2_BUF_SIZE_H
 #define LV2_BUF_SIZE_H
 
+/**
+   @defgroup buf-size Buffer Size
+
+   Access to, and restrictions on, buffer sizes; see
+   <http://lv2plug.in/ns/ext/buf-size> for details.
+
+   @{
+*/
+
 #define LV2_BUF_SIZE_URI    "http://lv2plug.in/ns/ext/buf-size"
 #define LV2_BUF_SIZE_PREFIX LV2_BUF_SIZE_URI "#"
 
@@ -26,5 +35,9 @@
 #define LV2_BUF_SIZE__minBlockLength      LV2_BUF_SIZE_PREFIX "minBlockLength"
 #define LV2_BUF_SIZE__powerOf2BlockLength LV2_BUF_SIZE_PREFIX "powerOf2BlockLength"
 #define LV2_BUF_SIZE__sequenceSize        LV2_BUF_SIZE_PREFIX "sequenceSize"
+
+/**
+   @}
+*/
 
 #endif  /* LV2_BUF_SIZE_H */

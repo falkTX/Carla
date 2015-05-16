@@ -17,9 +17,12 @@
 */
 
 /**
-   @file ui.h User Interface API.
+   @defgroup ui User Interfaces
 
-   For high-level documentation, see <http://lv2plug.in/ns/extensions/ui>.
+   User interfaces of any type for plugins,
+   <http://lv2plug.in/ns/extensions/ui> for details.
+
+   @{
 */
 
 #ifndef LV2_UI_H
@@ -37,6 +40,7 @@
 #define LV2_UI__GtkUI            LV2_UI_PREFIX "GtkUI"
 #define LV2_UI__PortNotification LV2_UI_PREFIX "PortNotification"
 #define LV2_UI__Qt4UI            LV2_UI_PREFIX "Qt4UI"
+#define LV2_UI__Qt5UI            LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__UI               LV2_UI_PREFIX "UI"
 #define LV2_UI__WindowsUI        LV2_UI_PREFIX "WindowsUI"
 #define LV2_UI__X11UI            LV2_UI_PREFIX "X11UI"
@@ -59,7 +63,7 @@
 #define LV2_UI__windowTitle      LV2_UI_PREFIX "windowTitle"
 
 /**
-   The index returned by LV2_UI_Port_Port::port_index() for unknown ports.
+   The index returned by LV2UI_Port_Map::port_index() for unknown ports.
 */
 #define LV2UI_INVALID_PORT_INDEX ((uint32_t)-1)
 
@@ -98,18 +102,21 @@ typedef void* LV2UI_Feature_Handle;
 /**
    A host-provided function that sends data to a plugin's input ports.
 
-   The @p buffer parameter must point to a block of data, @p buffer_size bytes
-   large.  The format of this data and how the host should use it is defined by
-   the @p port_protocol.  This buffer is owned by the UI and is only valid for
-   the duration of this call.
+   @param controller The opaque controller pointer passed to
+   LV2UI_Descriptor::instantiate().
 
-   The @p port_protocol parameter should either be 0 or the URID for a
-   ui:PortProtocol.  If it is 0, the protocol is implicitly ui:floatProtocol,
-   the port MUST be an lv2:ControlPort input, @p buffer MUST point to a single
-   float value, and @p buffer_size MUST be sizeof(float).
+   @param port_index Index of the port to update.
 
-   The UI SHOULD NOT use a protocol not supported by the host, but the host
-   MUST gracefully ignore any protocol it does not understand.
+   @param buffer Buffer containing `buffer_size` bytes of data.
+
+   @param buffer_size Size of `buffer` in bytes.
+
+   @param port_protocol Either 0 or the URID for a ui:PortProtocol.  If 0, the
+   protocol is implicitly ui:floatProtocol, the port MUST be an lv2:ControlPort
+   input, `buffer` MUST point to a single float value, and `buffer_size` MUST
+   be sizeof(float).  The UI SHOULD NOT use a protocol not supported by the
+   host, but the host MUST gracefully ignore any protocol it does not
+   understand.
 */
 typedef void (*LV2UI_Write_Function)(LV2UI_Controller controller,
                                      uint32_t         port_index,
@@ -143,7 +150,7 @@ typedef struct _LV2UI_Descriptor {
 	   @param write_function A function that the UI can use to send data to the
 	   plugin's input ports.
 
-	   @param controller A handle for the plugin instance to be passed as the
+	   @param controller A handle for the UI instance to be passed as the
 	   first parameter of UI methods.
 
 	   @param widget (output) widget pointer.  The UI points this at its main
@@ -173,18 +180,18 @@ typedef struct _LV2UI_Descriptor {
 	/**
 	   Tell the UI that something interesting has happened at a plugin port.
 
-	   What is "interesting" and how it is written to @p buffer is defined by
-	   @p format, which has the same meaning as in LV2UI_Write_Function().
+	   What is "interesting" and how it is written to `buffer` is defined by
+	   `format`, which has the same meaning as in LV2UI_Write_Function().
 	   Format 0 is a special case for lv2:ControlPort, where this function
 	   should be called when the port value changes (but not necessarily for
-	   every change), @p buffer_size must be sizeof(float), and @p buffer
+	   every change), `buffer_size` must be sizeof(float), and `buffer`
 	   points to a single IEEE-754 float.
 
 	   By default, the host should only call this function for lv2:ControlPort
 	   inputs.  However, the UI can request updates for other ports statically
 	   with ui:portNotification or dynamicaly with ui:portSubscribe.
 
-	   The UI MUST NOT retain any reference to @p buffer after this function
+	   The UI MUST NOT retain any reference to `buffer` after this function
 	   returns, it is only valid for the duration of the call.
 
 	   This member may be NULL if the UI is not interested in any port events.
@@ -201,7 +208,7 @@ typedef struct _LV2UI_Descriptor {
 
 	   This member may be set to NULL if the UI is not interested in supporting
 	   any extensions. This is similar to LV2_Descriptor::extension_data().
-	   
+
 	*/
 	const void* (*extension_data)(const char* uri);
 } LV2UI_Descriptor;
@@ -247,7 +254,7 @@ typedef struct _LV2UI_Port_Map {
 	LV2UI_Feature_Handle handle;
 
 	/**
-	   Get the index for the port with the given @p symbol.
+	   Get the index for the port with the given `symbol`.
 
 	   @return The index of the port, or LV2UI_INVALID_PORT_INDEX if no such
 	   port is found.
@@ -271,7 +278,7 @@ typedef struct _LV2UI_Port_Subscribe {
 	   This means that the host will call the UI's port_event() function when
 	   the port value changes (as defined by protocol).
 
-	   Calling this function with the same @p port_index and @p port_protocol
+	   Calling this function with the same `port_index` and `port_protocol`
 	   as an already active subscription has no effect.
 
 	   @param handle The handle field of this struct.
@@ -291,7 +298,7 @@ typedef struct _LV2UI_Port_Subscribe {
 	   This means that the host will cease calling calling port_event() when
 	   the port value changes.
 
-	   Calling this function with a @p port_index and @p port_protocol that
+	   Calling this function with a `port_index` and `port_protocol` that
 	   does not refer to an active port subscription has no effect.
 
 	   @param handle The handle field of this struct.
@@ -428,3 +435,7 @@ typedef const LV2UI_Descriptor* (*LV2UI_DescriptorFunction)(uint32_t index);
 #endif
 
 #endif /* LV2_UI_H */
+
+/**
+   @}
+*/

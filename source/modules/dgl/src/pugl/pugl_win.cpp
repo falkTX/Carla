@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2014 David Robillard <http://drobilla.net>
+  Copyright 2012 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -22,11 +22,11 @@
 #include <windowsx.h>
 #include <GL/gl.h>
 
+#include <ctime>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 
-#include "pugl/pugl_internal.h"
+#include "pugl_internal.h"
 
 #ifndef WM_MOUSEWHEEL
 #    define WM_MOUSEWHEEL 0x020A
@@ -38,7 +38,9 @@
 #    define WHEEL_DELTA 120
 #endif
 
-#define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
+const int LOCAL_CLOSE_MSG = WM_USER + 50;
+
+HINSTANCE hInstance = NULL;
 
 struct PuglInternalsImpl {
 	HWND     hwnd;
@@ -47,11 +49,10 @@ struct PuglInternalsImpl {
 	WNDCLASS wc;
 };
 
-static HINSTANCE hInstance = NULL;
-
 LRESULT CALLBACK
 wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
+#if 0
 extern "C" {
 BOOL WINAPI
 DllMain(HINSTANCE hInst, DWORD, LPVOID)
@@ -60,32 +61,12 @@ DllMain(HINSTANCE hInst, DWORD, LPVOID)
     return 1;
 }
 } // extern "C"
+#endif
 
 PuglInternals*
 puglInitInternals()
 {
 	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
-}
-
-void
-puglEnterContext(PuglView* view)
-{
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL) {
-		wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
-	}
-#endif
-}
-
-void
-puglLeaveContext(PuglView* view, bool flush)
-{
-#ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL && flush) {
-		glFlush();
-		SwapBuffers(view->impl->hdc);
-	}
-#endif
 }
 
 int
@@ -101,8 +82,9 @@ puglCreateWindow(PuglView* view, const char* title)
 	// Should class be a parameter?  Does this make sense on other platforms?
 	static int wc_count = 0;
 	char classNameBuf[256];
-	srand((time(NULL)));
-	_snprintf(classNameBuf, sizeof(classNameBuf), "%d-%d_%s\n", ++wc_count, rand(), title);
+	std::srand((std::time(NULL)));
+	_snprintf(classNameBuf, sizeof(classNameBuf), "%s_%d-%d", title, std::rand(), ++wc_count);
+	classNameBuf[sizeof(classNameBuf)-1] = '\0';
 
 	impl->wc.style         = CS_OWNDC;
 	impl->wc.lpfnWndProc   = wndProc;
@@ -114,37 +96,35 @@ puglCreateWindow(PuglView* view, const char* title)
 	impl->wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	impl->wc.lpszMenuName  = NULL;
 	impl->wc.lpszClassName = strdup(classNameBuf);
-	RegisterClass(&impl->wc);
 
-	int winFlags = WS_POPUPWINDOW | WS_CAPTION;
-	if (view->resizable) {
-		winFlags |= WS_SIZEBOX;
-	}
-
-	// Adjust the overall window size to accomodate our requested client size
-	RECT wr = { 0, 0, view->width, view->height };
-	AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
-
-	impl->hwnd = CreateWindowEx(
-		WS_EX_TOPMOST,
-		classNameBuf, title,
-		view->parent ? WS_CHILD : winFlags,
-		CW_USEDEFAULT, CW_USEDEFAULT, wr.right-wr.left, wr.bottom-wr.top,
-		(HWND)view->parent, NULL, hInstance, NULL);
-
-	if (!impl->hwnd) {
-		UnregisterClass(impl->wc.lpszClassName, hInstance);
+	if (!RegisterClass(&impl->wc)) {
 		free((void*)impl->wc.lpszClassName);
 		free(impl);
 		free(view);
 		return 1;
 	}
 
-#ifdef _WIN64
+	// Adjust the overall window size to accomodate our requested client size
+	const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (view->resizable ? WS_SIZEBOX : 0x0);
+	RECT wr = { 0, 0, view->width, view->height };
+	AdjustWindowRectEx(&wr, view->parent ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
+
+	impl->hwnd = CreateWindowEx(
+		WS_EX_TOPMOST,
+		classNameBuf, title,
+		view->parent ? (WS_CHILD | WS_VISIBLE) : winFlags,
+		CW_USEDEFAULT, CW_USEDEFAULT, wr.right-wr.left, wr.bottom-wr.top,
+		(HWND)view->parent, NULL, hInstance, NULL);
+
+	if (!impl->hwnd) {
+		UnregisterClass(impl->wc.lpszClassName, NULL);
+		free((void*)impl->wc.lpszClassName);
+		free(impl);
+		free(view);
+		return 1;
+	}
+
 	SetWindowLongPtr(impl->hwnd, GWLP_USERDATA, (LONG_PTR)view);
-#else
-	SetWindowLongPtr(impl->hwnd, GWL_USERDATA, (LONG)view);
-#endif
 
 	impl->hdc = GetDC(impl->hwnd);
 
@@ -162,6 +142,16 @@ puglCreateWindow(PuglView* view, const char* title)
 	SetPixelFormat(impl->hdc, format, &pfd);
 
 	impl->hglrc = wglCreateContext(impl->hdc);
+	if (!impl->hglrc) {
+		ReleaseDC (impl->hwnd, impl->hdc);
+		DestroyWindow (impl->hwnd);
+		UnregisterClass (impl->wc.lpszClassName, NULL);
+		free((void*)impl->wc.lpszClassName);
+		free(impl);
+		free(view);
+		return 1;
+	}
+
 	wglMakeCurrent(impl->hdc, impl->hglrc);
 
 	return 0;
@@ -190,7 +180,7 @@ puglDestroy(PuglView* view)
 	wglDeleteContext(view->impl->hglrc);
 	ReleaseDC(view->impl->hwnd, view->impl->hdc);
 	DestroyWindow(view->impl->hwnd);
-	UnregisterClass(view->impl->wc.lpszClassName, hInstance);
+	UnregisterClass(view->impl->wc.lpszClassName, NULL);
 	free((void*)view->impl->wc.lpszClassName);
 	free(view->impl);
 	free(view);
@@ -199,10 +189,12 @@ puglDestroy(PuglView* view)
 static void
 puglReshape(PuglView* view, int width, int height)
 {
-	puglEnterContext(view);
+	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
 
 	if (view->reshapeFunc) {
 		view->reshapeFunc(view, width, height);
+	} else {
+		puglDefaultReshape(view, width, height);
 	}
 
 	view->width  = width;
@@ -212,14 +204,15 @@ puglReshape(PuglView* view, int width, int height)
 static void
 puglDisplay(PuglView* view)
 {
-	puglEnterContext(view);
+	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
 
+	view->redisplay = false;
 	if (view->displayFunc) {
 		view->displayFunc(view);
 	}
 
-	puglLeaveContext(view, true);
-	view->redisplay = false;
+	glFlush();
+	SwapBuffers(view->impl->hdc);
 }
 
 static PuglKey
@@ -308,7 +301,6 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOUSEMOVE:
 		if (view->motionFunc) {
-			view->event_timestamp_ms = GetMessageTime();
 			view->motionFunc(view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		}
 		break;
@@ -333,17 +325,21 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_MOUSEWHEEL:
 		if (view->scrollFunc) {
 			view->event_timestamp_ms = GetMessageTime();
+			POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			ScreenToClient(view->impl->hwnd, &pt);
 			view->scrollFunc(
-				view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam),
-				0.0f, (int16_t)HIWORD(wParam) / (float)WHEEL_DELTA);
+				view, pt.x, pt.y,
+				0, GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
 		}
 		break;
 	case WM_MOUSEHWHEEL:
 		if (view->scrollFunc) {
 			view->event_timestamp_ms = GetMessageTime();
+			POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+			ScreenToClient(view->impl->hwnd, &pt);
 			view->scrollFunc(
-				view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam),
-				(int16_t)HIWORD(wParam) / float(WHEEL_DELTA), 0.0f);
+				view, pt.x, pt.y,
+				GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA, 0);
 		}
 		break;
 	case WM_KEYDOWN:
@@ -357,11 +353,18 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 				view->specialFunc(view, message == WM_KEYDOWN, key);
 			}
 		} else if (view->keyboardFunc) {
-			view->keyboardFunc(view, message == WM_KEYDOWN, wParam);
+			static BYTE kbs[256];
+			if (GetKeyboardState(kbs) != FALSE) {
+				char lb[2];
+				UINT scanCode = (lParam >> 8) & 0xFFFFFF00;
+				if ( 1 == ToAscii(wParam, scanCode, kbs, (LPWORD)lb, 0)) {
+					view->keyboardFunc(view, message == WM_KEYDOWN, (char)lb[0]);
+				}
+			}
 		}
 		break;
 	case WM_QUIT:
-	case PUGL_LOCAL_CLOSE_MSG:
+	case LOCAL_CLOSE_MSG:
 		if (view->closeFunc) {
 			view->closeFunc(view);
 		}
@@ -374,12 +377,6 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	return 0;
 }
 
-void
-puglGrabFocus(PuglView* /*view*/)
-{
-	// TODO
-}
-
 PuglStatus
 puglProcessEvents(PuglView* view)
 {
@@ -387,7 +384,6 @@ puglProcessEvents(PuglView* view)
 	while (PeekMessage(&msg, view->impl->hwnd, 0, 0, PM_REMOVE)) {
 		handleMessage(view, msg.message, msg.wParam, msg.lParam);
 	}
-
 
 	if (view->redisplay) {
 		InvalidateRect(view->impl->hwnd, NULL, FALSE);
@@ -399,23 +395,19 @@ puglProcessEvents(PuglView* view)
 LRESULT CALLBACK
 wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-#ifdef _WIN64
 	PuglView* view = (PuglView*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-#else
-	PuglView* view = (PuglView*)GetWindowLongPtr(hwnd, GWL_USERDATA);
-#endif
 
 	switch (message) {
 	case WM_CREATE:
 		PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
 		return 0;
 	case WM_CLOSE:
-		PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
+		PostMessage(hwnd, LOCAL_CLOSE_MSG, wParam, lParam);
 		return 0;
 	case WM_DESTROY:
 		return 0;
 	default:
-		if (view) {
+		if (view && hwnd == view->impl->hwnd) {
 			return handleMessage(view, message, wParam, lParam);
 		} else {
 			return DefWindowProc(hwnd, message, wParam, lParam);

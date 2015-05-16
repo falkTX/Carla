@@ -51,7 +51,7 @@ struct ERect {
     int16_t top, left, bottom, right;
 };
 #else
-# include "vst/aeffectx.h"
+# include "vst2/aeffectx.h"
 #endif
 
 using juce::ScopedJuceInitialiser_GUI;
@@ -191,7 +191,7 @@ public:
             fSampleRate = opt;
 
             if (fDescriptor->dispatcher != nullptr)
-                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, opt);
             break;
 
         case effSetBlockSize:
@@ -211,9 +211,31 @@ public:
                 carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
 
                 // tell host we want MIDI events
-                fAudioMaster(fEffect, audioMasterWantMidi, 0, 0, nullptr, 0.0f);
+                hostCallback(audioMasterWantMidi);
 
-                CARLA_SAFE_ASSERT_BREAK(! fIsActive);
+                // deactivate for possible changes
+                if (fDescriptor->deactivate != nullptr && fIsActive)
+                    fDescriptor->deactivate(fHandle);
+
+                // check if something changed
+                const uint32_t bufferSize = static_cast<uint32_t>(hostCallback(audioMasterGetBlockSize));
+                const double   sampleRate = static_cast<double>(hostCallback(audioMasterGetSampleRate));
+
+                if (bufferSize != 0 && fBufferSize != bufferSize)
+                {
+                    fBufferSize = bufferSize;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, (int32_t)value, nullptr, 0.0f);
+                }
+
+                if (sampleRate != 0.0 && ! carla_compareFloats(fSampleRate, sampleRate))
+                {
+                    fSampleRate = sampleRate;
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)sampleRate);
+                }
 
                 if (fDescriptor->activate != nullptr)
                     fDescriptor->activate(fHandle);
@@ -243,10 +265,13 @@ public:
                 strBuf[0xff] = '\0';
                 std::snprintf(strBuf, 0xff, P_INTPTR, (intptr_t)ptr);
 
+                // set CARLA_PLUGIN_EMBED_WINID for external process
                 carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
 
+                // show UI now
                 fDescriptor->ui_show(fHandle, true);
 
+                // reset CARLA_PLUGIN_EMBED_WINID just in case
                 carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
 
                 ret = 1;
@@ -300,7 +325,6 @@ public:
             {
                 // host has not activated the plugin yet, nasty!
                 vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-                fIsActive = true;
             }
 
             if (const VstEvents* const events = (const VstEvents*)ptr)
@@ -369,12 +393,11 @@ public:
         {
             // host has not activated the plugin yet, nasty!
             vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
-            fIsActive = true;
         }
 
         static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
 
-        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)fAudioMaster(fEffect, audioMasterGetTime, 0, kWantVstTimeFlags, nullptr, 0.0f))
+        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)hostCallback(audioMasterGetTime, 0, kWantVstTimeFlags))
         {
             fTimeInfo.frame     = static_cast<uint64_t>(vstTimeInfo->samplePos);
             fTimeInfo.playing   =  (vstTimeInfo->flags & kVstTransportPlaying);
@@ -420,7 +443,7 @@ public:
         fMidiEventCount = 0;
 
         if (fMidiOutEvents.numEvents > 0)
-            fAudioMaster(fEffect, audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
+            hostCallback(audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
     }
 
 protected:
@@ -496,10 +519,27 @@ protected:
     intptr_t handleDispatcher(const NativeHostDispatcherOpcode opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
         carla_debug("NativePlugin::handleDispatcher(%i, %i, " P_INTPTR ", %p, %f)", opcode, index, value, ptr, opt);
-        return 0;
+
+        switch (opcode)
+        {
+        case NATIVE_HOST_OPCODE_NULL:
+        case NATIVE_HOST_OPCODE_UPDATE_PARAMETER:
+        case NATIVE_HOST_OPCODE_UPDATE_MIDI_PROGRAM:
+        case NATIVE_HOST_OPCODE_RELOAD_PARAMETERS:
+        case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
+        case NATIVE_HOST_OPCODE_RELOAD_ALL:
+        case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:
+            break;
+
+        case NATIVE_HOST_OPCODE_HOST_IDLE:
+            hostCallback(audioMasterIdle);
+            break;
+        }
 
         // unused for now
-        (void)opcode; (void)index; (void)value; (void)ptr; (void)opt;
+        return 0;
+
+        (void)index; (void)value; (void)ptr; (void)opt;
     }
 
 private:
@@ -522,6 +562,16 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
+
+    // host callback
+    intptr_t hostCallback(const int32_t opcode,
+                          const int32_t index = 0,
+                          const intptr_t value = 0,
+                          void* const ptr = nullptr,
+                          const float opt = 0.0f)
+    {
+        return fAudioMaster(fEffect, opcode, index, value, ptr, opt);
+    }
 
     struct FixedVstEvents {
         int32_t numEvents;
@@ -685,10 +735,12 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effClose:
         if (VstObject* const obj = vstObjectPtr)
         {
-            if (obj->plugin != nullptr)
+            NativePlugin* const plugin(obj->plugin);
+
+            if (plugin != nullptr)
             {
-                delete obj->plugin;
                 obj->plugin = nullptr;
+                delete plugin;
             }
 
 #if 0

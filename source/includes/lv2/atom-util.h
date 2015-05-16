@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2013 David Robillard <http://drobilla.net>
+  Copyright 2008-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -20,6 +20,12 @@
    Note these functions are all static inline, do not take their address.
 
    This header is non-normative, it is provided for convenience.
+*/
+
+/**
+   @defgroup util Utilities
+   @ingroup atom
+   @{
 */
 
 #ifndef LV2_ATOM_UTIL_H
@@ -44,21 +50,21 @@ lv2_atom_pad_size(uint32_t size)
 	return (size + 7U) & (~7U);
 }
 
-/** Return the total size of @p atom, including the header. */
+/** Return the total size of `atom`, including the header. */
 static inline uint32_t
 lv2_atom_total_size(const LV2_Atom* atom)
 {
 	return (uint32_t)sizeof(LV2_Atom) + atom->size;
 }
 
-/** Return true iff @p atom is null. */
+/** Return true iff `atom` is null. */
 static inline bool
 lv2_atom_is_null(const LV2_Atom* atom)
 {
 	return !atom || (atom->type == 0 && atom->size == 0);
 }
 
-/** Return true iff @p a is equal to @p b. */
+/** Return true iff `a` is equal to `b`. */
 static inline bool
 lv2_atom_equals(const LV2_Atom* a, const LV2_Atom* b)
 {
@@ -80,13 +86,20 @@ lv2_atom_sequence_begin(const LV2_Atom_Sequence_Body* body)
 }
 
 /** Get an iterator pointing to the end of a Sequence body. */
+static inline const LV2_Atom_Event*
+lv2_atom_sequence_end(const LV2_Atom_Sequence_Body* body, uint32_t size)
+{
+	return (const LV2_Atom_Event*)((const uint8_t*)body + lv2_atom_pad_size(size));
+}
+
+/** Get an iterator pointing to the end of a Sequence body. */
 static inline LV2_Atom_Event*
-lv2_atom_sequence_end(LV2_Atom_Sequence_Body* body, uint32_t size)
+lv2_atom_sequence_end2(LV2_Atom_Sequence_Body* body, uint32_t size)
 {
 	return (LV2_Atom_Event*)((uint8_t*)body + lv2_atom_pad_size(size));
 }
 
-/** Return true iff @p i has reached the end of @p body. */
+/** Return true iff `i` has reached the end of `body`. */
 static inline bool
 lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
                          uint32_t                      size,
@@ -95,7 +108,7 @@ lv2_atom_sequence_is_end(const LV2_Atom_Sequence_Body* body,
 	return (const uint8_t*)i >= ((const uint8_t*)body + size);
 }
 
-/** Return an iterator to the element following @p i. */
+/** Return an iterator to the element following `i`. */
 static inline const LV2_Atom_Event*
 lv2_atom_sequence_next(const LV2_Atom_Event* i)
 {
@@ -134,7 +147,7 @@ lv2_atom_sequence_next(const LV2_Atom_Event* i)
 */
 
 /**
-   Clear all events from @p sequence.
+   Clear all events from `sequence`.
 
    This simply resets the size field, the other fields are left untouched.
 */
@@ -145,14 +158,14 @@ lv2_atom_sequence_clear(LV2_Atom_Sequence* seq)
 }
 
 /**
-   Append an event at the end of @p sequence.
+   Append an event at the end of `sequence`.
 
    @param seq Sequence to append to.
    @param capacity Total capacity of the sequence atom
    (e.g. as set by the host for sequence output ports).
    @param event Event to write.
 
-   @return A pointer to the newly written event in @p seq,
+   @return A pointer to the newly written event in `seq`,
    or NULL on failure (insufficient space).
 */
 static inline LV2_Atom_Event*
@@ -165,7 +178,7 @@ lv2_atom_sequence_append_event(LV2_Atom_Sequence*    seq,
 		return NULL;
 	}
 
-	LV2_Atom_Event* e = lv2_atom_sequence_end(&seq->body, seq->atom.size);
+	LV2_Atom_Event* e = lv2_atom_sequence_end2(&seq->body, seq->atom.size);
 	memcpy(e, event, total_size);
 
 	seq->atom.size += lv2_atom_pad_size(total_size);
@@ -179,21 +192,21 @@ lv2_atom_sequence_append_event(LV2_Atom_Sequence*    seq,
    @{
 */
 
-/** Get an iterator pointing to the first element in @p tup. */
+/** Get an iterator pointing to the first element in `tup`. */
 static inline const LV2_Atom*
 lv2_atom_tuple_begin(const LV2_Atom_Tuple* tup)
 {
 	return (const LV2_Atom*)(LV2_ATOM_BODY_CONST(tup));
 }
 
-/** Return true iff @p i has reached the end of @p body. */
+/** Return true iff `i` has reached the end of `body`. */
 static inline bool
 lv2_atom_tuple_is_end(const void* body, uint32_t size, const LV2_Atom* i)
 {
 	return (const uint8_t*)i >= ((const uint8_t*)body + size);
 }
 
-/** Return an iterator to the element following @p i. */
+/** Return an iterator to the element following `i`. */
 static inline const LV2_Atom*
 lv2_atom_tuple_next(const LV2_Atom* i)
 {
@@ -230,14 +243,14 @@ lv2_atom_tuple_next(const LV2_Atom* i)
    @{
 */
 
-/** Return a pointer to the first property in @p body. */
+/** Return a pointer to the first property in `body`. */
 static inline const LV2_Atom_Property_Body*
 lv2_atom_object_begin(const LV2_Atom_Object_Body* body)
 {
 	return (const LV2_Atom_Property_Body*)(body + 1);
 }
 
-/** Return true iff @p i has reached the end of @p obj. */
+/** Return true iff `i` has reached the end of `obj`. */
 static inline bool
 lv2_atom_object_is_end(const LV2_Atom_Object_Body*   body,
                        uint32_t                      size,
@@ -246,7 +259,7 @@ lv2_atom_object_is_end(const LV2_Atom_Object_Body*   body,
 	return (const uint8_t*)i >= ((const uint8_t*)body + size);
 }
 
-/** Return an iterator to the property following @p i. */
+/** Return an iterator to the property following `i`. */
 static inline const LV2_Atom_Property_Body*
 lv2_atom_object_next(const LV2_Atom_Property_Body* i)
 {
@@ -297,10 +310,10 @@ static const LV2_Atom_Object_Query LV2_ATOM_OBJECT_QUERY_END = { 0, NULL };
 /**
    Get an object's values for various keys.
 
-   The value pointer of each item in @p query will be set to the location of
-   the corresponding value in @p object.  Every value pointer in @p query MUST
-   be initialised to NULL.  This function reads @p object in a single linear
-   sweep.  By allocating @p query on the stack, objects can be "queried"
+   The value pointer of each item in `query` will be set to the location of
+   the corresponding value in `object`.  Every value pointer in `query` MUST
+   be initialised to NULL.  This function reads `object` in a single linear
+   sweep.  By allocating `query` on the stack, objects can be "queried"
    quickly without allocating any memory.  This function is realtime safe.
 
    This function can only do "flat" queries, it is not smart enough to match
@@ -436,6 +449,7 @@ lv2_atom_object_get(const LV2_Atom_Object* object, ...)
 }
 
 /**
+   @}
    @}
 */
 

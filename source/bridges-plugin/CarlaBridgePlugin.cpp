@@ -25,6 +25,7 @@
 # include <signal.h>
 #endif
 
+#include "jackbridge/JackBridge.hpp"
 #include "juce_core.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
@@ -295,6 +296,17 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+#if defined(CARLA_OS_WIN) && ! defined(BUILDING_CARLA_FOR_WINDOWS)
+    // ---------------------------------------------------------------------
+    // Test if bridge is working
+
+    if (! jackbridge_is_ok())
+    {
+        carla_stderr("A JACK or Wine library is missing, cannot continue");
+        return 1;
+    }
+#endif
+
     // ---------------------------------------------------------------------
     // Get args
 
@@ -308,6 +320,20 @@ int main(int argc, char* argv[])
 
     if (label[0] == '\0' || std::strcmp(label, "(none)") == 0)
         label = nullptr;
+
+    // ---------------------------------------------------------------------
+    // Check binary type
+
+    CarlaBackend::BinaryType btype = CarlaBackend::BINARY_NATIVE;
+
+    if (const char* const binaryTypeStr = std::getenv("CARLA_BRIDGE_PLUGIN_BINARY_TYPE"))
+        btype = CarlaBackend::getBinaryTypeFromString(binaryTypeStr);
+
+    if (btype == CarlaBackend::BINARY_NONE)
+    {
+        carla_stderr("Invalid binary type '%i'", btype);
+        return 1;
+    }
 
     // ---------------------------------------------------------------------
     // Check plugin type
@@ -409,7 +435,7 @@ int main(int argc, char* argv[])
 
     int ret;
 
-    if (carla_add_plugin(CarlaBackend::BINARY_NATIVE, itype, filename, name, label, uniqueId, extraStuff))
+    if (carla_add_plugin(btype, itype, filename, name, label, uniqueId, extraStuff, 0x0))
     {
         ret = 0;
 
@@ -420,7 +446,12 @@ int main(int argc, char* argv[])
             if (const CarlaPluginInfo* const pluginInfo = carla_get_plugin_info(0))
             {
                 if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
-                    carla_show_custom_ui(0, true);
+                {
+#ifdef CARLA_OS_LINUX
+                    if (std::getenv("DISPLAY") != nullptr)
+#endif
+                        carla_show_custom_ui(0, true);
+                }
             }
         }
 

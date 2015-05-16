@@ -422,6 +422,7 @@ public:
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
         // embed UIs can only be resizable if they provide resize extension
         fUiOptions.isResizable = false;
+        // TODO: put this trick into main carla
 
         for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
         {
@@ -503,15 +504,18 @@ public:
 
         if (fDescriptor->extension_data != nullptr)
         {
-            fExt.programs = (const LV2_Programs_UI_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__UIInterface);
             fExt.options  = (const LV2_Options_Interface*)fDescriptor->extension_data(LV2_OPTIONS__interface);
+            fExt.programs = (const LV2_Programs_UI_Interface*)fDescriptor->extension_data(LV2_PROGRAMS__UIInterface);
             fExt.idle     = (const LV2UI_Idle_Interface*)fDescriptor->extension_data(LV2_UI__idleInterface);
+            fExt.resize   = (const LV2UI_Resize*)fDescriptor->extension_data(LV2_UI__resize);
 
             // check if invalid
             if (fExt.programs != nullptr && fExt.programs->select_program == nullptr)
                 fExt.programs = nullptr;
             if (fExt.idle != nullptr && fExt.idle->idle == nullptr)
                 fExt.idle = nullptr;
+            if (fExt.resize != nullptr && fExt.resize->ui_resize == nullptr)
+                fExt.resize = nullptr;
         }
 
         return true;
@@ -620,6 +624,12 @@ public:
         fUiOptions.transientWindowId = transientWindowId;
     }
 
+    void uiResized(const uint width, const uint height) override
+    {
+        if (fHandle != nullptr && fExt.resize != nullptr)
+            fExt.resize->ui_resize(fHandle, static_cast<int>(width), static_cast<int>(height));
+    }
+
     // ---------------------------------------------------------------------
 
     LV2_URID getCustomURID(const char* const uri)
@@ -654,11 +664,12 @@ public:
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), nullptr);
+        static const char* const sFallback = "urn:null";
+        CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), sFallback);
         carla_debug("CarlaLv2Client::getCustomURIDString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid, nullptr);
+        return fCustomURIDs.getAt(urid, sFallback);
     }
 
     // ---------------------------------------------------------------------
@@ -742,13 +753,15 @@ private:
 
     struct Extensions {
         const LV2_Options_Interface* options;
-        const LV2UI_Idle_Interface* idle;
         const LV2_Programs_UI_Interface* programs;
+        const LV2UI_Idle_Interface* idle;
+        const LV2UI_Resize* resize;
 
         Extensions()
             : options(nullptr),
+              programs(nullptr),
               idle(nullptr),
-              programs(nullptr) {}
+              resize(nullptr) {}
     } fExt;
 
     // -------------------------------------------------------------------

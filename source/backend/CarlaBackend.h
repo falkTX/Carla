@@ -168,6 +168,12 @@ static const uint PLUGIN_NEEDS_FIXED_BUFFERS = 0x100;
  */
 static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
 
+/*!
+ * Plugin uses 1 program per MIDI channel.
+ * @note: Only used in some internal plugins and gig+sf2 files.
+ */
+static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
@@ -353,6 +359,11 @@ static const char* const CUSTOM_DATA_TYPE_BOOLEAN = "http://kxstudio.sf.net/ns/c
 static const char* const CUSTOM_DATA_TYPE_CHUNK = "http://kxstudio.sf.net/ns/carla/chunk";
 
 /*!
+ * Property type URI.
+ */
+static const char* const CUSTOM_DATA_TYPE_PROPERTY = "http://kxstudio.sf.net/ns/carla/property";
+
+/*!
  * String type URI.
  */
 static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/carla/string";
@@ -369,11 +380,6 @@ static const char* const CUSTOM_DATA_TYPE_STRING = "http://kxstudio.sf.net/ns/ca
  * @see CustomData::key
  * @{
  */
-
-/*!
- * Plugin options key.
- */
-static const char* const CUSTOM_DATA_KEY_PLUGIN_OPTIONS = "CarlaPluginOptions";
 
 /*!
  * UI position key.
@@ -915,28 +921,34 @@ typedef enum {
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
     /*!
+     * NSM callback.
+     * (Work in progress, values are not defined yet)
+     */
+    ENGINE_CALLBACK_NSM = 35,
+
+    /*!
      * Idle frontend.
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
-    ENGINE_CALLBACK_IDLE = 35,
+    ENGINE_CALLBACK_IDLE = 36,
 
     /*!
      * Show a message as information.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_INFO = 36,
+    ENGINE_CALLBACK_INFO = 37,
 
     /*!
      * Show a message as an error.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_ERROR = 37,
+    ENGINE_CALLBACK_ERROR = 38,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 38
+    ENGINE_CALLBACK_QUIT = 39
 
 } EngineCallbackOpcode;
 
@@ -956,7 +968,7 @@ typedef enum {
 
     /*!
      * Set the engine processing mode.
-     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_PATCHBAY for all other OSes.
      * @see EngineProcessMode
      */
     ENGINE_OPTION_PROCESS_MODE = 1,
@@ -1031,41 +1043,36 @@ typedef enum {
     ENGINE_OPTION_AUDIO_DEVICE = 12,
 
     /*!
-     * Set data needed for NSM support.
-     */
-    ENGINE_OPTION_NSM_INIT = 13,
-
-    /*!
      * Set path used for a specific plugin type.
      * Uses value as the plugin format, valueStr as actual path.
      * @see PluginType
      */
-    ENGINE_OPTION_PLUGIN_PATH = 14,
+    ENGINE_OPTION_PLUGIN_PATH = 13,
 
     /*!
      * Set path to the binary files.
      * Default unset.
      * @note Must be set for plugin and UI bridges to work
      */
-    ENGINE_OPTION_PATH_BINARIES = 15,
+    ENGINE_OPTION_PATH_BINARIES = 14,
 
     /*!
      * Set path to the resource files.
      * Default unset.
      * @note Must be set for some internal plugins to work
      */
-    ENGINE_OPTION_PATH_RESOURCES = 16,
+    ENGINE_OPTION_PATH_RESOURCES = 15,
 
     /*!
      * Prevent bad plugin and UI behaviour.
      * @note: Linux only
      */
-    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 17,
+    ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 16,
 
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 18
+    ENGINE_OPTION_FRONTEND_WIN_ID = 17
 
 } EngineOption;
 

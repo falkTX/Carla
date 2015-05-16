@@ -64,6 +64,7 @@ public:
           fNeedIdle(false),
           fLastChunk(nullptr),
           fIsProcessing(false),
+          fMainThread(pthread_self()),
 #ifdef PTW32_DLLPORT
           fProcThread({nullptr, 0}),
 #else
@@ -81,13 +82,6 @@ public:
 
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
-
-#ifdef CARLA_OS_WIN
-        fProcThread.p = nullptr;
-        fProcThread.x = 0;
-#else
-        fProcThread = 0;
-#endif
 
         // make plugin valid
         srand(id);
@@ -588,7 +582,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true);
+            pData->audioIn.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, true, j);
             pData->audioIn.ports[j].rindex = j;
         }
 
@@ -613,7 +607,7 @@ public:
 
             portName.truncate(portNameSize);
 
-            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false);
+            pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
 
@@ -774,7 +768,7 @@ public:
             portName += "events-in";
             portName.truncate(portNameSize);
 
-            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true);
+            pData->event.portIn = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, true, 0);
         }
 
         if (needsCtrlOut)
@@ -790,7 +784,7 @@ public:
             portName += "events-out";
             portName.truncate(portNameSize);
 
-            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false);
+            pData->event.portOut = (CarlaEngineEventPort*)pData->client->addPort(kEnginePortTypeEvent, portName, false, 0);
         }
 
         // plugin hints
@@ -843,6 +837,7 @@ public:
             deactivate();
         }
 
+#if 0 // TODO
         // check latency
         if (pData->hints & PLUGIN_CAN_DRYWET)
         {
@@ -859,19 +854,7 @@ public:
             pData->recreateLatencyBuffers();
 #endif
         }
-
-        // special plugin fixes
-        // 1. IL Harmless - disable threaded processing
-        if (fEffect->uniqueID == 1229484653)
-        {
-            char strBuf[STR_MAX+1] = { '\0' };
-            getLabel(strBuf);
-
-            if (std::strcmp(strBuf, "IL Harmless") == 0)
-            {
-                // TODO - disable threaded processing
-            }
-        }
+#endif
 
         //bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -914,7 +897,7 @@ public:
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
         // Update OSC Names
-        if (pData->engine->isOscControlRegistered())
+        if (pData->engine->isOscControlRegistered() && pData->id < pData->engine->getCurrentPluginCount())
         {
             pData->engine->oscSend_control_set_program_count(pData->id, newCount);
 
@@ -1061,11 +1044,13 @@ public:
             }
 
 #ifndef BUILD_BRIDGE
+#if 0 // TODO
             if (pData->latency > 0)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
                     FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
             }
+#endif
 #endif
 
             pData->needsReset = false;
@@ -1457,7 +1442,7 @@ public:
                 midiData[1] = static_cast<uint8_t>(vstMidiEvent.midiData[1]);
                 midiData[2] = static_cast<uint8_t>(vstMidiEvent.midiData[2]);
 
-                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), MIDI_GET_CHANNEL_FROM_DATA(midiData), 0, 3, midiData);
+                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), 3, midiData);
             }
 
         } // End of MIDI Output
@@ -1738,13 +1723,17 @@ protected:
         }
 
         case audioMasterCurrentId:
-            // TODO
-            // if using old sdk, return effect->uniqueID
+            ret = fEffect->uniqueID;
             break;
 
         case audioMasterIdle:
-            //pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-            //pData->engine->idle();
+            if (pthread_equal(pthread_self(), fMainThread))
+            {
+                pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+                if (pData->engine->getType() != kEngineTypePlugin)
+                    pData->engine->idle();
+            }
             break;
 
 #if ! VST_FORCE_DEPRECATED
@@ -2112,9 +2101,13 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 1)
 
+        sCurrentUniqueId     = uniqueId;
         sLastCarlaPluginVST2 = this;
+
         fEffect = vstFn(carla_vst_audioMasterCallback);
+
         sLastCarlaPluginVST2 = nullptr;
+        sCurrentUniqueId     = 0;
 
         if (fEffect == nullptr)
         {
@@ -2190,7 +2183,9 @@ public:
         // set default options
 
         pData->options  = 0x0;
-        pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fEffect->flags & effFlagsIsSynth)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fEffect->flags & effFlagsProgramChunks)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -2223,6 +2218,7 @@ private:
     void* fLastChunk;
 
     bool      fIsProcessing;
+    pthread_t fMainThread;
     pthread_t fProcThread;
 
     struct FixedVstEvents {
@@ -2264,6 +2260,7 @@ private:
 
     int fUnique2;
 
+    static intptr_t         sCurrentUniqueId;
     static CarlaPluginVST2* sLastCarlaPluginVST2;
 
     // -------------------------------------------------------------------
@@ -2303,9 +2300,9 @@ private:
         if (std::strcmp(feature, "startStopProcess") == 0)
             return 1;
         if (std::strcmp(feature, "supportShell") == 0)
-            return -1;
+            return 1;
         if (std::strcmp(feature, "shellCategory") == 0)
-            return -1;
+            return 1;
 
         // unimplemented
         carla_stderr("carla_vst_hostCanDo(\"%s\") - unknown feature", feature);
@@ -2323,6 +2320,11 @@ private:
         {
         case audioMasterVersion:
             return kVstVersion;
+
+        case audioMasterCurrentId:
+            if (sCurrentUniqueId != 0)
+                return sCurrentUniqueId;
+            break;
 
         case audioMasterGetVendorString:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
@@ -2394,6 +2396,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginVST2)
 };
 
+intptr_t         CarlaPluginVST2::sCurrentUniqueId     = 0;
 CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
@@ -2415,15 +2418,6 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 
     if (! plugin->init(init.filename, init.name, init.uniqueId))
     {
-        delete plugin;
-        return nullptr;
-    }
-
-    plugin->reload();
-
-    if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && ! plugin->canRunInRack())
-    {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo VST plugins, sorry!");
         delete plugin;
         return nullptr;
     }

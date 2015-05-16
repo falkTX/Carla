@@ -31,6 +31,8 @@
 # include "juce_audio_processors.h"
 #endif
 
+#include "../native-plugins/_data.cpp"
+
 namespace CB = CarlaBackend;
 
 static const char* const gNullCharPtr = "";
@@ -57,167 +59,6 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const NativePluginDescriptor carlaRackDesc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
-    /* audioIns  */ 2,
-    /* audioOuts */ 2,
-    /* midiIns   */ 1,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Carla-Rack",
-    /* label     */ "carlarack",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr
-};
-
-static const NativePluginDescriptor carlaPatchbayDesc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
-    /* audioIns  */ 2,
-    /* audioOuts */ 2,
-    /* midiIns   */ 1,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Carla-Patchbay",
-    /* label     */ "carlapatchbay",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr
-};
-
-static const NativePluginDescriptor carlaPatchbay3sDesc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
-    /* audioIns  */ 3,
-    /* audioOuts */ 2,
-    /* midiIns   */ 1,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Carla-Patchbay (sidechain)",
-    /* label     */ "carlapatchbay3s",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr
-};
-
-static const NativePluginDescriptor carlaPatchbay16Desc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
-    /* audioIns  */ 16,
-    /* audioOuts */ 16,
-    /* midiIns   */ 1,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Carla-Patchbay (16chan)",
-    /* label     */ "carlapatchbay16",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr
-};
-
-static const NativePluginDescriptor carlaPatchbay32Desc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
-    /* audioIns  */ 32,
-    /* audioOuts */ 32,
-    /* midiIns   */ 1,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Carla-Patchbay (32chan)",
-    /* label     */ "carlapatchbay32",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-    nullptr, nullptr, nullptr, nullptr
-};
-
-static LinkedList<const NativePluginDescriptor*> gPluginDescriptors;
-
-static const
-struct ScopedInitializer {
-    ScopedInitializer()
-    {
-        carla_register_all_plugins();
-    }
-
-    ~ScopedInitializer()
-    {
-        gPluginDescriptors.clear();
-    }
-} _si;
-
-// -------------------------------------------------------------------------------------------------------------------
-
-CARLA_EXTERN_C
-void carla_register_native_plugin_carla();
-
-void carla_register_native_plugin_carla()
-{
-    gPluginDescriptors.append(&carlaRackDesc);
-    gPluginDescriptors.append(&carlaPatchbayDesc);
-    gPluginDescriptors.append(&carlaPatchbay3sDesc);
-    gPluginDescriptors.append(&carlaPatchbay16Desc);
-    gPluginDescriptors.append(&carlaPatchbay32Desc);
-}
-
-void carla_register_native_plugin(const NativePluginDescriptor* desc)
-{
-    gPluginDescriptors.append(desc);
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
 const char* carla_get_complete_license_text()
 {
     carla_debug("carla_get_complete_license_text()");
@@ -229,6 +70,12 @@ const char* carla_get_complete_license_text()
         retText =
         "<p>This current Carla build is using the following features and 3rd-party code:</p>"
         "<ul>"
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
+# define LS_NOTE_NO "2"
+#else
+# define LS_NOTE_NO "1"
+#endif
 
         // Plugin formats
         "<li>LADSPA plugin support</li>"
@@ -251,13 +98,7 @@ const char* carla_get_complete_license_text()
         "<li>FluidSynth library for SF2 support</li>"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support [2]</li>"
-#endif
-
-        // Internal plugins
-        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
-#ifdef WANT_ZYNADDSUBFX
-        "<li>ZynAddSubFX plugin code</li>"
+        "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
 #endif
 
         // misc libs
@@ -272,6 +113,18 @@ const char* carla_get_complete_license_text()
         "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
 #endif
 
+        // Internal plugins
+#ifdef HAVE_EXPERIMENTAL_PLUGINS
+        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
+#endif
+        "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
+        "<li>MVerb plugin code by Martin Eastwood</li>"
+        "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
+        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
+#ifdef HAVE_ZYN_DEPS
+        "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
+#endif
+
         // end
         "</ul>"
 
@@ -282,7 +135,7 @@ const char* carla_get_complete_license_text()
 #endif
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        "&nbsp;[2] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
+        "&nbsp;[" LS_NOTE_NO "] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
 #endif
         "</p>"
         ;
@@ -329,7 +182,7 @@ const char* carla_get_supported_file_extensions()
         // linuxsampler (gig and sfz)
         ";*.gig;*.sfz"
 #endif
-#ifdef WANT_ZYNADDSUBFX
+#ifdef HAVE_ZYN_DEPS
         // zynaddsubfx presets
         ";*.xmz;*.xiz"
 #endif
@@ -369,7 +222,9 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
     switch (ptype)
     {
     case CB::PLUGIN_INTERNAL: {
-        return static_cast<uint>(gPluginDescriptors.count());
+        uint32_t count = 0;
+        carla_get_native_plugins_data(&count);
+        return count;
     }
 
     case CB::PLUGIN_LV2: {
@@ -411,33 +266,39 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
     switch (ptype)
     {
     case CB::PLUGIN_INTERNAL: {
-        const NativePluginDescriptor* const desc(gPluginDescriptors.getAt(index, nullptr));
-        CARLA_SAFE_ASSERT_BREAK(desc != nullptr);
+        uint32_t count = 0;
+        const NativePluginDescriptor* const descs(carla_get_native_plugins_data(&count));
+        CARLA_SAFE_ASSERT_BREAK(index < count);
+        CARLA_SAFE_ASSERT_BREAK(descs != nullptr);
 
-        info.category = static_cast<CB::PluginCategory>(desc->category);
+        const NativePluginDescriptor& desc(descs[index]);
+
+        info.category = static_cast<CB::PluginCategory>(desc.category);
         info.hints    = 0x0;
 
-        if (desc->hints & NATIVE_PLUGIN_IS_RTSAFE)
+        if (desc.hints & NATIVE_PLUGIN_IS_RTSAFE)
             info.hints |= CB::PLUGIN_IS_RTSAFE;
-        if (desc->hints & NATIVE_PLUGIN_IS_SYNTH)
+        if (desc.hints & NATIVE_PLUGIN_IS_SYNTH)
             info.hints |= CB::PLUGIN_IS_SYNTH;
-        if (desc->hints & NATIVE_PLUGIN_HAS_UI)
+        if (desc.hints & NATIVE_PLUGIN_HAS_UI)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-        if (desc->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
+        if (desc.hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS)
             info.hints |= CB::PLUGIN_NEEDS_FIXED_BUFFERS;
-        if (desc->hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
+        if (desc.hints & NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD)
             info.hints |= CB::PLUGIN_NEEDS_UI_MAIN_THREAD;
+        if (desc.hints & NATIVE_PLUGIN_USES_MULTI_PROGS)
+            info.hints |= CB::PLUGIN_USES_MULTI_PROGS;
 
-        info.audioIns      = desc->audioIns;
-        info.audioOuts     = desc->audioOuts;
-        info.midiIns       = desc->midiIns;
-        info.midiOuts      = desc->midiOuts;
-        info.parameterIns  = desc->paramIns;
-        info.parameterOuts = desc->paramOuts;
-        info.name          = desc->name;
-        info.label         = desc->label;
-        info.maker         = desc->maker;
-        info.copyright     = desc->copyright;
+        info.audioIns      = desc.audioIns;
+        info.audioOuts     = desc.audioOuts;
+        info.midiIns       = desc.midiIns;
+        info.midiOuts      = desc.midiOuts;
+        info.parameterIns  = desc.paramIns;
+        info.parameterOuts = desc.paramOuts;
+        info.name          = desc.name;
+        info.label         = desc.label;
+        info.maker         = desc.maker;
+        info.copyright     = desc.copyright;
         return &info;
     }
 
@@ -455,7 +316,7 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         // features
         info.hints = 0x0;
 
-        if (lilvPlugin.get_uis().size() > 0 /*|| lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr*/)
+        if (lilvPlugin.get_uis().size() > 0 || lilvPlugin.get_modgui_resources_directory().as_uri() != nullptr)
             info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
 
         {

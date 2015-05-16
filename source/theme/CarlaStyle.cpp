@@ -1875,6 +1875,8 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
                             if (checked)
                                 box.state |= State_On;
                             proxy()->drawPrimitive(PE_IndicatorCheckBox, &box, painter, widget);
+                            painter->setPen(QPen(highlight, 0));
+                            painter->drawRect(checkRect);
                         }
                     }
                 }
@@ -3748,7 +3750,6 @@ int CarlaStyle::styleHint(StyleHint hint, const QStyleOption* option, const QWid
     case SH_ComboBox_ListMouseTracking:
     case SH_ScrollBar_StopMouseOverSlider:
     case SH_ScrollBar_MiddleClickAbsolutePosition:
-    case SH_EtchDisabledText:
     case SH_TitleBar_AutoRaise:
     case SH_TitleBar_NoBorder:
     case SH_ItemView_ShowDecorationSelected:
@@ -3758,18 +3759,15 @@ int CarlaStyle::styleHint(StyleHint hint, const QStyleOption* option, const QWid
     case SH_Menu_MouseTracking:
         return 1;
 
+    case SH_ComboBox_Popup:
+    case SH_EtchDisabledText:
     case SH_ToolBox_SelectedPageTitleBold:
     case SH_ScrollView_FrameOnlyAroundContents:
     case SH_Menu_AllowActiveAndDisabled:
     case SH_MainWindow_SpaceBelowMenuBar:
-    case SH_DialogButtonBox_ButtonsHaveIcons:
+    //case SH_DialogButtonBox_ButtonsHaveIcons:
     case SH_MessageBox_CenterButtons:
     case SH_RubberBand_Mask:
-        return 0;
-
-    case SH_ComboBox_Popup:
-        if (const QStyleOptionComboBox *cmb = qstyleoption_cast<const QStyleOptionComboBox*>(option))
-            return !cmb->editable;
         return 0;
 
     case SH_Table_GridLineColor:

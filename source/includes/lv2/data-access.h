@@ -16,12 +16,12 @@
 */
 
 /**
-   @file data-access.h
-   C header for the LV2 Extension Data extension
-   <http://lv2plug.in/ns/ext/data-access>.
+   @defgroup data-access Data Access
 
-   This extension defines a method for (e.g.) plugin UIs to have (possibly
-   marshalled) access to the extension_data function on a plugin instance.
+   Access to plugin extension_data() for UIs, see
+   <http://lv2plug.in/ns/ext/data-acess> for details.
+
+   @{
 */
 
 #ifndef LV2_DATA_ACCESS_H
@@ -61,3 +61,7 @@ typedef struct {
 #endif
 
 #endif  /* LV2_DATA_ACCESS_H */
+
+/**
+   @}
+*/

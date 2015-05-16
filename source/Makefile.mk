@@ -58,22 +58,32 @@ endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 CARLA_VESTIGE_HEADER = false
+EXPERIMENTAL_PLUGINS = false
 endif
 
 # --------------------------------------------------------------
-# Common build and link flags
+# Set build and link flags
 
-BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MMD
+BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
 BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -fdata-sections -ffunction-sections
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-O1 -Wl,--as-needed -Wl,--gc-sections
-LINK_OPTS += -Wl,--strip-all
 
 ifneq ($(MACOS),true)
 # MacOS doesn't support this
 BASE_OPTS += -mfpmath=sse
-else
+endif
+
+ifeq ($(MACOS),true)
 # MacOS linker flags
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
+else
+# Common linker flags
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
+ifeq ($(MODDUO),true)
+# MOD Duo optimization flags
+BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mtune=cortex-a7 -mfpu=neon -mfloat-abi=hard
+LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 ifeq ($(RASPPI),true)
@@ -83,14 +93,26 @@ LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 ifeq ($(PANDORA),true)
-# OpenPandora flags
+# OpenPandora optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+endif
+
+ifeq ($(NOOPT),true)
+# No optimization flags
+BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
 ifneq ($(WIN32),true)
 # not needed for Windows
 BASE_FLAGS += -fPIC -DPIC
+endif
+
+ifeq ($(STOAT),true)
+CC  = clang
+CXX = clang++
+BASE_FLAGS += -emit-llvm
+BASE_OPTS  += -O0
 endif
 
 ifeq ($(DEBUG),true)
@@ -156,6 +178,7 @@ HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
+HAVE_NTK        = $(shell pkg-config --exists ntk ntk_images && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
@@ -169,12 +192,24 @@ HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
 HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
 
-HAVE_ZYN_DEPS     = $(shell pkg-config --exists fftw3 mxml zlib && echo true)
-HAVE_ZYN_UI_DEPS  = $(shell pkg-config --exists ntk_images ntk && echo true)
+# --------------------------------------------------------------
+# Check for optional libs (special non-pkgconfig unix tests)
 
 ifeq ($(UNIX),true)
+
 # libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
-HAVE_LIBMAGIC     = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
+
+# fltk doesn't have a pkg-config file but has fltk-config instead.
+# Also, don't try looking for it if we already have NTK.
+ifneq ($(HAVE_NTK),true)
+ifeq ($(shell which fltk-config 1>/dev/null 2>/dev/null && echo true),true)
+ifeq ($(shell which fluid 1>/dev/null 2>/dev/null && echo true),true)
+HAVE_FLTK = true
+endif
+endif
+endif
+
 endif
 
 # --------------------------------------------------------------
@@ -376,6 +411,14 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 3)
 
+HAVE_ZYN_DEPS    = $(shell pkg-config --exists liblo fftw3 mxml zlib && echo true)
+ifeq ($(HAVE_FLTK),true)
+HAVE_ZYN_UI_DEPS = true
+endif
+ifeq ($(HAVE_NTK),true)
+HAVE_ZYN_UI_DEPS = true
+endif
+
 ifeq ($(HAVE_DGL),true)
 NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
 ifeq ($(HAVE_PROJECTM),true)
@@ -383,12 +426,22 @@ NATIVE_PLUGINS_LIBS  += $(PROJECTM_LIBS)
 endif
 endif
 
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
+NATIVE_PLUGINS_LIBS  += -lclxclient -lclthreads -lzita-convolver -lzita-resampler
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo libpng12 fftw3f x11 xft zlib)
+endif
+
 ifeq ($(HAVE_ZYN_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_DEPS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3 mxml zlib)
+BASE_FLAGS           += -DHAVE_ZYN_DEPS
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs liblo fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-NATIVE_PLUGINS_FLAGS += -DHAVE_ZYN_UI_DEPS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
+BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
+# ifeq ($(HAVE_NTK),true)
+# NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
+# else
+# NATIVE_PLUGINS_LIBS  += $(shell fltk-config --use-images --ldstaticflags)
+# endif
 endif
 endif
 

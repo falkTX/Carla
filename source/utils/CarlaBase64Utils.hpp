@@ -45,6 +45,7 @@ uint8_t findBase64CharIndex(const char c)
             return i;
     }
 
+    carla_stderr2("findBase64CharIndex('%c') - failed", c);
     return 0;
 }
 
@@ -69,9 +70,18 @@ std::vector<uint8_t> carla_getChunkFromBase64String(const char* const base64stri
     std::vector<uint8_t> ret;
     ret.reserve(std::strlen(base64string)*3/4 + 4);
 
-    for (std::size_t l=0, len=std::strlen(base64string); l<len && base64string[l] != '=' && CarlaBase64Helpers::isBase64Char(base64string[l]); ++l)
+    for (std::size_t l=0, len=std::strlen(base64string); l<len; ++l)
     {
-        charArray4[i++] = static_cast<uint>(base64string[l]);
+        const char c = base64string[l];
+
+        if (c == '\0' || c == '=')
+            break;
+        if (c == ' ' || c == '\n')
+            continue;
+
+         CARLA_SAFE_ASSERT_CONTINUE(CarlaBase64Helpers::isBase64Char(c));
+
+        charArray4[i++] = static_cast<uint>(c);
 
         if (i == 4)
         {
@@ -91,11 +101,11 @@ std::vector<uint8_t> carla_getChunkFromBase64String(const char* const base64stri
 
     if (i != 0)
     {
+        for (j=0; j<i && j<4; ++j)
+            charArray4[j] = CarlaBase64Helpers::findBase64CharIndex(static_cast<char>(charArray4[j]));
+
         for (j=i; j<4; ++j)
             charArray4[j] = 0;
-
-        for (j=0; j<4; ++j)
-            charArray4[j] = CarlaBase64Helpers::findBase64CharIndex(static_cast<char>(charArray4[j]));
 
         charArray3[0] =  (charArray4[0] << 2)        + ((charArray4[1] & 0x30) >> 4);
         charArray3[1] = ((charArray4[1] & 0xf) << 4) + ((charArray4[2] & 0x3c) >> 2);

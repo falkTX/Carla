@@ -39,25 +39,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 
 export DEFAULT_QT=5
 
-# Clean build
-make clean
-
-# Build PyQt5 resources
-make $JOBS UI RES WIDGETS
-
-# Build discovery
-make $JOBS discovery
-rm -f bin/carla-discovery-win64.exe
-cp bin/carla-discovery-native.exe bin/carla-discovery-win64.exe
-
-# Build backend
-make $JOBS backend
-
-# Build Plugin bridges
-# make $JOBS bridges
-
-# Build UI bridges
-make $JOBS -C source/bridges-ui ui_lv2-windows
+make $JOBS
 
 export PYTHONPATH=`pwd`/source
 
@@ -65,21 +47,22 @@ rm -rf ./data/windows/Carla
 cp ./source/carla ./source/Carla.pyw
 $PYTHON_EXE ./data/windows/app.py build_exe
 rm -f ./source/Carla.pyw
-mv build data/windows/Carla
 
 cd data/windows/
+
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
-mv Carla/exe.*/* Carla/
 rm Carla/carla-discovery-native.exe
-rmdir Carla/exe.*
+rm Carla/carla-lv2-export.exe
 
-rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd
+# FIXME
+rm Carla/carla-bridge-lv2-windows.exe
+rm Carla/carla-bridge-native.exe
+
+rm -f Carla/PyQt5.Qsci.pyd Carla/PyQt5.QtNetwork.pyd Carla/PyQt5.QtSql.pyd Carla/PyQt5.QtTest.pyd Carla/PyQt5.QtXml.pyd
 
 cp $WINEPREFIX/drive_c/Python34/python34.dll                                Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icudt49.dll         Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icuin49.dll         Carla/
-cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icuuc49.dll         Carla/
+cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/icu*.dll            Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/libEGL.dll          Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/libGLESv2.dll       Carla/
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Core.dll         Carla/
@@ -90,31 +73,31 @@ cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5PrintSupport.dll Carl
 cp $WINEPREFIX/drive_c/Python34/Lib/site-packages/PyQt5/Qt5Svg.dll          Carla/
 
 # Build unzipfx
+make -C unzipfx-carla -f Makefile.win32 clean
 make -C unzipfx-carla -f Makefile.win32
 
-# Create static build
+# Create zip of Carla
 rm -f Carla.zip CarlaControl.zip
 zip -r -9 Carla.zip Carla
 
+# Create static build
 rm -f Carla.exe CarlaControl.exe
 cat unzipfx-carla/unzipfx2cat.exe Carla.zip > Carla.exe
 chmod +x Carla.exe
 
 # Cleanup
-make -C unzipfx-carla -f Makefile.win32 clean
-make -C unzipfx-carla-control -f Makefile.win32 clean
 rm -f Carla.zip CarlaControl.zip
-rm -f unzipfx-*/*.exe
 
-rm -rf Carla-2.0beta3-win64
-mkdir Carla-2.0beta3-win64
-mkdir Carla-2.0beta3-win64/vcredist
-cp Carla.exe README.txt Carla-2.0beta3-win64
-cp ~/.cache/winetricks/vcrun2010/vcredist_x64.exe Carla-2.0beta3-win64/vcredist
-zip -r -9 Carla-2.0beta3-win64.zip Carla-2.0beta3-win64
+# Create release zip
+rm -rf Carla-2.0beta4-win64
+mkdir Carla-2.0beta4-win64
+mkdir Carla-2.0beta4-win64/vcredist
+cp Carla.exe README.txt Carla-2.0beta4-win64
+cp ~/.cache/winetricks/vcrun2010/vcredist_x64.exe Carla-2.0beta4-win64/vcredist
+zip -r -9 Carla-2.0beta4-win64.zip Carla-2.0beta4-win64
 
 cd ../..
 
 # Testing:
 echo "export WINEPREFIX=~/.winepy3_x64"
-echo "$PYTHON_EXE ./source/carla -platformpluginpath \"C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\plugins\\\\platforms\""
+echo "$PYTHON_EXE ./source/carla"

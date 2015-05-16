@@ -21,6 +21,7 @@
 #include "CarlaNativeExtUI.hpp"
 
 #include "juce_audio_basics.h"
+using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::Range;
 
@@ -30,7 +31,7 @@ class BigMeterPlugin : public NativePluginAndUiClass
 {
 public:
     BigMeterPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, CARLA_OS_SEP_STR "bigmeter-ui"),
+        : NativePluginAndUiClass(host, "bigmeter-ui"),
           fColor(1),
           fStyle(1),
           fOutLeft(0.0f),
@@ -136,10 +137,10 @@ protected:
         switch (index)
         {
         case 0:
-            fColor = int(value);
+            fColor = roundToIntAccurate(value);
             break;
         case 1:
-            fStyle = int(value);
+            fStyle = roundToIntAccurate(value);
             break;
         default:
             break;
@@ -160,10 +161,10 @@ protected:
         Range<float> range;
 
         range     = FloatVectorOperations::findMinAndMax(inputs[0], static_cast<int>(frames));
-        fOutLeft  = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+        fOutLeft  = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
 
         range     = FloatVectorOperations::findMinAndMax(inputs[1], static_cast<int>(frames));
-        fOutRight = carla_max(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+        fOutRight = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
     }
 
 private:

@@ -84,7 +84,7 @@ void EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t& size,
 // -----------------------------------------------------------------------
 // EngineEvent
 
-void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data) noexcept
+void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data, const uint8_t midiPortOffset) noexcept
 {
     if (size == 0 || data == nullptr || data[0] < MIDI_STATUS_NOTE_OFF)
     {
@@ -156,7 +156,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
     {
         type = kEngineEventTypeMidi;
 
-        midi.port = 0;
+        midi.port = midiPortOffset;
         midi.size = size;
 
         if (size > EngineMidiEvent::kDataSize)
@@ -187,12 +187,16 @@ EngineOptions::EngineOptions() noexcept
     : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
       transportMode(ENGINE_TRANSPORT_MODE_JACK),
 #else
-    : processMode(ENGINE_PROCESS_MODE_CONTINUOUS_RACK),
+    : processMode(ENGINE_PROCESS_MODE_PATCHBAY),
       transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
 #endif
       forceStereo(false),
       preferPluginBridges(false),
+#ifdef CARLA_OS_WIN
+      preferUiBridges(false),
+#else
       preferUiBridges(true),
+#endif
       uisAlwaysOnTop(true),
       maxParameters(MAX_DEFAULT_PARAMETERS),
       uiBridgesTimeout(4000),
@@ -205,7 +209,6 @@ EngineOptions::EngineOptions() noexcept
       pathLV2(nullptr),
       pathVST2(nullptr),
       pathVST3(nullptr),
-      pathAU(nullptr),
       pathGIG(nullptr),
       pathSF2(nullptr),
       pathSFZ(nullptr),
@@ -250,12 +253,6 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathVST3;
         pathVST3 = nullptr;
-    }
-
-    if (pathAU != nullptr)
-    {
-        delete[] pathAU;
-        pathAU = nullptr;
     }
 
     if (pathGIG != nullptr)

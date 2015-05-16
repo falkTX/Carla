@@ -24,8 +24,52 @@
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
-#include <stdint.h>
 
+#if defined(__clang__)
+#define REALTIME __attribute__((annotate("realtime")))
+#define NONREALTIME __attribute__((annotate("nonrealtime")))
+#else
+#define REALTIME
+#define NONREALTIME
+#endif
+
+//Forward Declarations
+namespace rtosc{struct Ports; class ThreadLink;};
+class  EffectMgr;
+class  ADnoteParameters;
+struct ADnoteGlobalParam;
+class  SUBnoteParameters;
+class  PADnoteParameters;
+class  SynthNote;
+
+class  Allocator;
+
+class  Microtonal;
+class  XMLwrapper;
+class  Resonance;
+class  FFTwrapper;
+class  EnvelopeParams;
+class  LFOParams;
+class  FilterParams;
+
+class  LFO;
+class  Envelope;
+class  OscilGen;
+
+class  Controller;
+class  Master;
+class  Part;
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <complex>
+#else
+namespace std {
+    template<class T> struct complex;
+};
+#endif
+
+typedef double fftw_real;
+typedef std::complex<fftw_real> fft_t;
 
 /**
  * The number of harmonics of additive synth
@@ -62,9 +106,9 @@
 #define NUM_VOICES 8
 
 /*
- * The poliphony (notes)
+ * The polyphony (notes)
  */
-#define POLIPHONY 60
+#define POLYPHONY 60
 
 /*
  * Number of system effects
@@ -119,9 +163,17 @@
 #define FF_MAX_FORMANTS 12
 #define FF_MAX_SEQUENCE 8
 
+#define MAX_PRESETTYPE_SIZE 30
+
 #define LOG_2 0.693147181f
 #define PI 3.1415926536f
 #define LOG_10 2.302585093f
+
+/*
+ * Envelope Limits
+ */
+#define MAX_ENVELOPE_POINTS 40
+#define MIN_ENVELOPE_DB -400
 
 /*
  * The threshold for the amplitude interpolation used if the amplitude
@@ -235,6 +287,10 @@ struct SYNTH_T {
     int   bufferbytes;
     float oscilsize_f;
 
+    float dt(void) const
+    {
+        return buffersize_f / samplerate_f;
+    }
     inline void alias(void)
     {
         halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
@@ -244,6 +300,4 @@ struct SYNTH_T {
     }
     static float numRandom(void); //defined in Util.cpp for now
 };
-
-extern SYNTH_T *synth;
 #endif

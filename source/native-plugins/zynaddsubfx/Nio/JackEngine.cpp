@@ -1,32 +1,42 @@
 /*
-    JackEngine.cpp
+  ZynAddSubFX - a software synthesizer
+  JackEngine.cpp - Jack Driver
 
-    Copyright 2009, Alan Calvert
+  Copyright 2009, Alan Calvert
+            2014, Mark McCurry
 
-    This file is part of yoshimi, which is free software: you can
-    redistribute it and/or modify it under the terms of the GNU General
-    Public License as published by the Free Software Foundation, either
-    version 3 of the License, or (at your option) any later version.
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of version 2 of the GNU General Public License
+  as published by the Free Software Foundation.
 
-    yoshimi is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License (version 2 or later) for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with yoshimi.  If not, see <http://www.gnu.org/licenses/>.
+  You should have received a copy of the GNU General Public License (version 2)
+  along with this program; if not, write to the Free Software Foundation,
+  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
 #include <iostream>
 
 #include <jack/midiport.h>
+#ifdef JACK_HAS_METADATA_API
+# include <jack/metadata.h>
+#endif // JACK_HAS_METADATA_API
+#include "jack_osc.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <cassert>
 #include <cstring>
+#include <unistd.h> // access()
+#include <fstream> // std::istream
 
 #include "Nio.h"
+#include "OutMgr.h"
 #include "InMgr.h"
+#include "Misc/Util.h"
 
 #include "JackEngine.h"
 
@@ -34,8 +44,8 @@ using namespace std;
 
 extern char *instance_name;
 
-JackEngine::JackEngine()
-    :AudioOut(), jackClient(NULL)
+JackEngine::JackEngine(const SYNTH_T &synth)
+    :AudioOut(synth), jackClient(NULL)
 {
     name = "JACK";
     audio.jackSamplerate = 0;
@@ -58,6 +68,9 @@ bool JackEngine::connectServer(string server)
     string postfix    = Nio::getPostfix();
     if(!postfix.empty())
         clientname += "_" + postfix;
+    if(Nio::pidInClientName)
+        clientname += "_" + os_pid_as_padded_string();
+
     jack_status_t jackstatus;
     bool use_server_name = server.size() && server.compare("default") != 0;
     jack_options_t jopts = (jack_options_t)
@@ -93,12 +106,11 @@ bool JackEngine::connectJack()
     connectServer("");
     if(NULL != jackClient) {
         setBufferSize(jack_get_buffer_size(jackClient));
-        int chk;
         jack_set_error_function(_errorCallback);
         jack_set_info_function(_infoCallback);
         if(jack_set_buffer_size_callback(jackClient, _bufferSizeCallback, this))
             cerr << "Error setting the bufferSize callback" << endl;
-        if((chk = jack_set_xrun_callback(jackClient, _xrunCallback, this)))
+        if((jack_set_xrun_callback(jackClient, _xrunCallback, this)))
             cerr << "Error setting jack xrun callback" << endl;
         if(jack_set_process_callback(jackClient, _processCallback, this)) {
             cerr << "Error, JackEngine failed to set process callback" << endl;
@@ -213,6 +225,12 @@ bool JackEngine::openAudio()
                 cerr << "Warning, No outputs to autoconnect to" << endl;
         }
         midi.jack_sync = true;
+        osc.oscport = jack_port_register(jackClient, "osc",
+                JACK_DEFAULT_OSC_TYPE, JackPortIsInput, 0);
+#ifdef JACK_HAS_METADATA_API
+        jack_uuid_t uuid = jack_port_uuid(osc.oscport);
+        jack_set_property(jackClient, uuid, "http://jackaudio.org/metadata/event-types", JACK_EVENT_TYPE__OSC, "text/plain");
+#endif // JACK_HAS_METADATA_API
         return true;
     }
     else
@@ -226,10 +244,19 @@ void JackEngine::stopAudio()
     for(int i = 0; i < 2; ++i) {
         jack_port_t *port = audio.ports[i];
         audio.ports[i] = NULL;
-        if(NULL != port)
+        if(jackClient != NULL && NULL != port)
             jack_port_unregister(jackClient, port);
     }
     midi.jack_sync = false;
+    if(osc.oscport) {
+       if (jackClient != NULL) {
+               jack_port_unregister(jackClient, osc.oscport);
+#ifdef JACK_HAS_METADATA_API
+               jack_uuid_t uuid = jack_port_uuid(osc.oscport);
+               jack_remove_property(jackClient, uuid, "http://jackaudio.org/metadata/event-types");
+#endif // JACK_HAS_METADATA_API
+       }
+    }
     if(!getMidiEn())
         disconnectJack();
 }
@@ -293,6 +320,20 @@ int JackEngine::processCallback(jack_nframes_t nframes)
 
 bool JackEngine::processAudio(jack_nframes_t nframes)
 {
+    //handle rt osc events first
+    void   *oscport    = jack_port_get_buffer(osc.oscport, nframes);
+    size_t osc_packets = jack_osc_get_event_count(oscport);
+
+    for(size_t i = 0; i < osc_packets; ++i) {
+        jack_osc_event_t event;
+        if(jack_osc_event_get(&event, oscport, i))
+            continue;
+        if(*event.buffer!='/') //Bundles are unhandled
+            continue;
+        //TODO validate message length
+        OutMgr::getInstance().applyOscEventRt((char*)event.buffer);
+    }
+
     for(int port = 0; port < 2; ++port) {
         audio.portBuffs[port] =
             (jsample_t *)jack_port_get_buffer(audio.ports[port], nframes);

@@ -25,10 +25,48 @@ START_NAMESPACE_DGL
 
 class App;
 class Widget;
+class StandaloneWindow;
 
 class Window
 {
 public:
+   /**
+      File browser options.
+    */
+    struct FileBrowserOptions {
+        const char* startDir;
+        const char* title;
+        uint width;
+        uint height;
+
+      /**
+         File browser buttons.
+
+         0 means hidden.
+         1 means visible and unchecked.
+         2 means visible and checked.
+        */
+        struct Buttons {
+            uint listAllFiles;
+            uint showHidden;
+            uint showPlaces;
+
+            /** Constuctor for default values */
+            Buttons()
+                : listAllFiles(2),
+                  showHidden(1),
+                  showPlaces(1) {}
+        } buttons;
+
+        /** Constuctor for default values */
+        FileBrowserOptions()
+            : startDir(nullptr),
+              title(nullptr),
+              width(0),
+              height(0),
+              buttons() {}
+    };
+
     explicit Window(App& app);
     explicit Window(App& app, Window& parent);
     explicit Window(App& app, intptr_t parentId);
@@ -42,6 +80,8 @@ public:
     void focus();
     void repaint() noexcept;
 
+    bool openFileBrowser(const FileBrowserOptions& options);
+
     bool isVisible() const noexcept;
     void setVisible(bool yesNo);
 
@@ -54,6 +94,7 @@ public:
     void setSize(uint width, uint height);
     void setSize(Size<uint> size);
 
+    const char* getTitle() const noexcept;
     void setTitle(const char* title);
 
     void setTransientWinId(uintptr_t winId);
@@ -69,6 +110,8 @@ protected:
     virtual void onDisplayAfter();
     virtual void onReshape(uint width, uint height);
     virtual void onClose();
+
+    virtual void fileBrowserSelected(const char* filename);
 
 private:
     struct PrivateData;
