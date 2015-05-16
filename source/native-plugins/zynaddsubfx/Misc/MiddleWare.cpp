@@ -37,7 +37,9 @@
 #include <err.h>
 
 using std::string;
+#ifndef PLUGINVERSION
 extern rtosc::ThreadLink *the_bToU;//XXX
+#endif
 
 /******************************************************************************
  *                        LIBLO And Reflection Code                           *
@@ -846,7 +848,7 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port
     lo_server_add_method(server, NULL, NULL, handler_function, mw);
     fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
 
-#ifndef CARLA_VERSION_STRING
+#ifndef PLUGINVERSION
     clean_up_tmp_nams();
     create_tmp_file((unsigned)lo_server_get_port(server));
 #endif
@@ -856,7 +858,9 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port
     idle = 0;
     idle_ptr = 0;
 
+#ifndef PLUGINVERSION
     the_bToU = bToU;
+#endif
     master = new Master(synth);
     master->bToU = bToU;
     master->uToB = uToB;
@@ -999,7 +1003,7 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg, bool dummy)
         broadcast = true;
     } else if(broadcast) {
         broadcast = false;
-#ifdef CARLA_VERSION_STRING
+#ifdef PLUGINVERSION
         if (!curr_url.empty()) // falktx: check added
             cb(ui, rtmsg);
 

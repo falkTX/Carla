@@ -230,9 +230,11 @@ static const Ports master_ports = {
 };
 const Ports &Master::ports = master_ports;
 
+#ifndef PLUGINVERSION
 //XXX HACKS
 Master *the_master;
 rtosc::ThreadLink *the_bToU;
+#endif
 
 class DataObj:public rtosc::RtData
 {
@@ -290,12 +292,14 @@ Master::Master(const SYNTH_T &synth_)
     bToU = NULL;
     uToB = NULL;
     memory = new Allocator();
-    the_master = this;
     swaplr = 0;
     off  = 0;
     smps = 0;
     bufl = new float[synth.buffersize];
     bufr = new float[synth.buffersize];
+#ifndef PLUGINVERSION
+    the_master = this;
+#endif
 
     fft = new FFTwrapper(synth.oscilsize);
 
@@ -319,6 +323,7 @@ Master::Master(const SYNTH_T &synth_)
 
     defaults();
 
+#ifndef PLUGINVERSION
     midi.event_cb = [](const char *m)
     {
         char loc_buf[1024];
@@ -327,6 +332,9 @@ Master::Master(const SYNTH_T &synth_)
         //printf("sending an event to the owner of '%s'\n", m);
         Master::ports.dispatch(m+1, d);
     };
+#else
+    midi.event_cb = [](const char *) {};
+#endif
 
     midi.error_cb = [](const char *a, const char *b)
     {
