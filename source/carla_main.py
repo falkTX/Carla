@@ -56,13 +56,11 @@ def usage(mode):
             "patchbay"    if mode == MODE_PATCHBAY or mode == MODE_HOST else "",
             " and "       if mode == MODE_HOST                          else "",
             "plugin host" if mode == MODE_RACK     or mode == MODE_HOST else ""))
-        print()
         print("Usage: %s [OPTION]... [FILE]" % mode)
         print()
         print("  where FILE can point to a Carla session file to be loaded")
     else:
-        print("%s: Control a remote Carla instance via OSC." % mode)
-        print()
+        print("%s: control a remote Carla instance via OSC." % mode)
         print("Usage: %s [OPTION]... [OSC_URL]" % mode)
         print()
         print("  where OSC_URL needs to be in format osc.udp://host:port")
