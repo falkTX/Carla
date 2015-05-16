@@ -32,7 +32,19 @@ if __name__ == '__main__':
     libPrefix = None
 
     for arg in sys.argv:
-        if arg.startswith("--with-appname="):
+        if arg == "--version":
+            # Print version information and exit.
+            from carla_shared import VERSION, PYQT_VERSION_STR, qVersion, getPaths
+            pathBinaries, pathResources = getPaths(libPrefix)
+            print("Carla %s" % VERSION)
+            print("  Python version: %s" % sys.version.split(" ",1)[0])
+            print("  Qt version:     %s" % qVersion())
+            print("  PyQt version:   %s" % PYQT_VERSION_STR)
+            print("  Binary dir:     %s" % pathBinaries)
+            print("  Resources dir:  %s" % pathResources)
+            sys.exit(0)
+
+        elif arg.startswith("--with-appname="):
             initName = os.path.basename(arg.replace("--with-initname=", ""))
 
         elif arg.startswith("--with-libprefix="):
