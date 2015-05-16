@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -536,6 +536,22 @@ def toList(value):
 
 def getIcon(icon, size = 16):
     return QIcon.fromTheme(icon, QIcon(":/%ix%i/%s.png" % (size, size, icon)))
+
+# ------------------------------------------------------------------------------------------------------------
+# Handle some basic command-line arguments shared between all carla variants
+
+def handleInitialCommandLineArguments(file):
+    initName = os.path.basename(file) if ("__file__" in dir() and os.path.dirname(file) in PATH) else sys.argv[0]
+    libPrefix = None
+
+    for arg in sys.argv:
+        if arg.startswith("--with-appname="):
+            initName = os.path.basename(arg.replace("--with-initname=", ""))
+
+        elif arg.startswith("--with-libprefix="):
+            libPrefix = arg.replace("--with-libprefix=", "")
+
+    return (initName, libPrefix)
 
 # ------------------------------------------------------------------------------------------------------------
 # Get paths (binaries, resources)

@@ -28,19 +28,14 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Read CLI args
 
-    initName = os.path.basename(__file__) if ("__file__" in dir() and os.path.dirname(__file__) in PATH) else sys.argv[0]
-    libPrefix = None
-    oscAddr = None
+    initName, libPrefix = handleInitialCommandLineArguments(__file__)
 
     for arg in sys.argv:
-        if arg.startswith("--with-appname="):
-            initName = os.path.basename(arg.replace("--with-initname=", ""))
-
-        elif arg.startswith("--with-libprefix="):
-            libPrefix = arg.replace("--with-libprefix=", "")
-
-        elif arg.startswith("osc."):
+        if arg.startswith("osc."):
             oscAddr = arg
+            break
+    else:
+        oscAddr = None
 
     # -------------------------------------------------------------
     # App initialization
