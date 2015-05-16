@@ -36,7 +36,7 @@ if __name__ == '__main__':
             # Print version information and exit.
             from carla_shared import VERSION, PYQT_VERSION_STR, qVersion, getPaths
             pathBinaries, pathResources = getPaths(libPrefix)
-            print("Carla %s started, status:" % VERSION)
+            print("Carla %s" % VERSION)
             print("  Python version: %s" % sys.version.split(" ",1)[0])
             print("  Qt version:     %s" % qVersion())
             print("  PyQt version:   %s" % PYQT_VERSION_STR)
