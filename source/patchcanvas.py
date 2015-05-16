@@ -1767,7 +1767,6 @@ class CanvasPort(QGraphicsItem):
         self.m_cursor_moving = False
 
         self.setFlags(QGraphicsItem.ItemIsSelectable)
-        self.setAcceptHoverEvents(True)
 
         if options.auto_select_items:
             self.setAcceptHoverEvents(True)
