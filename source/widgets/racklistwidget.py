@@ -145,6 +145,16 @@ class RackListItem(QListWidgetItem):
 
     # --------------------------------------------------------------------------------------------------------
 
+    def compact(self):
+        if self.fOptions['compact']:
+            return
+        self.recreateWidget(True)
+
+    def expand(self):
+        if not self.fOptions['compact']:
+            return
+        self.recreateWidget(True)
+
     def recreateWidget(self, invertCompactOption = False, firstInit = False):
         if invertCompactOption:
             self.fOptions['compact'] = not self.fOptions['compact']

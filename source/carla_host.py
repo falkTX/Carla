@@ -358,6 +358,8 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_wet100.triggered.connect(self.slot_pluginsWet100)
         self.ui.act_plugins_bypass.triggered.connect(self.slot_pluginsBypass)
         self.ui.act_plugins_center.triggered.connect(self.slot_pluginsCenter)
+        self.ui.act_plugins_compact.triggered.connect(self.slot_pluginsCompact)
+        self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
         self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
@@ -855,6 +857,20 @@ class HostWindow(QMainWindow):
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_LEFT, -1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_BALANCE_RIGHT, 1.0)
             pitem.getWidget().setInternalParameter(PARAMETER_PANNING, 0.0)
+
+    @pyqtSlot()
+    def slot_pluginsCompact(self):
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+            pitem.compact()
+
+    @pyqtSlot()
+    def slot_pluginsExpand(self):
+        for pitem in self.fPluginList:
+            if pitem is None:
+                break
+            pitem.expand()
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (host callbacks)

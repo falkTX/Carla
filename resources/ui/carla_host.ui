@@ -185,6 +185,9 @@
      <addaction name="act_plugins_bypass"/>
      <addaction name="separator"/>
      <addaction name="act_plugins_center"/>
+     <addaction name="separator"/>
+     <addaction name="act_plugins_compact"/>
+     <addaction name="act_plugins_expand"/>
     </widget>
     <addaction name="act_plugin_add"/>
     <addaction name="act_plugin_remove_all"/>
@@ -819,6 +822,16 @@
    </property>
    <property name="text">
     <string>&amp;Refresh</string>
+   </property>
+  </action>
+  <action name="act_plugins_compact">
+   <property name="text">
+    <string>Compact Slots</string>
+   </property>
+  </action>
+  <action name="act_plugins_expand">
+   <property name="text">
+    <string>Expand Slots</string>
    </property>
   </action>
  </widget>
