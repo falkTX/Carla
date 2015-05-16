@@ -17,13 +17,13 @@
 
 #include "CarlaPipeUtils.cpp"
 
-#include "zita-rev1/png2img.cc"
-#include "zita-rev1/guiclass.cc"
-#include "zita-rev1/mainwin.cc"
-#include "zita-rev1/rotary.cc"
-#include "zita-rev1/styles.cc"
+#include "zita-bls1/png2img.cc"
+#include "zita-bls1/guiclass.cc"
+#include "zita-bls1/mainwin.cc"
+#include "zita-bls1/rotary.cc"
+#include "zita-bls1/styles.cc"
 
-using namespace REV1;
+using namespace BLS1;
 
 static Mainwin* mainwin = nullptr;
 
@@ -62,9 +62,6 @@ protected:
             float value;
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(index), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsFloat(value), true);
-
-            if (index == Mainwin::R_OPMIX && mainwin->_ambis)
-                index = Mainwin::R_RGXYZ;
 
             mainwin->_rotary[index]->set_value(value);
             return true;
@@ -110,9 +107,6 @@ protected:
 
     void valueChangedCallback(uint index, double value) override
     {
-        if (index == Mainwin::R_RGXYZ)
-            index = Mainwin::R_OPMIX;
-
         if (isPipeRunning())
             writeControlMessage(index, value);
     }
@@ -144,13 +138,11 @@ int main(int argc, const char* argv[])
     }
 
     ZitaPipeClient pipe;
-    bool ambisonic      = false;
     const char* uiTitle = "Test UI";
 
     if (argc > 1)
     {
-        ambisonic = std::strcmp(argv[1], "true") == 0;
-        uiTitle   = argv[2];
+        uiTitle = argv[2];
 
         if (! pipe.initPipeClient(argv))
             return 1;
@@ -163,7 +155,7 @@ int main(int argc, const char* argv[])
 
     styles_init(display, &xresman);
     rootwin = new X_rootwin(display);
-    mainwin = new Mainwin(rootwin, &xresman, xp, yp, ambisonic, &pipe);
+    mainwin = new Mainwin(rootwin, &xresman, xp, yp, &pipe);
     mainwin->x_set_title(uiTitle);
     rootwin->handle_event();
     handler = new X_handler(display, mainwin, EV_X11);

@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -26,11 +26,10 @@
 namespace BLS1 {
 
 
-Jclient::Jclient (const char *jname, jack_client_t *jclient) :
+Jclient::Jclient (jack_client_t *jclient) :
     A_thread ("Jclient"),
     _jack_client (jclient),
     _active (false),
-    _jname (0),
     _inpbal0 (0),	
     _inpbal1 (0),	
     _ga (1.0f),
@@ -38,7 +37,7 @@ Jclient::Jclient (const char *jname, jack_client_t *jclient) :
     _da (0.0f),
     _db (0.0f)
 {
-    init_jack (jname);
+    init_jack ();
 }
 
 
@@ -48,36 +47,24 @@ Jclient::~Jclient (void)
 }
 
 
-void Jclient::init_jack (const char *jname)
+void Jclient::init_jack (void)
 {
-    struct sched_param  spar;
-    int                 abspri, policy, k;
-
     jack_set_process_callback (_jack_client, jack_static_process, (void *) this);
     jack_on_shutdown (_jack_client, jack_static_shutdown, (void *) this);
+    jack_activate (_jack_client);
 
-    if (jack_activate (_jack_client))
-    {
-        fprintf (stderr, "Can't activate JACK.\n");
-        exit (1);
-    }
-
-    _jname = jack_get_client_name (_jack_client);
     _fsamp = jack_get_sample_rate (_jack_client);
     _psize = jack_get_buffer_size (_jack_client);
     if (_psize > 4096)
     {
 	fprintf (stderr, "Period size can't be more than 4096.\n");
-	exit (1);
+	return;
     }
     if (_psize & (_psize - 1))
     {
 	fprintf (stderr, "Period size must be a power of 2.\n");
-	exit (1);
+	return;
     }
-
-    pthread_getschedparam (jack_client_thread_id (_jack_client), &policy, &spar);
-    abspri = spar.sched_priority;
 
     _inpports [0] = jack_port_register (_jack_client, "inp.L", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
     _inpports [1] = jack_port_register (_jack_client, "inp.R", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -87,10 +74,10 @@ void Jclient::init_jack (const char *jname)
     _hpfilt.setfsamp (_fsamp);
     _lshelf.setfsamp (_fsamp);
     _lshelf.bypass (false);
-    _shuffl.init (_fsamp, _psize, abspri, policy);
+    _shuffl.init (_fsamp, _psize);
 
 
-    for (k = _fsamp, _fragm = 1024; k > 56000; k >>= 1, _fragm <<= 1);
+    for (int k = _fsamp, _fragm = 1024; k > 56000; k >>= 1, _fragm <<= 1);
     _nsamp = 0;
     _active = true;
 }

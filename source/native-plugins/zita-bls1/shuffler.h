@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -37,7 +37,7 @@ public:
     Shuffler (void);
     ~Shuffler (void);
     
-    void init (int fsamp, int quant, int abspri, int policy);
+    void init (int fsamp, int quant);
     void reset (void);
     void prepare (float gain, float freq);
     void process (int nsamp, float *inp [], float *out []);

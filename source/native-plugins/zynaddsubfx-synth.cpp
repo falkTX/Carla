@@ -509,7 +509,7 @@ protected:
 
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
 
         /**/ if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz

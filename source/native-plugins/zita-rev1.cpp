@@ -66,8 +66,6 @@ public:
         fJackClient.bufferSize = getBufferSize();
         fJackClient.sampleRate = getSampleRate();
 
-        jclient = new Jclient(&fJackClient, isAmbisonic);
-
         // set initial values
         fParameters[kParameterDELAY] = 0.04f;
         fParameters[kParameterXOVER] = 200.0f;
@@ -84,27 +82,7 @@ public:
         else
             fParameters[kParameterOPMIXorRGXYZ] = 0.5f;
 
-        Reverb* const reverb(jclient->reverb());
-
-        reverb->set_delay(fParameters[kParameterDELAY]);
-        reverb->set_xover(fParameters[kParameterXOVER]);
-        reverb->set_rtlow(fParameters[kParameterRTLOW]);
-        reverb->set_rtmid(fParameters[kParameterRTMID]);
-        reverb->set_fdamp(fParameters[kParameterFDAMP]);
-
-        if (isAmbisonic)
-        {
-            reverb->set_opmix(0.5);
-            reverb->set_rgxyz(fParameters[kParameterOPMIXorRGXYZ]);
-        }
-        else
-        {
-            reverb->set_opmix(fParameters[kParameterOPMIXorRGXYZ]);
-            reverb->set_rgxyz(0.0);
-        }
-
-        reverb->set_eq1(fParameters[kParameterEQ1FR], fParameters[kParameterEQ1GN]);
-        reverb->set_eq2(fParameters[kParameterEQ2FR], fParameters[kParameterEQ2GN]);
+        _recreateZitaClient();
     }
 
     // -------------------------------------------------------------------
@@ -306,11 +284,13 @@ public:
     void bufferSizeChanged(const uint32_t bufferSize) override
     {
         fJackClient.bufferSize = bufferSize;
+        _recreateZitaClient();
     }
 
     void sampleRateChanged(const double sampleRate) override
     {
         fJackClient.sampleRate = sampleRate;
+        _recreateZitaClient();
     }
 
     // -------------------------------------------------------------------
@@ -357,7 +337,35 @@ private:
     // Zita stuff (core)
     ScopedPointer<Jclient> jclient;
 
+    // Parameters
     float fParameters[kParameterNROTARY];
+
+    void _recreateZitaClient()
+    {
+        jclient = new Jclient(&fJackClient, kIsAmbisonic);
+
+        Reverb* const reverb(jclient->reverb());
+
+        reverb->set_delay(fParameters[kParameterDELAY]);
+        reverb->set_xover(fParameters[kParameterXOVER]);
+        reverb->set_rtlow(fParameters[kParameterRTLOW]);
+        reverb->set_rtmid(fParameters[kParameterRTMID]);
+        reverb->set_fdamp(fParameters[kParameterFDAMP]);
+
+        if (kIsAmbisonic)
+        {
+            reverb->set_opmix(0.5);
+            reverb->set_rgxyz(fParameters[kParameterOPMIXorRGXYZ]);
+        }
+        else
+        {
+            reverb->set_opmix(fParameters[kParameterOPMIXorRGXYZ]);
+            reverb->set_rgxyz(0.0);
+        }
+
+        reverb->set_eq1(fParameters[kParameterEQ1FR], fParameters[kParameterEQ1GN]);
+        reverb->set_eq2(fParameters[kParameterEQ2FR], fParameters[kParameterEQ2GN]);
+    }
 
 public:
     static NativePluginHandle _instantiateAmbisonic(const NativeHostDescriptor* host)
@@ -384,8 +392,7 @@ static const NativePluginDescriptor rev1AmbisonicDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD),
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 4,
@@ -425,8 +432,7 @@ static const NativePluginDescriptor rev1StereoDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD),
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,

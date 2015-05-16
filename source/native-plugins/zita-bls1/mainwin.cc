@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -30,25 +30,21 @@
 namespace BLS1 {
 
 
-Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb) :
+Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, ValueChangedCallback* valuecb) :
     A_thread ("Main"),
     X_window (parent, xp, yp, XSIZE, YSIZE, XftColors [C_MAIN_BG]->pixel),
     _stop (false),
     _xres (xres),
-    _jclient (jclient),
     _touch (false),
     _valuecb (valuecb)
 {
     X_hints     H;
-    char        s [1024];
     int         i;
 
     _atom = XInternAtom (dpy (), "WM_DELETE_WINDOW", True);
     XSetWMProtocols (dpy (), win (), &_atom, 1);
     _atom = XInternAtom (dpy (), "WM_PROTOCOLS", True);
 
-    sprintf (s, "%s", jclient->jname ());
-    x_set_title (s);
     H.position (xp, yp);
     H.minsize (XSIZE, YSIZE);
     H.maxsize (XSIZE, YSIZE);
@@ -56,6 +52,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
     H.rclas (xres->rclas ());
     x_apply (&H); 
 
+    RotaryCtl::init (disp ());
     _rotary [INPBAL] = new Rlinctl (this, this, &inpbal_img,  20, 0, 120, 4,  -3.0f,   3.0f,  0.0f, INPBAL);
     _rotary [HPFILT] = new Rlogctl (this, this, &hpfilt_img,  20, 0, 120, 4,  10.0f, 320.0f, 40.0f, HPFILT);
     _rotary [SHGAIN] = new Rlinctl (this, this, &shgain_img, 190, 0, 120, 5,   0.0f,  24.0f, 15.0f, SHGAIN);
@@ -78,6 +75,7 @@ Mainwin::Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jc
  
 Mainwin::~Mainwin (void)
 {
+    RotaryCtl::fini ();
 }
 
  
@@ -133,16 +131,15 @@ void Mainwin::handle_time (void)
 	if (--_timeout == 0) numdisp (-1);
     }
 
-    if (_touch && _jclient->shuffler ()->ready ()) 
+    if (_touch) 
     {
         double v1 = _rotary [SHGAIN]->value (), v2 = _rotary [SHFREQ]->value ();
-	_jclient->shuffler ()->prepare (v1, v2);
         _valuecb->valueChangedCallback (SHGAIN, v1);
         _valuecb->valueChangedCallback (SHFREQ, v2);
 	_touch = 0;
     }
 
-    inc_time (50000);
+    inc_time (5000);
     XFlush (dpy ());
 }
 
@@ -178,12 +175,10 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent *E)
 	{
 	case INPBAL:
             v = _rotary [INPBAL]->value ();
-	    _jclient->set_inpbal (v);
             _valuecb->valueChangedCallback (INPBAL, v);
 	    break;
 	case HPFILT:
             v = _rotary [HPFILT]->value ();
-	    _jclient->set_hpfilt (v);
             _valuecb->valueChangedCallback (HPFILT, v);
 	    break;
 	case SHGAIN:
@@ -194,7 +189,6 @@ void Mainwin::handle_callb (int type, X_window *W, XEvent *E)
 	case LFGAIN:
             v  = _rotary [LFGAIN]->value ();
             v2 = _rotary [LFFREQ]->value ();
-	    _jclient->set_loshelf (v, v2);
             _valuecb->valueChangedCallback (LFGAIN, v);
             _valuecb->valueChangedCallback (LFFREQ, v2);
 	    break;

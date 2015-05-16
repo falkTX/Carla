@@ -412,7 +412,11 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
 endif
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+endif
+endif
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
 	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
@@ -531,6 +535,7 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
 
 	install -m 755 \
+		bin/resources/bls1-ui \
 		bin/resources/rev1-ui \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/
 endif
@@ -541,13 +546,13 @@ endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	install -m 755 \
-		bin/resources/zynaddsubfx-ui \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/
-
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+
+	install -m 755 \
+		bin/resources/zynaddsubfx-ui \
+		$(DESTDIR)$(PREFIX)/share/carla/resources/
 endif
 endif
 

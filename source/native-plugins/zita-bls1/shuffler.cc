@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -54,7 +54,7 @@ Shuffler::~Shuffler (void)
 }
 
 
-void Shuffler::init (int fsamp, int quant, int abspri, int policy)
+void Shuffler::init (int fsamp, int quant)
 {
     int k;
 
@@ -80,7 +80,7 @@ void Shuffler::init (int fsamp, int quant, int abspri, int policy)
 
     _convproc.configure (1, 1, _iplen, _quant, _minpt, _minpt);
     _convproc.impdata_create (0, 0, 1, _fft_time, 0, _iplen);
-    _convproc.start_process (abspri, policy);
+    _convproc.start_process (35, SCHED_FIFO);
 }
 
 

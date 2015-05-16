@@ -14,6 +14,19 @@ BUILD_C_FLAGS   += -I..
 BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 
 # ----------------------------------------------------------------------------------------------------------------------------
+# Flags for Zita UIs
+
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+ZITA_DSP_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Wno-unused-parameter
+ZITA_DSP_CXX_FLAGS += $(shell pkg-config --cflags fftw3f)
+ZITA_UI_CXX_FLAGS   = $(BUILD_CXX_FLAGS) -Wno-unused-parameter -Wno-ignored-qualifiers
+ZITA_UI_CXX_FLAGS  += $(shell pkg-config --cflags cairo libpng12 x11 xft zlib)
+ZITA_UI_LINK_FLAGS  = $(LINK_FLAGS) -lclxclient -lclthreads
+ZITA_UI_LINK_FLAGS += $(shell pkg-config --libs cairo libpng12 x11 xft zlib)
+ZITA_UI_LINK_FLAGS += -ldl -lpthread -lrt
+endif # EXPERIMENTAL_PLUGINS
+
+# ----------------------------------------------------------------------------------------------------------------------------
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -156,7 +169,9 @@ OBJS += \
 	$(OBJDIR)/zita-bls1.cpp.o \
 	$(OBJDIR)/zita-rev1.cpp.o
 
-TARGETS += resources/rev1-ui$(APP_EXT)
+TARGETS += \
+	resources/bls1-ui$(APP_EXT) \
+	resources/rev1-ui$(APP_EXT)
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -179,10 +194,15 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	@rm -f $@
 	@$(AR) crs $@ $^
 
+resources/bls1-ui$(APP_EXT): $(OBJDIR)/zita-bls1-ui.cpp.o
+	-@mkdir -p $(OBJDIR)
+	@echo "Linking zita-bls1-ui"
+	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
+
 resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zita-rev1-ui"
-	@$(CXX) $^ $(LINK_FLAGS) -lclxclient -lclthreads $(shell pkg-config --libs cairo libpng12 x11 xft zlib) -ldl -lpthread -lrt -o $@
+	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
@@ -281,25 +301,21 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/zita-%.cpp.o: zita-%.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZITA_DSP_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/zita-%-ui.cpp.o: zita-%-ui.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(ZITA_UI_CXX_FLAGS) -c -o $@
+
+# TODO
 $(OBJDIR)/zita-at1.cpp.o: zita-at1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
-
-$(OBJDIR)/zita-bls1.cpp.o: zita-bls1.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
-
-$(OBJDIR)/zita-rev1.cpp.o: zita-rev1.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f) -Wno-unused-parameter -c -o $@
-
-$(OBJDIR)/zita-rev1-ui.cpp.o: zita-rev1-ui.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags cairo libpng12 x11 xft zlib) -Wno-unused-parameter -Wno-ignored-qualifiers -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -311,7 +327,8 @@ $(OBJDIR)/%.cpp.o: %.cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 -include $(OBJS:%.o=%.d)
--include $(OBJDIR)/zita-rev-ui.cpp.d
+-include $(OBJDIR)/zita-bls1-ui.cpp.d
+-include $(OBJDIR)/zita-rev1-ui.cpp.d
 -include $(OBJDIR)/zynaddsubfx-ui.cpp.d
 
 # ----------------------------------------------------------------------------------------------------------------------------

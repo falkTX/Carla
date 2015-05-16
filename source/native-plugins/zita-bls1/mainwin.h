@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -29,7 +29,7 @@
 #include "jclient.h"
 #include "global.h"
 
-class BLS1Plugin;
+class ZitaPipeClient;
 
 namespace BLS1 {
 
@@ -43,9 +43,10 @@ public:
         virtual void valueChangedCallback(uint, double) = 0;
     };
 
+
     enum { XSIZE = 540, YSIZE = 75 };
 
-    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, Jclient *jclient, ValueChangedCallback* valuecb);
+    Mainwin (X_rootwin *parent, X_resman *xres, int xp, int yp, ValueChangedCallback* valuecb);
     ~Mainwin (void);
     Mainwin (const Mainwin&);
     Mainwin& operator=(const Mainwin&);
@@ -72,7 +73,6 @@ private:
     Atom            _atom;
     bool            _stop;
     X_resman       *_xres;
-    Jclient        *_jclient;
     RotaryCtl      *_rotary [NROTARY];
     X_textip       *_numtext;
     int             _parmind;
@@ -81,7 +81,7 @@ private:
 
     ValueChangedCallback* _valuecb;
 
-    friend class ::BLS1Plugin;
+    friend class ::ZitaPipeClient;
 };
 
 

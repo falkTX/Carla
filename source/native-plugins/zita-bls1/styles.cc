@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------
 //
 //  Copyright (C) 2011 Fons Adriaensen <fons@linuxaudio.org>
-//  Modified by falkTX on Jan 2015 for inclusion in Carla
-//
+//  Modified by falkTX on Jan-Apr 2015 for inclusion in Carla
+//    
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation; either version 2 of the License, or
@@ -24,6 +24,7 @@
 #include "png2img.h"
 
 #include "CarlaString.hpp"
+#include <dlfcn.h>
 
 namespace BLS1 {
 
@@ -44,9 +45,20 @@ RotaryImg  lffreq_img;
 RotaryImg  lfgain_img;
 
 
-
-int styles_init (X_display *disp, X_resman *xrm, const char *resdir)
+static CarlaString getResourceDir()
 {
+    Dl_info exeInfo;
+    dladdr((void*)getResourceDir, &exeInfo);
+
+    CarlaString filename(exeInfo.dli_fname);
+    return filename.truncate(filename.rfind("-ui"));
+}
+
+
+int styles_init (X_display *disp, X_resman *xrm)
+{
+    CarlaString resourceDir(getResourceDir());
+
     XftColors [C_MAIN_BG] = disp->alloc_xftcolor (0.25f, 0.25f, 0.25f, 1.0f);
     XftColors [C_MAIN_FG] = disp->alloc_xftcolor (1.0f, 1.0f, 1.0f, 1.0f);
     XftColors [C_TEXT_BG] = disp->alloc_xftcolor (1.0f, 1.0f, 0.0f, 1.0f);
@@ -58,10 +70,9 @@ int styles_init (X_display *disp, X_resman *xrm, const char *resdir)
     tstyle1.color.normal.bgnd = XftColors [C_TEXT_BG]->pixel;
     tstyle1.color.normal.text = XftColors [C_TEXT_FG];
 
-    const CarlaString SHARED = CarlaString(resdir)+"/bls1";
-    inputsect = png2img (SHARED+"/inputsect.png", disp, XftColors [C_MAIN_BG]);
-    shuffsect = png2img (SHARED+"/shuffsect.png", disp, XftColors [C_MAIN_BG]);
-    lfshfsect = png2img (SHARED+"/lfshfsect.png", disp, XftColors [C_MAIN_BG]);
+    inputsect = png2img (resourceDir+"/inputsect.png", disp, XftColors [C_MAIN_BG]);
+    shuffsect = png2img (resourceDir+"/shuffsect.png", disp, XftColors [C_MAIN_BG]);
+    lfshfsect = png2img (resourceDir+"/lfshfsect.png", disp, XftColors [C_MAIN_BG]);
     if (!inputsect || !shuffsect || !lfshfsect) return 1;
 
     inpbal_img._backg = XftColors [C_MAIN_BG];
