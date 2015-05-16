@@ -335,7 +335,8 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
-LINUXSAMPLER_LIBS  = $(shell pkg-config --libs linuxsampler)
+LINUXSAMPLER_LIBS  = -Wl,-rpath=$(shell pkg-config --variable=libdir gig):$(shell pkg-config --variable=libdir linuxsampler)
+LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
 endif
 
 ifeq ($(HAVE_PROJECTM),true)
