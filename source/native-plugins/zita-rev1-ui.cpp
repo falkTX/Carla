@@ -171,6 +171,9 @@ int main(int argc, const char* argv[])
     handler->next_event();
     XFlush(display->dpy());
 
+    if (argc == 1)
+        mainwin->x_map();
+
     do
     {
         ev = mainwin->process();

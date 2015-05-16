@@ -77,8 +77,7 @@ OBJS += \
 	$(OBJDIR)/midi-join.c.o \
 	$(OBJDIR)/midi-split.c.o \
 	$(OBJDIR)/midi-through.c.o \
-	$(OBJDIR)/midi-transpose.c.o \
-	$(OBJDIR)/nekofilter.c.o
+	$(OBJDIR)/midi-transpose.c.o
 
 OBJS += \
 	$(OBJDIR)/audio-file.cpp.o \

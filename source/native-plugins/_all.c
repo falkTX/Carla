@@ -29,7 +29,6 @@ extern void carla_register_native_plugin_midijoin(void);
 extern void carla_register_native_plugin_midisplit(void);
 extern void carla_register_native_plugin_midithrough(void);
 extern void carla_register_native_plugin_miditranspose(void);
-extern void carla_register_native_plugin_nekofilter(void);
 
 // Audio file
 extern void carla_register_native_plugin_audiofile(void);
@@ -79,7 +78,6 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_midisplit();
     carla_register_native_plugin_midithrough();
     carla_register_native_plugin_miditranspose();
-    carla_register_native_plugin_nekofilter();
 
     // Audio file
     carla_register_native_plugin_audiofile();

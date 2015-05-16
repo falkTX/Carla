@@ -411,7 +411,6 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
 endif
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
@@ -540,10 +539,6 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 		bin/resources/rev1-ui \
 		$(DESTDIR)$(PREFIX)/share/carla/resources/
 endif
-
-	install -m 644 \
-		bin/resources/nekofilter/*.png \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/nekofilter/
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)

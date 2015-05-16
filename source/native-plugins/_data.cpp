@@ -159,27 +159,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-{
-    /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
-#if defined(__linux__) || defined(__linux)
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
-                                                  |NATIVE_PLUGIN_HAS_UI),
-#else
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
-#endif
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
-    /* audioIns  */ 1,
-    /* audioOuts */ 1,
-    /* midiIns   */ 0,
-    /* midiOuts  */ 0,
-    /* paramIns  */ 2 + 4*4,
-    /* paramOuts */ 0,
-    /* name      */ "NekoFilter",
-    /* label     */ "nekofilter",
-    /* maker     */ "falkTX, Nedko, Fons Adriaensen",
-    /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
-},
 
 
 // -----------------------------------------------------------------------
@@ -763,8 +742,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_USES_STATE),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 1,
     /* audioOuts */ 1,
@@ -782,9 +760,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
@@ -802,9 +778,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 4,
@@ -822,9 +796,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
     /* supports  */ static_cast<NativePluginSupports>(0x0),
     /* audioIns  */ 2,
     /* audioOuts */ 2,
