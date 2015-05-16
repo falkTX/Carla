@@ -301,21 +301,21 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/zita-%.cpp.o: zita-%.cpp
+# TODO
+$(OBJDIR)/zita-at1.cpp.o: zita-at1.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(ZITA_DSP_CXX_FLAGS) -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
 
 $(OBJDIR)/zita-%-ui.cpp.o: zita-%-ui.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(ZITA_UI_CXX_FLAGS) -c -o $@
 
-# TODO
-$(OBJDIR)/zita-at1.cpp.o: zita-at1.cpp
+$(OBJDIR)/zita-%.cpp.o: zita-%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(shell pkg-config --cflags fftw3f x11 xft) -Wno-unused-parameter -Wno-unused-result -c -o $@
+	@$(CXX) $< $(ZITA_DSP_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
