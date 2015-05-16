@@ -429,8 +429,8 @@ endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
-NATIVE_PLUGINS_LIBS  += -lclxclient -lclthreads -lzita-convolver -lzita-resampler
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs cairo libpng12 fftw3f x11 xft zlib)
+NATIVE_PLUGINS_LIBS  += -lclthreads -lzita-convolver -lzita-resampler
+NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3f)
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
@@ -438,11 +438,6 @@ BASE_FLAGS           += -DHAVE_ZYN_DEPS
 NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs liblo fftw3 mxml zlib)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
-# ifeq ($(HAVE_NTK),true)
-# NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs ntk_images ntk)
-# else
-# NATIVE_PLUGINS_LIBS  += $(shell fltk-config --use-images --ldstaticflags)
-# endif
 endif
 endif
 
