@@ -52,17 +52,6 @@ if __name__ == '__main__':
     gui = HostWindow(host, True)
 
     # -------------------------------------------------------------
-    # Load project file if set
-
-    for arg in app.arguments():
-        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg == "--gdb":
-            continue
-
-        if os.path.exists(arg):
-            gui.loadProjectLater(arg)
-            break
-
-    # -------------------------------------------------------------
     # Show GUI
 
     gui.show()

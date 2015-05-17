@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import Qt, QSettings
+    from PyQt5.QtCore import Qt, QCoreApplication, QSettings
     from PyQt5.QtGui import QColor, QPalette
     from PyQt5.QtWidgets import QApplication
 else:
-    from PyQt4.QtCore import Qt, QSettings
+    from PyQt4.QtCore import Qt, QCoreApplication, QSettings
     from PyQt4.QtGui import QApplication, QColor, QPalette
 
 # ------------------------------------------------------------------------------------------------------------
@@ -79,6 +79,9 @@ class CarlaApplication(object):
 
         # create app
         self.createApp(appName)
+
+        if gCarla.nogui:
+            return
 
         self.fApp.setStyle("carla" if stylesDir else "fusion")
 
@@ -219,10 +222,13 @@ class CarlaApplication(object):
         if MACOS:
             QApplication.setAttribute(Qt.AA_DontShowIconsInMenus)
 
-        self.fApp = QApplication(sys.argv)
+        self.fApp = QCoreApplication(sys.argv) if gCarla.nogui else QApplication(sys.argv)
         self.fApp.setApplicationName(appName)
         self.fApp.setApplicationVersion(VERSION)
         self.fApp.setOrganizationName("falkTX")
+
+        if gCarla.nogui:
+            return
 
         if appName.lower() == "carla-control":
             self.fApp.setWindowIcon(QIcon(":/scalable/carla-control.svg"))

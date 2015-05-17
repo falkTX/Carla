@@ -455,6 +455,13 @@ class HostWindow(QMainWindow):
         if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
             self.ui.tabWidget.setCurrentIndex(1)
 
+        # Load initial project file if set
+        if not (self.host.isControl or self.host.isPlugin):
+            projectFile = getInitialProjectFile(QApplication.instance())
+
+            if projectFile:
+                self.loadProjectLater(projectFile)
+
         # For NSM we wait for the open message
         if NSM_URL and host.nsmOK:
             host.nsm_ready(-1)
@@ -596,7 +603,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_engineStart(self):
-        audioDriver = self.setEngineSettings()
+        audioDriver = setEngineSettings(self.host)
         firstInit   = self.fFirstEngineInit
 
         self.fFirstEngineInit = False
@@ -1199,96 +1206,6 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Settings
 
-    def setEngineSettings(self):
-        # ----------------------------------------------------------------------------------------------------
-        # do nothing if control
-
-        if self.host.isControl:
-            return "Control"
-
-        # ----------------------------------------------------------------------------------------------------
-
-        settings = QSettings("falkTX", "Carla2")
-
-        # ----------------------------------------------------------------------------------------------------
-        # main settings
-
-        setHostSettings(self.host)
-
-        # ----------------------------------------------------------------------------------------------------
-        # plugin paths
-
-        LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
-        DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
-        LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
-        VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-        VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
-        GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
-        SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
-        SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
-
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
-        self.host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
-
-        # ----------------------------------------------------------------------------------------------------
-        # don't continue if plugin
-
-        if self.host.isPlugin:
-            return "Plugin"
-
-        # ----------------------------------------------------------------------------------------------------
-        # driver and device settings
-
-        # driver name
-        try:
-            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-        except:
-            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
-
-        # driver options
-        try:
-            audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
-        except:
-            audioDevice = ""
-
-        try:
-            audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
-        except:
-            audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
-
-        try:
-            audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
-        except:
-            audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
-
-        try:
-            audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
-        except:
-            audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
-
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
-        self.host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
-
-        # ----------------------------------------------------------------------------------------------------
-        # fix things if needed
-
-        if audioDriver != "JACK" and self.host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
-            self.host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
-            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
-
-        # ----------------------------------------------------------------------------------------------------
-        # return selected driver name
-
-        return audioDriver
-
     def saveSettings(self):
         settings = QSettings()
 
@@ -1385,7 +1302,7 @@ class HostWindow(QMainWindow):
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] == patchcanvas.EYECANDY_FULL else 0
 
-        self.setEngineSettings()
+        setEngineSettings(self.host)
         self.restartTimersIfNeeded()
 
     # --------------------------------------------------------------------------------------------------------
@@ -2286,6 +2203,12 @@ def loadHostSettings(host):
         print("LADISH detected but using multiple clients (not allowed), forcing single client now")
         host.nextProcessMode = host.processMode = ENGINE_PROCESS_MODE_SINGLE_CLIENT
 
+    # --------------------------------------------------------------------------------------------------------
+    # run headless host now if nogui option enabled
+
+    if gCarla.nogui:
+        runHostWithoutUI(host)
+
 # ------------------------------------------------------------------------------------------------------------
 # Set host settings
 
@@ -2309,5 +2232,151 @@ def setHostSettings(host):
 
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
+
+# ------------------------------------------------------------------------------------------------------------
+# Set Engine settings according to carla preferences. Returns selected audio driver.
+
+def setEngineSettings(host):
+    # kdevelop likes this :)
+    if False: host = CarlaHostNull()
+
+    # --------------------------------------------------------------------------------------------------------
+    # do nothing if control
+
+    if host.isControl:
+        return "Control"
+
+    # --------------------------------------------------------------------------------------------------------
+
+    settings = QSettings("falkTX", "Carla2")
+
+    # --------------------------------------------------------------------------------------------------------
+    # main settings
+
+    setHostSettings(host)
+
+    # --------------------------------------------------------------------------------------------------------
+    # plugin paths
+
+    LADSPA_PATH = toList(settings.value(CARLA_KEY_PATHS_LADSPA, CARLA_DEFAULT_LADSPA_PATH))
+    DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
+    LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
+    VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
+    VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
+    GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
+    SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
+    SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
+
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LADSPA, splitter.join(LADSPA_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
+    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))
+
+    # --------------------------------------------------------------------------------------------------------
+    # don't continue if plugin
+
+    if host.isPlugin:
+        return "Plugin"
+
+    # --------------------------------------------------------------------------------------------------------
+    # driver and device settings
+
+    # driver name
+    try:
+        audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+    except:
+        audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
+
+    # driver options
+    try:
+        audioDevice = settings.value("%s%s/Device" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), "", type=str)
+    except:
+        audioDevice = ""
+
+    try:
+        audioNumPeriods = settings.value("%s%s/NumPeriods" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_NUM_PERIODS, type=int)
+    except:
+        audioNumPeriods = CARLA_DEFAULT_AUDIO_NUM_PERIODS
+
+    try:
+        audioBufferSize = settings.value("%s%s/BufferSize" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_BUFFER_SIZE, type=int)
+    except:
+        audioBufferSize = CARLA_DEFAULT_AUDIO_BUFFER_SIZE
+
+    try:
+        audioSampleRate = settings.value("%s%s/SampleRate" % (CARLA_KEY_ENGINE_DRIVER_PREFIX, audioDriver), CARLA_DEFAULT_AUDIO_SAMPLE_RATE, type=int)
+    except:
+        audioSampleRate = CARLA_DEFAULT_AUDIO_SAMPLE_RATE
+
+    host.set_engine_option(ENGINE_OPTION_AUDIO_DEVICE,      0,               audioDevice)
+    host.set_engine_option(ENGINE_OPTION_AUDIO_NUM_PERIODS, audioNumPeriods, "")
+    host.set_engine_option(ENGINE_OPTION_AUDIO_BUFFER_SIZE, audioBufferSize, "")
+    host.set_engine_option(ENGINE_OPTION_AUDIO_SAMPLE_RATE, audioSampleRate, "")
+
+    # --------------------------------------------------------------------------------------------------------
+    # fix things if needed
+
+    if audioDriver != "JACK" and host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
+        host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+        host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
+
+    # --------------------------------------------------------------------------------------------------------
+    # return selected driver name
+
+    return audioDriver
+
+# ------------------------------------------------------------------------------------------------------------
+# Run Carla without showing UI
+
+def runHostWithoutUI(host):
+    # kdevelop likes this :)
+    if False: host = CarlaHostNull()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Some initial checks
+
+    if not gCarla.nogui:
+        return
+
+    projectFile = getInitialProjectFile(QCoreApplication.instance(), True)
+
+    if not projectFile:
+        print("Carla no-gui mode can only be used together with a project file.")
+        sys.exit(1)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Additional imports
+
+    from time import sleep
+
+    # --------------------------------------------------------------------------------------------------------
+    # Init engine
+
+    audioDriver = setEngineSettings(host)
+    if not host.engine_init(audioDriver, "Carla-nogui"):
+        print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
+        sys.exit(1)
+
+    if not host.load_project(projectFile):
+        print("Failed to load selected project file, possible reasons:\n%s" % host.get_last_error())
+        host.engine_close()
+        sys.exit(1)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Idle
+
+    while host.is_engine_running() and not gCarla.term:
+        host.engine_idle()
+        sleep(0.5)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Stop
+
+    host.engine_close()
+    sys.exit(0)
 
 # ------------------------------------------------------------------------------------------------------------

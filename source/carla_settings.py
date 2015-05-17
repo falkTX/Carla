@@ -851,12 +851,7 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost, loadHostSettings
 
-    libPrefix = None
-
-    for arg in sys.argv:
-        if arg.startswith("--with-libprefix="):
-            libPrefix = arg.replace("--with-libprefix=", "")
-            break
+    initName, libPrefix = handleInitialCommandLineArguments(__file__)
 
     app  = CarlaApplication("Carla2-Settings", libPrefix)
     host = initHost("Carla2-Settings", libPrefix, False, False, False)

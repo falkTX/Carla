@@ -477,12 +477,16 @@ del DEFAULT_SFZ_PATH
 
 class CarlaObject(object):
     __slots__ = [
-        'gui',  # Host Window
-        'utils' # Utils object
+        'gui',   # Host Window
+        'nogui', # Skip UI
+        'term',  # Terminated by OS signal
+        'utils'  # Utils object
     ]
 
 gCarla = CarlaObject()
 gCarla.gui   = None
+gCarla.nogui = False
+gCarla.term  = False
 gCarla.utils = None
 
 # ------------------------------------------------------------------------------------------------------------
@@ -544,7 +548,7 @@ def handleInitialCommandLineArguments(file):
     initName  = os.path.basename(file) if ("__file__" in dir() and os.path.dirname(file) in PATH) else sys.argv[0]
     libPrefix = None
 
-    for arg in sys.argv:
+    for arg in sys.argv[1:]:
         if arg.startswith("--with-appname="):
             initName = os.path.basename(arg.replace("--with-initname=", ""))
 
@@ -554,6 +558,9 @@ def handleInitialCommandLineArguments(file):
         elif arg == "--gdb":
             pass
 
+        elif arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
+            gCarla.nogui = True
+
         elif arg in ("-h", "--h", "-help", "--help"):
             print("Usage: %s [OPTION]... [FILE|URL]" % initName)
             print("")
@@ -562,6 +569,7 @@ def handleInitialCommandLineArguments(file):
             print(" and OPTION can be one or more of the following:")
             print("")
             print("    --gdb    \t Run Carla inside gdb.")
+            print(" -n,--no-gui \t Run Carla headless, don't show UI.")
             print("")
             print(" -h,--help   \t Print this help text and exit.")
             print(" -v,--version\t Print version information and exit.")
@@ -582,6 +590,20 @@ def handleInitialCommandLineArguments(file):
             sys.exit(0)
 
     return (initName, libPrefix)
+
+# ------------------------------------------------------------------------------------------------------------
+# Get initial project file (as passed in the command-line parameters)
+
+def getInitialProjectFile(app, skipExistCheck = False):
+    for arg in app.arguments()[1:]:
+        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg == "--gdb":
+            continue
+        if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):
+            continue
+        if skipExistCheck or os.path.exists(arg):
+            return arg
+
+    return None
 
 # ------------------------------------------------------------------------------------------------------------
 # Get paths (binaries, resources)
@@ -628,13 +650,14 @@ def getPaths(libPrefix = None):
 # TODO move to carla_host.py or something
 
 def signalHandler(sig, frame):
-    if gCarla.gui is None:
-        return
-
     if sig in (SIGINT, SIGTERM):
-        gCarla.gui.SIGTERM.emit()
+        gCarla.term = True
+        if gCarla.gui is not None:
+            gCarla.gui.SIGTERM.emit()
+
     elif haveSIGUSR1 and sig == SIGUSR1:
-        gCarla.gui.SIGUSR1.emit()
+        if gCarla.gui is not None:
+            gCarla.gui.SIGUSR1.emit()
 
 def setUpSignals():
     signal(SIGINT,  signalHandler)
