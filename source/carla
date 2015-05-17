@@ -54,17 +54,13 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Load project file if set
 
-    args = app.arguments()
+    for arg in app.arguments():
+        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg == "--gdb":
+            continue
 
-    if len(args) > 1:
-        arg = args[-1]
-
-        if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix="):
-            pass
-        elif arg == "--gdb":
-            pass
-        elif os.path.exists(arg):
+        if os.path.exists(arg):
             gui.loadProjectLater(arg)
+            break
 
     # -------------------------------------------------------------
     # Show GUI

@@ -541,7 +541,7 @@ def getIcon(icon, size = 16):
 # Handle some basic command-line arguments shared between all carla variants
 
 def handleInitialCommandLineArguments(file):
-    initName = os.path.basename(file) if ("__file__" in dir() and os.path.dirname(file) in PATH) else sys.argv[0]
+    initName  = os.path.basename(file) if ("__file__" in dir() and os.path.dirname(file) in PATH) else sys.argv[0]
     libPrefix = None
 
     for arg in sys.argv:
@@ -550,6 +550,36 @@ def handleInitialCommandLineArguments(file):
 
         elif arg.startswith("--with-libprefix="):
             libPrefix = arg.replace("--with-libprefix=", "")
+
+        elif arg == "--gdb":
+            pass
+
+        elif arg in ("-h", "--h", "-help", "--help"):
+            print("Usage: %s [OPTION]... [FILE|URL]" % initName)
+            print("")
+            print(" where FILE can be a Carla project or preset file to be loaded, or URL if using Carla-Control")
+            print("")
+            print(" and OPTION can be one or more of the following:")
+            print("")
+            print("    --gdb    \t Run Carla inside gdb.")
+            print("")
+            print(" -h,--help   \t Print this help text and exit.")
+            print(" -v,--version\t Print version information and exit.")
+            print("")
+
+            sys.exit(0)
+
+        elif arg in ("-v", "--v", "-version", "--version"):
+            pathBinaries, pathResources = getPaths(libPrefix)
+
+            print("Using Carla version %s" % VERSION)
+            print("  Python version: %s" % sys.version.split(" ",1)[0])
+            print("  Qt version:     %s" % qVersion())
+            print("  PyQt version:   %s" % PYQT_VERSION_STR)
+            print("  Binary dir:     %s" % pathBinaries)
+            print("  Resources dir:  %s" % pathResources)
+
+            sys.exit(0)
 
     return (initName, libPrefix)
 
