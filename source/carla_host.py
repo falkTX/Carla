@@ -514,7 +514,7 @@ class HostWindow(QMainWindow):
     def loadProjectLater(self, filename):
         self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
         self.setProperWindowTitle()
-        QTimer.singleShot(0, self.slot_loadProjectNow)
+        QTimer.singleShot(1, self.slot_loadProjectNow)
 
     def saveProjectNow(self):
         if not self.fProjectFilename:
