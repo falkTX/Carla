@@ -21,7 +21,11 @@
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMutex.hpp"
 
-#include "lv2/atom.h"
+#ifdef BUILDING_CARLA
+# include "lv2/atom.h"
+#else
+# include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+#endif
 
 // -----------------------------------------------------------------------
 // CarlaPipeCommon class
