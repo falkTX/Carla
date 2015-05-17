@@ -401,8 +401,10 @@ install:
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/
 	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
 	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	install -d $(DESTDIR)$(PREFIX)/lib/python3/dist-packages/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/
 	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
+	install -d $(DESTDIR)$(PREFIX)/include/carla/utils/
 	install -d $(DESTDIR)$(PREFIX)/share/applications/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/
 	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -499,6 +501,11 @@ endif
 		source/*.py \
 		$(DESTDIR)$(PREFIX)/share/carla/
 
+	install -m 644 \
+		source/carla_backend.py \
+		source/carla_utils.py \
+		$(DESTDIR)$(PREFIX)/lib/python3/dist-packages/
+
 	# Install headers
 	install -m 644 \
 		source/backend/CarlaBackend.h \
@@ -511,7 +518,19 @@ endif
 
 	install -m 644 \
 		source/includes/CarlaDefines.h \
+		source/includes/CarlaMIDI.h \
 		$(DESTDIR)$(PREFIX)/include/carla/includes/
+
+	install -m 644 \
+		source/utils/CarlaUtils.hpp \
+		source/utils/CarlaJuceUtils.hpp \
+		source/utils/CarlaMathUtils.hpp \
+		source/utils/CarlaPipeUtils.hpp \
+		source/utils/CarlaPipeUtils.cpp \
+		source/utils/CarlaExternalUI.hpp \
+		source/utils/CarlaMutex.hpp \
+		source/utils/CarlaString.hpp \
+		$(DESTDIR)$(PREFIX)/include/carla/utils/
 
 	# Install resources
 	install -m 755 \
