@@ -545,7 +545,7 @@ def getIcon(icon, size = 16):
 # Handle some basic command-line arguments shared between all carla variants
 
 def handleInitialCommandLineArguments(file):
-    initName  = os.path.basename(file) if ("__file__" in dir() and os.path.dirname(file) in PATH) else sys.argv[0]
+    initName  = os.path.basename(file) if (file is not None and os.path.dirname(file) in PATH) else sys.argv[0]
     libPrefix = None
 
     for arg in sys.argv[1:]:
