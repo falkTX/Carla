@@ -112,6 +112,7 @@ OBJS += \
 # ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
 
+ifeq ($(LINUX),true)
 ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS += \
 	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
@@ -156,6 +157,7 @@ ZYN_UI_FILES_H = \
 	zynaddsubfx/UI/ResonanceUI.h \
 	zynaddsubfx/UI/SUBnoteUI.h \
 	zynaddsubfx/UI/VirKeyboard.h
+endif
 endif
 endif
 

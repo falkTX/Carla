@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # -------------------------------------------------------------
     # Read CLI args
 
-    initName, libPrefix = handleInitialCommandLineArguments(__file__)
+    initName, libPrefix = handleInitialCommandLineArguments(__file__ if "__file__" in dir() else sys.argv[0])
 
     # -------------------------------------------------------------
     # App initialization

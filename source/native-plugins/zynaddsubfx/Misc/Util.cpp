@@ -26,7 +26,6 @@
 #include <cmath>
 #include <cstdio>
 #include <fstream>
-#include <err.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>

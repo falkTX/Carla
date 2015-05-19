@@ -35,6 +35,7 @@
 
 #ifdef CARLA_OS_WIN
 # include <ctime>
+# include "juce_core.h"
 #else
 # include <cerrno>
 # include <fcntl.h>

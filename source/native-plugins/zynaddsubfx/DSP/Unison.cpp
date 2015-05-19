@@ -21,7 +21,6 @@
 
 #include <cmath>
 #include <cstring>
-#include <err.h>
 
 #include "../Misc/Allocator.h"
 #include "Unison.h"

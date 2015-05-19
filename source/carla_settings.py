@@ -851,7 +851,7 @@ if __name__ == '__main__':
     from carla_app import CarlaApplication
     from carla_host import initHost, loadHostSettings
 
-    initName, libPrefix = handleInitialCommandLineArguments(__file__)
+    initName, libPrefix = handleInitialCommandLineArguments(__file__ if "__file__" in dir() else sys.argv[0])
 
     app  = CarlaApplication("Carla2-Settings", libPrefix)
     host = initHost("Carla2-Settings", libPrefix, False, False, False)

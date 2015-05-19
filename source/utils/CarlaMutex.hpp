@@ -32,10 +32,19 @@ public:
      * Constructor.
      */
     CarlaMutex() noexcept
+#if 0 //def CARLA_OS_WIN
+        : fAlreadyLocked(false),
+          fSection(),
+#else
         : fMutex(),
+#endif
           fTryLockWasCalled(false)
     {
+#if 0 //def CARLA_OS_WIN
+        InitializeCriticalSection(&fSection);
+#else
         pthread_mutex_init(&fMutex, nullptr);
+#endif
     }
 
     /*
@@ -43,7 +52,11 @@ public:
      */
     ~CarlaMutex() noexcept
     {
+#if 0 //def CARLA_OS_WIN
+        DeleteCriticalSection(&fSection);
+#else
         pthread_mutex_destroy(&fMutex);
+#endif
     }
 
     /*
@@ -61,7 +74,16 @@ public:
      */
     void lock() const noexcept
     {
+#if 0 //def CARLA_OS_WIN
+        EnterCriticalSection(&fSection);
+
+        for (;fAlreadyLocked;)
+            Sleep(500);
+
+        fAlreadyLocked = true;
+#else
         pthread_mutex_lock(&fMutex);
+#endif
     }
 
     /*
@@ -72,7 +94,21 @@ public:
     {
         fTryLockWasCalled = true;
 
+#if 0 //def CARLA_OS_WIN
+        if (TryEnterCriticalSection(&fSection) == FALSE)
+            return false;
+
+        if (fAlreadyLocked)
+        {
+            LeaveCriticalSection(&fSection);
+            return false;
+        }
+
+        fAlreadyLocked = true;
+        return true;
+#else
         return (pthread_mutex_trylock(&fMutex) == 0);
+#endif
     }
 
     /*
@@ -83,12 +119,22 @@ public:
         if (resetTryLock)
             fTryLockWasCalled = false;
 
+#if 0 //def CARLA_OS_WIN
+        fAlreadyLocked = false;
+        LeaveCriticalSection(&fSection);
+#else
         pthread_mutex_unlock(&fMutex);
+#endif
     }
 
 private:
-    mutable pthread_mutex_t fMutex;            // The mutex
-    mutable volatile bool   fTryLockWasCalled; // true if "tryLock()" was called at least once
+#if 0 //def CARLA_OS_WIN
+    mutable volatile bool fAlreadyLocked;
+    mutable CRITICAL_SECTION fSection;
+#else
+    mutable pthread_mutex_t fMutex;
+#endif
+    mutable volatile bool fTryLockWasCalled; // true if "tryLock()" was called at least once
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaMutex)

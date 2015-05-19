@@ -24,7 +24,6 @@
 #include <cstdio>
 #include <cstring>
 #include <cassert>
-#include <err.h>
 #include "../Misc/Util.h"
 #include "SVFilter.h"
 
