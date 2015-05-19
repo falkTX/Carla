@@ -18,8 +18,10 @@
 #include "CarlaDefines.h"
 
 #ifdef CARLA_OS_WIN
-#define errx(...)
-#define warnx(...)
+# define errx(...)
+# define warnx(...)
+#else
+# include <err.h>
 #endif
 
 #define PLUGINVERSION

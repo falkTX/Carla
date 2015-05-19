@@ -378,7 +378,7 @@ void waitForProcessToStopOrKillIt(const PROCESS_INFORMATION& processInfo, const 
 }
 #else
 static inline
-bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds) noexcept
+bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, bool sendTerminate) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pid > 0, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
@@ -409,6 +409,11 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds) noe
             break;
 
         case 0:
+            if (sendTerminate)
+            {
+                sendTerminate = false;
+                ::kill(pid, SIGTERM);
+            }
             if (getMillisecondCounter() < timeoutEnd)
             {
                 carla_msleep(5);
@@ -442,14 +447,14 @@ void waitForChildToStopOrKillIt(pid_t& pid, const uint32_t timeOutMilliseconds) 
     CARLA_SAFE_ASSERT_RETURN(pid > 0,);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0,);
 
-    if (! waitForChildToStop(pid, timeOutMilliseconds))
+    if (! waitForChildToStop(pid, timeOutMilliseconds, true))
     {
         carla_stderr("waitForChildToStopOrKillIt() - process didn't stop, force killing");
 
         if (::kill(pid, SIGKILL) != -1)
         {
             // wait for killing to take place
-            waitForChildToStop(pid, timeOutMilliseconds);
+            waitForChildToStop(pid, timeOutMilliseconds, false);
         }
         else
         {
@@ -1375,7 +1380,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     if (::kill(pData->pid, SIGKILL) != -1)
     {
         // wait for killing to take place
-        waitForChildToStop(pData->pid, 2*1000);
+        waitForChildToStop(pData->pid, 2*1000, false);
     }
     pData->pid = -1;
 #endif
