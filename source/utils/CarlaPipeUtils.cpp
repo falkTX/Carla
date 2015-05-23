@@ -241,7 +241,7 @@ bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
         CarlaString error(std::strerror(errno));
         carla_stderr2("exec failed: %s", error.buffer());
 
-        _exit(0); // this is not noexcept safe but doesn't matter anyway
+        _exit(1); // this is not noexcept safe but doesn't matter anyway
     }   break;
 
     case -1: { // error

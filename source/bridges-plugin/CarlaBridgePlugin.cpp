@@ -25,6 +25,10 @@
 # include <signal.h>
 #endif
 
+#ifdef CARLA_OS_LINUX
+# include <X11/Xlib.h>
+#endif
+
 #include "jackbridge/JackBridge.hpp"
 #include "juce_core.h"
 
@@ -413,6 +417,11 @@ int main(int argc, char* argv[])
         if (std::strstr(label, " (16 outs)") != nullptr)
             extraStuff = "true";
     }
+
+#ifdef CARLA_OS_LINUX
+    if (std::getenv("DISPLAY") != nullptr)
+        XInitThreads();
+#endif
 
     // ---------------------------------------------------------------------
     // Init plugin bridge
