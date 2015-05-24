@@ -992,13 +992,13 @@ protected:
     {
         for (uint32_t i=0; i < fPorts.paramCount; ++i)
         {
-            if (fDescriptor->get_parameter_info(fHandle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT)
-            {
-                fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
+            if (! fPorts.paramsOut[i])
+                continue;
 
-                if (fPorts.paramsPtr[i] != nullptr)
-                    *fPorts.paramsPtr[i] = fPorts.paramsLast[i];
-            }
+            fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
+
+            if (fPorts.paramsPtr[i] != nullptr)
+                *fPorts.paramsPtr[i] = fPorts.paramsLast[i];
         }
     }
 
