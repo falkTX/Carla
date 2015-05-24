@@ -171,9 +171,7 @@ public:
         else if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             fUI.portOffset += 1;
 
-#if 0 // TODO
         fUI.portOffset += desc->midiOuts;
-#endif
         fUI.portOffset += 1; // freewheel
         fUI.portOffset += desc->audioIns;
         fUI.portOffset += desc->audioOuts;
@@ -265,60 +263,43 @@ public:
 
         for (uint32_t i=0; i < fPorts.paramCount; ++i)
         {
+            if (fPorts.paramsOut[i])
+                continue;
+
             CARLA_SAFE_ASSERT_CONTINUE(fPorts.paramsPtr[i] != nullptr)
 
             curValue = *fPorts.paramsPtr[i];
 
-            if ((! carla_compareFloats(fPorts.paramsLast[i], curValue)) && (fDescriptor->get_parameter_info(fHandle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT) == 0)
-            {
-                fPorts.paramsLast[i] = curValue;
-                fDescriptor->set_parameter_value(fHandle, i, curValue);
-            }
+            if (carla_compareFloats(fPorts.paramsLast[i], curValue))
+                continue;
+
+            fPorts.paramsLast[i] = curValue;
+            fDescriptor->set_parameter_value(fHandle, i, curValue);
         }
 
-        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
+        if (fDescriptor->midiIns > 0 || fDescriptor->midiOuts > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
             carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
 
-            LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
+            if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             {
-                const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
-
-                if (event == nullptr)
-                    continue;
-
-                if (event->body.type == fURIs.midiEvent)
+                LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
                 {
-                    if (event->body.size > 4)
+                    const LV2_Atom_Event* const event((const LV2_Atom_Event*)iter);
+
+                    if (event == nullptr)
                         continue;
-                    if (event->time.frames >= frames)
-                        continue;
-                    if (fMidiEventCount >= kMaxMidiEvents*2)
+                    if (event->body.type != fURIs.atomBlank)
                         continue;
 
-                    const uint8_t* const data((const uint8_t*)(event + 1));
-
-                    fMidiEvents[fMidiEventCount].port = 0;
-                    fMidiEvents[fMidiEventCount].time = (uint32_t)event->time.frames;
-                    fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
-
-                    for (uint32_t i=0; i < event->body.size; ++i)
-                        fMidiEvents[fMidiEventCount].data[i] = data[i];
-
-                    fMidiEventCount += 1;
-                    continue;
-                }
-
-                if (event->body.type == fURIs.atomBlank)
-                {
                     const LV2_Atom_Object* const obj((const LV2_Atom_Object*)&event->body);
 
                     if (obj->body.otype != fURIs.timePos)
                         continue;
 
-                    LV2_Atom* bar     = nullptr;
-                    LV2_Atom* barBeat = nullptr;
+                    LV2_Atom* bar      = nullptr;
+                    LV2_Atom* barBeat  = nullptr;
                     LV2_Atom* beat     = nullptr;
                     LV2_Atom* beatUnit = nullptr;
                     LV2_Atom* beatsPerBar = nullptr;
@@ -455,11 +436,10 @@ public:
                     }
 
                     fTimeInfo.bbt.valid = (beatsPerMinute != nullptr && beatsPerBar != nullptr && beatUnit != nullptr);
-                    continue;
                 }
             }
 
-            for (uint32_t i=1; i < fDescriptor->midiIns; ++i)
+            for (uint32_t i=0; i < fDescriptor->midiIns; ++i)
             {
                 LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], iter)
                 {
@@ -478,20 +458,22 @@ public:
 
                     const uint8_t* const data((const uint8_t*)(event + 1));
 
-                    fMidiEvents[fMidiEventCount].port = (uint8_t)i;
-                    fMidiEvents[fMidiEventCount].size = (uint8_t)event->body.size;
-                    fMidiEvents[fMidiEventCount].time = (uint32_t)event->time.frames;
+                    NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
+                    carla_zeroStruct(nativeEvent);
+
+                    nativeEvent.port = (uint8_t)i;
+                    nativeEvent.size = (uint8_t)event->body.size;
+                    nativeEvent.time = (uint32_t)event->time.frames;
 
                     for (uint32_t j=0; j < event->body.size; ++j)
-                        fMidiEvents[fMidiEventCount].data[j] = data[j];
-
-                    fMidiEventCount += 1;
+                        nativeEvent.data[j] = data[j];
                 }
             }
         }
 
         fIsProcessing = true;
-        fDescriptor->process(fHandle, fPorts.audioIns, fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
+        // FIXME
+        fDescriptor->process(fHandle, const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
         fIsProcessing = false;
 
         // update timePos for next callback
@@ -529,9 +511,61 @@ public:
             }
         }
 
-        // TODO - midi out
-
         updateParameterOutputs();
+
+        if (fDescriptor->midiOuts > 0)
+        {
+            uint32_t capacities[fDescriptor->midiOuts];
+            uint32_t offsets   [fDescriptor->midiOuts];
+
+            for (uint32_t i=0, size=fDescriptor->midiOuts; i<size; ++i)
+            {
+                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
+
+                capacities[i] = seq->atom.size;
+                offsets   [i] = 0;
+            }
+
+            LV2_Atom_Event* aev;
+            uint32_t size;
+
+            // reverse lookup MIDI events
+            for (uint32_t i = (kMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
+            {
+                if (fMidiEvents[i].data[0] == 0)
+                    break;
+
+                NativeMidiEvent& nativeEvent(fMidiEvents[i]);
+
+                const uint8_t port(nativeEvent.port);
+                CARLA_SAFE_ASSERT_CONTINUE(nativeEvent.port < fDescriptor->midiOuts);
+
+                LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
+                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
+
+                if (sizeof(LV2_Atom_Event) + nativeEvent.size > capacities[port] - offsets[port])
+                    continue;
+
+                if (offsets[port] == 0)
+                {
+                    seq->atom.size = 0;
+                    seq->atom.type = fURIs.atomSequence;
+                    seq->body.unit = 0;
+                    seq->body.pad  = 0;
+                }
+
+                aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + offsets[port]);
+                aev->time.frames = nativeEvent.time;
+                aev->body.size   = nativeEvent.size;
+                aev->body.type   = fURIs.midiEvent;
+                std::memcpy(LV2_ATOM_BODY(&aev->body), nativeEvent.data, nativeEvent.size);
+
+                size            = lv2_atom_pad_size(sizeof(LV2_Atom_Event) + nativeEvent.size);
+                offsets[port]  += size;
+                seq->atom.size += size;
+            }
+        }
     }
 
     // -------------------------------------------------------------------
@@ -878,13 +912,14 @@ protected:
         // reverse-find first free event, and put it there
         for (uint32_t i=(kMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
         {
-            if (fMidiEvents[i].data[0] == 0)
-            {
-                std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
-                return true;
-            }
+            if (fMidiEvents[i].data[0] != 0)
+                continue;
+
+            std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
+            return true;
         }
 
+        carla_stdout("NativePlugin::handleWriteMidiEvent(%p) - buffer full", event);
         return false;
     }
 
@@ -1070,14 +1105,15 @@ private:
     } fUI;
 
     struct Ports {
-        LV2_Atom_Sequence** eventsIn;
-        LV2_Atom_Sequence** midiOuts;
-        float**  audioIns;
-        float**  audioOuts;
+        const LV2_Atom_Sequence** eventsIn;
+        /* */ LV2_Atom_Sequence** midiOuts;
+        const float** audioIns;
+        /* */ float** audioOuts;
         float*   freewheel;
         uint32_t paramCount;
         float*   paramsLast;
         float**  paramsPtr;
+        bool*    paramsOut;
 
         Ports()
             : eventsIn(nullptr),
@@ -1087,7 +1123,8 @@ private:
               freewheel(nullptr),
               paramCount(0),
               paramsLast(nullptr),
-              paramsPtr(nullptr) {}
+              paramsPtr(nullptr),
+              paramsOut(nullptr) {}
 
         ~Ports()
         {
@@ -1126,6 +1163,12 @@ private:
                 delete[] paramsPtr;
                 paramsPtr = nullptr;
             }
+
+            if (paramsOut != nullptr)
+            {
+                delete[] paramsOut;
+                paramsOut = nullptr;
+            }
         }
 
         void init(const NativePluginDescriptor* const desc, NativePluginHandle handle)
@@ -1134,14 +1177,14 @@ private:
 
             if (desc->midiIns > 0)
             {
-                eventsIn = new LV2_Atom_Sequence*[desc->midiIns];
+                eventsIn = new const LV2_Atom_Sequence*[desc->midiIns];
 
                 for (uint32_t i=0; i < desc->midiIns; ++i)
                     eventsIn[i] = nullptr;
             }
             else if (desc->hints & NATIVE_PLUGIN_USES_TIME)
             {
-                eventsIn = new LV2_Atom_Sequence*[1];
+                eventsIn = new const LV2_Atom_Sequence*[1];
                 eventsIn[0] = nullptr;
             }
 
@@ -1155,7 +1198,7 @@ private:
 
             if (desc->audioIns > 0)
             {
-                audioIns = new float*[desc->audioIns];
+                audioIns = new const float*[desc->audioIns];
 
                 for (uint32_t i=0; i < desc->audioIns; ++i)
                     audioIns[i] = nullptr;
@@ -1177,11 +1220,13 @@ private:
                 {
                     paramsLast = new float[paramCount];
                     paramsPtr  = new float*[paramCount];
+                    paramsOut  = new bool[paramCount];
 
                     for (uint32_t i=0; i < paramCount; ++i)
                     {
                         paramsLast[i] = desc->get_parameter_value(handle, i);
-                        paramsPtr[i] = nullptr;
+                        paramsPtr [i] = nullptr;
+                        paramsOut [i] = (desc->get_parameter_info(handle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT);
                     }
                 }
             }
@@ -1209,7 +1254,6 @@ private:
                 }
             }
 
-#if 0 // TODO
             for (uint32_t i=0; i < desc->midiOuts; ++i)
             {
                 if (port == index++)
@@ -1218,7 +1262,6 @@ private:
                     return;
                 }
             }
-#endif
 
             if (port == index++)
             {

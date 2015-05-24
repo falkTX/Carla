@@ -1167,8 +1167,6 @@ protected:
                     hints |= NATIVE_PARAMETER_USES_SAMPLE_RATE;
                 if (paramData.hints & PARAMETER_USES_SCALEPOINTS)
                     hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
-                if (paramData.hints & PARAMETER_USES_CUSTOM_TEXT)
-                    hints |= NATIVE_PARAMETER_USES_CUSTOM_TEXT;
 
                 if (paramData.type == PARAMETER_INPUT || paramData.type == PARAMETER_OUTPUT)
                 {
@@ -1206,24 +1204,6 @@ protected:
         }
 
         return 0.0f;
-    }
-
-    const char* getParameterText(const uint32_t index /*, const float value*/) const
-    {
-        if (CarlaPlugin* const plugin = _getFirstPlugin())
-        {
-            if (index < plugin->getParameterCount())
-            {
-                static char strBuf[STR_MAX+1];
-                carla_zeroChar(strBuf, STR_MAX+1);
-
-                plugin->getParameterText(index, /*value,*/ strBuf);
-
-                return strBuf;
-            }
-        }
-
-        return nullptr;
     }
 
     // -------------------------------------------------------------------
@@ -1691,11 +1671,6 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index /*, float value*/)
-    {
-        return handlePtr->getParameterText(index /*, value*/);
-    }
-
     static uint32_t _get_midi_program_count(NativePluginHandle handle)
     {
         return handlePtr->getMidiProgramCount();
@@ -1843,7 +1818,6 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_parameter_text,
     CarlaEngineNative::_get_midi_program_count,
     CarlaEngineNative::_get_midi_program_info,
     CarlaEngineNative::_set_parameter_value,
@@ -1886,7 +1860,6 @@ static const NativePluginDescriptor carlaPatchbayDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_parameter_text,
     CarlaEngineNative::_get_midi_program_count,
     CarlaEngineNative::_get_midi_program_info,
     CarlaEngineNative::_set_parameter_value,
@@ -1929,7 +1902,6 @@ static const NativePluginDescriptor carlaPatchbay3sDesc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_parameter_text,
     CarlaEngineNative::_get_midi_program_count,
     CarlaEngineNative::_get_midi_program_info,
     CarlaEngineNative::_set_parameter_value,
@@ -1972,7 +1944,6 @@ static const NativePluginDescriptor carlaPatchbay16Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_parameter_text,
     CarlaEngineNative::_get_midi_program_count,
     CarlaEngineNative::_get_midi_program_info,
     CarlaEngineNative::_set_parameter_value,
@@ -2015,7 +1986,6 @@ static const NativePluginDescriptor carlaPatchbay32Desc = {
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
     CarlaEngineNative::_get_parameter_value,
-    CarlaEngineNative::_get_parameter_text,
     CarlaEngineNative::_get_midi_program_count,
     CarlaEngineNative::_get_midi_program_info,
     CarlaEngineNative::_set_parameter_value,

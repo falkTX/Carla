@@ -438,6 +438,7 @@ public:
         fMidiOutEvents.numEvents = 0;
 
         if (fHandle != nullptr)
+            // FIXME
             fDescriptor->process(fHandle, const_cast<float**>(inputs), outputs, static_cast<uint32_t>(sampleFrames), fMidiEvents, fMidiEventCount);
 
         fMidiEventCount = 0;

@@ -235,7 +235,6 @@ static const NativePluginDescriptor midigainDesc = {
     .get_parameter_count = midigain_get_parameter_count,
     .get_parameter_info  = midigain_get_parameter_info,
     .get_parameter_value = midigain_get_parameter_value,
-    .get_parameter_text  = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,

@@ -105,7 +105,6 @@ static const NativePluginDescriptor midijoinDesc = {
     .get_parameter_count = NULL,
     .get_parameter_info  = NULL,
     .get_parameter_value = NULL,
-    .get_parameter_text  = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,

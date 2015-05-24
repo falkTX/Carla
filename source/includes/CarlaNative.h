@@ -84,8 +84,7 @@ typedef enum {
     NATIVE_PARAMETER_IS_INTEGER       = 1 << 4,
     NATIVE_PARAMETER_IS_LOGARITHMIC   = 1 << 5,
     NATIVE_PARAMETER_USES_SAMPLE_RATE = 1 << 6,
-    NATIVE_PARAMETER_USES_SCALEPOINTS = 1 << 7,
-    NATIVE_PARAMETER_USES_CUSTOM_TEXT = 1 << 8
+    NATIVE_PARAMETER_USES_SCALEPOINTS = 1 << 7
 } NativeParameterHints;
 
 typedef enum {
@@ -225,7 +224,6 @@ typedef struct _NativePluginDescriptor {
     uint32_t               (*get_parameter_count)(NativePluginHandle handle);
     const NativeParameter* (*get_parameter_info)(NativePluginHandle handle, uint32_t index);
     float                  (*get_parameter_value)(NativePluginHandle handle, uint32_t index);
-    const char*            (*get_parameter_text)(NativePluginHandle handle, uint32_t index /*, float value*/);
 
     uint32_t                 (*get_midi_program_count)(NativePluginHandle handle);
     const NativeMidiProgram* (*get_midi_program_info)(NativePluginHandle handle, uint32_t index);

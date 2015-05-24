@@ -21,10 +21,10 @@
 
 #undef DESCFUNCS
 #define DESCFUNCS \
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, \
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, \
-    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, \
-    nullptr, nullptr, nullptr, nullptr
+    nullptr, nullptr, nullptr, nullptr, nullptr, \
+    nullptr, nullptr, nullptr, nullptr, nullptr, \
+    nullptr, nullptr, nullptr, nullptr, nullptr, \
+    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr
 
 static const NativePluginDescriptor sNativePluginDescriptors[] = {
 

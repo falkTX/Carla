@@ -711,11 +711,13 @@ public:
 
     uint getMaxClientNameSize() const noexcept override
     {
+#ifndef BUILD_BRIDGE
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+#endif
         {
             try {
-                return static_cast<uint>(jackbridge_client_name_size());
-            } CARLA_SAFE_EXCEPTION_RETURN("jack_client_name_size", 0);
+                return static_cast<uint>(jackbridge_client_name_size()-1);
+            } CARLA_SAFE_EXCEPTION_RETURN("jack_client_name_size", 32);
         }
 
         return CarlaEngine::getMaxClientNameSize();
@@ -726,8 +728,8 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT || pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
         {
             try {
-                return static_cast<uint>(jackbridge_port_name_size());
-            } CARLA_SAFE_EXCEPTION_RETURN("jack_port_name_size", 0);
+                return static_cast<uint>(jackbridge_port_name_size()-1);
+            } CARLA_SAFE_EXCEPTION_RETURN("jack_port_name_size", 255);
         }
 
         return CarlaEngine::getMaxPortNameSize();
@@ -749,10 +751,13 @@ public:
 
         carla_zeroStruct<jack_position_t>(fTransportPos);
 
+        CarlaString truncatedClientName(clientName);
+        truncatedClientName.truncate(getMaxClientNameSize());
+
 #ifdef BUILD_BRIDGE
         fIsRunning = true;
 
-        if (! pData->init(clientName))
+        if (! pData->init(truncatedClientName))
         {
             close();
             setLastError("Failed to init internal data");
@@ -762,7 +767,7 @@ public:
         if (pData->bufferSize == 0 || carla_compareFloats(pData->sampleRate, 0.0))
         {
             // open temp client to get initial buffer-size and sample-rate values
-            if (jack_client_t* const tmpClient = jackbridge_client_open(clientName, JackNoStartServer, nullptr))
+            if (jack_client_t* const tmpClient = jackbridge_client_open(truncatedClientName, JackNoStartServer, nullptr))
             {
                 pData->bufferSize = jackbridge_get_buffer_size(tmpClient);
                 pData->sampleRate = jackbridge_get_sample_rate(tmpClient);
@@ -779,7 +784,7 @@ public:
 
         return true;
 #else
-        fClient = jackbridge_client_open(clientName, JackNullOption, nullptr);
+        fClient = jackbridge_client_open(truncatedClientName, JackNullOption, nullptr);
 
         if (fClient == nullptr)
         {

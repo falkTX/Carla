@@ -398,6 +398,12 @@ int main(int argc, char* argv[])
 
     CarlaString clientName(name != nullptr ? name : label);
 
+    // LV2 URI is not usable as client name
+    //if (itype == CarlaBackend::PLUGIN_LV2 && clientName == label)
+    {
+
+    }
+
     if (clientName.isEmpty())
     {
         const String jfilename = String(CharPointer_UTF8(filename));

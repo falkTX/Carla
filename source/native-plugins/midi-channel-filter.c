@@ -165,7 +165,6 @@ static const NativePluginDescriptor midichanfilterDesc = {
     .get_parameter_count = midichanfilter_get_parameter_count,
     .get_parameter_info  = midichanfilter_get_parameter_info,
     .get_parameter_value = midichanfilter_get_parameter_value,
-    .get_parameter_text  = NULL,
 
     .get_midi_program_count = NULL,
     .get_midi_program_info  = NULL,

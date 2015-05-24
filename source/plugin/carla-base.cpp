@@ -79,10 +79,6 @@ struct PluginListManager {
                 continue;
             }
 
-            // skip midi plugins, not implemented yet
-            if (desc->audioIns == 0 && desc->audioOuts == 0 && desc->midiIns >= 1 && desc->midiOuts >= 1)
-                continue;
-
             descs.append(desc);
         }
     }

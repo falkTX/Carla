@@ -235,12 +235,6 @@ protected:
         return 0.0f;
     }
 
-    virtual const char* getParameterText(const uint32_t index /*, const float value*/) const
-    {
-        CARLA_SAFE_ASSERT_RETURN(index < getParameterCount(), nullptr);
-        return nullptr;
-    }
-
     // -------------------------------------------------------------------
     // Plugin midi-program calls
 
@@ -401,11 +395,6 @@ public:
         return handlePtr->getParameterValue(index);
     }
 
-    static const char* _get_parameter_text(NativePluginHandle handle, uint32_t index /*, float value*/)
-    {
-        return handlePtr->getParameterText(index /*, value*/);
-    }
-
     static uint32_t _get_midi_program_count(NativePluginHandle handle)
     {
         return handlePtr->getMidiProgramCount();
@@ -537,7 +526,6 @@ public:                                                                      \
     ClassName::_get_parameter_count,    \
     ClassName::_get_parameter_info,     \
     ClassName::_get_parameter_value,    \
-    ClassName::_get_parameter_text,     \
     ClassName::_get_midi_program_count, \
     ClassName::_get_midi_program_info,  \
     ClassName::_set_parameter_value,    \

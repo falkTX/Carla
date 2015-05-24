@@ -590,7 +590,7 @@ int jackbridge_client_name_size()
     if (getBridgeInstance().client_name_size_ptr != nullptr)
         return getBridgeInstance().client_name_size_ptr();
 #endif
-    return 0;
+    return 33;
 }
 
 char* jackbridge_get_client_name(jack_client_t* client)
@@ -1214,7 +1214,7 @@ int jackbridge_port_name_size()
     if (getBridgeInstance().port_name_size_ptr != nullptr)
         return getBridgeInstance().port_name_size_ptr();
 #endif
-    return 0;
+    return 256;
 }
 
 int jackbridge_port_type_size()
@@ -1226,7 +1226,7 @@ int jackbridge_port_type_size()
     if (getBridgeInstance().port_type_size_ptr != nullptr)
         return getBridgeInstance().port_type_size_ptr();
 #endif
-    return 0;
+    return 32;
 }
 
 size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type)

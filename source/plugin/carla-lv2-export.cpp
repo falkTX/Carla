@@ -328,15 +328,31 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         text += "        lv2:designation lv2:control ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
 
-        if (pluginDesc->midiIns > 1)
+        if (pluginDesc->hints & NATIVE_PLUGIN_USES_TIME)
         {
-            text += "        lv2:symbol \"lv2_events_in_1\" ;\n";
-            text += "        lv2:name \"Events Input #1\" ;\n";
+            if (pluginDesc->midiIns > 1)
+            {
+                text += "        lv2:symbol \"lv2_events_in_1\" ;\n";
+                text += "        lv2:name \"Events Input #1\" ;\n";
+            }
+            else
+            {
+                text += "        lv2:symbol \"lv2_events_in\" ;\n";
+                text += "        lv2:name \"Events Input\" ;\n";
+            }
         }
         else
         {
-            text += "        lv2:symbol \"lv2_events_in\" ;\n";
-            text += "        lv2:name \"Events Input\" ;\n";
+            if (pluginDesc->midiIns > 1)
+            {
+                text += "        lv2:symbol \"lv2_midi_in_1\" ;\n";
+                text += "        lv2:name \"MIDI Input #1\" ;\n";
+            }
+            else
+            {
+                text += "        lv2:symbol \"lv2_midi_in\" ;\n";
+                text += "        lv2:name \"MIDI Input\" ;\n";
+            }
         }
 
         text += "    ] ;\n\n";
@@ -354,17 +370,8 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         text += "        atom:bufferType atom:Sequence ;\n";
         text += "        atom:supports <" LV2_MIDI__MidiEvent "> ;\n";
         text += "        lv2:index " + String(portIndex++) + " ;\n";
-
-        if (pluginDesc->midiIns > 1)
-        {
-            text += "        lv2:symbol \"lv2_events_in_" + String(i+1) + "\" ;\n";
-            text += "        lv2:name \"Events Input #" + String(i+1) + "\" ;\n";
-        }
-        else
-        {
-            text += "        lv2:symbol \"lv2_events_in\" ;\n";
-            text += "        lv2:name \"Events Input\" ;\n";
-        }
+        text += "        lv2:symbol \"lv2_midi_in_" + String(i+1) + "\" ;\n";
+        text += "        lv2:name \"MIDI Input #" + String(i+1) + "\" ;\n";
 
         if (i+1 == pluginDesc->midiIns)
             text += "    ] ;\n\n";
@@ -372,7 +379,6 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
             text += "    ] , [\n";
     }
 
-#if 0 // TODO
     // -------------------------------------------------------------------
     // MIDI outputs
 
@@ -402,7 +408,6 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         else
             text += "    ] , [\n";
     }
-#endif
 
     // -------------------------------------------------------------------
     // Freewheel port
@@ -416,7 +421,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     text += "        lv2:minimum 0.0 ;\n";
     text += "        lv2:maximum 1.0 ;\n";
     text += "        lv2:designation <" LV2_CORE__freeWheeling "> ;\n";
-    text += "        lv2:portProperty lv2:toggled ;\n";
+    text += "        lv2:portProperty lv2:toggled, <" LV2_PORT_PROPS__notOnGUI "> ;\n";
     text += "    ] ;\n";
     text += "\n";
 
@@ -497,27 +502,20 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
         text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
 
-        if (paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED)
-        {
-            if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE) == 0)
-                text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
-                text += "        lv2:portProperty lv2:toggled ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
-                text += "        lv2:portProperty lv2:integer ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
-                text += "        lv2:portProperty <" LV2_PORT_PROPS__logarithmic "> ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
-                text += "        lv2:portProperty lv2:toggled ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
-                text += "        lv2:portProperty lv2:enumeration ;\n";
-            if (paramInfo->hints & NATIVE_PARAMETER_USES_CUSTOM_TEXT)
-                pass(); // TODO: custom lv2 extension for this
-        }
-        else
-        {
+        if ((paramInfo->hints & NATIVE_PARAMETER_IS_AUTOMABLE) == 0)
+            text += "        lv2:portProperty <" LV2_PORT_PROPS__expensive "> ;\n";
+        if (paramInfo->hints & NATIVE_PARAMETER_IS_BOOLEAN)
+            text += "        lv2:portProperty lv2:toggled ;\n";
+        if (paramInfo->hints & NATIVE_PARAMETER_IS_INTEGER)
+            text += "        lv2:portProperty lv2:integer ;\n";
+        if (paramInfo->hints & NATIVE_PARAMETER_IS_LOGARITHMIC)
+            text += "        lv2:portProperty <" LV2_PORT_PROPS__logarithmic "> ;\n";
+        if (paramInfo->hints & NATIVE_PARAMETER_USES_SAMPLE_RATE)
+            text += "        lv2:portProperty lv2:toggled ;\n";
+        if (paramInfo->hints & NATIVE_PARAMETER_USES_SCALEPOINTS)
+            text += "        lv2:portProperty lv2:enumeration ;\n";
+        if ((paramInfo->hints & NATIVE_PARAMETER_IS_ENABLED) == 0)
             text += "        lv2:portProperty <" LV2_PORT_PROPS__notOnGUI "> ;\n";
-        }
 
         for (uint32_t j=0; j < paramInfo->scalePointCount; ++j)
         {
