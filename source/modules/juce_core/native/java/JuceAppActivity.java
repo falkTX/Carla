@@ -331,15 +331,26 @@ public class JuceAppActivity   extends Activity
             setFocusableInTouchMode (true);
             setOnFocusChangeListener (this);
             requestFocus();
+
+            // swap red and blue colours to match internal opengl texture format
+            ColorMatrix colorMatrix = new ColorMatrix();
+
+            float[] colorTransform = { 0,    0,    1.0f, 0,    0,
+                                       0,    1.0f, 0,    0,    0,
+                                       1.0f, 0,    0,    0,    0,
+                                       0,    0,    0,    1.0f, 0 };
+
+            colorMatrix.set (colorTransform);
+            paint.setColorFilter (new ColorMatrixColorFilter (colorMatrix));
         }
 
         //==============================================================================
-        private native void handlePaint (long host, Canvas canvas);
+        private native void handlePaint (long host, Canvas canvas, Paint paint);
 
         @Override
         public void onDraw (Canvas canvas)
         {
-            handlePaint (host, canvas);
+            handlePaint (host, canvas, paint);
         }
 
         @Override
@@ -350,6 +361,7 @@ public class JuceAppActivity   extends Activity
 
         private boolean opaque;
         private long host;
+        private Paint paint = new Paint();
 
         //==============================================================================
         private native void handleMouseDown (long host, int index, float x, float y, long time);
@@ -446,6 +458,22 @@ public class JuceAppActivity   extends Activity
         {
             handleKeyUp (host, keyCode, event.getUnicodeChar());
             return true;
+        }
+
+        @Override
+        public boolean onKeyMultiple (int keyCode, int count, KeyEvent event)
+        {
+            if (keyCode != KeyEvent.KEYCODE_UNKNOWN || event.getAction() != KeyEvent.ACTION_MULTIPLE)
+                return super.onKeyMultiple (keyCode, count, event);
+
+            if (event.getCharacters() != null)
+            {
+                int utf8Char = event.getCharacters().codePointAt (0);
+                handleKeyDown (host, utf8Char, utf8Char);
+                return true;
+            }
+
+            return false;
         }
 
         // this is here to make keyboard entry work on a Galaxy Tab2 10.1

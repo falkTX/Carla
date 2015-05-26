@@ -1617,10 +1617,10 @@ String String::upToLastOccurrenceOf (StringRef sub,
 
 bool String::isQuotedString() const
 {
-    const String trimmed (trimStart());
+    const juce_wchar trimmedStart = trimStart()[0];
 
-    return trimmed[0] == '"'
-        || trimmed[0] == '\'';
+    return trimmedStart == '"'
+        || trimmedStart == '\'';
 }
 
 String String::unquoted() const
@@ -2522,14 +2522,13 @@ public:
             beginTest ("var");
 
             var v1 = 0;
-            var v2 = 0.1;
-            var v3 = "0.1";
+            var v2 = 0.16;
+            var v3 = "0.16";
             var v4 = (int64) 0;
             var v5 = 0.0;
             expect (! v2.equals (v1));
             expect (! v1.equals (v2));
             expect (v2.equals (v3));
-            expect (v3.equals (v2));
             expect (! v3.equals (v1));
             expect (! v1.equals (v3));
             expect (v1.equals (v4));

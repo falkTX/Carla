@@ -127,7 +127,7 @@ public:
         if (select (socketHandle + 1, &readbits, 0, 0, &tv) <= 0)
             return 0;   // (timeout)
 
-        const int bytesRead = jmax (0, (int) recv (socketHandle, buffer, bytesToRead, MSG_WAITALL));
+        const int bytesRead = jmax (0, (int) recv (socketHandle, buffer, (size_t) bytesToRead, MSG_WAITALL));
         if (bytesRead == 0)
             finished = true;
 
@@ -182,7 +182,7 @@ private:
     }
 
     int createConnection (URL::OpenStreamProgressCallback* progressCallback, void* progressCallbackContext,
-                          const int numRedirectsToFollow)
+                          const int numRedirects)
     {
         closeSocket (false);
 
@@ -193,7 +193,7 @@ private:
         else if (timeOutMs < 0)
             timeOutTime = 0xffffffff;
         else
-            timeOutTime += timeOutMs;
+            timeOutTime += (uint32) timeOutMs;
 
         String hostName, hostPath;
         int hostPort;
@@ -279,7 +279,7 @@ private:
 
             String location (findHeaderItem (headerLines, "Location:"));
 
-            if (++levelsOfRedirection <= numRedirectsToFollow
+            if (++levelsOfRedirection <= numRedirects
                  && status >= 300 && status < 400
                  && location.isNotEmpty() && location != address)
             {
@@ -295,7 +295,7 @@ private:
                 }
 
                 address = location;
-                return createConnection (progressCallback, progressCallbackContext, numRedirectsToFollow);
+                return createConnection (progressCallback, progressCallbackContext, numRedirects);
             }
 
             return status;
@@ -391,12 +391,12 @@ private:
 
             const int numToSend = jmin (1024, (int) (requestHeader.getSize() - totalHeaderSent));
 
-            if (send (socketHandle, static_cast <const char*> (requestHeader.getData()) + totalHeaderSent, numToSend, 0) != numToSend)
+            if (send (socketHandle, static_cast <const char*> (requestHeader.getData()) + totalHeaderSent, (size_t) numToSend, 0) != numToSend)
                 return false;
 
-            totalHeaderSent += numToSend;
+            totalHeaderSent += (size_t) numToSend;
 
-            if (progressCallback != nullptr && ! progressCallback (progressCallbackContext, totalHeaderSent, requestHeader.getSize()))
+            if (progressCallback != nullptr && ! progressCallback (progressCallbackContext, (int) totalHeaderSent, (int) requestHeader.getSize()))
                 return false;
         }
 

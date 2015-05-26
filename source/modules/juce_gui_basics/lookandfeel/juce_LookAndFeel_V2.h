@@ -193,9 +193,10 @@ public:
     ImageEffectFilter* getSliderEffect (Slider&) override;
     Font getSliderPopupFont (Slider&) override;
     int getSliderPopupPlacement (Slider&) override;
+    Slider::SliderLayout getSliderLayout (Slider&) override;
 
     //==============================================================================
-    void getTooltipSize (const String& tipText, int& width, int& height) override;
+    Rectangle<int> getTooltipBounds (const String& tipText, Point<int> screenPos, Rectangle<int> parentArea) override;
     void drawTooltip (Graphics&, const String& text, int width, int height) override;
 
     //==============================================================================

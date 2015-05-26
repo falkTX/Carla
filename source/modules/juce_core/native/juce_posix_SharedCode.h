@@ -596,12 +596,38 @@ File juce_getExecutableFile()
         {
             Dl_info exeInfo;
             dladdr ((void*) juce_getExecutableFile, &exeInfo);
-            return CharPointer_UTF8 (exeInfo.dli_fname);
+            const CharPointer_UTF8 filename (exeInfo.dli_fname);
+
+            // if the filename is absolute simply return it
+            if (File::isAbsolutePath (filename))
+                return filename;
+
+            // if the filename is relative construct from CWD
+            if (filename[0] == '.')
+                return File::getCurrentWorkingDirectory().getChildFile (filename).getFullPathName();
+
+            // filename is abstract, look up in PATH
+            if (const char* const envpath = ::getenv ("PATH"))
+            {
+                StringArray paths (StringArray::fromTokens (envpath, ":", ""));
+
+                for (int i=paths.size(); --i>=0;)
+                {
+                    const File filepath (File (paths[i]).getChildFile (filename));
+
+                    if (filepath.existsAsFile())
+                        return filepath.getFullPathName();
+                }
+            }
+
+            // if we reach this, we failed to find ourselves...
+            jassertfalse;
+            return filename;
         }
     };
 
     static String filename (DLAddrReader::getFilename());
-    return File::getCurrentWorkingDirectory().getChildFile (filename);
+    return filename;
    #endif
 }
 
@@ -961,22 +987,22 @@ void JUCE_CALLTYPE Thread::setCurrentThreadAffinityMask (const uint32 affinityMa
         if ((affinityMask & (1 << i)) != 0)
             CPU_SET (i, &affinity);
 
-    /*
-       N.B. If this line causes a compile error, then you've probably not got the latest
-       version of glibc installed.
-
-       If you don't want to update your copy of glibc and don't care about cpu affinities,
-       then you can just disable all this stuff by setting the SUPPORT_AFFINITIES macro to 0.
-    */
+   #if (! JUCE_LINUX) || ((__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2004)
+    pthread_setaffinity_np (pthread_self(), sizeof (cpu_set_t), &affinity);
+   #else
+    // NB: this call isn't really correct because it sets the affinity of the process,
+    // not the thread. But it's included here as a fallback for people who are using
+    // ridiculously old versions of glibc
     sched_setaffinity (getpid(), sizeof (cpu_set_t), &affinity);
+   #endif
+
     sched_yield();
 
    #else
-    /* affinities aren't supported because either the appropriate header files weren't found,
-       or the SUPPORT_AFFINITIES macro was turned off
-    */
+    // affinities aren't supported because either the appropriate header files weren't found,
+    // or the SUPPORT_AFFINITIES macro was turned off
     jassertfalse;
-    (void) affinityMask;
+    ignoreUnused (affinityMask);
    #endif
 }
 
@@ -1057,8 +1083,8 @@ public:
                 close (pipeHandles[1]);
 #endif
 
-                execvp (argv[0], argv.getRawDataPointer());
-                exit (-1);
+                if (execvp (argv[0], argv.getRawDataPointer()) < 0)
+                    _exit (-1);
             }
             else
             {
@@ -1285,7 +1311,7 @@ private:
         {
             struct timespec t;
             clock_gettime (CLOCK_MONOTONIC, &t);
-            time = 1000000000 * (int64) t.tv_sec + t.tv_nsec;
+            time = (uint64) (1000000000 * (int64) t.tv_sec + (int64) t.tv_nsec);
         }
 
         void wait() noexcept

@@ -74,7 +74,7 @@ public:
 
             ScopedUnlock ul (lock);
             const unsigned char x = 0xff;
-            size_t bytesWritten = write (fd[0], &x, 1);
+            ssize_t bytesWritten = write (fd[0], &x, 1);
             (void) bytesWritten;
         }
     }
@@ -186,7 +186,7 @@ private:
 
             const ScopedUnlock ul (lock);
             unsigned char x;
-            size_t numBytes = read (fd[1], &x, 1);
+            ssize_t numBytes = read (fd[1], &x, 1);
             (void) numBytes;
         }
 
@@ -235,6 +235,8 @@ namespace LinuxErrorHandling
 
     int errorHandler (Display* display, XErrorEvent* event)
     {
+        (void) display; (void) event;
+
        #if JUCE_DEBUG_XERRORS
         char errorStr[64] = { 0 };
         char requestStr[64] = { 0 };

@@ -154,7 +154,7 @@ public:
     bool isAttachedOnLeft() const noexcept                                      { return leftOfOwnerComp; }
 
     /** Specifies the minimum amount that the font can be squashed horizontally before it starts
-        using ellipsis.
+        using ellipsis. Use a value of 0 for a default value.
 
         @see Graphics::drawFittedText
     */
@@ -188,6 +188,9 @@ public:
 
         /** Called when a Label goes into editing mode and displays a TextEditor. */
         virtual void editorShown (Label*, TextEditor&) {}
+
+        /** Called when a Label is about to delete its TextEditor and exit editing mode. */
+        virtual void editorHidden (Label*, TextEditor&) {}
     };
 
     /** Registers a listener that will be called when the label's text changes. */
