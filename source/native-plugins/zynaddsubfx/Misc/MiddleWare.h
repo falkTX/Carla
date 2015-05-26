@@ -4,6 +4,7 @@
 #include <string>
 
 struct SYNTH_T;
+class Master;
 //Link between realtime and non-realtime layers
 class MiddleWare
 {

@@ -107,16 +107,18 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
 
             fl_color( fl_color_add_alpha( fl_color(), 127 ) );
 
-            int lw=2;
-            fl_line_style(FL_SOLID,lw);
-            fl_begin_line();
-            double ph=((phase-64.0)/128.0*oscilsize+oscilsize);
-            for (int i=1;i<lx;i++){
-                int k2=(oscilsize*i/lx)+ph;
-                double y2=smps[k2%oscilsize];
-                fl_vertex(i+ox,y2*ly/2.0+oy+ly/2);
+            if(smps) {
+                int lw=2;
+                fl_line_style(FL_SOLID,lw);
+                fl_begin_line();
+                double ph=((phase-64.0)/128.0*oscilsize+oscilsize);
+                for (int i=1;i<lx;i++){
+                    int k2=(oscilsize*i/lx)+ph;
+                    double y2=smps[k2%oscilsize];
+                    fl_vertex(i+ox,y2*ly/2.0+oy+ly/2);
+                }
+                fl_end_line();
             }
-            fl_end_line();
 
             fl_line_style(FL_SOLID,0);
         }

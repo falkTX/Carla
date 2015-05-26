@@ -127,6 +127,7 @@ static const rtosc::Ports PADnotePorts =
             PADnoteParameters *p = ((PADnoteParameters*)d.obj);
             const unsigned n = p->synth.oscilsize / 2;
             float *tmp = new float[n];
+            *tmp = 0;
             for(unsigned i=1; i<n; ++i)
                 tmp[i] = p->getNhr(i);
             d.reply(d.loc, "b", n*sizeof(float), tmp);
@@ -134,7 +135,9 @@ static const rtosc::Ports PADnotePorts =
     {"profile:i", rProp(non-realtime) rDoc("UI display of the harmonic profile"),
         NULL, [](const char *m, rtosc::RtData &d) {
             PADnoteParameters *p = ((PADnoteParameters*)d.obj);
-            const unsigned n = rtosc_argument(m, 0).i;
+            const int n = rtosc_argument(m, 0).i;
+            if(n<=0)
+                return;
             float *tmp = new float[n];
             float realbw = p->getprofile(tmp, n);
             d.reply(d.loc, "b", n*sizeof(float), tmp);

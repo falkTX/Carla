@@ -519,10 +519,12 @@ static int handler_function(const char *path, const char *types, lo_arg **argv,
     (void) argv;
     (void) argc;
     (void) user_data;
-    char buffer[2048];
+    char buffer[8192];
     memset(buffer, 0, sizeof(buffer));
-    size_t size = 2048;
+    size_t size = sizeof(buffer);
+    assert(lo_message_length(msg, path) <= sizeof(buffer));
     lo_message_serialise(msg, path, buffer, &size);
+    assert(size <= sizeof(buffer));
     raiseUi(gui, buffer);
 
     return 0;

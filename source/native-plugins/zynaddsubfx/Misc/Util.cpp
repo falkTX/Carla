@@ -37,6 +37,9 @@
 #include <sched.h>
 #endif
 
+#ifndef errx
+#include <err.h>
+#endif
 
 prng_t prng_state = 0x1234;
 

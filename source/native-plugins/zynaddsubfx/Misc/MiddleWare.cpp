@@ -35,7 +35,7 @@
 #include <list>
 
 #ifndef errx
-# include <err.h>
+#include <err.h>
 #endif
 
 using std::string;
@@ -209,7 +209,7 @@ void refreshBankView(const Bank &bank, unsigned loc, Fl_Osc_Interface *osc)
 
 
     if (osc)
-        osc->tryLink(response);
+    osc->tryLink(response);
 }
 
 void bankList(Bank &bank, Fl_Osc_Interface *osc)
@@ -251,7 +251,7 @@ void bankPos(Bank &bank, Fl_Osc_Interface *osc)
 
     if(!rtosc_message(response, 2048, "/loadbank", "i", bank.bankpos))
         errx(1, "Failure to handle bank update properly...");
-    if (osc)
+    if(osc)
         osc->tryLink(response);
 }
 
@@ -628,7 +628,7 @@ public:
                 [master,filename,this,npart](){
                 Part *p = new Part(*master->memory, synth, &master->microtonal, master->fft);
                 if(p->loadXMLinstrument(filename))
-                fprintf(stderr, "Warning: failed to load part!\n");
+                    fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
 
                 auto isLateLoad = [this,npart]{
                 return actual_load[npart] != pending_load[npart];
@@ -839,7 +839,7 @@ public:
 };
 
 MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_, int prefered_port)
-    :parent(mw), synth(synth_)
+    :parent(mw), ui(nullptr), synth(synth_)
 {
     bToU = new rtosc::ThreadLink(4096*2,1024);
     uToB = new rtosc::ThreadLink(4096*2,1024);
@@ -898,6 +898,8 @@ MiddleWareImpl::~MiddleWareImpl(void)
     remove(get_tmp_nam().c_str());
 
     warnMemoryLeaks();
+
+    lo_server_free(server);
 
     delete master;
     delete osc;
@@ -1350,7 +1352,7 @@ void MiddleWare::activeUrl(std::string u)
 {
     impl->last_url = u;
 }
-
+        
 const SYNTH_T &MiddleWare::getSynth(void) const
 {
     return impl->synth;

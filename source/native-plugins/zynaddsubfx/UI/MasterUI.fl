@@ -1495,7 +1495,7 @@ configui=new ConfigUI(osc);
 make_window();
 fl_open_display();
 
-\#ifdef HAVE_X11
+\#ifdef __linux__
 Pixmap p = XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
                                  (char*)zynaddsubfx_bits, zynaddsubfx_width, zynaddsubfx_height);
 masterwindow->icon((char *)p);
