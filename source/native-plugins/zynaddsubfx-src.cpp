@@ -18,8 +18,11 @@
 #include "CarlaDefines.h"
 
 #ifdef CARLA_OS_WIN
-# define errx(...)
-# define warnx(...)
+# include <cmath>
+# define errx(...) {}
+# define warnx(...) {}
+# define rindex strrchr
+using std::isnan;
 #else
 # include <err.h>
 #endif

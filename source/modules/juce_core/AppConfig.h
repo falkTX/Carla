@@ -65,9 +65,15 @@
 */
 #define JUCE_CATCH_UNHANDLED_EXCEPTIONS 0
 
+// misc
 #define JUCE_DISABLE_JUCE_VERSION_PRINTING 1
-
+#define JUCE_STANDALONE_APPLICATION 0
+#define JUCE_STRING_UTF_TYPE 8
 #define JUCE_USE_VFORK 1
+
+// not used/wanted
+#define JUCE_USE_XRANDR 0
+#define JUCE_USE_XINERAMA 0
 
 #if ! (JUCE_MAC || JUCE_WINDOWS)
 # define JUCE_MODAL_LOOPS_PERMITTED  0
@@ -80,6 +86,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_core                  1
 
 // always disabled
+#define JUCE_MODULE_AVAILABLE_juce_audio_plugin_client   0
 #define JUCE_MODULE_AVAILABLE_juce_audio_utils           0
 #define JUCE_MODULE_AVAILABLE_juce_cryptography          0
 #define JUCE_MODULE_AVAILABLE_juce_opengl                0

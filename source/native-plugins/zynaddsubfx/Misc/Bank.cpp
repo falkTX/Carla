@@ -288,7 +288,11 @@ int Bank::newbank(string newbankdirname)
         bankdir += "/";
 
     bankdir += newbankdirname;
+#ifdef _WIN32
+    if(mkdir(bankdir.c_str()) < 0)
+#else
     if(mkdir(bankdir.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) < 0)
+#endif
         return -1;
 
     const string tmpfilename = bankdir + '/' + FORCE_BANK_DIR_FILE;

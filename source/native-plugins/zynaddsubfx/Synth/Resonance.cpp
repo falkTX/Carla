@@ -98,11 +98,11 @@ void Resonance::applyres(int n, fft_t *fftdata, float freq) const
 
     //Provide an upper bound for resonance
     const float upper =
-        limit<float>(array_max(Prespoints, N_RES_POINTS), 1.0f, INFINITY);
+        limit<float>(array_max(Prespoints, N_RES_POINTS), 1.0f, (float)INFINITY);
 
     for(int i = 1; i < n; ++i) {
         //compute where the n-th hamonics fits to the graph
-        const float x  = limit((logf(freq*i) - l1) / l2, 0.0f, INFINITY) * N_RES_POINTS;
+        const float x  = limit((logf(freq*i) - l1) / l2, 0.0f, (float)INFINITY) * N_RES_POINTS;
         const float dx = x - floor(x);
         const int kx1  = limit<int>(floor(x), 0, N_RES_POINTS - 1);
         const int kx2  = limit<int>(kx1 + 1,  0, N_RES_POINTS - 1);
@@ -136,7 +136,7 @@ float Resonance::getfreqresponse(float freq) const
         limit<float>(array_max(Prespoints, N_RES_POINTS), 1.0f, INFINITY);
 
     //compute where the n-th hamonics fits to the graph
-    const float x   = limit((logf(freq) - l1) / l2, 0.0f, INFINITY) * N_RES_POINTS;
+    const float x   = limit((logf(freq) - l1) / l2, 0.0f, (float)INFINITY) * N_RES_POINTS;
     const float dx  = x - floor(x);
     const int   kx1 = limit<int>(floor(x), 0, N_RES_POINTS - 1);
     const int   kx2 = limit<int>(kx1 + 1,  0, N_RES_POINTS - 1);
