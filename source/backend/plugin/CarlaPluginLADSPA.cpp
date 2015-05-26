@@ -1534,11 +1534,6 @@ public:
 
     // -------------------------------------------------------------------
 
-    void* getNativeHandle() const noexcept override
-    {
-        return nullptr; // fHandle;
-    }
-
     const void* getNativeDescriptor() const noexcept override
     {
         return fDescriptor;
@@ -1576,8 +1571,6 @@ public:
             pData->engine->setLastError("null label");
             return false;
         }
-
-        fIsDssiVst = CarlaString(filename).contains("dssi-vst", true);
 
         // ---------------------------------------------------------------
         // open DLL
@@ -1700,6 +1693,11 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // check if this is dssi-vst
+
+        fIsDssiVst = CarlaString(filename).contains("dssi-vst", true);
+
+        // ---------------------------------------------------------------
         // set default options
 
         pData->options = 0x0;
@@ -1786,7 +1784,8 @@ private:
         return false;
     }
 
-    static bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf, const bool wantName, const bool useBracket) noexcept
+    static bool _getSeparatedParameterNameOrUnitImpl(const char* const paramName, char* const strBuf,
+                                                     const bool wantName, const bool useBracket) noexcept
     {
         const char* const sepBracketStart(std::strstr(paramName, useBracket ? " [" : " ("));
 
@@ -1806,7 +1805,7 @@ private:
         const std::size_t sepIndex(std::strlen(paramName)-unitSize-3);
 
         // just in case
-        if (sepIndex >= STR_MAX)
+        if (sepIndex+2 >= STR_MAX)
             return false;
 
         if (wantName)
@@ -1832,7 +1831,8 @@ private:
 
 CarlaPlugin* CarlaPlugin::newLADSPA(const Initializer& init, const LADSPA_RDF_Descriptor* const rdfDescriptor)
 {
-    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)", init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
+    carla_debug("CarlaPlugin::newLADSPA({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x}, %p)",
+                init.engine, init.filename, init.name, init.label, init.uniqueId, init.options, rdfDescriptor);
 
     CarlaPluginLADSPA* const plugin(new CarlaPluginLADSPA(init.engine, init.id));
 

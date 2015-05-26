@@ -47,22 +47,22 @@ int main(int argc, char* argv[])
     EngineDriverDeviceInfo e;
 
     CarlaPluginInfo f;
-    CarlaCachedPluginInfo g;
+    /*CarlaCachedPluginInfo g;*/
     CarlaPortCountInfo h;
     CarlaParameterInfo i;
     CarlaScalePointInfo j;
     CarlaTransportInfo k;
 
-    const char* licenseText;
-    const char* fileExtensions;
+    /*const char* licenseText;
+    const char* fileExtensions;*/
 
     uint l, count;
 
-    licenseText = carla_get_complete_license_text();
+    /*licenseText = carla_get_complete_license_text();
     printf("LICENSE:\n%s\n", licenseText);
 
     fileExtensions = carla_get_supported_file_extensions();
-    printf("FILE EXTENSIONS:\n%s\n", fileExtensions);
+    printf("FILE EXTENSIONS:\n%s\n", fileExtensions);*/
 
     count = carla_get_engine_driver_count();
     printf("DRIVER COUNT: %i\n", count);
@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
         assert(engine != nullptr);
         engine->getLastError();
 #endif
-        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL))
+        if (carla_add_plugin(BINARY_NATIVE, PLUGIN_INTERNAL, NULL, NULL, "audiofile", 0, NULL, 0x0))
         {
 #ifdef __cplusplus
             CarlaPlugin* const plugin(engine->getPlugin(0));
@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
     (void)argc;
     (void)argv;
     (void)a; (void)b; (void)c; (void)d; (void)e;
-    (void)f; (void)g; (void)h; (void)i; (void)j; (void)k;
+    (void)f; /*(void)g;*/ (void)h; (void)i; (void)j; (void)k;
 #ifdef __cplusplus
     (void)e1; (void)e2; (void)e4; (void)e5; (void)e6;
 #endif
