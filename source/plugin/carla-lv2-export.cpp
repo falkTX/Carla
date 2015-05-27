@@ -115,7 +115,7 @@ static void writeManifestFile(PluginListManager& plm)
     // -------------------------------------------------------------------
     // Plugins
 
-    for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
+    for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& pluginDesc(it.getValue());
         const String label(pluginDesc->label);
@@ -576,7 +576,7 @@ int main()
 
     writeManifestFile(plm);
 
-    for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin(); it.valid(); it.next())
+    for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
     {
         const NativePluginDescriptor* const& pluginDesc(it.getValue());
         writePluginFile(pluginDesc);

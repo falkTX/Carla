@@ -601,7 +601,7 @@ const CarlaStateSave& CarlaPlugin::getStateSave(const bool callPrepareForSave)
     // ---------------------------------------------------------------
     // Custom Data
 
-    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
         const CustomData& cData(it.getValue(kCustomDataFallback));
         CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
@@ -628,7 +628,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 1 - PRE-set custom data (only those which reload programs)
 
-    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
+    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin2(); it.valid(); it.next())
     {
         const CarlaStateSave::CustomData* const stateCustomData(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
@@ -712,7 +712,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
 
     const float sampleRate(static_cast<float>(pData->engine->getSampleRate()));
 
-    for (CarlaStateSave::ParameterItenerator it = stateSave.parameters.begin(); it.valid(); it.next())
+    for (CarlaStateSave::ParameterItenerator it = stateSave.parameters.begin2(); it.valid(); it.next())
     {
         CarlaStateSave::Parameter* const stateParameter(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateParameter != nullptr);
@@ -724,7 +724,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             // Try to set by symbol, otherwise use index
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin2(); it2.valid(); it2.next())
                 {
                     ParamSymbol* const paramSymbol(it2.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(paramSymbol != nullptr);
@@ -747,7 +747,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
             // Symbol only
             if (stateParameter->symbol != nullptr && stateParameter->symbol[0] != '\0')
             {
-                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin(); it2.valid(); it2.next())
+                for (LinkedList<ParamSymbol*>::Itenerator it2 = paramSymbols.begin2(); it2.valid(); it2.next())
                 {
                     ParamSymbol* const paramSymbol(it2.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(paramSymbol != nullptr);
@@ -796,7 +796,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 4c - clear
 
-    for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin(); it.valid(); it.next())
+    for (LinkedList<ParamSymbol*>::Itenerator it = paramSymbols.begin2(); it.valid(); it.next())
     {
         ParamSymbol* const paramSymbol(it.getValue(nullptr));
         delete paramSymbol;
@@ -807,7 +807,7 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     // ---------------------------------------------------------------
     // Part 5 - set custom data
 
-    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin(); it.valid(); it.next())
+    for (CarlaStateSave::CustomDataItenerator it = stateSave.customData.begin2(); it.valid(); it.next())
     {
         const CarlaStateSave::CustomData* const stateCustomData(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);
@@ -1267,7 +1267,7 @@ void CarlaPlugin::setCustomData(const char* const type, const char* const key, c
     }
 
     // Check if we already have this key
-    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
     {
         CustomData& customData(it.getValue(kCustomDataFallbackNC));
         CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
@@ -1432,7 +1432,7 @@ void CarlaPlugin::idle()
 
     const CarlaMutexLocker sl(pData->postRtEvents.mutex);
 
-    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin(); it.valid(); it.next())
+    for (RtLinkedList<PluginPostRtEvent>::Itenerator it = pData->postRtEvents.data.begin2(); it.valid(); it.next())
     {
         const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
         CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);
@@ -1830,7 +1830,7 @@ void CarlaPlugin::uiIdle()
 
         const CarlaMutexLocker sl(pData->postUiEvents.mutex);
 
-        for (LinkedList<PluginPostRtEvent>::Itenerator it = pData->postUiEvents.data.begin(); it.valid(); it.next())
+        for (LinkedList<PluginPostRtEvent>::Itenerator it = pData->postUiEvents.data.begin2(); it.valid(); it.next())
         {
             const PluginPostRtEvent& event(it.getValue(kPluginPostRtEventFallback));
             CARLA_SAFE_ASSERT_CONTINUE(event.type != kPluginPostRtEventNull);

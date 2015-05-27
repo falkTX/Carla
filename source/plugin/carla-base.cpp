@@ -86,7 +86,7 @@ struct PluginListManager {
     ~PluginListManager()
     {
 #ifdef CARLA_NATIVE_PLUGIN_DSSI
-        for (LinkedList<const DSSI_Descriptor*>::Itenerator it = dssiDescs.begin(); it.valid(); it.next())
+        for (LinkedList<const DSSI_Descriptor*>::Itenerator it = dssiDescs.begin2(); it.valid(); it.next())
         {
             const DSSI_Descriptor* const dssiDesc(it.getValue());
             //delete[] lv2Desc->URI;
@@ -96,7 +96,7 @@ struct PluginListManager {
 #endif
 
 #ifdef CARLA_NATIVE_PLUGIN_LV2
-        for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin(); it.valid(); it.next())
+        for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin2(); it.valid(); it.next())
         {
             const LV2_Descriptor* const lv2Desc(it.getValue());
             delete[] lv2Desc->URI;

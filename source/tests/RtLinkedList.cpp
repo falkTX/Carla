@@ -135,23 +135,24 @@ int main()
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 4);
     assert(postRtEvents.dataPendingRT.count() == 0);
-//     return 0;
 
-    for (RtLinkedList<MyData>::Itenerator it = postRtEvents.data.begin(); it.valid(); it.next())
+    for (RtLinkedList<MyData>::Itenerator it = postRtEvents.data.begin2(); it.valid(); it.next())
     {
-        static const MyData fallback = { { '\0' }, 11 };
-        const MyData& my(it.getValue(fallback));
+        const MyData& my(it.getValue());
 
         carla_stdout("FOR DATA!!!: %i %s", my.id, my.str);
 
-        if (my.id == 1)
+        if (my.id == 2)
         {
-            // +1 append at
+            // +1 append
             postRtEvents.dataPendingRT.insertAt(m5, it);
             assert(postRtEvents.data.count() == 4);
             assert(postRtEvents.dataPendingRT.count() == 1);
         }
     }
+
+    for (const MyData& my : postRtEvents.data)
+        carla_stdout("FOR DATA!!! NEW AUTO Itenerator!!!: %i %s", my.id, my.str);
 
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 5);

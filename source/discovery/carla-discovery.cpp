@@ -1214,7 +1214,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         uniqueIds.append(gVstCurrentUniqueId);
     }
 
-    for (LinkedList<intptr_t>::Itenerator it = uniqueIds.begin(); it.valid(); it.next())
+    for (LinkedList<intptr_t>::Itenerator it = uniqueIds.begin2(); it.valid(); it.next())
     {
         gVstCurrentUniqueId = it.getValue(0);
 

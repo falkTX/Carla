@@ -60,6 +60,7 @@ using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if 0
 // -------------------------------------------------------------------
 // Fallback data
 
@@ -2093,7 +2094,7 @@ public:
 
         if (fDescriptor->cleanup == nullptr)
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -2137,7 +2138,7 @@ public:
         }
         else
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -2169,7 +2170,7 @@ public:
         }
         else
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -2402,7 +2403,7 @@ public:
 
         osc_send_sample_rate(fOscData, static_cast<float>(pData->engine->getSampleRate()));
 
-        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
         {
             const CustomData& customData(it.getValue(kCustomDataFallback));
             CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());
@@ -2887,7 +2888,7 @@ private:
             dlabel = carla_strdup(label);
         } catch(...) { return false; }
 
-        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin2(); it.valid(); it.next())
         {
             const char* const itLabel(it.getValue());
 
@@ -2905,7 +2906,7 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0',);
 
-        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = sMultiSynthList.begin2(); it.valid(); it.next())
         {
             const char* const itLabel(it.getValue());
 
@@ -2924,14 +2925,19 @@ private:
 };
 
 LinkedList<const char*> CarlaPluginDSSI::sMultiSynthList;
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
 CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x})",
-                init.engine, init.filename, init.name, init.label, init.uniqueId, init.optons);
+                init.engine, init.filename, init.name, init.label, init.uniqueId, init.options);
 
+    init.engine->setLastError("TODO");
+    return nullptr;
+
+#if 0
     CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, init.options))
@@ -2941,6 +2947,7 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     }
 
     return plugin;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

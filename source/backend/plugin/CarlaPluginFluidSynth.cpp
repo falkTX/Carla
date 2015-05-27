@@ -1054,7 +1054,7 @@ public:
 
             if (pData->extNotes.mutex.tryLock())
             {
-                for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
+                for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin2(); it.valid(); it.next())
                 {
                     const ExternalMidiNote& note(it.getValue());
 

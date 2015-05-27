@@ -68,7 +68,7 @@ public:
         {
             if (fDescriptor->cleanup != nullptr)
             {
-                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
                 {
                     LADSPA_Handle const handle(it.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -713,7 +713,7 @@ public:
                 // Start parameters in their default values
                 fParamBuffers[j] = def;
 
-                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
                 {
                     LADSPA_Handle const handle(it.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -728,7 +728,7 @@ public:
                 // Not Audio or Control
                 carla_stderr2("ERROR - Got a broken Port (neither Audio or Control)");
 
-                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+                for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
                 {
                     LADSPA_Handle const handle(it.getValue(nullptr));
                     CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -879,7 +879,7 @@ public:
 
         if (fDescriptor->activate != nullptr)
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -897,7 +897,7 @@ public:
 
         if (fDescriptor->deactivate != nullptr)
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -1171,7 +1171,7 @@ public:
         // Run plugin
 
         uint instn = 0;
-        for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next(), ++instn)
+        for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next(), ++instn)
         {
             LADSPA_Handle const handle(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -1381,7 +1381,7 @@ public:
 
         if (fDescriptor->cleanup == nullptr)
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -1425,7 +1425,7 @@ public:
         }
         else
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
@@ -1457,7 +1457,7 @@ public:
         }
         else
         {
-            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin(); it.valid(); it.next())
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
                 LADSPA_Handle const handle(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);

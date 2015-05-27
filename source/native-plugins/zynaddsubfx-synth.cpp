@@ -52,7 +52,7 @@ public:
         if (! fInitiated)
             return;
 
-        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin(); it.valid(); it.next())
+        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin2(); it.valid(); it.next())
         {
             const ProgramInfo* const& pInfo(it.getValue(nullptr));
             delete pInfo;
@@ -118,7 +118,7 @@ public:
 
     const char* getZynProgramFilename(const uint32_t bank, const uint32_t program) const noexcept
     {
-        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin(); it.valid(); it.next())
+        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin2(); it.valid(); it.next())
         {
             const ProgramInfo* const& pInfo(it.getValue(nullptr));
 

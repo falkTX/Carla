@@ -189,7 +189,7 @@ void CarlaEngineClient::_addEventPortName(const bool isInput, const char* const 
 
 static void getUniquePortName(CarlaString& sname, const CarlaStringList& list)
 {
-    for (CarlaStringList::Itenerator it = list.begin(); it.valid(); it.next())
+    for (CarlaStringList::Itenerator it = list.begin2(); it.valid(); it.next())
     {
         const char* const portName(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');

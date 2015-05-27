@@ -134,7 +134,7 @@ protected:
         tmpList[count] = nullptr;
 
         std::size_t i=0;
-        for (LinkedList<const char*>::Itenerator it = list.begin(); it.valid(); it.next(), ++i)
+        for (LinkedList<const char*>::Itenerator it = list.begin2(); it.valid(); it.next(), ++i)
         {
             tmpList[i] = carla_strdup_safe(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_BREAK(tmpList[i] != nullptr);
@@ -162,7 +162,7 @@ public:
     CarlaStringList(const CarlaStringList& list) noexcept
         : LinkedList<const char*>()
     {
-        for (Itenerator it = list.begin(); it.valid(); it.next())
+        for (Itenerator it = list.begin2(); it.valid(); it.next())
             LinkedList<const char*>::append(carla_strdup_safe(it.getValue(nullptr)));
     }
 
@@ -175,7 +175,7 @@ public:
 
     void clear() noexcept
     {
-        for (Itenerator it = begin(); it.valid(); it.next())
+        for (Itenerator it = begin2(); it.valid(); it.next())
         {
             if (const char* const string = it.getValue(nullptr))
                 delete[] string;
@@ -256,7 +256,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
 
-        for (Itenerator it = begin(); it.valid(); it.next())
+        for (Itenerator it = begin2(); it.valid(); it.next())
         {
             const char* const stringComp(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
@@ -276,7 +276,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(string != nullptr,);
 
-        for (Itenerator it = begin(); it.valid(); it.next())
+        for (Itenerator it = begin2(); it.valid(); it.next())
         {
             const char* const stringComp(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
@@ -315,7 +315,7 @@ public:
     {
         clear();
 
-        for (Itenerator it = list.begin(); it.valid(); it.next())
+        for (Itenerator it = list.begin2(); it.valid(); it.next())
         {
             if (const char* const string = carla_strdup_safe(it.getValue(nullptr)))
                 LinkedList<const char*>::append(string);

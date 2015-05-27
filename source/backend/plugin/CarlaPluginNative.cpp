@@ -749,7 +749,7 @@ public:
 
         if (fDescriptor->ui_set_custom_data != nullptr)
         {
-            for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+            for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
             {
                 const CustomData& cData(it.getValue());
 
@@ -2299,7 +2299,7 @@ public:
 
         sPluginInitializer.initIfNeeded();
 
-        for (LinkedList<const NativePluginDescriptor*>::Itenerator it = gPluginDescriptors.begin(); it.valid(); it.next())
+        for (LinkedList<const NativePluginDescriptor*>::Itenerator it = gPluginDescriptors.begin2(); it.valid(); it.next())
         {
             fDescriptor = it.getValue();
 
