@@ -33,7 +33,7 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Izynaddsubfx -Izynaddsubfx/rtosc
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
-ZYN_LD_FLAGS  +=  -lpthread -lrt
+ZYN_LD_FLAGS  += -lpthread -lrt
 ifeq ($(HAVE_X11),true)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags x11)
 ZYN_LD_FLAGS  += $(shell pkg-config --libs x11)
@@ -215,7 +215,7 @@ resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zynaddsubfx-ui"
-	@$(CXX) $^ $(ZYN_LD_FLAGS) -ldl -lpthread -o $@
+	$(CXX) $^ $(ZYN_LD_FLAGS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
