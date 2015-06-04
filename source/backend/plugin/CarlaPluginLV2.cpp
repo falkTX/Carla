@@ -31,6 +31,7 @@
 #include "Lv2AtomRingBuffer.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
+#include "../modules/lilv/config/lilv_config.h"
 
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
@@ -4706,8 +4707,10 @@ public:
 
         if (pData->engine->getOptions().pathLV2 != nullptr && pData->engine->getOptions().pathLV2[0] != '\0')
             lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+        else if (const char* const LV2_PATH = std::getenv("LV2_PATH"))
+            lv2World.initIfNeeded(LV2_PATH);
         else
-            lv2World.initIfNeeded(std::getenv("LV2_PATH"));
+            lv2World.initIfNeeded(LILV_DEFAULT_LV2_PATH);
 
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
