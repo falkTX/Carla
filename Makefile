@@ -697,6 +697,7 @@ uninstall:
 	rm -rf $(DESTDIR)$(PREFIX)/include/carla/
 	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
 	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
 	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
 	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
 
