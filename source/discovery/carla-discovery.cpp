@@ -1426,7 +1426,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
     }
     else
 #endif
-     filename = File(filename_).getFullPathName();
+    filename = File(filename_).getFullPathName();
 
     juce::ScopedPointer<AudioPluginFormat> pluginFormat;
 

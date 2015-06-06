@@ -53,27 +53,27 @@ endif
 
 # --------------------------------------------------------------
 
-TARGETS  = ansi-pedantic-test_c_ansi
-TARGETS += ansi-pedantic-test_c89
-TARGETS += ansi-pedantic-test_c99
-TARGETS += ansi-pedantic-test_c11
-TARGETS += ansi-pedantic-test_clang
-TARGETS += ansi-pedantic-test_cxx_ansi
-TARGETS += ansi-pedantic-test_cxx03
-TARGETS += ansi-pedantic-test_cxx11
-TARGETS += ansi-pedantic-test_cxxlang
-TARGETS += CarlaPipeUtils
-TARGETS += CarlaRingBuffer
-TARGETS += CarlaString
-# TARGETS += CarlaUtils1
+# TARGETS  = ansi-pedantic-test_c_ansi
+# TARGETS += ansi-pedantic-test_c89
+# TARGETS += ansi-pedantic-test_c99
+# TARGETS += ansi-pedantic-test_c11
+# TARGETS += ansi-pedantic-test_clang
+# TARGETS += ansi-pedantic-test_cxx_ansi
+# TARGETS += ansi-pedantic-test_cxx03
+# TARGETS += ansi-pedantic-test_cxx11
+# TARGETS += ansi-pedantic-test_cxxlang
+# TARGETS += CarlaPipeUtils
+# TARGETS += CarlaRingBuffer
+# TARGETS += CarlaString
+TARGETS += CarlaUtils1
 # ifneq ($(WIN32),true)
 # TARGETS += CarlaUtils2
 # endif
-TARGETS += CarlaUtils3
+# TARGETS += CarlaUtils3
 # TARGETS += CarlaUtils4
-TARGETS += Exceptions
-TARGETS += Print
-TARGETS += RDF
+# TARGETS += Exceptions
+# TARGETS += Print
+# TARGETS += RDF
 
 all: $(TARGETS)
 

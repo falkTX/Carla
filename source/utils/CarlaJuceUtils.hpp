@@ -1,7 +1,7 @@
 /*
  * Carla misc utils based on Juce
  * Copyright (C) 2013 Raw Material Software Ltd.
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -21,16 +21,16 @@
 #include "CarlaUtils.hpp"
 
 /** A good old-fashioned C macro concatenation helper.
-   This combines two items (which may themselves be macros) into a single string,
-   avoiding the pitfalls of the ## macro operator.
+    This combines two items (which may themselves be macros) into a single string,
+    avoiding the pitfalls of the ## macro operator.
 */
 #define CARLA_JOIN_MACRO_HELPER(a, b) a ## b
 #define CARLA_JOIN_MACRO(item1, item2) CARLA_JOIN_MACRO_HELPER(item1, item2)
 
-/** This macro lets you embed a leak-detecting object inside a class.\n
+/** This macro lets you embed a leak-detecting object inside a class.
     To use it, simply declare a CARLA_LEAK_DETECTOR(YourClassName) inside a private section
     of the class declaration. E.g.
-    \code
+    @code
     class MyClass
     {
     public:
@@ -40,7 +40,7 @@
     private:
         CARLA_LEAK_DETECTOR(MyClass)
     };
-    \endcode
+    @endcode
 */
 #define CARLA_LEAK_DETECTOR(ClassName)                                            \
     friend class ::LeakedObjectDetector<ClassName>;                               \
@@ -51,7 +51,7 @@
     CARLA_DECLARE_NON_COPY_CLASS(ClassName)                      \
     CARLA_LEAK_DETECTOR(ClassName)
 
-//==============================================================================
+//=====================================================================================================================
 /**
     Embedding an instance of this class inside another class can be used as a low-overhead
     way of detecting leaked instances.
@@ -67,7 +67,7 @@ template <class OwnerClass>
 class LeakedObjectDetector
 {
 public:
-    //==============================================================================
+    //=================================================================================================================
     LeakedObjectDetector() noexcept                            { ++(getCounter().numObjects); }
     LeakedObjectDetector(const LeakedObjectDetector&) noexcept { ++(getCounter().numObjects); }
 
@@ -86,12 +86,13 @@ public:
                 your object management. Tut, tut. Always, always use ScopedPointers, OwnedArrays,
                 ReferenceCountedObjects, etc, and avoid the 'delete' operator at all costs!
             */
-            carla_stderr2("*** Dangling pointer deletion! Class: '%s', Count: %i", getLeakedObjectClassName(), getCounter().numObjects);
+            carla_stderr2("*** Dangling pointer deletion! Class: '%s', Count: %i", getLeakedObjectClassName(),
+                                                                                   getCounter().numObjects);
         }
     }
 
 private:
-    //==============================================================================
+    //=================================================================================================================
     class LeakCounter
     {
     public:
@@ -109,7 +110,8 @@ private:
                     your object management. Tut, tut. Always, always use ScopedPointers, OwnedArrays,
                     ReferenceCountedObjects, etc, and avoid the 'delete' operator at all costs!
                 */
-                carla_stderr2("*** Leaked objects detected: %i instance(s) of class '%s'", numObjects, getLeakedObjectClassName());
+                carla_stderr2("*** Leaked objects detected: %i instance(s) of class '%s'", numObjects,
+                                                                                           getLeakedObjectClassName());
             }
         }
 
@@ -129,7 +131,7 @@ private:
     }
 };
 
-//==============================================================================
+//=====================================================================================================================
 /**
     Helper class providing an RAII-based mechanism for temporarily setting and
     then re-setting a value.
@@ -185,7 +187,7 @@ public:
     }
 
 private:
-    //==============================================================================
+    //=================================================================================================================
     ValueType& value;
     const ValueType originalValue;
 
@@ -198,5 +200,7 @@ namespace juce {
 extern bool juce_isRunningInWine();
 }
 #endif
+
+//=====================================================================================================================
 
 #endif // CARLA_JUCE_UTILS_HPP_INCLUDED

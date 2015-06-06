@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,17 +23,17 @@
 #include <cmath>
 #include <limits>
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // math functions (base)
 
 /*
- * Return the lower of 2 values, with 'min' as the minimum possible value (ie, base).
+ * Return the lower of 2 values, with 'min' as the minimum possible value (ie, constrain).
  */
 template<typename T>
 static inline
-const T& carla_minWithBase(const T& v1, const T& v2, const T& min) noexcept
+const T& carla_minConstrained(const T& v1, const T& v2, const T& min) noexcept
 {
-    return ((v1 <= min || v2 <= min) ? min : (v1 < v2 ? v1 : v2));
+    return (v1 <= min || v2 <= min) ? min : (v1 < v2 ? v1 : v2);
 }
 
 /*
@@ -62,7 +62,7 @@ template<typename T>
 static inline
 const T& carla_maxLimited(const T& v1, const T& v2, const T& max) noexcept
 {
-    return ((v1 >= max || v2 >= max) ? max : (v1 > v2 ? v1 : v2));
+    return (v1 >= max || v2 >= max) ? max : (v1 > v2 ? v1 : v2);
 }
 
 /*
@@ -89,7 +89,7 @@ T carla_maxNegative(const T& v1, const T& v2) noexcept
  */
 template<typename T>
 static inline
-const T& carla_fixValue(const T& min, const T& max, const T& value) noexcept
+const T& carla_fixedValue(const T& min, const T& max, const T& value) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(max > min, max);
 
@@ -118,22 +118,28 @@ uint32_t carla_nextPowerOf2(uint32_t size) noexcept
     return ++size;
 }
 
-// -----------------------------------------------------------------------
-// math functions (floating numbers)
-
 /*
- * Safely compare two floating point numbers.
- * Returns true if they match.
+ * Safely check if 2 numbers are equal.
  */
 template<typename T>
 static inline
-bool carla_compareFloats(const T& v1, const T& v2)
+bool carla_isEqual(const T& v1, const T& v2)
 {
     return std::abs(v1-v2) < std::numeric_limits<T>::epsilon();
 }
 
 /*
- * Safely check if a floating point number is zero.
+ * Safely check if 2 numbers are not equal.
+ */
+template<typename T>
+static inline
+bool carla_isNotEqual(const T& v1, const T& v2)
+{
+    return std::abs(v1-v2) >= std::numeric_limits<T>::epsilon();
+}
+
+/*
+ * Safely check if a number is zero.
  */
 template<typename T>
 static inline
@@ -143,7 +149,7 @@ bool carla_isZero(const T& value)
 }
 
 /*
- * Safely check if a floating point number is not zero.
+ * Safely check if a number is not zero.
  */
 template<typename T>
 static inline
@@ -152,52 +158,52 @@ bool carla_isNotZero(const T& value)
     return std::abs(value) >= std::numeric_limits<T>::epsilon();
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // math functions (extended)
 
 /*
  * Add float array values to another float array.
  */
 static inline
-void carla_addFloat(float* dataDst, const float* dataSrc, const std::size_t numSamples) noexcept
+void carla_addFloats(float dest[], const float src[], const std::size_t count) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
+    CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
-    for (std::size_t i=0; i < numSamples; ++i)
-        *dataDst++ += *dataSrc++;
+    for (std::size_t i=0; i<count; ++i)
+        *dest++ += *src++;
 }
 
 /*
  * Copy float array values to another float array.
  */
 static inline
-void carla_copyFloat(float* const dataDst, const float* const dataSrc, const std::size_t numSamples) noexcept
+void carla_copyFloats(float dest[], const float src[], const std::size_t count) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(dataDst != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(dataSrc != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
+    CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
-    std::memcpy(dataDst, dataSrc, numSamples*sizeof(float));
+    std::memcpy(dest, src, count*sizeof(float));
 }
 
 /*
  * Clear a float array.
  */
 static inline
-void carla_zeroFloat(float* const data, const std::size_t numSamples) noexcept
+void carla_zeroFloats(float floats[], const std::size_t count) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-    CARLA_SAFE_ASSERT_RETURN(numSamples > 0,);
+    CARLA_SAFE_ASSERT_RETURN(floats != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
-    std::memset(data, 0, numSamples*sizeof(float));
+    std::memset(floats, 0, count*sizeof(float));
 }
 
-#if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Missing functions in OSX.
 
+#if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }
@@ -210,6 +216,6 @@ inline float round(float __x)
 }
 #endif
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_MATH_UTILS_HPP_INCLUDED

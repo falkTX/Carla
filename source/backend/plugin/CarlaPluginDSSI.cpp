@@ -1,6 +1,6 @@
 /*
- * Carla DSSI Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Carla Plugin, DSSI implementation
+ * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -14,8 +14,6 @@
  *
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
-
-// TODO: set fUsesCustomData and latency index before init finishes
 
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngineUtils.hpp"

@@ -1,6 +1,6 @@
 /*
  * Carla String
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,13 +20,6 @@
 
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMathUtils.hpp"
-
-namespace std {
-#ifdef CARLA_OS_HAIKU
-using ::snprintf;
-#endif
-using ::ssize_t; // FIXME?
-}
 
 // -----------------------------------------------------------------------
 // CarlaString class
@@ -379,7 +372,7 @@ public:
 
         if (char* const subStrBuf = std::strstr(fBuffer, strBuf))
         {
-            const std::ssize_t ret(subStrBuf - fBuffer);
+            const ssize_t ret(subStrBuf - fBuffer);
 
             if (ret < 0)
             {
@@ -592,7 +585,7 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
-        const std::size_t kTmpBufSize = carla_nextPowerOf2(dataSize/3);
+        const std::size_t kTmpBufSize = carla_nextPowerOf2(static_cast<uint32_t>(dataSize/3));
 
         const uchar* bytesToEncode((const uchar*)data);
 
