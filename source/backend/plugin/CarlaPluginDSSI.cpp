@@ -2875,9 +2875,6 @@ CarlaPlugin* CarlaPlugin::newDSSI(const Initializer& init)
     carla_debug("CarlaPlugin::newDSSI({%p, \"%s\", \"%s\", \"%s\", " P_INT64 ", %x})",
                 init.engine, init.filename, init.name, init.label, init.uniqueId, init.options);
 
-    init.engine->setLastError("TODO");
-    return nullptr;
-
     CarlaPluginDSSI* const plugin(new CarlaPluginDSSI(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.label, init.options))
