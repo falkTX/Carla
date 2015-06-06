@@ -106,7 +106,7 @@ protected:
 
     void setParameterValue(const uint32_t index, const float value) final
     {
-        const int ivalue(roundToIntAccurate(carla_fixValue(0.0f, 127.0f, value)));
+        const int ivalue(roundToIntAccurate(carla_fixedValue(0.0f, 127.0f, value)));
 
         fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(ivalue));
     }

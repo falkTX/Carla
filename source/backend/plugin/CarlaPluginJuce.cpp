@@ -1113,7 +1113,7 @@ protected:
 
     bool getCurrentPosition(CurrentPositionInfo& result) override
     {
-        carla_copyStruct<CurrentPositionInfo>(result, fPosInfo);
+        carla_copyStruct(result, fPosInfo);
         return true;
     }
 

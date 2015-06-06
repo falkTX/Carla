@@ -1418,8 +1418,8 @@ public:
 
         {
             // note - balance not possible with kUse16Outs, so we can safely skip fAudioOutBuffers
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && ! carla_compareFloats(pData->postProc.volume, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             float oldBufLeft[doBalance ? frames : 1];
 

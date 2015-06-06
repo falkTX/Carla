@@ -179,7 +179,7 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
         if (! gVstIsProcessing) { DISCOVERY_OUT("warning", "Plugin requested timeInfo out of process"); }
         if (! gVstWantsTime)    { DISCOVERY_OUT("warning", "Plugin requested timeInfo but didn't ask if host could do \"sendVstTimeInfo\""); }
 
-        carla_zeroStruct<VstTimeInfo>(timeInfo);
+        carla_zeroStruct(timeInfo);
         timeInfo.sampleRate = kSampleRate;
 
         // Tempo
@@ -549,7 +549,7 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloats(bufferAudio[iA], kBufferSize);
                     descriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -571,7 +571,7 @@ static void do_ladspa_check(lib_t& libHandle, const char* const filename, const 
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
                         max = min + 0.1f;
                     }
-                    else if (carla_compareFloats(min, max))
+                    else if (carla_isEqual(min, max))
                     {
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max == min");
                         max = min + 0.1f;
@@ -820,7 +820,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
 
                 if (LADSPA_IS_PORT_AUDIO(portDescriptor))
                 {
-                    carla_zeroFloat(bufferAudio[iA], kBufferSize);
+                    carla_zeroFloats(bufferAudio[iA], kBufferSize);
                     ldescriptor->connect_port(handle, j, bufferAudio[iA++]);
                 }
                 else if (LADSPA_IS_PORT_CONTROL(portDescriptor))
@@ -842,7 +842,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: min > max");
                         max = min + 0.1f;
                     }
-                    else if (carla_compareFloats(min, max))
+                    else if (carla_isEqual(min, max))
                     {
                         DISCOVERY_OUT("warning", "Parameter '" << portName << "' is broken: max == min");
                         max = min + 0.1f;
@@ -889,7 +889,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             if (descriptor->run_synth != nullptr)
             {
                 snd_seq_event_t midiEvents[2];
-                carla_zeroStruct<snd_seq_event_t>(midiEvents, 2);
+                carla_zeroStructs(midiEvents, 2);
 
                 const unsigned long midiEventCount = 2;
 
@@ -1193,7 +1193,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
     {
         for (;;)
         {
-            carla_zeroChar(strBuf, STR_MAX+1);
+            carla_zeroChars(strBuf, STR_MAX+1);
 
             gVstCurrentUniqueId = effect->dispatcher(effect, effShellGetNextPlugin, 0, 0, strBuf, 0.0f);
 
@@ -1232,7 +1232,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
         }
 
         // get name
-        carla_zeroChar(strBuf, STR_MAX+1);
+        carla_zeroChars(strBuf, STR_MAX+1);
 
         if (effect->dispatcher(effect, effGetEffectName, 0, 0, strBuf, 0.0f) == 1)
             cName = strBuf;
@@ -1240,7 +1240,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
             cName.clear();
 
         // get product
-        carla_zeroChar(strBuf, STR_MAX+1);
+        carla_zeroChars(strBuf, STR_MAX+1);
 
         if (effect->dispatcher(effect, effGetProductString, 0, 0, strBuf, 0.0f) == 1)
             cProduct = strBuf;
@@ -1248,7 +1248,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
             cProduct.clear();
 
         // get vendor
-        carla_zeroChar(strBuf, STR_MAX+1);
+        carla_zeroChars(strBuf, STR_MAX+1);
 
         if (effect->dispatcher(effect, effGetVendorString, 0, 0, strBuf, 0.0f) == 1)
             cVendor = strBuf;
@@ -1299,14 +1299,14 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
             for (int j=0; j < audioIns; ++j)
             {
                 bufferAudioIn[j] = new float[kBufferSize];
-                carla_zeroFloat(bufferAudioIn[j], kBufferSize);
+                carla_zeroFloats(bufferAudioIn[j], kBufferSize);
             }
 
             float* bufferAudioOut[audioOuts];
             for (int j=0; j < audioOuts; ++j)
             {
                 bufferAudioOut[j] = new float[kBufferSize];
-                carla_zeroFloat(bufferAudioOut[j], kBufferSize);
+                carla_zeroFloats(bufferAudioOut[j], kBufferSize);
             }
 
             struct VstEventsFixed {
@@ -1323,7 +1323,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
             } events;
 
             VstMidiEvent midiEvents[2];
-            carla_zeroStruct<VstMidiEvent>(midiEvents, 2);
+            carla_zeroStructs(midiEvents, 2);
 
             midiEvents[0].type = kVstMidiType;
             midiEvents[0].byteSize = sizeof(VstMidiEvent);

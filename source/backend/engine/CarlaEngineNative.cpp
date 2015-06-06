@@ -576,7 +576,7 @@ public:
         if (gNeedsJuceHandling && ++gJuceReferenceCounter == 1)
             juce::initialiseJuce_GUI();
 
-        carla_zeroChar(fTmpBuf, STR_MAX+1);
+        carla_zeroChars(fTmpBuf, STR_MAX+1);
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
@@ -732,7 +732,7 @@ protected:
 
     void sampleRateChanged(const double newSampleRate)
     {
-        if (carla_compareFloats(pData->sampleRate, newSampleRate))
+        if (carla_isEqual(pData->sampleRate, newSampleRate))
             return;
 
         {
@@ -1339,8 +1339,8 @@ protected:
         // ---------------------------------------------------------------
         // initialize events
 
-        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
-        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
 
         // ---------------------------------------------------------------
         // events input (before processing)
@@ -1385,7 +1385,7 @@ protected:
         // ---------------------------------------------------------------
         // events output (after processing)
 
-        carla_zeroStruct<EngineEvent>(pData->events.in, kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.in, kMaxEngineEventInternalCount);
 
         {
             NativeMidiEvent midiEvent;

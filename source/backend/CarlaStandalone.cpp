@@ -949,9 +949,9 @@ const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)
         char strBufMaker[STR_MAX+1];
         char strBufCopyright[STR_MAX+1];
 
-        carla_zeroChar(strBufLabel, STR_MAX+1);
-        carla_zeroChar(strBufMaker, STR_MAX+1);
-        carla_zeroChar(strBufCopyright, STR_MAX+1);
+        carla_zeroChars(strBufLabel, STR_MAX+1);
+        carla_zeroChars(strBufMaker, STR_MAX+1);
+        carla_zeroChars(strBufCopyright, STR_MAX+1);
 
         info.type     = plugin->getType();
         info.category = plugin->getCategory();
@@ -1093,9 +1093,9 @@ const CarlaParameterInfo* carla_get_parameter_info(uint pluginId, uint32_t param
             char strBufSymbol[STR_MAX+1];
             char strBufUnit[STR_MAX+1];
 
-            carla_zeroChar(strBufName, STR_MAX+1);
-            carla_zeroChar(strBufSymbol, STR_MAX+1);
-            carla_zeroChar(strBufUnit, STR_MAX+1);
+            carla_zeroChars(strBufName, STR_MAX+1);
+            carla_zeroChars(strBufSymbol, STR_MAX+1);
+            carla_zeroChars(strBufUnit, STR_MAX+1);
 
             info.scalePointCount = plugin->getParameterScalePointCount(parameterId);
 
@@ -1148,7 +1148,7 @@ const CarlaScalePointInfo* carla_get_parameter_scalepoint_info(uint pluginId, ui
             if (scalePointId < plugin->getParameterScalePointCount(parameterId))
             {
                 char strBufLabel[STR_MAX+1];
-                carla_zeroChar(strBufLabel, STR_MAX+1);
+                carla_zeroChars(strBufLabel, STR_MAX+1);
 
                 info.value = plugin->getParameterScalePointValue(parameterId, scalePointId);
 
@@ -1231,7 +1231,7 @@ const MidiProgramData* carla_get_midi_program_data(uint pluginId, uint32_t midiP
         if (midiProgramId < plugin->getMidiProgramCount())
         {
             const MidiProgramData& ret(plugin->getMidiProgramData(midiProgramId));
-            carla_copyStruct<MidiProgramData>(midiProgData, ret);
+            carla_copyStruct(midiProgData, ret);
             checkStringPtr(midiProgData.name);
             return &midiProgData;
         }
@@ -1262,7 +1262,7 @@ const CustomData* carla_get_custom_data(uint pluginId, uint32_t customDataId)
         if (customDataId < plugin->getCustomDataCount())
         {
             const CustomData& ret(plugin->getCustomData(customDataId));
-            carla_copyStruct<CustomData>(customData, ret);
+            carla_copyStruct(customData, ret);
             checkStringPtr(customData.type);
             checkStringPtr(customData.key);
             checkStringPtr(customData.value);
@@ -1376,7 +1376,7 @@ const char* carla_get_parameter_text(uint pluginId, uint32_t parameterId)
     {
         if (parameterId < plugin->getParameterCount())
         {
-            carla_zeroChar(textBuf, STR_MAX+1);
+            carla_zeroChars(textBuf, STR_MAX+1);
             plugin->getParameterText(parameterId, textBuf);
             return textBuf;
         }
@@ -1400,7 +1400,7 @@ const char* carla_get_program_name(uint pluginId, uint32_t programId)
     {
         if (programId < plugin->getProgramCount())
         {
-            carla_zeroChar(programName, STR_MAX+1);
+            carla_zeroChars(programName, STR_MAX+1);
             plugin->getProgramName(programId, programName);
             return programName;
         }
@@ -1424,7 +1424,7 @@ const char* carla_get_midi_program_name(uint pluginId, uint32_t midiProgramId)
     {
         if (midiProgramId < plugin->getMidiProgramCount())
         {
-            carla_zeroChar(midiProgramName, STR_MAX+1);
+            carla_zeroChars(midiProgramName, STR_MAX+1);
             plugin->getMidiProgramName(midiProgramId, midiProgramName);
             return midiProgramName;
         }
@@ -1446,7 +1446,7 @@ const char* carla_get_real_plugin_name(uint pluginId)
 
     if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
     {
-        carla_zeroChar(realPluginName, STR_MAX+1);
+        carla_zeroChars(realPluginName, STR_MAX+1);
         plugin->getRealName(realPluginName);
         return realPluginName;
     }

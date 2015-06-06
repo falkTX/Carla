@@ -228,14 +228,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(size > 0,);
 
         if (! tryRead(data, size))
-            carla_zeroBytes(data, size);
+            std::memset(data, 0, size);
     }
 
     template <typename T>
     void readCustomType(T& type) noexcept
     {
         if (! tryRead(&type, sizeof(T)))
-            carla_zeroStruct(type);
+            std::memset(&type, 0, sizeof(T));
     }
 
     // -------------------------------------------------------------------

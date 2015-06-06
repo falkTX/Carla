@@ -147,7 +147,7 @@ static void test_CarlaRingBuffer3(CarlaRingBuffer<BufferStruct>& b) noexcept
 
     // read data
     char license[kLicenseSize+1];
-    carla_zeroChar(license, kLicenseSize+1);
+    carla_zeroChars(license, kLicenseSize+1);
     b.readCustomData(license, kLicenseSize);
 
     // now empty again

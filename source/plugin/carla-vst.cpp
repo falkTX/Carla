@@ -168,8 +168,8 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents);
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
+        carla_zeroStruct(fTimeInfo);
 
         return true;
     }
@@ -185,7 +185,7 @@ public:
         switch (opcode)
         {
         case effSetSampleRate:
-            if (carla_compareFloats(fSampleRate, static_cast<double>(opt)))
+            if (carla_isEqual(fSampleRate, static_cast<double>(opt)))
                 return 0;
 
             fSampleRate = opt;
@@ -208,7 +208,7 @@ public:
             if (value != 0)
             {
                 fMidiEventCount = 0;
-                carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+                carla_zeroStruct(fTimeInfo);
 
                 // tell host we want MIDI events
                 hostCallback(audioMasterWantMidi);
@@ -229,7 +229,7 @@ public:
                         fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, (int32_t)value, nullptr, 0.0f);
                 }
 
-                if (sampleRate != 0.0 && ! carla_compareFloats(fSampleRate, sampleRate))
+                if (sampleRate != 0.0 && carla_isNotEqual(fSampleRate, sampleRate))
                 {
                     fSampleRate = sampleRate;
 
@@ -588,7 +588,7 @@ private:
         {
             for (uint32_t i=0; i<kMaxMidiEvents; ++i)
                 data[i] = (VstEvent*)&mdata[i];
-            carla_zeroStruct<VstMidiEvent>(mdata, kMaxMidiEvents);
+            carla_zeroStructs(mdata, kMaxMidiEvents);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(FixedVstEvents);

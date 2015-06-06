@@ -66,7 +66,7 @@ static std::string replaceStdString(const std::string& original, const std::stri
     {
         retval.append(current, next);
         retval.append(after);
-        current = next + static_cast<std::ssize_t>(before.size());
+        current = next + static_cast<ssize_t>(before.size());
     }
     retval.append(current, next);
     return retval;
@@ -330,23 +330,23 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                 }
                 else if (tag.equalsIgnoreCase("drywet"))
                 {
-                    dryWet = carla_fixValue(0.0f, 1.0f, text.getFloatValue());
+                    dryWet = carla_fixedValue(0.0f, 1.0f, text.getFloatValue());
                 }
                 else if (tag.equalsIgnoreCase("volume"))
                 {
-                    volume = carla_fixValue(0.0f, 1.27f, text.getFloatValue());
+                    volume = carla_fixedValue(0.0f, 1.27f, text.getFloatValue());
                 }
                 else if (tag.equalsIgnoreCase("balanceleft") || tag.equalsIgnoreCase("balance-left"))
                 {
-                    balanceLeft = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    balanceLeft = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
                 else if (tag.equalsIgnoreCase("balanceright") || tag.equalsIgnoreCase("balance-right"))
                 {
-                    balanceRight = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    balanceRight = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
                 else if (tag.equalsIgnoreCase("panning"))
                 {
-                    panning = carla_fixValue(-1.0f, 1.0f, text.getFloatValue());
+                    panning = carla_fixedValue(-1.0f, 1.0f, text.getFloatValue());
                 }
                 else if (tag.equalsIgnoreCase("controlchannel") || tag.equalsIgnoreCase("control-channel"))
                 {
@@ -552,15 +552,15 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
 
         dataXml << "   <Active>" << (active ? "Yes" : "No") << "</Active>\n";
 
-        if (! carla_compareFloats(dryWet, 1.0f))
+        if (carla_isNotEqual(dryWet, 1.0f))
             dataXml << "   <DryWet>"        << String(dryWet, 7)       << "</DryWet>\n";
-        if (! carla_compareFloats(volume, 1.0f))
+        if (carla_isNotEqual(volume, 1.0f))
             dataXml << "   <Volume>"        << String(volume, 7)       << "</Volume>\n";
-        if (! carla_compareFloats(balanceLeft, -1.0f))
+        if (carla_isNotEqual(balanceLeft, -1.0f))
             dataXml << "   <Balance-Left>"  << String(balanceLeft, 7)  << "</Balance-Left>\n";
-        if (! carla_compareFloats(balanceRight, 1.0f))
+        if (carla_isNotEqual(balanceRight, 1.0f))
             dataXml << "   <Balance-Right>" << String(balanceRight, 7) << "</Balance-Right>\n";
-        if (! carla_compareFloats(panning, 0.0f))
+        if (carla_isNotEqual(panning, 0.0f))
             dataXml << "   <Panning>"       << String(panning, 7)      << "</Panning>\n";
 
         if (ctrlChannel < 0)

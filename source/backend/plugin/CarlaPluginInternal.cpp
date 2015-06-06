@@ -49,7 +49,7 @@ void PluginAudioData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginAudioPort[newCount];
-    carla_zeroStruct(ports, newCount);
+    carla_zeroStructs(ports, newCount);
 
     count = newCount;
 }
@@ -103,7 +103,7 @@ void PluginCVData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     ports = new PluginCVPort[newCount];
-    carla_zeroStruct(ports, newCount);
+    carla_zeroStructs(ports, newCount);
 
     count = newCount;
 }
@@ -200,7 +200,7 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     data = new ParameterData[newCount];
-    carla_zeroStruct(data, newCount);
+    carla_zeroStructs(data, newCount);
 
     for (uint32_t i=0; i < newCount; ++i)
     {
@@ -210,12 +210,12 @@ void PluginParameterData::createNew(const uint32_t newCount, const bool withSpec
     }
 
     ranges = new ParameterRanges[newCount];
-    carla_zeroStruct(ranges, newCount);
+    carla_zeroStructs(ranges, newCount);
 
     if (withSpecial)
     {
         special = new SpecialParameterType[newCount];
-        carla_zeroStruct(special, newCount);
+        carla_zeroStructs(special, newCount);
     }
 
     count = newCount;
@@ -289,7 +289,7 @@ void PluginProgramData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     names = new ProgramName[newCount];
-    carla_zeroStruct(names, newCount);
+    carla_zeroStructs(names, newCount);
 
     count   = newCount;
     current = -1;
@@ -339,7 +339,7 @@ void PluginMidiProgramData::createNew(const uint32_t newCount)
     CARLA_SAFE_ASSERT_RETURN(newCount > 0,);
 
     data = new MidiProgramData[newCount];
-    carla_zeroStruct(data, newCount);
+    carla_zeroStructs(data, newCount);
 
     count   = newCount;
     current = -1;

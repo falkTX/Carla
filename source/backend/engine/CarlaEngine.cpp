@@ -659,7 +659,7 @@ bool CarlaEngine::removePlugin(const uint id)
 # endif
 #else
     pData->curPluginCount = 0;
-    carla_zeroStruct(pData->plugins, 1);
+    carla_zeroStructs(pData->plugins, 1);
 #endif
 
     delete plugin;
@@ -769,7 +769,7 @@ bool CarlaEngine::clonePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
     char label[STR_MAX+1];
-    carla_zeroChar(label, STR_MAX+1);
+    carla_zeroChars(label, STR_MAX+1);
     plugin->getLabel(label);
 
     const uint pluginCountBefore(pData->curPluginCount);
@@ -895,7 +895,7 @@ const char* CarlaEngine::getUniquePluginName(const char* const name) const
         return sname.dup();
     }
 
-    const std::size_t maxNameSize(carla_minWithBase<uint>(getMaxClientNameSize(), 0xff, 6U) - 6); // 6 = strlen(" (10)") + 1
+    const std::size_t maxNameSize(carla_minConstrained<uint>(getMaxClientNameSize(), 0xff, 6U) - 6); // 6 = strlen(" (10)") + 1
 
     if (maxNameSize == 0 || ! isRunning())
         return sname.dup();

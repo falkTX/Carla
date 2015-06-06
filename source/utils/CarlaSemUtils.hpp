@@ -61,7 +61,7 @@ sem_t* carla_sem_create() noexcept
         std::srand(static_cast<uint>(std::time(nullptr)));
 
     char strBuf[0xff+1];
-    carla_zeroChar(strBuf, 0xff+1);
+    carla_zeroChars(strBuf, 0xff+1);
     std::snprintf(strBuf, 0xff, "carla-sem-%lu-%lu-%i", static_cast<ulong>(::getpid()), sCounter, std::rand());
 
     ::sem_unlink(strBuf);

@@ -789,7 +789,7 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     FloatVectorOperations::clear(outBuf[1], iframes);
 
     // initialize event outputs (zero)
-    carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
+    carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
 
     uint32_t oldAudioInCount  = 0;
     uint32_t oldAudioOutCount = 0;
@@ -827,10 +827,10 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
             else
             {
                 // initialize event inputs from previous outputs
-                carla_copyStruct<EngineEvent>(data->events.in, data->events.out, kMaxEngineEventInternalCount);
+                carla_copyStructs(data->events.in, data->events.out, kMaxEngineEventInternalCount);
 
                 // initialize event outputs (zero)
-                carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
+                carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
             }
         }
 
@@ -1217,7 +1217,7 @@ public:
             EngineEvent* const engineEvents(port->fBuffer);
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
-            carla_zeroStruct<EngineEvent>(engineEvents, kMaxEngineEventInternalCount);
+            carla_zeroStructs(engineEvents, kMaxEngineEventInternalCount);
             fillEngineEventsFromJuceMidiBuffer(engineEvents, midi);
         }
 
@@ -1270,7 +1270,7 @@ public:
             CARLA_SAFE_ASSERT_RETURN(engineEvents != nullptr,);
 
             fillJuceMidiBufferFromEngineEvents(midi, engineEvents);
-            carla_zeroStruct<EngineEvent>(engineEvents, kMaxEngineEventInternalCount);
+            carla_zeroStructs(engineEvents, kMaxEngineEventInternalCount);
         }
 
         fPlugin->unlock();
@@ -1340,8 +1340,8 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
       graph(),
       audioBuffer(),
       midiBuffer(),
-      inputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
-      outputs(carla_fixValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
+      inputs(carla_fixedValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
+      outputs(carla_fixedValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
       retCon(),
       usingExternal(false),
       extGraph(engine),
@@ -1845,7 +1845,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put juce events in carla buffer
     {
-        carla_zeroStruct<EngineEvent>(data->events.out, kMaxEngineEventInternalCount);
+        carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
         fillEngineEventsFromJuceMidiBuffer(data->events.out, midiBuffer);
         midiBuffer.clear();
     }

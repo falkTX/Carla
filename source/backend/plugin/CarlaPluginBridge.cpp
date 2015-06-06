@@ -1794,9 +1794,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && ! carla_compareFloats(pData->postProc.volume, 1.0f);
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -2022,25 +2022,25 @@ public:
                 // realName
                 const uint32_t realNameSize(fShmNonRtServerControl.readUInt());
                 char realName[realNameSize+1];
-                carla_zeroChar(realName, realNameSize+1);
+                carla_zeroChars(realName, realNameSize+1);
                 fShmNonRtServerControl.readCustomData(realName, realNameSize);
 
                 // label
                 const uint32_t labelSize(fShmNonRtServerControl.readUInt());
                 char label[labelSize+1];
-                carla_zeroChar(label, labelSize+1);
+                carla_zeroChars(label, labelSize+1);
                 fShmNonRtServerControl.readCustomData(label, labelSize);
 
                 // maker
                 const uint32_t makerSize(fShmNonRtServerControl.readUInt());
                 char maker[makerSize+1];
-                carla_zeroChar(maker, makerSize+1);
+                carla_zeroChars(maker, makerSize+1);
                 fShmNonRtServerControl.readCustomData(maker, makerSize);
 
                 // copyright
                 const uint32_t copyrightSize(fShmNonRtServerControl.readUInt());
                 char copyright[copyrightSize+1];
-                carla_zeroChar(copyright, copyrightSize+1);
+                carla_zeroChars(copyright, copyrightSize+1);
                 fShmNonRtServerControl.readCustomData(copyright, copyrightSize);
 
                 fInfo.name  = realName;
@@ -2141,19 +2141,19 @@ public:
                 // name
                 const uint32_t nameSize(fShmNonRtServerControl.readUInt());
                 char name[nameSize+1];
-                carla_zeroChar(name, nameSize+1);
+                carla_zeroChars(name, nameSize+1);
                 fShmNonRtServerControl.readCustomData(name, nameSize);
 
                 // symbol
                 const uint32_t symbolSize(fShmNonRtServerControl.readUInt());
                 char symbol[symbolSize+1];
-                carla_zeroChar(symbol, symbolSize+1);
+                carla_zeroChars(symbol, symbolSize+1);
                 fShmNonRtServerControl.readCustomData(symbol, symbolSize);
 
                 // unit
                 const uint32_t unitSize(fShmNonRtServerControl.readUInt());
                 char unit[unitSize+1];
-                carla_zeroChar(unit, unitSize+1);
+                carla_zeroChars(unit, unitSize+1);
                 fShmNonRtServerControl.readCustomData(unit, unitSize);
 
                 CARLA_SAFE_ASSERT_INT2(index < pData->param.count, index, pData->param.count);
@@ -2254,7 +2254,7 @@ public:
                 // name
                 const uint32_t nameSize(fShmNonRtServerControl.readUInt());
                 char name[nameSize+1];
-                carla_zeroChar(name, nameSize+1);
+                carla_zeroChars(name, nameSize+1);
                 fShmNonRtServerControl.readCustomData(name, nameSize);
 
                 CARLA_SAFE_ASSERT_INT2(index < pData->prog.count, index, pData->prog.count);
@@ -2276,7 +2276,7 @@ public:
                 // name
                 const uint32_t nameSize(fShmNonRtServerControl.readUInt());
                 char name[nameSize+1];
-                carla_zeroChar(name, nameSize+1);
+                carla_zeroChars(name, nameSize+1);
                 fShmNonRtServerControl.readCustomData(name, nameSize);
 
                 CARLA_SAFE_ASSERT_INT2(index < pData->midiprog.count, index, pData->midiprog.count);
@@ -2297,19 +2297,19 @@ public:
                 // type
                 const uint32_t typeSize(fShmNonRtServerControl.readUInt());
                 char type[typeSize+1];
-                carla_zeroChar(type, typeSize+1);
+                carla_zeroChars(type, typeSize+1);
                 fShmNonRtServerControl.readCustomData(type, typeSize);
 
                 // key
                 const uint32_t keySize(fShmNonRtServerControl.readUInt());
                 char key[keySize+1];
-                carla_zeroChar(key, keySize+1);
+                carla_zeroChars(key, keySize+1);
                 fShmNonRtServerControl.readCustomData(key, keySize);
 
                 // value
                 const uint32_t valueSize(fShmNonRtServerControl.readUInt());
                 char value[valueSize+1];
-                carla_zeroChar(value, valueSize+1);
+                carla_zeroChars(value, valueSize+1);
                 fShmNonRtServerControl.readCustomData(value, valueSize);
 
                 CarlaPlugin::setCustomData(type, key, value, false);
@@ -2321,7 +2321,7 @@ public:
                 // chunkFilePath
                 const uint32_t chunkFilePathSize(fShmNonRtServerControl.readUInt());
                 char chunkFilePath[chunkFilePathSize+1];
-                carla_zeroChar(chunkFilePath, chunkFilePathSize+1);
+                carla_zeroChars(chunkFilePath, chunkFilePathSize+1);
                 fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
 
                 String realChunkFilePath(chunkFilePath);
@@ -2382,7 +2382,7 @@ public:
                 // error
                 const uint32_t errorSize(fShmNonRtServerControl.readUInt());
                 char error[errorSize+1];
-                carla_zeroChar(error, errorSize+1);
+                carla_zeroChars(error, errorSize+1);
                 fShmNonRtServerControl.readCustomData(error, errorSize);
 
                 if (fInitiated)
@@ -2510,7 +2510,7 @@ public:
         // init bridge thread
         {
             char shmIdsStr[6*4+1];
-            carla_zeroChar(shmIdsStr, 6*4+1);
+            carla_zeroChars(shmIdsStr, 6*4+1);
 
             std::strncpy(shmIdsStr+6*0, &fShmAudioPool.filename[fShmAudioPool.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*1, &fShmRtClientControl.filename[fShmRtClientControl.filename.length()-6], 6);

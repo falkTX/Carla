@@ -158,7 +158,7 @@ public:
         static T& _getFallback()
         {
             static T data;
-            carla_zeroStruct<T>(data);
+            carla_zeroStruct(data);
             return data;
         }
 
@@ -225,7 +225,7 @@ public:
         static T& _getFallback()
         {
             static T data;
-            carla_zeroStruct<T>(data);
+            carla_zeroStruct(data);
             return data;
         }
     };

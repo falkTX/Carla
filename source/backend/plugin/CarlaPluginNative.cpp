@@ -190,9 +190,9 @@ public:
     {
         carla_debug("CarlaPluginNative::CarlaPluginNative(%p, %i)", engine, id);
 
-        carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_fill(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
+        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStruct(fTimeInfo);
 
         fHost.handle      = this;
         fHost.resourceDir = carla_strdup(engine->getOptions().resourceDir);
@@ -1019,7 +1019,7 @@ public:
             else if (max < min)
                 min = max;
 
-            if (carla_compareFloats(min, max))
+            if (carla_isEqual(min, max))
             {
                 carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", paramInfo->name);
                 max = min + 0.1f;
@@ -1320,7 +1320,7 @@ public:
         }
 
         fMidiEventCount = 0;
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1461,7 +1461,7 @@ public:
 
                         if (fMidiEventCount > 0)
                         {
-                            carla_zeroStruct<NativeMidiEvent>(fMidiEvents, fMidiEventCount);
+                            carla_zeroStructs(fMidiEvents, fMidiEventCount);
                             fMidiEventCount = 0;
                         }
                     }
@@ -1888,8 +1888,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];

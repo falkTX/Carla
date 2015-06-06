@@ -54,7 +54,7 @@ struct BridgeAudioPool {
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 64);
+        carla_zeroChars(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -106,7 +106,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 64);
+        carla_zeroChars(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -195,7 +195,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         : filename(),
           data(nullptr)
     {
-        carla_zeroChar(shm, 64);
+        carla_zeroChars(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -274,7 +274,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
            filename(),
            data(nullptr)
     {
-        carla_zeroChar(shm, 64);
+        carla_zeroChars(shm, 64);
         jackbridge_shm_init(shm);
     }
 
@@ -574,27 +574,27 @@ public:
                 // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPluginInfo2);
 
-                carla_zeroChar(bufStr, STR_MAX);
+                carla_zeroChars(bufStr, STR_MAX);
                 plugin->getRealName(bufStr);
-                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChar(bufStr, STR_MAX);
+                carla_zeroChars(bufStr, STR_MAX);
                 plugin->getLabel(bufStr);
-                bufStrSize = carla_fixValue(1U, 256U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixedValue(1U, 256U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChar(bufStr, STR_MAX);
+                carla_zeroChars(bufStr, STR_MAX);
                 plugin->getMaker(bufStr);
-                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                carla_zeroChar(bufStr, STR_MAX);
+                carla_zeroChars(bufStr, STR_MAX);
                 plugin->getCopyright(bufStr);
-                bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
+                bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
                 fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
@@ -656,21 +656,21 @@ public:
                         fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerParameterData2);
                         fShmNonRtServerControl.writeUInt(i);
 
-                        carla_zeroChar(bufStr, STR_MAX);
+                        carla_zeroChars(bufStr, STR_MAX);
                         plugin->getParameterName(i, bufStr);
-                        bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        carla_zeroChar(bufStr, STR_MAX);
+                        carla_zeroChars(bufStr, STR_MAX);
                         plugin->getParameterSymbol(i, bufStr);
-                        bufStrSize = carla_fixValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
-                        carla_zeroChar(bufStr, STR_MAX);
+                        carla_zeroChars(bufStr, STR_MAX);
                         plugin->getParameterUnit(i, bufStr);
-                        bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                        bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                         fShmNonRtServerControl.writeUInt(bufStrSize);
                         fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
@@ -720,9 +720,9 @@ public:
                     fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerProgramName);
                     fShmNonRtServerControl.writeUInt(i);
 
-                    carla_zeroChar(bufStr, STR_MAX);
+                    carla_zeroChars(bufStr, STR_MAX);
                     plugin->getProgramName(i, bufStr);
-                    bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
+                    bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(bufStr)));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
                     fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
 
@@ -750,7 +750,7 @@ public:
                     fShmNonRtServerControl.writeUInt(mpData.bank);
                     fShmNonRtServerControl.writeUInt(mpData.program);
 
-                    bufStrSize = carla_fixValue(1U, 32U, static_cast<uint32_t>(std::strlen(mpData.name)));
+                    bufStrSize = carla_fixedValue(1U, 32U, static_cast<uint32_t>(std::strlen(mpData.name)));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
                     fShmNonRtServerControl.writeCustomData(mpData.name, bufStrSize);
 
@@ -989,19 +989,19 @@ public:
                 // type
                 const uint32_t typeSize(fShmNonRtClientControl.readUInt());
                 char typeStr[typeSize+1];
-                carla_zeroChar(typeStr, typeSize+1);
+                carla_zeroChars(typeStr, typeSize+1);
                 fShmNonRtClientControl.readCustomData(typeStr, typeSize);
 
                 // key
                 const uint32_t keySize(fShmNonRtClientControl.readUInt());
                 char keyStr[keySize+1];
-                carla_zeroChar(keyStr, keySize+1);
+                carla_zeroChars(keyStr, keySize+1);
                 fShmNonRtClientControl.readCustomData(keyStr, keySize);
 
                 // value
                 const uint32_t valueSize(fShmNonRtClientControl.readUInt());
                 char valueStr[valueSize+1];
-                carla_zeroChar(valueStr, valueSize+1);
+                carla_zeroChars(valueStr, valueSize+1);
                 fShmNonRtClientControl.readCustomData(valueStr, valueSize);
 
                 if (plugin != nullptr && plugin->isEnabled())
@@ -1014,7 +1014,7 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(size > 0);
 
                 char chunkFilePathTry[size+1];
-                carla_zeroChar(chunkFilePathTry, size+1);
+                carla_zeroChars(chunkFilePathTry, size+1);
                 fShmNonRtClientControl.readCustomData(chunkFilePathTry, size);
 
                 CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
@@ -1430,7 +1430,7 @@ protected:
                     std::size_t curMidiDataPos = 0;
 
                     if (pData->events.in[0].type != kEngineEventTypeNull)
-                        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
+                        carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
 
                     if (pData->events.out[0].type != kEngineEventTypeNull)
                     {
@@ -1490,7 +1490,7 @@ protected:
                             }
                         }
 
-                        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+                        carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
                     }
 
                 }   break;

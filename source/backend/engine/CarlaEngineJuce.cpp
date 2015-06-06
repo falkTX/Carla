@@ -430,8 +430,8 @@ protected:
             FloatVectorOperations::clear(outputChannelData[i], numSamples);
 
         // initialize events
-        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
-        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {

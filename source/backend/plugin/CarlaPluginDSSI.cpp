@@ -914,7 +914,7 @@ public:
                     carla_stderr2("WARNING - Broken plugin parameter '%s': min > max", paramName);
                     min = max - 0.1f;
                 }
-                else if (carla_compareFloats(min, max))
+                else if (carla_isEqual(min, max))
                 {
                     carla_stderr2("WARNING - Broken plugin parameter '%s': min == max", paramName);
                     max = min + 0.1f;
@@ -1341,7 +1341,7 @@ public:
         }
 
         ulong midiEventCount = 0;
-        carla_zeroStruct<snd_seq_event_t>(fMidiEvents, kPluginMaxMidiEvents);
+        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1934,8 +1934,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;

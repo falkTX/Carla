@@ -112,7 +112,7 @@ void CarlaEngineEventPort::initBuffer() noexcept
     if (kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
     else if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroStruct<EngineEvent>(fBuffer, kMaxEngineEventInternalCount);
+        carla_zeroStructs(fBuffer, kMaxEngineEventInternalCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept
@@ -178,7 +178,7 @@ bool CarlaEngineEventPort::writeControlEvent(const uint32_t time, const uint8_t 
 
         event.ctrl.type  = type;
         event.ctrl.param = param;
-        event.ctrl.value = carla_fixValue<float>(0.0f, 1.0f, value);
+        event.ctrl.value = carla_fixedValue<float>(0.0f, 1.0f, value);
 
         return true;
     }

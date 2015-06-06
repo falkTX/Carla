@@ -77,8 +77,8 @@ public:
     {
         carla_debug("CarlaPluginVST2::CarlaPluginVST2(%p, %i)", engine, id);
 
-        carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
-        carla_zeroStruct<VstTimeInfo>(fTimeInfo);
+        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStruct(fTimeInfo);
 
         for (ushort i=0; i < kPluginMaxMidiEvents*2; ++i)
             fEvents.data[i] = (VstEvent*)&fMidiEvents[i];
@@ -620,7 +620,7 @@ public:
             float min, max, def, step, stepSmall, stepLarge;
 
             VstParameterProperties prop;
-            carla_zeroStruct<VstParameterProperties>(prop);
+            carla_zeroStruct(prop);
 
             if (pData->hints & PLUGIN_HAS_COCKOS_EXTENSIONS)
             {
@@ -637,7 +637,7 @@ public:
                         carla_stderr2("WARNING - Broken plugin parameter min > max (with cockos extensions)");
                         min = max - 0.1f;
                     }
-                    else if (carla_compareFloats(min, max))
+                    else if (carla_isEqual(min, max))
                     {
                         carla_stderr2("WARNING - Broken plugin parameter min == max (with cockos extensions)");
                         max = min + 0.1f;
@@ -679,7 +679,7 @@ public:
                         carla_stderr2("WARNING - Broken plugin parameter min > max");
                         min = max - 0.1f;
                     }
-                    else if (carla_compareFloats(min, max))
+                    else if (carla_isEqual(min, max))
                     {
                         carla_stderr2("WARNING - Broken plugin parameter min == max");
                         max = min + 0.1f;
@@ -1006,7 +1006,7 @@ public:
         }
 
         fMidiEventCount = 0;
-        carla_zeroStruct<VstMidiEvent>(fMidiEvents, kPluginMaxMidiEvents*2);
+        carla_zeroStructs(fMidiEvents, kPluginMaxMidiEvents*2);
 
         // --------------------------------------------------------------------------------------------------------
         // Check if needs reset
@@ -1174,7 +1174,7 @@ public:
 
                         if (fMidiEventCount > 0)
                         {
-                            carla_zeroStruct<VstMidiEvent>(fMidiEvents, fMidiEventCount);
+                            carla_zeroStructs(fMidiEvents, fMidiEventCount);
                             fMidiEventCount = 0;
                         }
                     }
@@ -1528,9 +1528,9 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && ! carla_compareFloats(pData->postProc.volume, 1.0f);
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1798,7 +1798,7 @@ protected:
 
         case audioMasterGetNumAutomatableParameters:
             // Deprecated in VST SDK 2.4
-            ret = carla_fixValue<intptr_t>(0, static_cast<intptr_t>(pData->engine->getOptions().maxParameters), fEffect->numParams);
+            ret = carla_fixedValue<intptr_t>(0, static_cast<intptr_t>(pData->engine->getOptions().maxParameters), fEffect->numParams);
             break;
 
         case audioMasterGetParameterQuantization:
@@ -2139,7 +2139,7 @@ public:
         else
         {
             char strBuf[STR_MAX+1];
-            carla_zeroChar(strBuf, STR_MAX+1);
+            carla_zeroChars(strBuf, STR_MAX+1);
             dispatcher(effGetEffectName, 0, 0, strBuf, 0.0f);
 
             if (strBuf[0] != '\0')

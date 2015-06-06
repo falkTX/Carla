@@ -449,10 +449,10 @@ protected:
         }
         else if (index <= kParamPart16Volume)
         {
-            if (carla_compareFloats(fParameters[index], value))
+            if (carla_isEqual(fParameters[index], value))
                 return;
 
-            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+            fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
             fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
             fMiddleWare->activeUrl("");
@@ -463,10 +463,10 @@ protected:
         }
         else if (index <= kParamPart16Panning)
         {
-            if (carla_compareFloats(fParameters[index], value))
+            if (carla_isEqual(fParameters[index], value))
                 return;
 
-            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+            fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
             fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
             fMiddleWare->activeUrl("");
@@ -480,7 +480,7 @@ protected:
             const uint zynIndex(getZynParameterFromIndex(index));
             CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
 
-            fParameters[index] = std::round(carla_fixValue(0.0f, 127.0f, value));
+            fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
             for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
             {

@@ -305,7 +305,7 @@ public:
         const int screen = DefaultScreen(fDisplay);
 
         XSetWindowAttributes attr;
-        carla_zeroStruct<XSetWindowAttributes>(attr);
+        carla_zeroStruct(attr);
 
         attr.border_pixel = 0;
         attr.event_mask   = KeyPressMask|KeyReleaseMask;
@@ -485,7 +485,7 @@ public:
         if (! fIsResizable)
         {
             XSizeHints sizeHints;
-            carla_zeroStruct<XSizeHints>(sizeHints);
+            carla_zeroStruct(sizeHints);
 
             sizeHints.flags      = PSize|PMinSize|PMaxSize;
             sizeHints.width      = static_cast<int>(width);

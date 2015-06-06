@@ -211,8 +211,8 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStruct(fTimeInfo);
 
         fPorts.init(fDescriptor, fHandle);
         fURIs.map(fUridMap);
@@ -233,7 +233,7 @@ public:
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
 
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_zeroStruct(fTimeInfo);
     }
 
     void lv2_deactivate()
@@ -270,7 +270,7 @@ public:
 
             curValue = *fPorts.paramsPtr[i];
 
-            if (carla_compareFloats(fPorts.paramsLast[i], curValue))
+            if (carla_isEqual(fPorts.paramsLast[i], curValue))
                 continue;
 
             fPorts.paramsLast[i] = curValue;
@@ -280,7 +280,7 @@ public:
         if (fDescriptor->midiIns > 0 || fDescriptor->midiOuts > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
-            carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+            carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
 
             if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             {
@@ -432,7 +432,7 @@ public:
                     if (speed != nullptr && speed->type == fURIs.atomFloat)
                     {
                         fLastTimeSpeed = ((LV2_Atom_Float*)speed)->body;
-                        fTimeInfo.playing = carla_compareFloats(fLastTimeSpeed, 1.0);
+                        fTimeInfo.playing = carla_isEqual(fLastTimeSpeed, 1.0);
                     }
 
                     fTimeInfo.bbt.valid = (beatsPerMinute != nullptr && beatsPerBar != nullptr && beatUnit != nullptr);
@@ -477,7 +477,7 @@ public:
         fIsProcessing = false;
 
         // update timePos for next callback
-        if (! carla_compareFloats(fLastTimeSpeed, 0.0))
+        if (carla_isNotEqual(fLastTimeSpeed, 0.0))
         {
             const double newFrames = fLastTimeSpeed*frames;
 

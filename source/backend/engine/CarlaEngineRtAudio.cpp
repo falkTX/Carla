@@ -249,8 +249,8 @@ public:
             return false;
         }
 
-        iParams.nChannels = carla_fixValue(0U, 128U, iParams.nChannels);
-        oParams.nChannels = carla_fixValue(0U, 128U, oParams.nChannels);
+        iParams.nChannels = carla_fixedValue(0U, 128U, iParams.nChannels);
+        oParams.nChannels = carla_fixedValue(0U, 128U, oParams.nChannels);
         fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::LINUX_PULSE;
 
         RtAudio::StreamOptions rtOptions;
@@ -599,8 +599,8 @@ protected:
         }
 
         // initialize events
-        carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
-        carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+        carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
 
         if (fMidiInEvents.mutex.tryLock())
         {

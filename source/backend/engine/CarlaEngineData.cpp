@@ -43,14 +43,14 @@ void EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t& size,
             size    = 3;
             data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
             data[1] = MIDI_CONTROL_BANK_SELECT;
-            data[2] = uint8_t(carla_fixValue<float>(0.0f, float(MAX_MIDI_VALUE-1), value));
+            data[2] = uint8_t(carla_fixedValue<float>(0.0f, float(MAX_MIDI_VALUE-1), value));
         }
         else
         {
             size    = 3;
             data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
             data[1] = static_cast<uint8_t>(param);
-            data[2] = uint8_t(carla_fixValue<float>(0.0f, 1.0f, value) * float(MAX_MIDI_VALUE-1));
+            data[2] = uint8_t(carla_fixedValue<float>(0.0f, 1.0f, value) * float(MAX_MIDI_VALUE-1));
         }
         break;
 
@@ -58,13 +58,13 @@ void EngineControlEvent::convertToMidiData(const uint8_t channel, uint8_t& size,
         size    = 3;
         data[0] = static_cast<uint8_t>(MIDI_STATUS_CONTROL_CHANGE | (channel & MIDI_CHANNEL_BIT));
         data[1] = MIDI_CONTROL_BANK_SELECT;
-        data[2] = uint8_t(carla_fixValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
+        data[2] = uint8_t(carla_fixedValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
         break;
 
     case kEngineControlEventTypeMidiProgram:
         size    = 2;
         data[0] = static_cast<uint8_t>(MIDI_STATUS_PROGRAM_CHANGE | (channel & MIDI_CHANNEL_BIT));
-        data[1] = uint8_t(carla_fixValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
+        data[1] = uint8_t(carla_fixedValue<uint16_t>(0, MAX_MIDI_VALUE-1, param));
         break;
 
     case kEngineControlEventTypeAllSoundOff:
@@ -133,7 +133,7 @@ void EngineEvent::fillFromMidiData(const uint8_t size, const uint8_t* const data
         {
             CARLA_SAFE_ASSERT_RETURN(size >= 3,);
 
-            const uint8_t midiValue(carla_fixValue<uint8_t>(0, 127, data[2])); // ensures 0.0<->1.0 value range
+            const uint8_t midiValue(carla_fixedValue<uint8_t>(0, 127, data[2])); // ensures 0.0<->1.0 value range
 
             ctrl.type  = kEngineControlEventTypeParameter;
             ctrl.param = midiControl;
@@ -323,7 +323,7 @@ bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept
         return false;
     if ((valid & kValidBBT) == 0)
         return true;
-    if (! carla_compareFloats(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
+    if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
         return false;
     return true;
 }

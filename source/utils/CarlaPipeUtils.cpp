@@ -514,7 +514,7 @@ struct CarlaPipeCommon::PrivateData {
         } CARLA_SAFE_EXCEPTION("CreateEvent");
 #endif
 
-        carla_zeroChar(tmpBuf, 0xff+1);
+        carla_zeroChars(tmpBuf, 0xff+1);
     }
 
     ~PrivateData() noexcept

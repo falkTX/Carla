@@ -1007,9 +1007,9 @@ void CarlaPlugin::setDryWet(const float value, const bool sendOsc, const bool se
 {
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.0f);
 
-    const float fixedValue(carla_fixValue<float>(0.0f, 1.0f, value));
+    const float fixedValue(carla_fixedValue<float>(0.0f, 1.0f, value));
 
-    if (carla_compareFloats(pData->postProc.dryWet, fixedValue))
+    if (carla_isEqual(pData->postProc.dryWet, fixedValue))
         return;
 
     pData->postProc.dryWet = fixedValue;
@@ -1030,9 +1030,9 @@ void CarlaPlugin::setVolume(const float value, const bool sendOsc, const bool se
 {
     CARLA_SAFE_ASSERT(value >= 0.0f && value <= 1.27f);
 
-    const float fixedValue(carla_fixValue<float>(0.0f, 1.27f, value));
+    const float fixedValue(carla_fixedValue<float>(0.0f, 1.27f, value));
 
-    if (carla_compareFloats(pData->postProc.volume, fixedValue))
+    if (carla_isEqual(pData->postProc.volume, fixedValue))
         return;
 
     pData->postProc.volume = fixedValue;
@@ -1053,9 +1053,9 @@ void CarlaPlugin::setBalanceLeft(const float value, const bool sendOsc, const bo
 {
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
 
-    if (carla_compareFloats(pData->postProc.balanceLeft, fixedValue))
+    if (carla_isEqual(pData->postProc.balanceLeft, fixedValue))
         return;
 
     pData->postProc.balanceLeft = fixedValue;
@@ -1076,9 +1076,9 @@ void CarlaPlugin::setBalanceRight(const float value, const bool sendOsc, const b
 {
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
 
-    if (carla_compareFloats(pData->postProc.balanceRight, fixedValue))
+    if (carla_isEqual(pData->postProc.balanceRight, fixedValue))
         return;
 
     pData->postProc.balanceRight = fixedValue;
@@ -1099,9 +1099,9 @@ void CarlaPlugin::setPanning(const float value, const bool sendOsc, const bool s
 {
     CARLA_SAFE_ASSERT(value >= -1.0f && value <= 1.0f);
 
-    const float fixedValue(carla_fixValue<float>(-1.0f, 1.0f, value));
+    const float fixedValue(carla_fixedValue<float>(-1.0f, 1.0f, value));
 
-    if (carla_compareFloats(pData->postProc.panning, fixedValue))
+    if (carla_isEqual(pData->postProc.panning, fixedValue))
         return;
 
     pData->postProc.panning = fixedValue;
@@ -1198,7 +1198,7 @@ void CarlaPlugin::setParameterValueByRealIndex(const int32_t rindex, const float
     {
         if (pData->param.data[i].rindex == rindex)
         {
-            //if (! carla_compareFloats(getParameterValue(i), value))
+            //if (carla_isNotEqual(getParameterValue(i), value))
             setParameterValue(i, value, sendGui, sendOsc, sendCallback);
             break;
         }
@@ -1648,10 +1648,10 @@ void CarlaPlugin::registerToOscClient() noexcept
     // Base data
     {
         char bufName[STR_MAX+1], bufLabel[STR_MAX+1], bufMaker[STR_MAX+1], bufCopyright[STR_MAX+1];
-        carla_zeroChar(bufName, STR_MAX);
-        carla_zeroChar(bufLabel, STR_MAX);
-        carla_zeroChar(bufMaker, STR_MAX);
-        carla_zeroChar(bufCopyright, STR_MAX);
+        carla_zeroChars(bufName, STR_MAX);
+        carla_zeroChars(bufLabel, STR_MAX);
+        carla_zeroChars(bufMaker, STR_MAX);
+        carla_zeroChars(bufCopyright, STR_MAX);
 
         getRealName(bufName);
         getLabel(bufLabel);
@@ -1679,8 +1679,8 @@ void CarlaPlugin::registerToOscClient() noexcept
 
         for (uint32_t i=0, maxParams=pData->engine->getOptions().maxParameters; i<count && i<maxParams; ++i)
         {
-            carla_zeroChar(bufName, STR_MAX);
-            carla_zeroChar(bufUnit, STR_MAX);
+            carla_zeroChars(bufName, STR_MAX);
+            carla_zeroChars(bufUnit, STR_MAX);
 
             getParameterName(i, bufName);
             getParameterUnit(i, bufUnit);

@@ -97,7 +97,7 @@ const char* lib_error(const char* const filename) noexcept
 
 #ifdef CARLA_OS_WIN
     static char libError[2048+1];
-    carla_zeroChar(libError, 2048+1);
+    carla_zeroChars(libError, 2048+1);
 
     try {
         const DWORD winErrorCode  = ::GetLastError();

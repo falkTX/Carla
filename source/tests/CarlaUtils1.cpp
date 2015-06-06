@@ -473,18 +473,18 @@ static void test_CarlaMathUtils() noexcept
     assert(carla_max(5, 6, 3) == 3);
 
     // Fix bounds of 'value' between 'min' and 'max'.
-    assert(carla_fixValue(0, 1, -1) == 0);
-    assert(carla_fixValue(0, 1,  0) == 0);
-    assert(carla_fixValue(0, 1,  1) == 1);
-    assert(carla_fixValue(0, 1,  2) == 1);
+    assert(carla_fixedValue(0, 1, -1) == 0);
+    assert(carla_fixedValue(0, 1,  0) == 0);
+    assert(carla_fixedValue(0, 1,  1) == 1);
+    assert(carla_fixedValue(0, 1,  2) == 1);
 
-    assert(carla_fixValue(0.0, 1.0, -1.0) == 0.0);
-    assert(carla_fixValue(0.0, 1.0,  0.0) == 0.0);
-    assert(carla_fixValue(0.0, 1.0,  1.0) == 1.0);
-    assert(carla_fixValue(0.0, 1.0,  2.0) == 1.0);
+    assert(carla_fixedValue(0.0, 1.0, -1.0) == 0.0);
+    assert(carla_fixedValue(0.0, 1.0,  0.0) == 0.0);
+    assert(carla_fixedValue(0.0, 1.0,  1.0) == 1.0);
+    assert(carla_fixedValue(0.0, 1.0,  2.0) == 1.0);
 
-    assert(carla_fixValue(0.0, 1.0, -0.1) == 0.0);
-    assert(carla_fixValue(0.0, 1.0,  1.1) == 1.0);
+    assert(carla_fixedValue(0.0, 1.0, -0.1) == 0.0);
+    assert(carla_fixedValue(0.0, 1.0,  1.1) == 1.0);
 
     // Get next power of 2.
     assert(carla_nextPowerOf2(0) == 0);

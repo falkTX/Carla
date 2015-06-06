@@ -127,7 +127,7 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       nextAction()
 {
 #ifdef BUILD_BRIDGE
-    carla_zeroStruct(plugins, 1);
+    carla_zeroStructs(plugins, 1);
 #endif
 }
 
@@ -206,7 +206,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
 #ifndef BUILD_BRIDGE
     plugins = new EnginePluginData[maxPluginNumber];
-    carla_zeroStruct(plugins, maxPluginNumber);
+    carla_zeroStructs(plugins, maxPluginNumber);
 #endif
 
     nextAction.ready();

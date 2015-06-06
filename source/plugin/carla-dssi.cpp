@@ -208,8 +208,8 @@ public:
         if (fHandle == nullptr)
             return false;
 
-        carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStruct(fTimeInfo);
 
         fPorts.init(fDescriptor, fHandle);
         fUris.map(fUridMap);
@@ -230,7 +230,7 @@ public:
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
 
-        carla_zeroStruct<NativeTimeInfo>(fTimeInfo);
+        carla_zeroStruct(fTimeInfo);
     }
 
     void lv2_deactivate()
@@ -294,7 +294,7 @@ public:
         if (fDescriptor->midiIns > 0 || (fDescriptor->hints & PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
-            carla_zeroStruct<NativeMidiEvent>(fMidiEvents, kMaxMidiEvents*2);
+            carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
 
             LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], iter)
             {

@@ -690,7 +690,7 @@ public:
         // FIXME: Always enable JACK transport for now
         pData->options.transportMode = ENGINE_TRANSPORT_MODE_JACK;
 
-        carla_zeroStruct<jack_position_t>(fTransportPos);
+        carla_zeroStruct(fTransportPos);
     }
 
     ~CarlaEngineJack() noexcept override
@@ -749,7 +749,7 @@ public:
         fTransportState   = JackTransportStopped;
         fExternalPatchbay = true;
 
-        carla_zeroStruct<jack_position_t>(fTransportPos);
+        carla_zeroStruct(fTransportPos);
 
         CarlaString truncatedClientName(clientName);
         truncatedClientName.truncate(getMaxClientNameSize());
@@ -764,7 +764,7 @@ public:
             return false;
         }
 
-        if (pData->bufferSize == 0 || carla_compareFloats(pData->sampleRate, 0.0))
+        if (pData->bufferSize == 0 || carla_isEqual(pData->sampleRate, 0.0))
         {
             // open temp client to get initial buffer-size and sample-rate values
             if (jack_client_t* const tmpClient = jackbridge_client_open(truncatedClientName, JackNoStartServer, nullptr))
@@ -1309,7 +1309,7 @@ protected:
 
     void handleJackSampleRateCallback(const double newSampleRate)
     {
-        if (carla_compareFloats(pData->sampleRate, newSampleRate))
+        if (carla_isEqual(pData->sampleRate, newSampleRate))
             return;
 
         pData->sampleRate = newSampleRate;
@@ -1439,8 +1439,8 @@ protected:
             /**/  float* outBuf[2] = { audioOut1, audioOut2 };
 
             // initialize events
-            carla_zeroStruct<EngineEvent>(pData->events.in,  kMaxEngineEventInternalCount);
-            carla_zeroStruct<EngineEvent>(pData->events.out, kMaxEngineEventInternalCount);
+            carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+            carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
 
             {
                 ushort engineEventIndex = 0;

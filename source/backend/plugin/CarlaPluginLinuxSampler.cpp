@@ -219,11 +219,11 @@ public:
         sSampler->SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
         sSampler->SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
 
-        carla_zeroStruct(fCurProgs,        MAX_MIDI_CHANNELS);
-        carla_zeroStruct(fSamplerChannels, MAX_MIDI_CHANNELS);
-        carla_zeroStruct(fEngineChannels,  MAX_MIDI_CHANNELS);
+        carla_zeroStructs(fCurProgs,        MAX_MIDI_CHANNELS);
+        carla_zeroStructs(fSamplerChannels, MAX_MIDI_CHANNELS);
+        carla_zeroStructs(fEngineChannels,  MAX_MIDI_CHANNELS);
 
-        carla_zeroFloat(fParamBuffers, LinuxSamplerParametersMax);
+        carla_zeroFloats(fParamBuffers, LinuxSamplerParametersMax);
 
         if (use16Outs && ! isGIG)
             carla_stderr("Tried to use SFZ with 16 stereo outs, this doesn't make much sense so single stereo mode will be used instead");
@@ -1104,8 +1104,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && ! carla_compareFloats(pData->postProc.volume, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
 
             float oldBufLeft[doBalance ? frames : 1];
 

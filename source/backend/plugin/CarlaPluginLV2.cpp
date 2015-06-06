@@ -2091,7 +2091,7 @@ public:
                     max = (float)0xffffff;
                 }
 
-                if (carla_compareFloats(min, max))
+                if (carla_isEqual(min, max))
                 {
                     carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", fRdfDescriptor->Ports[i].Name);
                     max = min + 0.1f;
@@ -2809,7 +2809,7 @@ public:
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
                     if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
-                                                                              !carla_compareFloats(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat)))
+                                                                              !carla_isEqual(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat)))
                     {
                         fParamBuffers[k] = static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
                         doPostRt = true;
@@ -2823,28 +2823,28 @@ public:
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && ! carla_compareFloats(fLastTimeInfo.bbt.beatType, timeInfo.bbt.beatType))
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatType, timeInfo.bbt.beatType))
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatType;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && ! carla_compareFloats(fLastTimeInfo.bbt.beatsPerBar, timeInfo.bbt.beatsPerBar))
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerBar, timeInfo.bbt.beatsPerBar))
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && ! carla_compareFloats(fLastTimeInfo.bbt.beatsPerMinute, timeInfo.bbt.beatsPerMinute))
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerMinute, timeInfo.bbt.beatsPerMinute))
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.beatsPerMinute);
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && ! carla_compareFloats(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat))
+                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat))
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.ticksPerBeat);
                         doPostRt = true;
@@ -2911,7 +2911,7 @@ public:
 
             pData->postRtEvents.trySplice();
 
-            carla_copyStruct<EngineTimeInfo>(fLastTimeInfo, timeInfo);
+            carla_copyStruct(fLastTimeInfo, timeInfo);
         }
 
         // --------------------------------------------------------------------------------------------------------
@@ -3603,7 +3603,7 @@ public:
 
             if (pData->param.data[k].hints & PARAMETER_IS_TRIGGER)
             {
-                if (! carla_compareFloats(fParamBuffers[k], pData->param.ranges[k].def))
+                if (carla_isNotEqual(fParamBuffers[k], pData->param.ranges[k].def))
                 {
                     fParamBuffers[k] = pData->param.ranges[k].def;
                     pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, fParamBuffers[k]);
@@ -3618,8 +3618,8 @@ public:
         // Post-processing (dry/wet, volume and balance)
 
         {
-            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && ! carla_compareFloats(pData->postProc.dryWet, 1.0f);
-            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_compareFloats(pData->postProc.balanceLeft, -1.0f) && carla_compareFloats(pData->postProc.balanceRight, 1.0f));
+            const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
+            const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
             const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
@@ -3808,7 +3808,7 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("CarlaPluginLV2::sampleRateChanged(%g) - start", newSampleRate);
 
-        if (! carla_compareFloats(fLv2Options.sampleRate, newSampleRate))
+        if (carla_isNotEqual(fLv2Options.sampleRate, newSampleRate))
         {
             fLv2Options.sampleRate = newSampleRate;
 
@@ -4561,7 +4561,7 @@ public:
 
             const float value(*(const float*)buffer);
 
-            //if (! carla_compareFloats(fParamBuffers[index], value))
+            //if (carla_isNotEqual(fParamBuffers[index], value))
             setParameterValue(index, value, false, true, true);
 
         } break;
