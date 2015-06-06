@@ -258,13 +258,13 @@ void CarlaStateSave::clear() noexcept
     currentMidiBank     = -1;
     currentMidiProgram  = -1;
 
-    for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
+    for (ParameterItenerator it = parameters.begin2(); it.valid(); it.next())
     {
         Parameter* const stateParameter(it.getValue(nullptr));
         delete stateParameter;
     }
 
-    for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
+    for (CustomDataItenerator it = customData.begin2(); it.valid(); it.next())
     {
         CustomData* const stateCustomData(it.getValue(nullptr));
         delete stateCustomData;
@@ -574,7 +574,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
     }
 #endif
 
-    for (ParameterItenerator it = parameters.begin(); it.valid(); it.next())
+    for (ParameterItenerator it = parameters.begin2(); it.valid(); it.next())
     {
         Parameter* const stateParameter(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateParameter != nullptr);
@@ -631,7 +631,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         content << midiProgramXml;
     }
 
-    for (CustomDataItenerator it = customData.begin(); it.valid(); it.next())
+    for (CustomDataItenerator it = customData.begin2(); it.valid(); it.next())
     {
         CustomData* const stateCustomData(it.getValue(nullptr));
         CARLA_SAFE_ASSERT_CONTINUE(stateCustomData != nullptr);

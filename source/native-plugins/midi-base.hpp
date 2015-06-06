@@ -186,7 +186,7 @@ public:
     {
         const CarlaMutexLocker sl(fMutex);
 
-        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
@@ -214,7 +214,7 @@ public:
     {
         const CarlaMutexLocker sl(fMutex);
 
-        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
             delete it.getValue(nullptr);
 
         fData.clear();
@@ -236,7 +236,7 @@ public:
         if (fStartTime != 0)
             timePosFrame += static_cast<long double>(fStartTime);
 
-        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
@@ -275,7 +275,7 @@ public:
 
     LinkedList<const RawMidiEvent*>::Itenerator iteneratorBegin() const noexcept
     {
-        return fData.begin();
+        return fData.begin2();
     }
 
     // -------------------------------------------------------------------
@@ -298,7 +298,7 @@ public:
         char* dataWrtn = data;
         int wrtn;
 
-        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const rawMidiEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(rawMidiEvent != nullptr);
@@ -435,7 +435,7 @@ private:
             return;
         }
 
-        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin(); it.valid(); it.next())
+        for (LinkedList<const RawMidiEvent*>::Itenerator it = fData.begin2(); it.valid(); it.next())
         {
             const RawMidiEvent* const oldEvent(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(oldEvent != nullptr);

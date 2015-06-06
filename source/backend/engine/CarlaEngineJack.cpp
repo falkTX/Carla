@@ -590,7 +590,7 @@ public:
 
     void invalidate() noexcept
     {
-        for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin(); it.valid(); it.next())
+        for (LinkedList<CarlaEngineJackAudioPort*>::Itenerator it = fAudioPorts.begin2(); it.valid(); it.next())
         {
             CarlaEngineJackAudioPort* const port(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
@@ -598,7 +598,7 @@ public:
             port->invalidate();
         }
 
-        for (LinkedList<CarlaEngineJackCVPort*>::Itenerator it = fCVPorts.begin(); it.valid(); it.next())
+        for (LinkedList<CarlaEngineJackCVPort*>::Itenerator it = fCVPorts.begin2(); it.valid(); it.next())
         {
             CarlaEngineJackCVPort* const port(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
@@ -606,7 +606,7 @@ public:
             port->invalidate();
         }
 
-        for (LinkedList<CarlaEngineJackEventPort*>::Itenerator it = fEventPorts.begin(); it.valid(); it.next())
+        for (LinkedList<CarlaEngineJackEventPort*>::Itenerator it = fEventPorts.begin2(); it.valid(); it.next())
         {
             CarlaEngineJackEventPort* const port(it.getValue(nullptr));
             CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
@@ -924,7 +924,7 @@ public:
         LinkedList<uint> newPlugins;
         fNewGroups.moveTo(newPlugins);
 
-        for (LinkedList<uint>::Itenerator it = newPlugins.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = newPlugins.begin2(); it.valid(); it.next())
         {
             const uint groupId(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
@@ -1135,7 +1135,7 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
             return CarlaEngine::patchbayDisconnect(connectionId);
 
-        for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin(); it.valid(); it.next())
+        for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
         {
             static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -1632,7 +1632,7 @@ protected:
         }
         else
         {
-            for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin(); it.valid(); it.next())
+            for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
             {
                 static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -1658,7 +1658,7 @@ protected:
         // ignore this if on internal patchbay mode
         if (! fExternalPatchbay) return;
 
-        for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin(); it.valid(); it.next())
+        for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin2(); it.valid(); it.next())
         {
             static GroupNameToId groupNameFallback = { 0, { '\0' } };
 
@@ -1697,7 +1697,7 @@ protected:
         const uint groupId(fUsedGroups.getGroupId(groupName));
         CARLA_SAFE_ASSERT_RETURN(groupId > 0,);
 
-        for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
         {
             static PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 

@@ -67,15 +67,17 @@ protected:
 
     AbstractLinkedList() noexcept
         : kDataSize(sizeof(Data)),
-          fCount(0)
+          fCount(0),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , fQueue({&fQueue, &fQueue}) {}
-#else
+          fQueue({&fQueue, &fQueue}),
+#endif
+          fUsingItenerator(false)
     {
+#ifndef CARLA_PROPER_CPP11_SUPPORT
         fQueue.next = &fQueue;
         fQueue.prev = &fQueue;
-    }
 #endif
+    }
 
 public:
     virtual ~AbstractLinkedList() noexcept
@@ -85,13 +87,20 @@ public:
 
     class Itenerator {
     public:
-        Itenerator(const ListHead& queue) noexcept
+        Itenerator(const ListHead& queue, bool* usingItenerator) noexcept
             : fEntry(queue.next),
               fEntry2(fEntry->next),
-              kQueue(queue)
+              kQueue(queue),
+              fUsingItenerator(usingItenerator)
         {
             CARLA_SAFE_ASSERT(fEntry != nullptr);
             CARLA_SAFE_ASSERT(fEntry2 != nullptr);
+        }
+
+        ~Itenerator()
+        {
+            if (fUsingItenerator != nullptr)
+                *fUsingItenerator = false;
         }
 
         bool valid() const noexcept
@@ -132,7 +141,11 @@ public:
         // TODO: remove this, fallback should be mandatory
         T& getValue() const noexcept
         {
+            static T& fallback(_getFallback());
+
             Data* const data(list_entry(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
             return data->value;
         }
 
@@ -140,13 +153,103 @@ public:
         ListHead* fEntry;
         ListHead* fEntry2;
         const ListHead& kQueue;
+        bool* const fUsingItenerator;
+
+        static T& _getFallback()
+        {
+            static T data;
+            carla_zeroStruct<T>(data);
+            return data;
+        }
 
         friend class AbstractLinkedList;
     };
 
-    Itenerator begin() const noexcept
+    class AutoItenerator {
+    public:
+        AutoItenerator(const ListHead* entry, bool* usingItenerator) noexcept
+            : fEntry(entry),
+              fEntry2(entry != nullptr ? entry->next : nullptr),
+              fUsingItenerator(usingItenerator)
+        {
+            CARLA_SAFE_ASSERT(fEntry != nullptr);
+            CARLA_SAFE_ASSERT(fEntry2 != nullptr);
+        }
+
+        ~AutoItenerator() noexcept
+        {
+            if (fUsingItenerator != nullptr)
+                *fUsingItenerator = false;
+        }
+
+        bool operator!=(AutoItenerator& it) const noexcept
+        {
+            CARLA_SAFE_ASSERT_RETURN(fEntry != nullptr, false);
+            CARLA_SAFE_ASSERT_RETURN(it.fEntry != nullptr, false);
+
+            return fEntry != it.fEntry;
+        }
+
+        AutoItenerator& operator++() noexcept
+        {
+            fEntry  = fEntry2;
+            fEntry2 = (fEntry != nullptr) ? fEntry->next : nullptr;
+            return *this;
+        }
+
+        T& operator*() noexcept
+        {
+            static T& fallback(_getFallback());
+
+            Data* const data(list_entry(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+            return data->value;
+        }
+
+        const T& operator*() const noexcept
+        {
+            static const T& fallback(_getFallback());
+
+            const Data* const data(list_entry_const(fEntry, Data, siblings));
+            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
+
+            return data->value;
+        }
+
+    private:
+        ListHead* fEntry;
+        ListHead* fEntry2;
+        bool* const fUsingItenerator;
+
+        static T& _getFallback()
+        {
+            static T data;
+            carla_zeroStruct<T>(data);
+            return data;
+        }
+    };
+
+    Itenerator begin2() const noexcept
     {
-        return Itenerator(fQueue);
+        static const ListHead fallback = { nullptr, nullptr };
+        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, Itenerator(fallback, nullptr));
+
+        fUsingItenerator = true;
+        return Itenerator(fQueue, &fUsingItenerator);
+    }
+
+    AutoItenerator begin() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, AutoItenerator(nullptr, nullptr));
+
+        fUsingItenerator = true;
+        return AutoItenerator(fQueue.next, &fUsingItenerator);
+    }
+
+    AutoItenerator end() const noexcept
+    {
+        return AutoItenerator(&fQueue, nullptr);
     }
 
     void clear() noexcept
@@ -246,11 +349,11 @@ public:
         return fallback;
     }
 
-    const T& getFirst(const T& fallback) const noexcept
+    T getFirst(T& fallback, const bool removeObj) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
 
-        return _get(fQueue.next, fallback);
+        return _get(fQueue.next, fallback, removeObj);
     }
 
     T& getFirst(T& fallback) const noexcept
@@ -260,18 +363,18 @@ public:
         return _get(fQueue.next, fallback);
     }
 
-    T getFirst(T& fallback, const bool removeObj) noexcept
+    const T& getFirst(const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
 
-        return _get(fQueue.next, fallback, removeObj);
+        return _get(fQueue.next, fallback);
     }
 
-    const T& getLast(const T& fallback) const noexcept
+    T getLast(T& fallback, const bool removeObj) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
 
-        return _get(fQueue.prev, fallback);
+        return _get(fQueue.prev, fallback, removeObj);
     }
 
     T& getLast(T& fallback) const noexcept
@@ -281,11 +384,11 @@ public:
         return _get(fQueue.prev, fallback);
     }
 
-    T getLast(T& fallback, const bool removeObj) noexcept
+    const T& getLast(const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, fallback);
 
-        return _get(fQueue.prev, fallback, removeObj);
+        return _get(fQueue.prev, fallback);
     }
 
     void remove(Itenerator& it) noexcept
@@ -331,9 +434,11 @@ public:
     }
 
     // move data to a new list, and clear ourselves
-    void moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
+    bool moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0,);
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, false);
+        CARLA_SAFE_ASSERT_RETURN(! list.fUsingItenerator, false);
 
         if (inTail)
             __list_splice_tail(&fQueue, &list.fQueue);
@@ -345,6 +450,8 @@ public:
 
         //! and we get nothing
         _init();
+
+        return true;
     }
 
 protected:
@@ -352,6 +459,8 @@ protected:
 
     std::size_t fCount;
     ListHead    fQueue;
+
+    mutable bool fUsingItenerator;
 
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;

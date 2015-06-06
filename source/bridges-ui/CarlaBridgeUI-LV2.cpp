@@ -361,7 +361,7 @@ public:
             }
         }
 
-        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin2(); it.valid(); it.next())
         {
             const char* const uri(it.getValue(nullptr));
 

@@ -24,15 +24,8 @@ const unsigned short MIN_RT_EVENTS = 5;
 const unsigned short MAX_RT_EVENTS = 10;
 
 struct MyData {
-    CarlaString str;
+    char str[234];
     int id;
-
-    MyData() noexcept
-        : id(-1) {}
-
-    MyData(int i) noexcept
-        : str(i),
-          id(i) {}
 };
 
 struct PostRtEvents {
@@ -43,8 +36,8 @@ struct PostRtEvents {
 
     PostRtEvents() noexcept
         : dataPool(MIN_RT_EVENTS, MAX_RT_EVENTS),
-          data(dataPool, true),
-          dataPendingRT(dataPool, true) {}
+          data(dataPool),
+          dataPendingRT(dataPool) {}
 
     ~PostRtEvents() noexcept
     {
@@ -68,16 +61,17 @@ struct PostRtEvents {
     {
         if (mutex.tryLock())
         {
-            dataPendingRT.spliceAppendTo(data);
+            dataPendingRT.moveTo(data, true);
             mutex.unlock();
         }
     }
 
 } postRtEvents;
 
+void run5Tests();
 void run5Tests()
 {
-    unsigned short k = 0;
+    ushort k = 0;
     MyData allMyData[MAX_RT_EVENTS];
 
     // Make a safe copy of events while clearing them
@@ -85,7 +79,8 @@ void run5Tests()
 
     while (! postRtEvents.data.isEmpty())
     {
-        MyData& my(postRtEvents.data.getFirst(true));
+        static MyData fallback = { { '\0' }, 0 };
+        const MyData& my(postRtEvents.data.getFirst(fallback, true));
         allMyData[k++] = my;
     }
 
@@ -101,21 +96,21 @@ void run5Tests()
     assert(postRtEvents.dataPendingRT.isEmpty());
 
     // Handle events now
-    for (unsigned short i=0; i < k; ++i)
+    for (ushort i=0; i < k; ++i)
     {
         const MyData& my(allMyData[i]);
 
-        carla_stdout("Got data: %i %s", my.id, my.str.buffer());
+        carla_stdout("Got data: %i %s", my.id, my.str);
     }
 }
 
 int main()
 {
-    MyData m1(1);
-    MyData m2(2);
-    MyData m3(3);
-    MyData m4(4);
-    MyData m5(5);
+    MyData m1; m1.id = 1; std::strcpy(m1.str, "1");
+    MyData m2; m2.id = 2; std::strcpy(m2.str, "2");
+    MyData m3; m3.id = 3; std::strcpy(m3.str, "3");
+    MyData m4; m4.id = 4; std::strcpy(m4.str, "4");
+    MyData m5; m5.id = 5; std::strcpy(m5.str, "5");
 
     // start
     assert(postRtEvents.data.count() == 0);
@@ -125,6 +120,8 @@ int main()
 
     // single append
     postRtEvents.appendRT(m1);
+    assert(postRtEvents.data.count() == 0);
+    assert(postRtEvents.dataPendingRT.count() == 1);
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 1);
     assert(postRtEvents.dataPendingRT.count() == 0);
@@ -139,23 +136,27 @@ int main()
     assert(postRtEvents.data.count() == 4);
     assert(postRtEvents.dataPendingRT.count() == 0);
 
-    for (RtLinkedList<MyData>::Itenerator it = postRtEvents.data.begin(); it.valid(); it.next())
+    for (RtLinkedList<MyData>::Itenerator it = postRtEvents.data.begin2(); it.valid(); it.next())
     {
         const MyData& my(it.getValue());
 
-        carla_stdout("FOR DATA!!!: %i %s", my.id, my.str.buffer());
+        carla_stdout("FOR DATA!!!: %i %s", my.id, my.str);
 
-        if (my.id == 1)
+        if (my.id == 2)
         {
-            // +1 append at
+            // +1 append
             postRtEvents.dataPendingRT.insertAt(m5, it);
             assert(postRtEvents.data.count() == 4);
             assert(postRtEvents.dataPendingRT.count() == 1);
-            postRtEvents.trySplice();
-            assert(postRtEvents.data.count() == 5);
-            assert(postRtEvents.dataPendingRT.count() == 0);
         }
     }
+
+    for (const MyData& my : postRtEvents.data)
+        carla_stdout("FOR DATA!!! NEW AUTO Itenerator!!!: %i %s", my.id, my.str);
+
+    postRtEvents.trySplice();
+    assert(postRtEvents.data.count() == 5);
+    assert(postRtEvents.dataPendingRT.count() == 0);
 
     run5Tests();
 
@@ -179,7 +180,7 @@ int main()
     {
         for (size_t j=0, count=evIns.count(); j < count; ++j)
         {
-            const uint32_t& type(evIns.getAt(j));
+            const uint32_t& type(evIns.getAt(j, 0));
 
             if (type == CARLA_EVENT_DATA_ATOM)
                 pass();

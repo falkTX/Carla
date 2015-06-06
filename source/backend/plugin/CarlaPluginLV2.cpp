@@ -31,6 +31,7 @@
 #include "Lv2AtomRingBuffer.hpp"
 
 #include "../engine/CarlaEngineOsc.hpp"
+#include "../modules/lilv/config/lilv_config.h"
 
 extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
@@ -684,7 +685,7 @@ public:
             }
         }
 
-        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin(); it.valid(); it.next())
+        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin2(); it.valid(); it.next())
         {
             const char* const uri(it.getValue());
 
@@ -2962,7 +2963,7 @@ public:
                 {
                     const uint32_t j = fEventsIn.ctrlIndex;
 
-                    for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin(); it.valid(); it.next())
+                    for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin2(); it.valid(); it.next())
                     {
                         const ExternalMidiNote& note(it.getValue());
 
@@ -4353,7 +4354,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(stype != nullptr, LV2_STATE_ERR_BAD_TYPE);
 
         // Check if we already have this key
-        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
         {
             CustomData& data(it.getValue());
 
@@ -4402,7 +4403,7 @@ public:
         const char* stype = nullptr;
         const char* stringData = nullptr;
 
-        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin(); it.valid(); it.next())
+        for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
         {
             const CustomData& data(it.getValue());
 
@@ -4706,8 +4707,10 @@ public:
 
         if (pData->engine->getOptions().pathLV2 != nullptr && pData->engine->getOptions().pathLV2[0] != '\0')
             lv2World.initIfNeeded(pData->engine->getOptions().pathLV2);
+        else if (const char* const LV2_PATH = std::getenv("LV2_PATH"))
+            lv2World.initIfNeeded(LV2_PATH);
         else
-            lv2World.initIfNeeded(std::getenv("LV2_PATH"));
+            lv2World.initIfNeeded(LILV_DEFAULT_LV2_PATH);
 
         // ---------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)

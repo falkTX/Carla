@@ -91,7 +91,7 @@ ExternalGraphPorts::ExternalGraphPorts() noexcept
 
 const char* ExternalGraphPorts::getName(const bool isInput, const uint portId) const noexcept
 {
-    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
     {
         static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
@@ -107,7 +107,7 @@ const char* ExternalGraphPorts::getName(const bool isInput, const uint portId) c
 
 uint ExternalGraphPorts::getPortId(const bool isInput, const char portName[], bool* const ok) const noexcept
 {
-    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin() : outs.begin(); it.valid(); it.next())
+    for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
     {
         static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
 
@@ -230,7 +230,7 @@ bool ExternalGraph::disconnect(const uint connectionId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(connections.list.count() > 0, false);
 
-    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin2(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -347,7 +347,7 @@ void ExternalGraph::refresh(const char* const deviceName)
         const CarlaString groupName(strBuf);
 
         int h = 0;
-        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
             portNameToId.setFullName(groupName + portNameToId.name);
@@ -370,7 +370,7 @@ void ExternalGraph::refresh(const char* const deviceName)
         const CarlaString groupName(strBuf);
 
         int h = 0;
-        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
             portNameToId.setFullName(groupName + portNameToId.name);
@@ -387,7 +387,7 @@ void ExternalGraph::refresh(const char* const deviceName)
         const CarlaString groupNamePlus("Readable MIDI ports:");
 
         int h = 0;
-        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
@@ -404,7 +404,7 @@ void ExternalGraph::refresh(const char* const deviceName)
         const CarlaString groupNamePlus("Writable MIDI ports:");
 
         int h = 0;
-        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin(); it.valid(); it.next())
+        for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
@@ -425,7 +425,7 @@ const char* const* ExternalGraph::getConnections() const noexcept
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
 
-    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin2(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -692,7 +692,7 @@ void RackGraph::refresh(const char* const deviceName)
     // Connections
     const CarlaRecursiveMutexLocker cml(audioBuffers.mutex);
 
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin2(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
@@ -708,7 +708,7 @@ void RackGraph::refresh(const char* const deviceName)
         extGraph.connections.list.append(connectionToId);
     }
 
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin2(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
@@ -724,7 +724,7 @@ void RackGraph::refresh(const char* const deviceName)
         extGraph.connections.list.append(connectionToId);
     }
 
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin2(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
@@ -740,7 +740,7 @@ void RackGraph::refresh(const char* const deviceName)
         extGraph.connections.list.append(connectionToId);
     }
 
-    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
+    for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin2(); it.valid(); it.next())
     {
         const uint& portId(it.getValue(0));
         CARLA_SAFE_ASSERT_CONTINUE(portId > 0);
@@ -906,7 +906,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         bool noConnections = true;
 
         // connect input buffers
-        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn1.begin2(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
@@ -928,7 +928,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
         noConnections = true;
 
-        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedIn2.begin2(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
@@ -963,7 +963,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     // connect output buffers
     if (audioBuffers.connectedOut1.count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut1.begin2(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
@@ -975,7 +975,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
     if (audioBuffers.connectedOut2.count() != 0)
     {
-        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin(); it.valid(); it.next())
+        for (LinkedList<uint>::Itenerator it = audioBuffers.connectedOut2.begin2(); it.valid(); it.next())
         {
             const uint& port(it.getValue(0));
             CARLA_SAFE_ASSERT_CONTINUE(port > 0);
@@ -1578,7 +1578,7 @@ bool PatchbayGraph::disconnect(const uint connectionId)
     if (usingExternal)
         return extGraph.disconnect(connectionId);
 
-    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin2(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -1614,7 +1614,7 @@ void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
 {
     CARLA_SAFE_ASSERT(! usingExternal);
 
-    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin2(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 
@@ -1718,7 +1718,7 @@ const char* const* PatchbayGraph::getConnections(const bool external) const
 
     CarlaStringList connList;
 
-    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin(); it.valid(); it.next())
+    for (LinkedList<ConnectionToId>::Itenerator it=connections.list.begin2(); it.valid(); it.next())
     {
         static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
 

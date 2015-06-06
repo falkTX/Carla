@@ -628,7 +628,7 @@ CarlaPlugin::ProtectedData::~ProtectedData() noexcept
         iconName = nullptr;
     }
 
-    for (LinkedList<CustomData>::Itenerator it = custom.begin(); it.valid(); it.next())
+    for (LinkedList<CustomData>::Itenerator it = custom.begin2(); it.valid(); it.next())
     {
         CustomData& customData(it.getValue(kCustomDataFallbackNC));
         //CARLA_SAFE_ASSERT_CONTINUE(customData.isValid());

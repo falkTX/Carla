@@ -125,11 +125,11 @@ public:
         fMemPool.resize(minPreallocated, maxPreallocated);
     }
 
-    void moveTo(RtLinkedList<T>& list, const bool inTail) noexcept
+    bool moveTo(RtLinkedList<T>& list, const bool inTail) noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool,);
+        CARLA_SAFE_ASSERT_RETURN(fMemPool == list.fMemPool, false);
 
-        AbstractLinkedList<T>::moveTo(list, inTail);
+        return AbstractLinkedList<T>::moveTo(list, inTail);
     }
 
 protected:

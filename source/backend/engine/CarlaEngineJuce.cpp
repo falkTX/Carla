@@ -203,7 +203,7 @@ public:
 
         pData->graph.destroy();
 
-        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin2(); it.valid(); it.next())
         {
             MidiInPort& inPort(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
@@ -217,7 +217,7 @@ public:
 
         fMidiOutMutex.lock();
 
-        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin2(); it.valid(); it.next())
         {
             MidiOutPort& outPort(it.getValue());
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
@@ -348,7 +348,7 @@ public:
         // ---------------------------------------------------------------
         // add midi connections
 
-        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
         {
             const MidiInPort& inPort(it.getValue());
 
@@ -367,7 +367,7 @@ public:
 
         fMidiOutMutex.lock();
 
-        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
         {
             const MidiOutPort& outPort(it.getValue());
 
@@ -438,7 +438,7 @@ protected:
             uint32_t engineEventIndex = 0;
             fMidiInEvents.splice();
 
-            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin(); it.valid(); it.next())
+            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin2(); it.valid(); it.next())
             {
                 const RtMidiEvent& midiEvent(it.getValue());
                 EngineEvent&       engineEvent(pData->events.in[engineEventIndex++]);
@@ -508,7 +508,7 @@ protected:
                 {
                     MidiMessage message(static_cast<const void*>(dataPtr), static_cast<int>(size), static_cast<double>(engineEvent.time)/nframes);
 
-                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
                     {
                         MidiOutPort& outPort(it.getValue());
                         CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
@@ -633,7 +633,7 @@ protected:
             return CarlaEngine::disconnectExternalGraphPort(connectionType, portId, portName);
 
         case kExternalGraphConnectionMidiInput:
-            for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+            for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
             {
                 MidiInPort& inPort(it.getValue());
                 CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
@@ -652,7 +652,7 @@ protected:
         case kExternalGraphConnectionMidiOutput: {
             const CarlaMutexLocker cml(fMidiOutMutex);
 
-            for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+            for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
             {
                 MidiOutPort& outPort(it.getValue());
                 CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);

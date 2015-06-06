@@ -57,10 +57,8 @@ static void initRtAudioAPIsIfNeeded()
     std::vector<RtAudio::Api> apis;
     RtAudio::getCompiledApi(apis);
 
-    for (std::vector<RtAudio::Api>::iterator it = apis.begin(), end = apis.end(); it != end; ++it)
+    for (const RtAudio::Api& api : apis)
     {
-        const RtAudio::Api& api(*it);
-
         if (api == RtAudio::MACOSX_CORE)
             continue;
         if (api == RtAudio::WINDOWS_ASIO)
@@ -339,7 +337,7 @@ public:
 
         pData->graph.destroy();
 
-        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin2(); it.valid(); it.next())
         {
             static MidiInPort fallback = { nullptr, { '\0' } };
 
@@ -356,7 +354,7 @@ public:
 
         fMidiOutMutex.lock();
 
-        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin2(); it.valid(); it.next())
         {
             static MidiOutPort fallback = { nullptr, { '\0' } };
 
@@ -480,7 +478,7 @@ public:
         // ---------------------------------------------------------------
         // add midi connections
 
-        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+        for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
         {
             static const MidiInPort fallback = { nullptr, { '\0' } };
 
@@ -503,7 +501,7 @@ public:
 
         fMidiOutMutex.lock();
 
-        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+        for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
         {
             static const MidiOutPort fallback = { nullptr, { '\0' } };
 
@@ -609,7 +607,7 @@ protected:
             uint32_t engineEventIndex = 0;
             fMidiInEvents.splice();
 
-            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin(); it.valid(); it.next())
+            for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin2(); it.valid(); it.next())
             {
                 static const RtMidiEvent fallback = { 0, 0, { 0 } };
 
@@ -683,7 +681,7 @@ protected:
                 {
                     fMidiOutVector.assign(dataPtr, dataPtr + size);
 
-                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+                    for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
                     {
                         static MidiOutPort fallback = { nullptr, { '\0' } };
 
@@ -869,7 +867,7 @@ protected:
             return CarlaEngine::disconnectExternalGraphPort(connectionType, portId, portName);
 
         case kExternalGraphConnectionMidiInput:
-            for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin(); it.valid(); it.next())
+            for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
             {
                 static MidiInPort fallback = { nullptr, { '\0' } };
 
@@ -891,7 +889,7 @@ protected:
         case kExternalGraphConnectionMidiOutput: {
             const CarlaMutexLocker cml(fMidiOutMutex);
 
-            for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin(); it.valid(); it.next())
+            for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
             {
                 static MidiOutPort fallback = { nullptr, { '\0' } };
 

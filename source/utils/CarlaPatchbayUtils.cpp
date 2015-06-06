@@ -24,7 +24,7 @@ uint PatchbayGroupList::getGroupId(const char* const groupName) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(groupName != nullptr && groupName[0] != '\0', 0);
 
-    for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
+    for (LinkedList<GroupNameToId>::Itenerator it = list.begin2(); it.valid(); it.next())
     {
         const GroupNameToId& groupNameToId(it.getValue(kGroupNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
@@ -40,7 +40,7 @@ const char* PatchbayGroupList::getGroupName(const uint groupId) const noexcept
 {
     static const char fallback[] = { '\0' };
 
-    for (LinkedList<GroupNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
+    for (LinkedList<GroupNameToId>::Itenerator it = list.begin2(); it.valid(); it.next())
     {
         const GroupNameToId& groupNameToId(it.getValue(kGroupNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
@@ -56,7 +56,7 @@ const char* PatchbayPortList::getFullPortName(const uint groupId, const uint por
 {
     static const char fallback[] = { '\0' };
 
-    for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
+    for (LinkedList<PortNameToId>::Itenerator it = list.begin2(); it.valid(); it.next())
     {
         const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
@@ -72,7 +72,7 @@ const PortNameToId& PatchbayPortList::getPortNameToId(const char* const fullPort
 {
     CARLA_SAFE_ASSERT_RETURN(fullPortName != nullptr && fullPortName[0] != '\0', kPortNameToIdFallback);
 
-    for (LinkedList<PortNameToId>::Itenerator it = list.begin(); it.valid(); it.next())
+    for (LinkedList<PortNameToId>::Itenerator it = list.begin2(); it.valid(); it.next())
     {
         const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);

@@ -34,7 +34,7 @@ public:
     ~LibCounter() noexcept
     {
         // might have some leftovers
-        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin2(); it.valid(); it.next())
         {
             static Lib libFallback = { nullptr, nullptr, 0, false };
 
@@ -73,7 +73,7 @@ public:
 
         const CarlaMutexLocker cml(fMutex);
 
-        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin2(); it.valid(); it.next())
         {
             static Lib libFallback = { nullptr, nullptr, 0, false };
 
@@ -118,7 +118,7 @@ public:
 
         const CarlaMutexLocker cml(fMutex);
 
-        for (LinkedList<Lib>::Itenerator it = fLibs.begin(); it.valid(); it.next())
+        for (LinkedList<Lib>::Itenerator it = fLibs.begin2(); it.valid(); it.next())
         {
             static Lib libFallback = { nullptr, nullptr, 0, false };
 
