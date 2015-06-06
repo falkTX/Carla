@@ -379,15 +379,13 @@ public:
     // -------------------------------------------------------------------
     // Information (current data)
 
-#if 0
     std::size_t getChunkData(void** const dataPtr) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fUsesCustomData, 0);
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS, 0);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr, 0);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->get_custom_data != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fHandles.count() > 0, 0);
         CARLA_SAFE_ASSERT_RETURN(dataPtr != nullptr, 0);
 
         *dataPtr = nullptr;
@@ -396,12 +394,11 @@ public:
         ulong dataSize = 0;
 
         try {
-            ret = fDssiDescriptor->get_custom_data(fHandle, dataPtr, &dataSize);
+            ret = fDssiDescriptor->get_custom_data(fHandles.getFirst(nullptr), dataPtr, &dataSize);
         } CARLA_SAFE_EXCEPTION_RETURN("CarlaPluginDSSI::getChunkData", 0);
 
         return (ret != 0) ? dataSize : 0;
     }
-#endif
 
     // -------------------------------------------------------------------
     // Information (per-plugin data)
@@ -550,11 +547,9 @@ public:
         CarlaPlugin::setParameterValue(parameterId, fixedValue, sendGui, sendOsc, sendCallback);
     }
 
-#if 0
     void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
@@ -566,16 +561,15 @@ public:
         if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) != 0)
             return carla_stderr2("CarlaPluginDSSI::setCustomData(\"%s\", \"%s\", \"%s\", %s) - type is not string", type, key, value, bool2str(sendGui));
 
-        if (fDssiDescriptor->configure != nullptr)
+        if (fDssiDescriptor->configure != nullptr && fHandles.count() > 0)
         {
-            try {
-                fDssiDescriptor->configure(fHandle, key, value);
-            } catch(...) {}
-
-            if (fHandle2 != nullptr)
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                 try {
-                    fDssiDescriptor->configure(fHandle2, key, value);
+                    fDssiDescriptor->configure(handle, key, value);
                 } catch(...) {}
             }
         }
@@ -600,17 +594,22 @@ public:
         CARLA_SAFE_ASSERT_RETURN(pData->options & PLUGIN_OPTION_USE_CHUNKS,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->set_custom_data != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle2 == nullptr,);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
+        if (fHandles.count() > 0)
         {
             const ScopedSingleProcessLocker spl(this, true);
 
-            try {
-                fDssiDescriptor->set_custom_data(fHandle, const_cast<void*>(data), static_cast<ulong>(dataSize));
-            } CARLA_SAFE_EXCEPTION("CarlaPluginDSSI::setChunkData");
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
+            {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
+                try {
+                    fDssiDescriptor->set_custom_data(handle, const_cast<void*>(data), static_cast<ulong>(dataSize));
+                } CARLA_SAFE_EXCEPTION("CarlaPluginDSSI::setChunkData");
+            }
         }
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
@@ -625,31 +624,28 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDssiDescriptor->select_program != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(index >= -1 && index < static_cast<int32_t>(pData->midiprog.count),);
 
-        if (index >= 0)
+        if (index >= 0 && fHandles.count() > 0)
         {
             const uint32_t bank(pData->midiprog.data[index].bank);
             const uint32_t program(pData->midiprog.data[index].program);
 
             const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
-            try {
-                fDssiDescriptor->select_program(fHandle, bank, program);
-            } catch(...) {}
-
-            if (fHandle2 != nullptr)
+            for (LinkedList<LADSPA_Handle>::Itenerator it = fHandles.begin2(); it.valid(); it.next())
             {
+                LADSPA_Handle const handle(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(handle != nullptr);
+
                 try {
-                    fDssiDescriptor->select_program(fHandle2, bank, program);
+                    fDssiDescriptor->select_program(handle, bank, program);
                 } catch(...) {}
             }
         }
 
         CarlaPlugin::setMidiProgram(index, sendGui, sendOsc, sendCallback);
     }
-#endif
 
 #ifdef HAVE_LIBLO
     // -------------------------------------------------------------------
@@ -1194,10 +1190,13 @@ public:
         carla_debug("CarlaPluginDSSI::reload() - end");
     }
 
-#if 0
     void reloadPrograms(const bool doInit) override
     {
         carla_debug("CarlaPluginDSSI::reloadPrograms(%s)", bool2str(doInit));
+
+        const LADSPA_Handle handle(fHandles.getFirst(nullptr));
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
         const uint32_t oldCount = pData->midiprog.count;
         const int32_t  current  = pData->midiprog.current;
 
@@ -1208,7 +1207,7 @@ public:
         uint32_t newCount = 0;
         if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
         {
-            for (; fDssiDescriptor->get_program(fHandle, newCount) != nullptr;)
+            for (; fDssiDescriptor->get_program(handle, newCount) != nullptr;)
                 ++newCount;
         }
 
@@ -1219,7 +1218,7 @@ public:
             // Update data
             for (uint32_t i=0; i < newCount; ++i)
             {
-                const DSSI_Program_Descriptor* const pdesc(fDssiDescriptor->get_program(fHandle, i));
+                const DSSI_Program_Descriptor* const pdesc(fDssiDescriptor->get_program(handle, i));
                 CARLA_SAFE_ASSERT_CONTINUE(pdesc != nullptr);
                 CARLA_SAFE_ASSERT(pdesc->Name != nullptr);
 
@@ -1286,7 +1285,6 @@ public:
             pData->engine->callback(ENGINE_CALLBACK_RELOAD_PROGRAMS, pData->id, 0, 0, 0.0f, nullptr);
         }
     }
-#endif
 
     // -------------------------------------------------------------------
     // Plugin processing
