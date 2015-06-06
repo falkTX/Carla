@@ -720,9 +720,14 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no cleanup()");
             continue;
         }
-        if (ldescriptor->run == nullptr && descriptor->run_synth == nullptr && descriptor->run_multiple_synths == nullptr)
+        if (ldescriptor->run == nullptr && descriptor->run_synth == nullptr)
         {
-            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no run(), run_synth() or run_multiple_synths()");
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' has no run() or run_synth()");
+            continue;
+        }
+        if (descriptor->run_synth == nullptr && descriptor->run_multiple_synths != nullptr)
+        {
+            DISCOVERY_OUT("error", "Plugin '" << ldescriptor->Name << "' requires run_multiple_synths which is not supported");
             continue;
         }
         if (! LADSPA_IS_HARD_RT_CAPABLE(ldescriptor->Properties))
@@ -767,7 +772,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             }
         }
 
-        if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
+        if (descriptor->run_synth != nullptr)
             midiIns = 1;
 
         if (midiIns > 0 && audioIns == 0 && audioOuts > 0)
@@ -881,7 +886,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
             if (ldescriptor->activate != nullptr)
                 ldescriptor->activate(handle);
 
-            if (descriptor->run_synth != nullptr || descriptor->run_multiple_synths != nullptr)
+            if (descriptor->run_synth != nullptr)
             {
                 snd_seq_event_t midiEvents[2];
                 carla_zeroStruct<snd_seq_event_t>(midiEvents, 2);
@@ -897,15 +902,7 @@ static void do_dssi_check(lib_t& libHandle, const char* const filename, const bo
                 midiEvents[1].data.note.velocity = 0;
                 midiEvents[1].time.tick = kBufferSize/2;
 
-                if (descriptor->run_multiple_synths != nullptr && descriptor->run_synth == nullptr)
-                {
-                    LADSPA_Handle handlePtr[1] = { handle };
-                    snd_seq_event_t* midiEventsPtr[1] = { midiEvents };
-                    unsigned long midiEventCountPtr[1] = { midiEventCount };
-                    descriptor->run_multiple_synths(1, handlePtr, kBufferSize, midiEventsPtr, midiEventCountPtr);
-                }
-                else
-                    descriptor->run_synth(handle, kBufferSize, midiEvents, midiEventCount);
+                descriptor->run_synth(handle, kBufferSize, midiEvents, midiEventCount);
             }
             else
                 ldescriptor->run(handle, kBufferSize);

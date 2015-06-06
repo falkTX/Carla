@@ -38,9 +38,9 @@ public:
           fExtraStereoBuffer(),
           fParamBuffers(nullptr),
           fLatencyIndex(-1),
-          fIsDssiVst(false),
           fForcedStereoIn(false),
           fForcedStereoOut(false),
+          fIsDssiVst(false),
           leakDetector_CarlaPluginLADSPA()
     {
         carla_debug("CarlaPluginLADSPA::CarlaPluginLADSPA(%p, %i)", engine, id);
@@ -426,6 +426,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fHandles.count() > 0,);
         carla_debug("CarlaPluginLADSPA::reload() - start");
 
         const EngineProcessMode processMode(pData->engine->getProccessMode());
@@ -1105,7 +1106,8 @@ public:
         } // End of Control Output
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames, const uint32_t timeOffset)
+    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames,
+                       const uint32_t timeOffset)
     {
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
 
@@ -1728,9 +1730,9 @@ private:
     float*  fParamBuffers;
 
     int32_t fLatencyIndex; // -1 if invalid
-    bool    fIsDssiVst;
     bool    fForcedStereoIn;
     bool    fForcedStereoOut;
+    bool    fIsDssiVst;
 
     // -------------------------------------------------------------------
 
