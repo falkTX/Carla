@@ -396,19 +396,73 @@ int main(int argc, char* argv[])
     // ---------------------------------------------------------------------
     // Set client name
 
-    CarlaString clientName(name != nullptr ? name : label);
+    CarlaString clientName;
 
-    // LV2 URI is not usable as client name
-    //if (itype == CarlaBackend::PLUGIN_LV2 && clientName == label)
+    if (name != nullptr)
     {
-
+        clientName = name;
     }
+    else if (itype == CarlaBackend::PLUGIN_LV2)
+    {
+        // LV2 requires URI
+        CARLA_SAFE_ASSERT_RETURN(label != nullptr && label[0] != '\0', 1);
 
-    if (clientName.isEmpty())
+        // LV2 URI is not usable as client name, create a usable name from URI
+        CarlaString label2(label);
+
+        // truncate until last valid char
+        for (std::size_t i=label2.length()-1; i != 0; --i)
+        {
+            if (! std::isalnum(label2[i]))
+                continue;
+
+            label2.truncate(i+1);
+            break;
+        }
+
+        // get last used separator
+        bool found;
+        std::size_t septmp, sep = 0;
+
+        septmp = label2.rfind('#', &found)+1;
+        if (found && septmp > sep)
+            sep = septmp;
+
+        septmp = label2.rfind('/', &found)+1;
+        if (found && septmp > sep)
+            sep = septmp;
+
+        septmp = label2.rfind('=', &found)+1;
+        if (found && septmp > sep)
+            sep = septmp;
+
+        septmp = label2.rfind(':', &found)+1;
+        if (found && septmp > sep)
+            sep = septmp;
+
+        // make name starting from the separator and first valid char
+        const char* name2 = label2.buffer() + sep;
+        for (; *name2 != '\0' && ! std::isalnum(*name2); ++name2) {}
+
+        if (*name2 != '\0')
+            clientName = name2;
+    }
+    else if (label != nullptr)
+    {
+        clientName = label;
+    }
+    else
     {
         const String jfilename = String(CharPointer_UTF8(filename));
         clientName = File(jfilename).getFileNameWithoutExtension().toRawUTF8();
     }
+
+    // if we still have no client name by now, use a dummy one
+    if (clientName.isEmpty())
+        clientName = "carla-plugin";
+
+    // just to be safe
+    clientName.toBasic();
 
     // ---------------------------------------------------------------------
     // Set extraStuff
