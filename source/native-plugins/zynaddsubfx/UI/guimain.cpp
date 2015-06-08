@@ -328,13 +328,15 @@ class UI_Interface:public Fl_Osc_Interface
 
         void write(string s, const char *args, ...) override
         {
+            char buffer[4096];
             va_list va;
             va_start(va, args);
+            rtosc_vmessage(buffer, sizeof(buffer), s.c_str(), args, va);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 4 + 30, 0 + 40);
             ////fprintf(stderr, ".");
             //fprintf(stderr, "write(%s:%s)\n", s.c_str(), args);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            transmitMsg(s.c_str(), args, va);
+            transmitMsg(buffer);
             va_end(va);
         }
 
