@@ -38,6 +38,18 @@ using std::isnan;
 // C-code includes
 extern "C" {
 #include "zynaddsubfx/tlsf/tlsf.c"
+#undef TLSF_64BIT
+#undef tlsf_decl
+#undef tlsf_fls_sizet
+#undef tlsf_cast
+#undef tlsf_min
+#undef tlsf_max
+#undef tlsf_assert
+#undef _tlsf_glue2
+#undef _tlsf_glue
+#undef tlsf_static_assert
+#undef tlsf_insist
+
 #include "zynaddsubfx/rtosc/dispatch.c"
 #include "zynaddsubfx/rtosc/rtosc.c"
 }

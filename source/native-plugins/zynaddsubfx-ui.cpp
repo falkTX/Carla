@@ -55,9 +55,14 @@ extern "C" {
 // rtosc c++ includes
 #include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
 #include "zynaddsubfx/rtosc/cpp/miditable.cpp"
+#undef RTOSC_INVALID_MIDI
+#undef MAX_UNHANDLED_PATH
 #include "zynaddsubfx/rtosc/cpp/ports.cpp"
+#undef __builtin_expect
 #include "zynaddsubfx/rtosc/cpp/subtree-serialize.cpp"
 #include "zynaddsubfx/rtosc/cpp/thread-link.cpp"
+#undef off_t
+#undef static
 #include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
 // zynaddsubfx ui includes
