@@ -3,15 +3,16 @@
 #include <vector>
 #include "Fl_Osc_Widget.H"
 #include <FL/Fl_Browser.H>
+#include "Osc_SimpleListModel.h"
 
-class Fl_Osc_ListView:public Fl_Browser, public Fl_Osc_Widget
+class Fl_Osc_ListView:public Fl_Browser, Fl_Osc_Widget
 {
     public:
         Fl_Osc_ListView(int x,int y, int w, int h, const char *label=0);
         virtual ~Fl_Osc_ListView(void);
         
         void init(const char *path_);
-        void OSC_raw(const char *msg);
+        void doUpdate(Osc_SimpleListModel::list_t l);
         void update(void);
 
         void insert(std::string s, int offset);
@@ -21,5 +22,5 @@ class Fl_Osc_ListView:public Fl_Browser, public Fl_Osc_Widget
     private:
         void sendUpdate() const;
         std::string path;
-        std::vector<std::string> data;
+        Osc_SimpleListModel *data;
 };

@@ -1,3 +1,4 @@
+#pragma once
 #include "Fl_Osc_Widget.H"
 #include <functional>
 #include <vector>

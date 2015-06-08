@@ -5,6 +5,7 @@
 #include "MidiIn.h"
 #include "AudioOut.h"
 #include "WavEngine.h"
+#include <cstring>
 #include <iostream>
 #include <algorithm>
 using std::string;
@@ -118,9 +119,18 @@ string Nio::getSink()
 #include <jack/jack.h>
 void Nio::preferedSampleRate(unsigned &rate)
 {
-    //XXX hello non portable code
-    if(system("ps aux | grep jack"))
+#if __linux__
+    //avoid checking in with jack if it's off
+    FILE *ps = popen("ps aux", "r");
+    char buffer[4096];
+    while(fgets(buffer, sizeof(buffer), ps))
+        if(strstr(buffer, "jack"))
+            break;
+    fclose(ps);
+
+    if(!strstr(buffer, "jack"))
         return;
+#endif
 
     jack_client_t *client = jack_client_open("temp-client",
                                              JackNoStartServer, 0);

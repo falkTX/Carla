@@ -81,7 +81,7 @@ return(1);} {}
   }
   Function {OSC_value(char c)} {open return_type void
   } {
-    code {value(127-c);} {}
+    code {value(127-c+fmodf(value(), 1.0f));} {}
   }
   decl {bool bw;} {public local
   }

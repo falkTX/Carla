@@ -1,3 +1,4 @@
+#pragma once
 #include "Fl_Osc_Widget.H"
 #include <functional>
 #include <vector>
@@ -7,7 +8,7 @@ class Osc_DataModel:public Fl_Osc_Widget
 {
     public:
         Osc_DataModel(Fl_Osc_Interface *osc_)
-            :Fl_Osc_Widget("", osc_), list_size(0)
+            :Fl_Osc_Widget("", osc_)
         {
             assert(osc);
         }
@@ -15,7 +16,6 @@ class Osc_DataModel:public Fl_Osc_Widget
         typedef std::string value_t;
         value_t value;
         std::function<void(value_t)> callback;
-        unsigned list_size;
 
         void update(std::string url)
         {

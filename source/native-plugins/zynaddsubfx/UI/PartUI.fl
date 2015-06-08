@@ -828,7 +828,7 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
         class Fl_Osc_Group
       } {
         Fl_Box {} {
-          xywh {0 0 0 0}
+          xywh {0 220 0 0}
           code0 {editgroup->ext = "kit0/";}
         }
         Fl_Group {} {

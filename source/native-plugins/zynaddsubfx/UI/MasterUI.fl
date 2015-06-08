@@ -17,7 +17,9 @@ decl {\#include <stdio.h>} {public local
 decl {\#include <string.h>} {public local
 } 
 
-decl {\#include "zynaddsubfx.xbm"} {private local
+decl {\#if defined(__linux__) && ! defined(PLUGINVERSION)
+\#include "zynaddsubfx.xpm"
+\#endif} {public local
 } 
 
 decl {\#include "WidgetPDial.h"} {public local
@@ -74,6 +76,11 @@ extern NSM_Client *nsm;
 \#endif} {public local
 } 
 
+decl {\#if defined(__linux__) && ! defined(PLUGINVERSION)
+\#include <X11/xpm.h>
+\#endif} {public local
+} 
+
 decl {\#include "../globals.h"} {public local
 } 
 
@@ -105,7 +112,7 @@ class Panellistitem {open : {public Fl_Osc_Group}
   Function {make_window()} {open private
   } {
     Fl_Window panellistitem {open
-      private xywh {638 721 100 260} type Double box NO_BOX
+      private xywh {632 715 100 260} type Double box NO_BOX
       class Fl_Group visible
     } {
       Fl_Group panellistitemgroup {open
@@ -240,7 +247,7 @@ class MasterUI {open
         class Fl_Osc_Group
       } {
         Fl_Menu_Bar mastermenu {
-          xywh {0 5 690 25}
+          xywh {0 0 390 25}
         } {
           Submenu {} {
             label {&File}
@@ -449,13 +456,13 @@ if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
         }
         Fl_Dial mastervolumedial {
           label {Master Volume}
-          tooltip {Master Volume} xywh {20 37 55 55} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1
+          tooltip {Master Volume} xywh {15 32 55 55} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1
           code2 {o->init("volume");}
           class Fl_Osc_Dial
         }
         Fl_Counter masterkeyshiftcounter {
           label {Master KeyShift}
-          xywh {155 102 120 23} type Simple labelsize 9 minimum -64 maximum 64 step 1
+          xywh {150 97 120 23} type Simple labelsize 9 minimum -64 maximum 64 step 1
           code0 {o->lstep(12);}
           code1 {o->init("Pkeyshift",'i',-64);}
           class Fl_Osc_Counter
@@ -464,25 +471,25 @@ if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
           label {Panic!}
           callback {virkeyboard->releaseallkeys();
           o->oscWrite("Panic");}
-          xywh {285 34 105 53} color 90 labelfont 1
+          xywh {280 29 105 53} color 90 labelfont 1
           class Fl_Osc_Button
         }
         Fl_Group partuigroup {open
-          xywh {5 315 390 205}
+          xywh {0 310 390 205}
         } {
           Fl_Group partui {open
-            xywh {5 315 383 175}
+            xywh {0 310 383 175}
             code0 {o->init("/part0/", 0,bankui,"/part0/", osc);}
             code1 {o->show();}
             class PartUI
           } {}
         }
         Fl_Tabs {} {open
-          xywh {5 150 390 165} box UP_FRAME
+          xywh {0 145 390 165} box UP_FRAME
         } {
           Fl_Group {} {
             label {System Effects} open
-            xywh {5 167 390 145} labelsize 15 align 9
+            xywh {0 162 390 145} labelsize 15 align 9
           } {
             Fl_Counter syseffnocounter {
               label {Sys.Effect No.}
@@ -490,7 +497,7 @@ if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
               syseffectuigroup->reext("sysefx"+to_s(nsyseff)+"/");
               sysefftype->oscMove("sysefx"+to_s(nsyseff)+"/efftype");
 syseffectui->refresh();}
-              xywh {10 186 80 22} type Simple labelfont 1 labelsize 10 align 1 minimum 0 maximum 127 step 1 value 1 textfont 1
+              xywh {5 181 80 22} type Simple labelfont 1 labelsize 10 align 1 minimum 0 maximum 127 step 1 value 1 textfont 1
               code0 {o->bounds(1,NUM_SYS_EFX);}
               code1 {o->value(nsyseff+1);}
             }
@@ -498,7 +505,7 @@ syseffectui->refresh();}
               label EffType
               callback {syseffectui->efftype = o->value();
 syseffectui->refresh();}
-              xywh {290 181 100 22} down_box BORDER_BOX labelsize 10
+              xywh {285 176 100 22} down_box BORDER_BOX labelsize 10
               code0 {o->init("sysefx"+to_s(nsyseff)+"/efftype");}
               class Fl_Osc_Choice
             } {
@@ -540,15 +547,15 @@ syseffectui->refresh();}
               }
             }
             Fl_Group syseffectuigroup {
-              xywh {10 208 380 95} color 48
+              xywh {5 203 380 95} color 48
               class Fl_Osc_Group
             } {
               Fl_Box {} {
-                xywh {0 0 0 0}
+                xywh {5 203 0 0}
                 code0 {syseffectuigroup->ext = "sysefx0/";}
               }
               Fl_Group syseffectui {
-                xywh {10 208 380 95}
+                xywh {5 203 380 95}
                 code0 {o->init(false);}
                 class EffUI
               } {}
@@ -556,22 +563,22 @@ syseffectui->refresh();}
             Fl_Button {} {
               label {Send to...}
               callback {syseffsendwindow->show();}
-              xywh {95 186 85 22} box THIN_UP_BOX labelfont 1 labelsize 11
+              xywh {90 181 85 22} box THIN_UP_BOX labelfont 1 labelsize 11
             }
             Fl_Button {} {
               label C
               callback {presetsui->copy("/sysefx"+to_s(nsyseff)+"/");}
-              xywh {185 192 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
+              xywh {180 187 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
             }
             Fl_Button {} {
               label P
               callback { presetsui->paste("/sysefx"+to_s(nsyseff)+"/",syseffectui);} selected
-              xywh {215 192 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+              xywh {210 187 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
             }
           }
           Fl_Group {} {
             label {Insertion Effects} open
-            xywh {5 170 390 145} labelsize 15 align 9 hide
+            xywh {0 165 390 145} labelsize 15 align 9 hide
           } {
             Fl_Counter inseffnocounter {
               label {Ins.Effect No.}
@@ -594,7 +601,7 @@ if (master->Pinsparts[ninseff]!=-1) {
  	inseffectui->deactivate();
         inseffectuigroup->deactivate();
 };*/}
-              xywh {10 188 80 22} type Simple labelfont 1 labelsize 10 align 1 minimum 0 maximum 127 step 1 value 1 textfont 1
+              xywh {5 183 80 22} type Simple labelfont 1 labelsize 10 align 1 minimum 0 maximum 127 step 1 value 1 textfont 1
               code0 {o->bounds(1,NUM_INS_EFX);}
               code1 {o->value(ninseff+1);}
             }
@@ -606,7 +613,7 @@ pthread_mutex_unlock(&master->mutex);*/
 inseffectui->efftype = o->value();
 inseffectui->refresh();
 inseffectui->show();}
-              xywh {290 178 100 22} down_box BORDER_BOX labelsize 10
+              xywh {285 173 100 22} down_box BORDER_BOX labelsize 10
               code0 {/*o->value(master->insefx[ninseff]->geteffect());*/}
               code1 {/*if (master->Pinsparts[ninseff]== -1) o->deactivate();*/}
               code2 {o->init("insefx"+to_s(ninseff)+"/efftype");}
@@ -650,15 +657,15 @@ inseffectui->show();}
               }
             }
             Fl_Group inseffectuigroup {open
-              xywh {10 210 380 95} box FLAT_BOX color 48
+              xywh {5 205 380 95} box FLAT_BOX color 48
               class Fl_Osc_Group
             } {
               Fl_Box {} {
-                xywh {0 0 0 0}
+                xywh {5 205 0 0}
                 code0 {inseffectuigroup->ext = "insefx0/";}
               }
               Fl_Group inseffectui {
-                xywh {10 210 380 90} box UP_FRAME
+                xywh {5 205 380 90} box UP_FRAME
                 code0 {o->init(true);}
                 class EffUI
               } {}
@@ -676,7 +683,7 @@ if ((int) o->value()==1){
     inseffectui->activate();
 };
 /*master->insefx[ninseff]->cleanup();*/} open
-              xywh {100 188 80 22} down_box BORDER_BOX labelfont 1 labelsize 10 align 5 textsize 10
+              xywh {95 183 80 22} down_box BORDER_BOX labelfont 1 labelsize 10 align 5 textsize 10
               code0 {o->add("Master Out");o->add("Off");}
               code1 {char tmp[50]; for (int i=0;i<NUM_MIDI_PARTS;i++) {sprintf(tmp,"Part %2d",i+1);o->add(tmp);};}
               code3 {o->init("Pinsparts"+to_s(ninseff),-2);}
@@ -685,22 +692,22 @@ if ((int) o->value()==1){
             Fl_Button {} {
               label C
               callback {presetsui->copy(inseffectuigroup->loc());}
-              xywh {185 190 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+              xywh {180 185 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
             }
             Fl_Button {} {
               label P
               callback {presetsui->paste(inseffectuigroup->loc(),inseffectui);}
-              xywh {215 190 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+              xywh {210 185 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
             }
           }
         }
         Fl_Button {} {
           label Scales
           callback {microtonalui->show();}
-          xywh {325 92 65 23} color 51 labelfont 1
+          xywh {320 87 65 23} color 51 labelfont 1
         }
         Fl_Group {} {
-          xywh {155 45 117 45} box UP_FRAME
+          xywh {150 40 117 45} box UP_FRAME
         } {
           Fl_Button recordbutton {
             label {Rec.}
@@ -713,7 +720,7 @@ pauselabel->activate();
 o->oscWrite("HDDRecorder/start");
 o->oscWrite("resetvu");
 mastermenu->redraw();}
-            tooltip {Start Recording} xywh {164 51 21 21} box ROUND_UP_BOX color 88 labelfont 1 labelsize 10 align 2 deactivate
+            tooltip {Start Recording} xywh {159 46 21 21} box ROUND_UP_BOX color 88 labelfont 1 labelsize 10 align 2 deactivate
             class Fl_Osc_Button
           }
           Fl_Button stopbutton {
@@ -726,7 +733,7 @@ pauselabel->deactivate();
 recordmenu->activate();
 recordmenu->label("&Record");
 mastermenu->redraw();}
-            tooltip {Stop Recording and close the audio file} xywh {242 51 21 21} box THIN_UP_BOX color 4 labelfont 1 labelsize 10 align 2 deactivate
+            tooltip {Stop Recording and close the audio file} xywh {237 46 21 21} box THIN_UP_BOX color 4 labelfont 1 labelsize 10 align 2 deactivate
             class Fl_Osc_Button
           }
           Fl_Button pausebutton {
@@ -735,27 +742,27 @@ mastermenu->redraw();}
 o->oscWrite("HDDRecorder/pause");
 recordbutton->activate();
 mastermenu->redraw();}
-            tooltip {Pause Recording} xywh {203 51 21 21} box THIN_UP_BOX color 4 selection_color 4 labelfont 1 labelcolor 3 align 16 deactivate
+            tooltip {Pause Recording} xywh {198 46 21 21} box THIN_UP_BOX color 4 selection_color 4 labelfont 1 labelcolor 3 align 16 deactivate
             class Fl_Osc_Button
           }
           Fl_Box pauselabel {
             label Pause
-            xywh {197 71 30 15} labelfont 1 labelsize 10 deactivate
+            xywh {192 66 30 15} labelfont 1 labelsize 10 deactivate
           }
         }
         Fl_Group {} {
-          xywh {6 495 389 55}
+          xywh {1 490 389 55}
         } {
           Fl_Box mastervu {
             label {VU-Meter}
-            xywh {10 495 380 30} box FLAT_BOX color 48 selection_color 75
+            xywh {5 490 380 30} box FLAT_BOX color 48 selection_color 75
             code0 {o->init(osc);}
             class VuMasterMeter
           }
         }
         Fl_Check_Button nrpnbutton {
           label NRPN
-          tooltip {Receive NRPNs} xywh {15 120 60 25} down_box DOWN_BOX labelsize 12
+          tooltip {Receive NRPNs} xywh {10 115 60 25} down_box DOWN_BOX labelsize 12
           code0 {o->init("ctl/NRPN.receive");}
           class Fl_Osc_Check
         }
@@ -777,27 +784,27 @@ partui->rebase("/part"+to_s(npart)+"/");
 updatepanel();
 simplenpartcounter->value(nval+1);
 simplenpartcounter->do_callback();}
-          tooltip {The part number} xywh {10 317 50 18} type Simple labelfont 1 minimum 0 maximum 127 step 1 value 1 textfont 1
+          tooltip {The part number} xywh {5 312 50 18} type Simple labelfont 1 minimum 0 maximum 127 step 1 value 1 textfont 1
           code0 {o->bounds(1,NUM_MIDI_PARTS);}
           code1 {bankui->init(o);}
         }
         Fl_Button {} {
           label vK
           callback {virkeyboard->show();}
-          tooltip {Virtual Keyboard} xywh {285 92 40 23} color 51 labelfont 1
+          tooltip {Virtual Keyboard} xywh {280 87 40 23} color 51 labelfont 1
         }
         Fl_Group {} {
-          xywh {90 37 55 110} box UP_FRAME
+          xywh {85 32 55 110} box UP_FRAME
         } {
           Fl_Button {} {
             label Reset
             callback {globalfinedetuneslider->value(64.0);
 globalfinedetuneslider->do_callback();}
-            tooltip {Master fine detune reset} xywh {95 42 45 23} box THIN_UP_BOX labelsize 10
+            tooltip {Master fine detune reset} xywh {90 37 45 23} box THIN_UP_BOX labelsize 10
           }
           Fl_Dial globalfinedetuneslider {
             label {Fine Detune}
-            tooltip {global fine detune} xywh {95 73 45 45} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1 value 64
+            tooltip {global fine detune} xywh {90 68 45 45} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1 value 64
             code0 {o->init("microtonal/Pglobalfinedetune");}
             class Fl_Osc_Dial
           }
@@ -806,11 +813,11 @@ globalfinedetuneslider->do_callback();}
           label {Panel Window}
           callback {updatepanel();
 panelwindow->show();}
-          tooltip {Panel Window} xywh {285 117 105 23} color 51 labelfont 1 labelsize 10
+          tooltip {Panel Window} xywh {280 112 105 23} color 51 labelfont 1 labelsize 10
         }
         Fl_Button sm_indicator1 {
           label SM
-          xywh {355 10 35 15} box ROUNDED_BOX down_box ROUNDED_BOX color 45 selection_color 93 labelfont 3 labelcolor 39 deactivate
+          xywh {350 5 35 15} box ROUNDED_BOX down_box ROUNDED_BOX color 45 selection_color 93 labelfont 3 labelcolor 39 deactivate
         }
       }
     }
@@ -868,7 +875,7 @@ GNU General Public License for details.}
     }
     Fl_Window panelwindow {
       label {ZynAddSubFX Panel} open
-      xywh {621 253 630 635} type Double
+      xywh {615 247 630 635} type Double
       class Fl_Osc_Window visible
     } {
       Fl_Box {} {
@@ -912,7 +919,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
 {
 	*exitprogram=1;
 };} open
-      xywh {661 384 600 335} type Double
+      xywh {655 378 600 335} type Double
       class Fl_Osc_Window visible
     } {
       Fl_Box {} {
@@ -921,7 +928,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
         code1 {simplemasterwindow->base = "/";}
       }
       Fl_Menu_Bar simplemastermenu {
-        xywh {0 0 690 25}
+        xywh {0 0 600 25}
       } {
         Submenu {} {
           label {&File}
@@ -1012,7 +1019,7 @@ if (result==-10) fl_alert("Error: Could not load the file\\nbecause it is not an
         class Fl_Osc_Group
       } {
         Fl_Box {} {
-          xywh {0 0 0 0}
+          xywh {125 65 0 0}
           code0 {simplelistitemgroup->ext = "part0/";}
         }
         Fl_Button partname {
@@ -1206,7 +1213,7 @@ simplesyseffectui->refresh();
               class Fl_Osc_Group
             } {
               Fl_Box {} {
-                xywh {0 0 0 0}
+                xywh {350 95 0 0}
                 code0 {simplesyseffectuigroup->ext = "sysefx0/";}
               }
               Fl_Group simplesyseffectui {
@@ -1312,7 +1319,7 @@ simpleinseffectui->show();}
               class Fl_Osc_Group
             } {
               Fl_Box {} {
-                xywh {0 0 0 0}
+                xywh {350 95 0 0}
                 code0 {simpleinseffectuigroup->ext = "insefx0/";}
               }
               Fl_Group simpleinseffectui {
@@ -1475,7 +1482,7 @@ masterwindowlabel[99]='\\0';
 masterwindow->label(&masterwindowlabel[0]);
 simplemasterwindow->label(&masterwindowlabel[0]);} {}
   }
-  Function {MasterUI(int *exitprogram_, class Fl_Osc_Interface *osc_)} {open
+  Function {MasterUI(int *exitprogram_, class Fl_Osc_Interface *osc_):nioui(osc_)} {open
   } {
     code {exitprogram=exitprogram_;
 osc=osc_;
@@ -1495,9 +1502,10 @@ configui=new ConfigUI(osc);
 make_window();
 fl_open_display();
 
-\#ifdef __linux__
-Pixmap p = XCreateBitmapFromData(fl_display, DefaultRootWindow(fl_display),
-                                 (char*)zynaddsubfx_bits, zynaddsubfx_width, zynaddsubfx_height);
+\#if defined(__linux__) && ! defined(PLUGINVERSION)
+Pixmap p, mask;
+XCreatePixmapFromData(fl_display, DefaultRootWindow(fl_display),
+                                 (char**)zynaddsubfx_xpm, &p, &mask, NULL);
 masterwindow->icon((char *)p);
 \#endif
 assert(osc);

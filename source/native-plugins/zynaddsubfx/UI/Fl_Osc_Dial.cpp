@@ -78,12 +78,12 @@ int Fl_Osc_Dial::handle(int ev)
 
 void Fl_Osc_Dial::OSC_value(int v)
 {
-    value(v+minimum());
+    value(v+minimum()+fmodf(value(), 1));
 }
 
 void Fl_Osc_Dial::OSC_value(char v)
 {
-    value(v+minimum());
+    value(v+minimum()+fmodf(value(), 1));
 }
 
 void Fl_Osc_Dial::update(void)

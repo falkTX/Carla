@@ -27,6 +27,7 @@
 #include <sstream>
 #include <stdint.h>
 #include <algorithm>
+#include <set>
 #include "Config.h"
 #include "../globals.h"
 
@@ -151,6 +152,8 @@ template<class T>
 static inline void nullify(T &t) {delete t; t = NULL; }
 template<class T>
 static inline void arrayNullify(T &t) {delete [] t; t = NULL; }
+
+char *rtosc_splat(const char *path, std::set<std::string>);
 
 /**
  * Port macros - these produce easy and regular port definitions for common

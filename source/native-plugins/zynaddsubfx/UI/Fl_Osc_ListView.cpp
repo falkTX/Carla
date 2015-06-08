@@ -3,10 +3,13 @@
 #include <rtosc/rtosc.h>
 
 Fl_Osc_ListView::Fl_Osc_ListView(int x,int y, int w, int h, const char *label)
-    :Fl_Browser(x,y,w,h,label)
+    :Fl_Browser(x,y,w,h,label), data(0)
 {}
 
-Fl_Osc_ListView::~Fl_Osc_ListView(void) {};
+Fl_Osc_ListView::~Fl_Osc_ListView(void) 
+{
+    delete data;
+};
         
 void Fl_Osc_ListView::init(const char *path_)
 {
@@ -16,38 +19,52 @@ void Fl_Osc_ListView::init(const char *path_)
     loc = pane->base;
     assert(osc);
     path = path_;
-    oscRegister(path_);
-}
-void Fl_Osc_ListView::OSC_raw(const char *msg)
-{
-    this->clear();
-    for(int i=0; i<(int)rtosc_narguments(msg); ++i) {
-        this->add(rtosc_argument(msg, i).s);
-    }
+    data = new Osc_SimpleListModel(osc);
+    data->callback = [this](Osc_SimpleListModel::list_t l){this->doUpdate(l);};
+    data->update(loc+path_);
 }
 
+void Fl_Osc_ListView::doUpdate(Osc_SimpleListModel::list_t l)
+{
+    this->clear();
+    for(int i=0; i<(int)l.size(); ++i) {
+        this->add(l[i].c_str());
+    }
+}
 void Fl_Osc_ListView::update(void)
 {
-    osc->requestValue(path.c_str());
+    data->update(loc+path);
 }
 
 void Fl_Osc_ListView::insert(std::string s, int offset)
 {
-    fprintf(stderr, "UNIMPLEMENTED\n");
+    assert(offset);
+    data->list.insert(data->list.begin()+offset-1, s);
+    data->apply();
+    //fprintf(stderr, "UNIMPLEMENTED\n");
 }
 void Fl_Osc_ListView::append(std::string s)
 {
-    fprintf(stderr, "UNIMPLEMENTED\n");
+    data->list.push_back(s);
+    data->apply();
 }
 void Fl_Osc_ListView::doMove(int i, int j)
 {
-    fprintf(stderr, "UNIMPLEMENTED\n");
+    assert(i);
+    assert(j);
+    auto &list = data->list;
+    std::string value = list[j-1];
+    list.erase(list.begin()+j-1);
+    list.insert(list.begin()+i-1, value);
+    //std::swap(data->list[i-1], data->list[j-1]);
+    data->apply();
 }
 void Fl_Osc_ListView::doRemove(int offset)
 {
-    fprintf(stderr, "UNIMPLEMENTED\n");
+    assert(offset);
+    data->list.erase(data->list.begin()+offset-1);
+    data->apply();
 }
 void Fl_Osc_ListView::sendUpdate() const
 {
-    fprintf(stderr, "UNIMPLEMENTED\n");
 }

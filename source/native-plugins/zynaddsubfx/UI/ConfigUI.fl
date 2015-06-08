@@ -300,7 +300,11 @@ activatebutton_presetdir(true);}
 };} {}
   }
   Function {show()} {} {
-    code {configwindow->show();} {}
+    code {
+    rootsbrowse->update();
+    presetbrowse->update();
+    configwindow->show();
+    } {}
   }
   decl {class Fl_Osc_Interface *osc;} {public local
   }

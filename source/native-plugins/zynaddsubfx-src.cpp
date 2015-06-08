@@ -152,12 +152,12 @@ namespace Nio {
    void masterSwap(Master*){}
 //    bool start(void){return 1;}
 //    void stop(void){}
-//    bool setSource(std::string){return true;}
-//    bool setSink(std::string){return true;}
-//    std::set<std::string> getSources(void){return std::set<std::string>();}
-//    std::set<std::string> getSinks(void){return std::set<std::string>();}
-//    std::string getSource(void){return "";}
-//    std::string getSink(void){return "";}
+   bool setSource(std::string){return true;}
+   bool setSink(std::string){return true;}
+   std::set<std::string> getSources(void){return std::set<std::string>();}
+   std::set<std::string> getSinks(void){return std::set<std::string>();}
+   std::string getSource(void){return "";}
+   std::string getSink(void){return "";}
    void waveNew(WavFile*){}
    void waveStart(){}
    void waveStop(){}

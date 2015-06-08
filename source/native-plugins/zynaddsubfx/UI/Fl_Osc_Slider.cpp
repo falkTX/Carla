@@ -33,7 +33,7 @@ Fl_Osc_Slider::~Fl_Osc_Slider(void)
 void Fl_Osc_Slider::OSC_value(int v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_);
+    Fl_Slider::value(v+min_+fmodf(value(),1.0));
 }
 
 void Fl_Osc_Slider::OSC_value(float v)
@@ -45,7 +45,7 @@ void Fl_Osc_Slider::OSC_value(float v)
 void Fl_Osc_Slider::OSC_value(char v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_);
+    Fl_Slider::value(v+min_+fmodf(value(),1.0));
 }
 
 void Fl_Osc_Slider::cb(void)

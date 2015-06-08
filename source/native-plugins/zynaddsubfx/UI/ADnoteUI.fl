@@ -761,7 +761,7 @@ bypassfiltercheckbutton->redraw();}
         }
         Fl_Box noiselabel {
           label {White Noise}
-          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 53
+          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 53 hide
         }
       }
       Fl_Check_Button voiceonbutton {

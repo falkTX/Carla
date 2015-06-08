@@ -189,7 +189,6 @@ static const Ports voicePorts = {
 #define rObject ADnoteGlobalParam
 
 static const Ports globalPorts = {
-    rParamZyn(PPanning, "Panning (0 random, 1 left, 127 right)"),
     rRecurp(Reson, "Resonance"),
     rRecurp(FreqLfo, "Frequency LFO"),
     rRecurp(AmpLfo, "Amplitude LFO"),
@@ -207,7 +206,7 @@ static const Ports globalPorts = {
     rParamZyn(PBandwidth,    "Relative Fine Detune Gain"),
 
     //Amplitude
-    rParamZyn(PPanning, "Panning of ADsynth"),
+    rParamZyn(PPanning, "Panning of ADsynth (0 random, 1 left, 127 right)"),
     rParamZyn(PVolume, "volume control"),
     rParamZyn(PAmpVelocityScaleFunction, "Volume Velocity Control"),
 

@@ -41,6 +41,8 @@
 #include <err.h>
 #endif
 
+#include <rtosc/rtosc.h>
+
 prng_t prng_state = 0x1234;
 
 Config config;
@@ -212,4 +214,22 @@ float cinterpolate(const float *data, size_t len, float pos)
               r_pos      = (l_pos + 1) % len;
     const float leftness = pos - l_pos;
     return data[l_pos] * leftness + data[r_pos] * (1.0f - leftness);
+}
+
+char *rtosc_splat(const char *path, std::set<std::string> v)
+{
+    char argT[v.size()+1];
+    rtosc_arg_t arg[v.size()];
+    unsigned i=0;
+    for(auto vv : v) {
+        argT[i]  = 's';
+        arg[i].s = vv.c_str();
+        i++;
+    }
+    argT[v.size()] = 0;
+
+    size_t len = rtosc_amessage(0, 0, path, argT, arg);
+    char *buf = new char[len];
+    rtosc_amessage(buf, len, path, argT, arg);
+    return buf;
 }
