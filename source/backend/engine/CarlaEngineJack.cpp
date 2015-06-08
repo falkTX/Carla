@@ -1135,33 +1135,40 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
             return CarlaEngine::patchbayDisconnect(connectionId);
 
-        for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
+        ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
+
         {
-            static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+            const CarlaMutexLocker cml(fUsedConnections.mutex);
 
-            const ConnectionToId& connectionToId(it.getValue(fallback));
-            CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
-
-            if (connectionToId.id == connectionId)
+            for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
             {
-                const char* const fullPortNameA = fUsedPorts.getFullPortName(connectionToId.groupA, connectionToId.portA);
-                CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
+                connectionToId = it.getValue(connectionToId);
+                CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
 
-                const char* const fullPortNameB = fUsedPorts.getFullPortName(connectionToId.groupB, connectionToId.portB);
-                CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
-
-                if (! jackbridge_disconnect(fClient, fullPortNameA, fullPortNameB))
-                {
-                    setLastError("JACK operation failed");
-                    return false;
-                }
-
-                return true;
+                if (connectionToId.id == connectionId)
+                    break;
             }
         }
 
-        setLastError("Failed to find the requested connection");
-        return false;
+        if (connectionToId.id == 0 || connectionToId.id != connectionId)
+        {
+            setLastError("Failed to find the requested connection");
+            return false;
+        }
+
+        const char* const fullPortNameA = fUsedPorts.getFullPortName(connectionToId.groupA, connectionToId.portA);
+        CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
+
+        const char* const fullPortNameB = fUsedPorts.getFullPortName(connectionToId.groupB, connectionToId.portB);
+        CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
+
+        if (! jackbridge_disconnect(fClient, fullPortNameA, fullPortNameB))
+        {
+            setLastError("JACK operation failed");
+            return false;
+        }
+
+        return true;
     }
 
     bool patchbayRefresh(const bool external) override
@@ -1632,21 +1639,29 @@ protected:
         }
         else
         {
-            for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
+            ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
+            bool found = false;
+
             {
-                static const ConnectionToId fallback = { 0, 0, 0, 0, 0 };
+                const CarlaMutexLocker cml(fUsedConnections.mutex);
 
-                const ConnectionToId& connectionToId(it.getValue(fallback));
-                CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
-
-                if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
-                    connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
+                for (LinkedList<ConnectionToId>::Itenerator it = fUsedConnections.list.begin2(); it.valid(); it.next())
                 {
-                    callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
-                    fUsedConnections.list.remove(it);
-                    break;
+                    connectionToId = it.getValue(connectionToId);
+                    CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+                    if (connectionToId.groupA == portNameToIdA.group && connectionToId.portA == portNameToIdA.port &&
+                        connectionToId.groupB == portNameToIdB.group && connectionToId.portB == portNameToIdB.port)
+                    {
+                        found = true;
+                        fUsedConnections.list.remove(it);
+                        break;
+                    }
                 }
             }
+
+            if (found)
+                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
         }
     }
 

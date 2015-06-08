@@ -18,6 +18,7 @@
 #ifndef CARLA_PATCHBAY_UTILS_HPP_INCLUDED
 #define CARLA_PATCHBAY_UTILS_HPP_INCLUDED
 
+#include "CarlaMutex.hpp"
 #include "LinkedList.hpp"
 
 #define STR_MAX 0xFF
@@ -201,10 +202,12 @@ struct ConnectionToId {
 struct PatchbayConnectionList {
     uint lastId;
     LinkedList<ConnectionToId> list;
+    CarlaMutex mutex;
 
     PatchbayConnectionList() noexcept
         : lastId(0),
-          list() {}
+          list(),
+          mutex() {}
 
     void clear() noexcept
     {
