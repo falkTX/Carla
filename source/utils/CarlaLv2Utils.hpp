@@ -1018,39 +1018,38 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                                 carla_stderr("lv2_rdf_new(\"%s\") - got unknown unit unit '%s'", uri, unitUnit);
                         }
                     }
+
+                    if (LilvNode* const unitNameNode = lilv_world_get(lv2World.me, unitUnitNode, lv2World.unit_name.me, nullptr))
+                    {
+                        if (const char* const unitName = lilv_node_as_string(unitNameNode))
+                        {
+                            rdfPort->Unit.Hints |= LV2_PORT_UNIT_NAME;
+                            rdfPort->Unit.Name   = carla_strdup(unitName);
+                        }
+                        lilv_node_free(unitNameNode);
+                    }
+
+                    if (LilvNode* const unitRenderNode = lilv_world_get(lv2World.me, unitUnitNode, lv2World.unit_render.me, nullptr))
+                    {
+                        if (const char* const unitRender = lilv_node_as_string(unitRenderNode))
+                        {
+                            rdfPort->Unit.Hints |= LV2_PORT_UNIT_RENDER;
+                            rdfPort->Unit.Render = carla_strdup(unitRender);
+                        }
+                        lilv_node_free(unitRenderNode);
+                    }
+
+                    if (LilvNode* const unitSymbolNode = lilv_world_get(lv2World.me, unitUnitNode, lv2World.unit_symbol.me, nullptr))
+                    {
+                        if (const char* const unitSymbol = lilv_node_as_string(unitSymbolNode))
+                        {
+                            rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
+                            rdfPort->Unit.Symbol = carla_strdup(unitSymbol);
+                        }
+                        lilv_node_free(unitSymbolNode);
+                    }
+
                     lilv_node_free(unitUnitNode);
-                }
-
-                // FIXME
-
-                if (LilvNode* const unitNameNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_name.me))
-                {
-                    if (const char* const unitName = lilv_node_as_string(unitNameNode))
-                    {
-                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_NAME;
-                        rdfPort->Unit.Name   = carla_strdup(unitName);
-                    }
-                    lilv_node_free(unitNameNode);
-                }
-
-                if (LilvNode* const unitRenderNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_render.me))
-                {
-                    if (const char* const unitRender = lilv_node_as_string(unitRenderNode))
-                    {
-                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_RENDER;
-                        rdfPort->Unit.Render = carla_strdup(unitRender);
-                    }
-                    lilv_node_free(unitRenderNode);
-                }
-
-                if (LilvNode* const unitSymbolNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_symbol.me))
-                {
-                    if (const char* const unitSymbol = lilv_node_as_string(unitSymbolNode))
-                    {
-                        rdfPort->Unit.Hints |= LV2_PORT_UNIT_SYMBOL;
-                        rdfPort->Unit.Symbol = carla_strdup(unitSymbol);
-                    }
-                    lilv_node_free(unitSymbolNode);
                 }
             }
 
