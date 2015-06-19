@@ -477,15 +477,15 @@ protected:
         }
         else if (index <= kParamResBandwidth)
         {
-            const uint zynIndex(getZynParameterFromIndex(index));
-            CARLA_SAFE_ASSERT_RETURN(zynIndex != C_NULL,);
+            const MidiControllers zynControl(getZynControlFromIndex(index));
+            CARLA_SAFE_ASSERT_RETURN(zynControl != C_NULL,);
 
             fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
             for (int npart=0; npart<NUM_MIDI_PARTS; ++npart)
             {
                 if (fMaster->part[npart] != nullptr)
-                    fMaster->part[npart]->SetController(zynIndex, static_cast<int>(value));
+                    fMaster->part[npart]->SetController(zynControl, static_cast<int>(value));
             }
         }
     }
@@ -579,7 +579,7 @@ protected:
             else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
             {
                 // skip controls which we map to parameters
-                if (getZynParameterFromIndex(midiEvent->data[1]) != C_NULL)
+                if (getIndexFromZynControl(midiEvent->data[1]) != kParamCount)
                     continue;
 
                 const int control = midiEvent->data[1];
@@ -723,7 +723,7 @@ private:
 
     CarlaMutex fMutex;
 
-    static uint getZynParameterFromIndex(const uint index)
+    static MidiControllers getZynControlFromIndex(const uint index)
     {
         switch (index)
         {
@@ -739,11 +739,30 @@ private:
             return C_resonance_center;
         case kParamResBandwidth:
             return C_resonance_bandwidth;
-        case kParamCount:
+        default:
             return C_NULL;
         }
+    }
 
-        return C_NULL;
+    static Parameters getIndexFromZynControl(const uint8_t control)
+    {
+        switch (control)
+        {
+        case C_filtercutoff:
+            return kParamFilterCutoff;
+        case C_filterq:
+            return kParamFilterQ;
+        case C_bandwidth:
+            return kParamBandwidth;
+        case C_fmamp:
+            return kParamModAmp;
+        case C_resonance_center:
+            return kParamResCenter;
+        case C_resonance_bandwidth:
+            return kParamResBandwidth;
+        default:
+            return kParamCount;
+        }
     }
 
     // -------------------------------------------------------------------
