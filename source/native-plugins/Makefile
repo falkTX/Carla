@@ -48,7 +48,7 @@ else # HAVE_NTK
 FLUID          = fluid
 ZYN_CXX_FLAGS += -DFLTK_GUI
 ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
-ZYN_LD_FLAGS  += $(shell fltk-config --use-images --ldstaticflags)
+ZYN_LD_FLAGS  += $(shell fltk-config --use-images --ldflags)
 endif # HAVE_NTK
 else  # HAVE_ZYN_UI_DEPS
 ZYN_CXX_FLAGS += -DNO_UI
@@ -229,11 +229,6 @@ zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/_all.c.o: _all.c
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
-
 $(OBJDIR)/%.c.o: %.c
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
@@ -318,13 +313,6 @@ $(OBJDIR)/zita-%.cpp.o: zita-%.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(ZITA_DSP_CXX_FLAGS) -c -o $@
-
-# ----------------------------------------------------------------------------------------------------------------------------
-
-$(OBJDIR)/%.cpp.o: %.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
