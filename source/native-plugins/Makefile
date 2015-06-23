@@ -236,6 +236,38 @@ $(OBJDIR)/%.c.o: %.c
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+$(OBJDIR)/_data.cpp.o: _data.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/audio-file.cpp.o: audio-file.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/bigmeter.cpp.o: bigmeter.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/midi-file.cpp.o: midi-file.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/midi-sequencer.cpp.o: midi-sequencer.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+$(OBJDIR)/notes.cpp.o: notes.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
+# ----------------------------------------------------------------------------------------------------------------------------
+
 $(OBJDIR)/distrho-3bandeq.cpp.o: distrho-3bandeq.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
