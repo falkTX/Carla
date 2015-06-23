@@ -332,7 +332,7 @@ $(OBJDIR)/zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
 $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
+	$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
