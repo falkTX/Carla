@@ -49,8 +49,7 @@ protected:
     CarlaBridgeUI* const ui;
 
     CarlaBridgeToolkit(CarlaBridgeUI* const u)
-        : ui(u),
-          leakDetector_CarlaBridgeToolkit() {}
+        : ui(u) {}
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };

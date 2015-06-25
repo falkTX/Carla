@@ -85,8 +85,7 @@ public:
           fMidiIns(),
           fMidiInEvents(),
           fMidiOuts(),
-          fMidiOutMutex(),
-          leakDetector_CarlaEngineJuce()
+          fMidiOutMutex()
     {
         carla_debug("CarlaEngineJuce::CarlaEngineJuce(%p)", devType);
 

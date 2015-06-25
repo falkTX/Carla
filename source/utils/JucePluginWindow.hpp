@@ -39,8 +39,7 @@ class JucePluginWindow : public DocumentWindow
 public:
     JucePluginWindow()
         : DocumentWindow("JucePluginWindow", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false),
-          leakDetector_JucePluginWindow()
+          fClosed(false)
     {
         setVisible(false);
         //setAlwaysOnTop(true);

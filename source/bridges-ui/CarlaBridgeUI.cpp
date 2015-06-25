@@ -39,8 +39,7 @@ CarlaBridgeUI::CarlaBridgeUI() noexcept
       fLastMsgTimer(-1),
       fToolkit(nullptr),
       fLib(nullptr),
-      fLibFilename(),
-      leakDetector_CarlaBridgeUI()
+      fLibFilename()
 {
     carla_debug("CarlaBridgeUI::CarlaBridgeUI()");
 

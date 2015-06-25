@@ -75,8 +75,7 @@ public:
           fBinary(),
           fLabel(),
           fOscData(oscData),
-          fProcess(),
-          leakDetector_CarlaThreadDSSIUI() {}
+          fProcess() {}
 
     void setData(const char* const binary, const char* const label) noexcept
     {
@@ -276,13 +275,12 @@ public:
           fForcedStereoIn(false),
           fForcedStereoOut(false),
           fIsDssiVst(false),
-          fUsesCustomData(false),
+          fUsesCustomData(false)
 #ifdef HAVE_LIBLO
-          fOscData(),
+        , fOscData(),
           fThreadUI(engine, this, fOscData),
-          fUiFilename(nullptr),
+          fUiFilename(nullptr)
 #endif
-          leakDetector_CarlaPluginDSSI()
     {
         carla_debug("CarlaPluginDSSI::CarlaPluginDSSI(%p, %i)", engine, id);
 

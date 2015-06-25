@@ -212,8 +212,7 @@ public:
           fLv2Options(),
           fUiOptions(),
           fCustomURIDs(),
-          fExt(),
-          leakDetector_CarlaLv2Client()
+          fExt()
     {
         carla_zeroPointers(fFeatures, kFeatureCount+1);
 

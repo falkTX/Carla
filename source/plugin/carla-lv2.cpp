@@ -90,8 +90,7 @@ public:
           fURIs(),
           fUI(),
           fPorts(),
-          sJuceInitialiser(),
-          leakDetector_NativePlugin()
+          sJuceInitialiser()
     {
         run  = extui_run;
         show = extui_show;

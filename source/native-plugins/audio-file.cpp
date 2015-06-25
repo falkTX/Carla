@@ -47,8 +47,7 @@ public:
           fReaderBuffer(),
           fReaderMutex(),
           fReader(),
-          fReaderSource(),
-          leakDetector_AudioFilePlugin()
+          fReaderSource()
     {
         fReaderBuffer.setSize(2, static_cast<int>(getBufferSize()));
     }

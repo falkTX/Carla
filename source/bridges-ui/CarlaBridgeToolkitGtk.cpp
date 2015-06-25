@@ -45,8 +45,7 @@ public:
           fLastX(0),
           fLastY(0),
           fLastWidth(0),
-          fLastHeight(0),
-          leakDetector_CarlaBridgeToolkitGtk()
+          fLastHeight(0)
     {
         carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", u);
     }

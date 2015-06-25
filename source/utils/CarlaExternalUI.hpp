@@ -37,8 +37,7 @@ public:
         : fFilename(),
           fArg1(),
           fArg2(),
-          fUiState(UiNone),
-          leakDetector_CarlaExternalUI() {}
+          fUiState(UiNone) {}
 
     ~CarlaExternalUI() /*noexcept*/ override
     {

@@ -79,8 +79,7 @@ public:
         : CarlaEngineAudioPort(client, isInputPort, indexOffset),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          kDeletionCallback(delCallback),
-          leakDetector_CarlaEngineJackAudioPort()
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackAudioPort::CarlaEngineJackAudioPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -172,8 +171,7 @@ public:
         : CarlaEngineCVPort(client, isInputPort, indexOffset),
           fJackClient(jackClient),
           fJackPort(jackPort),
-          kDeletionCallback(delCallback),
-          leakDetector_CarlaEngineJackCVPort()
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackCVPort::CarlaEngineJackCVPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -265,8 +263,7 @@ public:
           fJackPort(jackPort),
           fJackBuffer(nullptr),
           fRetEvent(kFallbackJackEngineEvent),
-          kDeletionCallback(delCallback),
-          leakDetector_CarlaEngineJackEventPort()
+          kDeletionCallback(delCallback)
     {
         carla_debug("CarlaEngineJackEventPort::CarlaEngineJackEventPort(%s, %p, %p)", bool2str(isInputPort), jackClient, jackPort);
 
@@ -458,8 +455,7 @@ public:
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
           fCVPorts(),
-          fEventPorts(),
-          leakDetector_CarlaEngineJackClient()
+          fEventPorts()
     {
         carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%p)", jackClient);
 
@@ -669,15 +665,14 @@ public:
           fExternalPatchbay(true),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
-          fIsRunning(false),
+          fIsRunning(false)
 #else
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
           fNewGroups(),
-          fRetConns(),
+          fRetConns()
 #endif
-          leakDetector_CarlaEngineJack()
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");
 

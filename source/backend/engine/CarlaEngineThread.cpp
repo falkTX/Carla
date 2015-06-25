@@ -25,8 +25,7 @@ CARLA_BACKEND_START_NAMESPACE
 
 CarlaEngineThread::CarlaEngineThread(CarlaEngine* const engine) noexcept
     : CarlaThread("CarlaEngineThread"),
-      kEngine(engine),
-      leakDetector_CarlaEngineThread()
+      kEngine(engine)
 {
     CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineThread::CarlaEngineThread(%p)", engine);

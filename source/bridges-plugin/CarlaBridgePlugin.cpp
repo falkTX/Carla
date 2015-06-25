@@ -177,8 +177,7 @@ public:
     CarlaBridgePlugin(const bool useBridge, const char* const clientName, const char* const audioPoolBaseName,
                       const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : fEngine(nullptr),
-          fUsingBridge(false),
-          leakDetector_CarlaBridgePlugin()
+          fUsingBridge(false)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
         carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);

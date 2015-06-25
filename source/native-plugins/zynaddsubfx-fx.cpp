@@ -46,8 +46,7 @@ protected:
           fSampleRate(getSampleRate()),
           fEffect(nullptr),
           efxoutl(nullptr),
-          efxoutr(nullptr),
-          leakDetector_FxAbstractPlugin()
+          efxoutr(nullptr)
     {
         const int ibufferSize(static_cast<int>(fBufferSize));
 
@@ -233,8 +232,7 @@ class FxAlienWahPlugin : public FxAbstractPlugin<Alienwah>
 {
 public:
     FxAlienWahPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 11, 4),
-          leakDetector_FxAlienWahPlugin() {}
+        : FxAbstractPlugin(host, 11, 4) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -370,8 +368,7 @@ class FxChorusPlugin : public FxAbstractPlugin<Chorus>
 {
 public:
     FxChorusPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 12, 10),
-          leakDetector_FxChorusPlugin() {}
+        : FxAbstractPlugin(host, 12, 10) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -531,8 +528,7 @@ class FxDistortionPlugin : public FxAbstractPlugin<Distorsion>
 {
 public:
     FxDistortionPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 11, 6),
-          leakDetector_FxDistortionPlugin() {}
+        : FxAbstractPlugin(host, 11, 6) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -700,8 +696,7 @@ class FxDynamicFilterPlugin : public FxAbstractPlugin<DynamicFilter>
 {
 public:
     FxDynamicFilterPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 10, 5),
-          leakDetector_FxDynamicFilterPlugin() {}
+        : FxAbstractPlugin(host, 10, 5) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -835,8 +830,7 @@ class FxEchoPlugin : public FxAbstractPlugin<Echo>
 {
 public:
     FxEchoPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 7, 9),
-          leakDetector_FxEchoPlugin() {}
+        : FxAbstractPlugin(host, 7, 9) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -958,8 +952,7 @@ class FxPhaserPlugin : public FxAbstractPlugin<Phaser>
 {
 public:
     FxPhaserPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 15, 12),
-          leakDetector_FxPhaserPlugin() {}
+        : FxAbstractPlugin(host, 15, 12) {}
 
 protected:
     // -------------------------------------------------------------------
@@ -1142,8 +1135,7 @@ class FxReverbPlugin : public FxAbstractPlugin<Reverb>
 {
 public:
     FxReverbPlugin(const NativeHostDescriptor* const host)
-        : FxAbstractPlugin(host, 13, 13),
-          leakDetector_FxReverbPlugin() {}
+        : FxAbstractPlugin(host, 13, 13) {}
 
 protected:
     // -------------------------------------------------------------------

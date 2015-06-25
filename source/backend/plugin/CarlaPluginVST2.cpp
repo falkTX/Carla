@@ -72,8 +72,7 @@ public:
 #endif
           fEvents(),
           fUI(),
-          fUnique2(2),
-          leakDetector_CarlaPluginVST2()
+          fUnique2(2)
     {
         carla_debug("CarlaPluginVST2::CarlaPluginVST2(%p, %i)", engine, id);
 

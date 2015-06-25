@@ -576,11 +576,11 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       extNotes(),
       latency(),
       postRtEvents(),
-      postUiEvents(),
+      postUiEvents()
 #ifndef BUILD_BRIDGE
-      postProc(),
+    , postProc(),
 #endif
-      leakDetector_ProtectedData() {}
+      {}
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {

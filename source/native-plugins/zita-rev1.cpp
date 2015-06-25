@@ -55,8 +55,7 @@ public:
           kNumInputs(2),
           kNumOutputs(isAmbisonic ? 4 : 2),
           fJackClient(),
-          jclient(nullptr),
-          leakDetector_REV1Plugin()
+          jclient(nullptr)
     {
         CARLA_SAFE_ASSERT(host != nullptr);
 

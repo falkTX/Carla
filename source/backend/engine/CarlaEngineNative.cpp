@@ -63,8 +63,7 @@ class CarlaEngineNativeUI : public CarlaExternalUI
 {
 public:
     CarlaEngineNativeUI(CarlaEngine* const engine)
-        : fEngine(engine),
-          leakDetector_CarlaEngineNativeUI()
+        : fEngine(engine)
     {
         carla_debug("CarlaEngineNativeUI::CarlaEngineNativeUI(%p)", engine);
     }
@@ -566,8 +565,7 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
-          fOptionsForced(false),
-          leakDetector_CarlaEngineNative()
+          fOptionsForced(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 

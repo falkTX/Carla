@@ -83,8 +83,7 @@ public:
           fVstRect(),
           fMidiOutEvents(),
           fStateChunk(nullptr),
-          sJuceInitialiser(),
-          leakDetector_NativePlugin()
+          sJuceInitialiser()
     {
         fHost.handle      = this;
         fHost.uiName      = carla_strdup("CarlaVST");

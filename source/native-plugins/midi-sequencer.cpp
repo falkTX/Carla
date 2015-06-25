@@ -38,8 +38,7 @@ public:
           fTicksPerFrame(0.0),
           fInEvents(),
           fMidiOut(this),
-          fTimeInfo(),
-          leakDetector_MidiSequencerPlugin()
+          fTimeInfo()
     {
         carla_zeroStruct(fTimeInfo);
     }

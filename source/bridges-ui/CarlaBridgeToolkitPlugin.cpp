@@ -37,11 +37,10 @@ public:
     CarlaBridgeToolkitPlugin(CarlaBridgeUI* const u)
         : CarlaBridgeToolkit(u),
           fUI(nullptr),
-          fIdling(false),
+          fIdling(false)
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-          kJuceInit(),
+        , kJuceInit()
 #endif
-          leakDetector_CarlaBridgeToolkitPlugin()
     {
         carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", u);
     }

@@ -57,8 +57,7 @@ public:
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
-          fNeedsShow(false),
-          leakDetector_CarlaBridgeToolkitQt()
+          fNeedsShow(false)
     {
         carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", u);
     }

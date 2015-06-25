@@ -498,8 +498,7 @@ public:
           fBinary(),
           fLabel(),
           fShmIds(),
-          fProcess(),
-          leakDetector_CarlaPluginBridgeThread() {}
+          fProcess() {}
 
     void setData(const char* const binary, const char* const label, const char* const shmIds) noexcept
     {
@@ -744,8 +743,7 @@ public:
           fShmNonRtServerControl(),
           fInfo(),
           fUniqueId(0),
-          fParams(nullptr),
-          leakDetector_CarlaPluginBridge()
+          fParams(nullptr)
     {
         carla_debug("CarlaPluginBridge::CarlaPluginBridge(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
 

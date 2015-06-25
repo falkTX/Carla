@@ -47,8 +47,7 @@ public:
           fPosInfo(),
           fChunk(),
           fUniqueId(nullptr),
-          fWindow(),
-          leakDetector_CarlaPluginJuce()
+          fWindow()
     {
         carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
 

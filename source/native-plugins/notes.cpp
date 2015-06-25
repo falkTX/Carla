@@ -26,8 +26,7 @@ class NotesPlugin : public NativePluginAndUiClass
 public:
     NotesPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "notes-ui"),
-          fCurPage(1),
-          leakDetector_NotesPlugin() {}
+          fCurPage(1) {}
 
 protected:
     // -------------------------------------------------------------------

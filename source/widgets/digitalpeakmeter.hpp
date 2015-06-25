@@ -65,8 +65,7 @@ public:
           fMeterStyle(STYLE_DEFAULT),
           fMeterBackground("#111111"),
           fMeterGradient(0, 0, 0, 0),
-          fSmoothMultiplier(1),
-          leakDetector_DigitalPeakMeter()
+          fSmoothMultiplier(1)
     {
         updateGrandient();
     }

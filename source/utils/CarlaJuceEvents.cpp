@@ -41,8 +41,7 @@ public:
         : Thread("JuceEventsThread"),
           fInitializing(false),
           fLock(),
-          fQueue(),
-          leakDetector_JuceEventsThread() {}
+          fQueue() {}
 
     ~JuceEventsThread()
     {

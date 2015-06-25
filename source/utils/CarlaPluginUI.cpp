@@ -133,9 +133,8 @@ public:
           DocumentWindow("JucePluginUI", Colour(50, 50, 200), DocumentWindow::closeButton, false),
           fClosed(false),
 #ifdef CARLA_OS_MAC
-          fCocoaWrapper(),
+        , fCocoaWrapper()
 #endif
-          leakDetector_JucePluginUI()
     {
         setVisible(false);
         //setAlwaysOnTop(true);
@@ -296,8 +295,7 @@ public:
           fWindow(0),
           fIsVisible(false),
           fFirstShow(true),
-          fEventProc(nullptr),
-          leakDetector_X11PluginUI()
+          fEventProc(nullptr)
      {
         fDisplay = XOpenDisplay(nullptr);
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);

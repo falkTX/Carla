@@ -36,8 +36,7 @@ public:
     NativePluginAndUiClass(const NativeHostDescriptor* const host, const char* const extUiPath)
         : NativePluginClass(host),
           CarlaExternalUI(),
-          fExtUiPath(getResourceDir()),
-          leakDetector_NativePluginAndUiClass()
+          fExtUiPath(getResourceDir())
     {
         fExtUiPath += CARLA_OS_SEP_STR;
         fExtUiPath += extUiPath;

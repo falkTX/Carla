@@ -375,8 +375,7 @@ public:
           fShmNonRtServerControl(),
           fIsOffline(false),
           fFirstIdle(true),
-          fLastPingTime(-1),
-          leakDetector_CarlaEngineBridge()
+          fLastPingTime(-1)
     {
         carla_stdout("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 

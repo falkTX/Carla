@@ -534,8 +534,7 @@ struct CarlaPipeCommon::PrivateData {
 // -----------------------------------------------------------------------
 
 CarlaPipeCommon::CarlaPipeCommon() noexcept
-    : pData(new PrivateData()),
-      leakDetector_CarlaPipeCommon()
+    : pData(new PrivateData())
 {
     carla_debug("CarlaPipeCommon::CarlaPipeCommon()");
 }
@@ -1112,8 +1111,7 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
 // -----------------------------------------------------------------------
 
 CarlaPipeServer::CarlaPipeServer() noexcept
-    : CarlaPipeCommon(),
-      leakDetector_CarlaPipeServer()
+    : CarlaPipeCommon()
 {
     carla_debug("CarlaPipeServer::CarlaPipeServer()");
 }
@@ -1485,8 +1483,7 @@ void CarlaPipeServer::writeHideMessage() const noexcept
 // -----------------------------------------------------------------------
 
 CarlaPipeClient::CarlaPipeClient() noexcept
-    : CarlaPipeCommon(),
-      leakDetector_CarlaPipeClient()
+    : CarlaPipeCommon()
 {
     carla_debug("CarlaPipeClient::CarlaPipeClient()");
 }

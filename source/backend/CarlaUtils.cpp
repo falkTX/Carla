@@ -669,8 +669,7 @@ public:
     CarlaPipeClientPlugin(const CarlaPipeCallbackFunc callbackFunc, void* const callbackPtr) noexcept
         : CarlaPipeClient(),
           fCallbackFunc(callbackFunc),
-          fCallbackPtr(callbackPtr),
-          leakDetector_CarlaPipeClientPlugin()
+          fCallbackPtr(callbackPtr)
     {
         CARLA_SAFE_ASSERT(fCallbackFunc != nullptr);
     }

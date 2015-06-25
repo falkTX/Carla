@@ -185,8 +185,7 @@ public:
           fMidiEventCount(0),
           fMidiIn(),
           fMidiOut(),
-          fTimeInfo(),
-          leakDetector_CarlaPluginNative()
+          fTimeInfo()
     {
         carla_debug("CarlaPluginNative::CarlaPluginNative(%p, %i)", engine, id);
 

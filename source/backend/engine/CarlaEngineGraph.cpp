@@ -1135,8 +1135,7 @@ class CarlaPluginInstance : public AudioPluginInstance
 public:
     CarlaPluginInstance(CarlaEngine* const engine, CarlaPlugin* const plugin)
         : kEngine(engine),
-          fPlugin(plugin),
-          leakDetector_CarlaPluginInstance()
+          fPlugin(plugin)
     {
         setPlayConfigDetails(static_cast<int>(fPlugin->getAudioInCount()),
                              static_cast<int>(fPlugin->getAudioOutCount()),

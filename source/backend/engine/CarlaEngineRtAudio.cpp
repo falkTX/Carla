@@ -170,8 +170,7 @@ public:
           fMidiInEvents(),
           fMidiOuts(),
           fMidiOutMutex(),
-          fMidiOutVector(3),
-          leakDetector_CarlaEngineRtAudio()
+          fMidiOutVector(3)
     {
         carla_debug("CarlaEngineRtAudio::CarlaEngineRtAudio(%i)", api);
 

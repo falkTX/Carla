@@ -35,8 +35,7 @@ public:
           fColor(1),
           fStyle(1),
           fOutLeft(0.0f),
-          fOutRight(0.0f),
-          leakDetector_BigMeterPlugin() {}
+          fOutRight(0.0f) {}
 
 protected:
     // -------------------------------------------------------------------

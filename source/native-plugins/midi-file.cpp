@@ -30,8 +30,7 @@ public:
         : NativePluginClass(host),
           fMidiOut(this),
           fNeedsAllNotesOff(false),
-          fWasPlayingBefore(false),
-          leakDetector_MidiFilePlugin() {}
+          fWasPlayingBefore(false) {}
 
 protected:
     // -------------------------------------------------------------------

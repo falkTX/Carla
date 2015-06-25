@@ -401,8 +401,7 @@ public:
           fFilename(),
           fPluginURI(),
           fUiURI(),
-          fUiState(UiNone),
-          leakDetector_CarlaPipeServerLV2() {}
+          fUiState(UiNone) {}
 
     ~CarlaPipeServerLV2() noexcept override
     {
@@ -523,8 +522,7 @@ public:
           fLastStateChunk(nullptr),
           fLastTimeInfo(),
           fExt(),
-          fUI(),
-          leakDetector_CarlaPluginLV2()
+          fUI()
     {
         carla_debug("CarlaPluginLV2::CarlaPluginLV2(%p, %i)", engine, id);
 

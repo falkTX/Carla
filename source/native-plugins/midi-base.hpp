@@ -58,8 +58,7 @@ public:
           fMidiPort(0),
           fStartTime(0),
           fMutex(),
-          fData(),
-          leakDetector_MidiPattern()
+          fData()
     {
         CARLA_SAFE_ASSERT(kPlayer != nullptr);
     }

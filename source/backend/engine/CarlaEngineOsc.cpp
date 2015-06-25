@@ -39,8 +39,7 @@ CarlaEngineOsc::CarlaEngineOsc(CarlaEngine* const engine) noexcept
       fServerPathTCP(),
       fServerPathUDP(),
       fServerTCP(nullptr),
-      fServerUDP(nullptr),
-      leakDetector_CarlaEngineOsc()
+      fServerUDP(nullptr)
 {
     CARLA_SAFE_ASSERT(engine != nullptr);
     carla_debug("CarlaEngineOsc::CarlaEngineOsc(%p)", engine);

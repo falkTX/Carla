@@ -207,8 +207,7 @@ public:
           fMaster(nullptr),
           fSynth(),
           fIsActive(false),
-          fMutex(),
-          leakDetector_ZynAddSubFxPlugin()
+          fMutex()
     {
         sPrograms.initIfNeeded();
 

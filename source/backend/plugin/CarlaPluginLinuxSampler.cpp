@@ -59,8 +59,7 @@ public:
     AudioOutputDevicePlugin(const CarlaEngine* const engine, const CarlaPlugin* const plugin, const bool uses16Outs)
         : AudioOutputDevice(std::map<std::string, DeviceCreationParameter*>()),
           kEngine(engine),
-          kPlugin(plugin),
-          leakDetector_AudioOutputDevicePlugin()
+          kPlugin(plugin)
     {
         CARLA_ASSERT(engine != nullptr);
         CARLA_ASSERT(plugin != nullptr);
@@ -130,8 +129,7 @@ class MidiInputPortPlugin : public MidiInputPort
 {
 public:
     MidiInputPortPlugin(MidiInputDevice* const device, const int portNum = 0)
-        : MidiInputPort(device, portNum),
-          leakDetector_MidiInputPortPlugin() {}
+        : MidiInputPort(device, portNum) {}
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiInputPortPlugin)
 };
@@ -143,8 +141,7 @@ class MidiInputDevicePlugin : public MidiInputDevice
 {
 public:
     MidiInputDevicePlugin(Sampler* const sampler)
-        : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler),
-          leakDetector_MidiInputDevicePlugin()
+        : MidiInputDevice(std::map<std::string, DeviceCreationParameter*>(), sampler)
     {
         AcquirePorts(1);
     }
@@ -210,8 +207,7 @@ public:
           fMidiInputDevice(sSampler),
           fMidiInputPort(nullptr),
           fInstrumentIds(),
-          fInstrumentInfo(),
-          leakDetector_CarlaPluginLinuxSampler()
+          fInstrumentInfo()
     {
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 

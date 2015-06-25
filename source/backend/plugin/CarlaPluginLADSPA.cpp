@@ -40,8 +40,7 @@ public:
           fLatencyIndex(-1),
           fForcedStereoIn(false),
           fForcedStereoOut(false),
-          fIsDssiVst(false),
-          leakDetector_CarlaPluginLADSPA()
+          fIsDssiVst(false)
     {
         carla_debug("CarlaPluginLADSPA::CarlaPluginLADSPA(%p, %i)", engine, id);
 

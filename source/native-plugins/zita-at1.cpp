@@ -54,8 +54,7 @@ public:
         : NativePluginAndUiClass(host, "at1-ui"),
           fJackClient(),
           jclient(nullptr),
-          notemask(0xfff),
-          leakDetector_AT1Plugin()
+          notemask(0xfff)
     {
         CARLA_SAFE_ASSERT(host != nullptr);
 

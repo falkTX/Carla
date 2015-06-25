@@ -52,8 +52,7 @@ public:
     BLS1Plugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "bls1-ui"),
           fJackClient(),
-          jclient(nullptr),
-          leakDetector_BLS1Plugin()
+          jclient(nullptr)
     {
         CARLA_SAFE_ASSERT(host != nullptr);
 

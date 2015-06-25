@@ -34,8 +34,7 @@ class NativePluginClass
 {
 public:
     NativePluginClass(const NativeHostDescriptor* const host)
-        : pHost(host),
-          leakDetector_NativePluginClass()
+        : pHost(host)
     {
         CARLA_SAFE_ASSERT(host != nullptr);
     }
