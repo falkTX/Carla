@@ -917,6 +917,8 @@ void NanoWidget::onDisplay()
 
 END_NAMESPACE_DGL
 
+#undef final
+
 extern "C" {
 #include "nanovg/nanovg.c"
 }
