@@ -978,9 +978,9 @@ private:
 
     //==============================================================================
    #if JUCE_USE_XRANDR
-    friend class ContainerDeletePolicy<XRRScreenResources>;
-    friend class ContainerDeletePolicy<XRROutputInfo>;
-    friend class ContainerDeletePolicy<XRRCrtcInfo>;
+    friend struct ContainerDeletePolicy<XRRScreenResources>;
+    friend struct ContainerDeletePolicy<XRROutputInfo>;
+    friend struct ContainerDeletePolicy<XRRCrtcInfo>;
 
     class XRandrWrapper
     {
@@ -1062,9 +1062,9 @@ private:
 
     private:
         //==============================================================================
-        friend class ContainerDeletePolicy<XRRScreenResources>;
-        friend class ContainerDeletePolicy<XRROutputInfo>;
-        friend class ContainerDeletePolicy<XRRCrtcInfo>;
+        friend struct ContainerDeletePolicy<XRRScreenResources>;
+        friend struct ContainerDeletePolicy<XRROutputInfo>;
+        friend struct ContainerDeletePolicy<XRRCrtcInfo>;
 
         void freeScreenResources (XRRScreenResources* ptr)
         {
@@ -2209,6 +2209,7 @@ public:
         wheel.deltaY = amount;
         wheel.isReversed = false;
         wheel.isSmooth = false;
+        wheel.isInertial = false;
 
         handleMouseWheel (0, getMousePos (buttonPressEvent), getEventTime (buttonPressEvent), wheel);
     }
@@ -3723,12 +3724,45 @@ void Desktop::Displays::findDisplays (float masterScale)
 {
     DisplayGeometry& geometry = DisplayGeometry::getOrCreateInstance (display, masterScale);
 
+    // add the main display first
+    int mainDisplayIdx;
+    for (mainDisplayIdx = 0; mainDisplayIdx < geometry.infos.size(); ++mainDisplayIdx)
+    {
+        const DisplayGeometry::ExtendedInfo& info = geometry.infos.getReference (mainDisplayIdx);
+        if (info.isMain)
+        break;
+    }
+
+    // no main display found then use the first
+    if (mainDisplayIdx >= geometry.infos.size())
+        mainDisplayIdx = 0;
+
+    // add the main display
+    {
+        const DisplayGeometry::ExtendedInfo& info =
+      geometry.infos.getReference (mainDisplayIdx);
+        Desktop::Displays::Display d;
+
+        d.isMain = true;
+        d.scale = masterScale * info.scale;
+        d.dpi = info.dpi;
+
+        d.totalArea = DisplayGeometry::physicalToScaled (info.totalBounds);
+        d.userArea = (info.usableBounds / d.scale) + info.topLeftScaled;
+
+        displays.add (d);
+    }
+
     for (int i = 0; i < geometry.infos.size(); ++i)
     {
+        // don't add the main display a second time
+        if (i == mainDisplayIdx)
+            continue;
+
         const DisplayGeometry::ExtendedInfo& info = geometry.infos.getReference (i);
         Desktop::Displays::Display d;
 
-        d.isMain = info.isMain;
+        d.isMain = false;
         d.scale = masterScale * info.scale;
         d.dpi = info.dpi;
 
