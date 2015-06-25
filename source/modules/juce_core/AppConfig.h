@@ -39,7 +39,11 @@
     Enables a memory-leak check for certain objects when the app terminates. See the LeakedObjectDetector
     class and the JUCE_LEAK_DETECTOR macro for more details about enabling leak checking for specific classes.
 */
-#define JUCE_CHECK_MEMORY_LEAKS 1
+#ifdef DEBUG
+ #define JUCE_CHECK_MEMORY_LEAKS 1
+#else
+ #define JUCE_CHECK_MEMORY_LEAKS 0
+#endif
 
 //=============================================================================
 /** Config: JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
