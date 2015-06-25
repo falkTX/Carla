@@ -25,13 +25,13 @@ VectorJuicePlugin::VectorJuicePlugin()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
 {
     // set default values
-    d_setProgram(0);
+    loadProgram(0);
 }
 
 // -----------------------------------------------------------------------
 // Init
 
-void VectorJuicePlugin::d_initParameter(uint32_t index, Parameter& parameter)
+void VectorJuicePlugin::initParameter(uint32_t index, Parameter& parameter)
 {
     switch (index)
     {
@@ -190,7 +190,7 @@ void VectorJuicePlugin::d_initParameter(uint32_t index, Parameter& parameter)
     }
 }
 
-void VectorJuicePlugin::d_initProgramName(uint32_t index, d_string& programName)
+void VectorJuicePlugin::initProgramName(uint32_t index, String& programName)
 {
     if (index != 0)
         return;
@@ -201,7 +201,7 @@ void VectorJuicePlugin::d_initProgramName(uint32_t index, d_string& programName)
 // -----------------------------------------------------------------------
 // Internal data
 
-float VectorJuicePlugin::d_getParameterValue(uint32_t index) const
+float VectorJuicePlugin::getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -244,7 +244,7 @@ float VectorJuicePlugin::d_getParameterValue(uint32_t index) const
     }
 }
 
-void VectorJuicePlugin::d_setParameterValue(uint32_t index, float value)
+void VectorJuicePlugin::setParameterValue(uint32_t index, float value)
 {
     bool resetPhase = false;
 
@@ -304,7 +304,7 @@ void VectorJuicePlugin::d_setParameterValue(uint32_t index, float value)
     }
 }
 
-void VectorJuicePlugin::d_setProgram(uint32_t index)
+void VectorJuicePlugin::loadProgram(uint32_t index)
 {
     if (index != 0)
         return;
@@ -325,13 +325,13 @@ void VectorJuicePlugin::d_setProgram(uint32_t index)
     orbitPhaseY = 1.0f;
 
     /* reset filter values */
-    d_activate();
+    activate();
 }
 
 // -----------------------------------------------------------------------
 // Process
 
-void VectorJuicePlugin::d_activate()
+void VectorJuicePlugin::activate()
 {
     /* Default variable values */
     orbitX=orbitY=orbitTX=orbitTY=0.5;
@@ -349,7 +349,7 @@ void VectorJuicePlugin::d_activate()
     }
 }
 
-void VectorJuicePlugin::d_run(const float** inputs, float** outputs, uint32_t frames)
+void VectorJuicePlugin::run(const float** inputs, float** outputs, uint32_t frames)
 {
     float out1, out2, tX, tY;
 

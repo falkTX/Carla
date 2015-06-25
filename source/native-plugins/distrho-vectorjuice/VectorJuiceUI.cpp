@@ -25,10 +25,8 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 VectorJuiceUI::VectorJuiceUI()
-    : UI()
-#ifndef DISTRHO_OS_MAC
-    , fAboutWindow(this)
-#endif
+    : UI(),
+      fAboutWindow(this)
 {
     setSize(VectorJuiceArtwork::backgroundWidth, VectorJuiceArtwork::backgroundHeight);
 
@@ -57,11 +55,9 @@ VectorJuiceUI::VectorJuiceUI()
     //subOrbit
     fImgSubOrbit = Image(VectorJuiceArtwork::subOrbitData, VectorJuiceArtwork::subOrbitWidth, VectorJuiceArtwork::subOrbitHeight);
 
-#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(VectorJuiceArtwork::aboutData, VectorJuiceArtwork::aboutWidth, VectorJuiceArtwork::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
-#endif
 
     // about button
     Image aboutImageNormal(VectorJuiceArtwork::aboutButtonNormalData, VectorJuiceArtwork::aboutButtonNormalWidth, VectorJuiceArtwork::aboutButtonNormalHeight);
@@ -189,13 +185,13 @@ VectorJuiceUI::VectorJuiceUI()
     fSliderOrbitPhaseY->setCallback(this);
 
     // set default values
-    d_programChanged(0);
+    programLoaded(0);
 }
 
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void VectorJuiceUI::d_parameterChanged(uint32_t index, float value)
+void VectorJuiceUI::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -279,7 +275,7 @@ void VectorJuiceUI::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void VectorJuiceUI::d_programChanged(uint32_t index)
+void VectorJuiceUI::programLoaded(uint32_t index)
 {
     if (index != 0)
         return;
@@ -307,39 +303,37 @@ void VectorJuiceUI::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
-#endif
 }
 
 void VectorJuiceUI::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void VectorJuiceUI::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void VectorJuiceUI::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void VectorJuiceUI::imageSliderDragStarted(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), true);
+    editParameter(slider->getId(), true);
 }
 
 void VectorJuiceUI::imageSliderDragFinished(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), false);
+    editParameter(slider->getId(), false);
 }
 
 void VectorJuiceUI::imageSliderValueChanged(ImageSlider* slider, float value)
 {
-    d_setParameterValue(slider->getId(), value);
+    setParameterValue(slider->getId(), value);
 }
 
 void VectorJuiceUI::onDisplay()
@@ -441,14 +435,14 @@ bool VectorJuiceUI::onMotion(const MotionEvent& ev)
     if (newX != paramX)
     {
         paramX = newX;
-        d_setParameterValue(VectorJuicePlugin::paramX, paramX);
+        setParameterValue(VectorJuicePlugin::paramX, paramX);
         repaint();
     }
 
     if (newY != paramY)
     {
         paramY = newY;
-        d_setParameterValue(VectorJuicePlugin::paramY, paramY);
+        setParameterValue(VectorJuicePlugin::paramY, paramY);
         repaint();
     }
 

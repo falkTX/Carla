@@ -578,7 +578,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
       postRtEvents(),
       postUiEvents()
 #ifndef BUILD_BRIDGE
-    , postProc(),
+    , postProc()
 #endif
       {}
 

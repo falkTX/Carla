@@ -20,9 +20,7 @@
 
 #include "DistrhoUI.hpp"
 
-#include "ImageAboutWindow.hpp"
-#include "ImageButton.hpp"
-#include "ImageKnob.hpp"
+#include "ImageWidgets.hpp"
 
 #include "WobbleJuiceArtwork.hpp"
 
@@ -46,8 +44,8 @@ protected:
     // -------------------------------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t index, float value) override;
-    void d_programChanged(uint32_t index) override;
+    void parameterChanged(uint32_t index, float value) override;
+    void programLoaded(uint32_t index) override;
 
     // -------------------------------------------------------------------
     // Widget Callbacks
@@ -61,9 +59,7 @@ protected:
 
 private:
     Image fImgBackground;
-#ifndef DISTRHO_OS_MAC
     ImageAboutWindow fAboutWindow;
-#endif
 
     ScopedPointer<ImageButton> fButtonAbout;
     ScopedPointer<ImageKnob>   fKnobDivision, fKnobResonance, fKnobRange;

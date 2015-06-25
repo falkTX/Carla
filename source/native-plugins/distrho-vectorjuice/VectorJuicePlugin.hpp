@@ -97,8 +97,8 @@ public:
     void animate()
     {
         //sync orbit with frame, bpm
-        const TimePosition& time(d_getTimePosition());
-        bar = ((120.0/(time.bbt.valid ? time.bbt.beatsPerMinute : 120.0))*(d_getSampleRate()));
+        const TimePosition& time(getTimePosition());
+        bar = ((120.0/(time.bbt.valid ? time.bbt.beatsPerMinute : 120.0))*(getSampleRate()));
 
         int multiplier = 16;//2000*4;
         tickX = bar/(std::round(orbitSpeedX))*multiplier;
@@ -163,27 +163,27 @@ protected:
     // -------------------------------------------------------------------
     // Information
 
-    const char* d_getLabel() const noexcept override
+    const char* getLabel() const noexcept override
     {
         return "VectorJuice";
     }
 
-    const char* d_getMaker() const noexcept override
+    const char* getMaker() const noexcept override
     {
         return "Andre Sklenar";
     }
 
-    const char* d_getLicense() const noexcept override
+    const char* getLicense() const noexcept override
     {
         return "GPL v2+";
     }
 
-    uint32_t d_getVersion() const noexcept override
+    uint32_t getVersion() const noexcept override
     {
         return 0x1000;
     }
 
-    int64_t d_getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         return d_cconst('V', 'e', 'c', 'J');
     }
@@ -191,21 +191,21 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t index, Parameter& parameter) override;
-    void d_initProgramName(uint32_t index, d_string& programName) override;
+    void initParameter(uint32_t index, Parameter& parameter) override;
+    void initProgramName(uint32_t index, String& programName) override;
 
     // -------------------------------------------------------------------
     // Internal data
 
-    float d_getParameterValue(uint32_t index) const override;
-    void  d_setParameterValue(uint32_t index, float value) override;
-    void  d_setProgram(uint32_t index) override;
+    float getParameterValue(uint32_t index) const override;
+    void  setParameterValue(uint32_t index, float value) override;
+    void  loadProgram(uint32_t index) override;
 
     // -------------------------------------------------------------------
     // Process
 
-    void d_activate() override;
-    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
+    void activate() override;
+    void run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

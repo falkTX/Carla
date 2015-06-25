@@ -23,21 +23,17 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 WobbleJuiceUI::WobbleJuiceUI()
-    : UI()
-#ifndef DISTRHO_OS_MAC
-    , fAboutWindow(this)
-#endif
+    : UI(),
+      fAboutWindow(this)
 {
     setSize(WobbleJuiceArtwork::backgroundWidth, WobbleJuiceArtwork::backgroundHeight);
 
     // background
     fImgBackground = Image(WobbleJuiceArtwork::backgroundData, WobbleJuiceArtwork::backgroundWidth, WobbleJuiceArtwork::backgroundHeight, GL_BGR);
 
-#ifndef DISTRHO_OS_MAC
     // about
     Image aboutImage(WobbleJuiceArtwork::aboutData, WobbleJuiceArtwork::aboutWidth, WobbleJuiceArtwork::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
-#endif
 
     // knobs
     Image knobImage(WobbleJuiceArtwork::knobData, WobbleJuiceArtwork::knobWidth, WobbleJuiceArtwork::knobHeight);
@@ -105,13 +101,13 @@ WobbleJuiceUI::WobbleJuiceUI()
     fButtonAbout->setCallback(this);
 
     // set default values
-    d_programChanged(0);
+    programLoaded(0);
 }
 
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void WobbleJuiceUI::d_parameterChanged(uint32_t index, float value)
+void WobbleJuiceUI::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -136,7 +132,7 @@ void WobbleJuiceUI::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void WobbleJuiceUI::d_programChanged(uint32_t index)
+void WobbleJuiceUI::programLoaded(uint32_t index)
 {
     if (index != 0)
         return;
@@ -158,24 +154,22 @@ void WobbleJuiceUI::imageButtonClicked(ImageButton* button, int)
     if (button != fButtonAbout)
         return;
 
-#ifndef DISTRHO_OS_MAC
     fAboutWindow.exec();
-#endif
 }
 
 void WobbleJuiceUI::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void WobbleJuiceUI::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void WobbleJuiceUI::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void WobbleJuiceUI::onDisplay()
