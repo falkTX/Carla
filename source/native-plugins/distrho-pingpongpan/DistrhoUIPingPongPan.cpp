@@ -19,23 +19,21 @@
 
 START_NAMESPACE_DISTRHO
 
+namespace Art = DistrhoArtworkPingPongPan;
+
 // -----------------------------------------------------------------------
 
 DistrhoUIPingPongPan::DistrhoUIPingPongPan()
-    : UI(),
+    : UI(Art::backgroundWidth, Art::backgroundHeight),
+      fImgBackground(Art::backgroundData, Art::backgroundWidth, Art::backgroundHeight, GL_BGR),
       fAboutWindow(this)
 {
-    // set UI size
-    setSize(DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight);
-
-    // background
-    fImgBackground = Image(DistrhoArtworkPingPongPan::backgroundData, DistrhoArtworkPingPongPan::backgroundWidth, DistrhoArtworkPingPongPan::backgroundHeight, GL_BGR);
-
-    Image imageAbout(DistrhoArtworkPingPongPan::aboutData, DistrhoArtworkPingPongPan::aboutWidth, DistrhoArtworkPingPongPan::aboutHeight, GL_BGR);
+    // about
+    Image imageAbout(Art::aboutData, Art::aboutWidth, Art::aboutHeight, GL_BGR);
     fAboutWindow.setImage(imageAbout);
 
     // knobs
-    Image knobImage(DistrhoArtworkPingPongPan::knobData, DistrhoArtworkPingPongPan::knobWidth, DistrhoArtworkPingPongPan::knobHeight);
+    Image knobImage(Art::knobData, Art::knobWidth, Art::knobHeight);
 
     // knob Low-Mid
     fKnobFreq = new ImageKnob(this, knobImage, ImageKnob::Vertical);
@@ -56,20 +54,20 @@ DistrhoUIPingPongPan::DistrhoUIPingPongPan()
     fKnobWidth->setCallback(this);
 
     // about button
-    Image aboutImageNormal(DistrhoArtworkPingPongPan::aboutButtonNormalData, DistrhoArtworkPingPongPan::aboutButtonNormalWidth, DistrhoArtworkPingPongPan::aboutButtonNormalHeight);
-    Image aboutImageHover(DistrhoArtworkPingPongPan::aboutButtonHoverData, DistrhoArtworkPingPongPan::aboutButtonHoverWidth, DistrhoArtworkPingPongPan::aboutButtonHoverHeight);
+    Image aboutImageNormal(Art::aboutButtonNormalData, Art::aboutButtonNormalWidth, Art::aboutButtonNormalHeight);
+    Image aboutImageHover(Art::aboutButtonHoverData, Art::aboutButtonHoverWidth, Art::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setAbsolutePos(183, 8);
     fButtonAbout->setCallback(this);
 
     // set default values
-    d_programChanged(0);
+    programLoaded(0);
 }
 
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void DistrhoUIPingPongPan::d_parameterChanged(uint32_t index, float value)
+void DistrhoUIPingPongPan::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -82,7 +80,7 @@ void DistrhoUIPingPongPan::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void DistrhoUIPingPongPan::d_programChanged(uint32_t index)
+void DistrhoUIPingPongPan::programLoaded(uint32_t index)
 {
     if (index != 0)
         return;
@@ -105,17 +103,17 @@ void DistrhoUIPingPongPan::imageButtonClicked(ImageButton* button, int)
 
 void DistrhoUIPingPongPan::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void DistrhoUIPingPongPan::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void DistrhoUIPingPongPan::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUIPingPongPan::onDisplay()

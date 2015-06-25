@@ -19,7 +19,7 @@
 
 #include "DistrhoPlugin.hpp"
 
-#include "extra/d_mutex.hpp"
+#include "extra/Mutex.hpp"
 
 class projectM;
 class DistrhoUIProM;
@@ -38,27 +38,27 @@ protected:
     // -------------------------------------------------------------------
     // Information
 
-    const char* d_getLabel() const noexcept override
+    const char* getLabel() const noexcept override
     {
         return "ProM";
     }
 
-    const char* d_getMaker() const noexcept override
+    const char* getMaker() const noexcept override
     {
         return "DISTRHO";
     }
 
-    const char* d_getLicense() const noexcept override
+    const char* getLicense() const noexcept override
     {
         return "LGPL";
     }
 
-    uint32_t d_getVersion() const noexcept override
+    uint32_t getVersion() const noexcept override
     {
         return 0x1000;
     }
 
-    int64_t d_getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         return d_cconst('D', 'P', 'r', 'M');
     }
@@ -66,18 +66,18 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t, Parameter&) override;
+    void initParameter(uint32_t, Parameter&) override;
 
     // -------------------------------------------------------------------
     // Internal data
 
-    float d_getParameterValue(uint32_t) const override;
-    void  d_setParameterValue(uint32_t, float) override;
+    float getParameterValue(uint32_t) const override;
+    void  setParameterValue(uint32_t, float) override;
 
     // -------------------------------------------------------------------
     // Process
 
-    void d_run(const float** inputs, float** outputs, uint32_t frames) override;
+    void run(const float** inputs, float** outputs, uint32_t frames) override;
 
     // -------------------------------------------------------------------
 

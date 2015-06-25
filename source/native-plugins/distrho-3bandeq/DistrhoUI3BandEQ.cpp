@@ -17,28 +17,23 @@
 #include "DistrhoPlugin3BandEQ.hpp"
 #include "DistrhoUI3BandEQ.hpp"
 
-using DGL::Point;
-
 START_NAMESPACE_DISTRHO
+
+namespace Art = DistrhoArtwork3BandEQ;
 
 // -----------------------------------------------------------------------
 
 DistrhoUI3BandEQ::DistrhoUI3BandEQ()
-    : UI(),
+    : UI(Art::backgroundWidth, Art::backgroundHeight),
+      fImgBackground(Art::backgroundData, Art::backgroundWidth, Art::backgroundHeight, GL_BGR),
       fAboutWindow(this)
 {
-    // set UI size
-    setSize(DistrhoArtwork3BandEQ::backgroundWidth, DistrhoArtwork3BandEQ::backgroundHeight);
-
-    // background
-    fImgBackground = Image(DistrhoArtwork3BandEQ::backgroundData, DistrhoArtwork3BandEQ::backgroundWidth, DistrhoArtwork3BandEQ::backgroundHeight, GL_BGR);
-
     // about
-    Image aboutImage(DistrhoArtwork3BandEQ::aboutData, DistrhoArtwork3BandEQ::aboutWidth, DistrhoArtwork3BandEQ::aboutHeight, GL_BGR);
+    Image aboutImage(Art::aboutData, Art::aboutWidth, Art::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
 
     // sliders
-    Image sliderImage(DistrhoArtwork3BandEQ::sliderData, DistrhoArtwork3BandEQ::sliderWidth, DistrhoArtwork3BandEQ::sliderHeight);
+    Image sliderImage(Art::sliderData, Art::sliderWidth, Art::sliderHeight);
     Point<int> sliderPosStart(57, 43);
     Point<int> sliderPosEnd(57, 43 + 160);
 
@@ -54,29 +49,38 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     // slider Mid
     sliderPosStart.setX(120);
     sliderPosEnd.setX(120);
-    fSliderMid = new ImageSlider(*fSliderLow);
+    fSliderMid = new ImageSlider(this, sliderImage);
     fSliderMid->setId(DistrhoPlugin3BandEQ::paramMid);
+    fSliderMid->setInverted(true);
     fSliderMid->setStartPos(sliderPosStart);
     fSliderMid->setEndPos(sliderPosEnd);
+    fSliderMid->setRange(-24.0f, 24.0f);
+    fSliderMid->setCallback(this);
 
     // slider High
     sliderPosStart.setX(183);
     sliderPosEnd.setX(183);
-    fSliderHigh = new ImageSlider(*fSliderLow);
+    fSliderHigh = new ImageSlider(this, sliderImage);
     fSliderHigh->setId(DistrhoPlugin3BandEQ::paramHigh);
+    fSliderHigh->setInverted(true);
     fSliderHigh->setStartPos(sliderPosStart);
     fSliderHigh->setEndPos(sliderPosEnd);
+    fSliderHigh->setRange(-24.0f, 24.0f);
+    fSliderHigh->setCallback(this);
 
     // slider Master
     sliderPosStart.setX(287);
     sliderPosEnd.setX(287);
-    fSliderMaster = new ImageSlider(*fSliderLow);
+    fSliderMaster = new ImageSlider(this, sliderImage);
     fSliderMaster->setId(DistrhoPlugin3BandEQ::paramMaster);
+    fSliderMaster->setInverted(true);
     fSliderMaster->setStartPos(sliderPosStart);
     fSliderMaster->setEndPos(sliderPosEnd);
+    fSliderMaster->setRange(-24.0f, 24.0f);
+    fSliderMaster->setCallback(this);
 
     // knobs
-    Image knobImage(DistrhoArtwork3BandEQ::knobData, DistrhoArtwork3BandEQ::knobWidth, DistrhoArtwork3BandEQ::knobHeight);
+    Image knobImage(Art::knobData, Art::knobWidth, Art::knobHeight);
 
     // knob Low-Mid
     fKnobLowMid = new ImageKnob(this, knobImage, ImageKnob::Vertical);
@@ -97,20 +101,20 @@ DistrhoUI3BandEQ::DistrhoUI3BandEQ()
     fKnobMidHigh->setCallback(this);
 
     // about button
-    Image aboutImageNormal(DistrhoArtwork3BandEQ::aboutButtonNormalData, DistrhoArtwork3BandEQ::aboutButtonNormalWidth, DistrhoArtwork3BandEQ::aboutButtonNormalHeight);
-    Image aboutImageHover(DistrhoArtwork3BandEQ::aboutButtonHoverData, DistrhoArtwork3BandEQ::aboutButtonHoverWidth, DistrhoArtwork3BandEQ::aboutButtonHoverHeight);
+    Image aboutImageNormal(Art::aboutButtonNormalData, Art::aboutButtonNormalWidth, Art::aboutButtonNormalHeight);
+    Image aboutImageHover(Art::aboutButtonHoverData, Art::aboutButtonHoverWidth, Art::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setAbsolutePos(264, 300);
     fButtonAbout->setCallback(this);
 
     // set default values
-    d_programChanged(0);
+    programLoaded(0);
 }
 
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void DistrhoUI3BandEQ::d_parameterChanged(uint32_t index, float value)
+void DistrhoUI3BandEQ::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -135,7 +139,7 @@ void DistrhoUI3BandEQ::d_parameterChanged(uint32_t index, float value)
     }
 }
 
-void DistrhoUI3BandEQ::d_programChanged(uint32_t index)
+void DistrhoUI3BandEQ::programLoaded(uint32_t index)
 {
     if (index != 0)
         return;
@@ -162,32 +166,32 @@ void DistrhoUI3BandEQ::imageButtonClicked(ImageButton* button, int)
 
 void DistrhoUI3BandEQ::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void DistrhoUI3BandEQ::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void DistrhoUI3BandEQ::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUI3BandEQ::imageSliderDragStarted(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), true);
+    editParameter(slider->getId(), true);
 }
 
 void DistrhoUI3BandEQ::imageSliderDragFinished(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), false);
+    editParameter(slider->getId(), false);
 }
 
 void DistrhoUI3BandEQ::imageSliderValueChanged(ImageSlider* slider, float value)
 {
-    d_setParameterValue(slider->getId(), value);
+    setParameterValue(slider->getId(), value);
 }
 
 void DistrhoUI3BandEQ::onDisplay()

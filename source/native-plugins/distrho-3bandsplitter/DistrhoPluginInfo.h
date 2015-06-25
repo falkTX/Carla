@@ -18,19 +18,14 @@
 #define DISTRHO_PLUGIN_INFO_H_INCLUDED
 
 #define DISTRHO_PLUGIN_NAME "3 Band Splitter"
+#define DISTRHO_PLUGIN_URI  "http://distrho.sf.net/plugins/3BandSplitter"
 
 #define DISTRHO_PLUGIN_HAS_UI        1
-#define DISTRHO_PLUGIN_IS_SYNTH      0
-
+#define DISTRHO_PLUGIN_IS_RT_SAFE    1
 #define DISTRHO_PLUGIN_NUM_INPUTS    2
 #define DISTRHO_PLUGIN_NUM_OUTPUTS   6
-
-#define DISTRHO_PLUGIN_IS_RT_SAFE    1
-#define DISTRHO_PLUGIN_WANT_LATENCY  0
 #define DISTRHO_PLUGIN_WANT_PROGRAMS 1
-#define DISTRHO_PLUGIN_WANT_STATE    0
-#define DISTRHO_PLUGIN_WANT_TIMEPOS  0
 
-#define DISTRHO_PLUGIN_URI "http://distrho.sf.net/plugins/3BandSplitter"
+#define DISTRHO_PLUGIN_LV2_CATEGORY "lv2:EQPlugin"
 
 #endif // DISTRHO_PLUGIN_INFO_H_INCLUDED

@@ -35,13 +35,13 @@ protected:
     // -------------------------------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t, float) override;
+    void parameterChanged(uint32_t, float) override;
 
     // -------------------------------------------------------------------
     // UI Callbacks
 
-    void d_uiIdle() override;
-    void d_uiReshape(uint width, uint height) override;
+    void uiIdle() override;
+    void uiReshape(uint width, uint height) override;
 
     // -------------------------------------------------------------------
     // Widget Callbacks

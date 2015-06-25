@@ -49,12 +49,12 @@ protected:
     // -------------------------------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t index, float value) override;
+    void parameterChanged(uint32_t index, float value) override;
 
     // -------------------------------------------------------------------
     // UI Callbacks
 
-    void d_uiIdle() override;
+    void uiIdle() override;
 
     // -------------------------------------------------------------------
     // Widget Callbacks

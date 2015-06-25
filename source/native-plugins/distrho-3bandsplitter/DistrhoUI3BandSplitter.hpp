@@ -18,19 +18,9 @@
 #define DISTRHO_UI_3BANDSPLITTER_HPP_INCLUDED
 
 #include "DistrhoUI.hpp"
-
-#include "ImageAboutWindow.hpp"
-#include "ImageButton.hpp"
-#include "ImageKnob.hpp"
-#include "ImageSlider.hpp"
+#include "ImageWidgets.hpp"
 
 #include "DistrhoArtwork3BandSplitter.hpp"
-
-using DGL::Image;
-using DGL::ImageAboutWindow;
-using DGL::ImageButton;
-using DGL::ImageKnob;
-using DGL::ImageSlider;
 
 START_NAMESPACE_DISTRHO
 
@@ -48,8 +38,8 @@ protected:
     // -------------------------------------------------------------------
     // DSP Callbacks
 
-    void d_parameterChanged(uint32_t index, float value) override;
-    void d_programChanged(uint32_t index) override;
+    void parameterChanged(uint32_t index, float value) override;
+    void programLoaded(uint32_t index) override;
 
     // -------------------------------------------------------------------
     // Widget Callbacks

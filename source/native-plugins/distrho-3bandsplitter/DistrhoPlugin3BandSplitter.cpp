@@ -31,16 +31,16 @@ DistrhoPlugin3BandSplitter::DistrhoPlugin3BandSplitter()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
 {
     // set default values
-    d_setProgram(0);
+    loadProgram(0);
 
     // reset
-    d_deactivate();
+    deactivate();
 }
 
 // -----------------------------------------------------------------------
 // Init
 
-void DistrhoPlugin3BandSplitter::d_initParameter(uint32_t index, Parameter& parameter)
+void DistrhoPlugin3BandSplitter::initParameter(uint32_t index, Parameter& parameter)
 {
     switch (index)
     {
@@ -106,7 +106,7 @@ void DistrhoPlugin3BandSplitter::d_initParameter(uint32_t index, Parameter& para
     }
 }
 
-void DistrhoPlugin3BandSplitter::d_initProgramName(uint32_t index, d_string& programName)
+void DistrhoPlugin3BandSplitter::initProgramName(uint32_t index, String& programName)
 {
     if (index != 0)
         return;
@@ -117,7 +117,7 @@ void DistrhoPlugin3BandSplitter::d_initProgramName(uint32_t index, d_string& pro
 // -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPlugin3BandSplitter::d_getParameterValue(uint32_t index) const
+float DistrhoPlugin3BandSplitter::getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -138,9 +138,9 @@ float DistrhoPlugin3BandSplitter::d_getParameterValue(uint32_t index) const
     }
 }
 
-void DistrhoPlugin3BandSplitter::d_setParameterValue(uint32_t index, float value)
+void DistrhoPlugin3BandSplitter::setParameterValue(uint32_t index, float value)
 {
-    if (d_getSampleRate() <= 0.0)
+    if (getSampleRate() <= 0.0)
         return;
 
     switch (index)
@@ -164,21 +164,21 @@ void DistrhoPlugin3BandSplitter::d_setParameterValue(uint32_t index, float value
     case paramLowMidFreq:
         fLowMidFreq = std::fmin(value, fMidHighFreq);
         freqLP = fLowMidFreq;
-        xLP  = std::exp(-2.0f * kPI * freqLP / (float)d_getSampleRate());
+        xLP  = std::exp(-2.0f * kPI * freqLP / (float)getSampleRate());
         a0LP = 1.0f - xLP;
         b1LP = -xLP;
         break;
     case paramMidHighFreq:
         fMidHighFreq = std::fmax(value, fLowMidFreq);
         freqHP = fMidHighFreq;
-        xHP  = std::exp(-2.0f * kPI * freqHP / (float)d_getSampleRate());
+        xHP  = std::exp(-2.0f * kPI * freqHP / (float)getSampleRate());
         a0HP = 1.0f - xHP;
         b1HP = -xHP;
         break;
     }
 }
 
-void DistrhoPlugin3BandSplitter::d_setProgram(uint32_t index)
+void DistrhoPlugin3BandSplitter::loadProgram(uint32_t index)
 {
     if (index != 0)
         return;
@@ -197,15 +197,15 @@ void DistrhoPlugin3BandSplitter::d_setProgram(uint32_t index)
     freqHP = 2000.0f;
 
     // reset filter values
-    d_activate();
+    activate();
 }
 
 // -----------------------------------------------------------------------
 // Process
 
-void DistrhoPlugin3BandSplitter::d_activate()
+void DistrhoPlugin3BandSplitter::activate()
 {
-    const float sr = (float)d_getSampleRate();
+    const float sr = (float)getSampleRate();
 
     xLP  = std::exp(-2.0f * kPI * freqLP / sr);
 
@@ -222,13 +222,13 @@ void DistrhoPlugin3BandSplitter::d_activate()
     b1HP = -xHP;
 }
 
-void DistrhoPlugin3BandSplitter::d_deactivate()
+void DistrhoPlugin3BandSplitter::deactivate()
 {
     out1LP = out2LP = out1HP = out2HP = 0.0f;
     tmp1LP = tmp2LP = tmp1HP = tmp2HP = 0.0f;
 }
 
-void DistrhoPlugin3BandSplitter::d_run(const float** inputs, float** outputs, uint32_t frames)
+void DistrhoPlugin3BandSplitter::run(const float** inputs, float** outputs, uint32_t frames)
 {
     const float* in1  = inputs[0];
     const float* in2  = inputs[1];

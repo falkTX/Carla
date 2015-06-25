@@ -47,14 +47,13 @@ static const projectM::Settings kSettings = {
 // -----------------------------------------------------------------------
 
 DistrhoUIProM::DistrhoUIProM()
-    : UI()
+    : UI(512, 512)
 {
-    setSize(512, 512);
 }
 
 DistrhoUIProM::~DistrhoUIProM()
 {
-    if (DistrhoPluginProM* const dspPtr = (DistrhoPluginProM*)d_getPluginInstancePointer())
+    if (DistrhoPluginProM* const dspPtr = (DistrhoPluginProM*)getPluginInstancePointer())
     {
         const MutexLocker csm(dspPtr->fMutex);
         dspPtr->fPM = nullptr;
@@ -64,21 +63,21 @@ DistrhoUIProM::~DistrhoUIProM()
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void DistrhoUIProM::d_parameterChanged(uint32_t, float)
+void DistrhoUIProM::parameterChanged(uint32_t, float)
 {
 }
 
 // -----------------------------------------------------------------------
 // UI Callbacks
 
-void DistrhoUIProM::d_uiIdle()
+void DistrhoUIProM::uiIdle()
 {
     if (fPM == nullptr)
         return;
 
     repaint();
 
-    if (DistrhoPluginProM* const dspPtr = (DistrhoPluginProM*)d_getPluginInstancePointer())
+    if (DistrhoPluginProM* const dspPtr = (DistrhoPluginProM*)getPluginInstancePointer())
     {
         if (dspPtr->fPM != nullptr)
             return;
@@ -88,7 +87,7 @@ void DistrhoUIProM::d_uiIdle()
     }
 }
 
-void DistrhoUIProM::d_uiReshape(uint width, uint height)
+void DistrhoUIProM::uiReshape(uint width, uint height)
 {
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
@@ -175,13 +174,13 @@ bool DistrhoUIProM::onKeyboard(const KeyboardEvent& ev)
     {
         switch (ev.key)
         {
-        case DGL::CHAR_BACKSPACE:
+        case DGL::kCharBackspace:
             pmKey = PROJECTM_K_BACKSPACE;
             break;
-        case DGL::CHAR_ESCAPE:
+        case DGL::kCharEscape:
             pmKey = PROJECTM_K_ESCAPE;
             break;
-        case DGL::CHAR_DELETE:
+        case DGL::kCharDelete:
             pmKey = PROJECTM_K_DELETE;
             break;
         }
@@ -190,7 +189,7 @@ bool DistrhoUIProM::onKeyboard(const KeyboardEvent& ev)
     if (pmKey == PROJECTM_K_NONE)
         return false;
 
-    if (ev.mod & DGL::MODIFIER_CTRL)
+    if (ev.mod & DGL::kModifierControl)
         pmMod = PROJECTM_KMOD_LCTRL;
 
     fPM->key_handler(ev.press ? PROJECTM_KEYUP : PROJECTM_KEYDOWN, pmKey, pmMod);
@@ -208,84 +207,84 @@ bool DistrhoUIProM::onSpecial(const SpecialEvent& ev)
 
     switch (ev.key)
     {
-    case DGL::KEY_F1:
+    case DGL::kKeyF1:
         pmKey = PROJECTM_K_F1;
         break;
-    case DGL::KEY_F2:
+    case DGL::kKeyF2:
         pmKey = PROJECTM_K_F2;
         break;
-    case DGL::KEY_F3:
+    case DGL::kKeyF3:
         pmKey = PROJECTM_K_F3;
         break;
-    case DGL::KEY_F4:
+    case DGL::kKeyF4:
         pmKey = PROJECTM_K_F4;
         break;
-    case DGL::KEY_F5:
+    case DGL::kKeyF5:
         pmKey = PROJECTM_K_F5;
         break;
-    case DGL::KEY_F6:
+    case DGL::kKeyF6:
         pmKey = PROJECTM_K_F6;
         break;
-    case DGL::KEY_F7:
+    case DGL::kKeyF7:
         pmKey = PROJECTM_K_F7;
         break;
-    case DGL::KEY_F8:
+    case DGL::kKeyF8:
         pmKey = PROJECTM_K_F8;
         break;
-    case DGL::KEY_F9:
+    case DGL::kKeyF9:
         pmKey = PROJECTM_K_F9;
         break;
-    case DGL::KEY_F10:
+    case DGL::kKeyF10:
         pmKey = PROJECTM_K_F10;
         break;
-    case DGL::KEY_F11:
+    case DGL::kKeyF11:
         pmKey = PROJECTM_K_F11;
         break;
-    case DGL::KEY_F12:
+    case DGL::kKeyF12:
         pmKey = PROJECTM_K_F12;
         break;
-    case DGL::KEY_LEFT:
+    case DGL::kKeyLeft:
         pmKey = PROJECTM_K_LEFT;
         break;
-    case DGL::KEY_UP:
+    case DGL::kKeyUp:
         pmKey = PROJECTM_K_UP;
         break;
-    case DGL::KEY_RIGHT:
+    case DGL::kKeyRight:
         pmKey = PROJECTM_K_RIGHT;
         break;
-    case DGL::KEY_DOWN:
+    case DGL::kKeyDown:
         pmKey = PROJECTM_K_DOWN;
         break;
-    case DGL::KEY_PAGE_UP:
+    case DGL::kKeyPageUp:
         pmKey = PROJECTM_K_PAGEUP;
         break;
-    case DGL::KEY_PAGE_DOWN:
+    case DGL::kKeyPageDown:
         pmKey = PROJECTM_K_PAGEDOWN;
         break;
-    case DGL::KEY_HOME:
+    case DGL::kKeyHome:
         pmKey = PROJECTM_K_HOME;
         break;
-    case DGL::KEY_END:
+    case DGL::kKeyEnd:
         pmKey = PROJECTM_K_END;
         break;
-    case DGL::KEY_INSERT:
+    case DGL::kKeyInsert:
         pmKey = PROJECTM_K_INSERT;
         break;
-    case DGL::KEY_SHIFT:
+    case DGL::kKeyShift:
         pmKey = PROJECTM_K_LSHIFT;
         break;
-    case DGL::KEY_CTRL:
+    case DGL::kKeyControl:
         pmKey = PROJECTM_K_LCTRL;
         break;
-    case DGL::KEY_ALT:
-    case DGL::KEY_SUPER:
+    case DGL::kKeyAlt:
+    case DGL::kKeySuper:
         break;
     }
 
     if (pmKey == PROJECTM_K_NONE)
         return false;
 
-    if (ev.mod & DGL::MODIFIER_CTRL)
+    if (ev.mod & DGL::kModifierControl)
         pmMod = PROJECTM_KMOD_LCTRL;
 
     fPM->key_handler(ev.press ? PROJECTM_KEYUP : PROJECTM_KEYDOWN, pmKey, pmMod);

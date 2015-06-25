@@ -29,16 +29,16 @@ DistrhoPluginPingPongPan::DistrhoPluginPingPongPan()
     : Plugin(paramCount, 1, 0) // 1 program, 0 states
 {
     // set default values
-    d_setProgram(0);
+    loadProgram(0);
 
     // reset
-    d_deactivate();
+    deactivate();
 }
 
 // -----------------------------------------------------------------------
 // Init
 
-void DistrhoPluginPingPongPan::d_initParameter(uint32_t index, Parameter& parameter)
+void DistrhoPluginPingPongPan::initParameter(uint32_t index, Parameter& parameter)
 {
     switch (index)
     {
@@ -63,7 +63,7 @@ void DistrhoPluginPingPongPan::d_initParameter(uint32_t index, Parameter& parame
     }
 }
 
-void DistrhoPluginPingPongPan::d_initProgramName(uint32_t index, d_string& programName)
+void DistrhoPluginPingPongPan::initProgramName(uint32_t index, String& programName)
 {
     if (index != 0)
         return;
@@ -74,7 +74,7 @@ void DistrhoPluginPingPongPan::d_initProgramName(uint32_t index, d_string& progr
 // -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginPingPongPan::d_getParameterValue(uint32_t index) const
+float DistrhoPluginPingPongPan::getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -87,16 +87,16 @@ float DistrhoPluginPingPongPan::d_getParameterValue(uint32_t index) const
     }
 }
 
-void DistrhoPluginPingPongPan::d_setParameterValue(uint32_t index, float value)
+void DistrhoPluginPingPongPan::setParameterValue(uint32_t index, float value)
 {
-    if (d_getSampleRate() <= 0.0)
+    if (getSampleRate() <= 0.0)
         return;
 
     switch (index)
     {
     case paramFreq:
         fFreq = value;
-        waveSpeed = (k2PI * fFreq / 100.0f)/(float)d_getSampleRate();
+        waveSpeed = (k2PI * fFreq / 100.0f)/(float)getSampleRate();
         break;
     case paramWidth:
         fWidth = value;
@@ -104,7 +104,7 @@ void DistrhoPluginPingPongPan::d_setParameterValue(uint32_t index, float value)
     }
 }
 
-void DistrhoPluginPingPongPan::d_setProgram(uint32_t index)
+void DistrhoPluginPingPongPan::loadProgram(uint32_t index)
 {
     if (index != 0)
         return;
@@ -114,23 +114,23 @@ void DistrhoPluginPingPongPan::d_setProgram(uint32_t index)
     fWidth = 75.0f;
 
     // reset filter values
-    d_activate();
+    activate();
 }
 
 // -----------------------------------------------------------------------
 // Process
 
-void DistrhoPluginPingPongPan::d_activate()
+void DistrhoPluginPingPongPan::activate()
 {
-    waveSpeed = (k2PI * fFreq / 100.0f)/(float)d_getSampleRate();
+    waveSpeed = (k2PI * fFreq / 100.0f)/(float)getSampleRate();
 }
 
-void DistrhoPluginPingPongPan::d_deactivate()
+void DistrhoPluginPingPongPan::deactivate()
 {
     wavePos = 0.0f;
 }
 
-void DistrhoPluginPingPongPan::d_run(const float** inputs, float** outputs, uint32_t frames)
+void DistrhoPluginPingPongPan::run(const float** inputs, float** outputs, uint32_t frames)
 {
     const float* in1  = inputs[0];
     const float* in2  = inputs[1];

@@ -52,27 +52,27 @@ protected:
     // -------------------------------------------------------------------
     // Information
 
-    const char* d_getLabel() const noexcept override
+    const char* getLabel() const noexcept override
     {
         return "Nekobi";
     }
 
-    const char* d_getMaker() const noexcept override
+    const char* getMaker() const noexcept override
     {
         return "Sean Bolton, falkTX";
     }
 
-    const char* d_getLicense() const noexcept override
+    const char* getLicense() const noexcept override
     {
         return "GPL v2+";
     }
 
-    uint32_t d_getVersion() const noexcept override
+    uint32_t getVersion() const noexcept override
     {
         return 0x1000;
     }
 
-    int64_t d_getUniqueId() const noexcept override
+    int64_t getUniqueId() const noexcept override
     {
         return d_cconst('D', 'N', 'e', 'k');
     }
@@ -80,20 +80,20 @@ protected:
     // -------------------------------------------------------------------
     // Init
 
-    void d_initParameter(uint32_t index, Parameter& parameter) override;
+    void initParameter(uint32_t index, Parameter& parameter) override;
 
     // -------------------------------------------------------------------
     // Internal data
 
-    float d_getParameterValue(uint32_t index) const override;
-    void  d_setParameterValue(uint32_t index, float value) override;
+    float getParameterValue(uint32_t index) const override;
+    void  setParameterValue(uint32_t index, float value) override;
 
     // -------------------------------------------------------------------
     // Process
 
-    void d_activate() override;
-    void d_deactivate() override;
-    void d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) override;
+    void activate() override;
+    void deactivate() override;
+    void run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount) override;
 
     // -------------------------------------------------------------------
 

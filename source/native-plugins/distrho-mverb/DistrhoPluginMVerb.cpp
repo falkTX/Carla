@@ -25,16 +25,16 @@ START_NAMESPACE_DISTRHO
 DistrhoPluginMVerb::DistrhoPluginMVerb()
     : Plugin(MVerb<float>::NUM_PARAMS, 5, 0) // 5 program, 0 states
 {
-    fVerb.setSampleRate(d_getSampleRate());
+    fVerb.setSampleRate(getSampleRate());
 
     // set initial values
-    d_setProgram(0);
+    loadProgram(0);
 }
 
 // -----------------------------------------------------------------------
 // Init
 
-void DistrhoPluginMVerb::d_initParameter(uint32_t index, Parameter& parameter)
+void DistrhoPluginMVerb::initParameter(uint32_t index, Parameter& parameter)
 {
     parameter.unit       = "%";
     parameter.ranges.min = 0.0f;
@@ -101,7 +101,7 @@ void DistrhoPluginMVerb::d_initParameter(uint32_t index, Parameter& parameter)
     }
 }
 
-void DistrhoPluginMVerb::d_initProgramName(uint32_t index, d_string& programName)
+void DistrhoPluginMVerb::initProgramName(uint32_t index, String& programName)
 {
     switch(index)
     {
@@ -126,17 +126,17 @@ void DistrhoPluginMVerb::d_initProgramName(uint32_t index, d_string& programName
 // -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginMVerb::d_getParameterValue(uint32_t index) const
+float DistrhoPluginMVerb::getParameterValue(uint32_t index) const
 {
     return fVerb.getParameter(static_cast<int>(index)) * 100.0f;
 }
 
-void DistrhoPluginMVerb::d_setParameterValue(uint32_t index, float value)
+void DistrhoPluginMVerb::setParameterValue(uint32_t index, float value)
 {
     fVerb.setParameter(static_cast<int>(index), value / 100.0f);
 }
 
-void DistrhoPluginMVerb::d_setProgram(uint32_t index)
+void DistrhoPluginMVerb::loadProgram(uint32_t index)
 {
     // NOTE: DAMPINGFREQ is reversed
 
@@ -205,12 +205,12 @@ void DistrhoPluginMVerb::d_setProgram(uint32_t index)
 // -----------------------------------------------------------------------
 // Process
 
-void DistrhoPluginMVerb::d_activate()
+void DistrhoPluginMVerb::activate()
 {
     fVerb.reset();
 }
 
-void DistrhoPluginMVerb::d_run(const float** inputs, float** outputs, uint32_t frames)
+void DistrhoPluginMVerb::run(const float** inputs, float** outputs, uint32_t frames)
 {
     fVerb.process(inputs, outputs, static_cast<int>(frames));
 }
@@ -218,7 +218,7 @@ void DistrhoPluginMVerb::d_run(const float** inputs, float** outputs, uint32_t f
 // -----------------------------------------------------------------------
 // Callbacks
 
-void DistrhoPluginMVerb::d_sampleRateChanged(double newSampleRate)
+void DistrhoPluginMVerb::sampleRateChanged(double newSampleRate)
 {
     fVerb.setSampleRate(newSampleRate);
 }

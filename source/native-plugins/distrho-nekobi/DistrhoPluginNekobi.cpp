@@ -91,8 +91,8 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     nekobee_init_tables();
 
     // init synth
-    fSynth.sample_rate = d_getSampleRate();
-    fSynth.deltat = 1.0f / (float)d_getSampleRate();
+    fSynth.sample_rate = getSampleRate();
+    fSynth.deltat = 1.0f / (float)getSampleRate();
     fSynth.nugget_remains = 0;
 
     fSynth.note_id = 0;
@@ -147,7 +147,7 @@ DistrhoPluginNekobi::DistrhoPluginNekobi()
     fSynth.volume    = 0.75f;
 
     // reset
-    d_deactivate();
+    deactivate();
 }
 
 DistrhoPluginNekobi::~DistrhoPluginNekobi()
@@ -158,7 +158,7 @@ DistrhoPluginNekobi::~DistrhoPluginNekobi()
 // -----------------------------------------------------------------------
 // Init
 
-void DistrhoPluginNekobi::d_initParameter(uint32_t index, Parameter& parameter)
+void DistrhoPluginNekobi::initParameter(uint32_t index, Parameter& parameter)
 {
     switch (index)
     {
@@ -238,7 +238,7 @@ void DistrhoPluginNekobi::d_initParameter(uint32_t index, Parameter& parameter)
 // -----------------------------------------------------------------------
 // Internal data
 
-float DistrhoPluginNekobi::d_getParameterValue(uint32_t index) const
+float DistrhoPluginNekobi::getParameterValue(uint32_t index) const
 {
     switch (index)
     {
@@ -263,7 +263,7 @@ float DistrhoPluginNekobi::d_getParameterValue(uint32_t index) const
     return 0.0f;
 }
 
-void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
+void DistrhoPluginNekobi::setParameterValue(uint32_t index, float value)
 {
     switch (index)
     {
@@ -313,7 +313,7 @@ void DistrhoPluginNekobi::d_setParameterValue(uint32_t index, float value)
 // -----------------------------------------------------------------------
 // Process
 
-void DistrhoPluginNekobi::d_activate()
+void DistrhoPluginNekobi::activate()
 {
     fSynth.nugget_remains = 0;
     fSynth.note_id = 0;
@@ -322,13 +322,13 @@ void DistrhoPluginNekobi::d_activate()
         nekobee_synth_all_voices_off(&fSynth);
 }
 
-void DistrhoPluginNekobi::d_deactivate()
+void DistrhoPluginNekobi::deactivate()
 {
     if (fSynth.voice != nullptr)
         nekobee_synth_all_voices_off(&fSynth);
 }
 
-void DistrhoPluginNekobi::d_run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
+void DistrhoPluginNekobi::run(const float**, float** outputs, uint32_t frames, const MidiEvent* midiEvents, uint32_t midiEventCount)
 {
     uint32_t framesDone = 0;
     uint32_t curEventIndex = 0;

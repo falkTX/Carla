@@ -20,27 +20,24 @@
 
 START_NAMESPACE_DISTRHO
 
+namespace Art = DistrhoArtworkNekobi;
+
 // -----------------------------------------------------------------------
 
 DistrhoUINekobi::DistrhoUINekobi()
-    : UI(),
+    : UI(Art::backgroundWidth, Art::backgroundHeight),
+      fImgBackground(Art::backgroundData, Art::backgroundWidth, Art::backgroundHeight, GL_BGR),
       fAboutWindow(this)
 {
     // FIXME
     fNeko.setTimerSpeed(5);
 
-    // set UI size
-    setSize(DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight);
-
-    // background
-    fImgBackground = Image(DistrhoArtworkNekobi::backgroundData, DistrhoArtworkNekobi::backgroundWidth, DistrhoArtworkNekobi::backgroundHeight, GL_BGR);
-
     // about
-    Image aboutImage(DistrhoArtworkNekobi::aboutData, DistrhoArtworkNekobi::aboutWidth, DistrhoArtworkNekobi::aboutHeight, GL_BGR);
+    Image aboutImage(Art::aboutData, Art::aboutWidth, Art::aboutHeight, GL_BGR);
     fAboutWindow.setImage(aboutImage);
 
     // slider
-    Image sliderImage(DistrhoArtworkNekobi::sliderData, DistrhoArtworkNekobi::sliderWidth, DistrhoArtworkNekobi::sliderHeight);
+    Image sliderImage(Art::sliderData, Art::sliderWidth, Art::sliderHeight);
 
     fSliderWaveform = new ImageSlider(this, sliderImage);
     fSliderWaveform->setId(DistrhoPluginNekobi::paramWaveform);
@@ -52,7 +49,7 @@ DistrhoUINekobi::DistrhoUINekobi()
     fSliderWaveform->setCallback(this);
 
     // knobs
-    Image knobImage(DistrhoArtworkNekobi::knobData, DistrhoArtworkNekobi::knobWidth, DistrhoArtworkNekobi::knobHeight);
+    Image knobImage(Art::knobData, Art::knobWidth, Art::knobHeight);
 
     // knob Tuning
     fKnobTuning = new ImageKnob(this, knobImage, ImageKnob::Vertical);
@@ -125,8 +122,8 @@ DistrhoUINekobi::DistrhoUINekobi()
     fKnobVolume->setCallback(this);
 
     // about button
-    Image aboutImageNormal(DistrhoArtworkNekobi::aboutButtonNormalData, DistrhoArtworkNekobi::aboutButtonNormalWidth, DistrhoArtworkNekobi::aboutButtonNormalHeight);
-    Image aboutImageHover(DistrhoArtworkNekobi::aboutButtonHoverData, DistrhoArtworkNekobi::aboutButtonHoverWidth, DistrhoArtworkNekobi::aboutButtonHoverHeight);
+    Image aboutImageNormal(Art::aboutButtonNormalData, Art::aboutButtonNormalWidth, Art::aboutButtonNormalHeight);
+    Image aboutImageHover(Art::aboutButtonHoverData, Art::aboutButtonHoverWidth, Art::aboutButtonHoverHeight);
     fButtonAbout = new ImageButton(this, aboutImageNormal, aboutImageHover, aboutImageHover);
     fButtonAbout->setAbsolutePos(505, 5);
     fButtonAbout->setCallback(this);
@@ -135,7 +132,7 @@ DistrhoUINekobi::DistrhoUINekobi()
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void DistrhoUINekobi::d_parameterChanged(uint32_t index, float value)
+void DistrhoUINekobi::parameterChanged(uint32_t index, float value)
 {
     switch (index)
     {
@@ -169,7 +166,7 @@ void DistrhoUINekobi::d_parameterChanged(uint32_t index, float value)
 // -----------------------------------------------------------------------
 // UI Callbacks
 
-void DistrhoUINekobi::d_uiIdle()
+void DistrhoUINekobi::uiIdle()
 {
     if (fNeko.idle())
         repaint();
@@ -188,32 +185,32 @@ void DistrhoUINekobi::imageButtonClicked(ImageButton* button, int)
 
 void DistrhoUINekobi::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void DistrhoUINekobi::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void DistrhoUINekobi::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUINekobi::imageSliderDragStarted(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), true);
+    editParameter(slider->getId(), true);
 }
 
 void DistrhoUINekobi::imageSliderDragFinished(ImageSlider* slider)
 {
-    d_editParameter(slider->getId(), false);
+    editParameter(slider->getId(), false);
 }
 
 void DistrhoUINekobi::imageSliderValueChanged(ImageSlider* slider, float value)
 {
-    d_setParameterValue(slider->getId(), value);
+    setParameterValue(slider->getId(), value);
 }
 
 void DistrhoUINekobi::onDisplay()

@@ -23,24 +23,21 @@
 
 START_NAMESPACE_DISTRHO
 
+namespace Art = DistrhoArtworkMVerb;
+
 using DGL::Color;
 
 // -----------------------------------------------------------------------
 
 DistrhoUIMVerb::DistrhoUIMVerb()
-    : UI()
+    : UI(Art::backgroundWidth, Art::backgroundHeight),
+      fImgBackground(Art::backgroundData, Art::backgroundWidth, Art::backgroundHeight, GL_BGR)
 {
-    // set UI size
-    setSize(DistrhoArtworkMVerb::backgroundWidth, DistrhoArtworkMVerb::backgroundHeight);
-
-    // background
-    fImgBackground = Image(DistrhoArtworkMVerb::backgroundData, DistrhoArtworkMVerb::backgroundWidth, DistrhoArtworkMVerb::backgroundHeight, GL_BGR);
-
     // text
-    fNanoText.createFontMem("kh", (const uchar*)khkangrey_ttf, khkangrey_ttfSize, false);
+    fNanoText.createFontFromMemory("kh", (const uchar*)khkangrey_ttf, khkangrey_ttfSize, false);
 
     // knobs
-    Image knobImage(DistrhoArtworkMVerb::knobData, DistrhoArtworkMVerb::knobWidth, DistrhoArtworkMVerb::knobHeight);
+    Image knobImage(Art::knobData, Art::knobWidth, Art::knobHeight);
 
     {
         ImageKnob* const knob(new ImageKnob(this, knobImage, ImageKnob::Vertical));
@@ -125,7 +122,7 @@ DistrhoUIMVerb::DistrhoUIMVerb()
     }
 
     // set initial values
-    d_programChanged(0);
+    programLoaded(0);
 }
 
 DistrhoUIMVerb::~DistrhoUIMVerb()
@@ -142,12 +139,12 @@ DistrhoUIMVerb::~DistrhoUIMVerb()
 // -----------------------------------------------------------------------
 // DSP Callbacks
 
-void DistrhoUIMVerb::d_parameterChanged(uint32_t index, float value)
+void DistrhoUIMVerb::parameterChanged(uint32_t index, float value)
 {
     fKnobs[index]->setValue(value);
 }
 
-void DistrhoUIMVerb::d_programChanged(uint32_t index)
+void DistrhoUIMVerb::programLoaded(uint32_t index)
 {
     switch(index)
     {
@@ -214,17 +211,17 @@ void DistrhoUIMVerb::d_programChanged(uint32_t index)
 
 void DistrhoUIMVerb::imageKnobDragStarted(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), true);
+    editParameter(knob->getId(), true);
 }
 
 void DistrhoUIMVerb::imageKnobDragFinished(ImageKnob* knob)
 {
-    d_editParameter(knob->getId(), false);
+    editParameter(knob->getId(), false);
 }
 
 void DistrhoUIMVerb::imageKnobValueChanged(ImageKnob* knob, float value)
 {
-    d_setParameterValue(knob->getId(), value);
+    setParameterValue(knob->getId(), value);
 }
 
 void DistrhoUIMVerb::onDisplay()
@@ -232,11 +229,11 @@ void DistrhoUIMVerb::onDisplay()
     fImgBackground.draw();
 
     // text display
-    fNanoText.beginFrame(getWidth(), getHeight());
+    fNanoText.beginFrame(this);
 
     fNanoText.fontFace("kh");
     fNanoText.fontSize(20);
-    fNanoText.textAlign(NanoVG::Align(NanoVG::ALIGN_CENTER|NanoVG::ALIGN_TOP));
+    fNanoText.textAlign(NanoVG::ALIGN_CENTER|NanoVG::ALIGN_TOP);
     fNanoText.fillColor(Color(1.0f, 1.0f, 1.0f));
 
     char strBuf[32+1];
@@ -245,13 +242,10 @@ void DistrhoUIMVerb::onDisplay()
     for (std::size_t i=0; i<MVerb<float>::NUM_PARAMS; ++i)
     {
         std::snprintf(strBuf, 32, "%i%%", int(fKnobs[i]->getValue()));
-        fNanoText.textBox(58 + fKnobs[i]->getAbsoluteX()-56, 73, 30.0f, strBuf, nullptr);
+        fNanoText.textBox(58.0f + float(fKnobs[i]->getAbsoluteX()) - 56.0f, 73.0f, 30.0f, strBuf, nullptr);
     }
 
     fNanoText.endFrame();
-
-    // just in case
-    glDisable(GL_CULL_FACE);
 }
 
 // -----------------------------------------------------------------------
