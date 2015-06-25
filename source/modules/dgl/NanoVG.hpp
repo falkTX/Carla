@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -26,6 +26,11 @@ struct NVGpaint;
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
+// Forward class names
+
+class NanoVG;
+
+// -----------------------------------------------------------------------
 // NanoImage
 
 /**
@@ -36,11 +41,45 @@ START_NAMESPACE_DGL
  */
 class NanoImage
 {
+private:
+    struct Handle {
+        NVGcontext* context;
+        int         imageId;
+
+        Handle() noexcept
+            : context(nullptr),
+              imageId(0) {}
+
+        Handle(NVGcontext* c, int id) noexcept
+            : context(c),
+              imageId(id) {}
+    };
+
 public:
+   /**
+      Constructor for an invalid/null image.
+    */
+    NanoImage();
+
+   /**
+      Constructor.
+    */
+    NanoImage(const Handle& handle);
+
    /**
       Destructor.
     */
     ~NanoImage();
+
+   /**
+      Create a new image without recreating the C++ class.
+    */
+    NanoImage& operator=(const Handle& handle);
+
+   /**
+      Wherever this image is valid.
+    */
+    bool isValid() const noexcept;
 
    /**
       Get size.
@@ -48,23 +87,16 @@ public:
     Size<uint> getSize() const noexcept;
 
    /**
-      Update image data.
+      Get the OpenGL texture handle.
     */
-    void updateImage(const uchar* const data);
-
-protected:
-   /**
-      Constructors are protected.
-      NanoImages must be created within a NanoVG or NanoWidget class.
-    */
-    NanoImage(NVGcontext* const context, const int imageId) noexcept;
+    GLuint getTextureHandle() const;
 
 private:
-    NVGcontext* fContext;
-    int fImageId;
+    Handle fHandle;
     Size<uint> fSize;
     friend class NanoVG;
 
+   /** @internal */
     void _updateSize();
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoImage)
@@ -114,7 +146,7 @@ private:
    These can be used as paints for strokes and fills.
 
    @section Scissoring
-   Scissoring allows you to clip the rendering into a rectangle. This is useful for varius
+   Scissoring allows you to clip the rendering into a rectangle. This is useful for various
    user interface cases like rendering a text edit or a timeline.
 
    @section Paths
@@ -168,6 +200,32 @@ private:
 class NanoVG
 {
 public:
+    enum CreateFlags {
+       /**
+          Flag indicating if geometry based anti-aliasing is used (may not be needed when using MSAA).
+        */
+        CREATE_ANTIALIAS = 1 << 0,
+
+       /**
+          Flag indicating if strokes should be drawn using stencil buffer. The rendering will be a little
+          slower, but path overlaps (i.e. self-intersecting or sharp turns) will be drawn just once.
+        */
+        CREATE_STENCIL_STROKES = 1 << 1,
+
+       /**
+          Flag indicating that additional debug checks are done.
+        */
+        CREATE_DEBUG = 1 << 2,
+    };
+
+    enum ImageFlags {
+        IMAGE_GENERATE_MIPMAPS = 1 << 0, // Generate mipmaps during creation of the image.
+        IMAGE_REPEAT_X         = 1 << 1, // Repeat image in X direction.
+        IMAGE_REPEAT_Y         = 1 << 2, // Repeat image in Y direction.
+        IMAGE_FLIP_Y           = 1 << 3, // Flips (inverses) image in Y direction when rendered.
+        IMAGE_PREMULTIPLIED    = 1 << 4  // Image data has premultiplied alpha.
+    };
+
     enum Align {
         // Horizontal align
         ALIGN_LEFT     = 1 << 0, // Align horizontally to left (default).
@@ -180,23 +238,12 @@ public:
         ALIGN_BASELINE = 1 << 6  // Align vertically to baseline (default).
     };
 
-    enum Alpha {
-        STRAIGHT_ALPHA,
-        PREMULTIPLIED_ALPHA
-    };
-
     enum LineCap {
         BUTT,
         ROUND,
         SQUARE,
         BEVEL,
         MITER
-    };
-
-    enum PatternRepeat {
-        REPEAT_NONE = 0x0, // No repeat
-        REPEAT_X    = 0x1, // Repeat in X direction
-        REPEAT_Y    = 0x2  // Repeat in Y direction
     };
 
     enum Solidity {
@@ -217,7 +264,6 @@ public:
         Color innerColor;
         Color outerColor;
         int   imageId;
-        PatternRepeat repeat;
 
         Paint() noexcept;
 
@@ -246,14 +292,14 @@ public:
 
    /**
       Constructor.
-      Uses 512x512 as default atlas size.
+      @see CreateFlags
     */
-    NanoVG();
+    NanoVG(int flags = CREATE_ANTIALIAS);
 
    /**
-      Constructor using custom text atlas size.
+      Constructor reusing a NanoVG context, used for subwidgets.
     */
-    NanoVG(const int textAtlasWidth, const int textAtlasHeight);
+    NanoVG(NanoWidget* groupWidget);
 
    /**
       Destructor.
@@ -271,14 +317,18 @@ public:
 
    /**
       Begin drawing a new frame.
-      @param withAlha Controls if drawing the shapes to the render target should be done using straight or pre-multiplied alpha.
     */
-    void beginFrame(const uint width, const uint height, const float scaleFactor = 1.0f, const Alpha alpha = PREMULTIPLIED_ALPHA);
+    void beginFrame(const uint width, const uint height, const float scaleFactor = 1.0f);
 
    /**
       Begin drawing a new frame inside a widget.
     */
     void beginFrame(Widget* const widget);
+
+   /**
+      Cancels drawing the current frame.
+    */
+    void cancelFrame();
 
    /**
       Ends drawing flushing remaining render state.
@@ -373,6 +423,12 @@ public:
       Can be one of MITER, ROUND, BEVEL.
     */
     void lineJoin(LineCap join = MITER);
+
+   /**
+      Sets the transparency applied to all rendered shapes.
+      Already transparent paths will get proportionally more transparent as well.
+    */
+    void globalAlpha(float alpha);
 
    /* --------------------------------------------------------------------
     * Transforms */
@@ -495,17 +551,50 @@ public:
    /**
       Creates image by loading it from the disk from specified file name.
     */
-    NanoImage* createImage(const char* filename);
+    NanoImage::Handle createImageFromFile(const char* filename, ImageFlags imageFlags);
+
+   /**
+      Creates image by loading it from the disk from specified file name.
+      Overloaded function for convenience.
+      @see ImageFlags
+    */
+    NanoImage::Handle createImageFromFile(const char* filename, int imageFlags);
 
    /**
       Creates image by loading it from the specified chunk of memory.
     */
-    NanoImage* createImageMem(uchar* data, int ndata);
+    NanoImage::Handle createImageFromMemory(uchar* data, uint dataSize, ImageFlags imageFlags);
+
+   /**
+      Creates image by loading it from the specified chunk of memory.
+      Overloaded function for convenience.
+      @see ImageFlags
+    */
+    NanoImage::Handle createImageFromMemory(uchar* data, uint dataSize, int imageFlags);
 
    /**
       Creates image from specified image data.
     */
-    NanoImage* createImageRGBA(uint w, uint h, const uchar* data);
+    NanoImage::Handle createImageFromRGBA(uint w, uint h, const uchar* data, ImageFlags imageFlags);
+
+   /**
+      Creates image from specified image data.
+      Overloaded function for convenience.
+      @see ImageFlags
+    */
+    NanoImage::Handle createImageFromRGBA(uint w, uint h, const uchar* data, int imageFlags);
+
+   /**
+      Creates image from an OpenGL texture handle.
+    */
+    NanoImage::Handle createImageFromTextureHandle(GLuint textureId, uint w, uint h, ImageFlags imageFlags, bool deleteTexture = false);
+
+   /**
+      Creates image from an OpenGL texture handle.
+      Overloaded function for convenience.
+      @see ImageFlags
+    */
+    NanoImage::Handle createImageFromTextureHandle(GLuint textureId, uint w, uint h, int imageFlags, bool deleteTexture = false);
 
    /* --------------------------------------------------------------------
     * Paints */
@@ -535,20 +624,29 @@ public:
 
    /**
       Creates and returns an image pattern. Parameters (ox,oy) specify the left-top location of the image pattern,
-      (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render,
-      and repeat tells if the image should be repeated across x or y.
+      (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render.
       The gradient is transformed by the current transform when it is passed to fillPaint() or strokePaint().
     */
-    Paint imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage* image, PatternRepeat repeat);
+    Paint imagePattern(float ox, float oy, float ex, float ey, float angle, const NanoImage& image, float alpha);
 
    /* --------------------------------------------------------------------
     * Scissoring */
 
    /**
-      Sets the current
+      Sets the current scissor rectangle.
       The scissor rectangle is transformed by the current transform.
     */
     void scissor(float x, float y, float w, float h);
+
+   /**
+      Intersects current scissor rectangle with the specified rectangle.
+      The scissor rectangle is transformed by the current transform.
+      Note: in case the rotation of previous scissor rect differs from
+      the current one, the intersection will be done between the specified
+      rectangle and the previous scissor rectangle transformed in the current
+      transform space. The resulting shape is always rectangle.
+    */
+    void intersectScissor(float x, float y, float w, float h);
 
    /**
       Reset and disables scissoring.
@@ -574,9 +672,14 @@ public:
     void lineTo(float x, float y);
 
    /**
-      Adds bezier segment from last point in the path via two control points to the specified point.
+      Adds cubic bezier segment from last point in the path via two control points to the specified point.
     */
     void bezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y);
+
+   /**
+      Adds quadratic bezier segment from last point in the path via a control point to the specified point.
+    */
+    void quadTo(float cx, float cy, float x, float y);
 
    /**
       Adds an arc segment at the corner defined by the last path point, and two specified points.
@@ -594,7 +697,9 @@ public:
     void pathWinding(Winding dir);
 
    /**
-      Creates new arc shaped sub-path.
+      Creates new circle arc shaped sub-path. The arc center is at cx,cy, the arc radius is r,
+      and the arc is drawn from angle a0 to a1, and swept in direction dir (NVG_CCW or NVG_CW).
+      Angles are specified in radians.
     */
     void arc(float cx, float cy, float r, float a0, float a1, Winding dir);
 
@@ -635,13 +740,13 @@ public:
       Creates font by loading it from the disk from specified file name.
       Returns handle to the font.
     */
-    FontId createFont(const char* name, const char* filename);
+    FontId createFontFromFile(const char* name, const char* filename);
 
    /**
       Creates font by loading it from the specified memory chunk.
       Returns handle to the font.
     */
-    FontId createFontMem(const char* name, const uchar* data, int ndata, bool freeData);
+    FontId createFontFromMemory(const char* name, const uchar* data, uint dataSize, bool freeData);
 
    /**
       Finds a loaded font of specified name, and returns handle to it, or -1 if the font is not found.
@@ -696,11 +801,12 @@ public:
     float text(float x, float y, const char* string, const char* end);
 
    /**
-      Draws multi-line text string at specified location wrapped at the specified width. If end is specified only the sub-string up to the end is drawn.
+      Draws multi-line text string at specified location wrapped at the specified width.
+      If end is specified only the sub-string up to the end is drawn.
       White space is stripped at the beginning of the rows, the text is split at word boundaries or when new-line characters are encountered.
       Words longer than the max width are slit at nearest character (i.e. no hyphenation).
     */
-    void textBox(float x, float y, float breakRowWidth, const char* string, const char* end);
+    void textBox(float x, float y, float breakRowWidth, const char* string, const char* end = nullptr);
 
    /**
       Measures the specified text string. The bounds value are [xmin,ymin, xmax,ymax].
@@ -714,13 +820,13 @@ public:
       if the bounding box of the text should be returned. The bounds value are [xmin,ymin, xmax,ymax]
       Measured values are returned in local coordinate space.
     */
-    void textBoxBounds(float x, float y, float breakRowWidth, const char* string, const char* end, float* bounds);
+    void textBoxBounds(float x, float y, float breakRowWidth, const char* string, const char* end, float bounds[4]);
 
    /**
       Calculates the glyph x positions of the specified text. If end is specified only the sub-string will be used.
       Measured values are returned in local coordinate space.
     */
-    int textGlyphPositions(float x, float y, const char* string, const char* end, GlyphPosition* positions, int maxPositions);
+    int textGlyphPositions(float x, float y, const char* string, const char* end, GlyphPosition& positions, int maxPositions);
 
    /**
       Returns the vertical metrics based on the current text style.
@@ -733,11 +839,12 @@ public:
       White space is stripped at the beginning of the rows, the text is split at word boundaries or when new-line characters are encountered.
       Words longer than the max width are slit at nearest character (i.e. no hyphenation).
     */
-    int textBreakLines(const char* string, const char* end, float breakRowWidth, TextRow* rows, int maxRows);
+    int textBreakLines(const char* string, const char* end, float breakRowWidth, TextRow& rows, int maxRows);
 
 private:
     NVGcontext* const fContext;
     bool fInFrame;
+    bool fIsSubWidget;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoVG)
 };
@@ -758,14 +865,24 @@ class NanoWidget : public Widget,
 public:
    /**
       Constructor.
+      @see CreateFlags
     */
-    NanoWidget(Window& parent)
-        : Widget(parent),
-          NanoVG(),
-          leakDetector_NanoWidget()
-    {
-        setNeedsScaling(true);
-    }
+    explicit NanoWidget(Window& parent, int flags = CREATE_ANTIALIAS);
+
+   /**
+      Constructor for a subwidget.
+    */
+    explicit NanoWidget(Widget* groupWidget, int flags = CREATE_ANTIALIAS);
+
+   /**
+      Constructor for a subwidget, reusing a NanoVG context.
+    */
+    explicit NanoWidget(NanoWidget* groupWidget);
+
+   /**
+      Destructor.
+    */
+    virtual ~NanoWidget();
 
 protected:
    /**
@@ -775,19 +892,21 @@ protected:
     virtual void onNanoDisplay() = 0;
 
 private:
+    struct PrivateData;
+    PrivateData* const nData;
+
    /**
       Widget display function.
       Implemented internally to wrap begin/endFrame() automatically.
     */
-    void onDisplay() override
-    {
-        //glPushAttrib(GL_PIXEL_MODE_BIT|GL_STENCIL_BUFFER_BIT|GL_ENABLE_BIT);
-        beginFrame(getWidth(), getHeight());
-        onNanoDisplay();
-        endFrame();
-        //glPopAttrib();
-        glDisable(GL_CULL_FACE);
-    }
+    void onDisplay() override;
+
+    // these should not be used
+    void beginFrame(uint,uint) {}
+    void beginFrame(uint,uint,float) {}
+    void beginFrame(Widget*) {}
+    void cancelFrame() {}
+    void endFrame() {}
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoWidget)
 };

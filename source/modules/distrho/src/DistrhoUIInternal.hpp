@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,10 +18,10 @@
 #define DISTRHO_UI_INTERNAL_HPP_INCLUDED
 
 #include "../DistrhoUI.hpp"
-#include "../../dgl/App.hpp"
+#include "../../dgl/Application.hpp"
 #include "../../dgl/Window.hpp"
 
-using DGL::App;
+using DGL::Application;
 using DGL::IdleCallback;
 using DGL::Window;
 
@@ -142,7 +142,7 @@ UI* createUiWrapper(void* const dspPtr, Window* const window)
 class UIExporterWindow : public Window
 {
 public:
-    UIExporterWindow(App& app, const intptr_t winId, void* const dspPtr)
+    UIExporterWindow(Application& app, const intptr_t winId, void* const dspPtr)
         : Window(app, winId),
           fUI(createUiWrapper(dspPtr, this)),
           fIsReady(false)
@@ -175,7 +175,7 @@ protected:
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
-        fUI->d_uiReshape(width, height);
+        fUI->uiReshape(width, height);
         fIsReady = true;
     }
 
@@ -184,7 +184,7 @@ protected:
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
-        fUI->d_uiFileBrowserSelected(filename);
+        fUI->uiFileBrowserSelected(filename);
     }
 
 private:
@@ -257,15 +257,15 @@ public:
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
-        fUI->d_parameterChanged(index, value);
+        fUI->parameterChanged(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    void programChanged(const uint32_t index)
+    void programLoaded(const uint32_t index)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fUI != nullptr,);
 
-        fUI->d_programChanged(index);
+        fUI->programLoaded(index);
     }
 #endif
 
@@ -276,7 +276,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         DISTRHO_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        fUI->d_stateChanged(key, value);
+        fUI->stateChanged(key, value);
     }
 #endif
 
@@ -295,7 +295,7 @@ public:
     void exec_idle()
     {
         if (glWindow.isReady())
-            fUI->d_uiIdle();
+            fUI->uiIdle();
     }
 
     bool idle()
@@ -305,7 +305,7 @@ public:
         glApp.idle();
 
         if (glWindow.isReady())
-            fUI->d_uiIdle();
+            fUI->uiIdle();
 
         return ! glApp.isQuiting();
     }
@@ -364,14 +364,14 @@ public:
         fData->sampleRate = sampleRate;
 
         if (doCallback)
-            fUI->d_sampleRateChanged(sampleRate);
+            fUI->sampleRateChanged(sampleRate);
     }
 
 private:
     // -------------------------------------------------------------------
     // DGL Application and Window for this widget
 
-    App glApp;
+    Application      glApp;
     UIExporterWindow glWindow;
 
     // prevent recursion

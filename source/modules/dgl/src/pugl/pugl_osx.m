@@ -187,12 +187,9 @@ puglDisplay(PuglView* view)
 		printf("Is doubleBuffered? FALSE\n");
 	}
 
-	if (self) {	
-		NSOpenGLContext* context = [self openGLContext];
-		[context makeCurrentContext];
-
+	if (self) {
 		GLint swapInterval = 1;
-		[context setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
+		[[self openGLContext] setValues:&swapInterval forParameter:NSOpenGLCPSwapInterval];
 
 		[self reshape];
 	}
@@ -216,11 +213,15 @@ puglDisplay(PuglView* view)
 	int    width  = bounds.size.width;
 	int    height = bounds.size.height;
 
+	puglEnterContext(puglview);
+
 	if (puglview->reshapeFunc) {
 		puglview->reshapeFunc(puglview, width, height);
 	} else {
 		puglDefaultReshape(puglview, width, height);
 	}
+
+	puglLeaveContext(puglview, false);
 
 	puglview->width  = width;
 	puglview->height = height;
@@ -228,14 +229,9 @@ puglDisplay(PuglView* view)
 
 - (void) drawRect:(NSRect)r
 {
+	puglEnterContext(puglview);
 	puglDisplay(puglview);
-
-	if (doubleBuffered) {
-	    [[self openGLContext] flushBuffer];
-	} else {
-	    glFlush();
-	    //glSwapAPPLE();
-	}
+	puglLeaveContext(puglview, true);
 
 	// unused
 	return; (void)r;
@@ -428,6 +424,31 @@ puglInitInternals()
 	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
 }
 
+void
+puglEnterContext(PuglView* view)
+{
+#ifdef PUGL_HAVE_GL
+	if (view->ctx_type == PUGL_GL) {
+		[[view->impl->glview openGLContext] makeCurrentContext];
+	}
+#endif
+}
+
+void
+puglLeaveContext(PuglView* view, bool flush)
+{
+#ifdef PUGL_HAVE_GL
+	if (view->ctx_type == PUGL_GL && flush) {
+		if (view->impl->glview->doubleBuffered) {
+			[[view->impl->glview openGLContext] flushBuffer];
+		} else {
+			glFlush();
+		}
+		//[NSOpenGLContext clearCurrentContext];
+	}
+#endif
+}
+
 int
 puglCreateWindow(PuglView* view, const char* title)
 {
@@ -543,4 +564,10 @@ PuglNativeWindow
 puglGetNativeWindow(PuglView* view)
 {
 	return (PuglNativeWindow)view->impl->glview;
+}
+
+void*
+puglGetContext(PuglView* view)
+{
+	return NULL;
 }

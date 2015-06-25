@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -38,18 +38,22 @@ extern double   d_lastSampleRate;
 struct Plugin::PrivateData {
     bool isProcessing;
 
+#if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+    AudioPort* audioPorts;
+#endif
+
     uint32_t   parameterCount;
     Parameter* parameters;
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
-    uint32_t  programCount;
-    d_string* programNames;
+    uint32_t programCount;
+    String*  programNames;
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
-    uint32_t  stateCount;
-    d_string* stateKeys;
-    d_string* stateDefValues;
+    uint32_t stateCount;
+    String*  stateKeys;
+    String*  stateDefValues;
 #endif
 
 #if DISTRHO_PLUGIN_WANT_LATENCY
@@ -65,6 +69,9 @@ struct Plugin::PrivateData {
 
     PrivateData() noexcept
         : isProcessing(false),
+#if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+          audioPorts(nullptr),
+#endif
           parameterCount(0),
           parameters(nullptr),
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
@@ -88,6 +95,14 @@ struct Plugin::PrivateData {
 
     ~PrivateData() noexcept
     {
+#if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+        if (audioPorts != nullptr)
+        {
+            delete[] audioPorts;
+            audioPorts = nullptr;
+        }
+#endif
+
         if (parameters != nullptr)
         {
             delete[] parameters;
@@ -132,17 +147,31 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
 
+#if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+        {
+            uint32_t j=0;
+# if DISTRHO_PLUGIN_NUM_INPUTS > 0
+            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i, ++j)
+                fPlugin->initAudioPort(true, i, fData->audioPorts[j]);
+# endif
+# if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+            for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i, ++j)
+                fPlugin->initAudioPort(false, i, fData->audioPorts[j]);
+# endif
+        }
+#endif
+
         for (uint32_t i=0, count=fData->parameterCount; i < count; ++i)
-            fPlugin->d_initParameter(i, fData->parameters[i]);
+            fPlugin->initParameter(i, fData->parameters[i]);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         for (uint32_t i=0, count=fData->programCount; i < count; ++i)
-            fPlugin->d_initProgramName(i, fData->programNames[i]);
+            fPlugin->initProgramName(i, fData->programNames[i]);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
         for (uint32_t i=0, count=fData->stateCount; i < count; ++i)
-            fPlugin->d_initState(i, fData->stateKeys[i], fData->stateDefValues[i]);
+            fPlugin->initState(i, fData->stateKeys[i], fData->stateDefValues[i]);
 #endif
     }
 
@@ -157,42 +186,42 @@ public:
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
 
-        return fPlugin->d_getName();
+        return fPlugin->getName();
     }
 
     const char* getLabel() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
 
-        return fPlugin->d_getLabel();
+        return fPlugin->getLabel();
     }
 
     const char* getMaker() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
 
-        return fPlugin->d_getMaker();
+        return fPlugin->getMaker();
     }
 
     const char* getLicense() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
 
-        return fPlugin->d_getLicense();
+        return fPlugin->getLicense();
     }
 
     uint32_t getVersion() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0);
 
-        return fPlugin->d_getVersion();
+        return fPlugin->getVersion();
     }
 
     long getUniqueId() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0);
 
-        return fPlugin->d_getUniqueId();
+        return fPlugin->getUniqueId();
     }
 
     void* getInstancePointer() const noexcept
@@ -208,6 +237,28 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, 0);
 
         return fData->latency;
+    }
+#endif
+
+#if DISTRHO_PLUGIN_NUM_INPUTS+DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+    const AudioPort& getAudioPort(const bool input, const uint32_t index) const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, sFallbackAudioPort);
+
+        if (input)
+        {
+# if DISTRHO_PLUGIN_NUM_INPUTS > 0
+            DISTRHO_SAFE_ASSERT_RETURN(index < DISTRHO_PLUGIN_NUM_INPUTS,  sFallbackAudioPort);
+# endif
+        }
+        else
+        {
+# if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+            DISTRHO_SAFE_ASSERT_RETURN(index < DISTRHO_PLUGIN_NUM_OUTPUTS, sFallbackAudioPort);
+# endif
+        }
+
+        return fData->audioPorts[index + (input ? 0 : DISTRHO_PLUGIN_NUM_INPUTS)];
     }
 #endif
 
@@ -230,21 +281,21 @@ public:
         return (getParameterHints(index) & kParameterIsOutput);
     }
 
-    const d_string& getParameterName(const uint32_t index) const noexcept
+    const String& getParameterName(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
 
         return fData->parameters[index].name;
     }
 
-    const d_string& getParameterSymbol(const uint32_t index) const noexcept
+    const String& getParameterSymbol(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
 
         return fData->parameters[index].symbol;
     }
 
-    const d_string& getParameterUnit(const uint32_t index) const noexcept
+    const String& getParameterUnit(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, sFallbackString);
 
@@ -263,7 +314,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, 0.0f);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount, 0.0f);
 
-        return fPlugin->d_getParameterValue(index);
+        return fPlugin->getParameterValue(index);
     }
 
     void setParameterValue(const uint32_t index, const float value)
@@ -271,7 +322,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->parameterCount,);
 
-        fPlugin->d_setParameterValue(index, value);
+        fPlugin->setParameterValue(index, value);
     }
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
@@ -282,19 +333,19 @@ public:
         return fData->programCount;
     }
 
-    const d_string& getProgramName(const uint32_t index) const noexcept
+    const String& getProgramName(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->programCount, sFallbackString);
 
         return fData->programNames[index];
     }
 
-    void setProgram(const uint32_t index)
+    void loadProgram(const uint32_t index)
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->programCount,);
 
-        fPlugin->d_setProgram(index);
+        fPlugin->loadProgram(index);
     }
 #endif
 
@@ -306,14 +357,14 @@ public:
         return fData->stateCount;
     }
 
-    const d_string& getStateKey(const uint32_t index) const noexcept
+    const String& getStateKey(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->stateCount, sFallbackString);
 
         return fData->stateKeys[index];
     }
 
-    const d_string& getStateDefaultValue(const uint32_t index) const noexcept
+    const String& getStateDefaultValue(const uint32_t index) const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr && index < fData->stateCount, sFallbackString);
 
@@ -326,7 +377,7 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
         DISTRHO_SAFE_ASSERT_RETURN(value != nullptr,);
 
-        fPlugin->d_setState(key, value);
+        fPlugin->setState(key, value);
     }
 
     bool wantStateKey(const char* const key) const noexcept
@@ -355,20 +406,38 @@ public:
 
     // -------------------------------------------------------------------
 
+    bool isActive() const noexcept
+    {
+        return fIsActive;
+    }
+
     void activate()
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(! fIsActive,);
 
         fIsActive = true;
-        fPlugin->d_activate();
+        fPlugin->activate();
     }
 
     void deactivate()
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+        DISTRHO_SAFE_ASSERT_RETURN(fIsActive,);
 
         fIsActive = false;
-        fPlugin->d_deactivate();
+        fPlugin->deactivate();
+    }
+
+    void deactivateIfNeeded()
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
+
+        if (fIsActive)
+        {
+            fIsActive = false;
+            fPlugin->deactivate();
+        }
     }
 
 #if DISTRHO_PLUGIN_IS_SYNTH
@@ -378,8 +447,14 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
+        if (! fIsActive)
+        {
+            fIsActive = true;
+            fPlugin->activate();
+        }
+
         fData->isProcessing = true;
-        fPlugin->d_run(inputs, outputs, frames, midiEvents, midiEventCount);
+        fPlugin->run(inputs, outputs, frames, midiEvents, midiEventCount);
         fData->isProcessing = false;
     }
 #else
@@ -388,8 +463,14 @@ public:
         DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr,);
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
+        if (! fIsActive)
+        {
+            fIsActive = true;
+            fPlugin->activate();
+        }
+
         fData->isProcessing = true;
-        fPlugin->d_run(inputs, outputs, frames);
+        fPlugin->run(inputs, outputs, frames);
         fData->isProcessing = false;
     }
 #endif
@@ -421,9 +502,9 @@ public:
 
         if (doCallback)
         {
-            if (fIsActive) fPlugin->d_deactivate();
-            fPlugin->d_bufferSizeChanged(bufferSize);
-            if (fIsActive) fPlugin->d_activate();
+            if (fIsActive) fPlugin->deactivate();
+            fPlugin->bufferSizeChanged(bufferSize);
+            if (fIsActive) fPlugin->activate();
         }
     }
 
@@ -440,9 +521,9 @@ public:
 
         if (doCallback)
         {
-            if (fIsActive) fPlugin->d_deactivate();
-            fPlugin->d_sampleRateChanged(sampleRate);
-            if (fIsActive) fPlugin->d_activate();
+            if (fIsActive) fPlugin->deactivate();
+            fPlugin->sampleRateChanged(sampleRate);
+            if (fIsActive) fPlugin->activate();
         }
     }
 
@@ -457,7 +538,8 @@ private:
     // -------------------------------------------------------------------
     // Static fallback data, see DistrhoPlugin.cpp
 
-    static const d_string        sFallbackString;
+    static const String          sFallbackString;
+    static const AudioPort       sFallbackAudioPort;
     static const ParameterRanges sFallbackRanges;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginExporter)

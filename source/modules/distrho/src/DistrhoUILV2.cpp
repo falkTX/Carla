@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -16,7 +16,7 @@
 
 #include "DistrhoUIInternal.hpp"
 
-#include "../extra/d_string.hpp"
+#include "../extra/String.hpp"
 
 #include "lv2/atom.h"
 #include "lv2/atom-util.h"
@@ -195,7 +195,7 @@ public:
     {
         const uint32_t realProgram(bank * 128 + program);
 
-        fUI.programChanged(realProgram);
+        fUI.programLoaded(realProgram);
     }
 #endif
 
@@ -222,7 +222,7 @@ protected:
         const uint32_t eventInPortIndex(DISTRHO_PLUGIN_NUM_INPUTS + DISTRHO_PLUGIN_NUM_OUTPUTS);
 
         // join key and value
-        d_string tmpStr;
+        String tmpStr;
         tmpStr += key;
         tmpStr += "\xff";
         tmpStr += value;

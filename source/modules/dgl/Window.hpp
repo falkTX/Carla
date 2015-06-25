@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -23,7 +23,7 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-class App;
+class Application;
 class Widget;
 class StandaloneWindow;
 
@@ -67,9 +67,9 @@ public:
               buttons() {}
     };
 
-    explicit Window(App& app);
-    explicit Window(App& app, Window& parent);
-    explicit Window(App& app, intptr_t parentId);
+    explicit Window(Application& app);
+    explicit Window(Application& app, Window& parent);
+    explicit Window(Application& app, intptr_t parentId);
     virtual ~Window();
 
     void show();
@@ -99,7 +99,7 @@ public:
 
     void setTransientWinId(uintptr_t winId);
 
-    App& getApp() const noexcept;
+    Application& getApp() const noexcept;
     intptr_t getWindowId() const noexcept;
 
     void addIdleCallback(IdleCallback* const callback);
@@ -116,7 +116,7 @@ protected:
 private:
     struct PrivateData;
     PrivateData* const pData;
-    friend class App;
+    friend class Application;
     friend class Widget;
     friend class StandaloneWindow;
 

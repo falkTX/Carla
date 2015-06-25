@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -64,7 +64,7 @@ struct ERect {
 
 START_NAMESPACE_DISTRHO
 
-typedef std::map<const d_string,d_string> StringMap;
+typedef std::map<const String, String> StringMap;
 
 // -----------------------------------------------------------------------
 
@@ -107,9 +107,9 @@ public:
     bool*   parameterChecks;
     float*  parameterValues;
 
-#if DISTRHO_PLUGIN_WANT_STATE
+# if DISTRHO_PLUGIN_WANT_STATE
     virtual void setStateFromUI(const char* const newKey, const char* const newValue) = 0;
-#endif
+# endif
 };
 
 // -----------------------------------------------------------------------
@@ -160,24 +160,28 @@ public:
     // -------------------------------------------------------------------
     // functions called from the plugin side, may block
 
-#if DISTRHO_PLUGIN_WANT_STATE
+# if DISTRHO_PLUGIN_WANT_STATE
     void setStateFromPlugin(const char* const key, const char* const value)
     {
         fUI.stateChanged(key, value);
     }
-#endif
+# endif
 
     // -------------------------------------------------------------------
 
 protected:
-    intptr_t hostCallback(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
+    intptr_t hostCallback(const int32_t opcode,
+                          const int32_t index = 0,
+                          const intptr_t value = 0,
+                          void* const ptr = nullptr,
+                          const float opt = 0.0f)
     {
         return fAudioMaster(fEffect, opcode, index, value, ptr, opt);
     }
 
     void editParameter(const uint32_t index, const bool started)
     {
-        hostCallback(started ? audioMasterBeginEdit : audioMasterEndEdit, index, 0, nullptr, 0.0f);
+        hostCallback(started ? audioMasterBeginEdit : audioMasterEndEdit, index);
     }
 
     void setParameterValue(const uint32_t index, const float realValue)
@@ -191,31 +195,31 @@ protected:
 
     void setState(const char* const key, const char* const value)
     {
-#if DISTRHO_PLUGIN_WANT_STATE
+# if DISTRHO_PLUGIN_WANT_STATE
         fUiHelper->setStateFromUI(key, value);
-#else
+# else
         return; // unused
         (void)key;
         (void)value;
-#endif
+# endif
     }
 
     void sendNote(const uint8_t channel, const uint8_t note, const uint8_t velocity)
     {
-#if 0 //DISTRHO_PLUGIN_HAS_MIDI_INPUT
+# if 0 //DISTRHO_PLUGIN_WANT_MIDI_INPUT
         // TODO
-#else
+# else
         return; // unused
         (void)channel;
         (void)note;
         (void)velocity;
-#endif
+# endif
     }
 
     void setSize(const uint width, const uint height)
     {
         fUI.setWindowSize(width, height);
-        hostCallback(audioMasterSizeWindow, width, height, nullptr, 0.0f);
+        hostCallback(audioMasterSizeWindow, width, height);
     }
 
 private:
@@ -278,7 +282,7 @@ public:
         std::memset(fProgramName, 0, sizeof(char)*(32+1));
         std::strcpy(fProgramName, "Default");
 
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
         fMidiEventCount = 0;
 #endif
 
@@ -315,8 +319,8 @@ public:
 
         for (uint32_t i=0, count=fPlugin.getStateCount(); i<count; ++i)
         {
-            const d_string& d_key(fPlugin.getStateKey(i));
-            fStateMap[d_key] = fPlugin.getStateDefaultValue(i);
+            const String& dkey(fPlugin.getStateKey(i));
+            fStateMap[dkey] = fPlugin.getStateDefaultValue(i);
         }
 #endif
     }
@@ -389,10 +393,27 @@ public:
         case effMainsChanged:
             if (value != 0)
             {
-                fPlugin.activate();
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
                 fMidiEventCount = 0;
+
+                // tell host we want MIDI events
+                hostCallback(audioMasterWantMidi);
 #endif
+
+                // deactivate for possible changes
+                fPlugin.deactivateIfNeeded();
+
+                // check if something changed
+                const uint32_t bufferSize = static_cast<uint32_t>(hostCallback(audioMasterGetBlockSize));
+                const double   sampleRate = static_cast<double>(hostCallback(audioMasterGetSampleRate));
+
+                if (bufferSize != 0)
+                    fPlugin.setBufferSize(bufferSize, true);
+
+                if (sampleRate != 0.0)
+                    fPlugin.setSampleRate(sampleRate, true);
+
+                fPlugin.activate();
             }
             else
             {
@@ -436,8 +457,8 @@ public:
 # if DISTRHO_PLUGIN_WANT_STATE
                 for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
                 {
-                    const d_string& key   = cit->first;
-                    const d_string& value = cit->second;
+                    const String& key   = cit->first;
+                    const String& value = cit->second;
 
                     fVstUI->setStateFromPlugin(key, value);
                 }
@@ -485,15 +506,15 @@ public:
             }
             else
             {
-                d_string chunkStr;
+                String chunkStr;
 
                 for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
                 {
-                    const d_string& key   = cit->first;
-                    const d_string& value = cit->second;
+                    const String& key   = cit->first;
+                    const String& value = cit->second;
 
                     // join key and value
-                    d_string tmpStr;
+                    String tmpStr;
                     tmpStr  = key;
                     tmpStr += "\xff";
                     tmpStr += value;
@@ -537,8 +558,10 @@ public:
 
                 setStateFromUI(key, value);
 
+# if DISTRHO_PLUGIN_HAS_UI
                 if (fVstUI != nullptr)
                     fVstUI->setStateFromPlugin(key, value);
+# endif
 
                 // get next key
                 key = value+(std::strlen(value)+1);
@@ -548,8 +571,14 @@ public:
         }
 #endif // DISTRHO_PLUGIN_WANT_STATE
 
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
         case effProcessEvents:
+            if (! fPlugin.isActive())
+            {
+                // host has not activated the plugin yet, nasty!
+                vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+            }
+
             if (const VstEvents* const events = (const VstEvents*)ptr)
             {
                 if (events->numEvents == 0)
@@ -586,7 +615,7 @@ public:
             }
             break;
 
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT || DISTRHO_PLUGIN_HAS_MIDI_OUTPUT || DISTRHO_PLUGIN_WANT_TIMEPOS || DISTRHO_OS_MAC
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT || DISTRHO_PLUGIN_WANT_MIDI_OUTPUT || DISTRHO_PLUGIN_WANT_TIMEPOS || DISTRHO_OS_MAC
         case effCanDo:
             if (const char* const canDo = (const char*)ptr)
             {
@@ -597,13 +626,13 @@ public:
                     return 0xbeef0000;
                 }
 # endif
-# if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+# if DISTRHO_PLUGIN_WANT_MIDI_INPUT
                 if (std::strcmp(canDo, "receiveVstEvents") == 0)
                     return 1;
                 if (std::strcmp(canDo, "receiveVstMidiEvent") == 0)
                     return 1;
 # endif
-# if DISTRHO_PLUGIN_HAS_MIDI_OUTPUT
+# if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
                 if (std::strcmp(canDo, "sendVstEvents") == 0)
                     return 1;
                 if (std::strcmp(canDo, "sendVstMidiEvent") == 0)
@@ -646,10 +675,19 @@ public:
 
     void vst_processReplacing(const float** const inputs, float** const outputs, const int32_t sampleFrames)
     {
+        if (sampleFrames <= 0)
+            return;
+
+        if (! fPlugin.isActive())
+        {
+            // host has not activated the plugin yet, nasty!
+            vst_dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
+        }
+
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
         static const int kWantVstTimeFlags(kVstTransportPlaying|kVstPpqPosValid|kVstTempoValid|kVstTimeSigValid);
 
-        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)fAudioMaster(fEffect, audioMasterGetTime, 0, kWantVstTimeFlags, nullptr, 0.0f))
+        if (const VstTimeInfo* const vstTimeInfo = (const VstTimeInfo*)hostCallback(audioMasterGetTime, 0, kWantVstTimeFlags))
         {
             fTimePosition.frame     =   vstTimeInfo->samplePos;
             fTimePosition.playing   =  (vstTimeInfo->flags & kVstTransportPlaying);
@@ -690,7 +728,7 @@ public:
         }
 #endif
 
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
         fPlugin.run(inputs, outputs, sampleFrames, fMidiEvents, fMidiEventCount);
         fMidiEventCount = 0;
 #else
@@ -724,7 +762,7 @@ private:
     // Temporary data
     char fProgramName[32+1];
 
-#if DISTRHO_PLUGIN_HAS_MIDI_INPUT
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
     uint32_t  fMidiEventCount;
     MidiEvent fMidiEvents[kMaxMidiEvents];
 #endif
@@ -748,6 +786,18 @@ private:
 #endif
 
     // -------------------------------------------------------------------
+    // host callback
+
+    intptr_t hostCallback(const int32_t opcode,
+                          const int32_t index = 0,
+                          const intptr_t value = 0,
+                          void* const ptr = nullptr,
+                          const float opt = 0.0f)
+    {
+        return fAudioMaster(fEffect, opcode, index, value, ptr, opt);
+    }
+
+    // -------------------------------------------------------------------
     // functions called from the plugin side, RT no block
 
 #if DISTRHO_PLUGIN_HAS_UI
@@ -762,7 +812,11 @@ private:
     // -------------------------------------------------------------------
     // functions called from the UI side, may block
 
+# if DISTRHO_PLUGIN_HAS_UI
     void setStateFromUI(const char* const key, const char* const newValue) override
+# else
+    void setStateFromUI(const char* const key, const char* const newValue)
+# endif
     {
         fPlugin.setState(key, newValue);
 
@@ -773,9 +827,9 @@ private:
         // check if key already exists
         for (StringMap::iterator it=fStateMap.begin(), ite=fStateMap.end(); it != ite; ++it)
         {
-            const d_string& d_key(it->first);
+            const String& dkey(it->first);
 
-            if (d_key == key)
+            if (dkey == key)
             {
                 it->second = newValue;
                 return;

@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,12 +19,20 @@
 
 #include "Geometry.hpp"
 
-START_NAMESPACE_DGL
+#include <vector>
 
 // -----------------------------------------------------------------------
 // Forward class names
 
-class App;
+START_NAMESPACE_DISTRHO
+class UI;
+END_NAMESPACE_DISTRHO
+
+START_NAMESPACE_DGL
+
+class Application;
+class ImageSlider;
+class NanoWidget;
 class Window;
 class StandaloneWindow;
 
@@ -173,6 +181,11 @@ public:
     explicit Widget(Window& parent);
 
    /**
+      Constructor for a subwidget.
+    */
+    explicit Widget(Widget* groupWidget);
+
+   /**
       Destructor.
     */
     virtual ~Widget();
@@ -274,7 +287,7 @@ public:
       Get this widget's window application.
       Same as calling getParentWindow().getApp().
     */
-    App& getParentApp() const noexcept;
+    Application& getParentApp() const noexcept;
 
    /**
       Get parent window, as passed in the constructor.
@@ -349,33 +362,18 @@ protected:
     */
     virtual void onResize(const ResizeEvent&);
 
-   /**
-      Tell the parent window this widget needs the full viewport.
-      When enabled, the local widget coordinates are ignored.
-      @note: This is an internal function;
-             You do not need it under normal circumstances.
-    */
-    void setNeedsFullViewport(bool yesNo) noexcept;
-
-   /**
-      Tell the parent window this widget needs scaling.
-      When enabled, the widget viewport is scaled to match width and height.
-      @note: This is an internal function;
-             You do not need it under normal circumstances.
-    */
-    void setNeedsScaling(bool yesNo) noexcept;
-
 private:
-    Window& fParent;
-    bool    fNeedsFullViewport;
-    bool    fNeedsScaling;
-    bool    fVisible;
-    uint    fId;
-    Point<int> fAbsolutePos;
-    Size<uint> fSize;
+    struct PrivateData;
+    PrivateData* const pData;
 
+   /** @internal */
+    explicit Widget(Widget* groupWidget, bool addToSubWidgets);
+
+    friend class ImageSlider;
+    friend class NanoWidget;
     friend class Window;
     friend class StandaloneWindow;
+    friend class DISTRHO_NAMESPACE::UI;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Widget)
 };

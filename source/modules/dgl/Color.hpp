@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -25,8 +25,6 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-// TODO: create color from "#333" and "#112233" like strings
-
 /**
    A color made from red, green, blue and alpha floating-point values in [0..1] range.
 */
@@ -40,7 +38,7 @@ struct Color {
     };
 
    /**
-      Create black color.
+      Create solid black color.
     */
     Color() noexcept;
 
@@ -85,7 +83,7 @@ struct Color {
 
    /**
       Check if this color matches another.
-      @note: Comparison is forced within 8-bit color values.
+      @note Comparison is forced within 8-bit color values.
     */
     bool isEqual(const Color& color, bool withAlpha = true) noexcept;
     bool isNotEqual(const Color& color, bool withAlpha = true) noexcept;

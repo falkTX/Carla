@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,32 +16,91 @@
 
 #include "DistrhoPluginInternal.hpp"
 
-#if ! DISTRHO_PLUGIN_HAS_UI
-# error JACK export requires an UI
+#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+# undef DISTRHO_PLUGIN_HAS_UI
+# define DISTRHO_PLUGIN_HAS_UI 0
 #endif
 
-#include "DistrhoUIInternal.hpp"
+#if DISTRHO_PLUGIN_HAS_UI
+# include "DistrhoUIInternal.hpp"
+#else
+# include "../extra/Sleep.hpp"
+#endif
 
 #include "jack/jack.h"
 #include "jack/midiport.h"
 #include "jack/transport.h"
 
+#ifndef DISTRHO_OS_WINDOWS
+# include <signal.h>
+#endif
+
 // -----------------------------------------------------------------------
 
 START_NAMESPACE_DISTRHO
 
-#if ! DISTRHO_PLUGIN_WANT_STATE
+#if DISTRHO_PLUGIN_HAS_UI && ! DISTRHO_PLUGIN_WANT_STATE
 static const setStateFunc setStateCallback = nullptr;
 #endif
 
 // -----------------------------------------------------------------------
 
+static volatile bool gCloseSignalReceived = false;
+
+#ifdef DISTRHO_OS_WINDOWS
+static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
+{
+    if (dwCtrlType == CTRL_C_EVENT)
+    {
+        gCloseSignalReceived = true;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static void initSignalHandler()
+{
+    SetConsoleCtrlHandler(winSignalHandler, TRUE);
+}
+#else
+static void closeSignalHandler(int) noexcept
+{
+    gCloseSignalReceived = true;
+}
+
+static void initSignalHandler()
+{
+    struct sigaction sint;
+    struct sigaction sterm;
+
+    sint.sa_handler  = closeSignalHandler;
+    sint.sa_flags    = SA_RESTART;
+    sint.sa_restorer = nullptr;
+    sigemptyset(&sint.sa_mask);
+    sigaction(SIGINT, &sint, nullptr);
+
+    sterm.sa_handler  = closeSignalHandler;
+    sterm.sa_flags    = SA_RESTART;
+    sterm.sa_restorer = nullptr;
+    sigemptyset(&sterm.sa_mask);
+    sigaction(SIGTERM, &sterm, nullptr);
+}
+#endif
+
+// -----------------------------------------------------------------------
+
+#if DISTRHO_PLUGIN_HAS_UI
 class PluginJack : public IdleCallback
+#else
+class PluginJack
+#endif
 {
 public:
     PluginJack(jack_client_t* const client)
         : fPlugin(),
+#if DISTRHO_PLUGIN_HAS_UI
           fUI(this, 0, nullptr, setParameterValueCallback, setStateCallback, nullptr, setSizeCallback, fPlugin.getInstancePointer()),
+#endif
           fClient(client)
     {
         char strBuf[0xff+1];
@@ -70,8 +129,10 @@ public:
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         if (fPlugin.getProgramCount() > 0)
         {
-            fPlugin.setProgram(0);
-            fUI.programChanged(0);
+            fPlugin.loadProgram(0);
+# if DISTRHO_PLUGIN_HAS_UI
+            fUI.programLoaded(0);
+# endif
         }
 #endif
 
@@ -88,7 +149,9 @@ public:
                 else
                 {
                     fLastOutputValues[i] = 0.0f;
+# if DISTRHO_PLUGIN_HAS_UI
                     fUI.parameterChanged(i, fPlugin.getParameterValue(i));
+# endif
                 }
             }
         }
@@ -102,14 +165,21 @@ public:
         jack_set_process_callback(fClient, jackProcessCallback, this);
         jack_on_shutdown(fClient, jackShutdownCallback, this);
 
+        fPlugin.activate();
+
         jack_activate(fClient);
 
+#if DISTRHO_PLUGIN_HAS_UI
         if (const char* const name = jack_get_client_name(fClient))
             fUI.setWindowTitle(name);
         else
             fUI.setWindowTitle(fPlugin.getName());
 
         fUI.exec(this);
+#else
+        while (! gCloseSignalReceived)
+            d_sleep(1);
+#endif
     }
 
     ~PluginJack()
@@ -118,6 +188,8 @@ public:
             return;
 
         jack_deactivate(fClient);
+
+        fPlugin.deactivate();
 
 #if DISTRHO_PLUGIN_IS_SYNTH
         jack_port_unregister(fClient, fPortMidiIn);
@@ -146,8 +218,12 @@ public:
     // -------------------------------------------------------------------
 
 protected:
+#if DISTRHO_PLUGIN_HAS_UI
     void idleCallback() override
     {
+        if (gCloseSignalReceived)
+            return fUI.quit();
+
         float value;
 
         for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
@@ -166,6 +242,7 @@ protected:
 
         fUI.exec_idle();
     }
+#endif
 
     void jackBufferSize(const jack_nframes_t nframes)
     {
@@ -273,7 +350,9 @@ protected:
     {
         d_stderr("jack has shutdown, quitting now...");
         fClient = nullptr;
+#if DISTRHO_PLUGIN_HAS_UI
         fUI.quit();
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -290,16 +369,20 @@ protected:
     }
 #endif
 
+#if DISTRHO_PLUGIN_HAS_UI
     void setSize(const uint width, const uint height)
     {
         fUI.setWindowSize(width, height);
     }
+#endif
 
     // -------------------------------------------------------------------
 
 private:
     PluginExporter fPlugin;
+#if DISTRHO_PLUGIN_HAS_UI
     UIExporter     fUI;
+#endif
 
     jack_client_t* fClient;
 
@@ -359,10 +442,12 @@ private:
     }
 #endif
 
+#if DISTRHO_PLUGIN_HAS_UI
     static void setSizeCallback(void* ptr, uint width, uint height)
     {
         uiPtr->setSize(width, height);
     }
+#endif
 
     #undef uiPtr
 };
@@ -380,7 +465,7 @@ int main()
 
     if (client == nullptr)
     {
-        d_string errorString;
+        String errorString;
 
         if (status & JackFailure)
             errorString += "Overall operation failed;\n";
@@ -422,9 +507,13 @@ int main()
 
     USE_NAMESPACE_DISTRHO;
 
+    initSignalHandler();
+
     d_lastBufferSize = jack_get_buffer_size(client);
     d_lastSampleRate = jack_get_sample_rate(client);
+#if DISTRHO_PLUGIN_HAS_UI
     d_lastUiSampleRate = d_lastSampleRate;
+#endif
 
     const PluginJack p(client);
 

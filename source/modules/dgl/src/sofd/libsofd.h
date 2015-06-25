@@ -21,13 +21,13 @@
  * THE SOFTWARE.
  */
 
-#ifdef SOFD_HAVE_X11
+#ifndef LIBSOFD_H
+#define LIBSOFD_H
+
 #include <X11/Xlib.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 /* public API */
-
-typedef struct FibInternalsImpl FibInternals;
 
 /** open a file select dialog
  * @param dpy X Display connection
@@ -110,8 +110,6 @@ int x_fib_cfg_buttons (int k, int v);
  */
 int x_fib_cfg_filter_callback (int (*cb)(const char*));
 
-#endif /* END X11 specific functions */
-
 /* 'recently used' API. x-platform
  * NOTE: all functions use a static cache and are not reentrant.
  * It is expected that none of these functions are called in
@@ -173,3 +171,5 @@ unsigned int x_fib_recent_count ();
  * @return pointer to static string
  */
 const char *x_fib_recent_at (unsigned int i);
+
+#endif // LIBSOFD_H

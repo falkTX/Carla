@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,7 +76,7 @@ public:
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
     void carla_setMidiProgram(const uint32_t realProgram)
     {
-        fUI.programChanged(realProgram);
+        fUI.programLoaded(realProgram);
     }
 #endif
 
@@ -292,7 +292,7 @@ protected:
 
         CARLA_SAFE_ASSERT_RETURN(realProgram < getMidiProgramCount(),);
 
-        fPlugin.setProgram(realProgram);
+        fPlugin.loadProgram(realProgram);
     }
 #endif
 

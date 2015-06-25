@@ -15,19 +15,19 @@ BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
 # needed by sofd right now, fix later
 BUILD_CXX_FLAGS += -fpermissive
 
+# needed by oui-blendish
+BUILD_CXX_FLAGS += -Wno-unused-parameter
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
-	$(OBJDIR)/App.cpp.o \
+	$(OBJDIR)/Application.cpp.o \
 	$(OBJDIR)/Color.cpp.o \
 	$(OBJDIR)/Geometry.cpp.o \
 	$(OBJDIR)/Image.cpp.o \
-	$(OBJDIR)/ImageAboutWindow.cpp.o \
-	$(OBJDIR)/ImageButton.cpp.o \
-	$(OBJDIR)/ImageKnob.cpp.o \
-	$(OBJDIR)/ImageSlider.cpp.o \
-	$(OBJDIR)/ImageSwitch.cpp.o \
+	$(OBJDIR)/ImageWidgets.cpp.o \
 	$(OBJDIR)/NanoVG.cpp.o \
+	$(OBJDIR)/NanoWidgets.cpp.o \
 	$(OBJDIR)/Widget.cpp.o
 
 ifeq ($(MACOS),true)

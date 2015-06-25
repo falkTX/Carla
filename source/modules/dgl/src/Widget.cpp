@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -14,8 +14,7 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../Widget.hpp"
-#include "../Window.hpp"
+#include "WidgetPrivateData.hpp"
 
 START_NAMESPACE_DGL
 
@@ -23,35 +22,41 @@ START_NAMESPACE_DGL
 // Widget
 
 Widget::Widget(Window& parent)
-    : fParent(parent),
-      fNeedsFullViewport(false),
-      fNeedsScaling(false),
-      fVisible(true),
-      fId(0),
-      fAbsolutePos(0, 0),
-      fSize(0, 0),
-      leakDetector_Widget()
+    : pData(new PrivateData(this, parent, nullptr, false))
 {
-    fParent._addWidget(this);
+    parent._addWidget(this);
+}
+
+Widget::Widget(Widget* groupWidget)
+    : pData(new PrivateData(this, groupWidget->getParentWindow(), groupWidget, true))
+{
+    pData->parent._addWidget(this);
+}
+
+Widget::Widget(Widget* groupWidget, bool addToSubWidgets)
+    : pData(new PrivateData(this, groupWidget->getParentWindow(), groupWidget, addToSubWidgets))
+{
+    pData->parent._addWidget(this);
 }
 
 Widget::~Widget()
 {
-    fParent._removeWidget(this);
+    pData->parent._removeWidget(this);
+    delete pData;
 }
 
 bool Widget::isVisible() const noexcept
 {
-    return fVisible;
+    return pData->visible;
 }
 
 void Widget::setVisible(bool yesNo)
 {
-    if (fVisible == yesNo)
+    if (pData->visible == yesNo)
         return;
 
-    fVisible = yesNo;
-    fParent.repaint();
+    pData->visible = yesNo;
+    pData->parent.repaint();
 }
 
 void Widget::show()
@@ -66,47 +71,47 @@ void Widget::hide()
 
 uint Widget::getWidth() const noexcept
 {
-    return fSize.getWidth();
+    return pData->size.getWidth();
 }
 
 uint Widget::getHeight() const noexcept
 {
-    return fSize.getHeight();
+    return pData->size.getHeight();
 }
 
 const Size<uint>& Widget::getSize() const noexcept
 {
-    return fSize;
+    return pData->size;
 }
 
 void Widget::setWidth(uint width) noexcept
 {
-    if (fSize.getWidth() == width)
+    if (pData->size.getWidth() == width)
         return;
 
     ResizeEvent ev;
-    ev.oldSize = fSize;
-    ev.size    = Size<uint>(width, fSize.getHeight());
+    ev.oldSize = pData->size;
+    ev.size    = Size<uint>(width, pData->size.getHeight());
 
-    fSize.setWidth(width);
+    pData->size.setWidth(width);
     onResize(ev);
 
-    fParent.repaint();
+    pData->parent.repaint();
 }
 
 void Widget::setHeight(uint height) noexcept
 {
-    if (fSize.getHeight() == height)
+    if (pData->size.getHeight() == height)
         return;
 
     ResizeEvent ev;
-    ev.oldSize = fSize;
-    ev.size    = Size<uint>(fSize.getWidth(), height);
+    ev.oldSize = pData->size;
+    ev.size    = Size<uint>(pData->size.getWidth(), height);
 
-    fSize.setHeight(height);
+    pData->size.setHeight(height);
     onResize(ev);
 
-    fParent.repaint();
+    pData->parent.repaint();
 }
 
 void Widget::setSize(uint width, uint height) noexcept
@@ -116,50 +121,50 @@ void Widget::setSize(uint width, uint height) noexcept
 
 void Widget::setSize(const Size<uint>& size) noexcept
 {
-    if (fSize == size)
+    if (pData->size == size)
         return;
 
     ResizeEvent ev;
-    ev.oldSize = fSize;
+    ev.oldSize = pData->size;
     ev.size    = size;
 
-    fSize = size;
+    pData->size = size;
     onResize(ev);
 
-    fParent.repaint();
+    pData->parent.repaint();
 }
 
 int Widget::getAbsoluteX() const noexcept
 {
-    return fAbsolutePos.getX();
+    return pData->absolutePos.getX();
 }
 
 int Widget::getAbsoluteY() const noexcept
 {
-    return fAbsolutePos.getY();
+    return pData->absolutePos.getY();
 }
 
 const Point<int>& Widget::getAbsolutePos() const noexcept
 {
-    return fAbsolutePos;
+    return pData->absolutePos;
 }
 
 void Widget::setAbsoluteX(int x) noexcept
 {
-    if (fAbsolutePos.getX() == x)
+    if (pData->absolutePos.getX() == x)
         return;
 
-    fAbsolutePos.setX(x);
-    fParent.repaint();
+    pData->absolutePos.setX(x);
+    pData->parent.repaint();
 }
 
 void Widget::setAbsoluteY(int y) noexcept
 {
-    if (fAbsolutePos.getY() == y)
+    if (pData->absolutePos.getY() == y)
         return;
 
-    fAbsolutePos.setY(y);
-    fParent.repaint();
+    pData->absolutePos.setY(y);
+    pData->parent.repaint();
 }
 
 void Widget::setAbsolutePos(int x, int y) noexcept
@@ -169,26 +174,26 @@ void Widget::setAbsolutePos(int x, int y) noexcept
 
 void Widget::setAbsolutePos(const Point<int>& pos) noexcept
 {
-    if (fAbsolutePos == pos)
+    if (pData->absolutePos == pos)
         return;
 
-    fAbsolutePos = pos;
-    fParent.repaint();
+    pData->absolutePos = pos;
+    pData->parent.repaint();
 }
 
-App& Widget::getParentApp() const noexcept
+Application& Widget::getParentApp() const noexcept
 {
-    return fParent.getApp();
+    return pData->parent.getApp();
 }
 
 Window& Widget::getParentWindow() const noexcept
 {
-    return fParent;
+    return pData->parent;
 }
 
 bool Widget::contains(int x, int y) const noexcept
 {
-    return (x >= 0 && y >= 0 && static_cast<uint>(x) < fSize.getWidth() && static_cast<uint>(y) < fSize.getHeight());
+    return (x >= 0 && y >= 0 && static_cast<uint>(x) < pData->size.getWidth() && static_cast<uint>(y) < pData->size.getHeight());
 }
 
 bool Widget::contains(const Point<int>& pos) const noexcept
@@ -198,17 +203,17 @@ bool Widget::contains(const Point<int>& pos) const noexcept
 
 void Widget::repaint() noexcept
 {
-    fParent.repaint();
+    pData->parent.repaint();
 }
 
 uint Widget::getId() const noexcept
 {
-    return fId;
+    return pData->id;
 }
 
 void Widget::setId(uint id) noexcept
 {
-    fId = id;
+    pData->id = id;
 }
 
 bool Widget::onKeyboard(const KeyboardEvent&)
@@ -238,16 +243,6 @@ bool Widget::onScroll(const ScrollEvent&)
 
 void Widget::onResize(const ResizeEvent&)
 {
-}
-
-void Widget::setNeedsFullViewport(bool yesNo) noexcept
-{
-    fNeedsFullViewport = yesNo;
-}
-
-void Widget::setNeedsScaling(bool yesNo) noexcept
-{
-    fNeedsScaling = yesNo;
 }
 
 // -----------------------------------------------------------------------

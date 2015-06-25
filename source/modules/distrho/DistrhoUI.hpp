@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,7 +17,7 @@
 #ifndef DISTRHO_UI_HPP_INCLUDED
 #define DISTRHO_UI_HPP_INCLUDED
 
-#include "extra/d_leakdetector.hpp"
+#include "extra/LeakDetector.hpp"
 #include "src/DistrhoPluginChecks.h"
 
 #if DISTRHO_UI_USE_NANOVG
@@ -34,6 +34,11 @@ START_NAMESPACE_DISTRHO
  * DPF UI */
 
 /**
+   @addtogroup MainClasses
+   @{
+ */
+
+/**
    DPF UI class from where UI instances are created.
 
    TODO.
@@ -47,7 +52,7 @@ public:
       UI class constructor.
       The UI should be initialized to a default state that matches the plugin side.
     */
-    UI();
+    UI(uint width = 0, uint height = 0);
 
    /**
       Destructor.
@@ -59,32 +64,32 @@ public:
 
    /**
       Get the current sample rate used in plugin processing.
-      @see d_sampleRateChanged(double)
+      @see sampleRateChanged(double)
     */
-    double d_getSampleRate() const noexcept;
+    double getSampleRate() const noexcept;
 
    /**
       TODO: Document this.
     */
-    void d_editParameter(const uint32_t index, const bool started);
+    void editParameter(uint32_t index, bool started);
 
    /**
       TODO: Document this.
     */
-    void d_setParameterValue(const uint32_t index, const float value);
+    void setParameterValue(uint32_t index, float value);
 
 #if DISTRHO_PLUGIN_WANT_STATE
    /**
       TODO: Document this.
     */
-    void d_setState(const char* const key, const char* const value);
+    void setState(const char* key, const char* value);
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
    /**
       TODO: Document this.
     */
-    void d_sendNote(const uint8_t channel, const uint8_t note, const uint8_t velocity);
+    void sendNote(uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
@@ -94,7 +99,7 @@ public:
    /**
       TODO: Document this.
     */
-    void* d_getPluginInstancePointer() const noexcept;
+    void* getPluginInstancePointer() const noexcept;
 #endif
 
 protected:
@@ -102,25 +107,25 @@ protected:
     * DSP/Plugin Callbacks */
 
    /**
-      A parameter has changed on the plugin side.
+      A parameter has changed on the plugin side.@n
       This is called by the host to inform the UI about parameter changes.
     */
-    virtual void d_parameterChanged(uint32_t index, float value) = 0;
+    virtual void parameterChanged(uint32_t index, float value) = 0;
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
    /**
-      The current program has changed on the plugin side.
+      A program has been loaded on the plugin side.@n
       This is called by the host to inform the UI about program changes.
     */
-    virtual void d_programChanged(uint32_t index) = 0;
+    virtual void programLoaded(uint32_t index) = 0;
 #endif
 
 #if DISTRHO_PLUGIN_WANT_STATE
    /**
-      A state has changed on the plugin side.
+      A state has changed on the plugin side.@n
       This is called by the host to inform the UI about state changes.
     */
-    virtual void d_stateChanged(const char* key, const char* value) = 0;
+    virtual void stateChanged(const char* key, const char* value) = 0;
 #endif
 
    /* --------------------------------------------------------------------------------------------------------
@@ -128,9 +133,9 @@ protected:
 
    /**
       Optional callback to inform the UI about a sample rate change on the plugin side.
-      @see d_getSampleRate()
+      @see getSampleRate()
     */
-    virtual void d_sampleRateChanged(double newSampleRate);
+    virtual void sampleRateChanged(double newSampleRate);
 
    /* --------------------------------------------------------------------------------------------------------
     * UI Callbacks (optional) */
@@ -138,20 +143,20 @@ protected:
    /**
       TODO: Document this.
     */
-    virtual void d_uiIdle() {}
+    virtual void uiIdle() {}
 
    /**
       File browser selected function.
       @see Window::fileBrowserSelected(const char*)
     */
-    virtual void d_uiFileBrowserSelected(const char* filename);
+    virtual void uiFileBrowserSelected(const char* filename);
 
    /**
       OpenGL window reshape function, called when parent window is resized.
       You can reimplement this function for a custom OpenGL state.
       @see Window::onReshape(uint,uint)
     */
-    virtual void d_uiReshape(uint width, uint height);
+    virtual void uiReshape(uint width, uint height);
 
    /* --------------------------------------------------------------------------------------------------------
     * UI Resize Handling, internal */
@@ -176,18 +181,26 @@ private:
     void setAbsoluteY(int) const noexcept {}
     void setAbsolutePos(int, int) const noexcept {}
     void setAbsolutePos(const DGL::Point<int>&) const noexcept {}
-    void setNeedsFullViewport(bool) const noexcept {}
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UI)
 };
+
+/** @} */
 
 /* ------------------------------------------------------------------------------------------------------------
  * Create UI, entry point */
 
 /**
+   @addtogroup EntryPoints
+   @{
+ */
+
+/**
    TODO.
  */
 extern UI* createUI();
+
+/** @} */
 
 // -----------------------------------------------------------------------------------------------------------
 

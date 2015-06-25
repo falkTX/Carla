@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -15,6 +15,7 @@
  */
 
 #include "DistrhoUIInternal.hpp"
+#include "src/WidgetPrivateData.hpp"
 
 START_NAMESPACE_DISTRHO
 
@@ -28,11 +29,14 @@ Window* d_lastUiWindow = nullptr;
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
 
-UI::UI()
+UI::UI(uint width, uint height)
     : UIWidget(*d_lastUiWindow),
       pData(new PrivateData())
 {
-    UIWidget::setNeedsFullViewport(true);
+    ((UIWidget*)this)->pData->needsFullViewport = false;
+
+    if (width > 0 && height > 0)
+        setSize(width, height);
 }
 
 UI::~UI()
@@ -43,30 +47,30 @@ UI::~UI()
 /* ------------------------------------------------------------------------------------------------------------
  * Host state */
 
-double UI::d_getSampleRate() const noexcept
+double UI::getSampleRate() const noexcept
 {
     return pData->sampleRate;
 }
 
-void UI::d_editParameter(const uint32_t index, const bool started)
+void UI::editParameter(uint32_t index, bool started)
 {
     pData->editParamCallback(index + pData->parameterOffset, started);
 }
 
-void UI::d_setParameterValue(const uint32_t index, const float value)
+void UI::setParameterValue(uint32_t index, float value)
 {
     pData->setParamCallback(index + pData->parameterOffset, value);
 }
 
 #if DISTRHO_PLUGIN_WANT_STATE
-void UI::d_setState(const char* const key, const char* const value)
+void UI::setState(const char* key, const char* value)
 {
     pData->setStateCallback(key, value);
 }
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
-void UI::d_sendNote(const uint8_t channel, const uint8_t note, const uint8_t velocity)
+void UI::sendNote(uint8_t channel, uint8_t note, uint8_t velocity)
 {
     pData->sendNoteCallback(channel, note, velocity);
 }
@@ -76,7 +80,7 @@ void UI::d_sendNote(const uint8_t channel, const uint8_t note, const uint8_t vel
 /* ------------------------------------------------------------------------------------------------------------
  * Direct DSP access */
 
-void* UI::d_getPluginInstancePointer() const noexcept
+void* UI::getPluginInstancePointer() const noexcept
 {
     return pData->dspPtr;
 }
@@ -85,16 +89,16 @@ void* UI::d_getPluginInstancePointer() const noexcept
 /* ------------------------------------------------------------------------------------------------------------
  * DSP/Plugin Callbacks (optional) */
 
-void UI::d_sampleRateChanged(double) {}
+void UI::sampleRateChanged(double) {}
 
 /* ------------------------------------------------------------------------------------------------------------
  * UI Callbacks (optional) */
 
-void UI::d_uiFileBrowserSelected(const char*)
+void UI::uiFileBrowserSelected(const char*)
 {
 }
 
-void UI::d_uiReshape(uint width, uint height)
+void UI::uiReshape(uint width, uint height)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

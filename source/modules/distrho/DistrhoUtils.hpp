@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -44,6 +44,10 @@ inline float rint(float __x)
 inline float round(float __x)
   { return __builtin_roundf(__x); }
 }
+#endif
+
+#ifndef M_PI
+# define M_PI 3.14159265358979323846
 #endif
 
 // -----------------------------------------------------------------------
@@ -196,6 +200,33 @@ bool d_isNotZero(const T& value)
 {
     return std::abs(value) >= std::numeric_limits<T>::epsilon();
 }
+
+/*
+ * Get next power of 2.
+ */
+static inline
+uint32_t d_nextPowerOf2(uint32_t size) noexcept
+{
+    DISTRHO_SAFE_ASSERT_RETURN(size > 0, 0);
+
+    // http://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
+    --size;
+    size |= size >> 1;
+    size |= size >> 2;
+    size |= size >> 4;
+    size |= size >> 8;
+    size |= size >> 16;
+    return ++size;
+}
+
+// -----------------------------------------------------------------------
+
+#ifndef DONT_SET_USING_DISTRHO_NAMESPACE
+  // If your code uses a lot of DISTRHO classes, then this will obviously save you
+  // a lot of typing, but can be disabled by setting DONT_SET_USING_DISTRHO_NAMESPACE.
+  namespace DISTRHO_NAMESPACE {}
+  using namespace DISTRHO_NAMESPACE;
+#endif
 
 // -----------------------------------------------------------------------
 

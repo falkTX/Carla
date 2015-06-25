@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -45,13 +45,13 @@ public:
 
    /**
       Constructor using raw image data.
-      @note: @a rawData must remain valid for the lifetime of this Image.
+      @note @a rawData must remain valid for the lifetime of this Image.
     */
     Image(const char* const rawData, const uint width, const uint height, const GLenum format = GL_BGRA, const GLenum type = GL_UNSIGNED_BYTE);
 
    /**
       Constructor using raw image data.
-      @note: @a rawData must remain valid for the lifetime of this Image.
+      @note @a rawData must remain valid for the lifetime of this Image.
     */
     Image(const char* const rawData, const Size<uint>& size, const GLenum format = GL_BGRA, const GLenum type = GL_UNSIGNED_BYTE);
 
@@ -67,13 +67,13 @@ public:
 
    /**
       Load image data from memory.
-      @note: @a rawData must remain valid for the lifetime of this Image.
+      @note @a rawData must remain valid for the lifetime of this Image.
     */
     void loadFromMemory(const char* const rawData, const uint width, const uint height, const GLenum format = GL_BGRA, const GLenum type = GL_UNSIGNED_BYTE) noexcept;
 
    /**
       Load image data from memory.
-      @note: @a rawData must remain valid for the lifetime of this Image.
+      @note @a rawData must remain valid for the lifetime of this Image.
     */
     void loadFromMemory(const char* const rawData, const Size<uint>& size, const GLenum format = GL_BGRA, const GLenum type = GL_UNSIGNED_BYTE) noexcept;
 

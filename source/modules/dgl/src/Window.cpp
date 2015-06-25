@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,10 +17,11 @@
 // we need this for now
 //#define PUGL_GRAB_FOCUS 1
 
-#include "AppPrivateData.hpp"
-#include "../Widget.hpp"
-#include "../Window.hpp"
-#include "../../distrho/extra/d_string.hpp"
+#include "../../distrho/src/DistrhoDefines.h"
+
+#undef PUGL_HAVE_CAIRO
+#undef PUGL_HAVE_GL
+#define PUGL_HAVE_GL 1
 
 #include "pugl/pugl.h"
 
@@ -37,6 +38,11 @@ extern "C" {
 #else
 # error Unsupported platform
 #endif
+
+#include "ApplicationPrivateData.hpp"
+#include "WidgetPrivateData.hpp"
+#include "../StandaloneWindow.hpp"
+#include "../../distrho/extra/String.hpp"
 
 #define FOR_EACH_WIDGET(it) \
   for (std::list<Widget*>::iterator it = fWidgets.begin(); it != fWidgets.end(); ++it)
@@ -60,7 +66,7 @@ START_NAMESPACE_DGL
 // Window Private
 
 struct Window::PrivateData {
-    PrivateData(App& app, Window* const self)
+    PrivateData(Application& app, Window* const self)
         : fApp(app),
           fSelf(self),
           fView(puglInit()),
@@ -74,22 +80,21 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0),
+          hwnd(0)
 #elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
-          xWindow(0),
+          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true),
           mView(nullptr),
-          mWindow(nullptr),
+          mWindow(nullptr)
 #endif
-          leakDetector_PrivateData()
     {
         DBG("Creating window without parent..."); DBGF;
         init();
     }
 
-    PrivateData(App& app, Window* const self, Window& parent)
+    PrivateData(Application& app, Window* const self, Window& parent)
         : fApp(app),
           fSelf(self),
           fView(puglInit()),
@@ -103,16 +108,15 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0),
+          hwnd(0)
 #elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
-          xWindow(0),
+          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false),
           mView(nullptr),
-          mWindow(nullptr),
+          mWindow(nullptr)
 #endif
-          leakDetector_PrivateData()
     {
         DBG("Creating window with parent..."); DBGF;
         init();
@@ -128,7 +132,7 @@ struct Window::PrivateData {
 #endif
     }
 
-    PrivateData(App& app, Window* const self, const intptr_t parentId)
+    PrivateData(Application& app, Window* const self, const intptr_t parentId)
         : fApp(app),
           fSelf(self),
           fView(puglInit()),
@@ -142,16 +146,15 @@ struct Window::PrivateData {
           fWidgets(),
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
-          hwnd(0),
+          hwnd(0)
 #elif defined(DISTRHO_OS_LINUX)
           xDisplay(nullptr),
-          xWindow(0),
+          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(parentId == 0),
           mView(nullptr),
-          mWindow(nullptr),
+          mWindow(nullptr)
 #endif
-          leakDetector_PrivateData()
     {
         if (fUsingEmbed)
         {
@@ -182,7 +185,8 @@ struct Window::PrivateData {
             return;
         }
 
-        puglInitResizable(fView, fResizable);
+        puglInitContextType(fView, PUGL_GL);
+        puglInitUserResizable(fView, fResizable);
         puglInitWindowSize(fView, static_cast<int>(fWidth), static_cast<int>(fHeight));
 
         puglSetHandle(fView, this);
@@ -223,6 +227,7 @@ struct Window::PrivateData {
             XChangeProperty(xDisplay, xWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
         }
 #endif
+        puglEnterContext(fView);
 
         fApp.pData->windows.push_back(fSelf);
 
@@ -349,7 +354,23 @@ struct Window::PrivateData {
         fModal.enabled = false;
 
         if (fModal.parent != nullptr)
+        {
             fModal.parent->fModal.childFocus = nullptr;
+
+            // the mouse position probably changed since the modal appeared,
+            // so send a mouse motion event to the modal's parent window
+#if defined(DISTRHO_OS_WINDOWS)
+            // TODO
+#elif defined(DISTRHO_OS_MAC)
+            // TODO
+#elif defined(DISTRHO_OS_LINUX)
+            int i, wx, wy;
+            uint u;
+            ::Window w;
+            if (XQueryPointer(fModal.parent->xDisplay, fModal.parent->xWindow, &w, &w, &i, &i, &wx, &wy, &u) == True)
+                fModal.parent->onPuglMotion(wx, wy);
+#endif
+        }
 
         DBG("Ok\n");
     }
@@ -647,60 +668,10 @@ struct Window::PrivateData {
     {
         fSelf->onDisplayBefore();
 
-        bool needsDisableScissor = false;
-
         FOR_EACH_WIDGET(it)
         {
             Widget* const widget(*it);
-
-            if (widget->isVisible())
-            {
-                // reset color
-                glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
-                if (widget->fNeedsFullViewport || (widget->fAbsolutePos.isZero() && widget->fSize == Size<uint>(fWidth, fHeight)))
-                {
-                    // full viewport size
-                    glViewport(0,
-                               0,
-                               static_cast<GLsizei>(fWidth),
-                               static_cast<GLsizei>(fHeight));
-                }
-                else if (! widget->fNeedsScaling)
-                {
-                    // only set viewport pos
-                    glViewport(widget->getAbsoluteX(),
-                               /*fView->height - static_cast<int>(widget->getHeight())*/ - widget->getAbsoluteY(),
-                               static_cast<GLsizei>(fWidth),
-                               static_cast<GLsizei>(fHeight));
-
-                    // then cut the outer bounds
-                    glScissor(widget->getAbsoluteX(),
-                              fView->height - static_cast<int>(widget->getHeight()) - widget->getAbsoluteY(),
-                              static_cast<GLsizei>(widget->getWidth()),
-                              static_cast<GLsizei>(widget->getHeight()));
-
-                    glEnable(GL_SCISSOR_TEST);
-                    needsDisableScissor = true;
-                }
-                else
-                {
-                    // limit viewport to widget bounds
-                    glViewport(widget->getAbsoluteX(),
-                               fView->height - static_cast<int>(widget->getHeight()) - widget->getAbsoluteY(),
-                               static_cast<GLsizei>(widget->getWidth()),
-                               static_cast<GLsizei>(widget->getHeight()));
-                }
-
-                // display widget
-                widget->onDisplay();
-
-                if (needsDisableScissor)
-                {
-                    glDisable(GL_SCISSOR_TEST);
-                    needsDisableScissor = false;
-                }
-            }
+            widget->pData->display(fWidth, fHeight);
         }
 
         fSelf->onDisplayAfter();
@@ -838,7 +809,7 @@ struct Window::PrivateData {
         {
             Widget* const widget(*it);
 
-            if (widget->fNeedsFullViewport)
+            if (widget->pData->needsFullViewport)
                 widget->setSize(fWidth, fHeight);
         }
     }
@@ -860,9 +831,9 @@ struct Window::PrivateData {
 
     // -------------------------------------------------------------------
 
-    App&      fApp;
-    Window*   fSelf;
-    PuglView* fView;
+    Application& fApp;
+    Window*      fSelf;
+    PuglView*    fView;
 
     bool fFirstInit;
     bool fVisible;
@@ -966,17 +937,14 @@ struct Window::PrivateData {
 // -----------------------------------------------------------------------
 // Window
 
-Window::Window(App& app)
-    : pData(new PrivateData(app, this)),
-      leakDetector_Window() {}
+Window::Window(Application& app)
+    : pData(new PrivateData(app, this)) {}
 
-Window::Window(App& app, Window& parent)
-    : pData(new PrivateData(app, this, parent)),
-      leakDetector_Window() {}
+Window::Window(Application& app, Window& parent)
+    : pData(new PrivateData(app, this, parent)) {}
 
-Window::Window(App& app, intptr_t parentId)
-    : pData(new PrivateData(app, this, parentId)),
-      leakDetector_Window() {}
+Window::Window(Application& app, intptr_t parentId)
+    : pData(new PrivateData(app, this, parentId)) {}
 
 Window::~Window()
 {
@@ -1022,7 +990,7 @@ void Window::repaint() noexcept
 bool Window::openFileBrowser(const FileBrowserOptions& options)
 {
 #ifdef SOFD_HAVE_X11
-    using DISTRHO_NAMESPACE::d_string;
+    using DISTRHO_NAMESPACE::String;
 
     // --------------------------------------------------------------------------
     // configure start dir
@@ -1030,7 +998,7 @@ bool Window::openFileBrowser(const FileBrowserOptions& options)
     // TODO: get abspath if needed
     // TODO: cross-platform
 
-    d_string startDir(options.startDir);
+    String startDir(options.startDir);
 
     if (startDir.isEmpty())
     {
@@ -1051,7 +1019,7 @@ bool Window::openFileBrowser(const FileBrowserOptions& options)
     // --------------------------------------------------------------------------
     // configure title
 
-    d_string title(options.title);
+    String title(options.title);
 
     if (title.isEmpty())
     {
@@ -1145,7 +1113,7 @@ void Window::setTransientWinId(uintptr_t winId)
     pData->setTransientWinId(winId);
 }
 
-App& Window::getApp() const noexcept
+Application& Window::getApp() const noexcept
 {
     return pData->fApp;
 }
@@ -1216,6 +1184,46 @@ void Window::onClose()
 
 void Window::fileBrowserSelected(const char*)
 {
+}
+
+// -----------------------------------------------------------------------
+
+StandaloneWindow::StandaloneWindow()
+    : Application(),
+      Window((Application&)*this),
+      fWidget(nullptr) {}
+
+void StandaloneWindow::exec()
+{
+    Window::show();
+    Application::exec();
+}
+
+void StandaloneWindow::onReshape(uint width, uint height)
+{
+    if (fWidget != nullptr)
+        fWidget->setSize(width, height);
+    Window::onReshape(width, height);
+}
+
+void StandaloneWindow::_addWidget(Widget* widget)
+{
+    if (fWidget == nullptr)
+    {
+        fWidget = widget;
+        fWidget->pData->needsFullViewport = true;
+    }
+    Window::_addWidget(widget);
+}
+
+void StandaloneWindow::_removeWidget(Widget* widget)
+{
+    if (fWidget == widget)
+    {
+        fWidget->pData->needsFullViewport = false;
+        fWidget = nullptr;
+    }
+    Window::_removeWidget(widget);
 }
 
 // -----------------------------------------------------------------------

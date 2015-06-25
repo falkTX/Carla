@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2014 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -18,15 +18,16 @@
    @file pugl_win.cpp Windows/WGL Pugl Implementation.
 */
 
+#include <winsock2.h>
 #include <windows.h>
 #include <windowsx.h>
 #include <GL/gl.h>
 
 #include <ctime>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
-#include "pugl_internal.h"
+#include "pugl/pugl_internal.h"
 
 #ifndef WM_MOUSEWHEEL
 #    define WM_MOUSEWHEEL 0x020A
@@ -37,8 +38,11 @@
 #ifndef WHEEL_DELTA
 #    define WHEEL_DELTA 120
 #endif
+#ifndef GWLP_USERDATA
+#    define GWLP_USERDATA (-21)
+#endif
 
-const int LOCAL_CLOSE_MSG = WM_USER + 50;
+#define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
 
 HINSTANCE hInstance = NULL;
 
@@ -67,6 +71,27 @@ PuglInternals*
 puglInitInternals()
 {
 	return (PuglInternals*)calloc(1, sizeof(PuglInternals));
+}
+
+void
+puglEnterContext(PuglView* view)
+{
+#ifdef PUGL_HAVE_GL
+	if (view->ctx_type == PUGL_GL) {
+		wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
+	}
+#endif
+}
+
+void
+puglLeaveContext(PuglView* view, bool flush)
+{
+#ifdef PUGL_HAVE_GL
+	if (view->ctx_type == PUGL_GL && flush) {
+		glFlush();
+		SwapBuffers(view->impl->hdc);
+	}
+#endif
 }
 
 int
@@ -104,8 +129,19 @@ puglCreateWindow(PuglView* view, const char* title)
 		return 1;
 	}
 
-	// Adjust the overall window size to accomodate our requested client size
-	const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (view->resizable ? WS_SIZEBOX : 0x0);
+	int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+	if (view->resizable) {
+		winFlags |= WS_SIZEBOX;
+		if (view->min_width > 0 && view->min_height > 0) {
+			// Adjust the minimum window size to accomodate requested view size
+			RECT mr = { 0, 0, view->min_width, view->min_height };
+			AdjustWindowRectEx(&mr, view->parent ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
+			view->min_width  = mr.right - mr.left;
+			view->min_height = mr.bottom - mr.top;
+		}
+	}
+
+	// Adjust the window size to accomodate requested view size
 	RECT wr = { 0, 0, view->width, view->height };
 	AdjustWindowRectEx(&wr, view->parent ? WS_CHILD : winFlags, FALSE, WS_EX_TOPMOST);
 
@@ -152,25 +188,19 @@ puglCreateWindow(PuglView* view, const char* title)
 		return 1;
 	}
 
-	wglMakeCurrent(impl->hdc, impl->hglrc);
-
-	return 0;
+	return PUGL_SUCCESS;
 }
 
 void
 puglShowWindow(PuglView* view)
 {
-	PuglInternals* impl = view->impl;
-
-	ShowWindow(impl->hwnd, SW_SHOWNORMAL);
+	ShowWindow(view->impl->hwnd, SW_SHOWNORMAL);
 }
 
 void
 puglHideWindow(PuglView* view)
 {
-	PuglInternals* impl = view->impl;
-
-	ShowWindow(impl->hwnd, SW_HIDE);
+	ShowWindow(view->impl->hwnd, SW_HIDE);
 }
 
 void
@@ -189,7 +219,7 @@ puglDestroy(PuglView* view)
 static void
 puglReshape(PuglView* view, int width, int height)
 {
-	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
+	puglEnterContext(view);
 
 	if (view->reshapeFunc) {
 		view->reshapeFunc(view, width, height);
@@ -204,15 +234,14 @@ puglReshape(PuglView* view, int width, int height)
 static void
 puglDisplay(PuglView* view)
 {
-	wglMakeCurrent(view->impl->hdc, view->impl->hglrc);
+	puglEnterContext(view);
 
 	view->redisplay = false;
 	if (view->displayFunc) {
 		view->displayFunc(view);
 	}
 
-	glFlush();
-	SwapBuffers(view->impl->hdc);
+	puglLeaveContext(view, true);
 }
 
 static PuglKey
@@ -282,17 +311,23 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	PuglKey     key;
+	RECT        rect;
+	MINMAXINFO* mmi;
 
 	setModifiers(view);
 	switch (message) {
 	case WM_CREATE:
 	case WM_SHOWWINDOW:
 	case WM_SIZE:
-		RECT rect;
 		GetClientRect(view->impl->hwnd, &rect);
 		puglReshape(view, rect.right, rect.bottom);
 		view->width = rect.right;
 		view->height = rect.bottom;
+		break;
+	case WM_GETMINMAXINFO:
+		mmi = (MINMAXINFO*)lParam;
+		mmi->ptMinTrackSize.x = view->min_width;
+		mmi->ptMinTrackSize.y = view->min_height;
 		break;
 	case WM_PAINT:
 		BeginPaint(view->impl->hwnd, &ps);
@@ -301,6 +336,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_MOUSEMOVE:
 		if (view->motionFunc) {
+			view->event_timestamp_ms = GetMessageTime();
 			view->motionFunc(view, GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
 		}
 		break;
@@ -329,7 +365,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 			ScreenToClient(view->impl->hwnd, &pt);
 			view->scrollFunc(
 				view, pt.x, pt.y,
-				0, GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
+				0.0f, GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA);
 		}
 		break;
 	case WM_MOUSEHWHEEL:
@@ -339,7 +375,7 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 			ScreenToClient(view->impl->hwnd, &pt);
 			view->scrollFunc(
 				view, pt.x, pt.y,
-				GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA, 0);
+				GET_WHEEL_DELTA_WPARAM(wParam) / (float)WHEEL_DELTA, 0.0f);
 		}
 		break;
 	case WM_KEYDOWN:
@@ -364,9 +400,10 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 	case WM_QUIT:
-	case LOCAL_CLOSE_MSG:
+	case PUGL_LOCAL_CLOSE_MSG:
 		if (view->closeFunc) {
 			view->closeFunc(view);
+			view->redisplay = false;
 		}
 		break;
 	default:
@@ -375,6 +412,12 @@ handleMessage(PuglView* view, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 
 	return 0;
+}
+
+void
+puglGrabFocus(PuglView* view)
+{
+	// TODO
 }
 
 PuglStatus
@@ -402,7 +445,7 @@ wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
 		return 0;
 	case WM_CLOSE:
-		PostMessage(hwnd, LOCAL_CLOSE_MSG, wParam, lParam);
+		PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
 		return 0;
 	case WM_DESTROY:
 		return 0;
@@ -425,4 +468,15 @@ PuglNativeWindow
 puglGetNativeWindow(PuglView* view)
 {
 	return (PuglNativeWindow)view->impl->hwnd;
+}
+
+void*
+puglGetContext(PuglView* view)
+{
+#ifdef PUGL_HAVE_CAIRO
+	if (view->ctx_type == PUGL_CAIRO) {
+		// TODO
+	}
+#endif
+	return NULL;
 }

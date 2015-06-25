@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,49 +17,7 @@
 #ifndef DGL_IMAGE_SWITCH_HPP_INCLUDED
 #define DGL_IMAGE_SWITCH_HPP_INCLUDED
 
-#include "Image.hpp"
-#include "Widget.hpp"
-
-START_NAMESPACE_DGL
-
-// -----------------------------------------------------------------------
-
-class ImageSwitch : public Widget
-{
-public:
-    class Callback
-    {
-    public:
-        virtual ~Callback() {}
-        virtual void imageSwitchClicked(ImageSwitch* imageButton, bool down) = 0;
-    };
-
-    explicit ImageSwitch(Window& parent, const Image& imageNormal, const Image& imageDown) noexcept;
-    explicit ImageSwitch(Widget* widget, const Image& imageNormal, const Image& imageDown) noexcept;
-    explicit ImageSwitch(const ImageSwitch& imageSwitch) noexcept;
-    ImageSwitch& operator=(const ImageSwitch& imageSwitch) noexcept;
-
-    bool isDown() const noexcept;
-    void setDown(bool down) noexcept;
-
-    void setCallback(Callback* callback) noexcept;
-
-protected:
-     void onDisplay() override;
-     bool onMouse(const MouseEvent&) override;
-
-private:
-    Image fImageNormal;
-    Image fImageDown;
-    bool  fIsDown;
-
-    Callback* fCallback;
-
-    DISTRHO_LEAK_DETECTOR(ImageSwitch)
-};
-
-// -----------------------------------------------------------------------
-
-END_NAMESPACE_DGL
+#warning This is a deprecated file, please include ImageWidgets.hpp instead.
+#include "ImageWidgets.hpp"
 
 #endif // DGL_IMAGE_SWITCH_HPP_INCLUDED

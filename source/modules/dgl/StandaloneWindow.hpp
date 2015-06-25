@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,7 +17,7 @@
 #ifndef DGL_STANDALONE_WINDOW_HPP_INCLUDED
 #define DGL_STANDALONE_WINDOW_HPP_INCLUDED
 
-#include "App.hpp"
+#include "Application.hpp"
 #include "Widget.hpp"
 #include "Window.hpp"
 
@@ -25,51 +25,31 @@ START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-class StandaloneWindow : public App,
+class StandaloneWindow : public Application,
                          public Window
 {
 public:
-    StandaloneWindow()
-        : App(),
-          Window((App&)*this),
-          fWidget(nullptr) {}
+   /**
+      Constructor.
+    */
+    StandaloneWindow();
 
-    void exec()
-    {
-        Window::show();
-        App::exec();
-    }
-
-protected:
-    void onReshape(uint width, uint height) override
-    {
-        if (fWidget != nullptr)
-            fWidget->setSize(width, height);
-        Window::onReshape(width, height);
-    }
+   /**
+      Show window and execute application.
+    */
+    void exec();
 
 private:
     Widget* fWidget;
 
-    void _addWidget(Widget* widget) override
-    {
-        if (fWidget == nullptr)
-        {
-            fWidget = widget;
-            fWidget->setNeedsFullViewport(true);
-        }
-        Window::_addWidget(widget);
-    }
+   /** @internal */
+    void onReshape(uint width, uint height) override;
 
-    void _removeWidget(Widget* widget) override
-    {
-        if (fWidget == widget)
-        {
-            fWidget->setNeedsFullViewport(false);
-            fWidget = nullptr;
-        }
-        Window::_removeWidget(widget);
-    }
+   /** @internal */
+    void _addWidget(Widget* widget) override;
+
+   /** @internal */
+    void _removeWidget(Widget* widget) override;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(StandaloneWindow)
 };

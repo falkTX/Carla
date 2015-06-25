@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -17,8 +17,8 @@
 #ifndef DGL_BASE_HPP_INCLUDED
 #define DGL_BASE_HPP_INCLUDED
 
-#include "../distrho/extra/d_leakdetector.hpp"
-#include "../distrho/extra/d_scopedpointer.hpp"
+#include "../distrho/extra/LeakDetector.hpp"
+#include "../distrho/extra/ScopedPointer.hpp"
 
 // -----------------------------------------------------------------------
 // Define namespace
@@ -121,50 +121,50 @@ START_NAMESPACE_DGL
    Convenience symbols for ASCII control characters.
  */
 enum Char {
-    CHAR_BACKSPACE = 0x08,
-    CHAR_ESCAPE    = 0x1B,
-    CHAR_DELETE    = 0x7F
+    kCharBackspace = 0x08,
+    kCharEscape    = 0x1B,
+    kCharDelete    = 0x7F
 };
 
 /**
    Keyboard modifier flags.
  */
 enum Modifier {
-    MODIFIER_SHIFT = 1 << 0, /**< Shift key */
-    MODIFIER_CTRL  = 1 << 1, /**< Control key */
-    MODIFIER_ALT   = 1 << 2, /**< Alt/Option key */
-    MODIFIER_SUPER = 1 << 3  /**< Mod4/Command/Windows key */
+    kModifierShift   = 1 << 0, /**< Shift key */
+    kModifierControl = 1 << 1, /**< Control key */
+    kModifierAlt     = 1 << 2, /**< Alt/Option key */
+    kModifierSuper   = 1 << 3  /**< Mod4/Command/Windows key */
 };
 
 /**
    Special (non-Unicode) keyboard keys.
  */
 enum Key {
-    KEY_F1 = 1,
-    KEY_F2,
-    KEY_F3,
-    KEY_F4,
-    KEY_F5,
-    KEY_F6,
-    KEY_F7,
-    KEY_F8,
-    KEY_F9,
-    KEY_F10,
-    KEY_F11,
-    KEY_F12,
-    KEY_LEFT,
-    KEY_UP,
-    KEY_RIGHT,
-    KEY_DOWN,
-    KEY_PAGE_UP,
-    KEY_PAGE_DOWN,
-    KEY_HOME,
-    KEY_END,
-    KEY_INSERT,
-    KEY_SHIFT,
-    KEY_CTRL,
-    KEY_ALT,
-    KEY_SUPER
+    kKeyF1 = 1,
+    kKeyF2,
+    kKeyF3,
+    kKeyF4,
+    kKeyF5,
+    kKeyF6,
+    kKeyF7,
+    kKeyF8,
+    kKeyF9,
+    kKeyF10,
+    kKeyF11,
+    kKeyF12,
+    kKeyLeft,
+    kKeyUp,
+    kKeyRight,
+    kKeyDown,
+    kKeyPageUp,
+    kKeyPageDown,
+    kKeyHome,
+    kKeyEnd,
+    kKeyInsert,
+    kKeyShift,
+    kKeyControl,
+    kKeyAlt,
+    kKeySuper
 };
 
 // -----------------------------------------------------------------------
@@ -183,5 +183,13 @@ public:
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DGL
+
+#ifndef DONT_SET_USING_DGL_NAMESPACE
+  // If your code uses a lot of DGL classes, then this will obviously save you
+  // a lot of typing, but can be disabled by setting DONT_SET_USING_DGL_NAMESPACE.
+  using namespace DGL_NAMESPACE;
+#endif
+
+// -----------------------------------------------------------------------
 
 #endif // DGL_BASE_HPP_INCLUDED
