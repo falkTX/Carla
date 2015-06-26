@@ -45,7 +45,7 @@ static bool
 test_strtod(double dbl, double max_delta)
 {
 	char buf[1024];
-	snprintf(buf, sizeof(buf), "%lf", dbl);
+	snprintf(buf, sizeof(buf), "%f", dbl);
 
 	char* endptr = NULL;
 	const double out = serd_strtod(buf, &endptr);

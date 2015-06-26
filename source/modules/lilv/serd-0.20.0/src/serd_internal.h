@@ -38,14 +38,6 @@
 #    define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-#ifndef HAVE_FMAX
-static inline double
-fmax(double a, double b)
-{
-	return (a < b) ? b : a;
-}
-#endif
-
 /* File and Buffer Utilities */
 
 static inline FILE*

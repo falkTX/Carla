@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.20.0'
+SERD_VERSION       = '0.21.1'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -67,12 +67,6 @@ def configure(conf):
                    define_name = 'HAVE_GCOV',
                    mandatory   = False)
 
-    conf.check(function_name = 'fmax',
-               header_name   = 'math.h',
-               define_name   = 'HAVE_FMAX',
-               lib           = ['m'],
-               mandatory     = False)
-
     if not Options.options.no_posix:
         conf.check(function_name = 'posix_memalign',
                    header_name   = 'stdlib.h',
@@ -96,8 +90,8 @@ def configure(conf):
     autowaf.set_lib_env(conf, 'serd', SERD_VERSION)
     conf.write_config_header('serd_config.h', remove=False)
 
-    autowaf.display_msg(conf, 'Utilities', str(conf.env.BUILD_UTILS))
-    autowaf.display_msg(conf, 'Unit tests', str(conf.env.BUILD_TESTS))
+    autowaf.display_msg(conf, 'Utilities', bool(conf.env.BUILD_UTILS))
+    autowaf.display_msg(conf, 'Unit tests', bool(conf.env.BUILD_TESTS))
     print('')
 
 lib_source = [
@@ -214,7 +208,6 @@ def build(bld):
     # Man page
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
 
-    bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env.DOCS:
         bld.add_post_fun(fix_docs)
 

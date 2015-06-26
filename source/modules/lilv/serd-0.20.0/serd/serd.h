@@ -183,7 +183,7 @@ typedef enum {
 	   @see <a href="http://www.w3.org/TeamSubmission/turtle#nodeID">Turtle
 	   <tt>nodeID</tt></a>
 	*/
-	SERD_BLANK = 4,
+	SERD_BLANK = 4
 
 } SerdType;
 
@@ -317,7 +317,7 @@ serd_base64_decode(const uint8_t* str, size_t len, size_t* size);
    @{
 */
 
-static const SerdURI SERD_URI_NULL = {{NULL,0},{NULL,0},{NULL,0},{NULL,0},{NULL,0},{NULL,0}};
+static const SerdURI SERD_URI_NULL = {{0,0},{0,0},{0,0},{0,0},{0,0},{0,0}};
 
 /**
    Return the local path for `uri`, or NULL if `uri` is not a file URI.
@@ -336,8 +336,7 @@ serd_uri_to_path(const uint8_t* uri);
    @param hostname If non-NULL, set to the hostname, if present.
    @return The path component of the URI.
 
-   Both the returned path and `hostname` (if applicable) are owned by the
-   caller and must be freed with free().
+   The returned path and `*hostname` must be freed with free().
 */
 SERD_API
 uint8_t*
@@ -397,7 +396,7 @@ serd_uri_serialise_relative(const SerdURI* uri,
    @{
 */
 
-static const SerdNode SERD_NODE_NULL = { NULL, 0, 0, 0, SERD_NOTHING };
+static const SerdNode SERD_NODE_NULL = { 0, 0, 0, 0, SERD_NOTHING };
 
 /**
    Make a (shallow) node from `str`.
@@ -687,6 +686,17 @@ serd_reader_new(SerdSyntax        syntax,
                 SerdPrefixSink    prefix_sink,
                 SerdStatementSink statement_sink,
                 SerdEndSink       end_sink);
+
+/**
+   Enable or disable strict parsing.
+
+   The reader is non-strict (lax) by default, which will tolerate URIs with
+   invalid characters.  Setting strict will fail when parsing such files.  An
+   error is printed for invalid input in either case.
+*/
+SERD_API
+void
+serd_reader_set_strict(SerdReader* reader, bool strict);
 
 /**
    Set a function to be called when errors occur during reading.

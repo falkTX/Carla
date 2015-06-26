@@ -119,7 +119,8 @@ def getParameterShortName(paramName):
     elif "threshold" in paramLow:
         paramName = paramName.replace("hreshold", "hres")
 
-    # remove space if 1st last word is lowercase and the 2nd first is uppercase, or if 2nd is number
+    # remove space if last char from 1st word is lowercase and the first char from the 2nd is uppercase,
+    # or if 2nd is a number
     if " " in paramName:
         name1, name2 = paramName.split(" ", 1)
         if (name1[-1].islower() and name2[0].isupper()) or name2.isdigit():

@@ -216,6 +216,13 @@ serd_node_new_uri(const SerdURI* uri, const SerdURI* base, SerdURI* out)
 	return node;
 }
 
+static inline unsigned
+serd_digits(double abs)
+{
+	const double lg = ceil(log10(floor(abs) + 1.0));
+	return lg < 1.0 ? 1U : (unsigned)lg;
+}
+
 SERD_API
 SerdNode
 serd_node_new_decimal(double d, unsigned frac_digits)
@@ -225,7 +232,7 @@ serd_node_new_decimal(double d, unsigned frac_digits)
 	}
 
 	const double   abs_d      = fabs(d);
-	const unsigned int_digits = (unsigned)fmax(1.0, ceil(log10(abs_d + 1)));
+	const unsigned int_digits = serd_digits(abs_d);
 	char*          buf        = (char*)calloc(int_digits + frac_digits + 3, 1);
 	SerdNode       node       = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 	const double   int_part   = floor(abs_d);
@@ -276,7 +283,7 @@ SerdNode
 serd_node_new_integer(int64_t i)
 {
 	int64_t        abs_i  = (i < 0) ? -i : i;
-	const unsigned digits = fmax(1.0, ceil(log10((double)abs_i + 1)));
+	const unsigned digits = serd_digits(abs_i);
 	char*          buf    = (char*)calloc(digits + 2, 1);
 	SerdNode       node   = { (const uint8_t*)buf, 0, 0, 0, SERD_LITERAL };
 

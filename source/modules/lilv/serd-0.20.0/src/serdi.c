@@ -50,6 +50,7 @@ print_usage(const char* name, bool error)
 	fprintf(os, "  -f           Keep full URIs in input (don't qualify).\n");
 	fprintf(os, "  -h           Display this help and exit.\n");
 	fprintf(os, "  -i SYNTAX    Input syntax (`turtle' or `ntriples').\n");
+	fprintf(os, "  -l           Lax (non-strict) parsing.\n");
 	fprintf(os, "  -o SYNTAX    Output syntax (`turtle' or `ntriples').\n");
 	fprintf(os, "  -p PREFIX    Add PREFIX to blank node IDs.\n");
 	fprintf(os, "  -q           Suppress all output except data.\n");
@@ -100,6 +101,7 @@ main(int argc, char** argv)
 	bool           bulk_read     = true;
 	bool           bulk_write    = false;
 	bool           full_uris     = false;
+	bool           lax           = false;
 	bool           quiet         = false;
 	const uint8_t* in_name       = NULL;
 	const uint8_t* add_prefix    = NULL;
@@ -119,6 +121,8 @@ main(int argc, char** argv)
 			full_uris = true;
 		} else if (argv[a][1] == 'h') {
 			return print_usage(argv[0], false);
+		} else if (argv[a][1] == 'l') {
+			lax = true;
 		} else if (argv[a][1] == 'q') {
 			quiet = true;
 		} else if (argv[a][1] == 'v') {
@@ -215,6 +219,7 @@ main(int argc, char** argv)
 		(SerdStatementSink)serd_writer_write_statement,
 		(SerdEndSink)serd_writer_end_anon);
 
+	serd_reader_set_strict(reader, !lax);
 	if (quiet) {
 		serd_reader_set_error_sink(reader, quiet_error_sink, NULL);
 		serd_writer_set_error_sink(writer, quiet_error_sink, NULL);
