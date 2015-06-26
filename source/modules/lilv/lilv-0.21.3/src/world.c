@@ -797,12 +797,8 @@ lilv_world_load_plugin_classes(LilvWorld* world)
 }
 
 LILV_API void
-lilv_world_load_all(LilvWorld* world)
+lilv_world_load_all(LilvWorld* world, const char* lv2_path)
 {
-	const char* lv2_path = getenv("LV2_PATH");
-	if (!lv2_path)
-		lv2_path = LILV_DEFAULT_LV2_PATH;
-
 	// Discover bundles and read all manifest files into model
 	lilv_world_load_path(world, lv2_path);
 
