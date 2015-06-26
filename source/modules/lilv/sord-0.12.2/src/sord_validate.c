@@ -49,10 +49,16 @@ typedef struct {
 	SordNode* owl_InverseFunctionalProperty;
 	SordNode* owl_ObjectProperty;
 	SordNode* owl_OntologyProperty;
+	SordNode* owl_Restriction;
 	SordNode* owl_Thing;
+	SordNode* owl_cardinality;
 	SordNode* owl_equivalentClass;
+	SordNode* owl_minCardinality;
 	SordNode* owl_onDatatype;
+	SordNode* owl_onProperty;
+	SordNode* owl_someValuesFrom;
 	SordNode* owl_withRestrictions;
+	SordNode* rdf_PlainLiteral;
 	SordNode* rdf_Property;
 	SordNode* rdf_first;
 	SordNode* rdf_rest;
@@ -61,6 +67,7 @@ typedef struct {
 	SordNode* rdfs_Literal;
 	SordNode* rdfs_Resource;
 	SordNode* rdfs_domain;
+	SordNode* rdfs_label;
 	SordNode* rdfs_range;
 	SordNode* rdfs_subClassOf;
 	SordNode* xsd_anyURI;
@@ -117,7 +124,7 @@ absolute_path(const uint8_t* path)
 #endif
 }
 
-static void
+static int
 error(const char* msg, const SordQuad quad)
 {
 	const char* sep = one_line_errors ? "\t" : "\n       ";
@@ -127,6 +134,17 @@ error(const char* msg, const SordQuad quad)
 	        sep, (const char*)sord_node_get_string(quad[SORD_SUBJECT]),
 	        sep, (const char*)sord_node_get_string(quad[SORD_PREDICATE]),
 	        sep, (const char*)sord_node_get_string(quad[SORD_OBJECT]));
+	return 1;
+}
+
+static int
+errorf(const char* fmt, ...)
+{
+	va_list args;
+	va_start(args, fmt);
+	vfprintf(stderr, fmt, args);
+	va_end(args);
+	return 1;
 }
 
 static bool
@@ -165,7 +183,7 @@ regexp_match(const uint8_t* pat, const char* str)
 #ifdef HAVE_PCRE
 	// Append a $ to the pattern so we only match if the entire string matches
 	const size_t len  = strlen((const char*)pat);
-	char* const  regx = malloc(len + 2);
+	char* const  regx = (char*)malloc(len + 2);
 	memcpy(regx, pat, len);
 	regx[len]     = '$';
 	regx[len + 1] = '\0';
@@ -286,6 +304,27 @@ literal_is_valid(SordModel*      model,
 		return true;
 	}
 
+	/* Check that literal data is related to required type.  We don't do a
+	   strict subtype check here because e.g. an xsd:decimal might be a valid
+	   xsd:unsignedInt, which the pattern checks will verify, but if the
+	   literal type is not related to the required type at all
+	   (e.g. xsd:decimal and xsd:string) there is a problem. */
+	const SordNode* datatype = sord_node_get_datatype(literal);
+	if (datatype && datatype != type) {
+		if (!is_descendant_of(
+			    model, uris,
+			    datatype, type, uris->owl_onDatatype) &&
+		    !is_descendant_of(
+			    model, uris,
+			    type, datatype, uris->owl_onDatatype)) {
+			errorf("Literal `%s' datatype <%s> is not compatible with <%s>\n",
+			       sord_node_get_string(literal),
+			       sord_node_get_string(datatype),
+			       sord_node_get_string(type));
+			return false;
+		}
+	}
+
 	// Find restrictions list
 	SordIter* rs = sord_search(model, type, uris->owl_withRestrictions, 0, 0);
 	if (sord_iter_end(rs)) {
@@ -331,7 +370,7 @@ literal_is_valid(SordModel*      model,
 
 static bool
 check_type(SordModel*      model,
-           URIs*           uris,
+           const URIs*     uris,
            const SordNode* node,
            const SordNode* type)
 {
@@ -341,9 +380,10 @@ check_type(SordModel*      model,
 	}
 
 	if (sord_node_get_type(node) == SORD_LITERAL) {
-		if (sord_node_equals(type, uris->rdfs_Literal) ||
-		    sord_node_equals(type, uris->xsd_string)) {
+		if (sord_node_equals(type, uris->rdfs_Literal)) {
 			return true;
+		} else if (sord_node_equals(type, uris->rdf_PlainLiteral)) {
+			return !sord_node_get_language(node);
 		} else {
 			return literal_is_valid(model, uris, node, type);
 		}
@@ -375,6 +415,229 @@ check_type(SordModel*      model,
 	}
 
 	return false;
+}
+
+static int
+check_properties(SordModel* model, URIs* uris)
+{
+	int       st = 0;
+	SordIter* i  = sord_begin(model);
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		SordQuad quad;
+		sord_iter_get(i, quad);
+
+		const SordNode* subj = quad[SORD_SUBJECT];
+		const SordNode* pred = quad[SORD_PREDICATE];
+		const SordNode* obj  = quad[SORD_OBJECT];
+
+		bool is_any_property = false;
+		SordIter* t = sord_search(model, pred, uris->rdf_type, NULL, NULL);
+		for (; !sord_iter_end(t); sord_iter_next(t)) {
+			if (is_descendant_of(model, uris,
+			                     sord_iter_get_node(t, SORD_OBJECT),
+			                     uris->rdf_Property,
+			                     uris->rdfs_subClassOf)) {
+				is_any_property = true;
+				break;
+			}
+		}
+		sord_iter_free(t);
+
+		const bool is_ObjectProperty = sord_ask(
+			model, pred, uris->rdf_type, uris->owl_ObjectProperty, 0);
+		const bool is_FunctionalProperty = sord_ask(
+			model, pred, uris->rdf_type, uris->owl_FunctionalProperty, 0);
+		const bool is_InverseFunctionalProperty = sord_ask(
+			model, pred, uris->rdf_type, uris->owl_InverseFunctionalProperty, 0);
+		const bool is_DatatypeProperty = sord_ask(
+			model, pred, uris->rdf_type, uris->owl_DatatypeProperty, 0);
+
+		if (!is_any_property) {
+			st = error("Use of undefined property", quad);
+		}
+
+		if (!sord_ask(model, pred, uris->rdfs_label, NULL, NULL)) {
+			st = errorf("Property <%s> has no label\n",
+			            sord_node_get_string(pred));
+		}
+
+		if (is_DatatypeProperty &&
+		    sord_node_get_type(obj) != SORD_LITERAL) {
+			st = error("Datatype property with non-literal value", quad);
+		}
+
+		if (is_ObjectProperty &&
+		    sord_node_get_type(obj) == SORD_LITERAL) {
+			st = error("Object property with literal value", quad);
+		}
+
+		if (is_FunctionalProperty &&
+		    sord_count(model, subj, pred, NULL, NULL) > 1) {
+			st = error("Functional property with several objects", quad);
+		}
+
+		if (is_InverseFunctionalProperty &&
+		    sord_count(model, NULL, pred, obj, NULL) > 1) {
+			st = error("Inverse functional property with several subjects", quad);
+		}
+
+		if (sord_node_equals(pred, uris->rdf_type) &&
+		    !sord_ask(model, obj, uris->rdf_type, uris->rdfs_Class, NULL) &&
+		    !sord_ask(model, obj, uris->rdf_type, uris->owl_Class, NULL)) {
+			st = error("Type is not a rdfs:Class or owl:Class", quad);
+		}
+
+		if (sord_node_get_type(obj) == SORD_LITERAL &&
+		    !literal_is_valid(model, uris, obj, sord_node_get_datatype(obj))) {
+			st = error("Literal does not match datatype", quad);
+		}
+
+		SordIter* r = sord_search(model, pred, uris->rdfs_range, NULL, NULL);
+		for (; !sord_iter_end(r); sord_iter_next(r)) {
+			const SordNode* range = sord_iter_get_node(r, SORD_OBJECT);
+			if (!check_type(model, uris, obj, range)) {
+				st = error("Object not in property range", quad);
+				fprintf(stderr, "note: Range is <%s>\n",
+				        sord_node_get_string(range));
+			}
+		}
+		sord_iter_free(r);
+
+		SordIter* d = sord_search(model, pred, uris->rdfs_domain, NULL, NULL);
+		if (d) {
+			const SordNode* domain = sord_iter_get_node(d, SORD_OBJECT);
+			if (!check_type(model, uris, subj, domain)) {
+				st = error("Subject not in property domain", quad);
+				fprintf(stderr, "note: Domain is <%s>\n",
+				        sord_node_get_string(domain));
+			}
+			sord_iter_free(d);
+		}
+	}
+	sord_iter_free(i);
+
+	return st;
+}
+
+static int
+check_instance(SordModel*      model,
+               const URIs*     uris,
+               const SordNode* restriction,
+               const SordNode* instance)
+{
+	int st = 0;
+
+	const SordNode* prop = sord_get(
+		model, restriction, uris->owl_onProperty, NULL, NULL);
+	if (!prop) {
+		return 0;
+	}
+
+	const unsigned values = sord_count(model, instance, prop, NULL, NULL);
+
+	// Check exact cardinality
+	const SordNode* card = sord_get(
+		model, restriction, uris->owl_cardinality, NULL, NULL);
+	if (card) {
+		const unsigned c = atoi((const char*)sord_node_get_string(card));
+		if (values != c) {
+			st = errorf("Property %s on %s has %u != %u values\n",
+			            sord_node_get_string(prop),
+			            sord_node_get_string(instance),
+			            values, c);
+		}
+	}
+
+	// Check minimum cardinality
+	const SordNode* minCard = sord_get(
+		model, restriction, uris->owl_minCardinality, NULL, NULL);
+	if (minCard) {
+		const unsigned m = atoi((const char*)sord_node_get_string(minCard));
+		if (values < m) {
+			st = errorf("Property %s on %s has %u < %u values\n",
+			            sord_node_get_string(prop),
+			            sord_node_get_string(instance),
+			            values, m);
+		}
+	}
+
+	// Check someValuesFrom
+	SordIter* sf = sord_search(
+		model, restriction, uris->owl_someValuesFrom, NULL, NULL);
+	if (sf) {
+		const SordNode* type = sord_iter_get_node(sf, SORD_OBJECT);
+		SordIter* v     = sord_search(model, instance, prop, NULL, NULL);
+		bool      found = false;
+		for (; !sord_iter_end(v); sord_iter_next(v)) {
+			const SordNode* value = sord_iter_get_node(v, SORD_OBJECT);
+			if (check_type(model, uris, value, type)) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			st = errorf("%s has no <%s> values of type <%s>\n",
+			            sord_node_get_string(instance),
+			            sord_node_get_string(prop),
+			            sord_node_get_string(type));
+		}
+		sord_iter_free(v);
+	}
+	sord_iter_free(sf);
+
+	return st;
+}
+
+static int
+check_class_instances(SordModel*      model,
+                      const URIs*     uris,
+                      const SordNode* restriction,
+                      const SordNode* klass)
+{
+	// Check immediate instances of this class
+	SordIter* i = sord_search(model, NULL, uris->rdf_type, klass, NULL);
+	for (; !sord_iter_end(i); sord_iter_next(i)) {
+		const SordNode* instance = sord_iter_get_node(i, SORD_SUBJECT);
+		check_instance(model, uris, restriction, instance);
+	}
+	sord_iter_free(i);
+
+	// Check instances of all subclasses recursively
+	SordIter* s = sord_search(model, NULL, uris->rdfs_subClassOf, klass, NULL);
+	for (; !sord_iter_end(s); sord_iter_next(s)) {
+		const SordNode* subklass = sord_iter_get_node(s, SORD_SUBJECT);
+		check_class_instances(model, uris, restriction, subklass);
+	}
+	sord_iter_free(s);
+
+	return 0;
+}
+
+static int
+check_instances(SordModel* model, const URIs* uris)
+{
+	int       st = 0;
+	SordIter* r = sord_search(
+		model, NULL, uris->rdf_type, uris->owl_Restriction, NULL);
+	for (; !sord_iter_end(r); sord_iter_next(r)) {
+		const SordNode* restriction = sord_iter_get_node(r, SORD_SUBJECT);
+		const SordNode* prop        = sord_get(
+			model, restriction, uris->owl_onProperty, NULL, NULL);
+		if (!prop) {
+			continue;
+		}
+
+		SordIter* c = sord_search(
+			model, NULL, uris->rdfs_subClassOf, restriction, NULL);
+		for (; !sord_iter_end(c); sord_iter_next(c)) {
+			const SordNode* klass = sord_iter_get_node(c, SORD_SUBJECT);
+			check_class_instances(model, uris, restriction, klass);
+		}
+		sord_iter_free(c);
+	}
+	sord_iter_free(r);
+
+	return st;
 }
 
 int
@@ -439,10 +702,16 @@ main(int argc, char** argv)
 	URI(owl, InverseFunctionalProperty);
 	URI(owl, ObjectProperty);
 	URI(owl, OntologyProperty);
+	URI(owl, Restriction);
 	URI(owl, Thing);
+	URI(owl, cardinality);
 	URI(owl, equivalentClass);
+	URI(owl, minCardinality);
 	URI(owl, onDatatype);
+	URI(owl, onProperty);
+	URI(owl, someValuesFrom);
 	URI(owl, withRestrictions);
+	URI(rdf, PlainLiteral);
 	URI(rdf, Property);
 	URI(rdf, first);
 	URI(rdf, rest);
@@ -451,6 +720,7 @@ main(int argc, char** argv)
 	URI(rdfs, Literal);
 	URI(rdfs, Resource);
 	URI(rdfs, domain);
+	URI(rdfs, label);
 	URI(rdfs, range);
 	URI(rdfs, subClassOf);
 	URI(xsd, anyURI);
@@ -464,100 +734,13 @@ main(int argc, char** argv)
 	fprintf(stderr, "warning: Built without PCRE, datatypes not checked.\n");
 #endif
 
-	SordIter* i = sord_begin(model);
-	for (; !sord_iter_end(i); sord_iter_next(i)) {
-		SordQuad quad;
-		sord_iter_get(i, quad);
-
-		const SordNode* subj = quad[SORD_SUBJECT];
-		const SordNode* pred = quad[SORD_PREDICATE];
-		const SordNode* obj  = quad[SORD_OBJECT];
-
-		bool is_any_property = false;
-		SordIter* t = sord_search(model, pred, uris.rdf_type, NULL, NULL);
-		for (; !sord_iter_end(t); sord_iter_next(t)) {
-			if (is_descendant_of(model, &uris,
-			                     sord_iter_get_node(t, SORD_OBJECT),
-			                     uris.rdf_Property,
-			                     uris.rdfs_subClassOf)) {
-				is_any_property = true;
-				break;
-			}
-		}
-		sord_iter_free(t);
-
-		const bool is_ObjectProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_ObjectProperty, 0);
-		const bool is_FunctionalProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_FunctionalProperty, 0);
-		const bool is_InverseFunctionalProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_InverseFunctionalProperty, 0);
-		const bool is_DatatypeProperty = sord_ask(
-			model, pred, uris.rdf_type, uris.owl_DatatypeProperty, 0);
-
-		if (!is_any_property) {
-			error("Use of undefined property", quad);
-		}
-
-		if (is_DatatypeProperty &&
-		    sord_node_get_type(obj) != SORD_LITERAL) {
-			error("Datatype property with non-literal value", quad);
-		}
-
-		if (is_ObjectProperty &&
-		    sord_node_get_type(obj) == SORD_LITERAL) {
-			error("Object property with literal value", quad);
-		}
-
-		if (is_FunctionalProperty &&
-		    sord_count(model, subj, pred, NULL, NULL) > 1) {
-			error("Functional property with several objects", quad);
-		}
-
-		if (is_InverseFunctionalProperty &&
-		    sord_count(model, NULL, pred, obj, NULL) > 1) {
-			error("Inverse functional property with several subjects", quad);
-		}
-
-		if (sord_node_equals(pred, uris.rdf_type) &&
-		    !sord_ask(model, obj, uris.rdf_type, uris.rdfs_Class, NULL) &&
-		    !sord_ask(model, obj, uris.rdf_type, uris.owl_Class, NULL)) {
-			error("Type is not a rdfs:Class or owl:Class", quad);
-		}
-
-		if (sord_node_get_type(obj) == SORD_LITERAL &&
-		    !literal_is_valid(model, &uris, obj, sord_node_get_datatype(obj))) {
-			error("Literal does not match datatype", quad);
-		}
-
-		SordIter* r = sord_search(model, pred, uris.rdfs_range, NULL, NULL);
-		if (r) {
-			const SordNode* range = sord_iter_get_node(r, SORD_OBJECT);
-			if (!check_type(model, &uris, obj, range)) {
-				error("Object not in property range", quad);
-				fprintf(stderr, "note: Range is <%s>\n",
-				        sord_node_get_string(range));
-			}
-			sord_iter_free(r);
-		}
-
-		SordIter* d = sord_search(model, pred, uris.rdfs_domain, NULL, NULL);
-		if (d) {
-			const SordNode* domain = sord_iter_get_node(d, SORD_OBJECT);
-			if (!check_type(model, &uris, subj, domain)) {
-				error("Subject not in property domain", quad);
-				fprintf(stderr, "note: Domain is <%s>\n",
-				        sord_node_get_string(domain));
-			}
-			sord_iter_free(d);
-		}
-	}
-	sord_iter_free(i);
+	const int prop_st = check_properties(model, &uris);
+	const int inst_st = check_instances(model, &uris);
 
 	printf("Found %d errors among %d files (checked %d restrictions)\n",
 	       n_errors, argc - 1, n_restrictions);
 
 	sord_free(model);
 	sord_world_free(world);
-	return 0;
+	return prop_st || inst_st;
 }

@@ -436,6 +436,8 @@ sord_count(SordModel*      model,
 
 /**
    Check if `model` contains a triple pattern.
+
+   @return true if `model` contains a match for `pat`, otherwise false.
 */
 SORD_API
 bool
@@ -445,6 +447,8 @@ sord_contains(SordModel* model, const SordQuad pat);
    Add a quad to a model.
 
    Calling this function invalidates all iterators on `model`.
+
+   @return true on success, false, on error.
 */
 SORD_API
 bool

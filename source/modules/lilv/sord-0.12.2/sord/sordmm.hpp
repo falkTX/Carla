@@ -596,6 +596,10 @@ Model::write_to_string(const std::string& base_uri_str,
 	                                     string_sink,
 	                                     &ret);
 
+	const SerdNode base_uri_node = serd_node_from_string(
+		SERD_URI, (const uint8_t*)base_uri_str.c_str());
+	serd_writer_set_base_uri(writer, &base_uri_node);
+
 	serd_env_foreach(_world.prefixes().c_obj(),
 	                 (SerdPrefixSink)serd_writer_set_prefix,
 	                 writer);
@@ -647,4 +651,3 @@ Model::get(const Node& subject,
 }  // namespace Sord
 
 #endif  // SORD_SORDMM_HPP
-

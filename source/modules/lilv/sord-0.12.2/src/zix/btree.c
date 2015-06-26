@@ -306,12 +306,11 @@ zix_btree_insert(ZixBTree* const t, void* const e)
 			n      = n->children[i];
 		} else {
 			// Insert into internal node
-			zix_btree_ainsert(n->vals, n->n_vals, i, e);
+			zix_btree_ainsert(n->vals, n->n_vals++, i, e);
 			break;
 		}
 	}
 
-	++n->n_vals;
 	++t->size;
 
 	return ZIX_STATUS_SUCCESS;
@@ -358,7 +357,7 @@ zix_btree_rotate_left(ZixBTreeNode* const parent, const uint16_t i)
 
 	// Move first child pointer from RHS to end of LHS
 	if (!lhs->is_leaf) {
-		lhs->children[lhs->n_vals] = zix_btree_aerase(
+		lhs->children[lhs->n_vals] = (ZixBTreeNode*)zix_btree_aerase(
 			(void**)rhs->children, rhs->n_vals, 0);
 	}
 
@@ -609,6 +608,11 @@ zix_btree_lower_bound(const ZixBTree* const t,
                       const void* const     e,
                       ZixBTreeIter** const  ti)
 {
+	if (!t) {
+		*ti = NULL;
+		return ZIX_STATUS_BAD_ARG;
+	}
+
 	ZixBTreeNode* n           = t->root;
 	bool          found       = false;
 	unsigned      found_level = 0;
@@ -632,6 +636,7 @@ zix_btree_lower_bound(const ZixBTree* const t,
 		} else {
 			++(*ti)->level;
 			n = n->children[i];
+			assert(n);
 		}
 	}
 

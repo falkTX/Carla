@@ -148,6 +148,9 @@ sord_node_hash(const void* n)
 {
 	const SordNode* node = (const SordNode*)n;
 	uint32_t        hash = zix_digest_start();
+	if (node->node.buf == NULL) {
+		return 0;
+	}
 	hash = zix_digest_add(hash, node->node.buf, node->node.n_bytes);
 	hash = zix_digest_add(hash, &node->node.type, sizeof(node->node.type));
 	if (node->node.type == SERD_LITERAL) {
@@ -207,6 +210,7 @@ free_node_entry(void* value, void* user_data)
 		sord_node_free((SordWorld*)user_data, node->meta.lit.datatype);
 	}
 	free((uint8_t*)node->node.buf);
+	node->node.buf = NULL;
 }
 
 void
@@ -447,14 +451,14 @@ sord_iter_get_node(const SordIter* iter, SordQuadIndex index)
 	return iter ? ((SordNode**)zix_btree_get(iter->cur))[index] : NULL;
 }
 
-bool
-sord_iter_next(SordIter* iter)
+static bool
+sord_iter_scan_next(SordIter* iter)
 {
-	if (iter->end)
+	if (iter->end) {
 		return true;
+	}
 
 	const SordNode** key;
-	iter->end = sord_iter_forward(iter);
 	if (!iter->end) {
 		switch (iter->mode) {
 		case ALL:
@@ -503,6 +507,17 @@ sord_iter_next(SordIter* iter)
 #endif
 		return false;
 	}
+}
+
+bool
+sord_iter_next(SordIter* iter)
+{
+	if (iter->end) {
+		return true;
+	}
+
+	iter->end = sord_iter_forward(iter);
+	return sord_iter_scan_next(iter);
 }
 
 bool
@@ -1194,7 +1209,7 @@ sord_add(SordModel* sord, const SordQuad tup)
 	memcpy(quad, tup, sizeof(SordQuad));
 
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
+		if (sord->indices[i] && (i < GSPO || tup[3])) {
 			if (!sord_add_to_index(sord, quad, (SordOrder)i)) {
 				assert(i == 0);  // Assuming index coherency
 				free(quad);
@@ -1220,7 +1235,7 @@ sord_remove(SordModel* sord, const SordQuad tup)
 
 	SordNode* quad = NULL;
 	for (unsigned i = 0; i < NUM_ORDERS; ++i) {
-		if (sord->indices[i]) {
+		if (sord->indices[i] && (i < GSPO || tup[3])) {
 			if (zix_btree_remove(sord->indices[i], tup, (void**)&quad, NULL)) {
 				assert(i == 0);  // Assuming index coherency
 				return;  // Quad not found, do nothing
@@ -1258,6 +1273,7 @@ sord_erase(SordModel* sord, SordIter* iter)
 		}
 	}
 	iter->end = zix_btree_iter_is_end(iter->cur);
+	sord_iter_scan_next(iter);
 
 	free(quad);
 
