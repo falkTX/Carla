@@ -1,5 +1,5 @@
 diff --git a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
-index 5c26681..ca673e4 100644
+index e907789..34f4d7b 100644
 --- a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
 +++ b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
 @@ -26,8 +26,9 @@
@@ -14,7 +14,7 @@ index 5c26681..ca673e4 100644
  
  #ifdef LILV_SHARED
  #    ifdef _WIN32
-@@ -1152,9 +1153,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
+@@ -1199,9 +1200,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
     @return A new LilvState which must be freed with lilv_state_free(), or NULL.
  */
  LILV_API LilvState*
@@ -27,7 +27,7 @@ index 5c26681..ca673e4 100644
  
  /**
     Load a state snapshot from a file.
-@@ -1172,18 +1173,18 @@ lilv_state_new_from_world(LilvWorld*      world,
+@@ -1219,18 +1220,18 @@ lilv_state_new_from_world(LilvWorld*      world,
     new memory consumed once this function returns.
  */
  LILV_API LilvState*
@@ -53,7 +53,7 @@ index 5c26681..ca673e4 100644
  
  /**
     Function to get a port value.
-@@ -1352,7 +1353,8 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
+@@ -1425,7 +1426,8 @@ lilv_state_emit_port_values(const LilvState*     state,
  */
  LILV_API void
  lilv_state_restore(const LilvState*           state,
@@ -63,7 +63,7 @@ index 5c26681..ca673e4 100644
                     LilvSetPortValueFunc       set_value,
                     void*                      user_data,
                     uint32_t                   flags,
-@@ -1695,6 +1697,21 @@ LILV_API const LilvNode*
+@@ -1786,6 +1788,21 @@ LILV_API const LilvNode*
  lilv_ui_get_binary_uri(const LilvUI* ui);
  
  /**
@@ -265,10 +265,10 @@ index b9b3a69..0d82f3f 100644
  
  } /* namespace Lilv */
 diff --git a/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h b/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
-index ed2c13a..8d30b39 100644
+index e2444d3..4d0a8e5 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
 +++ b/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
-@@ -50,7 +50,7 @@ static inline char* dlerror(void) { return "Unknown error"; }
+@@ -53,7 +53,7 @@ static inline char* dlerror(void) { return "Unknown error"; }
  #include "lilv/lilv.h"
  
  #ifdef LILV_DYN_MANIFEST
@@ -278,7 +278,7 @@ index ed2c13a..8d30b39 100644
  
  /*
 diff --git a/source/modules/lilv/lilv-0.21.3/src/plugin.c b/source/modules/lilv/lilv-0.21.3/src/plugin.c
-index 9c966b6..7bd6e60 100644
+index bf0843b..5e5a2c8 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/plugin.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/plugin.c
 @@ -27,7 +27,7 @@
@@ -306,7 +306,7 @@ index 6bf8fc7..0a50891 100644
  #include "lilv_internal.h"
  
 diff --git a/source/modules/lilv/lilv-0.21.3/src/state.c b/source/modules/lilv/lilv-0.21.3/src/state.c
-index 68d48f1..fa54484 100644
+index 79199e4..119dcee 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/state.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/state.c
 @@ -18,10 +18,10 @@
@@ -324,7 +324,7 @@ index 68d48f1..fa54484 100644
  
  #include "lilv_config.h"
  #include "lilv_internal.h"
-@@ -397,30 +397,18 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
+@@ -411,35 +411,18 @@ lilv_state_emit_port_values(const LilvState*     state,
  
  LILV_API void
  lilv_state_restore(const LilvState*           state,
@@ -336,6 +336,11 @@ index 68d48f1..fa54484 100644
                     uint32_t                   flags,
                     const LV2_Feature *const * features)
  {
+-	if (!state) {
+-		LILV_ERROR("lilv_state_restore() called on NULL state\n");
+-		return;
+-	}
+-
 -	LV2_State_Map_Path map_path = {
 -		(LilvState*)state, abstract_path, absolute_path };
 -	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
@@ -357,9 +362,9 @@ index 68d48f1..fa54484 100644
 -	free(sfeatures);
 -
  	if (set_value) {
- 		for (uint32_t i = 0; i < state->num_values; ++i) {
- 			const PortValue* val = &state->values[i];
-@@ -571,9 +559,9 @@ new_state_from_model(LilvWorld*       world,
+ 		lilv_state_emit_port_values(state, set_value, user_data);
+ 	}
+@@ -586,9 +569,9 @@ new_state_from_model(LilvWorld*       world,
  }
  
  LILV_API LilvState*
@@ -372,7 +377,7 @@ index 68d48f1..fa54484 100644
  {
  	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
  		LILV_ERRORF("Subject `%s' is not a URI or blank node.\n",
-@@ -588,10 +576,10 @@ lilv_state_new_from_world(LilvWorld*      world,
+@@ -600,10 +583,10 @@ lilv_state_new_from_world(LilvWorld*      world,
  }
  
  LILV_API LilvState*
@@ -387,7 +392,7 @@ index 68d48f1..fa54484 100644
  {
  	if (subject && !lilv_node_is_uri(subject)
  	    && !lilv_node_is_blank(subject)) {
-@@ -641,9 +629,9 @@ set_prefixes(SerdEnv* env)
+@@ -653,9 +636,9 @@ set_prefixes(SerdEnv* env)
  }
  
  LILV_API LilvState*
@@ -460,10 +465,10 @@ index 0f4f2f6..a3e17da 100644
 +       return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
 +}
 diff --git a/source/modules/lilv/lilv-0.21.3/src/util.c b/source/modules/lilv/lilv-0.21.3/src/util.c
-index f1c9c1c..7ca7ca0 100644
+index 31c9238..5bcdb7e 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/util.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/util.c
-@@ -29,7 +29,6 @@
+@@ -30,7 +30,6 @@
  #include <string.h>
  
  #ifdef _WIN32
@@ -471,17 +476,20 @@ index f1c9c1c..7ca7ca0 100644
  #    include <windows.h>
  #    include <direct.h>
  #    include <io.h>
-@@ -426,7 +425,7 @@ lilv_symlink(const char* oldpath, const char* newpath)
+@@ -446,10 +445,7 @@ lilv_symlink(const char* oldpath, const char* newpath)
  	int ret = 0;
  	if (strcmp(oldpath, newpath)) {
  #ifdef _WIN32
 -		ret = !CreateSymbolicLink(newpath, oldpath, 0);
-+		ret = 0;
+-		if (ret) {
+-			ret = !CreateHardLink(newpath, oldpath, 0);
+-		}
++		ret = 1;
  #else
  		ret = symlink(oldpath, newpath);
  #endif
 diff --git a/source/modules/lilv/lilv-0.21.3/src/world.c b/source/modules/lilv/lilv-0.21.3/src/world.c
-index 41fe16f..76db7fc 100644
+index 02dbeec..437d767 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/world.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/world.c
 @@ -19,7 +19,7 @@
@@ -494,7 +502,7 @@ index 41fe16f..76db7fc 100644
  #include "lilv_internal.h"
  
 diff --git a/source/modules/lilv/sratom-0.4.7/sratom/sratom.h b/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
-index bb1af95..67855d5 100644
+index a86f67e..f0c12b9 100644
 --- a/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
 +++ b/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
 @@ -23,9 +23,9 @@
@@ -511,10 +519,10 @@ index bb1af95..67855d5 100644
  #include "sord/sord.h"
  
 diff --git a/source/modules/lilv/sratom-0.4.7/src/sratom.c b/source/modules/lilv/sratom-0.4.7/src/sratom.c
-index 4d8add7..555bbda 100644
+index 272e6e3..4f9d136 100644
 --- a/source/modules/lilv/sratom-0.4.7/src/sratom.c
 +++ b/source/modules/lilv/sratom-0.4.7/src/sratom.c
-@@ -22,9 +22,9 @@
+@@ -20,9 +20,9 @@
  #include <stdlib.h>
  #include <string.h>
  
