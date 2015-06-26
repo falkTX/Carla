@@ -1790,21 +1790,6 @@ lilv_ui_get_binary_uri(const LilvUI* ui);
 /**
   Custom calls
 */
-LILV_API const LilvNodes*
-lilv_ui_get_supported_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_required_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_optional_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_extension_data(const LilvUI* ui);
-
-/**
-  Custom calls
-*/
 LILV_API LilvNode*
 lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin);
 
