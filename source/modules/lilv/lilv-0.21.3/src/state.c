@@ -18,10 +18,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
-#include "lv2/lv2plug.in/ns/ext/state/state.h"
+#include "lv2/atom.h"
+#include "lv2/atom-forge.h"
+#include "lv2/presets.h"
+#include "lv2/state.h"
 
 #include "lilv_config.h"
 #include "lilv_internal.h"
@@ -411,34 +411,17 @@ lilv_state_emit_port_values(const LilvState*     state,
 
 LILV_API void
 lilv_state_restore(const LilvState*           state,
-                   LilvInstance*              instance,
+                   const LV2_State_Interface* iface,
+                   LV2_Handle                 handle,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,
                    const LV2_Feature *const * features)
 {
-	if (!state) {
-		LILV_ERROR("lilv_state_restore() called on NULL state\n");
-		return;
-	}
-
-	LV2_State_Map_Path map_path = {
-		(LilvState*)state, abstract_path, absolute_path };
-	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
-
-	const LV2_Feature** sfeatures = add_features(features, &map_feature, NULL);
-
-	const LV2_Descriptor*      desc  = instance ? instance->lv2_descriptor : NULL;
-	const LV2_State_Interface* iface = (desc && desc->extension_data)
-		? (const LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
-		: NULL;
-
 	if (iface) {
-		iface->restore(instance->lv2_handle, retrieve_callback,
-		               (LV2_State_Handle)state, flags, sfeatures);
+		iface->restore(handle, retrieve_callback,
+		               (LV2_State_Handle)state, flags, features);
 	}
-
-	free(sfeatures);
 
 	if (set_value) {
 		lilv_state_emit_port_values(state, set_value, user_data);
@@ -586,9 +569,9 @@ new_state_from_model(LilvWorld*       world,
 }
 
 LILV_API LilvState*
-lilv_state_new_from_world(LilvWorld*      world,
-                          LV2_URID_Map*   map,
-                          const LilvNode* node)
+lilv_state_new_from_world(LilvWorld*          world,
+                          const LV2_URID_Map* map,
+                          const LilvNode*     node)
 {
 	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
 		LILV_ERRORF("Subject `%s' is not a URI or blank node.\n",
@@ -600,10 +583,10 @@ lilv_state_new_from_world(LilvWorld*      world,
 }
 
 LILV_API LilvState*
-lilv_state_new_from_file(LilvWorld*      world,
-                         LV2_URID_Map*   map,
-                         const LilvNode* subject,
-                         const char*     path)
+lilv_state_new_from_file(LilvWorld*          world,
+                         const LV2_URID_Map* map,
+                         const LilvNode*     subject,
+                         const char*         path)
 {
 	if (subject && !lilv_node_is_uri(subject)
 	    && !lilv_node_is_blank(subject)) {
@@ -653,9 +636,9 @@ set_prefixes(SerdEnv* env)
 }
 
 LILV_API LilvState*
-lilv_state_new_from_string(LilvWorld*    world,
-                           LV2_URID_Map* map,
-                           const char*   str)
+lilv_state_new_from_string(LilvWorld*          world,
+                           const LV2_URID_Map* map,
+                           const char*         str)
 {
 	if (!str) {
 		return NULL;

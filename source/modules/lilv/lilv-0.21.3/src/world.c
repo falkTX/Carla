@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
+#include "lv2/presets.h"
 
 #include "lilv_internal.h"
 

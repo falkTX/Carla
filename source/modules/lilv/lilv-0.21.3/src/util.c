@@ -30,7 +30,6 @@
 #include <string.h>
 
 #ifdef _WIN32
-#    define _WIN32_WINNT 0x0600  /* for CreateSymbolicLink */
 #    include <windows.h>
 #    include <direct.h>
 #    include <io.h>
@@ -446,10 +445,7 @@ lilv_symlink(const char* oldpath, const char* newpath)
 	int ret = 0;
 	if (strcmp(oldpath, newpath)) {
 #ifdef _WIN32
-		ret = !CreateSymbolicLink(newpath, oldpath, 0);
-		if (ret) {
-			ret = !CreateHardLink(newpath, oldpath, 0);
-		}
+		ret = 1;
 #else
 		ret = symlink(oldpath, newpath);
 #endif
