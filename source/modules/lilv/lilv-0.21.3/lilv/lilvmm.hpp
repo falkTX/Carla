@@ -38,7 +38,7 @@ uri_to_path(const char* uri) {
 	inline RT name() { return lilv_ ## prefix ## _ ## name (me); }
 
 #define LILV_WRAP0_CONST(RT, prefix, name) \
-        inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
+	inline RT name() const { return lilv_ ## prefix ## _ ## name (me); }
 
 #define LILV_WRAP0_VOID(prefix, name) \
 	inline void name() { lilv_ ## prefix ## _ ## name(me); }
@@ -70,7 +70,7 @@ uri_to_path(const char* uri) {
 #endif
 
 struct Node {
-        inline Node(LilvNode* node)       : me(node) {}
+	inline Node(LilvNode* node)       : me(node) {}
 	inline Node(const LilvNode* node) : me(lilv_node_duplicate(node)) {}
 	inline Node(const Node& copy)     : me(lilv_node_duplicate(copy.me)) {}
 
@@ -99,11 +99,11 @@ struct Node {
 	LILV_WRAP0_CONST(bool,        node, is_bool);
 	LILV_WRAP0_CONST(bool,        node, as_bool);
 
-        Node& operator=(const Node& copy) {
-                lilv_node_free(me);
-                me = lilv_node_duplicate(copy.me);
-                return *this;
-        }
+	Node& operator=(const Node& copy) {
+		lilv_node_free(me);
+		me = lilv_node_duplicate(copy.me);
+		return *this;
+	}
 
 	LilvNode* me;
 };
@@ -154,23 +154,23 @@ struct Nodes {
 	LILV_WRAP_COLL(Nodes, Node, nodes);
 	LILV_WRAP1(bool, nodes, contains, const Node, node);
 
-        inline Node get_first() const {
-              return Node((const LilvNode*)lilv_nodes_get_first(me));
-        }
+	inline Node get_first() const {
+		return Node((const LilvNode*)lilv_nodes_get_first(me));
+	}
 };
 
 struct UI {
 	inline UI(const LilvUI* c_obj) : me(c_obj) {}
 	LILV_WRAP_CONVERSION(const LilvUI);
 
-        LILV_WRAP0(Node,  ui, get_uri);
-        LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
-        LILV_WRAP0(Node,  ui, get_bundle_uri);
-        LILV_WRAP0(Node,  ui, get_binary_uri);
-        LILV_WRAP0(Nodes, ui, get_supported_features);
-        LILV_WRAP0(Nodes, ui, get_required_features);
-        LILV_WRAP0(Nodes, ui, get_optional_features);
-        LILV_WRAP0(Nodes, ui, get_extension_data);
+	LILV_WRAP0(Node,  ui, get_uri);
+	LILV_WRAP1(bool,  ui, is_a, LilvNode*, ui_class);
+	LILV_WRAP0(Node,  ui, get_bundle_uri);
+	LILV_WRAP0(Node,  ui, get_binary_uri);
+	LILV_WRAP0(Nodes, ui, get_supported_features);
+	LILV_WRAP0(Nodes, ui, get_required_features);
+	LILV_WRAP0(Nodes, ui, get_optional_features);
+	LILV_WRAP0(Nodes, ui, get_extension_data);
 
 	const LilvUI* me;
 };
@@ -279,14 +279,14 @@ struct Plugins {
 struct Instance {
 	inline Instance(LilvInstance* instance) : me(instance) {}
 
-        LILV_DEPRECATED
-        inline Instance(Plugin plugin, double sample_rate)
-                : me(lilv_plugin_instantiate(plugin, sample_rate, NULL)) {}
+	LILV_DEPRECATED
+	inline Instance(Plugin plugin, double sample_rate)
+		: me(lilv_plugin_instantiate(plugin, sample_rate, NULL)) {}
 
-        LILV_DEPRECATED inline Instance(Plugin              plugin,
-                                        double              sample_rate,
-                                        LV2_Feature* const* features)
-                : me(lilv_plugin_instantiate(plugin, sample_rate, features)) {}
+	LILV_DEPRECATED inline Instance(Plugin              plugin,
+	                                double              sample_rate,
+	                                LV2_Feature* const* features)
+		: me(lilv_plugin_instantiate(plugin, sample_rate, features)) {}
 
 	static inline Instance* create(Plugin              plugin,
 	                               double              sample_rate,
@@ -357,7 +357,7 @@ struct World {
 
 	LilvWorld* me;
 
-        CARLA_DECLARE_NON_COPY_STRUCT(World)
+	CARLA_DECLARE_NON_COPY_STRUCT(World)
 };
 
 } /* namespace Lilv */
