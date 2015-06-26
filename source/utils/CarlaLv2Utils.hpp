@@ -570,10 +570,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             rdfDescriptor->Author = carla_strdup(author);
 
         if (const char* const binary = lilvPlugin.get_library_uri().as_string())
-            rdfDescriptor->Binary = carla_strdup(lilv_uri_to_path(binary));
+            rdfDescriptor->Binary = carla_strdup_free(lilv_file_uri_parse(binary, nullptr));
 
         if (const char* const bundle = lilvPlugin.get_bundle_uri().as_string())
-            rdfDescriptor->Bundle = carla_strdup(lilv_uri_to_path(bundle));
+            rdfDescriptor->Bundle = carla_strdup_free(lilv_file_uri_parse(bundle, nullptr));
 
         Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
 
@@ -1313,10 +1313,10 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         rdfUI->URI = carla_strdup(uiURI);
 
                     if (const char* const uiBinary = lilvUI.get_binary_uri().as_string())
-                        rdfUI->Binary = carla_strdup(lilv_uri_to_path(uiBinary));
+                        rdfUI->Binary = carla_strdup_free(lilv_file_uri_parse(uiBinary, nullptr));
 
                     if (const char* const uiBundle = lilvUI.get_bundle_uri().as_string())
-                        rdfUI->Bundle = carla_strdup(lilv_uri_to_path(uiBundle));
+                        rdfUI->Bundle = carla_strdup_free(lilv_file_uri_parse(uiBundle, nullptr));
                 }
 
                 // -------------------------------------------------------
@@ -1405,7 +1405,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // Set UI Information
 
                 if (const char* const resDir = lilvPlugin.get_modgui_resources_directory().as_uri())
-                    rdfUI->URI = carla_strdup(lilv_uri_to_path(resDir));
+                    rdfUI->URI = carla_strdup_free(lilv_file_uri_parse(resDir, nullptr));
 
                 if (rdfDescriptor->Bundle != nullptr)
                     rdfUI->Bundle = carla_strdup(rdfDescriptor->Bundle);
