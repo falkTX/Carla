@@ -29,11 +29,6 @@
 
 namespace Lilv {
 
-static inline const char*
-uri_to_path(const char* uri) {
-	return lilv_uri_to_path(uri);
-}
-
 #define LILV_WRAP0(RT, prefix, name) \
 	inline RT name() { return lilv_ ## prefix ## _ ## name (me); }
 
@@ -328,6 +323,9 @@ struct World {
 
 	inline LilvNode* new_uri(const char* uri) const {
 		return lilv_new_uri(me, uri);
+	}
+	inline LilvNode* new_file_uri(const char* host, const char* path) const {
+		return lilv_new_file_uri(me, host, path);
 	}
 	inline LilvNode* new_string(const char* str) const {
 		return lilv_new_string(me, str);
