@@ -2,7 +2,8 @@
 #ifndef _SRATOM_CONFIG_H_
 #define _SRATOM_CONFIG_H_
 
-#define SRATOM_VERSION "0.4.2"
+#define SRATOM_INTERNAL
+#define SRATOM_VERSION "0.4.7"
 
 #define HAVE_LV2  1
 #define HAVE_SERD 1
