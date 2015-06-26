@@ -553,7 +553,7 @@ lilv_world_free(LilvWorld* world);
    with special plugin bundles which are installed to a known location).
 */
 LILV_API void
-lilv_world_load_all(LilvWorld* world);
+lilv_world_load_all(LilvWorld* world, const char* lv2_path);
 
 /**
    Load a specific bundle.

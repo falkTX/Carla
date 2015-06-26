@@ -234,6 +234,13 @@ struct Plugin {
 	LILV_WRAP0(Nodes,       plugin, get_extension_data);
 	LILV_WRAP0(UIs,         plugin, get_uis);
 	LILV_WRAP1(Nodes,       plugin, get_related, Node, type);
+	LILV_WRAP0(Node,        plugin, get_modgui_resources_directory);
+	LILV_WRAP0(Node,        plugin, get_modgui_stylesheet);
+	LILV_WRAP0(Node,        plugin, get_modgui_icon_template);
+	LILV_WRAP0(Node,        plugin, get_modgui_settings_template);
+	LILV_WRAP0(Node,        plugin, get_modgui_template_data);
+	LILV_WRAP0(Node,        plugin, get_modgui_screenshot);
+	LILV_WRAP0(Node,        plugin, get_modgui_thumbnail);
 
 	inline Port get_port_by_index(unsigned index) {
 		return Port(me, lilv_plugin_get_port_by_index(me, index));
@@ -341,7 +348,7 @@ struct World {
 	}
 
 	LILV_WRAP2_VOID(world, set_option, const char*, uri, LilvNode*, value);
-	LILV_WRAP0_VOID(world, load_all);
+	LILV_WRAP1_VOID(world, load_all, const char*, lv2_path);
 	LILV_WRAP1_VOID(world, load_bundle, LilvNode*, bundle_uri);
 	LILV_WRAP0(const LilvPluginClass*, world, get_plugin_class);
 	LILV_WRAP0(const LilvPluginClasses*, world, get_plugin_classes);
