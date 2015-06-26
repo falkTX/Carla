@@ -1,3 +1,9 @@
+sratom (0.4.7) unstable;
+
+  * Fix warnings when building with ISO C++ compilers
+
+ -- David Robillard <d@drobilla.net>  Fri, 08 Aug 2014 18:14:19 -0400
+
 sratom (0.4.6) stable;
 
   * Update for latest LV2 Atom Object simplification

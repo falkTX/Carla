@@ -14,17 +14,15 @@
   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 */
 
-#define __STDC_LIMIT_MACROS 1
-
 #include <assert.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "lv2/atom-forge.h"
-#include "lv2/atom-util.h"
-#include "lv2/midi.h"
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/atom/util.h"
+#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
 
 #include "sratom/sratom.h"
 
@@ -36,7 +34,7 @@
 typedef enum {
 	MODE_SUBJECT,
 	MODE_BODY,
-	MODE_SEQUENCE,
+	MODE_SEQUENCE
 } ReadMode;
 
 struct SratomImpl {
@@ -600,7 +598,6 @@ read_node(Sratom*         sratom,
 				for (const char* s = str; s < str + len; s += 2) {
 					unsigned num;
 					sscanf(s, "%2X", &num);
-					assert(num < UINT8_MAX);
 					const uint8_t c = num;
 					lv2_atom_forge_raw(forge, &c, 1);
 				}
