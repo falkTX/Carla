@@ -25,15 +25,28 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #ifdef _WIN32
+#    define _WIN32_WINNT 0x0600  /* for CreateSymbolicLink */
 #    include <windows.h>
 #    include <direct.h>
 #    include <io.h>
 #    define F_OK 0
 #    define mkdir(path, flags) _mkdir(path)
+#    if (defined(_MSC_VER) && (_MSC_VER < 1500))
+/** Implement 'CreateSymbolicLink()' for MSVC 8 or earlier */
+BOOLEAN WINAPI
+CreateSymbolicLink(LPCTSTR linkpath, LPCTSTR targetpath, DWORD flags)
+{
+	typedef BOOLEAN (WINAPI* PFUNC)(LPCTSTR, LPCTSTR, DWORD);
+
+	PFUNC pfn = (PFUNC)GetProcAddress(GetModuleHandle(TEXT("kernel32.dll")), "CreateSymbolicLinkA");
+	return pfn ? pfn(linkpath, targetpath, flags) : 0;
+}
+#    endif /* _MSC_VER < 1500 */
 #else
 #    include <dirent.h>
 #    include <unistd.h>
@@ -67,13 +80,15 @@ lilv_strjoin(const char* first, ...)
 		if (s == NULL)
 			break;
 
-		const size_t this_len = strlen(s);
-		if (!(result = (char*)realloc(result, len + this_len + 1))) {
+		const size_t this_len   = strlen(s);
+		char*        new_result = (char*)realloc(result, len + this_len + 1);
+		if (!new_result) {
 			free(result);
 			LILV_ERROR("realloc() failed\n");
 			return NULL;
 		}
 
+		result = new_result;
 		memcpy(result + len, s, this_len);
 		len += this_len;
 	}
@@ -101,6 +116,12 @@ const char*
 lilv_uri_to_path(const char* uri)
 {
 	return (const char*)serd_uri_to_path((const uint8_t*)uri);
+}
+
+char*
+lilv_file_uri_parse(const char* uri, char** hostname)
+{
+	return (char*)serd_file_uri_parse((const uint8_t*)uri, (uint8_t**)hostname);
 }
 
 /** Return the current LANG converted to Turtle (i.e. RFC3066) style.
@@ -425,7 +446,10 @@ lilv_symlink(const char* oldpath, const char* newpath)
 	int ret = 0;
 	if (strcmp(oldpath, newpath)) {
 #ifdef _WIN32
-		ret = 0;
+		ret = !CreateSymbolicLink(newpath, oldpath, 0);
+		if (ret) {
+			ret = !CreateHardLink(newpath, oldpath, 0);
+		}
 #else
 		ret = symlink(oldpath, newpath);
 #endif

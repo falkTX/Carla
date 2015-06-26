@@ -20,8 +20,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lv2/atom.h"
-#include "lv2/event.h"
+#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+#include "lv2/lv2plug.in/ns/ext/event/event.h"
 
 #include "lilv_internal.h"
 

@@ -18,10 +18,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "lv2/atom.h"
-#include "lv2/atom-forge.h"
-#include "lv2/presets.h"
-#include "lv2/state.h"
+#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/presets/presets.h"
+#include "lv2/lv2plug.in/ns/ext/state/state.h"
 
 #include "lilv_config.h"
 #include "lilv_internal.h"
@@ -51,6 +51,7 @@ typedef struct {
 
 struct LilvStateImpl {
 	LilvNode*  plugin_uri;  ///< Plugin URI
+	LilvNode*  uri;         ///< State/preset URI
 	char*      dir;         ///< Save directory (if saved)
 	char*      file_dir;    ///< Directory for files created by plugin
 	char*      copy_dir;    ///< Directory for snapshots of external files
@@ -216,7 +217,7 @@ abstract_path(LV2_State_Map_Path_Handle handle,
 		free(real_path);
 		return lilv_strdup(pm->rel);
 	} else if (lilv_path_is_child(real_path, state->dir)) {
-		// File in state directory (loaded, or created by plugin during save
+		// File in state directory (loaded, or created by plugin during save)
 		path = lilv_path_relative_to(real_path, state->dir);
 	} else if (lilv_path_is_child(real_path, state->file_dir)) {
 		// File created by plugin earlier
@@ -238,13 +239,16 @@ abstract_path(LV2_State_Map_Path_Handle handle,
 			// Refer to the latest copy in plugin state
 			real_path = copy;
 		}
-	} else {
-		// New path outside state directory
+	} else if (state->link_dir) {
+		// New path outside state directory, make a link
 		const char* slash = strrchr(real_path, '/');
 		const char* name  = slash ? (slash + 1) : real_path;
 
 		// Find a free name in the (virtual) state directory
 		path = lilv_find_free_path(name, lilv_state_has_path, state);
+	} else {
+		// No link directory, preserve absolute path
+		path = lilv_strdup(abs_path);
 	}
 
 	// Add record to path mapping
@@ -334,8 +338,7 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
 {
 	const LV2_Feature** sfeatures = NULL;
 	LilvWorld* const    world     = plugin->world;
-	LilvState* const    state     = (LilvState*)malloc(sizeof(LilvState));
-	memset(state, '\0', sizeof(LilvState));
+	LilvState* const    state     = (LilvState*)calloc(1, sizeof(LilvState));
 	state->plugin_uri = lilv_node_duplicate(lilv_plugin_get_uri(plugin));
 	state->abs2rel    = zix_tree_new(false, abs_cmp, NULL, path_rel_free);
 	state->rel2abs    = zix_tree_new(false, rel_cmp, NULL, NULL);
@@ -396,25 +399,49 @@ lilv_state_new_from_instance(const LilvPlugin*          plugin,
 }
 
 LILV_API void
+lilv_state_emit_port_values(const LilvState*     state,
+                            LilvSetPortValueFunc set_value,
+                            void*                user_data)
+{
+	for (uint32_t i = 0; i < state->num_values; ++i) {
+		const PortValue* val = &state->values[i];
+		set_value(val->symbol, user_data, val->value, val->size, val->type);
+	}
+}
+
+LILV_API void
 lilv_state_restore(const LilvState*           state,
-                   const LV2_State_Interface* iface,
-                   LV2_Handle                 handle,
+                   LilvInstance*              instance,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,
                    const LV2_Feature *const * features)
 {
-	if (iface) {
-		iface->restore(handle, retrieve_callback,
-		               (LV2_State_Handle)state, flags, features);
+	if (!state) {
+		LILV_ERROR("lilv_state_restore() called on NULL state\n");
+		return;
 	}
 
+	LV2_State_Map_Path map_path = {
+		(LilvState*)state, abstract_path, absolute_path };
+	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
+
+	const LV2_Feature** sfeatures = add_features(features, &map_feature, NULL);
+
+	const LV2_Descriptor*      desc  = instance ? instance->lv2_descriptor : NULL;
+	const LV2_State_Interface* iface = (desc && desc->extension_data)
+		? (const LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
+		: NULL;
+
+	if (iface) {
+		iface->restore(instance->lv2_handle, retrieve_callback,
+		               (LV2_State_Handle)state, flags, sfeatures);
+	}
+
+	free(sfeatures);
+
 	if (set_value) {
-		for (uint32_t i = 0; i < state->num_values; ++i) {
-			const PortValue* val = &state->values[i];
-			set_value(val->symbol, user_data,
-			          val->value, val->size, val->type);
-		}
+		lilv_state_emit_port_values(state, set_value, user_data);
 	}
 }
 
@@ -431,10 +458,10 @@ new_state_from_model(LilvWorld*       world,
 	}
 
 	// Allocate state
-	LilvState* const state = (LilvState*)malloc(sizeof(LilvState));
-	memset(state, '\0', sizeof(LilvState));
+	LilvState* const state = (LilvState*)calloc(1, sizeof(LilvState));
 	state->dir       = lilv_strdup(dir);
 	state->atom_Path = map->map(map->handle, LV2_ATOM__Path);
+	state->uri       = lilv_node_new_from_node(world, node);
 
 	// Get the plugin URI this state applies to
 	SordIter* i = sord_search(model, node, world->uris.lv2_appliesTo, 0, 0);
@@ -559,9 +586,9 @@ new_state_from_model(LilvWorld*       world,
 }
 
 LILV_API LilvState*
-lilv_state_new_from_world(LilvWorld*          world,
-                          const LV2_URID_Map* map,
-                          const LilvNode*     node)
+lilv_state_new_from_world(LilvWorld*      world,
+                          LV2_URID_Map*   map,
+                          const LilvNode* node)
 {
 	if (!lilv_node_is_uri(node) && !lilv_node_is_blank(node)) {
 		LILV_ERRORF("Subject `%s' is not a URI or blank node.\n",
@@ -569,17 +596,14 @@ lilv_state_new_from_world(LilvWorld*          world,
 		return NULL;
 	}
 
-	LilvState* state = new_state_from_model(
-		world, map, world->model, node->node, NULL);
-
-	return state;
+	return new_state_from_model(world, map, world->model, node->node, NULL);
 }
 
 LILV_API LilvState*
-lilv_state_new_from_file(LilvWorld*          world,
-                         const LV2_URID_Map* map,
-                         const LilvNode*     subject,
-                         const char*         path)
+lilv_state_new_from_file(LilvWorld*      world,
+                         LV2_URID_Map*   map,
+                         const LilvNode* subject,
+                         const char*     path)
 {
 	if (subject && !lilv_node_is_uri(subject)
 	    && !lilv_node_is_blank(subject)) {
@@ -629,9 +653,9 @@ set_prefixes(SerdEnv* env)
 }
 
 LILV_API LilvState*
-lilv_state_new_from_string(LilvWorld*          world,
-                           const LV2_URID_Map* map,
-                           const char*         str)
+lilv_state_new_from_string(LilvWorld*    world,
+                           LV2_URID_Map* map,
+                           const char*   str)
 {
 	if (!str) {
 		return NULL;
@@ -667,7 +691,7 @@ ttl_writer(SerdSink sink, void* stream, const SerdNode* base, SerdEnv** new_env)
 		serd_uri_parse(base->buf, &base_uri);
 	}
 
-	SerdEnv* env = serd_env_new(base);
+	SerdEnv* env = *new_env ? *new_env : serd_env_new(base);
 	set_prefixes(env);
 
 	SerdWriter* writer = serd_writer_new(
@@ -678,7 +702,10 @@ ttl_writer(SerdSink sink, void* stream, const SerdNode* base, SerdEnv** new_env)
 		sink,
 		stream);
 
-	*new_env = env;
+	if (!*new_env) {
+		*new_env = env;
+	}
+
 	return writer;
 }
 
@@ -697,53 +724,117 @@ ttl_file_writer(FILE* fd, const SerdNode* node, SerdEnv** env)
 	return writer;
 }
 
+static void
+add_to_model(SordWorld*     world,
+             SerdEnv*       env,
+             SordModel*     model,
+             const SerdNode s,
+             const SerdNode p,
+             const SerdNode o)
+{
+	SordNode* ss = sord_node_from_serd_node(world, env, &s, NULL, NULL);
+	SordNode* sp = sord_node_from_serd_node(world, env, &p, NULL, NULL);
+	SordNode* so = sord_node_from_serd_node(world, env, &o, NULL, NULL);
+
+	SordQuad quad = { ss, sp, so, NULL };
+	sord_add(model, quad);
+
+	sord_node_free(world, ss);
+	sord_node_free(world, sp);
+	sord_node_free(world, so);
+}
+
+static void
+remove_manifest_entry(SordWorld* world, SordModel* model, const char* subject)
+{
+	SordNode* s = sord_new_uri(world, USTR(subject));
+	SordIter* i = sord_search(model, s, NULL, NULL, NULL);
+	while (!sord_iter_end(i)) {
+		sord_erase(model, i);
+	}
+	sord_iter_free(i);
+	sord_node_free(world, s);
+}
+
 static int
-add_state_to_manifest(const LilvNode* plugin_uri,
+add_state_to_manifest(LilvWorld*      lworld,
+                      const LilvNode* plugin_uri,
                       const char*     manifest_path,
                       const char*     state_uri,
                       const char*     state_path)
 {
-	FILE* fd = fopen(manifest_path, "a");
-	if (!fd) {
-		LILV_ERRORF("Failed to open %s (%s)\n",
-		            manifest_path, strerror(errno));
-		return 4;
+	SordWorld*  world    = lworld->world;
+	SerdNode    manifest = serd_node_new_file_uri(USTR(manifest_path), 0, 0, 0);
+	SerdNode    file     = serd_node_new_file_uri(USTR(state_path), 0, 0, 0);
+	SerdEnv*    env      = serd_env_new(&manifest);
+	SordModel*  model    = sord_new(world, SORD_SPO, false);
+
+	FILE* rfd = fopen(manifest_path, "r");
+	if (rfd) {
+		// Read manifest into model
+		SerdReader* reader = sord_new_reader(model, env, SERD_TURTLE, NULL);
+		lilv_flock(rfd, true);
+		serd_reader_read_file_handle(reader, rfd, manifest.buf);
+		serd_reader_free(reader);
 	}
 
-	lilv_flock(fd, true);
-
-	SerdNode    file     = serd_node_new_file_uri(USTR(state_path), 0, 0, 0);
-	SerdNode    manifest = serd_node_new_file_uri(USTR(manifest_path), 0, 0, 0);
-	SerdEnv*    env      = NULL;
-	SerdWriter* writer   = ttl_file_writer(fd, &manifest, &env);
-
+	// Choose state URI (use file URI if not given)
 	if (!state_uri) {
 		state_uri = (const char*)file.buf;
 	}
 
-	// <state> a pset:Preset
+	// Remove any existing manifest entries for this state
+	remove_manifest_entry(world, model, state_uri);
+
+	// Add manifest entry for this state to model
 	SerdNode s = serd_node_from_string(SERD_URI, USTR(state_uri));
-	SerdNode p = serd_node_from_string(SERD_URI, USTR(LILV_NS_RDF "type"));
-	SerdNode o = serd_node_from_string(SERD_URI, USTR(LV2_PRESETS__Preset));
-	serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL);
+
+	// <state> a pset:Preset
+	add_to_model(world, env, model,
+	             s,
+	             serd_node_from_string(SERD_URI, USTR(LILV_NS_RDF "type")),
+	             serd_node_from_string(SERD_URI, USTR(LV2_PRESETS__Preset)));
+
+	// <state> a pset:Preset
+	add_to_model(world, env, model,
+	             s,
+	             serd_node_from_string(SERD_URI, USTR(LILV_NS_RDF "type")),
+	             serd_node_from_string(SERD_URI, USTR(LV2_PRESETS__Preset)));
 
 	// <state> rdfs:seeAlso <file>
-	p = serd_node_from_string(SERD_URI, USTR(LILV_NS_RDFS "seeAlso"));
-	serd_writer_write_statement(writer, 0, NULL, &s, &p, &file, NULL, NULL);
+	add_to_model(world, env, model,
+	             s,
+	             serd_node_from_string(SERD_URI, USTR(LILV_NS_RDFS "seeAlso")),
+	             file);
 
 	// <state> lv2:appliesTo <plugin>
-	p = serd_node_from_string(SERD_URI, USTR(LV2_CORE__appliesTo));
-	o = serd_node_from_string(
-		SERD_URI, USTR(lilv_node_as_string(plugin_uri)));
-	serd_writer_write_statement(writer, 0, NULL, &s, &p, &o, NULL, NULL);
+	add_to_model(world, env, model,
+	             s,
+	             serd_node_from_string(SERD_URI, USTR(LV2_CORE__appliesTo)),
+	             serd_node_from_string(SERD_URI,
+	                                   USTR(lilv_node_as_string(plugin_uri))));
 
+	// Write manifest model to file
+	FILE* wfd = fopen(manifest_path, "w");
+	if (wfd) {
+		SerdWriter* writer = ttl_file_writer(wfd, &manifest, &env);
+		sord_write(model, writer, NULL);
+		serd_writer_free(writer);
+		fclose(wfd);
+	} else {
+		LILV_ERRORF("Failed to open %s for writing (%s)\n",
+		            manifest_path, strerror(errno));
+	}
+
+	sord_free(model);
 	serd_node_free(&file);
 	serd_node_free(&manifest);
-	serd_writer_free(writer);
 	serd_env_free(env);
 
-	lilv_flock(fd, false);
-	fclose(fd);
+	if (rfd) {
+		lilv_flock(rfd, false);
+		fclose(rfd);
+	}
 
 	return 0;
 }
@@ -936,31 +1027,32 @@ lilv_state_save(LilvWorld*       world,
 		return 4;
 	}
 
-	// FIXME: make parameter non-const?
-	if (state->dir && strcmp(state->dir, abs_dir)) {
-		free(state->dir);
-		((LilvState*)state)->dir = lilv_strdup(abs_dir);
-	}
-
 	// Create symlinks to files if necessary
 	lilv_state_make_links(state, abs_dir);
 
 	// Write state to Turtle file
-	SerdNode    file   = serd_node_new_file_uri(USTR(path), NULL, NULL, false);
-	SerdEnv*    env    = NULL;
-	SerdWriter* writer = ttl_file_writer(fd, &file, &env);
+	SerdNode    file = serd_node_new_file_uri(USTR(path), NULL, NULL, false);
+	SerdNode    node = uri ? serd_node_from_string(SERD_URI, USTR(uri)) : file;
+	SerdEnv*    env  = NULL;
+	SerdWriter* ttl  = ttl_file_writer(fd, &file, &env);
+	int         ret  = lilv_state_write(
+		world, map, unmap, state, ttl, (const char*)node.buf, dir);
 
-	SerdNode node = uri ? serd_node_from_string(SERD_URI, USTR(uri)) : file;
-	int ret       = lilv_state_write(
-		world, map, unmap, state, writer, (const char*)node.buf, dir);
+	// Set saved dir and uri (FIXME: const violation)
+	SerdNode dir_uri = serd_node_new_file_uri(USTR(abs_dir), NULL, NULL, false);
+	free(state->dir);
+	lilv_node_free(state->uri);
+	((LilvState*)state)->dir = (char*)dir_uri.buf;
+	((LilvState*)state)->uri = lilv_new_uri(world, (const char*)node.buf);
 
 	serd_node_free(&file);
-	serd_writer_free(writer);
+	serd_writer_free(ttl);
 	serd_env_free(env);
 	fclose(fd);
 
+	// Add entry to manifest
 	char* const manifest = lilv_path_join(abs_dir, "manifest.ttl");
-	add_state_to_manifest(state->plugin_uri, manifest, uri, path);
+	add_state_to_manifest(world, state->plugin_uri, manifest, uri, path);
 
 	free(manifest);
 	free(abs_dir);
@@ -993,6 +1085,75 @@ lilv_state_to_string(LilvWorld*       world,
 	return (char*)serd_chunk_sink_finish(&chunk);
 }
 
+LILV_API int
+lilv_state_delete(LilvWorld*       world,
+                  const LilvState* state)
+{
+	if (!state->dir || !state->uri) {
+		LILV_ERROR("Attempt to delete unsaved state\n");
+		return -1;
+	}
+
+	LilvNode*  bundle        = lilv_new_uri(world, state->dir);
+	LilvNode*  manifest      = lilv_world_get_manifest_uri(world, bundle);
+	char*      manifest_path = lilv_node_get_path(manifest, NULL);
+	SordModel* model         = sord_new(world->world, SORD_SPO, false);
+
+	{
+		// Read manifest into temporary local model
+		SerdEnv*    env = serd_env_new(sord_node_to_serd_node(manifest->node));
+		SerdReader* ttl = sord_new_reader(model, env, SERD_TURTLE, NULL);
+		serd_reader_read_file(ttl, USTR(manifest_path));
+		serd_reader_free(ttl);
+		serd_env_free(env);
+	}
+
+	SordNode* file = sord_get(
+		model, state->uri->node, world->uris.rdfs_seeAlso, NULL, NULL);
+	if (file) {
+		// Remove state file
+		char* file_path = lilv_file_uri_parse(
+			(const char*)sord_node_get_string(file), NULL);
+		if (unlink(file_path)) {
+			LILV_ERRORF("Failed to remove %s (%s)\n", file_path, strerror(errno));
+		}
+		free(file_path);
+	}
+
+	// Remove any existing manifest entries for this state
+	remove_manifest_entry(
+		world->world, model, lilv_node_as_string(state->uri));
+	remove_manifest_entry(
+		world->world, world->model, lilv_node_as_string(state->uri));
+
+	// Drop bundle from model
+	lilv_world_unload_bundle(world, bundle);
+
+	if (sord_num_quads(model) == 0) {
+		// Manifest is empty, attempt to remove bundle entirely
+		if (unlink(manifest_path)) {
+			LILV_ERRORF("Failed to remove %s (%s)\n",
+			            manifest_path, strerror(errno));
+		}
+		char* dir_path = lilv_file_uri_parse(state->dir, NULL);
+		if (rmdir(dir_path)) {
+			LILV_ERRORF("Failed to remove %s (%s)\n",
+			            dir_path, strerror(errno));
+		}
+		free(dir_path);
+	} else {
+		// Still something in the manifest, reload bundle
+		lilv_world_load_bundle(world, bundle);
+	}
+
+	sord_free(model);
+	free(manifest_path);
+	lilv_node_free(manifest);
+	lilv_node_free(bundle);
+
+	return 0;
+}
+
 LILV_API void
 lilv_state_free(LilvState* state)
 {
@@ -1005,6 +1166,7 @@ lilv_state_free(LilvState* state)
 			free(state->values[i].symbol);
 		}
 		lilv_node_free(state->plugin_uri);
+		lilv_node_free(state->uri);
 		zix_tree_free(state->abs2rel);
 		zix_tree_free(state->rel2abs);
 		free(state->props);
@@ -1071,6 +1233,12 @@ LILV_API const LilvNode*
 lilv_state_get_plugin_uri(const LilvState* state)
 {
 	return state->plugin_uri;
+}
+
+LILV_API const LilvNode*
+lilv_state_get_uri(const LilvState* state)
+{
+	return state->uri;
 }
 
 LILV_API const char*

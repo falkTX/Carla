@@ -30,6 +30,8 @@ extern "C" {
 #    include <windows.h>
 #    define dlopen(path, flags) LoadLibrary(path)
 #    define dlclose(lib)        FreeLibrary((HMODULE)lib)
+#    define unlink(path)        _unlink(path)
+#    define rmdir(path)         _rmdir(path)
 #    ifdef _MSC_VER
 #        define __func__ __FUNCTION__
 #        define INFINITY DBL_MAX + DBL_MAX
@@ -39,6 +41,7 @@ extern "C" {
 static inline char* dlerror(void) { return "Unknown error"; }
 #else
 #    include <dlfcn.h>
+#    include <unistd.h>
 #endif
 
 #include "serd/serd.h"
@@ -50,7 +53,7 @@ static inline char* dlerror(void) { return "Unknown error"; }
 #include "lilv/lilv.h"
 
 #ifdef LILV_DYN_MANIFEST
-#    include "lv2/dynmanifest.h"
+#    include "lv2/lv2plug.in/ns/ext/dynmanifest/dynmanifest.h"
 #endif
 
 /*
@@ -102,9 +105,7 @@ typedef struct {
 	char*                     bundle_path;
 	void*                     lib;
 	LV2_Descriptor_Function   lv2_descriptor;
-#ifdef LILV_NEW_LV2
 	const LV2_Lib_Descriptor* desc;
-#endif
 	uint32_t                  refs;
 } LilvLib;
 
@@ -175,7 +176,7 @@ struct LilvWorldImpl {
 		SordNode* lv2_requiredFeature;
 		SordNode* lv2_symbol;
 		SordNode* lv2_prototype;
-		SordNode* null_uri;
+		SordNode* owl_Ontology;
 		SordNode* pset_value;
 		SordNode* rdf_a;
 		SordNode* rdf_value;
@@ -188,6 +189,7 @@ struct LilvWorldImpl {
 		SordNode* xsd_decimal;
 		SordNode* xsd_double;
 		SordNode* xsd_integer;
+		SordNode* null_uri;
 	} uris;
 	LilvOptions opt;
 };
@@ -274,6 +276,8 @@ LilvPlugins*       lilv_plugins_new(void);
 LilvScalePoints*   lilv_scale_points_new(void);
 LilvPluginClasses* lilv_plugin_classes_new(void);
 LilvUIs*           lilv_uis_new(void);
+
+LilvNode* lilv_world_get_manifest_uri(LilvWorld* world, LilvNode* bundle_uri);
 
 const uint8_t* lilv_world_blank_node_prefix(LilvWorld* world);
 

@@ -95,6 +95,7 @@ bench(const LilvPlugin* p, uint32_t sample_count, uint32_t block_size)
 			fprintf(stderr, "<%s> requires feature <%s>, skipping\n",
 			        uri, lilv_node_as_uri(feature));
 			free(buf);
+			uri_table_destroy(&uri_table);
 			return 0.0;
 		}
 	}
@@ -104,6 +105,7 @@ bench(const LilvPlugin* p, uint32_t sample_count, uint32_t block_size)
 		fprintf(stderr, "Failed to instantiate <%s>\n",
 		        lilv_node_as_uri(lilv_plugin_get_uri(p)));
 		free(buf);
+		uri_table_destroy(&uri_table);
 		return 0.0;
 	}
 
@@ -128,6 +130,7 @@ bench(const LilvPlugin* p, uint32_t sample_count, uint32_t block_size)
 				lilv_instance_free(instance);
 				free(buf);
 				free(controls);
+				uri_table_destroy(&uri_table);
 				return 0.0;
 			}
 		} else if (lilv_port_is_a(p, port, atom_AtomPort)) {
@@ -138,6 +141,7 @@ bench(const LilvPlugin* p, uint32_t sample_count, uint32_t block_size)
 			lilv_instance_free(instance);
 			free(buf);
 			free(controls);
+			uri_table_destroy(&uri_table);
 			return 0.0;
 		}
 	}

@@ -26,9 +26,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "lv2/lv2.h"
-#include "lv2/state.h"
-#include "lv2/urid.h"
+#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
+#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
 
 #ifdef LILV_SHARED
 #    ifdef _WIN32
@@ -45,6 +44,11 @@
 #    endif
 #else
 #    define LILV_API
+#endif
+#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
+#    define LILV_DEPRECATED __attribute__((__deprecated__))
+#else
+#    define LILV_DEPRECATED
 #endif
 
 #ifdef __cplusplus
@@ -105,10 +109,23 @@ typedef void LilvNodes;          /**< set<Node>. */
    Convert a file URI string to a local path string.
    For example, "file://foo/bar/baz.ttl" returns "/foo/bar/baz.ttl".
    Return value is shared and must not be deleted by caller.
+   This function does not handle escaping correctly and should not be used for
+   general file URIs.  Use lilv_file_uri_parse() instead.
    @return `uri` converted to a path, or NULL on failure (URI is not local).
 */
-LILV_API const char*
+LILV_API LILV_DEPRECATED const char*
 lilv_uri_to_path(const char* uri);
+
+/**
+   Convert a file URI string to a local path string.
+   For example, "file://foo/bar%20one/baz.ttl" returns "/foo/bar one/baz.ttl".
+   Return value must be freed by caller.
+   @param uri The file URI to parse.
+   @param hostname If non-NULL, set to the hostname in the URI, if any.
+   @return `uri` converted to a path, or NULL on failure (URI is not local).
+*/
+LILV_API char*
+lilv_file_uri_parse(const char* uri, char** hostname);
 
 /**
    Create a new URI value.
@@ -240,6 +257,14 @@ lilv_node_is_string(const LilvNode* value);
 */
 LILV_API const char*
 lilv_node_as_string(const LilvNode* value);
+
+/**
+   Return the path of a file URI node.
+   Returns NULL if `value` is not a file URI.
+   Returned value must be freed by caller.
+*/
+LILV_API char*
+lilv_node_get_path(const LilvNode* value, char** hostname);
 
 /**
    Return whether this value is a decimal literal.
@@ -527,14 +552,14 @@ lilv_world_free(LilvWorld* world);
    with special plugin bundles which are installed to a known location).
 */
 LILV_API void
-lilv_world_load_all(LilvWorld* world, const char* lv2_path);
+lilv_world_load_all(LilvWorld* world);
 
 /**
    Load a specific bundle.
    `bundle_uri` must be a fully qualified URI to the bundle directory,
    with the trailing slash, eg. file:///usr/lib/lv2/foo.lv2/
 
-   Normal hosts should not need this function (use lilv_world_load_all).
+   Normal hosts should not need this function (use lilv_world_load_all()).
 
    Hosts MUST NOT attach any long-term significance to bundle paths
    (e.g. in save files), since there are no guarantees they will remain
@@ -544,6 +569,26 @@ lilv_world_load_all(LilvWorld* world, const char* lv2_path);
 LILV_API void
 lilv_world_load_bundle(LilvWorld* world,
                        LilvNode*  bundle_uri);
+
+/**
+   Load all specifications from currently loaded bundles.
+
+   This is for hosts that explicitly load specific bundles, its use is not
+   necessary when using lilv_world_load_all().  This function parses the
+   specifications and adds them to the model.
+*/
+LILV_API void
+lilv_world_load_specifications(LilvWorld* world);
+
+/**
+   Load all plugin classes from currently loaded specifications.
+
+   Must be called after lilv_world_load_specifications().  This is for hosts
+   that explicitly load specific bundles, its use is not necessary when using
+   lilv_world_load_all().
+*/
+LILV_API void
+lilv_world_load_plugin_classes(LilvWorld* world);
 
 /**
    Unload a specific bundle.
@@ -688,13 +733,14 @@ lilv_plugin_get_uri(const LilvPlugin* plugin);
 
 /**
    Get the (resolvable) URI of the plugin's "main" bundle.
-   This returns the URI of the bundle where the plugin itself was found.
-   Note that the data for a plugin may be spread over many bundles, that is,
-   lilv_plugin_get_data_uris may return URIs which are not within this bundle.
+   This returns the URI of the bundle where the plugin itself was found.  Note
+   that the data for a plugin may be spread over many bundles, that is,
+   lilv_plugin_get_data_uris() may return URIs which are not within this
+   bundle.
 
    Typical hosts should not need to use this function.
    Note this always returns a fully qualified URI.  If you want a local
-   filesystem path, use lilv_uri_to_path.
+   filesystem path, use lilv_uri_to_path().
    @return a shared string which must not be modified or freed.
 */
 LILV_API const LilvNode*
@@ -704,7 +750,7 @@ lilv_plugin_get_bundle_uri(const LilvPlugin* plugin);
    Get the (resolvable) URIs of the RDF data files that define a plugin.
    Typical hosts should not need to use this function.
    Note this always returns fully qualified URIs.  If you want local
-   filesystem paths, use lilv_uri_to_path.
+   filesystem paths, use lilv_uri_to_path().
    @return a list of complete URLs eg. "file:///foo/ABundle.lv2/aplug.ttl",
    which is shared and must not be modified or freed.
 */
@@ -714,7 +760,7 @@ lilv_plugin_get_data_uris(const LilvPlugin* plugin);
 /**
    Get the (resolvable) URI of the shared library for `plugin`.
    Note this always returns a fully qualified URI.  If you want a local
-   filesystem path, use lilv_uri_to_path.
+   filesystem path, use lilv_uri_to_path().
    @return a shared string which must not be modified or freed.
 */
 LILV_API const LilvNode*
@@ -766,8 +812,8 @@ lilv_plugin_has_feature(const LilvPlugin* p,
    A feature is "supported" by a plugin if it is required OR optional.
 
    Since required features have special rules the host must obey, this function
-   probably shouldn't be used by normal hosts.  Using lilv_plugin_get_optional_features
-   and lilv_plugin_get_required_features separately is best in most cases.
+   probably shouldn't be used by normal hosts.  Using lilv_plugin_get_optional_features()
+   and lilv_plugin_get_required_features() separately is best in most cases.
 
    Returned value must be freed by caller with lilv_nodes_free().
 */
@@ -832,7 +878,7 @@ lilv_plugin_get_num_ports(const LilvPlugin* p);
 
    This is a convenience method for the common case of getting the range of
    all float ports on a plugin, and may be significantly faster than
-   repeated calls to lilv_port_get_range.
+   repeated calls to lilv_port_get_range().
 */
 LILV_API void
 lilv_plugin_get_port_ranges_float(const LilvPlugin* p,
@@ -873,7 +919,7 @@ lilv_plugin_has_latency(const LilvPlugin* p);
 /**
    Return the index of the plugin's latency port.
    It is a fatal error to call this on a plugin without checking if the port
-   exists by first calling lilv_plugin_has_latency.
+   exists by first calling lilv_plugin_has_latency().
 
    Any plugin that introduces unwanted latency that should be compensated for
    (by hosts with the ability/need) MUST provide this port, which is a control
@@ -891,7 +937,7 @@ lilv_plugin_get_port_by_index(const LilvPlugin* plugin,
 
 /**
    Get a port on `plugin` by `symbol`.
-   Note this function is slower than lilv_plugin_get_port_by_index,
+   Note this function is slower than lilv_plugin_get_port_by_index(),
    especially on plugins with a very large number of ports.
 */
 LILV_API const LilvPort*
@@ -991,7 +1037,7 @@ lilv_plugin_write_manifest_entry(LilvWorld*        world,
    If `type` is NULL, all such resources will be returned, regardless of type.
 
    To actually load the data for each returned resource, use
-   lilv_world_load_resource.
+   lilv_world_load_resource().
 */
 LILV_API LilvNodes*
 lilv_plugin_get_related(const LilvPlugin* plugin, const LilvNode* type);
@@ -1014,7 +1060,7 @@ lilv_port_get_node(const LilvPlugin* plugin,
                    const LilvPort*   port);
 
 /**
-   Port analog of lilv_plugin_get_value.
+   Port analog of lilv_plugin_get_value().
 */
 LILV_API LilvNodes*
 lilv_port_get_value(const LilvPlugin* plugin,
@@ -1090,7 +1136,7 @@ lilv_port_get_name(const LilvPlugin* plugin,
 /**
    Get all the classes of a port.
    This can be used to determine if a port is an input, output, audio,
-   control, midi, etc, etc, though it's simpler to use lilv_port_is_a.
+   control, midi, etc, etc, though it's simpler to use lilv_port_is_a().
    The returned list does not include lv2:Port, which is implied.
    Returned value is shared and must not be destroyed by caller.
 */
@@ -1116,8 +1162,8 @@ lilv_port_is_a(const LilvPlugin* plugin,
 
    `def`, `min`, and `max` are outputs, pass pointers to uninitialized
    LilvNode* variables.  These will be set to point at new values (which must
-   be freed by the caller using lilv_node_free), or NULL if the value does not
-   exist.
+   be freed by the caller using lilv_node_free()), or NULL if the value does
+   not exist.
 */
 LILV_API void
 lilv_port_get_range(const LilvPlugin* plugin,
@@ -1153,9 +1199,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
    @return A new LilvState which must be freed with lilv_state_free(), or NULL.
 */
 LILV_API LilvState*
-lilv_state_new_from_world(LilvWorld*          world,
-                          const LV2_URID_Map* map,
-                          const LilvNode*     subject);
+lilv_state_new_from_world(LilvWorld*      world,
+                          LV2_URID_Map*   map,
+                          const LilvNode* subject);
 
 /**
    Load a state snapshot from a file.
@@ -1173,18 +1219,18 @@ lilv_state_new_from_world(LilvWorld*          world,
    new memory consumed once this function returns.
 */
 LILV_API LilvState*
-lilv_state_new_from_file(LilvWorld*          world,
-                         const LV2_URID_Map* map,
-                         const LilvNode*     subject,
-                         const char*         path);
+lilv_state_new_from_file(LilvWorld*      world,
+                         LV2_URID_Map*   map,
+                         const LilvNode* subject,
+                         const char*     path);
 
 /**
    Load a state snapshot from a string made by lilv_state_to_string().
 */
 LILV_API LilvState*
-lilv_state_new_from_string(LilvWorld*          world,
-                           const LV2_URID_Map* map,
-                           const char*         str);
+lilv_state_new_from_string(LilvWorld*    world,
+                           LV2_URID_Map* map,
+                           const char*   str);
 
 /**
    Function to get a port value.
@@ -1223,9 +1269,11 @@ typedef const void* (*LilvGetPortValueFunc)(const char* port_symbol,
 
    @param save_dir Directory of files created by plugin during save (or NULL).
    If the state will be saved, this should be the bundle directory later passed
-   to lilv_state_save.
+   to lilv_state_save().
 
-   @param get_value Function to get port values.
+   @param get_value Function to get port values (or NULL).  If NULL, the
+   returned state will not represent port values.  This should only be NULL in
+   hosts that save and restore port values via some other mechanism.
 
    @param user_data User data to pass to `get_value`.
 
@@ -1302,6 +1350,14 @@ LILV_API const LilvNode*
 lilv_state_get_plugin_uri(const LilvState* state);
 
 /**
+   Get the URI of `state`.
+
+   This may return NULL if the state has not been saved and has no URI.
+*/
+LILV_API const LilvNode*
+lilv_state_get_uri(const LilvState* state);
+
+/**
    Get the label of `state`.
 */
 LILV_API const char*
@@ -1329,6 +1385,22 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
                                      uint32_t    type);
 
 /**
+   Enumerate the port values in a state snapshot.
+   @param state The state to retrieve port values from.
+   @param set_value A function to receive port values.
+   @param user_data User data to pass to `set_value`.
+
+   This function is a subset of lilv_state_restore() that only fires the
+   `set_value` callback and does not directly affect a plugin instance.  This
+   is useful in hosts that need to retrieve the port values in a state snapshot
+   for special handling.
+*/
+LILV_API void
+lilv_state_emit_port_values(const LilvState*     state,
+                            LilvSetPortValueFunc set_value,
+                            void*                user_data);
+
+/**
    Restore a plugin instance from a state snapshot.
    @param state The state to restore, which must apply to the correct plugin.
    @param instance An instance of the plugin `state` applies to, or NULL.
@@ -1338,10 +1410,10 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
    @param features Features to pass LV2_State_Interface.restore().
 
    This will set all the properties of `instance`, if given, to the values
-   stored in `state`.  If `set_value` is provided, it will be called (with
-   the given `user_data`) to restore each port value, otherwise the host must
-   restore the port values itself (using lilv_state_get_port_value) in order to
-   completely restore `state`.
+   stored in `state`.  If `set_value` is provided, it will be called (with the
+   given `user_data`) to restore each port value, otherwise the host must
+   restore the port values itself (using lilv_state_get_port_value()) in order
+   to completely restore `state`.
 
    If the state has properties and `instance` is given, this function is in
    the "instantiation" threading class, i.e. it MUST NOT be called
@@ -1353,8 +1425,7 @@ typedef void (*LilvSetPortValueFunc)(const char* port_symbol,
 */
 LILV_API void
 lilv_state_restore(const LilvState*           state,
-                   const LV2_State_Interface* iface,
-                   LV2_Handle                 handle,
+                   LilvInstance*              instance,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,
@@ -1405,6 +1476,24 @@ lilv_state_to_string(LilvWorld*       world,
                      const LilvState* state,
                      const char*      uri,
                      const char*      base_uri);
+
+/**
+   Unload a state from the world and delete all associated files.
+   @param world The world.
+   @param state State to remove from the system.
+
+   This function DELETES FILES/DIRECTORIES FROM THE FILESYSTEM!  It is intended
+   for removing user-saved presets, but can delete any state the user has
+   permission to delete, including presets shipped with plugins.
+
+   The rdfs:seeAlso file for the state will be removed.  The entry in the
+   bundle's manifest.ttl is removed, and if this results in an empty manifest,
+   then the manifest file is removed.  If this results in an empty bundle, then
+   the bundle directory is removed as well.
+*/
+LILV_API int
+lilv_state_delete(LilvWorld*       world,
+                  const LilvState* state);
 
 /**
    @}
@@ -1473,7 +1562,7 @@ lilv_plugin_class_get_children(const LilvPluginClass* plugin_class);
 
 /* Instance of a plugin.
    This is exposed in the ABI to allow inlining of performance critical
-   functions like lilv_instance_run (simple wrappers of functions in lv2.h).
+   functions like lilv_instance_run() (simple wrappers of functions in lv2.h).
    This is for performance reasons, user code should not use this definition
    in any way (which is why it is not machine documented).
    Truly private implementation details are hidden via `pimpl`.
@@ -1539,8 +1628,8 @@ lilv_instance_connect_port(LilvInstance* instance,
 /**
    Activate a plugin instance.
    This resets all state information in the plugin, except for port data
-   locations (as set by lilv_instance_connect_port).  This MUST be called
-   before calling lilv_instance_run.
+   locations (as set by lilv_instance_connect_port()).  This MUST be called
+   before calling lilv_instance_run().
 */
 static inline void
 lilv_instance_activate(LilvInstance* instance)
@@ -1642,8 +1731,8 @@ lilv_ui_get_uri(const LilvUI* ui);
    @param ui The Plugin UI
    @return a shared value which must not be modified or freed.
 
-   Note that in most cases lilv_ui_is_supported should be used which finds the
-   UI type, avoding the need to use this function (and type specific logic).
+   Note that in most cases lilv_ui_is_supported() should be used, which avoids
+   the need to use this function (and type specific logic).
 */
 LILV_API const LilvNodes*
 lilv_ui_get_classes(const LilvUI* ui);
@@ -1695,42 +1784,6 @@ lilv_ui_get_bundle_uri(const LilvUI* ui);
 */
 LILV_API const LilvNode*
 lilv_ui_get_binary_uri(const LilvUI* ui);
-
-/**
-  Custom calls
-*/
-LILV_API LilvNode*
-lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_stylesheet(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_icon_template(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_settings_template(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_template_data(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_screenshot(const LilvPlugin* plugin);
-
-LILV_API LilvNode*
-lilv_plugin_get_modgui_thumbnail(const LilvPlugin* plugin);
-
-LILV_API const LilvNodes*
-lilv_ui_get_supported_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_required_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_optional_features(const LilvUI* ui);
-
-LILV_API const LilvNodes*
-lilv_ui_get_extension_data(const LilvUI* ui);
 
 /**
    @}

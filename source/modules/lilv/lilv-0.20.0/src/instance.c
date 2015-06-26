@@ -33,11 +33,12 @@ lilv_plugin_instantiate(const LilvPlugin*        plugin,
 	const LilvNode* const lib_uri    = lilv_plugin_get_library_uri(plugin);
 	const LilvNode* const bundle_uri = lilv_plugin_get_bundle_uri(plugin);
 
-	const char* bundle_path = lilv_uri_to_path(
-		lilv_node_as_uri(lilv_plugin_get_bundle_uri(plugin)));
+	char* const bundle_path = lilv_file_uri_parse(
+		lilv_node_as_uri(lilv_plugin_get_bundle_uri(plugin)), NULL);
 
 	LilvLib* lib = lilv_lib_open(plugin->world, lib_uri, bundle_path, features);
 	if (!lib) {
+		free(bundle_path);
 		return NULL;
 	}
 
@@ -46,12 +47,13 @@ lilv_plugin_instantiate(const LilvPlugin*        plugin,
 	SerdURI     base_uri;
 	if (serd_uri_parse((const uint8_t*)bundle_uri_str, &base_uri)) {
 		lilv_lib_close(lib);
+		free(bundle_path);
 		return NULL;
 	}
 
 	const LV2_Feature** local_features = NULL;
 	if (features == NULL) {
-		local_features = (const LV2_Feature**)malloc(sizeof(LV2_Feature));
+		local_features = (const LV2_Feature**)malloc(sizeof(LV2_Feature*));
 		local_features[0] = NULL;
 	}
 
@@ -93,6 +95,7 @@ lilv_plugin_instantiate(const LilvPlugin*        plugin,
 	}
 
 	free(local_features);
+	free(bundle_path);
 
 	if (result) {
 		// Failed to instantiate
@@ -121,4 +124,3 @@ lilv_instance_free(LilvInstance* instance)
 	instance->pimpl = NULL;
 	free(instance);
 }
-

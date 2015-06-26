@@ -385,3 +385,12 @@ lilv_node_as_bool(const LilvNode* value)
 {
 	return lilv_node_is_bool(value) ? value->val.bool_val : false;
 }
+
+LILV_API char*
+lilv_node_get_path(const LilvNode* value, char** hostname)
+{
+	if (lilv_node_is_uri(value)) {
+		return lilv_file_uri_parse(lilv_node_as_uri(value), hostname);
+	}
+	return NULL;
+}

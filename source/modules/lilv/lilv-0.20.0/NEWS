@@ -1,3 +1,26 @@
+lilv (0.21.3) unstable;
+
+  * Fix loading files with spaces in their path
+  * Add lilv_file_uri_parse() for correct URI to path conversion
+  * Add lilv_node_get_path() for convenient file URI path access
+  * Add lilv_state_emit_port_values() for special port value handling
+  * Add lilv_state_get_uri()
+  * Add lilv_state_delete() for deleting user saved presets
+  * Fix lilv_world_ask() to work with wildcards
+  * Fix creation of duplicate manifest entries when saving state
+  * Fix bindings for Python 3
+  * Load discovered owl ontologies as specifications
+  * Expose lilv_world_load_specifications() and
+    lilv_world_load_plugin_classes()
+  * Tolerate passing NULL to lilv_state_restore()
+  * Preserve absolute paths in state if no link directory is given
+  * Fix a few minor/unlikely memory errors
+  * Configure based on compiler target OS for cross-compilation
+  * Windows fixes (thanks John Emmas)
+  * Minor documentation improvements
+
+ -- David Robillard <d@drobilla.net>  Mon, 16 Mar 2015 03:24:05 -0400
+
 lilv (0.20.0) stable;
 
   * Don't load files multiple times if they are listed as rdfs:seeAlso for
