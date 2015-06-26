@@ -31,6 +31,7 @@
 
 #define NS_DOAP (const uint8_t*)"http://usefulinc.com/ns/doap#"
 #define NS_FOAF (const uint8_t*)"http://xmlns.com/foaf/0.1/"
+#define NS_MOD  (const uint8_t*)"http://portalmod.com/ns/modgui#"
 
 /** Ownership of `uri` is taken */
 LilvPlugin*
@@ -906,6 +907,131 @@ lilv_plugin_get_author_homepage(const LilvPlugin* plugin)
 		return ret;
 	}
 	return NULL;
+}
+
+static const SordNode*
+lilv_plugin_get_modgui(const LilvPlugin* p)
+{
+        lilv_plugin_load_if_necessary(p);
+
+        SordNode* mod_gui = sord_new_uri(
+                p->world->world, NS_MOD "gui");
+
+        SordIter* gui = lilv_world_query_internal(
+                p->world,
+                p->plugin_uri->node,
+                mod_gui,
+                NULL);
+
+        sord_node_free(p->world->world, mod_gui);
+
+        if (sord_iter_end(gui)) {
+                sord_iter_free(gui);
+                return NULL;
+        }
+
+        const SordNode* Gui = sord_iter_get_node(gui, SORD_OBJECT);
+
+        sord_iter_free(gui);
+        return Gui;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld     = plugin->world->world;
+                SordNode*  modgui_res = sord_new_uri(sworld, NS_MOD "resourcesDirectory");
+                LilvNode*  ret        = lilv_plugin_get_one(plugin, modgui, modgui_res);
+                sord_node_free(sworld, modgui_res);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_stylesheet(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld       = plugin->world->world;
+                SordNode*  modgui_style = sord_new_uri(sworld, NS_MOD "stylesheet");
+                LilvNode*  ret          = lilv_plugin_get_one(plugin, modgui, modgui_style);
+                sord_node_free(sworld, modgui_style);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_icon_template(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld      = plugin->world->world;
+                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "iconTemplate");
+                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
+                sord_node_free(sworld, modgui_tmpl);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_settings_template(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld      = plugin->world->world;
+                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "settingsTemplate");
+                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
+                sord_node_free(sworld, modgui_tmpl);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_template_data(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld      = plugin->world->world;
+                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "templateData");
+                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
+                sord_node_free(sworld, modgui_tmpl);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_screenshot(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld     = plugin->world->world;
+                SordNode*  modgui_scr = sord_new_uri(sworld, NS_MOD "screenshot");
+                LilvNode*  ret        = lilv_plugin_get_one(plugin, modgui, modgui_scr);
+                sord_node_free(sworld, modgui_scr);
+                return ret;
+        }
+        return NULL;
+}
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_thumbnail(const LilvPlugin* plugin)
+{
+        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
+        if (modgui) {
+                SordWorld* sworld       = plugin->world->world;
+                SordNode*  modgui_thumb = sord_new_uri(sworld, NS_MOD "thumbnail");
+                LilvNode*  ret          = lilv_plugin_get_one(plugin, modgui, modgui_thumb);
+                sord_node_free(sworld, modgui_thumb);
+                return ret;
+        }
+        return NULL;
 }
 
 LILV_API bool
