@@ -1,5 +1,5 @@
 diff --git a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
-index e907789..34f4d7b 100644
+index e907789..84223c5 100644
 --- a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
 +++ b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
 @@ -26,8 +26,9 @@
@@ -14,6 +14,15 @@ index e907789..34f4d7b 100644
  
  #ifdef LILV_SHARED
  #    ifdef _WIN32
+@@ -552,7 +553,7 @@ lilv_world_free(LilvWorld* world);
+    with special plugin bundles which are installed to a known location).
+ */
+ LILV_API void
+-lilv_world_load_all(LilvWorld* world);
++lilv_world_load_all(LilvWorld* world, const char* lv2_path);
+ 
+ /**
+    Load a specific bundle.
 @@ -1199,9 +1200,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
     @return A new LilvState which must be freed with lilv_state_free(), or NULL.
  */
@@ -63,12 +72,33 @@ index e907789..34f4d7b 100644
                     LilvSetPortValueFunc       set_value,
                     void*                      user_data,
                     uint32_t                   flags,
-@@ -1786,6 +1788,21 @@ LILV_API const LilvNode*
+@@ -1786,6 +1788,42 @@ LILV_API const LilvNode*
  lilv_ui_get_binary_uri(const LilvUI* ui);
  
  /**
 +  Custom calls
 +*/
++LILV_API LilvNode*
++lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_stylesheet(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_icon_template(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_settings_template(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_template_data(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_screenshot(const LilvPlugin* plugin);
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_thumbnail(const LilvPlugin* plugin);
++
 +LILV_API const LilvNodes*
 +lilv_ui_get_supported_features(const LilvUI* ui);
 +
@@ -86,7 +116,7 @@ index e907789..34f4d7b 100644
     @}
  */
 diff --git a/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp b/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
-index b9b3a69..0d82f3f 100644
+index b9b3a69..367b8d8 100644
 --- a/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
 +++ b/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
 @@ -17,6 +17,8 @@
@@ -201,7 +231,21 @@ index b9b3a69..0d82f3f 100644
  
  	const LilvUI* me;
  };
-@@ -258,16 +272,14 @@ struct Plugins {
+@@ -220,6 +234,13 @@ struct Plugin {
+ 	LILV_WRAP0(Nodes,       plugin, get_extension_data);
+ 	LILV_WRAP0(UIs,         plugin, get_uis);
+ 	LILV_WRAP1(Nodes,       plugin, get_related, Node, type);
++	LILV_WRAP0(Node,        plugin, get_modgui_resources_directory);
++	LILV_WRAP0(Node,        plugin, get_modgui_stylesheet);
++	LILV_WRAP0(Node,        plugin, get_modgui_icon_template);
++	LILV_WRAP0(Node,        plugin, get_modgui_settings_template);
++	LILV_WRAP0(Node,        plugin, get_modgui_template_data);
++	LILV_WRAP0(Node,        plugin, get_modgui_screenshot);
++	LILV_WRAP0(Node,        plugin, get_modgui_thumbnail);
+ 
+ 	inline Port get_port_by_index(unsigned index) {
+ 		return Port(me, lilv_plugin_get_port_by_index(me, index));
+@@ -258,16 +279,14 @@ struct Plugins {
  struct Instance {
  	inline Instance(LilvInstance* instance) : me(instance) {}
  
@@ -225,7 +269,7 @@ index b9b3a69..0d82f3f 100644
  
  	static inline Instance* create(Plugin              plugin,
  	                               double              sample_rate,
-@@ -304,22 +316,22 @@ struct Instance {
+@@ -304,22 +323,22 @@ struct Instance {
  };
  
  struct World {
@@ -255,7 +299,16 @@ index b9b3a69..0d82f3f 100644
  		return lilv_new_bool(me, val);
  	}
  	inline Nodes find_nodes(const LilvNode* subject,
-@@ -337,6 +349,8 @@ struct World {
+@@ -329,7 +348,7 @@ struct World {
+ 	}
+ 
+ 	LILV_WRAP2_VOID(world, set_option, const char*, uri, LilvNode*, value);
+-	LILV_WRAP0_VOID(world, load_all);
++	LILV_WRAP1_VOID(world, load_all, const char*, lv2_path);
+ 	LILV_WRAP1_VOID(world, load_bundle, LilvNode*, bundle_uri);
+ 	LILV_WRAP0(const LilvPluginClass*, world, get_plugin_class);
+ 	LILV_WRAP0(const LilvPluginClasses*, world, get_plugin_classes);
+@@ -337,6 +356,8 @@ struct World {
  	LILV_WRAP1(int, world, load_resource, const LilvNode*, resource);
  
  	LilvWorld* me;
@@ -278,10 +331,10 @@ index e2444d3..4d0a8e5 100644
  
  /*
 diff --git a/source/modules/lilv/lilv-0.21.3/src/plugin.c b/source/modules/lilv/lilv-0.21.3/src/plugin.c
-index bf0843b..5e5a2c8 100644
+index bf0843b..c711990 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/plugin.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/plugin.c
-@@ -27,7 +27,7 @@
+@@ -27,10 +27,11 @@
  #include "lilv_config.h"
  #include "lilv_internal.h"
  
@@ -290,6 +343,142 @@ index bf0843b..5e5a2c8 100644
  
  #define NS_DOAP (const uint8_t*)"http://usefulinc.com/ns/doap#"
  #define NS_FOAF (const uint8_t*)"http://xmlns.com/foaf/0.1/"
++#define NS_MOD  (const uint8_t*)"http://portalmod.com/ns/modgui#"
+ 
+ /** Ownership of `uri` is taken */
+ LilvPlugin*
+@@ -908,6 +909,131 @@ lilv_plugin_get_author_homepage(const LilvPlugin* plugin)
+ 	return NULL;
+ }
+ 
++static const SordNode*
++lilv_plugin_get_modgui(const LilvPlugin* p)
++{
++        lilv_plugin_load_if_necessary(p);
++
++        SordNode* mod_gui = sord_new_uri(
++                p->world->world, NS_MOD "gui");
++
++        SordIter* gui = lilv_world_query_internal(
++                p->world,
++                p->plugin_uri->node,
++                mod_gui,
++                NULL);
++
++        sord_node_free(p->world->world, mod_gui);
++
++        if (sord_iter_end(gui)) {
++                sord_iter_free(gui);
++                return NULL;
++        }
++
++        const SordNode* Gui = sord_iter_get_node(gui, SORD_OBJECT);
++
++        sord_iter_free(gui);
++        return Gui;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld     = plugin->world->world;
++                SordNode*  modgui_res = sord_new_uri(sworld, NS_MOD "resourcesDirectory");
++                LilvNode*  ret        = lilv_plugin_get_one(plugin, modgui, modgui_res);
++                sord_node_free(sworld, modgui_res);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_stylesheet(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld       = plugin->world->world;
++                SordNode*  modgui_style = sord_new_uri(sworld, NS_MOD "stylesheet");
++                LilvNode*  ret          = lilv_plugin_get_one(plugin, modgui, modgui_style);
++                sord_node_free(sworld, modgui_style);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_icon_template(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld      = plugin->world->world;
++                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "iconTemplate");
++                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
++                sord_node_free(sworld, modgui_tmpl);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_settings_template(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld      = plugin->world->world;
++                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "settingsTemplate");
++                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
++                sord_node_free(sworld, modgui_tmpl);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_template_data(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld      = plugin->world->world;
++                SordNode*  modgui_tmpl = sord_new_uri(sworld, NS_MOD "templateData");
++                LilvNode*  ret         = lilv_plugin_get_one(plugin, modgui, modgui_tmpl);
++                sord_node_free(sworld, modgui_tmpl);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_screenshot(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld     = plugin->world->world;
++                SordNode*  modgui_scr = sord_new_uri(sworld, NS_MOD "screenshot");
++                LilvNode*  ret        = lilv_plugin_get_one(plugin, modgui, modgui_scr);
++                sord_node_free(sworld, modgui_scr);
++                return ret;
++        }
++        return NULL;
++}
++
++LILV_API LilvNode*
++lilv_plugin_get_modgui_thumbnail(const LilvPlugin* plugin)
++{
++        const SordNode* modgui = lilv_plugin_get_modgui(plugin);
++        if (modgui) {
++                SordWorld* sworld       = plugin->world->world;
++                SordNode*  modgui_thumb = sord_new_uri(sworld, NS_MOD "thumbnail");
++                LilvNode*  ret          = lilv_plugin_get_one(plugin, modgui, modgui_thumb);
++                sord_node_free(sworld, modgui_thumb);
++                return ret;
++        }
++        return NULL;
++}
++
+ LILV_API bool
+ lilv_plugin_is_replaced(const LilvPlugin* plugin)
+ {
 diff --git a/source/modules/lilv/lilv-0.21.3/src/port.c b/source/modules/lilv/lilv-0.21.3/src/port.c
 index 6bf8fc7..0a50891 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/port.c
@@ -406,7 +595,7 @@ index 79199e4..119dcee 100644
  	if (!str) {
  		return NULL;
 diff --git a/source/modules/lilv/lilv-0.21.3/src/ui.c b/source/modules/lilv/lilv-0.21.3/src/ui.c
-index 0f4f2f6..a3e17da 100644
+index 0f4f2f6..a0dd567 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/ui.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/ui.c
 @@ -109,3 +109,54 @@ lilv_ui_get_binary_uri(const LilvUI* ui)
@@ -489,7 +678,7 @@ index 31c9238..5bcdb7e 100644
  		ret = symlink(oldpath, newpath);
  #endif
 diff --git a/source/modules/lilv/lilv-0.21.3/src/world.c b/source/modules/lilv/lilv-0.21.3/src/world.c
-index 02dbeec..437d767 100644
+index 02dbeec..8b2db95 100644
 --- a/source/modules/lilv/lilv-0.21.3/src/world.c
 +++ b/source/modules/lilv/lilv-0.21.3/src/world.c
 @@ -19,7 +19,7 @@
@@ -500,6 +689,20 @@ index 02dbeec..437d767 100644
 +#include "lv2/presets.h"
  
  #include "lilv_internal.h"
+ 
+@@ -797,12 +797,8 @@ lilv_world_load_plugin_classes(LilvWorld* world)
+ }
+ 
+ LILV_API void
+-lilv_world_load_all(LilvWorld* world)
++lilv_world_load_all(LilvWorld* world, const char* lv2_path)
+ {
+-	const char* lv2_path = getenv("LV2_PATH");
+-	if (!lv2_path)
+-		lv2_path = LILV_DEFAULT_LV2_PATH;
+-
+ 	// Discover bundles and read all manifest files into model
+ 	lilv_world_load_path(world, lv2_path);
  
 diff --git a/source/modules/lilv/sratom-0.4.7/sratom/sratom.h b/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
 index a86f67e..f0c12b9 100644
