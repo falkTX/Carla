@@ -141,6 +141,15 @@ protected:
             return true;
         }
 
+        if (std::strcmp(msg, "program") == 0)
+        {
+            uint i;
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(i), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(i), true);
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsUInt(i), true);
+            return true;
+        }
+
         if (std::strcmp(msg, "show") == 0)
         {
             try {
@@ -172,7 +181,8 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uiTitle), true);
 
             try {
-                GUI::raiseUi(gui, "/title", "s", uiTitle);
+                MasterUI* const ui((MasterUI*)gui);
+                ui->masterwindow->label(uiTitle);
             } CARLA_SAFE_EXCEPTION("msgReceived uiTitle");
             return true;
         }
@@ -216,6 +226,12 @@ int main(int argc, const char* argv[])
 
     if (argc == 1)
         GUI::raiseUi(gui, "/show", "i", 1);
+
+    if (uiTitle != nullptr)
+    {
+        MasterUI* const ui((MasterUI*)gui);
+        ui->masterwindow->label(uiTitle);
+    }
 
     for (; Pexitprogram == 0;)
     {
