@@ -220,8 +220,6 @@ struct CarlaEngine::ProtectedData {
 
     // -------------------------------------------------------------------
 
-    //friend class ScopedActionLock;
-
 #ifdef CARLA_PROPER_CPP11_SUPPORT
     ProtectedData() = delete;
     CARLA_DECLARE_NON_COPY_STRUCT(ProtectedData)
@@ -256,6 +254,22 @@ private:
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ScopedActionLock)
+};
+
+// -----------------------------------------------------------------------
+
+class ScopedThreadStopper
+{
+public:
+    ScopedThreadStopper(CarlaEngine* const engine) noexcept;
+    ~ScopedThreadStopper() noexcept;
+
+private:
+    CarlaEngine* const engine;
+    CarlaEngine::ProtectedData* const pData;
+
+    CARLA_PREVENT_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_CLASS(ScopedThreadStopper)
 };
 
 // -----------------------------------------------------------------------

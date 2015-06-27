@@ -530,8 +530,10 @@ public:
         const char* realName = name;
 
         // Create JACK port first, if needed
-        if (fUseClient && fJackClient != nullptr)
+        if (fUseClient)
         {
+            CARLA_SAFE_ASSERT_RETURN(fJackClient != nullptr, nullptr);
+
             realName = _getUniquePortName(name);
 
             switch (portType)
@@ -638,6 +640,32 @@ public:
         fEventPorts.removeAll(port);
     }
 
+    void closeForRename(jack_client_t* const client) noexcept
+    {
+        if (fJackClient != nullptr)
+        {
+            if (isActive())
+            {
+                try {
+                    jackbridge_activate(fJackClient);
+                } catch(...) {}
+            }
+
+            try {
+                jackbridge_client_close(fJackClient);
+            } catch(...) {}
+
+            invalidate();
+        }
+
+        fAudioPorts.clear();
+        fCVPorts.clear();
+        fEventPorts.clear();
+        _clearPorts();
+
+        fJackClient = client;
+    }
+
 private:
     jack_client_t* fJackClient;
     const bool     fUseClient;
@@ -645,8 +673,6 @@ private:
     LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
     LinkedList<CarlaEngineJackEventPort*> fEventPorts;
-
-    friend class CarlaEngineJack;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackClient)
 };
@@ -1017,6 +1043,8 @@ public:
             return nullptr;
         }
 
+        const ScopedThreadStopper sts(this);
+
         CARLA_SAFE_ASSERT(plugin->getId() == id);
 
         CarlaString uniqueName;
@@ -1025,7 +1053,7 @@ public:
             const char* const tmpName = getUniquePluginName(newName);
             uniqueName = tmpName;
             delete[] tmpName;
-        } CARLA_SAFE_EXCEPTION("JACK renamePlugin");
+        } CARLA_SAFE_EXCEPTION("JACK renamePlugin getUniquePluginName");
 
         if (uniqueName.isEmpty())
         {
@@ -1052,25 +1080,19 @@ public:
                 // we should not be able to do this, jack really needs to allow client rename
                 if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
                 {
-                    // close old client
+                    // disable plugin
                     plugin->setEnabled(false);
 
-                    if (client->isActive())
-                        client->deactivate();
-
-                    plugin->clearBuffers();
-
-                    jackbridge_client_close(client->fJackClient);
+                    // close client
+                    client->closeForRename(jackClient);
 
                     // set new client data
                     uniqueName = jackbridge_get_client_name(jackClient);
 
                     jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
-                    jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                     jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
+                    jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                     jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
-
-                    client->fJackClient = jackClient;
 
                     needsReinit = true;
                 }

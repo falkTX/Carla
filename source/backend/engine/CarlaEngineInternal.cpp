@@ -394,6 +394,22 @@ ScopedActionLock::~ScopedActionLock() noexcept
 }
 
 // -----------------------------------------------------------------------
+// ScopedThreadStopper
+
+ScopedThreadStopper::ScopedThreadStopper(CarlaEngine* const e) noexcept
+    : engine(e),
+      pData(e->pData)
+{
+    pData->thread.stopThread(500);
+}
+
+ScopedThreadStopper::~ScopedThreadStopper() noexcept
+{
+    if (engine->isRunning() && ! pData->aboutToClose)
+        pData->thread.startThread();
+}
+
+// -----------------------------------------------------------------------
 // ScopedEngineEnvironmentLocker
 
 ScopedEngineEnvironmentLocker::ScopedEngineEnvironmentLocker(CarlaEngine* const engine) noexcept

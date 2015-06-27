@@ -960,9 +960,8 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
     if (pData->enabled == yesNo)
         return;
 
-    pData->enabled = yesNo;
-
     pData->masterMutex.lock();
+    pData->enabled = yesNo;
     pData->masterMutex.unlock();
 }
 

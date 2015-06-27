@@ -645,6 +645,7 @@ protected:
     void _addCVPortName(const bool, const char* const);
     void _addEventPortName(const bool, const char* const);
     const char* _getUniquePortName(const char* const);
+    void _clearPorts();
 
     CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineClient)
 #endif
@@ -1074,6 +1075,7 @@ protected:
     friend class PendingRtEventsRunner;
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
+    friend class ScopedThreadStopper;
     friend struct PatchbayGraph;
     friend struct RackGraph;
 

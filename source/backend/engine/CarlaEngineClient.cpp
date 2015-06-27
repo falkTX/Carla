@@ -263,6 +263,16 @@ const char* CarlaEngineClient::_getUniquePortName(const char* const name)
     return sname.dup();
 }
 
+void CarlaEngineClient::_clearPorts()
+{
+    pData->audioInList.clear();
+    pData->audioOutList.clear();
+    pData->cvInList.clear();
+    pData->cvOutList.clear();
+    pData->eventInList.clear();
+    pData->eventOutList.clear();
+}
+
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE

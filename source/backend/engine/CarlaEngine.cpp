@@ -576,9 +576,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 #ifndef BUILD_BRIDGE
     if (oldPlugin != nullptr)
     {
-        // the engine thread might be reading from the old plugin
-        pData->thread.stopThread(500);
-        pData->thread.startThread();
+        const ScopedThreadStopper sts(this);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
             pData->graph.replacePlugin(oldPlugin, plugin);
@@ -635,7 +633,7 @@ bool CarlaEngine::removePlugin(const uint id)
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin != nullptr, "Could not find plugin to remove");
     CARLA_SAFE_ASSERT_RETURN_ERR(plugin->getId() == id, "Invalid engine internal data");
 
-    pData->thread.stopThread(500);
+    const ScopedThreadStopper sts(this);
 
 #ifndef BUILD_BRIDGE
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -664,9 +662,6 @@ bool CarlaEngine::removePlugin(const uint id)
 
     delete plugin;
 
-    if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
-
     callback(ENGINE_CALLBACK_PLUGIN_REMOVED, id, 0, 0, 0.0f, nullptr);
     return true;
 }
@@ -682,7 +677,7 @@ bool CarlaEngine::removeAllPlugins()
     if (pData->curPluginCount == 0)
         return true;
 
-    pData->thread.stopThread(500);
+    const ScopedThreadStopper sts(this);
 
     const uint curPluginCount(pData->curPluginCount);
 
@@ -721,9 +716,6 @@ bool CarlaEngine::removeAllPlugins()
 
         callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
     }
-
-    if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
 
     return true;
 }
@@ -825,38 +817,31 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(idB < pData->curPluginCount, "Invalid plugin Id");
     carla_debug("CarlaEngine::switchPlugins(%i)", idA, idB);
 
-    {
-        CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
-        CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
+    CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
+    CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
 
-        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
-        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
-        CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
-        CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA != nullptr, "Could not find plugin to switch");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginA->getId() == idA, "Invalid engine internal data");
+    CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
-        pData->thread.stopThread(500);
+    const ScopedThreadStopper sts(this);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.replacePlugin(pluginA, pluginB);
-    }
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.replacePlugin(pluginA, pluginB);
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
 
+    // TODO
     /*
-    CarlaPlugin* const pluginA(pData->plugins[idA].plugin);
-    CarlaPlugin* const pluginB(pData->plugins[idB].plugin);
+    pluginA->updateOscURL();
+    pluginB->updateOscURL();
 
-    if (pluginA != nullptr && pluginB != nullptr)
-    {
-        pluginA->updateOscURL();
-        pluginB->updateOscURL();
-    }
+    if (isOscControlRegistered())
+        oscSend_control_switch_plugins(idA, idB);
     */
 
-    // TODO
-    //if (isOscControlRegistered())
-    //    oscSend_control_switch_plugins(idA, idB);
 
     if (isRunning() && ! pData->aboutToClose)
         pData->thread.startThread();
