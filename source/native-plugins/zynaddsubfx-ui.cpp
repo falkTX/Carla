@@ -86,6 +86,7 @@ extern "C" {
 #include "zynaddsubfx/UI/Fl_Osc_DialF.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Input.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_ListView.cpp"
+#include "zynaddsubfx/UI/Fl_Osc_Numeric_Input.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Output.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Pane.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Roller.cpp"
