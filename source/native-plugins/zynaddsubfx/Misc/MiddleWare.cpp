@@ -347,14 +347,14 @@ struct NonRtObjStore
     {
         std::string base = "/part"+to_s(i)+"/kit"+to_s(j)+"/";
         for(int k=0; k<NUM_VOICES; ++k) {
-            std::string nbase = base+"adpars/voice"+to_s(k)+"/";
+            std::string nbase = base+"adpars/VoicePar"+to_s(k)+"/";
             if(adpars) {
                 auto &nobj = adpars->VoicePar[k];
-                objmap[nbase+"oscil/"]     = nobj.OscilSmp;
-                objmap[nbase+"mod-oscil/"] = nobj.FMSmp;
+                objmap[nbase+"OscilSmp/"]     = nobj.OscilSmp;
+                objmap[nbase+"FMSmp/"] = nobj.FMSmp;
             } else {
-                objmap[nbase+"oscil/"]     = nullptr;
-                objmap[nbase+"mod-oscil/"] = nullptr;
+                objmap[nbase+"OscilSmp/"] = nullptr;
+                objmap[nbase+"FMSmp/"]    = nullptr;
             }
         }
     }
@@ -365,10 +365,10 @@ struct NonRtObjStore
         for(int k=0; k<NUM_VOICES; ++k) {
             if(padpars) {
                 objmap[base+"padpars/"]       = padpars;
-                objmap[base+"padpars/oscil/"] = padpars->oscilgen;
+                objmap[base+"padpars/oscilgen/"] = padpars->oscilgen;
             } else {
                 objmap[base+"padpars/"]       = nullptr;
-                objmap[base+"padpars/oscil/"] = nullptr;
+                objmap[base+"padpars/oscilgen/"] = nullptr;
             }
         }
     }
@@ -1214,8 +1214,8 @@ void MiddleWareImpl::kitEnable(int part, int kit, int type)
  */
 void MiddleWareImpl::handleMsg(const char *msg)
 {
-    assert(!strstr(msg,"free"));
     assert(msg && *msg && rindex(msg, '/')[1]);
+    assert(strstr(msg,"free") == NULL || strstr(rtosc_argument_string(msg), "b") == NULL);
     assert(strcmp(msg, "/part0/Psysefxvol"));
     assert(strcmp(msg, "/Penabled"));
     assert(strcmp(msg, "part0/part0/Ppanning"));

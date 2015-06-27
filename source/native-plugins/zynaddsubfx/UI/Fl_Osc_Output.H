@@ -2,7 +2,7 @@
 #include <FL/Fl_Value_Output.H>
 #include "Fl_Osc_Widget.H"
 
-class Fl_Osc_Output:public Fl_Value_Output, Fl_Osc_Widget
+class Fl_Osc_Output:public Fl_Value_Output, public Fl_Osc_Widget
 {
     public:
         Fl_Osc_Output(int x, int y, int w, int h, const char *label = NULL);
@@ -19,6 +19,5 @@ class Fl_Osc_Output:public Fl_Value_Output, Fl_Osc_Widget
         void cb(void);
     private:
         float newvalue_;
-        std::string name;
         std::pair<Fl_Callback*, void*> cb_data;
 };

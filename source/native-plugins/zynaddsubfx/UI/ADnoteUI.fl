@@ -119,7 +119,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
           class Fl_Osc_Output
         }
         Fl_Slider voicedetune {
-          callback {//detunevalueoutput->do_callback();}
+          callback {detunevalueoutput->update();}
           tooltip {Fine Detune (cents)} xywh {315 5 185 20} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
           code0 {o->init("PDetune",'i');}
           class Fl_Osc_Slider
@@ -253,7 +253,7 @@ o->redraw();}
                 class Fl_Osc_Counter
               }
               Fl_Slider {} {
-                callback {o->oscWrite("detunevalue");}
+                callback {fmdetunevalueoutput->update();}
                 tooltip {Fine Detune (cents)} xywh {590 245 155 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
                 code0 {o->init("PFMDetune", 'i');}
                 class Fl_Osc_Slider
@@ -266,7 +266,7 @@ o->redraw();}
               }
               Fl_Choice {} {
                 label {Detune Type}
-                callback {fmdetunevalueoutput->do_callback();} open
+                callback {fmdetunevalueoutput->update();} open
                 xywh {540 280 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
                 code0 {o->add("Default");o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
                 code1 {o->init("PFMDetuneType");}
@@ -466,7 +466,7 @@ o->redraw();}
               class Fl_Osc_Counter
             }
             Fl_Slider {} {
-              callback {detunevalueoutput->do_callback();}
+              callback {detunevalueoutput->update();}
               tooltip {Fine Detune (cents)} xywh {58 287 392 13} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
               code0 {o->init("PDetune", 'i');}
               class Fl_Osc_Slider
@@ -493,7 +493,7 @@ o->redraw();}
             }
             Fl_Choice {} {
               label {Detune Type}
-              callback {detunevalueoutput->do_callback();} open
+              callback {detunevalueoutput->update();} open
               xywh {455 320 70 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
               code0 {o->add("Default");o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
               code1 {o->init("PDetuneType");}
@@ -866,7 +866,7 @@ class ADnoteUI {open : {public PresetsUI_}
           class LFOUI
         } {}
         Fl_Slider detune {
-          callback {o->oscWrite("detunevalue");}
+          callback {detunevalueoutput->update();}
           tooltip {Fine Detune (cents)} xywh {60 300 385 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
           code0 {o->init("PDetune", 'i');}
           class Fl_Osc_Slider
@@ -879,7 +879,7 @@ class ADnoteUI {open : {public PresetsUI_}
         }
         Fl_Choice detunetype {
           label {Detune Type}
-          callback {o->oscWrite("detunevalue");} open
+          callback {detunevalueoutput->update();} open
           xywh {455 340 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
           code0 {o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
           code1 {o->init("PDetuneType",1);}

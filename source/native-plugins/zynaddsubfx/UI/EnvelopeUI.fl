@@ -126,11 +126,15 @@ sustaincounter->update();
       }
       Fl_Check_Button freemodebutton {
         label FreeMode
-        callback {reinit();
+        callback {
+        o->oscWrite("Pfreemode", o->value() ? "T" : "F");
+        reinit(o->value());
 
 freeedit->lastpoint=-1;
 freeedit->redraw();}
         tooltip {Enable or disable the freemode} xywh {10 155 95 20} labelsize 11
+        code0{o->init("Pfreemode");}
+        class Fl_Osc_Check
       }
       Fl_Check_Button forcedreleasecheck {
         label frcR
@@ -503,7 +507,6 @@ envfree->redraw();}
     base = base_;
     ext  = ext_;
     Envmode = env_type;
-    Pfreemode = false;
     Penvsustain = false;
     Penvpoints  = 3;
     Penvstretch = 0;
@@ -537,59 +540,60 @@ refresh();} {}
     code {Fl_Osc_Group::rebase(new_base);
     freemodeeditwindow->rebase(new_base+ext);} {}
   }
-  Function {reinit()} {open
+  Function {reinit(bool Pfreemode)} {open
   } {
-    code {if(Pfreemode){
-    int answer=fl_choice("Disable the free mode of the Envelope?","No","Yes",NULL);
-    freemodebutton->value(Pfreemode);
-    if (answer==0)
-      return;
-};
+    code {
+    //if(!Pfreemode){
+    //    int answer=fl_choice("Disable the free mode of the Envelope?","No","Yes",NULL);
+    //    freemodebutton->value(Pfreemode);
+    //    if (answer==0)
+    //        return;
+    //};
+        freeedit->update();
 
-Pfreemode = !Pfreemode;
+    hide();
+    const int winx=freemodeeditwindow->x();
+    const int winy=freemodeeditwindow->y();
 
-hide();
-const int winx=freemodeeditwindow->x();
-const int winy=freemodeeditwindow->y();
+    bool reshow = freemodeeditwindow->visible();
+    freemodeeditwindow->hide();
 
-freemodeeditwindow->hide();
-
-envwindow->hide();
-Fl_Group *par=envwindow->parent();
-par->hide();
+    envwindow->hide();
+    Fl_Group *par=envwindow->parent();
+    par->hide();
 
 
-refresh();
-envwindow->show();
-par->redraw();
+    refresh();
+    envwindow->show();
+    par->redraw();
 
-par->show();
-show();
-freemodeeditwindow->position(winx,winy);
-freemodeeditwindow->show();
+    par->show();
+    show();
+    freemodeeditwindow->position(winx,winy);
+    if(reshow)
+        freemodeeditwindow->show();
 
-if (Pfreemode) {
-	freemodebutton->value(1);
-	addpoint->show();
-	deletepoint->show();
-	forcedreleasecheck->show();
-	sustaincounter->show();
-    envstretchdial->show();
-} else{
-	freemodebutton->value(0);
-	addpoint->hide();
-	deletepoint->hide();
-	forcedreleasecheck->hide();
-	sustaincounter->hide();
-    envstretchdial->hide();
-};
+    if (Pfreemode) {
+        freemodebutton->value(1);
+        addpoint->show();
+        deletepoint->show();
+        forcedreleasecheck->show();
+        sustaincounter->show();
+        envstretchdial->show();
+    } else{
+        freemodebutton->value(0);
+        addpoint->hide();
+        deletepoint->hide();
+        forcedreleasecheck->hide();
+        sustaincounter->hide();
+        envstretchdial->hide();
+    };
 } {selected
     }
   }
   Function {refresh()} {open
   } {
-    code {freemodebutton->value(Pfreemode);
-
+    code {
     sustaincounter->value(Penvsustain);
     sustaincounter->maximum(Penvpoints-2);
 
@@ -598,7 +602,7 @@ if (Pfreemode) {
 linearenvelopecheck->value(Plinearenvelope);
 
 //Conditionally display widgets
-    if(Pfreemode) {
+    if(freemodebutton->value()) {
         freemodebutton->value(1);
         addpoint->show();
         deletepoint->show();
@@ -614,14 +618,14 @@ linearenvelopecheck->value(Plinearenvelope);
         envstretchdial->hide();
     }
 
-    if(Pfreemode || Envmode>2)
+    if(freemodebutton->value() || Envmode>2)
         linearenvelopecheck->hide();
 	else
         linearenvelopecheck->show();
 
     forcedreleasecheck->value(Pforcedrelease);
 
-if (Pfreemode==0){
+if (freemodebutton->value()==0){
 	addpoint->hide();
 	deletepoint->hide();
 } else {
@@ -635,7 +639,7 @@ envADSRfilter->hide();
 envASRbw->hide();
 envfree->hide();
 
-if (Pfreemode==0){
+if (freemodebutton->value()==0){
    switch(Envmode){
          case 1:
          case 2:
@@ -663,8 +667,6 @@ envwindow->resize(this->x(),this->y(),this->w(),this->h());
 envwindow->show();} {}
   }
   decl {int Envmode;} {private local
-  }
-  decl {int Pfreemode;} {private local
   }
   decl {int Penvsustain;} {private local
   }

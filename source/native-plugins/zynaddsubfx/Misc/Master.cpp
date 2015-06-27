@@ -667,7 +667,7 @@ void Master::AudioOut(float *outl, float *outr)
     }
     if(events>1 && false)
         fprintf(stderr, "backend: %d events per cycle\n",events);
-
+        
 
     //Swaps the Left channel with Right Channel
     if(swaplr)

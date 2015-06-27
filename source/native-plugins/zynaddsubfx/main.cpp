@@ -429,10 +429,28 @@ int main(int argc, char *argv[])
 
 
     gui = NULL;
+
+    //Capture Startup Responses
+    typedef std::vector<const char *> wait_t;
+    wait_t msg_waitlist;
+    middleware->setUiCallback([](void*v,const char*msg) {
+            wait_t &wait = *(wait_t*)v;
+            size_t len = rtosc_message_length(msg, -1);
+            char *copy = new char[len];
+            memcpy(copy, msg, len);
+            wait.push_back(copy);
+            }, &msg_waitlist);
+
     if(!noui)
         gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
     middleware->setUiCallback(GUI::raiseUi, gui);
     middleware->setIdleCallback([](void*){GUI::tickUi(gui);}, NULL);
+
+    //Replay Startup Responses
+    for(auto msg:msg_waitlist) {
+        GUI::raiseUi(gui, msg);
+        delete [] msg;
+    }
 
     if(!noui)
     {

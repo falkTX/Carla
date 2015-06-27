@@ -29,10 +29,16 @@ decl {\#include "Fl_Osc_Counter.H"} {public local
 decl {\#include "Fl_Osc_Choice.H"} {public local
 } 
 
+decl {\#include "Osc_IntModel.h"} {public local
+} 
+
 decl {\#include "Fl_Osc_Check.H"} {public local
 } 
 
 decl {\#include "Fl_Osc_Input.H"} {public local
+} 
+
+decl {\#include "Fl_Osc_Numeric_Input.H"} {public local
 } 
 
 decl {\#include "Fl_Osc_ListView.H"} {public local
@@ -71,14 +77,14 @@ class ConfigUI {} {
             Fl_Input samplerateinput {
               xywh {115 50 60 20} type Int textfont 1
               code0 {o->init("cfg.SampleRate");}
-              class Fl_Osc_Input
+              class Fl_Osc_Numeric_Input
             }
           }
           Fl_Input {} {
             label {Buffer Size}
             tooltip {Internal Sound Buffer Size (samples)} xywh {190 45 60 20} type Int labelsize 11 align 129 textfont 1
             code0 {o->init("cfg.SoundBufferSize");}
-            class Fl_Osc_Input
+            class Fl_Osc_Numeric_Input
           }
           Fl_Check_Button {} {
             label {Swap Stereo }
@@ -86,11 +92,12 @@ class ConfigUI {} {
             code0 {o->init("cfg.SwapStereo");}
             class Fl_Osc_Check
           }
-          Fl_Choice {} {
+          Fl_Choice oscilsize_widget {
             label OscilSize
+            callback{
+            oscilsize->updateVal((int)(o->value()+7));
+            }
             tooltip {ADSynth Oscillator Size (samples)} xywh {175 80 75 20} down_box BORDER_BOX labelfont 1 labelsize 11 textsize 10
-            code0 {o->init("cfg.OscilPower");}
-            class Fl_Osc_Choice
           } {
             MenuItem {} {
               label 128
@@ -279,7 +286,14 @@ activatebutton_presetdir(true);}
   Function {ConfigUI(Fl_Osc_Interface *osc_)} {} {
     code {
     osc = osc_;
-    make_window();} {}
+    make_window();
+    oscilsize = new Osc_IntModel(osc);
+    oscilsize->callback = [this](int i){
+        oscilsize_widget->value(i-7);
+    };
+    oscilsize->update("/config/cfg.OscilPower");
+    
+    } {}
   }
   Function {activatebutton_rootdir(bool active)} {} {
     code {if (active) {
@@ -307,5 +321,7 @@ activatebutton_presetdir(true);}
     } {}
   }
   decl {class Fl_Osc_Interface *osc;} {public local
+  }
+  decl {class Osc_IntModel *oscilsize;} {public local
   }
 } 

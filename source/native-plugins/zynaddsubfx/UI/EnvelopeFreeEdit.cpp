@@ -26,7 +26,7 @@ void EnvelopeFreeEdit::init(void)
 void EnvelopeFreeEdit::OSC_raw(const char *msg)
 {
     const char *args = rtosc_argument_string(msg);
-    if(strstr(msg,"Penvpoints") && !strcmp(args, "c")) {
+    if(strstr(msg,"Penvpoints") && !strcmp(args, "i")) {
         Penvpoints = rtosc_argument(msg, 0).i;
     } else if(strstr(msg,"Penvdt") && !strcmp(args, "b")) {
         rtosc_blob_t b = rtosc_argument(msg, 0).b;
@@ -36,7 +36,7 @@ void EnvelopeFreeEdit::OSC_raw(const char *msg)
         rtosc_blob_t b = rtosc_argument(msg, 0).b;
         assert(b.len == MAX_ENVELOPE_POINTS);
         memcpy(Penvval, b.data, MAX_ENVELOPE_POINTS);
-    } else if(strstr(msg,"Penvsustain") && !strcmp(args, "c")) {
+    } else if(strstr(msg,"Penvsustain") && !strcmp(args, "i")) {
         Penvsustain = rtosc_argument(msg, 0).i;
     }
     redraw();
@@ -202,7 +202,10 @@ int EnvelopeFreeEdit::handle(int event)
         else
             Penvdt[currentpoint]=0;
 
-        oscWrite(to_s("Penvdt")+to_s(currentpoint), "c", newdt);
+        oscWrite(to_s("Penvval")+to_s(currentpoint), "c", ny);
+        oscWrite(to_s("Penvdt")+to_s(currentpoint),  "c", newdt);
+        oscWrite("Penvdt","");
+        oscWrite("Penvval","");
         redraw();
 
         if(pair)

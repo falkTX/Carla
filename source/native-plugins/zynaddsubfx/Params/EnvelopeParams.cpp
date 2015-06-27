@@ -34,7 +34,11 @@ using namespace rtosc;
 static const rtosc::Ports localPorts = {
     rSelf(EnvelopeParams),
     rPaste,
+#undef  rChangeCb
+#define rChangeCb if(!obj->Pfreemode) obj->converttofree();
     rToggle(Pfreemode, "Complex Envelope Definitions"),
+#undef  rChangeCb
+#define rChangeCb
     rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
     rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),

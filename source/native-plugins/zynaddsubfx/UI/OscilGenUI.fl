@@ -119,7 +119,7 @@ class Oscilharmonic {: {public Fl_Group}
       Fl_Slider mag {
         callback {int x=64;
 if (Fl::event_button3()) o->value(x);
-   else x=127-(int)o->value();
+   else x=128-(int)o->value();
 if (x==64) o->selection_color(0);
     else o->selection_color(222);
 
@@ -496,12 +496,15 @@ redrawoscil();}
 if (autoclearbutton->value()){
    for (int i=0;i<MAX_AD_HARMONICS;i++){
       h[i]->mag->value(64);
+      h[i]->mag->do_callback();
       h[i]->phase->value(64);
+      h[i]->phase->do_callback();
    };
 
    harmonicshiftcounter->value(0);
 
    h[0]->mag->value(0);
+   h[0]->mag->do_callback();
    wshbutton->value(0);
    wshbutton->do_callback();
    fltbutton->value(0);
@@ -527,9 +530,12 @@ redrawoscil();}
 
 for (int i=0;i<MAX_AD_HARMONICS;i++){
     h[i]->mag->value(64);
+    h[i]->mag->do_callback();
     h[i]->phase->value(64);
+    h[i]->phase->do_callback();
 };
 h[0]->mag->value(0);
+h[0]->mag->do_callback();
 
 //for (int i=0;i<MAX_AD_HARMONICS;i++){
 //  if (oscil->Phmag[i]==64) h[i]->mag->selection_color(0);

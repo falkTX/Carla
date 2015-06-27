@@ -54,6 +54,9 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
 
         virtual void OSC_value(unsigned N, void *data) override
         {
+            if(oscilsize == 0)
+                OSC_value((int)N/4);
+
             assert(N==(unsigned)(oscilsize*4));
 
             memcpy(smps, data, N);

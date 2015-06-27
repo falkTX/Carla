@@ -56,7 +56,7 @@ class Fl_Osc_StrChoice:public Fl_Choice, public Fl_Osc_Widget
             cb_data.first = cb;
             cb_data.second = p;
         }
-
+        
         void cb(void)
         {
             assert(osc);
@@ -110,7 +110,7 @@ NioUI::NioUI(Fl_Osc_Interface *osc)
         for(auto io:list)
             audio->add(io.c_str());
     };
-
+    
     midi_opt->update("/io/source-list");
     audio_opt->update("/io/sink-list");
 

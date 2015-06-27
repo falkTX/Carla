@@ -15,8 +15,8 @@ BankList::BankList(int x,int y, int w, int h, const char *label)
 void BankList::init(std::string path)
 {
     ext = path;
+    oscRegister("bank-list");
     oscRegister(path.c_str());
-    osc->createLink("/bank-list", this);
 }
 
 void BankList::OSC_raw(const char *msg)

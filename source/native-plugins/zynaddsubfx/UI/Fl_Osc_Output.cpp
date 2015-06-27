@@ -19,7 +19,7 @@ Fl_Osc_Output::Fl_Osc_Output(int X, int Y, int W, int H, const char *label)
 
 void Fl_Osc_Output::init(const char *path)
 {
-    name = path;
+    ext = path;
     oscRegister(path);
 };
 
@@ -51,7 +51,7 @@ void Fl_Osc_Output::OSC_value(float v)
         
 void Fl_Osc_Output::update(void)
 {
-    oscWrite(name);
+    oscWrite(ext);
 }
 
 float Fl_Osc_Output::newvalue(void) const
@@ -61,5 +61,5 @@ float Fl_Osc_Output::newvalue(void) const
 
 void Fl_Osc_Output::cb(void)
 {
-    oscWrite(name);
+    oscWrite(ext);
 }
