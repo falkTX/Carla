@@ -170,7 +170,7 @@ protected:
 
         const CarlaMutexLocker cml(getPipeLock());
 
-        writeMessage("uiTitle\n", 10);
+        writeMessage("uiTitle\n", 8);
         writeAndFixMessage(uiName);
         flushMessages();
     }
