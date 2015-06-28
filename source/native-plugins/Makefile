@@ -220,11 +220,11 @@ resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 # ----------------------------------------------------------------------------------------------------------------------------
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
-	@echo "Generating $@/h"
+	@echo "Generating $@|h"
 	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
 zynaddsubfx/UI/%.h: zynaddsubfx/UI/%.fl
-	@echo "Generating $@/cpp"
+	@echo "Generating $@|cpp"
 	@$(FLUID) -c -o zynaddsubfx/UI/$*.cpp -h zynaddsubfx/UI/$*.h $<
 
 # ----------------------------------------------------------------------------------------------------------------------------
