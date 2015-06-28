@@ -248,6 +248,8 @@ private:
 
     JackPortDeletionCallback* const kDeletionCallback;
 
+    friend class CarlaEngineJackClient;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackCVPort)
 };
 
@@ -439,6 +441,8 @@ private:
 
     JackPortDeletionCallback* const kDeletionCallback;
 
+    friend class CarlaEngineJackClient;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackEventPort)
 };
 
@@ -496,6 +500,37 @@ public:
         }
 
         CarlaEngineClient::activate();
+
+        const CarlaMutexLocker cml(fPreRenameMutex);
+
+        if (fJackClient != nullptr)
+        {
+            // restore pre-rename connections
+            const char* portNameA = nullptr;
+            const char* portNameB = nullptr;
+            bool doConnection = false;
+
+            for (CarlaStringList::Itenerator it = fPreRenameConnections.begin2(); it.valid(); it.next())
+            {
+                const bool connectNow = doConnection;
+                doConnection = !doConnection;
+
+                if (connectNow)
+                    portNameB = it.getValue(nullptr);
+                else
+                    portNameA = it.getValue(nullptr);
+
+                if (! connectNow)
+                    continue;
+
+                CARLA_SAFE_ASSERT_CONTINUE(portNameA != nullptr && portNameA[0] != '\0');
+                CARLA_SAFE_ASSERT_CONTINUE(portNameB != nullptr && portNameB[0] != '\0');
+
+                jackbridge_connect(fJackClient, portNameA, portNameB);
+            }
+        }
+
+        fPreRenameConnections.clear();
     }
 
     void deactivate() noexcept override
@@ -640,14 +675,25 @@ public:
         fEventPorts.removeAll(port);
     }
 
-    void closeForRename(jack_client_t* const client) noexcept
+    void closeForRename(jack_client_t* const client, const char* const clientName) noexcept
     {
         if (fJackClient != nullptr)
         {
             if (isActive())
             {
+                {
+                    // store current client connections
+                    const CarlaMutexLocker cml(fPreRenameMutex);
+
+                    fPreRenameConnections.clear();
+
+                    _savePortsConnections(fAudioPorts, clientName);
+                    _savePortsConnections(fCVPorts, clientName);
+                    _savePortsConnections(fEventPorts, clientName);
+                }
+
                 try {
-                    jackbridge_activate(fJackClient);
+                    jackbridge_deactivate(fJackClient);
                 } catch(...) {}
             }
 
@@ -673,6 +719,44 @@ private:
     LinkedList<CarlaEngineJackAudioPort*> fAudioPorts;
     LinkedList<CarlaEngineJackCVPort*>    fCVPorts;
     LinkedList<CarlaEngineJackEventPort*> fEventPorts;
+
+    CarlaMutex      fPreRenameMutex;
+    CarlaStringList fPreRenameConnections;
+
+    template<typename T>
+    void _savePortsConnections(const LinkedList<T*>& t, const char* const clientName)
+    {
+        CarlaString clientNamePrefix(clientName);
+        clientNamePrefix += ":";
+
+        for (typename LinkedList<T*>::Itenerator it = t.begin2(); it.valid(); it.next())
+        {
+            T* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(port->fJackPort != nullptr);
+
+            const char* const shortPortName(jackbridge_port_short_name(port->fJackPort));
+            CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
+
+            const CarlaString portName(clientNamePrefix + shortPortName);
+
+            if (const char** const connections = jackbridge_port_get_all_connections(fJackClient, port->fJackPort))
+            {
+                for (int i=0; connections[i] != nullptr; ++i)
+                {
+                    if (! port->kIsInput)
+                        fPreRenameConnections.append(portName);
+
+                    fPreRenameConnections.append(connections[i]);
+
+                    if (port->kIsInput)
+                        fPreRenameConnections.append(portName);
+                }
+
+                jackbridge_free(connections);
+            }
+        }
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJackClient)
 };
@@ -1080,15 +1164,16 @@ public:
                 // we should not be able to do this, jack really needs to allow client rename
                 if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
                 {
+                    // get new client name
+                    uniqueName = jackbridge_get_client_name(jackClient);
+
+                    // close client
+                    client->closeForRename(jackClient, uniqueName);
+
                     // disable plugin
                     plugin->setEnabled(false);
 
-                    // close client
-                    client->closeForRename(jackClient);
-
                     // set new client data
-                    uniqueName = jackbridge_get_client_name(jackClient);
-
                     jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
                     jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
                     jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
