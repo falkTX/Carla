@@ -178,11 +178,14 @@ public:
           fHost(),
           fDescriptor(nullptr),
           fIsProcessing(false),
+          fIsOffline(false),
           fIsUiAvailable(false),
           fIsUiVisible(false),
           fAudioInBuffers(nullptr),
           fAudioOutBuffers(nullptr),
           fMidiEventCount(0),
+          fCurBufferSize(engine->getBufferSize()),
+          fCurSampleRate(engine->getSampleRate()),
           fMidiIn(),
           fMidiOut(),
           fTimeInfo()
@@ -1817,7 +1820,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
-        if (pData->engine->isOffline())
+        if (fIsOffline)
         {
             pData->singleMutex.lock();
         }
@@ -1985,6 +1988,11 @@ public:
             fAudioOutBuffers[i] = new float[newBufferSize];
         }
 
+        if (fCurBufferSize == newBufferSize)
+            return;
+
+        fCurBufferSize = newBufferSize;
+
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
             fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, static_cast<intptr_t>(newBufferSize), nullptr, 0.0f);
@@ -1999,6 +2007,11 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("CarlaPluginNative::sampleRateChanged(%g)", newSampleRate);
 
+        if (carla_isEqual(fCurSampleRate, newSampleRate))
+            return;
+
+        fCurSampleRate = newSampleRate;
+
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
             fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, float(newSampleRate));
@@ -2010,6 +2023,11 @@ public:
 
     void offlineModeChanged(const bool isOffline) override
     {
+        if (fIsOffline == isOffline)
+            return;
+
+        fIsOffline = isOffline;
+
         if (fDescriptor != nullptr && fDescriptor->dispatcher != nullptr)
         {
             fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_OFFLINE_CHANGED, 0, isOffline ? 1 : 0, nullptr, 0.0f);
@@ -2141,21 +2159,6 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    uint32_t handleGetBufferSize() const noexcept
-    {
-        return pData->engine->getBufferSize();
-    }
-
-    double handleGetSampleRate() const noexcept
-    {
-        return pData->engine->getSampleRate();
-    }
-
-    bool handleIsOffline() const noexcept
-    {
-        return pData->engine->isOffline();
-    }
-
     const NativeTimeInfo* handleGetTimeInfo() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
@@ -2412,6 +2415,7 @@ private:
     const NativePluginDescriptor* fDescriptor;
 
     bool fIsProcessing;
+    bool fIsOffline;
     bool fIsUiAvailable;
     bool fIsUiVisible;
 
@@ -2420,7 +2424,9 @@ private:
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kPluginMaxMidiEvents*2];
 
-    int32_t fCurMidiProgs[MAX_MIDI_CHANNELS];
+    int32_t  fCurMidiProgs[MAX_MIDI_CHANNELS];
+    uint32_t fCurBufferSize;
+    double   fCurSampleRate;
 
     NativePluginMidiData fMidiIn;
     NativePluginMidiData fMidiOut;
@@ -2433,17 +2439,17 @@ private:
 
     static uint32_t carla_host_get_buffer_size(NativeHostHandle handle) noexcept
     {
-        return handlePtr->handleGetBufferSize();
+        return handlePtr->fCurBufferSize;
     }
 
     static double carla_host_get_sample_rate(NativeHostHandle handle) noexcept
     {
-        return handlePtr->handleGetSampleRate();
+        return handlePtr->fCurSampleRate;
     }
 
     static bool carla_host_is_offline(NativeHostHandle handle) noexcept
     {
-        return handlePtr->handleIsOffline();
+        return handlePtr->fIsOffline;
     }
 
     static const NativeTimeInfo* carla_host_get_time_info(NativeHostHandle handle) noexcept
