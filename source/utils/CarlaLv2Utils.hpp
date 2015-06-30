@@ -92,7 +92,7 @@
 #define NS_rdf  "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 #define NS_rdfs "http://www.w3.org/2000/01/rdf-schema#"
 #define NS_llmm "http://ll-plugins.nongnu.org/lv2/ext/midimap#"
-#define NS_mod  "http://portalmod.com/ns/modgui#"
+#define NS_mod  "http://moddevices.com/ns/modgui#"
 
 #define LV2_MIDI_Map__CC      "http://ll-plugins.nongnu.org/lv2/namespace#CC"
 #define LV2_MIDI_Map__NRPN    "http://ll-plugins.nongnu.org/lv2/namespace#NRPN"

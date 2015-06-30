@@ -1769,7 +1769,7 @@ def getSkinStyle(host, pluginId):
         return "calf_black" if "mono" in pluginLabel else "calf_blue"
 
     # MOD
-    #if pluginLabel.startswith("http://portalmod.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
+    #if pluginLabel.startswith("http://moddevices.com/") or pluginLabel.startswith("http://plugin.org.uk/swh-plugins/"):
         #return "mod"
 
     # OpenAV

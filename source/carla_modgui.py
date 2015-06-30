@@ -28,12 +28,12 @@ import json
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
-    from PyQt4.QtGui import QImage, QPainter
+    from PyQt5.QtGui import QImage, QPainter, QPalette
     from PyQt5.QtWidgets import QMainWindow
     from PyQt5.QtWebKitWidgets import QWebElement, QWebSettings, QWebView
 else:
     from PyQt4.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
-    from PyQt4.QtGui import QImage, QPainter
+    from PyQt4.QtGui import QImage, QPainter, QPalette
     from PyQt4.QtGui import QMainWindow
     from PyQt4.QtWebKit import QWebElement, QWebSettings, QWebView
 
@@ -42,6 +42,7 @@ else:
 
 from pystache import render as pyrender
 from tornado.gen import engine
+from tornado.log import enable_pretty_logging
 from tornado.ioloop import IOLoop
 from tornado.web import asynchronous, HTTPError
 from tornado.web import Application, RequestHandler, StaticFileHandler
@@ -87,136 +88,100 @@ os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
 
-from mod.indexing import EffectIndex
-from mod.lv2 import PluginSerializer
+from mod.lv2 import get_plugin_info, init as lv2_init
 
 # ------------------------------------------------------------------------------------------------------------
 # MOD related classes
 
-class EffectSearcher(RequestHandler):
-    index = EffectIndex()
-
-    @classmethod
-    def urls(cls, path):
-        return [
-            (r"/%s/(get)/([a-z0-9]+)?" % path, cls),
-        ]
-
-    def get(self, action, objid=None):
-        if action != 'get':
-            raise HTTPError(404)
-
-        try:
-            self.set_header('Access-Control-Allow-Origin', self.request.headers['Origin'])
-        except KeyError:
-            pass
-
-        self.set_header('Content-Type', 'application/json')
-
-        if objid is None:
-            objid = self.get_by_url()
-
-        try:
-            response = self.get_object(objid)
-        except:
-            raise HTTPError(404)
-
-        self.write(json.dumps(response))
-
-    def get_by_url(self):
-        try:
-            url = self.request.arguments['url'][0]
-        except (KeyError, IndexError):
-            raise HTTPError(404)
-
-        search = self.index.find(url=url)
-        try:
-            entry = next(search)
-        except StopIteration:
-            raise HTTPError(404)
-
-        return entry['id']
-
-    def get_object(self, objid):
-        path = os.path.join(self.index.data_source, objid)
-        md_path = path + '.metadata'
-        obj = json.loads(open(path).read())
-        if os.path.exists(md_path):
-            obj.update(json.loads(open(md_path).read()))
-        return obj
-
-class EffectGet(EffectSearcher):
-    @asynchronous
-    @engine
-    def get(self, instance_id):
-        objid = self.get_by_url()
-
-        try:
-            options = self.get_object(objid)
-            presets = []
-            for _, preset in options['presets'].items():
-                presets.append({'label': preset['label']})
-            options['presets'] = presets
-        except:
-            raise HTTPError(404)
-
-        if self.request.connection.stream.closed():
-            return
-
-        self.write(json.dumps(options))
-        self.finish()
-
-class EffectStylesheet(EffectSearcher):
+class EffectGet(RequestHandler):
     def get(self):
-        objid = self.get_by_url()
+        uri = self.get_argument('uri')
 
         try:
-            effect = self.get_object(objid)
+            data = get_plugin_info(uri)
         except:
             raise HTTPError(404)
 
-        try:
-            path = effect['gui']['stylesheet']
-        except:
-            raise HTTPError(404)
+        self.set_header('Content-type', 'application/json')
+        self.write(json.dumps(data))
 
-        if not os.path.exists(path):
-            raise HTTPError(404)
+class EffectResource(StaticFileHandler):
 
-        content = open(path).read()
-        context = { 'ns': '?url=%s&bundle=%s' % (effect['url'], effect['package']) }
-
-        self.set_header('Content-type', 'text/css')
-        self.write(pyrender(content, context))
-
-class EffectResource(StaticFileHandler, EffectSearcher):
     def initialize(self):
         # Overrides StaticFileHandler initialize
         pass
 
     def get(self, path):
         try:
-            objid = self.get_by_url()
+            uri = self.get_argument('uri')
+        except:
+            return self.shared_resource(path)
 
-            try:
-                options = self.get_object(objid)
-            except:
-                raise HTTPError(404)
+        try:
+            data = get_plugin_info(uri)
+        except:
+            raise HTTPError(404)
 
-            try:
-                document_root = options['gui']['resourcesDirectory']
-            except:
-                raise HTTPError(404)
+        try:
+            root = data['gui']['resourcesDirectory']
+        except:
+            raise HTTPError(404)
 
-            StaticFileHandler.initialize(self, document_root)
-            StaticFileHandler.get(self, path)
-
+        try:
+            super(EffectResource, self).initialize(root)
+            super(EffectResource, self).get(path)
         except HTTPError as e:
             if e.status_code != 404:
                 raise e
+            self.shared_resource(path)
+        except IOError:
+            raise HTTPError(404)
 
-            StaticFileHandler.initialize(self, os.path.join(HTML_DIR, 'resources'))
-            StaticFileHandler.get(self, path)
+    def shared_resource(self, path):
+        super(EffectResource, self).initialize(os.path.join(HTML_DIR, 'resources'))
+        super(EffectResource, self).get(path)
+
+class EffectStylesheet(RequestHandler):
+    def get(self):
+        uri = self.get_argument('uri')
+
+        try:
+            data = get_plugin_info(uri)
+        except:
+            raise HTTPError(404)
+
+        try:
+            path = data['gui']['stylesheet']
+        except:
+            raise HTTPError(404)
+
+        if not os.path.exists(path):
+            raise HTTPError(404)
+
+        with open(path, 'rb') as fd:
+            self.set_header('Content-type', 'text/css')
+            self.write(fd.read())
+
+class EffectJavascript(RequestHandler):
+    def get(self):
+        uri = self.get_argument('uri')
+
+        try:
+            data = get_plugin_info(uri)
+        except:
+            raise HTTPError(404)
+
+        try:
+            path = data['gui']['javascript']
+        except:
+            raise HTTPError(404)
+
+        if not os.path.exists(path):
+            raise HTTPError(404)
+
+        with open(path, 'rb') as fd:
+            self.set_header('Content-type', 'text/javascript')
+            self.write(fd.read())
 
 # ------------------------------------------------------------------------------------------------------------
 # WebServer Thread
@@ -229,10 +194,10 @@ class WebServerThread(QThread):
         QThread.__init__(self, parent)
 
         self.fApplication = Application(
-            EffectSearcher.urls('effect') +
             [
                 (r"/effect/get/?", EffectGet),
                 (r"/effect/stylesheet.css", EffectStylesheet),
+                (r"/effect/gui.js", EffectJavascript),
                 (r"/resources/(.*)", EffectResource),
                 (r"/(.*)", StaticFileHandler, {"path": HTML_DIR}),
             ],
@@ -244,6 +209,7 @@ class WebServerThread(QThread):
         if not self.fPrepareWasCalled:
             self.fPrepareWasCalled = True
             self.fApplication.listen(PORT, address="0.0.0.0")
+            enable_pretty_logging()
 
         self.running.emit()
         IOLoop.instance().start()
@@ -279,14 +245,14 @@ class HostWindow(QMainWindow):
         self.fQuitReceived = False
         self.fWasRepainted = False
 
-        self.fPlugin      = PluginSerializer(URI)
-        self.fPorts       = self.fPlugin.data['ports']
+        self.fPlugin      = get_plugin_info(URI)
+        self.fPorts       = self.fPlugin['ports']
         self.fPortSymbols = {}
         self.fPortValues  = {}
 
         for port in self.fPorts['control']['input'] + self.fPorts['control']['output']:
             self.fPortSymbols[port['index']] = port['symbol']
-            self.fPortValues [port['index']] = port['default']
+            self.fPortValues [port['index']] = port['ranges']['default']
 
         # ----------------------------------------------------------------------------------------------------
         # Init pipe
@@ -305,10 +271,12 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI
 
-        self.fWebview = QWebView(self)
-        self.setCentralWidget(self.fWebview)
         self.setContentsMargins(0, 0, 0, 0)
-        #self.fWebview.settings().setAttribute(7, True)
+
+        self.fWebview = QWebView(self)
+        #self.fWebview.setAttribute(Qt.WA_OpaquePaintEvent, False)
+        #self.fWebview.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setCentralWidget(self.fWebview)
 
         page = self.fWebview.page()
         page.setViewportSize(QSize(980, 600))
@@ -316,6 +284,11 @@ class HostWindow(QMainWindow):
         mainFrame = page.mainFrame()
         mainFrame.setScrollBarPolicy(Qt.Horizontal, Qt.ScrollBarAlwaysOff)
         mainFrame.setScrollBarPolicy(Qt.Vertical, Qt.ScrollBarAlwaysOff)
+
+        palette = self.fWebview.palette()
+        palette.setBrush(QPalette.Base, palette.brush(QPalette.Window))
+        page.setPalette(palette)
+        self.fWebview.setPalette(palette)
 
         settings = self.fWebview.settings()
         settings.setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
@@ -386,33 +359,36 @@ class HostWindow(QMainWindow):
         #image.save("/tmp/test.png")
 
         # get coordinates and size from image
-        x = -1
+        #x = -1
         #y = -1
-        lastx = -1
-        lasty = -1
+        #lastx = -1
+        #lasty = -1
+        #bgcol = self.fHostColor.rgba()
 
-        for h in range(0, image.height()):
-            hasNonTransPixels = False
+        #for h in range(0, image.height()):
+            #hasNonTransPixels = False
 
-            for w in range(0, image.width()):
-                if image.pixel(w, h) not in (0, 0xff070707):
-                    hasNonTransPixels = True
-                    if x == -1 or x > w:
-                        x = w
-                    lastx = max(lastx, w)
+            #for w in range(0, image.width()):
+                #if image.pixel(w, h) not in (0, bgcol): # 0xff070707):
+                    #hasNonTransPixels = True
+                    #if x == -1 or x > w:
+                        #x = w
+                    #lastx = max(lastx, w)
 
-            if hasNonTransPixels:
-                #if y == -1:
-                    #y = h
-                lasty = h
+            #if hasNonTransPixels:
+                ##if y == -1:
+                    ##y = h
+                #lasty = h
 
         # set size and position accordingly
-        if -1 not in (x, lastx, lasty):
-            self.setFixedSize(lastx-x, lasty)
-            self.fCurrentFrame.setScrollPosition(QPoint(x, 0))
-        else:
+        #if -1 not in (x, lastx, lasty):
+            #self.setFixedSize(lastx-x, lasty)
+            #self.fCurrentFrame.setScrollPosition(QPoint(x, 0))
+        #else:
+
+        # TODO that^ needs work
+        if True:
             self.setFixedSize(size)
-            self.fCurrentFrame.setScrollPosition(QPoint(15, 0))
 
         # set initial values
         for index in self.fPortValues.keys():
@@ -653,17 +629,15 @@ if __name__ == '__main__':
         print("usage: %s <plugin-uri>" % sys.argv[0])
         sys.exit(1)
 
-    libPrefix = os.getenv("CARLA_LIB_PREFIX")
-
     # -------------------------------------------------------------
     # App initialization
 
-    app = CarlaApplication("Carla2-MODGUI", libPrefix)
+    app = CarlaApplication("Carla2-MODGUI")
 
     # -------------------------------------------------------------
     # Init utils
 
-    pathBinaries, pathResources = getPaths(libPrefix)
+    pathBinaries, pathResources = getPaths()
 
     utilsname = "libcarla_utils.%s" % (DLL_EXTENSION)
 
@@ -674,6 +648,11 @@ if __name__ == '__main__':
     # Set-up custom signal handling
 
     setUpSignals()
+
+    # -------------------------------------------------------------
+    # Init LV2
+
+    lv2_init()
 
     # -------------------------------------------------------------
     # Create GUI

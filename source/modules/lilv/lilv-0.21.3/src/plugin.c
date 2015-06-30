@@ -31,7 +31,7 @@
 
 #define NS_DOAP (const uint8_t*)"http://usefulinc.com/ns/doap#"
 #define NS_FOAF (const uint8_t*)"http://xmlns.com/foaf/0.1/"
-#define NS_MOD  (const uint8_t*)"http://portalmod.com/ns/modgui#"
+#define NS_MOD  (const uint8_t*)"http://moddevices.com/ns/modgui#"
 
 /** Ownership of `uri` is taken */
 LilvPlugin*
