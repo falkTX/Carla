@@ -131,7 +131,7 @@ public:
     JucePluginUI(CloseCallback* const cb, const uintptr_t /*parentId*/)
         : CarlaPluginUI(cb, false),
           DocumentWindow("JucePluginUI", Colour(50, 50, 200), DocumentWindow::closeButton, false),
-          fClosed(false),
+          fClosed(false)
 #ifdef CARLA_OS_MAC
         , fCocoaWrapper()
 #endif
