@@ -1028,28 +1028,21 @@ const char* CarlaPipeCommon::_readline() const noexcept
 #endif
         } CARLA_SAFE_EXCEPTION_BREAK("CarlaPipeCommon::readline() - read");
 
-        //if (ret == 0 || c == '\n')
-        //    break;
+        if (ret != 1 || c == '\n')
+            break;
 
-        if (ret == 1 && c != '\n')
+        if (c == '\r')
+            c = '\n';
+
+        *ptr++ = c;
+
+        if (i+1 == 0xff)
         {
-            if (c == '\r')
-                c = '\n';
-
-            *ptr++ = c;
-
-            if (i+1 == 0xff)
-            {
-                i = 0;
-                *ptr = '\0';
-                pData->tmpStr += pData->tmpBuf;
-                ptr = pData->tmpBuf;
-            }
-
-            continue;
+            i = 0;
+            *ptr = '\0';
+            pData->tmpStr += pData->tmpBuf;
+            ptr = pData->tmpBuf;
         }
-
-        break;
     }
 
     if (ptr != pData->tmpBuf)
