@@ -1050,7 +1050,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
         *ptr = '\0';
         pData->tmpStr += pData->tmpBuf;
     }
-    else if (pData->tmpStr.isEmpty())
+    else if (pData->tmpStr.isEmpty() && ret != 1)
     {
         // some error
         return nullptr;
