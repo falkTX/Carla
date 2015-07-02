@@ -64,10 +64,10 @@ PORTn = 8998 + int(random()*9000)
 # Set up environment for the webserver
 
 PORT     = str(PORTn)
-ROOT     = "/usr/share"
-#ROOT     = "/home/falktx/FOSS/GIT-mine/MOD/mod-app/source/modules"
+ROOT     = "/usr/share/mod"
+#ROOT     = "/home/falktx/FOSS/GIT-mine/MOD/mod-app/source/modules/mod-ui"
 DATA_DIR = os.path.expanduser("~/.local/share/mod-data/")
-HTML_DIR = os.path.join(ROOT, "mod-ui", "html")
+HTML_DIR = os.path.join(ROOT, "html")
 
 os.environ['MOD_DEV_HOST'] = "1"
 os.environ['MOD_DEV_HMI']  = "1"
@@ -77,12 +77,12 @@ os.environ['MOD_LOG']      = "1" # TESTING
 os.environ['MOD_DATA_DIR']           = DATA_DIR
 os.environ['MOD_HTML_DIR']           = HTML_DIR
 os.environ['MOD_KEY_PATH']           = os.path.join(DATA_DIR, "keys")
-os.environ['MOD_CLOUD_PUB']          = os.path.join(ROOT, "mod-ui", "keys", "cloud_key.pub")
+os.environ['MOD_CLOUD_PUB']          = os.path.join(ROOT, "keys", "cloud_key.pub")
 os.environ['MOD_PLUGIN_LIBRARY_DIR'] = os.path.join(DATA_DIR, "lib")
 
 os.environ['MOD_DEFAULT_JACK_BUFSIZE']  = "0"
 os.environ['MOD_PHANTOM_BINARY']        = "/usr/bin/phantomjs"
-os.environ['MOD_SCREENSHOT_JS']         = os.path.join(ROOT, "mod-ui", "screenshot.js")
+os.environ['MOD_SCREENSHOT_JS']         = os.path.join(ROOT, "screenshot.js")
 os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 
 # ------------------------------------------------------------------------------------------------------------
