@@ -259,9 +259,9 @@ template<class T> constexpr T spice(T*t) {return *t;}
         } else { \
             if(obj->name != rtosc_argument(msg, 0).T) { \
                 data.broadcast(loc, args);\
+                obj->name = rtosc_argument(msg, 0).T; \
                 rChangeCb \
             } \
-            obj->name = rtosc_argument(msg, 0).T; \
         } rBOIL_END
 
 #define SNIP \

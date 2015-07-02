@@ -568,7 +568,8 @@ const Port *Ports::apropos(const char *path) const
 
     //This is the lowest level, now find the best port
     for(const Port &port: ports)
-        if(*path && strstr(port.name, path)==port.name)
+        if(*path && (strstr(port.name, path)==port.name ||
+                    rtosc_match_path(port.name, path)))
             return &port;
 
     return NULL;
