@@ -629,15 +629,17 @@ if __name__ == '__main__':
         print("usage: %s <plugin-uri>" % sys.argv[0])
         sys.exit(1)
 
+    libPrefix = os.getenv("CARLA_LIB_PREFIX")
+
     # -------------------------------------------------------------
     # App initialization
 
-    app = CarlaApplication("Carla2-MODGUI")
+    app = CarlaApplication("Carla2-MODGUI", libPrefix)
 
     # -------------------------------------------------------------
     # Init utils
 
-    pathBinaries, pathResources = getPaths()
+    pathBinaries, pathResources = getPaths(libPrefix)
 
     utilsname = "libcarla_utils.%s" % (DLL_EXTENSION)
 
