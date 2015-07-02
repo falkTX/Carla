@@ -52,6 +52,20 @@ class PPSlider {: {public Fl_Slider, public Fl_Osc_Widget}
   } {
     code {int X=x(),Y=y(),W=w(),H=h();
 
+// catch any (un)learn event first
+{
+	bool middle_mouse = (event == FL_PUSH && Fl::event_state(FL_BUTTON2) && !Fl::event_shift());
+	bool ctl_click    = (event == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+	bool shift_middle = (event == FL_PUSH && Fl::event_state(FL_BUTTON2) && Fl::event_shift());
+	if(middle_mouse || ctl_click) {
+		osc->write("/learn", "s", (loc+ext).c_str());
+		return 1;
+	} else if(shift_middle) {
+		osc->write("/unlearn", "s", (loc+ext).c_str());
+		return 1;
+	}
+}
+
 if ((!Fl::event_buttons())|| (event==0)||(Fl::event_shift()==0)) return(Fl_Slider::handle(event));
 
 if (!Fl::event_inside(X,Y,W,H)) {
@@ -100,7 +114,7 @@ class SUBnoteharmonic {: {public Fl_Osc_Group}
         int x=0;
 if (Fl::event_button1() || Fl::event() == FL_MOUSEWHEEL) x=127-(int)o->value();
    else o->value(127-x);
-   o->osc->writeValue(o->loc + "Phmag" + to_s(n), (char) x);
+   o->osc->writeValue(o->loc + o->ext, (char) x);
 if (x==0) o->selection_color(0);
     else o->selection_color(222);}
         tooltip {harmonic's magnitude} xywh {0 15 10 135} type {Vert Knob} box FLAT_BOX selection_color 222 maximum 127 step 1 value 127
@@ -137,16 +151,16 @@ if (Fl::event_button1() || Fl::event() == FL_MOUSEWHEEL) x=127-(int)o->value();
     code {n=n_;
 make_window();
 harmonic->show();
-
-osc->createLink(base+"Phmag"+to_s(n), mag);
+mag->ext = "Phmag" + to_s(n);
+mag->oscRegister(mag->ext.c_str());
 osc->createLink(base+"Phrelbw"+to_s(n), bw);
-osc->requestValue(base+"Phmag"+to_s(n));
 osc->requestValue(base+"Phrelbw"+to_s(n));
 
 end();} {}
   }
   Function {refresh()} {} {
-    code {osc->requestValue(base+"Phmag"+to_s(n));
+    code {// request values for the widgets
+mag->oscWrite(mag->ext);
 osc->requestValue(base+"Phrelbw"+to_s(n));} {}
   }
   Function {~SUBnoteharmonic()} {} {

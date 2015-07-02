@@ -62,11 +62,11 @@ class EffectMgr:public Presets
         void kill(void) REALTIME;
         void cleanup(void) REALTIME;
 
-        void changeeffectrt(int nefx_) REALTIME;
+        void changeeffectrt(int nefx_, bool avoidSmash=false) REALTIME;
         void changeeffect(int nefx_) NONREALTIME;
         int geteffect(void);
         void changepreset(unsigned char npreset) NONREALTIME;
-        void changepresetrt(unsigned char npreset) REALTIME;
+        void changepresetrt(unsigned char npreset, bool avoidSmash=false) REALTIME;
         unsigned char getpreset(void);
         void seteffectpar(int npar, unsigned char value) NONREALTIME;
         void seteffectparrt(int npar, unsigned char value) REALTIME;
