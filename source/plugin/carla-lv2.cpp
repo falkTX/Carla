@@ -519,7 +519,7 @@ public:
             fDescriptor->set_parameter_value(fHandle, i, curValue);
         }
 
-        if (frames != 0)
+        if (frames == 0)
             return updateParameterOutputs();
 
         // FIXME
