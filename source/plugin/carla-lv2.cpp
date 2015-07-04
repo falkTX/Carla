@@ -83,7 +83,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fLastTimeSpeed(0.0),
-          fIsProcessing(false),
+          fIsOffline(false),
           fBufferSize(0),
           fSampleRate(sampleRate),
           fUridMap(nullptr),
@@ -251,6 +251,8 @@ public:
 
     void lv2_run(const uint32_t frames)
     {
+        fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
+
         if (frames == 0)
         {
             updateParameterOutputs();
@@ -470,10 +472,8 @@ public:
             }
         }
 
-        fIsProcessing = true;
         // FIXME
         fDescriptor->process(fHandle, const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
-        fIsProcessing = false;
 
         // update timePos for next callback
         if (carla_isNotEqual(fLastTimeSpeed, 0.0))
@@ -877,33 +877,8 @@ protected:
 
     // -------------------------------------------------------------------
 
-    uint32_t handleGetBufferSize() const
-    {
-        return fBufferSize;
-    }
-
-    double handleGetSampleRate() const
-    {
-        return fSampleRate;
-    }
-
-    bool handleIsOffline() const
-    {
-        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
-
-        return (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
-    }
-
-    const NativeTimeInfo* handleGetTimeInfo() const
-    {
-        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, nullptr);
-
-        return &fTimeInfo;
-    }
-
     bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
-        CARLA_SAFE_ASSERT_RETURN(fIsProcessing, false);
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->midiOuts > 0, false);
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
@@ -1015,9 +990,8 @@ private:
     NativeTimeInfo  fTimeInfo;
     double          fLastTimeSpeed;
 
-    bool fIsProcessing;
-
     // Lv2 host data
+    bool     fIsOffline;
     uint32_t fBufferSize;
     double   fSampleRate;
 
@@ -1328,22 +1302,22 @@ private:
 
     static uint32_t host_get_buffer_size(NativeHostHandle handle)
     {
-        return handlePtr->handleGetBufferSize();
+        return handlePtr->fBufferSize;
     }
 
     static double host_get_sample_rate(NativeHostHandle handle)
     {
-        return handlePtr->handleGetSampleRate();
+        return handlePtr->fSampleRate;
     }
 
     static bool host_is_offline(NativeHostHandle handle)
     {
-        return handlePtr->handleIsOffline();
+        return handlePtr->fIsOffline;
     }
 
     static const NativeTimeInfo* host_get_time_info(NativeHostHandle handle)
     {
-        return handlePtr->handleGetTimeInfo();
+        return &(handlePtr->fTimeInfo);
     }
 
     static bool host_write_midi_event(NativeHostHandle handle, const NativeMidiEvent* event)

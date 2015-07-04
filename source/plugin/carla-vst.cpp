@@ -449,26 +449,6 @@ public:
 protected:
     // -------------------------------------------------------------------
 
-    uint32_t handleGetBufferSize() const
-    {
-        return fBufferSize;
-    }
-
-    double handleGetSampleRate() const
-    {
-        return fSampleRate;
-    }
-
-    bool handleIsOffline() const
-    {
-        return false;
-    }
-
-    const NativeTimeInfo* handleGetTimeInfo() const
-    {
-        return &fTimeInfo;
-    }
-
     bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->midiOuts > 0, false);
@@ -607,22 +587,23 @@ private:
 
     static uint32_t host_get_buffer_size(NativeHostHandle handle)
     {
-        return handlePtr->handleGetBufferSize();
+        return handlePtr->fBufferSize;
     }
 
     static double host_get_sample_rate(NativeHostHandle handle)
     {
-        return handlePtr->handleGetSampleRate();
+        return handlePtr->fSampleRate;
     }
 
-    static bool host_is_offline(NativeHostHandle handle)
+    static bool host_is_offline(NativeHostHandle /*handle*/)
     {
-        return handlePtr->handleIsOffline();
+        // TODO
+        return false;
     }
 
     static const NativeTimeInfo* host_get_time_info(NativeHostHandle handle)
     {
-        return handlePtr->handleGetTimeInfo();
+        return &(handlePtr->fTimeInfo);
     }
 
     static bool host_write_midi_event(NativeHostHandle handle, const NativeMidiEvent* event)
