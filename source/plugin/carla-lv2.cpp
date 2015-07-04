@@ -258,10 +258,7 @@ public:
     {
         fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
 
-        if (frames == 0)
-            return updateParameterOutputs();
-
-        // cache midi events and time information
+        // cache midi events and time information first
         if (fDescriptor->midiIns > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
@@ -521,6 +518,9 @@ public:
             fPorts.paramsLast[i] = curValue;
             fDescriptor->set_parameter_value(fHandle, i, curValue);
         }
+
+        if (frames != 0)
+            return updateParameterOutputs();
 
         // FIXME
         fDescriptor->process(fHandle, const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames, fMidiEvents, fMidiEventCount);
