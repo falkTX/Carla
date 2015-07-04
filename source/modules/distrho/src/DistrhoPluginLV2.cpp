@@ -241,31 +241,12 @@ public:
 
     void lv2_run(const uint32_t sampleCount)
     {
-        // pre-roll
-        if (sampleCount == 0)
-            return updateParameterOutputs();
-
-        // Check for updated parameters
-        float curValue;
-
-        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
-        {
-            if (fPortControls[i] == nullptr)
-                continue;
-
-            curValue = *fPortControls[i];
-
-            if (fLastControlValues[i] != curValue && ! fPlugin.isParameterOutput(i))
-            {
-                fLastControlValues[i] = curValue;
-                fPlugin.setParameterValue(i, curValue);
-            }
-        }
-
-#if DISTRHO_LV2_USE_EVENTS_IN
-# if DISTRHO_PLUGIN_WANT_MIDI_INPUT
+        // cache midi input and time position first
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
         uint32_t midiEventCount = 0;
-# endif
+#endif
+
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT || DISTRHO_PLUGIN_WANT_TIMEPOS
         LV2_ATOM_SEQUENCE_FOREACH(fPortEventsIn, event)
         {
             if (event == nullptr)
@@ -279,17 +260,22 @@ public:
 
                 const uint8_t* const data((const uint8_t*)(event + 1));
 
-                MidiEvent& midiEvent(fMidiEvents[midiEventCount]);
+                MidiEvent& midiEvent(fMidiEvents[midiEventCount++]);
 
                 midiEvent.frame = event->time.frames;
                 midiEvent.size  = event->body.size;
 
                 if (midiEvent.size > MidiEvent::kDataSize)
+                {
                     midiEvent.dataExt = data;
+                    std::memset(midiEvent.data, 0, MidiEvent::kDataSize);
+                }
                 else
+                {
+                    midiEvent.dataExt = nullptr;
                     std::memcpy(midiEvent.data, data, midiEvent.size);
+                }
 
-                ++midiEventCount;
                 continue;
             }
 # endif
@@ -475,10 +461,21 @@ public:
                                            fLastPositionData.beatUnit > 0 &&
                                            fLastPositionData.beatsPerBar > 0.0f);
 
+                fPlugin.setTimePosition(fTimePosition);
+
                 continue;
             }
 # endif
-# if (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
+        }
+#endif
+
+        // check for messages from UI
+#if DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI
+        LV2_ATOM_SEQUENCE_FOREACH(fPortEventsIn, event)
+        {
+            if (event == nullptr)
+                break;
+
             if (event->body.type == fURIDs.distrhoState && fWorker != nullptr)
             {
                 const void* const data((const void*)(event + 1));
@@ -494,92 +491,104 @@ public:
                 {
                     fWorker->schedule_work(fWorker->handle, event->body.size, data);
                 }
-
-                continue;
             }
-# endif
         }
 #endif
 
-# if DISTRHO_PLUGIN_WANT_TIMEPOS
-        fPlugin.setTimePosition(fTimePosition);
-# endif
+        // Check for updated parameters
+        float curValue;
 
+        for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
+        {
+            if (fPortControls[i] == nullptr)
+                continue;
+
+            curValue = *fPortControls[i];
+
+            if (fLastControlValues[i] != curValue && ! fPlugin.isParameterOutput(i))
+            {
+                fLastControlValues[i] = curValue;
+                fPlugin.setParameterValue(i, curValue);
+            }
+        }
+
+        // Run plugin
+        if (sampleCount != 0)
+        {
 #if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount, fMidiEvents, midiEventCount);
+            fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount, fMidiEvents, midiEventCount);
 #else
-        fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount);
+            fPlugin.run(fPortAudioIns, fPortAudioOuts, sampleCount);
 #endif
 
-# if DISTRHO_PLUGIN_WANT_TIMEPOS
-        // update timePos for next callback
-        if (d_isNotZero(fLastPositionData.speed))
-        {
-            if (fLastPositionData.speed > 0.0)
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+            // update timePos for next callback
+            if (d_isNotZero(fLastPositionData.speed))
             {
-                // playing forwards
-                fLastPositionData.frame += sampleCount;
-            }
-            else
-            {
-                // playing backwards
-                fLastPositionData.frame -= sampleCount;
-
-                if (fLastPositionData.frame < 0)
-                    fLastPositionData.frame = 0;
-            }
-
-            fTimePosition.frame = fLastPositionData.frame;
-
-            if (fTimePosition.bbt.valid)
-            {
-                const double beatsPerMinute = fLastPositionData.beatsPerMinute * fLastPositionData.speed;
-                const double framesPerBeat  = 60.0 * fSampleRate / beatsPerMinute;
-                const double addedBarBeats  = double(sampleCount) / framesPerBeat;
-
-                if (fLastPositionData.barBeat >= 0.0f)
+                if (fLastPositionData.speed > 0.0)
                 {
-                    fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+addedBarBeats,
-                                                          fLastPositionData.beatsPerBar);
+                    // playing forwards
+                    fLastPositionData.frame += sampleCount;
+                }
+                else
+                {
+                    // playing backwards
+                    fLastPositionData.frame -= sampleCount;
 
-                    const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
-                    fTimePosition.bbt.beat = fLastPositionData.barBeat-rest+1.0;
-                    fTimePosition.bbt.tick = rest*fTimePosition.bbt.ticksPerBeat+0.5;
-
-                    if (fLastPositionData.bar >= 0)
-                    {
-                        fLastPositionData.bar += std::floor((fLastPositionData.barBeat+addedBarBeats)/
-                                                             fLastPositionData.beatsPerBar);
-
-                        if (fLastPositionData.bar < 0)
-                            fLastPositionData.bar = 0;
-
-                        fTimePosition.bbt.bar = fLastPositionData.bar + 1;
-
-                        fTimePosition.bbt.barStartTick = fTimePosition.bbt.ticksPerBeat*
-                                                         fTimePosition.bbt.beatsPerBar*
-                                                        (fTimePosition.bbt.bar-1);
-                    }
+                    if (fLastPositionData.frame < 0)
+                        fLastPositionData.frame = 0;
                 }
 
-                fTimePosition.bbt.beatsPerMinute = std::abs(beatsPerMinute);
+                fTimePosition.frame = fLastPositionData.frame;
+
+                if (fTimePosition.bbt.valid)
+                {
+                    const double beatsPerMinute = fLastPositionData.beatsPerMinute * fLastPositionData.speed;
+                    const double framesPerBeat  = 60.0 * fSampleRate / beatsPerMinute;
+                    const double addedBarBeats  = double(sampleCount) / framesPerBeat;
+
+                    if (fLastPositionData.barBeat >= 0.0f)
+                    {
+                        fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+addedBarBeats,
+                                                              fLastPositionData.beatsPerBar);
+
+                        const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
+                        fTimePosition.bbt.beat = fLastPositionData.barBeat-rest+1.0;
+                        fTimePosition.bbt.tick = rest*fTimePosition.bbt.ticksPerBeat+0.5;
+
+                        if (fLastPositionData.bar >= 0)
+                        {
+                            fLastPositionData.bar += std::floor((fLastPositionData.barBeat+addedBarBeats)/
+                                                             fLastPositionData.beatsPerBar);
+
+                            if (fLastPositionData.bar < 0)
+                                fLastPositionData.bar = 0;
+
+                            fTimePosition.bbt.bar = fLastPositionData.bar + 1;
+
+                            fTimePosition.bbt.barStartTick = fTimePosition.bbt.ticksPerBeat*
+                                                             fTimePosition.bbt.beatsPerBar*
+                                                            (fTimePosition.bbt.bar-1);
+                        }
+                    }
+
+                    fTimePosition.bbt.beatsPerMinute = std::abs(beatsPerMinute);
+                }
             }
+#endif
         }
-# endif
 
         updateParameterOutputs();
 
-#if DISTRHO_LV2_USE_EVENTS_OUT
+#if DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI
         const uint32_t capacity = fPortEventsOut->atom.size;
 
         bool needsInit = true;
         uint32_t size, offset = 0;
         LV2_Atom_Event* aev;
 
-# if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
-        // TODO
-# endif
-# if (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI)
+        // TODO - MIDI Output
+
         for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
         {
             if (! fNeededUiSends[i])
@@ -634,7 +643,6 @@ public:
                 break;
             }
         }
-# endif
 #endif
     }
 
