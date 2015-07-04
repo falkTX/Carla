@@ -22,7 +22,7 @@
 
 // -----------------------------------------------------------------------
 
-class MidiSequencerPlugin : public NativePluginAndUiClass,
+class MidiPatternPlugin : public NativePluginAndUiClass,
                             public AbstractMidiPlayer
 {
 public:
@@ -30,8 +30,8 @@ public:
         kParameterCount = 0
     };
 
-    MidiSequencerPlugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, "midiseq-ui"),
+    MidiPatternPlugin(const NativeHostDescriptor* const host)
+        : NativePluginAndUiClass(host, "midipattern-ui"),
           fNeedsAllNotesOff(false),
           fWantInEvents(false),
           fWasPlayingBefore(false),
@@ -349,13 +349,13 @@ private:
         }
     }
 
-    PluginClassEND(MidiSequencerPlugin)
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiSequencerPlugin)
+    PluginClassEND(MidiPatternPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiPatternPlugin)
 };
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor midisequencerDesc = {
+static const NativePluginDescriptor midipatternDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
@@ -364,26 +364,26 @@ static const NativePluginDescriptor midisequencerDesc = {
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
-    /* midiIns   */ 1,
+    /* midiIns   */ 0,
     /* midiOuts  */ 1,
-    /* paramIns  */ MidiSequencerPlugin::kParameterCount,
+    /* paramIns  */ MidiPatternPlugin::kParameterCount,
     /* paramOuts */ 0,
-    /* name      */ "MIDI Sequencer",
-    /* label     */ "midisequencer",
+    /* name      */ "MIDI Pattern",
+    /* label     */ "midipattern",
     /* maker     */ "falkTX, tatch",
     /* copyright */ "GNU GPL v2+",
-    PluginDescriptorFILL(MidiSequencerPlugin)
+    PluginDescriptorFILL(MidiPatternPlugin)
 };
 
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_midisequencer();
+void carla_register_native_plugin_midipattern();
 
 CARLA_EXPORT
-void carla_register_native_plugin_midisequencer()
+void carla_register_native_plugin_midipattern()
 {
-    carla_register_native_plugin(&midisequencerDesc);
+    carla_register_native_plugin(&midipatternDesc);
 }
 
 // -----------------------------------------------------------------------

@@ -35,7 +35,7 @@ extern void carla_register_native_plugin_audiofile(void);
 
 // MIDI file and sequencer
 extern void carla_register_native_plugin_midifile(void);
-extern void carla_register_native_plugin_midisequencer(void);
+extern void carla_register_native_plugin_midipattern(void);
 
 // Carla
 extern void carla_register_native_plugin_carla(void);
@@ -85,7 +85,7 @@ void carla_register_all_native_plugins(void)
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
 #ifdef CARLA_OS_LINUX
-    carla_register_native_plugin_midisequencer();
+    carla_register_native_plugin_midipattern();
 #endif
 
 #ifndef CARLA_OS_WIN

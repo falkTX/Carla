@@ -84,7 +84,7 @@ OBJS += \
 	$(OBJDIR)/audio-file.cpp.o \
 	$(OBJDIR)/bigmeter.cpp.o \
 	$(OBJDIR)/midi-file.cpp.o \
-	$(OBJDIR)/midi-sequencer.cpp.o \
+	$(OBJDIR)/midi-pattern.cpp.o \
 	$(OBJDIR)/notes.cpp.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -256,7 +256,7 @@ $(OBJDIR)/midi-file.cpp.o: midi-file.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-$(OBJDIR)/midi-sequencer.cpp.o: midi-sequencer.cpp
+$(OBJDIR)/midi-pattern.cpp.o: midi-pattern.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
