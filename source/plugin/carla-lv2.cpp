@@ -195,7 +195,7 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
+        carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
         carla_zeroStruct(fTimeInfo);
 
         // hosts may not send all values, resulting on some invalid data
@@ -259,34 +259,13 @@ public:
         fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
 
         if (frames == 0)
-        {
-            updateParameterOutputs();
-            return;
-        }
+            return updateParameterOutputs();
 
-        // Check for updated parameters
-        float curValue;
-
-        for (uint32_t i=0; i < fPorts.paramCount; ++i)
-        {
-            if (fPorts.paramsOut[i])
-                continue;
-
-            CARLA_SAFE_ASSERT_CONTINUE(fPorts.paramsPtr[i] != nullptr)
-
-            curValue = *fPorts.paramsPtr[i];
-
-            if (carla_isEqual(fPorts.paramsLast[i], curValue))
-                continue;
-
-            fPorts.paramsLast[i] = curValue;
-            fDescriptor->set_parameter_value(fHandle, i, curValue);
-        }
-
-        if (fDescriptor->midiIns > 0 || fDescriptor->midiOuts > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
+        // cache midi events and time information
+        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
         {
             fMidiEventCount = 0;
-            carla_zeroStructs(fMidiEvents, kMaxMidiEvents*2);
+            carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
 
             if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
             {
@@ -490,22 +469,57 @@ public:
                         continue;
                     if (event->time.frames >= frames)
                         break;
-                    if (fMidiEventCount >= kMaxMidiEvents*2)
+                    if (fMidiEventCount >= kMaxMidiEvents)
                         break;
 
                     const uint8_t* const data((const uint8_t*)(event + 1));
 
                     NativeMidiEvent& nativeEvent(fMidiEvents[fMidiEventCount++]);
-                    carla_zeroStruct(nativeEvent);
 
                     nativeEvent.port = (uint8_t)i;
                     nativeEvent.size = (uint8_t)event->body.size;
                     nativeEvent.time = (uint32_t)event->time.frames;
 
-                    for (uint32_t j=0; j < event->body.size; ++j)
+                    uint32_t j=0;
+                    for (uint32_t size=event->body.size; j<size; ++j)
                         nativeEvent.data[j] = data[j];
+                    for (; j<4; ++j)
+                        nativeEvent.data[j] = 0;
                 }
             }
+        }
+
+        // init midi out data
+        if (fDescriptor->midiOuts > 0)
+        {
+            for (uint32_t i=0, size=fDescriptor->midiOuts; i<size; ++i)
+            {
+                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
+                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
+
+                Ports::MidiOutData& mData(fPorts.midiOutData[i]);
+                mData.capacity = seq->atom.size;
+                mData.offset   = 0;
+            }
+        }
+
+        // Check for updated parameters
+        float curValue;
+
+        for (uint32_t i=0; i < fPorts.paramCount; ++i)
+        {
+            if (fPorts.paramsOut[i])
+                continue;
+
+            CARLA_SAFE_ASSERT_CONTINUE(fPorts.paramsPtr[i] != nullptr)
+
+            curValue = *fPorts.paramsPtr[i];
+
+            if (carla_isEqual(fPorts.paramsLast[i], curValue))
+                continue;
+
+            fPorts.paramsLast[i] = curValue;
+            fDescriptor->set_parameter_value(fHandle, i, curValue);
         }
 
         // FIXME
@@ -566,60 +580,6 @@ public:
         }
 
         updateParameterOutputs();
-
-        if (fDescriptor->midiOuts > 0)
-        {
-            uint32_t capacities[fDescriptor->midiOuts];
-            uint32_t offsets   [fDescriptor->midiOuts];
-
-            for (uint32_t i=0, size=fDescriptor->midiOuts; i<size; ++i)
-            {
-                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
-                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
-
-                capacities[i] = seq->atom.size;
-                offsets   [i] = 0;
-            }
-
-            LV2_Atom_Event* aev;
-            uint32_t size;
-
-            // reverse lookup MIDI events
-            for (uint32_t i = (kMaxMidiEvents*2)-1; i >= fMidiEventCount; --i)
-            {
-                if (fMidiEvents[i].data[0] == 0)
-                    break;
-
-                NativeMidiEvent& nativeEvent(fMidiEvents[i]);
-
-                const uint8_t port(nativeEvent.port);
-                CARLA_SAFE_ASSERT_CONTINUE(nativeEvent.port < fDescriptor->midiOuts);
-
-                LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
-                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
-
-                if (sizeof(LV2_Atom_Event) + nativeEvent.size > capacities[port] - offsets[port])
-                    continue;
-
-                if (offsets[port] == 0)
-                {
-                    seq->atom.size = 0;
-                    seq->atom.type = fURIs.atomSequence;
-                    seq->body.unit = 0;
-                    seq->body.pad  = 0;
-                }
-
-                aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + offsets[port]);
-                aev->time.frames = nativeEvent.time;
-                aev->body.size   = nativeEvent.size;
-                aev->body.type   = fURIs.midiEvent;
-                std::memcpy(LV2_ATOM_BODY(&aev->body), nativeEvent.data, nativeEvent.size);
-
-                size            = lv2_atom_pad_size(sizeof(LV2_Atom_Event) + nativeEvent.size);
-                offsets[port]  += size;
-                seq->atom.size += size;
-            }
-        }
     }
 
     // -------------------------------------------------------------------
@@ -936,20 +896,39 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->midiOuts > 0, false);
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
-        CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
+        CARLA_SAFE_ASSERT_RETURN(event->size > 0, false);
 
-        // reverse-find first free event, and put it there
-        for (uint32_t i=(kMaxMidiEvents*2)-1; i > fMidiEventCount; --i)
+        const uint8_t port(event->port);
+        CARLA_SAFE_ASSERT_RETURN(port < fDescriptor->midiOuts, false);
+
+        LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
+        CARLA_SAFE_ASSERT_RETURN(seq != nullptr, false);
+
+        Ports::MidiOutData& mData(fPorts.midiOutData[port]);
+
+        if (sizeof(LV2_Atom_Event) + event->size > mData.capacity - mData.offset)
+            return false;
+
+        if (mData.offset == 0)
         {
-            if (fMidiEvents[i].data[0] != 0)
-                continue;
-
-            std::memcpy(&fMidiEvents[i], event, sizeof(NativeMidiEvent));
-            return true;
+            seq->atom.size = 0;
+            seq->atom.type = fURIs.atomSequence;
+            seq->body.unit = 0;
+            seq->body.pad  = 0;
         }
 
-        carla_stdout("NativePlugin::handleWriteMidiEvent(%p) - buffer full", event);
-        return false;
+        LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
+
+        aev->time.frames = event->time;
+        aev->body.size   = event->size;
+        aev->body.type   = fURIs.midiEvent;
+        std::memcpy(LV2_ATOM_BODY(&aev->body), event->data, event->size);
+
+        const uint32_t size = lv2_atom_pad_size(sizeof(LV2_Atom_Event) + event->size);
+        mData.offset       += size;
+        seq->atom.size     += size;
+
+        return true;
     }
 
     void handleUiParameterChanged(const uint32_t index, const float value) const
@@ -1041,7 +1020,7 @@ private:
     LV2_Program_Descriptor              fProgramDesc;
 
     uint32_t        fMidiEventCount;
-    NativeMidiEvent fMidiEvents[kMaxMidiEvents*2];
+    NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
 
     // Lv2 host data
@@ -1157,8 +1136,19 @@ private:
     } fUI;
 
     struct Ports {
+        // need to save current state
+        struct MidiOutData {
+            uint32_t capacity;
+            uint32_t offset;
+
+            MidiOutData()
+                : capacity(0),
+                  offset(0) {}
+        };
+
         const LV2_Atom_Sequence** eventsIn;
         /* */ LV2_Atom_Sequence** midiOuts;
+        /* */ MidiOutData*        midiOutData;
         const float** audioIns;
         /* */ float** audioOuts;
         float*   freewheel;
@@ -1190,6 +1180,12 @@ private:
             {
                 delete[] midiOuts;
                 midiOuts = nullptr;
+            }
+
+            if (midiOutData != nullptr)
+            {
+                delete[] midiOutData;
+                midiOutData = nullptr;
             }
 
             if (audioIns != nullptr)
@@ -1243,6 +1239,7 @@ private:
             if (desc->midiOuts > 0)
             {
                 midiOuts = new LV2_Atom_Sequence*[desc->midiOuts];
+                midiOutData = new MidiOutData[desc->midiOuts];
 
                 for (uint32_t i=0; i < desc->midiOuts; ++i)
                     midiOuts[i] = nullptr;
