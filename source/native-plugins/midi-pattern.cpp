@@ -23,7 +23,7 @@
 // -----------------------------------------------------------------------
 
 class MidiPatternPlugin : public NativePluginAndUiClass,
-                            public AbstractMidiPlayer
+                          public AbstractMidiPlayer
 {
 public:
     enum Parameters {
@@ -33,10 +33,8 @@ public:
     MidiPatternPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "midipattern-ui"),
           fNeedsAllNotesOff(false),
-          fWantInEvents(false),
           fWasPlayingBefore(false),
           fTicksPerFrame(0.0),
-          fInEvents(),
           fMidiOut(this),
           fTimeInfo()
     {
@@ -47,34 +45,10 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float**, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float**, const uint32_t frames, const NativeMidiEvent*, uint32_t) override
     {
         if (const NativeTimeInfo* const timeInfo = getTimeInfo())
             fTimeInfo = *timeInfo;
-
-        if (fWantInEvents)
-        {
-            if (midiEventCount > 0)
-            {
-                RawMidiEvent rawMidiEvent;
-
-                for (uint32_t i=0; i < midiEventCount; ++i)
-                {
-                    const NativeMidiEvent* const midiEvent(&midiEvents[i]);
-
-                    rawMidiEvent.time    = fTimeInfo.playing ? fTimeInfo.frame + midiEvent->time : 0;
-                    rawMidiEvent.size    = midiEvent->size;
-                    rawMidiEvent.data[0] = midiEvent->data[0];
-                    rawMidiEvent.data[1] = midiEvent->data[1];
-                    rawMidiEvent.data[2] = midiEvent->data[2];
-                    rawMidiEvent.data[3] = midiEvent->data[3];
-
-                    fInEvents.appendRT(rawMidiEvent);
-                }
-            }
-
-            fInEvents.trySplice();
-        }
 
         if (fWasPlayingBefore != fTimeInfo.playing)
         {
@@ -224,6 +198,7 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(time), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(size), true);
+            CARLA_SAFE_ASSERT_RETURN(size > 0, true);
 
             uint8_t data[size], dvalue;
 
@@ -245,6 +220,7 @@ protected:
 
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsULong(time), true);
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(size), true);
+            CARLA_SAFE_ASSERT_RETURN(size > 0, true);
 
             uint8_t data[size], dvalue;
 
@@ -266,54 +242,9 @@ protected:
 
 private:
     bool fNeedsAllNotesOff;
-    bool fWantInEvents;
     bool fWasPlayingBefore;
 
     double fTicksPerFrame;
-
-    struct InRtEvents {
-        CarlaMutex mutex;
-        RtLinkedList<RawMidiEvent>::Pool dataPool;
-        RtLinkedList<RawMidiEvent> data;
-        RtLinkedList<RawMidiEvent> dataPendingRT;
-
-        InRtEvents() noexcept
-            : mutex(),
-              dataPool(MIN_PREALLOCATED_EVENT_COUNT, MAX_PREALLOCATED_EVENT_COUNT),
-              data(dataPool),
-              dataPendingRT(dataPool) {}
-
-        ~InRtEvents() noexcept
-        {
-            clear();
-        }
-
-        void appendRT(const RawMidiEvent& event) noexcept
-        {
-            dataPendingRT.append(event);
-        }
-
-        void clear() noexcept
-        {
-            mutex.lock();
-            data.clear();
-            dataPendingRT.clear();
-            mutex.unlock();
-        }
-
-        void trySplice() noexcept
-        {
-            if (mutex.tryLock())
-            {
-                if (dataPendingRT.count() > 0)
-                    dataPendingRT.moveTo(data, true);
-                mutex.unlock();
-            }
-        }
-
-        CARLA_DECLARE_NON_COPY_STRUCT(InRtEvents);
-
-    } fInEvents;
 
     MidiPattern    fMidiOut;
     NativeTimeInfo fTimeInfo;
