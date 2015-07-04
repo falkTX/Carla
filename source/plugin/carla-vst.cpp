@@ -476,7 +476,13 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(event->data[0] != 0, false);
 
         if (fMidiOutEvents.numEvents >= static_cast<int32_t>(kMaxMidiEvents))
-            return false;
+        {
+            // send current events
+            hostCallback(audioMasterProcessEvents, 0, 0, &fMidiOutEvents, 0.0f);
+
+            // clear
+            fMidiOutEvents.numEvents = 0;
+        }
 
         VstMidiEvent& vstMidiEvent(fMidiOutEvents.mdata[fMidiOutEvents.numEvents++]);
 
@@ -489,7 +495,7 @@ protected:
         for (; i<4; ++i)
             vstMidiEvent.midiData[i] = 0;
 
-        return false;
+        return true;
     }
 
     void handleUiParameterChanged(const uint32_t /*index*/, const float /*value*/) const
@@ -581,9 +587,7 @@ private:
 
         FixedVstEvents()
             : numEvents(0),
-              reserved(0),
-              data(),
-              mdata()
+              reserved(0)
         {
             for (uint32_t i=0; i<kMaxMidiEvents; ++i)
                 data[i] = (VstEvent*)&mdata[i];
