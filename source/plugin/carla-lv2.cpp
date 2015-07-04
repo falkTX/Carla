@@ -192,21 +192,11 @@ public:
             fBufferSize = 1024;
         }
 
-        fHandle = fDescriptor->instantiate(&fHost);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
-
         carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
         carla_zeroStruct(fTimeInfo);
 
-        // hosts may not send all values, resulting on some invalid data
-        fTimeInfo.bbt.bar   = 1;
-        fTimeInfo.bbt.beat  = 1;
-        fTimeInfo.bbt.tick  = 0;
-        fTimeInfo.bbt.barStartTick = 0;
-        fTimeInfo.bbt.beatsPerBar  = 4;
-        fTimeInfo.bbt.beatType     = 4;
-        fTimeInfo.bbt.ticksPerBeat = 960.0;
-        fTimeInfo.bbt.beatsPerMinute = 120.0;
+        fHandle = fDescriptor->instantiate(&fHost);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
         if (fDescriptor->midiIns > 0)
             fUI.portOffset += fDescriptor->midiIns;
@@ -238,6 +228,16 @@ public:
             fDescriptor->activate(fHandle);
 
         carla_zeroStruct(fTimeInfo);
+
+        // hosts may not send all values, resulting on some invalid data
+        fTimeInfo.bbt.bar   = 1;
+        fTimeInfo.bbt.beat  = 1;
+        fTimeInfo.bbt.tick  = 0;
+        fTimeInfo.bbt.barStartTick = 0;
+        fTimeInfo.bbt.beatsPerBar  = 4;
+        fTimeInfo.bbt.beatType     = 4;
+        fTimeInfo.bbt.ticksPerBeat = 960.0;
+        fTimeInfo.bbt.beatsPerMinute = 120.0;
     }
 
     void lv2_deactivate()
@@ -312,7 +312,7 @@ public:
                         else
                             carla_stderr("Unknown lv2 ticksPerBeat value type");
 
-                        if (fLastPositionData.ticksPerBeat > 0)
+                        if (fLastPositionData.ticksPerBeat > 0.0)
                             fTimeInfo.bbt.ticksPerBeat = fLastPositionData.ticksPerBeat;
                     }
 
@@ -1038,7 +1038,7 @@ private:
         float    beatsPerMinute;
         int64_t  frame;
         double   speed;
-        int64_t  ticksPerBeat;
+        double   ticksPerBeat;
 
         Lv2PositionData()
             : bar(-1),
@@ -1048,7 +1048,7 @@ private:
               beatsPerMinute(0.0f),
               frame(-1),
               speed(0.0),
-              ticksPerBeat(-1) {}
+              ticksPerBeat(-1.0) {}
 
     } fLastPositionData;
 
@@ -1064,7 +1064,6 @@ private:
         LV2_URID midiEvent;
         LV2_URID timePos;
         LV2_URID timeBar;
-        LV2_URID timeBeat;
         LV2_URID timeBarBeat;
         LV2_URID timeBeatsPerBar;
         LV2_URID timeBeatsPerMinute;
@@ -1085,7 +1084,6 @@ private:
               midiEvent(0),
               timePos(0),
               timeBar(0),
-              timeBeat(0),
               timeBarBeat(0),
               timeBeatsPerBar(0),
               timeBeatsPerMinute(0),
@@ -1107,7 +1105,6 @@ private:
             midiEvent    = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
             timePos      = uridMap->map(uridMap->handle, LV2_TIME__Position);
             timeBar      = uridMap->map(uridMap->handle, LV2_TIME__bar);
-            timeBeat     = uridMap->map(uridMap->handle, LV2_TIME__beat);
             timeBarBeat  = uridMap->map(uridMap->handle, LV2_TIME__barBeat);
             timeBeatUnit = uridMap->map(uridMap->handle, LV2_TIME__beatUnit);
             timeFrame    = uridMap->map(uridMap->handle, LV2_TIME__frame);

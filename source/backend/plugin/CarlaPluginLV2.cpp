@@ -2807,7 +2807,7 @@ public:
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
                     if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
-                                                                              !carla_isEqual(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat)))
+                                                                              fLastTimeInfo.bbt.beat != timeInfo.bbt.beat))
                     {
                         fParamBuffers[k] = static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
                         doPostRt = true;
@@ -2880,7 +2880,7 @@ public:
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat)));
 
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT);
-                    lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.beat -1);
+                    lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.beat - 1);
 
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_BEAT_UNIT);
                     lv2_atom_forge_int(&fAtomForge, static_cast<int32_t>(timeInfo.bbt.beatType));
@@ -2892,7 +2892,7 @@ public:
                     lv2_atom_forge_float(&fAtomForge, static_cast<float>(timeInfo.bbt.beatsPerMinute));
 
                     lv2_atom_forge_key(&fAtomForge, CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT);
-                    lv2_atom_forge_double(&fAtomForge, static_cast<float>(timeInfo.bbt.ticksPerBeat));
+                    lv2_atom_forge_double(&fAtomForge, timeInfo.bbt.ticksPerBeat);
                 }
 
                 lv2_atom_forge_pop(&fAtomForge, &forgeFrame);
