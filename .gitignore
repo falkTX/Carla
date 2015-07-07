@@ -60,6 +60,7 @@ source/carla_config.py
 source/digitalpeakmeter.py
 source/ledbutton.py
 source/paramspinbox.py
+source/pianoroll.py
 source/pixmapbutton.py
 source/pixmapdial.py
 source/pixmapkeyboard.py

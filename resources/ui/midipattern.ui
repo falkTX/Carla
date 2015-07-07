@@ -1,0 +1,499 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MidiPatternW</class>
+ <widget class="QMainWindow" name="MidiPatternW">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>755</width>
+    <height>436</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MIDI Pattern</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <widget class="ModeIndicator" name="modeIndicator" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>30</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>30</width>
+          <height>20</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="timeSigLabel">
+        <property name="text">
+         <string>Time Signature:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="timeSigBox">
+        <property name="editable">
+         <bool>true</bool>
+        </property>
+        <property name="currentIndex">
+         <number>3</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>1/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>4/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>5/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>6/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>12/8</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>5</width>
+          <height>5</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="measureLabel">
+        <property name="text">
+         <string>Measures:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="measureBox">
+        <property name="currentIndex">
+         <number>3</number>
+        </property>
+        <item>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>5</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>6</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>7</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>8</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>9</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>10</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>11</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>12</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>13</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>14</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>15</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>16</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>17</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>5</width>
+          <height>5</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="defaultLengthLabel">
+        <property name="text">
+         <string>Default Length:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="defaultLengthBox">
+        <item>
+         <property name="text">
+          <string>1/16</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/15</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/12</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/9</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/8</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/6</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>5</width>
+          <height>5</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QLabel" name="quantizeLabel">
+        <property name="text">
+         <string>Quantize:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="quantizeBox">
+        <item>
+         <property name="text">
+          <string>1/16</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/15</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/12</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/9</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/8</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/6</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/4</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/3</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1/2</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>1</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_4">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>5</width>
+          <height>5</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QSlider" name="hSlider">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <widget class="QSlider" name="vSlider">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="PianoRollView" name="graphicsView"/>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>755</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_File">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="act_file_quit"/>
+   </widget>
+   <widget class="QMenu" name="menu_Edit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="act_edit_insert"/>
+    <addaction name="act_edit_velocity"/>
+    <addaction name="act_edit_select_all"/>
+   </widget>
+   <addaction name="menu_File"/>
+   <addaction name="menu_Edit"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="act_file_quit">
+   <property name="text">
+    <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="act_edit_insert">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Insert Mode</string>
+   </property>
+   <property name="shortcut">
+    <string>F</string>
+   </property>
+  </action>
+  <action name="act_edit_velocity">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Velocity Mode</string>
+   </property>
+   <property name="shortcut">
+    <string>D</string>
+   </property>
+  </action>
+  <action name="act_edit_select_all">
+   <property name="text">
+    <string>Select All</string>
+   </property>
+   <property name="shortcut">
+    <string>A</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PianoRollView</class>
+   <extends>QGraphicsView</extends>
+   <header>pianoroll.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ModeIndicator</class>
+   <extends>QWidget</extends>
+   <header>pianoroll.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>act_file_quit</sender>
+   <signal>triggered()</signal>
+   <receiver>MidiPatternW</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>377</x>
+     <y>217</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

@@ -269,6 +269,7 @@ RES = \
 	bin/resources/paramspinbox.py \
 	bin/resources/patchcanvas.py \
 	bin/resources/patchcanvas_theme.py \
+	bin/resources/pianoroll.py \
 	bin/resources/pixmapbutton.py \
 	bin/resources/pixmapdial.py \
 	bin/resources/pixmapkeyboard.py \
@@ -290,6 +291,7 @@ RES = \
 	bin/resources/ui_carla_settings.py \
 	bin/resources/ui_carla_settings_driver.py \
 	bin/resources/ui_inputdialog_value.py \
+	bin/resources/ui_midipattern.py \
 	source/carla_config.py \
 	source/resources_rc.py
 
@@ -333,7 +335,8 @@ UIs = \
 	source/ui_carla_refresh.py \
 	source/ui_carla_settings.py \
 	source/ui_carla_settings_driver.py \
-	source/ui_inputdialog_value.py
+	source/ui_inputdialog_value.py \
+	source/ui_midipattern.py
 
 UI: $(UIs)
 
@@ -351,6 +354,7 @@ WIDGETS = \
 	source/digitalpeakmeter.py \
 	source/ledbutton.py \
 	source/paramspinbox.py \
+	source/pianoroll.py \
 	source/pixmapbutton.py \
 	source/pixmapdial.py \
 	source/pixmapkeyboard.py \
@@ -593,6 +597,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/paramspinbox.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/patchcanvas.py              $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/patchcanvas_theme.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/pianoroll.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/pixmapbutton.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/pixmapdial.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/pixmapkeyboard.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
@@ -614,6 +619,7 @@ endif
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/
 	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(PREFIX)/share/carla/ui_midipattern.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
 
 	# Adjust PREFIX value in script files
 	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
