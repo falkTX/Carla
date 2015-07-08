@@ -609,14 +609,16 @@ public:
                 else
                     max = 1.0f;
 
-                if (min > max)
+                if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': min > max", paramName);
-                    min = max - 0.1f;
+                    min *= sampleRate;
+                    max *= sampleRate;
+                    pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
                 }
-                else if (carla_isEqual(min, max))
+
+                if (min >= max)
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': min == max", paramName);
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", paramName);
                     max = min + 0.1f;
                 }
 
@@ -630,14 +632,6 @@ public:
                     def = min;
                 else if (def > max)
                     def = max;
-
-                if (LADSPA_IS_HINT_SAMPLE_RATE(portRangeHints.HintDescriptor))
-                {
-                    min *= sampleRate;
-                    max *= sampleRate;
-                    def *= sampleRate;
-                    pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
-                }
 
                 if (LADSPA_IS_HINT_TOGGLED(portRangeHints.HintDescriptor))
                 {

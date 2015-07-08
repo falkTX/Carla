@@ -2079,8 +2079,12 @@ public:
                 else
                     max = 1.0f;
 
-                if (min > max)
-                    max = min;
+                if (LV2_IS_PORT_SAMPLE_RATE(portProps))
+                {
+                    min *= sampleRate;
+                    max *= sampleRate;
+                    pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
+                }
 
                 // stupid hack for ir.lv2 (broken plugin)
                 if (std::strcmp(fRdfDescriptor->URI, "http://factorial.hu/plugins/lv2/ir") == 0 && std::strncmp(fRdfDescriptor->Ports[i].Name, "FileHash", 8) == 0)
@@ -2089,9 +2093,9 @@ public:
                     max = (float)0xffffff;
                 }
 
-                if (carla_isEqual(min, max))
+                if (min >= max)
                 {
-                    carla_stderr2("WARNING - Broken plugin parameter '%s': max == min", fRdfDescriptor->Ports[i].Name);
+                    carla_stderr2("WARNING - Broken plugin parameter '%s': min >= max", fRdfDescriptor->Ports[i].Name);
                     max = min + 0.1f;
                 }
 
@@ -2113,14 +2117,6 @@ public:
                     def = min;
                 else if (def > max)
                     def = max;
-
-                if (LV2_IS_PORT_SAMPLE_RATE(portProps))
-                {
-                    min *= sampleRate;
-                    max *= sampleRate;
-                    def *= sampleRate;
-                    pData->param.data[j].hints |= PARAMETER_USES_SAMPLERATE;
-                }
 
                 if (LV2_IS_PORT_TOGGLED(portProps))
                 {
