@@ -27,21 +27,182 @@ class MidiPatternPlugin : public NativePluginAndUiClass,
 {
 public:
     enum Parameters {
-        kParameterCount = 0
+        kParameterTimeSig = 0,
+        kParameterMeasures,
+        kParameterDefLength,
+        kParameterQuantize,
+        kParameterCount
     };
 
     MidiPatternPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "midipattern-ui"),
           fNeedsAllNotesOff(false),
           fWasPlayingBefore(false),
+          fTimeSigNum(4),
           fTicksPerFrame(0.0),
+          fMaxTicks(0.0),
           fMidiOut(this),
           fTimeInfo()
     {
         carla_zeroStruct(fTimeInfo);
+
+        // set default param values
+        fParameters[kParameterTimeSig]   = 3.0f;
+        fParameters[kParameterMeasures]  = 4.0f;
+        fParameters[kParameterDefLength] = 4.0f;
+        fParameters[kParameterQuantize]  = 4.0f;
     }
 
 protected:
+    // -------------------------------------------------------------------
+    // Plugin parameter calls
+
+    uint32_t getParameterCount() const override
+    {
+        return kParameterCount;
+    }
+
+    const NativeParameter* getParameterInfo(const uint32_t index) const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount, nullptr);
+
+        static NativeParameter param;
+        static NativeParameterScalePoint scalePoints[10];
+
+        int hints = NATIVE_PARAMETER_IS_ENABLED|NATIVE_PARAMETER_IS_AUTOMABLE|NATIVE_PARAMETER_IS_INTEGER;
+
+        switch (index)
+        {
+        case 0:
+            hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
+            param.name = "Time Signature";
+            param.ranges.def = 3.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 5.0f;
+            scalePoints[0].value = 0.0f;
+            scalePoints[0].label = "1/4";
+            scalePoints[1].value = 1.0f;
+            scalePoints[1].label = "2/4";
+            scalePoints[2].value = 2.0f;
+            scalePoints[2].label = "3/4";
+            scalePoints[3].value = 3.0f;
+            scalePoints[3].label = "4/4";
+            scalePoints[4].value = 4.0f;
+            scalePoints[4].label = "5/4";
+            scalePoints[5].value = 5.0f;
+            scalePoints[5].label = "6/4";
+            param.scalePointCount = 6;
+            param.scalePoints     = scalePoints;
+            break;
+        case 1:
+            param.name = "Measures";
+            param.ranges.def = 4.0f;
+            param.ranges.min = 1.0f;
+            param.ranges.max = 16.0f;
+            break;
+        case 2:
+            hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
+            param.name = "Default Length";
+            param.ranges.def = 4.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 9.0f;
+            scalePoints[0].value = 0.0f;
+            scalePoints[0].label = "1/16";
+            scalePoints[1].value = 1.0f;
+            scalePoints[1].label = "1/15";
+            scalePoints[2].value = 2.0f;
+            scalePoints[2].label = "1/12";
+            scalePoints[3].value = 3.0f;
+            scalePoints[3].label = "1/9";
+            scalePoints[4].value = 4.0f;
+            scalePoints[4].label = "1/8";
+            scalePoints[5].value = 5.0f;
+            scalePoints[5].label = "1/6";
+            scalePoints[6].value = 6.0f;
+            scalePoints[6].label = "1/4";
+            scalePoints[7].value = 7.0f;
+            scalePoints[7].label = "1/3";
+            scalePoints[8].value = 8.0f;
+            scalePoints[8].label = "1/2";
+            scalePoints[9].value = 9.0f;
+            scalePoints[9].label = "1";
+            param.scalePointCount = 10;
+            param.scalePoints     = scalePoints;
+            break;
+        case 3:
+            hints |= NATIVE_PARAMETER_USES_SCALEPOINTS;
+            param.name = "Quantize";
+            param.ranges.def = 4.0f;
+            param.ranges.min = 0.0f;
+            param.ranges.max = 9.0f;
+            scalePoints[0].value = 0.0f;
+            scalePoints[0].label = "1/16";
+            scalePoints[1].value = 1.0f;
+            scalePoints[1].label = "1/15";
+            scalePoints[2].value = 2.0f;
+            scalePoints[2].label = "1/12";
+            scalePoints[3].value = 3.0f;
+            scalePoints[3].label = "1/9";
+            scalePoints[4].value = 4.0f;
+            scalePoints[4].label = "1/8";
+            scalePoints[5].value = 5.0f;
+            scalePoints[5].label = "1/6";
+            scalePoints[6].value = 6.0f;
+            scalePoints[6].label = "1/4";
+            scalePoints[7].value = 7.0f;
+            scalePoints[7].label = "1/3";
+            scalePoints[8].value = 8.0f;
+            scalePoints[8].label = "1/2";
+            scalePoints[9].value = 9.0f;
+            scalePoints[9].label = "1";
+            param.scalePointCount = 10;
+            param.scalePoints     = scalePoints;
+            break;
+        }
+
+        param.hints = static_cast<NativeParameterHints>(hints);
+
+        return &param;
+    }
+
+    float getParameterValue(const uint32_t index) const override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount, 0.0f);
+
+        return fParameters[index];
+    }
+
+    // -------------------------------------------------------------------
+    // Plugin state calls
+
+    void setParameterValue(const uint32_t index, const float value) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(index < kParameterCount,);
+
+        fParameters[index] = value;
+
+        switch (index)
+        {
+        case kParameterTimeSig:
+            /**/ if (value > 4.5f)
+                fTimeSigNum = 6;
+            else if (value > 3.5f)
+                fTimeSigNum = 5;
+            else if (value > 2.5f)
+                fTimeSigNum = 4;
+            else if (value > 2.5f)
+                fTimeSigNum = 3;
+            else if (value > 1.5f)
+                fTimeSigNum = 2;
+            else
+                fTimeSigNum = 1;
+            // nobreak
+        case kParameterMeasures:
+            fMaxTicks = 48.0*fTimeSigNum*fParameters[kParameterMeasures] /2; // FIXME: why /2 ?
+            break;
+        }
+    }
+
     // -------------------------------------------------------------------
     // Plugin process calls
 
@@ -84,8 +245,25 @@ protected:
 
             fTicksPerFrame = 48.0 / (60.0 / fTimeInfo.bbt.beatsPerMinute * getSampleRate());
 
-            fMidiOut.play(fTicksPerFrame*static_cast<long double>(fTimeInfo.frame),
-                          fTicksPerFrame*static_cast<double>(frames));
+            /* */ double playPos = fTicksPerFrame*static_cast<double>(fTimeInfo.frame);
+            const double endPos  = playPos + fTicksPerFrame*static_cast<double>(frames);
+
+            const double loopedEndPos  = std::fmod(endPos, fMaxTicks);
+
+            for (; playPos < endPos; playPos += fMaxTicks)
+            {
+                const double loopedPlayPos = std::fmod(playPos, fMaxTicks);
+
+                if (loopedEndPos >= loopedPlayPos)
+                {
+                    fMidiOut.play(loopedPlayPos, loopedEndPos-loopedPlayPos);
+                }
+                else
+                {
+                    fMidiOut.play(loopedPlayPos, fMaxTicks-loopedPlayPos);
+                    fMidiOut.play(0.0, loopedEndPos);
+                }
+            }
         }
     }
 
@@ -170,8 +348,8 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
-        carla_stdout("Playing at %i :: %03X:%03i:%03i",
-                     midiEvent.time, midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
+        carla_stdout("Playing at %f :: %03X:%03i:%03i",
+                     float(double(midiEvent.time)*fTicksPerFrame), midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
 
         NativePluginAndUiClass::writeMidiEvent(&midiEvent);
     }
@@ -243,11 +421,15 @@ protected:
 private:
     bool fNeedsAllNotesOff;
     bool fWasPlayingBefore;
+    int  fTimeSigNum;
 
     double fTicksPerFrame;
+    double fMaxTicks;
 
     MidiPattern    fMidiOut;
     NativeTimeInfo fTimeInfo;
+
+    float fParameters[kParameterCount];
 
     void _sendEventsToUI() const noexcept
     {
@@ -292,7 +474,7 @@ static const NativePluginDescriptor midipatternDesc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 0,

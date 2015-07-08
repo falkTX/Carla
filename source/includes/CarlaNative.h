@@ -67,6 +67,7 @@ typedef enum {
 } NativePluginHints;
 
 typedef enum {
+    NATIVE_PLUGIN_SUPPORTS_NOTHING          = 0,
     NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES  = 1 << 0, /** handles MIDI programs internally instead of host-exposed/exported */
     NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES  = 1 << 1,
     NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE = 1 << 2,

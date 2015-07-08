@@ -83,6 +83,11 @@ class MidiPatternW(ExternalUI, QMainWindow):
         self.ui.piano.modeupdate.connect(self.ui.modeIndicator.changeMode)
         self.ui.piano.modeupdate.connect(self.slot_modeChanged)
 
+        self.ui.timeSigBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.measureBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.defaultLengthBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+        self.ui.quantizeBox.currentIndexChanged[int].connect(self.slot_paramChanged)
+
         self.ui.timeSigBox.currentIndexChanged[str].connect(self.ui.piano.setTimeSig)
         self.ui.measureBox.currentIndexChanged[str].connect(self.ui.piano.setMeasures)
         self.ui.defaultLengthBox.currentIndexChanged[str].connect(self.ui.piano.setDefaultLength)
@@ -119,11 +124,37 @@ class MidiPatternW(ExternalUI, QMainWindow):
             self.ui.act_edit_insert.setChecked(False)
             self.ui.act_edit_velocity.setChecked(False)
 
+    def slot_paramChanged(self, index):
+        sender = self.sender()
+
+        if sender == self.ui.timeSigBox:
+            param = 0
+        elif sender == self.ui.measureBox:
+            param = 1
+            index += 1
+        elif sender == self.ui.defaultLengthBox:
+            param = 2
+        elif sender == self.ui.quantizeBox:
+            param = 3
+        else:
+            return
+
+        self.sendControl(param, index)
+
     # -------------------------------------------------------------------
     # DSP Callbacks
 
     def dspParameterChanged(self, index, value):
-        pass
+        value = int(value)
+
+        if index == 0: # TimeSig
+            self.ui.timeSigBox.setCurrentIndex(value)
+        elif index == 1: # Measures
+            self.ui.measureBox.setCurrentIndex(value-1)
+        elif index == 2: # DefLength
+            self.ui.defaultLengthBox.setCurrentIndex(value)
+        elif index == 3: # Quantize
+            self.ui.quantizeBox.setCurrentIndex(value)
 
     def dspStateChanged(self, key, value):
         pass
@@ -190,12 +221,6 @@ class MidiPatternW(ExternalUI, QMainWindow):
             self.send([msg, note_stop, 3, MIDI_STATUS_NOTE_OFF, note, vel])
 
     def msgCallback(self, msg):
-        #try:
-            self.msgCallback2(msg)
-        #except:
-            #print("Custom msgCallback error, skipped for", msg)
-
-    def msgCallback2(self, msg):
         msg = charPtrToString(msg)
 
         if msg == "midi-clear-all":
@@ -237,25 +262,8 @@ class MidiPatternW(ExternalUI, QMainWindow):
             if old_frame != frame:
                 self.ui.piano.movePlayHead(self.fTransportInfo)
 
-        elif msg == "show":
-            self.uiShow()
-
-        elif msg == "focus":
-            self.uiFocus()
-
-        elif msg == "hide":
-            self.uiHide()
-
-        elif msg == "quit":
-            self.fQuitReceived = True
-            self.uiQuit()
-
-        elif msg == "uiTitle":
-            uiTitle = self.readlineblock()
-            self.uiTitleChanged(uiTitle)
-
         else:
-            print("unknown message: \"" + msg + "\"")
+            ExternalUI.msgCallback(self, msg)
 
     # -------------------------------------------------------------------
     # Internal stuff

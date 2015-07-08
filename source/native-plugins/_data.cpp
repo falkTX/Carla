@@ -212,12 +212,12 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_EVERYTHING,
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 0,
     /* midiOuts  */ 1,
-    /* paramIns  */ 0,
+    /* paramIns  */ 4,
     /* paramOuts */ 0,
     /* name      */ "MIDI Pattern",
     /* label     */ "midipattern",
