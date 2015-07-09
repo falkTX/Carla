@@ -426,7 +426,11 @@
      </property>
      <item>
       <widget class="QWidget" name="w_knobs_left" native="true">
-       <layout class="QHBoxLayout" name="horizontalLayout_3"/>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="margin">
+         <number>0</number>
+        </property>
+       </layout>
       </widget>
      </item>
      <item>
@@ -444,7 +448,11 @@
      </item>
      <item>
       <widget class="QWidget" name="w_knobs_right" native="true">
-       <layout class="QHBoxLayout" name="horizontalLayout_2"/>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <property name="margin">
+         <number>0</number>
+        </property>
+       </layout>
       </widget>
      </item>
     </layout>
