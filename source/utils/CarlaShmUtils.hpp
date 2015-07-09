@@ -1,6 +1,6 @@
 /*
  * Carla shared memory utils
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,14 +21,16 @@
 #include "CarlaUtils.hpp"
 
 #ifdef CARLA_OS_WIN
-struct shm_t { HANDLE map; bool isServer; const char* filename; };
-# define shm_t_INIT { INVALID_HANDLE_VALUE, true, nullptr }
+struct carla_shm_t { HANDLE map; bool isServer; const char* filename; };
+# define carla_shm_t_INIT { INVALID_HANDLE_VALUE, true, nullptr }
 #else
-# include <cerrno>
+# ifndef __WINE__
+#  include <cerrno>
+# endif
 # include <fcntl.h>
 # include <sys/mman.h>
-struct shm_t { int fd; const char* filename; std::size_t size; };
-# define shm_t_INIT { -1, nullptr, 0 }
+struct carla_shm_t { int fd; const char* filename; std::size_t size; };
+# define carla_shm_t_INIT { -1, nullptr, 0 }
 #endif
 
 // -----------------------------------------------------------------------
@@ -37,13 +39,13 @@ struct shm_t { int fd; const char* filename; std::size_t size; };
 /*
  * Null object returned when a shared memory operation fails.
  */
-static const shm_t gNullCarlaShm = shm_t_INIT;
+static const carla_shm_t gNullCarlaShm = carla_shm_t_INIT;
 
 /*
  * Check if a shared memory object is valid.
  */
 static inline
-bool carla_is_shm_valid(const shm_t& shm) noexcept
+bool carla_is_shm_valid(const carla_shm_t& shm) noexcept
 {
 #ifdef CARLA_OS_WIN
     return (shm.filename != nullptr);
@@ -56,7 +58,7 @@ bool carla_is_shm_valid(const shm_t& shm) noexcept
  * Initialize a shared memory object to an invalid state.
  */
 static inline
-void carla_shm_init(shm_t& shm) noexcept
+void carla_shm_init(carla_shm_t& shm) noexcept
 {
     shm = gNullCarlaShm;
 }
@@ -66,11 +68,11 @@ void carla_shm_init(shm_t& shm) noexcept
  * Returns an invalid object if the operation failed or the filename already exists.
  */
 static inline
-shm_t carla_shm_create(const char* const filename) noexcept
+carla_shm_t carla_shm_create(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', gNullCarlaShm);
 
-    shm_t ret;
+    carla_shm_t ret;
 
 #ifdef CARLA_OS_WIN
     ret.map      = INVALID_HANDLE_VALUE;
@@ -98,11 +100,11 @@ shm_t carla_shm_create(const char* const filename) noexcept
  * Attach to an existing shared memory object.
  */
 static inline
-shm_t carla_shm_attach(const char* const filename) noexcept
+carla_shm_t carla_shm_attach(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0', gNullCarlaShm);
 
-    shm_t ret;
+    carla_shm_t ret;
 
 #ifdef CARLA_OS_WIN
         ret.map      = INVALID_HANDLE_VALUE;
@@ -123,7 +125,7 @@ shm_t carla_shm_attach(const char* const filename) noexcept
  * Close a shared memory object and invalidate it.
  */
 static inline
-void carla_shm_close(shm_t& shm) noexcept
+void carla_shm_close(carla_shm_t& shm) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
 #ifdef CARLA_OS_WIN
@@ -153,7 +155,7 @@ void carla_shm_close(shm_t& shm) noexcept
  * @note One shared memory object can only have one mapping at a time.
  */
 static inline
-void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
+void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), nullptr);
     CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
@@ -210,7 +212,7 @@ void* carla_shm_map(shm_t& shm, const std::size_t size) noexcept
  * Unmap a shared memory object address.
  */
 static inline
-void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
+void carla_shm_unmap(carla_shm_t& shm, void* const ptr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
     CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
@@ -237,6 +239,7 @@ void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
     } CARLA_SAFE_EXCEPTION("carla_shm_unmap");
 }
 
+#ifndef __WINE__
 // -----------------------------------------------------------------------
 // advanced calls
 
@@ -245,7 +248,7 @@ void carla_shm_unmap(shm_t& shm, void* const ptr) noexcept
  * Will keep trying until a free random filename is obtained.
  */
 static inline
-shm_t carla_shm_create_temp(char* const fileBase) noexcept
+carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
 {
     // check if the fileBase name is valid
     CARLA_SAFE_ASSERT_RETURN(fileBase != nullptr, gNullCarlaShm);
@@ -269,7 +272,7 @@ shm_t carla_shm_create_temp(char* const fileBase) noexcept
             fileBase[c] = charSet[std::rand() % charSetLen];
 
         // (try to) create new shm for this filename
-        const shm_t shm = carla_shm_create(fileBase);
+        const carla_shm_t shm = carla_shm_create(fileBase);
 
         // all ok!
         if (carla_is_shm_valid(shm))
@@ -298,7 +301,7 @@ shm_t carla_shm_create_temp(char* const fileBase) noexcept
  */
 template<typename T>
 static inline
-T* carla_shm_map(shm_t& shm) noexcept
+T* carla_shm_map(carla_shm_t& shm) noexcept
 {
     return (T*)carla_shm_map(shm, sizeof(T));
 }
@@ -308,12 +311,14 @@ T* carla_shm_map(shm_t& shm) noexcept
  */
 template<typename T>
 static inline
-bool carla_shm_map(shm_t& shm, T*& value) noexcept
+bool carla_shm_map(carla_shm_t& shm, T*& value) noexcept
 {
     value = (T*)carla_shm_map(shm, sizeof(T));
     return (value != nullptr);
 }
 
 // -----------------------------------------------------------------------
+
+#endif // __WINE__
 
 #endif // CARLA_SHM_UTILS_HPP_INCLUDED

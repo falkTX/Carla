@@ -392,13 +392,13 @@ __cdecl bool jackbridge_set_property_change_callback(jack_client_t* client, Jack
 
 __cdecl bool jackbridge_sem_init(void* sem) noexcept;
 __cdecl void jackbridge_sem_destroy(void* sem) noexcept;
-__cdecl bool jackbridge_sem_post(void* sem) noexcept;
-__cdecl bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept;
+__cdecl void jackbridge_sem_post(void* sem) noexcept;
+__cdecl bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept;
 
 __cdecl bool  jackbridge_shm_is_valid(const void* shm) noexcept;
 __cdecl void  jackbridge_shm_init(void* shm) noexcept;
 __cdecl void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
 __cdecl void  jackbridge_shm_close(void* shm) noexcept;
-__cdecl void* jackbridge_shm_map(void* shm, size_t size) noexcept;
+__cdecl void* jackbridge_shm_map(void* shm, uint64_t size) noexcept;
 
 #endif // JACKBRIDGE_HPP_INCLUDED

@@ -535,14 +535,14 @@ void jackbridge_sem_destroy(void* sem) noexcept
     getBridgeInstance().sem_destroy_ptr(sem);
 }
 
-bool jackbridge_sem_post(void* sem) noexcept
+void jackbridge_sem_post(void* sem) noexcept
 {
-    return getBridgeInstance().sem_post_ptr(sem);
+    getBridgeInstance().sem_post_ptr(sem);
 }
 
-bool jackbridge_sem_timedwait(void* sem, uint secs, bool* timedOut) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept
 {
-    return getBridgeInstance().sem_timedwait_ptr(sem, secs, timedOut);
+    return getBridgeInstance().sem_timedwait_ptr(sem, secs);
 }
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept
@@ -565,7 +565,7 @@ void jackbridge_shm_close(void* shm) noexcept
     return getBridgeInstance().shm_close_ptr(shm);
 }
 
-void* jackbridge_shm_map(void* shm, size_t size) noexcept
+void* jackbridge_shm_map(void* shm, uint64_t size) noexcept
 {
     return getBridgeInstance().shm_map_ptr(shm, size);
 }

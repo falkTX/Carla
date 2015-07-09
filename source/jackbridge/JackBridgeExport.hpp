@@ -110,13 +110,13 @@ typedef bool (__cdecl *jackbridgesym_remove_all_properties)(jack_client_t* clien
 typedef bool (__cdecl *jackbridgesym_set_property_change_callback)(jack_client_t* client, JackPropertyChangeCallback callback, void* arg);
 typedef bool (__cdecl *jackbridgesym_sem_init)(void* sem);
 typedef void (__cdecl *jackbridgesym_sem_destroy)(void* sem);
-typedef bool (__cdecl *jackbridgesym_sem_post)(void* sem);
-typedef bool (__cdecl *jackbridgesym_sem_timedwait)(void* sem, uint secs, bool* timedOut);
+typedef void (__cdecl *jackbridgesym_sem_post)(void* sem);
+typedef bool (__cdecl *jackbridgesym_sem_timedwait)(void* sem, uint secs);
 typedef bool (__cdecl *jackbridgesym_shm_is_valid)(const void* shm);
 typedef void (__cdecl *jackbridgesym_shm_init)(void* shm);
 typedef void (__cdecl *jackbridgesym_shm_attach)(void* shm, const char* name);
 typedef void (__cdecl *jackbridgesym_shm_close)(void* shm);
-typedef void* (__cdecl *jackbridgesym_shm_map)(void* shm, size_t size);
+typedef void* (__cdecl *jackbridgesym_shm_map)(void* shm, uint64_t size);
 
 } // extern "C"
 

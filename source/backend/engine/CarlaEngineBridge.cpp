@@ -162,18 +162,18 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool postClient() noexcept
+    void postClient() noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
-        return jackbridge_sem_post(&data->sem.client);
+        jackbridge_sem_post(&data->sem.client);
     }
 
-    bool waitForServer(const uint secs, bool* const timedOut) noexcept
+    bool waitForServer(const uint secs) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-        return jackbridge_sem_timedwait(&data->sem.server, secs, timedOut);
+        return jackbridge_sem_timedwait(&data->sem.server, secs);
     }
 
     PluginBridgeRtClientOpcode readOpcode() noexcept
@@ -1203,18 +1203,20 @@ public:
 protected:
     void run() override
     {
-        bool timedOut, quitReceived = false;
+        bool timedOut = false;
+        bool quitReceived = false;
 
         for (; ! shouldThreadExit();)
         {
-            if (! fShmRtClientControl.waitForServer(5, &timedOut))
+            if (! fShmRtClientControl.waitForServer(5))
             {
-                /*
-                * As a special case we ignore timeouts for plugin bridges.
-                * Some big Windows plugins (Kontakt, FL Studio VST) can time out when initializing or doing UI stuff.
-                * If any other error happens the plugin bridge is stopped.
-                */
-                if (timedOut) continue;
+                // Give engine 1 more change to catch up.
+                if (! timedOut)
+                {
+                    carla_stderr2("Bridge timed-out, giving it one more chance");
+                    timedOut = true;
+                    continue;
+                }
 
                 carla_stderr2("Bridge timed-out, final post...");
                 fShmRtClientControl.postClient();
@@ -1222,6 +1224,8 @@ protected:
                 signalThreadShouldExit();
                 break;
             }
+
+            timedOut = false;
 
             for (; fShmRtClientControl.isDataAvailableForReading();)
             {
@@ -1501,8 +1505,7 @@ protected:
                 }
             }
 
-            if (! fShmRtClientControl.postClient())
-                carla_stderr2("Could not post to client rt semaphore");
+            fShmRtClientControl.postClient();
         }
 
         callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);

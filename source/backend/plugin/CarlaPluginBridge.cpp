@@ -50,14 +50,14 @@ struct BridgeAudioPool {
     CarlaString filename;
     std::size_t size;
     float* data;
-    shm_t shm;
+    carla_shm_t shm;
 
     BridgeAudioPool() noexcept
         : filename(),
           size(0),
           data(nullptr)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(shm_t_INIT) {}
+        , shm(carla_shm_t_INIT) {}
 #else
     {
         carla_shm_init(shm);
@@ -131,14 +131,14 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     BridgeRtClientData* data;
     CarlaString filename;
     bool needsSemDestroy;
-    shm_t shm;
+    carla_shm_t shm;
 
     BridgeRtClientControl()
         : data(nullptr),
           filename(),
           needsSemDestroy(false)
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(shm_t_INIT) {}
+        , shm(carla_shm_t_INIT) {}
 #else
     {
         carla_shm_init(shm);
@@ -241,13 +241,13 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForClient(const uint secs, bool* const timedOut) noexcept
+    bool waitForClient(const uint secs) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jackbridge_sem_post(&data->sem.server);
 
-        return jackbridge_sem_timedwait(&data->sem.client, secs, timedOut);
+        return jackbridge_sem_timedwait(&data->sem.client, secs);
     }
 
     void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
@@ -264,14 +264,14 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
     BridgeNonRtClientData* data;
     CarlaString filename;
     CarlaMutex mutex;
-    shm_t shm;
+    carla_shm_t shm;
 
     BridgeNonRtClientControl() noexcept
         : data(nullptr),
           filename(),
           mutex()
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(shm_t_INIT) {}
+        , shm(carla_shm_t_INIT) {}
 #else
     {
         carla_shm_init(shm);
@@ -379,13 +379,13 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
 struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
     BridgeNonRtServerData* data;
     CarlaString filename;
-    shm_t shm;
+    carla_shm_t shm;
 
     BridgeNonRtServerControl() noexcept
         : data(nullptr),
           filename()
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(shm_t_INIT) {}
+        , shm(carla_shm_t_INIT) {}
 #else
     {
         carla_shm_init(shm);
@@ -2655,18 +2655,11 @@ private:
         CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
         CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
 
-        if (fShmRtClientControl.waitForClient(secs, &fTimedOut))
+        if (fShmRtClientControl.waitForClient(secs))
             return;
 
-        if (fTimedOut)
-        {
-            carla_stderr("waitForClient(%s) timeout here", action);
-        }
-        else
-        {
-            fTimedError = true;
-            carla_stderr("waitForClient(%s) error while waiting", action);
-        }
+        fTimedOut = true;
+        carla_stderr("waitForClient(%s) timeout here", action);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridge)
