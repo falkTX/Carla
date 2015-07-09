@@ -677,7 +677,7 @@ public:
 
         if (char* const state = fDescriptor->get_state(fHandle))
         {
-            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state), fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
+            store(handle, fUridMap->map(fUridMap->handle, "http://kxstudio.sf.net/ns/carla/chunk"), state, std::strlen(state)+1, fURIs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
             std::free(state);
             return LV2_STATE_SUCCESS;
         }

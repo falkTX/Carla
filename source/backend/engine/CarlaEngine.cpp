@@ -1897,9 +1897,10 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
                         plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
 #endif
-
                     plugin->loadStateSave(stateSave);
                 }
+                else
+                    carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
             }
             else
                 carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());

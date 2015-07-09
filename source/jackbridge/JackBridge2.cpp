@@ -1,6 +1,6 @@
 /*
- * JackBridge (Part 2, Semaphore functions)
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * JackBridge (Part 2, Semaphore + Shared memory functions)
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this

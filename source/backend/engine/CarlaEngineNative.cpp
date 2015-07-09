@@ -429,7 +429,10 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            {
                 plugin->setProgram(index, true, true, false);
+                _updateParamValues(plugin, pluginId);
+            }
         }
         else if (std::strcmp(msg, "set_midi_program") == 0)
         {
@@ -440,7 +443,10 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
 
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
+            {
                 plugin->setMidiProgram(index, true, true, false);
+                _updateParamValues(plugin, pluginId);
+            }
         }
         else if (std::strcmp(msg, "set_custom_data") == 0)
         {
@@ -549,6 +555,12 @@ protected:
 
 private:
     CarlaEngine* const fEngine;
+
+    void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
+    {
+        for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i)
+            fEngine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pluginId, i, 0, plugin->getParameterValue(i), nullptr);
+    }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
 };

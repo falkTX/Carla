@@ -595,7 +595,9 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             paramWidget.setContextMenuPolicy(Qt.CustomContextMenu)
             paramWidget.customContextMenuRequested.connect(self.slot_knobCustomMenu)
             paramWidget.realValueChanged.connect(self.slot_parameterValueChanged)
+            paramWidget.blockSignals(True)
             paramWidget.setValue(self.host.get_internal_parameter_value(self.fPluginId, paramIndex))
+            paramWidget.blockSignals(False)
 
         # -------------------------------------------------------------
 

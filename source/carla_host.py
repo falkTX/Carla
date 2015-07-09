@@ -542,7 +542,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_fileOpen(self):
-        fileFilter = self.tr("Carla Project File (*.carxp)")
+        fileFilter = self.tr("Carla Project File (*.carxp);;Carla Preset File (*.carxs)")
         filename   = QFileDialog.getOpenFileName(self, self.tr("Open Carla Project File"), self.fSavedSettings[CARLA_KEY_MAIN_PROJECT_FOLDER], filter=fileFilter)
 
         if config_UseQt5:
