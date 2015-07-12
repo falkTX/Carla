@@ -204,13 +204,6 @@ typedef uint32_t LV2_Property;
 #define LV2_IS_PORT_DESIGNATION_TIME_TICKS_PER_BEAT(x)    ((x) == LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT)
 #define LV2_IS_PORT_DESIGNATION_TIME(x)                   ((x) >= LV2_PORT_DESIGNATION_TIME_BAR && (x) <= LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT)
 
-// Feature Types
-#define LV2_FEATURE_OPTIONAL             1
-#define LV2_FEATURE_REQUIRED             2
-
-#define LV2_IS_FEATURE_OPTIONAL(x)       ((x) == LV2_FEATURE_OPTIONAL)
-#define LV2_IS_FEATURE_REQUIRED(x)       ((x) == LV2_FEATURE_REQUIRED)
-
 // UI Types
 #define LV2_UI_GTK2                      1
 #define LV2_UI_GTK3                      2
@@ -463,11 +456,11 @@ struct LV2_RDF_Preset {
 
 // Feature
 struct LV2_RDF_Feature {
-    LV2_Property Type;
+    bool Required;
     LV2_URI URI;
 
     LV2_RDF_Feature() noexcept
-        : Type(0),
+        : Required(false),
           URI(nullptr) {}
 
     ~LV2_RDF_Feature() noexcept

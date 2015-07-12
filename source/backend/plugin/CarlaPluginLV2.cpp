@@ -4057,18 +4057,22 @@ public:
 #ifndef LV2_UIS_ONLY_INPROCESS
         const LV2_RDF_UI* const rdfUI(&fRdfDescriptor->UIs[uiId]);
 
+        for (uint32_t i=0; i < rdfUI->FeatureCount; ++i)
+        {
+            const LV2_RDF_Feature& feat(rdfUI->Features[i]);
+
+            if (! feat.Required)
+                continue;
+            if (std::strcmp(feat.URI, LV2_INSTANCE_ACCESS_URI) == 0)
+                return false;
+            if (std::strcmp(feat.URI, LV2_DATA_ACCESS_URI) == 0)
+                return false;
+        }
+
         // Calf UIs are mostly useless without their special graphs
         // but they can be crashy under certain conditions, so follow user preferences
         if (std::strstr(rdfUI->URI, "http://calf.sourceforge.net/plugins/gui/") != nullptr)
             return pData->engine->getOptions().preferUiBridges;
-
-        for (uint32_t i=0; i < rdfUI->FeatureCount; ++i)
-        {
-            if (std::strcmp(rdfUI->Features[i].URI, LV2_INSTANCE_ACCESS_URI) == 0)
-                return false;
-            if (std::strcmp(rdfUI->Features[i].URI, LV2_DATA_ACCESS_URI) == 0)
-                return false;
-        }
 
         return true;
 #else
@@ -4812,7 +4816,7 @@ public:
             {
                 carla_stderr("Plugin DSP wants UI feature '%s', ignoring this", feature.URI);
             }
-            else if (LV2_IS_FEATURE_REQUIRED(feature.Type) && ! is_lv2_feature_supported(feature.URI))
+            else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
             {
                 CarlaString msg("Plugin wants a feature that is not supported:\n");
                 msg += feature.URI;
@@ -5208,7 +5212,7 @@ public:
             {
                 carla_stderr("Plugin UI requires a feature that is not supported:\n%s", uri);
 
-                if (LV2_IS_FEATURE_REQUIRED(fUI.rdfDescriptor->Features[i].Type))
+                if (fUI.rdfDescriptor->Features[i].Required)
                 {
                     canContinue = false;
                     break;

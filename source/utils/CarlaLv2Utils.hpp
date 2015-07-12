@@ -1210,7 +1210,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it));
                 LV2_RDF_Feature* const rdfFeature(&rdfDescriptor->Features[h++]);
 
-                rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
+                rdfFeature->Required = lilvFeatureNodesR.contains(lilvFeatureNode);
 
                 if (const char* const featureURI = lilvFeatureNode.as_uri())
                     rdfFeature->URI = carla_strdup(featureURI);
@@ -1339,7 +1339,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                             Lilv::Node lilvFeatureNode(lilvFeatureNodes.get(it2));
                             LV2_RDF_Feature* const rdfFeature(&rdfUI->Features[h2++]);
 
-                            rdfFeature->Type = lilvFeatureNodesR.contains(lilvFeatureNode) ? LV2_FEATURE_REQUIRED : LV2_FEATURE_OPTIONAL;
+                            rdfFeature->Required = lilvFeatureNodesR.contains(lilvFeatureNode);
 
                             if (const char* const featureURI = lilvFeatureNode.as_uri())
                                 rdfFeature->URI = carla_strdup(featureURI);

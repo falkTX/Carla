@@ -1032,7 +1032,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
                 {
                     DISCOVERY_OUT("warning", "Plugin '" << rdfDescriptor->URI << "' DSP wants UI feature '" << feature.URI << "', ignoring this");
                 }
-                else if (LV2_IS_FEATURE_REQUIRED(feature.Type) && ! is_lv2_feature_supported(feature.URI))
+                else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
                 {
                     DISCOVERY_OUT("error", "Plugin '" << rdfDescriptor->URI << "' requires a non-supported feature '" << feature.URI << "'");
                     supported = false;
