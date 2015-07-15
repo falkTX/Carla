@@ -29,12 +29,15 @@
 // -----------------------------------------------------------------------------
 
 JACKBRIDGE_EXPORT
-const JackBridgeExportedFunctions* jackbridge_get_exported_functions()
+const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functions()
 {
     static JackBridgeExportedFunctions funcs;
     carla_zeroStruct(funcs);
 
-    funcs.unique1 = funcs.unique2 = 0xdeadf00d;
+    funcs.unique1 = funcs.unique2 = funcs.unique3 = 0xdeadf00d;
+    carla_stdout("WINE jackbridge_get_exported_functions() called, data: %lu %lu %lu", funcs.unique1, funcs.unique2, funcs.unique3);
+    carla_stdout("WINE jackbridge_get_exported_functions() %p %p %p %lu", &funcs.unique1, &funcs.unique2, &funcs.unique3,
+          uintptr_t(&funcs.unique3) - uintptr_t(&funcs.unique1));
 
     funcs.get_version_ptr                      = jackbridge_get_version;
     funcs.get_version_string_ptr               = jackbridge_get_version_string;

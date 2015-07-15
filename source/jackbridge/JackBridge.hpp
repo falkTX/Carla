@@ -29,10 +29,6 @@
 # undef __WIN64__
 #endif
 
-#ifndef __cdecl
-# define __cdecl
-#endif
-
 #include "CarlaDefines.h"
 
 #ifdef JACKBRIDGE_DIRECT
@@ -43,6 +39,12 @@
 #else
 
 #include <cstddef>
+
+#if (defined(CARLA_OS_WIN) && ! defined(BUILDING_CARLA_FOR_WINDOWS)) || defined(__WINE__)
+# define JACKBRIDGE_API __cdecl
+#else
+# define JACKBRIDGE_API
+#endif
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>
@@ -255,150 +257,150 @@ typedef struct _jack_position jack_position_t;
 typedef struct _jack_session_event jack_session_event_t;
 typedef struct _jack_session_command_t jack_session_command_t;
 
-typedef void (__cdecl *JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
-typedef int  (__cdecl *JackProcessCallback)(jack_nframes_t nframes, void* arg);
-typedef void (__cdecl *JackThreadInitCallback)(void* arg);
-typedef int  (__cdecl *JackGraphOrderCallback)(void* arg);
-typedef int  (__cdecl *JackXRunCallback)(void* arg);
-typedef int  (__cdecl *JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
-typedef int  (__cdecl *JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
-typedef void (__cdecl *JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
-typedef void (__cdecl *JackClientRegistrationCallback)(const char* name, int register_, void* arg);
-typedef void (__cdecl *JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
-typedef int  (__cdecl *JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
-typedef void (__cdecl *JackFreewheelCallback)(int starting, void* arg);
-typedef void (__cdecl *JackShutdownCallback)(void* arg);
-typedef void (__cdecl *JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
-typedef int  (__cdecl *JackSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
-typedef void (__cdecl *JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
-typedef void (__cdecl *JackSessionCallback)(jack_session_event_t* event, void* arg);
-typedef void (__cdecl *JackPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
+typedef void (JACKBRIDGE_API *JackLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
+typedef int  (JACKBRIDGE_API *JackProcessCallback)(jack_nframes_t nframes, void* arg);
+typedef void (JACKBRIDGE_API *JackThreadInitCallback)(void* arg);
+typedef int  (JACKBRIDGE_API *JackGraphOrderCallback)(void* arg);
+typedef int  (JACKBRIDGE_API *JackXRunCallback)(void* arg);
+typedef int  (JACKBRIDGE_API *JackBufferSizeCallback)(jack_nframes_t nframes, void* arg);
+typedef int  (JACKBRIDGE_API *JackSampleRateCallback)(jack_nframes_t nframes, void* arg);
+typedef void (JACKBRIDGE_API *JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
+typedef void (JACKBRIDGE_API *JackClientRegistrationCallback)(const char* name, int register_, void* arg);
+typedef void (JACKBRIDGE_API *JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
+typedef int  (JACKBRIDGE_API *JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
+typedef void (JACKBRIDGE_API *JackFreewheelCallback)(int starting, void* arg);
+typedef void (JACKBRIDGE_API *JackShutdownCallback)(void* arg);
+typedef void (JACKBRIDGE_API *JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
+typedef int  (JACKBRIDGE_API *JackSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
+typedef void (JACKBRIDGE_API *JackTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
+typedef void (JACKBRIDGE_API *JackSessionCallback)(jack_session_event_t* event, void* arg);
+typedef void (JACKBRIDGE_API *JackPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
 
 } // extern "C"
 
 #endif // ! JACKBRIDGE_DIRECT
 
-__cdecl bool jackbridge_is_ok() noexcept;
+JACKBRIDGE_API bool jackbridge_is_ok() noexcept;
 
-__cdecl void        jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
-__cdecl const char* jackbridge_get_version_string();
+JACKBRIDGE_API void        jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
+JACKBRIDGE_API const char* jackbridge_get_version_string();
 
-__cdecl jack_client_t* jackbridge_client_open(const char* client_name, jack_options_t options, jack_status_t* status);
-__cdecl bool           jackbridge_client_close(jack_client_t* client);
+JACKBRIDGE_API jack_client_t* jackbridge_client_open(const char* client_name, uint32_t options, jack_status_t* status);
+JACKBRIDGE_API bool           jackbridge_client_close(jack_client_t* client);
 
-__cdecl int   jackbridge_client_name_size();
-__cdecl char* jackbridge_get_client_name(jack_client_t* client);
+JACKBRIDGE_API int   jackbridge_client_name_size();
+JACKBRIDGE_API char* jackbridge_get_client_name(jack_client_t* client);
 
-__cdecl char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name);
-__cdecl char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid);
+JACKBRIDGE_API char* jackbridge_get_uuid_for_client_name(jack_client_t* client, const char* name);
+JACKBRIDGE_API char* jackbridge_get_client_name_by_uuid(jack_client_t* client, const char* uuid);
 
-__cdecl bool jackbridge_activate(jack_client_t* client);
-__cdecl bool jackbridge_deactivate(jack_client_t* client);
-__cdecl bool jackbridge_is_realtime(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_activate(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_deactivate(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_is_realtime(jack_client_t* client);
 
-__cdecl bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback thread_init_callback, void* arg);
-__cdecl void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg);
-__cdecl void jackbridge_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback shutdown_callback, void* arg);
-__cdecl bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback process_callback, void* arg);
-__cdecl bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback freewheel_callback, void* arg);
-__cdecl bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
-__cdecl bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
-__cdecl bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
-__cdecl bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
-__cdecl bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
-__cdecl bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
-__cdecl bool jackbridge_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback graph_callback, void* arg);
-__cdecl bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg);
-__cdecl bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCallback thread_init_callback, void* arg);
+JACKBRIDGE_API void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown_callback, void* arg);
+JACKBRIDGE_API void jackbridge_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback shutdown_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback process_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback freewheel_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback bufsize_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback srate_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback registration_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback registration_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCallback rename_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback connect_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback graph_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback latency_callback, void* arg);
 
-__cdecl bool jackbridge_set_freewheel(jack_client_t* client, bool onoff);
-__cdecl bool jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes);
+JACKBRIDGE_API bool jackbridge_set_freewheel(jack_client_t* client, bool onoff);
+JACKBRIDGE_API bool jackbridge_set_buffer_size(jack_client_t* client, jack_nframes_t nframes);
 
-__cdecl jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
-__cdecl jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);
-__cdecl float          jackbridge_cpu_load(jack_client_t* client);
+JACKBRIDGE_API jack_nframes_t jackbridge_get_sample_rate(jack_client_t* client);
+JACKBRIDGE_API jack_nframes_t jackbridge_get_buffer_size(jack_client_t* client);
+JACKBRIDGE_API float          jackbridge_cpu_load(jack_client_t* client);
 
-__cdecl jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, ulong flags, ulong buffer_size);
-__cdecl bool         jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);
-__cdecl void*        jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes);
+JACKBRIDGE_API jack_port_t* jackbridge_port_register(jack_client_t* client, const char* port_name, const char* port_type, uint64_t flags, uint64_t buffer_size);
+JACKBRIDGE_API bool         jackbridge_port_unregister(jack_client_t* client, jack_port_t* port);
+JACKBRIDGE_API void*        jackbridge_port_get_buffer(jack_port_t* port, jack_nframes_t nframes);
 
-__cdecl const char*  jackbridge_port_name(const jack_port_t* port);
-__cdecl jack_uuid_t  jackbridge_port_uuid(const jack_port_t* port);
-__cdecl const char*  jackbridge_port_short_name(const jack_port_t* port);
-__cdecl int          jackbridge_port_flags(const jack_port_t* port);
-__cdecl const char*  jackbridge_port_type(const jack_port_t* port);
-__cdecl bool         jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* port);
-__cdecl int          jackbridge_port_connected(const jack_port_t* port);
-__cdecl bool         jackbridge_port_connected_to(const jack_port_t* port, const char* port_name);
-__cdecl const char** jackbridge_port_get_connections(const jack_port_t* port);
-__cdecl const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port);
+JACKBRIDGE_API const char*  jackbridge_port_name(const jack_port_t* port);
+JACKBRIDGE_API jack_uuid_t  jackbridge_port_uuid(const jack_port_t* port);
+JACKBRIDGE_API const char*  jackbridge_port_short_name(const jack_port_t* port);
+JACKBRIDGE_API int          jackbridge_port_flags(const jack_port_t* port);
+JACKBRIDGE_API const char*  jackbridge_port_type(const jack_port_t* port);
+JACKBRIDGE_API bool         jackbridge_port_is_mine(const jack_client_t* client, const jack_port_t* port);
+JACKBRIDGE_API int          jackbridge_port_connected(const jack_port_t* port);
+JACKBRIDGE_API bool         jackbridge_port_connected_to(const jack_port_t* port, const char* port_name);
+JACKBRIDGE_API const char** jackbridge_port_get_connections(const jack_port_t* port);
+JACKBRIDGE_API const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port);
 
-__cdecl bool jackbridge_port_set_name(jack_port_t* port, const char* port_name);
-__cdecl bool jackbridge_port_set_alias(jack_port_t* port, const char* alias);
-__cdecl bool jackbridge_port_unset_alias(jack_port_t* port, const char* alias);
-__cdecl int  jackbridge_port_get_aliases(const jack_port_t* port, char* const aliases[2]);
+JACKBRIDGE_API bool jackbridge_port_set_name(jack_port_t* port, const char* port_name);
+JACKBRIDGE_API bool jackbridge_port_set_alias(jack_port_t* port, const char* alias);
+JACKBRIDGE_API bool jackbridge_port_unset_alias(jack_port_t* port, const char* alias);
+JACKBRIDGE_API int  jackbridge_port_get_aliases(const jack_port_t* port, char* const aliases[2]);
 
-__cdecl bool jackbridge_port_request_monitor(jack_port_t* port, bool onoff);
-__cdecl bool jackbridge_port_request_monitor_by_name(jack_client_t* client, const char* port_name, bool onoff);
-__cdecl bool jackbridge_port_ensure_monitor(jack_port_t* port, bool onoff);
-__cdecl bool jackbridge_port_monitoring_input(jack_port_t* port);
+JACKBRIDGE_API bool jackbridge_port_request_monitor(jack_port_t* port, bool onoff);
+JACKBRIDGE_API bool jackbridge_port_request_monitor_by_name(jack_client_t* client, const char* port_name, bool onoff);
+JACKBRIDGE_API bool jackbridge_port_ensure_monitor(jack_port_t* port, bool onoff);
+JACKBRIDGE_API bool jackbridge_port_monitoring_input(jack_port_t* port);
 
-__cdecl bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port);
-__cdecl bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port);
-__cdecl bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port);
+JACKBRIDGE_API bool jackbridge_connect(jack_client_t* client, const char* source_port, const char* destination_port);
+JACKBRIDGE_API bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port);
+JACKBRIDGE_API bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port);
 
-__cdecl int    jackbridge_port_name_size();
-__cdecl int    jackbridge_port_type_size();
-__cdecl size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type);
+JACKBRIDGE_API int      jackbridge_port_name_size();
+JACKBRIDGE_API int      jackbridge_port_type_size();
+JACKBRIDGE_API uint32_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type);
 
-__cdecl void jackbridge_port_get_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range);
-__cdecl void jackbridge_port_set_latency_range(jack_port_t* port, jack_latency_callback_mode_t mode, jack_latency_range_t* range);
-__cdecl bool jackbridge_recompute_total_latencies(jack_client_t* client);
+JACKBRIDGE_API void jackbridge_port_get_latency_range(jack_port_t* port, uint32_t mode, jack_latency_range_t* range);
+JACKBRIDGE_API void jackbridge_port_set_latency_range(jack_port_t* port, uint32_t mode, jack_latency_range_t* range);
+JACKBRIDGE_API bool jackbridge_recompute_total_latencies(jack_client_t* client);
 
-__cdecl const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, ulong flags);
-__cdecl jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_name);
-__cdecl jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id);
+JACKBRIDGE_API const char** jackbridge_get_ports(jack_client_t* client, const char* port_name_pattern, const char* type_name_pattern, uint64_t flags);
+JACKBRIDGE_API jack_port_t* jackbridge_port_by_name(jack_client_t* client, const char* port_name);
+JACKBRIDGE_API jack_port_t* jackbridge_port_by_id(jack_client_t* client, jack_port_id_t port_id);
 
-__cdecl void jackbridge_free(void* ptr);
+JACKBRIDGE_API void jackbridge_free(void* ptr);
 
-__cdecl uint32_t jackbridge_midi_get_event_count(void* port_buffer);
-__cdecl bool     jackbridge_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint32_t event_index);
-__cdecl void     jackbridge_midi_clear_buffer(void* port_buffer);
-__cdecl bool     jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, size_t data_size);
-__cdecl jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, size_t data_size);
+JACKBRIDGE_API uint32_t jackbridge_midi_get_event_count(void* port_buffer);
+JACKBRIDGE_API bool     jackbridge_midi_event_get(jack_midi_event_t* event, void* port_buffer, uint32_t event_index);
+JACKBRIDGE_API void     jackbridge_midi_clear_buffer(void* port_buffer);
+JACKBRIDGE_API bool     jackbridge_midi_event_write(void* port_buffer, jack_nframes_t time, const jack_midi_data_t* data, uint32_t data_size);
+JACKBRIDGE_API jack_midi_data_t* jackbridge_midi_event_reserve(void* port_buffer, jack_nframes_t time, uint32_t data_size);
 
-__cdecl bool jackbridge_release_timebase(jack_client_t* client);
-__cdecl bool jackbridge_set_sync_callback(jack_client_t* client, JackSyncCallback sync_callback, void* arg);
-__cdecl bool jackbridge_set_sync_timeout(jack_client_t* client, jack_time_t timeout);
-__cdecl bool jackbridge_set_timebase_callback(jack_client_t* client, bool conditional, JackTimebaseCallback timebase_callback, void* arg);
-__cdecl bool jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame);
+JACKBRIDGE_API bool jackbridge_release_timebase(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_set_sync_callback(jack_client_t* client, JackSyncCallback sync_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_sync_timeout(jack_client_t* client, jack_time_t timeout);
+JACKBRIDGE_API bool jackbridge_set_timebase_callback(jack_client_t* client, bool conditional, JackTimebaseCallback timebase_callback, void* arg);
+JACKBRIDGE_API bool jackbridge_transport_locate(jack_client_t* client, jack_nframes_t frame);
 
-__cdecl jack_transport_state_t jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
-__cdecl jack_nframes_t         jackbridge_get_current_transport_frame(const jack_client_t* client);
+JACKBRIDGE_API uint32_t       jackbridge_transport_query(const jack_client_t* client, jack_position_t* pos);
+JACKBRIDGE_API jack_nframes_t jackbridge_get_current_transport_frame(const jack_client_t* client);
 
-__cdecl bool jackbridge_transport_reposition(jack_client_t* client, const jack_position_t* pos);
-__cdecl void jackbridge_transport_start(jack_client_t* client);
-__cdecl void jackbridge_transport_stop(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_transport_reposition(jack_client_t* client, const jack_position_t* pos);
+JACKBRIDGE_API void jackbridge_transport_start(jack_client_t* client);
+JACKBRIDGE_API void jackbridge_transport_stop(jack_client_t* client);
 
-__cdecl bool jackbridge_set_property(jack_client_t* client, jack_uuid_t subject, const char* key, const char* value, const char* type);
-__cdecl bool jackbridge_get_property(jack_uuid_t subject, const char* key, char** value, char** type);
-__cdecl void jackbridge_free_description(jack_description_t* desc, bool free_description_itself);
-__cdecl bool jackbridge_get_properties(jack_uuid_t subject, jack_description_t* desc);
-__cdecl bool jackbridge_get_all_properties(jack_description_t** descs);
-__cdecl bool jackbridge_remove_property(jack_client_t* client, jack_uuid_t subject, const char* key);
-__cdecl int  jackbridge_remove_properties(jack_client_t* client, jack_uuid_t subject);
-__cdecl bool jackbridge_remove_all_properties(jack_client_t* client);
-__cdecl bool jackbridge_set_property_change_callback(jack_client_t* client, JackPropertyChangeCallback callback, void* arg);
+JACKBRIDGE_API bool jackbridge_set_property(jack_client_t* client, jack_uuid_t subject, const char* key, const char* value, const char* type);
+JACKBRIDGE_API bool jackbridge_get_property(jack_uuid_t subject, const char* key, char** value, char** type);
+JACKBRIDGE_API void jackbridge_free_description(jack_description_t* desc, bool free_description_itself);
+JACKBRIDGE_API bool jackbridge_get_properties(jack_uuid_t subject, jack_description_t* desc);
+JACKBRIDGE_API bool jackbridge_get_all_properties(jack_description_t** descs);
+JACKBRIDGE_API bool jackbridge_remove_property(jack_client_t* client, jack_uuid_t subject, const char* key);
+JACKBRIDGE_API int  jackbridge_remove_properties(jack_client_t* client, jack_uuid_t subject);
+JACKBRIDGE_API bool jackbridge_remove_all_properties(jack_client_t* client);
+JACKBRIDGE_API bool jackbridge_set_property_change_callback(jack_client_t* client, JackPropertyChangeCallback callback, void* arg);
 
-__cdecl bool jackbridge_sem_init(void* sem) noexcept;
-__cdecl void jackbridge_sem_destroy(void* sem) noexcept;
-__cdecl void jackbridge_sem_post(void* sem) noexcept;
-__cdecl bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept;
+JACKBRIDGE_API bool jackbridge_sem_init(void* sem) noexcept;
+JACKBRIDGE_API void jackbridge_sem_destroy(void* sem) noexcept;
+JACKBRIDGE_API void jackbridge_sem_post(void* sem) noexcept;
+JACKBRIDGE_API bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept;
 
-__cdecl bool  jackbridge_shm_is_valid(const void* shm) noexcept;
-__cdecl void  jackbridge_shm_init(void* shm) noexcept;
-__cdecl void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
-__cdecl void  jackbridge_shm_close(void* shm) noexcept;
-__cdecl void* jackbridge_shm_map(void* shm, uint64_t size) noexcept;
+JACKBRIDGE_API bool  jackbridge_shm_is_valid(const void* shm) noexcept;
+JACKBRIDGE_API void  jackbridge_shm_init(void* shm) noexcept;
+JACKBRIDGE_API void  jackbridge_shm_attach(void* shm, const char* name) noexcept;
+JACKBRIDGE_API void  jackbridge_shm_close(void* shm) noexcept;
+JACKBRIDGE_API void* jackbridge_shm_map(void* shm, uint64_t size) noexcept;
 
 #endif // JACKBRIDGE_HPP_INCLUDED
