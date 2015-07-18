@@ -244,12 +244,10 @@ else:
 
 command = []
 
-if ARCH in ("win32", "win64"):
-    # FIXME win bridges don't work nicely with JACK right now
-    #command.append("wine")
-
-    BRIDGE = BRIDGE.replace("%s.exe" % ARCH, "native")
-    os.environ["CARLA_BRIDGE_PLUGIN_BINARY_TYPE"] = ARCH
+if ARCH == "win32":
+    command.append("wine")
+elif ARCH == "win64":
+    command.append("wine64")
 
 command.append(BRIDGE)
 command.append(FORMAT)
