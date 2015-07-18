@@ -20,7 +20,8 @@ extern "C" {
 
 // -----------------------------------------------------------------------------
 
-typedef void        (JACKBRIDGE_API *jackbridgesym_get_version)(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
+typedef void (JACKBRIDGE_API *jackbridgesym_init)();
+typedef void (JACKBRIDGE_API *jackbridgesym_get_version)(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
 typedef const char* (JACKBRIDGE_API *jackbridgesym_get_version_string)(void);
 typedef jack_client_t* (JACKBRIDGE_API *jackbridgesym_client_open)(const char* client_name, uint32_t options, jack_status_t* status);
 typedef bool           (JACKBRIDGE_API *jackbridgesym_client_close)(jack_client_t* client);
@@ -122,6 +123,7 @@ typedef void* (JACKBRIDGE_API *jackbridgesym_shm_map)(void* shm, uint64_t size);
 
 struct _JackBridgeExportedFunctions {
     ulong unique1;
+    jackbridgesym_init init_ptr;
     jackbridgesym_get_version get_version_ptr;
     jackbridgesym_get_version_string get_version_string_ptr;
     jackbridgesym_client_open client_open_ptr;

@@ -1,6 +1,6 @@
 /*
  * JackBridge
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -31,20 +31,21 @@
 
 #include "CarlaDefines.h"
 
-#ifdef JACKBRIDGE_DIRECT
-# include <jack/jack.h>
-# include <jack/midiport.h>
-# include <jack/transport.h>
-# include <jack/metadata.h>
-#else
-
-#include <cstddef>
-
-#if (defined(CARLA_OS_WIN) && ! defined(BUILDING_CARLA_FOR_WINDOWS)) || defined(__WINE__)
+#ifdef __cdecl
 # define JACKBRIDGE_API __cdecl
 #else
 # define JACKBRIDGE_API
 #endif
+
+#ifdef JACKBRIDGE_DIRECT
+# include <jack/jack.h>
+# include <jack/midiport.h>
+# include <jack/transport.h>
+# include <jack/session.h>
+# include <jack/metadata.h>
+#else
+
+#include <cstddef>
 
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>
@@ -281,6 +282,7 @@ typedef void (JACKBRIDGE_API *JackPropertyChangeCallback)(jack_uuid_t subject, c
 #endif // ! JACKBRIDGE_DIRECT
 
 JACKBRIDGE_API bool jackbridge_is_ok() noexcept;
+JACKBRIDGE_API void jackbridge_init();
 
 JACKBRIDGE_API void        jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr);
 JACKBRIDGE_API const char* jackbridge_get_version_string();

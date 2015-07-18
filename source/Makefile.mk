@@ -108,6 +108,10 @@ ifneq ($(WIN32),true)
 BASE_FLAGS += -fPIC -DPIC
 endif
 
+ifeq ($(CLANG),true)
+BASE_FLAGS += -Wabsolute-value
+endif
+
 ifeq ($(STOAT),true)
 CC  = clang
 CXX = clang++

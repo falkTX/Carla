@@ -1,6 +1,6 @@
 /*
  * JackBridge (Part 3, Export)
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -29,16 +29,15 @@
 // -----------------------------------------------------------------------------
 
 JACKBRIDGE_EXPORT
+const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functions();
+
+JACKBRIDGE_EXPORT
 const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functions()
 {
     static JackBridgeExportedFunctions funcs;
     carla_zeroStruct(funcs);
 
-    funcs.unique1 = funcs.unique2 = funcs.unique3 = 0xdeadf00d;
-    carla_stdout("WINE jackbridge_get_exported_functions() called, data: %lu %lu %lu", funcs.unique1, funcs.unique2, funcs.unique3);
-    carla_stdout("WINE jackbridge_get_exported_functions() %p %p %p %lu", &funcs.unique1, &funcs.unique2, &funcs.unique3,
-          uintptr_t(&funcs.unique3) - uintptr_t(&funcs.unique1));
-
+    funcs.init_ptr                             = jackbridge_init;
     funcs.get_version_ptr                      = jackbridge_get_version;
     funcs.get_version_string_ptr               = jackbridge_get_version_string;
     funcs.client_open_ptr                      = jackbridge_client_open;
@@ -136,6 +135,8 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.shm_attach_ptr                       = jackbridge_shm_attach;
     funcs.shm_close_ptr                        = jackbridge_shm_close;
     funcs.shm_map_ptr                          = jackbridge_shm_map;
+
+    funcs.unique1 = funcs.unique2 = funcs.unique3 = 0xdeadf00d;
 
     return &funcs;
 }

@@ -390,6 +390,7 @@ int main(int argc, char* argv[])
         rtClientBaseName[0]    = '\0';
         nonRtClientBaseName[0] = '\0';
         nonRtServerBaseName[0] = '\0';
+        jackbridge_init();
     }
 
     // ---------------------------------------------------------------------

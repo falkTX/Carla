@@ -62,13 +62,6 @@ public:
         const JackBridgeExportedFunctions* const funcs(bridge.func());
         CARLA_SAFE_ASSERT_RETURN(funcs != nullptr, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->unique1 != 0, fallback);
-        carla_stdout("unique1: %lu", funcs->unique1);
-        carla_stdout("unique2: %lu", funcs->unique2);
-        carla_stdout("unique3: %lu", funcs->unique3);
-
-        carla_stdout("WINDOWS get_exported_functions() %p %p %p %lu", &funcs->unique1, &funcs->unique2, &funcs->unique3,
-            uintptr_t(&funcs->unique3) - uintptr_t(&funcs->unique1));
-
         CARLA_SAFE_ASSERT_RETURN(funcs->unique1 == funcs->unique2, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->unique2 == funcs->unique3, fallback);
         CARLA_SAFE_ASSERT_RETURN(funcs->shm_map_ptr != nullptr, fallback);
@@ -97,7 +90,12 @@ static const JackBridgeExportedFunctions& getBridgeInstance() noexcept
 bool jackbridge_is_ok() noexcept
 {
     const JackBridgeExportedFunctions& instance(getBridgeInstance());
-    return (instance.unique1 != 0 && instance.unique1 == instance.unique2);
+    return (instance.unique1 != 0 && instance.unique1 == instance.unique2 && instance.init_ptr != nullptr);
+}
+
+void jackbridge_init()
+{
+    return getBridgeInstance().init_ptr();
 }
 
 void jackbridge_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto_ptr)

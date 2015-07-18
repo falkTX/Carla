@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1215,8 +1215,6 @@ public:
         const char* const fullPortNameB = fUsedPorts.getFullPortName(groupB, portB);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0', false);
 
-        carla_stdout("patchbayConnect(%u, %u, %u, %u => %s, %s)", groupA, portA, groupB, portB, fullPortNameA, fullPortNameB);
-
         if (! jackbridge_connect(fClient, fullPortNameA, fullPortNameB))
         {
             setLastError("JACK operation failed");
@@ -2198,39 +2196,29 @@ private:
 
     static int JACKBRIDGE_API carla_jack_bufsize_callback(jack_nframes_t newBufferSize, void* arg)
     {
-        carla_stdout("JACK %s", __FUNCTION__);
-        carla_stdout("JACK bufSize %i", newBufferSize);
-        carla_stdout("JACK bufSize %p", arg);
         handlePtr->handleJackBufferSizeCallback(newBufferSize);
         return 0;
     }
 
     static int JACKBRIDGE_API carla_jack_srate_callback(jack_nframes_t newSampleRate, void* arg)
     {
-        carla_stdout("JACK %s", __FUNCTION__);
-        carla_stdout("JACK srate %i", newSampleRate);
-        carla_stdout("JACK srate %p", arg);
         handlePtr->handleJackSampleRateCallback(newSampleRate);
         return 0;
     }
 
     static void JACKBRIDGE_API carla_jack_freewheel_callback(int starting, void* arg)
     {
-        carla_stdout("JACK %s", __FUNCTION__);
         handlePtr->handleJackFreewheelCallback(bool(starting));
     }
 
     static int JACKBRIDGE_API carla_jack_process_callback(jack_nframes_t nframes, void* arg) __attribute__((annotate("realtime")))
     {
-        carla_stdout("PROCESS CALLBACK START");
         handlePtr->handleJackProcessCallback(nframes);
-        carla_stdout("PROCESS CALLBACK END");
         return 0;
     }
 
     static void JACKBRIDGE_API carla_jack_latency_callback(jack_latency_callback_mode_t mode, void* arg)
     {
-        carla_stdout("JACK %s", __FUNCTION__);
         handlePtr->handleJackLatencyCallback(mode);
     }
 
@@ -2266,7 +2254,6 @@ private:
 
     static void JACKBRIDGE_API carla_jack_shutdown_callback(void* arg)
     {
-        carla_stdout("JACK %s", __FUNCTION__);
         handlePtr->handleJackShutdownCallback();
     }
 
