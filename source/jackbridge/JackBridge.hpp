@@ -268,7 +268,7 @@ typedef int  (JACKBRIDGE_API *JackSampleRateCallback)(jack_nframes_t nframes, vo
 typedef void (JACKBRIDGE_API *JackPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
 typedef void (JACKBRIDGE_API *JackClientRegistrationCallback)(const char* name, int register_, void* arg);
 typedef void (JACKBRIDGE_API *JackPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
-typedef int  (JACKBRIDGE_API *JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
+typedef void (JACKBRIDGE_API *JackPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg);
 typedef void (JACKBRIDGE_API *JackFreewheelCallback)(int starting, void* arg);
 typedef void (JACKBRIDGE_API *JackShutdownCallback)(void* arg);
 typedef void (JACKBRIDGE_API *JackInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);

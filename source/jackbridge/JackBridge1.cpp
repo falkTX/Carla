@@ -35,30 +35,29 @@
 
 extern "C" {
 
-typedef void (JACKSYM_API *JackSymLatencyCallback)(jack_latency_callback_mode_t mode, void* arg);
-typedef int  (JACKSYM_API *JackSymProcessCallback)(jack_nframes_t nframes, void* arg);
-typedef void (JACKSYM_API *JackSymThreadInitCallback)(void* arg);
-typedef int  (JACKSYM_API *JackSymGraphOrderCallback)(void* arg);
-typedef int  (JACKSYM_API *JackSymXRunCallback)(void* arg);
-typedef int  (JACKSYM_API *JackSymBufferSizeCallback)(jack_nframes_t nframes, void* arg);
-typedef int  (JACKSYM_API *JackSymSampleRateCallback)(jack_nframes_t nframes, void* arg);
-typedef void (JACKSYM_API *JackSymPortRegistrationCallback)(jack_port_id_t port, int register_, void* arg);
-typedef void (JACKSYM_API *JackSymClientRegistrationCallback)(const char* name, int register_, void* arg);
-typedef void (JACKSYM_API *JackSymPortConnectCallback)(jack_port_id_t a, jack_port_id_t b, int connect, void* arg);
-typedef int  (JACKSYM_API *JackSymPortRenameCallback)(jack_port_id_t port, const char* old_name, const char* new_name, void* arg); // NOTE: returns void in JACK1, int in JACK2
-typedef void (JACKSYM_API *JackSymFreewheelCallback)(int starting, void* arg);
-typedef void (JACKSYM_API *JackSymShutdownCallback)(void* arg);
-typedef void (JACKSYM_API *JackSymInfoShutdownCallback)(jack_status_t code, const char* reason, void* arg);
-typedef int  (JACKSYM_API *JackSymSyncCallback)(jack_transport_state_t state, jack_position_t* pos, void* arg);
-typedef void (JACKSYM_API *JackSymTimebaseCallback)(jack_transport_state_t state, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg);
-typedef void (JACKSYM_API *JackSymSessionCallback)(jack_session_event_t* event, void* arg);
-typedef void (JACKSYM_API *JackSymPropertyChangeCallback)(jack_uuid_t subject, const char* key, jack_property_change_t change, void* arg);
+typedef void (JACKSYM_API *JackSymLatencyCallback)(jack_latency_callback_mode_t, void*);
+typedef int  (JACKSYM_API *JackSymProcessCallback)(jack_nframes_t, void*);
+typedef void (JACKSYM_API *JackSymThreadInitCallback)(void*);
+typedef int  (JACKSYM_API *JackSymGraphOrderCallback)(void*);
+typedef int  (JACKSYM_API *JackSymXRunCallback)(void*);
+typedef int  (JACKSYM_API *JackSymBufferSizeCallback)(jack_nframes_t, void*);
+typedef int  (JACKSYM_API *JackSymSampleRateCallback)(jack_nframes_t, void*);
+typedef void (JACKSYM_API *JackSymPortRegistrationCallback)(jack_port_id_t, int, void*);
+typedef void (JACKSYM_API *JackSymClientRegistrationCallback)(const char*, int, void*);
+typedef void (JACKSYM_API *JackSymPortConnectCallback)(jack_port_id_t, jack_port_id_t, int, void*);
+typedef void (JACKSYM_API *JackSymPortRenameCallback)(jack_port_id_t, const char*, const char*, void*);
+typedef void (JACKSYM_API *JackSymFreewheelCallback)(int, void*);
+typedef void (JACKSYM_API *JackSymShutdownCallback)(void*);
+typedef void (JACKSYM_API *JackSymInfoShutdownCallback)(jack_status_t, const char*, void*);
+typedef int  (JACKSYM_API *JackSymSyncCallback)(jack_transport_state_t, jack_position_t*, void*);
+typedef void (JACKSYM_API *JackSymTimebaseCallback)(jack_transport_state_t, jack_nframes_t, jack_position_t*, int, void*);
+typedef void (JACKSYM_API *JackSymSessionCallback)(jack_session_event_t*, void*);
+typedef void (JACKSYM_API *JackSymPropertyChangeCallback)(jack_uuid_t, const char*, jack_property_change_t, void*);
 
 typedef void        (JACKSYM_API *jacksym_get_version)(int*, int*, int*, int*);
 typedef const char* (JACKSYM_API *jacksym_get_version_string)(void);
 
 typedef jack_client_t* (JACKSYM_API *jacksym_client_open)(const char*, jack_options_t, jack_status_t*);
-typedef const char*    (JACKSYM_API *jacksym_client_rename)(jack_client_t* client, const char* new_name);
 typedef int            (JACKSYM_API *jacksym_client_close)(jack_client_t*);
 
 typedef int   (JACKSYM_API *jacksym_client_name_size)(void);
@@ -182,7 +181,6 @@ struct JackBridge {
     jacksym_get_version_string get_version_string_ptr;
 
     jacksym_client_open client_open_ptr;
-    jacksym_client_rename client_rename_ptr;
     jacksym_client_close client_close_ptr;
 
     jacksym_client_name_size client_name_size_ptr;
@@ -299,7 +297,6 @@ struct JackBridge {
           get_version_ptr(nullptr),
           get_version_string_ptr(nullptr),
           client_open_ptr(nullptr),
-          client_rename_ptr(nullptr),
           client_close_ptr(nullptr),
           client_name_size_ptr(nullptr),
           get_client_name_ptr(nullptr),
@@ -419,7 +416,6 @@ struct JackBridge {
         LIB_SYMBOL(get_version_string)
 
         LIB_SYMBOL(client_open)
-        LIB_SYMBOL(client_rename)
         LIB_SYMBOL(client_close)
 
         LIB_SYMBOL(client_name_size)
@@ -1105,8 +1101,6 @@ bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCa
 #elif defined(JACKBRIDGE_DIRECT)
     return (jack_set_port_rename_callback(client, rename_callback, arg) == 0);
 #else
-    if (getBridgeInstance().get_version_string_ptr != nullptr) // don't use this on JACK1
-        return false;
     if (getBridgeInstance().set_port_rename_callback_ptr != nullptr)
     {
 # ifdef __WINE__

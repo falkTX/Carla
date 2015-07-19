@@ -671,21 +671,32 @@ public:
         fEventPorts.removeAll(port);
     }
 
-    void closeForRename(jack_client_t* const client, const char* const clientName) noexcept
+    bool renameInSingleClient(const CarlaString& newClientName)
+    {
+        const CarlaString clientNamePrefix(newClientName + ":");
+
+        return _renamePorts(fAudioPorts, clientNamePrefix) &&
+               _renamePorts(fCVPorts,    clientNamePrefix) &&
+               _renamePorts(fEventPorts, clientNamePrefix);
+    }
+
+    void closeForRename(jack_client_t* const newClient, const CarlaString& newClientName) noexcept
     {
         if (fJackClient != nullptr)
         {
             if (isActive())
             {
                 {
+                    const CarlaString clientNamePrefix(newClientName + ":");
+
                     // store current client connections
                     const CarlaMutexLocker cml(fPreRenameMutex);
 
                     fPreRenameConnections.clear();
 
-                    _savePortsConnections(fAudioPorts, clientName);
-                    _savePortsConnections(fCVPorts, clientName);
-                    _savePortsConnections(fEventPorts, clientName);
+                    _savePortsConnections(fAudioPorts, clientNamePrefix);
+                    _savePortsConnections(fCVPorts,    clientNamePrefix);
+                    _savePortsConnections(fEventPorts, clientNamePrefix);
                 }
 
                 try {
@@ -705,7 +716,7 @@ public:
         fEventPorts.clear();
         _clearPorts();
 
-        fJackClient = client;
+        fJackClient = newClient;
     }
 
 private:
@@ -720,11 +731,34 @@ private:
     CarlaStringList fPreRenameConnections;
 
     template<typename T>
-    void _savePortsConnections(const LinkedList<T*>& t, const char* const clientName)
+    bool _renamePorts(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
     {
-        CarlaString clientNamePrefix(clientName);
-        clientNamePrefix += ":";
+        for (typename LinkedList<T*>::Itenerator it = t.begin2(); it.valid(); it.next())
+        {
+            T* const port(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(port != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE(port->fJackPort != nullptr);
 
+            const char* shortPortName(jackbridge_port_short_name(port->fJackPort));
+            CARLA_SAFE_ASSERT_CONTINUE(shortPortName != nullptr && shortPortName[0] != '\0');
+
+            const char* const oldClientNameSep(std::strstr(shortPortName, ":"));
+            CARLA_SAFE_ASSERT_CONTINUE(oldClientNameSep != nullptr && oldClientNameSep[0] != '\0' && oldClientNameSep[1] != '\0');
+
+            shortPortName += oldClientNameSep-shortPortName + 1;
+
+            const CarlaString newPortName(clientNamePrefix + shortPortName);
+
+            if (! jackbridge_port_rename(fJackClient, port->fJackPort, newPortName))
+                return false;
+        }
+
+        return true;
+    }
+
+    template<typename T>
+    void _savePortsConnections(const LinkedList<T*>& t, const CarlaString& clientNamePrefix)
+    {
         for (typename LinkedList<T*>::Itenerator it = t.begin2(); it.valid(); it.next())
         {
             T* const port(it.getValue(nullptr));
@@ -1141,47 +1175,48 @@ public:
             return nullptr;
         }
 
-        // single client always re-inits
-        bool needsReinit = (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT);
+        bool needsReinit = false;
 
-        // rename in multiple client mode
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        // rename on client client mode, just rename the ports
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
         {
             CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
 
-#if 0
-            if (bridge.client_rename_ptr != nullptr)
+            if (! client->renameInSingleClient(uniqueName))
             {
-                newName = jackbridge_client_rename(client->fClient, newName);
+                setLastError("Failed to rename some JACK ports, does your JACK version support proper port renaming?");
+                return nullptr;
+            }
+        }
+        // rename in multiple client mode
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS)
+        {
+            CarlaEngineJackClient* const client((CarlaEngineJackClient*)plugin->getEngineClient());
+
+            // we should not be able to do this, jack really needs to allow client rename
+            if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
+            {
+                // get new client name
+                uniqueName = jackbridge_get_client_name(jackClient);
+
+                // close client
+                client->closeForRename(jackClient, uniqueName);
+
+                // disable plugin
+                plugin->setEnabled(false);
+
+                // set new client data
+                jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
+                jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
+                jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
+                jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
+
+                needsReinit = true;
             }
             else
-#endif
             {
-                // we should not be able to do this, jack really needs to allow client rename
-                if (jack_client_t* const jackClient = jackbridge_client_open(uniqueName, JackNullOption, nullptr))
-                {
-                    // get new client name
-                    uniqueName = jackbridge_get_client_name(jackClient);
-
-                    // close client
-                    client->closeForRename(jackClient, uniqueName);
-
-                    // disable plugin
-                    plugin->setEnabled(false);
-
-                    // set new client data
-                    jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
-                    jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
-                    jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
-                    jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
-
-                    needsReinit = true;
-                }
-                else
-                {
-                    setLastError("Failed to create new JACK client");
-                    return nullptr;
-                }
+                setLastError("Failed to create new JACK client");
+                return nullptr;
             }
         }
 
@@ -1761,30 +1796,6 @@ protected:
         }
     }
 
-    void handleJackClientRenameCallback(const char* const oldName, const char* const newName)
-    {
-        CARLA_SAFE_ASSERT_RETURN(oldName != nullptr && oldName[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0',);
-
-        // ignore this if on internal patchbay mode
-        if (! fExternalPatchbay) return;
-
-        for (LinkedList<GroupNameToId>::Itenerator it = fUsedGroups.list.begin2(); it.valid(); it.next())
-        {
-            static GroupNameToId groupNameFallback = { 0, { '\0' } };
-
-            GroupNameToId& groupNameToId(it.getValue(groupNameFallback));
-            CARLA_SAFE_ASSERT_CONTINUE(groupNameToId.group != 0);
-
-            if (std::strncmp(groupNameToId.name, oldName, STR_MAX) == 0)
-            {
-                groupNameToId.rename(newName);
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, groupNameToId.group, 0, 0, 0.0f, groupNameToId.name);
-                break;
-            }
-        }
-    }
-
     void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldFullName, const char* const newFullName)
     {
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
@@ -2238,17 +2249,9 @@ private:
         handlePtr->handleJackPortConnectCallback(a, b, (connect != 0));
     }
 
-    static int JACKBRIDGE_API carla_jack_client_rename_callback(const char* oldName, const char* newName, void* arg)
-    {
-        handlePtr->handleJackClientRenameCallback(oldName, newName);
-        return 0;
-    }
-
-    // NOTE: JACK1 returns void, JACK2 returns int
-    static int JACKBRIDGE_API carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
+    static void JACKBRIDGE_API carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
     {
         handlePtr->handleJackPortRenameCallback(port, oldName, newName);
-        return 0;
     }
 #endif
 
