@@ -81,7 +81,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.port_connected_to_ptr                = jackbridge_port_connected_to;
     funcs.port_get_connections_ptr             = jackbridge_port_get_connections;
     funcs.port_get_all_connections_ptr         = jackbridge_port_get_all_connections;
-    funcs.port_set_name_ptr                    = jackbridge_port_set_name;
+    funcs.port_rename_ptr                      = jackbridge_port_rename;
     funcs.port_set_alias_ptr                   = jackbridge_port_set_alias;
     funcs.port_unset_alias_ptr                 = jackbridge_port_unset_alias;
     funcs.port_get_aliases_ptr                 = jackbridge_port_get_aliases;

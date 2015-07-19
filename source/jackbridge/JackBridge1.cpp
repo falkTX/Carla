@@ -706,10 +706,9 @@ struct WineBridge {
         return getInstance().port_conn_cb(a, b, connect, arg);
     }
 
-    static int port_rename(jack_port_id_t port, const char* old_name, const char* new_name, void* arg)
+    static void port_rename(jack_port_id_t port, const char* old_name, const char* new_name, void* arg)
     {
         getInstance().port_rename_cb(port, old_name, new_name, arg);
-        return 0;
     }
 
     static void freewheel(int starting, void* arg)

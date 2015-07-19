@@ -308,9 +308,9 @@ const char** jackbridge_port_get_all_connections(const jack_client_t* client, co
     return getBridgeInstance().port_get_all_connections_ptr(client, port);
 }
 
-bool jackbridge_port_set_name(jack_port_t* port, const char* port_name)
+bool jackbridge_port_rename(jack_client_t* client, jack_port_t* port, const char* port_name)
 {
-    return getBridgeInstance().port_set_name_ptr(port, port_name);
+    return getBridgeInstance().port_rename_ptr(client, port, port_name);
 }
 
 bool jackbridge_port_set_alias(jack_port_t* port, const char* alias)
