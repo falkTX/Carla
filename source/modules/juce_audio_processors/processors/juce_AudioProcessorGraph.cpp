@@ -977,7 +977,6 @@ bool AudioProcessorGraph::removeNode (const uint32 nodeId)
     {
         if (nodes.getUnchecked(i)->nodeId == nodeId)
         {
-            nodes.getUnchecked(i)->setParentGraph (nullptr);
             nodes.remove (i);
             triggerAsyncUpdate();
 
@@ -1281,6 +1280,8 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
 void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
 {
     const ScopedLock sl (getCallbackLock());
+
+    AudioProcessor::setPlayHead (audioPlayHead);
 
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->getProcessor()->setPlayHead (audioPlayHead);

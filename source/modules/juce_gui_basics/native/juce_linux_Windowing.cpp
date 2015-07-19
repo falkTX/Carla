@@ -1881,6 +1881,9 @@ public:
     {
         if (LinuxComponentPeer* const otherPeer = dynamic_cast<LinuxComponentPeer*> (other))
         {
+            if (otherPeer->styleFlags & windowIsTemporary)
+                return;
+
             setMinimised (false);
 
             Window newStack[] = { otherPeer->windowH, windowH };
@@ -2320,6 +2323,10 @@ public:
         XEvent nextEvent;
         ScopedXLock xlock;
 
+        // if we have opengl contexts then just repaint them all
+        // regardless if this is really necessary
+        repaintOpenGLContexts ();
+
         if (exposeEvent.window != windowH)
         {
             Window child;
@@ -2509,6 +2516,28 @@ public:
         return currentScaleFactor;
     }
 
+    //===============================================================================
+    void addOpenGLRepaintListener (Component* dummy)
+    {
+        if (dummy != nullptr)
+            glRepaintListeners.addIfNotAlreadyThere (dummy);
+    }
+
+    void removeOpenGLRepaintListener (Component* dummy)
+    {
+        if (dummy != nullptr)
+            glRepaintListeners.removeAllInstancesOf (dummy);
+    }
+
+    void repaintOpenGLContexts()
+    {
+        for (int i = 0; i < glRepaintListeners.size(); ++i)
+        {
+            if (Component* c = glRepaintListeners [i])
+                c->handleCommandMessage (0);
+        }
+    }
+
     //==============================================================================
     bool dontRepaint;
 
@@ -2668,6 +2697,7 @@ private:
     BorderSize<int> windowBorder;
     bool isAlwaysOnTop;
     double currentScaleFactor;
+    Array<Component*> glRepaintListeners;
     enum { KeyPressEventType = 2 };
 
     struct MotifWmHints
@@ -4123,6 +4153,18 @@ Rectangle<int> juce_LinuxScaledToPhysicalBounds(ComponentPeer* peer, const Recta
         retval *= linuxPeer->getCurrentScale();
 
     return retval;
+}
+
+void juce_LinuxAddRepaintListener (ComponentPeer* peer, Component* dummy)
+{
+    if (LinuxComponentPeer* linuxPeer = dynamic_cast<LinuxComponentPeer*> (peer))
+        linuxPeer->addOpenGLRepaintListener (dummy);
+}
+
+void juce_LinuxRemoveRepaintListener (ComponentPeer* peer, Component* dummy)
+{
+    if (LinuxComponentPeer* linuxPeer = dynamic_cast<LinuxComponentPeer*> (peer))
+        linuxPeer->removeOpenGLRepaintListener (dummy);
 }
 
 //==============================================================================
