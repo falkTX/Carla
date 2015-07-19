@@ -337,7 +337,7 @@ JACKBRIDGE_API bool         jackbridge_port_connected_to(const jack_port_t* port
 JACKBRIDGE_API const char** jackbridge_port_get_connections(const jack_port_t* port);
 JACKBRIDGE_API const char** jackbridge_port_get_all_connections(const jack_client_t* client, const jack_port_t* port);
 
-JACKBRIDGE_API bool jackbridge_port_set_name(jack_port_t* port, const char* port_name);
+JACKBRIDGE_API bool jackbridge_port_rename(jack_client_t* client, jack_port_t* port, const char* port_name);
 JACKBRIDGE_API bool jackbridge_port_set_alias(jack_port_t* port, const char* alias);
 JACKBRIDGE_API bool jackbridge_port_unset_alias(jack_port_t* port, const char* alias);
 JACKBRIDGE_API int  jackbridge_port_get_aliases(const jack_port_t* port, char* const aliases[2]);

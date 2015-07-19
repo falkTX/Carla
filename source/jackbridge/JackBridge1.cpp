@@ -108,6 +108,7 @@ typedef int          (JACKSYM_API *jacksym_port_connected_to)(const jack_port_t*
 typedef const char** (JACKSYM_API *jacksym_port_get_connections)(const jack_port_t*);
 typedef const char** (JACKSYM_API *jacksym_port_get_all_connections)(const jack_client_t*, const jack_port_t*);
 
+typedef int (JACKSYM_API *jacksym_port_rename)(jack_client_t*, jack_port_t*, const char*);
 typedef int (JACKSYM_API *jacksym_port_set_name)(jack_port_t*, const char*);
 typedef int (JACKSYM_API *jacksym_port_set_alias)(jack_port_t*, const char*);
 typedef int (JACKSYM_API *jacksym_port_unset_alias)(jack_port_t*, const char*);
@@ -231,6 +232,7 @@ struct JackBridge {
     jacksym_port_get_connections port_get_connections_ptr;
     jacksym_port_get_all_connections port_get_all_connections_ptr;
 
+    jacksym_port_rename port_rename_ptr;
     jacksym_port_set_name port_set_name_ptr;
     jacksym_port_set_alias port_set_alias_ptr;
     jacksym_port_unset_alias port_unset_alias_ptr;
@@ -338,6 +340,7 @@ struct JackBridge {
           port_connected_to_ptr(nullptr),
           port_get_connections_ptr(nullptr),
           port_get_all_connections_ptr(nullptr),
+          port_rename_ptr(nullptr),
           port_set_name_ptr(nullptr),
           port_set_alias_ptr(nullptr),
           port_unset_alias_ptr(nullptr),
@@ -466,6 +469,7 @@ struct JackBridge {
         LIB_SYMBOL(port_get_connections)
         LIB_SYMBOL(port_get_all_connections)
 
+        LIB_SYMBOL(port_rename)
         LIB_SYMBOL(port_set_name)
         LIB_SYMBOL(port_set_alias)
         LIB_SYMBOL(port_unset_alias)
@@ -1418,15 +1422,17 @@ const char** jackbridge_port_get_all_connections(const jack_client_t* client, co
 
 // -----------------------------------------------------------------------------
 
-bool jackbridge_port_set_name(jack_port_t* port, const char* port_name)
+bool jackbridge_port_rename(jack_client_t* client, jack_port_t* port, const char* port_name)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)
-    return (jack_port_set_name(port, port_name) == 0);
+    return (jack_port_rename(client, port, port_name) == 0);
 #else
-    if (getBridgeInstance().get_version_string_ptr != nullptr) // don't use this on JACK1
-        return false;
-    if (getBridgeInstance().port_set_name_ptr != nullptr)
+    // Try new API first
+    if (getBridgeInstance().port_rename_ptr != nullptr)
+        return (getBridgeInstance().port_rename_ptr(client, port, port_name) == 0);
+    // Try old API if using JACK2
+    if (getBridgeInstance().get_version_string_ptr != nullptr && getBridgeInstance().port_set_name_ptr != nullptr)
         return (getBridgeInstance().port_set_name_ptr(port, port_name) == 0);
 #endif
     return false;
