@@ -59,5 +59,3 @@ You can use: <br/>
 `$ make features` <br/>
 To find out which dependencies are missing.
 
-
-<br/>
