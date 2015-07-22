@@ -1306,7 +1306,8 @@ protected:
         //runPendingRtEvents();
     }
 
-    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
+    void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
         const PendingRtEventsRunner prt(this);
 
@@ -1341,8 +1342,17 @@ protected:
 
         if (pData->curPluginCount == 0 && ! kIsPatchbay)
         {
-            FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
-            FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
+            if (outBuffer[0] != inBuffer[0])
+                FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
+
+            if (outBuffer[1] != inBuffer[1])
+                FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
+
+            for (uint32_t i=0; i < midiEventCount; ++i)
+            {
+                if (! pHost->write_midi_event(pHost->handle, &midiEvents[i]))
+                    break;
+            }
             return;
         }
 
