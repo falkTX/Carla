@@ -1,7 +1,6 @@
 prefix=X-PREFIX-X
-exec_prefix=${prefix}
-libdir=${exec_prefix}/lib/carla
-includedir=${prefix}/include/carla
+libdir=X-LIBDIR-X/carla
+includedir=X-INCLUDEDIR-X/carla
 
 Name: carla-standalone
 Version: 1.9.5

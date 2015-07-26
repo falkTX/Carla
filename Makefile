@@ -644,6 +644,15 @@ endif
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
+	# Adjust LIBDIR and INCLUDEDIR in pkg-config files
+	sed -i 's?X-LIBDIR-X?$(LIBDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
+	sed -i 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
 	# Adjust LIBDIR and DATADIR value in code
 	sed -i 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
 		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
