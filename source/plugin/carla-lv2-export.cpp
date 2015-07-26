@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -553,6 +553,69 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
 
     text += "    doap:name \"" + String(pluginDesc->name) + "\" ;\n";
     text += "    doap:maintainer [ foaf:name \"" + String(pluginDesc->maker) + "\" ] .\n";
+
+#if 0
+    // -------------------------------------------------------------------
+    // Presets
+
+    if (pluginDesc->get_midi_program_count != nullptr && pluginDesc->get_midi_program_info != nullptr && pluginHandle != nullptr)
+    {
+        if (const uint32_t presetCount = pluginDesc->get_midi_program_count(pluginHandle))
+        {
+            const String presetsFile("carla.lv2/" + pluginLabel + "-presets.ttl");
+            std::fstream presetsStream(presetsFile.toRawUTF8(), std::ios::out);
+
+            String presetId, presetText;
+
+            presetText += "@prefix lv2: <http://lv2plug.in/ns/lv2core#> .\n";
+            presetText += "@prefix pset: <http://lv2plug.in/ns/ext/presets#> .\n";
+            presetText += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
+
+            for (uint32_t i=0; i<presetCount; ++i)
+            {
+                const NativeMidiProgram* const midiProg(pluginDesc->get_midi_program_info(pluginHandle, i));
+                pluginDesc->set_midi_program(pluginHandle, 0, midiProg->bank, midiProg->program);
+
+                presetId = String::formatted("%03i", i+1);
+
+                text += "\n<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + "#preset" + presetId + ">\n";
+                text += "    a pset:Preset ;\n";
+                text += "    lv2:appliesTo <http://kxstudio.sf.net/carla/plugins/" + pluginLabel + "> ;\n";
+                text += "    rdfs:seeAlso <" + pluginLabel + "-presets.ttl> .\n";
+
+                presetText += "\n<http://kxstudio.sf.net/carla/plugins/" + pluginLabel + "#preset" + presetId + ">\n";
+                presetText += "    a pset:Preset ;\n";
+                presetText += "    lv2:appliesTo <http://kxstudio.sf.net/carla/plugins/" + pluginLabel + "> ;\n";
+                presetText += "    rdfs:label \"" + String(midiProg->name) + "\" ;\n";
+
+                for (uint32_t j=0; j < paramCount; ++j)
+                {
+                    const NativeParameter* paramInfo(pluginDesc->get_parameter_info(pluginHandle, j));
+                    const String           paramName(paramInfo->name != nullptr ? paramInfo->name : "");
+                    const String           paramUnit(paramInfo->unit != nullptr ? paramInfo->unit : "");
+
+                    CARLA_SAFE_ASSERT_RETURN(paramInfo != nullptr,)
+
+                    if (j == 0)
+                        presetText += "    lv2:port [\n";
+
+                    presetText += "        lv2:symbol \"" + nameToSymbol(paramName, j) + "\" ;\n";
+                    presetText += "        pset:value " + String::formatted("%f", pluginDesc->get_parameter_value(pluginHandle, j)) + " ;\n";
+
+                    if (j+1 == paramCount)
+                        presetText += "    ] ;\n\n";
+                    else
+                        presetText += "    ] , [\n";
+                }
+
+                presetsStream << presetText.toRawUTF8();
+                presetText.clear();
+            }
+
+            presetsStream.close();
+        }
+    }
+#endif
 
     // -------------------------------------------------------------------
     // Write file now
