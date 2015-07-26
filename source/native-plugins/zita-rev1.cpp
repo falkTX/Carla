@@ -391,7 +391,7 @@ static const NativePluginDescriptor rev1AmbisonicDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 4,
     /* midiIns   */ 0,
@@ -430,7 +430,7 @@ static const NativePluginDescriptor rev1StereoDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

@@ -221,7 +221,7 @@ static const NativePluginDescriptor midifileDesc = {
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 0,
     /* midiIns   */ 0,

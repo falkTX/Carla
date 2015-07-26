@@ -285,7 +285,7 @@ static const NativePluginDescriptor audiofileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

@@ -1305,7 +1305,7 @@ static const NativePluginDescriptor fxAlienWahDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1324,7 +1324,7 @@ static const NativePluginDescriptor fxChorusDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1342,7 +1342,7 @@ static const NativePluginDescriptor fxDistortionDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1360,7 +1360,7 @@ static const NativePluginDescriptor fxDynamicFilterDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_FILTER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1379,7 +1379,7 @@ static const NativePluginDescriptor fxEchoDesc = {
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1397,7 +1397,7 @@ static const NativePluginDescriptor fxPhaserDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_MODULATOR,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
@@ -1415,7 +1415,7 @@ static const NativePluginDescriptor fxReverbDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_USES_PANNING
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 0,

@@ -53,7 +53,7 @@ static const NativePluginDescriptor _mverbDesc = {
 #else
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
 #endif
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
     /* midiIns   */ 0,

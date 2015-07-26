@@ -416,7 +416,7 @@ static const NativePluginDescriptor at1Desc = {
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_USES_STATE),
-    /* supports  */ static_cast<NativePluginSupports>(0x0),
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 1,
     /* audioOuts */ 1,
     /* midiIns   */ 1,
