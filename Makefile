@@ -8,7 +8,7 @@ include source/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-LINK    := ln -sf
+LINK := ln -sf
 
 ifeq ($(DEFAULT_QT),4)
 PYUIC ?= pyuic4 -w
@@ -20,11 +20,12 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-PREFIX    := /usr/local
-LIBDIR    := $(PREFIX)/lib
-DESTDIR   :=
-
-BINDIR    := $(CURDIR)/bin
+PREFIX     := /usr/local
+BINDIR     := $(PREFIX)/bin
+LIBDIR     := $(PREFIX)/lib
+DATADIR    := $(PREFIX)/share
+INCLUDEDIR := $(PREFIX)/include
+DESTDIR    :=
 
 ifeq ($(DEBUG),true)
 MODULEDIR := $(CURDIR)/build/modules/Debug
@@ -238,11 +239,11 @@ win64: $(LIBS_WIN64)
 
 wine32:
 	$(MAKE) -C source/jackbridge wine32
-	cp -f $(MODULEDIR)/jackbridge-wine32.dll.so $(BINDIR)/jackbridge-wine32.dll
+	cp -f $(MODULEDIR)/jackbridge-wine32.dll.so $(CURDIR)/bin/jackbridge-wine32.dll
 
 wine64:
 	$(MAKE) -C source/jackbridge wine64
-	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(BINDIR)/jackbridge-wine64.dll
+	cp -f $(MODULEDIR)/jackbridge-wine64.dll.so $(CURDIR)/bin/jackbridge-wine64.dll
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Resources
@@ -401,33 +402,44 @@ stoat:
 
 install:
 	# Create directories
-	install -d $(DESTDIR)$(PREFIX)/bin/
-	install -d $(DESTDIR)$(PREFIX)/lib/carla/
-	install -d $(DESTDIR)$(PREFIX)/lib/carla/styles/
-	install -d $(DESTDIR)$(PREFIX)/lib/pkgconfig/
-	install -d $(DESTDIR)$(PREFIX)/lib/python3/dist-packages/
-	install -d $(DESTDIR)$(PREFIX)/include/carla/
-	install -d $(DESTDIR)$(PREFIX)/include/carla/includes/
-	install -d $(DESTDIR)$(PREFIX)/include/carla/utils/
-	install -d $(DESTDIR)$(PREFIX)/share/applications/
-	install -d $(DESTDIR)$(PREFIX)/share/carla/
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/
+	install -d $(DESTDIR)$(BINDIR)
+	install -d $(DESTDIR)$(LIBDIR)
+	install -d $(DESTDIR)$(LIBDIR)/carla
+	install -d $(DESTDIR)$(LIBDIR)/carla/styles
+	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
+	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
+	install -d $(DESTDIR)$(DATADIR)
+	install -d $(DESTDIR)$(DATADIR)/applications
+	install -d $(DESTDIR)$(DATADIR)/carla
+	install -d $(DESTDIR)$(DATADIR)/carla/resources
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/at1/
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	install -d $(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
 endif
 endif
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-	install -d $(DESTDIR)$(PREFIX)/share/mime/packages/
+	install -d $(DESTDIR)$(DATADIR)/icons
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable
+	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
+	install -d $(DESTDIR)$(DATADIR)/mime
+	install -d $(DESTDIR)$(DATADIR)/mime/packages
+	install -d $(DESTDIR)$(INCLUDEDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
 
 	# --------------------------------------------------------------------------------------------------------------------
 
@@ -440,60 +452,58 @@ endif
 		data/carla-rack \
 		data/carla-single \
 		data/carla-settings \
-		$(DESTDIR)$(PREFIX)/bin/
-
-# 		data/carla-control \
-
-	# Install desktop files
-	install -m 644 data/*.desktop $(DESTDIR)$(PREFIX)/share/applications/
-
-	# Install icons, 16x16
-	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(PREFIX)/share/icons/hicolor/16x16/apps/
-
-	# Install icons, 48x48
-	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(PREFIX)/share/icons/hicolor/48x48/apps/
-
-	# Install icons, 128x128
-	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(PREFIX)/share/icons/hicolor/128x128/apps/
-
-	# Install icons, 256x256
-	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
-	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(PREFIX)/share/icons/hicolor/256x256/apps/
-
-	# Install icons, scalable
-	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/
-
-	# Install mime package
-	install -m 644 data/carla.xml $(DESTDIR)$(PREFIX)/share/mime/packages/
+		$(DESTDIR)$(BINDIR)
 
 	# Install pkg-config files
-	install -m 644 data/*.pc $(DESTDIR)$(PREFIX)/lib/pkgconfig/
+	install -m 644 data/*.pc      $(DESTDIR)$(LIBDIR)/pkgconfig
+
+	# Install desktop files
+	install -m 644 data/*.desktop $(DESTDIR)$(DATADIR)/applications
+
+	# Install mime package
+	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
+
+	# Install icons, 16x16
+	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+
+	# Install icons, 48x48
+	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
+	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
+
+	# Install icons, 128x128
+	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
+	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
+
+	# Install icons, 256x256
+	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
+	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
+
+	# Install icons, scalable
+	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
+	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install backend libs
 	install -m 644 \
 		bin/libcarla_*.* \
-		$(DESTDIR)$(PREFIX)/lib/carla/
+		$(DESTDIR)$(LIBDIR)/carla
 
 	# Install other binaries
 	install -m 755 \
 		bin/*bridge-* \
 		bin/carla-discovery-* \
-		$(DESTDIR)$(PREFIX)/lib/carla/
+		$(DESTDIR)$(LIBDIR)/carla
 
 	# Install the real modgui bridge
 	install -m 755 \
 		data/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(PREFIX)/lib/carla/
+		$(DESTDIR)$(LIBDIR)/carla
 
 ifeq ($(HAVE_QT),true)
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
-		$(DESTDIR)$(PREFIX)/lib/carla/styles/
+		$(DESTDIR)$(LIBDIR)/carla/styles
 endif
 
 	# Install python code
@@ -503,12 +513,12 @@ endif
 		source/carla-patchbay \
 		source/carla-rack \
 		source/*.py \
-		$(DESTDIR)$(PREFIX)/share/carla/
+		$(DESTDIR)$(DATADIR)/carla
 
 	install -m 644 \
 		source/carla_backend.py \
 		source/carla_utils.py \
-		$(DESTDIR)$(PREFIX)/lib/python3/dist-packages/
+		$(DESTDIR)$(LIBDIR)/python3/dist-packages
 
 	# Install headers
 	install -m 644 \
@@ -518,12 +528,12 @@ endif
 		source/backend/CarlaEngine.hpp \
 		source/backend/CarlaPlugin.hpp \
 		source/includes/CarlaNative.h \
-		$(DESTDIR)$(PREFIX)/include/carla/
+		$(DESTDIR)$(INCLUDEDIR)/carla
 
 	install -m 644 \
 		source/includes/CarlaDefines.h \
 		source/includes/CarlaMIDI.h \
-		$(DESTDIR)$(PREFIX)/include/carla/includes/
+		$(DESTDIR)$(INCLUDEDIR)/carla/includes
 
 	install -m 644 \
 		source/utils/CarlaUtils.hpp \
@@ -534,130 +544,138 @@ endif
 		source/utils/CarlaExternalUI.hpp \
 		source/utils/CarlaMutex.hpp \
 		source/utils/CarlaString.hpp \
-		$(DESTDIR)$(PREFIX)/include/carla/utils/
+		$(DESTDIR)$(INCLUDEDIR)/carla/utils
 
 	# Install resources
 	install -m 755 \
 		bin/resources/carla-plugin \
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/
+		$(DESTDIR)$(DATADIR)/carla/resources
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 	install -m 644 \
 		bin/resources/at1/*.png \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/at1/
+		$(DESTDIR)$(DATADIR)/carla/resources/at1
 
 	install -m 644 \
 		bin/resources/bls1/*.png \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/bls1/
+		$(DESTDIR)$(DATADIR)/carla/resources/bls1
 
 	install -m 644 \
 		bin/resources/rev1/*.png \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/rev1/
+		$(DESTDIR)$(DATADIR)/carla/resources/rev1
 
 	install -m 755 \
 		bin/resources/at1-ui \
 		bin/resources/bls1-ui \
 		bin/resources/rev1-ui \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/
+		$(DESTDIR)$(DATADIR)/carla/resources
 endif
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/zynaddsubfx/
+		$(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
 
 	install -m 755 \
 		bin/resources/zynaddsubfx-ui \
-		$(DESTDIR)$(PREFIX)/share/carla/resources/
+		$(DESTDIR)$(DATADIR)/carla/resources
 endif
 endif
 
 	# Install resources (re-use python files)
-	$(LINK) $(PREFIX)/share/carla/carla_app.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_backend.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_backend_qt.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_config.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_control.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_database.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_host.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_modgui.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_panels.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_settings.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_skin.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_shared.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_utils.py              $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/carla_widgets.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/canvaspreviewframe.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/digitalpeakmeter.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/externalui.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ledbutton.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/paramspinbox.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/patchcanvas.py              $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/patchcanvas_theme.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/pianoroll.py                $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/pixmapbutton.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/pixmapdial.py               $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/pixmapkeyboard.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/racklistwidget.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/resources_rc.py             $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_about.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_about_juce.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_database.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_edit.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_host.py            $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_panel_time.py      $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_parameter.py       $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_compact.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_default.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_plugin_presets.py  $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_refresh.py         $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_settings.py        $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_carla_settings_driver.py $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_inputdialog_value.py     $(DESTDIR)$(PREFIX)/share/carla/resources/
-	$(LINK) $(PREFIX)/share/carla/ui_midipattern.py           $(DESTDIR)$(PREFIX)/share/carla/resources/
+	$(LINK) $(DATADIR)/carla/carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_config.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_modgui.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_panels.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/canvaspreviewframe.py       $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/digitalpeakmeter.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ledbutton.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/paramspinbox.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/pianoroll.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/pixmapbutton.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/pixmapdial.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/pixmapkeyboard.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/racklistwidget.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_panel_time.py      $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_plugin_compact.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_plugin_default.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_plugin_presets.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_refresh.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_settings.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
 
 	# Adjust PREFIX value in script files
-	sed -i "s?X-PREFIX-X?$(PREFIX)?" \
-		$(DESTDIR)$(PREFIX)/bin/carla \
-		$(DESTDIR)$(PREFIX)/bin/carla-control \
-		$(DESTDIR)$(PREFIX)/bin/carla-database \
-		$(DESTDIR)$(PREFIX)/bin/carla-patchbay \
-		$(DESTDIR)$(PREFIX)/bin/carla-rack \
-		$(DESTDIR)$(PREFIX)/bin/carla-single \
-		$(DESTDIR)$(PREFIX)/bin/carla-settings \
-		$(DESTDIR)$(PREFIX)/lib/carla/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-utils.pc
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(BINDIR)/carla \
+		$(DESTDIR)$(BINDIR)/carla-control \
+		$(DESTDIR)$(BINDIR)/carla-database \
+		$(DESTDIR)$(BINDIR)/carla-patchbay \
+		$(DESTDIR)$(BINDIR)/carla-rack \
+		$(DESTDIR)$(BINDIR)/carla-single \
+		$(DESTDIR)$(BINDIR)/carla-settings \
+		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
+	# Adjust LIBDIR and DATADIR value in code
+	sed -i 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
+		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
+
+	sed -i 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
+		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
 
 	# --------------------------------------------------------------------------------------------------------------------
 
 	# Install lv2 plugin
-	install -d $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	install -d $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
 
 	install -m 644 \
 		bin/carla.lv2/carla.* \
 		bin/carla.lv2/*.ttl \
-		$(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+		$(DESTDIR)$(LIBDIR)/lv2/carla.lv2
 
 	# Link binaries for lv2 plugin
-	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
-		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/; \
-		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
+	@for i in $(shell find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
+		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/$$i; \
 	done
-	rm -f $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/libcarla_standalone2.*
-	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
-
-	# Link styles for lv2 plugin
-	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
+	rm -f $(DESTDIR)$(LIBDIR)/vst/carla.vst/libcarla_standalone2.*
 
 	# Link resources for lv2 plugin
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/resources
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
+	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
+	$(LINK) $(DATADIR)/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
+
+	# Link styles for lv2 plugin
+	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
+	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
 
 	# --------------------------------------------------------------------------------------------------------------------
 
@@ -665,25 +683,26 @@ ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
 ifeq ($(DEFAULT_QT),4)
 	# Install vst plugin
-	install -d $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+	install -d $(DESTDIR)$(LIBDIR)/vst/carla.vst
 
 	install -m 644 \
 		bin/CarlaRack*.* \
 		bin/CarlaPatchbay*.* \
-		$(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+		$(DESTDIR)$(LIBDIR)/vst/carla.vst
 
 	# Link binaries for vst plugin
-	@for i in $(shell find $(DESTDIR)$(PREFIX)/lib/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
-		$(LINK) $(PREFIX)/lib/carla/$$i $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/; \
+	@for i in $(shell find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/; \
 	done
-	rm -f $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/libcarla_standalone2.*
-
-	# Link styles for vst plugin
-	$(LINK) $(PREFIX)/lib/carla/styles $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+	rm -f $(DESTDIR)$(LIBDIR)/vst/carla.vst/libcarla_standalone2.*
 
 	# Link resources for vst plugin
-	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/resources
-	$(LINK) $(PREFIX)/share/carla/resources/ $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
+	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
+	$(LINK) $(DATADIR)/carla/resources $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
+
+	# Link styles for vst plugin
+	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
+	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 endif
 endif
 endif
@@ -691,21 +710,21 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/carla*
-	rm -f $(DESTDIR)$(PREFIX)/lib/pkgconfig/carla-standalone.pc
-	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla.desktop
-	rm -f $(DESTDIR)$(PREFIX)/share/applications/carla-control.desktop
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/carla.png
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/*/apps/carla-control.png
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla.svg
-	rm -f $(DESTDIR)$(PREFIX)/share/icons/hicolor/scalable/apps/carla-control.svg
-	rm -f $(DESTDIR)$(PREFIX)/share/mime/packages/carla.xml
-	rm -rf $(DESTDIR)$(PREFIX)/include/carla/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/carla/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla.lv2/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/lv2/carla-native.lv2/
-	rm -rf $(DESTDIR)$(PREFIX)/lib/vst/carla.vst/
-	rm -rf $(DESTDIR)$(PREFIX)/share/carla/
+	rm -f $(DESTDIR)$(BINDIR)/carla*
+	rm -f $(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc
+	rm -f $(DESTDIR)$(DATADIR)/applications/carla.desktop
+	rm -f $(DESTDIR)$(DATADIR)/applications/carla-control.desktop
+	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/*/apps/carla.png
+	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/*/apps/carla-control.png
+	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/carla.svg
+	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/carla-control.svg
+	rm -f $(DESTDIR)$(DATADIR)/mime/packages/carla.xml
+	rm -rf $(DESTDIR)$(LIBDIR)/carla
+	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
+	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla-native.lv2
+	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst
+	rm -rf $(DESTDIR)$(DATADIR)/carla
+	rm -rf $(DESTDIR)$(INCLUDEDIR)/carla
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

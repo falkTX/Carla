@@ -21,6 +21,10 @@
 
 from carla_config import *
 
+# These will be modified during install
+X_LIBDIR_X = None
+X_DATADIR_X = None
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
@@ -611,10 +615,14 @@ def getInitialProjectFile(app, skipExistCheck = False):
 def getPaths(libPrefix = None):
     CWDl = CWD.lower()
 
+    # adjust for special distros
+    libdir  = os.path.basename(os.path.normpath(X_LIBDIR_X))  if X_LIBDIR_X  else "lib"
+    datadir = os.path.basename(os.path.normpath(X_DATADIR_X)) if X_DATADIR_X else "share"
+
     # standalone, installed system-wide linux
     if libPrefix is not None:
-        pathBinaries  = os.path.join(libPrefix, "lib", "carla")
-        pathResources = os.path.join(libPrefix, "share", "carla", "resources")
+        pathBinaries  = os.path.join(libPrefix, libdir, "carla")
+        pathResources = os.path.join(libPrefix, datadir, "carla", "resources")
 
     # standalone, local source
     elif CWDl.endswith("source"):
@@ -625,7 +633,7 @@ def getPaths(libPrefix = None):
     elif CWDl.endswith("resources"):
         # installed system-wide linux
         if CWDl.endswith("/share/carla/resources"):
-            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", "lib", "carla"))
+            pathBinaries  = os.path.abspath(os.path.join(CWD, "..", "..", "..", libdir, "carla"))
             pathResources = CWD
 
         # local source
