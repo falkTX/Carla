@@ -1157,6 +1157,7 @@ private:
         Ports()
             : eventsIn(nullptr),
               midiOuts(nullptr),
+              midiOutData(nullptr),
               audioIns(nullptr),
               audioOuts(nullptr),
               freewheel(nullptr),
