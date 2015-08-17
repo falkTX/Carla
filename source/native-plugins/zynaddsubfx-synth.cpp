@@ -207,6 +207,7 @@ public:
 
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "zynaddsubfx-ui"),
+          CarlaThread("ZynAddSubFxPlugin"),
           fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),

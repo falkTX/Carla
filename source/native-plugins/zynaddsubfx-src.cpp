@@ -112,6 +112,7 @@ extern "C" {
 #include "zynaddsubfx/Misc/PresetExtractor.cpp"
 #include "zynaddsubfx/Misc/Recorder.cpp"
 //#include "zynaddsubfx/Misc/Stereo.cpp"
+#include "zynaddsubfx/Misc/TmpFileMgr.cpp"
 #include "zynaddsubfx/Misc/Util.cpp"
 #include "zynaddsubfx/Misc/WavFile.cpp"
 #include "zynaddsubfx/Misc/WaveShapeSmps.cpp"
@@ -155,6 +156,7 @@ extern "C" {
 #include "zynaddsubfx/Synth/SUBnote.cpp"
 #include "zynaddsubfx/Synth/SynthNote.cpp"
 #include "zynaddsubfx/UI/ConnectionDummy.cpp"
+#include "zynaddsubfx/globals.cpp"
 
 // Dummy variables and functions for linking purposes
 // const char* instance_name = nullptr;

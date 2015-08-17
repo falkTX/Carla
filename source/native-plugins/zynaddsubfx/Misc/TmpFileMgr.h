@@ -1,3 +1,4 @@
+#pragma once
 
 /**
     This file provides routines for using zyn's tmp files.
