@@ -185,7 +185,8 @@ static ZynAddSubFxPrograms sPrograms;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxPlugin : public NativePluginAndUiClass
+class ZynAddSubFxPlugin : public NativePluginAndUiClass,
+                          private CarlaThread
 {
 public:
     enum Parameters {
@@ -237,8 +238,8 @@ public:
         fSynth.buffersize = static_cast<int>(getBufferSize());
         fSynth.samplerate = static_cast<uint>(getSampleRate());
 
-        //if (fSynth.buffersize > 32)
-        //    fSynth.buffersize = 32;
+        if (fSynth.buffersize > 32)
+            fSynth.buffersize = 32;
 
         fSynth.alias();
 
@@ -636,14 +637,6 @@ protected:
             CarlaExternalUI::stopPipeServer(2000);
         }
     }
-
-    void uiIdle() override
-    {
-        NativePluginAndUiClass::uiIdle();
-
-        if (isPipeRunning())
-            fMiddleWare->tick();
-    }
 #endif
 
     // -------------------------------------------------------------------
@@ -769,6 +762,19 @@ private:
         }
     }
 
+    void run() noexcept override
+    {
+        for (;;)
+        {
+            if (MiddleWare* const mw = fMiddleWare)
+                mw->tick();
+            else
+                break;
+
+            carla_msleep(1);
+        }
+    }
+
     // -------------------------------------------------------------------
 
     void _initMaster()
@@ -777,6 +783,7 @@ private:
         fMiddleWare->setUiCallback(__uiCallback, this);
         fMiddleWare->setIdleCallback(_idleCallback, this);
         _masterChangedCallback(fMiddleWare->spawnMaster());
+        startThread();
     }
 
     void _setMasterParameters()
@@ -819,8 +826,12 @@ private:
     void _deleteMaster()
     {
         fMaster = nullptr;
-        delete fMiddleWare;
+
+        MiddleWare* const tmp(fMiddleWare);
         fMiddleWare = nullptr;
+
+        stopThread(1000);
+        delete tmp;
     }
 
     void _masterChangedCallback(Master* m)
