@@ -205,41 +205,26 @@ float EQ::getfreqresponse(float freq)
     return rap2dB(resp * outvolume);
 }
 
-//full taps & three filter taps
-static void convolve(float *a, const float *filter)
-{
-    float tmp[MAX_EQ_BANDS*2+1];
-
-    for(int i=0; i<MAX_EQ_BANDS*2+1; ++i)
-        tmp[i] = a[i];
-
-    //Base Case
-    a[0] = tmp[0]*filter[0];
-    a[1] = tmp[0]*filter[1] + tmp[1]*filter[0];
-
-    for(int i=2; i<MAX_EQ_BANDS+1; ++i) {
-        a[i] = filter[0]*tmp[i]   +
-               filter[1]*tmp[i-1] +
-               filter[2]*tmp[i-2];
-    }
-}
-
 //Not exactly the most efficient manner to derive the total taps, but it should
 //be fast enough in practice
 void EQ::getFilter(float *a, float *b) const
 {
     a[0] = 1;
     b[0] = 1;
+    off_t off=0;
     for(int i = 0; i < MAX_EQ_BANDS; ++i) {
         auto &F = filter[i];
         if(F.Ptype == 0)
             continue;
-        float Fb[3] = {F.l->coeff.c[0], F.l->coeff.c[1], F.l->coeff.c[2]};
-        float Fa[3] = {1.0f, -F.l->coeff.d[1], -F.l->coeff.d[2]};
+        const double Fb[3] = {F.l->coeff.c[0], F.l->coeff.c[1], F.l->coeff.c[2]};
+        const double Fa[3] = {1.0f, -F.l->coeff.d[1], -F.l->coeff.d[2]};
 
         for(int j=0; j<F.Pstages+1; ++j) {
-            convolve(b, Fb);
-            convolve(a, Fa);
+            for(int k=0; k<3; ++k) {
+                a[off] = Fa[k];
+                b[off] = Fb[k];
+                off++;
+            }
         }
     }
 }

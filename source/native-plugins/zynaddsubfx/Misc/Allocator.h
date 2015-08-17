@@ -2,14 +2,17 @@
 #include <cstdlib>
 #include <utility>
 
+//! Allocator Base class
+//! subclasses must specify allocation and deallocation
 class Allocator
 {
     public:
         Allocator(void);
         Allocator(const Allocator&) = delete;
-        ~Allocator(void);
-        void *alloc_mem(size_t mem_size);
-        void dealloc_mem(void *memory);
+        virtual ~Allocator(void);
+
+        virtual void *alloc_mem(size_t mem_size) = 0;
+        virtual void dealloc_mem(void *memory) = 0;
 
         template <typename T, typename... Ts>
         T *alloc(Ts&&... ts)
@@ -64,23 +67,47 @@ class Allocator
             }
         }
 
-    void addMemory(void *, size_t mem_size);
+    virtual void addMemory(void *, size_t mem_size) = 0;
 
     //Return true if the current pool cannot allocate n chunks of chunk_size
-    bool lowMemory(unsigned n, size_t chunk_size);
-    bool memFree(void *pool);
+    virtual bool lowMemory(unsigned n, size_t chunk_size) const = 0;
+    bool memFree(void *pool) const;
 
     //returns number of pools
-    int memPools();
+    int memPools() const;
 
-    int freePools();
+    int freePools() const;
 
-    unsigned long long totalAlloced();
+    unsigned long long totalAlloced() const;
 
     struct AllocatorImpl *impl;
 };
 
-extern Allocator DummyAlloc;
+//! the allocator for normal use
+class AllocatorClass : public Allocator
+{
+    void *alloc_mem(size_t mem_size);
+    void dealloc_mem(void *memory);
+    void addMemory(void *, size_t mem_size);
+    bool lowMemory(unsigned n, size_t chunk_size) const;
+    using Allocator::Allocator;
+};
+
+//! the dummy allocator, which does not allow any allocation
+class DummyAllocator : public Allocator
+{
+    void not_allowed() const {
+        throw "(de)allocation forbidden"; // TODO: std exception
+    }
+public:
+    void *alloc_mem(size_t ) { return not_allowed(), nullptr; }
+    void dealloc_mem(void* ) { not_allowed(); } // TODO: more functions?
+    void addMemory(void *, size_t ) { not_allowed(); }
+    bool lowMemory(unsigned , size_t ) const { return not_allowed(), true; }
+    using Allocator::Allocator;
+};
+
+extern DummyAllocator DummyAlloc;
 
 /**
  * General notes on Memory Allocation Within ZynAddSubFX

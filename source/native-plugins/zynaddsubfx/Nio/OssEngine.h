@@ -45,7 +45,7 @@ struct OssMidiParse {
 class OssEngine:public AudioOut, MidiIn
 {
     public:
-        OssEngine(const SYNTH_T &synth);
+        OssEngine(const SYNTH_T &synth, const class oss_devs_t& oss_devs);
         ~OssEngine();
 
         bool Start();
@@ -83,6 +83,8 @@ class OssEngine:public AudioOut, MidiIn
             bool en;
             bool is32bit;
         } audio;
+        
+        const char* linux_oss_wave_out_dev;
 
         //Midi
         bool openMidi();
@@ -94,6 +96,8 @@ class OssEngine:public AudioOut, MidiIn
             bool en;
             bool run;
         } midi;
+        
+        const char* linux_oss_seq_in_dev;
 };
 
 #endif

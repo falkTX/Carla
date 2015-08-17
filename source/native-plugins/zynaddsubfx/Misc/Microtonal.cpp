@@ -75,7 +75,8 @@ const rtosc::Ports Microtonal::ports = {
 };
 
 
-Microtonal::Microtonal()
+Microtonal::Microtonal(const int &gzip_compression)
+    : gzip_compression(gzip_compression)
 {
     defaults();
 }
@@ -688,7 +689,7 @@ int Microtonal::saveXML(const char *filename) const
     add2XML(xml);
     xml->endbranch();
 
-    int result = xml->saveXMLfile(filename);
+    int result = xml->saveXMLfile(filename, gzip_compression);
     delete (xml);
     return result;
 }

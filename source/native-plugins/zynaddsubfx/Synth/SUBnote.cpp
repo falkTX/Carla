@@ -491,8 +491,8 @@ void SUBnote::computecurrentparameters()
  */
 int SUBnote::noteout(float *outl, float *outr)
 {
-    memcpy(outl, denormalkillbuf, synth.bufferbytes);
-    memcpy(outr, denormalkillbuf, synth.bufferbytes);
+    memcpy(outl, synth.denormalkillbuf, synth.bufferbytes);
+    memcpy(outr, synth.denormalkillbuf, synth.bufferbytes);
 
     if(NoteEnabled == OFF)
         return 0;

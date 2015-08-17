@@ -29,8 +29,9 @@
 class XMLwrapper;
 class PresetsStore
 {
+        const class Config& config;
     public:
-        PresetsStore();
+        PresetsStore(const class Config &config);
         ~PresetsStore();
 
         //Clipboard stuff
@@ -62,5 +63,5 @@ class PresetsStore
         void clearpresets();
 };
 
-extern PresetsStore presetsstore;
+//extern PresetsStore presetsstore;
 #endif

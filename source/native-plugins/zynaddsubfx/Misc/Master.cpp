@@ -25,6 +25,8 @@
 
 #include "Part.h"
 
+#include "../Misc/Stereo.h"
+#include "../Misc/Util.h"
 #include "../Params/LFOParams.h"
 #include "../Effects/EffectMgr.h"
 #include "../DSP/FFTwrapper.h"
@@ -286,12 +288,15 @@ vuData::vuData(void)
       rmspeakl(0.0f), rmspeakr(0.0f), clipped(0)
 {}
 
-Master::Master(const SYNTH_T &synth_)
-:HDDRecorder(synth_), ctl(synth_), midi(Master::ports), frozenState(false), pendingMemory(false), synth(synth_)
+Master::Master(const SYNTH_T &synth_, Config* config)
+    :HDDRecorder(synth_), ctl(synth_),
+    microtonal(config->cfg.GzipCompression), bank(config),
+    midi(Master::ports), frozenState(false), pendingMemory(false),
+    synth(synth_), gzip_compression(config->cfg.GzipCompression)
 {
     bToU = NULL;
     uToB = NULL;
-    memory = new Allocator();
+    memory = new AllocatorClass();
     swaplr = 0;
     off  = 0;
     smps = 0;
@@ -310,7 +315,8 @@ Master::Master(const SYNTH_T &synth_)
     }
 
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-        part[npart] = new Part(*memory, synth, &microtonal, fft);
+        part[npart] = new Part(*memory, synth, config->cfg.GzipCompression,
+                               config->cfg.Interpolation, &microtonal, fft);
 
     //Insertion Effects init
     for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)
@@ -1044,7 +1050,7 @@ int Master::saveXML(const char *filename)
     add2XML(xml);
     xml->endbranch();
 
-    int result = xml->saveXMLfile(filename);
+    int result = xml->saveXMLfile(filename, gzip_compression);
     delete (xml);
     return result;
 }

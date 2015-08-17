@@ -22,21 +22,32 @@
 
 #ifndef CONFIG_H
 #define CONFIG_H
-#include "../globals.h"
+
 #include <string>
 #define MAX_STRING_SIZE 4000
 #define MAX_BANK_ROOT_DIRS 100
+
+namespace rtosc
+{
+    struct Ports;
+}
+
+class oss_devs_t
+{
+    public:
+        char *linux_wave_out, *linux_seq_in;
+};
 
 /**Configuration file functions*/
 class Config
 {
     public:
-        /** Constructor*/
         Config();
-        /** Destructor*/
+        Config(const Config& ) = delete;
         ~Config();
+        
         struct {
-            char *LinuxOSSWaveOutDev, *LinuxOSSSeqInDev;
+            oss_devs_t oss_devs;
             int   SampleRate, SoundBufferSize, OscilSize, SwapStereo;
             int   WindowsWaveOutId, WindowsMidiInId;
             int   BankUIAutoClose;
@@ -62,12 +73,12 @@ class Config
         void clearbankrootdirlist();
         void clearpresetsdirlist();
         void init();
-        void save();
+        void save() const;
 
-        static rtosc::Ports &ports;
+        static const rtosc::Ports &ports;
     private:
         void readConfig(const char *filename);
-        void saveConfig(const char *filename);
-        void getConfigFileName(char *name, int namesize);
+        void saveConfig(const char *filename) const;
+        void getConfigFileName(char *name, int namesize) const;
 };
 #endif

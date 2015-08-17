@@ -76,7 +76,7 @@ NSM_Client *nsm = 0;
 
 char *instance_name = 0;
 
-void exitprogram();
+void exitprogram(const Config &config);
 
 extern pthread_t main_thread;
 
@@ -91,21 +91,21 @@ void sigterm_exit(int /*sig*/)
 /*
  * Program initialisation
  */
-void initprogram(SYNTH_T synth, int prefered_port)
+void initprogram(SYNTH_T synth, Config* config, int prefered_port)
 {
-    middleware = new MiddleWare(synth, prefered_port);
+    middleware = new MiddleWare(std::move(synth), config, prefered_port);
     master = middleware->spawnMaster();
     master->swaplr = swaplr;
 
     signal(SIGINT, sigterm_exit);
     signal(SIGTERM, sigterm_exit);
-    Nio::init(master->synth, master);
+    Nio::init(master->synth, config->cfg.oss_devs, master);
 }
 
 /*
  * Program exit
  */
-void exitprogram()
+void exitprogram(const Config& config)
 {
     Nio::stop();
     config.save();
@@ -121,7 +121,6 @@ void exitprogram()
         delete nsm;
 #endif
 
-    delete [] denormalkillbuf;
     FFT_cleanup();
 }
 
@@ -129,6 +128,7 @@ int main(int argc, char *argv[])
 {
     main_thread = pthread_self();
     SYNTH_T synth;
+    Config config;
     config.init();
     int noui = 0;
     cerr
@@ -375,12 +375,14 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    //produce denormal buf
-    denormalkillbuf = new float [synth.buffersize];
-    for(int i = 0; i < synth.buffersize; ++i)
-        denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+    cerr.precision(1);
+    cerr << std::fixed;
+    cerr << "\nSample Rate = \t\t" << synth.samplerate << endl;
+    cerr << "Sound Buffer Size = \t" << synth.buffersize << " samples" << endl;
+    cerr << "Internal latency = \t" << synth.dt() * 1000.0f << " ms" << endl;
+    cerr << "ADsynth Oscil.Size = \t" << synth.oscilsize << " samples" << endl;
 
-    initprogram(synth, prefered_port);
+    initprogram(std::move(synth), &config, prefered_port);
 
     if(!loadfile.empty()) {
         int tmp = master->loadXML(loadfile.c_str());
@@ -413,13 +415,6 @@ int main(int argc, char *argv[])
 
     //Run the Nio system
     bool ioGood = Nio::start();
-    
-    cerr.precision(1);
-    cerr << std::fixed;
-    cerr << "\nSample Rate = \t\t" << synth.samplerate << endl;
-    cerr << "Sound Buffer Size = \t" << synth.buffersize << " samples" << endl;
-    cerr << "Internal latency = \t" << synth.dt() * 1000.0f << " ms" << endl;
-    cerr << "ADsynth Oscil.Size = \t" << synth.oscilsize << " samples" << endl;
 
     if(!execAfterInit.empty()) {
         cout << "Executing user supplied command: " << execAfterInit << endl;
@@ -519,6 +514,6 @@ done:
         middleware->tick();
     }
 
-    exitprogram();
+    exitprogram(config);
     return 0;
 }

@@ -24,22 +24,15 @@
 
 #include <pthread.h>
 
-#include "Alienwah.h"
-#include "Phaser.h"
-#include "../Params/Presets.h"
-
 class Effect;
 class FilterParams;
 class XMLwrapper;
 class Allocator;
 
-#include "Distorsion.h"
-#include "EQ.h"
-#include "DynamicFilter.h"
 #include "../Params/FilterParams.h"
 #include "../Params/Presets.h"
 
-/**Effect manager, an interface betwen the program and effects*/
+/** Effect manager, an interface between the program and effects */
 class EffectMgr:public Presets
 {
     public:

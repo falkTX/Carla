@@ -43,8 +43,10 @@ extern MiddleWare *middleware;
 
 using namespace std;
 
-OssMultiEngine :: OssMultiEngine(const SYNTH_T &synth)
-    :AudioOut(synth)
+OssMultiEngine :: OssMultiEngine(const SYNTH_T &synth,
+    const oss_devs_t &oss_devs)
+    :AudioOut(synth),
+    linux_oss_wave_out_dev(oss_devs.linux_wave_out)
 {
     /* setup variables */
     name = "OSS-MULTI";
@@ -81,7 +83,7 @@ OssMultiEngine :: openAudio()
 
     const char *device = getenv("DSP_DEVICE");
     if(device == 0)
-        device = config.cfg.LinuxOSSWaveOutDev;
+        device = linux_oss_wave_out_dev;
 
     /* NOTE: PIPEs and FIFOs can block when opening them */
     handle = open(device, O_WRONLY, O_NONBLOCK);

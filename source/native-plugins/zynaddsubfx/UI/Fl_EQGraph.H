@@ -24,6 +24,6 @@ class Fl_EQGraph:public Fl_Box, public Fl_Osc_Widget
         float getfreqpos(float freq) const;
 
         float samplerate;
-        float num[MAX_EQ_BANDS*MAX_FILTER_STAGES*2+1];
-        float dem[MAX_EQ_BANDS*MAX_FILTER_STAGES*2+1];
+        float num[MAX_EQ_BANDS*MAX_FILTER_STAGES*3];
+        float dem[MAX_EQ_BANDS*MAX_FILTER_STAGES*3];
 };

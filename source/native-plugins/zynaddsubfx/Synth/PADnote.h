@@ -30,7 +30,8 @@
 class PADnote:public SynthNote
 {
     public:
-        PADnote(PADnoteParameters *parameters, SynthParams pars);
+        PADnote(PADnoteParameters *parameters, SynthParams pars,
+                const int &interpolation);
         ~PADnote();
 
         void legatonote(LegatoParams pars);
@@ -104,6 +105,7 @@ class PADnote:public SynthNote
 
 
         float globaloldamplitude, globalnewamplitude, velocity, realfreq;
+        const int& interpolation;
 };
 
 

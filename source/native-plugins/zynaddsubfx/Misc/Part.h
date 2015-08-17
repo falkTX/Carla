@@ -37,7 +37,9 @@ class Part
         /**Constructor
          * @param microtonal_ Pointer to the microtonal object
          * @param fft_ Pointer to the FFTwrapper*/
-        Part(Allocator &alloc, const SYNTH_T &synth, Microtonal *microtonal_, FFTwrapper *fft_);
+        Part(Allocator &alloc, const SYNTH_T &synth,
+             const int& gzip_compression, const int& interpolation,
+             Microtonal *microtonal_, FFTwrapper *fft_);
         /**Destructor*/
         ~Part();
 
@@ -85,6 +87,7 @@ class Part
 
         //the part's kit
         struct Kit {
+            Part              *parent;
             bool               Penabled, Pmuted;
             unsigned char      Pminkey, Pmaxkey;
             char              *Pname;
@@ -198,6 +201,7 @@ class Part
         FFTwrapper *fft;
         Allocator  &memory;
         const SYNTH_T &synth;
+        const int &gzip_compression, &interpolation;
 };
 
 #endif

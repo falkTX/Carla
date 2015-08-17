@@ -159,6 +159,10 @@ static const Ports kitPorts = {
     rToggle(Ppadenabled, "PADsynth enable"),
     rParamZyn(Psendtoparteffect, "Effect Levels"),
     rString(Pname, PART_MAX_NAME_LEN, "Kit User Specified Label"),
+    {"captureMin:", NULL, NULL, [](const char *, RtData &r)
+        {Part::Kit *p = (Part::Kit*)r.obj; p->Pminkey = p->parent->lastnote;}},
+    {"captureMax:", NULL, NULL, [](const char *, RtData &r)
+        {Part::Kit *p = (Part::Kit*)r.obj; p->Pmaxkey = p->parent->lastnote;}},
     {"padpars-data:b", rProp(internal), 0,
         [](const char *msg, RtData &d) {
             rObject &o = *(rObject*)d.obj;
@@ -184,8 +188,12 @@ static const Ports kitPorts = {
 const Ports &Part::Kit::ports = kitPorts;
 const Ports &Part::ports = partPorts;
 
-Part::Part(Allocator &alloc, const SYNTH_T &synth_, Microtonal *microtonal_, FFTwrapper *fft_)
-    :ctl(synth_), memory(alloc), synth(synth_)
+Part::Part(Allocator &alloc, const SYNTH_T &synth_,
+    const int &gzip_compression, const int &interpolation,
+    Microtonal *microtonal_, FFTwrapper *fft_)
+    :ctl(synth_), memory(alloc), synth(synth_),
+    gzip_compression(gzip_compression),
+    interpolation(interpolation)
 {
     microtonal = microtonal_;
     fft      = fft_;
@@ -195,6 +203,7 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, Microtonal *microtonal_, FFT
     monomemClear();
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
+        kit[n].parent  = this;
         kit[n].Pname   = new char [PART_MAX_NAME_LEN];
         kit[n].adpars  = nullptr;
         kit[n].subpars = nullptr;
@@ -328,16 +337,16 @@ void Part::cleanup(bool final_)
     for(int k = 0; k < POLYPHONY; ++k)
         KillNotePos(k);
     for(int i = 0; i < synth.buffersize; ++i) {
-        partoutl[i] = final_ ? 0.0f : denormalkillbuf[i];
-        partoutr[i] = final_ ? 0.0f : denormalkillbuf[i];
+        partoutl[i] = final_ ? 0.0f : synth.denormalkillbuf[i];
+        partoutr[i] = final_ ? 0.0f : synth.denormalkillbuf[i];
     }
     ctl.resetall();
     for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx)
         partefx[nefx]->cleanup();
     for(int n = 0; n < NUM_PART_EFX + 1; ++n)
         for(int i = 0; i < synth.buffersize; ++i) {
-            partfxinputl[n][i] = final_ ? 0.0f : denormalkillbuf[i];
-            partfxinputr[n][i] = final_ ? 0.0f : denormalkillbuf[i];
+            partfxinputl[n][i] = final_ ? 0.0f : synth.denormalkillbuf[i];
+            partfxinputr[n][i] = final_ ? 0.0f : synth.denormalkillbuf[i];
         }
 }
 
@@ -579,7 +588,8 @@ void Part::NoteOn(unsigned char note,
                     memory.alloc<SUBnote>(kit[0].subpars, pars);
             if(kit[0].Ppadenabled)
                 partnote[pos].kititem[0].padnote =
-                    memory.alloc<PADnote>(kit[0].padpars, pars);
+                    memory.alloc<PADnote>(kit[0].padpars, pars,
+                                          interpolation);
 
 
             if(kit[0].Padenabled || kit[0].Psubenabled || kit[0].Ppadenabled)
@@ -598,7 +608,8 @@ void Part::NoteOn(unsigned char note,
                         memory.alloc<SUBnote>(kit[0].subpars, pars);
                 if(kit[0].Ppadenabled)
                     partnote[posb].kititem[0].padnote =
-                        memory.alloc<PADnote>(kit[0].padpars, pars);
+                        memory.alloc<PADnote>(kit[0].padpars, pars,
+                                              interpolation);
 
                 if(kit[0].Padenabled || kit[0].Psubenabled || kit[0].Ppadenabled)
                     partnote[posb].itemsplaying++;
@@ -627,7 +638,8 @@ void Part::NoteOn(unsigned char note,
 
                 if(kit[item].padpars && kit[item].Ppadenabled)
                     note1.padnote =
-                        memory.alloc<PADnote>(kit[item].padpars, pars);
+                        memory.alloc<PADnote>(kit[item].padpars, pars,
+                                              interpolation);
 
                 // Spawn another note (but silent) if legatomodevalid==true
                 if(legatomodevalid) {
@@ -643,7 +655,8 @@ void Part::NoteOn(unsigned char note,
                             memory.alloc<SUBnote>(kit[item].subpars, pars);
                     if(kit[item].padpars && kit[item].Ppadenabled)
                         note2.padnote =
-                            memory.alloc<PADnote>(kit[item].padpars, pars);
+                            memory.alloc<PADnote>(kit[item].padpars, pars,
+                                                  interpolation);
 
                     if(kit[item].adpars || kit[item].subpars || kit[item].padpars)
                         partnote[posb].itemsplaying++;
@@ -1193,7 +1206,7 @@ int Part::saveXML(const char *filename)
     add2XMLinstrument(&xml);
     xml.endbranch();
 
-    int result = xml.saveXMLfile(filename);
+    int result = xml.saveXMLfile(filename, gzip_compression);
     return result;
 }
 

@@ -28,8 +28,6 @@
 #include <stdint.h>
 #include <algorithm>
 #include <set>
-#include "Config.h"
-#include "../globals.h"
 
 using std::min;
 using std::max;
@@ -57,10 +55,6 @@ void os_sleep(long length);
 std::string os_pid_as_padded_string();
 
 std::string legalizeFilename(std::string filename);
-
-extern float *denormalkillbuf; /**<the buffer to add noise in order to avoid denormalisation*/
-
-extern class Config config;
 
 void invSignal(float *sig, size_t len);
 

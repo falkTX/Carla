@@ -124,7 +124,7 @@ if (x==0) o->selection_color(0);
         callback {int x=64;
 if (Fl::event_button1() || Fl::event() == FL_MOUSEWHEEL) x=127-(int)o->value();
    else o->value(x);
-   o->osc->writeValue(o->loc+"Phrelbw"+to_s(n), (char) x);}
+   o->osc->writeValue(o->loc + o->ext, (char) x)};
         tooltip {harmonic's bandwidth} xywh {0 157 10 130} type {Vert Knob} box FLAT_BOX selection_color 222 maximum 127 step 1 value 64
         class PPSlider
       }
@@ -153,7 +153,8 @@ make_window();
 harmonic->show();
 mag->ext = "Phmag" + to_s(n);
 mag->oscRegister(mag->ext.c_str());
-osc->createLink(base+"Phrelbw"+to_s(n), bw);
+bw->ext = "Phrelbw" + to_s(n);
+bw->oscRegister(bw->ext.c_str());
 osc->requestValue(base+"Phrelbw"+to_s(n));
 
 end();} {}
@@ -161,7 +162,7 @@ end();} {}
   Function {refresh()} {} {
     code {// request values for the widgets
 mag->oscWrite(mag->ext);
-osc->requestValue(base+"Phrelbw"+to_s(n));} {}
+bw->oscWrite(bw->ext);} {}
   }
   Function {~SUBnoteharmonic()} {} {
     code {harmonic->hide();

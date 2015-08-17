@@ -31,7 +31,7 @@
 #include <iostream>
 #include <sstream>
 
-#include "../globals.h"
+#include "globals.h"
 #include "Util.h"
 
 using namespace std;
@@ -187,13 +187,12 @@ bool XMLwrapper::hasPadSynth() const
 
 /* SAVE XML members */
 
-int XMLwrapper::saveXMLfile(const string &filename) const
+int XMLwrapper::saveXMLfile(const string &filename, int compression) const
 {
     char *xmldata = getXMLdata();
     if(xmldata == NULL)
         return -2;
 
-    int compression = config.cfg.GzipCompression;
     int result      = dosavefile(filename.c_str(), compression, xmldata);
 
     free(xmldata);

@@ -2,6 +2,7 @@
 #define OUTMGR_H
 
 #include "../Misc/Stereo.h"
+#include "../globals.h"
 #include <list>
 #include <string>
 #include <semaphore.h>
@@ -16,7 +17,7 @@ class OutMgr
         ~OutMgr();
 
         /**Execute a tick*/
-        const Stereo<float *> tick(unsigned int frameSize) __attribute__((annotate("realtime")));
+        const Stereo<float *> tick(unsigned int frameSize) REALTIME;
 
         /**Request a new set of samples
          * @param n number of requested samples (defaults to 1)

@@ -28,6 +28,7 @@
 #include <rtosc/port-sugar.h>
 
 #include "Config.h"
+#include "globals.h"
 #include "XMLwrapper.h"
 
 #define rStdString(name, len, ...) \
@@ -46,7 +47,7 @@
 
 #if 1
 #define rObject Config
-static rtosc::Ports ports = {
+static const rtosc::Ports ports = {
     //rString(cfg.LinuxOSSWaveOutDev),
     //rString(cfg.LinuxOSSSeqInDev),
     rParamI(cfg.SampleRate, "samples of audio per second"),
@@ -145,7 +146,7 @@ static rtosc::Ports ports = {
             d.broadcast(d.loc, "i", (int)(log(c.cfg.OscilSize*1.0)/log(2.0)));
         }},
 };
-rtosc::Ports &Config::ports = ::ports;
+const rtosc::Ports &Config::ports = ::ports;
 #endif
 
 Config::Config()
@@ -160,10 +161,10 @@ void Config::init()
     cfg.OscilSize  = 1024;
     cfg.SwapStereo = 0;
 
-    cfg.LinuxOSSWaveOutDev = new char[MAX_STRING_SIZE];
-    snprintf(cfg.LinuxOSSWaveOutDev, MAX_STRING_SIZE, "/dev/dsp");
-    cfg.LinuxOSSSeqInDev = new char[MAX_STRING_SIZE];
-    snprintf(cfg.LinuxOSSSeqInDev, MAX_STRING_SIZE, "/dev/sequencer");
+    cfg.oss_devs.linux_wave_out = new char[MAX_STRING_SIZE];
+    snprintf(cfg.oss_devs.linux_wave_out, MAX_STRING_SIZE, "/dev/dsp");
+    cfg.oss_devs.linux_seq_in = new char[MAX_STRING_SIZE];
+    snprintf(cfg.oss_devs.linux_seq_in, MAX_STRING_SIZE, "/dev/sequencer");
 
     cfg.WindowsWaveOutId = 0;
     cfg.WindowsMidiInId  = 0;
@@ -228,8 +229,8 @@ void Config::init()
 
 Config::~Config()
 {
-    delete [] cfg.LinuxOSSWaveOutDev;
-    delete [] cfg.LinuxOSSSeqInDev;
+    delete [] cfg.oss_devs.linux_wave_out;
+    delete [] cfg.oss_devs.linux_seq_in;
 
     for(int i = 0; i < winmidimax; ++i)
         delete [] winmididevices[i].name;
@@ -237,7 +238,7 @@ Config::~Config()
 }
 
 
-void Config::save()
+void Config::save() const
 {
     char filename[MAX_STRING_SIZE];
     getConfigFileName(filename, MAX_STRING_SIZE);
@@ -330,10 +331,10 @@ void Config::readConfig(const char *filename)
 
         //linux stuff
         xmlcfg.getparstr("linux_oss_wave_out_dev",
-                         cfg.LinuxOSSWaveOutDev,
+                         cfg.oss_devs.linux_wave_out,
                          MAX_STRING_SIZE);
         xmlcfg.getparstr("linux_oss_seq_in_dev",
-                         cfg.LinuxOSSSeqInDev,
+                         cfg.oss_devs.linux_seq_in,
                          MAX_STRING_SIZE);
 
         //windows stuff
@@ -352,7 +353,7 @@ void Config::readConfig(const char *filename)
     cfg.OscilSize = (int) powf(2, ceil(logf(cfg.OscilSize - 1.0f) / logf(2.0f)));
 }
 
-void Config::saveConfig(const char *filename)
+void Config::saveConfig(const char *filename) const
 {
     XMLwrapper *xmlcfg = new XMLwrapper();
 
@@ -392,8 +393,8 @@ void Config::saveConfig(const char *filename)
     xmlcfg->addpar("interpolation", cfg.Interpolation);
 
     //linux stuff
-    xmlcfg->addparstr("linux_oss_wave_out_dev", cfg.LinuxOSSWaveOutDev);
-    xmlcfg->addparstr("linux_oss_seq_in_dev", cfg.LinuxOSSSeqInDev);
+    xmlcfg->addparstr("linux_oss_wave_out_dev", cfg.oss_devs.linux_wave_out);
+    xmlcfg->addparstr("linux_oss_seq_in_dev", cfg.oss_devs.linux_seq_in);
 
     //windows stuff
     xmlcfg->addpar("windows_wave_out_id", cfg.WindowsWaveOutId);
@@ -401,15 +402,13 @@ void Config::saveConfig(const char *filename)
 
     xmlcfg->endbranch();
 
-    int tmp = cfg.GzipCompression;
-    cfg.GzipCompression = 0;
-    xmlcfg->saveXMLfile(filename);
-    cfg.GzipCompression = tmp;
+    // for some reason (which one?), the gzip compression is bashed to 0
+    xmlcfg->saveXMLfile(filename, 0);
 
     delete (xmlcfg);
 }
 
-void Config::getConfigFileName(char *name, int namesize)
+void Config::getConfigFileName(char *name, int namesize) const
 {
     name[0] = 0;
     snprintf(name, namesize, "%s%s", getenv("HOME"), "/.zynaddsubfxXML.cfg");

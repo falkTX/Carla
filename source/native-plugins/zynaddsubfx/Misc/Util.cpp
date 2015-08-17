@@ -20,6 +20,7 @@
 
 */
 
+#include "globals.h"
 #include "Util.h"
 #include <vector>
 #include <cassert>
@@ -44,10 +45,6 @@
 #include <rtosc/rtosc.h>
 
 prng_t prng_state = 0x1234;
-
-Config config;
-float *denormalkillbuf;
-
 
 /*
  * Transform the velocity according the scaling parameter (velocity sensing)

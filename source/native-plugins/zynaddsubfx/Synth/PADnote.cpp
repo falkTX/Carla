@@ -29,8 +29,8 @@
 #include "../Misc/Util.h"
 
 PADnote::PADnote(PADnoteParameters *parameters,
-                 SynthParams pars)
-    :SynthNote(pars), pars(*parameters)
+                 SynthParams pars, const int& interpolation)
+    :SynthNote(pars), pars(*parameters), interpolation(interpolation)
 {
     firsttime = true;
     setup(pars.frequency, pars.velocity, pars.portamento, pars.note);
@@ -347,7 +347,7 @@ int PADnote::noteout(float *outl, float *outr)
     float freqlo  = freqrap - floor(freqrap);
 
 
-    if(config.cfg.Interpolation)
+    if(interpolation)
         Compute_Cubic(outl, outr, freqhi, freqlo);
     else
         Compute_Linear(outl, outr, freqhi, freqlo);

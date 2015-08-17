@@ -49,7 +49,7 @@ class XMLwrapper
          * @param filename the name of the destination file.
          * @returns 0 if ok or -1 if the file cannot be saved.
          */
-        int saveXMLfile(const std::string &filename) const;
+        int saveXMLfile(const std::string &filename, int compression) const;
 
         /**
          * Return XML tree as a string.

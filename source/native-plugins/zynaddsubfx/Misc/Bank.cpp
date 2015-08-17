@@ -46,16 +46,16 @@
 
 using namespace std;
 
-Bank::Bank()
-    :bankpos(0), defaultinsname(" ")
+Bank::Bank(Config *config)
+    :bankpos(0), defaultinsname(" "), config(config)
 {
     clearbank();
     bankfiletitle = dirname;
     rescanforbanks();
-    loadbank(config.cfg.currentBankDir);
+    loadbank(config->cfg.currentBankDir);
 
     for(unsigned i=0; i<banks.size(); ++i) {
-        if(banks[i].dir == config.cfg.currentBankDir) {
+        if(banks[i].dir == config->cfg.currentBankDir) {
             bankpos = i;
             break;
         }
@@ -270,7 +270,7 @@ int Bank::loadbank(string bankdirname)
     closedir(dir);
 
     if(!dirname.empty())
-        config.cfg.currentBankDir = dirname;
+        config->cfg.currentBankDir = dirname;
 
     return 0;
 }
@@ -281,7 +281,7 @@ int Bank::loadbank(string bankdirname)
 int Bank::newbank(string newbankdirname)
 {
     string bankdir;
-    bankdir = config.cfg.bankRootDirList[0];
+    bankdir = config->cfg.bankRootDirList[0];
 
     if(((bankdir[bankdir.size() - 1]) != '/')
        && ((bankdir[bankdir.size() - 1]) != '\\'))
@@ -361,8 +361,8 @@ void Bank::rescanforbanks()
     banks.clear();
 
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
-        if(!config.cfg.bankRootDirList[i].empty())
-            scanrootdir(config.cfg.bankRootDirList[i]);
+        if(!config->cfg.bankRootDirList[i].empty())
+            scanrootdir(config->cfg.bankRootDirList[i]);
 
     //sort the banks
     sort(banks.begin(), banks.end());

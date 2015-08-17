@@ -6,7 +6,7 @@
 #include "Fl_Osc_Widget.H"
 #include "Fl_Osc_Interface.h"
 
-class PADnoteOvertonePosition: public Fl_Box, Fl_Osc_Widget
+class PADnoteOvertonePosition: public Fl_Box, public Fl_Osc_Widget
 {
     public:
         PADnoteOvertonePosition(int x,int y, int w, int h, const char *label=0)

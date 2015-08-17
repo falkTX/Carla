@@ -22,6 +22,7 @@
 
 #include "OssEngine.h"
 #include "../Misc/Util.h"
+#include "../Misc/Config.h"
 #include "../globals.h"
 
 #include <cstring>
@@ -179,8 +180,11 @@ OssMidiParse(struct OssMidiParse &midi_parse,
         return (0);
 }
 
-OssEngine::OssEngine(const SYNTH_T &synth)
-    :AudioOut(synth), audioThread(NULL), midiThread(NULL)
+OssEngine::OssEngine(const SYNTH_T &synth,
+    const oss_devs_t& oss_devs)
+    :AudioOut(synth), audioThread(NULL), midiThread(NULL),
+    linux_oss_wave_out_dev(oss_devs.linux_wave_out),
+    linux_oss_seq_in_dev(oss_devs.linux_seq_in)
 {
     name = "OSS";
 
@@ -212,7 +216,7 @@ bool OssEngine::openAudio()
 
     const char *device = getenv("DSP_DEVICE");
     if(device == NULL)
-        device = config.cfg.LinuxOSSWaveOutDev;
+        device = linux_oss_wave_out_dev;
 
     /* NOTE: PIPEs and FIFOs can block when opening them */
     audio.handle = open(device, O_WRONLY, O_NONBLOCK);
@@ -350,7 +354,7 @@ bool OssEngine::openMidi()
 
     const char *device = getenv("MIDI_DEVICE");
     if(device == NULL)
-        device = config.cfg.LinuxOSSSeqInDev;
+        device = linux_oss_seq_in_dev;
 
     /* NOTE: PIPEs and FIFOs can block when opening them */
     handle = open(device, O_RDONLY, O_NONBLOCK);

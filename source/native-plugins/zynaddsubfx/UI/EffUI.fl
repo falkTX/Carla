@@ -39,7 +39,13 @@ decl {\#include "../Misc/Util.h"} {public local
 } 
 
 decl {\#include "../Effects/EffectMgr.h"} {public local
-} 
+}
+
+decl {\#include "../Effects/Phaser.h" /* for macros only, TODO */} {public local
+}
+
+decl {\#include "../Effects/Alienwah.h" /* for macros only, TODO */ } {public local
+}
 
 decl {\#include "PresetsUI.h"} {public local
 } 
@@ -943,7 +949,7 @@ stagescounter->oscMove("parameter"+to_s(npb+4));}
         Fl_Counter stagescounter {
           label {St.}
           callback {eqgraph->update();}
-          tooltip {Additional filter stages} xywh {340 60 30 15} type Simple labelfont 1 labelsize 10 minimum 1 maximum 127 step 1 textfont 1 textsize 11
+          tooltip {Additional filter stages} xywh {340 60 30 15} type Simple labelfont 1 labelsize 10 minimum 0 maximum 127 step 1 textfont 1 textsize 11
           code0 {o->init("parameter14");}
           class Fl_Osc_Counter
         }

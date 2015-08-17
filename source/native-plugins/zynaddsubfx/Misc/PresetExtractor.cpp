@@ -17,7 +17,6 @@
 #include "../Params/PADnoteParameters.h"
 #include "../Params/Presets.h"
 #include "../Params/PresetsArray.h"
-#include "../Params/PresetsStore.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Misc/MiddleWare.h"
 #include "PresetExtractor.h"
@@ -32,8 +31,9 @@ const rtosc::Ports real_preset_ports =
 {
     {"scan-for-presets:", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
-            presetsstore.scanforpresets();
-            auto &pre = presetsstore.presets;
+            MiddleWare &mw = *(MiddleWare*)d.obj;
+            mw.getPresetsStore().scanforpresets();
+            auto &pre = mw.getPresetsStore().presets;
             d.reply(d.loc, "i", pre.size());
             for(unsigned i=0; i<pre.size();++i)
                 d.reply(d.loc, "isss", i,
@@ -84,11 +84,13 @@ const rtosc::Ports real_preset_ports =
         }},
     {"clipboard-type:", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
-            d.reply(d.loc, "s", presetsstore.clipboard.type.c_str());
+            const MiddleWare &mw = *(MiddleWare*)d.obj;
+            d.reply(d.loc, "s", mw.getPresetsStore().clipboard.type.c_str());
         }},
     {"delete:s", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
-            presetsstore.deletepreset(rtosc_argument(msg,0).s);
+            MiddleWare &mw = *(MiddleWare*)d.obj;
+            mw.getPresetsStore().deletepreset(rtosc_argument(msg,0).s);
         }},
 
 };
@@ -202,7 +204,7 @@ std::string doCopy(MiddleWare &mw, string url, string name)
         T *t = (T*)capture<void*>(m, url+"self");
         //Extract Via mxml
         //t->add2XML(&xml);
-        t->copy(presetsstore, name.empty()? NULL:name.c_str());
+        t->copy(mw.getPresetsStore(), name.empty()? NULL:name.c_str());
     });
 
     return "";//xml.getXMLdata();
@@ -241,7 +243,7 @@ std::string doArrayCopy(MiddleWare &mw, int field, string url, string name)
         //Get the pointer
         T *t = (T*)capture<void*>(m, url+"self");
         //Extract Via mxml
-        t->copy(presetsstore, field, name.empty()?NULL:name.c_str());
+        t->copy(mw.getPresetsStore(), field, name.empty()?NULL:name.c_str());
     });
 
     return "";//xml.getXMLdata();
@@ -415,7 +417,7 @@ void presetPaste(MiddleWare &mw, std::string url, std::string name)
     string data = "";
     XMLwrapper xml;
     if(name.empty()) {
-        data = presetsstore.clipboard.data;
+        data = mw.getPresetsStore().clipboard.data;
         if(data.length() < 20)
             return;
         if(!xml.putXMLdata(data.c_str()))
@@ -440,7 +442,7 @@ void presetPasteArray(MiddleWare &mw, std::string url, int field, std::string na
     string data = "";
     XMLwrapper xml;
     if(name.empty()) {
-        data = presetsstore.clipboard.data;
+        data = mw.getPresetsStore().clipboard.data;
         if(data.length() < 20)
             return;
         if(!xml.putXMLdata(data.c_str()))

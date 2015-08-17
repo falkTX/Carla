@@ -4,7 +4,7 @@
 #include "Fl_Osc_Widget.H"
 
 //consider merging with Fl_Oscilloscope
-class Fl_OscilSpectrum : public Fl_Box, Fl_Osc_Widget
+class Fl_OscilSpectrum : public Fl_Box, public Fl_Osc_Widget
 {
     public:
         Fl_OscilSpectrum(int x,int y, int w, int h, const char *label=0)

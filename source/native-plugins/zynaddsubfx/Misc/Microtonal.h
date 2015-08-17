@@ -36,7 +36,7 @@ class Microtonal
 {
     public:
         /**Constructor*/
-        Microtonal();
+        Microtonal(const int& gzip_compression);
         /**Destructor*/
         ~Microtonal();
         void defaults();
@@ -131,6 +131,8 @@ class Microtonal
             //the real tunning is x1/x2
             unsigned int x1, x2;
         } octave[MAX_OCTAVE_SIZE], tmpoctave[MAX_OCTAVE_SIZE];
+
+        const int& gzip_compression;
 };
 
 #endif

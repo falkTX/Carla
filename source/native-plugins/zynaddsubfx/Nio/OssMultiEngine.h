@@ -29,7 +29,8 @@
 class OssMultiEngine : public AudioOut
 {
     public:
-        OssMultiEngine(const SYNTH_T &synth);
+        OssMultiEngine(const SYNTH_T &synth,
+                       const class oss_devs_t& oss_devs);
         ~OssMultiEngine();
 
         bool Start();
@@ -62,6 +63,8 @@ class OssMultiEngine : public AudioOut
 
         bool en;
         bool is32bit;
+
+        const char* linux_oss_wave_out_dev;
 };
 
 #endif

@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 #include "../globals.h"
+#include "Config.h"
 
 //entries in a bank
 #define BANK_SIZE 160
@@ -35,7 +36,7 @@ class Bank
 {
     public:
         /**Constructor*/
-        Bank();
+        Bank(Config* config);
         ~Bank();
         std::string getname(unsigned int ninstrument);
         std::string getnamenumbered(unsigned int ninstrument);
@@ -96,6 +97,8 @@ class Bank
         std::string dirname;
 
         void scanrootdir(std::string rootdir); //scans a root dir for banks
+        
+        Config* const config;
 };
 
 #endif

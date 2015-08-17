@@ -112,13 +112,17 @@ class PartKitItem {open : {public Fl_Osc_Group}
         }
         Fl_Button {} {
           label m
-          callback {o->oscWrite("grabMinKey");}
+          callback {o->oscWrite("captureMin");
+minkcounter->update();
+maxkcounter->update();}
           tooltip {set the minimum key to the last pressed key} xywh {285 3 15 12} box THIN_UP_BOX labelsize 10
           class Fl_Osc_Button
         }
         Fl_Button {} {
           label M
-          callback {o->oscWrite("grabMaxKey");}
+          callback {o->oscWrite("captureMax");
+minkcounter->update();
+maxkcounter->update();}
           tooltip {set the maximum key to the last pressed key} xywh {315 3 15 12} box THIN_UP_BOX labelsize 10
           class Fl_Osc_Button
         }

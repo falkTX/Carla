@@ -4,7 +4,7 @@
 #include "Fl_Osc_Widget.H"
 #include <string>
 
-class Fl_Osc_DialF:public WidgetPDial, Fl_Osc_Widget
+class Fl_Osc_DialF:public WidgetPDial, public Fl_Osc_Widget
 {
 
     public:

@@ -5,6 +5,7 @@
 #include "MidiIn.h"
 #include "AudioOut.h"
 #include "WavEngine.h"
+#include "../Misc/Config.h"
 #include <cstring>
 #include <iostream>
 #include <algorithm>
@@ -30,11 +31,12 @@ bool   Nio::pidInClientName = false;
 string Nio::defaultSource   = IN_DEFAULT;
 string Nio::defaultSink     = OUT_DEFAULT;
 
-void Nio::init(const SYNTH_T &synth, class Master *master)
+void Nio::init(const SYNTH_T &synth, const oss_devs_t& oss_devs,
+               class Master *master)
 {
     in  = &InMgr::getInstance(); //Enable input wrapper
     out = &OutMgr::getInstance(&synth); //Initialize the Output Systems
-    eng = &EngineMgr::getInstance(&synth); //Initialize The Engines
+    eng = &EngineMgr::getInstance(&synth, &oss_devs); //Initialize the Engines
 
     in->setMaster(master);
     out->setMaster(master);

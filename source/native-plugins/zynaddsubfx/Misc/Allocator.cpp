@@ -7,7 +7,7 @@
 #include "Allocator.h"
 
 //Used for dummy allocations
-Allocator DummyAlloc;
+DummyAllocator DummyAlloc;
 
 //recursive type class to avoid void *v = *(void**)v style casting
 struct next_t
@@ -57,7 +57,7 @@ Allocator::~Allocator(void)
     delete impl;
 }
 
-void *Allocator::alloc_mem(size_t mem_size)
+void *AllocatorClass::alloc_mem(size_t mem_size)
 {
     impl->totalAlloced += mem_size;
     void *mem = tlsf_malloc(impl->tlsf, mem_size);
@@ -66,14 +66,14 @@ void *Allocator::alloc_mem(size_t mem_size)
     //printf("Allocator result = %p\n", mem);
     return mem;
 }
-void Allocator::dealloc_mem(void *memory)
+void AllocatorClass::dealloc_mem(void *memory)
 {
     //printf("dealloc_mem(%d)\n", tlsf_block_size(memory));
     tlsf_free(impl->tlsf, memory);
     //free(memory);
 }
 
-bool Allocator::lowMemory(unsigned n, size_t chunk_size)
+bool AllocatorClass::lowMemory(unsigned n, size_t chunk_size) const
 {
     //This should stay on the stack
     void *buf[n];
@@ -90,7 +90,7 @@ bool Allocator::lowMemory(unsigned n, size_t chunk_size)
 }
 
 
-void Allocator::addMemory(void *v, size_t mem_size)
+void AllocatorClass::addMemory(void *v, size_t mem_size)
 {
     next_t *n = impl->pools;
     while(n->next) n = n->next;
@@ -124,7 +124,7 @@ typedef struct block_header_t
 static const size_t block_header_free_bit = 1 << 0;
 #endif
 
-bool Allocator::memFree(void *pool)
+bool Allocator::memFree(void *pool) const
 {
     size_t bh_shift = sizeof(next_t)+sizeof(size_t);
     //Assume that memory is free to start with
@@ -145,7 +145,7 @@ bool Allocator::memFree(void *pool)
     return isFree;
 }
 
-int Allocator::memPools()
+int Allocator::memPools() const
 {
     int i = 1;
     next_t *n = impl->pools;
@@ -156,7 +156,7 @@ int Allocator::memPools()
     return i;
 }
 
-int Allocator::freePools()
+int Allocator::freePools() const
 {
     int i = 0;
     next_t *n = impl->pools->next;
@@ -169,7 +169,7 @@ int Allocator::freePools()
 }
 
 
-unsigned long long Allocator::totalAlloced()
+unsigned long long Allocator::totalAlloced() const
 {
     return impl->totalAlloced;
 }

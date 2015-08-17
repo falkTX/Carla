@@ -24,6 +24,7 @@
 #include "../Misc/Util.h"
 
 #include <cmath>
+#include "globals.h"
 
 EffectLFO::EffectLFO(float srate_f, float bufsize_f)
     :Pfreq(40),
@@ -79,7 +80,7 @@ float EffectLFO::getlfoshape(float x)
             break;
         //when adding more, ensure ::updateparams() gets updated
         default:
-            out = cosf(x * 2.0f * PI); //EffectLFO_SINE
+            out = cosf(x * 2.0f * PI); //EffectLFO_SINE // TODO: use M_PI ?
     }
     return out;
 }

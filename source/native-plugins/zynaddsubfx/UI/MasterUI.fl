@@ -17,7 +17,7 @@ decl {\#include <stdio.h>} {public local
 decl {\#include <string.h>} {public local
 } 
 
-decl {\#if defined(__linux__) && ! defined(PLUGINVERSION)
+decl {\#if ! defined(PLUGINVERSION) && HAS_X11
 \#include "zynaddsubfx.xpm"
 \#endif} {public local
 } 
@@ -76,7 +76,7 @@ extern NSM_Client *nsm;
 \#endif} {public local
 } 
 
-decl {\#if defined(__linux__) && ! defined(PLUGINVERSION)
+decl {\#if !defined(PLUGINVERSION) && HAS_X11
 \#include <X11/xpm.h>
 \#endif} {public local
 } 
@@ -1502,7 +1502,7 @@ configui=new ConfigUI(osc);
 make_window();
 fl_open_display();
 
-\#if defined(__linux__) && ! defined(PLUGINVERSION)
+\#if !defined(PLUGINVERSION) && HAS_X11
 Pixmap p, mask;
 XCreatePixmapFromData(fl_display, DefaultRootWindow(fl_display),
                                  (char**)zynaddsubfx_xpm, &p, &mask, NULL);

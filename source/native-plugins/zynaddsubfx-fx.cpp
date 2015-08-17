@@ -221,7 +221,7 @@ protected:
     float*  efxoutr;
 
     // FIXME - is this thread-safe?
-    SharedResourcePointer<Allocator> fAllocator;
+    SharedResourcePointer<AllocatorClass> fAllocator;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAbstractPlugin)
 };

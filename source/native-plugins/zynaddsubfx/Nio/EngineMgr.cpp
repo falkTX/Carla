@@ -25,13 +25,14 @@
 
 using namespace std;
 
-EngineMgr &EngineMgr::getInstance(const SYNTH_T *synth)
+EngineMgr &EngineMgr::getInstance(const SYNTH_T *synth,
+    const oss_devs_t *oss_devs)
 {
-    static EngineMgr instance(synth);
+    static EngineMgr instance(synth, *oss_devs);
     return instance;
 }
 
-EngineMgr::EngineMgr(const SYNTH_T *synth)
+EngineMgr::EngineMgr(const SYNTH_T *synth, const oss_devs_t& oss_devs)
 {
     assert(synth);
     Engine *defaultEng = new NulEngine(*synth);
@@ -39,8 +40,8 @@ EngineMgr::EngineMgr(const SYNTH_T *synth)
     //conditional compiling mess (but contained)
     engines.push_back(defaultEng);
 #if OSS
-    engines.push_back(new OssEngine(*synth));
-    engines.push_back(new OssMultiEngine(*synth));
+    engines.push_back(new OssEngine(*synth, oss_devs));
+    engines.push_back(new OssMultiEngine(*synth, oss_devs));
 #endif
 #if ALSA
     engines.push_back(new AlsaEngine(*synth));

@@ -482,7 +482,8 @@ void OscilGen::changebasefunction(void)
 {
     if(Pcurrentbasefunc != 0) {
         getbasefunction(tmpsmps);
-        fft->smps2freqs(tmpsmps, basefuncFFTfreqs);
+        if(fft)
+            fft->smps2freqs(tmpsmps, basefuncFFTfreqs);
         clearDC(basefuncFFTfreqs);
     }
     else //in this case basefuncFFTfreqs are not used
@@ -1139,6 +1140,8 @@ void OscilGen::paste(OscilGen &o)
     RESTORE(fft);
     RESTORE(basefuncFFTfreqs);
     RESTORE(res);
+    if(this->Pcurrentbasefunc)
+        changebasefunction();
     this->prepare();
 }
 

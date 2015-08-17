@@ -24,6 +24,7 @@
 
 #include "../Misc/Allocator.h"
 #include "Unison.h"
+#include "globals.h"
 
 #ifndef errx
 #include <err.h>

@@ -69,8 +69,11 @@ public:
 
         fPrograms.append(new ProgramInfo(0, 0, "default", ""));
 
+        Config config;
+        config.init();
+
         SYNTH_T synth;
-        Master  master(synth);
+        Master  master(synth, &config);
 
         // refresh banks
         master.bank.rescanforbanks();
@@ -210,6 +213,7 @@ public:
           fMutex()
     {
         sPrograms.initIfNeeded();
+        fConfig.init();
 
         // init parameters to default
         fParameters[kParamPart01Enabled] = 1.0f;
@@ -716,6 +720,7 @@ private:
     MiddleWare* fMiddleWare;
     Master*     fMaster;
     SYNTH_T     fSynth;
+    Config      fConfig;
 
     bool  fIsActive;
     float fParameters[kParamCount];
@@ -768,7 +773,7 @@ private:
 
     void _initMaster()
     {
-        fMiddleWare = new MiddleWare(fSynth);
+        fMiddleWare = new MiddleWare(std::move(fSynth), &fConfig);
         fMiddleWare->setUiCallback(__uiCallback, this);
         fMiddleWare->setIdleCallback(_idleCallback, this);
         _masterChangedCallback(fMiddleWare->spawnMaster());
@@ -891,32 +896,7 @@ private:
 
     // -------------------------------------------------------------------
 
-public:
-    static NativePluginHandle _instantiate(const NativeHostDescriptor* host)
-    {
-        static bool needsInit = true;
-
-        if (needsInit)
-        {
-            needsInit = false;
-            config.init();
-
-            sprng(static_cast<prng_t>(std::time(nullptr)));
-
-            // FIXME - kill this
-            denormalkillbuf = new float[8192];
-            for (int i=0; i < 8192; ++i)
-                denormalkillbuf[i] = (RND - 0.5f) * 1e-16f;
-        }
-
-        return new ZynAddSubFxPlugin(host);
-    }
-
-    static void _cleanup(NativePluginHandle handle)
-    {
-        delete (ZynAddSubFxPlugin*)handle;
-    }
-
+    PluginClassEND(ZynAddSubFxPlugin)
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ZynAddSubFxPlugin)
 };
 

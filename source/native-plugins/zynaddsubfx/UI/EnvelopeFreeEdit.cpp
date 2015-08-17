@@ -223,3 +223,13 @@ void EnvelopeFreeEdit::update(void)
     oscWrite("Penvval");
     oscWrite("Penvsustain");
 }
+
+void EnvelopeFreeEdit::rebase(std::string new_base)
+{
+    osc->renameLink(loc+"Penvpoints", new_base+"Penvpoints", this);
+    osc->renameLink(loc+"Penvdt", new_base+"Penvdt", this);
+    osc->renameLink(loc+"Penvval",    new_base+"Penvval", this);
+    osc->renameLink(loc+"Penvsustain", new_base+"Penvsustain", this);
+    loc = new_base;
+    update();
+}

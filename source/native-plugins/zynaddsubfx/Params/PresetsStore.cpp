@@ -30,13 +30,14 @@
 #include "PresetsStore.h"
 #include "../Misc/XMLwrapper.h"
 #include "../Misc/Util.h"
+#include "../Misc/Config.h"
 
 using namespace std;
 
 //XXX to remove
-PresetsStore presetsstore;
+//PresetsStore presetsstore;
 
-PresetsStore::PresetsStore()
+PresetsStore::PresetsStore(const Config& config) : config(config)
 {
 }
 
@@ -154,7 +155,7 @@ void PresetsStore::copypreset(XMLwrapper &xml, char *type, string name)
 
     string filename("" + dirname + tmps + name + "." + &type[1] + ".xpz");
 
-    xml.saveXMLfile(filename);
+    xml.saveXMLfile(filename, config.cfg.GzipCompression);
 }
 
 bool PresetsStore::pastepreset(XMLwrapper &xml, unsigned int npreset)

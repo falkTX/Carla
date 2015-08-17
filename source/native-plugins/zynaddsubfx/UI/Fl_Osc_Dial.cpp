@@ -78,7 +78,10 @@ int Fl_Osc_Dial::handle(int ev)
 
 void Fl_Osc_Dial::OSC_value(int v)
 {
-    value(v+minimum()+fmodf(value(), 1));
+    if(64 != (int)minimum())
+        value(v+minimum()+fmodf(value(), 1));
+    else
+        value(v+fmodf(value(), 1));
 }
 
 void Fl_Osc_Dial::OSC_value(char v)
@@ -95,11 +98,10 @@ void Fl_Osc_Dial::cb(void)
 {
     assert(osc);
 
-/*    if((maximum()-minimum()) == 127 || (maximum()-minimum()) == 255) {
-	oscWrite(ext, "i", (int)(value()-minimum()));
-    }
-    else*/
+    if(64 != (int)minimum())
         oscWrite(ext, "i", (int)(value()-minimum()));
+    else
+        oscWrite(ext, "i", (int)(value()));
 
     if(cb_data.first)
         cb_data.first(this, cb_data.second);

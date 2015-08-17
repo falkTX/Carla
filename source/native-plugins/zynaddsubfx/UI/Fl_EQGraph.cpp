@@ -32,7 +32,7 @@ void Fl_EQGraph::OSC_raw(const char *msg)
         samplerate = rtosc_argument(msg, 0).f;
     } else {
         memcpy(dem, rtosc_argument(msg, 0).b.data, sizeof(dem));
-        memcpy(num, rtosc_argument(msg, 1).b.data, sizeof(dem));
+        memcpy(num, rtosc_argument(msg, 1).b.data, sizeof(num));
         redraw();
     }
 }
@@ -141,16 +141,24 @@ void Fl_EQGraph::draw(void)
 double Fl_EQGraph::getresponse(int maxy,float freq) const
 {
     const float angle = 2*PI*freq/samplerate;
-    std::complex<float> num_res = 0;
-    std::complex<float> dem_res = 0;
+    float mag = 1;
+    //std::complex<float> num_res = 0;
+    //std::complex<float> dem_res = 0;
          
 
-    for(int i = 0; i < MAX_EQ_BANDS*MAX_FILTER_STAGES*2+1; ++i) {
-        num_res += FFTpolar<float>(num[i], i*angle);
-        dem_res += FFTpolar<float>(dem[i], i*angle);
+    for(int i = 0; i < MAX_EQ_BANDS*MAX_FILTER_STAGES; ++i) {
+        if(num[3*i] == 0)
+            break;
+        std::complex<float> num_res= 0;
+        std::complex<float> dem_res= 0;
+        for(int j=0; j<3; ++j) {
+            num_res += FFTpolar<float>(num[3*i+j], j*angle);
+            dem_res += FFTpolar<float>(dem[3*i+j], j*angle);
+        }
+        mag *= abs(num_res/dem_res);
     }
 
-    float dbresp=20*log(abs(num_res/dem_res))/log(10);
+    float dbresp=20*log(mag)/log(10);
 
     //rescale
     return (int) ((dbresp/MAX_DB+1.0)*maxy/2.0);

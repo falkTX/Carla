@@ -6,13 +6,14 @@
 class WavFile;
 class Master;
 struct SYNTH_T;
+class oss_devs_t;
 
 /**Interface to Nio Subsystem
  *
  * Should be only externally included header */
 namespace Nio
 {
-    void init(const SYNTH_T &synth, Master *master);
+    void init(const SYNTH_T &synth, const oss_devs_t &oss_devs, Master *master);
     bool start(void);
     void stop(void);
 

@@ -252,22 +252,51 @@ enum LegatoMsg {
 #define O_BINARY 0
 #endif
 
+template<class T>
+class m_unique_ptr
+{
+    T* ptr = nullptr;
+public:
+    m_unique_ptr() = default;
+    m_unique_ptr(m_unique_ptr&& other) {
+        ptr = other.ptr;
+        other.ptr = nullptr;
+    }
+    m_unique_ptr(const m_unique_ptr& other) = delete;
+    ~m_unique_ptr() { ptr = nullptr; }
+    void resize(unsigned sz) {
+        delete[] ptr;
+        ptr = new T[sz]; }
+
+    operator T*() { return ptr; }
+    operator const T*() const { return ptr; }
+    T& operator[](unsigned idx) { return ptr[idx]; }
+    const T& operator[](unsigned idx) const { return ptr[idx]; }
+};
+
 //temporary include for synth->{samplerate/buffersize} members
 struct SYNTH_T {
+
     SYNTH_T(void)
         :samplerate(44100), buffersize(256), oscilsize(1024)
     {
         alias();
     }
 
+    SYNTH_T(const SYNTH_T& ) = delete;
+    SYNTH_T(SYNTH_T&& ) = default;
+
+    /** the buffer to add noise in order to avoid denormalisation */
+    m_unique_ptr<float> denormalkillbuf;
+
     /**Sampling rate*/
     unsigned int samplerate;
 
     /**
      * The size of a sound buffer (or the granularity)
-     * All internal transfer of sound data use buffer of this size
-     * All parameters are constant during this period of time, exception
-     * some parameters(like amplitudes) which are linear interpolated.
+     * All internal transfer of sound data use buffer of this size.
+     * All parameters are constant during this period of time, except
+     * some parameters(like amplitudes) which are linearly interpolated.
      * If you increase this you'll ecounter big latencies, but if you
      * decrease this the CPU requirements gets high.
      */
@@ -291,13 +320,7 @@ struct SYNTH_T {
     {
         return buffersize_f / samplerate_f;
     }
-    inline void alias(void)
-    {
-        halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
-        buffersize_f     = buffersize;
-        bufferbytes      = buffersize * sizeof(float);
-        oscilsize_f      = oscilsize;
-    }
+    void alias(void);
     static float numRandom(void); //defined in Util.cpp for now
 };
 #endif
