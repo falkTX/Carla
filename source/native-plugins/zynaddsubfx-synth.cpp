@@ -700,6 +700,10 @@ protected:
         _deleteMaster();
 
         fSynth.buffersize = static_cast<int>(bufferSize);
+
+        if (fSynth.buffersize > 32)
+            fSynth.buffersize = 32;
+
         fSynth.alias();
 
         _initMaster();
