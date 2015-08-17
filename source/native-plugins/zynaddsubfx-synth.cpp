@@ -539,7 +539,8 @@ protected:
         fIsActive = false;
     }
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
+    void process(float**, float** const outBuffer, const uint32_t frames,
+                 const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
         if (! fMutex.tryLock())
         {
@@ -553,55 +554,88 @@ protected:
             fMutex.lock();
         }
 
-        for (uint32_t i=0; i < midiEventCount; ++i)
-        {
-            const NativeMidiEvent* const midiEvent(&midiEvents[i]);
+        // the following code is based on ZynAddSubFX DSSI plugin code by Stephen G. Parry
+        uint32_t fromFrame = 0;
+        uint32_t toFrame   = 0;
+        uint32_t midiEventIndex = 0;
+        uint32_t nextEventFrame = 0;
 
-            const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
-            const char    channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
+        do {
+            /* Find the time of the next event, if any */
+            if (midiEvents == nullptr || midiEventIndex >= midiEventCount)
+                nextEventFrame = (uint32_t)-1;
+            else
+                nextEventFrame = midiEvents[midiEventIndex].time;
 
-            if (MIDI_IS_STATUS_NOTE_OFF(status))
+            /* find the end of the sub-sample to be processed this time round... */
+            /* if the next event falls within the desired sample interval... */
+            if (nextEventFrame < frames && nextEventFrame >= toFrame)
+                /* set the end to be at that event */
+                toFrame = nextEventFrame;
+            else
+                /* ...else go for the whole remaining sample */
+                toFrame = frames;
+
+            if (fromFrame < toFrame)
             {
-                const char note = static_cast<char>(midiEvent->data[1]);
+                // call master to fill from `fromFrame` to `toFrame`:
+                fMaster->GetAudioOutSamples(toFrame - fromFrame, fSynth.samplerate, outBuffer[0], outBuffer[1]);
 
-                fMaster->noteOff(channel, note);
+                // next sub-sample please...
+                fromFrame = toFrame;
             }
-            else if (MIDI_IS_STATUS_NOTE_ON(status))
+
+            // Now process any event(s) at the current timing point
+            for (; midiEventIndex < midiEventCount && midiEvents[midiEventIndex].time == toFrame;)
             {
-                const char note = static_cast<char>(midiEvent->data[1]);
-                const char velo = static_cast<char>(midiEvent->data[2]);
+                const NativeMidiEvent* const midiEvent(&midiEvents[midiEventIndex++]);
 
-                fMaster->noteOn(channel, note, velo);
+                const uint8_t status  = MIDI_GET_STATUS_FROM_DATA(midiEvent->data);
+                const char    channel = MIDI_GET_CHANNEL_FROM_DATA(midiEvent->data);
+
+                if (MIDI_IS_STATUS_NOTE_OFF(status))
+                {
+                    const char note = static_cast<char>(midiEvent->data[1]);
+
+                    fMaster->noteOff(channel, note);
+                }
+                else if (MIDI_IS_STATUS_NOTE_ON(status))
+                {
+                    const char note = static_cast<char>(midiEvent->data[1]);
+                    const char velo = static_cast<char>(midiEvent->data[2]);
+
+                    fMaster->noteOn(channel, note, velo);
+                }
+                else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
+                {
+                    const char note     = static_cast<char>(midiEvent->data[1]);
+                    const char pressure = static_cast<char>(midiEvent->data[2]);
+
+                    fMaster->polyphonicAftertouch(channel, note, pressure);
+                }
+                else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
+                {
+                    // skip controls which we map to parameters
+                    if (getIndexFromZynControl(midiEvent->data[1]) != kParamCount)
+                        continue;
+
+                    const int control = midiEvent->data[1];
+                    const int value   = midiEvent->data[2];
+
+                    fMaster->setController(channel, control, value);
+                }
+                else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
+                {
+                    const uint8_t lsb = midiEvent->data[1];
+                    const uint8_t msb = midiEvent->data[2];
+                    const int   value = ((msb << 7) | lsb) - 8192;
+
+                    fMaster->setController(channel, C_pitchwheel, value);
+                }
             }
-            else if (MIDI_IS_STATUS_POLYPHONIC_AFTERTOUCH(status))
-            {
-                const char note     = static_cast<char>(midiEvent->data[1]);
-                const char pressure = static_cast<char>(midiEvent->data[2]);
 
-                fMaster->polyphonicAftertouch(channel, note, pressure);
-            }
-            else if (MIDI_IS_STATUS_CONTROL_CHANGE(status))
-            {
-                // skip controls which we map to parameters
-                if (getIndexFromZynControl(midiEvent->data[1]) != kParamCount)
-                    continue;
-
-                const int control = midiEvent->data[1];
-                const int value   = midiEvent->data[2];
-
-                fMaster->setController(channel, control, value);
-            }
-            else if (MIDI_IS_STATUS_PITCH_WHEEL_CONTROL(status))
-            {
-                const uint8_t lsb = midiEvent->data[1];
-                const uint8_t msb = midiEvent->data[2];
-                const int   value = ((msb << 7) | lsb) - 8192;
-
-                fMaster->setController(channel, C_pitchwheel, value);
-            }
-        }
-
-        fMaster->GetAudioOutSamples(frames, fSynth.samplerate, outBuffer[0], outBuffer[1]);
+        // Keep going until we have the desired total length of sample...
+        } while (toFrame < frames);
 
         fMutex.unlock();
     }
@@ -764,12 +798,11 @@ private:
 
     void run() noexcept override
     {
-        for (;;)
+        for (; ! shouldThreadExit();)
         {
-            if (MiddleWare* const mw = fMiddleWare)
-                mw->tick();
-            else
-                break;
+            try {
+                fMiddleWare->tick();
+            } CARLA_SAFE_EXCEPTION("ZynAddSubFX MiddleWare tick");
 
             carla_msleep(1);
         }
@@ -825,13 +858,11 @@ private:
 
     void _deleteMaster()
     {
-        fMaster = nullptr;
-
-        MiddleWare* const tmp(fMiddleWare);
-        fMiddleWare = nullptr;
-
         stopThread(1000);
-        delete tmp;
+
+        fMaster = nullptr;
+        delete fMiddleWare;
+        fMiddleWare = nullptr;
     }
 
     void _masterChangedCallback(Master* m)
