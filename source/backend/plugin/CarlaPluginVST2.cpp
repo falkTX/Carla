@@ -2103,7 +2103,9 @@ public:
         sCurrentUniqueId     = uniqueId;
         sLastCarlaPluginVST2 = this;
 
-        fEffect = vstFn(carla_vst_audioMasterCallback);
+        try {
+            fEffect = vstFn(carla_vst_audioMasterCallback);
+        } CARLA_SAFE_EXCEPTION_RETURN("Vst init", false);
 
         sLastCarlaPluginVST2 = nullptr;
         sCurrentUniqueId     = 0;
