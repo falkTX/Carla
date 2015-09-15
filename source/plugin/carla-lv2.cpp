@@ -142,7 +142,7 @@ public:
                 carla_debug("Host option %i:\"%s\"", i, uridUnmap->unmap(uridUnmap->handle, options[i].key));
             }
 
-            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
             {
                 if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
                 {
@@ -152,7 +152,7 @@ public:
                     fBufferSize = static_cast<uint32_t>(value);
                 }
                 else
-                    carla_stderr("Host provides maxBlockLength but has wrong value type");
+                    carla_stderr("Host provides nominalBlockLength but has wrong value type");
 
                 break;
             }
@@ -594,7 +594,7 @@ public:
     {
         for (int i=0; options[i].key != 0; ++i)
         {
-            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
             {
                 if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Int))
                 {
@@ -607,7 +607,7 @@ public:
                         fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
                 }
                 else
-                    carla_stderr("Host changed maxBlockLength but with wrong value type");
+                    carla_stderr("Host changed nominalBlockLength but with wrong value type");
             }
             else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
             {

@@ -95,28 +95,29 @@ const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM     = 22;
 const uint32_t CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT    = 23;
 const uint32_t CARLA_URI_MAP_ID_BUF_MAX_LENGTH         = 24;
 const uint32_t CARLA_URI_MAP_ID_BUF_MIN_LENGTH         = 25;
-const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 26;
-const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 27;
-const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 28;
-const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 29;
-const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 30;
-const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 31; // base type
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 32; // values
-const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 33;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 34;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 35;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 36;
-const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 37;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 38;
-const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 39;
-const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 40;
-const uint32_t CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT    = 41;
-const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 42;
-const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 43;
-const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 44;
-const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 45;
-const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 46;
-const uint32_t CARLA_URI_MAP_ID_COUNT                  = 47;
+const uint32_t CARLA_URI_MAP_ID_BUF_NOMINAL_LENGTH     = 26;
+const uint32_t CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE      = 27;
+const uint32_t CARLA_URI_MAP_ID_LOG_ERROR              = 28;
+const uint32_t CARLA_URI_MAP_ID_LOG_NOTE               = 29;
+const uint32_t CARLA_URI_MAP_ID_LOG_TRACE              = 30;
+const uint32_t CARLA_URI_MAP_ID_LOG_WARNING            = 31;
+const uint32_t CARLA_URI_MAP_ID_TIME_POSITION          = 32; // base type
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR               = 33; // values
+const uint32_t CARLA_URI_MAP_ID_TIME_BAR_BEAT          = 34;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT              = 35;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEAT_UNIT         = 36;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_BAR     = 37;
+const uint32_t CARLA_URI_MAP_ID_TIME_BEATS_PER_MINUTE  = 38;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAME             = 39;
+const uint32_t CARLA_URI_MAP_ID_TIME_FRAMES_PER_SECOND = 40;
+const uint32_t CARLA_URI_MAP_ID_TIME_SPEED             = 41;
+const uint32_t CARLA_URI_MAP_ID_TIME_TICKS_PER_BEAT    = 42;
+const uint32_t CARLA_URI_MAP_ID_MIDI_EVENT             = 43;
+const uint32_t CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE      = 44;
+const uint32_t CARLA_URI_MAP_ID_UI_WINDOW_TITLE        = 45;
+const uint32_t CARLA_URI_MAP_ID_CARLA_ATOM_WORKER      = 46;
+const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 47;
+const uint32_t CARLA_URI_MAP_ID_COUNT                  = 48;
 
 // LV2 Feature Ids
 const uint32_t kFeatureIdBufSizeBounded   =  0;
@@ -283,6 +284,7 @@ struct CarlaPluginLV2Options {
     enum OptIndex {
         MaxBlockLenth = 0,
         MinBlockLenth,
+        NominalBlockLenth,
         SequenceSize,
         SampleRate,
         FrontendWinId,
@@ -293,6 +295,7 @@ struct CarlaPluginLV2Options {
 
     int maxBufferSize;
     int minBufferSize;
+    int nominalBufferSize;
     int sequenceSize;
     double sampleRate;
     int64_t frontendWinId;
@@ -322,6 +325,14 @@ struct CarlaPluginLV2Options {
         optMinBlockLenth.size    = sizeof(int);
         optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
         optMinBlockLenth.value   = &minBufferSize;
+
+        LV2_Options_Option& optNominalBlockLenth(opts[NominalBlockLenth]);
+        optNominalBlockLenth.context = LV2_OPTIONS_INSTANCE;
+        optNominalBlockLenth.subject = 0;
+        optNominalBlockLenth.key     = CARLA_URI_MAP_ID_BUF_NOMINAL_LENGTH;
+        optNominalBlockLenth.size    = sizeof(int);
+        optNominalBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
+        optNominalBlockLenth.value   = &nominalBufferSize;
 
         LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
         optSequenceSize.context = LV2_OPTIONS_INSTANCE;
@@ -3782,7 +3793,7 @@ public:
 
         if (fLv2Options.maxBufferSize != newBufferSizeInt || (fLv2Options.minBufferSize != 1 && fLv2Options.minBufferSize != newBufferSizeInt))
         {
-            fLv2Options.maxBufferSize = newBufferSizeInt;
+            fLv2Options.maxBufferSize = fLv2Options.nominalBufferSize = newBufferSizeInt;
 
             if (fLv2Options.minBufferSize != 1)
                 fLv2Options.minBufferSize = newBufferSizeInt;
@@ -3790,7 +3801,10 @@ public:
             if (fExt.options != nullptr && fExt.options->set != nullptr)
             {
                 fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MaxBlockLenth]);
-                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
+                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::NominalBlockLenth]);
+
+                if (fLv2Options.minBufferSize != 1)
+                    fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::MinBlockLenth]);
             }
         }
 
@@ -4855,10 +4869,11 @@ public:
         // ---------------------------------------------------------------
         // initialize options
 
-        fLv2Options.minBufferSize = 1;
-        fLv2Options.maxBufferSize = static_cast<int>(pData->engine->getBufferSize());
-        fLv2Options.sampleRate    = pData->engine->getSampleRate();
-        fLv2Options.frontendWinId = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
+        fLv2Options.minBufferSize     = 1;
+        fLv2Options.maxBufferSize     = static_cast<int>(pData->engine->getBufferSize());
+        fLv2Options.nominalBufferSize = fLv2Options.maxBufferSize;
+        fLv2Options.sampleRate        = pData->engine->getSampleRate();
+        fLv2Options.frontendWinId     = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
 
         uint32_t eventBufferSize = MAX_DEFAULT_BUFFER_SIZE;
 
@@ -4996,6 +5011,8 @@ public:
         // if a fixed buffer is not needed, skip its feature
         if (! needsFixedBuffer())
             fFeatures[kFeatureIdBufSizeFixed]->URI = LV2_BUF_SIZE__boundedBlockLength;
+        else
+            fLv2Options.minBufferSize = fLv2Options.maxBufferSize;
 
         // if power of 2 is not possible, skip its feature FIXME
         //if (fLv2Options.maxBufferSize)
@@ -5841,6 +5858,8 @@ private:
             return CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
         if (std::strcmp(uri, LV2_BUF_SIZE__minBlockLength) == 0)
             return CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
+        if (std::strcmp(uri, LV2_BUF_SIZE__nominalBlockLength) == 0)
+            return CARLA_URI_MAP_ID_BUF_NOMINAL_LENGTH;
         if (std::strcmp(uri, LV2_BUF_SIZE__sequenceSize) == 0)
             return CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
 
@@ -5955,6 +5974,8 @@ private:
             return LV2_BUF_SIZE__maxBlockLength;
         if (urid == CARLA_URI_MAP_ID_BUF_MIN_LENGTH)
             return LV2_BUF_SIZE__minBlockLength;
+        if (urid == CARLA_URI_MAP_ID_BUF_NOMINAL_LENGTH)
+            return LV2_BUF_SIZE__nominalBlockLength;
         if (urid == CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE)
             return LV2_BUF_SIZE__sequenceSize;
 
