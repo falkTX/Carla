@@ -85,6 +85,7 @@ public:
           fIsOffline(false),
           fBufferSize(0),
           fSampleRate(sampleRate),
+          fUsingNominal(false),
           fUridMap(nullptr),
           fURIs(),
           fUI(),
@@ -150,11 +151,29 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                     fBufferSize = static_cast<uint32_t>(value);
+                    fUsingNominal = true;
                 }
                 else
+                {
                     carla_stderr("Host provides nominalBlockLength but has wrong value type");
-
+                }
                 break;
+            }
+
+            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    fBufferSize = static_cast<uint32_t>(value);
+                }
+                else
+                {
+                    carla_stderr("Host provides maxBlockLength but has wrong value type");
+                }
+                // no break, continue in case host supports nominalBlockLength
             }
         }
 
@@ -596,7 +615,7 @@ public:
         {
             if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
             {
-                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Int))
+                if (options[i].type == fURIs.atomInt)
                 {
                     const int value(*(const int*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
@@ -609,9 +628,24 @@ public:
                 else
                     carla_stderr("Host changed nominalBlockLength but with wrong value type");
             }
+            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength) && ! fUsingNominal)
+            {
+                if (options[i].type == fURIs.atomInt)
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    fBufferSize = static_cast<uint32_t>(value);
+
+                    if (fDescriptor->dispatcher != nullptr)
+                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
+                }
+                else
+                    carla_stderr("Host changed maxBlockLength but with wrong value type");
+            }
             else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
             {
-                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Double))
+                if (options[i].type == fURIs.atomDouble)
                 {
                     const double value(*(const double*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0.0);
@@ -1027,6 +1061,7 @@ private:
     bool     fIsOffline;
     uint32_t fBufferSize;
     double   fSampleRate;
+    bool     fUsingNominal;
 
     const LV2_URID_Map* fUridMap;
 
