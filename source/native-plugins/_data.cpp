@@ -235,7 +235,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
@@ -256,7 +256,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
@@ -277,7 +277,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
@@ -298,7 +298,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
@@ -319,7 +319,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_STATE
                                                   |NATIVE_PLUGIN_USES_TIME),
