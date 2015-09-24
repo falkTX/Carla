@@ -25,7 +25,7 @@
 # include <signal.h>
 #endif
 
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
 # include <X11/Xlib.h>
 #endif
 
@@ -478,7 +478,7 @@ int main(int argc, char* argv[])
             extraStuff = "true";
     }
 
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
     if (std::getenv("DISPLAY") != nullptr)
         XInitThreads();
 #endif
@@ -516,7 +516,7 @@ int main(int argc, char* argv[])
             {
                 if (pluginInfo->hints & CarlaBackend::PLUGIN_HAS_CUSTOM_UI)
                 {
-#ifdef CARLA_OS_LINUX
+#ifdef HAVE_X11
                     if (std::getenv("DISPLAY") != nullptr)
 #endif
                         carla_show_custom_ui(0, true);
