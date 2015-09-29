@@ -791,15 +791,15 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // no port properties set, check if using old/invalid ones
                 if (rdfPort->Properties == 0x0)
                 {
-                    static const Lilv::Node oldPropArtifacts(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#causesArtifacts"));
-                    static const Lilv::Node oldPropContinuousCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#continuousCV"));
-                    static const Lilv::Node oldPropDiscreteCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#discreteCV"));
-                    static const Lilv::Node oldPropExpensive(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#expensive"));
-                    static const Lilv::Node oldPropStrictBounds(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#hasStrictBounds"));
-                    static const Lilv::Node oldPropLogarithmic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#logarithmic"));
-                    static const Lilv::Node oldPropNotAutomatic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notAutomatic"));
-                    static const Lilv::Node oldPropNotOnGUI(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notOnGUI"));
-                    static const Lilv::Node oldPropTrigger(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#trigger"));
+                    const Lilv::Node oldPropArtifacts(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#causesArtifacts"));
+                    const Lilv::Node oldPropContinuousCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#continuousCV"));
+                    const Lilv::Node oldPropDiscreteCV(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#discreteCV"));
+                    const Lilv::Node oldPropExpensive(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#expensive"));
+                    const Lilv::Node oldPropStrictBounds(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#hasStrictBounds"));
+                    const Lilv::Node oldPropLogarithmic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#logarithmic"));
+                    const Lilv::Node oldPropNotAutomatic(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notAutomatic"));
+                    const Lilv::Node oldPropNotOnGUI(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#notOnGUI"));
+                    const Lilv::Node oldPropTrigger(lv2World.new_uri("http://lv2plug.in/ns/dev/extportinfo#trigger"));
 
                     if (lilvPort.has_property(oldPropArtifacts))
                     {
