@@ -82,15 +82,9 @@ void carla_debug(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
-#ifndef QTCREATOR_TEST
         std::fprintf(stdout, "\x1b[30;1m");
-#endif
         std::vfprintf(stdout, fmt, args);
-#ifndef QTCREATOR_TEST
         std::fprintf(stdout, "\x1b[0m\n");
-#else
-        std::fprintf(stdout, "\n");
-#endif
         ::va_end(args);
     } catch (...) {}
 }
@@ -135,15 +129,9 @@ void carla_stderr2(const char* const fmt, ...) noexcept
     try {
         ::va_list args;
         ::va_start(args, fmt);
-#ifndef QTCREATOR_TEST
         std::fprintf(stderr, "\x1b[31m");
-#endif
         std::vfprintf(stderr, fmt, args);
-#ifndef QTCREATOR_TEST
         std::fprintf(stderr, "\x1b[0m\n");
-#else
-        std::fprintf(stderr, "\n");
-#endif
         ::va_end(args);
     } catch (...) {}
 }
@@ -154,7 +142,7 @@ void carla_stderr2(const char* const fmt, ...) noexcept
 /*
  * Print a safe assertion error message.
  */
-static inline
+inline
 void carla_safe_assert(const char* const assertion, const char* const file, const int line) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
@@ -163,13 +151,13 @@ void carla_safe_assert(const char* const assertion, const char* const file, cons
 /*
  * Print a safe assertion error message, with 1 extra integer value.
  */
-static inline
+inline
 void carla_safe_assert_int(const char* const assertion, const char* const file, const int line,
                                                                                 const int value) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
 }
-static inline
+inline
 void carla_safe_assert_uint(const char* const assertion, const char* const file, const int line,
                                                                                  const uint value) noexcept
 {
@@ -179,13 +167,13 @@ void carla_safe_assert_uint(const char* const assertion, const char* const file,
 /*
  * Print a safe assertion error message, with 2 extra integer values.
  */
-static inline
+inline
 void carla_safe_assert_int2(const char* const assertion, const char* const file, const int line,
                                                                                  const int v1, const int v2) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
 }
-static inline
+inline
 void carla_safe_assert_uint2(const char* const assertion, const char* const file, const int line,
                                                                                   const uint v1, const uint v2) noexcept
 {
@@ -198,7 +186,7 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
 /*
  * Print a safe exception error message.
  */
-static inline
+inline
 void carla_safe_exception(const char* const exception, const char* const file, const int line) noexcept
 {
     carla_stderr2("Carla exception caught: \"%s\" in file %s, line %i", exception, file, line);

@@ -16,7 +16,7 @@
  */
 
 #include "CarlaHost.h"
-#include "CarlaUtils.hpp"
+#include "CarlaString.hpp"
 
 #include "juce_core.h"
 

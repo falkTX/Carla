@@ -85,13 +85,13 @@ T carla_maxNegative(const T& v1, const T& v2) noexcept
 }
 
 /*
- * Fix bounds of 'value' between 'min' and 'max'.
+ * Return a value between 'min' and 'max'.
  */
 template<typename T>
 static inline
 const T& carla_fixedValue(const T& min, const T& max, const T& value) noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(max > min, max);
+    CARLA_SAFE_ASSERT_RETURN(max > min, min);
 
     if (value <= min)
         return min;
