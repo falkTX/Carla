@@ -142,7 +142,7 @@ void carla_stderr2(const char* const fmt, ...) noexcept
 /*
  * Print a safe assertion error message.
  */
-inline
+static inline
 void carla_safe_assert(const char* const assertion, const char* const file, const int line) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i", assertion, file, line);
@@ -151,13 +151,13 @@ void carla_safe_assert(const char* const assertion, const char* const file, cons
 /*
  * Print a safe assertion error message, with 1 extra integer value.
  */
-inline
+static inline
 void carla_safe_assert_int(const char* const assertion, const char* const file, const int line,
                                                                                 const int value) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, value %i", assertion, file, line, value);
 }
-inline
+static inline
 void carla_safe_assert_uint(const char* const assertion, const char* const file, const int line,
                                                                                  const uint value) noexcept
 {
@@ -167,13 +167,13 @@ void carla_safe_assert_uint(const char* const assertion, const char* const file,
 /*
  * Print a safe assertion error message, with 2 extra integer values.
  */
-inline
+static inline
 void carla_safe_assert_int2(const char* const assertion, const char* const file, const int line,
                                                                                  const int v1, const int v2) noexcept
 {
     carla_stderr2("Carla assertion failure: \"%s\" in file %s, line %i, v1 %i, v2 %i", assertion, file, line, v1, v2);
 }
-inline
+static inline
 void carla_safe_assert_uint2(const char* const assertion, const char* const file, const int line,
                                                                                   const uint v1, const uint v2) noexcept
 {
@@ -186,7 +186,7 @@ void carla_safe_assert_uint2(const char* const assertion, const char* const file
 /*
  * Print a safe exception error message.
  */
-inline
+static inline
 void carla_safe_exception(const char* const exception, const char* const file, const int line) noexcept
 {
     carla_stderr2("Carla exception caught: \"%s\" in file %s, line %i", exception, file, line);
