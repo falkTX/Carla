@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -56,6 +56,11 @@
     assertions if you try to do anything dangerous, but there are still plenty of ways it
     could go wrong.
 
+    Note that although the children in a tree have a fixed order, the properties are not
+    guaranteed to be stored in any particular order, so don't expect that a property's index
+    will correspond to the order in which the property was added, or that it will remain
+    constant when other properties are added or removed.
+
     Listeners can be added to a ValueTree to be told when properies change and when
     nodes are added or removed.
 
@@ -82,7 +87,7 @@ public:
     explicit ValueTree (const Identifier& type);
 
     /** Creates a reference to another ValueTree. */
-    ValueTree (const ValueTree&);
+    ValueTree (const ValueTree&) noexcept;
 
     /** Makes this object reference another node. */
     ValueTree& operator= (const ValueTree&);
@@ -119,7 +124,7 @@ public:
         It's hard to create an invalid node, but you might get one returned, e.g. by an out-of-range
         call to getChild().
     */
-    bool isValid() const                            { return object != nullptr; }
+    bool isValid() const noexcept                           { return object != nullptr; }
 
     /** Returns a deep copy of this tree and all its sub-nodes. */
     ValueTree createCopy() const;
@@ -129,12 +134,12 @@ public:
         The type is specified when the ValueTree is created.
         @see hasType
     */
-    Identifier getType() const;
+    Identifier getType() const noexcept;
 
     /** Returns true if the node has this type.
         The comparison is case-sensitive.
     */
-    bool hasType (const Identifier& typeName) const;
+    bool hasType (const Identifier& typeName) const noexcept;
 
     //==============================================================================
     /** Returns the value of a named property.
@@ -142,7 +147,7 @@ public:
         You can also use operator[] to get a property.
         @see var, setProperty, hasProperty
     */
-    const var& getProperty (const Identifier& name) const;
+    const var& getProperty (const Identifier& name) const noexcept;
 
     /** Returns the value of a named property, or a user-specified default if the property doesn't exist.
         If no such property has been set, this will return the value of defaultReturnValue.
@@ -156,7 +161,7 @@ public:
         calling getProperty().
         @see getProperty
     */
-    const var& operator[] (const Identifier& name) const;
+    const var& operator[] (const Identifier& name) const noexcept;
 
     /** Changes a named property of the node.
         The name identifier must not be an empty string.
@@ -168,7 +173,7 @@ public:
     ValueTree& setProperty (const Identifier& name, const var& newValue, UndoManager* undoManager);
 
     /** Returns true if the node contains a named property. */
-    bool hasProperty (const Identifier& name) const;
+    bool hasProperty (const Identifier& name) const noexcept;
 
     /** Removes a property from the node.
         If the undoManager parameter is non-null, its UndoManager::perform() method will be used,
@@ -185,12 +190,15 @@ public:
     /** Returns the total number of properties that the node contains.
         @see getProperty.
     */
-    int getNumProperties() const;
+    int getNumProperties() const noexcept;
 
     /** Returns the identifier of the property with a given index.
+        Note that properties are not guaranteed to be stored in any particular order, so don't
+        expect that the index will correspond to the order in which the property was added, or
+        that it will remain constant when other properties are added or removed.
         @see getNumProperties
     */
-    Identifier getPropertyName (int index) const;
+    Identifier getPropertyName (int index) const noexcept;
 
     /** Returns a Value object that can be used to control and respond to one of the tree's properties.
 
@@ -210,7 +218,7 @@ public:
     /** Returns the number of child nodes belonging to this one.
         @see getChild
     */
-    int getNumChildren() const;
+    int getNumChildren() const noexcept;
 
     /** Returns one of this node's child nodes.
         If the index is out of range, it'll return an invalid node. (See isValid() to find out
@@ -293,18 +301,18 @@ public:
     /** Returns true if this node is anywhere below the specified parent node.
         This returns true if the node is a child-of-a-child, as well as a direct child.
     */
-    bool isAChildOf (const ValueTree& possibleParent) const;
+    bool isAChildOf (const ValueTree& possibleParent) const noexcept;
 
     /** Returns the index of a child item in this parent.
         If the child isn't found, this returns -1.
     */
-    int indexOf (const ValueTree& child) const;
+    int indexOf (const ValueTree& child) const noexcept;
 
     /** Returns the parent node that contains this one.
         If the node has no parent, this will return an invalid node. (See isValid() to find out
         whether a node is valid).
     */
-    ValueTree getParent() const;
+    ValueTree getParent() const noexcept;
 
     /** Returns one of this node's siblings in its parent's child list.
 
@@ -312,7 +320,7 @@ public:
         that follows this one, -1 would return the node before it, 0 will return this node itself, etc.
         If the requested position is beyond the range of available nodes, this will return ValueTree::invalid.
     */
-    ValueTree getSibling (int delta) const;
+    ValueTree getSibling (int delta) const noexcept;
 
     //==============================================================================
     /** Creates an XmlElement that holds a complete image of this node and all its children.
@@ -526,7 +534,7 @@ private:
     void createListOfChildren (OwnedArray<ValueTree>&) const;
     void reorderChildren (const OwnedArray<ValueTree>&, UndoManager*);
 
-    explicit ValueTree (SharedObject*);
+    explicit ValueTree (SharedObject*) noexcept;
 };
 
 

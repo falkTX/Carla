@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -377,6 +377,7 @@ private:
         if (tag == "polygon")     return parsePolygon (xml, false);
         if (tag == "text")        return parseText (xml, true);
         if (tag == "switch")      return parseSwitch (xml);
+        if (tag == "a")           return parseLinkElement (xml);
         if (tag == "style")       parseCSSStyle (xml);
 
         return nullptr;
@@ -410,6 +411,11 @@ private:
 
         drawable->resetContentAreaAndBoundingBoxToFitChildren();
         return drawable;
+    }
+
+    DrawableComposite* parseLinkElement (const XmlPath& xml)
+    {
+        return parseGroupElement (xml); // TODO: support for making this clickable
     }
 
     //==============================================================================
@@ -1085,6 +1091,11 @@ private:
     }
 
     //==============================================================================
+    static bool isStartOfNumber (juce_wchar c) noexcept
+    {
+        return CharacterFunctions::isDigit (c) || c == '-' || c == '+';
+    }
+
     static bool parseNextNumber (String::CharPointerType& text, String& value, const bool allowUnits)
     {
         String::CharPointerType s (text);
@@ -1094,14 +1105,21 @@ private:
 
         String::CharPointerType start (s);
 
-        if (s.isDigit() || *s == '.' || *s == '-')
+        if (isStartOfNumber (*s))
             ++s;
 
-        while (s.isDigit() || *s == '.')
+        while (s.isDigit())
             ++s;
 
-        if ((*s == 'e' || *s == 'E')
-             && ((s + 1).isDigit() || s[1] == '-' || s[1] == '+'))
+        if (*s == '.')
+        {
+            ++s;
+
+            while (s.isDigit())
+                ++s;
+        }
+
+        if ((*s == 'e' || *s == 'E') && isStartOfNumber (s[1]))
         {
             s += 2;
 

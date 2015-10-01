@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -332,10 +332,11 @@ MidiOutput* MidiOutput::openDevice (int index)
         {
             MIDIClientRef client = CoreMidiHelpers::getGlobalMidiClient();
             MIDIPortRef port;
+            String deviceName = CoreMidiHelpers::getConnectedEndpointName (endPoint);
 
             if (client != 0 && CHECK_ERROR (MIDIOutputPortCreate (client, pname.cfString, &port)))
             {
-                mo = new MidiOutput();
+                mo = new MidiOutput (deviceName);
                 mo->internal = new CoreMidiHelpers::MidiPortAndEndpoint (port, endPoint);
             }
         }
@@ -354,7 +355,7 @@ MidiOutput* MidiOutput::createNewDevice (const String& deviceName)
 
     if (client != 0 && CHECK_ERROR (MIDISourceCreate (client, name.cfString, &endPoint)))
     {
-        MidiOutput* mo = new MidiOutput();
+        MidiOutput* mo = new MidiOutput (deviceName);
         mo->internal = new CoreMidiHelpers::MidiPortAndEndpoint (0, endPoint);
         return mo;
     }

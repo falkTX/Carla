@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -654,12 +654,13 @@ void GlyphArrangement::splitLines (const String& text, Font font, int startIndex
     float lineY = y;
     float widthPerLine = lineWidth / numLines;
 
-    for (int line = 0; line < numLines; ++line)
+    while (lineY < y + height)
     {
         int i = startIndex;
-        float lineStartX = glyphs.getReference (startIndex).getLeft();
+        const float lineStartX = glyphs.getReference (startIndex).getLeft();
+        const float lineBottomY = lineY + font.getHeight();
 
-        if (line == numLines - 1)
+        if (lineBottomY >= y + height)
         {
             widthPerLine = width;
             i = glyphs.size();
@@ -732,7 +733,7 @@ void GlyphArrangement::splitLines (const String& text, Font font, int startIndex
                                minimumHorizontalScale);
 
         startIndex = i;
-        lineY += font.getHeight();
+        lineY = lineBottomY;
 
         if (startIndex >= glyphs.size())
             break;

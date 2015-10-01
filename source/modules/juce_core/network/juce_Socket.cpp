@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -62,17 +62,25 @@ namespace SocketHelpers
        #endif
     }
 
+    template <typename Type>
+    static bool setOption (const SocketHandle handle, int mode, int property, Type value) noexcept
+    {
+        return setsockopt (handle, mode, property, reinterpret_cast<const char*> (&value), sizeof (value)) == 0;
+    }
+
+    template <typename Type>
+    static bool setOption (const SocketHandle handle, int property, Type value) noexcept
+    {
+        return setOption (handle, SOL_SOCKET, property, value);
+    }
+
     static bool resetSocketOptions (const SocketHandle handle, const bool isDatagram, const bool allowBroadcast) noexcept
     {
-        const int sndBufSize = 65536;
-        const int rcvBufSize = 65536;
-        const int one = 1;
-
         return handle > 0
-                && setsockopt (handle, SOL_SOCKET, SO_RCVBUF, (const char*) &rcvBufSize, sizeof (rcvBufSize)) == 0
-                && setsockopt (handle, SOL_SOCKET, SO_SNDBUF, (const char*) &sndBufSize, sizeof (sndBufSize)) == 0
-                && (isDatagram ? ((! allowBroadcast) || setsockopt (handle, SOL_SOCKET, SO_BROADCAST, (const char*) &one, sizeof (one)) == 0)
-                               : (setsockopt (handle, IPPROTO_TCP, TCP_NODELAY, (const char*) &one, sizeof (one)) == 0));
+                && setOption (handle, SO_RCVBUF, (int) 65536)
+                && setOption (handle, SO_SNDBUF, (int) 65536)
+                && (isDatagram ? ((! allowBroadcast) || setOption (handle, SO_BROADCAST, (int) 1))
+                               : setOption (handle, IPPROTO_TCP, TCP_NODELAY, (int) 1));
     }
 
     static void closeSocket (volatile int& handle, CriticalSection& readLock,
@@ -136,8 +144,12 @@ namespace SocketHelpers
         servTmpAddr.sin_addr.s_addr = htonl (INADDR_ANY);
         servTmpAddr.sin_port = htons ((uint16) port);
 
+       #if JUCE_WINDOWS
         if (address.isNotEmpty())
             servTmpAddr.sin_addr.s_addr = ::inet_addr (address.toUTF8());
+       #else
+        ignoreUnused (address);
+       #endif
 
         return bind (handle, (struct sockaddr*) &servTmpAddr, sizeof (struct sockaddr_in)) >= 0;
     }
@@ -308,8 +320,7 @@ namespace SocketHelpers
         hints.ai_flags = AI_NUMERICSERV;
 
         struct addrinfo* info = nullptr;
-        if (getaddrinfo (hostName.toUTF8(), String (portNumber).toUTF8(), &hints, &info) == 0
-             && info != nullptr)
+        if (getaddrinfo (hostName.toUTF8(), String (portNumber).toUTF8(), &hints, &info) == 0)
             return info;
 
         return nullptr;
@@ -364,8 +375,7 @@ namespace SocketHelpers
 
     static void makeReusable (int handle) noexcept
     {
-        const int reuse = 1;
-        setsockopt (handle, SOL_SOCKET, SO_REUSEADDR, (const char*) &reuse, sizeof (reuse));
+        setOption (handle, SO_REUSEADDR, (int) 1);
     }
 
     static bool multicast (int handle, const String& multicastIPAddress,
@@ -380,9 +390,10 @@ namespace SocketHelpers
         if (interfaceIPAddress.isNotEmpty())
             mreq.imr_interface.s_addr = inet_addr (interfaceIPAddress.toUTF8());
 
-        int joinCmd = join ? IP_ADD_MEMBERSHIP : IP_DROP_MEMBERSHIP;
-
-        return setsockopt (handle, IPPROTO_IP, joinCmd, (const char*) &mreq, sizeof (mreq)) == 0;
+        return setsockopt (handle, IPPROTO_IP,
+                           join ? IP_ADD_MEMBERSHIP
+                                : IP_DROP_MEMBERSHIP,
+                           (const char*) &mreq, sizeof (mreq)) == 0;
     }
 }
 
@@ -569,17 +580,31 @@ DatagramSocket::DatagramSocket (const bool canBroadcast)
     SocketHelpers::initSockets();
 
     handle = (int) socket (AF_INET, SOCK_DGRAM, 0);
-    SocketHelpers::resetSocketOptions (handle, true, canBroadcast);
-    SocketHelpers::makeReusable (handle);
+
+    if (handle >= 0)
+    {
+        SocketHelpers::resetSocketOptions (handle, true, canBroadcast);
+        SocketHelpers::makeReusable (handle);
+    }
 }
 
 DatagramSocket::~DatagramSocket()
 {
     if (lastServerAddress != nullptr)
-        freeaddrinfo (static_cast <struct addrinfo*> (lastServerAddress));
+        freeaddrinfo (static_cast<struct addrinfo*> (lastServerAddress));
 
+    shutdown();
+}
+
+void DatagramSocket::shutdown()
+{
+    if (handle < 0)
+        return;
+
+    int copyOfHandle = handle;
+    handle = -1;
     bool connected = false;
-    SocketHelpers::closeSocket (handle, readLock, false, 0, connected);
+    SocketHelpers::closeSocket (copyOfHandle, readLock, false, 0, connected);
 }
 
 bool DatagramSocket::bindToPort (const int port)
@@ -589,6 +614,9 @@ bool DatagramSocket::bindToPort (const int port)
 
 bool DatagramSocket::bindToPort (const int port, const String& addr)
 {
+    if (handle < 0)
+        return false;
+
     if (SocketHelpers::bindSocket (handle, port, addr))
     {
         isBound = true;
@@ -602,6 +630,9 @@ bool DatagramSocket::bindToPort (const int port, const String& addr)
 
 int DatagramSocket::getBoundPort() const noexcept
 {
+    if (handle < 0)
+        return -1;
+
     return isBound ? SocketHelpers::getBoundPort (handle) : -1;
 }
 
@@ -609,11 +640,17 @@ int DatagramSocket::getBoundPort() const noexcept
 int DatagramSocket::waitUntilReady (const bool readyForReading,
                                     const int timeoutMsecs) const
 {
+    if (handle < 0)
+        return -1;
+
     return SocketHelpers::waitForReadiness (handle, readLock, readyForReading, timeoutMsecs);
 }
 
 int DatagramSocket::read (void* destBuffer, int maxBytesToRead, bool shouldBlock)
 {
+    if (handle < 0)
+        return -1;
+
     bool connected = true;
     return isBound ? SocketHelpers::readSocket (handle, destBuffer, maxBytesToRead,
                                                 connected, shouldBlock, readLock) : -1;
@@ -621,6 +658,9 @@ int DatagramSocket::read (void* destBuffer, int maxBytesToRead, bool shouldBlock
 
 int DatagramSocket::read (void* destBuffer, int maxBytesToRead, bool shouldBlock, String& senderIPAddress, int& senderPort)
 {
+    if (handle < 0)
+        return -1;
+
     bool connected = true;
     return isBound ? SocketHelpers::readSocket (handle, destBuffer, maxBytesToRead, connected,
                                                 shouldBlock, readLock, &senderIPAddress, &senderPort) : -1;
@@ -629,7 +669,10 @@ int DatagramSocket::read (void* destBuffer, int maxBytesToRead, bool shouldBlock
 int DatagramSocket::write (const String& remoteHostname, int remotePortNumber,
                            const void* sourceBuffer, int numBytesToWrite)
 {
-    struct addrinfo*& info = reinterpret_cast <struct addrinfo*&> (lastServerAddress);
+    if (handle < 0)
+        return -1;
+
+    struct addrinfo*& info = reinterpret_cast<struct addrinfo*&> (lastServerAddress);
 
     // getaddrinfo can be quite slow so cache the result of the address lookup
     if (info == nullptr || remoteHostname != lastServerHost || remotePortNumber != lastServerPort)
@@ -651,7 +694,7 @@ int DatagramSocket::write (const String& remoteHostname, int remotePortNumber,
 
 bool DatagramSocket::joinMulticast (const String& multicastIPAddress)
 {
-    if (! isBound)
+    if (! isBound || handle < 0)
         return false;
 
     return SocketHelpers::multicast (handle, multicastIPAddress, lastBindAddress, true);
@@ -659,10 +702,26 @@ bool DatagramSocket::joinMulticast (const String& multicastIPAddress)
 
 bool DatagramSocket::leaveMulticast (const String& multicastIPAddress)
 {
-    if (! isBound)
+    if (! isBound || handle < 0)
         return false;
 
     return SocketHelpers::multicast (handle, multicastIPAddress, lastBindAddress, false);
+}
+
+bool DatagramSocket::setEnablePortReuse (bool enabled)
+{
+   #if ! JUCE_ANDROID
+    if (handle >= 0)
+        return SocketHelpers::setOption (handle,
+                                        #if JUCE_WINDOWS || JUCE_LINUX
+                                         SO_REUSEADDR,  // port re-use is implied by addr re-use on these platforms
+                                        #else
+                                         SO_REUSEPORT,
+                                        #endif
+                                         (int) (enabled ? 1 : 0));
+   #endif
+
+    return false;
 }
 
 #if JUCE_MSVC

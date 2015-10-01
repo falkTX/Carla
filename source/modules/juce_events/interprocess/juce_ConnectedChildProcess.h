@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -157,7 +157,8 @@ public:
     */
     bool launchSlaveProcess (const File& executableToLaunch,
                              const String& commandLineUniqueID,
-                             int timeoutMs = 0);
+                             int timeoutMs = 0,
+                             int streamFlags = ChildProcess::wantStdOut | ChildProcess::wantStdErr);
 
     /** This will be called to deliver a message from the slave process.
         The call will probably be made on a background thread, so be careful with your thread-safety!

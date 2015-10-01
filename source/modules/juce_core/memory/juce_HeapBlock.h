@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -29,7 +29,7 @@
 #ifndef JUCE_HEAPBLOCK_H_INCLUDED
 #define JUCE_HEAPBLOCK_H_INCLUDED
 
-#ifndef DOXYGEN
+#if ! (defined (DOXYGEN) || JUCE_EXCEPTIONS_DISABLED)
 namespace HeapBlockHelper
 {
     template <bool shouldThrow>
@@ -295,7 +295,11 @@ private:
 
     void throwOnAllocationFailure() const
     {
+       #if JUCE_EXCEPTIONS_DISABLED
+        jassert (data != nullptr); // without exceptions, you'll need to find a better way to handle this failure case.
+       #else
         HeapBlockHelper::ThrowOnFail<throwOnFailure>::check (data);
+       #endif
     }
 
    #if ! (defined (JUCE_DLL) || defined (JUCE_DLL_BUILD))

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the juce_core module of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission to use, copy, modify, and/or distribute this software for any purpose with
    or without fee is hereby granted, provided that the above copyright notice and this
@@ -106,8 +106,7 @@ namespace FileHelpers
         return nsStringToJuce ([NSSearchPathForDirectoriesInDomains (type, NSUserDomainMask, YES)
                                 objectAtIndex: 0]);
     }
-   #endif
-
+   #else
     static bool launchExecutable (const String& pathAndArguments)
     {
         const char* const argv[4] = { "/bin/sh", "-c", pathAndArguments.toUTF8(), nullptr };
@@ -127,6 +126,7 @@ namespace FileHelpers
 
         return cpid >= 0;
     }
+   #endif
 }
 
 bool File::isOnCDRomDrive() const

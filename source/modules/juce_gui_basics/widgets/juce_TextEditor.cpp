@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -723,19 +723,19 @@ public:
     {
     }
 
-    bool perform()
+    bool perform() override
     {
         owner.insert (text, insertIndex, font, colour, 0, newCaretPos);
         return true;
     }
 
-    bool undo()
+    bool undo() override
     {
         owner.remove (Range<int> (insertIndex, insertIndex + text.length()), 0, oldCaretPos);
         return true;
     }
 
-    int getSizeInUnits()
+    int getSizeInUnits() override
     {
         return text.length() + 16;
     }
@@ -767,20 +767,20 @@ public:
         removedSections.addArray (oldSections);
     }
 
-    bool perform()
+    bool perform() override
     {
         owner.remove (range, 0, newCaretPos);
         return true;
     }
 
-    bool undo()
+    bool undo() override
     {
         owner.reinsert (range.getStart(), removedSections);
         owner.moveCaretTo (oldCaretPos, false);
         return true;
     }
 
-    int getSizeInUnits()
+    int getSizeInUnits() override
     {
         int n = 16;
         for (int i = removedSections.size(); --i >= 0;)
@@ -1083,11 +1083,15 @@ void TextEditor::colourChanged()
 
 void TextEditor::lookAndFeelChanged()
 {
+    recreateCaret();
+}
+
+void TextEditor::recreateCaret()
+{
     if (isCaretVisible())
     {
         setCaretVisible (false);
         setCaretVisible (true);
-        updateCaretPosition();
     }
 }
 
@@ -1096,7 +1100,10 @@ void TextEditor::setCaretVisible (const bool shouldCaretBeVisible)
     if (shouldCaretBeVisible && ! isReadOnly())
     {
         if (caret == nullptr)
+        {
             textHolder->addChildComponent (caret = getLookAndFeel().createCaretComponent (this));
+            updateCaretPosition();
+        }
     }
     else
     {
@@ -2126,6 +2133,7 @@ void TextEditor::handleCommandMessage (const int commandId)
 
 void TextEditor::enablementChanged()
 {
+    recreateCaret();
     repaint();
 }
 

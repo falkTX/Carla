@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -105,6 +105,9 @@ public:
         callback, and may be more or less than the estimated value given to prepareToPlay().
         Your code must be able to cope with variable-sized blocks, or you're going to get
         clicks and crashes!
+
+        Also note that some hosts will occasionally decide to pass a buffer containing
+        zero samples, so make sure that your algorithm can deal with that!
 
         If the filter is receiving a midi input, then the midiMessages array will be filled
         with the midi messages for this block. Each message's timestamp will indicate the

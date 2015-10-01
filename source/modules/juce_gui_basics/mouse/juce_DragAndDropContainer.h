@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -41,7 +41,7 @@
 
     Note: If all that you need to do is to respond to files being drag-and-dropped from
     the operating system onto your component, you don't need any of these classes: you can do this
-    simply by overriding Component::filesDropped().
+    simply by overriding FileDragAndDropTarget::filesDropped().
 
     @see DragAndDropTarget
 */
