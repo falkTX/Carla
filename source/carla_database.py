@@ -1255,7 +1255,7 @@ class PluginDatabaseW(QDialog):
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaDatabase2")
         self.restoreGeometry(settings.value("PluginDatabase/Geometry", b""))
-        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), ""))
+        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), b""))
         self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
         self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
         self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))

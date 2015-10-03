@@ -1254,7 +1254,7 @@ class HostWindow(QMainWindow):
             self.ui.toolBar.setVisible(showToolbar)
 
             #if settings.contains("SplitterState"):
-                #self.ui.splitter.restoreState(settings.value("SplitterState", ""))
+                #self.ui.splitter.restoreState(settings.value("SplitterState", b""))
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
 
