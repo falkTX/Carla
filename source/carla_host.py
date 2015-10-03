@@ -1235,10 +1235,10 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         if firstTime:
-            self.restoreGeometry(settings.value("Geometry", ""))
+            self.restoreGeometry(settings.value("Geometry", b""))
 
             if not (self.host.isControl or self.host.isPlugin):
-                self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", ""))
+                self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", b""))
 
                 showTimePanel = settings.value("ShowTimePanel", True, type=bool)
                 self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
