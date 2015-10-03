@@ -15,7 +15,7 @@ winetricks fontsmooth=rgb
 # cd data/windows/python
 # msiexec /i python-3.4.3.msi /qn
 # wine cx_Freeze-4.3.4.win32-py3.4.exe
-# wine PyQt5-5.4.1-gpl-Py3.4-Qt5.4.1-x32.exe
+# wine PyQt5-5.5-gpl-Py3.4-Qt5.5.0-x32.exe
 # cd ../../..
 
 export WINEARCH=win64
@@ -30,5 +30,5 @@ winetricks fontsmooth=rgb
 # cd data/windows/python
 # msiexec /i python-3.4.3.amd64.msi /qn
 # wine cx_Freeze-4.3.4.win-amd64-py3.4.exe
-# wine PyQt5-5.4.1-gpl-Py3.4-Qt5.4.1-x64.exe
+# wine PyQt5-5.5-gpl-Py3.4-Qt5.5.0-x64.exe
 # cd ../../..
