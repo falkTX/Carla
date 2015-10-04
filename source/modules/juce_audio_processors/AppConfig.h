@@ -50,4 +50,9 @@
 
 #define JUCE_PLUGINHOST_LADSPA 0
 
+// Fix MinGW VST3 build
+#if JUCE_WINDOWS
+# define _set_abort_behavior(...)
+#endif
+
 #endif // CARLA_JUCE_AUDIO_PROCESSORS_APPCONFIG_H_INCLUDED
