@@ -103,9 +103,7 @@ ifeq ($(NOOPT),true)
 BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
-ifeq ($(WIN32),true)
-BASE_FLAGS += -D__MSVCRT_VERSION__=0x900
-else
+ifneq ($(WIN32),true)
 # not needed for Windows
 BASE_FLAGS += -fPIC -DPIC
 endif
@@ -408,7 +406,6 @@ ifeq ($(WIN32),true)
 DGL_LIBS                   = -lopengl32 -lgdi32
 JACKBRIDGE_LIBS            = -lpthread
 JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
-JUCE_AUDIO_PROCESSORS_LIBS = -lmsvcr90
 JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 JUCE_GRAPHICS_LIBS         = -lgdi32
 JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
