@@ -18,12 +18,12 @@
 
 #if ! (defined(JACKBRIDGE_DIRECT) || defined(JACKBRIDGE_DUMMY))
 
-#ifdef __WINE__
+#ifdef __WINE64__
 # include <windows.h>
 # include <pthread.h>
 #endif
 
-#if defined(CARLA_OS_WIN) && ! defined(__WINE__)
+#if defined(CARLA_OS_WIN) && ! defined(__WINE64__)
 # define JACKSYM_API __cdecl
 #else
 # define JACKSYM_API
@@ -165,7 +165,7 @@ typedef int  (JACKSYM_API *jacksym_remove_properties)(jack_client_t*, jack_uuid_
 typedef int  (JACKSYM_API *jacksym_remove_all_properties)(jack_client_t*);
 typedef int  (JACKSYM_API *jacksym_set_property_change_callback)(jack_client_t*, JackSymPropertyChangeCallback, void*);
 
-#ifdef __WINE__
+#ifdef __WINE64__
 typedef int  (JACKSYM_API *jacksym_thread_creator_t)(pthread_t*, const pthread_attr_t*, void *(*)(void*), void*);
 typedef void (JACKSYM_API *jacksym_set_thread_creator)(jacksym_thread_creator_t);
 #endif
@@ -288,7 +288,7 @@ struct JackBridge {
     jacksym_remove_all_properties remove_all_properties_ptr;
     jacksym_set_property_change_callback set_property_change_callback_ptr;
 
-#ifdef __WINE__
+#ifdef __WINE64__
     jacksym_set_thread_creator set_thread_creator_ptr;
 #endif
 
@@ -383,7 +383,7 @@ struct JackBridge {
           remove_properties_ptr(nullptr),
           remove_all_properties_ptr(nullptr),
           set_property_change_callback_ptr(nullptr)
-#ifdef __WINE__
+#ifdef __WINE64__
         , set_thread_creator_ptr(nullptr)
 #endif
     {
@@ -521,7 +521,7 @@ struct JackBridge {
         LIB_SYMBOL(remove_all_properties)
         LIB_SYMBOL(set_property_change_callback)
 
-#ifdef __WINE__
+#ifdef __WINE64__
         LIB_SYMBOL(set_thread_creator)
 #endif
 
@@ -553,7 +553,7 @@ static const JackBridge& getBridgeInstance() noexcept
 
 // -----------------------------------------------------------------------------
 
-#ifdef __WINE__
+#ifdef __WINE64__
 
 struct WineBridge {
     void* ptr;
@@ -749,7 +749,7 @@ struct WineBridge {
     CARLA_DECLARE_NON_COPY_STRUCT(WineBridge);
 };
 
-#endif // __WINE__
+#endif // __WINE64__
 
 // -----------------------------------------------------------------------------
 
@@ -766,7 +766,7 @@ bool jackbridge_is_ok() noexcept
 
 void jackbridge_init()
 {
-#ifdef __WINE__
+#ifdef __WINE64__
     if (getBridgeInstance().set_thread_creator_ptr != nullptr)
         getBridgeInstance().set_thread_creator_ptr(WineBridge::thread_creator);
 #endif
@@ -933,7 +933,7 @@ bool jackbridge_set_thread_init_callback(jack_client_t* client, JackThreadInitCa
 #else
     if (getBridgeInstance().set_thread_init_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_thread_init(thread_init_callback);
         return (getBridgeInstance().set_thread_init_callback_ptr(client, WineBridge::thread_init, arg) == 0);
 # else
@@ -952,7 +952,7 @@ void jackbridge_on_shutdown(jack_client_t* client, JackShutdownCallback shutdown
 #else
     if (getBridgeInstance().on_shutdown_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_shutdown(shutdown_callback);
         getBridgeInstance().on_shutdown_ptr(client, WineBridge::shutdown, arg);
 # else
@@ -970,7 +970,7 @@ void jackbridge_on_info_shutdown(jack_client_t* client, JackInfoShutdownCallback
 #else
     if (getBridgeInstance().on_info_shutdown_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_info_shutdown(shutdown_callback);
         getBridgeInstance().on_info_shutdown_ptr(client, WineBridge::info_shutdown, arg);
 # else
@@ -988,7 +988,7 @@ bool jackbridge_set_process_callback(jack_client_t* client, JackProcessCallback 
 #else
     if (getBridgeInstance().set_process_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_process(process_callback);
         return (getBridgeInstance().set_process_callback_ptr(client, WineBridge::process, arg) == 0);
 # else
@@ -1007,7 +1007,7 @@ bool jackbridge_set_freewheel_callback(jack_client_t* client, JackFreewheelCallb
 #else
     if (getBridgeInstance().set_freewheel_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_freewheel(freewheel_callback);
         return (getBridgeInstance().set_freewheel_callback_ptr(client, WineBridge::freewheel, arg) == 0);
 # else
@@ -1026,7 +1026,7 @@ bool jackbridge_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCa
 #else
     if (getBridgeInstance().set_buffer_size_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_bufsize(bufsize_callback);
         return (getBridgeInstance().set_buffer_size_callback_ptr(client, WineBridge::bufsize, arg) == 0);
 # else
@@ -1045,7 +1045,7 @@ bool jackbridge_set_sample_rate_callback(jack_client_t* client, JackSampleRateCa
 #else
     if (getBridgeInstance().set_sample_rate_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_srate(srate_callback);
         return (getBridgeInstance().set_sample_rate_callback_ptr(client, WineBridge::srate, arg) == 0);
 # else
@@ -1064,7 +1064,7 @@ bool jackbridge_set_client_registration_callback(jack_client_t* client, JackClie
 #else
     if (getBridgeInstance().set_client_registration_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_client_reg(registration_callback);
         return (getBridgeInstance().set_client_registration_callback_ptr(client, WineBridge::client_reg, arg) == 0);
 # else
@@ -1083,7 +1083,7 @@ bool jackbridge_set_port_registration_callback(jack_client_t* client, JackPortRe
 #else
     if (getBridgeInstance().set_port_registration_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_port_reg(registration_callback);
         return (getBridgeInstance().set_port_registration_callback_ptr(client, WineBridge::port_reg, arg) == 0);
 # else
@@ -1102,7 +1102,7 @@ bool jackbridge_set_port_rename_callback(jack_client_t* client, JackPortRenameCa
 #else
     if (getBridgeInstance().set_port_rename_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_port_rename(rename_callback);
         return (getBridgeInstance().set_port_rename_callback_ptr(client, WineBridge::port_rename, arg) == 0);
 # else
@@ -1121,7 +1121,7 @@ bool jackbridge_set_port_connect_callback(jack_client_t* client, JackPortConnect
 #else
     if (getBridgeInstance().set_port_connect_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_port_conn(connect_callback);
         return (getBridgeInstance().set_port_connect_callback_ptr(client, WineBridge::port_conn, arg) == 0);
 # else
@@ -1140,7 +1140,7 @@ bool jackbridge_set_graph_order_callback(jack_client_t* client, JackGraphOrderCa
 #else
     if (getBridgeInstance().set_graph_order_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_graph_order(graph_callback);
         return (getBridgeInstance().set_graph_order_callback_ptr(client, WineBridge::graph_order, arg) == 0);
 # else
@@ -1159,7 +1159,7 @@ bool jackbridge_set_xrun_callback(jack_client_t* client, JackXRunCallback xrun_c
 #else
     if (getBridgeInstance().set_xrun_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_xrun(xrun_callback);
         return (getBridgeInstance().set_xrun_callback_ptr(client, WineBridge::xrun, arg) == 0);
 # else
@@ -1178,7 +1178,7 @@ bool jackbridge_set_latency_callback(jack_client_t* client, JackLatencyCallback 
 #else
     if (getBridgeInstance().set_latency_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_latency(latency_callback);
         return (getBridgeInstance().set_latency_callback_ptr(client, WineBridge::latency, arg) == 0);
 # else
@@ -1768,7 +1768,7 @@ bool jackbridge_set_sync_callback(jack_client_t* client, JackSyncCallback sync_c
 #else
     if (getBridgeInstance().set_sync_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_sync(sync_callback);
         return (getBridgeInstance().set_sync_callback_ptr(client, WineBridge::sync, arg) == 0);
 # else
@@ -1799,7 +1799,7 @@ bool jackbridge_set_timebase_callback(jack_client_t* client, bool conditional, J
 #else
     if (getBridgeInstance().set_timebase_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_timebase(timebase_callback);
         return (getBridgeInstance().set_timebase_callback_ptr(client, conditional, WineBridge::timebase, arg) == 0);
 # else
@@ -1991,7 +1991,7 @@ bool jackbridge_set_property_change_callback(jack_client_t* client, JackProperty
 #else
     if (getBridgeInstance().set_property_change_callback_ptr != nullptr)
     {
-# ifdef __WINE__
+# ifdef __WINE64__
         WineBridge::getInstance().set_prop_change(callback);
         return (getBridgeInstance().set_property_change_callback_ptr(client, WineBridge::prop_change, arg) == 0);
 # else
