@@ -553,7 +553,7 @@ static const JackBridge& getBridgeInstance() noexcept
 
 // -----------------------------------------------------------------------------
 
-#ifdef __WINE__
+#if defined(__WINE__) && ! defined(JACKBRIDGE_DIRECT)
 
 struct WineBridge {
     void* ptr;
@@ -749,7 +749,7 @@ struct WineBridge {
     CARLA_DECLARE_NON_COPY_STRUCT(WineBridge);
 };
 
-#endif // __WINE__
+#endif // __WINE__ && ! JACKBRIDGE_DIRECT
 
 // -----------------------------------------------------------------------------
 
@@ -766,7 +766,7 @@ bool jackbridge_is_ok() noexcept
 
 void jackbridge_init()
 {
-#ifdef __WINE__
+#if defined(__WINE__) && ! defined(JACKBRIDGE_DIRECT)
     if (getBridgeInstance().set_thread_creator_ptr != nullptr)
         getBridgeInstance().set_thread_creator_ptr(WineBridge::thread_creator);
 #endif
