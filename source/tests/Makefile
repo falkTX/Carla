@@ -11,6 +11,8 @@ CXXLANG ?= clang++
 
 MODULEDIR=../../build/modules/Debug
 
+WINECXX ?= wineg++
+
 # --------------------------------------------------------------
 
 BASE_FLAGS  = -Wall -Wextra -Werror -pipe -DBUILDING_CARLA -DREAL_BUILD -DDEBUG -O0 -g
@@ -171,6 +173,10 @@ RDF: RDF.cpp ../modules/ladspa_rdf.hpp ../modules/lv2_rdf.hpp
 ifneq ($(WIN32),true)
 	set -e; ./$@ && valgrind --leak-check=full ./$@
 endif
+
+WineJack: WineJack.cpp
+	$(WINECXX) $< $(BASE_FLAGS) -m32 -ljack -lpthread -o $@
+	set -e; ./$@.exe
 
 # --------------------------------------------------------------
 
