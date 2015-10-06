@@ -82,7 +82,7 @@ endif
 
 ifeq ($(MODDUO),true)
 # MOD Duo optimization flags
-BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mtune=cortex-a7 -mfpu=neon -mfloat-abi=hard
+BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
