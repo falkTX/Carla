@@ -502,7 +502,7 @@ endif
 ifeq ($(HAVE_QT),true)
 	# Install theme
 	install -m 644 \
-		bin/styles/* \
+		source/theme/styles/* \
 		$(DESTDIR)$(LIBDIR)/carla/styles
 endif
 
