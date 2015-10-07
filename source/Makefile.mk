@@ -82,7 +82,7 @@ endif
 
 ifeq ($(MODDUO),true)
 # MOD Duo optimization flags
-BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+BASE_OPTS  = -O2 -ffast-math -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
@@ -94,7 +94,7 @@ endif
 
 ifeq ($(PANDORA),true)
 # OpenPandora optimization flags
-BASE_OPTS  = -O2 -ffast-math -march=armv7-a -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
+BASE_OPTS  = -O2 -ffast-math -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
