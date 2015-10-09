@@ -406,23 +406,20 @@ install:
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(LIBDIR)
 	install -d $(DESTDIR)$(LIBDIR)/carla
-	install -d $(DESTDIR)$(LIBDIR)/carla/styles
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 	install -d $(DESTDIR)$(DATADIR)
-	install -d $(DESTDIR)$(DATADIR)/applications
 	install -d $(DESTDIR)$(DATADIR)/carla
+	install -d $(DESTDIR)$(INCLUDEDIR)
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
+	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
+
+ifeq ($(HAVE_PYQT),true)
+	# Create directories (gui)
+	install -d $(DESTDIR)$(LIBDIR)/carla/styles
+	install -d $(DESTDIR)$(DATADIR)/applications
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
-endif
-ifeq ($(HAVE_ZYN_DEPS),true)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
-endif
-endif
 	install -d $(DESTDIR)$(DATADIR)/icons
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16
@@ -437,52 +434,32 @@ endif
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 	install -d $(DESTDIR)$(DATADIR)/mime
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
-	install -d $(DESTDIR)$(INCLUDEDIR)
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
+endif
+
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	# Create directories (experimental plugins)
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	# Create directories (zynaddsubfx)
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
+endif
+endif
 
 	# --------------------------------------------------------------------------------------------------------------------
 
-	# Install script files
+	# Install script files (non-gui)
 	install -m 755 \
-		data/carla \
-		data/carla-control \
-		data/carla-database \
-		data/carla-patchbay \
-		data/carla-rack \
 		data/carla-single \
-		data/carla-settings \
 		$(DESTDIR)$(BINDIR)
 
-	# Install pkg-config files
-	install -m 644 data/*.pc      $(DESTDIR)$(LIBDIR)/pkgconfig
-
-	# Install desktop files
-	install -m 644 data/*.desktop $(DESTDIR)$(DATADIR)/applications
-
-	# Install mime package
-	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
-
-	# Install icons, 16x16
-	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-
-	# Install icons, 48x48
-	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-
-	# Install icons, 128x128
-	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-
-	# Install icons, 256x256
-	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-
-	# Install icons, scalable
-	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
-	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
+	# Adjust PREFIX value in script files (non-gui)
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(BINDIR)/carla-single
 
 	# Install backend libs
 	install -m 644 \
@@ -495,27 +472,25 @@ endif
 		bin/carla-discovery-* \
 		$(DESTDIR)$(LIBDIR)/carla
 
-	# Install the real modgui bridge
-	install -m 755 \
-		data/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(LIBDIR)/carla
-
-ifeq ($(HAVE_THEME),true)
-	# Install theme
+	# Install pkg-config files
 	install -m 644 \
-		bin/styles/* \
-		$(DESTDIR)$(LIBDIR)/carla/styles
-endif
+		data/*.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig
 
-	# Install python code
-	install -m 644 \
-		source/carla \
-		source/carla-control \
-		source/carla-patchbay \
-		source/carla-rack \
-		source/*.py \
-		$(DESTDIR)$(DATADIR)/carla
+	# Adjust PREFIX, LIBDIR and INCLUDEDIR in pkg-config files
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
+	sed -i 's?X-LIBDIR-X?$(LIBDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
+	sed -i 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
+		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+
+	# Install python code (dist-packages)
 	install -m 644 \
 		source/carla_backend.py \
 		source/carla_utils.py \
@@ -547,44 +522,92 @@ endif
 		source/utils/CarlaString.hpp \
 		$(DESTDIR)$(INCLUDEDIR)/carla/utils
 
-	# Install resources
+	# --------------------------------------------------------------------------------------------------------------------
+
+ifeq ($(HAVE_PYQT),true)
+	# Install script files (gui)
+	install -m 755 \
+		data/carla \
+		data/carla-control \
+		data/carla-database \
+		data/carla-patchbay \
+		data/carla-rack \
+		data/carla-settings \
+		$(DESTDIR)$(BINDIR)
+
+	# Adjust PREFIX value in script files (gui)
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(BINDIR)/carla \
+		$(DESTDIR)$(BINDIR)/carla-control \
+		$(DESTDIR)$(BINDIR)/carla-database \
+		$(DESTDIR)$(BINDIR)/carla-patchbay \
+		$(DESTDIR)$(BINDIR)/carla-rack \
+		$(DESTDIR)$(BINDIR)/carla-settings
+
+	# Install the real modgui bridge
+	install -m 755 \
+		data/carla-bridge-lv2-modgui \
+		$(DESTDIR)$(LIBDIR)/carla
+
+	# Adjust PREFIX value in modgui bridge
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
+
+	# Install python code (gui)
+	install -m 644 \
+		source/carla \
+		source/carla-control \
+		source/carla-patchbay \
+		source/carla-rack \
+		source/*.py \
+		$(DESTDIR)$(DATADIR)/carla
+
+	# Adjust LIBDIR and DATADIR value in python code
+	sed -i 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
+		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
+
+	sed -i 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
+		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
+
+	# Install resources (gui)
 	install -m 755 \
 		bin/resources/carla-plugin \
 		bin/resources/carla-plugin-patchbay \
 		bin/resources/*-ui \
 		$(DESTDIR)$(DATADIR)/carla/resources
 
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
+ifeq ($(HAVE_THEME),true)
+	# Install theme
 	install -m 644 \
-		bin/resources/at1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/at1
-
-	install -m 644 \
-		bin/resources/bls1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/bls1
-
-	install -m 644 \
-		bin/resources/rev1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/rev1
-
-	install -m 755 \
-		bin/resources/at1-ui \
-		bin/resources/bls1-ui \
-		bin/resources/rev1-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
+		bin/styles/* \
+		$(DESTDIR)$(LIBDIR)/carla/styles
 endif
 
-ifeq ($(HAVE_ZYN_DEPS),true)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	install -m 644 \
-		bin/resources/zynaddsubfx/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
+	# Install desktop files
+	install -m 644 data/*.desktop $(DESTDIR)$(DATADIR)/applications
 
-	install -m 755 \
-		bin/resources/zynaddsubfx-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
-endif
-endif
+	# Install mime package
+	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
+
+	# Install icons, 16x16
+	install -m 644 resources/16x16/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+	install -m 644 resources/16x16/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
+
+	# Install icons, 48x48
+	install -m 644 resources/48x48/carla.png            $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
+	install -m 644 resources/48x48/carla-control.png    $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
+
+	# Install icons, 128x128
+	install -m 644 resources/128x128/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
+	install -m 644 resources/128x128/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
+
+	# Install icons, 256x256
+	install -m 644 resources/256x256/carla.png          $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
+	install -m 644 resources/256x256/carla-control.png  $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
+
+	# Install icons, scalable
+	install -m 644 resources/scalable/carla.svg         $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
+	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
 	$(LINK) $(DATADIR)/carla/carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
@@ -631,35 +654,43 @@ endif
 	$(LINK) $(DATADIR)/carla/ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
+endif
 
-	# Adjust PREFIX value in script files
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
-		$(DESTDIR)$(BINDIR)/carla \
-		$(DESTDIR)$(BINDIR)/carla-control \
-		$(DESTDIR)$(BINDIR)/carla-database \
-		$(DESTDIR)$(BINDIR)/carla-patchbay \
-		$(DESTDIR)$(BINDIR)/carla-rack \
-		$(DESTDIR)$(BINDIR)/carla-single \
-		$(DESTDIR)$(BINDIR)/carla-settings \
-		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+	# --------------------------------------------------------------------------------------------------------------------
 
-	# Adjust LIBDIR and INCLUDEDIR in pkg-config files
-	sed -i 's?X-LIBDIR-X?$(LIBDIR)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	# Install resources (experimental plugins)
+	install -m 644 \
+		bin/resources/at1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/at1
 
-	sed -i 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
-		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
+	install -m 644 \
+		bin/resources/bls1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/bls1
 
-	# Adjust LIBDIR and DATADIR value in code
-	sed -i 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
-		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
+	install -m 644 \
+		bin/resources/rev1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/rev1
 
-	sed -i 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
-		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
+	install -m 755 \
+		bin/resources/at1-ui \
+		bin/resources/bls1-ui \
+		bin/resources/rev1-ui \
+		$(DESTDIR)$(DATADIR)/carla/resources
+endif
+
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	# Install resources (zynaddsubfx)
+	install -m 644 \
+		bin/resources/zynaddsubfx/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
+
+	install -m 755 \
+		bin/resources/zynaddsubfx-ui \
+		$(DESTDIR)$(DATADIR)/carla/resources
+endif
+endif
 
 	# --------------------------------------------------------------------------------------------------------------------
 
@@ -713,6 +744,13 @@ ifeq ($(DEFAULT_QT),4)
 	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 endif
 endif
+endif
+
+	# --------------------------------------------------------------------------------------------------------------------
+
+ifneq ($(HAVE_PYQT),true)
+	# Remove gui files for non-gui build
+	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
