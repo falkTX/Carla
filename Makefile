@@ -671,7 +671,7 @@ endif
 		$(DESTDIR)$(LIBDIR)/lv2/carla.lv2
 
 	# Link binaries for lv2 plugin
-	@for i in $(shell find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
 		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
@@ -698,7 +698,7 @@ ifeq ($(DEFAULT_QT),4)
 		$(DESTDIR)$(LIBDIR)/vst/carla.vst
 
 	# Link binaries for vst plugin
-	@for i in $(shell find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'); do \
+	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
 		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/vst/carla.vst/libcarla_standalone2.*
