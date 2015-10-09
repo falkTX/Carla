@@ -13,9 +13,15 @@ LINK := ln -sf
 ifeq ($(DEFAULT_QT),4)
 PYUIC ?= pyuic4 -w
 PYRCC ?= pyrcc4 -py3
+ifeq ($(HAVE_QT4),true)
+HAVE_THEME = true
+endif
 else
 PYUIC ?= pyuic5
 PYRCC ?= pyrcc5
+ifeq ($(HAVE_QT5),true)
+HAVE_THEME = true
+endif
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -146,13 +152,8 @@ interposer:
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
-# FIXME
-ifeq ($(HAVE_QT),true)
 theme:
 	@$(MAKE) -C source/theme
-else
-theme:
-endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (posix32)
@@ -499,7 +500,7 @@ endif
 		data/carla-bridge-lv2-modgui \
 		$(DESTDIR)$(LIBDIR)/carla
 
-ifeq ($(HAVE_QT),true)
+ifeq ($(HAVE_THEME),true)
 	# Install theme
 	install -m 644 \
 		bin/styles/* \
