@@ -33,9 +33,10 @@ using juce::File;
 using juce::MemoryBlock;
 using juce::String;
 using juce::Time;
+using juce::Thread;
 
 template<typename T>
-bool jackbridge_shm_map2(char* shm, T*& value) noexcept
+bool jackbridge_shm_map2(void* shm, T*& value) noexcept
 {
     value = (T*)jackbridge_shm_map(shm, sizeof(T));
     return (value != nullptr);
@@ -162,24 +163,28 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    void postClient() noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-
-        jackbridge_sem_post(&data->sem.client);
-    }
-
-    bool waitForServer(const uint secs) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
-
-        return jackbridge_sem_timedwait(&data->sem.server, secs);
-    }
-
     PluginBridgeRtClientOpcode readOpcode() noexcept
     {
         return static_cast<PluginBridgeRtClientOpcode>(readUInt());
     }
+
+    // helper class that automatically posts semaphore on destructor
+    struct WaitHelper {
+        BridgeRtClientData* const data;
+        const bool ok;
+
+        WaitHelper(BridgeRtClientControl& c) noexcept
+            : data(c.data),
+              ok(jackbridge_sem_timedwait(&data->sem.server, 5)) {}
+
+        ~WaitHelper() noexcept
+        {
+            if (ok)
+                jackbridge_sem_post(&data->sem.client);
+        }
+
+        CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)
+    };
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
 };
@@ -363,12 +368,12 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
 // -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          public CarlaThread
+                          public Thread
 {
 public:
     CarlaEngineBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : CarlaEngine(),
-          CarlaThread("CarlaEngineBridge"),
+          Thread("CarlaEngineBridge"),
           fShmAudioPool(),
           fShmRtClientControl(),
           fShmNonRtClientControl(),
@@ -500,7 +505,7 @@ public:
             fShmNonRtServerControl.commitWrite();
         }
 
-        startThread();
+        startThread(10);
 
         return true;
     }
@@ -796,6 +801,7 @@ public:
         if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
+            threadShouldExit();
             callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
         }
     }
@@ -1203,29 +1209,14 @@ public:
 protected:
     void run() override
     {
-        bool timedOut = false;
         bool quitReceived = false;
 
-        for (; ! shouldThreadExit();)
+        for (; ! threadShouldExit();)
         {
-            if (! fShmRtClientControl.waitForServer(5))
-            {
-                // Give engine 1 more change to catch up.
-                if (! timedOut)
-                {
-                    carla_stderr2("Bridge timed-out, giving it one more chance");
-                    timedOut = true;
-                    continue;
-                }
+            const BridgeRtClientControl::WaitHelper helper(fShmRtClientControl);
 
-                carla_stderr2("Bridge timed-out, final post...");
-                fShmRtClientControl.postClient();
-                carla_stderr2("Bridge timed-out, done.");
-                signalThreadShouldExit();
-                break;
-            }
-
-            timedOut = false;
+            if (! helper.ok)
+                continue;
 
             for (; fShmRtClientControl.isDataAvailableForReading();)
             {
@@ -1504,8 +1495,6 @@ protected:
                 }   break;
                 }
             }
-
-            fShmRtClientControl.postClient();
         }
 
         callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);

@@ -120,6 +120,7 @@ struct BridgeAudioPool {
             size = sizeof(float);
 
         data = (float*)carla_shm_map(shm, size);
+        std::memset(data, 0, size);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
@@ -221,9 +222,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         if (carla_shm_map<BridgeRtClientData>(shm, data))
         {
-            carla_zeroStruct(data->sem);
-            carla_zeroStruct(data->timeInfo);
-            carla_zeroBytes(data->midiOut, kBridgeRtClientDataMidiOutSize);
+            std::memset(data, 0, sizeof(BridgeRtClientData));
             setRingBuffer(&data->ringBuffer, true);
             return true;
         }
@@ -548,7 +547,12 @@ protected:
 #ifndef CARLA_OS_WIN
         // start with "wine" if needed
         if (fBinary.endsWithIgnoreCase(".exe"))
-            arguments.add("wine");
+        {
+            if (File("/usr/bin/wine-rt").existsAsFile())
+                arguments.add("wine-rt");
+            else
+                arguments.add("wine");
+        }
 #endif
 
         // binary
@@ -2644,13 +2648,12 @@ private:
 
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
         fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.size));
-
         fShmRtClientControl.commitWrite();
 
-        waitForClient("resize-pool");
+        waitForClient("resize-pool", 5);
     }
 
-    void waitForClient(const char* const action, const uint secs = 5)
+    void waitForClient(const char* const action, const uint secs)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
         CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
@@ -2659,7 +2662,7 @@ private:
             return;
 
         fTimedOut = true;
-        carla_stderr("waitForClient(%s) timeout here", action);
+        carla_stderr("waitForClient(%s) timed out", action);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridge)
