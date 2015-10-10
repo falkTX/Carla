@@ -139,16 +139,13 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint secs) noexcept
      * I'll keep this code for the time being, but only for TESTING!
      * It should revert to the proper code (below) when we know more info about the bug.
      */
-    timespec timeout, now, step;
-    step.tv_sec  = 0;
-    step.tv_nsec = 2;
-
+    timespec timeout, now;
     ::clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += static_cast<time_t>(secs);
 
     for (;;)
     {
-        ::nanosleep(&step, NULL);
+        ::usleep(1);
         ::clock_gettime(CLOCK_REALTIME, &now);
 
         if (now.tv_sec >= timeout.tv_sec)
