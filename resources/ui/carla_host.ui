@@ -226,6 +226,7 @@
     <addaction name="act_settings_show_toolbar"/>
     <addaction name="act_settings_show_meters"/>
     <addaction name="act_settings_show_keyboard"/>
+    <addaction name="act_settings_show_side_panel"/>
     <addaction name="separator"/>
     <addaction name="act_settings_configure"/>
    </widget>
@@ -804,6 +805,14 @@
    </property>
    <property name="text">
     <string>Show Time Panel</string>
+   </property>
+  </action>
+  <action name="act_settings_show_side_panel">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Side Panel</string>
    </property>
   </action>
   <action name="act_file_connect">

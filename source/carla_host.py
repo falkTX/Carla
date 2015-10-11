@@ -378,6 +378,7 @@ class HostWindow(QMainWindow):
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
+        self.ui.act_settings_show_side_panel.toggled.connect(self.slot_showSidePanel)
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
@@ -1219,6 +1220,8 @@ class HostWindow(QMainWindow):
 
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
 
+        settings.setValue("ShowSidePanel", self.ui.dockWidget.isEnabled())
+
         diskFolders = []
 
         for i in range(self.ui.cb_disk.count()):
@@ -1257,6 +1260,11 @@ class HostWindow(QMainWindow):
                 #self.ui.splitter.restoreState(settings.value("SplitterState", b""))
             #else:
                 #self.ui.splitter.setSizes([210, 99999])
+
+            showSidePanel = settings.value("ShowSidePanel", True, type=bool)
+            self.ui.act_settings_show_side_panel.setChecked(showSidePanel)
+            self.ui.dockWidget.setEnabled(showSidePanel)
+            self.ui.dockWidget.setVisible(showSidePanel)
 
             diskFolders = toList(settings.value("DiskFolders", [HOME]))
 
@@ -1320,6 +1328,11 @@ class HostWindow(QMainWindow):
     @pyqtSlot(bool)
     def slot_showTimePanel(self, yesNo):
         self.ui.panelTime.setVisible(yesNo)
+
+    @pyqtSlot(bool)
+    def slot_showSidePanel(self, yesNo):
+        self.ui.dockWidget.setEnabled(yesNo)
+        self.ui.dockWidget.setVisible(yesNo)
 
     @pyqtSlot(bool)
     def slot_showToolbar(self, yesNo):
