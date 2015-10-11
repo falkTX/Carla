@@ -131,35 +131,6 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint secs) noexcept
     if (::sem_trywait(&sem.sem) == 0)
         return true;
 
-# if 1
-    /* NOTE:
-     * This is very ugly!
-     * While trying to fix 32bit-on-64bit issues I noticed this somehow gets a signal,
-     * while that timedwait does not.
-     * I'll keep this code for the time being, but only for TESTING!
-     * It should revert to the proper code (below) when we know more info about the bug.
-     */
-    timespec timeout, now;
-    ::clock_gettime(CLOCK_REALTIME, &timeout);
-    timeout.tv_sec += static_cast<time_t>(secs);
-
-    for (;;)
-    {
-        ::usleep(1);
-        ::clock_gettime(CLOCK_REALTIME, &now);
-
-        if (now.tv_sec >= timeout.tv_sec)
-            return false;
-
-        if (::sem_trywait(&sem.sem) == 0)
-            return true;
-    }
-
-    //timeval now;
-    //::gettimeofday(&now, nullptr);
-    //timeout.tv_sec  = now.tv_sec;
-    //timeout.tv_nsec = now.tv_usec * 1000;
-# else
     timespec timeout;
     ::clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += static_cast<time_t>(secs);
@@ -167,7 +138,6 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint secs) noexcept
     try {
         return (::sem_timedwait(&sem.sem, &timeout) == 0);
     } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
-# endif
 #endif
 }
 
