@@ -175,7 +175,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         WaitHelper(BridgeRtClientControl& c) noexcept
             : data(c.data),
-              ok(jackbridge_sem_timedwait(&data->sem.server, 5)) {}
+              ok(jackbridge_sem_timedwait(&data->sem.server, 5000)) {}
 
         ~WaitHelper() noexcept
         {
@@ -494,7 +494,7 @@ public:
         carla_stdout("  sizeof(BridgeNonRtClientData): %i/" P_SIZE, shmNonRtClientDataSize, sizeof(BridgeNonRtClientData));
         carla_stdout("  sizeof(BridgeNonRtServerData): %i/" P_SIZE, shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
 
-        if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData)  || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
+        if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
             return false;
 
         // tell backend we're live

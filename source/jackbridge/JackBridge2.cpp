@@ -52,14 +52,14 @@ void jackbridge_sem_post(void* sem) noexcept
 #endif
 }
 
-bool jackbridge_sem_timedwait(void* sem, uint secs) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint msecs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
 
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
-    return carla_sem_timedwait(*(carla_sem_t*)sem, secs);
+    return carla_sem_timedwait(*(carla_sem_t*)sem, msecs);
 #endif
 }
 

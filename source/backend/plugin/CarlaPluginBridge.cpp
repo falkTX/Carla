@@ -240,13 +240,13 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         setRingBuffer(nullptr, false);
     }
 
-    bool waitForClient(const uint secs) noexcept
+    bool waitForClient(const uint msecs) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
         jackbridge_sem_post(&data->sem.server);
 
-        return jackbridge_sem_timedwait(&data->sem.client, secs);
+        return jackbridge_sem_timedwait(&data->sem.client, msecs);
     }
 
     void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
@@ -738,6 +738,7 @@ public:
           fSaved(true),
           fTimedOut(false),
           fTimedError(false),
+          fProcWaitTime(0),
           fLastPongTime(-1),
           fBridgeBinary(),
           fBridgeThread(engine, this),
@@ -783,7 +784,7 @@ public:
             fShmRtClientControl.commitWrite();
 
             if (! fTimedOut)
-                waitForClient("stopping", 3);
+                waitForClient("stopping", 3000);
         }
 
         fBridgeThread.stopThread(3000);
@@ -1379,7 +1380,7 @@ public:
         fTimedOut = false;
 
         try {
-            waitForClient("activate", 2);
+            waitForClient("activate", 2000);
         } CARLA_SAFE_EXCEPTION("activate - waitForClient");
     }
 
@@ -1397,7 +1398,7 @@ public:
         fTimedOut = false;
 
         try {
-            waitForClient("deactivate", 2);
+            waitForClient("deactivate", 2000);
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
     }
 
@@ -1780,7 +1781,7 @@ public:
             fShmRtClientControl.commitWrite();
         }
 
-        waitForClient("process", 1);
+        waitForClient("process", fProcWaitTime);
 
         if (fTimedOut)
         {
@@ -1875,7 +1876,10 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        waitForClient("buffersize", 1);
+        //fProcWaitTime = newBufferSize*1000/pData->engine->getSampleRate();
+        fProcWaitTime = 1000;
+
+        waitForClient("buffersize", 1000);
     }
 
     void sampleRateChanged(const double newSampleRate) override
@@ -1887,7 +1891,10 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        waitForClient("samplerate", 1);
+        //fProcWaitTime = pData->engine->getBufferSize()*1000/newSampleRate;
+        fProcWaitTime = 1000;
+
+        waitForClient("samplerate", 1000);
     }
 
     void offlineModeChanged(const bool isOffline) override
@@ -1898,7 +1905,7 @@ public:
             fShmNonRtClientControl.commitWrite();
         }
 
-        waitForClient("offline", 1);
+        waitForClient("offline", 1000);
     }
 
     // -------------------------------------------------------------------
@@ -2509,6 +2516,10 @@ public:
 
         fShmNonRtClientControl.commitWrite();
 
+        // testing dummy message
+        fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
+        fShmRtClientControl.commitWrite();
+
         // init bridge thread
         {
             char shmIdsStr[6*4+1];
@@ -2599,6 +2610,7 @@ private:
     bool fSaved;
     bool fTimedOut;
     bool fTimedError;
+    uint fProcWaitTime;
 
     int64_t fLastPongTime;
 
@@ -2650,15 +2662,15 @@ private:
         fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.size));
         fShmRtClientControl.commitWrite();
 
-        waitForClient("resize-pool", 5);
+        waitForClient("resize-pool", 5000);
     }
 
-    void waitForClient(const char* const action, const uint secs)
+    void waitForClient(const char* const action, const uint msecs)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedOut,);
         CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
 
-        if (fShmRtClientControl.waitForClient(secs))
+        if (fShmRtClientControl.waitForClient(msecs))
             return;
 
         fTimedOut = true;
