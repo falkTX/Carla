@@ -277,7 +277,7 @@ private:
 
 typedef void (*EventProcPtr)(XEvent* ev);
 
-static const int X11Key_Escape = 9;
+static const uint X11Key_Escape = 9;
 static bool gErrorTriggered = false;
 
 static int temporaryErrorHandler(Display*, XErrorEvent*)
