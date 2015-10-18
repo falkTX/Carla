@@ -2280,13 +2280,13 @@ static void stbi__init_zdefaults(void)
 
 static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
 {
-   int final, type;
+   int final_, type;
    if (parse_header)
       if (!stbi__parse_zlib_header(a)) return 0;
    a->num_bits = 0;
    a->code_buffer = 0;
    do {
-      final = stbi__zreceive(a,1);
+      final_ = stbi__zreceive(a,1);
       type = stbi__zreceive(a,2);
       if (type == 0) {
          if (!stbi__parse_uncomperssed_block(a)) return 0;
@@ -2303,7 +2303,7 @@ static int stbi__parse_zlib(stbi__zbuf *a, int parse_header)
          }
          if (!stbi__parse_huffman_block(a)) return 0;
       }
-   } while (!final);
+   } while (!final_);
    return 1;
 }
 
@@ -2535,13 +2535,13 @@ static int stbi__create_png_image_raw(stbi__png *a, stbi_uc *raw, stbi__uint32 r
 
 static int stbi__create_png_image(stbi__png *a, stbi_uc *raw, stbi__uint32 raw_len, int out_n, int interlaced)
 {
-   stbi_uc *final;
+   stbi_uc *final_;
    int p;
    if (!interlaced)
       return stbi__create_png_image_raw(a, raw, raw_len, out_n, a->s->img_x, a->s->img_y);
 
    // de-interlacing
-   final = (stbi_uc *) malloc(a->s->img_x * a->s->img_y * out_n);
+   final_ = (stbi_uc *) malloc(a->s->img_x * a->s->img_y * out_n);
    for (p=0; p < 7; ++p) {
       int xorig[] = { 0,4,0,2,0,1,0 };
       int yorig[] = { 0,0,4,0,2,0,1 };
@@ -2553,19 +2553,19 @@ static int stbi__create_png_image(stbi__png *a, stbi_uc *raw, stbi__uint32 raw_l
       y = (a->s->img_y - yorig[p] + yspc[p]-1) / yspc[p];
       if (x && y) {
          if (!stbi__create_png_image_raw(a, raw, raw_len, out_n, x, y)) {
-            free(final);
+            free(final_);
             return 0;
          }
          for (j=0; j < y; ++j)
             for (i=0; i < x; ++i)
-               memcpy(final + (j*yspc[p]+yorig[p])*a->s->img_x*out_n + (i*xspc[p]+xorig[p])*out_n,
+               memcpy(final_ + (j*yspc[p]+yorig[p])*a->s->img_x*out_n + (i*xspc[p]+xorig[p])*out_n,
                       a->out + (j*x+i)*out_n, out_n);
          free(a->out);
          raw += (x*out_n+1)*y;
          raw_len -= (x*out_n+1)*y;
       }
    }
-   a->out = final;
+   a->out = final_;
 
    return 1;
 }

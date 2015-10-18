@@ -74,11 +74,13 @@
 // OpenGL includes
 
 #ifdef DISTRHO_OS_MAC
-# include "OpenGL/gl.h"
+# include <OpenGL/gl.h>
 #else
-# define GL_GLEXT_PROTOTYPES
-# include "GL/gl.h"
-# include "GL/glext.h"
+# ifndef DISTRHO_OS_WINDOWS
+#  define GL_GLEXT_PROTOTYPES
+# endif
+# include <GL/gl.h>
+# include <GL/glext.h>
 #endif
 
 // -----------------------------------------------------------------------

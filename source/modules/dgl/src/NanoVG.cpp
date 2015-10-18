@@ -18,26 +18,38 @@
 #include "WidgetPrivateData.hpp"
 
 // -----------------------------------------------------------------------
-// Ignore some warnings if debugging
 
-#if 0 //def DEBUG
-# define NANOVG_GL3   0
-# define NANOVG_GLES2 0
-# define NANOVG_GLES3 0
-# define NANOVG_GL_USE_UNIFORMBUFFER 0
-# if defined(__clang__)
-#  pragma clang diagnostic push
-#  pragma clang diagnostic ignored "-Weverything"
-# elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wall"
-#  pragma GCC diagnostic ignored "-Wextra"
-#  pragma GCC diagnostic ignored "-Wconversion"
-#  pragma GCC diagnostic ignored "-Weffc++"
-#  pragma GCC diagnostic ignored "-Wsign-conversion"
-#  pragma GCC diagnostic ignored "-Wundef"
-#  pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-# endif
+#if defined(DISTRHO_OS_WINDOWS)
+# include <windows.h>
+# define DGL_EXT(PROC, func) static PROC func;
+DGL_EXT(PFNGLACTIVETEXTUREPROC,            glActiveTexture)
+DGL_EXT(PFNGLATTACHSHADERPROC,             glAttachShader)
+DGL_EXT(PFNGLBINDATTRIBLOCATIONPROC,       glBindAttribLocation)
+DGL_EXT(PFNGLBINDBUFFERPROC,               glBindBuffer)
+DGL_EXT(PFNGLBUFFERDATAPROC,               glBufferData)
+DGL_EXT(PFNGLCOMPILESHADERPROC,            glCompileShader)
+DGL_EXT(PFNGLCREATEPROGRAMPROC,            glCreateProgram)
+DGL_EXT(PFNGLCREATESHADERPROC,             glCreateShader)
+DGL_EXT(PFNGLDELETEBUFFERSPROC,            glDeleteBuffers)
+DGL_EXT(PFNGLDELETEPROGRAMPROC,            glDeleteProgram)
+DGL_EXT(PFNGLDELETESHADERPROC,             glDeleteShader)
+DGL_EXT(PFNGLDISABLEVERTEXATTRIBARRAYPROC, glDisableVertexAttribArray)
+DGL_EXT(PFNGLENABLEVERTEXATTRIBARRAYPROC,  glEnableVertexAttribArray)
+DGL_EXT(PFNGLGENBUFFERSPROC,               glGenBuffers)
+DGL_EXT(PFNGLGETPROGRAMIVPROC,             glGetProgramiv)
+DGL_EXT(PFNGLGETPROGRAMINFOLOGPROC,        glGetProgramInfoLog)
+DGL_EXT(PFNGLGETSHADERIVPROC,              glGetShaderiv)
+DGL_EXT(PFNGLGETSHADERINFOLOGPROC,         glGetShaderInfoLog)
+DGL_EXT(PFNGLGETUNIFORMLOCATIONPROC,       glGetUniformLocation)
+DGL_EXT(PFNGLLINKPROGRAMPROC,              glLinkProgram)
+DGL_EXT(PFNGLSHADERSOURCEPROC,             glShaderSource)
+DGL_EXT(PFNGLSTENCILOPSEPARATEPROC,        glStencilOpSeparate)
+DGL_EXT(PFNGLUNIFORM1IPROC,                glUniform1i)
+DGL_EXT(PFNGLUNIFORM2FVPROC,               glUniform2fv)
+DGL_EXT(PFNGLUNIFORM4FVPROC,               glUniform4fv)
+DGL_EXT(PFNGLUSEPROGRAMPROC,               glUseProgram)
+DGL_EXT(PFNGLVERTEXATTRIBPOINTERPROC,      glVertexAttribPointer)
+# undef DGL_EXT
 #endif
 
 // -----------------------------------------------------------------------
@@ -61,16 +73,48 @@
 # define nvgDeleteGL nvgDeleteGLES3
 #endif
 
-// -----------------------------------------------------------------------
-// Restore normal state if debugging
-
-#if 0//def DEBUG
-# if defined(__clang__)
-#  pragma clang diagnostic pop
-# elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#  pragma GCC diagnostic pop
-# endif
+static NVGcontext* nvgCreateGL_helper(int flags)
+{
+#if defined(DISTRHO_OS_WINDOWS)
+    static bool needsInit = true;
+    if (needsInit)
+    {
+        needsInit = false;
+# define DGL_EXT(PROC, func) \
+      func = (PROC) wglGetProcAddress ( #func ); \
+      DISTRHO_SAFE_ASSERT_RETURN(func != nullptr, nullptr);
+DGL_EXT(PFNGLACTIVETEXTUREPROC,            glActiveTexture)
+DGL_EXT(PFNGLATTACHSHADERPROC,             glAttachShader)
+DGL_EXT(PFNGLBINDATTRIBLOCATIONPROC,       glBindAttribLocation)
+DGL_EXT(PFNGLBINDBUFFERPROC,               glBindBuffer)
+DGL_EXT(PFNGLBUFFERDATAPROC,               glBufferData)
+DGL_EXT(PFNGLCOMPILESHADERPROC,            glCompileShader)
+DGL_EXT(PFNGLCREATEPROGRAMPROC,            glCreateProgram)
+DGL_EXT(PFNGLCREATESHADERPROC,             glCreateShader)
+DGL_EXT(PFNGLDELETEBUFFERSPROC,            glDeleteBuffers)
+DGL_EXT(PFNGLDELETEPROGRAMPROC,            glDeleteProgram)
+DGL_EXT(PFNGLDELETESHADERPROC,             glDeleteShader)
+DGL_EXT(PFNGLDISABLEVERTEXATTRIBARRAYPROC, glDisableVertexAttribArray)
+DGL_EXT(PFNGLENABLEVERTEXATTRIBARRAYPROC,  glEnableVertexAttribArray)
+DGL_EXT(PFNGLGENBUFFERSPROC,               glGenBuffers)
+DGL_EXT(PFNGLGETPROGRAMIVPROC,             glGetProgramiv)
+DGL_EXT(PFNGLGETPROGRAMINFOLOGPROC,        glGetProgramInfoLog)
+DGL_EXT(PFNGLGETSHADERIVPROC,              glGetShaderiv)
+DGL_EXT(PFNGLGETSHADERINFOLOGPROC,         glGetShaderInfoLog)
+DGL_EXT(PFNGLGETUNIFORMLOCATIONPROC,       glGetUniformLocation)
+DGL_EXT(PFNGLLINKPROGRAMPROC,              glLinkProgram)
+DGL_EXT(PFNGLSHADERSOURCEPROC,             glShaderSource)
+DGL_EXT(PFNGLSTENCILOPSEPARATEPROC,        glStencilOpSeparate)
+DGL_EXT(PFNGLUNIFORM1IPROC,                glUniform1i)
+DGL_EXT(PFNGLUNIFORM2FVPROC,               glUniform2fv)
+DGL_EXT(PFNGLUNIFORM4FVPROC,               glUniform4fv)
+DGL_EXT(PFNGLUSEPROGRAMPROC,               glUseProgram)
+DGL_EXT(PFNGLVERTEXATTRIBPOINTERPROC,      glVertexAttribPointer)
+# undef DGL_EXT
+    }
 #endif
+    return nvgCreateGL(flags);
+}
 
 // -----------------------------------------------------------------------
 
@@ -172,19 +216,14 @@ NanoVG::Paint::operator NVGpaint() const noexcept
 // NanoVG
 
 NanoVG::NanoVG(int flags)
-    : fContext(nvgCreateGL(flags)),
+    : fContext(nvgCreateGL_helper(flags)),
       fInFrame(false),
-      fIsSubWidget(false)
-{
-    DISTRHO_SAFE_ASSERT_RETURN(fContext != nullptr,);
-}
+      fIsSubWidget(false) {}
 
 NanoVG::NanoVG(NanoWidget* groupWidget)
     : fContext(groupWidget->fContext),
       fInFrame(false),
-      fIsSubWidget(true)
-{
-}
+      fIsSubWidget(true) {}
 
 NanoVG::~NanoVG()
 {
@@ -208,13 +247,15 @@ void NanoVG::beginFrame(const uint width, const uint height, const float scaleFa
 
 void NanoVG::beginFrame(Widget* const widget)
 {
-    if (fContext == nullptr) return;
     DISTRHO_SAFE_ASSERT_RETURN(widget != nullptr,);
     DISTRHO_SAFE_ASSERT_RETURN(! fInFrame,);
 
-    Window& window(widget->getParentWindow());
-
     fInFrame = true;
+
+    if (fContext == nullptr)
+        return;
+
+    Window& window(widget->getParentWindow());
     nvgBeginFrame(fContext, static_cast<int>(window.getWidth()), static_cast<int>(window.getHeight()), 1.0f);
 }
 

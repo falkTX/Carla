@@ -74,8 +74,9 @@ typedef void (*PuglDisplayFunc)(PuglView* view);
    @param view The view the event occured in.
    @param press True if the key was pressed, false if released.
    @param key Unicode point of the key pressed.
+   @return 0 if event was handled, otherwise send event to parent window.
 */
-typedef void (*PuglKeyboardFunc)(PuglView* view, bool press, uint32_t key);
+typedef int (*PuglKeyboardFunc)(PuglView* view, bool press, uint32_t key);
 
 /**
    A function called when the pointer moves.
@@ -129,8 +130,9 @@ typedef void (*PuglScrollFunc)(PuglView* view, int x, int y, float dx, float dy)
    @param view The view the event occured in.
    @param press True if the key was pressed, false if released.
    @param key The key pressed.
+   @return 0 if event was handled, otherwise send event to parent window.
 */
-typedef void (*PuglSpecialFunc)(PuglView* view, bool press, PuglKey key);
+typedef int (*PuglSpecialFunc)(PuglView* view, bool press, PuglKey key);
 
 /**
    A function called when a filename is selected via file-browser.
