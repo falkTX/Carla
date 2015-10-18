@@ -375,7 +375,9 @@ clean:
 	$(MAKE) clean -C source/bridges-ui
 	$(MAKE) clean -C source/discovery
 	$(MAKE) clean -C source/modules
+	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
+	$(MAKE) clean -C source/theme
 	rm -f $(RES)
 	rm -f $(UIs)
 	rm -f $(WIDGETS)

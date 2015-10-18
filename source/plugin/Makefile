@@ -123,6 +123,7 @@ all: $(TARGETS)
 clean:
 	rm -f $(OBJDIR)/*.o $(TARGETS)
 	rm -f $(BINDIR)/carla.lv2/*.*
+	rm -f $(BINDIR)/carla-lv2-export$(APP_EXT)
 
 debug:
 	$(MAKE) DEBUG=true
