@@ -1,7 +1,7 @@
-diff --git a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
+diff --git a/source/modules/lilv/lilv-0.22.1/lilv/lilv.h b/source/modules/lilv/lilv-0.22.1/lilv/lilv.h
 index e907789..84223c5 100644
---- a/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
-+++ b/source/modules/lilv/lilv-0.21.3/lilv/lilv.h
+--- a/source/modules/lilv/lilv-0.22.1/lilv/lilv.h
++++ b/source/modules/lilv/lilv-0.22.1/lilv/lilv.h
 @@ -26,8 +26,9 @@
  #include <stdint.h>
  #include <stdio.h>
@@ -115,10 +115,10 @@ index e907789..84223c5 100644
     @}
     @}
  */
-diff --git a/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp b/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
+diff --git a/source/modules/lilv/lilv-0.22.1/lilv/lilvmm.hpp b/source/modules/lilv/lilv-0.22.1/lilv/lilvmm.hpp
 index b9b3a69..367b8d8 100644
---- a/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
-+++ b/source/modules/lilv/lilv-0.21.3/lilv/lilvmm.hpp
+--- a/source/modules/lilv/lilv-0.22.1/lilv/lilvmm.hpp
++++ b/source/modules/lilv/lilv-0.22.1/lilv/lilvmm.hpp
 @@ -17,6 +17,8 @@
  #ifndef LILV_LILVMM_HPP
  #define LILV_LILVMM_HPP
@@ -317,10 +317,10 @@ index b9b3a69..367b8d8 100644
  };
  
  } /* namespace Lilv */
-diff --git a/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h b/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
+diff --git a/source/modules/lilv/lilv-0.22.1/src/lilv_internal.h b/source/modules/lilv/lilv-0.22.1/src/lilv_internal.h
 index e2444d3..4d0a8e5 100644
---- a/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
-+++ b/source/modules/lilv/lilv-0.21.3/src/lilv_internal.h
+--- a/source/modules/lilv/lilv-0.22.1/src/lilv_internal.h
++++ b/source/modules/lilv/lilv-0.22.1/src/lilv_internal.h
 @@ -53,7 +53,7 @@ static inline char* dlerror(void) { return "Unknown error"; }
  #include "lilv/lilv.h"
  
@@ -330,10 +330,10 @@ index e2444d3..4d0a8e5 100644
  #endif
  
  /*
-diff --git a/source/modules/lilv/lilv-0.21.3/src/plugin.c b/source/modules/lilv/lilv-0.21.3/src/plugin.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/plugin.c b/source/modules/lilv/lilv-0.22.1/src/plugin.c
 index bf0843b..c711990 100644
---- a/source/modules/lilv/lilv-0.21.3/src/plugin.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/plugin.c
+--- a/source/modules/lilv/lilv-0.22.1/src/plugin.c
++++ b/source/modules/lilv/lilv-0.22.1/src/plugin.c
 @@ -27,10 +27,11 @@
  #include "lilv_config.h"
  #include "lilv_internal.h"
@@ -479,10 +479,10 @@ index bf0843b..c711990 100644
  LILV_API bool
  lilv_plugin_is_replaced(const LilvPlugin* plugin)
  {
-diff --git a/source/modules/lilv/lilv-0.21.3/src/port.c b/source/modules/lilv/lilv-0.21.3/src/port.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/port.c b/source/modules/lilv/lilv-0.22.1/src/port.c
 index 6bf8fc7..0a50891 100644
---- a/source/modules/lilv/lilv-0.21.3/src/port.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/port.c
+--- a/source/modules/lilv/lilv-0.22.1/src/port.c
++++ b/source/modules/lilv/lilv-0.22.1/src/port.c
 @@ -20,8 +20,8 @@
  #include <stdlib.h>
  #include <string.h>
@@ -494,10 +494,10 @@ index 6bf8fc7..0a50891 100644
  
  #include "lilv_internal.h"
  
-diff --git a/source/modules/lilv/lilv-0.21.3/src/state.c b/source/modules/lilv/lilv-0.21.3/src/state.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/state.c b/source/modules/lilv/lilv-0.22.1/src/state.c
 index 79199e4..119dcee 100644
---- a/source/modules/lilv/lilv-0.21.3/src/state.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/state.c
+--- a/source/modules/lilv/lilv-0.22.1/src/state.c
++++ b/source/modules/lilv/lilv-0.22.1/src/state.c
 @@ -18,10 +18,10 @@
  #include <stdio.h>
  #include <string.h>
@@ -594,10 +594,10 @@ index 79199e4..119dcee 100644
  {
  	if (!str) {
  		return NULL;
-diff --git a/source/modules/lilv/lilv-0.21.3/src/ui.c b/source/modules/lilv/lilv-0.21.3/src/ui.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/ui.c b/source/modules/lilv/lilv-0.22.1/src/ui.c
 index 0f4f2f6..a0dd567 100644
---- a/source/modules/lilv/lilv-0.21.3/src/ui.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/ui.c
+--- a/source/modules/lilv/lilv-0.22.1/src/ui.c
++++ b/source/modules/lilv/lilv-0.22.1/src/ui.c
 @@ -109,3 +109,54 @@ lilv_ui_get_binary_uri(const LilvUI* ui)
  {
  	return ui->binary_uri;
@@ -653,10 +653,10 @@ index 0f4f2f6..a0dd567 100644
 +       assert(ui->world);
 +       return lilv_ui_get_value_internal(ui, ui->world->uris.lv2_extensionData);
 +}
-diff --git a/source/modules/lilv/lilv-0.21.3/src/util.c b/source/modules/lilv/lilv-0.21.3/src/util.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/util.c b/source/modules/lilv/lilv-0.22.1/src/util.c
 index 31c9238..5bcdb7e 100644
---- a/source/modules/lilv/lilv-0.21.3/src/util.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/util.c
+--- a/source/modules/lilv/lilv-0.22.1/src/util.c
++++ b/source/modules/lilv/lilv-0.22.1/src/util.c
 @@ -30,7 +30,6 @@
  #include <string.h>
  
@@ -677,10 +677,10 @@ index 31c9238..5bcdb7e 100644
  #else
  		ret = symlink(oldpath, newpath);
  #endif
-diff --git a/source/modules/lilv/lilv-0.21.3/src/world.c b/source/modules/lilv/lilv-0.21.3/src/world.c
+diff --git a/source/modules/lilv/lilv-0.22.1/src/world.c b/source/modules/lilv/lilv-0.22.1/src/world.c
 index 02dbeec..8b2db95 100644
---- a/source/modules/lilv/lilv-0.21.3/src/world.c
-+++ b/source/modules/lilv/lilv-0.21.3/src/world.c
+--- a/source/modules/lilv/lilv-0.22.1/src/world.c
++++ b/source/modules/lilv/lilv-0.22.1/src/world.c
 @@ -19,7 +19,7 @@
  #include <stdlib.h>
  #include <string.h>
@@ -703,38 +703,4 @@ index 02dbeec..8b2db95 100644
 -
  	// Discover bundles and read all manifest files into model
  	lilv_world_load_path(world, lv2_path);
- 
-diff --git a/source/modules/lilv/sratom-0.4.7/sratom/sratom.h b/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
-index a86f67e..f0c12b9 100644
---- a/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
-+++ b/source/modules/lilv/sratom-0.4.7/sratom/sratom.h
-@@ -23,9 +23,9 @@
- 
- #include <stdint.h>
- 
--#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
--#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
--#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
-+#include "lv2/atom.h"
-+#include "lv2/atom-forge.h"
-+#include "lv2/urid.h"
- #include "serd/serd.h"
- #include "sord/sord.h"
- 
-diff --git a/source/modules/lilv/sratom-0.4.7/src/sratom.c b/source/modules/lilv/sratom-0.4.7/src/sratom.c
-index 272e6e3..4f9d136 100644
---- a/source/modules/lilv/sratom-0.4.7/src/sratom.c
-+++ b/source/modules/lilv/sratom-0.4.7/src/sratom.c
-@@ -20,9 +20,9 @@
- #include <stdlib.h>
- #include <string.h>
- 
--#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
--#include "lv2/lv2plug.in/ns/ext/atom/util.h"
--#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
-+#include "lv2/atom-forge.h"
-+#include "lv2/atom-util.h"
-+#include "lv2/midi.h"
- 
- #include "sratom/sratom.h"
  
