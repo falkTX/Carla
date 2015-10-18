@@ -795,10 +795,16 @@ private:
 // Jack Engine
 
 class CarlaEngineJack : public CarlaEngine
+#ifndef BUILD_BRIDGE
+                      , private CarlaThread
+#endif
 {
 public:
     CarlaEngineJack()
         : CarlaEngine(),
+#ifndef BUILD_BRIDGE
+          CarlaThread("CarlaEngineJackCallbacks"),
+#endif
           fClient(nullptr),
           fTransportPos(),
           fTransportState(JackTransportStopped),
@@ -979,6 +985,7 @@ public:
 
         if (jackbridge_activate(fClient))
         {
+            startThread();
             callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
             return true;
         }
@@ -1008,6 +1015,11 @@ public:
         CarlaEngine::close();
         return true;
 #else
+        stopThread(-1);
+
+        if (fPostPonedEvents.count() > 0)
+            fPostPonedEvents.clear();
+
         CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
 
         // deactivate first
@@ -1840,6 +1852,10 @@ protected:
 
     void handleJackShutdownCallback()
     {
+#ifndef BUILD_BRIDGE
+        signalThreadShouldExit();
+#endif
+
         const PendingRtEventsRunner prt(this);
 
         for (uint i=0; i < pData->curPluginCount; ++i)
@@ -2193,6 +2209,91 @@ private:
         setPluginPeaks(plugin->getId(), inPeaks, outPeaks);
     }
 
+#ifndef BUILD_BRIDGE
+    // -------------------------------------------------------------------
+
+    struct PostPonedJackEvent {
+        enum Type {
+            kTypeNull = 0,
+            kTypeClientRegister,
+            kTypePortRegister,
+            kTypePortConnect,
+            kTypePortRename
+        };
+
+        Type type;
+        bool action; // register or connect
+        jack_port_id_t port1;
+        jack_port_id_t port2;
+        char name1[STR_MAX+1];
+        char name2[STR_MAX+1];
+    };
+
+    LinkedList<PostPonedJackEvent> fPostPonedEvents;
+    CarlaMutex fPostPonedEventsMutex;
+
+    void postPoneJackCallback(const PostPonedJackEvent& ev)
+    {
+        const CarlaMutexLocker cml(fPostPonedEventsMutex);
+        fPostPonedEvents.append(ev);
+    }
+
+    void run() override
+    {
+        LinkedList<PostPonedJackEvent> events; // copy
+        PostPonedJackEvent nullEvent;
+        carla_zeroStruct(nullEvent);
+
+        for (; ! shouldThreadExit();)
+        {
+            {
+                const CarlaMutexLocker cml(fPostPonedEventsMutex);
+
+                if (fPostPonedEvents.count() > 0)
+                    fPostPonedEvents.moveTo(events);
+            }
+
+            if (fClient == nullptr)
+                break;
+
+            if (events.count() == 0)
+            {
+                carla_msleep(200);
+                continue;
+            }
+
+            for (LinkedList<PostPonedJackEvent>::Itenerator it = events.begin2(); it.valid(); it.next())
+            {
+                const PostPonedJackEvent& ev(it.getValue(nullEvent));
+                CARLA_SAFE_ASSERT_CONTINUE(ev.type != PostPonedJackEvent::kTypeNull);
+
+                switch (ev.type)
+                {
+                case PostPonedJackEvent::kTypeNull:
+                    break;
+                case PostPonedJackEvent::kTypeClientRegister:
+                    handleJackClientRegistrationCallback(ev.name1, ev.action);
+                    break;
+                case PostPonedJackEvent::kTypePortRegister:
+                    handleJackPortRegistrationCallback(ev.port1, ev.action);
+                    break;
+                case PostPonedJackEvent::kTypePortConnect:
+                    handleJackPortConnectCallback(ev.port1, ev.port2, ev.action);
+                    break;
+                case PostPonedJackEvent::kTypePortRename:
+                    handleJackPortRenameCallback(ev.port1, ev.name1, ev.name2);
+                    break;
+                }
+            }
+
+            events.clear();
+        }
+
+        if (events.count() > 0)
+            events.clear();
+    }
+#endif //  BUILD_BRIDGE
+
     // -------------------------------------------------------------------
 
     #define handlePtr ((CarlaEngineJack*)arg)
@@ -2236,22 +2337,44 @@ private:
 #ifndef BUILD_BRIDGE
     static void JACKBRIDGE_API carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
-        handlePtr->handleJackClientRegistrationCallback(name, (reg != 0));
+        PostPonedJackEvent ev;
+        carla_zeroStruct(ev);
+        ev.type   = PostPonedJackEvent::kTypeClientRegister;
+        ev.action = (reg != 0);
+        std::strncpy(ev.name1, name, STR_MAX);
+        handlePtr->postPoneJackCallback(ev);
     }
 
     static void JACKBRIDGE_API carla_jack_port_registration_callback(jack_port_id_t port, int reg, void* arg)
     {
-        handlePtr->handleJackPortRegistrationCallback(port, (reg != 0));
+        PostPonedJackEvent ev;
+        carla_zeroStruct(ev);
+        ev.type   = PostPonedJackEvent::kTypePortRegister;
+        ev.action = (reg != 0);
+        ev.port1  = port;
+        handlePtr->postPoneJackCallback(ev);
     }
 
     static void JACKBRIDGE_API carla_jack_port_connect_callback(jack_port_id_t a, jack_port_id_t b, int connect, void* arg)
     {
-        handlePtr->handleJackPortConnectCallback(a, b, (connect != 0));
+        PostPonedJackEvent ev;
+        carla_zeroStruct(ev);
+        ev.type   = PostPonedJackEvent::kTypePortConnect;
+        ev.action = (connect != 0);
+        ev.port1  = a;
+        ev.port2  = b;
+        handlePtr->postPoneJackCallback(ev);
     }
 
     static void JACKBRIDGE_API carla_jack_port_rename_callback(jack_port_id_t port, const char* oldName, const char* newName, void* arg)
     {
-        handlePtr->handleJackPortRenameCallback(port, oldName, newName);
+        PostPonedJackEvent ev;
+        carla_zeroStruct(ev);
+        ev.type  = PostPonedJackEvent::kTypePortRename;
+        ev.port1 = port;
+        std::strncpy(ev.name1, oldName, STR_MAX);
+        std::strncpy(ev.name2, newName, STR_MAX);
+        handlePtr->postPoneJackCallback(ev);
     }
 #endif
 
