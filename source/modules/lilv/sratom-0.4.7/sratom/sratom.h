@@ -23,9 +23,9 @@
 
 #include <stdint.h>
 
-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/urid.h"
+#include "lv2/atom.h"
+#include "lv2/atom-forge.h"
 #include "serd/serd.h"
 #include "sord/sord.h"
 
