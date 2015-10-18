@@ -76,7 +76,7 @@ test_fail(const char* fmt, ...)
 }
 
 static int
-test(bool top_level)
+test(bool top_level, bool pretty_numbers)
 {
 	LV2_URID_Map   map   = { NULL, urid_map };
 	LV2_URID_Unmap unmap = { NULL, urid_unmap };
@@ -84,6 +84,7 @@ test(bool top_level)
 	lv2_atom_forge_init(&forge, &map);
 
 	Sratom* sratom = sratom_new(&map);
+	sratom_set_pretty_numbers(sratom, pretty_numbers);
 	sratom_set_object_mode(
 		sratom,
 		top_level ? SRATOM_OBJECT_MODE_BLANK_SUBJECT : SRATOM_OBJECT_MODE_BLANK);
@@ -106,8 +107,12 @@ test(bool top_level)
 	LV2_URID eg_blank   = urid_map(NULL, "http://example.org/o-blank");
 	LV2_URID eg_tuple   = urid_map(NULL, "http://example.org/p-tuple");
 	LV2_URID eg_rectup  = urid_map(NULL, "http://example.org/q-rectup");
-	LV2_URID eg_vector  = urid_map(NULL, "http://example.org/r-vector");
-	LV2_URID eg_seq     = urid_map(NULL, "http://example.org/s-seq");
+	LV2_URID eg_ivector = urid_map(NULL, "http://example.org/r-ivector");
+	LV2_URID eg_lvector = urid_map(NULL, "http://example.org/s-lvector");
+	LV2_URID eg_fvector = urid_map(NULL, "http://example.org/t-fvector");
+	LV2_URID eg_dvector = urid_map(NULL, "http://example.org/u-dvector");
+	LV2_URID eg_bvector = urid_map(NULL, "http://example.org/v-bvector");
+	LV2_URID eg_seq     = urid_map(NULL, "http://example.org/x-seq");
 
 	uint8_t buf[1024];
 	lv2_atom_forge_set_buffer(&forge, buf, sizeof(buf));
@@ -217,10 +222,30 @@ test(bool top_level)
 	lv2_atom_forge_pop(&forge, &subrectup_frame);
 	lv2_atom_forge_pop(&forge, &rectup_frame);
 
-	// eg_vector = (Vector<Int32>)1,2,3,4
-	lv2_atom_forge_key(&forge, eg_vector);
-	int32_t elems[] = { 1, 2, 3, 4 };
-	lv2_atom_forge_vector(&forge, 4, forge.Int, sizeof(int32_t), elems);
+	// eg_ivector = (Vector<Int>)1,2,3,4
+	lv2_atom_forge_key(&forge, eg_ivector);
+	int32_t ielems[] = { 1, 2, 3, 4 };
+	lv2_atom_forge_vector(&forge, sizeof(int32_t), forge.Int, 4, ielems);
+
+	// eg_lvector = (Vector<Long>)1,2,3,4
+	lv2_atom_forge_key(&forge, eg_lvector);
+	int64_t lelems[] = { 1, 2, 3, 4 };
+	lv2_atom_forge_vector(&forge, sizeof(int64_t), forge.Long, 4, lelems);
+
+	// eg_fvector = (Vector<Float>)1.0,2.0,3.0,4.0
+	lv2_atom_forge_key(&forge, eg_fvector);
+	float felems[] = { 1, 2, 3, 4 };
+	lv2_atom_forge_vector(&forge, sizeof(float), forge.Float, 4, felems);
+
+	// eg_dvector = (Vector<Double>)1.0,2.0,3.0,4.0
+	lv2_atom_forge_key(&forge, eg_dvector);
+	double delems[] = { 1, 2, 3, 4 };
+	lv2_atom_forge_vector(&forge, sizeof(double), forge.Double, 4, delems);
+
+	// eg_bvector = (Vector<Bool>)1,0
+	lv2_atom_forge_key(&forge, eg_bvector);
+	int32_t belems[] = { true, false };
+	lv2_atom_forge_vector(&forge, sizeof(int32_t), forge.Bool, 2, belems);
 
 	// eg_seq = (Sequence)1, 2
 	LV2_URID midi_midiEvent = map.map(map.handle, LV2_MIDI__MidiEvent);
@@ -259,28 +284,31 @@ test(bool top_level)
 
 	LV2_Atom* parsed = NULL;
 	if (top_level) {
-		SerdNode o= serd_node_from_string(SERD_URI, (const uint8_t*)obj_uri);
+		SerdNode o = serd_node_from_string(SERD_URI, (const uint8_t*)obj_uri);
 		parsed = sratom_from_turtle(sratom, base_uri, &o, NULL, outstr);
 	} else {
 		parsed = sratom_from_turtle(sratom, base_uri, subj, pred, outstr);
 	}
-	if (!lv2_atom_equals(obj, parsed)) {
-		return test_fail("Parsed atom does not match original\n");
-	}
 
-	char* instr = sratom_to_turtle(
-		sratom, &unmap, base_uri, subj, pred,
-		parsed->type, parsed->size, LV2_ATOM_BODY(parsed));
-	printf("# Turtle => Atom\n\n%s", instr);
+	if (!pretty_numbers) {
+		if (!lv2_atom_equals(obj, parsed)) {
+			return test_fail("Parsed atom does not match original\n");
+		}
 
-	if (strcmp(outstr, instr)) {
-		return test_fail("Re-serialised string differs from original\n");
+		char* instr = sratom_to_turtle(
+			sratom, &unmap, base_uri, subj, pred,
+			parsed->type, parsed->size, LV2_ATOM_BODY(parsed));
+		printf("# Turtle => Atom\n\n%s", instr);
+
+		if (strcmp(outstr, instr)) {
+			return test_fail("Re-serialised string differs from original\n");
+		}
+		free(instr);
 	}
 
 	printf("All tests passed.\n");
 
 	free(parsed);
-	free(instr);
 	free(outstr);
 	sratom_free(sratom);
 	for (uint32_t i = 0; i < n_uris; ++i) {
@@ -297,10 +325,15 @@ test(bool top_level)
 int
 main(void)
 {
-	if (test(false)) {
+	if (test(false, false)) {
 		return 1;
-	} else if (test(true)) {
+	} else if (test(true, false)) {
+		return 1;
+	} else if (test(false, true)) {
+		return 1;
+	} else if (test(true, true)) {
 		return 1;
 	}
+
 	return 0;
 }

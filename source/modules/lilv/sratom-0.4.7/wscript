@@ -22,6 +22,8 @@ def options(opt):
     autowaf.set_options(opt)
     opt.add_option('--test', action='store_true', dest='build_tests',
                    help="Build unit tests")
+    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                   help='Do not use gcov for code coverage')
     opt.add_option('--static', action='store_true', dest='static',
                    help="Build static library")
     opt.add_option('--no-shared', action='store_true', dest='no_shared',
@@ -40,11 +42,8 @@ def configure(conf):
     if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
         conf.fatal('Neither a shared nor a static build requested')
 
-    # Check for gcov library (for test coverage)
-    if conf.env.BUILD_TESTS:
-        conf.check_cc(lib='gcov',
-                      define_name='HAVE_GCOV',
-                      mandatory=False)
+    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
+        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     autowaf.check_pkg(conf, 'lv2', uselib_store='LV2',
                       atleast_version='1.8.1', mandatory=True)
@@ -143,6 +142,7 @@ def build(bld):
     # Documentation
     autowaf.build_dox(bld, 'SRATOM', SRATOM_VERSION, top, out)
 
+    bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env.DOCS:
         bld.add_post_fun(fix_docs)
 

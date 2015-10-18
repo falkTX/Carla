@@ -20,9 +20,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "lv2/atom-forge.h"
-#include "lv2/atom-util.h"
-#include "lv2/midi.h"
+#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
+#include "lv2/lv2plug.in/ns/ext/atom/util.h"
+#include "lv2/lv2plug.in/ns/ext/midi/midi.h"
 
 #include "sratom/sratom.h"
 
@@ -551,9 +551,8 @@ atom_size(Sratom* sratom, uint32_t type_urid)
 		return sizeof(int32_t);
 	} else if (type_urid == sratom->forge.URID) {
 		return sizeof(uint32_t);
-	} else {
-		return 0;
 	}
+	return 0;
 }
 
 static void
