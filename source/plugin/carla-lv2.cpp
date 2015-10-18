@@ -384,8 +384,8 @@ public:
 
                         if (fLastPositionData.barBeat >= 0.0f)
                         {
-                            const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
-                            fTimeInfo.bbt.beat = fLastPositionData.barBeat-rest+1.0;
+                            const float rest = std::fmod(fLastPositionData.barBeat, 1.0f);
+                            fTimeInfo.bbt.beat = fLastPositionData.barBeat-rest+1.0f;
                             fTimeInfo.bbt.tick = rest*fTimeInfo.bbt.ticksPerBeat+0.5;
                         }
                     }
@@ -571,7 +571,7 @@ public:
 
                 if (fLastPositionData.barBeat >= 0.0f)
                 {
-                    fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+addedBarBeats,
+                    fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+static_cast<float>(addedBarBeats),
                                                           fLastPositionData.beatsPerBar);
 
                     const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
@@ -580,7 +580,7 @@ public:
 
                     if (fLastPositionData.bar >= 0)
                     {
-                        fLastPositionData.bar += std::floor((fLastPositionData.barBeat+addedBarBeats)/
+                        fLastPositionData.bar += std::floor((fLastPositionData.barBeat+static_cast<float>(addedBarBeats))/
                                                              fLastPositionData.beatsPerBar);
 
                         if (fLastPositionData.bar < 0)
