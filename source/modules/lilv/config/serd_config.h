@@ -3,7 +3,7 @@
 #define _SERD_CONFIG_H_
 
 #define SERD_INTERNAL
-#define SERD_VERSION "0.21.1"
+#define SERD_VERSION "0.22.0"
 
 #define HAVE_FILENO 1
 

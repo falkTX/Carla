@@ -3,7 +3,7 @@
 #define _LILV_CONFIG_H_
 
 #define LILV_INTERNAL
-#define LILV_VERSION "0.21.3"
+#define LILV_VERSION "0.22.1"
 
 #define HAVE_LV2    1
 #define HAVE_SERD   1
