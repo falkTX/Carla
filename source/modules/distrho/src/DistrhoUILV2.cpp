@@ -53,7 +53,7 @@ public:
             fUiResize->ui_resize(fUiResize->handle, fUI.getWidth(), fUI.getHeight());
 
         if (widget != nullptr)
-            *widget = (LV2UI_Widget*)fUI.getWindowId();
+            *widget = (LV2UI_Widget)fUI.getWindowId();
 
 #if DISTRHO_PLUGIN_WANT_STATE
         // tell the DSP we're ready to receive msgs

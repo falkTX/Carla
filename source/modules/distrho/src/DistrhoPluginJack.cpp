@@ -184,12 +184,19 @@ public:
 
     ~PluginJack()
     {
-        if (fClient == nullptr)
-            return;
+        if (fClient != nullptr)
+            jack_deactivate(fClient);
 
-        jack_deactivate(fClient);
+        if (fLastOutputValues != nullptr)
+        {
+            delete[] fLastOutputValues;
+            fLastOutputValues = nullptr;
+        }
 
         fPlugin.deactivate();
+
+        if (fClient == nullptr)
+            return;
 
 #if DISTRHO_PLUGIN_IS_SYNTH
         jack_port_unregister(fClient, fPortMidiIn);

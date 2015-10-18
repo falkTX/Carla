@@ -52,13 +52,12 @@ typedef std::map<const String, String> StringMap;
 class PluginLv2
 {
 public:
-    PluginLv2(const double sampleRate, const LV2_URID_Map* const uridMap, const LV2_Worker_Schedule* const worker)
-        : fPortControls(nullptr),
+    PluginLv2(const double sampleRate, const LV2_URID_Map* const uridMap, const LV2_Worker_Schedule* const worker, const bool usingNominal)
+        : fUsingNominal(usingNominal),
+          fPortControls(nullptr),
           fLastControlValues(nullptr),
           fSampleRate(sampleRate),
-#if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
           fURIDs(uridMap),
-#endif
           fUridMap(uridMap),
           fWorker(worker)
     {
@@ -124,18 +123,6 @@ public:
         // unused
         (void)fWorker;
 #endif
-
-#if DISTRHO_PLUGIN_WANT_TIMEPOS
-        // hosts may not send all values, resulting on some invalid data
-        fTimePosition.bbt.bar   = 1;
-        fTimePosition.bbt.beat  = 1;
-        fTimePosition.bbt.tick  = 0;
-        fTimePosition.bbt.barStartTick = 0;
-        fTimePosition.bbt.beatsPerBar  = 4;
-        fTimePosition.bbt.beatType     = 4;
-        fTimePosition.bbt.ticksPerBeat = 960.0;
-        fTimePosition.bbt.beatsPerMinute = 120.0;
-#endif
     }
 
     ~PluginLv2()
@@ -167,6 +154,19 @@ public:
 
     void lv2_activate()
     {
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
+        std::memset(&fTimePosition, 0, sizeof(TimePosition));
+
+        // hosts may not send all values, resulting on some invalid data
+        fTimePosition.bbt.bar   = 1;
+        fTimePosition.bbt.beat  = 1;
+        fTimePosition.bbt.tick  = 0;
+        fTimePosition.bbt.barStartTick = 0;
+        fTimePosition.bbt.beatsPerBar  = 4;
+        fTimePosition.bbt.beatType     = 4;
+        fTimePosition.bbt.ticksPerBeat = 960.0;
+        fTimePosition.bbt.beatsPerMinute = 120.0;
+#endif
         fPlugin.activate();
     }
 
@@ -321,7 +321,7 @@ public:
                     else
                         d_stderr("Unknown lv2 ticksPerBeat value type");
 
-                    if (fLastPositionData.ticksPerBeat > 0)
+                    if (fLastPositionData.ticksPerBeat > 0.0)
                         fTimePosition.bbt.ticksPerBeat = fLastPositionData.ticksPerBeat;
                 }
 
@@ -574,6 +574,8 @@ public:
 
                     fTimePosition.bbt.beatsPerMinute = std::abs(beatsPerMinute);
                 }
+
+                fPlugin.setTimePosition(fTimePosition);
             }
 #endif
         }
@@ -660,31 +662,39 @@ public:
         {
             if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
             {
-                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Int))
+                if (options[i].type == fURIDs.atomInt)
                 {
                     const int bufferSize(*(const int*)options[i].value);
                     fPlugin.setBufferSize(bufferSize);
-                    continue;
                 }
                 else
                 {
                     d_stderr("Host changed nominalBlockLength but with wrong value type");
-                    continue;
+                }
+            }
+            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength) && ! fUsingNominal)
+            {
+                if (options[i].type == fURIDs.atomInt)
+                {
+                    const int bufferSize(*(const int*)options[i].value);
+                    fPlugin.setBufferSize(bufferSize);
+                }
+                else
+                {
+                    d_stderr("Host changed maxBlockLength but with wrong value type");
                 }
             }
             else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
             {
-                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Double))
+                if (options[i].type == fURIDs.atomDouble)
                 {
                     const double sampleRate(*(const double*)options[i].value);
                     fSampleRate = sampleRate;
                     fPlugin.setSampleRate(sampleRate);
-                    continue;
                 }
                 else
                 {
                     d_stderr("Host changed sampleRate but with wrong value type");
-                    continue;
                 }
             }
         }
@@ -812,6 +822,7 @@ public:
 
 private:
     PluginExporter fPlugin;
+    const bool fUsingNominal; // if false use maxBlockLength
 
     // LV2 ports
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
@@ -852,7 +863,7 @@ private:
         float    beatsPerMinute;
         int64_t  frame;
         double   speed;
-        int64_t  ticksPerBeat;
+        double   ticksPerBeat;
 
         Lv2PositionData()
             : bar(-1),
@@ -862,13 +873,12 @@ private:
               beatsPerMinute(0.0f),
               frame(-1),
               speed(0.0),
-              ticksPerBeat(-1) {}
+              ticksPerBeat(-1.0) {}
 
     } fLastPositionData;
 #endif
 
     // LV2 URIDs
-#if DISTRHO_LV2_USE_EVENTS_IN || DISTRHO_LV2_USE_EVENTS_OUT
     struct URIDs {
         LV2_URID atomBlank;
         LV2_URID atomObject;
@@ -911,7 +921,6 @@ private:
               timeFrame(uridMap->map(uridMap->handle, LV2_TIME__frame)),
               timeSpeed(uridMap->map(uridMap->handle, LV2_TIME__speed)) {}
     } fURIDs;
-#endif
 
     // LV2 features
     const LV2_URID_Map* const fUridMap;
@@ -1004,29 +1013,44 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor*, double sampleRate, cons
 #endif
 
     d_lastBufferSize = 0;
+    bool usingNominal = false;
 
     for (int i=0; options[i].key != 0; ++i)
     {
         if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
         {
             if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+            {
+                d_lastBufferSize = *(const int*)options[i].value;
+                usingNominal = true;
+            }
+            else
+            {
+                d_stderr("Host provides nominalBlockLength but has wrong value type");
+            }
+            break;
+        }
+
+        if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+        {
+            if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
                 d_lastBufferSize = *(const int*)options[i].value;
             else
-                d_stderr("Host provides nominalBlockLength but has wrong value type");
+                d_stderr("Host provides maxBlockLength but has wrong value type");
 
-            break;
+            // no break, continue in case host supports nominalBlockLength
         }
     }
 
     if (d_lastBufferSize == 0)
     {
-        d_stderr("Host does not provide nominalBlockLength option");
+        d_stderr("Host does not provide nominalBlockLength or maxBlockLength options");
         d_lastBufferSize = 2048;
     }
 
     d_lastSampleRate = sampleRate;
 
-    return new PluginLv2(sampleRate, uridMap, worker);
+    return new PluginLv2(sampleRate, uridMap, worker, usingNominal);
 }
 
 #define instancePtr ((PluginLv2*)instance)
