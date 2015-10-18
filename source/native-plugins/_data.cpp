@@ -389,7 +389,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 },
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-#if defined(HAVE_DGL) && ! defined(CARLA_OS_WIN)
+#ifdef HAVE_DGL
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD

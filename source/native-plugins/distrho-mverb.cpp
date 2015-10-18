@@ -19,7 +19,7 @@
 #include "CarlaDefines.h"
 #include "distrho-mverb/DistrhoPluginInfo.h"
 
-#if DISTRHO_PLUGIN_HAS_UI && (defined(CARLA_OS_WIN) || ! defined(HAVE_DGL))
+#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
