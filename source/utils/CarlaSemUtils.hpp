@@ -156,7 +156,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
     {
         if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) == 0)
         {
-            __sync_fetch_and_sub(&sem.count, 1);
+            __sync_sub_and_fetch(&sem.count, 1);
             return true;
         }
 

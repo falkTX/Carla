@@ -80,21 +80,15 @@ else
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
-ifeq ($(MODDUO),true)
-# MOD Duo optimization flags
-BASE_OPTS  = -O2 -ffast-math -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+ifeq ($(PANDORA),true)
+# OpenPandora optimization flags
+BASE_OPTS  = -O2 -ffast-math -mcpu=cortex-a8 -mtune=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
 ifeq ($(RASPPI),true)
 # Raspberry-Pi optimization flags
 BASE_OPTS  = -O2 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
-LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
-endif
-
-ifeq ($(PANDORA),true)
-# OpenPandora optimization flags
-BASE_OPTS  = -O2 -ffast-math -mcpu=cortex-a8 -mfpu=neon -mfloat-abi=softfp
 LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
 endif
 
