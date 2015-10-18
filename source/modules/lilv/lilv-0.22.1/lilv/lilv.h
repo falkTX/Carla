@@ -26,8 +26,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "lv2/lv2plug.in/ns/lv2core/lv2.h"
-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+#include "lv2/lv2.h"
+#include "lv2/state.h"
+#include "lv2/urid.h"
 
 #ifdef LILV_SHARED
 #    ifdef _WIN32
@@ -562,7 +563,7 @@ lilv_world_free(LilvWorld* world);
    with special plugin bundles which are installed to a known location).
 */
 LILV_API void
-lilv_world_load_all(LilvWorld* world);
+lilv_world_load_all(LilvWorld* world, const char* lv2_path);
 
 /**
    Load a specific bundle.
@@ -1209,9 +1210,9 @@ lilv_port_get_scale_points(const LilvPlugin* plugin,
    @return A new LilvState which must be freed with lilv_state_free(), or NULL.
 */
 LILV_API LilvState*
-lilv_state_new_from_world(LilvWorld*      world,
-                          LV2_URID_Map*   map,
-                          const LilvNode* subject);
+lilv_state_new_from_world(LilvWorld*          world,
+                          const LV2_URID_Map* map,
+                          const LilvNode*     subject);
 
 /**
    Load a state snapshot from a file.
@@ -1229,18 +1230,18 @@ lilv_state_new_from_world(LilvWorld*      world,
    new memory consumed once this function returns.
 */
 LILV_API LilvState*
-lilv_state_new_from_file(LilvWorld*      world,
-                         LV2_URID_Map*   map,
-                         const LilvNode* subject,
-                         const char*     path);
+lilv_state_new_from_file(LilvWorld*          world,
+                         const LV2_URID_Map* map,
+                         const LilvNode*     subject,
+                         const char*         path);
 
 /**
    Load a state snapshot from a string made by lilv_state_to_string().
 */
 LILV_API LilvState*
-lilv_state_new_from_string(LilvWorld*    world,
-                           LV2_URID_Map* map,
-                           const char*   str);
+lilv_state_new_from_string(LilvWorld*          world,
+                           const LV2_URID_Map* map,
+                           const char*         str);
 
 /**
    Function to get a port value.
@@ -1435,7 +1436,8 @@ lilv_state_emit_port_values(const LilvState*     state,
 */
 LILV_API void
 lilv_state_restore(const LilvState*           state,
-                   LilvInstance*              instance,
+                   const LV2_State_Interface* iface,
+                   LV2_Handle                 handle,
                    LilvSetPortValueFunc       set_value,
                    void*                      user_data,
                    uint32_t                   flags,
@@ -1794,6 +1796,42 @@ lilv_ui_get_bundle_uri(const LilvUI* ui);
 */
 LILV_API const LilvNode*
 lilv_ui_get_binary_uri(const LilvUI* ui);
+
+/**
+  Custom calls
+*/
+LILV_API LilvNode*
+lilv_plugin_get_modgui_resources_directory(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_stylesheet(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_icon_template(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_settings_template(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_template_data(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_screenshot(const LilvPlugin* plugin);
+
+LILV_API LilvNode*
+lilv_plugin_get_modgui_thumbnail(const LilvPlugin* plugin);
+
+LILV_API const LilvNodes*
+lilv_ui_get_supported_features(const LilvUI* ui);
+
+LILV_API const LilvNodes*
+lilv_ui_get_required_features(const LilvUI* ui);
+
+LILV_API const LilvNodes*
+lilv_ui_get_optional_features(const LilvUI* ui);
+
+LILV_API const LilvNodes*
+lilv_ui_get_extension_data(const LilvUI* ui);
 
 /**
    @}
