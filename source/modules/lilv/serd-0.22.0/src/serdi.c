@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2013 David Robillard <http://drobilla.net>
+  Copyright 2011-2015 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -21,6 +21,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define SERDI_ERROR(msg)       fprintf(stderr, "serdi: " msg);
+#define SERDI_ERRORF(fmt, ...) fprintf(stderr, "serdi: " fmt, __VA_ARGS__);
+
 typedef struct {
 	SerdEnv*    env;
 	SerdWriter* writer;
@@ -41,6 +44,7 @@ static int
 print_usage(const char* name, bool error)
 {
 	FILE* const os = error ? stderr : stdout;
+	fprintf(os, "%s", error ? "\n" : "");
 	fprintf(os, "Usage: %s [OPTION]... INPUT [BASE_URI]\n", name);
 	fprintf(os, "Read and write RDF syntax.\n");
 	fprintf(os, "Use - for INPUT to read from standard input.\n\n");
@@ -68,17 +72,17 @@ set_syntax(SerdSyntax* syntax, const char* name)
 	} else if (!strcmp(name, "ntriples")) {
 		*syntax = SERD_NTRIPLES;
 	} else {
-		fprintf(stderr, "Unknown input format `%s'\n", name);
+		SERDI_ERRORF("unknown syntax `%s'\n", name);
 		return false;
 	}
 	return true;
 }
 
 static int
-bad_arg(const char* name, char opt)
+missing_arg(const char* name, char opt)
 {
-	fprintf(stderr, "%s: Bad or missing value for -%c\n", name, opt);
-	return 1;
+	SERDI_ERRORF("option requires an argument -- '%c'\n", opt);
+	return print_usage(name, true);
 }
 
 static SerdStatus
@@ -133,36 +137,40 @@ main(int argc, char** argv)
 			++a;
 			break;
 		} else if (argv[a][1] == 'i') {
-			if (++a == argc || !set_syntax(&input_syntax, argv[a])) {
-				return bad_arg(argv[0], 'i');
+			if (++a == argc) {
+				return missing_arg(argv[0], 'i');
+			} else if (!set_syntax(&input_syntax, argv[a])) {
+				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'o') {
-			if (++a == argc || !set_syntax(&output_syntax, argv[a])) {
-				return bad_arg(argv[0], 'o');
+			if (++a == argc) {
+				return missing_arg(argv[0], 'o');
+			} else if (!set_syntax(&output_syntax, argv[a])) {
+				return print_usage(argv[0], true);
 			}
 		} else if (argv[a][1] == 'p') {
 			if (++a == argc) {
-				return bad_arg(argv[0], 'p');
+				return missing_arg(argv[0], 'p');
 			}
 			add_prefix = (const uint8_t*)argv[a];
 		} else if (argv[a][1] == 'c') {
 			if (++a == argc) {
-				return bad_arg(argv[0], 'c');
+				return missing_arg(argv[0], 'c');
 			}
 			chop_prefix = (const uint8_t*)argv[a];
 		} else if (argv[a][1] == 'r') {
 			if (++a == argc) {
-				return bad_arg(argv[0], 'r');
+				return missing_arg(argv[0], 'r');
 			}
 			root_uri = (const uint8_t*)argv[a];
 		} else {
-			fprintf(stderr, "%s: Unknown option `%s'\n", argv[0], argv[a]);
+			SERDI_ERRORF("invalid option -- '%s'\n", argv[a] + 1);
 			return print_usage(argv[0], true);
 		}
 	}
 
 	if (a == argc) {
-		fprintf(stderr, "%s: Missing input\n", argv[0]);
+		SERDI_ERROR("missing input\n");
 		return 1;
 	}
 

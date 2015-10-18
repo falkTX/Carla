@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2014 David Robillard <http://drobilla.net>
+  Copyright 2011-2015 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -635,7 +635,7 @@ read_PN_CHARS(SerdReader* reader, Ref dest)
 	if ((c & 0x80)) {  // Multi-byte character
 		return !read_utf8_character(reader, dest, eat_byte_safe(reader, c));
 	}
-	
+
 	if (is_alpha(c) || is_digit(c) || c == '_' || c == '-') {
 		push_byte(reader, dest, eat_byte_safe(reader, c));
 		return true;
@@ -656,7 +656,7 @@ read_PERCENT(SerdReader* reader, Ref dest)
 	}
 	return false;
 }
-	
+
 static SerdStatus
 read_PLX(SerdReader* reader, Ref dest)
 {
@@ -884,7 +884,7 @@ read_number(SerdReader* reader, Ref* dest, Ref* datatype, bool* ate_dot)
 				*ate_dot = true;  // Force caller to deal with stupid grammar
 				return true;  // Next byte is not a number character, done
 			}
-			
+
 			push_byte(reader, ref, '.');
 			read_0_9(reader, ref, false);
 		}
@@ -1035,11 +1035,12 @@ read_BLANK_NODE_LABEL(SerdReader* reader, bool* ate_dot)
 	}
 
 	if (reader->syntax == SERD_TURTLE) {
-		if (is_digit(n->buf[1])) {
-			if (n->buf[0] == 'b') {
-				((char*)n->buf)[0] = 'B';  // Prevent clash
+		if (is_digit(n->buf[reader->bprefix_len + 1])) {
+			if ((n->buf[reader->bprefix_len]) == 'b') {
+				((char*)n->buf)[reader->bprefix_len] = 'B';  // Prevent clash
 				reader->seen_genid = true;
-			} else if (reader->seen_genid && n->buf[0] == 'B') {
+			} else if (reader->seen_genid &&
+			           n->buf[reader->bprefix_len] == 'B') {
 				r_err(reader, SERD_ERR_ID_CLASH,
 				      "found both `b' and `B' blank IDs, prefix required\n");
 				return pop_node(reader, ref);
@@ -1088,56 +1089,48 @@ read_blankName(SerdReader* reader)
 }
 
 static bool
-read_blank(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest, bool* ate_dot)
+read_anon(SerdReader* reader, ReadContext ctx, bool subject, Ref* dest)
 {
 	const SerdStatementFlags old_flags = *ctx.flags;
 	bool empty;
-	switch (peek_byte(reader)) {
-	case '_':
-		return (*dest = read_BLANK_NODE_LABEL(reader, ate_dot));
-	case '[':
-		eat_byte_safe(reader, '[');
-		if ((empty = peek_delim(reader, ']'))) {
-			*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
-		} else {
-			*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
-			if (peek_delim(reader, '=')) {
-				if (!(*dest = read_blankName(reader)) ||
-				    !eat_delim(reader, ';')) {
-					return false;
-				}
+	eat_byte_safe(reader, '[');
+	if ((empty = peek_delim(reader, ']'))) {
+		*ctx.flags |= (subject) ? SERD_EMPTY_S : SERD_EMPTY_O;
+	} else {
+		*ctx.flags |= (subject) ? SERD_ANON_S_BEGIN : SERD_ANON_O_BEGIN;
+		if (peek_delim(reader, '=')) {
+			if (!(*dest = read_blankName(reader)) ||
+			    !eat_delim(reader, ';')) {
+				return false;
 			}
 		}
-
-		if (!*dest) {
-			*dest = blank_id(reader);
-		}
-		if (ctx.subject) {
-			TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
-		}
-
-		ctx.subject = *dest;
-		if (!empty) {
-			*ctx.flags &= ~(SERD_LIST_CONT);
-			if (!subject) {
-				*ctx.flags |= SERD_ANON_CONT;
-			}
-			bool ate_dot_in_list = false;
-			read_predicateObjectList(reader, ctx, &ate_dot_in_list);
-			if (ate_dot_in_list) {
-				return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
-			}
-			read_ws_star(reader);
-			if (reader->end_sink) {
-				reader->end_sink(reader->handle, deref(reader, *dest));
-			}
-			*ctx.flags = old_flags;
-		}
-		return (eat_byte_check(reader, ']') == ']');
-	case '(':
-		return read_collection(reader, ctx, dest);
-	default: return false;  // never reached
 	}
+
+	if (!*dest) {
+		*dest = blank_id(reader);
+	}
+	if (ctx.subject) {
+		TRY_RET(emit_statement(reader, ctx, *dest, 0, 0));
+	}
+
+	ctx.subject = *dest;
+	if (!empty) {
+		*ctx.flags &= ~(SERD_LIST_CONT);
+		if (!subject) {
+			*ctx.flags |= SERD_ANON_CONT;
+		}
+		bool ate_dot_in_list = false;
+		read_predicateObjectList(reader, ctx, &ate_dot_in_list);
+		if (ate_dot_in_list) {
+			return r_err(reader, SERD_ERR_BAD_SYNTAX, "`.' inside blank\n");
+		}
+		read_ws_star(reader);
+		if (reader->end_sink) {
+			reader->end_sink(reader->handle, deref(reader, *dest));
+		}
+		*ctx.flags = old_flags;
+	}
+	return (eat_byte_check(reader, ']') == ']');
 }
 
 // Recurses, calling statement_sink for every statement encountered.
@@ -1164,11 +1157,16 @@ read_object(SerdReader* reader, ReadContext ctx, bool* ate_dot)
 	case '\0':
 	case ')':
 		return false;
-	case '[': case '(':
+	case '[':
 		emit = false;
-		// fall through
+		TRY_THROW(ret = read_anon(reader, ctx, false, &o));
+		break;
+	case '(':
+		emit = false;
+		TRY_THROW(ret = read_collection(reader, ctx, &o));
+		break;
 	case '_':
-		TRY_THROW(ret = read_blank(reader, ctx, false, &o, ate_dot));
+		TRY_THROW(ret = (o = read_BLANK_NODE_LABEL(reader, ate_dot)));
 		break;
 	case '<': case ':':
 		TRY_THROW(ret = read_iri(reader, &o, ate_dot));
@@ -1333,11 +1331,17 @@ read_subject(SerdReader* reader, ReadContext ctx, bool* nested)
 	Ref  subject = 0;
 	bool ate_dot = false;
 	switch (peek_byte(reader)) {
-	case '[': case '(':
+	case '[':
 		*nested = true;
-		// nobreak
+		read_anon(reader, ctx, true, &subject);
+		break;
+	case '(':
+		*nested = true;
+		read_collection(reader, ctx, &subject);
+		break;
 	case '_':
-		read_blank(reader, ctx, true, &subject, &ate_dot);
+		*nested = false;
+		subject = read_BLANK_NODE_LABEL(reader, &ate_dot);
 		break;
 	default:
 		read_iri(reader, &subject, &ate_dot);

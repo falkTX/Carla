@@ -1,5 +1,5 @@
 /*
-  Copyright 2011-2014 David Robillard <http://drobilla.net>
+  Copyright 2011-2015 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -177,7 +177,7 @@ parse_utf8_char(SerdWriter* writer, const uint8_t* utf8, size_t* size)
 
 	size_t  i  = 0;
 	uint8_t in = utf8[i++];
-	
+
 #define READ_BYTE() \
 	in = utf8[i++] & 0x3F; \
 	c  = (c << 6) | in;
@@ -237,7 +237,7 @@ uri_must_escape(const uint8_t c)
 		return !in_range(c, 0x20, 0x7E);
 	}
 }
-	
+
 static size_t
 write_uri(SerdWriter* writer, const uint8_t* utf8, size_t n_bytes)
 {

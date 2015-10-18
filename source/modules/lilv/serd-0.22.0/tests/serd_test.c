@@ -25,9 +25,11 @@
 
 #define USTR(s) ((const uint8_t*)(s))
 
-#ifdef _WIN32
+#ifndef INFINITY
 #    define INFINITY (DBL_MAX + DBL_MAX)
-#    define NAN      (INFINITY - INFINITY)
+#endif
+#ifndef NAN
+#    define NAN (INFINITY - INFINITY)
 #endif
 
 static int
@@ -100,11 +102,11 @@ main(void)
 	}
 
 	const double expt_test_nums[] = {
-		2.0E18, -5e19, +8e20, 2e+34, -5e-5, 8e0, 9e-0, 2e+0
+		2.0E18, -5e19, +8e20, 2e+24, -5e-5, 8e0, 9e-0, 2e+0
 	};
 
 	const char* expt_test_strs[] = {
-		"02e18", "-5e019", "+8e20", "2E+34", "-5E-5", "8E0", "9e-0", " 2e+0"
+		"02e18", "-5e019", "+8e20", "2E+24", "-5E-5", "8E0", "9e-0", " 2e+0"
 	};
 
 	for (unsigned i = 0; i < sizeof(expt_test_nums) / sizeof(double); ++i) {
@@ -399,6 +401,11 @@ main(void)
 
 	// Test serd_node_new_uri_from_string
 
+	SerdNode nonsense = serd_node_new_uri_from_string(NULL, NULL, NULL);
+	if (nonsense.type != SERD_NOTHING) {
+		return failure("Successfully created NULL URI\n");
+	}
+
 	SerdURI base_uri;
 	SerdNode base = serd_node_new_uri_from_string(USTR("http://example.org/"),
 	                                              NULL, &base_uri);
@@ -419,6 +426,10 @@ main(void)
 	SerdNode c   = serd_node_from_string(SERD_CURIE, USTR("eg.2:b"));
 	SerdEnv* env = serd_env_new(NULL);
 	serd_env_set_prefix_from_strings(env, USTR("eg.2"), USTR("http://example.org/"));
+
+	if (!serd_env_set_base_uri(env, NULL)) {
+		return failure("Successfully set NULL base URI\n");
+	}
 
 	if (!serd_env_set_base_uri(env, &node)) {
 		return failure("Set base URI to %s\n", node.buf);
@@ -614,7 +625,10 @@ main(void)
 		return failure("Apparently read an http URI\n");
 	}
 	if (!serd_reader_read_file(reader, USTR("file:///better/not/exist"))) {
-		return failure("Apprently read a non-existent file\n");
+		return failure("Apparently read a non-existent file\n");
+	}
+	if (!serd_reader_read_file(reader, USTR("file://"))) {
+		return failure("Apparently read a file with no path\n");
 	}
 	SerdStatus st = serd_reader_read_file(reader, USTR(path));
 	if (st) {

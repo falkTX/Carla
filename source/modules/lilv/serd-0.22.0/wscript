@@ -11,7 +11,7 @@ import waflib.extras.autowaf as autowaf
 # major increment <=> incompatible changes
 # minor increment <=> compatible changes (additions)
 # micro increment <=> no interface changes
-SERD_VERSION       = '0.21.1'
+SERD_VERSION       = '0.22.0'
 SERD_MAJOR_VERSION = '0'
 
 # Mandatory waf variables
@@ -27,6 +27,8 @@ def options(opt):
                    help='Do not build command line utilities')
     opt.add_option('--test', action='store_true', dest='build_tests',
                    help='Build unit tests')
+    opt.add_option('--no-coverage', action='store_true', dest='no_coverage',
+                   help='Do not use gcov for code coverage')
     opt.add_option('--stack-check', action='store_true', dest='stack_check',
                    help='Include runtime stack sanity checks')
     opt.add_option('--static', action='store_true', dest='static',
@@ -62,10 +64,8 @@ def configure(conf):
     if Options.options.largefile:
         conf.env.append_unique('DEFINES', ['_FILE_OFFSET_BITS=64'])
 
-    if conf.env.BUILD_TESTS:
-        conf.check(lib         = 'gcov',
-                   define_name = 'HAVE_GCOV',
-                   mandatory   = False)
+    if conf.env.BUILD_TESTS and not Options.options.no_coverage:
+        conf.check_cc(lib='gcov', define_name='HAVE_GCOV', mandatory=False)
 
     if not Options.options.no_posix:
         conf.check(function_name = 'posix_memalign',
@@ -208,6 +208,7 @@ def build(bld):
     # Man page
     bld.install_files('${MANDIR}/man1', 'doc/serdi.1')
 
+    bld.add_post_fun(autowaf.run_ldconfig)
     if bld.env.DOCS:
         bld.add_post_fun(fix_docs)
 
@@ -424,7 +425,7 @@ def test(ctx):
     autowaf.run_tests(ctx, APPNAME, ['serd_test'], dirs=['.'])
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q -o turtle %s/tests/good/base.ttl "base.ttl" > tests/good/base.ttl.out' % srcdir],
+            'serdi_static -q -o turtle "%s/tests/good/base.ttl" "base.ttl" > tests/good/base.ttl.out' % srcdir],
                       0, name='base')
 
     if not file_equals('%s/tests/good/base.ttl' % srcdir, 'tests/good/base.ttl.out'):
@@ -432,7 +433,7 @@ def test(ctx):
 
     nul = os.devnull
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static file://%s/tests/good/manifest.ttl > %s' % (srcdir, nul),
+            'serdi_static "file://%s/tests/good/manifest.ttl" > %s' % (srcdir, nul),
 #            'serdi_static %s/tests/good/UTF-8.ttl > %s' % (srcdir, nul),
             'serdi_static -v > %s' % nul,
             'serdi_static -h > %s' % nul,
@@ -441,7 +442,7 @@ def test(ctx):
                       0, name='serdi-cmd-good')
 
     autowaf.run_tests(ctx, APPNAME, [
-            'serdi_static -q file://%s/tests/bad-id-clash.ttl > %s' % (srcdir, nul),
+            'serdi_static -q "file://%s/tests/bad-id-clash.ttl" > %s' % (srcdir, nul),
             'serdi_static > %s' % nul,
             'serdi_static ftp://example.org/unsupported.ttl > %s' % nul,
             'serdi_static -i > %s' % nul,
@@ -465,9 +466,10 @@ def test(ctx):
         commands = []
 
         for test in tests:
-            path = os.path.join('tests', tdir, test)
-            commands += [ 'serdi_static -f "%s" "%s" > %s.out' % (
-                    os.path.join(srcdir, path), test_base(test), path) ]
+            for lax in ['', '-l']:
+                path = os.path.join('tests', tdir, test)
+                commands += [ 'serdi_static %s -f "%s" "%s" > %s.out' % (
+                    lax, os.path.join(srcdir, path), test_base(test), path) ]
 
         autowaf.run_tests(ctx, APPNAME, commands, 0, name=tdir)
 
@@ -486,8 +488,9 @@ def test(ctx):
     # Bad tests
     commands = []
     for test in bad_tests:
-        commands += [ 'serdi_static -q "%s" "%s" > %s.out' % (
-                os.path.join(srcdir, test), test_base(test), test) ]
+        for lax in ['', '-l']:
+            commands += [ 'serdi_static %s -q "%s" "%s" > %s.out' % (
+                lax, os.path.join(srcdir, test), test_base(test), test) ]
 
     autowaf.run_tests(ctx, APPNAME, commands, 1, name='bad')
 
