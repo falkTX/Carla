@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -e
+
+ORIG_ZYN_DIR="/home/falktx/Personal/FOSS/Git-other/zynaddsubfx"
+CARLA_ZYN_DIR="/home/falktx/Personal/FOSS/Git-mine/Carla/source/native-plugins/zynaddsubfx"
+
+rm -f $CARLA_ZYN_DIR/*.cpp
+rm -f $CARLA_ZYN_DIR/*.h
+rm -f $CARLA_ZYN_DIR/Containers/*
+rm -f $CARLA_ZYN_DIR/DSP/*
+rm -f $CARLA_ZYN_DIR/Effects/*
+rm -f $CARLA_ZYN_DIR/Misc/*
+rm -f $CARLA_ZYN_DIR/Nio/*
+rm -f $CARLA_ZYN_DIR/Params/*
+rm -f $CARLA_ZYN_DIR/Synth/*
+rm -fr $CARLA_ZYN_DIR/UI/*
+rm -fr $CARLA_ZYN_DIR/rtosc/*
+rm -f $CARLA_ZYN_DIR/tlsf/*
+
+cp $ORIG_ZYN_DIR/src/*.cpp $CARLA_ZYN_DIR/
+cp $ORIG_ZYN_DIR/src/*.h $CARLA_ZYN_DIR/
+cp $ORIG_ZYN_DIR/src/Containers/* $CARLA_ZYN_DIR/Containers/
+cp $ORIG_ZYN_DIR/src/DSP/* $CARLA_ZYN_DIR/DSP/
+cp $ORIG_ZYN_DIR/src/Effects/* $CARLA_ZYN_DIR/Effects/
+cp $ORIG_ZYN_DIR/src/Misc/* $CARLA_ZYN_DIR/Misc/
+cp $ORIG_ZYN_DIR/src/Nio/* $CARLA_ZYN_DIR/Nio/
+cp $ORIG_ZYN_DIR/src/Params/* $CARLA_ZYN_DIR/Params/
+cp $ORIG_ZYN_DIR/src/Synth/* $CARLA_ZYN_DIR/Synth/
+cp -r $ORIG_ZYN_DIR/src/UI/* $CARLA_ZYN_DIR/UI/
+cp $ORIG_ZYN_DIR/rtosc/include/rtosc/* $CARLA_ZYN_DIR/rtosc/
+cp -r $ORIG_ZYN_DIR/rtosc/src/* $CARLA_ZYN_DIR/rtosc/
+cp $ORIG_ZYN_DIR/tlsf/*.h $CARLA_ZYN_DIR/tlsf/
+cp $ORIG_ZYN_DIR/tlsf/*.c $CARLA_ZYN_DIR/tlsf/
+
+rm $CARLA_ZYN_DIR/*/CMakeLists.txt
+rm $CARLA_ZYN_DIR/UI/zynaddsubfx.xpm
+
+sed -i "s|../../include/rtosc/|../|" $CARLA_ZYN_DIR/rtosc/cpp/*.cpp
+sed -i "s|../../tlsf/tlsf.h|tlsf/tlsf.h|" $CARLA_ZYN_DIR/Misc/Allocator.cpp
+sed -i "s|../src/globals.h|globals.h|" $CARLA_ZYN_DIR/Misc/Config.cpp
