@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "Fl_Osc_Numeric_Input.H"
 
 Fl_Osc_Numeric_Input::Fl_Osc_Numeric_Input(int X, int Y, int W, int H, const char *label)

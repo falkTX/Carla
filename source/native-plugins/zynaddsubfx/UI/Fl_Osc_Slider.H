@@ -5,7 +5,6 @@
 
 class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
 {
-
     public:
         Fl_Osc_Slider(int X, int Y, int W, int H, const char *label = NULL);
        // string name,
@@ -22,10 +21,12 @@ class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
         void callback(Fl_Callback *cb, void *p = NULL);
         
         //MIDI Learn
-        int handle(int);
+        int handle(int ev, int X, int Y, int W, int H);
+        int handle(int ev);
 
         void cb(void);
         static void _cb(Fl_Widget *w, void *);
+        float reset_value;
     private:
         char osc_type;
         std::pair<Fl_Callback*, void*> cb_data;

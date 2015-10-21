@@ -62,11 +62,11 @@ static const Ports voicePorts = {
     rParamZyn(Unison_vibratto, "Subvoice vibratto"),
     rParamZyn(Unison_vibratto_speed, "Subvoice vibratto speed"),
     rOption(Unison_invert_phase, rOptions(none, random, 50%, 33%, 25%), "Subvoice Phases"),
-    rOption(Type, rOptions(Sound,Noise), "Type of Sound"),
+    rOption(Type, rOptions(Sound,White,Pink), "Type of Sound"),
     rParamZyn(PDelay, "Voice Startup Delay"),
     rToggle(Presonance, "Resonance Enable"),
-    rParamZyn(Pextoscil, "External Oscilator Selection"),
-    rParamZyn(PextFMoscil, "External FM Oscilator Selection"),
+    rParamI(Pextoscil, rMap(min, -1), rMap(max, 16), "External Oscilator Selection"),
+    rParamI(PextFMoscil, rMap(min, -1), rMap(max, 16), "External FM Oscilator Selection"),
     rParamZyn(Poscilphase, "Oscillator Phase"),
     rParamZyn(PFMoscilphase, "FM Oscillator Phase"),
     rToggle(Pfilterbypass, "Filter Bypass"),
@@ -108,14 +108,19 @@ static const Ports voicePorts = {
 
     
     //weird stuff for PCoarseDetune
-    {"detunevalue:", NULL, NULL, [](const char *, RtData &d)
+    {"detunevalue:",  rMap(unit,cents) rDoc("Get detune in cents"), NULL,
+        [](const char *, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
+            unsigned detuneType =
+            obj->PDetuneType == 0 ? *(obj->GlobalPDetuneType)
+            : obj->PDetuneType;
             //TODO check if this is accurate or if PCoarseDetune is utilized
             //TODO do the same for the other engines
-            d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
+            d.reply(d.loc, "f", getdetune(detuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+        [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -128,7 +133,8 @@ static const Ports voicePorts = {
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+        [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -143,14 +149,18 @@ static const Ports voicePorts = {
         }},
     
     //weird stuff for PCoarseDetune
-    {"FMdetunevalue:", NULL, NULL, [](const char *, RtData &d)
+    {"FMdetunevalue:", rMap(unit,cents) rDoc("Get modulator detune"), NULL, [](const char *, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
+            unsigned detuneType =
+            obj->PFMDetuneType == 0 ? *(obj->GlobalPDetuneType)
+            : obj->PFMDetuneType;
             //TODO check if this is accurate or if PCoarseDetune is utilized
             //TODO do the same for the other engines
-            d.reply(d.loc, "f", getdetune(obj->PFMDetuneType, 0, obj->PFMDetune));
+            d.reply(d.loc, "f", getdetune(detuneType, 0, obj->PFMDetune));
         }},
-    {"FMoctave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"FMoctave::c:i", rProp(parameter) rDoc("Octave note offset for modulator"), NULL,
+        [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -163,7 +173,8 @@ static const Ports voicePorts = {
                 obj->PFMCoarseDetune = k*1024 + obj->PFMCoarseDetune%1024;
             }
         }},
-    {"FMcoarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"FMcoarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune for modulator"),
+        NULL, [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -178,7 +189,8 @@ static const Ports voicePorts = {
         }},
 
     //Reader
-    {"unisonFrequencySpreadCents:", NULL, NULL, [](const char *, RtData &d)
+    {"unisonFrequencySpreadCents:", rMap(unit,cents) rDoc("Unison Frequency Spread"),
+        NULL, [](const char *, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             d.reply(d.loc, "f", obj->getUnisonFrequencySpreadCents());
@@ -224,12 +236,14 @@ static const Ports globalPorts = {
     rParamZyn(Hrandgrouping, "How randomness is applied to multiple voices using the same oscil"),
 
     //weird stuff for PCoarseDetune
-    {"detunevalue:", NULL, NULL, [](const char *, RtData &d)
+    {"detunevalue:", rMap(unit,cents) rDoc("Get detune in cents"), NULL,
+        [](const char *, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+        [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -242,7 +256,8 @@ static const Ports globalPorts = {
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+        [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -279,8 +294,10 @@ ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_)
     fft = fft_;
 
 
-    for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
+    for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
+        VoicePar[nvoice].GlobalPDetuneType = &GlobalPar.PDetuneType;
         EnableVoice(synth, nvoice);
+    }
 
     defaults();
 }
@@ -523,40 +540,6 @@ ADnoteParameters::~ADnoteParameters()
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
         KillVoice(nvoice);
 }
-
-int ADnoteParameters::get_unison_size_index(int nvoice) const
-{
-    int index = 0;
-    if(nvoice >= NUM_VOICES)
-        return 0;
-    int unison = VoicePar[nvoice].Unison_size;
-
-    while(1) {
-        if(ADnote_unison_sizes[index] >= unison)
-            return index;
-
-        if(ADnote_unison_sizes[index] == 0)
-            return index - 1;
-
-        index++;
-    }
-    return 0;
-}
-
-void ADnoteParameters::set_unison_size_index(int nvoice, int index) {
-    int unison = 1;
-    for(int i = 0; i <= index; ++i) {
-        unison = ADnote_unison_sizes[i];
-        if(unison == 0) {
-            unison = ADnote_unison_sizes[i - 1];
-            break;
-        }
-    }
-
-    VoicePar[nvoice].Unison_size = unison;
-}
-
-
 
 void ADnoteParameters::add2XMLsection(XMLwrapper *xml, int n)
 {

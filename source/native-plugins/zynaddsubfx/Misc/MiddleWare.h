@@ -4,15 +4,14 @@
 #include <string>
 
 struct SYNTH_T;
-class Config;
-class Master;
+class  Master;
 class PresetsStore;
 
 //Link between realtime and non-realtime layers
 class MiddleWare
 {
     public:
-        MiddleWare(SYNTH_T synth, Config *config,
+        MiddleWare(SYNTH_T synth, class Config *config,
                    int preferred_port = -1);
         ~MiddleWare(void);
         void updateResources(Master *m);
@@ -34,6 +33,8 @@ class MiddleWare
         void transmitMsg(const char *, const char *args, ...);
         //Handle a rtosc Message uToB
         void transmitMsg(const char *, const char *args, va_list va);
+        //Indicate that a bank will be loaded
+        void pendingSetBank(int bank);
         //Indicate that a program will be loaded on a known part
         void pendingSetProgram(int part, int program);
         //Get/Set the active bToU url

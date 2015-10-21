@@ -21,7 +21,7 @@ void BankList::init(std::string path)
 
 void BankList::OSC_raw(const char *msg)
 {
-    if(!strcmp(msg, "/bank-list")) {
+    if(!strcmp(msg, "/bank-list") && !strcmp(rtosc_argument_string(msg),"iss")) {
 
         const int   pos  = rtosc_argument(msg, 0).i;
         const char *path = rtosc_argument(msg, 1).s;
@@ -33,7 +33,7 @@ void BankList::OSC_raw(const char *msg)
         this->add(path);
         osc->write("/loadbank");
     }
-    if(!strcmp(msg, "/loadbank")) {
+    if(!strcmp(msg, "/loadbank")&& !strcmp(rtosc_argument_string(msg),"i")) {
         value(rtosc_argument(msg, 0).i);
     }
 }

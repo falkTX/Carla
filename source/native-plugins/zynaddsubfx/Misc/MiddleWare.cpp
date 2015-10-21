@@ -236,6 +236,11 @@ void rescanForBanks(Bank &bank, std::function<void(const char*)> cb)
 
 void loadBank(Bank &bank, int pos, std::function<void(const char*)> cb)
 {
+    char response[2048];
+    if(!rtosc_message(response, 2048, "/loadbank", "i", pos))
+        errx(1, "Failure to handle bank update properly...");
+    if(cb)
+        cb(response);
     if(bank.bankpos != pos) {
         bank.bankpos = pos;
         bank.loadbank(bank.banks[pos].dir);
@@ -433,13 +438,13 @@ namespace Nio
     using std::get;
     using rtosc::rtMsg;
     rtosc::Ports ports = {
-        {"sink-list:", 0, 0, [](const char *msg, rtosc::RtData &d) {
+        {"sink-list:", 0, 0, [](const char *, rtosc::RtData &d) {
                 auto list = Nio::getSinks();
                 char *ret = rtosc_splat(d.loc, list);
                 d.reply(ret);
                 delete [] ret;
             }},
-        {"source-list:", 0, 0, [](const char *msg, rtosc::RtData &d) {
+        {"source-list:", 0, 0, [](const char *, rtosc::RtData &d) {
                 auto list = Nio::getSources();
                 char *ret = rtosc_splat(d.loc, list);
                 d.reply(ret);
@@ -489,7 +494,7 @@ public:
     void doReadOnlyOp(std::function<void()> read_only_fn);
 
 
-    void saveBankSlot(int npart, int nslot, Master *master, Fl_Osc_Interface *osc)
+    void saveBankSlot(int npart, int nslot, Master *master)
     {
         int err = 0;
         doReadOnlyOp([master,nslot,npart,&err](){
@@ -502,7 +507,7 @@ public:
         }
     }
 
-    void renameBankSlot(int slot, string name, Master *master, Fl_Osc_Interface *osc)
+    void renameBankSlot(int slot, string name, Master *master)
     {
         int err = master->bank.setname(slot, name, -1);
         if(err) {
@@ -513,7 +518,7 @@ public:
         }
     }
 
-    void swapBankSlot(int slota, int slotb, Master *master, Fl_Osc_Interface *osc)
+    void swapBankSlot(int slota, int slotb, Master *master)
     {
         int err = master->bank.swapslot(slota, slotb);
         if(err) {
@@ -524,7 +529,7 @@ public:
         }
     }
 
-    void clearBankSlot(int slot, Master *master, Fl_Osc_Interface *osc)
+    void clearBankSlot(int slot, Master *master)
     {
         int err = master->bank.clearslot(slot);
         if(err) {
@@ -557,7 +562,14 @@ public:
                 /*printf("results: '%s' '%d'\n",fname.c_str(), res);*/});
     }
 
-    void loadPart(int npart, const char *filename, Master *master, Fl_Osc_Interface *osc)
+    void loadPendingBank(int par, Bank &bank)
+    {
+        if(((unsigned int)par < bank.banks.size())
+           && (bank.banks[par].dir != bank.bankfiletitle))
+            bank.loadbank(bank.banks[par].dir);
+    }
+
+    void loadPart(int npart, const char *filename, Master *master)
     {
         actual_load[npart]++;
 
@@ -565,9 +577,12 @@ public:
             return;
         assert(actual_load[npart] <= pending_load[npart]);
 
+        //load part in async fashion when possible
+#if HAVE_ASYNC
         auto alloc = std::async(std::launch::async,
                 [master,filename,this,npart](){
                 Part *p = new Part(*master->memory, synth,
+                                   master->time,
                                    config->cfg.GzipCompression,
                                    config->cfg.Interpolation,
                                    &master->microtonal, master->fft);
@@ -589,6 +604,20 @@ public:
         }
 
         Part *p = alloc.get();
+#else
+        Part *p = new Part(*master->memory, synth, master->time,
+                config->cfg.GzipCompression,
+                config->cfg.Interpolation,
+                &master->microtonal, master->fft);
+        if(p->loadXMLinstrument(filename))
+            fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
+
+        auto isLateLoad = [this,npart]{
+            return actual_load[npart] != pending_load[npart];
+        };
+
+        p->applyparameters(isLateLoad);
+#endif
 
         obj_store.extractPart(p, npart);
         kits.extractPart(p, npart);
@@ -605,6 +634,7 @@ public:
         if(npart == -1)
             return;
         Part *p = new Part(*master->memory, synth,
+                           master->time,
                            config->cfg.GzipCompression,
                            config->cfg.Interpolation,
                            &master->microtonal, master->fft);
@@ -628,7 +658,10 @@ public:
         m->uToB = uToB;
         m->bToU = bToU;
         if(filename) {
-            m->loadXML(filename);
+            if ( m->loadXML(filename) ) {
+                delete m;
+                return;
+            }
             m->applyparameters();
         }
 
@@ -658,7 +691,8 @@ public:
 
     void tick(void)
     {
-        while(lo_server_recv_noblock(server, 0));
+        if(server)
+            while(lo_server_recv_noblock(server, 0));
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
             bToUhandle(rtmsg);
@@ -815,13 +849,19 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
                                           LO_UDP, liblo_error_cb);
     else
         server = lo_server_new_with_proto(NULL, LO_UDP, liblo_error_cb);
-    lo_server_add_method(server, NULL, NULL, handler_function, mw);
-    fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
+
+    if(server) {
+        lo_server_add_method(server, NULL, NULL, handler_function, mw);
+        fprintf(stderr, "lo server running on %d\n", lo_server_get_port(server));
+    } else
+        fprintf(stderr, "lo server could not be started :-/\n");
+
 
 #ifndef PLUGINVERSION
     if(!isPlugin()) {
         clean_up_tmp_nams();
-        create_tmp_file((unsigned)lo_server_get_port(server));
+        if(server)
+            create_tmp_file((unsigned)lo_server_get_port(server));
     }
 #endif
 
@@ -869,7 +909,8 @@ MiddleWareImpl::~MiddleWareImpl(void)
 
     warnMemoryLeaks();
 
-    lo_server_free(server);
+    if(server)
+        lo_server_free(server);
 
     delete master;
     delete osc;
@@ -966,7 +1007,10 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg, bool dummy)
         uToB->write("/add-rt-memory", "bi", sizeof(void*), &mem, N);
     } else if(!strcmp(rtmsg, "/setprogram")
             && !strcmp(rtosc_argument_string(rtmsg),"cc")) {
-        loadPart(rtosc_argument(rtmsg,0).i, master->bank.ins[rtosc_argument(rtmsg,1).i].filename.c_str(), master, osc);
+        loadPart(rtosc_argument(rtmsg,0).i, master->bank.ins[rtosc_argument(rtmsg,1).i].filename.c_str(), master);
+    } else if(!strcmp(rtmsg, "/setbank")
+            && !strcmp(rtosc_argument_string(rtmsg), "c")) {
+        loadPendingBank(rtosc_argument(rtmsg,0).i, master->bank);
     } else if(!strcmp("/undo_pause", rtmsg)) {
         recording_undo = false;
     } else if(!strcmp("/undo_resume", rtmsg)) {
@@ -1148,7 +1192,7 @@ void MiddleWareImpl::handleMsg(const char *msg)
     if(last_url == "GUI")
         bank_cb = [this](const char *msg){if(osc)osc->tryLink(msg);};
     else
-        bank_cb = [this](const char *msg){this->bToUhandle(msg, 1);};
+        bank_cb = [this](const char *msg){if(osc)osc->tryLink(msg);this->bToUhandle(msg, 1);};
 
     if(!strcmp(msg, "/refresh_bank") && !strcmp(rtosc_argument_string(msg), "i")) {
         refreshBankView(master->bank, rtosc_argument(msg,0).i, bank_cb);
@@ -1184,22 +1228,22 @@ void MiddleWareImpl::handleMsg(const char *msg)
         loadMaster(NULL);
     } else if(!strcmp(msg, "/load_xiz") && !strcmp(rtosc_argument_string(msg), "is")) {
         pending_load[rtosc_argument(msg,0).i]++;
-        loadPart(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master, osc);
+        loadPart(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master);
     } else if(strstr(msg, "load-part") && !strcmp(rtosc_argument_string(msg), "is")) {
         pending_load[rtosc_argument(msg,0).i]++;
-        loadPart(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master, osc);
+        loadPart(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master);
     } else if(!strcmp(msg, "/setprogram")
             && !strcmp(rtosc_argument_string(msg),"c")) {
         pending_load[0]++;
-        loadPart(0, master->bank.ins[rtosc_argument(msg,0).i].filename.c_str(), master, osc);
+        loadPart(0, master->bank.ins[rtosc_argument(msg,0).i].filename.c_str(), master);
     } else if(strstr(msg, "save-bank-part") && !strcmp(rtosc_argument_string(msg), "ii")) {
-        saveBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).i, master, osc);
+        saveBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).i, master);
     } else if(strstr(msg, "bank-rename") && !strcmp(rtosc_argument_string(msg), "is")) {
-        renameBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master, osc);
+        renameBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).s, master);
     } else if(strstr(msg, "swap-bank-slots") && !strcmp(rtosc_argument_string(msg), "ii")) {
-        swapBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).i, master, osc);
+        swapBankSlot(rtosc_argument(msg,0).i, rtosc_argument(msg,1).i, master);
     } else if(strstr(msg, "clear-bank-slot") && !strcmp(rtosc_argument_string(msg), "i")) {
-        clearBankSlot(rtosc_argument(msg,0).i, master, osc);
+        clearBankSlot(rtosc_argument(msg,0).i, master);
     } else if(strstr(msg, "/config/")) {
         handleConfig(msg);
     } else if(strstr(msg, "/presets/")) {
@@ -1215,6 +1259,8 @@ void MiddleWareImpl::handleMsg(const char *msg)
         undo.seekHistory(-1);
     } else if(!strcmp(msg, "/redo")) {
         undo.seekHistory(+1);
+    } else if(!strcmp(msg, "/ui/title")) {
+        ;//drop the message into the abyss
     } else
         uToB->raw_write(msg);
 }
@@ -1316,6 +1362,10 @@ void MiddleWare::transmitMsg(const char *path, const char *args, va_list va)
         fprintf(stderr, "Error in transmitMsg(va)n");
 }
 
+void MiddleWare::pendingSetBank(int bank)
+{
+    impl->bToU->write("/setbank", "c", bank);
+}
 void MiddleWare::pendingSetProgram(int part, int program)
 {
     impl->pending_load[part]++;
@@ -1339,7 +1389,10 @@ const SYNTH_T &MiddleWare::getSynth(void) const
 
 const char* MiddleWare::getServerAddress(void) const
 {
-    return lo_server_get_url(impl->server);
+    if(impl->server)
+        return lo_server_get_url(impl->server);
+    else
+        return "NULL";
 }
 
 const PresetsStore& MiddleWare::getPresetsStore() const

@@ -345,14 +345,18 @@ class UI_Interface:public Fl_Osc_Interface
         {
 #ifndef NO_UI
             printf("\n\nDamage(\"%s\")\n", path);
+            std::set<Fl_Osc_Widget*> to_update;
             for(auto pair:map) {
                 if(strstr(pair.first.c_str(), path)) {
                     auto *tmp = dynamic_cast<Fl_Widget*>(pair.second);
                     if(!tmp || tmp->visible_r()) {
-                        pair.second->update();
+                        to_update.insert(pair.second);
                     }
                 }
             }
+
+            for(auto elm:to_update)
+                elm->update();
 #endif
         }
 

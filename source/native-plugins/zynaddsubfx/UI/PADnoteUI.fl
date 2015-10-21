@@ -84,8 +84,7 @@ initialized = true;} {selected
     } {
 
       Fl_Box dummy {
-        code0 {padnotewindow->osc = osc_i; padnotewindow->base = location;}
-        code1 {puts("dummy setup done...");}
+        code0 {padnotewindow->init(osc_i, location);}
       }
       Fl_Tabs {} {
         callback {if (o->value()!=harmonicstructuregroup) applybutton->hide();

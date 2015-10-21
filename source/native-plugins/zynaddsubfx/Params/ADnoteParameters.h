@@ -29,8 +29,6 @@
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PITCH_MOD
 };
-static const int ADnote_unison_sizes[] =
-{1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20, 25, 30, 40, 50, 0};
 
 /*****************************************************************/
 /*                    GLOBAL PARAMETERS                          */
@@ -284,6 +282,8 @@ struct ADnoteVoiceParam {
     unsigned char   PFMAmpEnvelopeEnabled;
     EnvelopeParams *FMAmpEnvelope;
 
+    unsigned char *GlobalPDetuneType;
+
     static const rtosc::Ports &ports;
 };
 
@@ -306,8 +306,6 @@ class ADnoteParameters:public PresetsArray
 
         float getBandwidthDetuneMultiplier() const;
         float getUnisonFrequencySpreadCents(int nvoice) const;
-        int get_unison_size_index(int nvoice) const;
-        void set_unison_size_index(int nvoice, int index);
         static const rtosc::Ports &ports;
         void defaults(int n); //n is the nvoice
         void add2XMLsection(XMLwrapper *xml, int n);

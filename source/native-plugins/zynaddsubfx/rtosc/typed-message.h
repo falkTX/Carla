@@ -1,10 +1,14 @@
-#pragma once
-#include "rtosc.h"
+#ifndef RTOSC_TYPED_MESSAGE_H
+#define RTOSC_TYPED_MESSAGE_H
+#include <rtosc/typestring.hh>
+#include <rtosc/rtosc.h>
 #include <type_traits>
 #include <stdexcept>
 
 namespace rtosc
 {
+struct match_exact{};
+struct match_partial{};
 
 template<class... Types> class rtMsg;
 
@@ -25,6 +29,17 @@ template<> class rtMsg<>
         const char *msg;
 };
 
+template<class T>
+struct advance_size
+{
+    static std::true_type size;
+};
+
+template<char ... C>
+struct advance_size<irqus::typestring<C...>>
+{
+    static std::false_type size;
+};
 
 template<class T>
 bool valid_char(char) { return false;}
@@ -44,13 +59,28 @@ bool validate(const char *arg)
     return rtosc_narguments(arg) == i;
 }
 
+template<class T>
+bool match_path(std::false_type, const char *arg)
+{
+    return rtosc_match_path(T::data(), arg);
+}
+
+template<class T>
+bool match_path(std::true_type, const char *)
+{
+    return true;
+}
+
 template<int i, class This, class... Rest>
 bool validate(const char *arg)
 {
-    if(!valid_char<This>(rtosc_type(arg,i)))
+    auto size = advance_size<This>::size;
+    if(size && !valid_char<This>(rtosc_type(arg,i)))
+        return false;
+    else if(!size && !match_path<This>(size, arg))
         return false;
     else
-        return validate<i+1,Rest...>(arg);
+        return validate<i+advance_size<This>::size,Rest...>(arg);
 }
 
 //Tuple Like Template Class Definition
@@ -58,6 +88,7 @@ template<class This, class... Rest>
 class rtMsg<This, Rest...>:public rtMsg<Rest...>
 {
     public:
+        typedef This This_;
         typedef rtMsg<Rest...> T;
         rtMsg(const char *arg = NULL, const char *spec=NULL)
             :T(arg, spec, false)
@@ -69,6 +100,7 @@ class rtMsg<This, Rest...>:public rtMsg<Rest...>
         rtMsg(const char *arg, const char *spec, bool)
             :T(arg, spec, false)
         {}
+
 };
 
 
@@ -114,4 +146,20 @@ get(rtMsg<Types...>& Tuple)
     typedef typename std::remove_reference<typename osc_element<Index, rtMsg<Types...>>::type>::type T;
     return rt_get_impl<T>(Tuple.msg, Index);
 }
+
+template<class... Types> inline
+    typename osc_element<0, rtMsg<Types...>>::type
+first(rtMsg<Types...>&Tuple)
+{
+    return get<0>(Tuple);
+}
+
+template<class... Types> inline
+    typename osc_element<1, rtMsg<Types...>>::type
+second(rtMsg<Types...>&Tuple)
+{
+    return get<1>(Tuple);
+}
+
 };
+#endif

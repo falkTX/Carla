@@ -105,13 +105,14 @@ const rtosc::Ports FilterParams::ports = {
             if(rtosc_narguments(msg))
                 rChangeCb;
         }},
-    {"centerfreq:", NULL, NULL,
-        [](const char *, RtData &d) {
+    {"centerfreq:", rDoc("Get the center frequency of the formant's graph"),
+        NULL, [](const char *, RtData &d) {
             FilterParams *obj = (FilterParams *) d.obj;
             d.reply(d.loc, "f", obj->getcenterfreq());
         }},
-    {"octavesfreq:", NULL, NULL,
-        [](const char *, RtData &d) {
+    {"octavesfreq:",
+        rDoc("Get the number of octave that the formant functions applies to"),
+        NULL, [](const char *, RtData &d) {
             FilterParams *obj = (FilterParams *) d.obj;
             d.reply(d.loc, "f", obj->getoctavesfreq());
         }},

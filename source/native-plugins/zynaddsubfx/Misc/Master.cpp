@@ -53,7 +53,9 @@ using namespace rtosc;
 
 static const Ports sysefxPort =
 {
-    {"part#" STRINGIFY(NUM_MIDI_PARTS) "::i", 0, 0, [](const char *m, RtData&d)
+    {"part#" STRINGIFY(NUM_MIDI_PARTS) "::i", rProp(parameter)
+        rDoc("gain on part to sysefx routing"), 0,
+        [](const char *m, RtData&d)
         {
             //ok, this is going to be an ugly workaround
             //we know that if we are here the message previously MUST have
@@ -80,7 +82,8 @@ static const Ports sysefxPort =
 
 static const Ports sysefsendto =
 {
-    {"to#" STRINGIFY(NUM_SYS_EFX) "::i", 0, 0, [](const char *m, RtData&d)
+    {"to#" STRINGIFY(NUM_SYS_EFX) "::i", 
+        rProp(parameter) rDoc("sysefx to sysefx routing gain"), 0, [](const char *m, RtData&d)
         {
             //same ugly workaround as before
             const char *index_1 = m;
@@ -103,6 +106,7 @@ static const Ports sysefsendto =
 };
 
 static const Ports master_ports = {
+    rString(last_xmz, XMZ_PATH_MAX, "File name for last name loaded if any."),
     rRecursp(part, 16, "Part"),//NUM_MIDI_PARTS
     rRecursp(sysefx, 4, "System Effect"),//NUM_SYS_EFX
     rRecursp(insefx, 8, "Insertion Effect"),//NUM_INS_EFX
@@ -112,10 +116,10 @@ static const Ports master_ports = {
     rArrayI(Pinsparts, NUM_INS_EFX, "Part to insert part onto"),
     {"echo", rDoc("Hidden port to echo messages"), 0, [](const char *m, RtData&d) {
        d.reply(m-1);}},
-    {"get-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
+    {"get-vu:", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
        d.reply("/vu-meter", "bb", sizeof(m->vu), &m->vu, sizeof(float)*NUM_MIDI_PARTS, m->vuoutpeakpart);}},
-    {"reset-vu", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
+    {"reset-vu:", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {
        Master *m = (Master*)d.obj;
        m->vuresetpeaks();}},
     {"load-part:ib", rProp(internal) rDoc("Load Part From Middleware"), 0, [](const char *msg, RtData &d) {
@@ -129,14 +133,14 @@ static const Ports master_ports = {
        p->initialize_rt();
        //printf("part %d is now pointer %p\n", i, p);
                                                                                                           }},
-    {"Pvolume::i", rDoc("Master Volume"), 0,
+    {"Pvolume::i", rProp(parameter) rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
             d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
         } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
             ((Master*)d.obj)->setPvolume(limit<char>(rtosc_argument(m,0).i,0,127));
             d.broadcast(d.loc, "i", ((Master*)d.obj)->Pvolume);}}},
-    {"volume::i", rDoc("Master Volume"), 0,
+    {"volume::i", rProp(parameter) rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
             d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
@@ -200,7 +204,8 @@ static const Ports master_ports = {
         [](const char *m, RtData &d){
             Master *M =  (Master*)d.obj;
             M->midi.clear_entry(rtosc_argument(m,0).s);}},
-    {"close-ui", rDoc("Request to close any connection named \"GUI\""), 0, [](const char *, RtData &d) {
+    {"close-ui:", rDoc("Request to close any connection named \"GUI\""), 0,
+        [](const char *, RtData &d) {
        d.reply("/close-ui", "");}},
     {"add-rt-memory:bi", rProp(internal) rDoc("Add Additional Memory To RT MemPool"), 0,
         [](const char *msg, RtData &d)
@@ -220,12 +225,13 @@ static const Ports master_ports = {
             d.reply("/oscilsize", "f", m.synth.oscilsize_f);
             d.reply("/oscilsize", "i", m.synth.oscilsize);
         }},
-    {"undo_pause",0,0,[](const char *, rtosc::RtData &d)
-        {d.reply("/undo_pause", "");}},
-    {"undo_resume",0,0,[](const char *, rtosc::RtData &d)
-        {d.reply("/undo_resume", "");}},
-    {"config/", 0, &Config::ports, [](const char *, rtosc::RtData &){}},
-    {"presets/", 0, &preset_ports, rBOIL_BEGIN
+    {"undo_pause:",rProp(internal) rDoc("pause undo event recording"),0,
+        [](const char *, rtosc::RtData &d) {d.reply("/undo_pause", "");}},
+    {"undo_resume:",rProp(internal) rDoc("resume undo event recording"),0,
+        [](const char *, rtosc::RtData &d) {d.reply("/undo_resume", "");}},
+    {"config/", rDoc("Top Level Application Configuration Parameters"), &Config::ports,
+        [](const char *, rtosc::RtData &){}},
+    {"presets/", rDoc("Parameter Presets"), &preset_ports, rBOIL_BEGIN
         SNIP
             preset_ports.dispatch(msg, data);
         rBOIL_END},
@@ -292,7 +298,7 @@ Master::Master(const SYNTH_T &synth_, Config* config)
     :HDDRecorder(synth_), ctl(synth_),
     microtonal(config->cfg.GzipCompression), bank(config),
     midi(Master::ports), frozenState(false), pendingMemory(false),
-    synth(synth_), gzip_compression(config->cfg.GzipCompression)
+    synth(synth_), time(synth), gzip_compression(config->cfg.GzipCompression)
 {
     bToU = NULL;
     uToB = NULL;
@@ -306,6 +312,7 @@ Master::Master(const SYNTH_T &synth_, Config* config)
     the_master = this;
 #endif
 
+    last_xmz[0] = 0;
     fft = new FFTwrapper(synth.oscilsize);
 
     shutup = 0;
@@ -315,7 +322,7 @@ Master::Master(const SYNTH_T &synth_, Config* config)
     }
 
     for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart)
-        part[npart] = new Part(*memory, synth, config->cfg.GzipCompression,
+        part[npart] = new Part(*memory, synth, time, config->cfg.GzipCompression,
                                config->cfg.Interpolation, &microtonal, fft);
 
     //Insertion Effects init
@@ -819,8 +826,8 @@ void Master::AudioOut(float *outl, float *outr)
         ShutUp();
     }
 
-    //update the LFO's time
-    LFOParams::time++;
+    //update the global frame timer
+    time++;
 }
 
 //TODO review the respective code from yoshimi for this
@@ -1054,7 +1061,6 @@ int Master::saveXML(const char *filename)
     delete (xml);
     return result;
 }
-
 
 
 int Master::loadXML(const char *filename)

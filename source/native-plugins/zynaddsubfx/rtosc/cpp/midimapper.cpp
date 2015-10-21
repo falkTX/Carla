@@ -1,5 +1,5 @@
 
-#include "ports.h"
+#include <rtosc/ports.h>
 #include <cstring>
 #include <algorithm>
 #include <map>
@@ -8,7 +8,7 @@
 #include <utility>
 
 #include <cassert>
-#include "miditable.h"
+#include <rtosc/miditable.h>
 
 using namespace rtosc;
 using std::string;

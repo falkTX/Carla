@@ -44,6 +44,9 @@ decl {\#include "Fl_Osc_Numeric_Input.H"} {public local
 decl {\#include "Fl_Osc_ListView.H"} {public local
 } 
 
+decl {\#include "Fl_Osc_Pane.H"} {public local
+}
+
 decl {\#include "../globals.h"} {public local
 } 
 
@@ -60,8 +63,7 @@ class ConfigUI {} {
     } {
       Fl_Box dummy {
         xywh {25 25 25 25}
-        code0 {configwindow->osc = osc;}
-        code1 {configwindow->base = "/config/";}
+        code0 {configwindow->init(osc, "/config/");}
       }
       Fl_Tabs {} {
         xywh {5 5 500 330}
@@ -291,7 +293,7 @@ activatebutton_presetdir(true);}
     oscilsize->callback = [this](int i){
         oscilsize_widget->value(i-7);
     };
-    oscilsize->update("/config/cfg.OscilPower");
+    oscilsize->doUpdate("/config/cfg.OscilPower");
     
     } {}
   }

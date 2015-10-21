@@ -43,6 +43,8 @@ class  PADnoteParameters;
 class  SynthNote;
 
 class  Allocator;
+class  AbsTime;
+class  RelTime;
 
 class  Microtonal;
 class  XMLwrapper;
@@ -141,6 +143,14 @@ typedef std::complex<fftw_real> fft_t;
  * The maximum length of instrument's name
  */
 #define PART_MAX_NAME_LEN 30
+
+/*
+ * The maximum we allow for an XMZ path
+ *
+ * Note that this is an ugly hack.  Finding a compile time path
+ * max portably is painful.
+ */
+#define XMZ_PATH_MAX 1024
 
 /*
  * The maximum number of bands of the equaliser
@@ -270,8 +280,8 @@ public:
 
     operator T*() { return ptr; }
     operator const T*() const { return ptr; }
-    T& operator[](unsigned idx) { return ptr[idx]; }
-    const T& operator[](unsigned idx) const { return ptr[idx]; }
+    //T& operator[](unsigned idx) { return ptr[idx]; }
+    //const T& operator[](unsigned idx) const { return ptr[idx]; }
 };
 
 //temporary include for synth->{samplerate/buffersize} members
@@ -280,7 +290,7 @@ struct SYNTH_T {
     SYNTH_T(void)
         :samplerate(44100), buffersize(256), oscilsize(1024)
     {
-        alias();
+        alias(false);
     }
 
     SYNTH_T(const SYNTH_T& ) = delete;
@@ -320,7 +330,7 @@ struct SYNTH_T {
     {
         return buffersize_f / samplerate_f;
     }
-    void alias(void);
+    void alias(bool randomize=true);
     static float numRandom(void); //defined in Util.cpp for now
 };
 #endif

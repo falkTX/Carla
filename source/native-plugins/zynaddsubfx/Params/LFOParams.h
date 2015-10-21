@@ -28,6 +28,14 @@
 
 class XMLwrapper;
 
+#define LFO_SINE      0
+#define LFO_TRIANGLE  1
+#define LFO_SQUARE    2
+#define LFO_RAMPUP    3
+#define LFO_RAMPDOWN  4
+#define LFO_EXP_DOWN1 5
+#define LFO_EXP_DOWN2 6
+
 class LFOParams:public Presets
 {
     public:
@@ -60,7 +68,6 @@ class LFOParams:public Presets
         unsigned char Pstretch; /**<how the LFO is "stretched" according the note frequency (64=no stretch)*/
 
         int fel; //what kind is the LFO (0 - frequency, 1 - amplitude, 2 - filter)
-        static int time; //is used by Pcontinous parameter
 
         static const rtosc::Ports &ports;
     private:

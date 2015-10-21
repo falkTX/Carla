@@ -84,7 +84,7 @@ class OscilGen:public Presets
 
         unsigned char Pwaveshaping, Pwaveshapingfunction;
         unsigned char Pfiltertype, Pfilterpar1, Pfilterpar2;
-        unsigned char Pfilterbeforews;
+        bool          Pfilterbeforews;
         unsigned char Psatype, Psapar; //spectrum adjust
 
         int Pharmonicshift; //how the harmonics are shifted

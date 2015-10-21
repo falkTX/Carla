@@ -1,4 +1,4 @@
-#include "ports.h"
+#include "../ports.h"
 #include <ostream>
 #include <cassert>
 #include <climits>
@@ -255,15 +255,15 @@ bool has(T &t, Z&z)
     return false;
 }
 
-int rtosc_max(int a, int b) { return a<b?b:a;}
+static int int_max(int a, int b) { return a<b?b:a;}
 
-ivec_t find_pos(words_t &strs)
+static ivec_t find_pos(words_t &strs)
 {
     ivec_t pos;
     int current_dups = strs.size();
     int N = 0;
     for(auto w:strs)
-        N = rtosc_max(N,w.length());
+        N = int_max(N,w.length());
 
     int pos_best = -1;
     int pos_best_val = INT_MAX;
@@ -294,7 +294,7 @@ ivec_t find_pos(words_t &strs)
     return pos;
 }
 
-ivec_t do_hash(const words_t &strs, const ivec_t &pos, const ivec_t &assoc)
+static ivec_t do_hash(const words_t &strs, const ivec_t &pos, const ivec_t &assoc)
 {
     ivec_t ivec;
     ivec.reserve(strs.size());
@@ -308,7 +308,7 @@ ivec_t do_hash(const words_t &strs, const ivec_t &pos, const ivec_t &assoc)
     return ivec;
 }
 
-ivec_t find_assoc(const words_t &strs, const ivec_t &pos)
+static ivec_t find_assoc(const words_t &strs, const ivec_t &pos)
 {
     ivec_t assoc;
     int current_dups = strs.size();
@@ -354,7 +354,7 @@ ivec_t find_assoc(const words_t &strs, const ivec_t &pos)
     return assoc;
 }
 
-ivec_t find_remap(words_t &strs, ivec_t &pos, ivec_t &assoc)
+static ivec_t find_remap(words_t &strs, ivec_t &pos, ivec_t &assoc)
 {
     ivec_t remap;
     auto hashed = do_hash(strs, pos, assoc);
@@ -362,7 +362,7 @@ ivec_t find_remap(words_t &strs, ivec_t &pos, ivec_t &assoc)
     //    printf("%d) '%s'\n", hashed[i], strs[i].c_str());
     int N = 0;
     for(auto h:hashed)
-        N = rtosc_max(N,h+1);
+        N = int_max(N,h+1);
     for(int i=0; i<N; ++i)
         remap.push_back(0);
     for(int i=0; i<(int)hashed.size(); ++i)
@@ -371,7 +371,7 @@ ivec_t find_remap(words_t &strs, ivec_t &pos, ivec_t &assoc)
     return remap;
 }
 
-void generate_minimal_hash(std::vector<std::string> str, Port_Matcher &pm)
+static void generate_minimal_hash(std::vector<std::string> str, Port_Matcher &pm)
 {
     pm.pos   = find_pos(str);
     if(pm.pos.empty()) {
@@ -382,7 +382,7 @@ void generate_minimal_hash(std::vector<std::string> str, Port_Matcher &pm)
     pm.remap = find_remap(str, pm.pos, pm.assoc);
 }
 
-void generate_minimal_hash(Ports &p, Port_Matcher &pm)
+static void generate_minimal_hash(Ports &p, Port_Matcher &pm)
 {
     svec_t keys;
     cvec_t args;
@@ -575,6 +575,71 @@ const Port *Ports::apropos(const char *path) const
     return NULL;
 }
 
+static bool parent_path_p(char *read, char *start)
+{
+    if(read-start<2)
+        return false;
+    return read[0]=='.' && read[-1]=='.' && read[-2]=='/';
+}
+
+static void read_path(char *&r, char *start)
+{
+    while(1)
+    {
+        if(r<start)
+            break;
+        bool doBreak = *r=='/';
+        r--;
+        if(doBreak)
+            break;
+    }
+}
+
+static void move_path(char *&r, char *&w, char *start)
+{
+    while(1)
+    {
+        if(r<start)
+            break;
+        bool doBreak = *r=='/';
+        *w-- = *r--;
+        if(doBreak)
+            break;
+    }
+}
+
+
+char *Ports::collapsePath(char *p)
+{
+    //obtain the pointer to the last non-null char
+    char *p_end = p;
+    while(*p_end) p_end++;
+    p_end--;
+
+    //number of subpaths to consume
+    int consuming = 0;
+
+    char *write_pos = p_end;
+    char *read_pos = p_end;
+    while(read_pos >= p) {
+        //per path chunk either
+        //(1) find a parent ref and inc consuming
+        //(2) find a normal ref and consume
+        //(3) find a normal ref and write through
+        bool ppath = parent_path_p(read_pos, p);
+        if(ppath) {
+            read_path(read_pos, p);
+            consuming++;
+        } else if(consuming) {
+            read_path(read_pos, p);
+            consuming--;
+        } else
+            move_path(read_pos, write_pos, p);
+    }
+    //return last written location, not next to write
+    return write_pos+1;
+};
+
 void rtosc::walk_ports(const Ports *base,
                        char         *name_buffer,
                        size_t        buffer_size,
@@ -670,7 +735,7 @@ void walk_ports2(const rtosc::Ports *base,
 
                 //for(unsigned i=0; i<max; ++i)
                 {
-                    sprintf(pos,"[0,%d]",max);
+                    sprintf(pos,"[0,%d]",max-1);
 
                     //Ensure the result is a path
                     if(strrchr(name_buffer, '/')[1] != '/')
@@ -697,7 +762,7 @@ void walk_ports2(const rtosc::Ports *base,
 
                 //for(unsigned i=0; i<max; ++i)
                 {
-                    sprintf(pos,"[0,%d]",max);
+                    sprintf(pos,"[0,%d]",max-1);
 
                     //Apply walker function
                     walker(&p, name_buffer, data);
@@ -724,54 +789,110 @@ static void units(std::ostream &o, const char *u)
     o << " units=\"" << u << "\"";
 }
 
+using std::ostream;
+using std::string;
+static ostream &dump_t_f_port(ostream &o, string name, string doc)
+{
+    o << " <message_in pattern=\"" << name << "\" typetag=\"T\">\n";
+    o << "  <desc>Enable " << doc << "</desc>\n";
+    o << "  <param_T symbol=\"x\"/>\n";
+    o << " </message_in>\n";
+    o << " <message_in pattern=\"" << name << "\" typetag=\"F\">\n";
+    o << "  <desc>Disable "  << doc << "</desc>\n";
+    o << "  <param_F symbol=\"x\"/>\n";
+    o << " </message_in>\n";
+    o << " <message_in pattern=\"" << name << "\" typetag=\"\">\n";
+    o << "  <desc>Get state of " << doc << "</desc>\n";
+    o << " </message_in>\n";
+    o << " <message_out pattern=\"" << name << "\" typetag=\"T\">\n";
+    o << "  <desc>Value of " << doc << "</desc>\n";
+    o << "  <param_T symbol=\"x\"/>";
+    o << " </message_out>\n";
+    o << " <message_out pattern=\"" << name << "\" typetag=\"F\">\n";
+    o << "  <desc>Value of " <<  doc << "</desc>\n";
+    o << "  <param_F symbol=\"x\"/>";
+    o << " </message_out>\n";
+    return o;
+}
+static ostream &dump_any_port(ostream &o, string name, string doc)
+{
+    o << " <message_in pattern=\"" << name << "\" typetag=\"*\">\n";
+    o << "  <desc>" << doc << "</desc>\n";
+    o << " </message_in>\n";
+    return o;
+}
+
+static ostream &dump_generic_port(ostream &o, string name, string doc, string type)
+{
+    const char *t = type.c_str();
+    string arg_names = "xyzabcdefghijklmnopqrstuvw";
+
+    //start out with argument separator
+    if(*t++ != ':')
+        return o;
+    //now real arguments (assume [] don't exist)
+    string args;
+    while(*t && *t != ':')
+        args += *t++;
+
+    o << " <message_in pattern=\"" << name << "\" typetag=\"" << args << "\">\n";
+    o << "  <desc>" << doc << "</desc>\n";
+
+    assert(args.length()<arg_names.length());
+    for(unsigned i=0; i<args.length(); ++i)
+        o << "  <param_" << args[i] << " symbol=\"" << arg_names[i] << "\"/>\n";
+    o << " </message_in>\n";
+
+    if(*t == ':')
+        return dump_generic_port(o, name, doc, t);
+    else
+        return o;
+}
+
 void dump_ports_cb(const rtosc::Port *p, const char *name, void *v)
 {
-    std::ostream &o = *(std::ostream*)v;
-    auto meta = p->meta();
-    if(meta.find("parameter") != p->meta().end()) {
+    std::ostream &o  = *(std::ostream*)v;
+    auto meta        = p->meta();
+    const char *args = strchr(p->name, ':');
+    auto mparameter  = meta.find("parameter");
+    auto mdoc        = meta.find("documentation");
+    string doc;
+
+    if(mdoc != p->meta().end())
+        doc = mdoc.value;
+    if(meta.find("internal") != meta.end()) {
+        doc += "[INTERNAL]";
+    }
+
+    if(mparameter != p->meta().end()) {
         char type = 0;
-        const char *foo = strchr(p->name, ':');
-        if(strchr(foo, 'f'))
-            type = 'f';
-        else if(strchr(foo, 'i'))
-            type = 'i';
-        else if(strchr(foo, 'c'))
-            type = 'c';
-        else if(strchr(foo, 'T'))
-            type = 't';
+        if(args) {
+            if(strchr(args, 'f'))
+                type = 'f';
+            else if(strchr(args, 'i'))
+                type = 'i';
+            else if(strchr(args, 'c'))
+                type = 'c';
+            else if(strchr(args, 'T'))
+                type = 't';
+            else if(strchr(args, 's'))
+                type = 's';
+        }
+
         if(!type) {
-            fprintf(stderr, "rtosc port dumper: Cannot handle '%s'\n", p->name);
+            fprintf(stderr, "rtosc port dumper: Cannot handle '%s'\n", name);
+            fprintf(stderr, "    args = <%s>\n", args);
             return;
         }
 
-        if(type == 't')
-        {
-            o << " <message_in pattern=\"" << name << "\" typetag=\"T\">\n";
-            o << "  <desc>Enable " << p->meta()["documentation"] << "</desc>\n";
-            o << "  <param_T symbol=\"x\"/>\n";
-            o << " </message_in>\n";
-            o << " <message_in pattern=\"" << name << "\" typetag=\"F\">\n";
-            o << "  <desc>Disable "  << p->meta()["documentation"] << "</desc>\n";
-            o << "  <param_F symbol=\"x\"/>\n";
-            o << " </message_in>\n";
-            o << " <message_in pattern=\"" << name << "\" typetag=\"\">\n";
-            o << "  <desc>Get state of " << p->meta()["documentation"] << "</desc>\n";
-            o << " </message_in>\n";
-            o << " <message_out pattern=\"" << name << "\" typetag=\"T\">\n";
-            o << "  <desc>Value of " << p->meta()["documentation"] << "</desc>\n";
-            o << "  <param_T symbol=\"x\"/>";
-            o << " </message_out>\n";
-            o << " <message_out pattern=\"" << name << "\" typetag=\"F\">\n";
-            o << "  <desc>Value of %s</desc>\n", p->meta()["documentation"];
-            o << "  <param_F symbol=\"x\"/>";
-            o << " </message_out>\n";
+        if(type == 't') {
+            dump_t_f_port(o, name, doc);
             return;
         }
 
         o << " <message_in pattern=\"" << name << "\" typetag=\"" << type << "\">\n";
-        o << "  <desc>Set Value of " << p->meta()["documentation"] << "</desc>\n";
-        if(meta.find("min") != meta.end() && meta.find("max") != meta.end() && type != 'c')
-        {
+        o << "  <desc>Set Value of " << doc << "</desc>\n";
+        if(meta.find("min") != meta.end() && meta.find("max") != meta.end() && type != 'c') {
             o << "  <param_" << type << " symbol=\"x\"";
             units(o, meta["unit"]);
             o << ">\n";
@@ -785,12 +906,11 @@ void dump_ports_cb(const rtosc::Port *p, const char *name, void *v)
         }
         o << " </message_in>\n";
         o << " <message_in pattern=\"" << name << "\" typetag=\"\">\n";
-        o << "  <desc>Get Value of " << p->meta()["documentation"] << "</desc>\n";
+        o << "  <desc>Get Value of " << doc << "</desc>\n";
         o << " </message_in>\n";
         o << " <message_out pattern=\"" << name << "\" typetag=\"" << type << "\">\n";
-        o << "  <desc>Value of " << p->meta()["documentation"] << "</desc>\n";
-        if(meta.find("min") != meta.end() && meta.find("max") != meta.end() && type != 'c')
-        {
+        o << "  <desc>Value of " << doc << "</desc>\n";
+        if(meta.find("min") != meta.end() && meta.find("max") != meta.end() && type != 'c') {
             o << "  <param_" << type << " symbol=\"x\"";
             units(o, meta["unit"]);
             o << ">\n";
@@ -803,10 +923,17 @@ void dump_ports_cb(const rtosc::Port *p, const char *name, void *v)
             o << "/>\n";
         }
         o << " </message_out>\n";
-    }// else if(meta.find("documentation") != meta.end())
-    //    fprintf(stderr, "Skipping \"%s\"\n", name);
-    //else
-    //    fprintf(stderr, "Skipping [UNDOCUMENTED] \"%s\"\n", name);
+    } else if(mdoc != meta.end() && (!args || args == std::string(""))) {
+        dump_any_port(o, name, doc);
+    } else if(mdoc != meta.end() && args) {
+        dump_generic_port(o, name, doc, args);
+    } else if(mdoc != meta.end()) {
+        fprintf(stderr, "Skipping \"%s\"\n", name);
+        if(args) {
+            fprintf(stderr, "    type = %s\n", args);
+        }
+    } else
+        fprintf(stderr, "Skipping [UNDOCUMENTED] \"%s\"\n", name);
 }
 
 std::ostream &rtosc::operator<<(std::ostream &o, rtosc::OscDocFormatter &formatter)

@@ -3,6 +3,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Double_Window.H>
 #include <string>
+#include "Osc_DataModel.h"
 
 class Fl_Osc_Pane
 {
@@ -16,8 +17,12 @@ class Fl_Osc_Pane
 
 class Fl_Osc_Window:public Fl_Double_Window, public Fl_Osc_Pane
 {
+    Osc_DataModel *title_ext;
+    std::string title_orig;
+    std::string title_new;
     public:
         Fl_Osc_Window(int w, int h, const char *L=0);
+        ~Fl_Osc_Window(void);
 
         void init(Fl_Osc_Interface *osc_, std::string loc_);
         virtual std::string loc(void) const;

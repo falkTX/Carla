@@ -1,5 +1,5 @@
 #include <math.h>
-#include "miditable.h"
+#include <rtosc/miditable.h>
 
 using namespace rtosc;
 

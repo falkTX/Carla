@@ -157,12 +157,12 @@ char *rtosc_splat(const char *path, std::set<std::string>);
   {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamICb(name)}
 
 #define rSelf(type) \
-{"self", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
+{"self:", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
     [](const char *, rtosc::RtData &d){ \
         d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
 
 #define rPaste \
-{"preset-type", rProp(internal), 0, \
+{"preset-type:", rProp(internal) rDoc("clipboard type of object"), 0, \
     [](const char *, rtosc::RtData &d){ \
         rObject *obj = (rObject*)d.obj; \
         d.reply(d.loc, "s", obj->type);}},\

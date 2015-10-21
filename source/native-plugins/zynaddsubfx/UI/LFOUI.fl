@@ -20,6 +20,9 @@ decl {\#include "Fl_Osc_Choice.H"} {public local
 decl {\#include "Fl_Osc_Check.H"} {public local
 } 
 
+decl {\#include "Fl_Osc_Pane.H"} {public local
+}
+
 decl {\#include "../globals.h"} {private global
 } 
 

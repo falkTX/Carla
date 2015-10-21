@@ -26,6 +26,9 @@ decl {\#include "Fl_Osc_Output.H"} {public local
 decl {\#include "Fl_Osc_Slider.H"} {public local
 } 
 
+decl {\#include "Fl_Osc_Pane.H"} {public local
+}
+
 decl {\#include <cmath>} {private local
 } 
 

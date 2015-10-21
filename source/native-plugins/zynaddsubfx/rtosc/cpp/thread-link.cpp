@@ -1,4 +1,4 @@
-#include "thread-link.h"
+#include "../thread-link.h"
 
 namespace rtosc {
 #ifdef off_t
@@ -17,7 +17,6 @@ struct internal_ringbuffer_t {
 };
 
 typedef internal_ringbuffer_t ringbuffer_t;
-#define static
 
 static size_t ring_read_size(ringbuffer_t *ring)
 {
@@ -178,5 +177,3 @@ char *ThreadLink::buffer(void) {return write_buffer;}
 size_t ThreadLink::buffer_size(void) const {return BufferSize;}
 
 };
-
-#undef static

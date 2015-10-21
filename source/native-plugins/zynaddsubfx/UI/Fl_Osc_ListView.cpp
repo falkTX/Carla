@@ -1,4 +1,5 @@
 #include "Fl_Osc_ListView.H"
+#include "Fl_Osc_Pane.H"
 #include <cstdio>
 #include <rtosc/rtosc.h>
 
@@ -21,7 +22,7 @@ void Fl_Osc_ListView::init(const char *path_)
     path = path_;
     data = new Osc_SimpleListModel(osc);
     data->callback = [this](Osc_SimpleListModel::list_t l){this->doUpdate(l);};
-    data->update(loc+path_);
+    data->doUpdate(loc+path_);
 }
 
 void Fl_Osc_ListView::doUpdate(Osc_SimpleListModel::list_t l)
@@ -33,7 +34,7 @@ void Fl_Osc_ListView::doUpdate(Osc_SimpleListModel::list_t l)
 }
 void Fl_Osc_ListView::update(void)
 {
-    data->update(loc+path);
+    data->doUpdate(loc+path);
 }
 
 void Fl_Osc_ListView::insert(std::string s, int offset)

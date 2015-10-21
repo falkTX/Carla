@@ -418,8 +418,7 @@ if (event==FL_RIGHT_MOUSE){
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {ctlwindow->osc = osc;}
-        code1 {ctlwindow->base = "/part"+to_s(npart)+"/ctl/";}
+        code0 {ctlwindow->init(osc,"/part"+to_s(npart)+"/ctl/");}
       }
       Fl_Check_Button {} {
         label Expr
@@ -610,8 +609,7 @@ else {propta->deactivate();proptb->deactivate();}}
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {partfx->osc  = osc;}
-        code1 {partfx->base = part_path;}
+        code0 {partfx->init(osc, part_path);}
       }
       Fl_Counter inseffnocounter {
         label {FX No.}
@@ -726,12 +724,12 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
       }
       Fl_Button {} {
         label C
-        callback {presetsui->copy(partfx->loc());}
+        callback {presetsui->copy(partfx->loc()+"partefx"+to_s(ninseff)+"/");}
         xywh {90 127 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
-        callback {presetsui->paste(partfx->loc(),inseffectui);}
+        callback {presetsui->paste(partfx->loc()+"partefx"+to_s(ninseff)+"/",inseffectui);}
         xywh {120 127 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
     }
@@ -742,8 +740,7 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {instrumentkitlist->osc = osc;}
-        code1 {instrumentkitlist->base = "/part"+to_s(npart)+"/";}
+        code0 {instrumentkitlist->init(osc, "/part"+to_s(npart)+"/");}
       }
       Fl_Button {} {
         label {Close Window}
@@ -824,8 +821,7 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {instrumenteditwindow->osc = osc;}
-        code1 {instrumenteditwindow->base = "/part"+to_s(npart)+"/";}
+        code0 {instrumenteditwindow->init(osc, "/part"+to_s(npart)+"/");}
       }
       Fl_Group editgroup {
         xywh {0 220 395 110} box UP_FRAME
@@ -1093,7 +1089,7 @@ delete(instrumenteditwindow);} {}
   }
   decl {BankUI *bankui;} {private local
   }
-  decl {ADnoteUI *adnoteui;} {private local
+  decl {ADnoteUI *adnoteui;} {selected public local
   }
   decl {SUBnoteUI *subnoteui;} {private local
   }

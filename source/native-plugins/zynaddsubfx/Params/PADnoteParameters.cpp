@@ -90,8 +90,6 @@ static const rtosc::Ports PADnotePorts =
 
     PC(fixedfreq),
     PC(fixedfreqET),
-    //TODO detune, coarse detune
-    PC(DetuneType),
     PC(Stereo),
     PC(Panning),
     PC(AmpVelocityScaleFunction),
@@ -115,7 +113,7 @@ static const rtosc::Ports PADnotePorts =
                 d.reply(d.loc, "i", p->Pbandwidth);
             }}},
     
-    {"bandwidthvalue:", NULL, NULL,
+    {"bandwidthvalue:", rMap(unit, cents) rDoc("Get Bandwidth"), NULL,
         [](const char *, rtosc::RtData &d) {
             PADnoteParameters *p = ((PADnoteParameters*)d.obj);
             d.reply(d.loc, "f", p->setPbandwidth(p->Pbandwidth));
@@ -143,7 +141,7 @@ static const rtosc::Ports PADnotePorts =
             d.reply(d.loc, "b", n*sizeof(float), tmp);
             d.reply(d.loc, "i", realbw);
             delete[] tmp;}},
-    {"sample#64:ifb", rDoc("Nothing to see here"), 0,
+    {"sample#64:ifb", rProp(internal) rDoc("Nothing to see here"), 0,
         [](const char *m, rtosc::RtData &d)
         {
             PADnoteParameters *p = (PADnoteParameters*)d.obj;
@@ -157,12 +155,14 @@ static const rtosc::Ports PADnotePorts =
             //XXX TODO memory managment (deallocation of smp buffer)
         }},
     //weird stuff for PCoarseDetune
-    {"detunevalue:", NULL, NULL, [](const char *, RtData &d)
+    {"detunevalue:", rMap(unit,cents) rDoc("Get detune value"), NULL,
+        [](const char *, RtData &d)
         {
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;
             d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+        [](const char *msg, RtData &d)
         {
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -175,7 +175,8 @@ static const rtosc::Ports PADnotePorts =
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", NULL, NULL, [](const char *msg, RtData &d)
+    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+        [](const char *msg, RtData &d)
         {
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;
             if(!rtosc_narguments(msg)) {

@@ -24,7 +24,7 @@
 #include "Misc/Util.h"
 #include "globals.h"
 
-void SYNTH_T::alias()
+void SYNTH_T::alias(bool randomize)
 {
     halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
     buffersize_f     = buffersize;
@@ -36,5 +36,8 @@ void SYNTH_T::alias()
     // for deleting the buffers and also call it in the dtor
     denormalkillbuf.resize(buffersize);
     for(int i = 0; i < buffersize; ++i)
-        denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+        if(randomize)
+            denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
+        else
+            denormalkillbuf[i] = 0;
 }

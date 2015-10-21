@@ -91,6 +91,7 @@ extern "C" {
 #include "zynaddsubfx/UI/Fl_Osc_Pane.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Roller.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Slider.cpp"
+#include "zynaddsubfx/UI/Fl_Osc_TSlider.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Value.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_VSlider.cpp"
 #include "zynaddsubfx/UI/Fl_Osc_Widget.cpp"
@@ -106,6 +107,7 @@ extern "C" {
 #include "zynaddsubfx/UI/PresetsUI.cpp"
 #include "zynaddsubfx/UI/ResonanceUI.cpp"
 #include "zynaddsubfx/UI/SUBnoteUI.cpp"
+#include "zynaddsubfx/UI/TipWin.cpp"
 #include "zynaddsubfx/UI/VirKeyboard.cpp"
 #include "zynaddsubfx/UI/guimain.cpp"
 

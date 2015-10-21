@@ -28,7 +28,7 @@
 #include <cstring>
 #include <cassert>
 #include <cstdio>
-#include "rtosc.h"
+#include <rtosc/rtosc.h>
 
 namespace rtosc {
 typedef const char *msg_t;

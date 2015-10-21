@@ -22,6 +22,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cassert>
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
@@ -131,7 +132,13 @@ void EnvelopeParams::paste(const EnvelopeParams &ep)
     //Avoid undefined behavior
     if(&ep == this)
         return;
-    memcpy((char*)this, (const char*)&ep, sizeof(*this));
+
+
+    char *base = (char*)&this->Pfreemode;
+    char *end  = (char*)&this->DR_val;
+    assert(end-base > 0);
+    
+    memcpy((char*)&this->Pfreemode, (const char*)&ep.Pfreemode, 1+end-base);
 }
 
 float EnvelopeParams::getdt(char i) const

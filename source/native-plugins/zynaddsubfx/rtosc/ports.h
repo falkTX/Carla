@@ -28,7 +28,7 @@
 #include <vector>
 #include <functional>
 #include <initializer_list>
-#include "rtosc.h"
+#include <rtosc/rtosc.h>
 #include <cstring>
 #include <cctype>
 #include <cstdlib>
@@ -179,6 +179,13 @@ struct Ports
      * @endcode
      */
     const Port *apropos(const char *path) const;
+
+    /**
+     * Collapse path with parent path identifiers "/.."
+     *
+     * e.g. /foo/bar/../baz => /foo/baz
+     */
+    static char *collapsePath(char *p);
 
     private:
     //Performance hacks

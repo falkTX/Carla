@@ -32,7 +32,7 @@
 #include "XMLwrapper.h"
 
 #define rStdString(name, len, ...) \
-    {STRINGIFY(name) "::s", rMap(length, len) DOC(__VA_ARGS__), NULL, rStringCb(name,len)}
+    {STRINGIFY(name) "::s", rMap(length, len) rProp(parameter) DOC(__VA_ARGS__), NULL, rStringCb(name,len)}
 #define rStdStringCb(name, length) rBOIL_BEGIN \
         if(!strcmp("", args)) {\
             data.reply(loc, "s", obj->name); \
@@ -57,7 +57,7 @@ static const rtosc::Ports ports = {
     rToggle(cfg.BankUIAutoClose, "Automatic Closing of BackUI After Patch Selection"),
     rParamI(cfg.GzipCompression, "Level of Gzip Compression For Save Files"),
     rParamI(cfg.Interpolation, "Level of Interpolation, Linear/Cubic"),
-    {"cfg.presetsDirList", rProp(parameter) rDoc("list of preset search directories"), 0,
+    {"cfg.presetsDirList", rDoc("list of preset search directories"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
             Config &c = *(Config*)d.obj;
@@ -90,7 +90,7 @@ static const rtosc::Ports ports = {
             rtosc_amessage(buffer, sizeof(buffer), d.loc, types, args);
             d.reply(buffer);
         }},
-    {"cfg.bankRootDirList", rProp(parameter) rDoc("list of bank search directories"), 0,
+    {"cfg.bankRootDirList", rDoc("list of bank search directories"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
             Config &c = *(Config*)d.obj;
@@ -133,7 +133,7 @@ static const rtosc::Ports ports = {
     rParamI(cfg.VirKeybLayout,       "Keyboard Layout For Virtual Piano Keyboard"),
     //rParamS(cfg.LinuxALSAaudioDev),
     //rParamS(cfg.nameTag)
-    {"cfg.OscilPower::i", rDoc("Size Of Oscillator Wavetable"), 0,
+    {"cfg.OscilPower::i", rProp(parameter) rDoc("Size Of Oscillator Wavetable"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
             Config &c = *(Config*)d.obj;

@@ -3,9 +3,9 @@
 #include <cstring>
 
 SynthNote::SynthNote(SynthParams &pars)
-    :legato(pars.synth, pars.frequency, pars.velocity, pars.portamento,
-            pars.note, pars.quiet),
-     memory(pars.memory), ctl(pars.ctl), synth(pars.synth)
+    :memory(pars.memory),
+    legato(pars.synth, pars.frequency, pars.velocity, pars.portamento,
+            pars.note, pars.quiet), ctl(pars.ctl), synth(pars.synth), time(pars.time)
 {}
 
 SynthNote::Legato::Legato(const SYNTH_T &synth_, float freq, float vel, int port,

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RTOSC_UNDO_H
+#define RTOSC_UNDO_H
 #include <functional>
 
 namespace rtosc
@@ -32,3 +33,4 @@ class UndoHistory
         class UndoHistoryImpl *impl;
 };
 };
+#endif

@@ -184,7 +184,7 @@ class SUBnoteUI {open : {public PresetsUI_}
     } {
       Fl_Box {} {
         xywh {0 0 0 0} box FLAT_BOX color 45
-        code0 {SUBparameters->osc = osc; SUBparameters->base = loc;}
+        code0 {SUBparameters->init(osc, loc);}
       }
       Fl_Scroll {} {
         label scroll open

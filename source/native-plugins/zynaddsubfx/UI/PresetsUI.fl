@@ -60,7 +60,7 @@ class PresetsUI {} {
                 printf("Value = %s\\n", val.c_str());
                 copytypetext->label(val.c_str());
                 pastetypetext->label(val.c_str());
-                listmodel.update("/presets/scan-for-presets");
+                listmodel.doUpdate("/presets/scan-for-presets");
             };
         
         } {}
@@ -268,7 +268,7 @@ class PresetsUI {} {
             pastebrowse->clear();
 
             printf("Datamodel Update...");
-            datamodel.update(url+"preset-type");
+            datamodel.doUpdate(url+"preset-type");
             } {}
     }
     decl {std::string url;} {public local

@@ -1,4 +1,5 @@
 #include "Fl_Osc_Widget.H"
+#include "Fl_Osc_Pane.H"
 #include <rtosc/rtosc.h>
 
 Fl_Osc_Widget::Fl_Osc_Widget(void) //Deprecated

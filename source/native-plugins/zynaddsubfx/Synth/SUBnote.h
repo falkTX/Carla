@@ -30,9 +30,10 @@
 class SUBnote:public SynthNote
 {
     public:
-        SUBnote(SUBnoteParameters *parameters, SynthParams &pars);
+        SUBnote(const SUBnoteParameters *parameters, SynthParams &pars);
         ~SUBnote();
 
+        SynthNote *cloneLegato(void);
         void legatonote(LegatoParams pars);
 
         int noteout(float *outl, float *outr); //note output,return 0 if the note is finished
@@ -100,6 +101,7 @@ class SUBnote:public SynthNote
 
         int   oldpitchwheel, oldbandwidth;
         float globalfiltercenterq;
+        float velocity;
 };
 
 #endif

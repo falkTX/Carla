@@ -28,6 +28,7 @@
 #include <rtosc/miditable.h>
 #include <rtosc/ports.h>
 
+#include "Time.h"
 #include "Bank.h"
 #include "Recorder.h"
 
@@ -53,6 +54,8 @@ class Master
         /** Destructor*/
         ~Master();
 
+        char last_xmz[XMZ_PATH_MAX];
+
         void applyOscEvent(const char *event);
 
         /**Saves all settings to a XML file
@@ -63,7 +66,6 @@ class Master
         void add2XML(XMLwrapper *xml);
 
         void defaults();
-
 
         /**loads all settings from a XML file
          * @return 0 for ok or -1 if there is an error*/
@@ -99,7 +101,8 @@ class Master
 
         /**Audio Output*/
         void AudioOut(float *outl, float *outr) REALTIME;
-        /**Audio Output (for callback mode). This allows the program to be controled by an external program*/
+        /**Audio Output (for callback mode).
+         * This allows the program to be controled by an external program*/
         void GetAudioOutSamples(size_t nsamples,
                                 unsigned samplerate,
                                 float *outl,
@@ -171,6 +174,7 @@ class Master
         rtosc::ThreadLink *uToB;
         bool pendingMemory;
         const SYNTH_T &synth;
+        AbsTime  time;
         const int& gzip_compression; //!< value from config
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];

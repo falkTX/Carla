@@ -86,12 +86,14 @@ class Allocator
 //! the allocator for normal use
 class AllocatorClass : public Allocator
 {
-    void *alloc_mem(size_t mem_size);
-    void dealloc_mem(void *memory);
-    void addMemory(void *, size_t mem_size);
-    bool lowMemory(unsigned n, size_t chunk_size) const;
-    using Allocator::Allocator;
+    public:
+        void *alloc_mem(size_t mem_size);
+        void dealloc_mem(void *memory);
+        void addMemory(void *, size_t mem_size);
+        bool lowMemory(unsigned n, size_t chunk_size) const;
+        using Allocator::Allocator;
 };
+typedef AllocatorClass Alloc;
 
 //! the dummy allocator, which does not allow any allocation
 class DummyAllocator : public Allocator

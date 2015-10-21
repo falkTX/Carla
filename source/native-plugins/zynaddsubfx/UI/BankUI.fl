@@ -29,6 +29,9 @@ decl {\#include "Fl_Osc_Interface.h"} {public local
 decl {\#include "Fl_Osc_Check.H"} {public local
 } 
 
+decl {\#include "Fl_Osc_Pane.H"} {public local
+}
+
 decl {\#include "../Misc/Util.h"} {public local
 } 
 
@@ -46,8 +49,7 @@ class BankUI {open
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {bankuiwindow->osc = osc;}
-        code1 {bankuiwindow->base = "/";}
+        code0 {bankuiwindow->init(osc, "/");}
       }
       Fl_Button {} {
         label Close

@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
     << "                Copyright (c) 2009-2014 Mark McCurry [active maintainer]"
     << endl;
     cerr << "Compiled: " << __DATE__ << " " << __TIME__ << endl;
-    cerr << "This program is free software (GNU GPL v.2 or later) and \n";
+    cerr << "This program is free software (GNU GPL v2 or later) and \n";
     cerr << "it comes with ABSOLUTELY NO WARRANTY.\n" << endl;
     if(argc == 1)
         cerr << "Try 'zynaddsubfx --help' for command-line options." << endl;
@@ -212,6 +212,9 @@ int main(int argc, char *argv[])
             "dump-oscdoc", 2, NULL, 'd'
         },
         {
+            "ui-title", 1, NULL, 'u'
+        },
+        {
             0, 0, 0, 0
         }
     };
@@ -219,7 +222,7 @@ int main(int argc, char *argv[])
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
     int prefered_port = -1;
 
-    string loadfile, loadinstrument, execAfterInit;
+    string loadfile, loadinstrument, execAfterInit, ui_title;
 
     while(1) {
         int tmp = 0;
@@ -227,7 +230,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:P:hvapSDUY",
+                          "l:L:r:b:o:I:O:N:e:P:u:hvapSDUY",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -335,6 +338,10 @@ int main(int argc, char *argv[])
                     outfile << s;
                 }
                 break;
+            case 'u':
+                if(optarguments)
+                    ui_title = optarguments;
+                break;
             case '?':
                 cerr << "ERROR:Bad option or parameter.\n" << endl;
                 exitwithhelp = 1;
@@ -370,6 +377,7 @@ int main(int argc, char *argv[])
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"
              << "  -d , --dump-oscdoc=FILE\t\t Dump oscdoc xml to file\n"
+             << "  -u , --ui-title=TITLE\t\t Extend UI Window Titles\n"
              << endl;
 
         return 0;
@@ -384,20 +392,26 @@ int main(int argc, char *argv[])
 
     initprogram(std::move(synth), &config, prefered_port);
 
+    bool altered_master = false;
     if(!loadfile.empty()) {
-        int tmp = master->loadXML(loadfile.c_str());
+        altered_master = true;
+        const char *filename = loadfile.c_str();
+        int tmp = master->loadXML(filename);
         if(tmp < 0) {
             cerr << "ERROR: Could not load master file " << loadfile
                  << "." << endl;
             exit(1);
         }
         else {
+            strncpy(master->last_xmz, filename, XMZ_PATH_MAX);
+            master->last_xmz[XMZ_PATH_MAX-1] = 0;
             master->applyparameters();
             cout << "Master file loaded." << endl;
         }
     }
 
     if(!loadinstrument.empty()) {
+        altered_master = true;
         int loadtopart = 0;
         int tmp = master->part[loadtopart]->loadXMLinstrument(
             loadinstrument.c_str());
@@ -412,6 +426,9 @@ int main(int argc, char *argv[])
             cout << "Instrument file loaded." << endl;
         }
     }
+
+    if(altered_master)
+        middleware->updateResources(master);
 
     //Run the Nio system
     bool ioGood = Nio::start();
@@ -446,6 +463,10 @@ int main(int argc, char *argv[])
         GUI::raiseUi(gui, msg);
         delete [] msg;
     }
+
+    //set titles
+    if(!ui_title.empty())
+        GUI::raiseUi(gui, "/ui/title", "s", ui_title.c_str());
 
     if(!noui)
     {

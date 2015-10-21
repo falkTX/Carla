@@ -30,10 +30,11 @@
 class PADnote:public SynthNote
 {
     public:
-        PADnote(PADnoteParameters *parameters, SynthParams pars,
+        PADnote(const PADnoteParameters *parameters, SynthParams pars,
                 const int &interpolation);
         ~PADnote();
 
+        SynthNote *cloneLegato(void);
         void legatonote(LegatoParams pars);
 
         int noteout(float *outl, float *outr);

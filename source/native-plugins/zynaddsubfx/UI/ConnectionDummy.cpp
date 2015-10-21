@@ -1,7 +1,7 @@
 #include "Connection.h"
 #include <unistd.h>
 namespace GUI {
-ui_handle_t createUi(Fl_Osc_Interface*, void *exit)
+ui_handle_t createUi(Fl_Osc_Interface*, void *)
 {
     return 0;
 }

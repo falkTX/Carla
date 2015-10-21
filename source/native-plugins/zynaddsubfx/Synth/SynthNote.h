@@ -28,8 +28,9 @@ class Controller;
 struct SynthParams
 {
     Allocator &memory;   //Memory Allocator for the Note to use
-    Controller &ctl;
+    const Controller &ctl;
     const SYNTH_T    &synth;
+    const AbsTime    &time;
     float     frequency; //Note base frequency
     float     velocity;  //Velocity of the Note
     bool      portamento;//True if portamento is used for this note
@@ -65,8 +66,14 @@ class SynthNote
         virtual int finished() const = 0;
 
         virtual void legatonote(LegatoParams pars) = 0;
+
+        virtual SynthNote *cloneLegato(void) = 0;
+
         /* For polyphonic aftertouch needed */
         void setVelocity(float velocity_);
+
+        //Realtime Safe Memory Allocator For notes
+        class Allocator  &memory;
     protected:
         // Legato transitions
         class Legato
@@ -87,6 +94,7 @@ class SynthNote
                     int   length;
                     float m, step;
                 } fade;
+            public:
                 struct { // Note parameters
                     float freq, vel;
                     bool  portamento;
@@ -103,10 +111,9 @@ class SynthNote
                 void setDecounter(int decounter_) {decounter = decounter_; }
         } legato;
 
-        //Realtime Safe Memory Allocator For notes
-        class Allocator  &memory;
         const Controller &ctl;
         const SYNTH_T    &synth;
+        const AbsTime    &time;
 };
 
 #endif

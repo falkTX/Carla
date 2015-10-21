@@ -3,8 +3,8 @@
 #include <cstdio>
 #include <cassert>
 #include <ctime>
-#include "rtosc.h"
-#include "undo-history.h"
+#include <rtosc/rtosc.h>
+#include <rtosc/undo-history.h>
 
 using std::pair;
 using std::make_pair;

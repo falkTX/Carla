@@ -43,8 +43,8 @@ struct rtosc_hack_decltype_t
 #define STRINGIFY(a) STRINGIFY2(a)
 
 //Helper for documenting varargs
-#define IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9, N, ...) N
-#define LAST_IMP(...) IMPL(__VA_ARGS__,9,8,7,6,5,4,3,2,1,0,0,0,0)
+#define IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,N, ...) N
+#define LAST_IMP(...) IMPL(__VA_ARGS__,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,0,0,0)
 #define DOC_IMP9(a,b,c,d,e,f,g,h,i) a b c d e f g h rDoc(i)
 #define DOC_IMP8(a,b,c,d,e,f,g,h)   a b c d e f g rDoc(h)
 #define DOC_IMP7(a,b,c,d,e,f,g)     a b c d e f rDoc(g)
@@ -75,6 +75,30 @@ struct rtosc_hack_decltype_t
 #define MAC_EACH_I(mac, count, ...) MAC_EACH_IMP(mac, count, __VA_ARGS__)
 #define MAC_EACH(mac, ...) MAC_EACH_I(mac, LAST_IMP(__VA_ARGS__), __VA_ARGS__)
 
+//                    1 2 3 4 5 6 7 8 910111213141516
+#define OPTIONS_IMP16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)\
+    rOpt(14,o)rOpt(15,p)
+#define OPTIONS_IMP15(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)\
+    rOpt(14,o)
+#define OPTIONS_IMP14(a,b,c,d,e,f,g,h,i,j,k,l,m,n) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)
+#define OPTIONS_IMP13(a,b,c,d,e,f,g,h,i,j,k,l,m) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)
+#define OPTIONS_IMP12(a,b,c,d,e,f,g,h,i,j,k,l) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)
+#define OPTIONS_IMP11(a,b,c,d,e,f,g,h,i,j,k) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)
+#define OPTIONS_IMP10(a,b,c,d,e,f,g,h,i,j) \
+    rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
+    rOpt(7,h) rOpt(8,i) rOpt(9,j)
 #define OPTIONS_IMP9(a,b,c,d,e,f,g,h,i) \
     rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
     rOpt(7,h) rOpt(8,i)
@@ -137,7 +161,7 @@ struct rtosc_hack_decltype_t
 //Alias operators
 #define rParams(name, length, ...) \
 rArray(name, length, __VA_ARGS__), \
-{STRINGIFY(name) ":", rProp(alias), NULL, rParamsCb(name, length)}
+{STRINGIFY(name) ":", rProp(alias) rDoc("get all data from aliased array"), NULL, rParamsCb(name, length)}
 
 
 template<class T> constexpr T spice(T*t) {return *t;}
@@ -145,7 +169,7 @@ template<class T> constexpr T spice(T*t) {return *t;}
 //Recursion [two ports in one for pointer manipulation]
 #define rRecur(name, ...) \
     {STRINGIFY(name) "/", DOC(__VA_ARGS__), &decltype(rObject::name)::ports, rRecurCb(name)}, \
-    {STRINGIFY(name) ":", rProp(internal), NULL, rRecurPtrCb(name)}
+    {STRINGIFY(name) ":", rProp(internal) rDoc("get obj pointer"), NULL, rRecurPtrCb(name)}
 
 #define rRecurp(name, ...) \
     {STRINGIFY(name) "/", DOC(__VA_ARGS__), \
@@ -168,7 +192,7 @@ template<class T> constexpr T spice(T*t) {return *t;}
 //Misc
 #define rDummy(name, ...) {STRINIFY(name), rProp(dummy), NULL, [](msg_t, rtosc::RtData &){}}
 #define rString(name, len, ...) \
-    {STRINGIFY(name) "::s", rMap(length, len) DOC(__VA_ARGS__), NULL, rStringCb(name,len)}
+    {STRINGIFY(name) "::s", rMap(length, len) rProp(parameter) DOC(__VA_ARGS__), NULL, rStringCb(name,len)}
 
 //General property operators
 #define rMap(name, value) ":" STRINGIFY(name) "\0=" STRINGIFY(value) "\0"

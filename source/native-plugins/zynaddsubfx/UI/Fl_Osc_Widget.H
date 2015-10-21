@@ -4,7 +4,6 @@
 #include <cassert>
 #include <cmath>
 #include "Fl_Osc_Interface.h"
-#include "Fl_Osc_Pane.H"
 #include <FL/Fl_Group.H>
 
 class Fl_Osc_Widget
@@ -54,5 +53,5 @@ class Fl_Osc_Widget
         std::string ext;
         Fl_Osc_Interface *osc;
     protected:
-        Fl_Osc_Pane *fetch_osc_pane(Fl_Widget *w);
+        class Fl_Osc_Pane *fetch_osc_pane(Fl_Widget *w);
 };

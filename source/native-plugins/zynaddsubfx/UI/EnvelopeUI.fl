@@ -20,6 +20,9 @@ decl {\#include "Fl_Osc_Button.H"} {public local
 decl {\#include "Fl_Osc_Counter.H"} {public local
 } 
 
+decl {\#include "Fl_Osc_Pane.H"} {public local
+}
+
 decl {\#include <stdio.h>} {public local
 } 
 
@@ -53,6 +56,21 @@ decl {\#include "common.H"} {public local
 decl {\#include "EnvelopeFreeEdit.h"} {public local
 } 
 
+class PointButton {open : {public Fl_Button, public Fl_Osc_Widget}}
+{
+  Function {PointButton(int x,int y, int w, int h, const char *label=0):Fl_Button(x,y,w,h,label),Fl_Osc_Widget(this)} {open
+  } {
+    code {} {}
+  }
+  Function {rebase(std::string new_base)} {open
+  } {
+    code {loc = new_base;} {}
+  }
+  Function {init(std::string path_)} {open
+  } {
+    code {ext = path_;} {}
+  }
+}
 class EnvelopeUI {open : {public Fl_Osc_Group,PresetsUI_}
 } {
   Function {EnvelopeUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h,label)} {} {
@@ -79,13 +97,13 @@ delete (freemodeeditwindow);} {}
       Fl_Button {} {
         label C
         callback {presetsui->copy(freemodeeditwindow->loc());}
-        xywh {465 160 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
-        code0 {freemodeeditwindow->osc = osc; freemodeeditwindow->base = loc();}
+        xywh {465 160 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
+        code0 {freemodeeditwindow->init(osc, loc());}
       }
       Fl_Button {} {
         label P
         callback {presetsui->paste(freemodeeditwindow->loc(),this);}
-        xywh {482 160 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+        xywh {482 160 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
       }
       Fl_Button addpoint {
         label {Add point}
@@ -101,8 +119,8 @@ sustaincounter->update();
 //sustaincounter->value(Penvsustain);
 //sustaincounter->maximum(Penvpoints-2);}
         xywh {115 155 80 20} box THIN_UP_BOX labelsize 11
-        code0 {(void)o;//if (Pfreemode==0) o->hide();}
-        class Fl_Osc_Button
+        code0 {(void)o->init("addPoint");}
+        class PointButton
       }
       Fl_Box freeedit {
         label Envelope
@@ -121,20 +139,8 @@ sustaincounter->update();
 //sustaincounter->value(Penvsustain);
 //sustaincounter->maximum(Penvpoints-2);}
         xywh {200 155 80 20} box THIN_UP_BOX labelsize 11
-        code0 {(void)o;//if (Pfreemode==0) o->hide();}
-        class Fl_Osc_Button
-      }
-      Fl_Check_Button freemodebutton {
-        label FreeMode
-        callback {
-        o->oscWrite("Pfreemode", o->value() ? "T" : "F");
-        reinit(o->value());
-
-freeedit->lastpoint=-1;
-freeedit->redraw();}
-        tooltip {Enable or disable the freemode} xywh {10 155 95 20} labelsize 11
-        code0{o->init("Pfreemode");}
-        class Fl_Osc_Check
+        code0 {(void)o->init("delPoint");}
+        class PointButton
       }
       Fl_Check_Button forcedreleasecheck {
         label frcR
@@ -170,6 +176,18 @@ envfree->redraw();}
         code3 {o->init("Penvsustain");}
         class Fl_Osc_Counter
       }
+      Fl_Check_Button freemodehack {
+          xywh {0 0 0 0} down_box DOWN_BOX
+          callback{refresh_display();}
+          code0 {o->init("Pfreemode");o->hide();}
+          class Fl_Osc_Check
+      }
+      Fl_Button {} {
+        label {Cancel Freemode}
+        callback {disable_freemode();}
+        xywh {5 155 105 20} box THIN_UP_BOX labelsize 11 labelcolor 1
+        class Fl_Osc_Button
+      }
     }
   }
   Function {make_ADSR_window()} {} {
@@ -185,12 +203,12 @@ envfree->redraw();}
         Fl_Button {} {
           label C
           callback {presetsui->copy(envADSR->loc());}
-          xywh {150 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {150 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Button {} {
           label P
           callback {presetsui->paste(envADSR->loc(),this);}
-          xywh {167 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {167 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Dial e1adt {
           label {A.dt}
@@ -234,8 +252,9 @@ envfree->redraw();}
         }
         Fl_Button {} {
           label E
-          callback {freemodeeditwindow->show();}
+          callback {open_as_freemode();}
           tooltip {Envelope window} xywh {185 5 15 15} labelfont 1 labelsize 10
+          class Fl_Osc_Button
         }
         Fl_Check_Button e1linearenvelope {
           label L
@@ -259,12 +278,12 @@ envfree->redraw();}
         Fl_Button {} {
           label C
           callback {presetsui->copy(envASR->loc());}
-          xywh {155 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {155 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Button {} {
           label P
           callback {presetsui->paste(envASR->loc(),this);}
-          xywh {172 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {172 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Dial e2aval {
           label {A.val}
@@ -309,8 +328,9 @@ envfree->redraw();}
       }
       Fl_Button {} {
         label E
-        callback {freemodeeditwindow->show();}
+        callback {open_as_freemode();}
         tooltip {Envelope window} xywh {190 5 15 15} labelfont 1 labelsize 10
+        class Fl_Osc_Button
       }
     }
   }
@@ -327,12 +347,12 @@ envfree->redraw();}
         Fl_Button {} {
           label C
           callback {presetsui->copy(envADSRfilter->loc());}
-          xywh {220 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {220 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Button {} {
           label P
           callback {presetsui->paste(envADSRfilter->loc(),this);}
-          xywh {237 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {237 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Dial e3aval {
           label {A.val}
@@ -390,8 +410,9 @@ envfree->redraw();}
         }
         Fl_Button {} {
           label E
-          callback {freemodeeditwindow->show();}
+          callback {open_as_freemode();}
           xywh {255 5 15 15} labelfont 1 labelsize 10
+          class Fl_Osc_Button
         }
       }
     }
@@ -410,12 +431,12 @@ envfree->redraw();}
         Fl_Button {} {
           label C
           callback {presetsui->copy(envASRbw->loc());}
-          xywh {155 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {155 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Button {} {
           label P
           callback {presetsui->paste(envASRbw->loc(),this);}
-          xywh {172 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+          xywh {172 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
         }
         Fl_Dial e4aval {
           label {A.val}
@@ -460,8 +481,9 @@ envfree->redraw();}
       }
       Fl_Button {} {
         label E
-        callback {freemodeeditwindow->show();}
+        callback {open_as_freemode();}
         xywh {190 5 15 15} labelfont 1 labelsize 10
+        class Fl_Osc_Button
       }
     }
   }
@@ -478,8 +500,9 @@ envfree->redraw();}
       } {
         Fl_Button {} {
           label E
-          callback {freemodeeditwindow->show();}
+          callback {open_as_freemode();}
           xywh {185 5 15 15} labelfont 1 labelsize 10
+          class Fl_Osc_Button
         }
         Fl_Box freeeditsmall {
           label Envelope
@@ -501,6 +524,18 @@ envfree->redraw();}
       }
     }
   }
+  Function {open_as_freemode()} {open
+  } {
+     code {
+    if (!freemodehack->value() &&
+        fl_choice("Convert envelope to free mode data?","No","Yes",NULL)==0)
+        return;
+    freemodehack->oscWrite("Pfreemode", "T");
+    freeedit->update();
+    freemodeeditwindow->show();
+    freemodeeditwindow->position(Fl::event_x_root()-20, Fl::event_y_root()+20);
+} {}
+}
   Function {init(int env_type, Fl_Osc_Interface *osc_, std::string base_, std::string ext_)} {open
   } {
     code {osc  = osc_;
@@ -533,105 +568,56 @@ freeeditsmall->setpair(freeedit);
 freeedit->setpair(freeeditsmall);
 
 
-refresh();} {}
+refresh_display();} {}
   }
   Function {rebase(std::string new_base)} {open
   } {
     code {Fl_Osc_Group::rebase(new_base);
     freemodeeditwindow->rebase(new_base+ext);} {}
   }
-  Function {reinit(bool Pfreemode)} {open
+  Function {disable_freemode()} {open
   } {
-    code {
-    //if(!Pfreemode){
-    //    int answer=fl_choice("Disable the free mode of the Envelope?","No","Yes",NULL);
-    //    freemodebutton->value(Pfreemode);
-    //    if (answer==0)
-    //        return;
-    //};
-        freeedit->update();
+    code {if (fl_choice("Discard free mode data?","No","Yes",NULL)==0)
+        return;
 
     hide();
-    const int winx=freemodeeditwindow->x();
-    const int winy=freemodeeditwindow->y();
-
-    bool reshow = freemodeeditwindow->visible();
+    int winx = Fl::event_x_root()-10;
+    int winy = Fl::event_y_root()-155;
+    winx = winx < 1 ? 1 : winx;
+    winy = winy < 1 ? 1 : winy;
     freemodeeditwindow->hide();
 
     envwindow->hide();
     Fl_Group *par=envwindow->parent();
     par->hide();
 
-
-    refresh();
+    freemodehack->oscWrite("Pfreemode", "F");
+    freeedit->update();
     envwindow->show();
     par->redraw();
 
     par->show();
     show();
-    freemodeeditwindow->position(winx,winy);
-    if(reshow)
-        freemodeeditwindow->show();
-
-    if (Pfreemode) {
-        freemodebutton->value(1);
-        addpoint->show();
-        deletepoint->show();
-        forcedreleasecheck->show();
-        sustaincounter->show();
-        envstretchdial->show();
-    } else{
-        freemodebutton->value(0);
-        addpoint->hide();
-        deletepoint->hide();
-        forcedreleasecheck->hide();
-        sustaincounter->hide();
-        envstretchdial->hide();
-    };
-} {selected
-    }
+    freemodeeditwindow->position(winx,winy);} {}
   }
-  Function {refresh()} {open
+  Function {refresh()} { open }
+  { code {
+    freemodehack->oscWrite("Pfreemode");
+  } {}
+  }
+  Function {refresh_display()} {open
   } {
     code {
+
     sustaincounter->value(Penvsustain);
     sustaincounter->maximum(Penvpoints-2);
 
     envstretchdial->value(Penvstretch);
 
-linearenvelopecheck->value(Plinearenvelope);
-
-//Conditionally display widgets
-    if(freemodebutton->value()) {
-        freemodebutton->value(1);
-        addpoint->show();
-        deletepoint->show();
-        forcedreleasecheck->show();
-        sustaincounter->show();
-        envstretchdial->show();
-    } else {
-        freemodebutton->value(0);
-        addpoint->hide();
-        deletepoint->hide();
-        forcedreleasecheck->hide();
-        sustaincounter->hide();
-        envstretchdial->hide();
-    }
-
-    if(freemodebutton->value() || Envmode>2)
-        linearenvelopecheck->hide();
-	else
-        linearenvelopecheck->show();
+    linearenvelopecheck->value(Plinearenvelope);
+    linearenvelopecheck->show();
 
     forcedreleasecheck->value(Pforcedrelease);
-
-if (freemodebutton->value()==0){
-	addpoint->hide();
-	deletepoint->hide();
-} else {
-	addpoint->show();
-	deletepoint->show();
-}
 
 envADSR->hide();
 envASR->hide();
@@ -639,7 +625,11 @@ envADSRfilter->hide();
 envASRbw->hide();
 envfree->hide();
 
-if (freemodebutton->value()==0){
+if (freemodehack->value()) {
+   envwindow=envfree;
+   freeedit->update();
+} else {
+   freemodeeditwindow->hide();
    switch(Envmode){
          case 1:
          case 2:
@@ -656,10 +646,8 @@ if (freemodebutton->value()==0){
          break;
          default:
          break; 
-   };
-}else{
-   envwindow=envfree;
-};
+   }
+}
 
 assert(envwindow);
 envwindow->resize(this->x(),this->y(),this->w(),this->h());

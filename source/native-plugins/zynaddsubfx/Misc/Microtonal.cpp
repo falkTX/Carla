@@ -67,7 +67,7 @@ const rtosc::Ports Microtonal::ports = {
     rString(Pname, MICROTONAL_MAX_NAME_LEN, "Microtonal Name"),
     rString(Pcomment, MICROTONAL_MAX_NAME_LEN, "Microtonal Name"),
 
-    {"octavesize:", 0, 0, [](const char*, RtData &d)
+    {"octavesize:", rDoc("Get octave size"), 0, [](const char*, RtData &d)
         {
             Microtonal &m = *(Microtonal*)d.obj;
             d.reply(d.loc, "i", m.getoctavesize());

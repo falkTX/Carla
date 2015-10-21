@@ -23,7 +23,7 @@ class Osc_IntModel:public Fl_Osc_Widget
             oscWrite(ext, "i", v);
         }
 
-        void update(std::string url)
+        void doUpdate(std::string url)
         {
             if(!ext.empty())
                 osc->removeLink(this);
@@ -31,7 +31,7 @@ class Osc_IntModel:public Fl_Osc_Widget
 
             oscRegister(ext.c_str());
         }
-        
+
         //Raw messages
         virtual void OSC_raw(const char *msg)
         {

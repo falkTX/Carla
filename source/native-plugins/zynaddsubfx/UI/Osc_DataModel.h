@@ -17,7 +17,7 @@ class Osc_DataModel:public Fl_Osc_Widget
         value_t value;
         std::function<void(value_t)> callback;
 
-        void update(std::string url)
+        void doUpdate(std::string url)
         {
             if(!ext.empty())
                 osc->removeLink(this);
@@ -26,7 +26,7 @@ class Osc_DataModel:public Fl_Osc_Widget
 
             oscRegister(ext.c_str());
         }
-        
+
         //Raw messages
         virtual void OSC_raw(const char *msg)
         {

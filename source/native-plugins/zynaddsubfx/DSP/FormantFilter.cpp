@@ -71,7 +71,7 @@ FormantFilter::FormantFilter(FilterParams *pars, Allocator *alloc, unsigned int 
     outgain = dB2rap(pars->getgain());
 
     oldinput   = -1.0f;
-    Qfactor    = 1.0f;
+    Qfactor = pars->getq();
     oldQfactor = Qfactor;
     firsttime  = 1;
 }

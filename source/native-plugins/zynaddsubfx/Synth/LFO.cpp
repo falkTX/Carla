@@ -28,8 +28,10 @@
 #include <cstdio>
 #include <cmath>
 
-LFO::LFO(const LFOParams &lfopars, float basefreq, float dt_)
-    :dt(dt_)
+LFO::LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t)
+    :delayTime(t, lfopars.Pdelay / 127.0f * 4.0f), //0..4 sec
+    waveShape(lfopars.PLFOtype),
+    deterministic(!lfopars.Pfreqrand)
 {
     int stretch = lfopars.Pstretch;
     if(stretch == 0)
@@ -38,24 +40,24 @@ LFO::LFO(const LFOParams &lfopars, float basefreq, float dt_)
     //max 2x/octave
     const float lfostretch = powf(basefreq / 440.0f, (stretch - 64.0f) / 63.0f);
 
-    float lfofreq =
+    const float lfofreq =
         (powf(2, lfopars.Pfreq * 10.0f) - 1.0f) / 12.0f * lfostretch;
-    incx = fabs(lfofreq) * dt;
+    phaseInc = fabs(lfofreq) * t.dt();
 
     if(!lfopars.Pcontinous) {
         if(lfopars.Pstartphase == 0)
-            x = RND;
+            phase = RND;
         else
-            x = fmod((lfopars.Pstartphase - 64.0f) / 127.0f + 1.0f, 1.0f);
+            phase = fmod((lfopars.Pstartphase - 64.0f) / 127.0f + 1.0f, 1.0f);
     }
     else {
-        const float tmp = fmod(lfopars.time * incx, 1.0f);
-        x = fmod((lfopars.Pstartphase - 64.0f) / 127.0f + 1.0f + tmp, 1.0f);
+        const float tmp = fmod(t.time() * phaseInc, 1.0f);
+        phase = fmod((lfopars.Pstartphase - 64.0f) / 127.0f + 1.0f + tmp, 1.0f);
     }
 
     //Limit the Frequency(or else...)
-    if(incx > 0.49999999f)
-        incx = 0.499999999f;
+    if(phaseInc > 0.49999999f)
+        phaseInc = 0.499999999f;
 
 
     lfornd = limit(lfopars.Prandomness / 127.0f, 0.0f, 1.0f);
@@ -70,88 +72,72 @@ LFO::LFO(const LFOParams &lfopars, float basefreq, float dt_)
             break; //in octave
         default:
             lfointensity = powf(2, lfopars.Pintensity / 127.0f * 11.0f) - 1.0f; //in centi
-            x -= 0.25f; //chance the starting phase
+            phase -= 0.25f; //chance the starting phase
             break;
     }
 
     amp1     = (1 - lfornd) + lfornd * RND;
     amp2     = (1 - lfornd) + lfornd * RND;
-    lfotype  = lfopars.PLFOtype;
-    lfodelay = lfopars.Pdelay / 127.0f * 4.0f; //0..4 sec
     incrnd   = nextincrnd = 1.0f;
-    freqrndenabled = (lfopars.Pfreqrand != 0);
-    computenextincrnd();
-    computenextincrnd(); //twice because I want incrnd & nextincrnd to be random
+    computeNextFreqRnd();
+    computeNextFreqRnd(); //twice because I want incrnd & nextincrnd to be random
 }
 
 LFO::~LFO()
 {}
 
-/*
- * LFO out
- */
+float LFO::baseOut(const char waveShape, const float phase) const
+{
+    switch(waveShape) {
+        case LFO_TRIANGLE:
+            if(phase >= 0.0f && phase < 0.25f)
+                return 4.0f * phase;
+            else if(phase > 0.25f && phase < 0.75f)
+                return 2 - 4 * phase;
+            else
+                return 4.0f * phase - 4.0f;
+            break;
+        case LFO_SQUARE:
+            if(phase < 0.5f)
+                return -1;
+            else
+                return  1;
+            break;
+        case LFO_RAMPUP:    return (phase - 0.5f) * 2.0f;
+        case LFO_RAMPDOWN:  return (0.5f - phase) * 2.0f;
+        case LFO_EXP_DOWN1: return powf(0.05f, phase) * 2.0f - 1.0f;
+        case LFO_EXP_DOWN2: return powf(0.001f, phase) * 2.0f - 1.0f;
+        default:            return cosf(phase * 2.0f * PI); //LFO_SINE
+    }
+}
+
+
 float LFO::lfoout()
 {
-    float out;
-    switch(lfotype) {
-        case 1: //LFO_TRIANGLE
-            if((x >= 0.0f) && (x < 0.25f))
-                out = 4.0f * x;
-            else
-            if((x > 0.25f) && (x < 0.75f))
-                out = 2 - 4 * x;
-            else
-                out = 4.0f * x - 4.0f;
-            break;
-        case 2: //LFO_SQUARE
-            if(x < 0.5f)
-                out = -1;
-            else
-                out = 1;
-            break;
-        case 3: //LFO_RAMPUP
-            out = (x - 0.5f) * 2.0f;
-            break;
-        case 4: //LFO_RAMPDOWN
-            out = (0.5f - x) * 2.0f;
-            break;
-        case 5: //LFO_EXP_DOWN 1
-            out = powf(0.05f, x) * 2.0f - 1.0f;
-            break;
-        case 6: //LFO_EXP_DOWN 2
-            out = powf(0.001f, x) * 2.0f - 1.0f;
-            break;
-        default:
-            out = cosf(x * 2.0f * PI); //LFO_SINE
-    }
+    float out = baseOut(waveShape, phase);
 
-
-    if((lfotype == 0) || (lfotype == 1))
-        out *= lfointensity * (amp1 + x * (amp2 - amp1));
+    if(waveShape == LFO_SINE || waveShape == LFO_TRIANGLE)
+        out *= lfointensity * (amp1 + phase * (amp2 - amp1));
     else
         out *= lfointensity * amp2;
-    if(lfodelay < 0.00001f) {
-        if(freqrndenabled == 0)
-            x += incx;
-        else {
-            float tmp = (incrnd * (1.0f - x) + nextincrnd * x);
-            if(tmp > 1.0f)
-                tmp = 1.0f;
-            else
-            if(tmp < 0.0f)
-                tmp = 0.0f;
-            x += incx * tmp;
-        }
-        if(x >= 1) {
-            x    = fmod(x, 1.0f);
-            amp1 = amp2;
-            amp2 = (1 - lfornd) + lfornd * RND;
 
-            computenextincrnd();
-        }
+    if(delayTime.inFuture())
+        return out;
+
+    //Start oscillating
+    if(deterministic)
+        phase += phaseInc;
+    else {
+        const float tmp = (incrnd * (1.0f - phase) + nextincrnd * phase);
+        phase += phaseInc * limit(tmp, 0.0f, 1.0f);
     }
-    else
-        lfodelay -= dt;
+    if(phase >= 1) {
+        phase    = fmod(phase, 1.0f);
+        amp1 = amp2;
+        amp2 = (1 - lfornd) + lfornd * RND;
+
+        computeNextFreqRnd();
+    }
     return out;
 }
 
@@ -164,9 +150,9 @@ float LFO::amplfoout()
 }
 
 
-void LFO::computenextincrnd()
+void LFO::computeNextFreqRnd()
 {
-    if(freqrndenabled == 0)
+    if(deterministic)
         return;
     incrnd     = nextincrnd;
     nextincrnd = powf(0.5f, lfofreqrnd) + RND * (powf(2.0f, lfofreqrnd) - 1.0f);

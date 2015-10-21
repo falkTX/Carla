@@ -1,4 +1,5 @@
 #include <FL/Fl.H>
+#include <FL/fl_draw.H>
 #include "Fl_Osc_VSlider.H"
 #include "Fl_Osc_Interface.h"
 #include "Fl_Osc_Pane.H"
@@ -9,82 +10,60 @@
 #include <sstream>
 
 Fl_Osc_VSlider::Fl_Osc_VSlider(int X, int Y, int W, int H, const char *label)
-    :Fl_Value_Slider(X,Y,W,H,label), Fl_Osc_Widget(this), cb_data(NULL, NULL)
+    :Fl_Osc_Slider(X,Y,W,H,label), cb_data(NULL, NULL)
 {
     //bounds(0.0f,1.0f);
-    Fl_Slider::callback(Fl_Osc_VSlider::_cb);
-}
-
-void Fl_Osc_VSlider::init(std::string path_, char type_)
-{
-    osc_type = type_;
-    ext = path_;
-    oscRegister(ext.c_str());
+    Fl_Slider::callback(Fl_Osc_Slider::_cb);
+    textfont_ = FL_HELVETICA;
+    textsize_ = 10;
+    textcolor_ = FL_FOREGROUND_COLOR;
 }
 
 Fl_Osc_VSlider::~Fl_Osc_VSlider(void)
 {}
 
-void Fl_Osc_VSlider::OSC_value(char v)
+void Fl_Osc_VSlider::init(std::string path_, char type_)
 {
-    Fl_Slider::value(v+minimum()+fmodf(value(), 1.0f));
-}
-        
-void Fl_Osc_VSlider::OSC_value(int v)
-{
-    Fl_Slider::value(v+minimum()+fmodf(value(), 1.0f));
+    Fl_Osc_Slider::init(path_, type_);
 }
 
-void Fl_Osc_VSlider::OSC_value(float v)
-{
-    Fl_Slider::value(v+minimum());
-}
-
-void Fl_Osc_VSlider::cb(void)
-{
-    const float val = Fl_Slider::value();
-    if(osc_type == 'f')
-        oscWrite(ext, "f", val-minimum());
-    else if(osc_type == 'i')
-        oscWrite(ext, "i", (int)(val-minimum()));
-    else {
-	fprintf(stderr, "invalid `c' from vslider %s%s, using `i'\n", loc.c_str(), ext.c_str());
-	oscWrite(ext, "i", (int)(val-minimum()));
+void Fl_Osc_VSlider::draw() {
+    int sxx = x(), syy = y(), sww = w(), shh = h();
+    int bxx = x(), byy = y(), bww = w(), bhh = h();
+    if (horizontal()) {
+        bww = 35; sxx += 35; sww -= 35;
+    } else {
+        syy += 25; bhh = 25; shh -= 25;
     }
-    //OSC_value(val);
-    
-    if(cb_data.first)
-        cb_data.first(this, cb_data.second);
-}
-
-void Fl_Osc_VSlider::callback(Fl_Callback *cb, void *p)
-{
-    cb_data.first = cb;
-    cb_data.second = p;
+    if (damage()&FL_DAMAGE_ALL) draw_box(box(),sxx,syy,sww,shh,color());
+    Fl_Osc_Slider::draw(sxx+Fl::box_dx(box()),
+                        syy+Fl::box_dy(box()),
+                        sww-Fl::box_dw(box()),
+                        shh-Fl::box_dh(box()));
+    draw_box(box(),bxx,byy,bww,bhh,color());
+    char buf[128];
+    format(buf);
+    fl_font(textfont(), textsize());
+    fl_color(active_r() ? textcolor() : fl_inactive(textcolor()));
+    fl_draw(buf, bxx, byy, bww, bhh, FL_ALIGN_CLIP);
 }
 
 int Fl_Osc_VSlider::handle(int ev)
 {
-    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && !Fl::event_shift());
-    bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
-    bool shift_middle = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && Fl::event_shift());
-    if(middle_mouse || ctl_click) {
-        printf("Trying to learn...\n");
-        osc->write("/learn", "s", (loc+ext).c_str());
-        return 1;
-    } else if(shift_middle) {
-        osc->write("/unlearn", "s", (loc+ext).c_str());
-        return 1;
+    if (ev == FL_PUSH && Fl::visible_focus()) {
+        Fl::focus(this);
+        redraw();
     }
-    return Fl_Value_Slider::handle(ev);
-}
+    int sxx = x(), syy = y(), sww = w(), shh = h();
+    if (horizontal()) {
+        sxx += 35; sww -= 35;
+    } else {
+        syy += 25; shh -= 25;
+    }
 
-void Fl_Osc_VSlider::update(void)
-{
-    oscWrite(ext, "");
-}
-
-void Fl_Osc_VSlider::_cb(Fl_Widget *w, void *)
-{
-    static_cast<Fl_Osc_VSlider*>(w)->cb();
+    return Fl_Osc_Slider::handle(ev,
+                                 sxx+Fl::box_dx(box()),
+                                 syy+Fl::box_dy(box()),
+                                 sww-Fl::box_dw(box()),
+                                 shh-Fl::box_dh(box()));
 }

@@ -80,7 +80,6 @@ class EffectMgr:public Presets
     private:
 
         //Parameters Prior to initialization
-        char effect_id;
         char preset;
         char settings[128];
 

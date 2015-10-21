@@ -28,7 +28,7 @@
 #include "../Params/FilterParams.h"
 #include "../Misc/Util.h"
 
-PADnote::PADnote(PADnoteParameters *parameters,
+PADnote::PADnote(const PADnoteParameters *parameters,
                  SynthParams pars, const int& interpolation)
     :SynthNote(pars), pars(*parameters), interpolation(interpolation)
 {
@@ -121,9 +121,9 @@ void PADnote::setup(float freq,
                 ((powf(10, 1.5f * pars.PPunchStrength / 127.0f) - 1.0f)
                  * VelF(velocity,
                         pars.PPunchVelocitySensing));
-            float time =
+            const float time =
                 powf(10, 3.0f * pars.PPunchTime / 127.0f) / 10000.0f;             //0.1f .. 100 ms
-            float stretch = powf(440.0f / freq, pars.PPunchStretch / 64.0f);
+            const float stretch = powf(440.0f / freq, pars.PPunchStretch / 64.0f);
             NoteGlobalPar.Punch.dt = 1.0f
                                      / (time * synth.samplerate_f * stretch);
         }
@@ -131,10 +131,10 @@ void PADnote::setup(float freq,
             NoteGlobalPar.Punch.Enabled = 0;
 
         NoteGlobalPar.FreqEnvelope = memory.alloc<Envelope>(*pars.FreqEnvelope, basefreq, synth.dt());
-        NoteGlobalPar.FreqLfo      = memory.alloc<LFO>(*pars.FreqLfo, basefreq, synth.dt());
+        NoteGlobalPar.FreqLfo      = memory.alloc<LFO>(*pars.FreqLfo, basefreq, time);
 
         NoteGlobalPar.AmpEnvelope = memory.alloc<Envelope>(*pars.AmpEnvelope, basefreq, synth.dt());
-        NoteGlobalPar.AmpLfo      = memory.alloc<LFO>(*pars.AmpLfo, basefreq, synth.dt());
+        NoteGlobalPar.AmpLfo      = memory.alloc<LFO>(*pars.AmpLfo, basefreq, time);
     }
 
     NoteGlobalPar.Volume = 4.0f
@@ -154,7 +154,7 @@ void PADnote::setup(float freq,
                     synth.samplerate, synth.buffersize);
 
         NoteGlobalPar.FilterEnvelope = memory.alloc<Envelope>(*pars.FilterEnvelope, basefreq, synth.dt());
-        NoteGlobalPar.FilterLfo      = memory.alloc<LFO>(*pars.FilterLfo, basefreq, synth.dt());
+        NoteGlobalPar.FilterLfo      = memory.alloc<LFO>(*pars.FilterLfo, basefreq, time);
     }
     NoteGlobalPar.FilterQ = pars.GlobalFilter->getq();
     NoteGlobalPar.FilterFreqTracking = pars.GlobalFilter->getfreqtracking(
@@ -164,6 +164,13 @@ void PADnote::setup(float freq,
         finished_ = true;
         return;
     }
+}
+
+SynthNote *PADnote::cloneLegato(void)
+{
+    SynthParams sp{memory, ctl, synth, time, legato.param.freq, velocity, 
+                   (bool)portamento, legato.param.midinote, true};
+    return memory.alloc<PADnote>(&pars, sp, interpolation);
 }
 
 void PADnote::legatonote(LegatoParams pars)

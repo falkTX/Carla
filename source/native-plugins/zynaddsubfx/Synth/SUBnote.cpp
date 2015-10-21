@@ -33,7 +33,7 @@
 #include "../Misc/Util.h"
 #include "../Misc/Allocator.h"
 
-SUBnote::SUBnote(SUBnoteParameters *parameters, SynthParams &spars)
+SUBnote::SUBnote(const SUBnoteParameters *parameters, SynthParams &spars)
     :SynthNote(spars), pars(*parameters)
 {
     NoteEnabled = ON;
@@ -46,6 +46,7 @@ void SUBnote::setup(float freq,
                     int midinote,
                     bool legato)
 {
+    this->velocity = velocity;
     portamento  = portamento_;
     NoteEnabled = ON;
     volume      = powf(0.1f, 3.0f * (1.0f - pars.PVolume / 96.0f)); //-60 dB .. 0 dB
@@ -208,6 +209,13 @@ void SUBnote::setup(float freq,
     }
 
     oldamplitude = newamplitude;
+}
+
+SynthNote *SUBnote::cloneLegato(void)
+{
+    SynthParams sp{memory, ctl, synth, time, legato.param.freq, velocity, 
+                   (bool)portamento, legato.param.midinote, true};
+    return memory.alloc<SUBnote>(&pars, sp);
 }
 
 void SUBnote::legatonote(LegatoParams pars)

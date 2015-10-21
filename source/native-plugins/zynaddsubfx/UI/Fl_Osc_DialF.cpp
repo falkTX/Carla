@@ -39,6 +39,7 @@ void Fl_Osc_DialF::init(const char *path)
     ext = path;
     loc = pane->base;
     oscRegister(path);
+    integer_step = false;
 };
 
 Fl_Osc_DialF::~Fl_Osc_DialF(void)

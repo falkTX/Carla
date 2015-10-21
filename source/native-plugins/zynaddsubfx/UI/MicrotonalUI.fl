@@ -51,8 +51,7 @@ class MicrotonalUI {} {
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {microtonaluiwindow->osc = osc;}
-        code1 {microtonaluiwindow->base = base;}
+        code0 {microtonaluiwindow->init(osc, base);}
       }
       Fl_Group {} {
         tooltip {Center where the note's freqs. are turned upside-down} xywh {249 2 155 45} box ENGRAVED_FRAME

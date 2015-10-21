@@ -11,6 +11,7 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Text_Display.H>
 #include "Osc_SimpleListModel.h"
+#include "Fl_Osc_Pane.H"
 
 using namespace std;
 
@@ -56,7 +57,7 @@ class Fl_Osc_StrChoice:public Fl_Choice, public Fl_Osc_Widget
             cb_data.first = cb;
             cb_data.second = p;
         }
-        
+
         void cb(void)
         {
             assert(osc);
@@ -66,7 +67,6 @@ class Fl_Osc_StrChoice:public Fl_Choice, public Fl_Osc_Widget
                 cb_data.first(this, cb_data.second);
         }
     private:
-        int min;
         std::pair<Fl_Callback*, void*> cb_data;
 };
 static void callback_fn_choice_nio(Fl_Widget *w, void *)
@@ -110,9 +110,9 @@ NioUI::NioUI(Fl_Osc_Interface *osc)
         for(auto io:list)
             audio->add(io.c_str());
     };
-    
-    midi_opt->update("/io/source-list");
-    audio_opt->update("/io/sink-list");
+
+    midi_opt->doUpdate("/io/source-list");
+    audio_opt->doUpdate("/io/sink-list");
 
     resizable(this);
     size_range(400, 300);
@@ -123,19 +123,19 @@ NioUI::~NioUI()
 
 void NioUI::refresh()
 {
-    midi_opt->update("/io/source-list");
-    audio_opt->update("/io/sink-list");
+    midi_opt->doUpdate("/io/source-list");
+    audio_opt->doUpdate("/io/sink-list");
     midi->update();
     audio->update();
 }
 
-void NioUI::midiCallback(Fl_Widget *c)
+void NioUI::midiCallback(Fl_Widget *)
 {
     //bool good = Nio::setSource(static_cast<Fl_Choice *>(c)->text());
     //static_cast<Fl_Choice *>(c)->textcolor(fl_rgb_color(255 * !good, 0, 0));
 }
 
-void NioUI::audioCallback(Fl_Widget *c)
+void NioUI::audioCallback(Fl_Widget *)
 {
     //bool good = Nio::setSink(static_cast<Fl_Choice *>(c)->text());
     //static_cast<Fl_Choice *>(c)->textcolor(fl_rgb_color(255 * !good, 0, 0));

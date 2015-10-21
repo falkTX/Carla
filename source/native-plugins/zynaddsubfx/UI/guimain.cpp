@@ -541,6 +541,7 @@ int main(int argc, char *argv[])
         lo_server_add_method(server, NULL, NULL, handler_function, 0);
         sendtourl = argv[1];
     }
+    fprintf(stderr, "ext client running on %d\n", lo_server_get_port(server));
     
     gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
 

@@ -18,7 +18,7 @@ class Osc_SimpleListModel:public Fl_Osc_Widget
         std::function<void(list_t)> callback;
         unsigned list_size;
 
-        void update(std::string url)
+        void doUpdate(std::string url)
         {
             if(!ext.empty())
                 osc->removeLink(this);
@@ -47,7 +47,7 @@ class Osc_SimpleListModel:public Fl_Osc_Widget
             rtosc_amessage(buffer, sizeof(buffer), ext.c_str(), types, args);
             osc->writeRaw(buffer);
         }
-        
+
         //Raw messages
         virtual void OSC_raw(const char *msg)
         {

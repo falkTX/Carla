@@ -115,6 +115,37 @@ unsigned rtosc_narguments(const char *msg);
  */
 char rtosc_type(const char *msg, unsigned i);
 
+typedef struct {
+    const char    *type_pos;
+    const uint8_t *value_pos;
+} rtosc_arg_itr_t;
+
+typedef struct {
+    char type;
+    rtosc_arg_t val;
+} rtosc_arg_val_t;
+
+/**
+ * Create an argument iterator for a message
+ * @param msg OSC message
+ * @returns an initialized iterator
+ */
+rtosc_arg_itr_t rtosc_itr_begin(const char *msg);
+
+/**
+ * Gets the next argument in a message
+ * @param itr OSC message iterator
+ * @returns a type value pair from the message
+ */
+rtosc_arg_val_t rtosc_itr_next(rtosc_arg_itr_t *itr);
+
+/**
+ * Determines if the iterator is at the end of the argument list
+ * @param itr OSC message iterator
+ * @returns 1 if there are no more elements, 0 otherwise
+ */
+int rtosc_itr_end(rtosc_arg_itr_t itr);
+
 /**
  * Blob data may be safely written to
  * @param msg OSC message

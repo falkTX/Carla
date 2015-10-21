@@ -45,7 +45,8 @@ static const rtosc::Ports local_ports = {
     rSelf(EffectMgr),
     rPaste,
     rRecurp(filterpars, "Filter Parameter for Dynamic Filter"),
-    {"parameter#128::i", rProp(alias) rDoc("Parameter Accessor"), NULL,
+    {"parameter#128::i:T:F", rProp(parameter) rProp(alias) rDoc("Parameter Accessor"),
+        NULL,
         [](const char *msg, rtosc::RtData &d)
         {
             EffectMgr *eff = (EffectMgr*)d.obj;
@@ -54,20 +55,37 @@ static const rtosc::Ports local_ports = {
 
             if(!rtosc_narguments(msg))
                 d.reply(d.loc, "i", eff->geteffectparrt(atoi(mm)));
-            else {
+            else if(rtosc_type(msg, 0) == 'i'){
                 eff->seteffectparrt(atoi(mm), rtosc_argument(msg, 0).i);
+                d.broadcast(d.loc, "i", eff->geteffectparrt(atoi(mm)));
+            } else if(rtosc_type(msg, 0) == 'T'){
+                eff->seteffectparrt(atoi(mm), 127);
+                d.broadcast(d.loc, "i", eff->geteffectparrt(atoi(mm)));
+            } else if(rtosc_type(msg, 0) == 'F'){
+                eff->seteffectparrt(atoi(mm), 0);
                 d.broadcast(d.loc, "i", eff->geteffectparrt(atoi(mm)));
             }
         }},
-    {"preset::i", rProp(alias) rDoc("Effect Preset Selector"), NULL,
+    {"preset::i", rProp(parameter) rProp(alias) rDoc("Effect Preset Selector"), NULL,
         [](const char *msg, rtosc::RtData &d)
         {
+            char loc[1024];
             EffectMgr *eff = (EffectMgr*)d.obj;
             if(!rtosc_narguments(msg))
                 d.reply(d.loc, "i", eff->getpreset());
             else {
                 eff->changepresetrt(rtosc_argument(msg, 0).i);
                 d.broadcast(d.loc, "i", eff->getpreset());
+
+                //update parameters as well
+                strncpy(loc, d.loc, 1024);
+                char *tail = rindex(loc, '/');
+                if(!tail)
+                    return;
+                for(int i=0;i<128;++i) {
+                    sprintf(tail+1, "parameter%d", i);
+                    d.broadcast(loc, "i", eff->geteffectparrt(i));
+                }
             }
         }},
     {"eq-coeffs:", rProp(internal) rDoc("Get equalizer Coefficients"), NULL,
@@ -84,7 +102,8 @@ static const rtosc::Ports local_ports = {
             eq->getFilter(a,b);
             d.reply(d.loc, "bb", sizeof(a), a, sizeof(b), b);
         }},
-    {"efftype::i", rDoc("Get Effect Type"), NULL, [](const char *m, rtosc::RtData &d)
+    {"efftype::i", rProp(parameter) rDoc("Get Effect Type"), NULL,
+        [](const char *m, rtosc::RtData &d)
         {
             EffectMgr *eff  = (EffectMgr*)d.obj;
             if(rtosc_narguments(m))  {
@@ -385,7 +404,7 @@ void EffectMgr::paste(EffectMgr &e)
     changeeffectrt(e.nefx, true);
     changepresetrt(e.preset, true);
     for(int i=0;i<128;++i)
-        seteffectparrt(e.settings[i], i);
+        seteffectparrt(i, e.settings[i]);
 }
 
 void EffectMgr::add2XML(XMLwrapper *xml)

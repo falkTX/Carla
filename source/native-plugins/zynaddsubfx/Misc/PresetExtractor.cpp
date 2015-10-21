@@ -30,7 +30,7 @@ static void dummy(const char *, rtosc::RtData&) {}
 const rtosc::Ports real_preset_ports =
 {
     {"scan-for-presets:", 0, 0,
-        [](const char *msg, rtosc::RtData &d) {
+        [](const char *, rtosc::RtData &d) {
             MiddleWare &mw = *(MiddleWare*)d.obj;
             mw.getPresetsStore().scanforpresets();
             auto &pre = mw.getPresetsStore().presets;
@@ -83,7 +83,7 @@ const rtosc::Ports real_preset_ports =
                 assert(false && "bad arguments");
         }},
     {"clipboard-type:", 0, 0,
-        [](const char *msg, rtosc::RtData &d) {
+        [](const char *, rtosc::RtData &d) {
             const MiddleWare &mw = *(MiddleWare*)d.obj;
             d.reply(d.loc, "s", mw.getPresetsStore().clipboard.type.c_str());
         }},
@@ -99,8 +99,8 @@ const rtosc::Ports real_preset_ports =
 const rtosc::Ports preset_ports
 {
     {"scan-for-presets:", rDoc("Scan For Presets"), 0, dummy},
-    {"copy:s:ss:si:ssi",  rDoc("Copy <s> URL to <s> Name/Clipboard from subfield <i>"), 0, dummy},
-    {"paste:s:ss:si:ssi", rDoc("Paste <s> URL to <s> File-Name/Clipboard from subfield <i>"), 0, dummy},
+    {"copy:s:ss:si:ssi",  rDoc("Copy (s)URL to (s) Name/Clipboard from subfield (i)"), 0, dummy},
+    {"paste:s:ss:si:ssi", rDoc("Paste (s) URL to (s) File-Name/Clipboard from subfield (i)"), 0, dummy},
     {"clipboard-type:",   rDoc("Type Stored In Clipboard"), 0, dummy},
     {"delete:s", rDoc("Delete the given preset file"), 0, dummy},
 };
@@ -121,14 +121,6 @@ const rtosc::Ports preset_ports
 //Params/SUBnoteParameters.cpp:    setpresettype("Psubsynth");
 //Synth/OscilGen.cpp:    setpresettype("Poscilgen");
 //Synth/Resonance.cpp:    setpresettype("Presonance");
-
-
-//Translate newer symbols to old preset types
-std::vector<string> translate_preset_types(std::string metatype)
-{
-    std::vector<string> results;
-    return results;
-}
 
 
 /*****************************************************************************

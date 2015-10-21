@@ -61,6 +61,9 @@ decl {\#include "VuPartMeter.h"} {public local
 decl {\#include "Fl_Osc_Dial.H"} {private local
 } 
 
+decl {\#include "Osc_DataModel.h"} {private local
+} 
+
 decl {\#include "VuMasterMeter.h"} {public local
 } 
 
@@ -241,7 +244,13 @@ class MasterUI {open
     close();
 };} open
       xywh {330 365 390 525} type Double xclass zynaddsubfx visible
+      class Fl_Osc_Window
     } {
+        Fl_Box dummy_again {
+          xywh {25 25 25 25}
+          code0 {masterwindow->init(osc, "");}
+        }
+
       Fl_Group win_root {open
         xywh {0 0 390 525}
         class Fl_Osc_Group
@@ -256,6 +265,11 @@ class MasterUI {open
             MenuItem {} {
               label {&New (erase all)...}
               callback {do_new_master();}
+              xywh {25 25 100 20}
+            }
+            MenuItem {} {
+              label {&Revert changes...}
+              callback {do_revert_changes();}
               xywh {25 25 100 20}
             }
             MenuItem {} {
@@ -568,7 +582,7 @@ syseffectui->refresh();}
             Fl_Button {} {
               label C
               callback {presetsui->copy("/sysefx"+to_s(nsyseff)+"/");}
-              xywh {180 187 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
+              xywh {180 187 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
             }
             Fl_Button {} {
               label P
@@ -855,8 +869,7 @@ GNU General Public License for details.}
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {syseffsendwindow->osc = osc; assert(osc);}
-        code1 {syseffsendwindow->base = "";}
+        code0 {syseffsendwindow->init(osc,"");}
       }
       Fl_Scroll syseffscroll {open
         xywh {0 45 120 170} box FLAT_BOX resizable
@@ -880,8 +893,7 @@ GNU General Public License for details.}
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {panelwindow->osc  = osc;}
-        code1 {panelwindow->base = "/";}
+        code0 {panelwindow->init(osc,"/");}
       }
       Fl_Scroll {} {open
         xywh {0 5 570 310} type HORIZONTAL box THIN_UP_BOX
@@ -924,8 +936,7 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
     } {
       Fl_Box {} {
         xywh {0 0 0 0}
-        code0 {simplemasterwindow->osc  = osc;}
-        code1 {simplemasterwindow->base = "/";}
+        code0 {simplemasterwindow->init(osc, "/");}
       }
       Fl_Menu_Bar simplemastermenu {
         xywh {0 0 600 25}
@@ -937,6 +948,11 @@ if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
           MenuItem {} {
             label {&New (erase all)...}
             callback {do_new_master();}
+            xywh {30 30 100 20}
+          }
+          MenuItem {} {
+            label {&Revert changes...}
+            callback {do_revert_changes();}
             xywh {30 30 100 20}
           }
           MenuItem {} {
@@ -1427,6 +1443,7 @@ virkeys->take_focus();}
       label {User Interface mode}
       callback {*exitprogram=1;}
       xywh {342 246 430 250} type Double hide non_modal
+      class Fl_Osc_Window
     } {
       Fl_Box {} {
         label {Welcome to ZynAddSubFX}
@@ -1489,6 +1506,25 @@ osc=osc_;
 ninseff=0;
 nsyseff=0;
 npart=0;
+last_loaded[0]=0;
+loading_next[0]=0;
+last_xmz = new Osc_DataModel(osc);
+last_xmz->callback = [this](std::string filestr) {
+    const char *filename = filestr.c_str();
+    if (filename[0] != 0)
+       strncpy(last_loaded, filename, XMZ_PATH_MAX);
+    else if (loading_next[0] != 0) {
+       strncpy(last_loaded, loading_next, XMZ_PATH_MAX);
+       loading_next[0] = 0;
+    } else
+       last_loaded[0] = 0;
+    last_loaded[XMZ_PATH_MAX - 1] = 0;
+    char *label = last_loaded[0] == 0 ? NULL
+                  : ((label = strrchr(last_loaded, '/'))) ? label+1
+		  : last_loaded;
+    setfilelabel(label);
+};
+last_xmz->doUpdate("/last_xmz");
 
 for (int i=0;i<NUM_SYS_EFX;i++)
    for (int j=0;j<NUM_SYS_EFX;j++)
@@ -1556,6 +1592,7 @@ simplelistitemgroup->redraw();} {}
 microtonalui=new MicrotonalUI(osc, "/microtonal/");
 
     osc->write("/reset_master");
+       osc->write("/last_xmz");
        npartcounter->value(1);
        refresh_master_ui();
        updatepanel();} {}
@@ -1565,9 +1602,29 @@ microtonalui=new MicrotonalUI(osc, "/microtonal/");
          do_new_master_unconditional();
          }} {}
   }
+  Function {do_revert_changes_unconditional()} {return_type int
+  } {
+    code {strncpy(loading_next, last_loaded, XMZ_PATH_MAX);
+    osc->write("/load_xmz", "s", last_loaded);
+    osc->write("/last_xmz");
+    refresh_master_ui();
+    updatepanel();
+
+return 1;} {}
+  }
+  Function {do_revert_changes()} {} {
+    code {if (last_loaded[0] == 0)
+         do_new_master();
+         else
+         if (fl_choice("Revert *ALL* the parameters ?","No","Yes",NULL)){
+         do_revert_changes_unconditional();
+         }} {}
+  }
   Function {do_load_master_unconditional(const char *filename, const char *display_name)} {return_type int
   } {
-    code {osc->write("/load_xmz", "s", filename);
+    code {strncpy(loading_next, filename, XMZ_PATH_MAX);
+    osc->write("/load_xmz", "s", filename);
+    osc->write("/last_xmz");
     refresh_master_ui();
     updatepanel();
 
@@ -1649,6 +1706,8 @@ simpleinseffnocounter->do_callback();
 simplerefresh();
 bankui->hide();} {}
   }
+  decl {class Osc_DataModel *last_xmz;} {public local
+  }
   decl {MicrotonalUI *microtonalui;} {private local
   }
   decl {BankUI *bankui;} {private local
@@ -1674,6 +1733,10 @@ bankui->hide();} {}
   decl {NioUI nioui;} {private local
   }
   decl {class Fl_Osc_Interface *osc;} {public local
+  }
+  decl {char last_loaded[XMZ_PATH_MAX];} {public local
+  }
+  decl {char loading_next[XMZ_PATH_MAX];} {public local
   }
   Function {close()} {open return_type void
   } {

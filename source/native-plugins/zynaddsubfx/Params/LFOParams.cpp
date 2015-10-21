@@ -49,8 +49,6 @@ static const rtosc::Ports _ports = {
 
 const rtosc::Ports &LFOParams::ports = _ports;
 
-int LFOParams::time;
-
 LFOParams::LFOParams()
 {
     Dfreq       = 64;
@@ -61,7 +59,6 @@ LFOParams::LFOParams()
     Ddelay      = 0;
     Dcontinous  = 0;
     fel  = 0;
-    time = 0;
 
     defaults();
 }
@@ -94,7 +91,6 @@ LFOParams::LFOParams(char Pfreq_,
     Ddelay      = Pdelay_;
     Dcontinous  = Pcontinous_;
     fel  = fel_;
-    time = 0;
 
     defaults();
 }

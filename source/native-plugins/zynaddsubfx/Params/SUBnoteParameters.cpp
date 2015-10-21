@@ -93,7 +93,8 @@ static const rtosc::Ports SUBnotePorts = {
             d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         }},
     //weird stuff for PCoarseDetune
-    {"octave::c:i", rDoc("Note octave shift"), NULL, [](const char *msg, RtData &d)
+    {"octave::c:i", rProp(parameter) rDoc("Note octave shift"), NULL,
+        [](const char *msg, RtData &d)
         {
             SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
             if(!rtosc_narguments(msg)) {
@@ -106,7 +107,8 @@ static const rtosc::Ports SUBnotePorts = {
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", rDoc("Note coarse detune"), NULL, [](const char *msg, RtData &d)
+    {"coarsedetune::c:i", rProp(parameter) rDoc("Note coarse detune"), NULL,
+        [](const char *msg, RtData &d)
         {
             SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
             if(!rtosc_narguments(msg)) {
