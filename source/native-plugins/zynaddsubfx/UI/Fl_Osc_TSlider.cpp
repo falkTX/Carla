@@ -53,7 +53,7 @@ int Fl_Osc_TSlider::handle(int event)
     return super;
 }
 
-void Fl_Osc_TSlider::set_transform(float scale, float offset)
+void Fl_Osc_TSlider::setTransform(float scale, float offset)
 {
     value_offset = offset;
     value_scale = scale;

@@ -89,7 +89,7 @@ delete (formantparswindow);} {}
       Fl_Button {} {
         label P
         callback {presetsui->paste(filterui->loc(),this);}
-        xywh {203 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 7
+        xywh {203 5 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
       }
       Fl_Group filterparamswindow {
         label {Filter Parameters}
@@ -258,7 +258,7 @@ delete (formantparswindow);} {}
       Fl_Button {} {
         label P
         callback {presetsui->paste(filterui->loc(),this,nvowel);}
-        xywh {665 25 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 7
+        xywh {665 25 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
         code0 {formantparswindow->osc = osc;}
         code1 {formantparswindow->base = loc();}
       }
@@ -473,6 +473,7 @@ filterparamswindow->redraw();} {}
   Function {rebase(std::string new_base)} {open
   } {
     code {
+    formantparswindow->rebase(new_base+"VoiceFilter/");
     Fl_Osc_Group::rebase(new_base);
   } {}
   }

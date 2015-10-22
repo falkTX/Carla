@@ -30,7 +30,4 @@ class Fl_Osc_VSlider:public Fl_Osc_Slider
 
     protected:
         void draw(void);
-    private:
-        char osc_type;
-        std::pair<Fl_Callback*, void*> cb_data;
 };

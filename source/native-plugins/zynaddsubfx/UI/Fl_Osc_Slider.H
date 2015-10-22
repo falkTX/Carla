@@ -24,10 +24,10 @@ class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
         int handle(int ev, int X, int Y, int W, int H);
         int handle(int ev);
 
-        void cb(void);
+        virtual void cb(void);
         static void _cb(Fl_Widget *w, void *);
         float reset_value;
-    private:
+    protected:
         char osc_type;
         std::pair<Fl_Callback*, void*> cb_data;
 };

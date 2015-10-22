@@ -32,7 +32,7 @@ decl {\#include <string.h>} {private local
 decl {\#include <string>} {public local
 } 
 
-decl {\#include "Fl_Osc_Slider.H"} {public local
+decl {\#include "Fl_Osc_TSlider.H"} {public local
 } 
 
 decl {\#include "Fl_Osc_VSlider.H"} {public local

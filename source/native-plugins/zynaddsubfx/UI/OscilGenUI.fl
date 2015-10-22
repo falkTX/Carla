@@ -59,7 +59,10 @@ decl {\#include "Fl_Osc_Choice.H"} {public local
 decl {\#include "Fl_Osc_Counter.H"} {public local
 } 
 
-decl {\#include "Fl_Osc_Slider.H"} {public local
+decl {\#include "Fl_Osc_TSlider.H"} {public local
+} 
+
+decl {\#include "Fl_Osc_VSlider.H"} {public local
 } 
 
 decl {\#include "PresetsUI.h"} {public local
@@ -68,42 +71,27 @@ decl {\#include "PresetsUI.h"} {public local
 decl {\#include <FL/fl_draw.H>} {public local
 } 
 
-class PSlider {: {public Fl_Slider, public Fl_Osc_Widget}
+class OGSlider {: {public Fl_Osc_TSlider}
 } {
-  Function {PSlider(int x,int y, int w, int h, const char *label=0):Fl_Slider(x,y,w,h,label)} {open
-  } {
-    code {phase=false;} {}
-  }
-  Function {handle(int event)} {open return_type int
-  } {
-    code {int X=x(),Y=y(),W=w(),H=h();
+  Function {OGSlider(int x,int y, int w, int h, const char *label=0)
+  :Fl_Osc_TSlider(x,y,w,h,label)} {open
+  } { code {phase=false; } {} }
 
-if ((!Fl::event_buttons())|| (event==0)||(Fl::event_shift()==0)) return(Fl_Slider::handle(event));
-
-if (!Fl::event_inside(X,Y,W,H)) {
-	if (event==FL_DRAG){
-		Fl_Slider::handle(FL_RELEASE);
-		Fl_Slider::handle(FL_LEAVE);
-		deactivate();
-		activate();
-		return(1);	
-	}else{
-		return(Fl_Slider::handle(event));
-	};
-} else {
-	//Fl_Slider::handle(FL_FOCUS);
-	Fl_Slider::handle(FL_PUSH);
-};
-
-return(1);} {}
-  }
   Function {OSC_value(char c)} {open return_type void
-  } {
-    code {if(phase)
-    value(c);
-else
-    value(127-c);} {}
-  }
+  } { code {value(phase ? c : 127-c);
+  selection_color(value() == reset_value ? 0 : 222);
+  redraw();
+  } {} }
+
+  Function {cb(void)} {open return_type void
+  } { code {
+  selection_color(value() == reset_value ? 0 : 222);
+  if(cb_data.first) cb_data.first(this, cb_data.second);
+  } {} }
+  
+  Function {update(void)} {open return_type void
+  } { code {} {} }
+  
   decl {bool phase;} {public local
   }
 } 
@@ -117,16 +105,15 @@ class Oscilharmonic {: {public Fl_Group}
       class Fl_Osc_Group visible
     } {
       Fl_Slider mag {
-        callback {int x=64;
-if (Fl::event_button3()) o->value(x);
-   else x=128-(int)o->value();
-if (x==64) o->selection_color(0);
-    else o->selection_color(222);
+        callback {int x=127-(int)o->value();
+//if (x==64) o->selection_color(0);
+//    else o->selection_color(222);
 
  o->osc->writeValue(o->loc+"magnitude"+to_s(n), (char)x);
  if (x==64) {
     o->osc->writeValue(o->loc+"phase"+to_s(n), (char)64);
     phase->value(64);
+    phase->selection_color(0);
  }
  o->osc->requestValue(o->loc+"prepare");
  o->osc->requestValue(o->loc+"spectrum");
@@ -136,14 +123,11 @@ display->redraw();}
         xywh {0 15 15 115} type {Vert Knob} box NO_BOX selection_color 222 maximum 127 step 1 value 64
         code0 {o->phase=false;//o->value(127-oscil->Phmag[n]);}
         code1 {//if (oscil->Phmag[n]==64) o->selection_color(0);}
-        class PSlider
+        class OGSlider
       }
       Fl_Slider phase {
-        callback {int x=64;
-if (Fl::event_button3()) o->value(x);
-   else x=(int)o->value();
-
-o->osc->writeValue(o->loc+"phase"+to_s(n), (char) x);
+        callback {
+o->osc->writeValue(o->loc+"phase"+to_s(n), (char) o->value());
 o->osc->requestValue(o->loc+"prepare");
 o->osc->requestValue(o->loc+"spectrum");
 o->osc->requestValue(o->loc+"waveform");
@@ -151,7 +135,7 @@ o->osc->requestValue(o->loc+"waveform");
 display->redraw();}
         xywh {0 135 15 75} type {Vert Knob} box NO_BOX selection_color 222 maximum 127 step 1 value 64
         code0 {o->phase=true;//o->value(oscil->Phphase[n]);}
-        class PSlider
+        class OGSlider
       }
       Fl_Box {} {
         xywh {15 70 5 5} box FLAT_BOX color 45
@@ -187,8 +171,13 @@ loc = loc_;
 make_window();
 mag->osc = osc;
 mag->loc = loc;
+mag->reset_value = 63;
+mag->setTransform(-1, 63);
 phase->osc = osc;
 phase->loc = loc;
+phase->reset_value = 64;
+phase->setRounding(1);
+phase->setTransform(-180.0/64, 180.0);
 
 osc->createLink(loc+"magnitude"+to_s(n), mag);
 osc->createLink(loc+"phase"+to_s(n), phase);
@@ -201,11 +190,7 @@ harmonic->show();} {}
   } {
     code {osc->requestValue(loc+"magnitude"+to_s(n));//mag->value(127-oscil->Phmag[n]);
 osc->requestValue(loc+"phase"+to_s(n));//phase->value(oscil->Phphase[n]);
-
-if (mag->value()==64)
-    mag->selection_color(0);
-else
-    mag->selection_color(222);} {}
+} {}
   }
   Function {~Oscilharmonic()} {open
   } {
@@ -265,10 +250,10 @@ class OscilEditor {open : {public PresetsUI_}
           }
           Fl_Value_Slider rndslider {
             label rnd
-            callback {(void)o;//oscil->Prand=(int)o->value()+64;
-oscildisplaygroup->redraw();}
+            callback {}
             tooltip {Oscilator Phase Randomness: smaller than 0 is "group", larger than 0 is for each harmonic} xywh {145 290 100 10} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -64 maximum 63 step 1
-            code0 {(void)o;//if (oscil->ADvsPAD) o->hide();}
+            code0 {(void)o->init("Prand");//if (oscil->ADvsPAD) o->hide();}
+	    class Fl_Osc_VSlider
           }
           Fl_Group {} {open
             xywh {15 35 350 50} box THIN_DOWN_BOX color 32 selection_color 218 labelcolor 63
@@ -494,8 +479,8 @@ redrawoscil();}
           label {Use as base}
           callback {osc->requestValue(loc+"use-as-base");
 if (autoclearbutton->value()){
-   for (int i=0;i<(MAX_AD_HARMONICS - 1);i++){
-      h[i]->mag->value(64);
+   for (int i=1;i<(MAX_AD_HARMONICS - 1);i++){
+      h[i]->mag->value(63);
       h[i]->mag->do_callback();
       h[i]->phase->value(64);
       h[i]->phase->do_callback();
@@ -505,6 +490,8 @@ if (autoclearbutton->value()){
 
    h[0]->mag->value(0);
    h[0]->mag->do_callback();
+   h[0]->phase->value(64);
+   h[0]->phase->do_callback();
    wshbutton->value(0);
    wshbutton->do_callback();
    fltbutton->value(0);
@@ -528,19 +515,16 @@ redrawoscil();}
           label Clear
           callback {if (!fl_choice("Clear the harmonics settings?","No","Yes",NULL)) return;
 
-for (int i=0;i<(MAX_AD_HARMONICS - 1);i++){
-    h[i]->mag->value(64);
+for (int i=1;i<(MAX_AD_HARMONICS - 1);i++){
+    h[i]->mag->value(63);
     h[i]->mag->do_callback();
     h[i]->phase->value(64);
     h[i]->phase->do_callback();
 };
 h[0]->mag->value(0);
 h[0]->mag->do_callback();
-
-//for (int i=0;i<(MAX_AD_HARMONICS - 1);i++){
-//  if (oscil->Phmag[i]==64) h[i]->mag->selection_color(0);
-//     else h[i]->mag->selection_color(222);
-//};
+h[0]->phase->value(64);
+h[0]->phase->do_callback();
 
 //harmonics->redraw();
 osc->requestValue(loc+"prepare");
@@ -839,10 +823,10 @@ redrawoscil();}
             class Fl_Osc_Dial
           }
           Fl_Slider adhrpar {
-            code0 {o->init("Padaptiveharmonicspar");}
+            code0 {o->init("Padaptiveharmonicspar");o->reset_value=50;}
             callback {redrawoscil();}
             xywh {675 450 55 10} type {Horz Knob} box NO_BOX maximum 100 step 1 value 50
-            class Fl_Osc_Slider
+            class Fl_Osc_TSlider
           }
         }
         Fl_Group {} {

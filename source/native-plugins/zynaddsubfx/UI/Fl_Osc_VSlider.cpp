@@ -10,7 +10,7 @@
 #include <sstream>
 
 Fl_Osc_VSlider::Fl_Osc_VSlider(int X, int Y, int W, int H, const char *label)
-    :Fl_Osc_Slider(X,Y,W,H,label), cb_data(NULL, NULL)
+    :Fl_Osc_Slider(X,Y,W,H,label)
 {
     //bounds(0.0f,1.0f);
     Fl_Slider::callback(Fl_Osc_Slider::_cb);

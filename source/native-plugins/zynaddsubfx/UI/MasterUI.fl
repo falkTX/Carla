@@ -64,6 +64,9 @@ decl {\#include "Fl_Osc_Dial.H"} {private local
 decl {\#include "Osc_DataModel.h"} {private local
 } 
 
+decl {\#include "Fl_Osc_TSlider.H"} {private local
+} 
+
 decl {\#include "VuMasterMeter.h"} {public local
 } 
 
@@ -146,11 +149,11 @@ bankui->show();}
         Fl_Slider partvolume {
           xywh {10 65 30 110} type {Vert Knob} box NO_BOX minimum 127 maximum 0 step 1 value 127
           code0 {o->init("Pvolume", 'i');}
-          class Fl_Osc_Slider
+          class Fl_Osc_TSlider
         }
         Fl_Dial partpanning {
           xywh {20 180 30 30} maximum 127 step 1
-          code0 {o->init("Ppanning");}
+          code0 {o->init("Ppanning");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Button {} {
@@ -471,7 +474,7 @@ if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
         Fl_Dial mastervolumedial {
           label {Master Volume}
           tooltip {Master Volume} xywh {15 32 55 55} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1
-          code2 {o->init("volume");}
+          code2 {o->init("volume"); o->selection_color(FL_RED);}
           class Fl_Osc_Dial
         }
         Fl_Counter masterkeyshiftcounter {
@@ -1051,8 +1054,8 @@ bankui->show();}
         Fl_Slider partpanning {
           label Pan
           xywh {185 95 145 15} type {Horz Knob} box NO_BOX labelsize 11 maximum 127 step 1 value 64
-          code0 {o->init("Ppanning",'i');}
-          class Fl_Osc_Slider
+          code0 {o->init("Ppanning",'i'); o->reset_value=64;}
+          class Fl_Osc_TSlider
         }
         Fl_Choice partrcv {
           label {Midi Channel Receive}

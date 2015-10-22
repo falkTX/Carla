@@ -36,6 +36,7 @@ cp $ORIG_ZYN_DIR/tlsf/*.c $CARLA_ZYN_DIR/tlsf/
 rm $CARLA_ZYN_DIR/*/CMakeLists.txt
 rm $CARLA_ZYN_DIR/UI/zynaddsubfx.xpm
 
+sed -i "s|emplace_uint32(|emplace_uint32_cpp(|"  $CARLA_ZYN_DIR/rtosc/cpp/subtree-serialize.cpp
 sed -i "s|../../include/rtosc/|../|" $CARLA_ZYN_DIR/rtosc/cpp/*.cpp
 sed -i "s|../../tlsf/tlsf.h|tlsf/tlsf.h|" $CARLA_ZYN_DIR/Misc/Allocator.cpp
 sed -i "s|../src/globals.h|globals.h|" $CARLA_ZYN_DIR/Misc/Config.cpp

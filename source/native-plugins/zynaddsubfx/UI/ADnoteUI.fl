@@ -52,6 +52,9 @@ decl {\#include "Fl_Osc_Slider.H"} {public local
 decl {\#include "Fl_Osc_VSlider.H"} {public local
 } 
 
+decl {\#include "Osc_IntModel.h"} {private local
+}
+
 decl {\#include "Fl_Oscilloscope.h"} {public local
 } 
 
@@ -78,6 +81,30 @@ decl {\#include "MasterUI.h"} {private local
 
 decl {extern class MasterUI *ui;} {private local
 } 
+
+class PhaseSlider {: {public Fl_Osc_TSlider}
+} {
+  Function {PhaseSlider(int x,int y, int w, int h, const char *label=0)
+  :Fl_Osc_TSlider(x,y,w,h,label)} {open
+  } { code {
+  setRounding(1);
+  reset_value=0;
+  setTransform(180.0/64, 0);
+  }}
+   Function {OSC_value(int i)} {open return_type void
+   } { code {
+       value(64-i);
+   } {} }
+  Function {cb(void)} {open return_type void
+  } {
+    code {
+	oscWrite(ext, "i", (int)(64-Fl_Slider::value()));
+	if(cb_data.first)
+	    cb_data.first(this, cb_data.second);
+} {}
+   }
+}
+
 
 class ADvoicelistitem {open : {public Fl_Osc_Group}
 } {
@@ -118,7 +145,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
         Fl_Group voiceoscil {open
           xywh {102 5 30 20} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
           code0 {voiceoscil->ext = "OscilSmp/";}
-          code1 {oscil=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
+          code1 {oscil=new Fl_Oscilloscope(o->x(),o->y()+1,o->w(),o->h(),"");}
           code2 {oscil->init(false);}
           class Fl_Osc_Group
         } {}
@@ -135,27 +162,11 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
         }
         Fl_Box whitenoiselabel {
           label N
-          xywh {107 5 20 20} labelfont 1 labelsize 13 labelcolor 7
+          xywh {107 5 20 20} labelfont 1 labelsize 13 labelcolor 54 hide
         }
-        Fl_Check_Button noisehack {
-          callback {if (o->value()==0) {
-  whitenoiselabel->hide();
-  voiceresonanceenabled->activate();
-  detunevalueoutput->activate();
-  voicedetune->activate();
-  voicelfofreq->activate();
-  voiceoscil->activate();
-} else {
-  whitenoiselabel->show();
-  voiceresonanceenabled->deactivate();
-  detunevalueoutput->deactivate();
-  voicedetune->deactivate();
-  voicelfofreq->deactivate();
-  voiceoscil->deactivate();
-};}
-          xywh {0 0 0 0} down_box DOWN_BOX
-          code0 {o->init("Type");o->hide();}
-          class Fl_Osc_Check
+        Fl_Box pinknoiselabel {
+          label N
+          xywh {107 5 20 20} labelfont 1 labelsize 13 labelcolor 212 hide
         }
       }
       Fl_Check_Button voiceenabled {
@@ -188,12 +199,47 @@ else
   Function {ADvoicelistitem(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h,label)} {open
   } {
     code {assert(osc);
+    voice_phase = new Osc_IntModel(osc);
+    voice_phase->callback=[this](int phase) {
+    oscil->phase=phase;
+    voiceoscil->redraw();
+    return;
+};
+    sound_type = new Osc_IntModel(osc);
+    sound_type->callback=[this](int voice_type) {
+    switch (voice_type) {
+        case 0:
+	    whitenoiselabel->hide();
+	    pinknoiselabel->hide();
+	    voiceresonanceenabled->activate();
+	    detunevalueoutput->activate();
+	    voicedetune->activate();
+	    voicelfofreq->activate();
+	    voiceoscil->activate();
+	    return;
+	case 1:
+            whitenoiselabel->show();
+            pinknoiselabel->hide();
+	    break;
+	default:
+            pinknoiselabel->show();
+            whitenoiselabel->hide();
+    }
+
+    voiceresonanceenabled->deactivate();
+    detunevalueoutput->deactivate();
+    voicedetune->deactivate();
+    voicelfofreq->deactivate();
+    voiceoscil->deactivate();
+    };
     nvoice=0;} {}
   }
   Function {init(int nvoice_, std::string loc_, Fl_Osc_Interface *osc_)} {open
   } {
     code {assert(osc_);
 assert(!loc_.empty());
+    voice_phase->doUpdate(loc_ + "Poscilphase");
+    sound_type->doUpdate(loc_ + "Type");
 
 nvoice=nvoice_;
 loc   = loc_;
@@ -209,9 +255,16 @@ detunevalueoutput->do_callback();
 ADnoteVoiceListItem->redraw();} {}
   }
   Function {~ADvoicelistitem()} {} {
-    code {ADnoteVoiceListItem->hide();} {}
+    code {ADnoteVoiceListItem->hide();
+    osc->removeLink(voice_phase);
+    osc->removeLink(sound_type);
+    } {}
   }
   decl {int nvoice;} {private local
+  }
+  decl {class Osc_IntModel *voice_phase;} {private local
+  }
+  decl {class Osc_IntModel *sound_type;} {private local
   }
   decl {Fl_Oscilloscope *oscil;} {private local
   }
@@ -366,11 +419,11 @@ oscedit=new OscilEditor(true, loc+"FMSmp/", osc_i);}
               }
               Fl_Slider {} {
                 label Phase
-                callback {oscFM->phase=64-(int) o->value();
+                callback {oscFM->phase=64-(int)o->value();
 fmoscil->redraw();}
-                xywh {645 415 105 15} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -64 maximum 63 step 1
-                code0 {o->init("PFMoscilphase", 'i');}
-                class Fl_Osc_Slider
+                xywh {645 415 105 15} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
+                code0 { o->init("PFMoscilphase", 'i'); }
+                class PhaseSlider
               }
               Fl_Choice extFMoscil {
                 label Use
@@ -548,11 +601,11 @@ o->redraw();}
           }
           Fl_Slider {} {
             label Phase
-            callback {osc->phase=64-(int) o->value();
+            callback {osc->phase=64-(int)o->value();
 voiceoscil->redraw();}
-            xywh {10 435 65 10} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -64 maximum 63 step 1
-            code0 {o->init("Poscilphase", 'i');}
-            class Fl_Osc_Slider
+            xywh {10 435 65 10} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
+            code0 { o->init("Poscilphase", 'i'); }
+            class PhaseSlider
           }
           Fl_Check_Button {} {
             label {R.}
@@ -748,7 +801,7 @@ o->redraw();}
           }
           MenuItem {} {
             label Pink
-            xywh {25 25 100 20} labelfont 1 labelsize 11 labelcolor 211
+            xywh {25 25 100 20} labelfont 1 labelsize 11 labelcolor 212
           }
         }
         Fl_Check_Button bypassfiltercheckbutton {
@@ -779,7 +832,7 @@ bypassfiltercheckbutton->redraw();}
         }
         Fl_Box whitenoiselabel {
           label {White Noise}
-          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 53 hide
+          xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 54 hide
         }
         Fl_Box pinknoiselabel {
           label {Pink Noise}

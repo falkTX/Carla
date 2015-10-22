@@ -83,6 +83,19 @@ void FormantFilterGraph::update(void)
     oscWrite("Pq");
 }
 
+void FormantFilterGraph::rebase(std::string new_base)
+{
+    osc->renameLink(loc+"Pvowels", new_base+"Pvowels", this);
+    osc->renameLink(loc+"Pnumformants", new_base+"Pnumformants", this);
+    osc->renameLink(loc+"Pstages", new_base+"Pstages", this);
+    osc->renameLink(loc+"Pcenterfreq", new_base+"Pcenterfreq", this);
+    osc->renameLink(loc+"Poctavesfreq", new_base+"Poctavesfreq", this);
+    osc->renameLink(loc+"Pgain", new_base+"Pgain", this);
+    osc->renameLink(loc+"Pq", new_base+"Pq", this);
+    loc = new_base;
+    update();
+}
+
 //TODO A good portion of this is copy/pasta from EnvelopUI's widget
 //     REFACTOR!
 void FormantFilterGraph::draw()

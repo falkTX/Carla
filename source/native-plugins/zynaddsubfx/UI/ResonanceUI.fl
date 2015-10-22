@@ -41,7 +41,7 @@ decl {\#include "Fl_Osc_Button.H"} {public local
 decl {\#include "Fl_Osc_Check.H"} {public local
 } 
 
-decl {\#include "Fl_Osc_Roller.H"} {public local
+decl {\#include "Fl_Osc_Slider.H"} {public local
 } 
 
 decl {\#include "Fl_Osc_Output.H"} {public local
@@ -99,12 +99,12 @@ redrawPADnoteApply();}
         code0 {o->init("Penabled");}
         class Fl_Osc_Check
       }
-      Fl_Roller maxdb {
+      Fl_Slider maxdb {
         callback {maxdbvo->value(o->value());
 redrawPADnoteApply();}
         xywh {90 282 84 15} type Horizontal minimum 1 maximum 90 step 1 value 30
-        code0 {o->init("PmaxdB");}
-        class Fl_Osc_Roller
+        code0 {o->init("PmaxdB", 'i'); o->reset_value = 30;}
+        class Fl_Osc_Slider
       }
       Fl_Value_Output maxdbvo {
         label {Max.}
