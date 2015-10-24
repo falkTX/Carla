@@ -20,6 +20,7 @@ void Fl_Osc_Button::OSC_value(bool v)
     Fl_Button::value(v);
 }
 
-void Fl_Osc_Button::rebase(std::string)
+void Fl_Osc_Button::rebase(std::string base)
 {
+    loc = base;
 }

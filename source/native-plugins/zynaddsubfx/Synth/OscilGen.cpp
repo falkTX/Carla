@@ -408,7 +408,6 @@ void OscilGen::convert2sine()
     float  mag[MAX_AD_HARMONICS], phase[MAX_AD_HARMONICS];
     float  oscil[synth.oscilsize];
     fft_t *freqs = new fft_t[synth.oscilsize / 2];
-
     get(oscil, -1.0f);
     FFTwrapper *fft = new FFTwrapper(synth.oscilsize);
     fft->smps2freqs(oscil, freqs);
@@ -429,7 +428,7 @@ void OscilGen::convert2sine()
         float newmag   = mag[i];
         float newphase = phase[i];
 
-        Phmag[i] = (int) ((newmag) * 64.0f) + 64;
+        Phmag[i] = (int) ((newmag) * 63.0f) + 64;
 
         Phphase[i] = 64 - (int) (64.0f * newphase / PI);
         if(Phphase[i] > 127)

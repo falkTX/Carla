@@ -52,7 +52,8 @@ bool Nio::start()
 
 void Nio::stop()
 {
-    eng->stop();
+    if(eng)
+        eng->stop();
 }
 
 void Nio::setDefaultSource(string name)

@@ -485,7 +485,7 @@ rtosc_arg_itr_t rtosc_itr_begin(const char *msg)
 rtosc_arg_val_t rtosc_itr_next(rtosc_arg_itr_t *itr)
 {
     //current position provides the value
-    rtosc_arg_val_t result = {0};
+    rtosc_arg_val_t result = {0,{0}};
     result.type = *itr->type_pos;
     if(result.type)
         result.val = extract_arg(itr->value_pos, result.type);

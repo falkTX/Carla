@@ -136,9 +136,9 @@ in ASCII collating sequence. (A minus sign at the end of the string has no speci
 #define RTOSC_MATCH_OPTIONS         5
 #define RTOSC_MATCH_PARTIAL_OPTIONS 6
 #define RTOSC_MATCH_ENUMERATED      7
-static bool is_charwise(char c)
+static bool is_charwise(uint8_t c)
 {
-    return (c>=0 && c<=0x7f) && c != ' ' && c != '#' &&
+    return c<=0x7f && c != ' ' && c != '#' &&
         c != '/' && c != '{' && c != '}';
 }
 
@@ -231,6 +231,7 @@ bool rtosc_match_partial(const char *a, const char *b)
         const char *sub=NULL;
         return strstr(a,sub);
     } else if(type == RTOSC_MATCH_OPTIONS || type == 6) {
+        return false;
     } else if(type == RTOSC_MATCH_ENUMERATED) {
         while(rtosc_match_char(&a,&b));
         if(*a && *b=='#' && b[1] != '\0')

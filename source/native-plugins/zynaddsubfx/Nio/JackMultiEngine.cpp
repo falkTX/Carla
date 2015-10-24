@@ -169,7 +169,8 @@ void JackMultiEngine::Stop()
             jack_port_unregister(impl->client, port);
     }
 
-    jack_client_close(impl->client);
+    if(impl->client)
+        jack_client_close(impl->client);
     impl->client = NULL;
 
     impl->running = false;

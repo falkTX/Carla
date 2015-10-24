@@ -56,6 +56,7 @@ JackEngine::JackEngine(const SYNTH_T &synth)
     }
     midi.inport = NULL;
     midi.jack_sync = false;
+    osc.oscport = NULL;
 }
 
 bool JackEngine::connectServer(string server)

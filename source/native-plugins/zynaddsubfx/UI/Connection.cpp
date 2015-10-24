@@ -241,6 +241,9 @@ class UI_Interface:public Fl_Osc_Interface
         {
             assert(s!="/Psysefxvol-1/part0");
             //Fl_Osc_Interface::requestValue(s);
+            char *tmp = strdup(s.c_str());
+            s = rtosc::Ports::collapsePath(tmp);
+            free(tmp);
             if(impl->activeUrl() != "GUI") {
                 impl->transmitMsg("/echo", "ss", "OSC_URL", "GUI");
                 impl->activeUrl("GUI");
@@ -251,6 +254,9 @@ class UI_Interface:public Fl_Osc_Interface
 
         void write(string s, const char *args, ...) override
         {
+            char *tmp = strdup(s.c_str());
+            s = rtosc::Ports::collapsePath(tmp);
+            free(tmp);
             va_list va;
             va_start(va, args);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 4 + 30, 0 + 40);
@@ -267,7 +273,7 @@ class UI_Interface:public Fl_Osc_Interface
             ////fprintf(stderr, ".");
             //fprintf(stderr, "rawWrite(%s:%s)\n", msg, rtosc_argument_string(msg));
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            impl->transmitMsg(msg);
+            impl->transmitMsg(rtosc::Ports::collapsePath((char*)msg));
         }
 
         void writeValue(string s, string ss) override
@@ -275,7 +281,7 @@ class UI_Interface:public Fl_Osc_Interface
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 4 + 30, 0 + 40);
             //fprintf(stderr, "writevalue<string>(%s,%s)\n", s.c_str(),ss.c_str());
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            impl->transmitMsg(s.c_str(), "s", ss.c_str());
+            write(s, "s", ss.c_str());
         }
 
         void writeValue(string s, char c) override
@@ -283,7 +289,7 @@ class UI_Interface:public Fl_Osc_Interface
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 4 + 30, 0 + 40);
             //fprintf(stderr, "writevalue<char>(%s,%d)\n", s.c_str(),c);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            impl->transmitMsg(s.c_str(), "c", c);
+            write(s, "c", c);
         }
 
         void writeValue(string s, float f) override
@@ -291,11 +297,14 @@ class UI_Interface:public Fl_Osc_Interface
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 4 + 30, 0 + 40);
             //fprintf(stderr, "writevalue<float>(%s,%f)\n", s.c_str(),f);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            impl->transmitMsg(s.c_str(), "f", f);
+            write(s, "f", f);
         }
 
         void createLink(string s, class Fl_Osc_Widget*w) override
         {
+            char *tmp = strdup(s.c_str());
+            s = rtosc::Ports::collapsePath(tmp);
+            free(tmp);
             assert(s.length() != 0);
             Fl_Osc_Interface::createLink(s,w);
             assert(!strstr(s.c_str(), "/part0/kit-1"));
@@ -312,6 +321,9 @@ class UI_Interface:public Fl_Osc_Interface
 
         void removeLink(string s, class Fl_Osc_Widget*w) override
         {
+            char *tmp = strdup(s.c_str());
+            s = rtosc::Ports::collapsePath(tmp);
+            free(tmp);
             for(auto i = map.begin(); i != map.end(); ++i) {
                 if(i->first == s && i->second == w) {
                     map.erase(i);

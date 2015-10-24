@@ -19,7 +19,7 @@ decl {\#include <string.h>} {public local
 
 decl {\#if ! defined(PLUGINVERSION) && HAS_X11
 \#include "zynaddsubfx.xpm"
-\#endif} {public local
+\#endif} {private local
 } 
 
 decl {\#include "WidgetPDial.h"} {public local
@@ -1522,9 +1522,15 @@ last_xmz->callback = [this](std::string filestr) {
     } else
        last_loaded[0] = 0;
     last_loaded[XMZ_PATH_MAX - 1] = 0;
-    char *label = last_loaded[0] == 0 ? NULL
-                  : ((label = strrchr(last_loaded, '/'))) ? label+1
-		  : last_loaded;
+    char *label = NULL;
+    if(last_loaded[0] != 0) {
+        label = strrchr(last_loaded, '/');
+        if(label && *label)
+            label = label+1;
+        else
+            label = last_loaded;
+    }
+
     setfilelabel(label);
 };
 last_xmz->doUpdate("/last_xmz");

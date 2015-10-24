@@ -823,7 +823,7 @@ redrawoscil();}
             class Fl_Osc_Dial
           }
           Fl_Slider adhrpar {
-            code0 {o->init("Padaptiveharmonicspar");o->reset_value=50;}
+            code0 {o->init("Padaptiveharmonicspar", 'i');o->reset_value=50;}
             callback {redrawoscil();}
             xywh {675 450 55 10} type {Horz Knob} box NO_BOX maximum 100 step 1 value 50
             class Fl_Osc_TSlider
@@ -880,6 +880,9 @@ redrawoscil();}
           callback {if (!fl_choice("Convert to SINE?","No","Yes",NULL)) return;
 
 osc->requestValue(loc+"convert2sine");
+bftype->update();
+bfslider->value(0);
+bfslider->do_callback();
 
 redrawoscil();
 refresh();}

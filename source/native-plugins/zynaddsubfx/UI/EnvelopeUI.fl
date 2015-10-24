@@ -91,7 +91,7 @@ delete (freemodeeditwindow);} {}
   } {
     Fl_Window freemodeeditwindow {
       label Envelope open
-      xywh {702 801 575 180} type Double
+      xywh {702 801 575 180} type Double resizable
       class Fl_Osc_Window visible
     } {
       Fl_Button {} {
@@ -106,7 +106,7 @@ delete (freemodeeditwindow);} {}
         xywh {482 160 15 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 10 labelcolor 55
       }
       Fl_Button addpoint {
-        label {Add point}
+        label {Add pt}
         callback {
 if(freeedit->lastpoint >= MAX_ENVELOPE_POINTS - 1)
     return;
@@ -118,7 +118,7 @@ sustaincounter->update();
 
 //sustaincounter->value(Penvsustain);
 //sustaincounter->maximum(Penvpoints-2);}
-        xywh {115 155 80 20} box THIN_UP_BOX labelsize 11
+        xywh {90 155 80 20} box THIN_UP_BOX labelsize 11
         code0 {(void)o->init("addPoint");}
         class PointButton
       }
@@ -130,7 +130,7 @@ sustaincounter->update();
         class EnvelopeFreeEdit
       }
       Fl_Button deletepoint {
-        label {Delete point}
+        label {Delete pt}
         callback {o->oscWrite("delPoint", "i", freeedit->lastpoint);
 freeedit->lastpoint-=1;
 freeedit->update();
@@ -138,7 +138,7 @@ envfree->redraw();
 sustaincounter->update();
 //sustaincounter->value(Penvsustain);
 //sustaincounter->maximum(Penvpoints-2);}
-        xywh {200 155 80 20} box THIN_UP_BOX labelsize 11
+        xywh {175 155 85 20} box THIN_UP_BOX labelsize 11
         code0 {(void)o->init("delPoint");}
         class PointButton
       }
@@ -172,7 +172,7 @@ sustaincounter->update();
         label Sust
         callback {freeedit->redraw();
 envfree->redraw();}
-        tooltip {Sustain (0 is disabled)} xywh {315 155 40 15} type Simple labelsize 11 align 4 minimum 0 maximum 127 step 1
+        tooltip {Sustain (0 is disabled)} xywh {305 155 40 15} type Simple labelsize 11 align 4 minimum 0 maximum 127 step 1
         code3 {o->init("Penvsustain");}
         class Fl_Osc_Counter
       }
@@ -183,9 +183,10 @@ envfree->redraw();}
           class Fl_Osc_Check
       }
       Fl_Button {} {
-        label {Cancel Freemode}
+        label {Cancel}
+	tooltip {Cancel freemode editing}
         callback {disable_freemode();}
-        xywh {5 155 105 20} box THIN_UP_BOX labelsize 11 labelcolor 1
+        xywh {5 155 80 20} box THIN_UP_BOX labelsize 11 labelcolor 1
         class Fl_Osc_Button
       }
     }
@@ -534,6 +535,7 @@ envfree->redraw();}
     freeedit->update();
     freemodeeditwindow->show();
     freemodeeditwindow->position(Fl::event_x_root()-20, Fl::event_y_root()+20);
+    freemodeeditwindow->size_range(400,160);
 } {}
 }
   Function {init(int env_type, Fl_Osc_Interface *osc_, std::string base_, std::string ext_)} {open
