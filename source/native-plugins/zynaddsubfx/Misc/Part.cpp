@@ -71,16 +71,18 @@ static const Ports partPorts = {
     rParamZyn(Pvelsns,   "Velocity sensing"),
     rParamZyn(Pveloffs,  "Velocity offset"),
     rToggle(Pnoteon,  "If the channel accepts note on events"),
-    //TODO FIXME Change to 0=OFF 1=MULTI 2=SINGLE
-    rParamI(Pkitmode, "Kit mode enable"),
+    rOption(Pkitmode, rOptions(Off, Multi-Kit, Single-Kit), "Kit mode/enable\n"
+            "Off        - Only the first kit is ever utilized\n"
+            "Multi-kit  - Every applicable kit is run for a note\n"
+            "Single-kit - The first applicable kit is run for a given note"),
     rToggle(Pdrummode, "Drum mode enable\n"
             "When drum mode is enabled all keys are mapped to 12tET and legato is disabled"),
-    rToggle(Ppolymode,  "Polyphoney mode"),
-    rToggle(Plegatomode, "Legato enable"),
+    rToggle(Ppolymode,  "Polyphony mode"),
+    rToggle(Plegatomode, "Legato mode"),
     rParamZyn(info.Ptype, "Class of Instrument"),
-    rString(info.Pauthor, MAX_INFO_TEXT_SIZE, "Instrument Author"),
-    rString(info.Pcomments, MAX_INFO_TEXT_SIZE, "Instrument Comments"),
-    rString(Pname, PART_MAX_NAME_LEN, "Kit User Specified Label"),
+    rString(info.Pauthor, MAX_INFO_TEXT_SIZE, "Instrument author"),
+    rString(info.Pcomments, MAX_INFO_TEXT_SIZE, "Instrument comments"),
+    rString(Pname, PART_MAX_NAME_LEN, "User specified label"),
     rArray(Pefxroute, NUM_PART_EFX,  "Effect Routing"),
     rArrayT(Pefxbypass, NUM_PART_EFX, "If an effect is bypassed"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
@@ -90,7 +92,13 @@ static const Ports partPorts = {
         [](const char *, RtData &r)
         {Part *p = (Part*)r.obj; p->Pmaxkey = p->lastnote;}},
     {"polyType::c:i", rProp(parameter) rOptions(Polyphonic, Monophonic, Legato)
-        rDoc("synthesis polyphony type"), NULL,
+        rDoc("Synthesis polyphony type\n"
+                "Polyphonic - Each note is played independently\n"
+                "Monophonic - A single note is played at a time with"
+                " envelopes resetting between notes\n"
+                "Legato     - A single note is played at a time without"
+                " envelopes resetting between notes\n"
+            ), NULL,
         [](const char *msg, RtData &d)
         {
             Part *p = (Part*)d.obj;
@@ -188,8 +196,6 @@ static const Ports kitPorts = {
             assert(o.subpars == NULL);
             o.subpars = *(decltype(o.subpars)*)rtosc_argument(msg, 0).b.data;
         }},
-
-    //    [](
 };
 
 const Ports &Part::Kit::ports = kitPorts;

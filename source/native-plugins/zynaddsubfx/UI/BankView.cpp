@@ -277,7 +277,7 @@ void BankView::react(int event, int nslot)
     }
 
     //Reads from slot
-    if ((event==1)&&(mode==1)&&(!slot.empty())){
+    if ((event==1)&&(mode==1) && !isempty){
         printf("Loading a part #%d with file '%s'\n", nslot, slot.filename());
         osc->write("/load-part", "is", *npart, slot.filename());
         osc->writeValue("/part"+to_s(*npart)+"/name", slot.name());
@@ -287,25 +287,23 @@ void BankView::react(int event, int nslot)
 
     //save(write) to slot
     if(event==1 && mode==2){
-        if(!isempty && !fl_choice("Overwrite the slot no. %d ?","No","Yes",NULL,nslot+1))
-            return;
-
-        osc->write("/save-bank-part", "ii", *npart, nslot);
-        osc->write("/refresh_bank", "i", nslot);
-        //pthread_mutex_lock(&master->part[*npart]->load_mutex);
-        //bank->savetoslot(slot,master->part[*npart]);
-        //pthread_mutex_unlock(&master->part[*npart]->load_mutex);
-
+        if(isempty ||
+           fl_choice("Overwrite the slot no. %d ?","No","Yes",NULL,nslot+1)) {
+            osc->write("/save-bank-part", "ii", *npart, nslot);
+            osc->write("/refresh_bank", "i", nslot);
+        }
         bvc->mode(1);
     }
 
 
     //Clears the slot
-    if(event==1 && mode==3 && !isempty) {
-        if (fl_choice("Clear the slot no. %d ?","No","Yes",NULL, nslot+1)) {
+    if(event==1 && mode==3) {
+        if (!isempty &&
+            fl_choice("Clear the slot no. %d ?","No","Yes",NULL, nslot+1)) {
             osc->write("/clear-bank-slot", "i", nslot);
             osc->write("/refresh_bank", "i", nslot);
         }
+        bvc->mode(1);
     }
 
     //Swap
@@ -314,7 +312,6 @@ void BankView::react(int event, int nslot)
             osc->write("/swap-bank-slots", "ii", nselected, nslot);
             osc->write("/refresh_bank", "i", nslot);
             osc->write("/refresh_bank", "i", nselected);
-            //bank->swapslot(nselected,slot);
             nselected=-1;
         } else if(nselected<0 || event==2) {
             nselected=nslot;

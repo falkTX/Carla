@@ -48,7 +48,7 @@ class SUBSlider {: {public Fl_Osc_TSlider}
 } {
   Function {SUBSlider(int x,int y, int w, int h, const char *label=0)
   :Fl_Osc_TSlider(x,y,w,h,label)} {open
-  } { code {}}
+  } { code {} {}}
    Function {OSC_value(char c)} {open return_type void
    } { code {
        value(127-c);

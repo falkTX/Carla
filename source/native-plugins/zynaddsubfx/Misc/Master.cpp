@@ -131,25 +131,20 @@ static const Ports master_ports = {
        d.reply("/free", "sb", "Part", sizeof(void*), &m->part[i]);
        m->part[i] = p;
        p->initialize_rt();
-       //printf("part %d is now pointer %p\n", i, p);
-                                                                                                          }},
-    {"Pvolume::i", rProp(parameter) rDoc("Master Volume"), 0,
+       }},
+    {"Pvolume::i", rProp(parameter) rLinear(0,127) rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
             d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
         } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
             ((Master*)d.obj)->setPvolume(limit<char>(rtosc_argument(m,0).i,0,127));
             d.broadcast(d.loc, "i", ((Master*)d.obj)->Pvolume);}}},
-    {"volume::i", rProp(parameter) rDoc("Master Volume"), 0,
+    {"volume::i", rProp(parameter) rLinear(0,127) rDoc("Master Volume"), 0,
         [](const char *m, rtosc::RtData &d) {
         if(rtosc_narguments(m)==0) {
             d.reply(d.loc, "i", ((Master*)d.obj)->Pvolume);
         } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
-            //printf("looking at value %d\n", rtosc_argument(m,0).i);
-            //printf("limited value is %d\n", limit<char>(
-            //            rtosc_argument(m,0).i, 0,127));
             ((Master*)d.obj)->setPvolume(limit<char>(rtosc_argument(m,0).i,0,127));
-            //printf("sets volume to value %d\n", ((Master*)d.obj)->Pvolume);
             d.broadcast(d.loc, "i", ((Master*)d.obj)->Pvolume);}}},
     {"Psysefxvol#" STRINGIFY(NUM_SYS_EFX) "/::i", 0, &sysefxPort,
         [](const char *msg, rtosc::RtData &d) {
@@ -176,18 +171,21 @@ static const Ports master_ports = {
         [](const char *m,RtData &d){
             Master *M =  (Master*)d.obj;
             M->setController(rtosc_argument(m,0).i,rtosc_argument(m,1).i,rtosc_argument(m,2).i);}},
-    {"Panic:", rDoc("Stop All Sound"), 0,
+    {"Panic:", rDoc("Stop all sound"), 0,
         [](const char *, RtData &d) {
             Master &M =  *(Master*)d.obj;
             M.ShutUp();
         }},
-    {"freeze_state:", rDoc("Internal Read-only Mode"), 0,
+    {"freeze_state:", rProp(internal) rDoc("Disable OSC event handling\n"
+            "This sets up a read-only mode from which it's safe for another"
+            " thread to save parameters"), 0,
         [](const char *,RtData &d) {
             Master *M =  (Master*)d.obj;
             std::atomic_thread_fence(std::memory_order_release);
             M->frozenState = true;
             d.reply("/state_frozen", "");}},
-    {"thaw_state:", rDoc("Internal Read-only Mode"), 0,
+    {"thaw_state:", rProp(internal) rDoc("Resume handling OSC messages\n"
+            "See /freeze_state for more information"), 0,
         [](const char *,RtData &d) {
             Master *M =  (Master*)d.obj;
             M->frozenState = false;}},
@@ -216,11 +214,11 @@ static const Ports master_ports = {
             m.memory->addMemory(mem, i);
             m.pendingMemory = false;
         }},
-    {"samplerate:", rMap(unit, Hz) rDoc("Synthesizer Global Sample Rate"), 0, [](const char *, RtData &d) {
+    {"samplerate:", rMap(unit, Hz) rDoc("Get synthesizer sample rate"), 0, [](const char *, RtData &d) {
             Master &m = *(Master*)d.obj;
             d.reply("/samplerate", "f", m.synth.samplerate_f);
         }},
-    {"oscilsize:", rDoc("Synthesizer Global Oscillator Size"), 0, [](const char *, RtData &d) {
+    {"oscilsize:", rDoc("Get synthesizer oscillator size"), 0, [](const char *, RtData &d) {
             Master &m = *(Master*)d.obj;
             d.reply("/oscilsize", "f", m.synth.oscilsize_f);
             d.reply("/oscilsize", "i", m.synth.oscilsize);
@@ -639,7 +637,7 @@ void Master::AudioOut(float *outl, float *outr)
     DataObj d{loc_buf, 1024, this, bToU};
     memset(loc_buf, 0, sizeof(loc_buf));
     int events = 0;
-    while(uToB && uToB->hasNext() && events < 10) {
+    while(uToB && uToB->hasNext() && events < 100) {
         const char *msg = uToB->read();
 
         if(!strcmp(msg, "/load-master")) {

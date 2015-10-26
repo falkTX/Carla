@@ -791,6 +791,63 @@ static void units(std::ostream &o, const char *u)
 
 using std::ostream;
 using std::string;
+static int enum_min(Port::MetaContainer meta)
+{
+    int min = 0;
+    for(auto m:meta)
+        if(strstr(m.title, "map "))
+            min = atoi(m.title+4);
+
+    for(auto m:meta)
+        if(strstr(m.title, "map "))
+            min = min>atoi(m.title+4) ? atoi(m.title+4) : min;
+
+    return min;
+}
+
+static int enum_max(Port::MetaContainer meta)
+{
+    int max = 0;
+    for(auto m:meta)
+        if(strstr(m.title, "map "))
+            max = atoi(m.title+4);
+
+    for(auto m:meta)
+        if(strstr(m.title, "map "))
+            max = max<atoi(m.title+4) ? atoi(m.title+4) : max;
+
+    return max;
+}
+
+static ostream &add_options(ostream &o, Port::MetaContainer meta)
+{
+    string sym_names = "xyzabcdefghijklmnopqrstuvw";
+    int sym_idx = 0;
+    bool has_options = false;
+    for(auto m:meta)
+        if(strstr(m.title, "map "))
+            has_options = true;
+    for(auto m:meta)
+        if(strcmp(m.title, "documentation") &&
+                strcmp(m.title, "parameter") &&
+                strcmp(m.title, "max") &&
+                strcmp(m.title, "min"))
+        printf("m.title = <%s>\n", m.title);
+
+    if(!has_options)
+        return o;
+
+    o << "    <hints>\n";
+    for(auto m:meta) {
+        if(strstr(m.title, "map ")) {
+            o << "      <point symbol=\"" << sym_names[sym_idx++] << "\" value=\"";
+            o << m.title+4 << "\">" << m.value << "</point>\n";
+        }
+    }
+    o << "    </hints>\n";
+
+    return o;
+}
 static ostream &dump_t_f_port(ostream &o, string name, string doc)
 {
     o << " <message_in pattern=\"" << name << "\" typetag=\"T\">\n";
@@ -899,6 +956,13 @@ void dump_ports_cb(const rtosc::Port *p, const char *name, void *v)
             o << "   <range_min_max " << (type == 'f' ? "lmin=\"[\" lmax=\"]\"" : "");
             o << " min=\"" << meta["min"] << "\"  max=\"" << meta["max"] << "\"/>\n";
             o << "  </param_" << type << ">";
+        } else if(meta.find("enumerated") != meta.end()) {
+            o << "  <param_" << type << " symbol=\"x\">\n";
+            o << "    <range_min_max min=\"" << enum_min(meta) << "\" max=\"";
+            o << enum_max(meta) << "\">\n";
+            add_options(o, meta);
+            o << "    </range_min_max>\n";
+            o << "  </param_" << type << ">\n";
         } else {
             o << "  <param_" << type << " symbol=\"x\"";
             units(o, meta["unit"]);
@@ -916,6 +980,13 @@ void dump_ports_cb(const rtosc::Port *p, const char *name, void *v)
             o << ">\n";
             o << "   <range_min_max " << (type == 'f' ? "lmin=\"[\" lmax=\"]\"" : "");
             o << " min=\"" << meta["min"] << "\"  max=\"" << meta["max"] << "\"/>\n";
+            o << "  </param_" << type << ">\n";
+        } else if(meta.find("enumerated") != meta.end()) {
+            o << "  <param_" << type << " symbol=\"x\">\n";
+            o << "    <range_min_max min=\"" << enum_min(meta) << "\" max=\"";
+            o << enum_max(meta) << "\">\n";
+            add_options(o, meta);
+            o << "    </range_min_max>\n";
             o << "  </param_" << type << ">\n";
         } else {
             o << "  <param_" << type << " symbol=\"x\"";

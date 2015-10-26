@@ -136,18 +136,23 @@ maxkcounter->do_callback();}
         }
         Fl_Button adeditbutton {
           label edit
-          callback {partui->showparameters(n,0);}
+          callback {
+	  if (Fl::event_shift()) {
+	      partui->showvoiceparams(n, true);
+	  } else if (Fl::event_ctrl()) {
+	      partui->showvoiceparams(n, false);
+	  } else
+	      partui->showparameters(n,0);
+	  }
           xywh {420 0 40 15} box THIN_UP_BOX labelsize 11
-          code1 {if (n==0) o->hide();}
         }
         Fl_Button subeditbutton {
           label edit
           callback {partui->showparameters(n,1);}
           xywh {490 0 40 15} box THIN_UP_BOX labelsize 11
-          code1 {if (n==0) o->hide();}
         }
         Fl_Check_Button mutedcheck {
-          private xywh {60 0 20 15} down_box DOWN_BOX labelfont 1 labelsize 11 align 4
+          public xywh {60 0 20 15} down_box DOWN_BOX labelfont 1 labelsize 11 align 4
           code0 {o->init("Pmuted");}
           class Fl_Osc_Check
         }
@@ -167,7 +172,6 @@ maxkcounter->do_callback();}
        else  adeditbutton->deactivate();}
           private xywh {400 0 20 15} down_box DOWN_BOX labelfont 1 labelsize 11 align 4
           code0 {o->init("Padenabled");}
-          code1 {if (n==0) o->hide();}
           class Fl_Osc_Check
         }
         Fl_Check_Button subcheck {
@@ -175,7 +179,6 @@ maxkcounter->do_callback();}
        else  subeditbutton->deactivate();}
           private xywh {470 0 20 15} down_box DOWN_BOX labelfont 1 labelsize 11 align 4
           code0 {o->init("Psubenabled");}
-          code1 {if (n==0) o->hide();}
           class Fl_Osc_Check
         }
         Fl_Choice sendtoeffect {
@@ -188,14 +191,12 @@ maxkcounter->do_callback();}
           label edit
           callback {partui->showparameters(n,2);}
           xywh {560 0 40 15} box THIN_UP_BOX labelsize 11
-          code1 {if (n==0) o->hide();}
         }
         Fl_Check_Button padcheck {
           callback {if (o->value()!=0) padeditbutton->activate();
        else padeditbutton->deactivate();}
           private xywh {540 0 20 15} down_box DOWN_BOX labelfont 1 labelsize 11 align 4
           code0 {o->init("Ppadenabled");}
-          code1 {if (n==0) o->hide();}
           class Fl_Osc_Check
         }
       }
@@ -231,6 +232,11 @@ partui->showparameters(n,-1);//use to delete the ui, if it is not to item 0}
         ext = "kit"+to_s(n)+"/";
 partui=partui_;
 make_window();
+if (n == 0)
+    mutedcheck->deactivate();
+else
+    deactivate();
+
 //partkititem->show();
 end();} {}
   }
@@ -353,7 +359,12 @@ if (event==FL_RIGHT_MOUSE){
         }
         Fl_Button {} {
           label {Edit instrument}
-          callback {instrumenteditwindow->show();}
+          callback {
+          if (Fl::event_shift() || Fl::event_ctrl())
+              instrumentkitlist->show();
+          else
+              instrumenteditwindow->show();
+          }
           xywh {15 90 130 30} color 52 labelfont 1 labelsize 13
         }
         Fl_Button {} {
@@ -745,7 +756,7 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
       Fl_Button {} {
         label {Close Window}
         callback {instrumentkitlist->hide();}
-        xywh {375 350 160 20} box THIN_UP_BOX
+        xywh {255 350 160 20} box THIN_UP_BOX
       }
       Fl_Scroll kitlist {open
         xywh {0 15 670 330} type VERTICAL box UP_FRAME
@@ -781,7 +792,14 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
       }
       Fl_Choice {} {
         label Mode
-        callback {if (o->value()==0) { kitlist->deactivate(); } else { kitlist->activate(); };}
+        callback {if (o->value()==0) {
+		 for (int i=1;i<NUM_KIT_ITEMS;i++)
+		   partkititem[i]->deactivate();
+		 partkititem[0]->mutedcheck->deactivate();
+        } else {
+		 for (int i=1;i<NUM_KIT_ITEMS;i++)
+		   partkititem[i]->activate();
+                   partkititem[0]->mutedcheck->activate(); };}
         xywh {35 350 70 15} down_box BORDER_BOX labelsize 11 textfont 1 textsize 11
         code0 {o->init("Pkitmode");}
         class Fl_Osc_Choice
@@ -801,10 +819,21 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
       }
       Fl_Check_Button {} {
         label {Drum mode}
-        xywh {285 350 70 15} down_box DOWN_BOX labelsize 10
+        xywh {125 350 80 15} down_box DOWN_BOX labelsize 10
         code0 {o->init("Pdrummode");}
         class Fl_Osc_Check
       }
+      Fl_Button {} {
+        label Comments
+        callback {instrumenteditwindow->show();}
+        xywh {481 350 106 20} box THIN_UP_BOX
+      }
+      Fl_Button {} {
+        label Effects
+        callback {partfx->show();} selected
+        xywh {600 350 70 20} box THIN_UP_BOX
+      }
+
       Fl_Box {} {
         label {FX.r.}
         xywh {620 0 30 15} labelfont 1 labelsize 11 align 18
@@ -863,7 +892,14 @@ if (x==2) part->partefx[ninseff]->setdryonly(true);
           }
           Fl_Button adeditbutton {
             label Edit
-            callback {showparameters(0,0);}
+            callback {
+	    if (Fl::event_shift()) {
+	        showvoiceparams(0, true);
+	    } else if (Fl::event_ctrl()) {
+	        showvoiceparams(0, false);
+	    } else
+	        showparameters(0,0);
+	    }
             xywh {15 281 80 34} color 51 selection_color 51 labelfont 1 labelsize 13 align 128
           }
         }
@@ -1030,6 +1066,23 @@ end();
 //if (config.ui.showinstrumentinfo!=0) instrumenteditwindow->show();
 } {}
   }
+  Function {cleanuplastkit(int kititem)} {open return_type int
+  } {
+    code {
+if (kititem==lastkititem)
+  return 0;
+delete adnoteui;
+delete subnoteui;
+delete padnoteui;
+adnoteui=NULL;subnoteui=NULL;padnoteui=NULL;
+lastkititem=kititem;
+
+if(kititem>=NUM_KIT_ITEMS) return 1;//bad kit item
+if(kititem<0) return 1;
+return 0;
+} {}}
+
+
   Function {showparameters(int kititem,int engine)} {open
   } {
     code {
@@ -1043,16 +1096,8 @@ if (engine==-1){//this is used if I want to clear the engine from the part
     return;
 }
 
-if (kititem!=lastkititem){
-    delete adnoteui;
-    delete subnoteui;   
-    delete padnoteui;
-    adnoteui=NULL;subnoteui=NULL;padnoteui=NULL;
-    lastkititem=kititem;
-
-    if(kititem>=NUM_KIT_ITEMS) return;//bad kit item
-    if(kititem<0) return;
-}
+    if (cleanuplastkit(kititem))
+        return;
 
 if(!adnoteui  && engine==0)//adsynenabledcheck->value())
     adnoteui=new ADnoteUI(loc+"kit"+to_s(kititem)+"/adpars/", osc);
@@ -1067,6 +1112,23 @@ if (engine==0&&adnoteui) adnoteui->ADnoteGlobalParameters->show();
 if (engine==1&&subnoteui) subnoteui->SUBparameters->show();
 if (engine==2&&padnoteui) padnoteui->padnotewindow->show();} {}
   }
+  Function {showvoiceparams(int kititem, bool voicelist)} {open
+  } {
+    code {
+if (cleanuplastkit(kititem))
+    return;
+if(adnoteui ||
+   (adnoteui=new ADnoteUI(loc+"kit"+to_s(kititem)+"/adpars/", osc)))
+    if(voicelist)
+        adnoteui->ADnoteVoiceList->show();
+    else {
+        if (adnoteui->advoice->mod_type->value() == 0)
+	    adnoteui->advoice->voiceFMparametersgroup->deactivate();
+	else
+	    adnoteui->advoice->voiceFMparametersgroup->activate();
+	adnoteui->ADnoteVoice->show();
+    }} {}}
+
   Function {~PartUI()} {} {
     code {delete adnoteui;
 delete subnoteui;

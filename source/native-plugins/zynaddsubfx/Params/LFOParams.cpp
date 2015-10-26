@@ -36,13 +36,17 @@ using namespace rtosc;
 static const rtosc::Ports _ports = {
     rSelf(LFOParams),
     rPaste,
-    rParamF(Pfreq, "frequency of LFO"),
+    rParamF(Pfreq, rLinear(0.0,1.0), "frequency of LFO\n"
+            "lfo frequency = (2^(10*Pfreq)-1)/12 * stretch\n"
+            "true frequency is [0,85.33] Hz"),
     rParamZyn(Pintensity, "Intensity of LFO"),
     rParamZyn(Pstartphase, rSpecial(random), "Starting Phase"),
-    rOption(PLFOtype,"Shape of LFO"),
-    rParamZyn(Prandomness, rSpecial(disable), "Amplitude Randomness"),
-    rParamZyn(Pfreqrand, rSpecial(disable), "Frequency Randomness"),
-    rParamZyn(Pdelay, rSpecial(disable), "Delay before LFO start"),
+    rOption(PLFOtype, rOptions(sine, triangle, square, ramp-up, ramp-down,
+                exponential-down1, exponential-down2), "Shape of LFO"),
+    rParamZyn(Prandomness, rSpecial(disable), "Amplitude Randomness (calculated uniformly at each cycle)"),
+    rParamZyn(Pfreqrand, rSpecial(disable), "Frequency Randomness (calculated uniformly at each cycle)"),
+    rParamZyn(Pdelay, rSpecial(disable), "Delay before LFO start\n"
+            "0..4 second delay"),
     rToggle(Pcontinous, "Enable for global operation"),
     rParamZyn(Pstretch, rCentered, "Note frequency stretch"),
 };

@@ -41,6 +41,7 @@ int WidgetPDial::handle(int event)
     if (event == FL_RELEASE && Fl::event_clicks() == 1) {
         Fl::event_clicks(0);
         value(reset_value);
+        tipwin->hide();
         value_damage();
         if (this->when() != 0)
             do_callback();

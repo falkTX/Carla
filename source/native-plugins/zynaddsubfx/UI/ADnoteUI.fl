@@ -90,7 +90,7 @@ class PhaseSlider {: {public Fl_Osc_TSlider}
   setRounding(1);
   reset_value=0;
   setTransform(180.0/64, 0);
-  }}
+  } {}}
    Function {OSC_value(int i)} {open return_type void
    } { code {
        value(64-i);

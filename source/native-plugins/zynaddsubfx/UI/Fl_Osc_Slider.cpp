@@ -106,7 +106,7 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
                         if (step < 1)
                             step = 1;
                 }
-                int dy = minimum() <=  maximum() ? Fl::e_dy : -Fl::e_dy;
+                int dy = minimum() <=  maximum() ? -Fl::e_dy : Fl::e_dy;
                 handle_drag(clamp(value() + step * dy));
             }
             return 1;

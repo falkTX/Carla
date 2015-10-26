@@ -138,7 +138,7 @@ struct rtosc_hack_decltype_t
 #define rToggle(name, ...) \
   {STRINGIFY(name) "::T:F",rProp(parameter) DOC(__VA_ARGS__), NULL, rToggleCb(name)}
 #define rOption(name, ...) \
-  {STRINGIFY(name) "::i:c",rProp(parameter) DOC(__VA_ARGS__), NULL, rOptionCb(name)}
+  {STRINGIFY(name) "::i:c",rProp(parameter) rProp(enumerated) DOC(__VA_ARGS__), NULL, rOptionCb(name)}
 
 //Array operators
 #define rArrayF(name, length, ...) \

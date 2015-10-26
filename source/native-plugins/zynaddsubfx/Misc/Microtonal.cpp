@@ -58,10 +58,10 @@ const rtosc::Ports Microtonal::ports = {
     rParamZyn(Pmiddlenote, "Scale degree 0 note"),
 
     //TODO check to see if this should be exposed
-    rParamZyn(Pmapsize, "UNDOCUMENTED"),
+    rParamZyn(Pmapsize, "Size of key map"),
     rToggle(Pmappingenabled, "Mapping Enable"),
 
-    rParams(Pmapping, "UNDOCUMENTED"),
+    rParams(Pmapping, 128, "Mapping of keys"),
     rParamZyn(Pglobalfinedetune, "Fine detune for all notes"),
 
     rString(Pname, MICROTONAL_MAX_NAME_LEN, "Microtonal Name"),
