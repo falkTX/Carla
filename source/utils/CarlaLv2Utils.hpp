@@ -1109,9 +1109,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
         if (presetNodes.size() > 0)
         {
-            // create a list of preset URIs (for checking appliesTo, sorting and unique-ness)
-            // FIXME - check appliesTo?
-
+            // create a list of preset URIs (for sorting and unique-ness)
 #ifdef USE_QT
             QStringList presetListURIs;
 
@@ -1154,35 +1152,48 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             {
                 Lilv::Node presetNode(presetNodes.get(it));
 
-                if (lv2World.load_resource(presetNode) == -1)
-                    continue;
+                const char* const presetURI(presetNode.as_uri());
+                CARLA_SAFE_ASSERT_CONTINUE(presetURI != nullptr && presetURI[0] != '\0');
 
-                if (const char* const presetURI = presetNode.as_uri())
+                // try to find label without loading the preset resource first
+                Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
+
+                // failed, try loading resource
+                if (presetLabelNodes.size() == 0)
+                {
+                    // if loading resource fails, skip this preset
+                    if (lv2World.load_resource(presetNode) == -1)
+                        continue;
+
+                    // ok, let's try again
+                    presetLabelNodes = lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr);
+                }
+
+                if (presetLabelNodes.size() > 0)
                 {
 #ifdef USE_QT
                     const int index(presetListURIs.indexOf(QString(presetURI)));
 #else
                     const int index(presetListURIs.indexOf(juce::String(presetURI)));
 #endif
-                    CARLA_SAFE_ASSERT_CONTINUE(index >= 0);
+                    CARLA_SAFE_ASSERT_CONTINUE(index >= 0 && index < static_cast<int>(rdfDescriptor->PresetCount));
 
                     LV2_RDF_Preset* const rdfPreset(&rdfDescriptor->Presets[index]);
 
                     // ---------------------------------------------------
                     // Set Preset Information
+
+                    rdfPreset->URI = carla_strdup(presetURI);
+
+                    Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
+
+                    if (presetLabelNodes.size() > 0)
                     {
-                        rdfPreset->URI = carla_strdup(presetURI);
-
-                        Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
-
-                        if (presetLabelNodes.size() > 0)
-                        {
-                            if (const char* const label = presetLabelNodes.get_first().as_string())
-                                rdfPreset->Label = carla_strdup(label);
-                        }
-
-                        lilv_nodes_free(const_cast<LilvNodes*>(presetLabelNodes.me));
+                        if (const char* const label = presetLabelNodes.get_first().as_string())
+                            rdfPreset->Label = carla_strdup(label);
                     }
+
+                    lilv_nodes_free(const_cast<LilvNodes*>(presetLabelNodes.me));
                 }
             }
         }
