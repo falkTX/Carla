@@ -146,15 +146,16 @@ const uint32_t kFeatureIdUiInstanceAccess = 21;
 const uint32_t kFeatureIdUiIdleInterface  = 22;
 const uint32_t kFeatureIdUiFixedSize      = 23;
 const uint32_t kFeatureIdUiMakeResident   = 24;
-const uint32_t kFeatureIdUiNoUserResize   = 25;
-const uint32_t kFeatureIdUiParent         = 26;
-const uint32_t kFeatureIdUiPortMap        = 27;
-const uint32_t kFeatureIdUiPortSubscribe  = 28;
-const uint32_t kFeatureIdUiResize         = 29;
-const uint32_t kFeatureIdUiTouch          = 30;
-const uint32_t kFeatureIdExternalUi       = 31;
-const uint32_t kFeatureIdExternalUiOld    = 32;
-const uint32_t kFeatureCountAll           = 33;
+const uint32_t kFeatureIdUiMakeResident2  = 25;
+const uint32_t kFeatureIdUiNoUserResize   = 26;
+const uint32_t kFeatureIdUiParent         = 27;
+const uint32_t kFeatureIdUiPortMap        = 28;
+const uint32_t kFeatureIdUiPortSubscribe  = 29;
+const uint32_t kFeatureIdUiResize         = 30;
+const uint32_t kFeatureIdUiTouch          = 31;
+const uint32_t kFeatureIdExternalUi       = 32;
+const uint32_t kFeatureIdExternalUiOld    = 33;
+const uint32_t kFeatureCountAll           = 34;
 
 // -----------------------------------------------------
 
@@ -5235,7 +5236,7 @@ public:
                     break;
                 }
             }
-            if (std::strcmp(uri, LV2_UI__makeResident) == 0)
+            if (std::strcmp(uri, LV2_UI__makeResident) == 0 || std::strcmp(uri, LV2_UI__makeSONameResident) == 0)
                 canDelete = false;
         }
 
@@ -5430,6 +5431,9 @@ public:
 
         fFeatures[kFeatureIdUiMakeResident]->URI   = LV2_UI__makeResident;
         fFeatures[kFeatureIdUiMakeResident]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiMakeResident2]->URI  = LV2_UI__makeSONameResident;
+        fFeatures[kFeatureIdUiMakeResident2]->data = nullptr;
 
         fFeatures[kFeatureIdUiNoUserResize]->URI   = LV2_UI__noUserResize;
         fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;

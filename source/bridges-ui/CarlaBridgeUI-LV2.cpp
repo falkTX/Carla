@@ -100,13 +100,14 @@ const uint32_t kFeatureIdUridUnmap        =  7;
 const uint32_t kFeatureIdUiIdleInterface  =  8;
 const uint32_t kFeatureIdUiFixedSize      =  9;
 const uint32_t kFeatureIdUiMakeResident   = 10;
-const uint32_t kFeatureIdUiNoUserResize   = 11;
-const uint32_t kFeatureIdUiParent         = 12;
-const uint32_t kFeatureIdUiPortMap        = 13;
-const uint32_t kFeatureIdUiPortSubscribe  = 14;
-const uint32_t kFeatureIdUiResize         = 15;
-const uint32_t kFeatureIdUiTouch          = 16;
-const uint32_t kFeatureCount              = 17;
+const uint32_t kFeatureIdUiMakeResident2  = 11;
+const uint32_t kFeatureIdUiNoUserResize   = 12;
+const uint32_t kFeatureIdUiParent         = 13;
+const uint32_t kFeatureIdUiPortMap        = 14;
+const uint32_t kFeatureIdUiPortSubscribe  = 15;
+const uint32_t kFeatureIdUiResize         = 16;
+const uint32_t kFeatureIdUiTouch          = 17;
+const uint32_t kFeatureCount              = 18;
 
 // -------------------------------------------------------------------------
 
@@ -318,6 +319,9 @@ public:
 
         fFeatures[kFeatureIdUiMakeResident]->URI   = LV2_UI__makeResident;
         fFeatures[kFeatureIdUiMakeResident]->data  = nullptr;
+
+        fFeatures[kFeatureIdUiMakeResident2]->URI  = LV2_UI__makeSONameResident;
+        fFeatures[kFeatureIdUiMakeResident2]->data = nullptr;
 
         fFeatures[kFeatureIdUiNoUserResize]->URI   = LV2_UI__noUserResize;
         fFeatures[kFeatureIdUiNoUserResize]->data  = nullptr;

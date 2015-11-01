@@ -99,8 +99,9 @@
 
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
-#define LV2_UI__Qt5UI         LV2_UI_PREFIX "Qt5UI"
-#define LV2_UI__makeResident  LV2_UI_PREFIX "makeResident"
+#define LV2_UI__Qt5UI              LV2_UI_PREFIX "Qt5UI"
+#define LV2_UI__makeResident       LV2_UI_PREFIX "makeResident"
+#define LV2_UI__makeSONameResident LV2_UI_PREFIX "makeSONameResident"
 
 // -----------------------------------------------------------------------
 // Custom Atom types
@@ -1524,6 +1525,8 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri) noexcept
     if (std::strcmp(uri, LV2_UI__idleInterface) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__makeResident) == 0)
+        return true;
+    if (std::strcmp(uri, LV2_UI__makeSONameResident) == 0)
         return true;
     if (std::strcmp(uri, LV2_UI__noUserResize) == 0)
         return true;
