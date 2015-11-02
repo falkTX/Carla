@@ -105,6 +105,7 @@ extern "C" {
 #undef MAX_LINE_SIZE
 #undef rObject
 #include "zynaddsubfx/Misc/MiddleWare.cpp"
+#undef rObject
 #include "zynaddsubfx/Misc/Part.cpp"
 #undef rChangeCb
 #define rChangeCb
@@ -113,7 +114,6 @@ extern "C" {
 #include "zynaddsubfx/Misc/PresetExtractor.cpp"
 #include "zynaddsubfx/Misc/Recorder.cpp"
 //#include "zynaddsubfx/Misc/Stereo.cpp"
-#include "zynaddsubfx/Misc/TmpFileMgr.cpp"
 #include "zynaddsubfx/Misc/Util.cpp"
 #include "zynaddsubfx/Misc/WavFile.cpp"
 #include "zynaddsubfx/Misc/WaveShapeSmps.cpp"
