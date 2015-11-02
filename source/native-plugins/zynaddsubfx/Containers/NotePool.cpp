@@ -106,6 +106,14 @@ void NotePool::applyLegato(LegatoParams &par)
     }
 };
 
+bool NotePool::full(void) const
+{
+    for(int i=0; i<POLYPHONY; ++i)
+        if(ndesc[i].status == Part::KEY_OFF)
+            return false;
+    return true;
+}
+
 //Note that isn't KEY_PLAYING or KEY_RELASED_AND_SUSTAINING
 bool NotePool::existsRunningNote(void) const
 {

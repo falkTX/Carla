@@ -32,6 +32,7 @@ const rtosc::Ports real_preset_ports =
     {"scan-for-presets:", 0, 0,
         [](const char *, rtosc::RtData &d) {
             MiddleWare &mw = *(MiddleWare*)d.obj;
+            assert(d.obj);
             mw.getPresetsStore().scanforpresets();
             auto &pre = mw.getPresetsStore().presets;
             d.reply(d.loc, "i", pre.size());
@@ -45,6 +46,7 @@ const rtosc::Ports real_preset_ports =
     {"copy:s:ss:si:ssi", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
             MiddleWare &mw = *(MiddleWare*)d.obj;
+            assert(d.obj);
             std::string args = rtosc_argument_string(msg);
             d.reply(d.loc, "s", "clipboard copy...");
             printf("\nClipboard Copy...\n");
@@ -65,6 +67,7 @@ const rtosc::Ports real_preset_ports =
     {"paste:s:ss:si:ssi", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
             MiddleWare &mw = *(MiddleWare*)d.obj;
+            assert(d.obj);
             std::string args = rtosc_argument_string(msg);
             d.reply(d.loc, "s", "clipboard paste...");
             printf("\nClipboard Paste...\n");
@@ -85,11 +88,13 @@ const rtosc::Ports real_preset_ports =
     {"clipboard-type:", 0, 0,
         [](const char *, rtosc::RtData &d) {
             const MiddleWare &mw = *(MiddleWare*)d.obj;
+            assert(d.obj);
             d.reply(d.loc, "s", mw.getPresetsStore().clipboard.type.c_str());
         }},
     {"delete:s", 0, 0,
         [](const char *msg, rtosc::RtData &d) {
             MiddleWare &mw = *(MiddleWare*)d.obj;
+            assert(d.obj);
             mw.getPresetsStore().deletepreset(rtosc_argument(msg,0).s);
         }},
 
@@ -133,6 +138,7 @@ class Capture:public rtosc::RtData
         {
             matches = 0;
             memset(locbuf, 0, sizeof(locbuf));
+            memset(msgbuf, 0, sizeof(msgbuf));
             loc      = locbuf;
             loc_size = sizeof(locbuf);
             obj      = obj_;
@@ -193,7 +199,9 @@ std::string doCopy(MiddleWare &mw, string url, string name)
     mw.doReadOnlyOp([&xml, url, name, &mw](){
         Master *m = mw.spawnMaster();
         //Get the pointer
+        printf("capture at <%s>\n", (url+"self").c_str());
         T *t = (T*)capture<void*>(m, url+"self");
+        assert(t);
         //Extract Via mxml
         //t->add2XML(&xml);
         t->copy(mw.getPresetsStore(), name.empty()? NULL:name.c_str());
@@ -303,6 +311,7 @@ void doClassPaste(std::string type, std::string type_, MiddleWare &mw, string ur
 
 std::string doClassCopy(std::string type, MiddleWare &mw, string url, string name)
 {
+    printf("doClassCopy(%p)\n", mw.spawnMaster()->uToB);
     if(type == "EnvelopeParams")
         return doCopy<EnvelopeParams>(mw, url, name);
     else if(type == "LFOParams")

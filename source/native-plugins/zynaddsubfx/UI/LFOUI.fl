@@ -46,9 +46,9 @@ decl {\#include "common.H"} {public local
 
 class LFOUI {open : {public Fl_Osc_Group, PresetsUI_}
 } {
-  Function {LFOUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h,label)} {open
+  Function {LFOUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h)} {open
   } {
-    code {} {}
+    code { cached_label = label; } {}
   }
   Function {~LFOUI()} {open
   } {
@@ -188,6 +188,8 @@ refresh();
 
 lfoui->resize(this->x(),this->y(),this->w(),this->h());
 
-lfoparamswindow->label(this->label());} {}
+lfoparamswindow->label(cached_label);} {}
   }
+
+  decl { const char *cached_label; } { private }
 } 

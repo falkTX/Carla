@@ -42,8 +42,27 @@ using rtosc::RtData;
 #define rObject ADnoteVoiceParam
 
 static const Ports voicePorts = {
-    rRecurp(OscilSmp, "Primary Oscillator"),
-    rRecurp(FMSmp,    "Modulating Oscillator"),
+    //Send Messages To Oscillator Realtime Table
+    {"OscilSmp/", rDoc("Primary Oscillator"),
+        &OscilGen::ports,
+        rBOIL_BEGIN
+            if(obj->OscilSmp == NULL) return;
+        data.obj = obj->OscilSmp;
+        SNIP
+            OscilGen::realtime_ports.dispatch(msg, data);
+        if(data.matches == 0)
+            data.forward();
+        rBOIL_END},
+    {"FMSmp/", rDoc("Modulating Oscillator"),
+        &OscilGen::ports,
+        rBOIL_BEGIN
+            if(obj->FMSmp == NULL) return;
+        data.obj = obj->FMSmp;
+        SNIP
+            OscilGen::realtime_ports.dispatch(msg, data);
+        if(data.matches == 0)
+            data.forward();
+        rBOIL_END},
     rRecurp(FreqLfo, "Frequency LFO"),
     rRecurp(AmpLfo, "Amplitude LFO"),
     rRecurp(FilterLfo, "Filter LFO"),
@@ -107,7 +126,7 @@ static const Ports voicePorts = {
     rToggle(PFMFreqEnvelopeEnabled,  "Modulator Frequency Envelope"),
     rToggle(PFMAmpEnvelopeEnabled,   "Modulator Amplitude Envelope"),
 
-    
+
     //weird stuff for PCoarseDetune
     {"detunevalue:",  rMap(unit,cents) rDoc("Get detune in cents"), NULL,
         [](const char *, RtData &d)
@@ -148,7 +167,7 @@ static const Ports voicePorts = {
                 obj->PCoarseDetune = k + (obj->PCoarseDetune/1024)*1024;
             }
         }},
-    
+
     //weird stuff for PCoarseDetune
     {"FMdetunevalue:", rMap(unit,cents) rDoc("Get modulator detune"), NULL, [](const char *, RtData &d)
         {
@@ -223,6 +242,7 @@ static const Ports globalPorts = {
     rParamZyn(PVolume, "volume control"),
     rParamZyn(PAmpVelocityScaleFunction, "Volume Velocity Control"),
 
+    rParamZyn(Fadein_adjustment, "Adjustment for anti-pop strategy."),
     rParamZyn(PPunchStrength, "Punch Strength"),
     rParamZyn(PPunchTime, "UNKNOWN"),
     rParamZyn(PPunchStretch, "How Punch changes with note frequency"),
@@ -348,6 +368,7 @@ void ADnoteGlobalParam::defaults()
     PAmpVelocityScaleFunction = 64;
     AmpEnvelope->defaults();
     AmpLfo->defaults();
+    Fadein_adjustment = FADEIN_ADJUSTMENT_SCALE;
     PPunchStrength = 0;
     PPunchTime     = 60;
     PPunchStretch  = 64;
@@ -712,6 +733,7 @@ void ADnoteGlobalParam::add2XML(XMLwrapper *xml)
     xml->addpar("volume", PVolume);
     xml->addpar("panning", PPanning);
     xml->addpar("velocity_sensing", PAmpVelocityScaleFunction);
+    xml->addpar("fadein_adjustment", Fadein_adjustment);
     xml->addpar("punch_strength", PPunchStrength);
     xml->addpar("punch_time", PPunchTime);
     xml->addpar("punch_stretch", PPunchStretch);
@@ -788,6 +810,7 @@ void ADnoteGlobalParam::getfromXML(XMLwrapper *xml)
         PAmpVelocityScaleFunction = xml->getpar127("velocity_sensing",
                                                    PAmpVelocityScaleFunction);
 
+        Fadein_adjustment = xml->getpar127("fadein_adjustment", Fadein_adjustment);
         PPunchStrength = xml->getpar127("punch_strength", PPunchStrength);
         PPunchTime     = xml->getpar127("punch_time", PPunchTime);
         PPunchStretch  = xml->getpar127("punch_stretch", PPunchStretch);
@@ -982,6 +1005,7 @@ void ADnoteGlobalParam::paste(ADnoteGlobalParam &a)
     copy(PPanning);
     copy(PAmpVelocityScaleFunction);
 
+    copy(Fadein_adjustment);
     copy(PPunchStrength);
     copy(PPunchTime);
     copy(PPunchStretch);

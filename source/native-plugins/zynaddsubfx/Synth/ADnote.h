@@ -144,6 +144,7 @@ class ADnote:public SynthNote
             Envelope *AmpEnvelope;
             LFO      *AmpLfo;
 
+            float Fadein_adjustment;
             struct {
                 int   Enabled;
                 float initialvalue, dt, t;

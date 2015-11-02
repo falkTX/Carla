@@ -263,7 +263,7 @@ class UI_Interface:public Fl_Osc_Interface
             ////fprintf(stderr, ".");
             //fprintf(stderr, "write(%s:%s)\n", s.c_str(), args);
             //fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
-            impl->transmitMsg(s.c_str(), args, va);
+            impl->transmitMsg_va(s.c_str(), args, va);
             va_end(va);
         }
 

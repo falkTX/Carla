@@ -137,11 +137,11 @@ maxkcounter->do_callback();}
         Fl_Button adeditbutton {
           label edit
           callback {
-	  if (Fl::event_shift()) {
+	  if (Fl::event_shift())
 	      partui->showvoiceparams(n, true);
-	  } else if (Fl::event_ctrl()) {
+	  else if (Fl::event_ctrl())
 	      partui->showvoiceparams(n, false);
-	  } else
+	  else
 	      partui->showparameters(n,0);
 	  }
           xywh {420 0 40 15} box THIN_UP_BOX labelsize 11

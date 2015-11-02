@@ -690,6 +690,12 @@ voiceonbutton->redraw();} open
               code0 {o->init("Unison_phase_randomness");}
               class Fl_Osc_Dial
             }
+            Fl_Dial {} {
+              label Stereo
+              tooltip {Stereo Spread} xywh {322 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              code0 {o->init("Unison_stereo_spread");}
+              class Fl_Osc_Dial
+            }
           }
         }
         Fl_Group {} {
@@ -717,7 +723,7 @@ voiceonbutton->redraw();} open
           } {}
           Fl_Dial {} {
             label Pan
-            tooltip {Panning (leftmost is Random)} xywh {210 60 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
+            tooltip {Panning (leftmost is Random)} xywh {212 65 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
             code0 {o->init("PPanning");}
             class Fl_Osc_Dial
           }
@@ -855,12 +861,6 @@ bypassfiltercheckbutton->redraw();}
         Fl_Box pinknoiselabel {
           label {Pink Noise}
           xywh {150 430 300 65} labelfont 1 labelsize 50 labelcolor 212 hide
-        }
-        Fl_Dial {} {
-          label Stereo
-          tooltip {Stereo Spread} xywh {327 560 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("Unison_stereo_spread");}
-          class Fl_Osc_Dial
         }
         Fl_Counter {} {
           label Unison selected
@@ -1046,27 +1046,34 @@ class ADnoteUI {open : {public PresetsUI_}
           code0 {o->init("PPanning");}
           class Fl_Osc_Dial
         }
+	  Fl_Dial {} {
+	    label De-pop selected
+            tooltip {Pop suppression} xywh {208 228 20 20} type Float labelsize 10 maximum 127 step 1 textfont 1 textsize 11
+            code0 {o->init("Fadein_adjustment");}
+	    class Fl_Osc_Dial
+          }
+
         Fl_Dial pstr {
           label {P.Str.}
-          tooltip {Punch Strength} xywh {125 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+          tooltip {Punch Strength} xywh {78 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
           code0 {o->init("PPunchStrength");}
           class Fl_Osc_Dial
         }
         Fl_Dial pt {
           label {P.t.}
-          tooltip {Punch Time (duration)} xywh {155 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+          tooltip {Punch Time (duration)} xywh {108 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
           code0 {o->init("PPunchTime");}
           class Fl_Osc_Dial
         }
         Fl_Dial pstc {
           label {P.Stc.}
-          tooltip {Punch Stretch} xywh {185 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+          tooltip {Punch Stretch} xywh {138 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
           code0 {o->init("PPunchStretch");}
           class Fl_Osc_Dial
         }
         Fl_Dial pvel {
           label {P.Vel.}
-          tooltip {Punch Velocity Sensing} xywh {215 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+          tooltip {Punch Velocity Sensing} xywh {168 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
           code0 {o->init("PPunchVelocitySensing");}
           class Fl_Osc_Dial
         }
@@ -1084,7 +1091,7 @@ class ADnoteUI {open : {public PresetsUI_}
         } {}
         Fl_Check_Button rndgrp {
           label {Rnd Grp}
-          tooltip {How the Harmonic Amplitude is applied to voices that use the same oscillator} xywh {70 235 40 25} down_box DOWN_BOX labelsize 10 align 148
+          tooltip {How the Harmonic Amplitude is applied to voices that use the same oscillator} xywh {7 241 65 18} down_box DOWN_BOX labelsize 11
           code0 {o->init("Hrandgrouping");}
           class Fl_Osc_Check
         }
@@ -1115,7 +1122,7 @@ class ADnoteUI {open : {public PresetsUI_}
       }
       Fl_Check_Button stereo {
         label Stereo
-        xywh {5 230 65 35} down_box DOWN_BOX labelsize 11
+        xywh {7 223 65 18} down_box DOWN_BOX labelsize 11
         code0 {o->init("PStereo");}
         class Fl_Osc_Check
       }

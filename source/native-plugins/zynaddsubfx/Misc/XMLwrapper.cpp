@@ -250,8 +250,12 @@ void XMLwrapper::addpar(const string &name, int val)
 
 void XMLwrapper::addparreal(const string &name, float val)
 {
-    addparams("par_real", 2, "name", name.c_str(), "value",
-              stringFrom<float>(val).c_str());
+    union { float in; uint32_t out; } convert;
+    char buf[11];
+    convert.in = val;
+    sprintf(buf, "0x%8X", convert.out);
+    addparams("par_real", 3, "name", name.c_str(), "value",
+              stringFrom<float>(val).c_str(), "exact_value", buf);
 }
 
 void XMLwrapper::addparbool(const string &name, int val)
@@ -571,7 +575,14 @@ float XMLwrapper::getparreal(const char *name, float defaultpar) const
     if(tmp == NULL)
         return defaultpar;
 
-    const char *strval = mxmlElementGetAttr(tmp, "value");
+    const char *strval = mxmlElementGetAttr(tmp, "exact_value");
+    if (strval != NULL) {
+        union { float out; uint32_t in; } convert;
+        sscanf(strval+2, "%x", &convert.in);
+        return convert.out;
+    }
+
+    strval = mxmlElementGetAttr(tmp, "value");
     if(strval == NULL)
         return defaultpar;
 
@@ -620,4 +631,56 @@ mxml_node_t *XMLwrapper::addparams(const char *name, unsigned int params,
         va_end(variableList);
     }
     return element;
+}
+
+XmlNode::XmlNode(std::string name_)
+    :name(name_)
+{}
+
+std::string &XmlNode::operator[](std::string name)
+{
+    //fetch an existing one
+    for(auto &a:attrs)
+        if(a.name == name)
+            return a.value;
+
+    //create a new one
+    attrs.push_back({name, ""});
+    return attrs[attrs.size()-1].value;
+}
+
+bool XmlNode::has(std::string name_)
+{
+    //fetch an existing one
+    for(auto &a:attrs)
+        if(a.name == name_)
+            return true;
+    return false;
+}
+
+void XMLwrapper::add(const XmlNode &node_)
+{
+    mxml_node_t *element = mxmlNewElement(node, node_.name.c_str());
+    for(auto attr:node_.attrs)
+        mxmlElementSetAttr(element, attr.name.c_str(),
+                attr.value.c_str());
+}
+
+std::vector<XmlNode> XMLwrapper::getBranch(void) const
+{
+    std::vector<XmlNode> res;
+    mxml_node_t *current = node->child;
+    while(current) {
+        if(current->type == MXML_ELEMENT) {
+            auto elm = current->value.element;
+            XmlNode n(elm.name);
+            for(int i=0; i<elm.num_attrs; ++i) {
+                auto &attr = elm.attrs[i];
+                n[attr.name] = attr.value;
+            }
+            res.push_back(n);
+        }
+        current = mxmlWalkNext(current, node, MXML_NO_DESCEND);
+    }
+    return res;
 }

@@ -24,12 +24,29 @@
 
 #include <mxml.h>
 #include <string>
-#ifndef float
-#define float float
-#endif
+#include <vector>
 
 #ifndef XML_WRAPPER_H
 #define XML_WRAPPER_H
+
+class XmlAttr
+{
+    public:
+        std::string name;
+        std::string value;
+};
+
+
+class XmlNode
+{
+    public:
+        XmlNode(std::string name_);
+        std::string          name;
+        std::vector<XmlAttr> attrs;
+
+        std::string &operator[](std::string name);
+        bool has(std::string);
+};
 
 /**Mxml wrapper*/
 class XMLwrapper
@@ -219,6 +236,10 @@ class XMLwrapper
          * Checks the current tree for PADsynth usage
          */
         bool hasPadSynth() const;
+
+        void add(const XmlNode &node);
+
+        std::vector<XmlNode> getBranch(void) const;
 
     private:
 

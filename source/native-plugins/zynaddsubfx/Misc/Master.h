@@ -166,7 +166,7 @@ class Master
         //Statistics on output levels
         vuData vu;
 
-        rtosc::MidiTable midi;//<1024,64>
+        rtosc::MidiMapperRT midi;
 
         bool   frozenState;//read-only parameters for threadsafe actions
         Allocator *memory;

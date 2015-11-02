@@ -93,6 +93,8 @@ class NotePool
         void upgradeToLegato(void);
         void applyLegato(LegatoParams &par);
 
+        bool full(void) const;
+
         //Note that isn't KEY_PLAYING or KEY_RELASED_AND_SUSTAINING
         bool existsRunningNote(void) const;
         int getRunningNotes(void) const;

@@ -114,7 +114,9 @@ class OscilGen:public Presets
 
         bool ADvsPAD; //if it is used by ADsynth or by PADsynth
 
-        static const rtosc::Ports ports;
+        static const rtosc::MergePorts ports;
+        static const rtosc::Ports      non_realtime_ports;
+        static const rtosc::Ports      realtime_ports;
 
         /* Oscillator Frequencies -
          *  this is different than the hamonics set-up by the user,

@@ -107,6 +107,8 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
                             step = 1;
                 }
                 int dy = minimum() <=  maximum() ? -Fl::e_dy : Fl::e_dy;
+                // Flip sense for vertical sliders.
+                dy = (this->type() & 1) ? dy : -dy;
                 handle_drag(clamp(value() + step * dy));
             }
             return 1;

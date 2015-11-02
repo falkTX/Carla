@@ -26,15 +26,70 @@ static bool rtosc_match_number(const char **pattern, const char **msg)
     return val < max;
 }
 
+// pattern = /previous/{A,B,C,D,E}/after
+//                     ^
+// message = /previous/C/after
+//                     ^
+const char *rtosc_match_options(const char *pattern, const char **msg)
+{
+    const char *preserve = *msg;
+    assert(*pattern == '{');
+    pattern++;
+
+retry:
+
+    while(1) {
+        //Check for special characters
+        if(*pattern == ',' || *pattern == '}') {
+            goto advance_until_end;
+        } else if((*pattern == **msg)) { //verbatim compare
+            if(**msg)
+                ++pattern, ++*msg;
+            else
+                goto try_next;
+        } else
+            goto try_next;
+    }
+
+advance_until_end:
+    while(*pattern && *pattern != '}') pattern++;
+    if(*pattern == '}')
+        pattern++;
+    return pattern;
+try_next:
+    *msg = preserve;
+    while(*pattern && *pattern != '}' && *pattern != ',') pattern++;
+    if(*pattern == ',') {
+        pattern++;
+        goto retry;
+    }
+
+    return NULL;
+}
+
 const char *rtosc_match_path(const char *pattern, const char *msg)
 {
     while(1) {
         //Check for special characters
         if(*pattern == ':' && !*msg)
             return pattern;
-        else if(*pattern == '/' && *msg == '/')
-            return ++pattern;
-        else if(*pattern == '#') {
+        else if(*pattern == '{') {
+            pattern = rtosc_match_options(pattern, &msg);
+            if(!pattern)
+                return NULL;
+        } else if(*pattern == '*') {
+            //advance message and pattern to '/' or ':' and '\0'
+            while(*pattern && *pattern != '/' && *pattern != ':')
+                pattern++;
+            if(*pattern == '/' || *pattern == ':')
+                while(*msg && *msg != '/')
+                    msg++;
+        } else if(*pattern == '/' && *msg == '/') {
+            ++pattern;
+            ++msg;
+            if(*pattern == '\0' || *pattern == ':')
+                return pattern;
+        } else if(*pattern == '#') {
             ++pattern;
             if(!rtosc_match_number(&pattern, &msg))
                 return NULL;

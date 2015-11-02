@@ -166,6 +166,10 @@ static const Ports master_ports = {
         [](const char *m,RtData &d){
             Master *M =  (Master*)d.obj;
             M->noteOff(rtosc_argument(m,0).i,rtosc_argument(m,1).i);}},
+    {"virtual_midi_cc:iii", rDoc("MIDI CC Event"), 0,
+        [](const char *m,RtData &d){
+            Master *M =  (Master*)d.obj;
+            M->setController(rtosc_argument(m,0).i,rtosc_argument(m,1).i,rtosc_argument(m,2).i);}},
 
     {"setController:iii", rDoc("MIDI CC Event"), 0,
         [](const char *m,RtData &d){
@@ -189,19 +193,13 @@ static const Ports master_ports = {
         [](const char *,RtData &d) {
             Master *M =  (Master*)d.obj;
             M->frozenState = false;}},
-    {"register:iis", rDoc("MIDI Mapping Registration"), 0,
-        [](const char *m,RtData &d){
+    {"midi-learn/", 0, &rtosc::MidiMapperRT::ports,
+        [](const char *msg, RtData &d) {
             Master *M =  (Master*)d.obj;
-            M->midi.addElm(rtosc_argument(m,0).i, rtosc_argument(m,1).i,rtosc_argument(m,2).s);}},
-    {"learn:s", rDoc("Begin Learning for specified address"), 0,
-        [](const char *m, RtData &d){
-            Master *M =  (Master*)d.obj;
-            printf("learning '%s'\n", rtosc_argument(m,0).s);
-            M->midi.learn(rtosc_argument(m,0).s);}},
-    {"unlearn:s", rDoc("Remove Learning for specified address"), 0,
-        [](const char *m, RtData &d){
-            Master *M =  (Master*)d.obj;
-            M->midi.clear_entry(rtosc_argument(m,0).s);}},
+            SNIP;
+            printf("residue message = <%s>\n", msg);
+            d.obj = &M->midi;
+            rtosc::MidiMapperRT::ports.dispatch(msg,d);}},
     {"close-ui:", rDoc("Request to close any connection named \"GUI\""), 0,
         [](const char *, RtData &d) {
        d.reply("/close-ui", "");}},
@@ -228,19 +226,13 @@ static const Ports master_ports = {
     {"undo_resume:",rProp(internal) rDoc("resume undo event recording"),0,
         [](const char *, rtosc::RtData &d) {d.reply("/undo_resume", "");}},
     {"config/", rDoc("Top Level Application Configuration Parameters"), &Config::ports,
-        [](const char *, rtosc::RtData &){}},
+        [](const char *, rtosc::RtData &d){d.forward();}},
     {"presets/", rDoc("Parameter Presets"), &preset_ports, rBOIL_BEGIN
         SNIP
             preset_ports.dispatch(msg, data);
         rBOIL_END},
 };
 const Ports &Master::ports = master_ports;
-
-#ifndef PLUGINVERSION
-//XXX HACKS
-Master *the_master;
-rtosc::ThreadLink *the_bToU;
-#endif
 
 class DataObj:public rtosc::RtData
 {
@@ -252,6 +244,7 @@ class DataObj:public rtosc::RtData
             loc_size = loc_size_;
             obj      = obj_;
             bToU     = bToU_;
+            forwarded = false;
         }
 
         virtual void reply(const char *path, const char *args, ...) override
@@ -280,9 +273,18 @@ class DataObj:public rtosc::RtData
         }
         virtual void broadcast(const char *msg) override
         {
-            reply("/broadcast");
+            reply("/broadcast", "");
             reply(msg);
-        };
+        }
+
+        virtual void forward(const char *reason) override
+        {
+            assert(message);
+            reply("/forward", "");
+            printf("forwarding '%s'\n", message);
+            forwarded = true;
+        }
+        bool forwarded;
     private:
         rtosc::ThreadLink *bToU;
 };
@@ -295,20 +297,22 @@ vuData::vuData(void)
 Master::Master(const SYNTH_T &synth_, Config* config)
     :HDDRecorder(synth_), ctl(synth_),
     microtonal(config->cfg.GzipCompression), bank(config),
-    midi(Master::ports), frozenState(false), pendingMemory(false),
+    frozenState(false), pendingMemory(false),
     synth(synth_), time(synth), gzip_compression(config->cfg.GzipCompression)
 {
     bToU = NULL;
     uToB = NULL;
+
+    //Setup MIDI
+    midi.frontend = [this](const char *msg) {bToU->raw_write(msg);};
+    midi.backend  = [this](const char *msg) {applyOscEvent(msg);};
+
     memory = new AllocatorClass();
     swaplr = 0;
     off  = 0;
     smps = 0;
     bufl = new float[synth.buffersize];
     bufr = new float[synth.buffersize];
-#ifndef PLUGINVERSION
-    the_master = this;
-#endif
 
     last_xmz[0] = 0;
     fft = new FFTwrapper(synth.oscilsize);
@@ -334,24 +338,6 @@ Master::Master(const SYNTH_T &synth_, Config* config)
 
     defaults();
 
-#ifndef PLUGINVERSION
-    midi.event_cb = [](const char *m)
-    {
-        char loc_buf[1024];
-        DataObj d{loc_buf, 1024, the_master, the_bToU};
-        memset(loc_buf, 0, sizeof(loc_buf));
-        //printf("sending an event to the owner of '%s'\n", m);
-        Master::ports.dispatch(m+1, d);
-    };
-#else
-    midi.event_cb = [](const char *) {};
-#endif
-
-    midi.error_cb = [](const char *a, const char *b)
-    {
-        fprintf(stderr, "MIDI- got an error '%s' -- '%s'\n",a,b);
-    };
-
     mastercb = 0;
     mastercb_ptr = 0;
 }
@@ -362,9 +348,19 @@ void Master::applyOscEvent(const char *msg)
     DataObj d{loc_buf, 1024, this, bToU};
     memset(loc_buf, 0, sizeof(loc_buf));
     d.matches = 0;
-    ports.dispatch(msg+1, d);
-    if(d.matches == 0)
-        fprintf(stderr, "Unknown path '%s'\n", msg);
+        
+    if(strcmp(msg, "/get-vu") && false) {
+        fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 5 + 30, 0 + 40);
+        fprintf(stdout, "backend[*]: '%s'<%s>\n", msg,
+                rtosc_argument_string(msg));
+        fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
+    }
+
+    ports.dispatch(msg, d, true);
+    if(d.matches == 0 && !d.forwarded)
+        fprintf(stderr, "Unknown path '%s:%s'\n", msg, rtosc_argument_string(msg));
+    if(d.forwarded)
+        bToU->raw_write(msg);
 }
 
 void Master::defaults()
@@ -450,7 +446,8 @@ void Master::setController(char chan, int type, int par)
 {
     if(frozenState)
         return;
-    midi.process(chan,type,par);
+    //TODO add chan back
+    midi.handleCC(type,par);
     if((type == C_dataentryhi) || (type == C_dataentrylo)
        || (type == C_nrpnhi) || (type == C_nrpnlo)) { //Process RPN and NRPN by the Master (ignore the chan)
         ctl.setparameternumber(type, par);
@@ -658,9 +655,7 @@ void Master::AudioOut(float *outl, float *outr)
                     rtosc_argument_string(msg));
             fprintf(stdout, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
         }
-        d.matches = 0;
-        //fprintf(stdout, "address '%s'\n", uToB->peak());
-        ports.dispatch(msg+1, d);
+        ports.dispatch(msg, d, true);
         events++;
         if(!d.matches) {// && !ports.apropos(msg)) {
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);

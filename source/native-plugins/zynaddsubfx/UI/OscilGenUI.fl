@@ -121,7 +121,7 @@ class Oscilharmonic {: {public Fl_Group}
 
 display->redraw();}
         xywh {0 15 15 115} type {Vert Knob} box NO_BOX selection_color 222 maximum 127 step 1 value 64
-        code0 {o->phase=false;//o->value(127-oscil->Phmag[n]);}
+        code0 {o->phase=false;o->ext = "magnitude"+to_s(n);//o->value(127-oscil->Phmag[n]);}
         code1 {//if (oscil->Phmag[n]==64) o->selection_color(0);}
         class OGSlider
       }
@@ -134,7 +134,7 @@ o->osc->requestValue(o->loc+"waveform");
 
 display->redraw();}
         xywh {0 135 15 75} type {Vert Knob} box NO_BOX selection_color 222 maximum 127 step 1 value 64
-        code0 {o->phase=true;//o->value(oscil->Phphase[n]);}
+        code0 {o->phase=true;o->ext = "phase"+to_s(n);//o->value(oscil->Phphase[n]);}
         class OGSlider
       }
       Fl_Box {} {
@@ -252,7 +252,7 @@ class OscilEditor {open : {public PresetsUI_}
             label rnd
             callback {}
             tooltip {Oscilator Phase Randomness: smaller than 0 is "group", larger than 0 is for each harmonic} xywh {145 290 100 10} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -64 maximum 63 step 1
-            code0 {(void)o->init("Prand");//if (oscil->ADvsPAD) o->hide();}
+            code0 {(void)o->init("Prand"); if (!adnotep) o->hide();}
 	    class Fl_Osc_VSlider
           }
           Fl_Group {} {open
@@ -453,6 +453,10 @@ redrawoscil();}
               MenuItem {} {
                 label Pow
                 xywh {85 85 100 20} labelfont 1 labelsize 10
+              }
+              MenuItem {} {
+                label Chop
+                xywh {95 95 100 20} labelfont 1 labelsize 10
               }
             }
             Fl_Dial bfmodpar1 {

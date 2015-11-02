@@ -139,20 +139,42 @@ void MidiMappernRT::map(const char *addr, bool coarse)
     unMap(addr, coarse);
     learnQueue.push_back(std::make_pair(addr,coarse));
     char buf[1024];
-    rtosc_message(buf, 1024, "/midi-add-watch","");
+    rtosc_message(buf, 1024, "/midi-learn/midi-add-watch","");
     rt_cb(buf);
 }
-        
+
 MidiMapperStorage *MidiMappernRT::generateNewBijection(const Port &port, std::string addr)
 {
     MidiBijection bi;
+    const auto &meta = port.meta();
+    if(meta.find("min") == meta.end() ||
+            meta.find("max") == meta.end()) {
+        printf("Rtosc-MIDI: Cannot Learn address = <%s>\n", addr.c_str());
+        printf("Rtosc-MIDI: There are no min/max fields\n");
+        return NULL;
+    }
     bi.mode = 0;
     bi.min = atof(port.meta()["min"]);
     bi.max = atof(port.meta()["max"]);
-    auto tmp = [bi,addr](int16_t x, MidiMapperStorage::write_cb cb) {
+    char type = 'f';
+    if(strstr(port.name, ":i"))
+        type = 'i';
+    std::function<void(int16_t, MidiMapperStorage::write_cb cb)> tmp =
+        [bi,addr,type](int16_t x, MidiMapperStorage::write_cb cb) {
         float out = bi(x);
+        //printf("in = %d out = %f\n", x, out);
         char buf[1024];
-        rtosc_message(buf, 1024, addr.c_str(), "f", out);
+        if(type == 'f')
+            rtosc_message(buf, 1024, addr.c_str(), "f", out);
+        else
+            rtosc_message(buf, 1024, addr.c_str(), "i", (int)out);
+        cb(buf);
+    };
+    if(bi.min == 0 && bi.max == 127 && type =='i')
+        tmp = [bi,addr,type](int16_t x, MidiMapperStorage::write_cb cb) {
+        //printf("special case in = %x out = %d\n", x, 0x7f&(x>>7));
+        char buf[1024];
+        rtosc_message(buf, 1024, addr.c_str(), "i", 0x7f&(x>>7));
         cb(buf);
     };
 
@@ -177,10 +199,19 @@ void MidiMappernRT::addNewMapper(int ID, const Port &port, std::string addr)
     bi.mode = 0;
     bi.min = atof(port.meta()["min"]);
     bi.max = atof(port.meta()["max"]);
-    auto tmp = [bi,addr](int16_t x, MidiMapperStorage::write_cb cb) {
+    char type = 'f';
+    if(strstr(port.name, ":i"))
+        type = 'i';
+    //printf("ADDING TYPE %c\n", type);
+    auto tmp = [bi,addr,type](int16_t x, MidiMapperStorage::write_cb cb) {
         float out = bi(x);
+        //printf("in = %d out = %f\n", x, out);
         char buf[1024];
-        rtosc_message(buf, 1024, addr.c_str(), "f", out);
+        if(type == 'f')
+            rtosc_message(buf, 1024, addr.c_str(), "f", out);
+        else
+            rtosc_message(buf, 1024, addr.c_str(), "i", (int)out);
+
         cb(buf);
     };
 
@@ -197,6 +228,10 @@ void MidiMappernRT::addNewMapper(int ID, const Port &port, std::string addr)
     }
     storage = nstorage;
     inv_map[addr] = std::make_tuple(storage->callbacks.size()-1, ID,-1,bi);
+
+    char buf[1024];
+    rtosc_message(buf, 1024, "/midi-learn/midi-bind", "b", sizeof(storage), &storage);
+    rt_cb(buf);
 }
 
 void MidiMappernRT::addFineMapper(int ID, const Port &port, std::string addr)
@@ -234,7 +269,7 @@ void MidiMappernRT::useFreeID(int ID)
         return;
     std::string addr = std::get<0>(learnQueue.front());
     bool coarse      = std::get<1>(learnQueue.front());
-    
+
     learnQueue.pop_front();
     assert(base_ports);
     const rtosc::Port *p = base_ports->apropos(addr.c_str());
@@ -264,13 +299,13 @@ void MidiMappernRT::useFreeID(int ID)
     //TODO clean up unused value and callback objects
 
     char buf[1024];
-    rtosc_message(buf, 1024, "/midi-bind", "b", sizeof(storage), &storage);
+    rtosc_message(buf, 1024, "/midi-learn/midi-bind", "b", sizeof(storage), &storage);
     rt_cb(buf);
 };
 
 void MidiMappernRT::unMap(const char *addr, bool coarse)
 {
-    printf("Unmapping('%s',%d)\n",addr,coarse);
+    //printf("Unmapping('%s',%d)\n",addr,coarse);
     if(inv_map.find(addr) == inv_map.end())
         return;
     auto imap = inv_map[addr];
@@ -296,7 +331,7 @@ void MidiMappernRT::unMap(const char *addr, bool coarse)
     //TODO clean up unused value and callback objects
 
     char buf[1024];
-    rtosc_message(buf, 1024, "/midi-bind", "b", sizeof(storage), &storage);
+    rtosc_message(buf, 1024, "/midi-learn/midi-bind", "b", sizeof(storage), &storage);
     rt_cb(buf);
 }
 
@@ -386,7 +421,7 @@ void MidiMappernRT::apply_low(int v, int ID)  { apply_midi(0x7f&v,ID);}
 void MidiMappernRT::apply_midi(int val, int ID)
 {
     char buf[1024];
-    rtosc_message(buf,1024,"/virtual_midi_cc","ii",val,ID);
+    rtosc_message(buf,1024,"/virtual_midi_cc","iii",0,val,ID);
     rt_cb(buf);
 }
 
@@ -408,9 +443,9 @@ void MidiMappernRT::setBounds(const char *str, float low, float high)
     };
 
     storage = nstorage;
-    
+
     char buf[1024];
-    rtosc_message(buf, 1024, "/midi-bind", "b", sizeof(storage), &storage);
+    rtosc_message(buf, 1024, "/midi-learn/midi-bind", "b", sizeof(storage), &storage);
     rt_cb(buf);
 }
 
@@ -497,7 +532,8 @@ MidiMapperRT::MidiMapperRT(void)
 {}
 void MidiMapperRT::setBackendCb(std::function<void(const char*)> cb) {backend = cb;}
 void MidiMapperRT::setFrontendCb(std::function<void(const char*)> cb) {frontend = cb;}
-void MidiMapperRT::handleCC(int ID, int val) { 
+void MidiMapperRT::handleCC(int ID, int val) {
+    //printf("handling CC(%d,%d){%d,%d,%d}\n", ID, val, (int)storage, pending.has(ID), watchSize);
     if((!storage || !storage->handleCC(ID, val, backend)) && !pending.has(ID) && watchSize) {
         watchSize--;
         pending.insert(ID);
@@ -508,6 +544,30 @@ void MidiMapperRT::handleCC(int ID, int val) {
 }
 void MidiMapperRT::addWatch(void) {watchSize++;}
 void MidiMapperRT::remWatch(void) {if(watchSize) watchSize--;}
+
+const rtosc::Ports MidiMapperRT::ports = {
+    {"midi-add-watch",0,0, [](msg_t, RtData&d)
+        {
+            auto midi = (MidiMapperRT*)d.obj;
+            midi->addWatch();}},
+    {"midi-remove-watch",0,0, [](msg_t, RtData&d)
+        {
+            auto midi = (MidiMapperRT*)d.obj;
+            midi->remWatch();}},
+    {"midi-bind:b","",0, [](msg_t msg, RtData&d)
+        {
+            auto &midi = *(MidiMapperRT*)d.obj;
+            midi.pending.pop();
+            MidiMapperStorage *nstorage =
+                *(MidiMapperStorage**)rtosc_argument(msg,0).b.data;
+            if(midi.storage) {
+                nstorage->cloneValues(*midi.storage);
+                midi.storage = nstorage;
+            } else
+                midi.storage = nstorage;}}
+};
+
+//Depricated
 Port MidiMapperRT::addWatchPort(void) {
     return Port{"midi-add-watch","",0, [this](msg_t, RtData&) {
         this->addWatch();

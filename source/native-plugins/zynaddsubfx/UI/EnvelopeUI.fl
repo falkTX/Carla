@@ -73,7 +73,7 @@ class PointButton {open : {public Fl_Button, public Fl_Osc_Widget}}
 }
 class EnvelopeUI {open : {public Fl_Osc_Group,PresetsUI_}
 } {
-  Function {EnvelopeUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h,label)} {} {
+  Function {EnvelopeUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h)} {} {
     code {freemodeeditwindow=NULL;
 envADSR=NULL;
 envASR=NULL;

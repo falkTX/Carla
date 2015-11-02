@@ -398,7 +398,7 @@ void Part::NoteOn(unsigned char note,
     const bool doingLegato     = isRunningNote && isLegatoMode() &&
                                  lastlegatomodevalid;
 
-    if(!Pnoteon || !inRange(note, Pminkey, Pmaxkey))
+    if(!Pnoteon || !inRange(note, Pminkey, Pmaxkey) || notePool.full())
         return;
 
     verifyKeyMode();
@@ -492,7 +492,7 @@ void Part::NoteOff(unsigned char note) //release the key
         monomemPop(note);
 
     for(auto &desc:notePool.activeDesc()) {
-        if(desc.note != note)
+        if(desc.note != note || desc.status != KEY_PLAYING)
             continue;
         if(!ctl.sustain.sustain) { //the sustain pedal is not pushed
             if((isMonoMode() || isLegatoMode()) && !monomemEmpty())

@@ -121,7 +121,7 @@ class MidiMappernRT
         std::string getMappedString(std::string addr);
 
         MidiBijection getBijection(std::string s);
-        
+
         void snoop(const char *msg);
 
         void apply_high(int v, int ID);
@@ -158,9 +158,13 @@ class MidiMapperRT
         void handleCC(int ID, int val);
         void addWatch(void);
         void remWatch(void);
+
+        //Depricated
         Port addWatchPort(void);
         Port removeWatchPort(void);
         Port bindPort(void);
+
+        static const Ports ports;
 
         //Fixed upper bounded size set of integer IDs
         class PendingQueue

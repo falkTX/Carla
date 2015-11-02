@@ -52,11 +52,16 @@ struct RtData
     void *obj;
     int  matches;
     const Port *port;
+    const char *message;
 
     virtual void reply(const char *path, const char *args, ...);
     virtual void reply(const char *msg);
+    virtual void chain(const char *path, const char *args, ...){};
+    virtual void chain(const char *msg){};
     virtual void broadcast(const char *path, const char *args, ...);
     virtual void broadcast(const char *msg);
+
+    virtual void forward(const char *rational=NULL);
 };
 
 
@@ -123,7 +128,7 @@ struct Port {
 struct Ports
 {
     std::vector<Port> ports;
-
+    std::function<void(msg_t, RtData&)> default_handler;
 
     typedef std::vector<Port>::const_iterator itr_t;
 
@@ -152,7 +157,7 @@ struct Ports
      * @param d The RtData object shall contain a path buffer (or null), the length of
      *          the buffer, a pointer to data.
      */
-    void dispatch(const char *m, RtData &d) const;
+    void dispatch(const char *m, RtData &d, bool base_dispatch=false) const;
 
     /**
      * Retrieve local port by name
@@ -187,10 +192,29 @@ struct Ports
      */
     static char *collapsePath(char *p);
 
+    protected:
+    void refreshMagic(void);
     private:
     //Performance hacks
     class Port_Matcher *impl;
     unsigned elms;
+};
+
+struct ClonePort
+{
+    const char *name;
+    std::function<void(msg_t, RtData&)> cb;
+};
+
+struct ClonePorts:public Ports
+{
+    ClonePorts(const Ports &p,
+            std::initializer_list<ClonePort> c);
+};
+
+struct MergePorts:public Ports
+{
+    MergePorts(std::initializer_list<const Ports*> c);
 };
 
 

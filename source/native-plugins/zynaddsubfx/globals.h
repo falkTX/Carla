@@ -34,7 +34,7 @@
 #endif
 
 //Forward Declarations
-namespace rtosc{struct Ports; class ThreadLink;};
+namespace rtosc{struct Ports; struct ClonePorts; struct MergePorts; class ThreadLink;};
 class  EffectMgr;
 class  ADnoteParameters;
 struct ADnoteGlobalParam;

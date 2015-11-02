@@ -45,7 +45,7 @@ static const rtosc::Ports local_ports = {
     rSelf(EffectMgr),
     rPaste,
     rRecurp(filterpars, "Filter Parameter for Dynamic Filter"),
-    {"parameter#128::i:T:F", rProp(parameter) rProp(alias) rDoc("Parameter Accessor"),
+    {"parameter#128::i:T:F", rProp(parameter) rProp(alias) rLinear(0,127) rDoc("Parameter Accessor"),
         NULL,
         [](const char *msg, rtosc::RtData &d)
         {

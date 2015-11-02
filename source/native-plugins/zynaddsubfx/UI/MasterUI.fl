@@ -161,7 +161,12 @@ bankui->show();}
           callback {if ((int)bankui->cbwig->value()!=(npart+1)){
    bankui->cbwig->value(npart+1);
    bankui->cbwig->do_callback();
-};}
+   }
+   if (Fl::event_shift())
+        partui->instrumenteditwindow->show();
+   else if (Fl::event_ctrl())
+        partui->instrumentkitlist->show();
+}
           xywh {15 235 40 20} labelsize 10
         }
         Fl_Choice partrcv {
@@ -196,9 +201,10 @@ o->redraw();}
     code {npart=0;
 bankui=NULL;} {}
   }
-  Function {init(int npart_,BankUI *bankui_)} {} {
+  Function {init(int npart_,BankUI *bankui_, PartUI *partui_)} {} {
     code {npart=npart_;
 bankui=bankui_;
+partui=partui_;
 ext = "part"+to_s(npart)+"/";
 
 make_window();
@@ -226,6 +232,8 @@ panellistitemgroup->redraw();} {}
   decl {int npart;} {private local
   }
   decl {BankUI *bankui;} {private local
+  }
+  decl {PartUI *partui;} {private local
   }
 } 
 
@@ -303,6 +311,32 @@ class MasterUI {open
                  do_save_master();
             }}
               xywh {15 15 100 20} divider
+            }
+            MenuItem {} {
+              label {&Load Midi Learn...}
+              callback {char *filename;
+filename=fl_file_chooser("Open:","({*.xlz})",NULL,0);
+if (filename==NULL) return;
+
+osc->write("/load_xlz", "s", filename);}
+              xywh {40 40 100 20}
+            }
+            MenuItem {} {
+              label {Save Midi Learn...}
+              callback {char *filename;
+int result;
+filename=fl_file_chooser("Save:","({*.xlz})",NULL,0);
+if (filename==NULL) return;
+filename=fl_filename_setext(filename,".xlz");
+
+result=fileexists(filename);
+if (result) {
+    result=0;
+   if (!fl_choice("The file exists. \\nOverwrite it?","No","Yes",NULL)) return;
+};
+
+osc->write("/save_xlz", "s", filename);}
+              xywh {30 30 100 20} divider
             }
             MenuItem {} {
               label {&Load Scale Settings...}
@@ -903,7 +937,7 @@ GNU General Public License for details.}
       } {
         Fl_Pack {} {open
           xywh {5 10 560 285} type HORIZONTAL
-          code0 {for (int i=0;i<NUM_MIDI_PARTS/2;i++){panellistitem[i]=new Panellistitem(0,0,70,260,"");panellistitem[i]->init(i,bankui);}}
+          code0 {for (int i=0;i<NUM_MIDI_PARTS/2;i++){panellistitem[i]=new Panellistitem(0,0,70,260,"");panellistitem[i]->init(i,bankui,partui);}}
         } {}
       }
       Fl_Scroll {} {open
@@ -911,7 +945,7 @@ GNU General Public License for details.}
       } {
         Fl_Pack {} {open
           xywh {5 325 560 285} type HORIZONTAL
-          code0 {for (int i=NUM_MIDI_PARTS/2;i<NUM_MIDI_PARTS;i++){panellistitem[i]=new Panellistitem(0,0,70,260,"");panellistitem[i]->init(i,bankui);}}
+          code0 {for (int i=NUM_MIDI_PARTS/2;i<NUM_MIDI_PARTS;i++){panellistitem[i]=new Panellistitem(0,0,70,260,"");panellistitem[i]->init(i,bankui,partui);}}
         } {}
       }
       Fl_Button {} {
@@ -1681,6 +1715,7 @@ char *tmp;
 if (result<0) fl_alert("Error: Could not save the file.");
 	else
 {
+    osc->write("/last_xmz", "s", filename);
 \#if USE_NSM
         if ( nsm && nsm->is_active() )
              setfilelabel( nsm->display_name );

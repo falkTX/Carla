@@ -69,6 +69,9 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
                                               pars.GlobalPar.
                                               PFilterVelocityScaleFunction) - 1);
 
+    NoteGlobalPar.Fadein_adjustment =
+        pars.GlobalPar.Fadein_adjustment / (float)FADEIN_ADJUSTMENT_SCALE;
+    NoteGlobalPar.Fadein_adjustment *= NoteGlobalPar.Fadein_adjustment;
     if(pars.GlobalPar.PPunchStrength != 0) {
         NoteGlobalPar.Punch.Enabled = 1;
         NoteGlobalPar.Punch.t = 1.0f; //start from 1.0f and to 0.0f
@@ -1101,6 +1104,7 @@ inline void ADnote::fadein(float *smps) const
     float tmp = (synth.buffersize_f - 1.0f) / (zerocrossings + 1) / 3.0f;
     if(tmp < 8.0f)
         tmp = 8.0f;
+    tmp *= NoteGlobalPar.Fadein_adjustment;
 
     int n;
     F2I(tmp, n); //how many samples is the fade-in
