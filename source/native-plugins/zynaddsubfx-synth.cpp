@@ -35,6 +35,8 @@
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 
+// #define ZYN_MSG_ANYWHERE
+
 // -----------------------------------------------------------------------
 
 class ZynAddSubFxPrograms
@@ -445,12 +447,16 @@ protected:
         {
             fParameters[index] = (value >= 0.5f) ? 1.0f : 0.0f;
 
-            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
-            fMiddleWare->activeUrl("");
-
             char msg[24];
             std::sprintf(msg, "/part%i/Penabled", index-kParamPart01Enabled);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, (value >= 0.5f) ? "T" : "F");
+#else
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
             fMiddleWare->transmitMsg(msg, (value >= 0.5f) ? "T" : "F");
+#endif
         }
         else if (index <= kParamPart16Volume)
         {
@@ -459,12 +465,16 @@ protected:
 
             fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
-            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
-            fMiddleWare->activeUrl("");
-
             char msg[24];
             std::sprintf(msg, "/part%i/Pvolume", index-kParamPart01Volume);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, "i", static_cast<int>(fParameters[index]));
+#else
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
             fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[index]));
+#endif
         }
         else if (index <= kParamPart16Panning)
         {
@@ -473,12 +483,16 @@ protected:
 
             fParameters[index] = std::round(carla_fixedValue(0.0f, 127.0f, value));
 
-            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
-            fMiddleWare->activeUrl("");
-
             char msg[24];
             std::sprintf(msg, "/part%i/Ppanning", index-kParamPart01Panning);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, "i", static_cast<int>(fParameters[index]));
+#else
+            fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
+            fMiddleWare->activeUrl("");
             fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[index]));
+#endif
         }
         else if (index <= kParamResBandwidth)
         {
@@ -509,7 +523,11 @@ protected:
         const char* const filename(sPrograms.getZynProgramFilename(bank, program));
         CARLA_SAFE_ASSERT_RETURN(filename != nullptr && filename[0] != '\0',);
 
+#ifdef ZYN_MSG_ANYWHERE
+        fMiddleWare->messageAnywhere("/load-part", "is", channel, filename);
+#else
         fMiddleWare->transmitMsg("/load-part", "is", channel, filename);
+#endif
     }
 
     void setCustomData(const char* const key, const char* const value) override
@@ -519,11 +537,19 @@ protected:
 
         /**/ if (std::strcmp(key, "CarlaAlternateFile1") == 0) // xmz
         {
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere("/load_xmz", "s", value);
+#else
             fMiddleWare->transmitMsg("/load_xmz", "s", value);
+#endif
         }
         else if (std::strcmp(key, "CarlaAlternateFile2") == 0) // xiz
         {
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere("/load_xiz", "is", 0, value);
+#else
             fMiddleWare->transmitMsg("/load_xiz", "is", 0, value);
+#endif
         }
     }
 
@@ -807,28 +833,43 @@ private:
 
     void _setMasterParameters()
     {
+#ifndef ZYN_MSG_ANYWHERE
         fMiddleWare->transmitMsg("/echo", "ss", "OSC_URL", "");
         fMiddleWare->activeUrl("");
+#endif
+        char msg[24];
 
         for (int i=kParamPart16Enabled+1; --i>=kParamPart01Enabled;)
         {
-            char msg[24];
             std::sprintf(msg, "/part%i/Penabled", i-kParamPart01Enabled);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, (fParameters[i] >= 0.5f) ? "T" : "F");
+#else
             fMiddleWare->transmitMsg(msg, (fParameters[i] >= 0.5f) ? "T" : "F");
+#endif
         }
 
         for (int i=kParamPart16Volume+1; --i>=kParamPart01Volume;)
         {
-            char msg[24];
             std::sprintf(msg, "/part%i/Pvolume", i-kParamPart01Volume);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, "i", static_cast<int>(fParameters[i]));
+#else
             fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[i]));
+#endif
         }
 
         for (int i=kParamPart16Panning+1; --i>=kParamPart01Panning;)
         {
-            char msg[24];
             std::sprintf(msg, "/part%i/Ppanning", i-kParamPart01Panning);
+
+#ifdef ZYN_MSG_ANYWHERE
+            fMiddleWare->messageAnywhere(msg, "i", static_cast<int>(fParameters[i]));
+#else
             fMiddleWare->transmitMsg(msg, "i", static_cast<int>(fParameters[i]));
+#endif
         }
 
         for (int i=0; i<NUM_MIDI_PARTS; ++i)
