@@ -91,18 +91,21 @@ class PhaseSlider {: {public Fl_Osc_TSlider}
   reset_value=0;
   setTransform(180.0/64, 0);
   } {}}
+  Function {set_scope(Fl_Oscilloscope *newscope)} {
+  } { code { oscope = newscope; } {} }
    Function {OSC_value(int i)} {open return_type void
    } { code {
        value(64-i);
+       oscope->phase=i;
+       oscope->parent()->redraw();
    } {} }
   Function {cb(void)} {open return_type void
-  } {
-    code {
-	oscWrite(ext, "i", (int)(64-Fl_Slider::value()));
-	if(cb_data.first)
-	    cb_data.first(this, cb_data.second);
-} {}
-   }
+  } { code {
+        oscWrite(ext, "i", (int)(64-Fl_Slider::value()));
+        if(cb_data.first)
+            cb_data.first(this, cb_data.second);
+} {} }
+   decl {Fl_Oscilloscope *oscope = NULL; } {private local}
 }
 
 
@@ -430,10 +433,8 @@ o->redraw();}
               }
               Fl_Slider {} {
                 label Phase
-                callback {oscFM->phase=64-(int)o->value();
-fmoscil->redraw();}
                 xywh {645 415 105 15} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
-                code0 { o->init("PFMoscilphase", 'i'); }
+                code0 { o->init("PFMoscilphase", 'i'); o->set_scope(oscFM); }
                 class PhaseSlider
               }
               Fl_Choice extFMoscil {
@@ -615,10 +616,8 @@ o->redraw();}
           }
           Fl_Slider {} {
             label Phase
-            callback {osc->phase=64-(int)o->value();
-voiceoscil->redraw();}
             xywh {10 435 65 10} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
-            code0 { o->init("Poscilphase", 'i'); }
+            code0 { o->init("Poscilphase", 'i'); o->set_scope(osc); }
             class PhaseSlider
           }
           Fl_Check_Button {} {

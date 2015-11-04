@@ -34,6 +34,9 @@ class MiddleWare
         //Handle a rtosc Message uToB
         void transmitMsg_va(const char *, const char *args, va_list va);
 
+        //Send a message to middleware from an arbitrary thread
+        void messageAnywhere(const char *msg, const char *args, ...);
+
         //Indicate that a bank will be loaded
         //NOTE: Can only be called by realtime thread
         void pendingSetBank(int bank);

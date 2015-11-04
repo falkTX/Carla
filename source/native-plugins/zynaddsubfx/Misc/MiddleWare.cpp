@@ -22,6 +22,7 @@
 #include "Master.h"
 #include "Part.h"
 #include "PresetExtractor.h"
+#include "../Containers/MultiPseudoStack.h"
 #include "../Params/PresetsStore.h"
 #include "../Params/ADnoteParameters.h"
 #include "../Params/SUBnoteParameters.h"
@@ -578,6 +579,10 @@ public:
             const char *rtmsg = bToU->read();
             bToUhandle(rtmsg);
         }
+        while(auto *m = multi_thread_source.read()) {
+            handleMsg(m->memory);
+            multi_thread_source.free(m);
+        }
     }
 
 
@@ -642,6 +647,9 @@ public:
     rtosc::ThreadLink *bToU;
     rtosc::ThreadLink *uToB;
 
+    //Link to the unknown
+    MultiQueue multi_thread_source;
+
     //LIBLO
     lo_server server;
     string last_url, curr_url;
@@ -701,7 +709,7 @@ class MwDataObj:public rtosc::RtData
         };
         //virtual void broadcast(const char *path, const char *args, ...){(void)path;(void)args;};
         //virtual void broadcast(const char *msg){(void)msg;};
-        
+
         virtual void chain(const char *msg) override
         {
             assert(msg);
@@ -835,6 +843,14 @@ rtosc::Ports bankPorts = {
             d.reply("/alert", "s",
                     "Failed To Clear Bank Slot, please check file permissions");
         rEnd},
+    {"msb:i", 0, 0,
+        rBegin;
+        impl.setMsb(rtosc_argument(msg, 0).i);
+        rEnd},
+    {"lsb:i", 0, 0,
+        rBegin;
+        impl.setLsb(rtosc_argument(msg, 0).i);
+        rEnd},
 };
 
 /******************************************************************************
@@ -961,9 +977,12 @@ static rtosc::Ports middwareSnoopPorts = {
         rEnd},
     {"setprogram:i:c", 0, 0,
         rBegin;
-        const int slot = rtosc_argument(msg, 0).i;
-        impl.pending_load[0]++;
-        impl.loadPart(0, impl.master->bank.ins[slot].filename.c_str(), impl.master);
+        Bank &bank     = impl.master->bank;
+        const int slot = rtosc_argument(msg, 0).i + 128*bank.bank_lsb;
+        if(slot < BANK_SIZE) {
+            impl.pending_load[0]++;
+            impl.loadPart(0, impl.master->bank.ins[slot].filename.c_str(), impl.master);
+        }
         rEnd},
     {"part#16/clear:", 0, 0,
         rBegin;
@@ -1431,6 +1450,23 @@ void MiddleWare::transmitMsg_va(const char *path, const char *args, va_list va)
     else
         fprintf(stderr, "Error in transmitMsg(va)n");
 }
+
+void MiddleWare::messageAnywhere(const char *path, const char *args, ...)
+{
+    auto *mem = impl->multi_thread_source.alloc();
+    if(!mem)
+        fprintf(stderr, "Middleware::messageAnywhere memory pool out of memory...\n");
+
+    va_list va;
+    va_start(va,args);
+    if(rtosc_vmessage(mem->memory,mem->size,path,args,va))
+        impl->multi_thread_source.write(mem);
+    else {
+        fprintf(stderr, "Middleware::messageAnywhere message too big...\n");
+        impl->multi_thread_source.free(mem);
+    }
+}
+
 
 void MiddleWare::pendingSetBank(int bank)
 {

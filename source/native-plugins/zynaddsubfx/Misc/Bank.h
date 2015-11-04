@@ -66,6 +66,9 @@ class Bank
 
         void rescanforbanks();
 
+        void setMsb(uint8_t msb);
+        void setLsb(uint8_t lsb);
+
         struct bankstruct {
             bool operator<(const bankstruct &b) const;
             std::string dir;
@@ -99,6 +102,10 @@ class Bank
         void scanrootdir(std::string rootdir); //scans a root dir for banks
         
         Config* const config;
+
+    public:
+        uint8_t bank_msb;
+        uint8_t bank_lsb;
 };
 
 #endif

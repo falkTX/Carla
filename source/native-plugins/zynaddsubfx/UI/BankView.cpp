@@ -303,7 +303,7 @@ void BankView::react(int event, int nslot)
     if(event==1 && mode==3) {
         if (!isempty &&
             fl_choice("Clear the slot no. %d ?","No","Yes",NULL, nslot+1)) {
-            osc->write("/bank/clear-slot", "i", nslot);
+            osc->write("/bank/clear_slot", "i", nslot);
             osc->write("/bank/slot"+to_s(nslot), "");
         }
         bvc->mode(1);

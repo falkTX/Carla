@@ -128,6 +128,8 @@ class OscilGen:public Presets
         //This array stores some termporary data and it has OSCIL_SIZE elements
         float *tmpsmps;
         fft_t *outoscilFFTfreqs;
+        float *cachedbasefunc;
+        bool cachedbasevalid;
 
         float hmag[MAX_AD_HARMONICS], hphase[MAX_AD_HARMONICS]; //the magnituides and the phases of the sine/nonsine harmonics
 
@@ -148,6 +150,8 @@ class OscilGen:public Presets
 
         //Do the oscil modulation stuff
         void modulation(fft_t *freqs);
+
+        float userfunc(float x);
 
     public:
         //Check system for needed updates

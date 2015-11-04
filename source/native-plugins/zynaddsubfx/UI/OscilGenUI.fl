@@ -95,6 +95,29 @@ class OGSlider {: {public Fl_Osc_TSlider}
   decl {bool phase;} {public local
   }
 } 
+class OGWaveChoice {: {public Fl_Osc_Choice}
+} {
+   Function {OGWaveChoice(int x,int y, int w, int h, const char *label=0)
+   :Fl_Osc_Choice(x,y,w,h,label)} {open
+   } { code {} {}}
+   Function {OSC_value(int i)} {open return_type void
+   } { code { value(i == 127 ? size()-2 : i);
+   ogui->setbfmodstatus(i); } {} }
+   Function {cb(void)} {open return_type void
+   } {
+    code {
+        int v = Fl_Osc_Choice::value();
+	if (value() < size()-2)
+	    oscWrite(ext, "i", v);
+	else
+	    oscWrite(ext);
+	if(cb_data.first)
+	    cb_data.first(this, cb_data.second);
+} {}}
+
+  decl { class OscilEditor *ogui;} { public }
+
+}
 
 class Oscilharmonic {: {public Fl_Group}
 } {
@@ -321,7 +344,7 @@ class OscilEditor {open : {public PresetsUI_}
         Fl_Group basefuncdisplaygroup {open
           xywh {370 10 360 300} box UP_FRAME
           code0 {o->base = loc;}
-          code1 {o->osc = osc;}
+          code1 {o->osc = osc; bftype->ogui = this;}
           code2 {assert(osc);}
           class Fl_Osc_Group
         } {
@@ -330,7 +353,7 @@ class OscilEditor {open : {public PresetsUI_}
             code0 {oscilo_base=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
             code1 {oscilo_base->parent(o);oscilo_base->init(true);}
           } {}
-          Fl_Dial bfslider {
+          Fl_Dial bfpar {
             callback {redrawoscil(); bfparval->value(o->value());}
             tooltip {Base Function Parameter} xywh {525 285 20 20} minimum -64 maximum 63 step 1
             code0 {o->init("Pbasefuncpar");}
@@ -341,12 +364,11 @@ class OscilEditor {open : {public PresetsUI_}
             callback {basefuncdisplaygroup->redraw();
 redrawoscil();
 
-if(!basefuncmodulation)
-return;
-if(o->value()==0||o->value()==127) basefuncmodulation->deactivate();
-else basefuncmodulation->activate();}
+if(!basefuncmodulation) return;
+setbfmodstatus(o->value());
+}
             xywh {375 290 90 15} down_box BORDER_BOX labelsize 10 align 5 when 1 textsize 11
-            class Fl_Osc_Choice
+            class OGWaveChoice
           } {
             MenuItem {} {
               label Sine
@@ -412,6 +434,10 @@ else basefuncmodulation->activate();}
               label Circle
               xywh {127 127 100 20} labelfont 1 labelsize 11
             }
+	    MenuItem {} {
+	      label User
+	      xywh {127 127 100 20} labelfont 1 labelsize 11 hide
+	    }
           }
           Fl_Box {} {
             label {Base Func.}
@@ -502,9 +528,12 @@ if (autoclearbutton->value()){
    fltbutton->do_callback();
    sabutton->value(0);
    sabutton->do_callback();
+   bfmodtype->value(0);
+   bfmodtype->do_callback();
 };
 
  osc->requestValue(loc+"prepare");
+ bftype->update();
 
 basefuncdisplaygroup->redraw();
 redrawoscil();}
@@ -885,8 +914,8 @@ redrawoscil();}
 
 osc->requestValue(loc+"convert2sine");
 bftype->update();
-bfslider->value(0);
-bfslider->do_callback();
+bfpar->value(0);
+bfpar->do_callback();
 
 redrawoscil();
 refresh();}
@@ -937,7 +966,7 @@ rndslider = NULL;
 hrndtype = NULL;
 magtype = NULL;
 basefuncdisplaygroup = NULL;
-bfslider = NULL;
+bfpar = NULL;
 bftype = NULL;
 make_window();
 bftype->init("Pcurrentbasefunc");
@@ -980,6 +1009,27 @@ oscils->update();
 oscilo_base->update();
 oscils_base->update();} {}
   }
+  Function {setbfmodstatus(int menuentry)} {open public
+  } {
+    code {
+    switch (menuentry){
+    case 0:
+         bfpar->deactivate();
+	 bfparval->deactivate();
+         basefuncmodulation->deactivate();
+         break;
+    case 127:
+         bfpar->deactivate();
+	 bfparval->deactivate();
+         basefuncmodulation->activate();
+         break;
+    default:
+         bfpar->activate();
+	 bfparval->activate();
+         basefuncmodulation->activate();
+    }
+    } {} }
+
   decl {Oscilharmonic *h[(MAX_AD_HARMONICS - 1)];} {private local
   }
   decl {std::string loc;} {private local

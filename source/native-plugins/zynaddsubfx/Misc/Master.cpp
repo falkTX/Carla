@@ -453,7 +453,7 @@ void Master::setController(char chan, int type, int par)
         ctl.setparameternumber(type, par);
 
         int parhi = -1, parlo = -1, valhi = -1, vallo = -1;
-        if(ctl.getnrpn(&parhi, &parlo, &valhi, &vallo) == 0) //this is NRPN
+        if(ctl.getnrpn(&parhi, &parlo, &valhi, &vallo) == 0) { //this is NRPN
             switch(parhi) {
                 case 0x04: //System Effects
                     if(parlo < NUM_SYS_EFX)
@@ -464,14 +464,8 @@ void Master::setController(char chan, int type, int par)
                         insefx[parlo]->seteffectparrt(valhi, vallo);
                     break;
             }
-    }
-    else
-    if(type == C_bankselectmsb) {      // Change current bank
-        //if(((unsigned int)par < bank.banks.size())
-        //   && (bank.banks[par].dir != bank.bankfiletitle))
-        //    bank.loadbank(bank.banks[par].dir);
-    }
-    else {  //other controllers
+        }
+    } else {  //other controllers
         for(int npart = 0; npart < NUM_MIDI_PARTS; ++npart) //Send the controller to all part assigned to the channel
             if((chan == part[npart]->Prcvchn) && (part[npart]->Penabled != 0))
                 part[npart]->SetController(type, par);

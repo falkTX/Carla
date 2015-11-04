@@ -47,7 +47,8 @@
 using namespace std;
 
 Bank::Bank(Config *config)
-    :bankpos(0), defaultinsname(" "), config(config)
+    :bankpos(0), defaultinsname(" "), config(config),
+     bank_msb(0), bank_lsb(0)
 {
     clearbank();
     bankfiletitle = dirname;
@@ -222,6 +223,12 @@ int Bank::loadbank(string bankdirname)
     if(dir == NULL)
         return -1;
 
+    //set msb when possible
+    bank_msb = 0;
+    for(unsigned i=0; i<banks.size(); i++)
+        if(banks[i].dir == bankdirname)
+            bank_msb = i;
+
     dirname = bankdirname;
 
     bankfiletitle = dirname;
@@ -383,6 +390,18 @@ void Bank::rescanforbanks()
             else
                 dupl = 0;
         }
+}
+
+void Bank::setMsb(uint8_t msb)
+{
+    if(msb < banks.size() && banks[msb].dir != bankfiletitle)
+        loadbank(banks[msb].dir);
+}
+
+void Bank::setLsb(uint8_t lsb)
+{
+    //should only involve values of 0/1 for the time being...
+    bank_lsb = limit<uint8_t>(lsb,0,1);
 }
 
 

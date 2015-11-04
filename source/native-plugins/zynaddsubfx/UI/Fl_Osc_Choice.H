@@ -21,8 +21,9 @@ class Fl_Osc_Choice:public Fl_Choice, public Fl_Osc_Widget
         void update(void);
         void callback(Fl_Callback *cb, void *p = NULL);
         
-        void cb(void);
+        virtual void cb(void);
     private:
         int min;
+    protected:
         std::pair<Fl_Callback*, void*> cb_data;
 };

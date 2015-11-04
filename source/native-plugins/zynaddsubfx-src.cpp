@@ -68,6 +68,7 @@ extern "C" {
 #include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
 // zynaddsubfx includes
+#include "zynaddsubfx/Containers/MultiPseudoStack.cpp"
 #include "zynaddsubfx/Containers/NotePool.cpp"
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
 #include "zynaddsubfx/DSP/FFTwrapper.cpp"

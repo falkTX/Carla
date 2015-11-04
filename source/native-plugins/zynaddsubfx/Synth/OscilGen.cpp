@@ -115,7 +115,7 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
                 d.reply(d.loc, "c", mag);
             else {
                 mag = rtosc_argument(m,0).i;
-                printf("setting magnitude\n\n");
+                //printf("setting magnitude\n\n");
                 //XXX hack hack
                 char *repath = strdup(d.loc);
                 char *edit   = rindex(repath, '/')+1;
@@ -158,18 +158,6 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             d.reply(d.loc, "b", n*sizeof(float), spc);
             delete[] spc;
         }},
-    {"waveform:", rProp(non-realtime) rDoc("Returns waveform points"),
-        NULL, [](const char *, rtosc::RtData &d) {
-            OscilGen &o = *((OscilGen*)d.obj);
-            const unsigned n = o.synth.oscilsize;
-            float *smps = new float[n];
-            memset(smps, 0, 4*n);
-            //printf("%d\n", o->needPrepare());
-            o.get(smps,-1.0);
-            //printf("wave: %f %f %f %f\n", smps[0], smps[1], smps[2], smps[3]);
-            d.reply(d.loc, "b", n*sizeof(float), smps);
-            delete[] smps;
-        }},
     {"prepare:", rProp(non-realtime) rDoc("Performs setup operation to oscillator"),
         NULL, [](const char *, rtosc::RtData &d) {
             //fprintf(stderr, "prepare: got a message from '%s'\n", m);
@@ -208,6 +196,18 @@ const rtosc::Ports OscilGen::realtime_ports{
             "Adaptive Harmonic Strength"),
     rParamZyn(Padaptiveharmonicspar,
             "Adaptive Harmonics Postprocessing Power"),
+    {"waveform:", rDoc("Returns waveform points"),
+        NULL, [](const char *, rtosc::RtData &d) {
+            OscilGen &o = *((OscilGen*)d.obj);
+            const unsigned n = o.synth.oscilsize;
+            float *smps = new float[n];
+            memset(smps, 0, 4*n);
+            //printf("%d\n", o->needPrepare());
+            o.get(smps,-1.0);
+            //printf("wave: %f %f %f %f\n", smps[0], smps[1], smps[2], smps[3]);
+            d.reply(d.loc, "b", n*sizeof(float), smps);
+            delete[] smps;
+        }},
     {"prepare:b", rProp(internal) rProp(realtime) rProp(pointer) rDoc("Sets prepared fft data"),
         NULL, [](const char *m, rtosc::RtData &d) {
             // fprintf(stderr, "prepare:b got a message from '%s'\n", m);
@@ -310,6 +310,8 @@ OscilGen::OscilGen(const SYNTH_T &synth_, FFTwrapper *fft_, Resonance *res_)
     outoscilFFTfreqs = new fft_t[synth.oscilsize / 2];
     oscilFFTfreqs    = new fft_t[synth.oscilsize / 2];
     basefuncFFTfreqs = new fft_t[synth.oscilsize / 2];
+    cachedbasefunc = new float[synth.oscilsize];
+    cachedbasevalid = false;
     pendingfreqs     = oscilFFTfreqs;
 
     randseed = 1;
@@ -324,6 +326,7 @@ OscilGen::~OscilGen()
     delete[] outoscilFFTfreqs;
     delete[] basefuncFFTfreqs;
     delete[] oscilFFTfreqs;
+    delete[] cachedbasefunc;
 }
 
 
@@ -436,6 +439,17 @@ void OscilGen::convert2sine()
     prepare();
 }
 
+float OscilGen::userfunc(float x)
+{
+    if (!fft)
+        return 0;
+    if (!cachedbasevalid) {
+        fft->freqs2smps(basefuncFFTfreqs, cachedbasefunc);
+        cachedbasevalid = true;
+    }
+    return cinterpolate(cachedbasefunc, synth.oscilsize, synth.oscilsize * x);
+}
+
 /*
  * Get the base function
  */
@@ -490,8 +504,10 @@ void OscilGen::getbasefunction(float *smps)
 
         if(func)
             smps[i] = func(t, par);
-        else
+        else if (Pcurrentbasefunc == 0)
             smps[i] = -sinf(2.0f * PI * i / synth.oscilsize);
+        else
+            smps[i] = userfunc(t);
     }
 }
 
@@ -1143,6 +1159,7 @@ void OscilGen::useasbase()
 
     oldbasefunc = Pcurrentbasefunc = 127;
     prepare();
+    cachedbasevalid = false;
 }
 
 
@@ -1239,7 +1256,7 @@ void OscilGen::add2XML(XMLwrapper *xml)
         for(int i = 1; i < synth.oscilsize / 2; ++i) {
             float xc = basefuncFFTfreqs[i].real();
             float xs = basefuncFFTfreqs[i].imag();
-            if((fabs(xs) > 1e-6f) && (fabs(xc) > 1e-6f)) {
+            if((fabs(xs) > 1e-6f) || (fabs(xc) > 1e-6f)) {
                 xml->beginbranch("BF_HARMONIC", i);
                 xml->addparreal("cos", xc);
                 xml->addparreal("sin", xs);
@@ -1326,10 +1343,6 @@ void OscilGen::getfromXML(XMLwrapper *xml)
         xml->exitbranch();
     }
 
-    if(Pcurrentbasefunc != 0)
-        changebasefunction();
-
-
     if(xml->enterbranch("BASE_FUNCTION")) {
         for(int i = 1; i < synth.oscilsize / 2; ++i)
             if(xml->enterbranch("BF_HARMONIC", i)) {
@@ -1340,9 +1353,13 @@ void OscilGen::getfromXML(XMLwrapper *xml)
             }
         xml->exitbranch();
 
+        if(Pcurrentbasefunc != 0)
+            changebasefunction();
+
         clearDC(basefuncFFTfreqs);
         normalize(basefuncFFTfreqs, synth.oscilsize);
-    }
+    } else if(Pcurrentbasefunc != 0)
+        changebasefunction();
 }
 
 
