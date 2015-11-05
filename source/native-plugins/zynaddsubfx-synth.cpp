@@ -710,6 +710,7 @@ protected:
 
         fMaster->putalldata(data);
         fMaster->applyparameters();
+        fMaster->initialize_rt();
 
         fMiddleWare->updateResources(fMaster);
 
