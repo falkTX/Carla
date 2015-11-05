@@ -148,16 +148,6 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             d.reply(d.loc, "b", n*sizeof(float), smps);
             delete[] smps;
         }},
-    {"spectrum:", rProp(non-realtime) rDoc("Returns spectrum of waveform"),
-        NULL, [](const char *, rtosc::RtData &d) {
-            OscilGen &o = *((OscilGen*)d.obj);
-            const unsigned n = o.synth.oscilsize / 2;
-            float *spc = new float[n];
-            memset(spc, 0, 4*n);
-            ((OscilGen*)d.obj)->getspectrum(n,spc,0);
-            d.reply(d.loc, "b", n*sizeof(float), spc);
-            delete[] spc;
-        }},
     {"prepare:", rProp(non-realtime) rDoc("Performs setup operation to oscillator"),
         NULL, [](const char *, rtosc::RtData &d) {
             //fprintf(stderr, "prepare: got a message from '%s'\n", m);
@@ -207,6 +197,16 @@ const rtosc::Ports OscilGen::realtime_ports{
             //printf("wave: %f %f %f %f\n", smps[0], smps[1], smps[2], smps[3]);
             d.reply(d.loc, "b", n*sizeof(float), smps);
             delete[] smps;
+        }},
+    {"spectrum:", rDoc("Returns spectrum of waveform"),
+        NULL, [](const char *, rtosc::RtData &d) {
+            OscilGen &o = *((OscilGen*)d.obj);
+            const unsigned n = o.synth.oscilsize / 2;
+            float *spc = new float[n];
+            memset(spc, 0, 4*n);
+            ((OscilGen*)d.obj)->getspectrum(n,spc,0);
+            d.reply(d.loc, "b", n*sizeof(float), spc);
+            delete[] spc;
         }},
     {"prepare:b", rProp(internal) rProp(realtime) rProp(pointer) rDoc("Sets prepared fft data"),
         NULL, [](const char *m, rtosc::RtData &d) {
@@ -1127,14 +1127,15 @@ void OscilGen::getspectrum(int n, float *spc, int what)
 
     for(int i = 1; i < n; ++i) {
         if(what == 0)
-            spc[i - 1] = abs(pendingfreqs, i);
+            spc[i] = abs(pendingfreqs, i);
         else {
             if(Pcurrentbasefunc == 0)
-                spc[i - 1] = ((i == 1) ? (1.0f) : (0.0f));
+                spc[i] = ((i == 1) ? (1.0f) : (0.0f));
             else
-                spc[i - 1] = abs(basefuncFFTfreqs, i);
+                spc[i] = abs(basefuncFFTfreqs, i);
         }
     }
+    spc[0]=0;
 
     if(what == 0) {
         for(int i = 0; i < n; ++i)

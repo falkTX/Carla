@@ -90,13 +90,15 @@ class PADnoteOvertonePosition: public Fl_Box, public Fl_Osc_Widget
                 mode = x;
                 regenerateOvertones();
             } else if(!strcmp(name, "oscilsize")) {
-                nsamples = x/2;
-                delete [] spc;
-                delete [] nhr;
-                spc = new float[nsamples];
-                nhr = new float[nsamples];
-                memset(spc, 0, nsamples*sizeof(float));
-                memset(nhr, 0, nsamples*sizeof(float));
+                if(x/2 != (int)nsamples) {
+                    nsamples = x/2;
+                    delete [] spc;
+                    delete [] nhr;
+                    spc = new float[nsamples];
+                    nhr = new float[nsamples];
+                    memset(spc, 0, nsamples*sizeof(float));
+                    memset(nhr, 0, nsamples*sizeof(float));
+                }
             }
         }
 

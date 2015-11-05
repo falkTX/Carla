@@ -106,8 +106,8 @@ class Fl_OscilSpectrum : public Fl_Box, public Fl_Osc_Widget
             if(!spc)
                 return;
             //draws the spectrum
-            for(int i=0; i<n; i++){
-                int tmp=i*GX+2;
+            for(int i=1; i<n; i++){
+                int tmp=(i-1)*GX+2;
                 float x=spc[i];
 
                 if (x>dB2rap(-maxdb)) x=rap2dB(x)/maxdb+1;

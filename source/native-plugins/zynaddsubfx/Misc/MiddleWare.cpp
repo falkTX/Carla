@@ -164,24 +164,24 @@ void deallocate(const char *str, void *v)
  *                    PadSynth Setup                                         *
  *****************************************************************************/
 
-void preparePadSynth(string path, PADnoteParameters *p, rtosc::ThreadLink *uToB)
+void preparePadSynth(string path, PADnoteParameters *p, rtosc::RtData &d)
 {
     //printf("preparing padsynth parameters\n");
     assert(!path.empty());
     path += "sample";
 
     unsigned max = 0;
-    p->sampleGenerator([&max,&path,uToB]
+    p->sampleGenerator([&max,&path,&d]
             (unsigned N, PADnoteParameters::Sample &s)
             {
             max = max<N ? N : max;
             //printf("sending info to '%s'\n", (path+to_s(N)).c_str());
-            uToB->write((path+to_s(N)).c_str(), "ifb",
+            d.chain((path+to_s(N)).c_str(), "ifb",
                 s.size, s.basefreq, sizeof(float*), &s.smp);
             }, []{return false;});
     //clear out unused samples
     for(unsigned i = max+1; i < PAD_MAX_SAMPLES; ++i) {
-        uToB->write((path+to_s(i)).c_str(), "ifb",
+        d.chain((path+to_s(i)).c_str(), "ifb",
                 0, 440.0f, sizeof(float*), NULL);
     }
 }
@@ -325,10 +325,14 @@ struct NonRtObjStore
     void handlePad(const char *msg, rtosc::RtData &d) {
         string obj_rl(d.message, msg);
         void *pad = get(obj_rl);
-        assert(pad);
-        strcpy(d.loc, obj_rl.c_str());
-        d.obj = pad;
-        PADnoteParameters::non_realtime_ports.dispatch(msg, d);
+        if(!strcmp(msg, "prepare"))
+            preparePadSynth(obj_rl, (PADnoteParameters*)pad, d);
+        else {
+            assert(pad);
+            strcpy(d.loc, obj_rl.c_str());
+            d.obj = pad;
+            PADnoteParameters::non_realtime_ports.dispatch(msg, d);
+        }
     }
 };
 
