@@ -714,27 +714,33 @@ cbwidget->do_callback();}
               code0 {o->init("PPanning");}
               class Fl_Osc_Dial
             }
+            Fl_Dial {} {
+              label De-pop selected
+              tooltip {Pop suppression} xywh {208 238 20 20} type Float labelsize 10 maximum 127 step 1 textfont 1 textsize 11
+              code0 {o->init("Fadein_adjustment");}
+              class Fl_Osc_Dial
+            }
             Fl_Dial pstr {
               label {P.Str.}
-              tooltip {Punch Strength} xywh {125 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip {Punch Strength} xywh {78 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->init("PPunchStrength");}
               class Fl_Osc_Dial
             }
             Fl_Dial pt {
               label {P.t.}
-              tooltip {Punch Time (duration)} xywh {155 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip {Punch Time (duration)} xywh {108 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->init("PPunchTime");}
               class Fl_Osc_Dial
             }
             Fl_Dial pstc {
               label {P.Stc.}
-              tooltip {Punch Stretch} xywh {185 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip {Punch Stretch} xywh {138 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->init("PPunchStretch");}
               class Fl_Osc_Dial
             }
             Fl_Dial pvel {
               label {P.Vel.}
-              tooltip {Punch Velocity Sensing} xywh {215 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              tooltip {Punch Velocity Sensing} xywh {168 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
               code0 {o->init("PPunchVelocitySensing");}
               class Fl_Osc_Dial
             }
@@ -753,7 +759,7 @@ cbwidget->do_callback();}
             Fl_Check_Button stereo {
               label Stereo
               callback {hprofile->redraw();}
-              xywh {15 245 70 25} down_box DOWN_BOX
+              xywh {10 245 70 25} down_box DOWN_BOX labelsize 12
               code0 {o->init("PStereo");}
               class Fl_Osc_Check
             }
@@ -776,7 +782,7 @@ cbwidget->do_callback();}
             } {}
             Fl_Group filterui {
               label {PADsynth - Filter} open
-              xywh {250 55 275 75} box FLAT_BOX color 50 align 144
+              xywh {250 50 275 75} box FLAT_BOX color 50 align 144
               code0 {o->init(location + "PFilter",
               osc_i, location, "GlobalFilter/");}
               class FilterUI

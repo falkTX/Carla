@@ -180,6 +180,11 @@ typedef std::complex<fftw_real> fft_t;
 #define LOG_10 2.302585093f
 
 /*
+ * For de-pop adjustment
+ */
+#define FADEIN_ADJUSTMENT_SCALE 20
+
+/*
  * Envelope Limits
  */
 #define MAX_ENVELOPE_POINTS 40

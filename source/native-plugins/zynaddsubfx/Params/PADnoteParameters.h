@@ -126,6 +126,9 @@ class PADnoteParameters:public Presets
 
         LFOParams *AmpLfo;
 
+        /* Adjustment factor for anti-pop fadein */
+        unsigned char Fadein_adjustment;
+
         unsigned char PPunchStrength, PPunchTime, PPunchStretch,
                       PPunchVelocitySensing;
 

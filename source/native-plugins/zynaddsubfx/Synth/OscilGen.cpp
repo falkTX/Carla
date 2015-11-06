@@ -447,7 +447,9 @@ float OscilGen::userfunc(float x)
         fft->freqs2smps(basefuncFFTfreqs, cachedbasefunc);
         cachedbasevalid = true;
     }
-    return cinterpolate(cachedbasefunc, synth.oscilsize, synth.oscilsize * x);
+    return cinterpolate(cachedbasefunc,
+                        synth.oscilsize,
+                        synth.oscilsize * (x + 1) - 1);
 }
 
 /*
@@ -1344,6 +1346,9 @@ void OscilGen::getfromXML(XMLwrapper *xml)
         xml->exitbranch();
     }
 
+    if(Pcurrentbasefunc != 0)
+        changebasefunction();
+
     if(xml->enterbranch("BASE_FUNCTION")) {
         for(int i = 1; i < synth.oscilsize / 2; ++i)
             if(xml->enterbranch("BF_HARMONIC", i)) {
@@ -1354,14 +1359,10 @@ void OscilGen::getfromXML(XMLwrapper *xml)
             }
         xml->exitbranch();
 
-        if(Pcurrentbasefunc != 0)
-            changebasefunction();
-
         clearDC(basefuncFFTfreqs);
         normalize(basefuncFFTfreqs, synth.oscilsize);
-    } else if(Pcurrentbasefunc != 0)
-        changebasefunction();
-}
+        cachedbasevalid = false;
+    }}
 
 
 //Define basic functions

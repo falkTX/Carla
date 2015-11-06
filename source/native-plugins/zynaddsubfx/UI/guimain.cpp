@@ -19,8 +19,10 @@
 
 */
 
+#include <rtosc/thread-link.h>
 #include <lo/lo.h>
 #include <string>
+#include <thread>
 
 //GUI System
 #include "Connection.h"
@@ -509,6 +511,8 @@ Fl_Osc_Interface *GUI::genOscInterface(MiddleWare *)
     return new UI_Interface();
 }
 
+rtosc::ThreadLink lo_buffer(4096, 1000);
+
 static void liblo_error_cb(int i, const char *m, const char *loc)
 {
     fprintf(stderr, "liblo :-( %d-%s@%s\n",i,m,loc);
@@ -527,9 +531,15 @@ static int handler_function(const char *path, const char *types, lo_arg **argv,
     assert(lo_message_length(msg, path) <= sizeof(buffer));
     lo_message_serialise(msg, path, buffer, &size);
     assert(size <= sizeof(buffer));
-    raiseUi(gui, buffer);
+    lo_buffer.raw_write(buffer);
 
     return 0;
+}
+
+void watch_lo(void)
+{
+    while(server && Pexitprogram == 0)
+        lo_server_recv_noblock(server, 100);
 }
 
 #ifndef CARLA_VERSION_STRING
@@ -542,17 +552,19 @@ int main(int argc, char *argv[])
         sendtourl = argv[1];
     }
     fprintf(stderr, "ext client running on %d\n", lo_server_get_port(server));
-    
+    std::thread lo_watch(watch_lo);
+
     gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
 
     GUI::raiseUi(gui, "/show",  "i", 1);
     while(Pexitprogram == 0) {
-        if(server)
-            while(lo_server_recv_noblock(server, 0));
         GUI::tickUi(gui);
+        while(lo_buffer.hasNext())
+            raiseUi(gui, lo_buffer.read());
     }
 
     exitprogram();
+    lo_watch.join();
     return 0;
 }
 #endif

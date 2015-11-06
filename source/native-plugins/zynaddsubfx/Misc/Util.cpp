@@ -207,9 +207,10 @@ float interpolate(const float *data, size_t len, float pos)
 
 float cinterpolate(const float *data, size_t len, float pos)
 {
-    const int l_pos      = ((int)pos) % len,
-              r_pos      = (l_pos + 1) % len;
-    const float leftness = pos - l_pos;
+    const unsigned int i_pos = pos,
+                       l_pos = i_pos % len,
+                       r_pos = l_pos + 1 < len ? l_pos + 1 : 0;
+    const float leftness = pos - i_pos;
     return data[l_pos] * leftness + data[r_pos] * (1.0f - leftness);
 }
 

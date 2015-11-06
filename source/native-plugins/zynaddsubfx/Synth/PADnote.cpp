@@ -114,6 +114,9 @@ void PADnote::setup(float freq,
                                               PFilterVelocityScaleFunction) - 1);
 
     if(!legato) {
+        NoteGlobalPar.Fadein_adjustment =
+            pars.Fadein_adjustment / (float)FADEIN_ADJUSTMENT_SCALE;
+        NoteGlobalPar.Fadein_adjustment *= NoteGlobalPar.Fadein_adjustment;
         if(pars.PPunchStrength != 0) {
             NoteGlobalPar.Punch.Enabled = 1;
             NoteGlobalPar.Punch.t = 1.0f; //start from 1.0f and to 0.0f
@@ -206,6 +209,7 @@ inline void PADnote::fadein(float *smps)
     float tmp = (synth.buffersize_f - 1.0f) / (zerocrossings + 1) / 3.0f;
     if(tmp < 8.0f)
         tmp = 8.0f;
+    tmp *= NoteGlobalPar.Fadein_adjustment;
 
     int n;
     F2I(tmp, n); //how many samples is the fade-in
