@@ -203,7 +203,7 @@ void carla_zeroFloats(float floats[], const std::size_t count) noexcept
 // --------------------------------------------------------------------------------------------------------------------
 // Missing functions in OSX.
 
-#if defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
+#if 0 // defined(CARLA_OS_MAC) && ! defined(DISTRHO_OS_MAC)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }

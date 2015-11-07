@@ -1159,9 +1159,11 @@ void CarlaEngine::callback(const EngineCallbackOpcode action, const uint pluginI
 
         try {
             pData->callback(pData->callbackPtr, action, pluginId, value1, value2, value3, valueStr);
+#if defined(CARLA_OS_LINUX) && defined(__arm__)
         } catch (__cxxabiv1::__forced_unwind&) {
             carla_stderr2("Caught forced unwind exception in callback");
             throw;
+#endif
         } catch (...) {
             carla_safe_exception("callback", __FILE__, __LINE__);
         }

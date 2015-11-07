@@ -33,8 +33,7 @@
 
 #include <clocale>
 
-#ifdef CARLA_OS_WIN
-# include <ctime>
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS)
 # include "juce_core.h"
 #else
 # include <cerrno>
@@ -155,20 +154,20 @@ ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* 
 // -----------------------------------------------------------------------
 // getMillisecondCounter
 
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS))
 static uint32_t lastMSCounterValue = 0;
+#endif
 
 static inline
 uint32_t getMillisecondCounter() noexcept
 {
-    uint32_t now;
-
-#ifdef CARLA_OS_WIN
-    now = static_cast<uint32_t>(timeGetTime());
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS)
+    return juce::Time::getMillisecondCounter();
 #else
+    uint32_t now;
     timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
     now =  t.tv_sec * 1000 + t.tv_nsec / 1000000;
-#endif
 
     if (now < lastMSCounterValue)
     {
@@ -184,6 +183,7 @@ uint32_t getMillisecondCounter() noexcept
     }
 
     return now;
+#endif
 }
 
 // -----------------------------------------------------------------------
