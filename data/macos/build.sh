@@ -8,36 +8,38 @@ if [ ! -f Makefile ]; then
   cd ../..
 fi
 
+TARGETDIR=$HOME/builds
+
 export MACOS="true"
 export CC=clang
 export CXX=clang++
 export CXFREEZE="/opt/carla/bin/cxfreeze --include-modules=re,sip,subprocess,inspect"
 export DEFAULT_QT=5
-export PYUIC5=/opt/carla/bin/pyuic5
+export PYUIC5=$TARGETDIR/carla/bin/pyuic5
 
 unset CPPFLAGS
 
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS=-m64
-export CXXFLAGS=-m64
-export LDLAGS=-m64
+export CFLAGS="-O3 -m64"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m64"
 
-export PATH=/opt/carla/bin:/opt/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/carla/lib/pkgconfig:/opt/carla64/lib/pkgconfig
+export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
 
 make $JOBS
 
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS=-m32
-export CXXFLAGS=-m32
-export LDLAGS=-m32
+export CFLAGS="-O3 -m32"
+export CXXFLAGS=$CFLAGS
+export LDFLAGS="-m32"
 
-export PATH=/opt/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=/opt/carla32/lib/pkgconfig
+export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
 
 make posix32 $JOBS
 

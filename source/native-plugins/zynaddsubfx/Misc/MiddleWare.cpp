@@ -8,7 +8,6 @@
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
 #include <rtosc/ports.h>
-#include <rtosc/typed-message.h>
 #include <lo/lo.h>
 
 #include <unistd.h>
@@ -378,7 +377,6 @@ struct ParamStore
 namespace Nio
 {
     using std::get;
-    using rtosc::rtMsg;
     rtosc::Ports ports = {
         {"sink-list:", 0, 0, [](const char *, rtosc::RtData &d) {
                 auto list = Nio::getSinks();
@@ -395,13 +393,13 @@ namespace Nio
         {"source::s", 0, 0, [](const char *msg, rtosc::RtData &d) {
                 if(rtosc_narguments(msg) == 0)
                     d.reply(d.loc, "s", Nio::getSource().c_str());
-                else if(rtMsg<const char*> m{msg})
-                    Nio::setSource(get<0>(m));}},
+                else
+                    Nio::setSource(rtosc_argument(msg,0).s);}},
         {"sink::s", 0, 0, [](const char *msg, rtosc::RtData &d) {
                 if(rtosc_narguments(msg) == 0)
                     d.reply(d.loc, "s", Nio::getSink().c_str());
-                else if(rtMsg<const char*> m{msg})
-                    Nio::setSink(get<0>(m));}},
+                else
+                    Nio::setSink(rtosc_argument(msg,0).s);}},
     };
 }
 

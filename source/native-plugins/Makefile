@@ -33,7 +33,7 @@ ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Izynaddsubfx -Izynaddsubfx/rtosc
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
-ZYN_LD_FLAGS  += -ldl -lpthread -lrt
+ZYN_LD_FLAGS  += -ldl -lpthread
 ifeq ($(HAVE_X11),true)
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags x11)
 ZYN_LD_FLAGS  += $(shell pkg-config --libs x11)
@@ -50,6 +50,9 @@ ZYN_CXX_FLAGS += -DFLTK_GUI
 ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
 ZYN_LD_FLAGS  += $(shell fltk-config --use-images --ldflags)
 endif # HAVE_NTK
+ifneq ($(LINUX),true)
+ZYN_LD_FLAGS  += $(MODULEDIR)/juce_core.a
+endif
 else  # HAVE_ZYN_UI_DEPS
 ZYN_CXX_FLAGS += -DNO_UI
 endif # HAVE_ZYN_UI_DEPS
@@ -113,7 +116,6 @@ OBJS += \
 # ----------------------------------------------------------------------------------------------------------------------------
 # ZynAddSubFX
 
-ifeq ($(LINUX),true)
 ifeq ($(HAVE_ZYN_DEPS),true)
 OBJS += \
 	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
@@ -158,7 +160,6 @@ ZYN_UI_FILES_H = \
 	zynaddsubfx/UI/ResonanceUI.h \
 	zynaddsubfx/UI/SUBnoteUI.h \
 	zynaddsubfx/UI/VirKeyboard.h
-endif
 endif
 endif
 
