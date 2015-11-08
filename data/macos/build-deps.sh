@@ -445,16 +445,17 @@ export QMAKESPEC=macx-clang
 # ------------------------------------------------------------------------------------
 # qt5-base download
 
-if [ ! -d qtbase-opensource-src-5.4.2 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.4/5.4.2/submodules/qtbase-opensource-src-5.4.2.tar.gz -o qtbase-opensource-src-5.4.2.tar.gz
-tar -xf qtbase-opensource-src-5.4.2.tar.gz
+if [ ! -d qtbase-opensource-src-5.5.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtbase-opensource-src-5.5.1.tar.gz -o qtbase-opensource-src-5.5.1.tar.gz
+tar -xf qtbase-opensource-src-5.5.1.tar.gz
 fi
 
 # ------------------------------------------------------------------------------------
 # qt5-base (64bit, shared, framework)
 
-if [ ! -f qtbase-opensource-src-5.4.2/build-done ]; then
-cd qtbase-opensource-src-5.4.2
+if [ ! -f qtbase-opensource-src-5.5.1/build-done ]; then
+cd qtbase-opensource-src-5.5.1
+if [ ! -f configured ]; then
 ./configure -release -shared -opensource -confirm-license -force-pkg-config -platform macx-clang -framework \
             -prefix $PREFIX -plugindir $PREFIX/lib/qt5/plugins -headerdir $PREFIX/include/qt5 \
             -qt-freetype -qt-libjpeg -qt-libpng -qt-pcre -opengl desktop -qpa cocoa \
@@ -463,6 +464,8 @@ cd qtbase-opensource-src-5.4.2
             -no-cups -no-dbus -no-evdev -no-fontconfig -no-harfbuzz -no-gif -no-glib -no-nis -no-openssl -no-pch -no-sql-ibase -no-sql-odbc \
             -no-audio-backend -no-qml-debug -no-separate-debug-info \
             -no-compile-examples -nomake examples -nomake tests -make libs -make tools
+touch configured
+fi
 make -j 2
 make install
 ln -s $PREFIX/lib/QtCore.framework/Headers    $PREFIX/include/qt5/QtCore
@@ -475,13 +478,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-mac-extras
 
-if [ ! -d qtmacextras-opensource-src-5.4.2 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.4/5.4.2/submodules/qtmacextras-opensource-src-5.4.2.tar.gz -o qtmacextras-opensource-src-5.4.2.tar.gz
-tar -xf qtmacextras-opensource-src-5.4.2.tar.gz
+if [ ! -d qtmacextras-opensource-src-5.5.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtmacextras-opensource-src-5.5.1.tar.gz -o qtmacextras-opensource-src-5.5.1.tar.gz
+tar -xf qtmacextras-opensource-src-5.5.1.tar.gz
 fi
 
-if [ ! -f qtmacextras-opensource-src-5.4.2/build-done ]; then
-cd qtmacextras-opensource-src-5.4.2
+if [ ! -f qtmacextras-opensource-src-5.5.1/build-done ]; then
+cd qtmacextras-opensource-src-5.5.1
 qmake
 make -j 2
 make install
@@ -492,13 +495,13 @@ fi
 # ------------------------------------------------------------------------------------
 # qt5-svg
 
-if [ ! -d qtsvg-opensource-src-5.4.2 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.4/5.4.2/submodules/qtsvg-opensource-src-5.4.2.tar.gz -o qtsvg-opensource-src-5.4.2.tar.gz
-tar -xf qtsvg-opensource-src-5.4.2.tar.gz
+if [ ! -d qtsvg-opensource-src-5.5.1 ]; then
+curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtsvg-opensource-src-5.5.1.tar.gz -o qtsvg-opensource-src-5.5.1.tar.gz
+tar -xf qtsvg-opensource-src-5.5.1.tar.gz
 fi
 
-if [ ! -f qtsvg-opensource-src-5.4.2/build-done ]; then
-cd qtsvg-opensource-src-5.4.2
+if [ ! -f qtsvg-opensource-src-5.5.1/build-done ]; then
+cd qtsvg-opensource-src-5.5.1
 qmake
 make -j 2
 make install
@@ -526,13 +529,13 @@ fi
 # ------------------------------------------------------------------------------------
 # sip
 
-if [ ! -d sip-4.16.5 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.16.5/sip-4.16.5.tar.gz -o sip-4.16.5.tar.gz
-tar -xf sip-4.16.5.tar.gz
+if [ ! -d sip-4.17 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/sip/sip-4.17/sip-4.17.tar.gz -o sip-4.17.tar.gz
+tar -xf sip-4.17.tar.gz
 fi
 
-if [ ! -f sip-4.16.5/build-done ]; then
-cd sip-4.16.5
+if [ ! -f sip-4.17/build-done ]; then
+cd sip-4.17
 python3 configure.py
 make
 make install
@@ -550,7 +553,7 @@ fi
 
 if [ ! -f pyliblo-0.9.2/build-done ]; then
 cd pyliblo-0.9.2
-python3 setup.py build
+env CFLAGS="$CFLAGS -I$TARGETDIR/carla64/include" LDFLAGS="$LDFLAGS -L$TARGETDIR/carla64/lib" python3 setup.py build
 python3 setup.py install --prefix=$PREFIX
 touch build-done
 cd ..
@@ -559,13 +562,13 @@ fi
 # ------------------------------------------------------------------------------------
 # pyqt5
 
-if [ ! -d PyQt-gpl-5.4.2 ]; then
-curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.4.2/PyQt-gpl-5.4.2.tar.gz -o PyQt-gpl-5.4.2.tar.gz
-tar -xf PyQt-gpl-5.4.2.tar.gz
+if [ ! -d PyQt-gpl-5.5.1 ]; then
+curl -L http://sourceforge.net/projects/pyqt/files/PyQt5/PyQt-5.5.1/PyQt-gpl-5.5.1.tar.gz -o PyQt-gpl-5.5.1.tar.gz
+tar -xf PyQt-gpl-5.5.1.tar.gz
 fi
 
-if [ ! -f PyQt-gpl-5.4.2/build-done ]; then
-cd PyQt-gpl-5.4.2
+if [ ! -f PyQt-gpl-5.5.1/build-done ]; then
+cd PyQt-gpl-5.5.1
 # sed -i -e "s/# Read the details./pylib_dir = ''/" configure.py
 # sed -i -e "s/qmake_QT=['webkitwidgets']/qmake_QT=['webkitwidgets', 'printsupport']/" configure.py
 python3 configure.py --confirm-license -c
