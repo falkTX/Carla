@@ -65,12 +65,7 @@ endif
 # Set build and link flags
 
 BASE_FLAGS = -Wall -Wextra -pipe -DBUILDING_CARLA -DREAL_BUILD -MD -MP
-BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -fdata-sections -ffunction-sections
-
-ifneq ($(MACOS),true)
-# MacOS doesn't support this
-BASE_OPTS += -mfpmath=sse
-endif
+BASE_OPTS  = -O2 -ffast-math -mtune=generic -msse -msse2 -mfpmath=sse -fdata-sections -ffunction-sections
 
 ifeq ($(MACOS),true)
 # MacOS linker flags
@@ -98,7 +93,7 @@ BASE_OPTS  = -O2 -ffast-math -fdata-sections -ffunction-sections
 endif
 
 ifneq ($(WIN32),true)
-# not needed for Windows
+# Not needed for Windows
 BASE_FLAGS += -fPIC -DPIC
 endif
 
@@ -127,14 +122,13 @@ endif
 32BIT_FLAGS = -m32
 64BIT_FLAGS = -m64
 
-BUILD_C_FLAGS   = $(BASE_FLAGS) -std=c99 -std=gnu99 $(CFLAGS)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=c++0x -std=gnu++0x $(CXXFLAGS)
-LINK_FLAGS      = $(LINK_OPTS) -Wl,--no-undefined $(LDFLAGS)
-
-ifeq ($(MACOS),true)
-# No C++11 support
-BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
+BUILD_C_FLAGS   = $(BASE_FLAGS) -std=gnu99 $(CFLAGS)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) -std=gnu++11 $(CXXFLAGS)
 LINK_FLAGS      = $(LINK_OPTS) $(LDFLAGS)
+
+ifneq ($(MACOS),true)
+# Not available on MacOS
+LINK_FLAGS     += -Wl,--no-undefined
 endif
 
 # --------------------------------------------------------------
@@ -333,7 +327,9 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 LINUXSAMPLER_FLAGS = $(shell pkg-config --cflags linuxsampler) -DIS_CPP11=1 -Wno-non-virtual-dtor -Wno-shadow -Wno-unused-parameter
+ifeq ($(LINUX),true)
 LINUXSAMPLER_LIBS  = -Wl,-rpath=$(shell pkg-config --variable=libdir gig):$(shell pkg-config --variable=libdir linuxsampler)
+endif
 LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
 endif
 

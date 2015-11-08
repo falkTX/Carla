@@ -569,8 +569,6 @@ fi
 
 if [ ! -f PyQt-gpl-5.5.1/build-done ]; then
 cd PyQt-gpl-5.5.1
-# sed -i -e "s/# Read the details./pylib_dir = ''/" configure.py
-# sed -i -e "s/qmake_QT=['webkitwidgets']/qmake_QT=['webkitwidgets', 'printsupport']/" configure.py
 python3 configure.py --confirm-license -c
 make
 make install
