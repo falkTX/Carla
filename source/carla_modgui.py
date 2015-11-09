@@ -40,11 +40,9 @@ else:
 # ------------------------------------------------------------------------------------------------------------
 # Imports (tornado)
 
-from pystache import render as pyrender
-from tornado.gen import engine
 from tornado.log import enable_pretty_logging
 from tornado.ioloop import IOLoop
-from tornado.web import asynchronous, HTTPError
+from tornado.web import HTTPError
 from tornado.web import Application, RequestHandler, StaticFileHandler
 
 # ------------------------------------------------------------------------------------------------------------
@@ -80,7 +78,6 @@ os.environ['MOD_KEY_PATH']           = os.path.join(DATA_DIR, "keys")
 os.environ['MOD_CLOUD_PUB']          = os.path.join(ROOT, "keys", "cloud_key.pub")
 os.environ['MOD_PLUGIN_LIBRARY_DIR'] = os.path.join(DATA_DIR, "lib")
 
-os.environ['MOD_DEFAULT_JACK_BUFSIZE']  = "0"
 os.environ['MOD_PHANTOM_BINARY']        = "/usr/bin/phantomjs"
 os.environ['MOD_SCREENSHOT_JS']         = os.path.join(ROOT, "screenshot.js")
 os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
@@ -88,7 +85,7 @@ os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
 
-from mod.lv2 import get_plugin_info, init as lv2_init
+from mod.utils import get_plugin_info, init as lv2_init
 
 # ------------------------------------------------------------------------------------------------------------
 # MOD related classes
@@ -100,22 +97,16 @@ class EffectGet(RequestHandler):
         try:
             data = get_plugin_info(uri)
         except:
+            print("ERROR: get_plugin_info for '%s' failed" % uri)
             raise HTTPError(404)
 
         self.set_header('Content-type', 'application/json')
         self.write(json.dumps(data))
+        self.finish()
 
-class EffectResource(StaticFileHandler):
-
-    def initialize(self):
-        # Overrides StaticFileHandler initialize
-        pass
-
-    def get(self, path):
-        try:
-            uri = self.get_argument('uri')
-        except:
-            return self.shared_resource(path)
+class EffectHTML(RequestHandler):
+    def get(self, html):
+        uri = self.get_argument('uri')
 
         try:
             data = get_plugin_info(uri)
@@ -123,23 +114,16 @@ class EffectResource(StaticFileHandler):
             raise HTTPError(404)
 
         try:
-            root = data['gui']['resourcesDirectory']
+            path = data['gui']['%sTemplate' % html]
         except:
             raise HTTPError(404)
 
-        try:
-            super(EffectResource, self).initialize(root)
-            super(EffectResource, self).get(path)
-        except HTTPError as e:
-            if e.status_code != 404:
-                raise e
-            self.shared_resource(path)
-        except IOError:
+        if not os.path.exists(path):
             raise HTTPError(404)
 
-    def shared_resource(self, path):
-        super(EffectResource, self).initialize(os.path.join(HTML_DIR, 'resources'))
-        super(EffectResource, self).get(path)
+        with open(path, 'rb') as fd:
+            self.set_header('Content-type', 'text/html')
+            self.write(fd.read())
 
 class EffectStylesheet(RequestHandler):
     def get(self):
@@ -183,6 +167,41 @@ class EffectJavascript(RequestHandler):
             self.set_header('Content-type', 'text/javascript')
             self.write(fd.read())
 
+class EffectResource(StaticFileHandler):
+    def initialize(self):
+        # Overrides StaticFileHandler initialize
+        pass
+
+    def get(self, path):
+        try:
+            uri = self.get_argument('uri')
+        except:
+            return self.shared_resource(path)
+
+        try:
+            data = get_plugin_info(uri)
+        except:
+            raise HTTPError(404)
+
+        try:
+            root = data['gui']['resourcesDirectory']
+        except:
+            raise HTTPError(404)
+
+        try:
+            super(EffectResource, self).initialize(root)
+            return super(EffectResource, self).get(path)
+        except HTTPError as e:
+            if e.status_code != 404:
+                raise e
+            return self.shared_resource(path)
+        except IOError:
+            raise HTTPError(404)
+
+    def shared_resource(self, path):
+        super(EffectResource, self).initialize(os.path.join(HTML_DIR, 'resources'))
+        return super(EffectResource, self).get(path)
+
 # ------------------------------------------------------------------------------------------------------------
 # WebServer Thread
 
@@ -196,6 +215,7 @@ class WebServerThread(QThread):
         self.fApplication = Application(
             [
                 (r"/effect/get/?", EffectGet),
+                (r"/effect/(icon|settings).html", EffectHTML),
                 (r"/effect/stylesheet.css", EffectStylesheet),
                 (r"/effect/gui.js", EffectJavascript),
                 (r"/resources/(.*)", EffectResource),
@@ -391,6 +411,8 @@ class HostWindow(QMainWindow):
             self.setFixedSize(size)
 
         # set initial values
+        self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue(':bypass', 0, null)")
+
         for index in self.fPortValues.keys():
             symbol = self.fPortSymbols[index]
             value  = self.fPortValues[index]
