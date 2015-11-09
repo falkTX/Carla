@@ -1177,31 +1177,55 @@ void OscilGen::getcurrentbasefunction(float *smps)
         getbasefunction(smps);   //the sine case
 }
 
-#define PRESERVE(x) decltype(this->x) x = this->x
-#define RESTORE(x)  this->x = x
+#define COPY(y) this->y = o.y
 void OscilGen::paste(OscilGen &o)
 {
     //XXX Figure out a better implementation of this sensitive to RT issues...
-    //Preserve Pointer Elements
-    PRESERVE(oscilFFTfreqs);
-    PRESERVE(pendingfreqs);
-    PRESERVE(tmpsmps);
-    PRESERVE(outoscilFFTfreqs);
-    PRESERVE(fft);
-    PRESERVE(basefuncFFTfreqs);
-    PRESERVE(res);
-    memcpy((char*)this, (char*)&o, sizeof(*this));
-    RESTORE(oscilFFTfreqs);
-    RESTORE(pendingfreqs);
-    RESTORE(tmpsmps);
-    RESTORE(outoscilFFTfreqs);
-    RESTORE(fft);
-    RESTORE(basefuncFFTfreqs);
-    RESTORE(res);
+    for(int i=0; i<MAX_AD_HARMONICS; ++i) {
+        COPY(Phmag[i]);
+        COPY(Phphase[i]);
+    }
+
+    COPY(Phmagtype);
+    COPY(Pcurrentbasefunc);
+    COPY(Pbasefuncpar);
+
+    COPY(Pbasefuncmodulation);
+    COPY(Pbasefuncmodulationpar1);
+    COPY(Pbasefuncmodulationpar2);
+    COPY(Pbasefuncmodulationpar3);
+
+    COPY(Pwaveshaping);
+    COPY(Pwaveshapingfunction);
+    COPY(Pfiltertype);
+    COPY(Pfilterpar1);
+    COPY(Pfilterpar2);
+    COPY(Pfilterbeforews);
+    COPY(Psatype);
+    COPY(Psapar);
+
+    COPY(Pharmonicshift);
+    COPY(Pharmonicshiftfirst);
+
+    COPY(Pmodulation);
+    COPY(Pmodulationpar1);
+    COPY(Pmodulationpar2);
+    COPY(Pmodulationpar3);
+
+    COPY(Prand);
+    COPY(Pamprandpower);
+    COPY(Pamprandtype);
+    COPY(Padaptiveharmonics);
+    COPY(Padaptiveharmonicsbasefreq);
+    COPY(Padaptiveharmonicspower);
+    COPY(Padaptiveharmonicspar);
+
+
     if(this->Pcurrentbasefunc)
         changebasefunction();
     this->prepare();
 }
+#undef COPY
 
 void OscilGen::add2XML(XMLwrapper *xml)
 {

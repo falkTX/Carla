@@ -113,7 +113,7 @@ int WidgetPDial::handle(int event)
             break;
         case FL_RELEASE:
             if (integer_step) {
-                int rounded = value() + 0.5;
+                float rounded = floorf(value() + 0.5);
                 value(clamp(rounded));
             }
             tipwin->hide();

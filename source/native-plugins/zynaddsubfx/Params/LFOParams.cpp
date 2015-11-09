@@ -142,10 +142,17 @@ void LFOParams::getfromXML(XMLwrapper *xml)
     Pcontinous  = xml->getparbool("continous", Pcontinous);
 }
 
+#define COPY(y) this->y=x.y
 void LFOParams::paste(LFOParams &x)
 {
-    //Avoid undefined behavior
-    if(&x == this)
-        return;
-    memcpy((char*)this, (const char*)&x, sizeof(*this));
+    COPY(Pfreq);
+    COPY(Pintensity);
+    COPY(Pstartphase);
+    COPY(PLFOtype);
+    COPY(Prandomness);
+    COPY(Pfreqrand);
+    COPY(Pdelay);
+    COPY(Pcontinous);
+    COPY(Pstretch);
 }
+#undef COPY

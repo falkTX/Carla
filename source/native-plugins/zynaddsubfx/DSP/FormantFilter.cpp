@@ -115,21 +115,16 @@ void FormantFilter::setpos(float frequency)
     else
         oldinput = input;
 
-    float pos = fmodf(input * sequencestretch, 1.0f);
-    if(pos < 0.0f)
-        pos += 1.0f;
+    float pos = input * sequencestretch;
+    pos -= floorf(pos);
 
     F2I(pos * sequencesize, p2);
     p1 = p2 - 1;
     if(p1 < 0)
         p1 += sequencesize;
 
-    pos = fmodf(pos * sequencesize, 1.0f);
-    if(pos < 0.0f)
-        pos = 0.0f;
-    else
-    if(pos > 1.0f)
-        pos = 1.0f;
+    pos = pos * sequencesize;
+    pos -= floorf(pos);
     pos =
         (atanf((pos * 2.0f
                 - 1.0f)

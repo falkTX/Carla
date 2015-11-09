@@ -35,7 +35,7 @@ Fl_Osc_Slider::~Fl_Osc_Slider(void)
 void Fl_Osc_Slider::OSC_value(int v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_+fmodf(value(),1.0));
+    Fl_Slider::value(v+min_+value()-floorf(value()));
 }
 
 void Fl_Osc_Slider::OSC_value(float v)
@@ -47,7 +47,7 @@ void Fl_Osc_Slider::OSC_value(float v)
 void Fl_Osc_Slider::OSC_value(char v)
 {
     const float min_ = min__(minimum(), maximum());//flipped sliders
-    Fl_Slider::value(v+min_+fmodf(value(),1.0));
+    Fl_Slider::value(v+min_+value()-floorf(value()));
 }
 
 void Fl_Osc_Slider::cb(void)
@@ -88,9 +88,27 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
         return 1;
     }
 
-    int handled, rounded;
-    bool reset_requested = false;
+    int handled;
+    float rounded;
+
+    if (ev != FL_MOUSEWHEEL)
+        handled = Fl_Slider::handle(ev, X, Y, W, H);
+
     switch (ev) {
+        case FL_PUSH:
+            denominator = 2.0;
+            old_value = value();
+            start_pos = horizontal() ? Fl::event_x() : Fl::event_y();
+            {
+                float range = maximum() - minimum();
+                float absrng = range > 0 ? range : -range;
+
+                if (absrng / W / step() > 32 && Fl::event_button1())
+                    denominator = 0.25;
+                if (range < 0)
+                    denominator *= -1;
+            }
+            break;
         case FL_MOUSEWHEEL:
             if (this == Fl::belowmouse() && Fl::e_dy != 0) {
                 int step = 1, divisor = 16;
@@ -108,42 +126,32 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
                 }
                 int dy = minimum() <=  maximum() ? -Fl::e_dy : Fl::e_dy;
                 // Flip sense for vertical sliders.
-                dy = (this->type() & 1) ? dy : -dy;
+                dy = this->horizontal() ? dy : -dy;
                 handle_drag(clamp(value() + step * dy));
             }
             return 1;
         case FL_RELEASE:
-            rounded = value() + 0.5;
-            value(clamp((double)rounded));
             if (Fl::event_clicks() == 1) {
                 Fl::event_clicks(0);
-                reset_requested = true;
+                value(reset_value);
+            } else {
+                rounded = floorf(value() + 0.5);
+                value(clamp(rounded));
+            }
+            value_damage();
+            do_callback();
+            break;
+        case FL_DRAG:
+            if (Fl::event_shift()) {
+                int delta = (horizontal() ? Fl::event_x() : Fl::event_y()) -
+                    start_pos;
+                rounded = floor(clamp(old_value + delta/denominator) + 0.5);
+                value(rounded);
+                value_damage();
+                do_callback();
             }
     }
     
-    if (!Fl::event_shift()) {
-        handled = Fl_Slider::handle(ev, X, Y, W, H);
-        if (reset_requested) {
-            value(reset_value);
-            value_damage();
-            if (this->when() != 0)
-                do_callback();
-        }
-        return handled;
-    }
-
-    // Slow down the drag.
-    // Handy if the slider has a large delta bigger than a mouse quantum.
-    // Somewhat tricky to use with OSC feedback.
-    // To change direction of movement, one must reclick the handle.
-    int old_value = value();
-    handled = Fl_Slider::handle(ev, X, Y, W, H);
-    int delta = value() - old_value;
-    if (ev == FL_DRAG && (delta < -1 || delta > 1)) {
-        value(clamp((old_value + (delta > 0 ? 1 : -1))));
-        value_damage();
-        do_callback();
-    }
     return handled;
 }
 

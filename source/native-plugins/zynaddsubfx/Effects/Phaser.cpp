@@ -135,8 +135,10 @@ void Phaser::AnalogPhase(const Stereo<float *> &input)
         Stereo<float> xn(input.l[i] * pangainL, input.r[i] * pangainR);
 
         if(barber) {
-            g.l = fmodf((g.l + 0.25f), ONE_);
-            g.r = fmodf((g.r + 0.25f), ONE_);
+            g.l += 0.25;
+            g.l -= floorf(g.l);
+            g.r += 0.25;
+            g.r -= floorf(g.r);
         }
 
         xn.l = applyPhase(xn.l, g.l, fb.l, hpf.l, yn1.l, xn1.l);

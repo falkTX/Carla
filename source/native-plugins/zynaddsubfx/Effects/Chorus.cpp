@@ -69,7 +69,6 @@ float Chorus::getdelay(float xlfo)
 //Apply the effect
 void Chorus::out(const Stereo<float *> &input)
 {
-    const float one = 1.0f;
     dl1 = dl2;
     dr1 = dr2;
     lfo.effectlfoout(&lfol, &lfor);
@@ -98,7 +97,7 @@ void Chorus::out(const Stereo<float *> &input)
         dlhi %= maxdelay;
 
         float dlhi2 = (dlhi - 1 + maxdelay) % maxdelay;
-        float dllo  = 1.0f - fmod(tmp, one);
+        float dllo  = 1.0f + floorf(tmp) - tmp;
         efxoutl[i] = cinterpolate(delaySample.l, maxdelay, dlhi2) * dllo
                      + cinterpolate(delaySample.l, maxdelay,
                                     dlhi) * (1.0f - dllo);
@@ -116,7 +115,7 @@ void Chorus::out(const Stereo<float *> &input)
         dlhi %= maxdelay;
 
         dlhi2      = (dlhi - 1 + maxdelay) % maxdelay;
-        dllo       = 1.0f - fmodf(tmp, one);
+        dllo       = 1.0f + floorf(tmp) - tmp;
         efxoutr[i] = cinterpolate(delaySample.r, maxdelay, dlhi2) * dllo
                      + cinterpolate(delaySample.r, maxdelay,
                                     dlhi) * (1.0f - dllo);

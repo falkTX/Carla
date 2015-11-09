@@ -127,19 +127,30 @@ EnvelopeParams::EnvelopeParams(unsigned char Penvstretch_,
 EnvelopeParams::~EnvelopeParams()
 {}
 
+#define COPY(y) this->y = ep.y
 void EnvelopeParams::paste(const EnvelopeParams &ep)
 {
-    //Avoid undefined behavior
-    if(&ep == this)
-        return;
 
+    COPY(Pfreemode);
+    COPY(Penvpoints);
+    COPY(Penvsustain);
+    for(int i=0; i<MAX_ENVELOPE_POINTS; ++i) {
+        this->Penvdt[i]  = ep.Penvdt[i];
+        this->Penvval[i] = ep.Penvval[i];
+    }
+    COPY(Penvstretch);
+    COPY(Pforcedrelease);
+    COPY(Plinearenvelope);
 
-    char *base = (char*)&this->Pfreemode;
-    char *end  = (char*)&this->DR_val;
-    assert(end-base > 0);
-    
-    memcpy((char*)&this->Pfreemode, (const char*)&ep.Pfreemode, 1+end-base);
+    COPY(PA_dt);
+    COPY(PD_dt);
+    COPY(PR_dt);
+    COPY(PA_val);
+    COPY(PD_val);
+    COPY(PS_val);
+    COPY(PR_val);
 }
+#undef COPY
 
 float EnvelopeParams::getdt(char i) const
 {

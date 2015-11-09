@@ -420,13 +420,43 @@ void FilterParams::getfromXML(XMLwrapper *xml)
     }
 }
 
+#define COPY(y) this->y = x.y
 void FilterParams::paste(FilterParams &x)
 {
-    //Avoid undefined behavior
-    if(&x == this)
-        return;
-    memcpy((char*)this, (const char*)&x, sizeof(*this));
+    COPY(Pcategory);
+    COPY(Ptype);
+    COPY(Pfreq);
+    COPY(Pq);
+    COPY(Pstages);
+    COPY(Pfreqtrack);
+    COPY(Pgain);
+
+    COPY(Pnumformants);
+    COPY(Pformantslowness);
+    COPY(Pvowelclearness);
+    COPY(Pcenterfreq);
+    COPY(Poctavesfreq);
+
+    for(int i=0; i<FF_MAX_VOWELS; ++i) {
+        for(int j=0; j<FF_MAX_FORMANTS; ++j) {
+            auto &a = this->Pvowels[i].formants[j];
+            auto &b = x.Pvowels[i].formants[j];
+            a.freq = b.freq;
+            a.amp  = b.amp;
+            a.q    = b.q;
+        }
+    }
+
+
+    COPY(Psequencesize);
+    COPY(Psequencestretch);
+    COPY(Psequencereversed);
+    for(int i=0; i<FF_MAX_SEQUENCE; ++i)
+        this->Psequence[i] = x.Psequence[i];
+
+    COPY(changed);
 }
+#undef COPY
 
 void FilterParams::pasteArray(FilterParams &x, int nvowel)
 {

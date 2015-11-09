@@ -51,11 +51,27 @@ void Fl_Osc_DialF::callback(Fl_Callback *cb, void *p)
     cb_data.second = p;
 }
 
+int Fl_Osc_DialF::handle(int ev)
+{
+    bool middle_mouse = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && !Fl::event_shift());
+    bool ctl_click    = (ev == FL_PUSH && Fl::event_state(FL_BUTTON1) && Fl::event_ctrl());
+    bool shift_middle = (ev == FL_PUSH && Fl::event_state(FL_BUTTON2) && Fl::event_shift());
+    if(middle_mouse || ctl_click) {
+        printf("Trying to learn...\n");
+        osc->write("/learn", "s", (loc+ext).c_str());
+        return 1;
+    } else if(shift_middle) {
+        osc->write("/unlearn", "s", (loc+ext).c_str());
+        return 1;
+    }
+    return WidgetPDial::handle(ev);
+}
+
 void Fl_Osc_DialF::OSC_value(float v)
 {
     value(v);
 }
-        
+
 void Fl_Osc_DialF::update(void)
 {
     oscWrite(ext);
@@ -66,7 +82,7 @@ void Fl_Osc_DialF::cb(void)
     assert(osc);
 
     oscWrite(ext, "f", (float)value());
-    
+
     if(cb_data.first)
         cb_data.first(this, cb_data.second);
 //    label_str = string_cast<float,string>(val);

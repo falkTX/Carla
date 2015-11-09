@@ -64,6 +64,10 @@ class LFO
         //If After initialization there are no calls to random number gen.
         bool  deterministic;
 
+        const float     dt_;
+        const LFOParams &lfopars_;
+        const float basefreq_;
+
         void computeNextFreqRnd(void);
 };
 

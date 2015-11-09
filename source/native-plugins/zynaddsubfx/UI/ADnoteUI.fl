@@ -1181,9 +1181,9 @@ resui->resonancewindow->show();}
         class ADvoiceUI
       } {}
       Fl_Button {} {
-        label {Close Window}
+        label {Close}
         callback {ADnoteVoice->hide();}
-        xywh {305 601 195 25} box THIN_UP_BOX labelfont 1
+        xywh {700 601 60 25} box THIN_UP_BOX
       }
       Fl_Counter currentvoicecounter {
         label {Current Voice}
@@ -1195,12 +1195,27 @@ advoice->change_voice(nvoice);}
       Fl_Button {} {
         label C
         callback {presetsui->copy(ADnoteVoice->loc(),nvoice);}
-        xywh {705 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {630 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
         callback {presetsui->paste(ADnoteVoice->loc(),this,nvoice);}
-        xywh {735 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {660 609 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+      }
+      Fl_Button {} {
+        label {Show ADsynth}
+        callback {ADnoteGlobalParameters->show();}
+        xywh {280 601 110 25} labelfont 0 labelsize 12
+      }
+      Fl_Button {} {
+        label {Show Voice List}
+        callback {
+	  for (int i=0;i<NUM_VOICES;i++){
+               voicelistitem[i]->refreshlist();
+          }
+          ADnoteVoiceList->show();
+	}
+        xywh {400 601 130 25} labelfont 0 labelsize 12
       }
     }
     Fl_Window ADnoteVoiceList {
@@ -1237,9 +1252,9 @@ advoice->change_voice(nvoice);}
         xywh {285 15 25 10} box NO_BOX labelfont 1 labelsize 11
       }
       Fl_Button {} {
-        label {Hide Voice List}
+        label {Close}
         callback {ADnoteVoiceList->hide();}
-        xywh {271 237 125 20}
+        xywh {271 237 80 20}
       }
       Fl_Scroll {} {open
         xywh {0 15 670 220} type VERTICAL box THIN_UP_BOX
@@ -1248,6 +1263,11 @@ advoice->change_voice(nvoice);}
           xywh {0 20 670 210}
           code0 {o->begin();for (int i=0;i<NUM_VOICES;i++){voicelistitem[i]=new ADvoicelistitem(0,0,670,25,"");voicelistitem[i]->init(i,loc+"VoicePar"+to_s(i)+"/",osc);}o->end();}
         } {}
+      }
+      Fl_Button {} {
+        label {Edit ADsynth}
+        callback {ui->partui->adnoteui->ADnoteGlobalParameters->show();}
+        xywh {5 237 106 20} labelsize 12
       }
     }
   }

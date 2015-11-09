@@ -18,6 +18,7 @@ class Fl_Osc_Pane
 class Fl_Osc_Window:public Fl_Double_Window, public Fl_Osc_Pane
 {
     Osc_DataModel *title_ext;
+    std::string rewrite_rule;
     std::string title_orig;
     std::string title_new;
     public:
@@ -28,6 +29,7 @@ class Fl_Osc_Window:public Fl_Double_Window, public Fl_Osc_Pane
         virtual std::string loc(void) const;
         virtual void rebase(std::string new_base);
         void update();
+        void update_title();
 };
 
 

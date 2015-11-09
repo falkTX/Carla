@@ -17,6 +17,9 @@ class Fl_Osc_DialF:public WidgetPDial, public Fl_Osc_Widget
         void update(void);
         void callback(Fl_Callback *cb, void *p = NULL);
 
+        //Midi learn handler
+        int handle(int);
+
         void cb(void);
     private:
         std::pair<Fl_Callback*, void*> cb_data;

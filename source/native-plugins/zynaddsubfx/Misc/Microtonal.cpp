@@ -655,7 +655,7 @@ void Microtonal::getfromXML(XMLwrapper *xml)
                     //populate fields for display
                     float x = logf(octave[i].tuning) / LOG_2 * 1200.0f;
                     octave[i].x1 = (int) floor(x);
-                    octave[i].x2 = (int) (floor(fmodf(x, 1.0f) * 1e6));
+                    octave[i].x2 = (int) (floor((x-octave[i].x1) * 1.0e6));
                 }
 
 

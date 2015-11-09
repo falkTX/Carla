@@ -73,10 +73,11 @@ static const Ports sysefxPort =
             int ind2 = atoi(m);
             Master &mast = *(Master*)d.obj;
 
-            if(rtosc_narguments(m))
+            if(rtosc_narguments(m)) {
                 mast.setPsysefxvol(ind2, ind1, rtosc_argument(m,0).i);
-            else
-                d.reply(d.loc, "i", mast.Psysefxvol[ind2][ind1]);
+                d.broadcast(d.loc, "i", mast.Psysefxvol[ind1][ind2]);
+            } else
+                d.reply(d.loc, "i", mast.Psysefxvol[ind1][ind2]);
         }}
 };
 
@@ -112,8 +113,13 @@ static const Ports master_ports = {
     rRecursp(insefx, 8, "Insertion Effect"),//NUM_INS_EFX
     rRecur(microtonal, "Micrtonal Mapping Functionality"),
     rRecur(ctl, "Controller"),
-    rParamZyn(Pkeyshift,  "Global Key Shift"),
     rArrayI(Pinsparts, NUM_INS_EFX, "Part to insert part onto"),
+    {"Pkeyshift::i", rProp(parameter) rLinear(0,127) rDoc("Global Key Shift"), 0, [](const char *m, RtData&d) {
+        if(rtosc_narguments(m)==0) {
+            d.reply(d.loc, "i", ((Master*)d.obj)->Pkeyshift);
+        } else if(rtosc_narguments(m)==1 && rtosc_type(m,0)=='i') {
+            ((Master*)d.obj)->setPkeyshift(limit<char>(rtosc_argument(m,0).i,0,127));
+            d.broadcast(d.loc, "i", ((Master*)d.obj)->Pkeyshift);}}},
     {"echo", rDoc("Hidden port to echo messages"), 0, [](const char *m, RtData&d) {
        d.reply(m-1);}},
     {"get-vu:", rDoc("Grab VU Data"), 0, [](const char *, RtData &d) {

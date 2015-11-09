@@ -665,7 +665,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
             const ScopedFreeData sfd2(nameData);
 
             CARLA_SAFE_ASSERT_CONTINUE(status == Success);
-            CARLA_SAFE_ASSERT_CONTINUE(nameSize != 0);
+
+            if (nameSize == 0)
+                // nameless window
+                continue;
 
             if (std::strstr((const char*)nameData, uiTitle) != nullptr)
             {

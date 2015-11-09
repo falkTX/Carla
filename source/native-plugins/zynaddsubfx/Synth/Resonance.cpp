@@ -251,10 +251,21 @@ void Resonance::sendcontroller(MidiControllers ctl, float par)
         ctlbw = par;
 }
 
+#define COPY(y) this->y = r.y
 void Resonance::paste(Resonance &r)
 {
-    memcpy((char*)this, (char*)&r, sizeof(r));
+    COPY(Penabled);
+    for(int i=0; i<N_RES_POINTS; ++i)
+        this->Prespoints[i] = r.Prespoints[i];
+    COPY(PmaxdB);
+    COPY(Pcenterfreq);
+    COPY(Poctavesfreq);
+    COPY(Pprotectthefundamental);
+
+    COPY(ctlcenter);
+    COPY(ctlbw);
 }
+#undef COPY
 
 void Resonance::add2XML(XMLwrapper *xml)
 {

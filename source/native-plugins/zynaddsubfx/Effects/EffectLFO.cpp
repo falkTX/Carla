@@ -60,7 +60,8 @@ void EffectLFO::updateparams(void)
     if(PLFOtype > 1)
         PLFOtype = 1;  //this has to be updated if more lfo's are added
     lfotype = PLFOtype;
-    xr      = fmodf(xl + (Pstereo - 64.0f) / 127.0f + 1.0f, 1.0f);
+    xr      = xl + (Pstereo - 64.0f) / 127.0f + 1.0f;
+    xr      -= floorf(xr);
 }
 
 

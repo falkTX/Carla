@@ -1493,7 +1493,7 @@ virkeys->take_focus();}
       Fl_Button {} {
         label Advanced
         callback {
-        osc->write("/cfg.UserInterfaceMode", "i", 1);
+        osc->write("/config/cfg.UserInterfaceMode", "i", 1);
 masterwindow->show();
 selectuiwindow->hide();}
         xywh {10 165 100 35} color 229 labelfont 1 labelsize 16
@@ -1506,7 +1506,7 @@ selectuiwindow->hide();}
         label Beginner
         callback {simplemasterwindow->show();
 selectuiwindow->hide();
-osc->write("/cfg.UserInterfaceMode", "i", 2);}
+osc->write("/config/cfg.UserInterfaceMode", "i", 2);}
         xywh {10 80 100 65} color 238 labelfont 1 labelsize 16
       }
       Fl_Box {} {
@@ -1534,7 +1534,10 @@ osc->write("/cfg.UserInterfaceMode", "i", 2);}
   else snprintf(&masterwindowlabel[0],100,"%s","ZynAddSubFX");
 masterwindowlabel[99]='\\0';
 masterwindow->label(&masterwindowlabel[0]);
-simplemasterwindow->label(&masterwindowlabel[0]);} {}
+simplemasterwindow->label(&masterwindowlabel[0]);
+masterwindow->update_title();
+simplemasterwindow->update_title();
+} {}
   }
   Function {MasterUI(int *exitprogram_, class Fl_Osc_Interface *osc_):nioui(osc_)} {open
   } {

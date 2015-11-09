@@ -78,15 +78,14 @@ int Fl_Osc_Dial::handle(int ev)
 
 void Fl_Osc_Dial::OSC_value(int v)
 {
-    if(64 != (int)minimum())
-        value(v+minimum()+fmodf(value(), 1));
-    else
-        value(v+fmodf(value(), 1));
+    value(v + value() - floorf(value()) +
+          (minimum() == 64 ? 0 : minimum()));
 }
 
 void Fl_Osc_Dial::OSC_value(char v)
 {
-    value(v+minimum()+fmodf(value(), 1));
+    value(v + value() - floorf(value()) +
+          minimum());
 }
 
 void Fl_Osc_Dial::update(void)

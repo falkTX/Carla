@@ -684,8 +684,9 @@ void PADnoteParameters::generatespectrum_bandwidthMode(float *spectrum,
             const float ibasefreq = realfreq / (synth.samplerate_f * 0.5f) * size;
             for(int i = 0; i < profilesize; ++i) {
                 const float idfreq = (i / (float)profilesize - 0.5f) * ibw;
-                const int   spfreq  = (int) (idfreq + ibasefreq);
-                const float fspfreq = fmodf((float)idfreq + ibasefreq, 1.0f);
+                const float freqsum = idfreq + ibasefreq;
+                const int   spfreq  = (int)freqsum;
+                const float fspfreq = freqsum - spfreq;
                 if(spfreq <= 0)
                     continue;
                 if(spfreq >= size - 1)

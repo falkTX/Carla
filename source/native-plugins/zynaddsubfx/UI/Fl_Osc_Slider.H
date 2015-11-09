@@ -30,4 +30,9 @@ class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
     protected:
         char osc_type;
         std::pair<Fl_Callback*, void*> cb_data;
+
+    private:
+        float old_value;
+        int start_pos;
+    float denominator;
 };

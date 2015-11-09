@@ -40,6 +40,14 @@ class Osc_IntModel:public Fl_Osc_Widget
                 value = rtosc_argument(msg, 0).i;
                 if(callback)
                     callback(value);
+            } else if(args == "T") {
+                value = 1;
+                if(callback)
+                    callback(value);
+            }  else if(args == "F") {
+                value = 0;
+                if(callback)
+                    callback(value);
             }
         }
 };

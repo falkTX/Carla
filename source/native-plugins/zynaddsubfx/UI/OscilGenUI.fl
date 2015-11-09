@@ -247,13 +247,8 @@ class OscilEditor {open : {public PresetsUI_}
       } {
         Fl_Button applybutton {
           label Apply
-          callback {//applybutton->color(FL_GRAY);
-//applybutton->redraw();
-//if (cbapplywidget!=NULL) {
-//	cbapplywidget->do_callback();
-//	cbapplywidget->color(FL_GRAY);
-//	cbapplywidget->redraw();
-//};}
+          callback {
+          dummy->osc->requestValue(loc+"../prepare");}
           xywh {305 285 60 20} box THIN_UP_BOX labelfont 1
           code0 {if(adnotep) o->hide();}
           code1 {dummy->base = loc;}
@@ -354,7 +349,7 @@ class OscilEditor {open : {public PresetsUI_}
             code1 {oscilo_base->parent(o);oscilo_base->init(true);}
           } {}
           Fl_Dial bfpar {
-            callback {redrawoscil(); bfparval->value(o->value());}
+            callback {redrawoscil(); if(bfparval){bfparval->value(o->value());}}
             tooltip {Base Function Parameter} xywh {525 285 20 20} minimum -64 maximum 63 step 1
             code0 {o->init("Pbasefuncpar");}
             class Fl_Osc_Dial
@@ -451,6 +446,8 @@ setbfmodstatus(o->value());
           Fl_Value_Output bfparval {
             label {Par.}
             xywh {495 290 25 15} labelsize 12 minimum -63 maximum 63 step 1
+            code0 {o->value(bfpar->value());}
+
           }
           Fl_Group basefuncmodulation {open
             xywh {555 281 169 25} box UP_FRAME
@@ -637,13 +634,14 @@ redrawoscil();}
             }
           }
           Fl_Dial wshpar {
-            callback {redrawoscil(); wsparval->value(o->value());}
+            callback {redrawoscil();if(wsparval){wsparval->value(o->value());}}
             tooltip {Waveshaping Parameter} xywh {265 318 20 20} minimum -64 maximum 63 step 1
             code0 {o->init("Pwaveshaping");}
             class Fl_Osc_Dial
           }
           Fl_Value_Output wsparval {
             xywh {233 321 25 15} labelsize 12 minimum -63 maximum 63 step 1
+            code0 {o->value(wshpar->value());}
           }
         }
         Fl_Light_Button autoclearbutton {
@@ -1009,23 +1007,23 @@ oscils->update();
 oscilo_base->update();
 oscils_base->update();} {}
   }
-  Function {setbfmodstatus(int menuentry)} {open public
+  Function {setbfmodstatus(int menuentry)} {open
   } {
     code {
     switch (menuentry){
     case 0:
          bfpar->deactivate();
-	 bfparval->deactivate();
+         bfparval->deactivate();
          basefuncmodulation->deactivate();
          break;
     case 127:
          bfpar->deactivate();
-	 bfparval->deactivate();
+         bfparval->deactivate();
          basefuncmodulation->activate();
          break;
     default:
          bfpar->activate();
-	 bfparval->activate();
+         bfparval->activate();
          basefuncmodulation->activate();
     }
     } {} }

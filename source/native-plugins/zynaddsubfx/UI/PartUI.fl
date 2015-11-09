@@ -61,7 +61,7 @@ class PartSysEffSend {open : {public Fl_Group}
       private xywh {604 244 100 100} type Double box NO_BOX
       class Fl_Group visible
     } {
-      Fl_Dial {} {
+      Fl_Dial widget {
         label 01
         xywh {0 0 25 25} box ROUND_UP_BOX labelfont 1 labelsize 10 align 130 maximum 127 step 1
         code0 {o->size(25,25);}
@@ -83,6 +83,18 @@ make_window();
 syseffsend->show();
 end();} {}
   }
+  Function {rebase(int part)} {} {
+    code {
+    auto *osc = widget->osc;
+    std::string old = "Psysefxvol"+to_s(neff)+"/part"+to_s(npart);
+    std::string next = "Psysefxvol"+to_s(neff)+"/part"+to_s(part);
+    widget->ext      = next;
+    osc->renameLink("/"+old, "/"+next, widget);
+    osc->requestValue("/"+next);
+    npart = part;
+    } {}
+  }
+
   Function {~PartSysEffSend()} {} {
     code {syseffsend->hide();
 //delete(syseffsend);} {}
@@ -1186,6 +1198,12 @@ partfx->rebase(new_loc);
 instrumentkitlist->rebase(new_loc);
 instrumenteditwindow->rebase(new_loc);
 partenablebutton->rebase(new_loc);
+int next_part = 0;
+const char *tmp = new_loc.c_str();
+while(*tmp && !isdigit(*tmp)) tmp++;
+next_part = atoi(tmp);
+for (int i=0;i<NUM_SYS_EFX;i++)
+    psyef[i]->rebase(next_part);
 } {selected
     }
   }

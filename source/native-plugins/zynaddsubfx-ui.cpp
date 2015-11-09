@@ -183,8 +183,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(readNextLineAsString(uiTitle), true);
 
             try {
-                MasterUI* const ui((MasterUI*)gui);
-                ui->masterwindow->label(uiTitle);
+                GUI::raiseUi(gui, "/ui/title", "s", uiTitle);
             } CARLA_SAFE_EXCEPTION("msgReceived uiTitle");
             return true;
         }
@@ -224,29 +223,28 @@ int main(int argc, const char* argv[])
         lo_server_add_method(server, NULL, NULL, handler_function, 0);
     }
 
+    std::thread lo_watch(watch_lo);
     gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
 
     if (argc == 1)
         GUI::raiseUi(gui, "/show", "i", 1);
 
-    if (uiTitle != nullptr)
-    {
-        MasterUI* const ui((MasterUI*)gui);
-        ui->masterwindow->label(uiTitle);
-    }
+    if (uiTitle != nullptr && uiTitle[0] != '\0')
+        GUI::raiseUi(gui, "/ui/title", "s", uiTitle);
 
     for (; Pexitprogram == 0;)
     {
-        if (server != nullptr) {
-            for (; lo_server_recv_noblock(server, 0);) {}
-        }
-
         pipe.idlePipe();
         GUI::tickUi(gui);
+
+        for (; lo_buffer.hasNext();)
+            raiseUi(gui, lo_buffer.read());
     }
 
     GUI::destroyUi(gui);
     gui = nullptr;
+
+    lo_watch.join();
     return 0;
 }
 

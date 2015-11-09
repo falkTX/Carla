@@ -31,7 +31,9 @@
 LFO::LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t)
     :delayTime(t, lfopars.Pdelay / 127.0f * 4.0f), //0..4 sec
     waveShape(lfopars.PLFOtype),
-    deterministic(!lfopars.Pfreqrand)
+    deterministic(!lfopars.Pfreqrand),
+    dt_(t.dt()),
+    lfopars_(lfopars), basefreq_(basefreq)
 {
     int stretch = lfopars.Pstretch;
     if(stretch == 0)
@@ -114,6 +116,33 @@ float LFO::baseOut(const char waveShape, const float phase) const
 
 float LFO::lfoout()
 {
+    //update internals XXX TODO cleanup
+    {
+        waveShape = lfopars_.PLFOtype;
+        int stretch = lfopars_.Pstretch;
+        if(stretch == 0)
+            stretch = 1;
+        const float lfostretch = powf(basefreq_ / 440.0f, (stretch - 64.0f) / 63.0f);
+
+        float lfofreq =
+            (powf(2, lfopars_.Pfreq * 10.0f) - 1.0f) / 12.0f * lfostretch;
+
+        phaseInc = fabs(lfofreq) * dt_;
+
+        switch(lfopars_.fel) {
+            case 1:
+                lfointensity = lfopars_.Pintensity / 127.0f;
+                break;
+            case 2:
+                lfointensity = lfopars_.Pintensity / 127.0f * 4.0f;
+                break; //in octave
+            default:
+                lfointensity = powf(2, lfopars_.Pintensity / 127.0f * 11.0f) - 1.0f; //in centi
+                //x -= 0.25f; //chance the starting phase
+                break;
+        }
+    }
+
     float out = baseOut(waveShape, phase);
 
     if(waveShape == LFO_SINE || waveShape == LFO_TRIANGLE)

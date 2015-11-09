@@ -282,8 +282,9 @@ void BankView::react(int event, int nslot)
     //Reads from slot
     if ((event==1)&&(mode==1) && !isempty){
         printf("Loading a part #%d with file '%s'\n", nslot, slot.filename());
-        osc->write("/load-part", "is", *npart, slot.filename());
-        osc->writeValue("/part"+to_s(*npart)+"/name", slot.name());
+        osc->write("/load-part", "iss", *npart, slot.filename(),
+                slot.name());
+        osc->writeValue("/part"+to_s(*npart)+"/Pname", slot.name());
         if(cbwig_)
             cbwig_->do_callback();
     }

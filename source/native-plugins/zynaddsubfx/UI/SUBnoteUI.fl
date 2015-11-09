@@ -136,7 +136,7 @@ class SUBnoteUI {open : {public PresetsUI_}
   } {
     Fl_Window SUBparameters {
       label {SUBsynth Parameters} open
-      xywh {542 511 735 470} type Double
+      xywh {542 511 735 475} type Double
       class Fl_Osc_Window visible
     } {
       Fl_Box {} {
@@ -155,7 +155,7 @@ class SUBnoteUI {open : {public PresetsUI_}
       Fl_Button {} {
         label Close
         callback {SUBparameters->hide();}
-        xywh {625 446 105 20} box THIN_UP_BOX labelfont 1 labelsize 11
+        xywh {670 446 60 25} box THIN_UP_BOX
       }
       Fl_Group {} {
         label AMPLITUDE open
@@ -326,7 +326,7 @@ freqsettingsui->redraw();}
 h[0]->mag->oscWrite(h[0]->mag->ext, "c", 127);
 h[0]->bw->oscWrite(h[0]->bw->ext, "c", 64);
 SUBparameters->redraw();}
-        tooltip {Clear the harmonics} xywh {445 446 70 20} box THIN_UP_BOX labelfont 1 labelsize 11
+        tooltip {Clear the harmonics} xywh {445 446 70 25} box THIN_UP_BOX
         class Fl_Osc_Button
       }
       Fl_Group bandwidthsettingsui {
@@ -392,12 +392,12 @@ globalfiltergroup->redraw();}
       Fl_Button {} {
         label C
         callback {presetsui->copy(loc);}
-        xywh {540 451 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {600 451 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
         callback {presetsui->paste(loc,this);}
-        xywh {570 451 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {630 451 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Group {} {
         label OVERTONES open

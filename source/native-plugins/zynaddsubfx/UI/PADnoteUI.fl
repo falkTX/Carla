@@ -32,6 +32,9 @@ decl {\#include <string.h>} {private local
 decl {\#include <string>} {public local
 } 
 
+decl {\#include "Osc_IntModel.h"} {private local
+}
+
 decl {\#include "Fl_Osc_TSlider.H"} {public local
 } 
 
@@ -71,19 +74,47 @@ oscui=NULL;
 osc_i = osc_;
 resui=new ResonanceUI(osc_i, location+"resonance/");
 initialized = false;
+applybutton = NULL;
 make_window();
-initialized = true;} {selected
+apply_watcher = new Osc_IntModel(osc_i);
+apply_watcher->callback=[this](int needsPrepare) {
+    if(needsPrepare) {
+        applybutton->color(FL_RED);
+        applybutton->redraw();
+        if(oscui) {
+            oscui->applybutton->color(FL_RED);
+            oscui->applybutton->redraw();
+        }
+        if(resui) {
+            resui->applybutton->color(FL_RED);
+            resui->applybutton->redraw();
+        }
+    } else {
+        applybutton->color(FL_GRAY);
+        applybutton->redraw();
+        if(oscui) {
+            oscui->applybutton->color(FL_GRAY);
+            oscui->applybutton->redraw();
+        }
+        if(resui) {
+            resui->applybutton->color(FL_GRAY);
+            resui->applybutton->redraw();
+        }
     }
+};
+apply_watcher->doUpdate(location+"needPrepare");
+initialized = true;} {}
   }
   Function {make_window()} {open
   } {
     Fl_Window padnotewindow {
       label {PAD synth Parameters} open
-      xywh {52 324 535 435} type Double hide
+      xywh {52 324 535 430} type Double hide
       class Fl_Osc_Window
     } {
 
       Fl_Box dummy {
+        xywh {25 25 25 25}
         code0 {padnotewindow->init(osc_i, location);}
       }
       Fl_Tabs {} {
@@ -281,8 +312,9 @@ oscui=new OscilEditor(false, location+"oscilgen/",osc_i);}
           Fl_Box cbwidget {
             label {Harmonic Content}
             callback {opui->update();
-applybutton->color(FL_RED);
-applybutton->redraw();}
+            if(applybutton) {
+                applybutton->color(FL_RED);
+                applybutton->redraw();}}
             xywh {125 135 205 20} align 16
           }
           Fl_Button {} {
@@ -803,23 +835,23 @@ if (resui!=NULL) {
 	resui->applybutton->color(FL_GRAY);
 	resui->applybutton->redraw();
 };}
-        xywh {300 400 135 30} box THIN_UP_BOX
+        xywh {200 400 135 25} box THIN_UP_BOX
         code0 {o->color(FL_RED);}
       }
       Fl_Button {} {
         label Close
         callback {padnotewindow->hide();}
-        xywh {440 400 90 30} box THIN_UP_BOX
+        xywh {470 400 60 25} box THIN_UP_BOX
       }
       Fl_Button {} {
         label C
         callback {presetsui->copy(padnotewindow->loc());}
-        xywh {65 400 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {400 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label P
         callback {presetsui->paste(padnotewindow->loc(),this);}
-        xywh {95 400 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
+        xywh {430 405 25 15} box THIN_UP_BOX color 179 labelfont 1 labelsize 11 labelcolor 55
       }
       Fl_Button {} {
         label export
@@ -828,7 +860,7 @@ filename=fl_file_chooser("Export samples:","(*.wav)",NULL,0);
 if (filename==NULL) return;
 fl_filename_setext(filename,"");
 o->oscWrite("export2wav", "s", filename);}
-        tooltip {export samples as wav file} xywh {5 400 55 30} box THIN_UP_BOX color 51 labelsize 11 align 128
+        tooltip {export samples as wav file} xywh {5 400 55 25} box THIN_UP_BOX color 51 labelsize 11 align 128
         class Fl_Osc_Button
       }
     }
@@ -875,8 +907,11 @@ applybutton->color(FL_GRAY);
 applybutton->parent()->redraw();} {}
   }
   Function {~PADnoteUI()} {} {
-    code {delete(oscui);
+    code {
+delete apply_watcher;
+delete(oscui);
 delete(resui);
+
 
 padnotewindow->hide();
 delete padnotewindow;} {}
@@ -896,5 +931,7 @@ delete padnotewindow;} {}
   decl {PADnoteHarmonicProfile *hpui;} {private local
   }
   decl {PADnoteOvertonePosition *opui;} {private local
+  }
+  decl {class Osc_IntModel *apply_watcher;} {private local
   }
 } 
