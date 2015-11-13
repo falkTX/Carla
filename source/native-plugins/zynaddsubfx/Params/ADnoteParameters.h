@@ -240,9 +240,15 @@ struct ADnoteVoiceParam {
     unsigned char   PFilterEnvelopeEnabled;
     EnvelopeParams *FilterEnvelope;
 
-    /* LFO Envelope */
+    /* Filter LFO */
     unsigned char PFilterLfoEnabled;
     LFOParams    *FilterLfo;
+
+    // filter velocity sensing
+    unsigned char PFilterVelocityScale;
+
+    // filter velocity sensing
+    unsigned char PFilterVelocityScaleFunction;
 
     /****************************
     *   MODULLATOR PARAMETERS   *

@@ -233,7 +233,7 @@ public:
 
                 for (int i = 0; i < numStreams; ++i)
                 {
-                    const AudioBuffer& b = bufList->mBuffers[i];
+                    const ::AudioBuffer& b = bufList->mBuffers[i];
 
                     for (unsigned int j = 0; j < b.mNumberChannels; ++j)
                     {
@@ -352,14 +352,20 @@ public:
 
     int getLatencyFromDevice (AudioObjectPropertyScope scope) const
     {
-        UInt32 lat = 0;
-        UInt32 size = sizeof (lat);
+        UInt32 latency = 0;
+        UInt32 size = sizeof (latency);
         AudioObjectPropertyAddress pa;
         pa.mElement = kAudioObjectPropertyElementMaster;
         pa.mSelector = kAudioDevicePropertyLatency;
         pa.mScope = scope;
-        AudioObjectGetPropertyData (deviceID, &pa, 0, nullptr, &size, &lat);
-        return (int) lat;
+        AudioObjectGetPropertyData (deviceID, &pa, 0, nullptr, &size, &latency);
+
+        UInt32 safetyOffset = 0;
+        size = sizeof (safetyOffset);
+        pa.mSelector = kAudioDevicePropertySafetyOffset;
+        AudioObjectGetPropertyData (deviceID, &pa, 0, nullptr, &size, &safetyOffset);
+
+        return (int) (latency + safetyOffset);
     }
 
     int getBitDepthFromDevice (AudioObjectPropertyScope scope) const
@@ -1945,7 +1951,7 @@ private:
 
                 for (int i = 0; i < numStreams; ++i)
                 {
-                    const AudioBuffer& b = bufList->mBuffers[i];
+                    const ::AudioBuffer& b = bufList->mBuffers[i];
                     total += b.mNumberChannels;
                 }
             }

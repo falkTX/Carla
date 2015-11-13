@@ -317,7 +317,11 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
         NoteVoicePar[nvoice].FilterLfo      = NULL;
 
         NoteVoicePar[nvoice].FilterCenterPitch =
-            pars.VoicePar[nvoice].VoiceFilter->getfreq();
+            pars.VoicePar[nvoice].VoiceFilter->getfreq()
+            + pars.VoicePar[nvoice].PFilterVelocityScale
+            / 127.0f * 6.0f       //velocity sensing
+            * (VelF(velocity,
+                    pars.VoicePar[nvoice].PFilterVelocityScaleFunction) - 1);
         NoteVoicePar[nvoice].filterbypass =
             pars.VoicePar[nvoice].Pfilterbypass;
 
@@ -511,7 +515,12 @@ void ADnote::legatonote(LegatoParams lpars)
 
 
         NoteVoicePar[nvoice].FilterCenterPitch =
-            pars.VoicePar[nvoice].VoiceFilter->getfreq();
+            pars.VoicePar[nvoice].VoiceFilter->getfreq()
+            + pars.VoicePar[nvoice].PFilterVelocityScale
+            / 127.0f * 6.0f       //velocity sensing
+            * (VelF(velocity,
+                    pars.VoicePar[nvoice].PFilterVelocityScaleFunction) - 1);
+
         NoteVoicePar[nvoice].filterbypass =
             pars.VoicePar[nvoice].Pfilterbypass;
 

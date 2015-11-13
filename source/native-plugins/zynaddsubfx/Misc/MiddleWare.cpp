@@ -877,6 +877,12 @@ rtosc::Ports bankPorts = {
 
 #undef  rObject
 #define rObject MiddleWareImpl
+
+#ifndef STRINGIFY
+#define STRINGIFY2(a) #a
+#define STRINGIFY(a) STRINGIFY2(a)
+#endif
+
 /*
  * BASE/part#/kititem#
  * BASE/part#/kit#/adpars/voice#/oscil/\*
@@ -885,15 +891,20 @@ rtosc::Ports bankPorts = {
  * BASE/part#/kit#/padpars/oscil/\*
  */
 static rtosc::Ports middwareSnoopPorts = {
-    {"part#16/kit#8/adpars/VoicePar#8/OscilSmp/", 0, &OscilGen::non_realtime_ports,
+    {"part#" STRINGIFY(NUM_MIDI_PARTS)
+        "/kit#" STRINGIFY(NUM_KIT_ITEMS) "/adpars/VoicePar#"
+            STRINGIFY(NUM_VOICES) "/OscilSmp/", 0, &OscilGen::non_realtime_ports,
         rBegin;
         impl.obj_store.handleOscil(chomp(chomp(chomp(chomp(chomp(msg))))), d);
         rEnd},
-    {"part#16/kit#8/adpars/VoicePar#8/FMSmp/", 0, &OscilGen::non_realtime_ports,
+    {"part#" STRINGIFY(NUM_MIDI_PARTS)
+        "/kit#" STRINGIFY(NUM_KIT_ITEMS)
+            "/adpars/VoicePar#" STRINGIFY(NUM_VOICES) "/FMSmp/", 0, &OscilGen::non_realtime_ports,
         rBegin
         impl.obj_store.handleOscil(chomp(chomp(chomp(chomp(chomp(msg))))), d);
         rEnd},
-    {"part#16/kit#8/padpars/", 0, &PADnoteParameters::non_realtime_ports,
+    {"part#" STRINGIFY(NUM_MIDI_PARTS)
+        "/kit#" STRINGIFY(NUM_KIT_ITEMS) "/padpars/", 0, &PADnoteParameters::non_realtime_ports,
         rBegin
         impl.obj_store.handlePad(chomp(chomp(chomp(msg))), d);
         rEnd},
@@ -1061,6 +1072,10 @@ static rtosc::Ports middlewareReplyPorts = {
         const int program = rtosc_argument(msg, 1).i;
         impl.loadPart(part, impl.master->bank.ins[program].filename.c_str(), impl.master);
         impl.uToB->write(("/part"+to_s(part)+"/Pname").c_str(), "s", impl.master->bank.ins[program].name.c_str());
+        rEnd},
+    {"setbank:c", 0, 0,
+        rBegin;
+        impl.loadPendingBank(rtosc_argument(msg,0).i, impl.master->bank);
         rEnd},
     {"undo_pause:", 0, 0, rBegin; impl.recording_undo = false; rEnd},
     {"undo_resume:", 0, 0, rBegin; impl.recording_undo = true; rEnd},

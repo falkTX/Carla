@@ -70,7 +70,6 @@ const rtosc::Ports real_preset_ports =
             assert(d.obj);
             std::string args = rtosc_argument_string(msg);
             d.reply(d.loc, "s", "clipboard paste...");
-            printf("\nClipboard Paste...\n");
             if(args == "s")
                 presetPaste(mw, rtosc_argument(msg, 0).s, "");
             else if(args == "ss")
@@ -146,7 +145,7 @@ class Capture:public rtosc::RtData
 
         virtual void reply(const char *path, const char *args, ...)
         {
-            printf("reply(%p)(%s)(%s)...\n", msgbuf, path, args);
+            //printf("reply(%p)(%s)(%s)...\n", msgbuf, path, args);
             //printf("size is %d\n", sizeof(msgbuf));
             va_list va;
             va_start(va,args);
@@ -199,7 +198,7 @@ std::string doCopy(MiddleWare &mw, string url, string name)
     mw.doReadOnlyOp([&xml, url, name, &mw](){
         Master *m = mw.spawnMaster();
         //Get the pointer
-        printf("capture at <%s>\n", (url+"self").c_str());
+        //printf("capture at <%s>\n", (url+"self").c_str());
         T *t = (T*)capture<void*>(m, url+"self");
         assert(t);
         //Extract Via mxml
@@ -216,6 +215,10 @@ void doPaste(MiddleWare &mw, string url, string type, XMLwrapper &xml, Ts&&... a
     //Generate a new object
     T *t = new T(std::forward<Ts>(args)...);
     
+    //Old workaround for LFO parameters
+    if(strstr(type.c_str(), "Plfo"))
+        type = "Plfo";
+
     if(xml.enterbranch(type) == 0)
         return;
 
@@ -227,7 +230,7 @@ void doPaste(MiddleWare &mw, string url, string type, XMLwrapper &xml, Ts&&... a
     rtosc_message(buffer, 1024, path.c_str(), "b", sizeof(void*), &t);
     if(!Master::ports.apropos(path.c_str()))
         fprintf(stderr, "Warning: Missing Paste URL: '%s'\n", path.c_str());
-    printf("Sending info to '%s'\n", buffer);
+    //printf("Sending info to '%s'\n", buffer);
     mw.transmitMsg(buffer);
 
     //Let the pointer be reclaimed later
@@ -237,7 +240,7 @@ template<class T>
 std::string doArrayCopy(MiddleWare &mw, int field, string url, string name)
 {
     XMLwrapper xml;
-    printf("Getting info from '%s'<%d>\n", url.c_str(), field);
+    //printf("Getting info from '%s'<%d>\n", url.c_str(), field);
     mw.doReadOnlyOp([&xml, url, field, name, &mw](){
         Master *m = mw.spawnMaster();
         //Get the pointer
@@ -270,7 +273,7 @@ void doArrayPaste(MiddleWare &mw, int field, string url, string type,
     rtosc_message(buffer, 1024, path.c_str(), "bi", sizeof(void*), &t, field);
     if(!Master::ports.apropos(path.c_str()))
         fprintf(stderr, "Warning: Missing Paste URL: '%s'\n", path.c_str());
-    printf("Sending info to '%s'<%d>\n", buffer, field);
+    //printf("Sending info to '%s'<%d>\n", buffer, field);
     mw.transmitMsg(buffer);
 
     //Let the pointer be reclaimed later
@@ -285,7 +288,7 @@ void doArrayPaste(MiddleWare &mw, int field, string url, string type,
  */
 void doClassPaste(std::string type, std::string type_, MiddleWare &mw, string url, XMLwrapper &data)
 {
-    printf("Class Paste\n");
+    //printf("Class Paste\n");
     if(type == "EnvelopeParams")
         doPaste<EnvelopeParams>(mw, url, type_, data);
     else if(type == "LFOParams")
@@ -311,7 +314,7 @@ void doClassPaste(std::string type, std::string type_, MiddleWare &mw, string ur
 
 std::string doClassCopy(std::string type, MiddleWare &mw, string url, string name)
 {
-    printf("doClassCopy(%p)\n", mw.spawnMaster()->uToB);
+    //printf("doClassCopy(%p)\n", mw.spawnMaster()->uToB);
     if(type == "EnvelopeParams")
         return doCopy<EnvelopeParams>(mw, url, name);
     else if(type == "LFOParams")
@@ -361,14 +364,14 @@ std::string getUrlPresetType(std::string url, MiddleWare &mw)
         //Get the pointer
         result = capture<std::string>(m, url+"preset-type");
     });
-    printf("preset type = %s\n", result.c_str());
+    //printf("preset type = %s\n", result.c_str());
     return result;
 }
 
 std::string getUrlType(std::string url)
 {
     assert(!url.empty());
-    printf("Searching for '%s'\n", (url+"self").c_str());
+    //printf("Searching for '%s'\n", (url+"self").c_str());
     auto self = Master::ports.apropos((url+"self").c_str());
     if(!self)
         fprintf(stderr, "Warning: URL Metadata Not Found For '%s'\n", url.c_str());
@@ -409,12 +412,12 @@ void presetCopy(MiddleWare &mw, std::string url, std::string name)
 {
     (void) name;
     doClassCopy(getUrlType(url), mw, url, name);
-    printf("PresetCopy()\n");
+    //printf("PresetCopy()\n");
 }
 void presetPaste(MiddleWare &mw, std::string url, std::string name)
 {
     (void) name;
-    printf("PresetPaste()\n");
+    //printf("PresetPaste()\n");
     string data = "";
     XMLwrapper xml;
     if(name.empty()) {
@@ -433,13 +436,13 @@ void presetPaste(MiddleWare &mw, std::string url, std::string name)
 void presetCopyArray(MiddleWare &mw, std::string url, int field, std::string name)
 {
     (void) name;
-    printf("PresetArrayCopy()\n");
+    //printf("PresetArrayCopy()\n");
     doClassArrayCopy(getUrlType(url), field, mw, url, name);
 }
 void presetPasteArray(MiddleWare &mw, std::string url, int field, std::string name)
 {
     (void) name;
-    printf("PresetArrayPaste()\n");
+    //printf("PresetArrayPaste()\n");
     string data = "";
     XMLwrapper xml;
     if(name.empty()) {
@@ -452,7 +455,7 @@ void presetPasteArray(MiddleWare &mw, std::string url, int field, std::string na
         if(xml.loadXMLfile(name))
             return;
     }
-    printf("Performing Paste...\n");
+    //printf("Performing Paste...\n");
     doClassArrayPaste(getUrlType(url), getUrlPresetType(url, mw), field, mw, url, xml);
 }
 #if 0
@@ -464,19 +467,19 @@ void presetPaste(std::string url, int)
 #endif
 void presetDelete(int)
 {
-    printf("PresetDelete()\n");
+    printf("PresetDelete()<UNIMPLEMENTED>\n");
 }
 void presetRescan()
 {
-    printf("PresetRescan()\n");
+    printf("PresetRescan()<UNIMPLEMENTED>\n");
 }
 std::string presetClipboardType()
 {
-    printf("PresetClipboardType()\n");
+    printf("PresetClipboardType()<UNIMPLEMENTED>\n");
     return "dummy";
 }
 bool presetCheckClipboardType()
 {
-    printf("PresetCheckClipboardType()\n");
+    printf("PresetCheckClipboardType()<UNIMPLEMENTED>\n");
     return true;
 }

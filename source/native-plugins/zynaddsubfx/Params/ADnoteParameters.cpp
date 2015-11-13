@@ -111,6 +111,8 @@ static const Ports voicePorts = {
     rToggle(PFilterEnabled,         "Filter Enable"),
     rToggle(PFilterEnvelopeEnabled, "Filter Envelope Enable"),
     rToggle(PFilterLfoEnabled,      "Filter LFO Enable"),
+    rParamZyn(PFilterVelocityScale, "Filter Velocity Magnitude"),
+    rParamZyn(PFilterVelocityScaleFunction, "Filter Velocity Function Shape"),
 
 
     //Modulator Stuff
@@ -428,6 +430,8 @@ void ADnoteVoiceParam::defaults()
     PFilterEnabled            = 0;
     PFilterEnvelopeEnabled    = 0;
     PFilterLfoEnabled         = 0;
+    PFilterVelocityScale = 0;
+    PFilterVelocityScaleFunction = 64;
     PFMEnabled                = 0;
 
     //I use the internal oscillator (-1)
@@ -664,6 +668,8 @@ void ADnoteVoiceParam::add2XML(XMLwrapper *xml, bool fmoscilused)
 
     if((PFilterEnabled != 0) || (!xml->minimal)) {
         xml->beginbranch("FILTER_PARAMETERS");
+        xml->addpar("velocity_sensing_amplitude", PFilterVelocityScale);
+        xml->addpar("velocity_sensing", PFilterVelocityScaleFunction);
         xml->beginbranch("FILTER");
         VoiceFilter->add2XML(xml);
         xml->endbranch();
@@ -974,6 +980,8 @@ void ADnoteVoiceParam::paste(ADnoteVoiceParam &a)
     RCopy(FilterEnvelope);
 
     copy(PFilterLfoEnabled);
+    copy(PFilterVelocityScale);
+    copy(PFilterVelocityScaleFunction);
 
     RCopy(FilterLfo);
 
@@ -1115,6 +1123,11 @@ void ADnoteVoiceParam::getfromXML(XMLwrapper *xml, unsigned nvoice)
     }
 
     if(xml->enterbranch("FILTER_PARAMETERS")) {
+        PFilterVelocityScale = xml->getpar127("velocity_sensing_amplitude",
+                                              PFilterVelocityScale);
+        PFilterVelocityScaleFunction = xml->getpar127(
+            "velocity_sensing",
+            PFilterVelocityScaleFunction);
         if(xml->enterbranch("FILTER")) {
             VoiceFilter->getfromXML(xml);
             xml->exitbranch();

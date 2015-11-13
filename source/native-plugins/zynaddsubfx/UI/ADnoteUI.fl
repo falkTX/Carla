@@ -764,7 +764,7 @@ o->redraw();}
           Fl_Group {} {
             label {ADsynth Voice - Filter} open
             xywh {250 30 275 75} box FLAT_BOX color 50 align 144
-            code0 {o->init("", osc_i, loc, "VoiceFilter/");}
+            code0 {o->init(loc + "PFilter", osc_i, loc, "VoiceFilter/");}
             class FilterUI
           } {}
           Fl_Group voicefilterenvgroup {

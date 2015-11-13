@@ -374,6 +374,7 @@ public:
                     ^ ((int) componentDesc.componentSubType)
                     ^ ((int) componentDesc.componentManufacturer);
         desc.lastFileModTime = Time();
+        desc.lastInfoUpdateTime = Time::getCurrentTime();
         desc.pluginFormatName = "AudioUnit";
         desc.category = AudioUnitFormatHelpers::getCategory (componentDesc.componentType);
         desc.manufacturerName = manufacturer;
@@ -1223,7 +1224,7 @@ private:
     //==============================================================================
     size_t getAudioBufferSizeInBytes() const noexcept
     {
-        return offsetof (AudioBufferList, mBuffers) + (sizeof (AudioBuffer) * numOutputBusChannels);
+        return offsetof (AudioBufferList, mBuffers) + (sizeof (::AudioBuffer) * numOutputBusChannels);
     }
 
     AudioBufferList* getAudioBufferListForBus (AudioUnitElement busIndex) const noexcept
