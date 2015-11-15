@@ -471,6 +471,13 @@ make install
 ln -s $PREFIX/lib/QtCore.framework/Headers    $PREFIX/include/qt5/QtCore
 ln -s $PREFIX/lib/QtGui.framework/Headers     $PREFIX/include/qt5/QtGui
 ln -s $PREFIX/lib/QtWidgets.framework/Headers $PREFIX/include/qt5/QtWidgets
+sed -i -e "s/ -lqtpcre/ /" $PREFIX/lib/pkgconfig/QtCore.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtCore.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtCore.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtGui.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtGui.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
 touch build-done
 cd ..
 fi
@@ -586,7 +593,7 @@ fi
 
 if [ ! -f cx_Freeze-4.3.3/build-done ]; then
 cd cx_Freeze-4.3.3
-sed  -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
+sed -i -e 's/"python%s.%s"/"python%s.%sm"/' setup.py
 python3 setup.py build
 python3 setup.py install --prefix=$PREFIX
 touch build-done
