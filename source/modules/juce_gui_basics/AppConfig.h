@@ -20,11 +20,6 @@
 */
 #define JUCE_ENABLE_REPAINT_DEBUGGING 0
 
-/** JUCE_USE_XINERAMA: Enables Xinerama multi-monitor support (Linux only).
-    Unless you specifically want to disable this, it's best to leave this option turned on.
-*/
-#define JUCE_USE_XINERAMA 1
-
 /** Config: JUCE_USE_XSHM
     Enables X shared memory for faster rendering on Linux. This is best left turned on
     unless you have a good reason to disable it.
