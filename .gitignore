@@ -15,6 +15,7 @@
 
 # Binary files
 *.7z
+*.bz2
 *.a
 *.o
 *.dll
