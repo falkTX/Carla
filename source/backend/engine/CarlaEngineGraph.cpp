@@ -1193,7 +1193,7 @@ public:
         return fPlugin->getName();
     }
 
-    void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi)
+    void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi) override
     {
         if (fPlugin == nullptr || ! fPlugin->isEnabled())
         {

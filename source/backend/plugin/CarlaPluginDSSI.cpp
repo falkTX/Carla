@@ -522,7 +522,7 @@ public:
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
-    void setId(const uint newId) noexcept
+    void setId(const uint newId) noexcept override
     {
         CarlaPlugin::setId(newId);
 

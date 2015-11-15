@@ -802,7 +802,7 @@ public:
     // -------------------------------------------------------------------
     // Information (base)
 
-    BinaryType getBinaryType() const noexcept
+    BinaryType getBinaryType() const noexcept override
     {
         return fBinaryType;
     }
