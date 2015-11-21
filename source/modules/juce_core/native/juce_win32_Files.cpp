@@ -643,6 +643,7 @@ bool File::isShortcut() const
 
 File File::getLinkedTarget() const
 {
+#if JUCE_MSVC
     {
         HANDLE h = CreateFile (getFullPathName().toWideCharPointer(),
                                GENERIC_READ, FILE_SHARE_READ, nullptr,
@@ -662,13 +663,21 @@ File File::getLinkedTarget() const
                 if (requiredSize > 0)
                 {
                     CloseHandle (h);
-                    return File (String (buffer));
+
+                    const StringRef prefix ("\\\\?\\");
+                    const String path (buffer);
+
+                    // It turns out that GetFinalPathNameByHandleW prepends \\?\ to the path.
+                    // This is not a bug, it's feature. See MSDN for more information.
+                    return File (path.startsWith (prefix) ? path.substring (prefix.length())
+                                                          : path);
                 }
             }
 
             CloseHandle (h);
         }
     }
+#endif
 
     File result (*this);
     String p (getFullPathName());

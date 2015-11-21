@@ -114,7 +114,7 @@
  #if JUCE_MINGW
   #include <basetyps.h>
   #include <sys/time.h>
-  #define alloca __builtin_alloca
+  #define alloca(x) __builtin_alloca((x))
  #else
   #include <crtdbg.h>
   #include <comutil.h>
