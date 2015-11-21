@@ -644,9 +644,9 @@ redrawoscil();}
             code0 {o->value(wshpar->value());}
           }
         }
-        Fl_Light_Button autoclearbutton {
+        Fl_Check_Button autoclearbutton {
           label {Clr.}
-          tooltip {Auto clear when using the oscillator as base function} xywh {100 318 35 20} box THIN_UP_BOX value 1 labelfont 1 labelsize 10
+          tooltip {Auto clear when using the oscillator as base function} xywh {98 318 40 20} box THIN_UP_BOX value 1 labelfont 1 labelsize 10
         }
         Fl_Group {} {
           xywh {290 313 155 30} box UP_FRAME

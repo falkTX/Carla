@@ -43,9 +43,9 @@ class Resonance:public Presets
         void zero(void);
 
         void paste(Resonance &r);
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults(void);
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
 
         //TODO remove unused methods

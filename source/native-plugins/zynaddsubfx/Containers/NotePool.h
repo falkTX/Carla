@@ -94,6 +94,7 @@ class NotePool
         void applyLegato(LegatoParams &par);
 
         bool full(void) const;
+        bool synthFull(int sdesc_count) const;
 
         //Note that isn't KEY_PLAYING or KEY_RELASED_AND_SUSTAINING
         bool existsRunningNote(void) const;

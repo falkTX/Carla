@@ -161,11 +161,14 @@ char *rtosc_splat(const char *path, std::set<std::string>);
     [](const char *, rtosc::RtData &d){ \
         d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
 
-#define rPaste \
+#define rPresetType \
 {"preset-type:", rProp(internal) rDoc("clipboard type of object"), 0, \
     [](const char *, rtosc::RtData &d){ \
         rObject *obj = (rObject*)d.obj; \
-        d.reply(d.loc, "s", obj->type);}},\
+        d.reply(d.loc, "s", obj->type);}}
+
+#define rPaste \
+rPresetType, \
 {"paste:b", rProp(internal) rDoc("paste port"), 0, \
     [](const char *m, rtosc::RtData &d){ \
         printf("rPaste...\n"); \

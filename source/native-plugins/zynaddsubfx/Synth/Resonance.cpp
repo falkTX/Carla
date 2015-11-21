@@ -267,39 +267,39 @@ void Resonance::paste(Resonance &r)
 }
 #undef COPY
 
-void Resonance::add2XML(XMLwrapper *xml)
+void Resonance::add2XML(XMLwrapper& xml)
 {
-    xml->addparbool("enabled", Penabled);
+    xml.addparbool("enabled", Penabled);
 
-    if((Penabled == 0) && (xml->minimal))
+    if((Penabled == 0) && (xml.minimal))
         return;
 
-    xml->addpar("max_db", PmaxdB);
-    xml->addpar("center_freq", Pcenterfreq);
-    xml->addpar("octaves_freq", Poctavesfreq);
-    xml->addparbool("protect_fundamental_frequency", Pprotectthefundamental);
-    xml->addpar("resonance_points", N_RES_POINTS);
+    xml.addpar("max_db", PmaxdB);
+    xml.addpar("center_freq", Pcenterfreq);
+    xml.addpar("octaves_freq", Poctavesfreq);
+    xml.addparbool("protect_fundamental_frequency", Pprotectthefundamental);
+    xml.addpar("resonance_points", N_RES_POINTS);
     for(int i = 0; i < N_RES_POINTS; ++i) {
-        xml->beginbranch("RESPOINT", i);
-        xml->addpar("val", Prespoints[i]);
-        xml->endbranch();
+        xml.beginbranch("RESPOINT", i);
+        xml.addpar("val", Prespoints[i]);
+        xml.endbranch();
     }
 }
 
 
-void Resonance::getfromXML(XMLwrapper *xml)
+void Resonance::getfromXML(XMLwrapper& xml)
 {
-    Penabled = xml->getparbool("enabled", Penabled);
+    Penabled = xml.getparbool("enabled", Penabled);
 
-    PmaxdB       = xml->getpar127("max_db", PmaxdB);
-    Pcenterfreq  = xml->getpar127("center_freq", Pcenterfreq);
-    Poctavesfreq = xml->getpar127("octaves_freq", Poctavesfreq);
-    Pprotectthefundamental = xml->getparbool("protect_fundamental_frequency",
+    PmaxdB       = xml.getpar127("max_db", PmaxdB);
+    Pcenterfreq  = xml.getpar127("center_freq", Pcenterfreq);
+    Poctavesfreq = xml.getpar127("octaves_freq", Poctavesfreq);
+    Pprotectthefundamental = xml.getparbool("protect_fundamental_frequency",
                                              Pprotectthefundamental);
     for(int i = 0; i < N_RES_POINTS; ++i) {
-        if(xml->enterbranch("RESPOINT", i) == 0)
+        if(xml.enterbranch("RESPOINT", i) == 0)
             continue;
-        Prespoints[i] = xml->getpar127("val", Prespoints[i]);
-        xml->exitbranch();
+        Prespoints[i] = xml.getpar127("val", Prespoints[i]);
+        xml.exitbranch();
     }
 }

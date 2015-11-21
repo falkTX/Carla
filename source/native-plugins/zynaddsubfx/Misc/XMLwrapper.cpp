@@ -98,7 +98,7 @@ XMLwrapper::XMLwrapper()
 {
     version.Major    = 2;
     version.Minor    = 5;
-    version.Revision = 1;
+    version.Revision = 2;
 
     minimal = true;
 

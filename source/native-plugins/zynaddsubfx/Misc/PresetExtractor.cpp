@@ -222,7 +222,7 @@ void doPaste(MiddleWare &mw, string url, string type, XMLwrapper &xml, Ts&&... a
     if(xml.enterbranch(type) == 0)
         return;
 
-    t->getfromXML(&xml);
+    t->getfromXML(xml);
 
     //Send the pointer
     string path = url+"paste";
@@ -264,7 +264,7 @@ void doArrayPaste(MiddleWare &mw, int field, string url, string type,
         return;
     }
     t->defaults(field);
-    t->getfromXMLsection(&xml, field);
+    t->getfromXMLsection(xml, field);
     xml.exitbranch();
 
     //Send the pointer

@@ -105,8 +105,8 @@ class Microtonal
         /**Comment about the tuning*/
         char Pcomment[MICROTONAL_MAX_NAME_LEN];
 
-        void add2XML(XMLwrapper *xml) const;
-        void getfromXML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml) const;
+        void getfromXML(XMLwrapper& xml);
         int saveXML(const char *filename) const;
         int loadXML(const char *filename);
 

@@ -30,7 +30,7 @@ endif # EXPERIMENTAL_PLUGINS
 # Flags for ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Izynaddsubfx -Izynaddsubfx/rtosc
+ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -DHAVE_ASYNC -Izynaddsubfx -Izynaddsubfx/rtosc
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
 ZYN_LD_FLAGS  += -ldl -lpthread

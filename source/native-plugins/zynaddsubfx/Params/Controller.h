@@ -35,9 +35,9 @@ class Controller
         ~Controller();
         void resetall();
 
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults();
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
         //Controllers functions
         void setpitchwheel(int value);

@@ -36,11 +36,11 @@ class FilterParams:public PresetsArray
                      unsigned char Pq_);
         ~FilterParams();
 
-        void add2XML(XMLwrapper *xml);
-        void add2XMLsection(XMLwrapper *xml, int n);
+        void add2XML(XMLwrapper& xml);
+        void add2XMLsection(XMLwrapper& xml, int n);
         void defaults();
-        void getfromXML(XMLwrapper *xml);
-        void getfromXMLsection(XMLwrapper *xml, int n);
+        void getfromXML(XMLwrapper& xml);
+        void getfromXMLsection(XMLwrapper& xml, int n);
         void paste(FilterParams &);
         void pasteArray(FilterParams &, int section);
 

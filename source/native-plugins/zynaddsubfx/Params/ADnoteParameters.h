@@ -38,8 +38,8 @@ struct ADnoteGlobalParam {
     ADnoteGlobalParam();
     ~ADnoteGlobalParam();
     void defaults();
-    void add2XML(XMLwrapper *xml);
-    void getfromXML(XMLwrapper *xml);
+    void add2XML(XMLwrapper& xml);
+    void getfromXML(XMLwrapper& xml);
     void paste(ADnoteGlobalParam &a);
     /* The instrument type  - MONO/STEREO
     If the mode is MONO, the panning of voices are not used
@@ -115,8 +115,8 @@ struct ADnoteGlobalParam {
 /*                    VOICE PARAMETERS                     */
 /***********************************************************/
 struct ADnoteVoiceParam {
-    void getfromXML(XMLwrapper *xml, unsigned nvoice);
-    void add2XML(XMLwrapper *xml, bool fmoscilused);
+    void getfromXML(XMLwrapper& xml, unsigned nvoice);
+    void add2XML(XMLwrapper& xml, bool fmoscilused);
     void paste(ADnoteVoiceParam &p);
     void defaults(void);
     void enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson);
@@ -306,8 +306,8 @@ class ADnoteParameters:public PresetsArray
         ADnoteVoiceParam  VoicePar[NUM_VOICES];
 
         void defaults();
-        void add2XML(XMLwrapper *xml);
-        void getfromXML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
+        void getfromXML(XMLwrapper& xml);
 
         void paste(ADnoteParameters &a);
         void pasteArray(ADnoteParameters &a, int section);
@@ -317,8 +317,8 @@ class ADnoteParameters:public PresetsArray
         float getUnisonFrequencySpreadCents(int nvoice) const;
         static const rtosc::Ports &ports;
         void defaults(int n); //n is the nvoice
-        void add2XMLsection(XMLwrapper *xml, int n);
-        void getfromXMLsection(XMLwrapper *xml, int n);
+        void add2XMLsection(XMLwrapper& xml, int n);
+        void getfromXMLsection(XMLwrapper& xml, int n);
     private:
 
         void EnableVoice(const SYNTH_T &synth, int nvoice);

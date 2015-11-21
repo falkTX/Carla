@@ -286,6 +286,18 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
                                              getvoicebasefreq(nvoice),
                                              pars.VoicePar[nvoice].Presonance);
 
+        //Find range of generated wave
+        float min = NoteVoicePar[nvoice].OscilSmp[0];
+        float max = min;
+        float *smpls = &(NoteVoicePar[nvoice].OscilSmp[1]);
+        for (int i = synth.oscilsize-1; i--; smpls++)
+            if (*smpls > max)
+                max = *smpls;
+            else if (*smpls < min)
+                min = *smpls;
+        NoteVoicePar[nvoice].OscilSmpMin = min;
+        NoteVoicePar[nvoice].OscilSmpMax = max;
+
         //I store the first elments to the last position for speedups
         for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; ++i)
             NoteVoicePar[nvoice].OscilSmp[synth.oscilsize
@@ -295,12 +307,12 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
         oscposhi_start +=
             (int)((pars.VoicePar[nvoice].Poscilphase
                    - 64.0f) / 128.0f * synth.oscilsize + synth.oscilsize * 4);
-        oscposhi_start %= synth.oscilsize;
 
+        int kth_start = oscposhi_start;
         for(int k = 0; k < unison; ++k) {
-            oscposhi[nvoice][k] = oscposhi_start;
+            oscposhi[nvoice][k] = kth_start % synth.oscilsize;
             //put random starting point for other subvoices
-            oscposhi_start      =
+            kth_start      = oscposhi_start +
                 (int)(RND * pars.VoicePar[nvoice].Unison_phase_randomness /
                         127.0f * (synth.oscilsize - 1));
         }

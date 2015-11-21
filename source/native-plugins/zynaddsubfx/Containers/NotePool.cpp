@@ -5,12 +5,13 @@
 #include "../Synth/SynthNote.h"
 #include <cstring>
 #include <cassert>
+#include <iostream>
 
 NotePool::NotePool(void)
     :needs_cleaning(0)
 {
     memset(ndesc, 0, sizeof(ndesc));
-    memset(sdesc, 0, sizeof(ndesc));
+    memset(sdesc, 0, sizeof(sdesc));
 }
 NotePool::activeNotesIter NotePool::activeNotes(NoteDescriptor &n)
 {
@@ -37,19 +38,21 @@ static int getMergeableDescriptor(uint8_t note, uint8_t sendto, bool legato,
         if(ndesc[desc_id].status == Part::KEY_OFF)
             break;
 
-    //Out of free descriptors
-    if(ndesc[desc_id].status != Part::KEY_OFF)
-        return -1;
-
     if(desc_id != 0) {
         auto &nd = ndesc[desc_id-1];
         if(nd.age == 0 && nd.note == note && nd.sendto == sendto
                 && nd.status == Part::KEY_PLAYING && nd.legatoMirror == legato)
             return desc_id-1;
     }
+
+    //Out of free descriptors
+    if(desc_id >= POLYPHONY || ndesc[desc_id].status != Part::KEY_OFF) {
+        return -1;
+    }
+
     return desc_id;
 }
-        
+
 NotePool::activeDescIter      NotePool::activeDesc(void)
 {
     cleanup();
@@ -76,8 +79,11 @@ void NotePool::insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bo
 
     //Get first free synth descriptor
     int sdesc_id = 0;
-    while(sdesc[sdesc_id].note)
+    while(sdesc[sdesc_id].note && sdesc_id < POLYPHONY*EXPECTED_USAGE)
         sdesc_id++;
+
+    assert(sdesc_id < POLYPHONY*EXPECTED_USAGE);
+
     sdesc[sdesc_id] = desc;
 };
 
@@ -92,8 +98,12 @@ void NotePool::upgradeToLegato(void)
 void NotePool::insertLegatoNote(uint8_t note, uint8_t sendto, SynthDescriptor desc)
 {
     assert(desc.note);
-    desc.note = desc.note->cloneLegato();
-    insertNote(note, sendto, desc, true);
+    try {
+        desc.note = desc.note->cloneLegato();
+        insertNote(note, sendto, desc, true);
+    } catch (std::bad_alloc &ba) {
+        std::cerr << "failed to insert legato note: " << ba.what() << std::endl;
+    }
 };
 
 //There should only be one pair of notes which are still playing
@@ -102,7 +112,11 @@ void NotePool::applyLegato(LegatoParams &par)
     for(auto &desc:activeDesc()) {
         desc.note = par.midinote;
         for(auto &synth:activeNotes(desc))
-            synth.note->legatonote(par);
+            try {
+                synth.note->legatonote(par);
+            } catch (std::bad_alloc& ba) {
+                std::cerr << "failed to create legato note: " << ba.what() << std::endl;
+            }
     }
 };
 
@@ -112,6 +126,15 @@ bool NotePool::full(void) const
         if(ndesc[i].status == Part::KEY_OFF)
             return false;
     return true;
+}
+
+bool NotePool::synthFull(int sdesc_count) const
+{
+    int actually_free=sizeof(sdesc)/sizeof(sdesc[0]);
+    for(const auto &desc:activeDesc()) {
+        actually_free -= desc.size;
+    }
+    return actually_free < sdesc_count;
 }
 
 //Note that isn't KEY_PLAYING or KEY_RELASED_AND_SUSTAINING
@@ -126,7 +149,8 @@ int NotePool::getRunningNotes(void) const
     bool running[256] = {0};
     for(auto &desc:activeDesc()) {
         //printf("note!(%d)\n", desc.note);
-        if(desc.status == Part::KEY_PLAYING)
+        if(desc.status == Part::KEY_PLAYING ||
+                desc.status == Part::KEY_RELEASED_AND_SUSTAINED)
             running[desc.note] = true;
     }
 
@@ -151,7 +175,7 @@ int NotePool::enforceKeyLimit(int limit) const
         //if(oldestnotepos != -1)
         //    ReleaseNotePos(oldestnotepos);
         //}
-    printf("Unimplemented enforceKeyLimit()\n");
+    //printf("Unimplemented enforceKeyLimit()\n");
     return -1;
 }
 

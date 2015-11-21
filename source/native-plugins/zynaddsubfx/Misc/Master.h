@@ -63,7 +63,7 @@ class Master
         int saveXML(const char *filename);
 
         /**This adds the parameters to the XML data*/
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
 
         void defaults();
 
@@ -78,7 +78,7 @@ class Master
         //This must be called prior-to/at-the-time-of RT insertion
         void initialize_rt(void) REALTIME;
 
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
         /**get all data to a newly allocated array (used for plugin)
          * @return the datasize*/

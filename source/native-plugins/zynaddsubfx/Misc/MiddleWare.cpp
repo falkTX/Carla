@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
+#include <iostream>
 
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
@@ -500,6 +501,7 @@ public:
                 config->cfg.GzipCompression,
                 config->cfg.Interpolation,
                 &master->microtonal, master->fft);
+
         if(p->loadXMLinstrument(filename))
             fprintf(stderr, "Warning: failed to load part<%s>!\n", filename);
 
@@ -524,19 +526,20 @@ public:
     {
         if(npart == -1)
             return;
+
         Part *p = new Part(*master->memory, synth,
-                           master->time,
-                           config->cfg.GzipCompression,
-                           config->cfg.Interpolation,
-                           &master->microtonal, master->fft);
+                master->time,
+                config->cfg.GzipCompression,
+                config->cfg.Interpolation,
+                &master->microtonal, master->fft);
         p->applyparameters();
         obj_store.extractPart(p, npart);
         kits.extractPart(p, npart);
 
         //Give it to the backend and wait for the old part to return for
         //deallocation
-        parent->transmitMsg("/load-part", "ib", npart, sizeof(Part*), &p);
-        GUI::raiseUi(ui, "/damage", "s", ("/part"+to_s(npart)+"/").c_str());
+        parent->transmitMsg("/load-part", "ib", npart, sizeof(Part *), &p);
+        GUI::raiseUi(ui, "/damage", "s", ("/part" + to_s(npart) + "/").c_str());
     }
 
     //Well, you don't get much crazier than changing out all of your RT
@@ -1058,7 +1061,7 @@ static rtosc::Ports middlewareReplyPorts = {
         void       *ptr  = *(void**)rtosc_argument(msg, 1).b.data;
         deallocate(type, ptr);
         rEnd},
-    {"request_memory:", 0, 0,
+    {"request-memory:", 0, 0,
         rBegin;
         //Generate out more memory for the RT memory pool
         //5MBi chunk

@@ -55,7 +55,7 @@ void Presets::copy(PresetsStore &ps, const char *name)
             strcpy(type, "Plfo");
 
     xml.beginbranch(type);
-    add2XML(&xml);
+    add2XML(xml);
     xml.endbranch();
 
     if(name == NULL)

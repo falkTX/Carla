@@ -102,13 +102,13 @@ redrawPADnoteApply();}
       Fl_Slider maxdb {
         callback {maxdbvo->value(o->value());
 redrawPADnoteApply();}
-        xywh {90 282 84 15} type Horizontal minimum 1 maximum 90 step 1 value 30
+        xywh {90 285 84 15} box FLAT_BOX type {Horz Knob} minimum 1 maximum 90 step 1 value 30
         code0 {o->init("PmaxdB", 'i'); o->reset_value = 30;}
         class Fl_Osc_Slider
       }
       Fl_Value_Output maxdbvo {
         label {Max.}
-        tooltip {The Maximum amplitude (dB)} xywh {126 264 24 18} labelsize 12 minimum 1 maximum 127 step 1 value 30 textfont 1 textsize 12
+        tooltip {The Maximum amplitude (dB)} xywh {126 264 24 18} labelsize 12 minimum 1 maximum 127 step 1 value 30 textfont 0 textsize 12
       }
       Fl_Box {} {
         label dB
@@ -117,14 +117,14 @@ redrawPADnoteApply();}
       Fl_Value_Output centerfreqvo {
         label {C.f.}
         callback {o->value(o->newvalue()/1000.0);}
-        tooltip {Center Frequency (kHz)} xywh {210 264 33 18} labelsize 12 when 3 minimum 1 maximum 10 step 0.01 value 1 textfont 1 textsize 12
+        tooltip {Center Frequency (kHz)} xywh {210 264 45 18} labelsize 12 when 3 minimum 1 maximum 10 step 0.01 value 1 textfont 1 textsize 12
         code0 {o->init("centerfreq");}
         class Fl_Osc_Output
       }
       Fl_Value_Output octavesfreqvo {
         label {Oct.}
         callback {o->value(o->newvalue());}
-        tooltip {No. of octaves} xywh {210 282 33 18} labelsize 12 when 3 minimum 1 maximum 127 step 1 value 30 textfont 1 textsize 12
+        tooltip {No. of octaves} xywh {210 282 45 18} labelsize 12 when 3 minimum 0 maximum 11 step 0.01 value 5 textfont 1 textsize 12
         code0 {o->init("octavesfreq");}
         class Fl_Osc_Output
       }
@@ -165,21 +165,19 @@ redrawPADnoteApply();}
         tooltip {Interpolate the peaks} xywh {365 265 46 15} box THIN_UP_BOX labelfont 1 labelsize 10
         class Fl_Osc_Button
       }
-      Fl_Dial centerfreq {
-        label {C.f.}
+      Fl_Slider centerfreq {
         callback {centerfreqvo->do_callback();
 redrawPADnoteApply();}
-        xywh {245 265 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-        code0 {o->init("Pcenterfreq");}
-        class Fl_Osc_Dial
+        xywh {260 268 90 14} box FLAT_BOX type {Horz Knob} labelsize 10 maximum 127 step 1
+        code0 {o->init("Pcenterfreq", 'i');}
+        class Fl_Osc_Slider
       }
-      Fl_Dial octavesfreq {
-        label {Oct.}
+      Fl_Slider octavesfreq {
         callback {octavesfreqvo->do_callback();
 redrawPADnoteApply();}
-        xywh {280 265 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-        code0 {o->init("Poctavesfreq");}
-        class Fl_Osc_Dial
+        xywh {260 286 90 14} box FLAT_BOX type {Horz Knob} labelsize 10 maximum 127 step 1
+        code0 {o->init("Poctavesfreq", 'i');}
+        class Fl_Osc_Slider
       }
       Fl_Button {} {
         label C

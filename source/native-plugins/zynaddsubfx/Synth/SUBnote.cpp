@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstdio>
 #include <cassert>
+#include <iostream>
 #include "../globals.h"
 #include "SUBnote.h"
 #include "Envelope.h"
@@ -224,8 +225,12 @@ void SUBnote::legatonote(LegatoParams pars)
     if(legato.update(pars))
         return;
 
-    setup(pars.frequency, pars.velocity, pars.portamento, pars.midinote,
-            true);
+    try {
+        setup(pars.frequency, pars.velocity, pars.portamento, pars.midinote,
+              true);
+    } catch (std::bad_alloc &ba) {
+        std::cerr << "failed to set legato note parameter in SUBnote: " << ba.what() << std::endl;
+    }
 }
 
 SUBnote::~SUBnote()

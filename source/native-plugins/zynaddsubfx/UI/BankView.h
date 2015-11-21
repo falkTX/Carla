@@ -11,7 +11,7 @@
 
 class Bank;
 class BankView;
-class Fl_Light_Button;
+class Fl_Check_Button;
 
 class BankList : public Fl_Osc_Choice
 {
@@ -63,9 +63,9 @@ class BankViewControls: public Fl_Group
         //4 -> swap
         int mode_;
 
-        static void cb_clearbutton(Fl_Light_Button*, void*);
-        static void cb_readbutton(Fl_Light_Button*, void*);
-        static void cb_writebutton(Fl_Light_Button*, void*);
+        static void cb_clearbutton(Fl_Check_Button*, void*);
+        static void cb_readbutton(Fl_Check_Button*, void*);
+        static void cb_writebutton(Fl_Check_Button*, void*);
 };
 
 class BankView: public Fl_Group, public Fl_Osc_Widget

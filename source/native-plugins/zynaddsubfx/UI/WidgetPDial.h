@@ -31,5 +31,6 @@ class WidgetPDial:public Fl_Dial
         class TipWin * tipwin;
         float value_offset;
         float value_scale;
+        int mod_state;
 };
 #endif

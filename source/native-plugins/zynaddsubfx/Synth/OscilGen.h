@@ -52,9 +52,9 @@ class OscilGen:public Presets
         void useasbase();
 
         void paste(OscilGen &o);
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults();
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
         void convert2sine();
 

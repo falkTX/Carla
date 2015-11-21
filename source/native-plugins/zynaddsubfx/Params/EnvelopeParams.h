@@ -46,9 +46,9 @@ class EnvelopeParams:public Presets
         void ASRinit_bw(char A_val, char A_dt, char R_val, char R_dt);
         void converttofree();
 
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults();
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
         float getdt(char i) const;
         static float dt(char val);

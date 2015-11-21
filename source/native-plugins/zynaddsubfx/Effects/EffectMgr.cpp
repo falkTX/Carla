@@ -22,6 +22,7 @@
 
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
+#include <iostream>
 
 
 #include "EffectMgr.h"
@@ -178,35 +179,40 @@ void EffectMgr::changeeffectrt(int _nefx, bool avoidSmash)
     memory.dealloc(efx);
     EffectParams pars(memory, insertion, efxoutl, efxoutr, 0,
             synth.samplerate, synth.buffersize);
-    switch(nefx) {
-        case 1:
-            efx = memory.alloc<Reverb>(pars);
-            break;
-        case 2:
-            efx = memory.alloc<Echo>(pars);
-            break;
-        case 3:
-            efx = memory.alloc<Chorus>(pars);
-            break;
-        case 4:
-            efx = memory.alloc<Phaser>(pars);
-            break;
-        case 5:
-            efx = memory.alloc<Alienwah>(pars);
-            break;
-        case 6:
-            efx = memory.alloc<Distorsion>(pars);
-            break;
-        case 7:
-            efx = memory.alloc<EQ>(pars);
-            break;
-        case 8:
-            efx = memory.alloc<DynamicFilter>(pars);
-            break;
-        //put more effect here
-        default:
-            efx = NULL;
-            break; //no effect (thru)
+    try {
+        switch (nefx) {
+            case 1:
+                efx = memory.alloc<Reverb>(pars);
+                break;
+            case 2:
+                efx = memory.alloc<Echo>(pars);
+                break;
+            case 3:
+                efx = memory.alloc<Chorus>(pars);
+                break;
+            case 4:
+                efx = memory.alloc<Phaser>(pars);
+                break;
+            case 5:
+                efx = memory.alloc<Alienwah>(pars);
+                break;
+            case 6:
+                efx = memory.alloc<Distorsion>(pars);
+                break;
+            case 7:
+                efx = memory.alloc<EQ>(pars);
+                break;
+            case 8:
+                efx = memory.alloc<DynamicFilter>(pars);
+                break;
+            //put more effect here
+            default:
+                efx = NULL;
+                break; //no effect (thru)
+        }
+    } catch (std::bad_alloc &ba) {
+        std::cerr << "failed to change effect " << _nefx << ": " << ba.what() << std::endl;
+        return;
     }
 
     if(efx)
@@ -287,7 +293,11 @@ void EffectMgr::seteffectparrt(int npar, unsigned char value)
         settings[npar] = value;
     if(!efx)
         return;
-    efx->changepar(npar, value);
+    try {
+        efx->changepar(npar, value);
+    } catch (std::bad_alloc &ba) {
+        std::cerr << "failed to change effect parameter " << npar << " to " << value << ": " << ba.what() << std::endl;
+    }
 }
 
 //Change a parameter of the current effect
@@ -407,55 +417,55 @@ void EffectMgr::paste(EffectMgr &e)
         seteffectparrt(i, e.settings[i]);
 }
 
-void EffectMgr::add2XML(XMLwrapper *xml)
+void EffectMgr::add2XML(XMLwrapper& xml)
 {
-    xml->addpar("type", geteffect());
+    xml.addpar("type", geteffect());
 
     if(!geteffect())
         return;
-    xml->addpar("preset", preset);
+    xml.addpar("preset", preset);
 
-    xml->beginbranch("EFFECT_PARAMETERS");
+    xml.beginbranch("EFFECT_PARAMETERS");
     for(int n = 0; n < 128; ++n) {
         int par = geteffectpar(n);
         if(par == 0)
             continue;
-        xml->beginbranch("par_no", n);
-        xml->addpar("par", par);
-        xml->endbranch();
+        xml.beginbranch("par_no", n);
+        xml.addpar("par", par);
+        xml.endbranch();
     }
     if(filterpars) {
-        xml->beginbranch("FILTER");
+        xml.beginbranch("FILTER");
         filterpars->add2XML(xml);
-        xml->endbranch();
+        xml.endbranch();
     }
-    xml->endbranch();
+    xml.endbranch();
 }
 
-void EffectMgr::getfromXML(XMLwrapper *xml)
+void EffectMgr::getfromXML(XMLwrapper& xml)
 {
-    changeeffect(xml->getpar127("type", geteffect()));
+    changeeffect(xml.getpar127("type", geteffect()));
 
     if(!geteffect())
         return;
 
-    preset = xml->getpar127("preset", preset);
+    preset = xml.getpar127("preset", preset);
 
-    if(xml->enterbranch("EFFECT_PARAMETERS")) {
+    if(xml.enterbranch("EFFECT_PARAMETERS")) {
         for(int n = 0; n < 128; ++n) {
             seteffectpar(n, 0); //erase effect parameter
-            if(xml->enterbranch("par_no", n) == 0)
+            if(xml.enterbranch("par_no", n) == 0)
                 continue;
             int par = geteffectpar(n);
-            seteffectpar(n, xml->getpar127("par", par));
-            xml->exitbranch();
+            seteffectpar(n, xml.getpar127("par", par));
+            xml.exitbranch();
         }
         if(filterpars)
-            if(xml->enterbranch("FILTER")) {
+            if(xml.enterbranch("FILTER")) {
                 filterpars->getfromXML(xml);
-                xml->exitbranch();
+                xml.exitbranch();
             }
-        xml->exitbranch();
+        xml.exitbranch();
     }
     cleanup();
 }

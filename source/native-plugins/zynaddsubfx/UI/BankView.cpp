@@ -34,7 +34,12 @@ void BankList::OSC_raw(const char *msg)
         this->add(path);
     }
     if(!strcmp(msg, "/bank/bank_select")&& !strcmp(rtosc_argument_string(msg),"i")) {
-        value(rtosc_argument(msg, 0).i);
+        int val = rtosc_argument(msg, 0).i;
+        if(value() != val) {
+            value(val);
+            for(int i=0; i<160; ++i)
+                osc->write("/bank/slot"+to_s(i), "");
+        }
     }
 }
 

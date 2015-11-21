@@ -33,6 +33,9 @@ class Fl_Osc_Slider:public Fl_Slider, public Fl_Osc_Widget
 
     private:
         float old_value;
+        int mod_state;
+        int slow_state;
         int start_pos;
+        bool just_pushed;
     float denominator;
 };

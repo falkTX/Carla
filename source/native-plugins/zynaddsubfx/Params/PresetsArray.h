@@ -42,7 +42,7 @@ class PresetsArray:public Presets
     protected:
         void setpresettype(const char *type);
     private:
-        virtual void add2XMLsection(XMLwrapper *xml, int n)    = 0;
+        virtual void add2XMLsection(XMLwrapper& xml, int n)    = 0;
         //virtual void getfromXMLsection(XMLwrapper *xml, int n) = 0;
         //virtual void defaults() = 0;
         //virtual void defaults(int n) = 0;

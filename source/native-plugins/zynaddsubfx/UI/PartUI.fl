@@ -531,7 +531,9 @@ else {bendrng->oscMove("pitchwheel.bendrange");}}
       }
       Fl_Button {} {
         label {Reset all controllers}
-        callback {o->oscWrite("defaults");//part->SetController(C_resetallcontrollers,0);}
+        callback {o->oscWrite("defaults");//part->SetController(C_resetallcontrollers,0);
+	ctlwindow->update();
+	}
         xywh {5 110 210 20} box THIN_UP_BOX
         class Fl_Osc_Button
       }

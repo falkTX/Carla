@@ -32,9 +32,9 @@ class SUBnoteParameters:public Presets
         SUBnoteParameters();
         ~SUBnoteParameters();
 
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults();
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
         void updateFrequencyMultipliers(void);
         void paste(SUBnoteParameters &sub);
 

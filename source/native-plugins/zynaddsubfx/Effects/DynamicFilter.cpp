@@ -21,6 +21,7 @@
 */
 
 #include <cmath>
+#include <iostream>
 #include "DynamicFilter.h"
 #include "../DSP/Filter.h"
 #include "../Misc/Allocator.h"
@@ -133,8 +134,18 @@ void DynamicFilter::reinitfilter(void)
 {
     memory.dealloc(filterl);
     memory.dealloc(filterr);
-    filterl = Filter::generate(memory, filterpars, samplerate, buffersize);
-    filterr = Filter::generate(memory, filterpars, samplerate, buffersize);
+
+    try {
+        filterl = Filter::generate(memory, filterpars, samplerate, buffersize);
+    } catch(std::bad_alloc& ba) {
+        std::cerr << "failed to generate left filter for dynamic filter: " << ba.what() << std::endl;
+    }
+
+    try {
+        filterr = Filter::generate(memory, filterpars, samplerate, buffersize);
+    } catch(std::bad_alloc& ba) {
+        std::cerr << "failed to generate right filter for dynamic filter: " << ba.what() << std::endl;
+    }
 }
 
 void DynamicFilter::setpreset(unsigned char npreset)

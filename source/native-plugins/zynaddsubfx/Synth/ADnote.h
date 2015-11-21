@@ -187,6 +187,9 @@ class ADnote:public SynthNote
             /* Waveform of the Voice */
             float *OscilSmp;
 
+            /* Range of waveform */
+            float OscilSmpMin, OscilSmpMax;
+
             /************************************
             *     FREQUENCY PARAMETERS          *
             ************************************/

@@ -40,9 +40,9 @@ class EffectMgr:public Presets
         ~EffectMgr();
 
         void paste(EffectMgr &e);
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults(void) REALTIME;
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
 
         void out(float *smpsl, float *smpsr) REALTIME;
 

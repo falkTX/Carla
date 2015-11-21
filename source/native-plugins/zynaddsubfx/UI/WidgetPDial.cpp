@@ -33,6 +33,8 @@ void WidgetPDial::setRounding(unsigned int digits)
     tipwin->setRounding(digits);
 }
 
+#define MOD_MASK (FL_CTRL | FL_SHIFT)
+
 int WidgetPDial::handle(int event)
 {
     double dragsize, min = minimum(), max = maximum(), result;
@@ -47,25 +49,50 @@ int WidgetPDial::handle(int event)
             do_callback();
         return 1;
     }
-    
+
+    int old_mod_state;
+
     switch(event) {
         case FL_PUSH:
+            mod_state = Fl::event_state() & MOD_MASK;
             if (integer_step)
                 setRounding(0);
-            else if (Fl::event_shift())
+            else if (mod_state == MOD_MASK)
+                setRounding(5);
+            else if (mod_state == FL_SHIFT)
                 setRounding(4);
             else
-                setRounding(Fl::event_button1() ? 2 : 3);
+                setRounding((Fl::event_button3() || mod_state & FL_CTRL)
+                            ? 3 : 2);
             oldvalue = value();
             old_y = Fl::event_y();
         case FL_DRAG:
             getPos();
+            old_mod_state = mod_state;
+            mod_state = Fl::event_state() & MOD_MASK;
+            if (old_mod_state != mod_state) {
+                oldvalue = value();
+                old_y = Fl::event_y();
+                if (integer_step)
+                    setRounding(0);
+                else if (mod_state == MOD_MASK)
+                    setRounding(5);
+                else if (mod_state == FL_SHIFT)
+                    setRounding(4);
+                else
+                    setRounding((Fl::event_button3() || mod_state & FL_CTRL)
+                                ? 3 : 2);
+                break;
+            }
             dy = old_y - Fl::event_y();
 
-            if (Fl::event_shift())
+            if (!integer_step && mod_state == MOD_MASK)
+                dragsize = 200000.0f;
+            else if (!integer_step && mod_state == FL_SHIFT)
                 dragsize = 20000.0f;
             else
-                dragsize = Fl::event_button1() ? 200.0f : 2000.0f;
+                dragsize = (Fl::event_button3() || mod_state & MOD_MASK)
+                    ? 1000.0f : 200.0f;
 
             value(clamp(oldvalue + dy / dragsize * (max - min)));
             tipwin->showValue(transform(value()));
@@ -74,19 +101,25 @@ int WidgetPDial::handle(int event)
                 do_callback();
             return 1;
         case FL_MOUSEWHEEL:
-            if (Fl::belowmouse() != this)
+            if (Fl::event_buttons() || Fl::belowmouse() != this)
                 return 1;
+            mod_state = Fl::event_state() & MOD_MASK;
             dy = - Fl::event_dy();
 
             if (integer_step) {
                 setRounding(0);
-                result = (int)(value() + dy * (Fl::event_ctrl() ? 1 : 8));
+                result = (int)(value() +
+                               dy * ((Fl::event_ctrl() ||
+                                      Fl::event_shift()) ? 1 : 8));
             } else {
                 float dragsize;
-                if (Fl::event_shift()) {
+                if (mod_state == MOD_MASK) {
+                    dragsize = 100000.0;
+                    setRounding(5);
+                } else if (mod_state == FL_SHIFT) {
                     dragsize = 10000.0;
                     setRounding(4);
-                } else if (Fl::event_ctrl()) {
+                } else if (mod_state == FL_CTRL) {
                     dragsize = 1000.0;
                     setRounding(3);
                 } else {
@@ -121,7 +154,6 @@ int WidgetPDial::handle(int event)
             if(this->when() == 0)
                 do_callback();
             return 1;
-            break;
     }
     return 0;
 //#endif

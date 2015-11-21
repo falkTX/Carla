@@ -48,7 +48,9 @@ class Part
         void cloneTraits(Part &part) const REALTIME;
 
         // Midi commands implemented
-        void NoteOn(unsigned char note,
+
+        //returns true when note is successfully applied
+        bool NoteOn(unsigned char note,
                     unsigned char velocity,
                     int masterkeyshift) REALTIME;
         void NoteOff(unsigned char note) REALTIME;
@@ -69,8 +71,8 @@ class Part
         int saveXML(const char *filename);
         int loadXMLinstrument(const char *filename);
 
-        void add2XML(XMLwrapper *xml);
-        void add2XMLinstrument(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
+        void add2XMLinstrument(XMLwrapper& xml);
 
         void defaults();
         void defaultsinstrument();
@@ -81,8 +83,8 @@ class Part
         void initialize_rt(void) REALTIME;
         void kill_rt(void) REALTIME;
 
-        void getfromXML(XMLwrapper *xml);
-        void getfromXMLinstrument(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
+        void getfromXMLinstrument(XMLwrapper& xml);
 
         void cleanup(bool final = false);
 

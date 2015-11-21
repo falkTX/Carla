@@ -61,9 +61,9 @@ void PresetsArray::copy(PresetsStore &ps, int nelement, const char *name)
 
     xml.beginbranch(type);
     if(nelement == -1)
-        add2XML(&xml);
+        add2XML(xml);
     else
-        add2XMLsection(&xml, nelement);
+        add2XMLsection(xml, nelement);
     xml.endbranch();
 
     if(name == NULL)

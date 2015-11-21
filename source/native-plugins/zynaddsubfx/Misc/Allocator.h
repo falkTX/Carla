@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdlib>
 #include <utility>
+#include <new>
 
 //! Allocator Base class
 //! subclasses must specify allocation and deallocation
@@ -14,21 +15,36 @@ class Allocator
         virtual void *alloc_mem(size_t mem_size) = 0;
         virtual void dealloc_mem(void *memory) = 0;
 
+        /**
+         * High level allocator method, which return a pointer to a class or struct
+         * allocated with the specialized subclass strategy
+         * @param ts argument(s) for the constructor of the type T
+         * @return a non null pointer to a new object of type T
+         * @throw std::bad_alloc is no memory could be allocated
+         */
         template <typename T, typename... Ts>
         T *alloc(Ts&&... ts)
         {
             void *data = alloc_mem(sizeof(T));
             if(!data)
-                return nullptr;
+                throw std::bad_alloc();
             return new (data) T(std::forward<Ts>(ts)...);
         }
 
+        /**
+         * High level allocator method, which return a pointer to an array of class or struct
+         * allocated with the specialized subclass strategy
+         * @param len the array length
+         * @param ts argument(s) for the constructor of the type T
+         * @return a non null pointer to an array of new object(s) of type T
+         * @throw std::bad_alloc is no memory could be allocated
+         */
         template <typename T, typename... Ts>
         T *valloc(size_t len, Ts&&... ts)
         {
             T *data = (T*)alloc_mem(len*sizeof(T));
             if(!data)
-                return nullptr;
+                throw std::bad_alloc();
             for(unsigned i=0; i<len; ++i)
                 new ((void*)&data[i]) T(std::forward<Ts>(ts)...);
 

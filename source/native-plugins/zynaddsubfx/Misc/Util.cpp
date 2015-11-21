@@ -219,7 +219,7 @@ char *rtosc_splat(const char *path, std::set<std::string> v)
     char argT[v.size()+1];
     rtosc_arg_t arg[v.size()];
     unsigned i=0;
-    for(auto vv : v) {
+    for(auto &vv : v) {
         argT[i]  = 's';
         arg[i].s = vv.c_str();
         i++;

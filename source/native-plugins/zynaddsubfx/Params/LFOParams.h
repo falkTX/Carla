@@ -50,10 +50,10 @@ class LFOParams:public Presets
                   char fel_);
         ~LFOParams();
 
-        void add2XML(XMLwrapper *xml);
+        void add2XML(XMLwrapper& xml);
         void defaults();
         /**Loads the LFO from the xml*/
-        void getfromXML(XMLwrapper *xml);
+        void getfromXML(XMLwrapper& xml);
         void paste(LFOParams &);
 
         /*  MIDI Parameters*/

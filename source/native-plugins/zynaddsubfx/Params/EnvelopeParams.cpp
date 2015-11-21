@@ -304,58 +304,58 @@ void EnvelopeParams::converttofree()
 
 
 
-void EnvelopeParams::add2XML(XMLwrapper *xml)
+void EnvelopeParams::add2XML(XMLwrapper& xml)
 {
-    xml->addparbool("free_mode", Pfreemode);
-    xml->addpar("env_points", Penvpoints);
-    xml->addpar("env_sustain", Penvsustain);
-    xml->addpar("env_stretch", Penvstretch);
-    xml->addparbool("forced_release", Pforcedrelease);
-    xml->addparbool("linear_envelope", Plinearenvelope);
-    xml->addpar("A_dt", PA_dt);
-    xml->addpar("D_dt", PD_dt);
-    xml->addpar("R_dt", PR_dt);
-    xml->addpar("A_val", PA_val);
-    xml->addpar("D_val", PD_val);
-    xml->addpar("S_val", PS_val);
-    xml->addpar("R_val", PR_val);
+    xml.addparbool("free_mode", Pfreemode);
+    xml.addpar("env_points", Penvpoints);
+    xml.addpar("env_sustain", Penvsustain);
+    xml.addpar("env_stretch", Penvstretch);
+    xml.addparbool("forced_release", Pforcedrelease);
+    xml.addparbool("linear_envelope", Plinearenvelope);
+    xml.addpar("A_dt", PA_dt);
+    xml.addpar("D_dt", PD_dt);
+    xml.addpar("R_dt", PR_dt);
+    xml.addpar("A_val", PA_val);
+    xml.addpar("D_val", PD_val);
+    xml.addpar("S_val", PS_val);
+    xml.addpar("R_val", PR_val);
 
-    if((Pfreemode != 0) || (!xml->minimal))
+    if((Pfreemode != 0) || (!xml.minimal))
         for(int i = 0; i < Penvpoints; ++i) {
-            xml->beginbranch("POINT", i);
+            xml.beginbranch("POINT", i);
             if(i != 0)
-                xml->addpar("dt", Penvdt[i]);
-            xml->addpar("val", Penvval[i]);
-            xml->endbranch();
+                xml.addpar("dt", Penvdt[i]);
+            xml.addpar("val", Penvval[i]);
+            xml.endbranch();
         }
 }
 
 
 
-void EnvelopeParams::getfromXML(XMLwrapper *xml)
+void EnvelopeParams::getfromXML(XMLwrapper& xml)
 {
-    Pfreemode       = xml->getparbool("free_mode", Pfreemode);
-    Penvpoints      = xml->getpar127("env_points", Penvpoints);
-    Penvsustain     = xml->getpar127("env_sustain", Penvsustain);
-    Penvstretch     = xml->getpar127("env_stretch", Penvstretch);
-    Pforcedrelease  = xml->getparbool("forced_release", Pforcedrelease);
-    Plinearenvelope = xml->getparbool("linear_envelope", Plinearenvelope);
+    Pfreemode       = xml.getparbool("free_mode", Pfreemode);
+    Penvpoints      = xml.getpar127("env_points", Penvpoints);
+    Penvsustain     = xml.getpar127("env_sustain", Penvsustain);
+    Penvstretch     = xml.getpar127("env_stretch", Penvstretch);
+    Pforcedrelease  = xml.getparbool("forced_release", Pforcedrelease);
+    Plinearenvelope = xml.getparbool("linear_envelope", Plinearenvelope);
 
-    PA_dt  = xml->getpar127("A_dt", PA_dt);
-    PD_dt  = xml->getpar127("D_dt", PD_dt);
-    PR_dt  = xml->getpar127("R_dt", PR_dt);
-    PA_val = xml->getpar127("A_val", PA_val);
-    PD_val = xml->getpar127("D_val", PD_val);
-    PS_val = xml->getpar127("S_val", PS_val);
-    PR_val = xml->getpar127("R_val", PR_val);
+    PA_dt  = xml.getpar127("A_dt", PA_dt);
+    PD_dt  = xml.getpar127("D_dt", PD_dt);
+    PR_dt  = xml.getpar127("R_dt", PR_dt);
+    PA_val = xml.getpar127("A_val", PA_val);
+    PD_val = xml.getpar127("D_val", PD_val);
+    PS_val = xml.getpar127("S_val", PS_val);
+    PR_val = xml.getpar127("R_val", PR_val);
 
     for(int i = 0; i < Penvpoints; ++i) {
-        if(xml->enterbranch("POINT", i) == 0)
+        if(xml.enterbranch("POINT", i) == 0)
             continue;
         if(i != 0)
-            Penvdt[i] = xml->getpar127("dt", Penvdt[i]);
-        Penvval[i] = xml->getpar127("val", Penvval[i]);
-        xml->exitbranch();
+            Penvdt[i] = xml.getpar127("dt", Penvdt[i]);
+        Penvval[i] = xml.getpar127("val", Penvval[i]);
+        xml.exitbranch();
     }
 
     if(!Pfreemode)

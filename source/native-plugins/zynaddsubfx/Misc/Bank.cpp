@@ -170,14 +170,9 @@ int Bank::savetoslot(unsigned int ninstrument, Part *part)
 
     snprintf(tmpfilename,
              maxfilename,
-             "%4d-%s",
+             "%04d-%s",
              ninstrument + 1,
              (char *)part->Pname);
-
-    //add the zeroes at the start of filename
-    for(int i = 0; i < 4; ++i)
-        if(tmpfilename[i] == ' ')
-            tmpfilename[i] = '0';
 
     string filename = dirname + '/' + legalizeFilename(tmpfilename) + ".xiz";
 
