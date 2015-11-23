@@ -32,8 +32,9 @@
 #endif
 
 #include <clocale>
+#include <ctime>
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS)
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_core.h"
 #else
 # include <cerrno>
@@ -154,14 +155,14 @@ ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* 
 // -----------------------------------------------------------------------
 // getMillisecondCounter
 
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS))
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 static uint32_t lastMSCounterValue = 0;
 #endif
 
 static inline
 uint32_t getMillisecondCounter() noexcept
 {
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WINDOWS)
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     return juce::Time::getMillisecondCounter();
 #else
     uint32_t now;
