@@ -630,19 +630,21 @@ class PluginEdit(QDialog):
         # Update current program text
         if self.ui.cb_programs.count() > 0:
             pIndex = self.ui.cb_programs.currentIndex()
-            pName  = self.host.get_program_name(self.fPluginId, pIndex)
-            #pName  = pName[:40] + (pName[40:] and "...")
-            self.ui.cb_programs.setItemText(pIndex, pName)
+            if pIndex >= 0:
+                pName  = self.host.get_program_name(self.fPluginId, pIndex)
+                #pName  = pName[:40] + (pName[40:] and "...")
+                self.ui.cb_programs.setItemText(pIndex, pName)
 
         # Update current midi program text
         if self.ui.cb_midi_programs.count() > 0:
             mpIndex = self.ui.cb_midi_programs.currentIndex()
-            mpData  = self.host.get_midi_program_data(self.fPluginId, mpIndex)
-            mpBank  = mpData['bank']
-            mpProg  = mpData['program']
-            mpName  = mpData['name']
-            #mpName  = mpName[:40] + (mpName[40:] and "...")
-            self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
+            if mpIndex >= 0:
+                mpData  = self.host.get_midi_program_data(self.fPluginId, mpIndex)
+                mpBank  = mpData['bank']
+                mpProg  = mpData['program']
+                mpName  = mpData['name']
+                #mpName  = mpName[:40] + (mpName[40:] and "...")
+                self.ui.cb_midi_programs.setItemText(mpIndex, "%03i:%03i - %s" % (mpBank+1, mpProg+1, mpName))
 
         # Update all parameter values
         for paramType, paramId, paramWidget in self.fParameterList:
@@ -1181,7 +1183,6 @@ class PluginEdit(QDialog):
 
             if ret[1]:
                 index = int(ret[0].split(" - ", 1)[0])-1
-                self.host.set_midi_program(self.fPluginId, -1)
                 self.host.set_program(self.fPluginId, index)
                 self.setMidiProgram(-1)
 
