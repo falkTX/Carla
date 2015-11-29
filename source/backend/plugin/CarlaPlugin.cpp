@@ -1327,7 +1327,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
     }
 
     // may be unused
-    return; (void)sendGui; (void)sendOsc;
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept
@@ -1360,7 +1360,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
     }
 
     // may be unused
-    return; (void)sendGui; (void)sendOsc;
+    return; (void)sendOsc;
 }
 
 void CarlaPlugin::setMidiProgramById(const uint32_t bank, const uint32_t program, const bool sendGui, const bool sendOsc, const bool sendCallback) noexcept

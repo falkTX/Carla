@@ -3971,7 +3971,7 @@ public:
         if (fUI.type == UI::TYPE_BRIDGE)
         {
             if (fPipeServer.isPipeRunning())
-                fPipeServer.writeProgramMessage(index);
+                fPipeServer.writeMidiProgramMessage(pData->midiprog.data[index].bank, pData->midiprog.data[index].program);
         }
         else
         {

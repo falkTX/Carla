@@ -913,7 +913,7 @@ void CarlaPipeCommon::writeMidiProgramMessage(const uint32_t bank, const uint32_
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("midiprogram\n", 8);
+    _writeMsgBuffer("midiprogram\n", 12);
 
     {
         std::snprintf(tmpBuf, 0xff, "%i\n", bank);
