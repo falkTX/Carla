@@ -578,7 +578,7 @@ int main(int argc, char *argv[])
         help = true;
 
     if(help) {
-        printf(help_message);
+        puts(help_message);
         return 1;
     }
 

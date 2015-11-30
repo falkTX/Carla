@@ -59,6 +59,8 @@ class SUBnote:public SynthNote
         int       firstnumharmonics; //To keep track of the first note's numharmonics value, useful in legato mode.
         int       start; //how the harmonics start
         float     basefreq;
+        float     BendAdjust;
+        float     OffsetHz;
         float     panning;
         Envelope *AmpEnvelope;
         Envelope *FreqEnvelope;

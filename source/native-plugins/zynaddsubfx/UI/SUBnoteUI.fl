@@ -107,11 +107,11 @@ harmonic->show();
 mag->reset_value=127;
 mag->ext = "Phmag" + to_s(n);
 mag->oscRegister(mag->ext.c_str());
-mag->setTransform(-1, 127);
+mag->set_transform([](float x){return 127.0f - x;});
 bw->reset_value=63;
 bw->ext = "Phrelbw" + to_s(n);
 bw->oscRegister(bw->ext.c_str());
-bw->setTransform(-1, 63);
+bw->set_transform([](float x){return 63.0f - x;});
 osc->requestValue(base+"Phrelbw"+to_s(n));
 
 end();} {}
@@ -164,19 +164,19 @@ class SUBnoteUI {open : {public PresetsUI_}
         Fl_Value_Slider vol {
           label Vol
           tooltip Volume xywh {10 25 140 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-          code0 {o->init("PVolume");}
+          code0 {o->init("PVolume");o->reset_value=96;}
           class Fl_Osc_VSlider
         }
         Fl_Value_Slider vsns {
           label {V.Sns}
           tooltip {Velocity Sensing Function (rightmost to disable)} xywh {10 45 140 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-          code0 {o->init("PAmpVelocityScaleFunction");}
+          code0 {o->init("PAmpVelocityScaleFunction");o->reset_value=90;}
           class Fl_Osc_VSlider
         }
         Fl_Dial pan {
           label Pan
           tooltip {Panning (leftmost is Random)} xywh {185 20 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-          code0 {o->init("PPanning");}
+          code0 {o->init("PPanning");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Group ampenv {
@@ -287,6 +287,18 @@ freqsettingsui->redraw();}
           code0 {o->init("detunevalue");}
           class Fl_Osc_Output
         }
+        Fl_Dial bendadjdial {
+          label Bend
+          tooltip {How the frequency varies according to the pitch wheel} xywh {448 53 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+          code0 {o->init("PBendAdjust"); o->reset_value=24;o->set_transform([](float x){return x/24.0f;});o->set_rounding(2);}
+          class Fl_Osc_Dial
+        }
+        Fl_Dial offsethzdial {
+          label Offset
+          tooltip {Offset of frequency in Hz} xywh {500 53 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+          code0 {o->init("POffsetHz"); o->set_rounding(2); o->set_transform([](float x){x/=64; return 15*(x*sqrtf(fabsf(x)));});}
+          class Fl_Osc_Dial
+        }
         Fl_Check_Button hz440 {
           label 440Hz
           callback {if (o->value()==0) fixedfreqetdial->deactivate();
@@ -297,7 +309,7 @@ freqsettingsui->redraw();}
         }
         Fl_Dial fixedfreqetdial {
           label {Eq.T.}
-          tooltip {How the frequency varies acording to the keyboard (leftmost for fixed frequency)} xywh {610 53 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
+          tooltip {How the frequency varies according to the keyboard (leftmost for fixed frequency)} xywh {610 53 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
           code0 {o->init("PfixedfreqET");}
           class Fl_Osc_Dial
         }
@@ -352,7 +364,7 @@ bandwidthsettingsui->redraw();}
         Fl_Value_Slider bandwidth {
           label {Band Width}
           xywh {225 40 115 15} type {Horz Knob} box NO_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("Pbandwidth");}
+          code0 {o->init("Pbandwidth");o->reset_value=40;}
           class Fl_Osc_VSlider
         }
         Fl_Value_Slider bwidthscale {

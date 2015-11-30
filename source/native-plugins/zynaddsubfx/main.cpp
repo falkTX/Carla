@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
              << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
                 "client name\n"
-             << "  -P , --prefered-port\t\t\t Prefered OSC Port\n"
+             << "  -P , --preferred-port\t\t\t Preferred OSC Port\n"
              << "  -O , --output\t\t\t\t Set Output Engine\n"
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"

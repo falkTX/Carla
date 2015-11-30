@@ -148,7 +148,7 @@ bankui->show();}
         }
         Fl_Slider partvolume {
           xywh {10 65 30 110} type {Vert Knob} box NO_BOX minimum 127 maximum 0 step 1 value 127
-          code0 {o->init("Pvolume", 'i');}
+          code0 {o->init("Pvolume", 'i');o->reset_value=96;}
           class Fl_Osc_TSlider
         }
         Fl_Dial partpanning {
@@ -508,7 +508,7 @@ if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
         Fl_Dial mastervolumedial {
           label {Master Volume}
           tooltip {Master Volume} xywh {15 32 55 55} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1
-          code2 {o->init("volume"); o->selection_color(FL_RED);}
+          code2 {o->init("volume"); o->selection_color(FL_RED); o->reset_value=80;}
           class Fl_Osc_Dial
         }
         Fl_Counter masterkeyshiftcounter {
@@ -856,7 +856,7 @@ globalfinedetuneslider->do_callback();}
           Fl_Dial globalfinedetuneslider {
             label {Fine Detune}
             tooltip {global fine detune} xywh {90 68 45 45} box ROUND_UP_BOX labelsize 9 align 130 maximum 127 step 1 value 64
-            code0 {o->init("microtonal/Pglobalfinedetune");}
+            code0 {o->init("microtonal/Pglobalfinedetune");o->reset_value=64;}
             class Fl_Osc_Dial
           }
         }
@@ -1102,7 +1102,7 @@ virkeys->midich=(int) o->value();} open
         } {}
         Fl_Dial partvolume {
           xywh {135 95 45 40} labelsize 9 maximum 127 step 1
-          code0 {o->init("Pvolume");}
+          code0 {o->init("Pvolume"); o->reset_value=96;}
           class Fl_Osc_Dial
         }
         Fl_Box {} {
@@ -1422,7 +1422,7 @@ pthread_mutex_unlock(&master->mutex);*/}
       Fl_Dial simplemastervolumedial {
         label {Master Volume}
         tooltip {Master Volume} xywh {10 35 40 40} box ROUND_UP_BOX labelfont 1 labelsize 11 align 130 maximum 127 step 1
-        code0 {o->init("Pvolume");}
+        code0 {o->init("Pvolume");o->reset_value=80;}
         class Fl_Osc_Dial
       }
       Fl_Counter simplemasterkeyshiftcounter {
@@ -1448,7 +1448,7 @@ simpleglobalfinedetuneslider->do_callback();}
       Fl_Dial simpleglobalfinedetuneslider {
         label {Fine Detune}
         tooltip {global fine detune} xywh {80 50 30 30} box ROUND_UP_BOX labelsize 11 align 130 maximum 127 step 1 value 64
-        code0 {o->init("microtonal/Pglobalfinedetune");}
+        code0 {o->init("microtonal/Pglobalfinedetune");o->reset_value=64;}
         class Fl_Osc_Dial
       }
       Fl_Counter simplenpartcounter {

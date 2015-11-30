@@ -93,6 +93,8 @@ static const Ports voicePorts = {
     //Freq Stuff
     rToggle(Pfixedfreq,           "If frequency is fixed"),
     rParamZyn(PfixedfreqET,          "Equal Tempermant Parameter"),
+    rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
+    rParamZyn(POffsetHz,          "Voice constant offset"),
     rParamI(PDetune,              "Fine Detune"),
     rParamI(PCoarseDetune,        "Coarse Detune"),
     rParamZyn(PDetuneType,           "Magnitude of Detune"),
@@ -125,6 +127,7 @@ static const Ports voicePorts = {
     rParamI(PFMDetune,               "Modulator Fine Detune"),
     rParamI(PFMCoarseDetune,         "Modulator Coarse Detune"),
     rParamZyn(PFMDetuneType,            "Modulator Detune Magnitude"),
+    rToggle(PFMFixedFreq,            "Modulator Frequency Fixed"),
     rToggle(PFMFreqEnvelopeEnabled,  "Modulator Frequency Envelope"),
     rToggle(PFMAmpEnvelopeEnabled,   "Modulator Amplitude Envelope"),
 
@@ -256,7 +259,7 @@ static const Ports globalPorts = {
 
 
     //Resonance
-    rParamZyn(Hrandgrouping, "How randomness is applied to multiple voices using the same oscil"),
+    rToggle(Hrandgrouping, "How randomness is applied to multiple voices using the same oscil"),
 
     //weird stuff for PCoarseDetune
     {"detunevalue:", rMap(unit,cents) rDoc("Get detune in cents"), NULL,
@@ -409,6 +412,8 @@ void ADnoteVoiceParam::defaults()
     Type = 0;
     Pfixedfreq    = 0;
     PfixedfreqET  = 0;
+    PBendAdjust = 88; // 64 + 24
+    POffsetHz     = 64;
     Presonance    = 1;
     Pfilterbypass = 0;
     Pextoscil     = -1;
@@ -433,6 +438,7 @@ void ADnoteVoiceParam::defaults()
     PFilterVelocityScale = 0;
     PFilterVelocityScaleFunction = 64;
     PFMEnabled                = 0;
+    PFMFixedFreq              = false;
 
     //I use the internal oscillator (-1)
     PFMVoice = -1;
@@ -646,6 +652,8 @@ void ADnoteVoiceParam::add2XML(XMLwrapper& xml, bool fmoscilused)
     xml.beginbranch("FREQUENCY_PARAMETERS");
     xml.addparbool("fixed_freq", Pfixedfreq);
     xml.addpar("fixed_freq_et", PfixedfreqET);
+    xml.addpar("bend_adjust", PBendAdjust);
+    xml.addpar("offset_hz", POffsetHz);
     xml.addpar("detune", PDetune);
     xml.addpar("coarse_detune", PCoarseDetune);
     xml.addpar("detune_type", PDetuneType);
@@ -716,6 +724,7 @@ void ADnoteVoiceParam::add2XML(XMLwrapper& xml, bool fmoscilused)
 
         xml.addparbool("freq_envelope_enabled",
                         PFMFreqEnvelopeEnabled);
+        xml.addparbool("fixed_freq", PFMFixedFreq);
         if((PFMFreqEnvelopeEnabled != 0) || (!xml.minimal)) {
             xml.beginbranch("FREQUENCY_ENVELOPE");
             FMFreqEnvelope->add2XML(xml);
@@ -944,6 +953,7 @@ void ADnoteVoiceParam::paste(ADnoteVoiceParam &a)
     copy(PFilterEnabled);
     copy(Pfilterbypass);
     copy(PFMEnabled);
+    copy(PFMFixedFreq);
 
     RCopy(OscilSmp);
 
@@ -965,6 +975,8 @@ void ADnoteVoiceParam::paste(ADnoteVoiceParam &a)
     copy(PDetune);
     copy(PCoarseDetune);
     copy(PDetuneType);
+    copy(PBendAdjust);
+    copy(POffsetHz);
     copy(PFreqEnvelopeEnabled);
 
     RCopy(FreqEnvelope);
@@ -1102,6 +1114,8 @@ void ADnoteVoiceParam::getfromXML(XMLwrapper& xml, unsigned nvoice)
     if(xml.enterbranch("FREQUENCY_PARAMETERS")) {
         Pfixedfreq    = xml.getparbool("fixed_freq", Pfixedfreq);
         PfixedfreqET  = xml.getpar127("fixed_freq_et", PfixedfreqET);
+        PBendAdjust  = xml.getpar127("bend_adjust", PBendAdjust);
+        POffsetHz  = xml.getpar127("offset_hz", POffsetHz);
         PDetune       = xml.getpar("detune", PDetune, 0, 16383);
         PCoarseDetune = xml.getpar("coarse_detune", PCoarseDetune, 0, 16383);
         PDetuneType   = xml.getpar127("detune_type", PDetuneType);
@@ -1173,6 +1187,8 @@ void ADnoteVoiceParam::getfromXML(XMLwrapper& xml, unsigned nvoice)
 
             PFMFreqEnvelopeEnabled = xml.getparbool("freq_envelope_enabled",
                                                      PFMFreqEnvelopeEnabled);
+            PFMFixedFreq = xml.getparbool("fixed_freq",
+                                                     PFMFixedFreq);
             if(xml.enterbranch("FREQUENCY_ENVELOPE")) {
                 FMFreqEnvelope->getfromXML(xml);
                 xml.exitbranch();

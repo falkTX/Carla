@@ -1071,8 +1071,9 @@ static rtosc::Ports middlewareReplyPorts = {
         rEnd},
     {"setprogram:cc:ii", 0, 0,
         rBegin;
+        Bank &bank        = impl.master->bank;
         const int part    = rtosc_argument(msg, 0).i;
-        const int program = rtosc_argument(msg, 1).i;
+        const int program = rtosc_argument(msg, 1).i + 128*bank.bank_lsb;
         impl.loadPart(part, impl.master->bank.ins[program].filename.c_str(), impl.master);
         impl.uToB->write(("/part"+to_s(part)+"/Pname").c_str(), "s", impl.master->bank.ins[program].name.c_str());
         rEnd},

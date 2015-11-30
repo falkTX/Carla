@@ -13,7 +13,7 @@ class TipWin:public Fl_Menu_Window
         void showValue(float f);
         void setText(const char *c);
         void showText();
-        void setRounding(unsigned int digits = 0);
+        void set_rounding(unsigned int digits = 0);
     private:
         void redraw();
         const char *getStr() const;

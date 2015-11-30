@@ -63,7 +63,13 @@ void PADnote::setup(float freq,
                 basefreq *= powf(3.0f, tmp);
         }
     }
-
+    int BendAdj = pars.PBendAdjust - 64;
+    if (BendAdj % 24 == 0)
+        BendAdjust = BendAdj / 24;
+    else
+        BendAdjust = BendAdj / 24.0f;
+    float offset_val = (pars.POffsetHz - 64)/64.0f;
+    OffsetHz = 15.0f*(offset_val * sqrtf(fabsf(offset_val)));
     firsttime = true;
     realfreq  = basefreq;
     if(!legato)
@@ -255,7 +261,8 @@ void PADnote::computecurrentparameters()
     }
 
     realfreq = basefreq * portamentofreqrap
-               * powf(2.0f, globalpitch / 12.0f) * ctl.pitchwheel.relfreq;
+               * powf(2.0f, globalpitch / 12.0f)
+        * powf(ctl.pitchwheel.relfreq, BendAdjust) + OffsetHz;
 }
 
 

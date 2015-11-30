@@ -53,6 +53,8 @@ static const rtosc::Ports SUBnotePorts = {
     //rToggle(),//continue
     rToggle(Pfixedfreq, "Base frequency fixed frequency enable"),
     rParamZyn(PfixedfreqET, "Equal temeperate control for fixed frequency operation"),
+    rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
+    rParamZyn(POffsetHz,            "Voice constant offset"),
 #undef rChangeCb
 #define rChangeCb obj->updateFrequencyMultipliers();
     rParamI(POvertoneSpread.type, rMap(min, 0), rMap(max, 7),
@@ -152,6 +154,8 @@ void SUBnoteParameters::defaults()
 
     Pfixedfreq   = 0;
     PfixedfreqET = 0;
+    PBendAdjust = 88; // 64 + 24
+    POffsetHz = 64;
     Pnumstages   = 2;
     Pbandwidth   = 40;
     Phmagtype    = 0;
@@ -232,6 +236,8 @@ void SUBnoteParameters::add2XML(XMLwrapper& xml)
     xml.beginbranch("FREQUENCY_PARAMETERS");
     xml.addparbool("fixed_freq", Pfixedfreq);
     xml.addpar("fixed_freq_et", PfixedfreqET);
+    xml.addpar("bend_adjust", PBendAdjust);
+    xml.addpar("offset_hz", POffsetHz);
 
     xml.addpar("detune", PDetune);
     xml.addpar("coarse_detune", PCoarseDetune);
@@ -352,6 +358,8 @@ void SUBnoteParameters::paste(SUBnoteParameters &sub)
     doPaste(PDetune);
     doPaste(PCoarseDetune);
     doPaste(PDetuneType);
+    doPaste(PBendAdjust);
+    doPaste(POffsetHz);
     doPaste(PFreqEnvelopeEnabled);
     doPPaste(FreqEnvelope);
     doPaste(PBandWidthEnvelopeEnabled);
@@ -423,6 +431,8 @@ void SUBnoteParameters::getfromXML(XMLwrapper& xml)
     if(xml.enterbranch("FREQUENCY_PARAMETERS")) {
         Pfixedfreq   = xml.getparbool("fixed_freq", Pfixedfreq);
         PfixedfreqET = xml.getpar127("fixed_freq_et", PfixedfreqET);
+        PBendAdjust  = xml.getpar127("bend_adjust", PBendAdjust);
+        POffsetHz  = xml.getpar127("offset_hz", POffsetHz);
 
         PDetune = xml.getpar("detune", PDetune, 0, 16383);
         PCoarseDetune = xml.getpar("coarse_detune", PCoarseDetune, 0, 16383);

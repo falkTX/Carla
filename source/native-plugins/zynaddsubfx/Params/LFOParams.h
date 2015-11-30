@@ -35,6 +35,7 @@ class XMLwrapper;
 #define LFO_RAMPDOWN  4
 #define LFO_EXP_DOWN1 5
 #define LFO_EXP_DOWN2 6
+#define LFO_RANDOM    7
 
 class LFOParams:public Presets
 {

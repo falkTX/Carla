@@ -171,6 +171,7 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
     printf("fowarding...\n"); d.forward();}
 const rtosc::Ports OscilGen::realtime_ports{
     rSelf(OscilGen),
+    rPresetType,
     rParamZyn(Prand, "Oscilator Phase Randomness: smaller than 0 is \""
             "group\", larger than 0 is for each harmonic"),
     rParamZyn(Pamprandpower,

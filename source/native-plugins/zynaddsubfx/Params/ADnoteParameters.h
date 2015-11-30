@@ -27,7 +27,7 @@
 #include "PresetsArray.h"
 
 enum FMTYPE {
-    NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PITCH_MOD
+    NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PW_MOD
 };
 
 /*****************************************************************/
@@ -189,6 +189,12 @@ struct ADnoteVoiceParam {
     /** Detune type */
     unsigned char PDetuneType;
 
+    /** Pitch bend adjustment */
+    unsigned char PBendAdjust;
+
+    /** Pitch offset Hz */
+    unsigned char POffsetHz;
+
     /* Frequency Envelope */
     unsigned char   PFreqEnvelopeEnabled;
     EnvelopeParams *FreqEnvelope;
@@ -282,6 +288,9 @@ struct ADnoteVoiceParam {
 
     /* The detune type */
     unsigned char PFMDetuneType;
+
+    /* FM base freq fixed at 440Hz */
+    unsigned char PFMFixedFreq;
 
     /* Frequency Envelope of the Modullator */
     unsigned char   PFMFreqEnvelopeEnabled;

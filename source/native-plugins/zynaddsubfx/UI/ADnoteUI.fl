@@ -87,9 +87,9 @@ class PhaseSlider {: {public Fl_Osc_TSlider}
   Function {PhaseSlider(int x,int y, int w, int h, const char *label=0)
   :Fl_Osc_TSlider(x,y,w,h,label)} {open
   } { code {
-  setRounding(1);
+  set_rounding(1);
   reset_value=0;
-  setTransform(180.0/64, 0);
+  set_transform([](float x){return 180.0f*x/64.0f;});
   } {}}
   Function {set_scope(Fl_Oscilloscope *newscope)} {
   } { code { oscope = newscope; } {} }
@@ -127,7 +127,7 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
       } {
         Fl_Value_Slider voicevolume {
           tooltip Volume xywh {132 5 115 20} type {Horz Knob} box NO_BOX labelsize 8 align 5 maximum 127 step 1
-          code1 {o->init("PVolume");}
+          code1 {o->init("PVolume"); o->reset_value=100;}
           class Fl_Osc_VSlider
         }
         Fl_Check_Button voiceresonanceenabled {
@@ -137,12 +137,12 @@ class ADvoicelistitem {open : {public Fl_Osc_Group}
         }
         Fl_Value_Slider voicelfofreq {
           tooltip {Frequency LFO amount} xywh {542 5 115 20} type {Horz Knob} box NO_BOX labelsize 8 align 5 maximum 127 step 1
-          code0 {o->init("FreqLfo/Pintensity", 'i');}
+          code0 {o->init("FreqLfo/Pintensity", 'i');o->reset_value=40;}
           class Fl_Osc_VSlider
         }
         Fl_Dial voicepanning {
           tooltip {Panning (leftmost is Random)} xywh {257 5 20 20} box ROUND_UP_BOX labelsize 10 align 4 maximum 127 step 1
-          code0 {o->init("PPanning");}
+          code0 {o->init("PPanning");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Group voiceoscil {open
@@ -214,6 +214,7 @@ else
         case 0:
 	    whitenoiselabel->hide();
 	    pinknoiselabel->hide();
+	    oscil->Overlay = NULL;
 	    voiceresonanceenabled->activate();
 	    detunevalueoutput->activate();
 	    voicedetune->activate();
@@ -223,10 +224,12 @@ else
 	case 1:
             whitenoiselabel->show();
             pinknoiselabel->hide();
+	    oscil->Overlay = whitenoiselabel;
 	    break;
 	default:
             pinknoiselabel->show();
             whitenoiselabel->hide();
+	    oscil->Overlay = pinknoiselabel;
     }
 
     voiceresonanceenabled->deactivate();
@@ -310,15 +313,15 @@ class ADvoiceUI {open : {public Fl_Group}
         } {
           Fl_Group voiceFMparametersgroup {
             label MODULATOR open
-            xywh {530 5 230 580} box UP_FRAME color 48 labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 17
+            xywh {530 5 230 585} box UP_FRAME color 48 labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 17
           } {
             Fl_Group modfrequency {
               label {Mod.FREQUENCY}
-              xywh {535 220 220 155} box UP_FRAME labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 17
+              xywh {535 219 220 174} box UP_FRAME labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 17
             } {
               Fl_Group voiceFMfreqenvgroup {
                 label {ADSynth Modulator - Frequency Envelope}
-                xywh {540 300 210 70} box FLAT_BOX color 51 align 144
+                xywh {540 315 210 70} box FLAT_BOX color 51 align 144
                 code0 {o->init(ENV_ASR, osc_i, loc, "FMFreqEnvelope/");}
                 class EnvelopeUI
               } {}
@@ -327,20 +330,20 @@ class ADvoiceUI {open : {public Fl_Group}
                 callback {if (o->value()==0) voiceFMfreqenvgroup->deactivate();
 else voiceFMfreqenvgroup->activate();
 o->redraw();}
-                tooltip {Forced Release} xywh {545 305 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
+                tooltip {Forced Release} xywh {545 322 50 10} down_box DOWN_BOX labelfont 1 labelsize 11
                 code0 {o->init("PFMFreqEnvelopeEnabled");}
                 class Fl_Osc_Check
               }
               Fl_Counter {} {
                 label {Coarse Det.}
-                tooltip {Coarse Detune} xywh {685 280 60 15} labelsize 10 align 1 minimum -64 maximum 63 step 1 textfont 1 textsize 11
+                tooltip {Coarse Detune} xywh {685 295 60 15} labelsize 10 align 1 minimum -64 maximum 63 step 1 textfont 1 textsize 11
                 code0 {o->init("FMcoarsedetune");}
                 code3 {o->lstep(10);}
                 class Fl_Osc_Counter
               }
               Fl_Counter {} {
                 label Octave
-                tooltip Octave xywh {625 280 45 15} type Simple labelsize 10 align 1 minimum -8 maximum 7 step 1 textfont 1 textsize 11
+                tooltip Octave xywh {625 295 45 15} type Simple labelsize 10 align 1 minimum -8 maximum 7 step 1 textfont 1 textsize 11
                 code0 {o->init("FMoctave");}
                 class Fl_Osc_Counter
               }
@@ -352,18 +355,26 @@ o->redraw();}
               }
               Fl_Value_Output fmdetunevalueoutput {
                 label Detune
-                xywh {540 245 45 18} labelsize 8 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 8
+                xywh {540 247 45 18} labelsize 8 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 8
                 code0 {o->init("FMdetunevalue");}
                 class Fl_Osc_Output
               }
               Fl_Choice {} {
                 label {Detune Type}
                 callback {fmdetunevalueoutput->update();} open
-                xywh {540 280 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
+                xywh {540 294 75 15} down_box BORDER_BOX labelsize 10 align 5 textfont 1 textsize 10
                 code0 {o->add("Default");o->add("L35cents");o->add("L10cents");o->add("E100cents");o->add("E1200cents");}
                 code1 {o->init("PFMDetuneType");}
                 class Fl_Osc_Choice
               } {}
+              Fl_Check_Button {} {
+                label 440Hz
+                callback {if (o->value()==0) fixedfreqetdial->deactivate();
+    else fixedfreqetdial->activate();} selected
+                tooltip {Set the modulator base frequency to 440Hz} xywh {683 266 55 15} down_box DOWN_BOX labelfont 1 labelsize 11
+                code0 {o->init("PFMFixedFreq");}
+                class Fl_Osc_Check
+              }
             }
             Fl_Group {} {
               label {Mod.AMPLITUDE}
@@ -371,19 +382,19 @@ o->redraw();}
             } {
               Fl_Value_Slider {} {
                 label Vol
-                tooltip Volume xywh {540 80 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-                code0 {o->init("PFMVolume", 'i');}
+                tooltip Volume xywh {540 80 155 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
+                code0 {o->init("PFMVolume", 'i');o->reset_value=90;}
                 class Fl_Osc_VSlider
               }
               Fl_Value_Slider {} {
                 label {V.Sns}
                 tooltip {Velocity Sensing Function (rightmost to disable)} xywh {540 100 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-                code0 {o->init("PFMVelocityScaleFunction");}
+                code0 {o->init("PFMVelocityScaleFunction");o->reset_value=64;}
                 class Fl_Osc_VSlider
               }
               Fl_Group voiceFMampenvgroup {
                 label {ADSynth Modulator - Amplitude Envelope} open
-                xywh {540 145 205 70} box FLAT_BOX color 51 align 144
+                xywh {540 140 205 70} box FLAT_BOX color 51 align 144
                 code0 {o->init(//pars->VoicePar[nvoice].FMAmpEnvelope,
                 ENV_ADSR, osc_i, loc, "FMAmpEnvelope/");}
                 class EnvelopeUI
@@ -405,10 +416,10 @@ o->redraw();}
               }
             }
             Fl_Group modoscil {open
-              xywh {535 365 220 220}
+              xywh {535 390 220 195}
             } {
               Fl_Group fmoscil {open
-                xywh {535 440 220 140} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
+                xywh {535 445 220 140} box THIN_DOWN_BOX color 32 selection_color 71 labelcolor 179
                 code0 {fmoscil->base = loc; fmoscil->ext="FMSmp/";fmoscil->osc = osc_i;fmoscil->begin();}
                 code1 {oscFM=new Fl_Oscilloscope(o->x(),o->y(),o->w(),o->h(),"");}
                 code2 {//int nv=nvoice; if (pars->VoicePar[nvoice].PextFMoscil>=0) nv=pars->VoicePar[nvoice].PextFMoscil;}
@@ -417,7 +428,7 @@ o->redraw();}
               } {}
               Fl_Box {} {
                 label {Mod.Oscillator}
-                xywh {535 375 155 20} labelfont 1 align 20
+                xywh {535 393 155 20} labelfont 1 align 20
               }
               Fl_Button changeFMoscilbutton {
                 label Change
@@ -428,13 +439,13 @@ o->redraw();}
                     oscedit=new OscilEditor(true,loc+"FMSmp/", osc_i);
                 else
                     oscedit=new OscilEditor(true,loc+"../VoicePar"+to_s(extFMoscil->value()-1)+"/FMSmp/", osc_i);}
-                xywh {700 380 55 15} box THIN_UP_BOX labelfont 1 labelsize 11
+                xywh {700 398 55 15} box THIN_UP_BOX labelfont 1 labelsize 11
                 code0 {(void)o;/*if (extFMoscil->value()>=0) o->labelcolor(FL_BLUE);*/}
               }
               Fl_Slider {} {
                 label Phase
-                xywh {645 415 105 15} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
-                code0 { o->init("PFMoscilphase", 'i'); o->set_scope(oscFM); }
+                xywh {645 425 105 15} type {Horz Knob} box NO_BOX labelsize 10 align 5 minimum -63 maximum 64 step 1
+                code0 {o->init("PFMoscilphase", 'i'); o->set_scope(oscFM);}
                 class PhaseSlider
               }
               Fl_Choice extFMoscil {
@@ -451,7 +462,7 @@ fmoscil->rebase(loc);
 else
 fmoscil->rebase(loc+"../VoicePar"+to_s(o->value()-1)+"/");
 voiceFMparametersgroup->redraw();} open
-                xywh {560 410 75 20} down_box BORDER_BOX labelsize 10 textfont 1 textsize 10
+                xywh {560 420 75 20} down_box BORDER_BOX labelsize 10 textfont 1 textsize 10
                 code0 {o->add("Internal");}
                 code1 {char tmp[50]; for (int i=0;i<nvoice;i++) {sprintf(tmp,"ExtM.%2d",i+1);o->add(tmp);};}
                 code3 {o->init("PextFMoscil",-1);}
@@ -506,8 +517,8 @@ o->redraw();}
               xywh {80 80 100 20} labelfont 1
             }
             MenuItem {} {
-              label PITCH
-              xywh {90 90 100 20} labelfont 1 deactivate
+              label PWM
+              xywh {80 80 100 20} labelfont 1
             }
           }
           Fl_Group {} {
@@ -558,6 +569,18 @@ o->redraw();}
               code3 {o->lstep(10);}
               class Fl_Osc_Counter
             }
+            Fl_Dial bendadjdial {
+              label Bend
+              tooltip {How the frequency varies according to the pitch wheel} xywh {60 270 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+              code0 {o->init("PBendAdjust");o->reset_value=24;o->set_transform([](float x){return x/24.0f;});o->set_rounding(2);}
+              class Fl_Osc_Dial
+            }
+            Fl_Dial offsethzdial {
+              label Offset
+              tooltip {Offset of frequency in Hz} xywh {110 270 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+              code0 {o->init("POffsetHz"); o->set_rounding(2); o->set_transform([](float x){x/=64; return 15*(x*sqrtf(fabsf(x)));});}
+              class Fl_Osc_Dial
+            }
             Fl_Slider {} {
               callback {detunevalueoutput->update();}
               tooltip {Fine Detune (cents)} xywh {58 287 392 13} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
@@ -580,7 +603,7 @@ o->redraw();}
             }
             Fl_Dial fixedfreqetdial {
               label {Eq.T.}
-              tooltip {How the frequency varies acording to the keyboard (leftmost for fixed frequency)} xywh {405 270 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
+              tooltip {How the frequency varies according to the keyboard (leftmost for fixed frequency)} xywh {405 270 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
               code0 {o->init("PfixedfreqET");}
               class Fl_Osc_Dial
             }
@@ -654,7 +677,7 @@ voiceonbutton->redraw();} open
             Fl_Dial {} {
               label Vibrato
               tooltip Vibrato xywh {364 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Unison_vibratto");}
+              code0 {o->init("Unison_vibratto");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Choice {} {
@@ -668,7 +691,7 @@ voiceonbutton->redraw();} open
               label {Frequency Spread}
               callback {unisonspreadoutput->update();}
               tooltip {Frequency Spread of the Unison} xywh {95 562 125 13} type {Horz Knob} box NO_BOX labelsize 12 align 1 maximum 127 step 1 value 64
-              code0 {o->init("Unison_frequency_spread", 'i');}
+              code0 {o->init("Unison_frequency_spread", 'i');o->reset_value=60;}
               class Fl_Osc_Slider
             }
             Fl_Value_Output unisonspreadoutput {
@@ -680,19 +703,19 @@ voiceonbutton->redraw();} open
             Fl_Dial {} {
               label {V.speed}
               tooltip {Vibrato Average Speed} xywh {406 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Unison_vibratto_speed");}
+              code0 {o->init("Unison_vibratto_speed");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial {} {
               label {Ph.rand}
               tooltip {Phase randomness} xywh {280 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Unison_phase_randomness");}
+              code0 {o->init("Unison_phase_randomness");o->reset_value=127;}
               class Fl_Osc_Dial
             }
             Fl_Dial {} {
               label Stereo
               tooltip {Stereo Spread} xywh {322 555 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Unison_stereo_spread");}
+              code0 {o->init("Unison_stereo_spread");o->reset_value=64;}
               class Fl_Osc_Dial
             }
           }
@@ -704,13 +727,13 @@ voiceonbutton->redraw();} open
           Fl_Value_Slider {} {
             label Vol
             tooltip Volume xywh {10 60 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-            code0 {o->init("PVolume");}
+            code0 {o->init("PVolume");o->reset_value=100;}
             class Fl_Osc_VSlider
           }
           Fl_Value_Slider {} {
             label {V.Sns}
             tooltip {Velocity Sensing Function (rightmost to disable)} xywh {10 80 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-            code0 {o->init("PAmpVelocityScaleFunction");}
+            code0 {o->init("PAmpVelocityScaleFunction");o->reset_value=127;}
             class Fl_Osc_VSlider
           }
           Fl_Group voiceampenvgroup {
@@ -723,7 +746,7 @@ voiceonbutton->redraw();} open
           Fl_Dial {} {
             label Pan
             tooltip {Panning (leftmost is Random)} xywh {212 65 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-            code0 {o->init("PPanning");}
+            code0 {o->init("PPanning");o->reset_value=64;}
             class Fl_Osc_Dial
           }
           Fl_Check_Button {} {
@@ -806,9 +829,9 @@ o->redraw();}
         } {}
         Fl_Choice {} {
           callback {switch (o->value()) {
-  case 0: voicemodegroup->activate(); whitenoiselabel->hide(); pinknoiselabel->hide(); break;
-  case 1: voicemodegroup->deactivate(); whitenoiselabel->show(); pinknoiselabel->hide(); break;
-  default: voicemodegroup->deactivate(); whitenoiselabel->hide(); pinknoiselabel->show(); break;
+  case 0: voicemodegroup->activate(); whitenoiselabel->hide(); pinknoiselabel->hide(); osc->Overlay=NULL; break;
+  case 1: voicemodegroup->deactivate(); whitenoiselabel->show(); pinknoiselabel->hide(); osc->Overlay=whitenoiselabel; break;
+  default: voicemodegroup->deactivate(); whitenoiselabel->hide(); pinknoiselabel->show(); osc->Overlay=pinknoiselabel; break;
 }} open
           tooltip {Oscillator Type (sound/noise)} xywh {5 515 65 20} down_box BORDER_BOX labelsize 10 textfont 1 textsize 10
           code0 {o->init("Type");}
@@ -820,11 +843,11 @@ o->redraw();}
           }
           MenuItem {} {
             label White
-            xywh {15 15 100 20} labelfont 1 labelsize 11 labelcolor 55
+            xywh {15 15 100 20} labelfont 1 labelsize 11
           }
           MenuItem {} {
             label Pink
-            xywh {25 25 100 20} labelfont 1 labelsize 11 labelcolor 212
+            xywh {25 25 100 20} labelfont 1 labelsize 11
           }
         }
         Fl_Check_Button bypassfiltercheckbutton {
@@ -1019,7 +1042,7 @@ class ADnoteUI {open : {public PresetsUI_}
   voicelistitem[i]->refreshlist();
 };}
           tooltip {Bandwidth - how the relative fine detune of the voice are changed} xywh {505 295 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("PBandwidth");}
+          code0 {o->init("PBandwidth");o->reset_value=64;}
           class Fl_Osc_Dial
         }
       }
@@ -1030,25 +1053,25 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Value_Slider volume {
           label Vol
           tooltip Volume xywh {10 30 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-          code0 {o->init("PVolume");}
+          code0 {o->init("PVolume");o->reset_value=90;}
           class Fl_Osc_VSlider
         }
         Fl_Value_Slider vsns {
           label {V.Sns}
           tooltip {Velocity Sensing Function (rightmost to disable)} xywh {10 50 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-          code0 {o->init("PAmpVelocityScaleFunction");}
+          code0 {o->init("PAmpVelocityScaleFunction");o->reset_value=64;}
           class Fl_Osc_VSlider
         }
         Fl_Dial pan {
           label Pan
           tooltip {Panning (leftmost is Random)} xywh {210 25 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-          code0 {o->init("PPanning");}
+          code0 {o->init("PPanning");o->reset_value=64;}
           class Fl_Osc_Dial
         }
 	  Fl_Dial {} {
 	    label De-pop selected
             tooltip {Pop suppression} xywh {208 228 20 20} type Float labelsize 10 maximum 127 step 1 textfont 1 textsize 11
-            code0 {o->init("Fadein_adjustment");}
+            code0 {o->init("Fadein_adjustment");o->reset_value=20;}
 	    class Fl_Osc_Dial
           }
 
@@ -1061,19 +1084,19 @@ class ADnoteUI {open : {public PresetsUI_}
         Fl_Dial pt {
           label {P.t.}
           tooltip {Punch Time (duration)} xywh {108 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("PPunchTime");}
+          code0 {o->init("PPunchTime");o->reset_value=60;}
           class Fl_Osc_Dial
         }
         Fl_Dial pstc {
           label {P.Stc.}
           tooltip {Punch Stretch} xywh {138 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("PPunchStretch");}
+          code0 {o->init("PPunchStretch");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Dial pvel {
           label {P.Vel.}
           tooltip {Punch Velocity Sensing} xywh {168 237 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-          code0 {o->init("PPunchVelocitySensing");}
+          code0 {o->init("PPunchVelocitySensing");o->reset_value=72;}
           class Fl_Osc_Dial
         }
         Fl_Group ampenv {

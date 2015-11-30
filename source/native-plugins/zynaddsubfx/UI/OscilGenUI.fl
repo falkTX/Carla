@@ -195,12 +195,12 @@ make_window();
 mag->osc = osc;
 mag->loc = loc;
 mag->reset_value = 63;
-mag->setTransform(-1, 63);
+mag->set_transform([](float x){return 63.0f - x;});
 phase->osc = osc;
 phase->loc = loc;
 phase->reset_value = 64;
-phase->setRounding(1);
-phase->setTransform(-180.0/64, 180.0);
+phase->set_rounding(1);
+phase->set_transform([](float x){return 180*(1 - x/64.0f);});
 
 osc->createLink(loc+"magnitude"+to_s(n), mag);
 osc->createLink(loc+"phase"+to_s(n), phase);
@@ -303,7 +303,7 @@ class OscilEditor {open : {public PresetsUI_}
             }
             Fl_Dial hrnddial {
               tooltip {Oscillator's spectrum adjust parameter} xywh {345 285 18 18} maximum 127 step 1
-              code0 {o->init("Pamprandpower");}
+              code0 {o->init("Pamprandpower");o->reset_value=64;}
               class Fl_Osc_Dial
             }
           }
@@ -485,19 +485,19 @@ redrawoscil();}
             Fl_Dial bfmodpar1 {
               callback {redrawoscil();}
               tooltip {Oscillator's modulation parameter 1} xywh {664 286 15 15} maximum 127 step 1
-              code0 {o->init("Pbasefuncmodulationpar1");}
+              code0 {o->init("Pbasefuncmodulationpar1");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial bfmodpar2 {
               callback {redrawoscil();}
               tooltip {Oscillator's modulation parameter 2} xywh {684 286 15 15} maximum 127 step 1
-              code0 {o->init("Pbasefuncmodulationpar2");}
+              code0 {o->init("Pbasefuncmodulationpar2");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial bfmodpar3 {
               callback {redrawoscil();} selected
               tooltip {Oscillator's modulation parameter 3} xywh {704 286 15 15} maximum 127 step 1
-              code0 {o->init("Pbasefuncmodulationpar3");}
+              code0 {o->init("Pbasefuncmodulationpar3");o->reset_value=32;}
               class Fl_Osc_Dial
             }
           }
@@ -718,7 +718,7 @@ redrawoscil();}
           Fl_Dial filtervalue1 {
             callback {redrawoscil();}
             tooltip {Oscillator's filter parameter1} xywh {372 318 20 20} maximum 127 step 1
-            code0 {o->init("Pfilterpar1");}
+            code0 {o->init("Pfilterpar1");o->reset_value=64;}
             class Fl_Osc_Dial
           }
           Fl_Check_Button filterpref {
@@ -729,7 +729,7 @@ redrawoscil();}
           Fl_Dial filtervalue2 {
             callback {redrawoscil();}
             tooltip {Oscillator's filter parameter2} xywh {395 318 20 20} maximum 127 step 1
-            code0 {o->init("Pfilterpar2");}
+            code0 {o->init("Pfilterpar2");o->reset_value=64;}
             class Fl_Osc_Dial
           }
         }
@@ -763,7 +763,7 @@ redrawoscil();}
           Fl_Dial sadjpar {
             callback {redrawoscil();}
             tooltip {Oscillator's spectrum adjust parameter} xywh {700 318 20 20} maximum 127 step 1
-            code0 {o->init("Psapar");}
+            code0 {o->init("Psapar");o->reset_value=64;}
             class Fl_Osc_Dial
           }
         }
@@ -843,14 +843,14 @@ redrawoscil();}
             label pow
             callback {redrawoscil();}
             tooltip {Adaptive harmonics power} xywh {705 465 25 25} labelsize 10 maximum 200 step 1
-            code0 {o->init("Padaptiveharmonicspower");}
+            code0 {o->init("Padaptiveharmonicspower");o->reset_value=100;}
             class Fl_Osc_Dial
           }
           Fl_Dial adhrbf {
             label baseF
             callback {redrawoscil();}
             tooltip {Adaptive harmonics base frequency} xywh {675 465 25 25} labelsize 10 maximum 255 step 1
-            code0 {o->init("Padaptiveharmonicsbasefreq");}
+            code0 {o->init("Padaptiveharmonicsbasefreq");o->reset_value=128;}
             class Fl_Osc_Dial
           }
           Fl_Slider adhrpar {
@@ -890,19 +890,19 @@ redrawoscil();}
           Fl_Dial modpar1 {
             callback {redrawoscil();}
             tooltip {Oscillator's modulation parameter 1} xywh {535 320 15 15} maximum 127 step 1
-            code0 {o->init("Pmodulationpar1");}
+            code0 {o->init("Pmodulationpar1");o->reset_value=64;}
             class Fl_Osc_Dial
           }
           Fl_Dial modpar2 {
             callback {redrawoscil();}
             tooltip {Oscillator's modulation parameter 2} xywh {555 320 15 15} maximum 127 step 1
-            code0 {o->init("Pmodulationpar2");}
+            code0 {o->init("Pmodulationpar2");o->reset_value=64;}
             class Fl_Osc_Dial
           }
           Fl_Dial modpar3 {
             callback {redrawoscil();}
             tooltip {Oscillator's modulation parameter 3} xywh {575 320 15 15} maximum 127 step 1
-            code0 {o->init("Pmodulationpar3");}
+            code0 {o->init("Pmodulationpar3");o->reset_value=32;}
             class Fl_Osc_Dial
           }
         }

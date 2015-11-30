@@ -131,10 +131,14 @@ hide();} {}
             label E2dn
             xywh {70 70 100 20} labelfont 1 labelsize 10
           }
+          MenuItem {} {
+            label RND
+            xywh {80 80 100 20} labelfont 1 labelsize 10
+          }
         }
         Fl_Check_Button continous {
           label {C.}
-          tooltip {Continous LFO} xywh {165 35 15 15} down_box DOWN_BOX labelsize 10 align 2
+          tooltip {Continuous LFO} xywh {165 35 15 15} down_box DOWN_BOX labelsize 10 align 2
           code0 {o->init("Pcontinous");}
           class Fl_Osc_Check
         }

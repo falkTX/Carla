@@ -136,7 +136,7 @@ initialized = true;} {}
               callback {if(hpui) hpui->update();
 cbwidget->do_callback();}
               xywh {20 75 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code2 {o->init("Php.base.par1");}
+              code2 {o->init("Php.base.par1");o->reset_value=80;}
               class Fl_Osc_Dial
             }
             Fl_Choice hpbasetype {
@@ -182,7 +182,7 @@ cbwidget->do_callback();}
               callback {hpui->update();
 cbwidget->do_callback();}
               xywh {40 115 20 20} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Php.modulator.freq");}
+              code0 {o->init("Php.modulator.freq");o->reset_value=30;}
               class Fl_Osc_Dial
             }
             Fl_Group {} {
@@ -244,7 +244,7 @@ cbwidget->do_callback();}}
                 callback {hpui->update();
 cbwidget->do_callback();}
                 xywh {15 235 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-                code0 {o->init("Php.amp.par1");}
+                code0 {o->init("Php.amp.par1");o->reset_value=80;}
                 class Fl_Osc_Dial
               }
               Fl_Dial hpamppar2 {
@@ -252,7 +252,7 @@ cbwidget->do_callback();}
                 callback {hpui->update();
 cbwidget->do_callback();}
                 xywh {55 235 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-                code0 {o->init("Php.amp.par2");}
+                code0 {o->init("Php.amp.par2");o->reset_value=64;}
                 class Fl_Osc_Dial
               }
             }
@@ -293,7 +293,7 @@ cbwidget->do_callback();}}
               callback {hpui->update();
 cbwidget->do_callback();}
               xywh {65 115 20 20} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Php.width");}
+              code0 {o->init("Php.width");o->reset_value=127;}
               class Fl_Osc_Dial
             }
           }
@@ -328,7 +328,7 @@ resui->setcbwidget(cbwidget,applybutton);}
             label BandWidth
             callback {o->oscWrite("bandwidthvalue");cbwidget->do_callback();}
             xywh {15 295 35 35} box ROUND_UP_BOX labelsize 10 maximum 1000 step 1
-            code0 {o->init("Pbandwidth");}
+            code0 {o->init("Pbandwidth");o->reset_value=500;}
             class Fl_Osc_Dial
           }
           Fl_Value_Output bwcents {
@@ -387,7 +387,7 @@ cbwidget->do_callback();}}
                   hpui->update();
 cbwidget->do_callback();}
               xywh {425 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Phrpos.par1");}
+              code0 {o->init("Phrpos.par1");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial hrpospar2 {
@@ -395,7 +395,7 @@ cbwidget->do_callback();}
               callback {opui->update();
 cbwidget->do_callback();}
               xywh {460 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("Phrpos.par2");}
+              code0 {o->init("Phrpos.par2");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial hrpospar3 {
@@ -651,7 +651,7 @@ cbwidget->do_callback();}
               xywh {125 125 100 20} labelfont 1 labelsize 11
             }
             MenuItem {} {
-              label Continous
+              label Continuous
               xywh {115 115 100 20} labelfont 1 labelsize 11
             }
           }
@@ -691,13 +691,13 @@ cbwidget->do_callback();}
             } {}
             Fl_Slider detune {
               callback {o->oscWrite("detunevalue");}
-              tooltip {Fine Detune (cents)} xywh {60 295 295 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
+              tooltip {Fine Detune (cents)} xywh {60 296 295 15} type {Horz Knob} box NO_BOX minimum -8192 maximum 8191 step 1
               code0 {o->init("PDetune", 'i');}
               class Fl_Osc_Slider
             }
             Fl_Value_Output detunevalueoutput {
               label Detune
-              xywh {12 295 45 15} labelsize 10 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 10
+              xywh {12 296 45 15} labelsize 10 align 5 minimum -5000 maximum 5000 step 0.01 textfont 1 textsize 10
               code0 {o->init("detunevalue");}
               class Fl_Osc_Output
             }
@@ -709,6 +709,18 @@ cbwidget->do_callback();}
               code1 {o->init("PDetuneType",1);}
               class Fl_Osc_Choice
             } {}
+            Fl_Dial bendadjustdial {
+              label Bend
+              tooltip {How the frequency varies according to the pitch wheel} xywh {60 278 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+              code0 {o->init("PBendAdjust");o->reset_value=24;o->set_transform([](float x){return x/24.0f;});o->set_rounding(2);}
+              class Fl_Osc_Dial
+            }
+            Fl_Dial offsethzdial {
+              label Offset
+              tooltip {Offset of frequency in Hz} xywh {110 278 15 15} box ROUND_UP_BOX labelsize 10 align 8 minimum -64 maximum 63 step 1
+              code0 {o->init("POffsetHz"); o->set_rounding(2); o->set_transform([](float x){x/=64; return 15*(x*sqrtf(fabsf(x)));});}
+              class Fl_Osc_Dial
+            }
             Fl_Check_Button hz440 {
               label 440Hz
               callback {if (o->value()==0) fixedfreqetdial->deactivate();
@@ -719,7 +731,7 @@ cbwidget->do_callback();}
             }
             Fl_Dial fixedfreqetdial {
               label {Eq.T.}
-              tooltip {How the frequency varies acording to the keyboard (leftmost for fixed frequency)} xywh {420 295 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
+              tooltip {How the frequency varies according to the keyboard (leftmost for fixed frequency)} xywh {420 295 15 15} box ROUND_UP_BOX labelsize 10 align 8 maximum 127 step 1
               code0 {o->init("PfixedfreqET");}
               class Fl_Osc_Dial
             }
@@ -731,25 +743,25 @@ cbwidget->do_callback();}
             Fl_Value_Slider volume {
               label Vol
               tooltip Volume xywh {10 50 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-              code0 {o->init("PVolume", 'i');}
+              code0 {o->init("PVolume", 'i');o->reset_value=90;}
               class Fl_Osc_VSlider
             }
             Fl_Value_Slider vsns {
               label {V.Sns}
               tooltip {Velocity Sensing Function (rightmost to disable)} xywh {10 70 160 15} type {Horz Knob} box NO_BOX labelsize 11 align 8 maximum 127 step 1
-              code0 {o->init("PAmpVelocityScaleFunction");}
+              code0 {o->init("PAmpVelocityScaleFunction");o->reset_value=64;}
               class Fl_Osc_VSlider
             }
             Fl_Dial pan {
               label Pan
               tooltip {Panning (leftmost is Random)} xywh {210 45 30 30} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-              code0 {o->init("PPanning");}
+              code0 {o->init("PPanning");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial {} {
               label De-pop selected
               tooltip {Pop suppression} xywh {208 238 20 20} type Float labelsize 10 maximum 127 step 1 textfont 1 textsize 11
-              code0 {o->init("Fadein_adjustment");}
+              code0 {o->init("Fadein_adjustment");o->reset_value=20;}
               class Fl_Osc_Dial
             }
             Fl_Dial pstr {
@@ -761,19 +773,19 @@ cbwidget->do_callback();}
             Fl_Dial pt {
               label {P.t.}
               tooltip {Punch Time (duration)} xywh {108 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("PPunchTime");}
+              code0 {o->init("PPunchTime");o->reset_value=60;}
               class Fl_Osc_Dial
             }
             Fl_Dial pstc {
               label {P.Stc.}
               tooltip {Punch Stretch} xywh {138 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("PPunchStretch");}
+              code0 {o->init("PPunchStretch");o->reset_value=64;}
               class Fl_Osc_Dial
             }
             Fl_Dial pvel {
               label {P.Vel.}
               tooltip {Punch Velocity Sensing} xywh {168 247 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
-              code0 {o->init("PPunchVelocitySensing");}
+              code0 {o->init("PPunchVelocitySensing");o->reset_value=72;}
               class Fl_Osc_Dial
             }
             Fl_Group ampenv {

@@ -169,14 +169,14 @@ redrawPADnoteApply();}
         callback {centerfreqvo->do_callback();
 redrawPADnoteApply();}
         xywh {260 268 90 14} box FLAT_BOX type {Horz Knob} labelsize 10 maximum 127 step 1
-        code0 {o->init("Pcenterfreq", 'i');}
+        code0 {o->init("Pcenterfreq", 'i');o->reset_value=64;}
         class Fl_Osc_Slider
       }
       Fl_Slider octavesfreq {
         callback {octavesfreqvo->do_callback();
 redrawPADnoteApply();}
         xywh {260 286 90 14} box FLAT_BOX type {Horz Knob} labelsize 10 maximum 127 step 1
-        code0 {o->init("Poctavesfreq", 'i');}
+        code0 {o->init("Poctavesfreq", 'i');o->reset_value=64;}
         class Fl_Osc_Slider
       }
       Fl_Button {} {

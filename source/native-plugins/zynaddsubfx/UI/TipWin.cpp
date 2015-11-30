@@ -11,7 +11,7 @@ TipWin::TipWin(void):Fl_Menu_Window(1, 1)
     end();
 }
 
-void TipWin::setRounding(unsigned int digits)
+void TipWin::set_rounding(unsigned int digits)
 {
     format[3] = "0123456789"[digits < 9 ? digits : 9];
 }

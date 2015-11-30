@@ -29,7 +29,8 @@
 #include <cmath>
 
 LFO::LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t)
-    :delayTime(t, lfopars.Pdelay / 127.0f * 4.0f), //0..4 sec
+    :first_half(-1),
+    delayTime(t, lfopars.Pdelay / 127.0f * 4.0f), //0..4 sec
     waveShape(lfopars.PLFOtype),
     deterministic(!lfopars.Pfreqrand),
     dt_(t.dt()),
@@ -88,7 +89,7 @@ LFO::LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t)
 LFO::~LFO()
 {}
 
-float LFO::baseOut(const char waveShape, const float phase) const
+float LFO::baseOut(const char waveShape, const float phase)
 {
     switch(waveShape) {
         case LFO_TRIANGLE:
@@ -109,6 +110,12 @@ float LFO::baseOut(const char waveShape, const float phase) const
         case LFO_RAMPDOWN:  return (0.5f - phase) * 2.0f;
         case LFO_EXP_DOWN1: return powf(0.05f, phase) * 2.0f - 1.0f;
         case LFO_EXP_DOWN2: return powf(0.001f, phase) * 2.0f - 1.0f;
+        case LFO_RANDOM:
+            if ((phase < 0.5) != first_half) {
+                first_half = phase < 0.5;
+                last_random = 2*RND-1;
+            }
+            return last_random;
         default:            return cosf(phase * 2.0f * PI); //LFO_SINE
     }
 }

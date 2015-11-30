@@ -279,7 +279,7 @@ class PartUI {open : {public Fl_Osc_Group}
         Fl_Dial {} {
           label Pan
           xywh {50 40 25 25} box ROUND_UP_BOX labelsize 11 maximum 127 step 1
-          code0 {o->init("Ppanning");}
+          code0 {o->init("Ppanning"); o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Counter {} {
@@ -344,19 +344,19 @@ if (event==FL_RIGHT_MOUSE){
         Fl_Dial {} {
           label Volume
           tooltip {Part Volume} xywh {10 35 30 30} box ROUND_UP_BOX labelsize 11 maximum 127 step 1
-          code0 {o->init("Pvolume");}
+          code0 {o->init("Pvolume"); o->reset_value=96;}
           class Fl_Osc_Dial
         }
         Fl_Dial {} {
           label {Vel.Ofs.}
           tooltip {Velocity Offset} xywh {135 40 25 25} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-          code0 {o->init("Pveloffs");}
+          code0 {o->init("Pveloffs"); o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Dial {} {
           label {Vel.Sns.}
           tooltip {Velocity Sensing Function} xywh {95 40 25 25} box ROUND_UP_BOX labelsize 10 maximum 127 step 1
-          code0 {o->init("Pvelsns");}
+          code0 {o->init("Pvelsns"); o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Button {} {
@@ -453,31 +453,31 @@ if (event==FL_RIGHT_MOUSE){
       Fl_Dial {} {
         label PanDpth
         tooltip {Panning Depth} xywh {10 55 30 30} labelsize 10 maximum 127 step 1
-        code0 {o->init("panning.depth");}
+        code0 {o->init("panning.depth");o->reset_value=64;}
         class Fl_Osc_Dial
       }
       Fl_Dial {} {
         label FltCut
         tooltip {Filter Cutoff depth} xywh {90 55 30 30} labelsize 10 maximum 127 step 1
-        code0 {o->init("filtercutoff.depth");}
+        code0 {o->init("filtercutoff.depth");o->reset_value=64;}
         class Fl_Osc_Dial
       }
       Fl_Dial {} {
         label FltQ
         tooltip {Filter Q depth} xywh {50 55 30 30} labelsize 10 maximum 127 step 1
-        code0 {o->init("filterq.depth");}
+        code0 {o->init("filterq.depth");o->reset_value=64;}
         class Fl_Osc_Dial
       }
       Fl_Dial {} {
         label BwDpth
         tooltip {BandWidth depth} xywh {125 10 30 30} labelsize 10 maximum 127 step 1
-        code0 {o->init("bandwidth.depth");}
+        code0 {o->init("bandwidth.depth");o->reset_value=64;}
         class Fl_Osc_Dial
       }
       Fl_Dial {} {
         label ModWh
         tooltip {Modulation Wheel depth} xywh {50 10 30 30} labelsize 10 maximum 127 step 1
-        code0 {o->init("modwheel.depth");}
+        code0 {o->init("modwheel.depth");o->reset_value=80;}
         class Fl_Osc_Dial
       }
       Fl_Check_Button benddir {
@@ -551,7 +551,7 @@ else {bendrng->oscMove("pitchwheel.bendrange");}}
         Fl_Dial {} {
           label time
           tooltip {Portamento time} xywh {285 60 25 25} labelsize 10 maximum 127 step 1
-          code0 {o->init("portamento.time");}
+          code0 {o->init("portamento.time");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Counter {} {
@@ -573,19 +573,19 @@ else {bendrng->oscMove("pitchwheel.bendrange");}}
         Fl_Dial {} {
           label {t.dn/up}
           tooltip {Portamento time stretch (up/down)} xywh {315 60 25 25} labelsize 10 maximum 127 step 1
-          code0 {o->init("portamento.updowntimestretch");}
+          code0 {o->init("portamento.updowntimestretch");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Dial propta {
           label {Prp.Rate}
           tooltip {Distance required to double change from nonpropotinal portamento time} xywh {405 20 25 25} labelsize 9 maximum 127 step 1
-          code0 {o->init("portamento.propRate");}
+          code0 {o->init("portamento.propRate");o->reset_value=80;}
           class Fl_Osc_Dial
         }
         Fl_Dial proptb {
           label {Prp.Dpth}
           tooltip {The difference from nonproportinal portamento} xywh {405 60 25 25} labelsize 9 maximum 127 step 1
-          code0 {o->init("portamento.propDepth");}
+          code0 {o->init("portamento.propDepth");o->reset_value=90;}
           class Fl_Osc_Dial
         }
         Fl_Check_Button {} {
@@ -605,13 +605,13 @@ else {propta->deactivate();proptb->deactivate();}}
         Fl_Dial {} {
           label BWdpth
           tooltip {BandWidth controller depth} xywh {455 60 25 25} labelsize 10 maximum 127 step 1
-          code0 {o->init("resonancebandwidth.depth");}
+          code0 {o->init("resonancebandwidth.depth");o->reset_value=64;}
           class Fl_Osc_Dial
         }
         Fl_Dial {} {
           label CFdpth
           tooltip {Center Frequency controller Depth} xywh {455 20 25 25} labelsize 10 maximum 127 step 1
-          code0 {o->init("resonancecenter.depth");}
+          code0 {o->init("resonancecenter.depth");o->reset_value=64;}
           class Fl_Osc_Dial
         }
       }

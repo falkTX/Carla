@@ -10,12 +10,10 @@ class Fl_Osc_TSlider:public Fl_Osc_Slider
         Fl_Osc_TSlider(int x, int y, int w, int h, const char *label = 0);
         ~Fl_Osc_TSlider();
         int handle(int event);
-	void setTransform(float scale = 1.0, float offset = 0.0);
-	float transform(float x);
-        void setRounding(unsigned int digits = 0);
+        void set_transform(float (*transformer)(float));
+        void set_rounding(unsigned int digits = 0);
     private:
         class TipWin * tipwin;
-        float value_offset;
-        float value_scale;
+        float (*transform)(float);
 };
 #endif

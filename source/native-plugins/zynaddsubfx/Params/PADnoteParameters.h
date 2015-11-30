@@ -106,6 +106,8 @@ class PADnoteParameters:public Presets
            If this parameter is 0, the frequency is fixed (to 440 Hz);
            if this parameter is 64, 1 MIDI halftone -> 1 frequency halftone */
         unsigned char PfixedfreqET;
+        unsigned char PBendAdjust;
+        unsigned char POffsetHz;
         unsigned short int PDetune; //fine detune
         unsigned short int PCoarseDetune; //coarse detune+octave
         unsigned char      PDetuneType; //detune type

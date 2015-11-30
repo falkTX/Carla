@@ -39,7 +39,7 @@ const rtosc::Ports Controller::ports = {
     rToggle(bandwidth.exponential, "Bandwidth Exponential Mode"),
     rParamZyn(modwheel.depth, "Depth of Modwheel MIDI Control"),
     rToggle(modwheel.exponential, "Modwheel Exponential Mode"),
-    rToggle(pitchwheel.is_split, "If PitchWheel Has unified blendrange or not"),
+    rToggle(pitchwheel.is_split, "If PitchWheel Has unified bendrange or not"),
     rParamI(pitchwheel.bendrange, "Range of MIDI Pitch Wheel"),
     rParamI(pitchwheel.bendrange_down, "Lower Range of MIDI Pitch Wheel"),
     rToggle(expression.receive, "Expression MIDI Receive"),

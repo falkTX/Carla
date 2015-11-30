@@ -66,7 +66,8 @@ static const rtosc::Ports realtime_ports =
     //Freq
     rToggle(Pfixedfreq, "Base frequency fixed frequency enable"),
     rParamZyn(PfixedfreqET, "Equal temeperate control for fixed frequency operation"),
-
+    rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
+    rParamZyn(POffsetHz,          "Voice constant offset"),
     rParamI(PDetune,        "Fine Detune"),
     rParamI(PCoarseDetune,  "Coarse Detune"),
     rParamZyn(PDetuneType,  "Magnitude of Detune"),
@@ -233,6 +234,8 @@ static const rtosc::Ports non_realtime_ports =
             d.reply(d.loc, "b", n*sizeof(float), tmp);
             d.reply(d.loc, "i", realbw);
             delete[] tmp;}},
+    {"needPrepare:", rDoc("Unimplemented Stub"),
+        NULL, [](const char *, rtosc::RtData&) {}},
 };
 
 const rtosc::Ports &PADnoteParameters::non_realtime_ports = ::non_realtime_ports;
@@ -327,6 +330,8 @@ void PADnoteParameters::defaults()
     /* Frequency Global Parameters */
     Pfixedfreq    = 0;
     PfixedfreqET  = 0;
+    PBendAdjust = 88; // 64 + 24
+    POffsetHz = 64;
     PDetune       = 8192; //zero
     PCoarseDetune = 0;
     PDetuneType   = 1;
@@ -984,6 +989,8 @@ void PADnoteParameters::add2XML(XMLwrapper& xml)
     xml.beginbranch("FREQUENCY_PARAMETERS");
     xml.addpar("fixed_freq", Pfixedfreq);
     xml.addpar("fixed_freq_et", PfixedfreqET);
+    xml.addpar("bend_adjust", PBendAdjust);
+    xml.addpar("offset_hz", POffsetHz);
     xml.addpar("detune", PDetune);
     xml.addpar("coarse_detune", PCoarseDetune);
     xml.addpar("detune_type", PDetuneType);
@@ -1098,6 +1105,8 @@ void PADnoteParameters::getfromXML(XMLwrapper& xml)
     if(xml.enterbranch("FREQUENCY_PARAMETERS")) {
         Pfixedfreq    = xml.getpar127("fixed_freq", Pfixedfreq);
         PfixedfreqET  = xml.getpar127("fixed_freq_et", PfixedfreqET);
+        PBendAdjust  = xml.getpar127("bend_adjust", PBendAdjust);
+        POffsetHz  = xml.getpar127("offset_hz", POffsetHz);
         PDetune       = xml.getpar("detune", PDetune, 0, 16383);
         PCoarseDetune = xml.getpar("coarse_detune", PCoarseDetune, 0, 16383);
         PDetuneType   = xml.getpar127("detune_type", PDetuneType);
@@ -1176,6 +1185,8 @@ void PADnoteParameters::pasteRT(PADnoteParameters &x)
     COPY(Pfixedfreq);
 
     COPY(PfixedfreqET);
+    COPY(PBendAdjust);
+    COPY(POffsetHz);
     COPY(PDetune);
     COPY(PCoarseDetune);
     COPY(PDetuneType);

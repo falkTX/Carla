@@ -103,6 +103,7 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
             just_pushed = true;
             mod_state = Fl::event_state() & MOD_MASK;
             slow_state = 0;
+            start_pos = horizontal() ? Fl::event_x() : Fl::event_y();
             handled = mod_state ? 1 : Fl_Slider::handle(ev, X, Y, W, H);
             break;
         case FL_MOUSEWHEEL:
@@ -146,8 +147,13 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
         case FL_DRAG: {
             old_mod_state = mod_state;
             mod_state = Fl::event_state() & MOD_MASK;
-            if (slow_state == 0 && mod_state == 0)
+            if (slow_state == 0 && mod_state == 0) {
+                int delta = (horizontal() ? Fl::event_x() : Fl::event_y())
+                    - start_pos;
+                if (delta < -1 || delta > 1)
+                    Fl::event_clicks(0);
                 return Fl_Slider::handle(ev, X, Y, W, H);
+            }
 
             if (mod_state != 0) {
                 slow_state = 1;
@@ -185,6 +191,8 @@ int Fl_Osc_Slider::handle(int ev, int X, int Y, int W, int H)
 
             int delta = (horizontal() ? Fl::event_x() : Fl::event_y())
                 - start_pos;
+            if (delta < -1 || delta > 1)
+                Fl::event_clicks(0);
             float new_value;
             if (slow_state == 1) {
                 new_value = old_value + delta / denominator;

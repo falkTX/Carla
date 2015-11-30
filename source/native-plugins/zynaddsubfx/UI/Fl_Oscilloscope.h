@@ -17,7 +17,8 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
 {
     public:
         Fl_Oscilloscope(int x,int y, int w, int h, const char *label=0)
-            :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this), smps(0), oscilsize(0)
+            :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this), smps(0), oscilsize(0),
+            Overlay(NULL)
         {
             phase=64;
             box(FL_FLAT_BOX);
@@ -129,6 +130,8 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
             fl_rect(ox-1,oy-1,lx+2,ly+2);
 
             fl_line_style(FL_SOLID,0);
+            if (Overlay)
+                Overlay->redraw();
         }
 
         //allows UI to manipuate phase of displayed waveform
@@ -149,4 +152,6 @@ class Fl_Oscilloscope : public Fl_Box, public Fl_Osc_Widget
         float *smps;
         int oscilsize;
         Fl_Color bkgnd;
+    public:
+        Fl_Box *Overlay;
 };

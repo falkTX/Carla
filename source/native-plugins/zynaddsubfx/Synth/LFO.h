@@ -41,7 +41,7 @@ class LFO
         float lfoout();
         float amplfoout();
     private:
-        float baseOut(const char waveShape, const float phase) const;
+        float baseOut(const char waveShape, const float phase);
         //Phase of Oscillator
         float phase;
         //Phase Increment Per Frame
@@ -50,6 +50,10 @@ class LFO
         float incrnd, nextincrnd;
         //Amplitude Randomness
         float amp1, amp2;
+
+        // RND mode
+        int first_half;
+        float last_random;
 
         //Intensity of the wave
         float lfointensity;
