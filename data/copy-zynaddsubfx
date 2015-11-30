@@ -40,3 +40,4 @@ sed -i "s|emplace_uint32(|emplace_uint32_cpp(|"  $CARLA_ZYN_DIR/rtosc/cpp/subtre
 sed -i "s|../../include/rtosc/|../|" $CARLA_ZYN_DIR/rtosc/cpp/*.cpp
 sed -i "s|../../tlsf/tlsf.h|tlsf/tlsf.h|" $CARLA_ZYN_DIR/Misc/Allocator.cpp
 sed -i "s|../src/globals.h|globals.h|" $CARLA_ZYN_DIR/Misc/Config.cpp
+sed -i "s|identity|identity_ts|"  $CARLA_ZYN_DIR/UI/Fl_Osc_TSlider.cpp
