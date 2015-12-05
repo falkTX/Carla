@@ -5790,7 +5790,7 @@ private:
     static const void* carla_lv2_state_retrieve(LV2_State_Handle handle, uint32_t key, size_t* size, uint32_t* type, uint32_t* flags)
     {
         CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        carla_stdout("carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
+        carla_debug("carla_lv2_state_retrieve(%p, %i, %p, %p, %p)", handle, key, size, type, flags);
 
         return ((CarlaPluginLV2*)handle)->handleStateRetrieve(key, size, type, flags);
     }
