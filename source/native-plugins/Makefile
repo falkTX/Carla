@@ -50,7 +50,9 @@ ZYN_CXX_FLAGS += -DFLTK_GUI
 ZYN_CXX_FLAGS += $(shell fltk-config --use-images --cxxflags)
 ZYN_LD_FLAGS  += $(shell fltk-config --use-images --ldflags)
 endif # HAVE_NTK
-ifneq ($(LINUX),true)
+ifeq ($(LINUX),true)
+ZYN_LD_FLAGS  += -lrt
+else
 ZYN_LD_FLAGS  += $(MODULEDIR)/juce_core.a
 endif
 else  # HAVE_ZYN_UI_DEPS
