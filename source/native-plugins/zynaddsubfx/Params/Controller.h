@@ -24,13 +24,14 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
+#include <stdint.h>
 #include "../globals.h"
 
 /**(Midi) Controllers implementation*/
 class Controller
 {
     public:
-        Controller(const SYNTH_T &synth);
+        Controller(const SYNTH_T &synth, const AbsTime *time = nullptr);
         Controller&operator=(const Controller &c);
         ~Controller();
         void resetall();
@@ -214,6 +215,10 @@ class Controller
             int valhi, vallo;
             unsigned char receive; //this is saved to disk by Master
         } NRPN;
+
+
+        const AbsTime *time;
+        int64_t last_update_timestamp;
 
         static const rtosc::Ports ports;
     private:

@@ -35,7 +35,7 @@ enum FMTYPE {
 /*****************************************************************/
 
 struct ADnoteGlobalParam {
-    ADnoteGlobalParam();
+    ADnoteGlobalParam(const AbsTime* time_ = nullptr);
     ~ADnoteGlobalParam();
     void defaults();
     void add2XML(XMLwrapper& xml);
@@ -106,6 +106,9 @@ struct ADnoteGlobalParam {
     //how the randomness is applied to the harmonics on more voices using the same oscillator
     unsigned char Hrandgrouping;
 
+    const AbsTime *time;
+    int64_t last_update_timestamp;
+
     static const rtosc::Ports &ports;
 };
 
@@ -115,11 +118,13 @@ struct ADnoteGlobalParam {
 /*                    VOICE PARAMETERS                     */
 /***********************************************************/
 struct ADnoteVoiceParam {
+    ADnoteVoiceParam() : time(nullptr), last_update_timestamp(0) { };
     void getfromXML(XMLwrapper& xml, unsigned nvoice);
     void add2XML(XMLwrapper& xml, bool fmoscilused);
     void paste(ADnoteVoiceParam &p);
     void defaults(void);
-    void enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson);
+    void enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson,
+                const AbsTime *time);
     void kill(void);
     float getUnisonFrequencySpreadCents(void) const;
     /** If the voice is enabled */
@@ -302,13 +307,17 @@ struct ADnoteVoiceParam {
 
     unsigned char *GlobalPDetuneType;
 
+    const AbsTime *time;
+    int64_t last_update_timestamp;
+
     static const rtosc::Ports &ports;
 };
 
 class ADnoteParameters:public PresetsArray
 {
     public:
-        ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_);
+        ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_,
+                         const AbsTime *time_ = nullptr);
         ~ADnoteParameters();
 
         ADnoteGlobalParam GlobalPar;
@@ -330,9 +339,12 @@ class ADnoteParameters:public PresetsArray
         void getfromXMLsection(XMLwrapper& xml, int n);
     private:
 
-        void EnableVoice(const SYNTH_T &synth, int nvoice);
+        void EnableVoice(const SYNTH_T &synth, int nvoice, const AbsTime* time);
         void KillVoice(int nvoice);
         FFTwrapper *fft;
+
+        const AbsTime *time;
+        int64_t last_update_timestamp;
 };
 
 #endif

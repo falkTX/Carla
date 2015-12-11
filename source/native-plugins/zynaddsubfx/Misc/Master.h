@@ -149,6 +149,7 @@ class Master
         float vuoutpeakpart[NUM_MIDI_PARTS];
         unsigned char fakepeakpart[NUM_MIDI_PARTS]; //this is used to compute the "peak" when the part is disabled
 
+        AbsTime  time;
         Controller ctl;
         bool       swaplr; //if L and R are swapped
 
@@ -174,7 +175,6 @@ class Master
         rtosc::ThreadLink *uToB;
         bool pendingMemory;
         const SYNTH_T &synth;
-        AbsTime  time;
         const int& gzip_compression; //!< value from config
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];

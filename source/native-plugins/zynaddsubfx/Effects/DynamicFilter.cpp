@@ -26,7 +26,7 @@
 #include "../DSP/Filter.h"
 #include "../Misc/Allocator.h"
 
-DynamicFilter::DynamicFilter(EffectParams pars)
+DynamicFilter::DynamicFilter(EffectParams pars, const AbsTime *time)
     :Effect(pars),
       lfo(pars.srate, pars.bufsize),
       Pvolume(110),
@@ -37,7 +37,7 @@ DynamicFilter::DynamicFilter(EffectParams pars)
       filterl(NULL),
       filterr(NULL)
 {
-    filterpars = memory.alloc<FilterParams>(0,0,0);
+    filterpars = memory.alloc<FilterParams>(0,0,0,time);
     setpreset(Ppreset);
     cleanup();
 }

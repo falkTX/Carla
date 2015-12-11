@@ -124,6 +124,7 @@ float LFO::baseOut(const char waveShape, const float phase)
 float LFO::lfoout()
 {
     //update internals XXX TODO cleanup
+    if ( ! lfopars_.time || lfopars_.last_update_timestamp == lfopars_.time->time())
     {
         waveShape = lfopars_.PLFOtype;
         int stretch = lfopars_.Pstretch;

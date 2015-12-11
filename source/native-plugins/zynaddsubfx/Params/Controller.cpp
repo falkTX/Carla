@@ -22,6 +22,7 @@
 
 #include "Controller.h"
 #include "../Misc/Util.h"
+#include "../Misc/Time.h"
 #include "../Misc/XMLwrapper.h"
 #include <cmath>
 #include <cstdio>
@@ -31,6 +32,9 @@
 using namespace rtosc;
 
 #define rObject Controller
+
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 const rtosc::Ports Controller::ports = {
     rParamZyn(panning.depth, "Depth of Panning MIDI Control"),
     rParamZyn(filtercutoff.depth, "Depth of Filter Cutoff MIDI Control"),
@@ -60,10 +64,10 @@ const rtosc::Ports Controller::ports = {
     rToggle(NRPN.receive, "NRPN MIDI Enable"),
     rAction(defaults),
 };
+#undef rChangeCb
 
-
-Controller::Controller(const SYNTH_T &synth_)
-    :synth(synth_)
+Controller::Controller(const SYNTH_T &synth_, const AbsTime *time_)
+    :time(time_), last_update_timestamp(0), synth(synth_)
 {
     defaults();
     resetall();

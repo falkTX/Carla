@@ -25,6 +25,7 @@
 #include "EnvelopeParams.h"
 #include "FilterParams.h"
 #include "../Misc/Util.h"
+#include "../Misc/Time.h"
 #include <cstdio>
 #include <cmath>
 
@@ -33,6 +34,9 @@
 
 #define rObject SUBnoteParameters
 using namespace rtosc;
+
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports SUBnotePorts = {
     rSelf(SUBnoteParameters),
     rPaste,
@@ -56,7 +60,8 @@ static const rtosc::Ports SUBnotePorts = {
     rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
     rParamZyn(POffsetHz,            "Voice constant offset"),
 #undef rChangeCb
-#define rChangeCb obj->updateFrequencyMultipliers();
+#define rChangeCb obj->updateFrequencyMultipliers(); if (obj->time) { \
+    obj->last_update_timestamp = obj->time->time(); }
     rParamI(POvertoneSpread.type, rMap(min, 0), rMap(max, 7),
             "Spread of harmonic frequencies"),
     rParamI(POvertoneSpread.par1, rMap(min, 0), rMap(max, 255),
@@ -66,7 +71,7 @@ static const rtosc::Ports SUBnotePorts = {
     rParamI(POvertoneSpread.par3, rMap(min, 0), rMap(max, 255),
             "Overtone Parameter"),
 #undef rChangeCb
-#define rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
     rParamZyn(Pnumstages, rMap(min, 1), rMap(max, 5), "Number of filter stages"),
     rParamZyn(Pbandwidth, "Bandwidth of filters"),
     rParamZyn(Phmagtype, "How the magnitudes are computed (0=linear,1=-60dB,2=-60dB)"),
@@ -125,21 +130,23 @@ static const rtosc::Ports SUBnotePorts = {
         }},
 
 };
+#undef rChangeCb
 
 const rtosc::Ports &SUBnoteParameters::ports = SUBnotePorts;
 
-SUBnoteParameters::SUBnoteParameters():Presets()
+SUBnoteParameters::SUBnoteParameters(const AbsTime *time_)
+        : Presets(), time(time_), last_update_timestamp(0)
 {
     setpresettype("Psubsynth");
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(64, 1, time_);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    FreqEnvelope = new EnvelopeParams(64, 0);
+    FreqEnvelope = new EnvelopeParams(64, 0, time_);
     FreqEnvelope->ASRinit(30, 50, 64, 60);
-    BandWidthEnvelope = new EnvelopeParams(64, 0);
+    BandWidthEnvelope = new EnvelopeParams(64, 0, time_);
     BandWidthEnvelope->ASRinit_bw(100, 70, 64, 60);
 
-    GlobalFilter = new FilterParams(2, 80, 40);
-    GlobalFilterEnvelope = new EnvelopeParams(0, 1);
+    GlobalFilter = new FilterParams(2, 80, 40, time_);
+    GlobalFilterEnvelope = new EnvelopeParams(0, 1, time_);
     GlobalFilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
 
     defaults();
@@ -395,6 +402,10 @@ void SUBnoteParameters::paste(SUBnoteParameters &sub)
 
     doPaste(Pbwscale);
     doPaste(Pstart);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 
 void SUBnoteParameters::getfromXML(XMLwrapper& xml)

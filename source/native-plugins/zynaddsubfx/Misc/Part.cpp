@@ -210,7 +210,7 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     Plegatomode(false),
     partoutl(new float[synth_.buffersize]),
     partoutr(new float[synth_.buffersize]),
-    ctl(synth_),
+    ctl(synth_, &time_),
     microtonal(microtonal_),
     fft(fft_),
     memory(alloc),
@@ -229,11 +229,11 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
         kit[n].padpars = nullptr;
     }
 
-    kit[0].adpars  = new ADnoteParameters(synth, fft);
+    kit[0].adpars  = new ADnoteParameters(synth, fft, &time);
 
     //Part's Insertion Effects init
     for(int nefx = 0; nefx < NUM_PART_EFX; ++nefx) {
-        partefx[nefx]    = new EffectMgr(memory, synth, 1);
+        partefx[nefx]    = new EffectMgr(memory, synth, 1, &time);
         Pefxbypass[nefx] = false;
     }
     assert(partefx[0]);
@@ -847,9 +847,9 @@ void Part::setkititemstatus(unsigned kititem, bool Penabled_)
     else {
         //All parameters must be NULL in this case
         assert(!(kkit.adpars || kkit.subpars || kkit.padpars));
-        kkit.adpars  = new ADnoteParameters(synth, fft);
-        kkit.subpars = new SUBnoteParameters();
-        kkit.padpars = new PADnoteParameters(synth, fft);
+        kkit.adpars  = new ADnoteParameters(synth, fft, &time);
+        kkit.subpars = new SUBnoteParameters(&time);
+        kkit.padpars = new PADnoteParameters(synth, fft, &time);
     }
 }
 
@@ -1082,7 +1082,7 @@ void Part::getfromXMLinstrument(XMLwrapper& xml)
                                                 kit[i].Padenabled);
             if(xml.enterbranch("ADD_SYNTH_PARAMETERS")) {
                 if(!kit[i].adpars)
-                    kit[i].adpars = new ADnoteParameters(synth, fft);
+                    kit[i].adpars = new ADnoteParameters(synth, fft, &time);
                 kit[i].adpars->getfromXML(xml);
                 xml.exitbranch();
             }
@@ -1091,7 +1091,7 @@ void Part::getfromXMLinstrument(XMLwrapper& xml)
                                                  kit[i].Psubenabled);
             if(xml.enterbranch("SUB_SYNTH_PARAMETERS")) {
                 if(!kit[i].subpars)
-                    kit[i].subpars = new SUBnoteParameters();
+                    kit[i].subpars = new SUBnoteParameters(&time);
                 kit[i].subpars->getfromXML(xml);
                 xml.exitbranch();
             }
@@ -1100,7 +1100,7 @@ void Part::getfromXMLinstrument(XMLwrapper& xml)
                                                  kit[i].Ppadenabled);
             if(xml.enterbranch("PAD_SYNTH_PARAMETERS")) {
                 if(!kit[i].padpars)
-                    kit[i].padpars = new PADnoteParameters(synth, fft);
+                    kit[i].padpars = new PADnoteParameters(synth, fft, &time);
                 kit[i].padpars->getfromXML(xml);
                 xml.exitbranch();
             }

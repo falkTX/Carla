@@ -144,6 +144,8 @@ extern "C" {
 #include "zynaddsubfx/Synth/ADnote.cpp"
 #include "zynaddsubfx/Synth/Envelope.cpp"
 #include "zynaddsubfx/Synth/LFO.cpp"
+#undef rChangeCb
+#define rChangeCb
 #include "zynaddsubfx/Synth/OscilGen.cpp"
 #undef rObject
 #undef PC

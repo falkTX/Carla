@@ -41,6 +41,8 @@ using rtosc::RtData;
 #define EXPAND(x) x
 #define rObject ADnoteVoiceParam
 
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const Ports voicePorts = {
     //Send Messages To Oscillator Realtime Table
     {"OscilSmp/", rDoc("Primary Oscillator"),
@@ -221,10 +223,12 @@ static const Ports voicePorts = {
             d.reply(d.loc, "f", obj->getUnisonFrequencySpreadCents());
         }},
 };
+#undef rChangeCb
 
 #undef  rObject
 #define rObject ADnoteGlobalParam
 
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const Ports globalPorts = {
     rRecurp(Reson, "Resonance"),
     rRecurp(FreqLfo, "Frequency LFO"),
@@ -298,9 +302,12 @@ static const Ports globalPorts = {
         }},
 
 };
+#undef rChangeCb
 
 #undef  rObject
 #define rObject ADnoteParameters
+
+#define rChangeCb obj->last_update_timestamp = obj->time.time();
 static const Ports adPorts = {//XXX 16 should not be hard coded
     rSelf(ADnoteParameters),
     rPaste,
@@ -308,13 +315,14 @@ static const Ports adPorts = {//XXX 16 should not be hard coded
     rRecurs(VoicePar, NUM_VOICES),
     rRecur(GlobalPar, "Adnote Parameters"),
 };
-
+#undef rChangeCb
 const Ports &ADnoteParameters::ports  = adPorts;
 const Ports &ADnoteVoiceParam::ports  = voicePorts;
 const Ports &ADnoteGlobalParam::ports = globalPorts;
 
-ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_)
-    :PresetsArray()
+ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_,
+                                   const AbsTime *time_)
+    :PresetsArray(), GlobalPar(time_), time(time_), last_update_timestamp(0)
 {
     setpresettype("Padsynth");
     fft = fft_;
@@ -322,26 +330,28 @@ ADnoteParameters::ADnoteParameters(const SYNTH_T &synth, FFTwrapper *fft_)
 
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
         VoicePar[nvoice].GlobalPDetuneType = &GlobalPar.PDetuneType;
-        EnableVoice(synth, nvoice);
+        VoicePar[nvoice].time = time_;
+        EnableVoice(synth, nvoice, time_);
     }
 
     defaults();
 }
 
-ADnoteGlobalParam::ADnoteGlobalParam()
+ADnoteGlobalParam::ADnoteGlobalParam(const AbsTime *time_) :
+        time(time_), last_update_timestamp(0)
 {
-    FreqEnvelope = new EnvelopeParams(0, 0);
+    FreqEnvelope = new EnvelopeParams(0, 0, time_);
     FreqEnvelope->ASRinit(64, 50, 64, 60);
-    FreqLfo = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0);
+    FreqLfo = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0, time_);
 
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(64, 1, time_);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    AmpLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1);
+    AmpLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1, time_);
 
-    GlobalFilter   = new FilterParams(2, 94, 40);
-    FilterEnvelope = new EnvelopeParams(0, 1);
+    GlobalFilter   = new FilterParams(2, 94, 40, time_);
+    FilterEnvelope = new EnvelopeParams(0, 1, time_);
     FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
-    FilterLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2);
+    FilterLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2, time_);
     Reson     = new Resonance();
 }
 
@@ -474,32 +484,34 @@ void ADnoteVoiceParam::defaults()
 /*
  * Init the voice parameters
  */
-void ADnoteParameters::EnableVoice(const SYNTH_T &synth, int nvoice)
+void ADnoteParameters::EnableVoice(const SYNTH_T &synth, int nvoice,
+                                   const AbsTime *time)
 {
-    VoicePar[nvoice].enable(synth, fft, GlobalPar.Reson);
+    VoicePar[nvoice].enable(synth, fft, GlobalPar.Reson, time);
 }
 
-void ADnoteVoiceParam::enable(const SYNTH_T &synth, FFTwrapper *fft, Resonance *Reson)
+void ADnoteVoiceParam::enable(const SYNTH_T &synth, FFTwrapper *fft,
+                              Resonance *Reson, const AbsTime *time)
 {
     OscilSmp = new OscilGen(synth, fft, Reson);
     FMSmp    = new OscilGen(synth, fft, NULL);
 
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(64, 1, time);
     AmpEnvelope->ADSRinit_dB(0, 100, 127, 100);
-    AmpLfo = new LFOParams(90, 32, 64, 0, 0, 30, 0, 1);
+    AmpLfo = new LFOParams(90, 32, 64, 0, 0, 30, 0, 1, time);
 
-    FreqEnvelope = new EnvelopeParams(0, 0);
+    FreqEnvelope = new EnvelopeParams(0, 0, time);
     FreqEnvelope->ASRinit(30, 40, 64, 60);
-    FreqLfo = new LFOParams(50, 40, 0, 0, 0, 0, 0, 0);
+    FreqLfo = new LFOParams(50, 40, 0, 0, 0, 0, 0, 0, time);
 
-    VoiceFilter    = new FilterParams(2, 50, 60);
-    FilterEnvelope = new EnvelopeParams(0, 0);
+    VoiceFilter    = new FilterParams(2, 50, 60, time);
+    FilterEnvelope = new EnvelopeParams(0, 0, time);
     FilterEnvelope->ADSRinit_filter(90, 70, 40, 70, 10, 40);
-    FilterLfo = new LFOParams(50, 20, 64, 0, 0, 0, 0, 2);
+    FilterLfo = new LFOParams(50, 20, 64, 0, 0, 0, 0, 2, time);
 
-    FMFreqEnvelope = new EnvelopeParams(0, 0);
+    FMFreqEnvelope = new EnvelopeParams(0, 0, time);
     FMFreqEnvelope->ASRinit(20, 90, 40, 80);
-    FMAmpEnvelope = new EnvelopeParams(64, 1);
+    FMAmpEnvelope = new EnvelopeParams(64, 1, time);
     FMAmpEnvelope->ADSRinit(80, 90, 127, 100);
 }
 
@@ -919,6 +931,10 @@ void ADnoteParameters::paste(ADnoteParameters &a)
     this->GlobalPar.paste(a.GlobalPar);
     for(int i=0; i<NUM_VOICES; ++i)
         this->VoicePar[i].paste(a.VoicePar[i]);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 
 void ADnoteParameters::pasteArray(ADnoteParameters &a, int nvoice)
@@ -927,6 +943,10 @@ void ADnoteParameters::pasteArray(ADnoteParameters &a, int nvoice)
         return;
 
     VoicePar[nvoice].paste(a.VoicePar[nvoice]);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 
 #define copy(x) this->x = a.x
@@ -1015,6 +1035,10 @@ void ADnoteVoiceParam::paste(ADnoteVoiceParam &a)
     RCopy(FMFreqEnvelope);
 
     RCopy(FMSmp);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 
 void ADnoteGlobalParam::paste(ADnoteGlobalParam &a)
@@ -1050,6 +1074,10 @@ void ADnoteGlobalParam::paste(ADnoteGlobalParam &a)
     RCopy(FilterEnvelope);
     RCopy(FilterLfo);
     RCopy(Reson);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 #undef copy
 #undef RCopy

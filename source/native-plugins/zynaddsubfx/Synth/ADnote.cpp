@@ -38,6 +38,7 @@
 ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
     :SynthNote(spars), pars(*pars_)
 {
+    memory.beginTransaction();
     tmpwavel = memory.valloc<float>(synth.buffersize);
     tmpwaver = memory.valloc<float>(synth.buffersize);
     bypassl  = memory.valloc<float>(synth.buffersize);
@@ -473,6 +474,7 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars)
     }
 
     initparameters();
+    memory.endTransaction();
 }
 
 SynthNote *ADnote::cloneLegato(void)

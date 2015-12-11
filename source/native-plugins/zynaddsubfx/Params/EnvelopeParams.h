@@ -31,7 +31,8 @@ class EnvelopeParams:public Presets
 {
     public:
         EnvelopeParams(unsigned char Penvstretch_=64,
-                       unsigned char Pforcedrelease_=0);
+                       unsigned char Pforcedrelease_=0,
+                       const AbsTime *time_ = nullptr);
         ~EnvelopeParams();
         void paste(const EnvelopeParams &ep);
         void ADSRinit(char A_dt, char D_dt, char S_val, char R_dt);
@@ -73,6 +74,9 @@ class EnvelopeParams:public Presets
                      // 3 for ASR parameters (frequency LFO)
                      // 4 for ADSR_filter parameters (filter parameters)
                      // 5 for ASR_bw parameters (bandwidth parameters)
+
+        const AbsTime *time;
+        int64_t last_update_timestamp;
 
         static const rtosc::Ports &ports;
     private:

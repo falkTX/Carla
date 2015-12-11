@@ -135,13 +135,15 @@ static const rtosc::Ports local_ports = {
 
 const rtosc::Ports &EffectMgr::ports = local_ports;
 
-EffectMgr::EffectMgr(Allocator &alloc, const SYNTH_T &synth_, const bool insertion_)
+EffectMgr::EffectMgr(Allocator &alloc, const SYNTH_T &synth_,
+                     const bool insertion_, const AbsTime *time_)
     :insertion(insertion_),
       efxoutl(new float[synth_.buffersize]),
       efxoutr(new float[synth_.buffersize]),
       filterpars(NULL),
       nefx(0),
       efx(NULL),
+      time(time_),
       dryonly(false),
       memory(alloc),
       synth(synth_)
@@ -203,7 +205,7 @@ void EffectMgr::changeeffectrt(int _nefx, bool avoidSmash)
                 efx = memory.alloc<EQ>(pars);
                 break;
             case 8:
-                efx = memory.alloc<DynamicFilter>(pars);
+                efx = memory.alloc<DynamicFilter>(pars, time);
                 break;
             //put more effect here
             default:

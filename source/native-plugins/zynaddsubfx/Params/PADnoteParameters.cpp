@@ -35,6 +35,8 @@ using namespace rtosc;
 
 
 #define rObject PADnoteParameters
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports realtime_ports =
 {
     rRecurp(FreqLfo, "Frequency LFO"),
@@ -237,6 +239,7 @@ static const rtosc::Ports non_realtime_ports =
     {"needPrepare:", rDoc("Unimplemented Stub"),
         NULL, [](const char *, rtosc::RtData&) {}},
 };
+#undef rChangeCb
 
 const rtosc::Ports &PADnoteParameters::non_realtime_ports = ::non_realtime_ports;
 const rtosc::Ports &PADnoteParameters::realtime_ports     = ::realtime_ports;
@@ -249,8 +252,9 @@ const rtosc::MergePorts PADnoteParameters::ports =
 };
 
 
-PADnoteParameters::PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_)
-    :Presets(), synth(synth_)
+PADnoteParameters::PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_,
+                                     const AbsTime *time_)
+        : Presets(), time(time_), last_update_timestamp(0), synth(synth_)
 {
     setpresettype("Ppadsynth");
 
@@ -260,18 +264,18 @@ PADnoteParameters::PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_)
     oscilgen  = new OscilGen(synth, fft_, resonance);
     oscilgen->ADvsPAD = true;
 
-    FreqEnvelope = new EnvelopeParams(0, 0);
+    FreqEnvelope = new EnvelopeParams(0, 0, time_);
     FreqEnvelope->ASRinit(64, 50, 64, 60);
-    FreqLfo = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0);
+    FreqLfo = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0, time_);
 
-    AmpEnvelope = new EnvelopeParams(64, 1);
+    AmpEnvelope = new EnvelopeParams(64, 1, time_);
     AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
-    AmpLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1);
+    AmpLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1, time_);
 
-    GlobalFilter   = new FilterParams(2, 94, 40);
-    FilterEnvelope = new EnvelopeParams(0, 1);
+    GlobalFilter   = new FilterParams(2, 94, 40, time_);
+    FilterEnvelope = new EnvelopeParams(0, 1, time_);
     FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
-    FilterLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2);
+    FilterLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2, time_);
 
     for(int i = 0; i < PAD_MAX_SAMPLES; ++i)
         sample[i].smp = NULL;
@@ -1176,6 +1180,10 @@ void PADnoteParameters::paste(PADnoteParameters &x)
 
     oscilgen->paste(*x.oscilgen);
     resonance->paste(*x.resonance);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 
 void PADnoteParameters::pasteRT(PADnoteParameters &x)
@@ -1215,5 +1223,9 @@ void PADnoteParameters::pasteRT(PADnoteParameters &x)
 
     FilterEnvelope->paste(*x.FilterEnvelope);
     FilterLfo->paste(*x.FilterLfo);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 #undef COPY

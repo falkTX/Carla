@@ -1338,15 +1338,17 @@ void MiddleWareImpl::kitEnable(int part, int kit, int type)
     string url = "/part"+to_s(part)+"/kit"+to_s(kit)+"/";
     void *ptr = NULL;
     if(type == 0 && kits.add[part][kit] == NULL) {
-        ptr = kits.add[part][kit] = new ADnoteParameters(synth, master->fft);
+        ptr = kits.add[part][kit] = new ADnoteParameters(synth, master->fft,
+                                                         &master->time);
         url += "adpars-data";
         obj_store.extractAD(kits.add[part][kit], part, kit);
     } else if(type == 1 && kits.pad[part][kit] == NULL) {
-        ptr = kits.pad[part][kit] = new PADnoteParameters(synth, master->fft);
+        ptr = kits.pad[part][kit] = new PADnoteParameters(synth, master->fft,
+                                                          &master->time);
         url += "padpars-data";
         obj_store.extractPAD(kits.pad[part][kit], part, kit);
     } else if(type == 2 && kits.sub[part][kit] == NULL) {
-        ptr = kits.sub[part][kit] = new SUBnoteParameters();
+        ptr = kits.sub[part][kit] = new SUBnoteParameters(&master->time);
         url += "subpars-data";
     }
 

@@ -36,7 +36,8 @@ class Allocator;
 class EffectMgr:public Presets
 {
     public:
-        EffectMgr(Allocator &alloc, const SYNTH_T &synth, const bool insertion_);
+        EffectMgr(Allocator &alloc, const SYNTH_T &synth, const bool insertion_,
+              const AbsTime *time_ = nullptr);
         ~EffectMgr();
 
         void paste(EffectMgr &e);
@@ -77,6 +78,7 @@ class EffectMgr:public Presets
         static const rtosc::Ports &ports;
         int     nefx;
         Effect *efx;
+        const AbsTime *time;
     private:
 
         //Parameters Prior to initialization

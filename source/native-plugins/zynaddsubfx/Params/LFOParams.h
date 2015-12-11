@@ -23,6 +23,7 @@
 #ifndef LFO_PARAMS_H
 #define LFO_PARAMS_H
 
+#include <Misc/Time.h>
 #include <rtosc/ports.h>
 #include "Presets.h"
 
@@ -40,7 +41,7 @@ class XMLwrapper;
 class LFOParams:public Presets
 {
     public:
-        LFOParams();
+        LFOParams(const AbsTime* time_ = nullptr);
         LFOParams(char Pfreq_,
                   char Pintensity_,
                   char Pstartphase_,
@@ -48,7 +49,8 @@ class LFOParams:public Presets
                   char Prandomness_,
                   char Pdelay_,
                   char Pcontinous,
-                  char fel_);
+                  char fel_,
+                  const AbsTime* time_ = nullptr);
         ~LFOParams();
 
         void add2XML(XMLwrapper& xml);
@@ -69,6 +71,9 @@ class LFOParams:public Presets
         unsigned char Pstretch; /**<how the LFO is "stretched" according the note frequency (64=no stretch)*/
 
         int fel; //what kind is the LFO (0 - frequency, 1 - amplitude, 2 - filter)
+
+        const AbsTime *time;
+        int64_t last_update_timestamp;
 
         static const rtosc::Ports &ports;
     private:

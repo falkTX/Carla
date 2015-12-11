@@ -22,6 +22,7 @@
 
 #include "FilterParams.h"
 #include "../Misc/Util.h"
+#include "../Misc/Time.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -36,11 +37,15 @@ using namespace rtosc;
 constexpr int sizeof_pvowels = sizeof(FilterParams::Pvowels);
 
 #define rObject FilterParams::Pvowels_t::formants_t
+
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports subsubports = {
     rParamZyn(freq, "Formant frequency"),
     rParamZyn(amp,  "Strength of formant"),
     rParamZyn(q,    "Quality Factor"),
 };
+#undef rChangeCb
 #undef rObject
 
 static const rtosc::Ports subports = {
@@ -54,12 +59,14 @@ static const rtosc::Ports subports = {
             FilterParams::Pvowels_t *obj = (FilterParams::Pvowels_t *) d.obj;
             d.obj = (void*) &obj->formants[idx];
             subsubports.dispatch(msg, d);
+            if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
         }},
 };
 
 #define rObject FilterParams
 #undef  rChangeCb
-#define rChangeCb obj->changed = true;
+#define rChangeCb obj->changed = true; if ( obj->time) { \
+    obj->last_update_timestamp = obj->time->time(); }
 const rtosc::Ports FilterParams::ports = {
     rSelf(FilterParams),
     rPaste,
@@ -127,13 +134,15 @@ const rtosc::Ports FilterParams::ports = {
 
 
 
-FilterParams::FilterParams()
-    :FilterParams(0,64,64)
+FilterParams::FilterParams(const AbsTime *time_)
+    :FilterParams(0,64,64, time_)
 {
 }
 FilterParams::FilterParams(unsigned char Ptype_,
                            unsigned char Pfreq_,
-                           unsigned char Pq_)
+                           unsigned char Pq_,
+                           const AbsTime *time_):
+        time(time_), last_update_timestamp(0)
 {
     setpresettype("Pfilter");
     Dtype = Ptype_;
@@ -179,10 +188,14 @@ void FilterParams::defaults()
 void FilterParams::defaults(int n)
 {
     int j = n;
+
+    Pvowels[j].time = time;
+
     for(int i = 0; i < FF_MAX_FORMANTS; ++i) {
         Pvowels[j].formants[i].freq = (int)(RND * 127.0f); //some random freqs
         Pvowels[j].formants[i].q    = 64;
         Pvowels[j].formants[i].amp  = 127;
+        Pvowels[j].formants[i].time = time;
     }
 }
 
@@ -455,6 +468,10 @@ void FilterParams::paste(FilterParams &x)
         this->Psequence[i] = x.Psequence[i];
 
     COPY(changed);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 #undef COPY
 
@@ -467,5 +484,9 @@ void FilterParams::pasteArray(FilterParams &x, int nvowel)
         self.freq = update.freq;
         self.amp  = update.amp;
         self.q    = update.q;
+    }
+
+    if ( time ) {
+        last_update_timestamp = time->time();
     }
 }

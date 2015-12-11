@@ -33,7 +33,7 @@ struct AllocatorImpl
     unsigned long long totalAlloced = 0;
 };
 
-Allocator::Allocator(void)
+Allocator::Allocator(void) : transaction_active()
 {
     impl = new AllocatorImpl;
     size_t default_size = 10*1024*1024;
@@ -124,6 +124,19 @@ typedef struct block_header_t
 static const size_t block_header_free_bit = 1 << 0;
 #endif
 
+void Allocator::beginTransaction() {
+    // TODO: log about unsupported nested transaction when a RT compliant
+    // logging is available and transaction_active == true
+    transaction_active = true;
+    transaction_alloc_index = 0;
+}
+
+void Allocator::endTransaction() {
+    // TODO: log about invalid end of transaction when a RT copmliant logging
+    // is available and transaction_active == false
+    transaction_active = false;
+}
+
 bool Allocator::memFree(void *pool) const
 {
     size_t bh_shift = sizeof(next_t)+sizeof(size_t);
@@ -172,6 +185,22 @@ int Allocator::freePools() const
 unsigned long long Allocator::totalAlloced() const
 {
     return impl->totalAlloced;
+}
+
+void Allocator::rollbackTransaction() {
+
+    // if a transaction is active
+    if (transaction_active) {
+
+        // deallocate all allocated memory within this transaction
+        for (size_t temp_idx = 0;
+             temp_idx < transaction_alloc_index; ++temp_idx) {
+            dealloc_mem(transaction_alloc_content[temp_idx]);
+        }
+
+    }
+
+    transaction_active = false;
 }
 
 /*

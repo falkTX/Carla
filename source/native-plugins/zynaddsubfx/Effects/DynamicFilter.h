@@ -30,7 +30,7 @@
 class DynamicFilter:public Effect
 {
     public:
-        DynamicFilter(EffectParams pars);
+        DynamicFilter(EffectParams pars, const AbsTime *time = nullptr);
         ~DynamicFilter();
         void out(const Stereo<float *> &smp);
 

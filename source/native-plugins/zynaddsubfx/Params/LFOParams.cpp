@@ -33,6 +33,8 @@ using namespace rtosc;
 
 
 #define rObject LFOParams
+#undef rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports _ports = {
     rSelf(LFOParams),
     rPaste,
@@ -50,10 +52,11 @@ static const rtosc::Ports _ports = {
     rToggle(Pcontinous, "Enable for global operation"),
     rParamZyn(Pstretch, rCentered, "Note frequency stretch"),
 };
+#undef rChangeCb
 
 const rtosc::Ports &LFOParams::ports = _ports;
 
-LFOParams::LFOParams()
+LFOParams::LFOParams(const AbsTime *time_) : time(time_)
 {
     Dfreq       = 64;
     Dintensity  = 0;
@@ -74,8 +77,9 @@ LFOParams::LFOParams(char Pfreq_,
                      char Prandomness_,
                      char Pdelay_,
                      char Pcontinous_,
-                     char fel_)
-{
+                     char fel_,
+                     const AbsTime *time_) : time(time_),
+                                             last_update_timestamp(0) {
     switch(fel_) {
         case 0:
             setpresettype("Plfofrequency");
@@ -154,5 +158,9 @@ void LFOParams::paste(LFOParams &x)
     COPY(Pdelay);
     COPY(Pcontinous);
     COPY(Pstretch);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 #undef COPY

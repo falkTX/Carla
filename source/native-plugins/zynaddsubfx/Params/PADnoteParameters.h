@@ -42,7 +42,8 @@
 class PADnoteParameters:public Presets
 {
     public:
-        PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_);
+        PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_,
+                          const AbsTime *time_ = nullptr);
         ~PADnoteParameters();
 
         void defaults();
@@ -172,6 +173,9 @@ class PADnoteParameters:public Presets
         typedef std::function<void(int,PADnoteParameters::Sample&)> callback;
         void sampleGenerator(PADnoteParameters::callback cb,
                              std::function<bool()> do_abort);
+
+        const AbsTime *time;
+        int64_t last_update_timestamp;
 
         static const rtosc::MergePorts ports;
         static const rtosc::Ports     &non_realtime_ports;

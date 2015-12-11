@@ -28,6 +28,7 @@
 
 #include "EnvelopeParams.h"
 #include "../Misc/Util.h"
+#include "../Misc/Time.h"
 
 #define rObject EnvelopeParams
 using namespace rtosc;
@@ -36,10 +37,11 @@ static const rtosc::Ports localPorts = {
     rSelf(EnvelopeParams),
     rPaste,
 #undef  rChangeCb
-#define rChangeCb if(!obj->Pfreemode) obj->converttofree();
+#define rChangeCb if(!obj->Pfreemode) obj->converttofree(); if (obj->time) { \
+        obj->last_update_timestamp = obj->time->time(); }
     rToggle(Pfreemode, "Complex Envelope Definitions"),
 #undef  rChangeCb
-#define rChangeCb
+#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
     rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
     rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
@@ -94,11 +96,14 @@ static const rtosc::Ports localPorts = {
 
         }},
 };
+#undef  rChangeCb
 
 const rtosc::Ports &EnvelopeParams::ports = localPorts;
 
 EnvelopeParams::EnvelopeParams(unsigned char Penvstretch_,
-        unsigned char Pforcedrelease_)
+                               unsigned char Pforcedrelease_,
+                               const AbsTime *time_):
+        time(time_), last_update_timestamp(0)
 {
     PA_dt  = 10;
     PD_dt  = 10;
@@ -149,6 +154,10 @@ void EnvelopeParams::paste(const EnvelopeParams &ep)
     COPY(PD_val);
     COPY(PS_val);
     COPY(PR_val);
+
+    if ( time ) {
+        last_update_timestamp = time->time();
+    }
 }
 #undef COPY
 

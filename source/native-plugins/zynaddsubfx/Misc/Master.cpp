@@ -301,10 +301,10 @@ vuData::vuData(void)
 {}
 
 Master::Master(const SYNTH_T &synth_, Config* config)
-    :HDDRecorder(synth_), ctl(synth_),
+    :HDDRecorder(synth_), time(synth_), ctl(synth_, &time),
     microtonal(config->cfg.GzipCompression), bank(config),
     frozenState(false), pendingMemory(false),
-    synth(synth_), time(synth), gzip_compression(config->cfg.GzipCompression)
+    synth(synth_), gzip_compression(config->cfg.GzipCompression)
 {
     bToU = NULL;
     uToB = NULL;
@@ -335,11 +335,11 @@ Master::Master(const SYNTH_T &synth_, Config* config)
 
     //Insertion Effects init
     for(int nefx = 0; nefx < NUM_INS_EFX; ++nefx)
-        insefx[nefx] = new EffectMgr(*memory, synth, 1);
+        insefx[nefx] = new EffectMgr(*memory, synth, 1, &time);
 
     //System Effects init
     for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
-        sysefx[nefx] = new EffectMgr(*memory, synth, 0);
+        sysefx[nefx] = new EffectMgr(*memory, synth, 0, &time);
 
 
     defaults();
