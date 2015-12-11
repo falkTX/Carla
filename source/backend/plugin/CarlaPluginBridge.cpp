@@ -547,12 +547,7 @@ protected:
 #ifndef CARLA_OS_WIN
         // start with "wine" if needed
         if (fBinary.endsWithIgnoreCase(".exe"))
-        {
-            if (File("/usr/bin/wine-rt").existsAsFile())
-                arguments.add("wine-rt");
-            else
-                arguments.add("wine");
-        }
+            arguments.add("wine");
 #endif
 
         // binary

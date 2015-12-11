@@ -284,8 +284,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     // TODO: make this an option, put somewhere else
     if (std::getenv("WINE_RT") == nullptr)
     {
-        carla_setenv("WINE_RT", "15");
-        carla_setenv("WINE_SVR_RT", "10");
+        carla_setenv("WINE_RT", "55");
+        carla_setenv("WINE_SVR_RT", "70");
     }
 
     gStandalone.engine = CarlaEngine::newDriverByName(driverName);
@@ -343,6 +343,13 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
         carla_stderr2("Engine is already running");
         gStandalone.lastError = "Engine is already running";
         return false;
+    }
+
+    // TODO: make this an option, put somewhere else
+    if (std::getenv("WINE_RT") == nullptr)
+    {
+        carla_setenv("WINE_RT", "55");
+        carla_setenv("WINE_SVR_RT", "70");
     }
 
     gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
