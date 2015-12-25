@@ -3837,24 +3837,3 @@ QRect CarlaStyle::subElementRect(SubElement sr, const QStyleOption *opt, const Q
     }
     return r;
 }
-
-#ifdef CARLA_EXPORT_STYLE
-# include "resources.cpp"
-
-CarlaStylePlugin::CarlaStylePlugin(QObject* parent)
-    : QStylePlugin(parent)
-{
-}
-
-QStyle* CarlaStylePlugin::create(const QString& key)
-{
-    return (key.toLower() == "carla") ? new CarlaStyle() : nullptr;
-}
-
-QStringList CarlaStylePlugin::keys() const
-{
-    return QStringList() << "Carla";
-}
-
-Q_EXPORT_PLUGIN2(Carla, CarlaStylePlugin)
-#endif
