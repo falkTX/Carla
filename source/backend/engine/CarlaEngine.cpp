@@ -378,11 +378,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     {
         if (btype == BINARY_NATIVE)
         {
-#ifdef CARLA_OS_WIN
+# ifdef CARLA_OS_WIN
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
-#else
+# else
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
-#endif
+# endif
         }
         else
         {
@@ -410,7 +410,78 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             bridgeBinary.clear();
     }
 
-    if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (pData->options.preferPluginBridges && bridgeBinary.isNotEmpty())))
+    // Prefer bridges for some specific plugins
+    bool preferBridges = pData->options.preferPluginBridges;
+
+# ifdef CARLA_OS_LINUX
+    if (! preferBridges)
+    {
+        if (ptype == PLUGIN_LV2)
+        {
+            if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
+                preferBridges = true;
+            if (std::strcmp(label, "http://factorial.hu/plugins/lv2/ir") == 0)
+                preferBridges = true;
+        }
+        else if (ptype == PLUGIN_VST2)
+        {
+            /**/ if (std::strncmp(label, "ACE ", 4) == 0 && uniqueId == 1633895765)
+                preferBridges = true;
+            else if (std::strncmp(label, "Bazille ", 8) == 0 && uniqueId == 1433421876)
+                preferBridges = true;
+            else if (std::strncmp(label, "Diva ", 5) == 0 && uniqueId == 1147754081)
+                preferBridges = true;
+            else if (std::strncmp(label, "Filterscape  ", 13) == 0 && uniqueId == 1095583057)
+                preferBridges = true;
+            else if (std::strncmp(label, "Filterscape VA  ", 16) == 0 && uniqueId == 1179866689)
+                preferBridges = true;
+            else if (std::strncmp(label, "Filterscape Q6  ", 16) == 0 && uniqueId == 1179865398)
+                preferBridges = true;
+            else if (std::strncmp(label, "Hive ", 5) == 0 && uniqueId == 1749636677)
+                preferBridges = true;
+            else if (std::strncmp(label, "MFM ", 4) == 0 && uniqueId == 1296452914)
+                preferBridges = true;
+            else if (std::strncmp(label, "Podolski ", 9) == 0 && uniqueId == 1349477487)
+                preferBridges = true;
+            else if (std::strncmp(label, "Presswerk ", 10) == 0 && uniqueId == 1886548821)
+                preferBridges = true;
+            else if (std::strncmp(label, "Protoverb ", 10) == 0 && uniqueId == 1969770582)
+                preferBridges = true;
+            else if (std::strncmp(label, "Satin ", 6) == 0 && uniqueId == 1969771348)
+                preferBridges = true;
+            else if (std::strncmp(label, "TripleCheese ", 13) == 0 && uniqueId == 1667388281)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Ambience ", 15) == 0 && uniqueId == 1432568113)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Delay ", 12) == 0 && uniqueId == 1432568881)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Equalizer ", 16) == 0 && uniqueId == 1432572209)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Flanger ", 14) == 0 && uniqueId == 1432569393)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik GrainDad ", 15) == 0 && uniqueId == 1432569649)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Phaser ", 13) == 0 && uniqueId == 1432571953)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Runciter ", 15) == 0 && uniqueId == 1382232375)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Shifter ", 14) == 0 && uniqueId == 1432572721)
+                preferBridges = true;
+            else if (std::strncmp(label, "Uhbik Tremolo ", 14) == 0 && uniqueId == 1432572977)
+                preferBridges = true;
+            else if (std::strncmp(label, "Zebra ", 6) == 0 && uniqueId == 1397572658)
+                preferBridges = true;
+            else if (std::strncmp(label, "Zebralette ", 11) == 0 && uniqueId == 1397572659)
+                preferBridges = true;
+            else if (std::strncmp(label, "ZRev ", 5) == 0 && uniqueId == 1919243824)
+                preferBridges = true;
+            else if (std::strncmp(label, "Zebrify ", 8) == 0 && uniqueId == 1397578034)
+                preferBridges = true;
+        }
+    }
+# endif
+
+    if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
         if (bridgeBinary.isNotEmpty())
         {
