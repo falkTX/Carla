@@ -24,7 +24,10 @@
 
 #define CARLA_USE_FUTEXES
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_WIN)
+# ifdef __WINE__
+#  error Wine is not supposed to use this!
+# endif
 struct carla_sem_t { HANDLE handle; };
 #elif defined(CARLA_OS_MAC)
 // TODO
@@ -160,8 +163,11 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
             return true;
         }
 
-        //if (errno == EAGAIN)
-        //   continue;
+        if (errno == EWOULDBLOCK)
+        {
+            printf("carla-bridge: retrying futex..");
+            continue;
+        }
 
         return false;
     }
