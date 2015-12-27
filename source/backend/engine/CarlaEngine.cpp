@@ -414,9 +414,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     bool preferBridges = pData->options.preferPluginBridges;
 
 # ifdef CARLA_OS_LINUX
-    if (! preferBridges && label != nullptr)
+    if (! preferBridges)
     {
-        if (ptype == PLUGIN_LV2)
+        if (ptype == PLUGIN_LV2 && label != nullptr)
         {
             if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
                 preferBridges = true;
@@ -425,57 +425,67 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         }
         else if (ptype == PLUGIN_VST2)
         {
-            /**/ if (std::strncmp(label, "ACE ", 4) == 0 && uniqueId == 1633895765)
+            /*
+            char uniqueIdChars[5] = {
+                static_cast<char>((uniqueId & 0xFF000000) >> 24),
+                static_cast<char>((uniqueId & 0x00FF0000) >> 16),
+                static_cast<char>((uniqueId & 0x0000FF00) >>  8),
+                static_cast<char>((uniqueId & 0x000000FF) >>  1),
+                0
+            };
+            */
+
+            /**/ if (uniqueId == 1633895765 && std::strstr(filename, "/ACE.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Bazille ", 8) == 0 && uniqueId == 1433421876)
+            else if (uniqueId == 1433421876 && std::strstr(filename, "/Bazille.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Diva ", 5) == 0 && uniqueId == 1147754081)
+            else if (uniqueId == 1147754081 && std::strstr(filename, "/Diva.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Filterscape  ", 13) == 0 && uniqueId == 1095583057)
+            else if (uniqueId == 1095583057 && std::strstr(filename, "/Filterscape.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Filterscape VA  ", 16) == 0 && uniqueId == 1179866689)
+            else if (uniqueId == 1179866689 && std::strstr(filename, "/Filterscape.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Filterscape Q6  ", 16) == 0 && uniqueId == 1179865398)
+            else if (uniqueId == 1179865398 && std::strstr(filename, "/Filterscape.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Hive ", 5) == 0 && uniqueId == 1749636677)
+            else if (uniqueId == 1749636677 && std::strstr(filename, "/Hive.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "MFM ", 4) == 0 && uniqueId == 1296452914)
+            else if (uniqueId == 1296452914 && std::strstr(filename, "/MFM2.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Podolski ", 9) == 0 && uniqueId == 1349477487)
+            else if (uniqueId == 1349477487 && std::strstr(filename, "/Podolski.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Presswerk ", 10) == 0 && uniqueId == 1886548821)
+            else if (uniqueId == 1886548821 && std::strstr(filename, "/Presswerk.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Protoverb ", 10) == 0 && uniqueId == 1969770582)
+            else if (uniqueId == 1969770582 && std::strstr(filename, "/Protoverb.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Satin ", 6) == 0 && uniqueId == 1969771348)
+            else if (uniqueId == 1969771348 && std::strstr(filename, "/Satin.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "TripleCheese ", 13) == 0 && uniqueId == 1667388281)
+            else if (uniqueId == 1667388281 && std::strstr(filename, "/TripleCheese.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Ambience ", 15) == 0 && uniqueId == 1432568113)
+            else if (uniqueId == 1432568113 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Delay ", 12) == 0 && uniqueId == 1432568881)
+            else if (uniqueId == 1432568881 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Equalizer ", 16) == 0 && uniqueId == 1432572209)
+            else if (uniqueId == 1432572209 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Flanger ", 14) == 0 && uniqueId == 1432569393)
+            else if (uniqueId == 1432569393 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik GrainDad ", 15) == 0 && uniqueId == 1432569649)
+            else if (uniqueId == 1432569649 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Phaser ", 13) == 0 && uniqueId == 1432571953)
+            else if (uniqueId == 1432571953 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Runciter ", 15) == 0 && uniqueId == 1382232375)
+            else if (uniqueId == 1382232375 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Shifter ", 14) == 0 && uniqueId == 1432572721)
+            else if (uniqueId == 1432572721 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Uhbik Tremolo ", 14) == 0 && uniqueId == 1432572977)
+            else if (uniqueId == 1432572977 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Zebra ", 6) == 0 && uniqueId == 1397572658)
+            else if (uniqueId == 1397572658 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Zebralette ", 11) == 0 && uniqueId == 1397572659)
+            else if (uniqueId == 1397572659 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "ZRev ", 5) == 0 && uniqueId == 1919243824)
+            else if (uniqueId == 1919243824 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
-            else if (std::strncmp(label, "Zebrify ", 8) == 0 && uniqueId == 1397578034)
+            else if (uniqueId == 1397578034 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
         }
     }
