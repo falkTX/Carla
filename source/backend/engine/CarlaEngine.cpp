@@ -461,6 +461,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
             else if (uniqueId == 1667388281 && std::strstr(filename, "/TripleCheese.") != nullptr)
                 preferBridges = true;
+            else if (uniqueId == 1952017974 && std::strstr(filename, "/TyrellN6.") != nullptr)
+                preferBridges = true;
             else if (uniqueId == 1432568113 && std::strstr(filename, "/Uhbik.") != nullptr)
                 preferBridges = true;
             else if (uniqueId == 1432568881 && std::strstr(filename, "/Uhbik.") != nullptr)
