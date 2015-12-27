@@ -599,7 +599,11 @@ def handleInitialCommandLineArguments(file):
 # Get initial project file (as passed in the command-line parameters)
 
 def getInitialProjectFile(app, skipExistCheck = False):
-    for arg in app.arguments()[1:]:
+    # FIXME - PyQt mishandles unicode characters, we'll use direct sys.argv for now
+    # see https://riverbankcomputing.com/pipermail/pyqt/2015-January/035395.html
+    #args = app.arguments()[1:]
+    args = sys.argv[1:]
+    for arg in args:
         if arg.startswith("--with-appname=") or arg.startswith("--with-libprefix=") or arg == "--gdb":
             continue
         if arg in ("-n", "--n", "-no-gui", "--no-gui", "-nogui", "--nogui"):

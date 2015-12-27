@@ -414,7 +414,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     bool preferBridges = pData->options.preferPluginBridges;
 
 # ifdef CARLA_OS_LINUX
-    if (! preferBridges)
+    if (! preferBridges && label != nullptr)
     {
         if (ptype == PLUGIN_LV2)
         {

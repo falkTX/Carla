@@ -237,11 +237,6 @@ class CarlaApplication(object):
 
         print("Using \"%s\" theme" % self.fApp.style().objectName())
 
-    def arguments(self):
-        # FIXME - PyQt mishandles unicode characters, we'll use direct sys.argv for now
-        return sys.argv
-        return self.fApp.arguments()
-
     def exec_(self):
         return self.fApp.exec_()
 
