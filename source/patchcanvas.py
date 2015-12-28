@@ -74,7 +74,7 @@ ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
 ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
 ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
 ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
-ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
+ACTION_PLUGIN_RENAME    = 10 # plugin_id, group_id, new_name
 ACTION_PLUGIN_REMOVE    = 11 # plugin_id, N, N
 ACTION_PLUGIN_SHOW_UI   = 12 # plugin_id, N, new_name
 
