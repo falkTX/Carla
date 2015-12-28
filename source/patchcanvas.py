@@ -2586,9 +2586,11 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_GROUP_INFO, self.m_group_id, 0, "")
 
         elif act_selected == act_x_rename:
-            new_name_try = QInputDialog.getText(None, "Rename Group", "New name:", QLineEdit.Normal, self.m_group_name)
-            if new_name_try[1] and new_name_try[0]: # 1 - bool ok, 0 - return text
-                canvas.callback(ACTION_GROUP_RENAME, self.m_group_id, 0, new_name_try[0])
+            oldName    = self.m_group_name
+            newNameTry = QInputDialog.getText(self.parentWidget(), "Rename Group", "New name:", QLineEdit.Normal, oldName)
+
+            if newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]:
+                canvas.callback(ACTION_GROUP_RENAME, self.m_group_id, 0, newNameTry[0])
 
         elif act_selected == act_x_split_join:
             if self.m_splitted:
@@ -2606,9 +2608,11 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_PLUGIN_CLONE, self.m_plugin_id, 0, "")
 
         elif act_selected == act_p_rename:
-            new_name_try = QInputDialog.getText(None, "Rename Plugin", "New name:", QLineEdit.Normal, self.m_group_name)
-            if new_name_try[1] and new_name_try[0]: # 1 - bool ok, 0 - return text
-                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, new_name_try[0])
+            oldName    = self.m_group_name
+            newNameTry = QInputDialog.getText(self.parentWidget(), "Rename Plugin", "New name:", QLineEdit.Normal, oldName)
+
+            if newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]:
+                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, newNameTry[0])
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")

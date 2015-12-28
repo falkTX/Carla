@@ -1942,7 +1942,12 @@ def canvasCallback(action, value1, value2, valueStr):
         pluginId = value1
         newName  = valueStr
 
-        if not host.rename_plugin(pluginId, newName):
+        if host.rename_plugin(pluginId, newName):
+            # FIXME
+            pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
+            if pwidget is not None:
+                pwidget.setName(newName)
+        else:
             CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
                                          host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
