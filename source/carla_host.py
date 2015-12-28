@@ -1930,6 +1930,13 @@ def canvasCallback(action, value1, value2, valueStr):
             return
 
         dialog.show()
+        dialog.activateWindow()
+
+        # FIXME
+        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
+
+        if pwidget is not None and pwidget.b_edit is not None:
+            pwidget.b_edit.setChecked(True)
 
     elif action == patchcanvas.ACTION_PLUGIN_RENAME:
         pluginId = value1
