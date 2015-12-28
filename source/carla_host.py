@@ -1940,6 +1940,7 @@ def canvasCallback(action, value1, value2, valueStr):
 
     elif action == patchcanvas.ACTION_PLUGIN_RENAME:
         pluginId = value1
+        clientId = value2
         newName  = valueStr
 
         if host.rename_plugin(pluginId, newName):
@@ -1947,6 +1948,10 @@ def canvasCallback(action, value1, value2, valueStr):
             pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
             if pwidget is not None:
                 pwidget.setName(newName)
+
+            patchcanvas.renameGroup(clientId, newName)
+            gCarla.gui.ui.miniCanvasPreview.update()
+
         else:
             CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
                                          host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)

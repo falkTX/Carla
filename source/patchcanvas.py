@@ -2612,7 +2612,7 @@ class CanvasBox(QGraphicsItem):
             newNameTry = QInputDialog.getText(self.parentWidget(), "Rename Plugin", "New name:", QLineEdit.Normal, oldName)
 
             if newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]:
-                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, newNameTry[0])
+                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, self.m_group_id, newNameTry[0])
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")

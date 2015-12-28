@@ -621,6 +621,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         self.fEditDialog.setPluginId(idx)
 
     def setName(self, name):
+        self.fPluginInfo['name'] = name
         self.fEditDialog.setName(name)
 
         if self.label_name is not None:

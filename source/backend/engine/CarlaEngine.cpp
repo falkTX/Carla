@@ -822,7 +822,8 @@ const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
     if (const char* const name = getUniquePluginName(newName))
     {
         plugin->setName(name);
-        return name;
+        delete[] name;
+        return plugin->getName();
     }
 
     setLastError("Unable to get new unique plugin name");
