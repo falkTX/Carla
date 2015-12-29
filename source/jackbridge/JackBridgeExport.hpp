@@ -118,7 +118,7 @@ typedef void (JACKBRIDGE_API *jackbridgesym_shm_init)(void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_attach)(void*, const char*);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_close)(void*);
 typedef void* (JACKBRIDGE_API *jackbridgesym_shm_map)(void*, uint64_t);
-typedef void (JACKBRIDGE_API *jackbridgesym_shm_unmap)(void*, void*);
+//typedef void (JACKBRIDGE_API *jackbridgesym_shm_unmap)(void*, void*);
 
 // -----------------------------------------------------------------------------
 
@@ -223,7 +223,7 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_shm_attach shm_attach_ptr;
     jackbridgesym_shm_close shm_close_ptr;
     jackbridgesym_shm_map shm_map_ptr;
-    jackbridgesym_shm_unmap shm_unmap_ptr;
+    //jackbridgesym_shm_unmap shm_unmap_ptr;
     ulong unique3;
 };
 
