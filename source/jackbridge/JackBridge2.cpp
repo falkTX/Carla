@@ -114,7 +114,6 @@ void* jackbridge_shm_map(void* shm, uint64_t size) noexcept
 #endif
 }
 
-/*
 void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(shm != nullptr,);
@@ -123,6 +122,5 @@ void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
     return carla_shm_unmap(*(carla_shm_t*)shm, ptr);
 #endif
 }
-*/
 
 // -----------------------------------------------------------------------------
