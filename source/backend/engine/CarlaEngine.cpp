@@ -490,6 +490,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             else if (uniqueId == 1397578034 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
         }
+        // FIXME: linuxsampler inside carla-rack/patchbay plugin has some issues (only last kit makes noise)
+        else if (getType() == kEngineTypePlugin)
+        {
+            if (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ)
+                preferBridges = true;
+        }
     }
 # endif
 
@@ -1674,7 +1680,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     outStream << "<!DOCTYPE CARLA-PROJECT>\n";
     outStream << "<CARLA-PROJECT VERSION='2.0'>\n";
 
-    const bool isPlugin(std::strcmp(getCurrentDriverName(), "Plugin") == 0);
+    const bool isPlugin(getType() == kEngineTypePlugin);
     const EngineOptions& options(pData->options);
 
     MemoryOutputStream outSettings(1024);
@@ -1837,7 +1843,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
 
-    const bool isPlugin(std::strcmp(getCurrentDriverName(), "Plugin") == 0);
+    const bool isPlugin(getType() == kEngineTypePlugin);
 
     // engine settings
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
