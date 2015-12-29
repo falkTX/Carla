@@ -578,4 +578,9 @@ void* jackbridge_shm_map(void* shm, uint64_t size) noexcept
     return getBridgeInstance().shm_map_ptr(shm, size);
 }
 
+void jackbridge_shm_unmap(void* shm, void* ptr) noexcept
+{
+    return getBridgeInstance().shm_unmap_ptr(shm, ptr);
+}
+
 // -----------------------------------------------------------------------------

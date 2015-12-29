@@ -1169,6 +1169,16 @@ public:
             return nullptr;
         }
 
+        // before we stop the engine thread we might need to get the plugin data
+        const bool needsReinit = (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
+        const CarlaStateSave* saveStatePtr = nullptr;
+
+        if (needsReinit)
+        {
+            const CarlaStateSave& saveState(plugin->getStateSave());
+            saveStatePtr = &saveState;
+        }
+
         const ScopedThreadStopper sts(this);
 
         CARLA_SAFE_ASSERT(plugin->getId() == id);
@@ -1186,8 +1196,6 @@ public:
             setLastError("Failed to request new unique plugin name");
             return nullptr;
         }
-
-        bool needsReinit = false;
 
         // rename on client client mode, just rename the ports
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
@@ -1222,8 +1230,6 @@ public:
                 jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
                 jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                 jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
-
-                needsReinit = true;
             }
             else
             {
@@ -1238,9 +1244,8 @@ public:
         if (needsReinit)
         {
             // reload plugin to recreate its ports
-            const CarlaStateSave& saveState(plugin->getStateSave());
             plugin->reload();
-            plugin->loadStateSave(saveState);
+            plugin->loadStateSave(*saveStatePtr);
         }
 
         return plugin->getName();

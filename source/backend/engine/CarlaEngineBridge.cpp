@@ -1235,6 +1235,11 @@ protected:
                     break;
 
                 case kPluginBridgeRtClientSetAudioPool: {
+                    if (fShmAudioPool.data != nullptr)
+                    {
+                        jackbridge_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data);
+                        fShmAudioPool.data = nullptr;
+                    }
                     const uint64_t poolSize(fShmRtClientControl.readULong());
                     CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
                     fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, static_cast<size_t>(poolSize));

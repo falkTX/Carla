@@ -1223,6 +1223,13 @@ public:
         // Safely disable plugin for reload
         const ScopedDisabler sd(this);
 
+        // cleanup of previous data
+        pData->audioIn.clear();
+        pData->audioOut.clear();
+        pData->cvIn.clear();
+        pData->cvOut.clear();
+        pData->event.clear();
+
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 

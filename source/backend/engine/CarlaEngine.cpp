@@ -1775,7 +1775,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     // if we're running inside some session-manager (and using JACK), let them handle the connections
     bool saveExternalConnections;
 
-    /**/ if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+    /**/ if (isPlugin)
         saveExternalConnections = false;
     else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
         saveExternalConnections = true;
@@ -1966,15 +1966,15 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             const void* extraStuff = nullptr;
 
             // check if using GIG or SF2 16outs
+            static const char kTrue[]            = "true";
             static const char kUse16OutsSuffix[] = " (16 outs)";
 
             const BinaryType btype(getBinaryTypeFromFile(stateSave.binary));
             const PluginType ptype(getPluginTypeFromString(stateSave.type));
 
-            if (CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
+            if ((ptype == PLUGIN_GIG || ptype == PLUGIN_SF2) && CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
             {
-                if (ptype == PLUGIN_GIG || ptype == PLUGIN_SF2)
-                    extraStuff = "true";
+                extraStuff = kTrue;
             }
 
             // TODO - proper find&load plugins
@@ -1983,6 +1983,8 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             {
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 {
+                    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
 #ifndef BUILD_BRIDGE
                     // deactivate bridge client-side ping check, since some plugins block during load
                     if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
@@ -2053,14 +2055,14 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             }
             break;
         }
-    }
 
-    callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+    }
 
     // if we're running inside some session-manager (and using JACK), let them handle the external connections
     bool loadExternalConnections;
 
-    /**/ if (std::strcmp(getCurrentDriverName(), "Plugin") == 0)
+    /**/ if (isPlugin)
         loadExternalConnections = false;
     else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
         loadExternalConnections = true;

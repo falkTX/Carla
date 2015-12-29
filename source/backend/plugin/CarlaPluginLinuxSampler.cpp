@@ -840,8 +840,6 @@ public:
 #ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
 #endif
-            bool sampleAccurate  = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
-
             uint32_t startTime  = 0;
             uint32_t timeOffset = 0;
 
@@ -852,7 +850,7 @@ public:
                 CARLA_SAFE_ASSERT_CONTINUE(event.time < frames);
                 CARLA_SAFE_ASSERT_BREAK(event.time >= timeOffset);
 
-                if (event.time > timeOffset && sampleAccurate)
+                if (event.time > timeOffset)
                 {
                     if (processSingle(audioOut, event.time - timeOffset, timeOffset))
                     {
@@ -960,7 +958,7 @@ public:
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
                         {
-                            fMidiInputPort->DispatchControlChange(uint8_t(ctrlEvent.param), uint8_t(ctrlEvent.value*127.0f), event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
+                            fMidiInputPort->DispatchControlChange(uint8_t(ctrlEvent.param), uint8_t(ctrlEvent.value*127.0f), event.channel, static_cast<int32_t>(startTime));
                         }
 
                         break;
@@ -979,7 +977,7 @@ public:
                     case kEngineControlEventTypeAllSoundOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_SOUND_OFF, 0, event.channel, static_cast<int32_t>(startTime));
                         }
                         break;
 
@@ -994,7 +992,7 @@ public:
                             }
 #endif
 
-                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
+                            fMidiInputPort->DispatchControlChange(MIDI_CONTROL_ALL_NOTES_OFF, 0, event.channel, static_cast<int32_t>(startTime));
                         }
                         break;
                     }
@@ -1026,7 +1024,7 @@ public:
                     midiData2[0] = uint8_t(status | (event.channel & MIDI_CHANNEL_BIT));
                     std::memcpy(midiData2+1, midiData+1, static_cast<std::size_t>(midiEvent.size-1));
 
-                    fMidiInputPort->DispatchRaw(midiData2, static_cast<int32_t>(sampleAccurate ? startTime : event.time));
+                    fMidiInputPort->DispatchRaw(midiData2, static_cast<int32_t>(startTime));
 
                     if (status == MIDI_STATUS_NOTE_ON)
                         pData->postponeRtEvent(kPluginPostRtEventNoteOn, event.channel, midiData[1], midiData[2]);
