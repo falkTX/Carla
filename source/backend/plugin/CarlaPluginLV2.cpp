@@ -1652,7 +1652,7 @@ public:
                 params += 1;
         }
 
-        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && (aIns == 1 || aOuts == 1) && fExt.state == nullptr && fExt.worker == nullptr)
+        if ((pData->options & PLUGIN_OPTION_FORCE_STEREO) != 0 && aIns <= 1 && aOuts <= 1 && fExt.state == nullptr && fExt.worker == nullptr)
         {
             if (fHandle2 == nullptr)
             {
