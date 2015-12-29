@@ -103,6 +103,10 @@ CarlaEngine::ProtectedData::ProtectedData(CarlaEngine* const engine) noexcept
       callbackPtr(nullptr),
       fileCallback(nullptr),
       fileCallbackPtr(nullptr),
+#ifndef BUILD_BRIDGE
+      firstLinuxSamplerInstance(true),
+      loadingProject(false),
+#endif
       hints(0x0),
       bufferSize(0),
       sampleRate(0.0),

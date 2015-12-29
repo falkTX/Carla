@@ -33,7 +33,6 @@
 
 #include "juce_core.h"
 
-#include "linuxsampler/EngineFactory.h"
 #include <linuxsampler/Sampler.h>
 
 // -----------------------------------------------------------------------

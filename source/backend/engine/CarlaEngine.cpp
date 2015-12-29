@@ -491,9 +491,18 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
         }
         // FIXME: linuxsampler inside carla-rack/patchbay plugin has some issues (only last kit makes noise)
-        else if (getType() == kEngineTypePlugin)
+        else if (getType() == kEngineTypePlugin && (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ))
         {
-            if (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ)
+            // if we're not loading a project consider all is ok
+            if (! pData->loadingProject)
+                pData->firstLinuxSamplerInstance = true;
+
+            // loading a project, revert first status if set
+            else if (pData->firstLinuxSamplerInstance)
+                pData->firstLinuxSamplerInstance = false;
+
+            // now check if bridge is needed
+            if (! pData->firstLinuxSamplerInstance)
                 preferBridges = true;
         }
     }
@@ -1838,6 +1847,10 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
         setLastError("Not a valid Carla project or preset file");
         return false;
     }
+
+#ifndef BUILD_BRIDGE
+    const ScopedValueSetter<bool> _svs(pData->loadingProject, true, false);
+#endif
 
     // completely load file
     xmlElement = xmlDoc.getDocumentElement(false);

@@ -173,6 +173,12 @@ struct CarlaEngine::ProtectedData {
     FileCallbackFunc fileCallback;
     void*            fileCallbackPtr;
 
+#ifndef BUILD_BRIDGE
+    // special hack for linuxsampler
+    bool firstLinuxSamplerInstance;
+    bool loadingProject;
+#endif
+
     uint     hints;
     uint32_t bufferSize;
     double   sampleRate;
