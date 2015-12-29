@@ -371,7 +371,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     CarlaPlugin* plugin = nullptr;
 
-#ifndef BRIDGE_PLUGIN
+#ifndef BUILD_BRIDGE
     CarlaString bridgeBinary(pData->options.binaryDir);
 
     if (bridgeBinary.isNotEmpty())

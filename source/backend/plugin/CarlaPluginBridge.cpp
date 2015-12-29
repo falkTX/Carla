@@ -355,11 +355,13 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         if (getAvailableDataSize() < BigStackBuffer::size/4)
             return;
 
+        carla_stdout("Server waitIfDataIsReachingLimit() waiting...");
+
         for (int i=50; --i >= 0;)
         {
             if (getAvailableDataSize() >= BigStackBuffer::size*3/4)
             {
-                //carla_stdout("Server waitIfDataIsReachingLimit() reached and waited successfully");
+                carla_stdout("Server waitIfDataIsReachingLimit() reached and waited successfully");
                 writeOpcode(kPluginBridgeNonRtClientPing);
                 commitWrite();
                 return;
