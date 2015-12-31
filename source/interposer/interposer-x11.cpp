@@ -58,20 +58,25 @@ int XMapWindow(Display* display, Window w)
 {
     carla_stdout("------------------------------- XMapWindow called");
 
-    if (++sMapWindowCounter != 1)
-        return real_XMapWindow(display, w);
-
-    if (const char* const winIdStr = std::getenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID"))
+    for (;;)
     {
-        CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0', real_XMapWindow(display, w));
+        if (++sMapWindowCounter != 1)
+            break;
 
-        const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
-        CARLA_SAFE_ASSERT_RETURN(winIdLL > 0, real_XMapWindow(display, w));
+        if (const char* const winIdStr = std::getenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID"))
+        {
+            CARLA_SAFE_ASSERT_BREAK(winIdStr[0] != '\0');
 
-        const Window winId(static_cast<Window>(winIdLL));
-        XSetTransientForHint(display, w, static_cast<Window>(winId));
+            const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
+            CARLA_SAFE_ASSERT_BREAK(winIdLL > 0);
 
-        carla_stdout("Transient hint correctly applied before mapping window");
+            const Window winId(static_cast<Window>(winIdLL));
+            XSetTransientForHint(display, w, static_cast<Window>(winId));
+
+            carla_stdout("Transient hint correctly applied before mapping window");
+        }
+
+        break;
     }
 
     return real_XMapWindow(display, w);
