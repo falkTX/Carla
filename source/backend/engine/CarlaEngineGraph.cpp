@@ -1483,6 +1483,18 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
         addNodeToPatchbay(newPlugin->getEngine(), node->nodeId, static_cast<int>(newPlugin->getId()), instance);
 }
 
+void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const newName)
+{
+    CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
+    carla_debug("PatchbayGraph::renamePlugin(%p)", plugin, newName);
+
+    AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
+    CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
+
+    if (! usingExternal)
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_RENAMED, node->nodeId, 0, 0, 0.0f, newName);
+}
+
 void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
@@ -2010,6 +2022,12 @@ void EngineInternalGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugi
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
     fPatchbay->replacePlugin(oldPlugin, newPlugin);
+}
+
+void EngineInternalGraph::renamePlugin(CarlaPlugin* const plugin, const char* const newName)
+{
+    CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+    fPatchbay->renamePlugin(plugin, newName);
 }
 
 void EngineInternalGraph::removePlugin(CarlaPlugin* const plugin)

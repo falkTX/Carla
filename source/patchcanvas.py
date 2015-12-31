@@ -31,16 +31,14 @@ if config_UseQt5:
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
     from PyQt5.QtSvg import QGraphicsSvgItem, QSvgRenderer
     from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
-    from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
-    from PyQt5.QtWidgets import QInputDialog, QLineEdit, QMenu
+    from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt4.QtGui import QCursor, QFont, QFontMetrics
     from PyQt4.QtGui import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
-    from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect
-    from PyQt4.QtGui import QInputDialog, QLineEdit, QMenu
+    from PyQt4.QtGui import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
     from PyQt4.QtSvg import QGraphicsSvgItem, QSvgRenderer
 
 # ------------------------------------------------------------------------------------------------------------
@@ -65,18 +63,18 @@ PORT_TYPE_PARAMETER  = 4
 
 # Callback Action
 ACTION_GROUP_INFO       =  0 # group_id, N, N
-ACTION_GROUP_RENAME     =  1 # group_id, N, new_name
+ACTION_GROUP_RENAME     =  1 # group_id, N, N
 ACTION_GROUP_SPLIT      =  2 # group_id, N, N
 ACTION_GROUP_JOIN       =  3 # group_id, N, N
 ACTION_PORT_INFO        =  4 # group_id, port_id, N
-ACTION_PORT_RENAME      =  5 # group_id, port_id, new_name
+ACTION_PORT_RENAME      =  5 # group_id, port_id, N
 ACTION_PORTS_CONNECT    =  6 # N, N, "outG:outP:inG:inP"
 ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
 ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
 ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
-ACTION_PLUGIN_RENAME    = 10 # plugin_id, group_id, new_name
+ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
 ACTION_PLUGIN_REMOVE    = 11 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI   = 12 # plugin_id, N, new_name
+ACTION_PLUGIN_SHOW_UI   = 12 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -1971,9 +1969,7 @@ class CanvasPort(QGraphicsItem):
             canvas.callback(ACTION_PORT_INFO, self.m_group_id, self.m_port_id, "")
 
         elif act_selected == act_x_rename:
-            new_name_try = QInputDialog.getText(None, "Rename Port", "New name:", QLineEdit.Normal, self.m_port_name)
-            if new_name_try[1] and new_name_try[0]: # 1 - bool ok, 0 - return text
-                canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, new_name_try[0])
+            canvas.callback(ACTION_PORT_RENAME, self.m_group_id, self.m_port_id, "")
 
         event.accept()
 
@@ -2586,11 +2582,7 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_GROUP_INFO, self.m_group_id, 0, "")
 
         elif act_selected == act_x_rename:
-            oldName    = self.m_group_name
-            newNameTry = QInputDialog.getText(self.parentWidget(), "Rename Group", "New name:", QLineEdit.Normal, oldName)
-
-            if newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]:
-                canvas.callback(ACTION_GROUP_RENAME, self.m_group_id, 0, newNameTry[0])
+            canvas.callback(ACTION_GROUP_RENAME, self.m_group_id, 0, "")
 
         elif act_selected == act_x_split_join:
             if self.m_splitted:
@@ -2608,11 +2600,7 @@ class CanvasBox(QGraphicsItem):
             canvas.callback(ACTION_PLUGIN_CLONE, self.m_plugin_id, 0, "")
 
         elif act_selected == act_p_rename:
-            oldName    = self.m_group_name
-            newNameTry = QInputDialog.getText(self.parentWidget(), "Rename Plugin", "New name:", QLineEdit.Normal, oldName)
-
-            if newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]:
-                canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, self.m_group_id, newNameTry[0])
+            canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, "")
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")

@@ -830,19 +830,19 @@ const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
     carla_debug("CarlaEngine::renamePlugin(%i, \"%s\")", id, newName);
 
     CarlaPlugin* const plugin(pData->plugins[id].plugin);
-
     CARLA_SAFE_ASSERT_RETURN_ERRN(plugin != nullptr, "Could not find plugin to rename");
     CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data");
 
-    if (const char* const name = getUniquePluginName(newName))
-    {
-        plugin->setName(name);
-        delete[] name;
-        return plugin->getName();
-    }
+    const char* const uniqueName(getUniquePluginName(newName));
+    CARLA_SAFE_ASSERT_RETURN_ERRN(uniqueName != nullptr, "Unable to get new unique plugin name");
 
-    setLastError("Unable to get new unique plugin name");
-    return nullptr;
+    plugin->setName(uniqueName);
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.renamePlugin(plugin, uniqueName);
+
+    delete[] uniqueName;
+    return plugin->getName();
 }
 
 bool CarlaEngine::clonePlugin(const uint id)

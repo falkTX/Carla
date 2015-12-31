@@ -774,13 +774,16 @@ private:
             {
                 for (int i=0; connections[i] != nullptr; ++i)
                 {
-                    if (! port->kIsInput)
-                        fPreRenameConnections.append(portName);
-
-                    fPreRenameConnections.append(connections[i]);
-
                     if (port->kIsInput)
+                    {
+                        fPreRenameConnections.append(connections[i]);
                         fPreRenameConnections.append(portName);
+                    }
+                    else
+                    {
+                        fPreRenameConnections.append(portName);
+                        fPreRenameConnections.append(connections[i]);
+                    }
                 }
 
                 jackbridge_free(connections);
@@ -1156,18 +1159,17 @@ public:
 #ifndef BUILD_BRIDGE
     const char* renamePlugin(const uint id, const char* const newName) override
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount > 0, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, nullptr);
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            return CarlaEngine::renamePlugin(id, newName);
+
         CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount != 0, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(id < pData->curPluginCount, nullptr);
         CARLA_SAFE_ASSERT_RETURN(newName != nullptr && newName[0] != '\0', nullptr);
 
         CarlaPlugin* const plugin(pData->plugins[id].plugin);
-
-        if (plugin == nullptr)
-        {
-            carla_stderr("CarlaEngine::clonePlugin(%i) - could not find plugin", id);
-            return nullptr;
-        }
+        CARLA_SAFE_ASSERT_RETURN_ERRN(plugin != nullptr, "Could not find plugin to rename");
+        CARLA_SAFE_ASSERT_RETURN_ERRN(plugin->getId() == id, "Invalid engine internal data");
 
         // before we stop the engine thread we might need to get the plugin data
         const bool needsReinit = (pData->options.processMode == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS);
@@ -1178,10 +1180,6 @@ public:
             const CarlaStateSave& saveState(plugin->getStateSave());
             saveStatePtr = &saveState;
         }
-
-        const ScopedThreadStopper sts(this);
-
-        CARLA_SAFE_ASSERT(plugin->getId() == id);
 
         CarlaString uniqueName;
 
@@ -1196,6 +1194,8 @@ public:
             setLastError("Failed to request new unique plugin name");
             return nullptr;
         }
+
+        const ScopedThreadStopper sts(this);
 
         // rename on client client mode, just rename the ports
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
@@ -1230,6 +1230,52 @@ public:
                 jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
                 jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                 jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
+
+                /* The following code is because of a tricky situation.
+                   We cannot lock or do jack operations during jack callbacks on jack1. jack2 events are asynchronous.
+                   When we close the client jack will trigger unregister-port callbacks, which we handle on a separate thread ASAP.
+                   But before that happens we already registered a new client with the same ports (the "renamed" one),
+                    and at this point the port we receive during that callback is actually the new one from the new client..
+                   JACK2 seems to be reusing ports to save space, which is understandable.
+                   Anyway, this means we have to remove all our port-related data before the new client ports are created.
+                   (we also stop the separate jack-events thread to avoid any race conditions while modying our port data) */
+
+                stopThread(-1);
+
+                const uint groupId(fUsedGroups.getGroupId(plugin->getName()));
+
+                if (groupId > 0)
+                {
+                    for (LinkedList<PortNameToId>::Itenerator it = fUsedPorts.list.begin2(); it.valid(); it.next())
+                    {
+                        for (LinkedList<ConnectionToId>::Itenerator it2 = fUsedConnections.list.begin2(); it2.valid(); it2.next())
+                        {
+                            static ConnectionToId connectionFallback = { 0, 0, 0, 0, 0 };
+
+                            ConnectionToId& connectionToId = it2.getValue(connectionFallback);
+                            CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id != 0);
+
+                            if (connectionToId.groupA != groupId && connectionToId.groupB != groupId)
+                                continue;
+
+                            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_REMOVED, connectionToId.id, 0, 0, 0.0f, nullptr);
+                            fUsedConnections.list.remove(it2);
+                        }
+
+                        static PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
+
+                        PortNameToId& portNameToId(it.getValue(portNameFallback));
+                        CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group != 0);
+
+                        if (portNameToId.group != groupId)
+                            continue;
+
+                        callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, nullptr);
+                        fUsedPorts.list.remove(it);
+                    }
+                }
+
+                startThread();
             }
             else
             {
@@ -1743,7 +1789,10 @@ protected:
         else
         {
             const PortNameToId& portNameToId(fUsedPorts.getPortNameToId(fullPortName));
-            CARLA_SAFE_ASSERT_RETURN(portNameToId.group > 0 && portNameToId.port > 0,);
+
+            /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                     See the comment on CarlaEngineJack::renamePlugin() for more information. */
+            if (portNameToId.group <= 0 || portNameToId.port <= 0) return;
 
             callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, portNameToId.group, static_cast<int>(portNameToId.port), 0, 0.0f, nullptr);
             fUsedPorts.list.removeOne(portNameToId);
@@ -1768,10 +1817,12 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fullPortNameB != nullptr && fullPortNameB[0] != '\0',);
 
         const PortNameToId& portNameToIdA(fUsedPorts.getPortNameToId(fullPortNameA));
-        CARLA_SAFE_ASSERT_RETURN(portNameToIdA.group > 0 && portNameToIdA.port > 0,);
-
         const PortNameToId& portNameToIdB(fUsedPorts.getPortNameToId(fullPortNameB));
-        CARLA_SAFE_ASSERT_RETURN(portNameToIdB.group > 0 && portNameToIdB.port > 0,);
+
+        /* NOTE: Due to JACK2 async behaviour the port we get here might be the same of a previous rename-plugin request.
+                 See the comment on CarlaEngineJack::renamePlugin() for more information. */
+        if (portNameToIdA.group <= 0 || portNameToIdA.port <= 0) return;
+        if (portNameToIdB.group <= 0 || portNameToIdB.port <= 0) return;
 
         if (connect)
         {
@@ -2301,6 +2352,15 @@ private:
 
     // -------------------------------------------------------------------
 
+// disable -Wattributes warnings
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wattributes"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wattributes"
+#endif
+
     #define handlePtr ((CarlaEngineJack*)arg)
 
     static void JACKBRIDGE_API carla_jack_thread_init_callback(void*)
@@ -2427,6 +2487,13 @@ private:
 
         engine->handlePluginJackShutdownCallback(plugin);
     }
+#endif
+
+// enable -Wattributes again
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
 #endif
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineJack)

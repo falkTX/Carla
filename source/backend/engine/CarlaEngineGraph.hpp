@@ -165,6 +165,7 @@ struct PatchbayGraph {
 
     void addPlugin(CarlaPlugin* const plugin);
     void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
+    void renamePlugin(CarlaPlugin* const plugin, const char* const newName);
     void removePlugin(CarlaPlugin* const plugin);
     void removeAllPlugins();
 

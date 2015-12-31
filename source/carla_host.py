@@ -974,6 +974,9 @@ class HostWindow(QMainWindow):
         y = self.ui.graphicsView.verticalScrollBar().value() + self.height()/4
         patchcanvas.setInitialPos(x, y)
 
+    def updateMiniCanvasLater(self):
+        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+
     # --------------------------------------------------------------------------------------------------------
     # Canvas (menu actions)
 
@@ -1013,7 +1016,7 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running():
             self.host.patchbay_refresh(self.fExternalPatchbay)
 
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot()
     def slot_canvasZoomFit(self):
@@ -1082,7 +1085,7 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, int, QPointF)
     def slot_canvasItemMoved(self, group_id, split_mode, pos):
-        self.ui.miniCanvasPreview.update()
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(float)
     def slot_canvasScaleChanged(self, scale):
@@ -1115,7 +1118,7 @@ class HostWindow(QMainWindow):
 
         patchcanvas.addGroup(clientId, clientName, pcSplit, pcIcon)
 
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
         if pluginId < 0:
             return
@@ -1128,12 +1131,12 @@ class HostWindow(QMainWindow):
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
         patchcanvas.removeGroup(clientId)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, str)
     def slot_handlePatchbayClientRenamedCallback(self, clientId, newClientName):
         patchcanvas.renameGroup(clientId, newClientName)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayClientDataChangedCallback(self, clientId, clientIcon, pluginId):
@@ -1151,7 +1154,7 @@ class HostWindow(QMainWindow):
             pcIcon = patchcanvas.ICON_FILE
 
         patchcanvas.setGroupIcon(clientId, pcIcon)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
         if pluginId < 0:
             return
@@ -1182,27 +1185,27 @@ class HostWindow(QMainWindow):
             isAlternate = False
 
         patchcanvas.addPort(clientId, portId, portName, portMode, portType, isAlternate)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int)
     def slot_handlePatchbayPortRemovedCallback(self, groupId, portId):
         patchcanvas.removePort(groupId, portId)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, str)
     def slot_handlePatchbayPortRenamedCallback(self, groupId, portId, newPortName):
         patchcanvas.renamePort(groupId, portId, newPortName)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, int, int, int)
     def slot_handlePatchbayConnectionAddedCallback(self, connectionId, groupOutId, portOutId, groupInId, portInId):
         patchcanvas.connectPorts(connectionId, groupOutId, portOutId, groupInId, portInId)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     @pyqtSlot(int, int, int)
     def slot_handlePatchbayConnectionRemovedCallback(self, connectionId, portOutId, portInId):
         patchcanvas.disconnectPorts(connectionId)
-        QTimer.singleShot(self.fMiniCanvasUpdateTimeout, self.ui.miniCanvasPreview.update)
+        self.updateMiniCanvasLater()
 
     # --------------------------------------------------------------------------------------------------------
     # Settings
@@ -1889,12 +1892,12 @@ def canvasCallback(action, value1, value2, valueStr):
     elif action == patchcanvas.ACTION_GROUP_SPLIT:
         groupId = value1
         patchcanvas.splitGroup(groupId)
-        gCarla.gui.ui.miniCanvasPreview.update()
+        gCarla.gui.updateMiniCanvasLater()
 
     elif action == patchcanvas.ACTION_GROUP_JOIN:
         groupId = value1
         patchcanvas.joinGroup(groupId)
-        gCarla.gui.ui.miniCanvasPreview.update()
+        gCarla.gui.updateMiniCanvasLater()
 
     elif action == patchcanvas.ACTION_PORT_INFO:
         pass
@@ -1923,38 +1926,17 @@ def canvasCallback(action, value1, value2, valueStr):
 
     elif action == patchcanvas.ACTION_PLUGIN_EDIT:
         pluginId = value1
+        pwidget  = gCarla.gui.getPluginSlotWidget(pluginId)
 
-        dialog = gCarla.gui.getPluginEditDialog(pluginId)
-
-        if dialog is None:
-            return
-
-        dialog.show()
-        dialog.activateWindow()
-
-        # FIXME
-        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
-
-        if pwidget is not None and pwidget.b_edit is not None:
-            pwidget.b_edit.setChecked(True)
+        if pwidget is not None:
+            pwidget.showEditDialog()
 
     elif action == patchcanvas.ACTION_PLUGIN_RENAME:
         pluginId = value1
-        clientId = value2
-        newName  = valueStr
+        pwidget  = gCarla.gui.getPluginSlotWidget(pluginId)
 
-        if host.rename_plugin(pluginId, newName):
-            # FIXME
-            pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
-            if pwidget is not None:
-                pwidget.setName(newName)
-
-            patchcanvas.renameGroup(clientId, newName)
-            gCarla.gui.ui.miniCanvasPreview.update()
-
-        else:
-            CustomMessageBox(gCarla.gui, QMessageBox.Warning, gCarla.gui.tr("Error"), gCarla.gui.tr("Operation failed"),
-                                         host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+        if pwidget is not None:
+            pwidget.showRenameDialog()
 
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
@@ -1965,14 +1947,10 @@ def canvasCallback(action, value1, value2, valueStr):
 
     elif action == patchcanvas.ACTION_PLUGIN_SHOW_UI:
         pluginId = value1
+        pwidget  = gCarla.gui.getPluginSlotWidget(pluginId)
 
-        host.show_custom_ui(pluginId, True)
-
-        # FIXME
-        pwidget = gCarla.gui.getPluginSlotWidget(pluginId)
-
-        if pwidget is not None and pwidget.b_gui is not None:
-            pwidget.b_gui.setChecked(True)
+        if pwidget is not None:
+            pwidget.showCustomUI()
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback

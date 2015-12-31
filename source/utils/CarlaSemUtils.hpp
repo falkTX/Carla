@@ -147,7 +147,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
 
 #if defined(CARLA_OS_WIN)
-    return (::WaitForSingleObject(sem.handle, secs*1000) == WAIT_OBJECT_0);
+    return (::WaitForSingleObject(sem.handle, secs*1000 + msecs) == WAIT_OBJECT_0);
 #elif defined(CARLA_OS_MAC)
     return false; // TODO
 #elif defined(CARLA_USE_FUTEXES)

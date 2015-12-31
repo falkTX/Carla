@@ -734,6 +734,37 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
+    def showCustomUI(self):
+        self.host.show_custom_ui(self.fPluginId, True)
+
+        if self.b_gui is not None:
+            self.b_gui.setChecked(True)
+
+    def showEditDialog(self):
+        self.fEditDialog.show()
+        self.fEditDialog.activateWindow()
+
+        if self.b_edit is not None:
+            self.b_edit.setChecked(True)
+
+    def showRenameDialog(self):
+        oldName    = self.fPluginInfo['name']
+        newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
+
+        if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
+            return
+
+        newName = newNameTry[0]
+
+        if not self.host.rename_plugin(self.fPluginId, newName):
+            CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                   self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        self.setName(newName)
+
+    #------------------------------------------------------------------
+
     def activeChanged(self, onOff):
         self.fIsActive = onOff
 
@@ -1046,19 +1077,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Rename
 
         elif actSel == actRename:
-            oldName    = self.fPluginInfo['name']
-            newNameTry = QInputDialog.getText(self, self.tr("Rename Plugin"), self.tr("New plugin name:"), QLineEdit.Normal, oldName)
-
-            if not (newNameTry[1] and newNameTry[0] and oldName != newNameTry[0]):
-                return
-
-            newName = newNameTry[0]
-
-            if self.host.rename_plugin(self.fPluginId, newName):
-                self.setName(newName)
-            else:
-                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
-                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            self.showRenameDialog()
 
         # -------------------------------------------------------------
         # Replace
