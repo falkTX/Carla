@@ -164,10 +164,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
         }
 
         if (errno == EWOULDBLOCK)
-        {
-            printf("carla-bridge: retrying futex..");
             continue;
-        }
 
         return false;
     }
