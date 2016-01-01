@@ -111,6 +111,10 @@ class HostWindow(QMainWindow):
         self.fIsProjectLoading = False
         self.fCurrentlyRemovingAllPlugins = False
 
+        # run a custom action after engine is properly closed
+        # 1 for close carla, 2 for load project
+        self.fCustomStopAction = 0
+
         # first attempt of auto-start engine doesn't show an error
         self.fFirstEngineInit = True
 
@@ -623,21 +627,43 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_engineStop(self, forced = False):
-        if self.fPluginCount > 0:
-            if not forced:
-                ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                            "Do you want to do this now?"),
-                                                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                if ask != QMessageBox.Yes:
-                    return
+        if self.fPluginCount == 0:
+            self.engineStopFinal()
+            return True
 
-            self.killTimers()
-            self.removeAllPlugins()
-            self.host.set_engine_about_to_close()
-            self.host.remove_all_plugins()
+        if not forced:
+            ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
+                                                                        "Do you want to do this now?"),
+                                                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if ask != QMessageBox.Yes:
+                return
+
+        return self.slot_engineStopTryAgain()
+
+    @pyqtSlot()
+    def slot_engineStopTryAgain(self):
+        if self.host.is_engine_running() and not self.host.set_engine_about_to_close():
+            QTimer.singleShot(0, self.slot_engineStopTryAgain)
+            return False
+
+        self.engineStopFinal()
+        return True
+
+    def engineStopFinal(self):
+        self.killTimers()
+        self.removeAllPlugins()
+        self.host.remove_all_plugins()
 
         if self.host.is_engine_running() and not self.host.engine_close():
             print(self.host.get_last_error())
+
+        if self.fCustomStopAction == 1:
+            self.close()
+        elif self.fCustomStopAction == 2:
+            self.slot_engineStart()
+            self.loadProjectNow()
+
+        self.fCustomStopAction = 0
 
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
@@ -1683,7 +1709,11 @@ class HostWindow(QMainWindow):
             self.fClientName      = os.path.basename(valueStr)
             self.fProjectFilename = QFileInfo(valueStr+".carxp").absoluteFilePath()
             self.setProperWindowTitle()
-            self.slot_engineStop(True)
+
+            self.fCustomStopAction = 2
+            if not self.slot_engineStop(True):
+                return
+
             self.slot_engineStart()
             self.loadProjectNow()
 
@@ -1733,7 +1763,8 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_handleSIGTERM(self):
         print("Got SIGTERM -> Closing now")
-        self.close()
+        self.fCustomStopAction = 1
+        self.slot_engineStop(True)
 
     # --------------------------------------------------------------------------------------------------------
     # Internal stuff
@@ -1816,6 +1847,11 @@ class HostWindow(QMainWindow):
             #return AbstractPluginSlot()
 
         return pitem.getWidget()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def waitForPendingEvents(self):
+        pass
 
     # --------------------------------------------------------------------------------------------------------
     # show/hide event
@@ -1927,7 +1963,10 @@ class HostWindow(QMainWindow):
         self.saveSettings()
 
         if self.host.is_engine_running() and not (self.host.isControl or self.host.isPlugin):
-            self.slot_engineStop(True)
+            if not self.slot_engineStop(True):
+                self.fCustomStopAction = 1
+                event.accept()
+                return
 
         QMainWindow.closeEvent(self, event)
 

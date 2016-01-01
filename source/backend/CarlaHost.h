@@ -340,8 +340,9 @@ CARLA_EXPORT bool carla_is_engine_running();
 /*!
  * Tell the engine it's about to close.
  * This is used to prevent the engine thread(s) from reactivating.
+ * Returns true if there's no pending engine events.
  */
-CARLA_EXPORT void carla_set_engine_about_to_close();
+CARLA_EXPORT bool carla_set_engine_about_to_close();
 
 /*!
  * Set the engine callback function.

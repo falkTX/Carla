@@ -1340,11 +1340,21 @@ void CarlaEngine::setLastError(const char* const error) const noexcept
     pData->lastError = error;
 }
 
-void CarlaEngine::setAboutToClose() noexcept
+// -----------------------------------------------------------------------
+// Misc
+
+bool CarlaEngine::isAboutToClose() const noexcept
+{
+    return pData->aboutToClose;
+}
+
+bool CarlaEngine::setAboutToClose() noexcept
 {
     carla_debug("CarlaEngine::setAboutToClose()");
 
     pData->aboutToClose = true;
+
+    return (pData->isIdling == 0);
 }
 
 // -----------------------------------------------------------------------
@@ -1856,6 +1866,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     xmlElement = xmlDoc.getDocumentElement(false);
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to completely parse project file");
 
+    if (pData->aboutToClose)
+        return true;
+
     const bool isPlugin(getType() == kEngineTypePlugin);
 
     // engine settings
@@ -1968,6 +1981,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
         break;
     }
 
+    if (pData->aboutToClose)
+        return true;
+
     // handle plugins first
     for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
     {
@@ -1979,6 +1995,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             stateSave.fillFromXmlElement(isPreset ? xmlElement.get() : elem);
 
             callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (pData->aboutToClose)
+                return true;
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
@@ -2003,6 +2022,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 {
                     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+                    if (pData->aboutToClose)
+                        return true;
 
 #ifndef BUILD_BRIDGE
                     // deactivate bridge client-side ping check, since some plugins block during load
@@ -2033,6 +2055,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     }
 
     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+    if (pData->aboutToClose)
+        return true;
 
     // handle connections (internal)
     if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -2076,6 +2101,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
         }
 
         callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+        if (pData->aboutToClose)
+            return true;
     }
 
     // if we're running inside some session-manager (and using JACK), let them handle the external connections

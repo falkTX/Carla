@@ -1852,7 +1852,7 @@ class CarlaHostNull(CarlaHostMeta):
         return False
 
     def set_engine_about_to_close(self):
-        return
+        return True
 
     def set_engine_callback(self, func):
         self.fEngineCallback = func
@@ -2119,7 +2119,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_is_engine_running.restype = c_bool
 
         self.lib.carla_set_engine_about_to_close.argtypes = None
-        self.lib.carla_set_engine_about_to_close.restype = None
+        self.lib.carla_set_engine_about_to_close.restype = c_bool
 
         self.lib.carla_set_engine_callback.argtypes = [EngineCallbackFunc, c_void_p]
         self.lib.carla_set_engine_callback.restype = None
@@ -2382,7 +2382,7 @@ class CarlaHostDLL(CarlaHostMeta):
         return bool(self.lib.carla_is_engine_running())
 
     def set_engine_about_to_close(self):
-        self.lib.carla_set_engine_about_to_close()
+        return bool(self.lib.carla_set_engine_about_to_close())
 
     def set_engine_callback(self, func):
         self._engineCallback = EngineCallbackFunc(func)

@@ -64,7 +64,7 @@ class PluginHost(CarlaHostQtPlugin):
         return self.fExternalUI.isRunning()
 
     def set_engine_about_to_close(self):
-        return
+        return True
 
 # ------------------------------------------------------------------------------------------------------------
 # Main Window

@@ -2567,6 +2567,8 @@ public:
 
             if (fInitiated)
                 break;
+            if (pData->engine->isAboutToClose())
+                break;
 
             carla_msleep(20);
         }

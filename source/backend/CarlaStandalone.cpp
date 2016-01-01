@@ -421,12 +421,12 @@ bool carla_is_engine_running()
     return (gStandalone.engine != nullptr && gStandalone.engine->isRunning());
 }
 
-void carla_set_engine_about_to_close()
+bool carla_set_engine_about_to_close()
 {
-    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, true);
     carla_debug("carla_set_engine_about_to_close()");
 
-    gStandalone.engine->setAboutToClose();
+    return gStandalone.engine->setAboutToClose();
 }
 
 void carla_set_engine_callback(EngineCallbackFunc func, void* ptr)

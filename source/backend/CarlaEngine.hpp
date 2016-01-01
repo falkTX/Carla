@@ -1003,10 +1003,16 @@ public:
     // Misc
 
     /*!
+     * Check if the engine is about to close.
+     */
+    bool isAboutToClose() const noexcept;
+
+    /*!
      * Tell the engine it's about to close.
      * This is used to prevent the engine thread(s) from reactivating.
+     * Returns true if there's no pending engine events.
      */
-    void setAboutToClose() noexcept;
+    bool setAboutToClose() noexcept;
 
     // -------------------------------------------------------------------
     // Options
