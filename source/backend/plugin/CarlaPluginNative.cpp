@@ -568,7 +568,7 @@ public:
             delete[] fHost.uiName;
         fHost.uiName = carla_strdup(uiName);
 
-        if (fDescriptor->dispatcher != nullptr)
+        if (fDescriptor->dispatcher != nullptr && fIsUiVisible)
             fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_UI_NAME_CHANGED, 0, 0, uiName, 0.0f);
 
         CarlaPlugin::setName(newName);

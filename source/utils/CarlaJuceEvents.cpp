@@ -49,6 +49,7 @@ public:
         stopThread(2000);
 
         const ScopedLock sl(fLock);
+        CARLA_SAFE_ASSERT(fQueue.size() == 0);
         fQueue.clear();
     }
 
