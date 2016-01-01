@@ -25,7 +25,7 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt5.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt5.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt5.QtGui import QCursor, QFont, QFontMetrics
@@ -33,7 +33,7 @@ if config_UseQt5:
     from PyQt5.QtWidgets import QGraphicsScene, QGraphicsItem, QGraphicsLineItem, QGraphicsPathItem
     from PyQt5.QtWidgets import QGraphicsColorizeEffect, QGraphicsDropShadowEffect, QMenu
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qDebug, qCritical, qFatal, qWarning, Qt, QObject
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, qCritical, qFatal, qWarning, Qt, QObject
     from PyQt4.QtCore import QAbstractAnimation, QLineF, QPointF, QRectF, QSizeF, QSettings, QTimer
     from PyQt4.QtGui import QColor, QLinearGradient, QPen, QPolygonF, QPainter, QPainterPath
     from PyQt4.QtGui import QCursor, QFont, QFontMetrics
@@ -199,28 +199,29 @@ class CanvasObject(QObject):
         QObject.__init__(self, parent)
 
     @pyqtSlot()
-    def AnimationIdle(self):
+    def AnimationFinishedShow(self):
         animation = self.sender()
         if animation:
-            CanvasRemoveAnimation(animation)
+            animation.forceStop()
+            canvas.animation_list.remove(animation)
 
     @pyqtSlot()
-    def AnimationHide(self):
+    def AnimationFinishedHide(self):
         animation = self.sender()
         if animation:
+            animation.forceStop()
+            canvas.animation_list.remove(animation)
             item = animation.item()
-            if item:
-                item.hide()
-            CanvasRemoveAnimation(animation)
+            if item: item.hide()
 
     @pyqtSlot()
-    def AnimationDestroy(self):
+    def AnimationFinishedDestroy(self):
         animation = self.sender()
         if animation:
+            animation.forceStop()
+            canvas.animation_list.remove(animation)
             item = animation.item()
-            if item:
-                CanvasRemoveItemFX(item)
-            CanvasRemoveAnimation(animation)
+            if item: CanvasRemoveItemFX(item)
 
     @pyqtSlot()
     def PortContextMenuDisconnect(self):
@@ -331,7 +332,7 @@ def setFeatures(new_features):
 
 def init(appName, scene, callback, debug=False):
     if debug:
-        qDebug("PatchCanvas::init(\"%s\", %s, %s, %s)" % (appName, scene, callback, bool2str(debug)))
+        print("PatchCanvas::init(\"%s\", %s, %s, %s)" % (appName, scene, callback, bool2str(debug)))
 
     if canvas.initiated:
         qCritical("PatchCanvas::init() - already initiated")
@@ -372,7 +373,7 @@ def init(appName, scene, callback, debug=False):
 
 def clear():
     if canvas.debug:
-        qDebug("PatchCanvas::clear()")
+        print("PatchCanvas::clear()")
 
     group_list_ids = []
     port_list_ids  = []
@@ -403,20 +404,31 @@ def clear():
     canvas.port_list = []
     canvas.connection_list = []
 
-    canvas.scene.clear()
+    canvas.scene.clearSelection()
+
+    animatedItems = []
+    for animation in canvas.animation_list:
+        animatedItems.append(animation.item())
+
+    for item in canvas.scene.items():
+        if item.type() != CanvasIconType and item not in animatedItems:
+            canvas.scene.removeItem(item)
+            del item
 
     canvas.initiated = False
 
+    QTimer.singleShot(0, canvas.scene.update)
+
 def setInitialPos(x, y):
     if canvas.debug:
-        qDebug("PatchCanvas::setInitialPos(%i, %i)" % (x, y))
+        print("PatchCanvas::setInitialPos(%i, %i)" % (x, y))
 
     canvas.initial_pos.setX(x)
     canvas.initial_pos.setY(y)
 
 def setCanvasSize(x, y, width, height):
     if canvas.debug:
-        qDebug("PatchCanvas::setCanvasSize(%i, %i, %i, %i)" % (x, y, width, height))
+        print("PatchCanvas::setCanvasSize(%i, %i, %i, %i)" % (x, y, width, height))
 
     canvas.size_rect.setX(x)
     canvas.size_rect.setY(y)
@@ -425,7 +437,7 @@ def setCanvasSize(x, y, width, height):
 
 def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     if canvas.debug:
-        qDebug("PatchCanvas::addGroup(%i, %s, %s, %s)" % (group_id, group_name.encode(), split2str(split), icon2str(icon)))
+        print("PatchCanvas::addGroup(%i, %s, %s, %s)" % (group_id, group_name.encode(), split2str(split), icon2str(icon)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -472,7 +484,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_sbox.setZValue(canvas.last_z_value)
 
         if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-            CanvasItemFX(group_sbox, True)
+            CanvasItemFX(group_sbox, True, False)
 
         group_sbox.checkItemPos()
 
@@ -494,13 +506,13 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     canvas.group_list.append(group_dict)
 
     if options.eyecandy == EYECANDY_FULL and not options.auto_hide_groups:
-        CanvasItemFX(group_box, True)
+        return CanvasItemFX(group_box, True, False)
 
     QTimer.singleShot(0, canvas.scene.update)
 
 def removeGroup(group_id):
     if canvas.debug:
-        qDebug("PatchCanvas::removeGroup(%i)" % group_id)
+        print("PatchCanvas::removeGroup(%i)" % group_id)
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -543,7 +555,7 @@ def removeGroup(group_id):
 
 def renameGroup(group_id, new_group_name):
     if canvas.debug:
-        qDebug("PatchCanvas::renameGroup(%i, %s)" % (group_id, new_group_name.encode()))
+        print("PatchCanvas::renameGroup(%i, %s)" % (group_id, new_group_name.encode()))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -560,7 +572,7 @@ def renameGroup(group_id, new_group_name):
 
 def splitGroup(group_id):
     if canvas.debug:
-        qDebug("PatchCanvas::splitGroup(%i)" % group_id)
+        print("PatchCanvas::splitGroup(%i)" % group_id)
 
     item = None
     group_name = ""
@@ -631,7 +643,7 @@ def splitGroup(group_id):
 
 def joinGroup(group_id):
     if canvas.debug:
-        qDebug("PatchCanvas::joinGroup(%i)" % group_id)
+        print("PatchCanvas::joinGroup(%i)" % group_id)
 
     item   = None
     s_item = None
@@ -710,7 +722,7 @@ def joinGroup(group_id):
 
 def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
     if canvas.debug:
-        qDebug("PatchCanvas::getGroupPos(%i, %s)" % (group_id, port_mode2str(port_mode)))
+        print("PatchCanvas::getGroupPos(%i, %s)" % (group_id, port_mode2str(port_mode)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -732,7 +744,7 @@ def setGroupPos(group_id, group_pos_x, group_pos_y):
 
 def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i):
     if canvas.debug:
-        qDebug("PatchCanvas::setGroupPos(%i, %i, %i, %i, %i)" % (group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i))
+        print("PatchCanvas::setGroupPos(%i, %i, %i, %i, %i)" % (group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group_pos_y_i))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -748,7 +760,7 @@ def setGroupPosFull(group_id, group_pos_x_o, group_pos_y_o, group_pos_x_i, group
 
 def setGroupIcon(group_id, icon):
     if canvas.debug:
-        qDebug("PatchCanvas::setGroupIcon(%i, %s)" % (group_id, icon2str(icon)))
+        print("PatchCanvas::setGroupIcon(%i, %s)" % (group_id, icon2str(icon)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -765,7 +777,7 @@ def setGroupIcon(group_id, icon):
 
 def getPluginAsGroup(plugin_id):
     if canvas.debug:
-        qDebug("PatchCanvas::getPluginAsGroup(%i)" % plugin_id)
+        print("PatchCanvas::getPluginAsGroup(%i)" % plugin_id)
 
     for group in canvas.group_list:
         if group.plugin_id == plugin_id:
@@ -776,7 +788,7 @@ def getPluginAsGroup(plugin_id):
 
 def setGroupAsPlugin(group_id, plugin_id, hasUi):
     if canvas.debug:
-        qDebug("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
+        print("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
 
     for group in canvas.group_list:
         if group.group_id == group_id:
@@ -791,7 +803,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
 
 def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=False):
     if canvas.debug:
-        qDebug("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type), bool2str(is_alternate)))
+        print("PatchCanvas::addPort(%i, %i, %s, %s, %s, %s)" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type), bool2str(is_alternate)))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
@@ -815,9 +827,6 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
         qCritical("PatchCanvas::addPort(%i, %i, %s, %s, %s) - Unable to find parent group" % (group_id, port_id, port_name.encode(), port_mode2str(port_mode), port_type2str(port_type)))
         return
 
-    if options.eyecandy == EYECANDY_FULL:
-        CanvasItemFX(port_widget, True)
-
     port_dict = port_dict_t()
     port_dict.group_id  = group_id
     port_dict.port_id   = port_id
@@ -830,20 +839,22 @@ def addPort(group_id, port_id, port_name, port_mode, port_type, is_alternate=Fal
 
     box_widget.updatePositions()
 
+    if options.eyecandy == EYECANDY_FULL:
+        return CanvasItemFX(port_widget, True, False)
+
     QTimer.singleShot(0, canvas.scene.update)
 
 def removePort(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::removePort(%i, %i)" % (group_id, port_id))
+        print("PatchCanvas::removePort(%i, %i)" % (group_id, port_id))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
             item = port.widget
             item.parentItem().removePortFromGroup(port_id)
             canvas.scene.removeItem(item)
-            del item
-
             canvas.port_list.remove(port)
+            del item
 
             QTimer.singleShot(0, canvas.scene.update)
             return
@@ -852,7 +863,7 @@ def removePort(group_id, port_id):
 
 def renamePort(group_id, port_id, new_port_name):
     if canvas.debug:
-        qDebug("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
+        print("PatchCanvas::renamePort(%i, %i, %s)" % (group_id, port_id, new_port_name.encode()))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
@@ -867,7 +878,7 @@ def renamePort(group_id, port_id, new_port_name):
 
 def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_id):
     if canvas.debug:
-        qDebug("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
+        print("PatchCanvas::connectPorts(%i, %i, %i, %i, %i)" % (connection_id, group_out_id, port_out_id, group_in_id, port_in_id))
 
     port_out = None
     port_in  = None
@@ -915,13 +926,13 @@ def connectPorts(connection_id, group_out_id, port_out_id, group_in_id, port_in_
 
     if options.eyecandy == EYECANDY_FULL:
         item = connection_dict.widget
-        CanvasItemFX(item, True)
+        return CanvasItemFX(item, True, False)
 
     QTimer.singleShot(0, canvas.scene.update)
 
 def disconnectPorts(connection_id):
     if canvas.debug:
-        qDebug("PatchCanvas::disconnectPorts(%i)" % connection_id)
+        print("PatchCanvas::disconnectPorts(%i)" % connection_id)
 
     line  = None
     item1 = None
@@ -965,19 +976,20 @@ def disconnectPorts(connection_id):
     item2.parentItem().removeLineFromGroup(connection_id)
 
     if options.eyecandy == EYECANDY_FULL:
-        CanvasItemFX(line, False, True)
-    else:
-        line.deleteFromScene()
+        return CanvasItemFX(line, False, True)
+
+    canvas.scene.removeItem(line)
+    del line
 
     QTimer.singleShot(0, canvas.scene.update)
 
 def arrange():
     if canvas.debug:
-        qDebug("PatchCanvas::arrange()")
+        print("PatchCanvas::arrange()")
 
 def updateZValues():
     if canvas.debug:
-        qDebug("PatchCanvas::updateZValues()")
+        print("PatchCanvas::updateZValues()")
 
     for group in canvas.group_list:
         group.widgets[0].resetLinesZValue()
@@ -987,7 +999,7 @@ def updateZValues():
 
 def handlePluginRemoved(plugin_id):
     if canvas.debug:
-        qDebug("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
+        print("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
 
     for group in canvas.group_list:
         if group.plugin_id < plugin_id:
@@ -1001,7 +1013,7 @@ def handlePluginRemoved(plugin_id):
 
 def handleAllPluginsRemoved():
     if canvas.debug:
-        qDebug("PatchCanvas::handleAllPluginsRemoved()")
+        print("PatchCanvas::handleAllPluginsRemoved()")
 
     for group in canvas.group_list:
         group.plugin_id -= 1
@@ -1014,7 +1026,7 @@ def handleAllPluginsRemoved():
 
 def CanvasGetNewGroupPos(horizontal):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
+        print("PatchCanvas::CanvasGetNewGroupPos(%s)" % bool2str(horizontal))
 
     new_pos = QPointF(canvas.initial_pos.x(), canvas.initial_pos.y())
     items = canvas.scene.items()
@@ -1040,7 +1052,7 @@ def CanvasGetNewGroupPos(horizontal):
 
 def CanvasGetFullPortName(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetFullPortName(%i, %i)" % (group_id, port_id))
+        print("PatchCanvas::CanvasGetFullPortName(%i, %i)" % (group_id, port_id))
 
     for port in canvas.port_list:
         if port.group_id == group_id and port.port_id == port_id:
@@ -1055,7 +1067,7 @@ def CanvasGetFullPortName(group_id, port_id):
 
 def CanvasGetPortConnectionList(group_id, port_id):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasGetPortConnectionList(%i, %i)" % (group_id, port_id))
+        print("PatchCanvas::CanvasGetPortConnectionList(%i, %i)" % (group_id, port_id))
 
     conn_list = []
 
@@ -1067,69 +1079,50 @@ def CanvasGetPortConnectionList(group_id, port_id):
 
     return conn_list
 
-def CanvasRemoveAnimation(f_animation):
-    if canvas.debug:
-        qDebug("PatchCanvas::CanvasRemoveAnimation(%s)" % f_animation)
-
-    for animation in canvas.animation_list:
-        if animation.animation == f_animation:
-            canvas.animation_list.remove(animation)
-            del animation.animation
-            break
-
 def CanvasCallback(action, value1, value2, value_str):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasCallback(%i, %i, %i, %s)" % (action, value1, value2, value_str.encode()))
+        print("PatchCanvas::CanvasCallback(%i, %i, %i, %s)" % (action, value1, value2, value_str.encode()))
 
     canvas.callback(action, value1, value2, value_str)
 
-def CanvasItemFX(item, show, destroy=False):
+def CanvasItemFX(item, show, destroy):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasItemFX(%s, %s, %s)" % (item, bool2str(show), bool2str(destroy)))
+        print("PatchCanvas::CanvasItemFX(%s, %s, %s)" % (item, bool2str(show), bool2str(destroy)))
 
-    # Check if item already has an animationItemFX
+    # Check if the item already has an animation
     for animation in canvas.animation_list:
-        if animation.item == item:
-            animation.animation.stop()
+        if animation.item() == item:
+            animation.forceStop()
             canvas.animation_list.remove(animation)
-            del animation.animation
+            del animation
             break
 
     animation = CanvasFadeAnimation(item, show)
     animation.setDuration(750 if show else 500)
 
-    animation_dict = animation_dict_t()
-    animation_dict.animation = animation
-    animation_dict.item = item
-    canvas.animation_list.append(animation_dict)
-
     if show:
-        animation.finished.connect(canvas.qobject.AnimationIdle)
+        animation.finished.connect(canvas.qobject.AnimationFinishedShow)
     else:
         if destroy:
-            animation.finished.connect(canvas.qobject.AnimationDestroy)
+            animation.finished.connect(canvas.qobject.AnimationFinishedDestroy)
         else:
-            animation.finished.connect(canvas.qobject.AnimationHide)
+            animation.finished.connect(canvas.qobject.AnimationFinishedHide)
+
+    canvas.animation_list.append(animation)
 
     animation.start()
 
 def CanvasRemoveItemFX(item):
     if canvas.debug:
-        qDebug("PatchCanvas::CanvasRemoveItemFX(%s)" % item)
+        print("PatchCanvas::CanvasRemoveItemFX(%s)" % item)
 
     if item.type() == CanvasBoxType:
         item.removeIconFromScene()
-        canvas.scene.removeItem(item)
 
-    elif item.type() == CanvasPortType:
-        canvas.scene.removeItem(item)
+    canvas.scene.removeItem(item)
+    del item
 
-    elif item.type() in (CanvasLineType, CanvasBezierLineType):
-        pass #item.deleteFromScene()
-
-    # Force deletion of item if needed
-    if item.type() in (CanvasBoxType, CanvasPortType):
-        del item
+    QTimer.singleShot(0, canvas.scene.update)
 
 # ------------------------------------------------------------------------------
 # patchscene.cpp
@@ -1367,12 +1360,15 @@ class PatchScene(QGraphicsScene):
 
         QGraphicsScene.wheelEvent(self, event)
 
+    #def contextMenuEvent(self, event):
+        #print("context menu event")
+
 # ------------------------------------------------------------------------------
 # canvasfadeanimation.cpp
 
 class CanvasFadeAnimation(QAbstractAnimation):
-    def __init__(self, item, show, parent=None):
-        QAbstractAnimation.__init__(self, parent)
+    def __init__(self, item, show):
+        QAbstractAnimation.__init__(self)
 
         self.m_show = show
         self.m_duration = 0
@@ -1380,6 +1376,10 @@ class CanvasFadeAnimation(QAbstractAnimation):
 
     def item(self):
         return self.m_item
+
+    def forceStop(self):
+        self.blockSignals(True)
+        self.stop()
 
     def setDuration(self, time):
         if self.m_item.opacity() == 0 and not self.m_show:
@@ -1400,7 +1400,13 @@ class CanvasFadeAnimation(QAbstractAnimation):
         else:
             value = 1.0 - (float(time) / self.m_duration)
 
-        self.m_item.setOpacity(value)
+        try:
+            self.m_item.setOpacity(value)
+        except:
+            print("Error: failed to animate canvas item, already destroyed?")
+            self.forceStop()
+            canvas.animation_list.remove(self)
+            return
 
         if self.m_item.type() == CanvasBoxType:
             self.m_item.setShadowOpacity(value)
@@ -1426,10 +1432,6 @@ class CanvasLine(QGraphicsLineItem):
 
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
-    def deleteFromScene(self):
-        canvas.scene.removeItem(self)
-        del self
 
     def isLocked(self):
         return self.m_locked
@@ -1523,10 +1525,6 @@ class CanvasBezierLine(QGraphicsPathItem):
         self.setBrush(QColor(0, 0, 0, 0))
         self.setGraphicsEffect(None)
         self.updateLinePos()
-
-    def deleteFromScene(self):
-        canvas.scene.removeItem(self)
-        del self
 
     def isLocked(self):
         return self.m_locked
@@ -1643,10 +1641,6 @@ class CanvasLineMov(QGraphicsLineItem):
 
         self.setPen(pen)
 
-    def deleteFromScene(self):
-        canvas.scene.removeItem(self)
-        del self
-
     def updateLinePos(self, scenePos):
         item_pos = [0, 0]
 
@@ -1700,10 +1694,6 @@ class CanvasBezierLineMov(QGraphicsPathItem):
 
         self.setBrush(QColor(0, 0, 0, 0))
         self.setPen(pen)
-
-    def deleteFromScene(self):
-        canvas.scene.removeItem(self)
-        del self
 
     def updateLinePos(self, scenePos):
         if self.m_port_mode == PORT_MODE_INPUT:
@@ -1886,9 +1876,11 @@ class CanvasPort(QGraphicsItem):
 
     def mouseReleaseEvent(self, event):
         if self.m_mouse_down:
-            if self.m_line_mov:
-                self.m_line_mov.deleteFromScene()
+            if self.m_line_mov is not None:
+                item = self.m_line_mov
                 self.m_line_mov = None
+                canvas.scene.removeItem(item)
+                del item
 
             for connection in canvas.connection_list:
                 if ((connection.group_out_id == self.m_group_id and connection.port_out_id == self.m_port_id) or
@@ -2197,7 +2189,7 @@ class CanvasBox(QGraphicsItem):
         self.m_plugin_ui = hasUi
 
     def setIcon(self, icon):
-        if self.icon_svg:
+        if self.icon_svg is not None:
             self.icon_svg.setIcon(icon, self.m_group_name)
 
     def setSplit(self, split, mode=PORT_MODE_NULL):
@@ -2216,7 +2208,7 @@ class CanvasBox(QGraphicsItem):
         if len(self.m_port_list_ids) == 0:
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
-                    CanvasItemFX(self, True)
+                    CanvasItemFX(self, True, False)
                 self.setVisible(True)
 
         new_widget = CanvasPort(self.m_group_id, port_id, port_name, port_mode, port_type, is_alternate, self)
@@ -2247,7 +2239,7 @@ class CanvasBox(QGraphicsItem):
         elif self.isVisible():
             if options.auto_hide_groups:
                 if options.eyecandy == EYECANDY_FULL:
-                    CanvasItemFX(self, False)
+                    CanvasItemFX(self, False, False)
                 else:
                     self.setVisible(False)
 
@@ -2280,8 +2272,13 @@ class CanvasBox(QGraphicsItem):
                     self.setPos(pos.x(), canvas.size_rect.height() - self.p_height)
 
     def removeIconFromScene(self):
-        if self.icon_svg:
-            canvas.scene.removeItem(self.icon_svg)
+        if self.icon_svg is None:
+            return
+
+        item = self.icon_svg
+        self.icon_svg = None
+        canvas.scene.removeItem(item)
+        del item
 
     def updatePositions(self):
         self.prepareGeometryChange()
