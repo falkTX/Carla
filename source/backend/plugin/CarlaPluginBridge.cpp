@@ -355,13 +355,10 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
         if (getAvailableDataSize() < BigStackBuffer::size/4)
             return;
 
-        carla_stdout("Server waitIfDataIsReachingLimit() waiting...");
-
         for (int i=50; --i >= 0;)
         {
             if (getAvailableDataSize() >= BigStackBuffer::size*3/4)
             {
-                carla_stdout("Server waitIfDataIsReachingLimit() reached and waited successfully");
                 writeOpcode(kPluginBridgeNonRtClientPing);
                 commitWrite();
                 return;
@@ -532,7 +529,7 @@ protected:
         }
         else if (fProcess->isRunning())
         {
-            carla_stderr("CarlaPluginBridgeThread::run() - already running, giving up...");
+            carla_stderr("CarlaPluginBridgeThread::run() - already running");
         }
 
         String name(kPlugin->getName());
@@ -700,11 +697,8 @@ protected:
                                         "Please remove this plugin, and not rely on it from this point.");
                 kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0.0f, errorString);
             }
-            else
-                carla_stderr("CarlaPluginBridgeThread::run() - bridge closed cleanly");
         }
 
-        carla_stdout("plugin bridge finished");
         fProcess = nullptr;
     }
 
@@ -930,8 +924,6 @@ public:
         const uint32_t timeoutEnd(Time::getMillisecondCounter() + 60*1000); // 60 secs, 1 minute
         const bool needsEngineIdle(pData->engine->getType() != kEngineTypePlugin);
 
-        carla_stdout("CarlaPluginBridge::waitForSaved() - now waiting...");
-
         for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
@@ -947,8 +939,6 @@ public:
 
         if (! fSaved)
             carla_stderr("CarlaPluginBridge::waitForSaved() - Timeout while requesting save state");
-        else
-            carla_stdout("CarlaPluginBridge::waitForSaved() - success!");
     }
 
     // -------------------------------------------------------------------
@@ -1091,8 +1081,6 @@ public:
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
             fShmNonRtClientControl.writeBool(std::strcmp(value, "true") == 0);
             fShmNonRtClientControl.commitWrite();
-
-            carla_stdout("Carla bridge server side, OnOff ping checks => %s", value);
             return;
         }
 
@@ -1126,8 +1114,6 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
 
-        carla_stdout("Carla bridge server side, setChunkData 001");
-
         CarlaString dataBase64(CarlaString::asBase64(data, dataSize));
         CARLA_SAFE_ASSERT_RETURN(dataBase64.length() > 0,);
 
@@ -1138,8 +1124,6 @@ public:
 
         if (File(filePath).replaceWithText(dataBase64.buffer()))
         {
-            carla_stdout("Carla bridge server side, setChunkData 002");
-
             const uint32_t ulength(static_cast<uint32_t>(filePath.length()));
 
             const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
@@ -1148,15 +1132,11 @@ public:
             fShmNonRtClientControl.writeUInt(ulength);
             fShmNonRtClientControl.writeCustomData(filePath.toRawUTF8(), ulength);
             fShmNonRtClientControl.commitWrite();
-
-            carla_stdout("Carla bridge server side, setChunkData sent");
         }
 
         // save data internally as well
         fInfo.chunk.resize(dataSize);
         std::memcpy(fInfo.chunk.data(), data, dataSize);
-
-        carla_stdout("Carla bridge server side, setChunkData saved locally too");
     }
 
     // -------------------------------------------------------------------
@@ -2370,7 +2350,6 @@ public:
                 {
                     fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
                     chunkFile.deleteFile();
-                    carla_stderr("chunk data final");
                 }
             }   break;
 
@@ -2471,20 +2450,20 @@ public:
 
         if (! fShmAudioPool.initialize())
         {
-            carla_stdout("Failed to initialize shared memory audio pool");
+            carla_stderr("Failed to initialize shared memory audio pool");
             return false;
         }
 
         if (! fShmRtClientControl.initialize())
         {
-            carla_stdout("Failed to initialize RT client control");
+            carla_stderr("Failed to initialize RT client control");
             fShmAudioPool.clear();
             return false;
         }
 
         if (! fShmNonRtClientControl.initialize())
         {
-            carla_stdout("Failed to initialize Non-RT client control");
+            carla_stderr("Failed to initialize Non-RT client control");
             fShmRtClientControl.clear();
             fShmAudioPool.clear();
             return false;
@@ -2492,7 +2471,7 @@ public:
 
         if (! fShmNonRtServerControl.initialize())
         {
-            carla_stdout("Failed to initialize Non-RT server control");
+            carla_stderr("Failed to initialize Non-RT server control");
             fShmNonRtClientControl.clear();
             fShmRtClientControl.clear();
             fShmAudioPool.clear();

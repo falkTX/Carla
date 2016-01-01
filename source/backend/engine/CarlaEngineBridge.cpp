@@ -351,7 +351,6 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
         {
             if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
             {
-                //carla_stdout("Client waitIfDataIsReachingLimit() reached and waited successfully");
                 writeOpcode(kPluginBridgeNonRtServerPong);
                 commitWrite();
                 return;
@@ -382,7 +381,7 @@ public:
           fFirstIdle(true),
           fLastPingTime(-1)
     {
-        carla_stdout("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+        carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
         fShmAudioPool.filename  = PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL;
         fShmAudioPool.filename += audioPoolBaseName;
@@ -419,49 +418,49 @@ public:
 
         if (! fShmAudioPool.attach())
         {
-            carla_stdout("Failed to attach to audio pool shared memory");
+            carla_stderr("Failed to attach to audio pool shared memory");
             return false;
         }
 
         if (! fShmRtClientControl.attach())
         {
             clear();
-            carla_stdout("Failed to attach to rt client control shared memory");
+            carla_stderr("Failed to attach to rt client control shared memory");
             return false;
         }
 
         if (! fShmRtClientControl.mapData())
         {
             clear();
-            carla_stdout("Failed to map rt client control shared memory");
+            carla_stderr("Failed to map rt client control shared memory");
             return false;
         }
 
         if (! fShmNonRtClientControl.attach())
         {
             clear();
-            carla_stdout("Failed to attach to non-rt client control shared memory");
+            carla_stderr("Failed to attach to non-rt client control shared memory");
             return false;
         }
 
         if (! fShmNonRtClientControl.mapData())
         {
             clear();
-            carla_stdout("Failed to map non-rt control client shared memory");
+            carla_stderr("Failed to map non-rt control client shared memory");
             return false;
         }
 
         if (! fShmNonRtServerControl.attach())
         {
             clear();
-            carla_stdout("Failed to attach to non-rt server control shared memory");
+            carla_stderr("Failed to attach to non-rt server control shared memory");
             return false;
         }
 
         if (! fShmNonRtServerControl.mapData())
         {
             clear();
-            carla_stdout("Failed to map non-rt control server shared memory");
+            carla_stderr("Failed to map non-rt control server shared memory");
             return false;
         }
 
@@ -909,8 +908,6 @@ public:
                 const uint32_t onOff(fShmNonRtClientControl.readBool());
 
                 fLastPingTime = onOff ? Time::currentTimeMillis() : -1;
-
-                carla_stdout("Carla bridge client side, OnOff ping checks => %s", bool2str(onOff));
             }   break;
 
             case kPluginBridgeNonRtClientActivate:
@@ -1025,8 +1022,6 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(chunkFilePathTry[0] != '\0');
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 
-                carla_stdout("Carla bridge client side setChunkData 001");
-
                 String chunkFilePath(chunkFilePathTry);
 
 #ifdef CARLA_OS_WIN
@@ -1043,10 +1038,8 @@ public:
                 CARLA_SAFE_ASSERT_BREAK(chunkDataBase64.isNotEmpty());
 
                 std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkDataBase64.toRawUTF8()));
-                carla_stdout("Carla bridge client side setChunkData 002");
 
                 plugin->setChunkData(chunk.data(), chunk.size());
-                carla_stdout("Carla bridge client side setChunkData done");
                 break;
             }
 
