@@ -40,6 +40,10 @@
 # error DISTRHO_PLUGIN_URI undefined!
 #endif
 
+#ifndef DISTRHO_PLUGIN_LV2_STATE_PREFIX
+# define DISTRHO_PLUGIN_LV2_STATE_PREFIX "urn:distrho:"
+#endif
+
 #define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_WANT_MIDI_INPUT || DISTRHO_PLUGIN_WANT_TIMEPOS || (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI))
 #define DISTRHO_LV2_USE_EVENTS_OUT (DISTRHO_PLUGIN_WANT_MIDI_OUTPUT || (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI))
 
@@ -739,6 +743,15 @@ public:
             if (fPortControls[i] != nullptr)
                 *fPortControls[i] = fLastControlValues[i];
         }
+
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+        // Update state
+        for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
+        {
+            const String& key = cit->first;
+            fStateMap[key] = fPlugin.getState(key);
+        }
+# endif
     }
 #endif
 
@@ -747,12 +760,21 @@ public:
 #if DISTRHO_PLUGIN_WANT_STATE
     LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle)
     {
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+        // Update current state
+        for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
+        {
+            const String& key = cit->first;
+            fStateMap[key] = fPlugin.getState(key);
+        }
+# endif
+
         for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
         {
             const String& key   = cit->first;
             const String& value = cit->second;
 
-            const String urnKey("urn:distrho:" + key);
+            const String urnKey(DISTRHO_PLUGIN_LV2_STATE_PREFIX + key);
 
             // some hosts need +1 for the null terminator, even though the type is string
             store(handle, fUridMap->map(fUridMap->handle, urnKey.buffer()), value.buffer(), value.length()+1, fURIDs.atomString, LV2_STATE_IS_POD|LV2_STATE_IS_PORTABLE);
@@ -769,7 +791,7 @@ public:
         for (uint32_t i=0, count=fPlugin.getStateCount(); i < count; ++i)
         {
             const String& key(fPlugin.getStateKey(i));
-            const String urnKey("urn:distrho:" + key);
+            const String urnKey(DISTRHO_PLUGIN_LV2_STATE_PREFIX + key);
 
             size  = 0;
             type  = 0;
@@ -909,7 +931,7 @@ private:
               atomLong(uridMap->map(uridMap->handle, LV2_ATOM__Long)),
               atomSequence(uridMap->map(uridMap->handle, LV2_ATOM__Sequence)),
               atomString(uridMap->map(uridMap->handle, LV2_ATOM__String)),
-              distrhoState(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
+              distrhoState(uridMap->map(uridMap->handle, DISTRHO_PLUGIN_LV2_STATE_PREFIX "KeyValueState")),
               midiEvent(uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent)),
               timePosition(uridMap->map(uridMap->handle, LV2_TIME__Position)),
               timeBar(uridMap->map(uridMap->handle, LV2_TIME__bar)),
@@ -1161,15 +1183,13 @@ static const void* lv2_extension_data(const char* uri)
 #endif
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-# define DISTRHO_DIRECT_ACCESS_URI "urn:distrho:direct-access"
-
     struct LV2_DirectAccess_Interface {
         void* (*get_instance_pointer)(LV2_Handle handle);
     };
 
     static const LV2_DirectAccess_Interface directaccess = { lv2_get_instance_pointer };
 
-    if (std::strcmp(uri, DISTRHO_DIRECT_ACCESS_URI) == 0)
+    if (std::strcmp(uri, DISTRHO_PLUGIN_LV2_STATE_PREFIX "direct-access") == 0)
         return &directaccess;
 #endif
 

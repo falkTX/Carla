@@ -28,6 +28,10 @@
 #include "lv2/lv2_kxstudio_properties.h"
 #include "lv2/lv2_programs.h"
 
+#ifndef DISTRHO_PLUGIN_LV2_STATE_PREFIX
+# define DISTRHO_PLUGIN_LV2_STATE_PREFIX "urn:distrho:"
+#endif
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
@@ -46,7 +50,7 @@ public:
           fController(controller),
           fWriteFunction(writeFunc),
           fEventTransferURID(uridMap->map(uridMap->handle, LV2_ATOM__eventTransfer)),
-          fKeyValueURID(uridMap->map(uridMap->handle, "urn:distrho:keyValueState")),
+          fKeyValueURID(uridMap->map(uridMap->handle, DISTRHO_PLUGIN_LV2_STATE_PREFIX "KeyValueState")),
           fWinIdWasNull(winId == 0)
     {
         if (fUiResize != nullptr && winId != 0)
@@ -331,8 +335,6 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
     void*                    instance = nullptr;
 
 #if DISTRHO_PLUGIN_WANT_DIRECT_ACCESS
-# define DISTRHO_DIRECT_ACCESS_URI "urn:distrho:direct-access"
-
     struct LV2_DirectAccess_Interface {
         void* (*get_instance_pointer)(LV2_Handle handle);
     };
@@ -381,7 +383,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
         return nullptr;
     }
 
-    if (const LV2_DirectAccess_Interface* const directAccess = (const LV2_DirectAccess_Interface*)extData->data_access(DISTRHO_DIRECT_ACCESS_URI))
+    if (const LV2_DirectAccess_Interface* const directAccess = (const LV2_DirectAccess_Interface*)extData->data_access(DISTRHO_PLUGIN_LV2_STATE_PREFIX "direct-access"))
         instance = directAccess->get_instance_pointer(instance);
     else
         instance = nullptr;

@@ -33,7 +33,7 @@
 # include <stdint.h>
 #endif
 
-#if 0 // defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC)
+#if defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }
@@ -60,6 +60,15 @@ static inline
 int64_t d_cconst(const uint8_t a, const uint8_t b, const uint8_t c, const uint8_t d) noexcept
 {
     return (a << 24) | (b << 16) | (c << 8) | (d << 0);
+}
+
+/*
+ * Return an hexadecimal representation of a MAJ.MIN.MICRO version number.
+ */
+static inline
+uint32_t d_version(const uint8_t major, const uint8_t minor, const uint8_t micro) noexcept
+{
+    return (major << 16) | (minor << 8) | (micro << 0);
 }
 
 /*

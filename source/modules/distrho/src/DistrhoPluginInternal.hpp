@@ -196,11 +196,25 @@ public:
         return fPlugin->getLabel();
     }
 
+    const char* getDescription() const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->getDescription();
+    }
+
     const char* getMaker() const noexcept
     {
         DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
 
         return fPlugin->getMaker();
+    }
+
+    const char* getHomePage() const noexcept
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fPlugin != nullptr, "");
+
+        return fPlugin->getHomePage();
     }
 
     const char* getLicense() const noexcept
@@ -370,6 +384,16 @@ public:
 
         return fData->stateDefValues[index];
     }
+
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+    String getState(const char* key) const
+    {
+        DISTRHO_SAFE_ASSERT_RETURN(fData != nullptr, sFallbackString);
+        DISTRHO_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0', sFallbackString);
+
+        return fPlugin->getState(key);
+    }
+# endif
 
     void setState(const char* const key, const char* const value)
     {

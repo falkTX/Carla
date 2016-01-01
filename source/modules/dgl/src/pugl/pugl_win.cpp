@@ -87,9 +87,12 @@ void
 puglLeaveContext(PuglView* view, bool flush)
 {
 #ifdef PUGL_HAVE_GL
-	if (view->ctx_type == PUGL_GL && flush) {
-		glFlush();
-		SwapBuffers(view->impl->hdc);
+	if (view->ctx_type == PUGL_GL) {
+		if (flush) {
+			glFlush();
+			SwapBuffers(view->impl->hdc);
+		}
+		wglMakeCurrent(NULL, NULL);
 	}
 #endif
 }

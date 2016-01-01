@@ -14,27 +14,39 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../NanoWidgets.hpp"
 #include "Common.hpp"
+#include "Resources.hpp"
 
 #define BLENDISH_IMPLEMENTATION
 #include "nanovg/nanovg.h"
 #include "oui-blendish/blendish.h"
-#include "oui-blendish/blendish_resources.h"
+#include "../distrho/extra/String.hpp"
 
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-static void registerBlendishResourcesIfNeeded(NVGcontext* const context)
+BlendishWidget::BlendishWidget(Window& parent)
+    : NanoWidget(parent)
 {
-    if (nvgFindFont(context, "__dpf_blendish__") >= 0)
+    loadSharedResources();
+}
+
+BlendishWidget::BlendishWidget(NanoWidget* widget)
+    : NanoWidget(widget)
+{
+    loadSharedResources();
+}
+
+void BlendishWidget::loadSharedResources()
+{
+    if (nvgFindFont(fContext, NANOVG_DEJAVU_SANS_TTF) >= 0)
         return;
 
-    using namespace blendish_resources;
+    using namespace dpf_resources;
 
-    bndSetFont(nvgCreateFontMem(context, "__dpf_blendish__", (const uchar*)dejavusans_ttf, dejavusans_ttf_size, 0));
-    bndSetIconImage(nvgCreateImageMem(context, 0, (const uchar*)blender_icons16_png, blender_icons16_png_size));
+    bndSetFont(nvgCreateFontMem(fContext, NANOVG_DEJAVU_SANS_TTF, (const uchar*)dejavusans_ttf, dejavusans_ttf_size, 0));
+    bndSetIconImage(nvgCreateImageMem(fContext, 0, (const uchar*)blender_icons16_png, blender_icons16_png_size));
 }
 
 // -----------------------------------------------------------------------
@@ -55,18 +67,16 @@ struct BlendishButton::PrivateData {
 // -----------------------------------------------------------------------
 
 BlendishButton::BlendishButton(Window& parent, const char* text, int iconId)
-    : NanoWidget(parent),
+    : BlendishWidget(parent),
       pData(new PrivateData(this, text, iconId))
 {
-    registerBlendishResourcesIfNeeded(getContext());
     _updateBounds();
 }
 
 BlendishButton::BlendishButton(NanoWidget* widget, const char* text, int iconId)
-    : NanoWidget(widget),
+    : BlendishWidget(widget),
       pData(new PrivateData(this, text, iconId))
 {
-    registerBlendishResourcesIfNeeded(getContext());
     _updateBounds();
 }
 
@@ -138,7 +148,5 @@ void BlendishButton::_updateBounds()
 // -----------------------------------------------------------------------
 
 END_NAMESPACE_DGL
-
-#include "oui-blendish/blendish_resources.cpp"
 
 // -----------------------------------------------------------------------

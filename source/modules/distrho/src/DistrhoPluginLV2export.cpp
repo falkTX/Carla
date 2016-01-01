@@ -45,6 +45,10 @@
 # define DISTRHO_PLUGIN_MINIMUM_BUFFER_SIZE 2048
 #endif
 
+#ifndef DISTRHO_PLUGIN_USES_MODGUI
+# define DISTRHO_PLUGIN_USES_MODGUI 0
+#endif
+
 #if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
@@ -111,7 +115,12 @@ void lv2_generate_ttl(const char* const basename)
         manifestString += "<" DISTRHO_PLUGIN_URI ">\n";
         manifestString += "    a lv2:Plugin ;\n";
         manifestString += "    lv2:binary <" + pluginDLL + "." DISTRHO_DLL_EXTENSION "> ;\n";
+#if DISTRHO_PLUGIN_USES_MODGUI
+        manifestString += "    rdfs:seeAlso <" + pluginTTL + "> ,\n";
+        manifestString += "                 <modgui.ttl> .\n";
+#else
         manifestString += "    rdfs:seeAlso <" + pluginTTL + "> .\n";
+#endif
         manifestString += "\n";
 
 #if DISTRHO_PLUGIN_HAS_UI
@@ -148,16 +157,21 @@ void lv2_generate_ttl(const char* const basename)
         char strBuf[0xff+1];
         strBuf[0xff] = '\0';
 
+        String presetString;
+
         // Presets
         for (uint32_t i = 0; i < plugin.getProgramCount(); ++i)
         {
             std::snprintf(strBuf, 0xff, "%03i", i+1);
 
-            manifestString += "<" DISTRHO_PLUGIN_URI + presetSeparator + "preset" + strBuf + ">\n";
-            manifestString += "    a pset:Preset ;\n";
-            manifestString += "    lv2:appliesTo <" DISTRHO_PLUGIN_URI "> ;\n";
-            manifestString += "    rdfs:seeAlso <presets.ttl> .\n";
-            manifestString += "\n";
+            presetString  = "<" DISTRHO_PLUGIN_URI + presetSeparator + "preset" + strBuf + ">\n";
+            presetString += "    a pset:Preset ;\n";
+            presetString += "    lv2:appliesTo <" DISTRHO_PLUGIN_URI "> ;\n";
+            presetString += "    rdfs:label \"" + plugin.getProgramName(i) + "\" ;\n";
+            presetString += "    rdfs:seeAlso <presets.ttl> .\n";
+            presetString += "\n";
+
+            manifestString += presetString;
         }
 #endif
 
@@ -181,6 +195,10 @@ void lv2_generate_ttl(const char* const basename)
         pluginString += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
         pluginString += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
         pluginString += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
+#ifdef DISTRHO_PLUGIN_BRAND
+        pluginString += "@prefix mod:  <http://moddevices.com/ns/mod#> .\n";
+#endif
+        pluginString += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
         pluginString += "@prefix rsz:  <" LV2_RESIZE_PORT_PREFIX "> .\n";
 #if DISTRHO_PLUGIN_HAS_UI
         pluginString += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
@@ -252,7 +270,7 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "        a lv2:InputPort, lv2:AudioPort ;\n";
 
                 pluginString += "        lv2:index " + String(portIndex) + " ;\n";
-                pluginString += "        lv2:symbol \"" + port.symbol + "\" ;\n";
+                pluginString += "        lv2:symbol \"lv2_" + port.symbol + "\" ;\n";
                 pluginString += "        lv2:name \"" + port.name + "\" ;\n";
 
                 if (port.hints & kAudioPortIsSidechain)
@@ -282,7 +300,7 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "        a lv2:OutputPort, lv2:AudioPort ;\n";
 
                 pluginString += "        lv2:index " + String(portIndex) + " ;\n";
-                pluginString += "        lv2:symbol \"" + port.symbol + "\" ;\n";
+                pluginString += "        lv2:symbol \"lv2_" + port.symbol + "\" ;\n";
                 pluginString += "        lv2:name \"" + port.name + "\" ;\n";
 
                 if (port.hints & kAudioPortIsSidechain)
@@ -412,6 +430,14 @@ void lv2_generate_ttl(const char* const basename)
                         {
                             pluginString += "        unit:unit unit:mhz ;\n";
                         }
+                        else if (unit == "ms")
+                        {
+                            pluginString += "        unit:unit unit:ms ;\n";
+                        }
+                        else if (unit == "s")
+                        {
+                            pluginString += "        unit:unit unit:s ;\n";
+                        }
                         else if (unit == "%")
                         {
                             pluginString += "        unit:unit unit:pc ;\n";
@@ -419,8 +445,7 @@ void lv2_generate_ttl(const char* const basename)
                         else
                         {
                             pluginString += "        unit:unit [\n";
-                            pluginString += "            a unit:Unit ;\n";
-                            pluginString += "            unit:name   \"" + unit + "\" ;\n";
+                            pluginString += "            rdfs:label  \"" + unit + "\" ;\n";
                             pluginString += "            unit:symbol \"" + unit + "\" ;\n";
                             pluginString += "            unit:render \"%f " + unit + "\" ;\n";
                             pluginString += "        ] ;\n";
@@ -452,8 +477,60 @@ void lv2_generate_ttl(const char* const basename)
             }
         }
 
+        // comment
+        {
+            const String comment(plugin.getDescription());
+
+            if (comment.isNotEmpty())
+                pluginString += "    rdfs:comment \"\"\"\n" + comment + "\n\"\"\" ;\n\n";
+        }
+
+#ifdef DISTRHO_PLUGIN_BRAND
+        // MOD
+        pluginString += "    mod:brand \"" DISTRHO_PLUGIN_BRAND "\" ;\n";
+        pluginString += "    mod:label \"" DISTRHO_PLUGIN_NAME "\" ;\n\n";
+#endif
+
+        // name
         pluginString += "    doap:name \"" + String(plugin.getName()) + "\" ;\n";
-        pluginString += "    doap:maintainer [ foaf:name \"" + String(plugin.getMaker()) + "\" ] .\n";
+
+        // license
+        {
+            const String license(plugin.getLicense());
+
+            if (license.contains("://"))
+                pluginString += "    doap:license <" +  license + "> ;\n\n";
+            else
+                pluginString += "    doap:license \"" +  license + "\" ;\n\n";
+        }
+
+        // developer
+        {
+            const String homepage(plugin.getHomePage());
+
+            pluginString += "    doap:maintainer [\n";
+            pluginString += "        foaf:name \"" + String(plugin.getMaker()) + "\" ;\n";
+
+            if (homepage.isNotEmpty())
+                pluginString += "        foaf:homepage <" + homepage + "> ;\n";
+
+            pluginString += "    ] ;\n\n";
+        }
+
+        {
+            const uint32_t version(plugin.getVersion());
+
+            const uint32_t majorVersion = (version & 0xFF0000) >> 16;
+            const uint32_t microVersion = (version & 0x00FF00) >> 8;
+            /* */ uint32_t minorVersion = (version & 0x0000FF) >> 0;
+
+            // NOTE: LV2 ignores 'major' version and says 0 for minor is pre-release/unstable.
+            if (majorVersion > 0)
+                minorVersion += 2;
+
+            pluginString += "    lv2:microVersion " + String(microVersion) + " ;\n";
+            pluginString += "    lv2:minorVersion " + String(minorVersion) + " .\n";
+        }
 
         pluginFile << pluginString << std::endl;
         pluginFile.close();
@@ -504,7 +581,6 @@ void lv2_generate_ttl(const char* const basename)
         String presetsString;
         presetsString += "@prefix lv2:   <" LV2_CORE_PREFIX "> .\n";
         presetsString += "@prefix pset:  <" LV2_PRESETS_PREFIX "> .\n";
-        presetsString += "@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .\n";
 # if DISTRHO_PLUGIN_WANT_STATE
         presetsString += "@prefix state: <" LV2_STATE_PREFIX "> .\n";
 # endif
@@ -512,7 +588,7 @@ void lv2_generate_ttl(const char* const basename)
 
         const uint32_t numParameters = plugin.getParameterCount();
         const uint32_t numPrograms   = plugin.getProgramCount();
-# if DISTRHO_PLUGIN_WANT_STATE
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
         const uint32_t numStates     = plugin.getStateCount();
 # endif
 
@@ -530,34 +606,26 @@ void lv2_generate_ttl(const char* const basename)
             plugin.loadProgram(i);
 
             presetString  = "<" DISTRHO_PLUGIN_URI + presetSeparator + "preset" + strBuf + ">\n";
-            presetString += "    rdfs:label \"" + plugin.getProgramName(i) + "\" ;\n\n";
 
-            // TODO
-# if 0 // DISTRHO_PLUGIN_WANT_STATE
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+            presetString += "    state:state [\n";
             for (uint32_t j=0; j<numStates; ++j)
             {
-                if (j == 0)
-                    presetString += "    state:state [\n";
-                else
-                    presetString += "    [\n";
+                const String key   = plugin.getStateKey(j);
+                const String value = plugin.getState(key);
 
-                presetString += "        <urn:distrho:" + plugin.getStateKey(j) + ">\n";
-                presetString += "\"\"\"\n";
-                presetString += plugin.getState(j);
-                presetString += "\"\"\"\n";
+                presetString += "        <urn:distrho:" + key + ">";
 
-                if (j+1 == numStates)
-                {
-                    if (numParameters > 0)
-                        presetString += "    ] ;\n\n";
-                    else
-                        presetString += "    ] .\n\n";
-                }
+                if (value.length() < 10)
+                    presetString += " \"" + value + "\" ;\n";
                 else
-                {
-                    presetString += "    ] ,\n";
-                }
+                    presetString += "\n\"\"\"\n" + value + "\n\"\"\" ;\n";
             }
+
+            if (numParameters > 0)
+                presetString += "    ] ;\n\n";
+            else
+                presetString += "    ] .\n\n";
 # endif
 
             for (uint32_t j=0; j <numParameters; ++j)

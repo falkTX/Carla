@@ -18,13 +18,23 @@
 #define DGL_NANO_WIDGETS_HPP_INCLUDED
 
 #include "NanoVG.hpp"
-#include "../distrho/extra/String.hpp"
 
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
 
-class BlendishButton : public NanoWidget
+class BlendishWidget : public NanoWidget
+{
+public:
+    explicit BlendishWidget(Window& parent);
+    explicit BlendishWidget(NanoWidget* widget);
+
+   void loadSharedResources() override;
+};
+
+// -----------------------------------------------------------------------
+
+class BlendishButton : public BlendishWidget
 {
 public:
     class Callback

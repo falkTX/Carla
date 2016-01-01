@@ -14,7 +14,6 @@
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../ImageWidgets.hpp"
 #include "Common.hpp"
 #include "WidgetPrivateData.hpp"
 

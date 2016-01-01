@@ -1,9 +1,9 @@
 /* (Auto-generated binary data file). */
 
-#ifndef BINARY_BLENDISH_RESOURCES_H
-#define BINARY_BLENDISH_RESOURCES_H
+#ifndef BINARY_DPF_RESOURCES_HPP_INCLUDED
+#define BINARY_DPF_RESOURCES_HPP_INCLUDED
 
-namespace blendish_resources
+namespace dpf_resources
 {
     extern const char*  blender_icons16_png;
     const unsigned int  blender_icons16_png_size = 250706;

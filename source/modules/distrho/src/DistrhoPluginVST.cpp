@@ -454,7 +454,17 @@ public:
 
                 fVstUI = new UIVst(fAudioMaster, fEffect, this, &fPlugin, (intptr_t)ptr);
 
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+                // Update current state from plugin side
+                for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
+                {
+                    const String& key = cit->first;
+                    fStateMap[key] = fPlugin.getState(key);
+                }
+# endif
+
 # if DISTRHO_PLUGIN_WANT_STATE
+                // Set state
                 for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
                 {
                     const String& key   = cit->first;
@@ -506,6 +516,15 @@ public:
             }
             else
             {
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+                // Update current state
+                for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)
+                {
+                    const String& key = cit->first;
+                    fStateMap[key] = fPlugin.getState(key);
+                }
+# endif
+
                 String chunkStr;
 
                 for (StringMap::const_iterator cit=fStateMap.begin(), cite=fStateMap.end(); cit != cite; ++cit)

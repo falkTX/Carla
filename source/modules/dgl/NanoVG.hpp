@@ -20,6 +20,8 @@
 #include "Color.hpp"
 #include "Widget.hpp"
 
+#define NANOVG_DEJAVU_SANS_TTF "__dpf_dejavusans_ttf__"
+
 struct NVGcontext;
 struct NVGpaint;
 
@@ -28,6 +30,7 @@ START_NAMESPACE_DGL
 // -----------------------------------------------------------------------
 // Forward class names
 
+class BlendishWidget;
 class NanoVG;
 
 // -----------------------------------------------------------------------
@@ -841,10 +844,16 @@ public:
     */
     int textBreakLines(const char* string, const char* end, float breakRowWidth, TextRow& rows, int maxRows);
 
+   /**
+      Load DPF's internal shared resources for this NanoVG class.
+    */
+    virtual void loadSharedResources();
+
 private:
     NVGcontext* const fContext;
     bool fInFrame;
     bool fIsSubWidget;
+    friend class BlendishWidget;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(NanoVG)
 };

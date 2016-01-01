@@ -51,7 +51,10 @@ struct Widget::PrivateData {
           visible(true)
     {
         if (addToSubWidgets && groupWidget != nullptr)
+        {
+            skipDisplay = true;
             groupWidget->pData->subWidgets.push_back(self);
+        }
     }
 
     ~PrivateData()

@@ -73,6 +73,10 @@
 # define DISTRHO_PLUGIN_WANT_STATE 0
 #endif
 
+#ifndef DISTRHO_PLUGIN_WANT_FULL_STATE
+# define DISTRHO_PLUGIN_WANT_FULL_STATE 0
+#endif
+
 #ifndef DISTRHO_PLUGIN_WANT_TIMEPOS
 # define DISTRHO_PLUGIN_WANT_TIMEPOS 0
 #endif
@@ -102,6 +106,22 @@
 # define DISTRHO_PLUGIN_WANT_MIDI_INPUT DISTRHO_PLUGIN_IS_SYNTH
 #elif DISTRHO_PLUGIN_IS_SYNTH && ! DISTRHO_PLUGIN_WANT_MIDI_INPUT
 # error Synths need MIDI input to work!
+#endif
+
+// -----------------------------------------------------------------------
+// Enable full state if plugin exports presets
+
+#if DISTRHO_PLUGIN_WANT_PROGRAMS && DISTRHO_PLUGIN_WANT_STATE
+# undef DISTRHO_PLUGIN_WANT_FULL_STATE
+# define DISTRHO_PLUGIN_WANT_FULL_STATE 1
+#endif
+
+// -----------------------------------------------------------------------
+// Disable UI if DGL is not available
+
+#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+# undef DISTRHO_PLUGIN_HAS_UI
+# define DISTRHO_PLUGIN_HAS_UI 0
 #endif
 
 // -----------------------------------------------------------------------

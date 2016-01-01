@@ -28,6 +28,7 @@ OBJS = \
 	$(OBJDIR)/ImageWidgets.cpp.o \
 	$(OBJDIR)/NanoVG.cpp.o \
 	$(OBJDIR)/NanoWidgets.cpp.o \
+	$(OBJDIR)/Resources.cpp.o \
 	$(OBJDIR)/Widget.cpp.o
 
 ifeq ($(MACOS),true)
