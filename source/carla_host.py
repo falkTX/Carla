@@ -1965,7 +1965,7 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running() and not (self.host.isControl or self.host.isPlugin):
             if not self.slot_engineStop(True):
                 self.fCustomStopAction = 1
-                event.accept()
+                event.ignore()
                 return
 
         QMainWindow.closeEvent(self, event)

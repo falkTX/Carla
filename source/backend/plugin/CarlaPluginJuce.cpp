@@ -1119,7 +1119,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const char* const format)
+    bool init(const char* const filename, const char* const name, const char* const label, const int64_t uniqueId, const uint options, const char* const format)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1234,6 +1234,9 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
 
+        // TODO: read some options
+        ignoreUnused(options);
+
         return true;
     }
 
@@ -1269,7 +1272,7 @@ CarlaPlugin* CarlaPlugin::newJuce(const Initializer& init, const char* const for
 #if (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
     CarlaPluginJuce* const plugin(new CarlaPluginJuce(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, format))
+    if (! plugin->init(init.filename, init.name, init.label, init.uniqueId, init.options, format))
     {
         delete plugin;
         return nullptr;

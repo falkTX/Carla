@@ -4701,7 +4701,7 @@ public:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const name, const char* const uri)
+    bool init(const char* const name, const char* const uri, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -5047,16 +5047,23 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
-        pData->options  = 0x0;
+        pData->options = 0x0;
 
         if (fExt.programs != nullptr && getCategory() == PLUGIN_CATEGORY_SYNTH)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fLatencyIndex >= 0 || getMidiInCount() > 0 || needsFixedBuffer())
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fCanInit2 && pData->engine->getOptions().forceStereo)
-            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        if (fCanInit2)
+        {
+            if (pData->engine->getOptions().forceStereo)
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+            else if (options & PLUGIN_OPTION_FORCE_STEREO)
+                pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        }
 
         if (getMidiInCount() > 0)
         {
@@ -6213,7 +6220,7 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
 
     CarlaPluginLV2* const plugin(new CarlaPluginLV2(init.engine, init.id));
 
-    if (! plugin->init(init.name, init.label))
+    if (! plugin->init(init.name, init.label, init.options))
     {
         delete plugin;
         return nullptr;

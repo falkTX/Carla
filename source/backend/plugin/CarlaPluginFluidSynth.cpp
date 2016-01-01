@@ -1545,7 +1545,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label)
+    bool init(const char* const filename, const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1625,7 +1625,11 @@ public:
         pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+        // TODO: read some options
+
         return true;
+
+        (void)options;
     }
 
 private:
@@ -1690,7 +1694,7 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
 
     CarlaPluginFluidSynth* const plugin(new CarlaPluginFluidSynth(init.engine, init.id,  use16Outs));
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name, init.label, init.options))
     {
         delete plugin;
         return nullptr;

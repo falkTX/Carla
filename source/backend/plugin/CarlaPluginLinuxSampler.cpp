@@ -1173,7 +1173,7 @@ public:
         return kUses16Outs ? xtrue : xfalse;
     }
 
-    bool init(const char* const filename, const char* const name, const char* const label)
+    bool init(const char* const filename, const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1341,7 +1341,11 @@ public:
         if (kIsGIG)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
+        // TODO: read some options
+
         return true;
+
+        (void)options;
     }
 
     // -------------------------------------------------------------------
@@ -1418,7 +1422,7 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
 
     CarlaPluginLinuxSampler* const plugin(new CarlaPluginLinuxSampler(init.engine, init.id, (sformat == "gig"), use16Outs));
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name, init.label, init.options))
     {
         delete plugin;
         return nullptr;

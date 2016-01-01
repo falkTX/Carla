@@ -2604,6 +2604,8 @@ public:
             return false;
         }
 
+        // TODO: set default options
+
         return true;
     }
 

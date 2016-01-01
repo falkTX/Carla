@@ -2053,7 +2053,7 @@ protected:
     // -------------------------------------------------------------------
 
 public:
-    bool init(const char* const filename, const char* const name, const int64_t uniqueId)
+    bool init(const char* const filename, const char* const name, const int64_t uniqueId, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2183,7 +2183,7 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
-        pData->options  = 0x0;
+        pData->options = 0x0;
 
         if (fEffect->flags & effFlagsIsSynth)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
@@ -2199,6 +2199,8 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         return true;
 
@@ -2417,7 +2419,7 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 #else
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.uniqueId))
+    if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
     {
         delete plugin;
         return nullptr;

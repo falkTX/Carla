@@ -2277,7 +2277,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const name, const char* const label)
+    bool init(const char* const name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2380,8 +2380,12 @@ public:
 
         if (getMidiInCount() > 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (pData->engine->getOptions().forceStereo)
+            pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+        else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CHANNEL_PRESSURE)
@@ -2505,7 +2509,7 @@ CarlaPlugin* CarlaPlugin::newNative(const Initializer& init)
 
     CarlaPluginNative* const plugin(new CarlaPluginNative(init.engine, init.id));
 
-    if (! plugin->init(init.name, init.label))
+    if (! plugin->init(init.name, init.label, init.options))
     {
         delete plugin;
         return nullptr;
