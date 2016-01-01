@@ -16,8 +16,7 @@
  */
 
 // config fix
-#include "CarlaDefines.h"
-#include "distrho-mverb/DistrhoPluginInfo.h"
+#include "distrho-kars/DistrhoPluginInfo.h"
 
 #if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
 # undef DISTRHO_PLUGIN_HAS_UI
@@ -25,16 +24,16 @@
 #endif
 
 // Plugin Code
-#include "distrho-mverb/DistrhoArtworkMVerb.cpp"
-#include "distrho-mverb/DistrhoPluginMVerb.cpp"
-#if DISTRHO_PLUGIN_HAS_UI
-#include "distrho-mverb/DistrhoUIMVerb.cpp"
+#include "distrho-kars/DistrhoArtworkKars.cpp"
+#include "distrho-kars/DistrhoPluginKars.cpp"
+#ifdef HAVE_DGL
+#include "distrho-kars/DistrhoUIKars.cpp"
 #endif
 
 // DISTRHO Code
 #define DISTRHO_PLUGIN_TARGET_CARLA
 #include "DistrhoPluginMain.cpp"
-#if DISTRHO_PLUGIN_HAS_UI
+#ifdef HAVE_DGL
 #include "DistrhoUIMain.cpp"
 #endif
 
@@ -42,27 +41,29 @@ START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
 
-static const NativePluginDescriptor _mverbDesc = {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-#if DISTRHO_PLUGIN_HAS_UI
+static const NativePluginDescriptor karsDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
+#ifdef HAVE_DGL
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH
                                                   |NATIVE_PLUGIN_HAS_UI
                                                   |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
                                                   |NATIVE_PLUGIN_USES_PARENT_ID),
 #else
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH),
 #endif
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ DISTRHO_PLUGIN_NUM_INPUTS,
     /* audioOuts */ DISTRHO_PLUGIN_NUM_OUTPUTS,
-    /* midiIns   */ 0,
+    /* midiIns   */ 1,
     /* midiOuts  */ 0,
-    /* paramIns  */ MVerb<float>::NUM_PARAMS,
+    /* paramIns  */ DistrhoPluginKars::paramCount,
     /* paramOuts */ 0,
     /* name      */ DISTRHO_PLUGIN_NAME,
-    /* label     */ "mverb",
-    /* maker     */ "falkTX, Martin Eastwood",
-    /* copyright */ "GPL v3+",
+    /* label     */ "kars",
+    /* maker     */ "falkTX, Chris Cannam",
+    /* copyright */ "ISC",
     PluginDescriptorFILL(PluginCarla)
 };
 
@@ -71,13 +72,13 @@ END_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 
 CARLA_EXPORT
-void carla_register_native_plugin_distrho_mverb();
+void carla_register_native_plugin_distrho_kars();
 
 CARLA_EXPORT
-void carla_register_native_plugin_distrho_mverb()
+void carla_register_native_plugin_distrho_kars()
 {
     USE_NAMESPACE_DISTRHO
-    carla_register_native_plugin(&_mverbDesc);
+    carla_register_native_plugin(&karsDesc);
 }
 
 // -----------------------------------------------------------------------

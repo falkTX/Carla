@@ -388,6 +388,31 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS
 },
 {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
+#ifdef HAVE_DGL
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
+#else
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_IS_SYNTH),
+#endif
+    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
+    /* audioIns  */ 0,
+    /* audioOuts */ 1,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 1,
+    /* paramOuts */ 0,
+    /* name      */ "Kars",
+    /* label     */ "kars",
+    /* maker     */ "falkTX, Chris Cannam",
+    /* copyright */ "ISC",
+    DESCFUNCS
+},
+{
     /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
 #ifdef HAVE_DGL
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
