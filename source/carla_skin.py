@@ -763,6 +763,25 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         self.setName(newName)
 
+    def showReplaceDialog(self):
+        data = gCarla.gui.showAddPluginDialog()
+
+        if data is None:
+            return
+
+        btype, ptype, filename, label, uniqueId, extraPtr = data
+
+        if not self.host.replace_plugin(self.fPluginId):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0)
+
+        self.host.replace_plugin(self.host.get_max_plugin_number())
+
+        if not ok:
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
     #------------------------------------------------------------------
 
     def activeChanged(self, onOff):
@@ -1083,8 +1102,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Replace
 
         elif actSel == actReplace:
-            # FIXME
-            gCarla.gui.slot_pluginAdd(self.fPluginId)
+            self.showReplaceDialog()
 
         # -------------------------------------------------------------
         # Remove

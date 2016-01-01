@@ -721,8 +721,7 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Plugins (menu actions)
 
-    @pyqtSlot()
-    def slot_pluginAdd(self, pluginToReplace = -1):
+    def showAddPluginDialog(self):
         dialog = PluginDatabaseW(self.fParentOrSelf, self.host)
 
         if not dialog.exec_():
@@ -739,17 +738,18 @@ class HostWindow(QMainWindow):
         uniqueId = dialog.fRetPlugin['uniqueId']
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
-        if pluginToReplace >= 0:
-            if not self.host.replace_plugin(pluginToReplace):
-                CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to replace plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-                return
+        return (btype, ptype, filename, label, uniqueId, extraPtr)
 
-        ok = self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0)
+    @pyqtSlot()
+    def slot_pluginAdd(self):
+        data = self.showAddPluginDialog()
 
-        if pluginToReplace >= 0:
-            self.host.replace_plugin(self.host.get_max_plugin_number())
+        if data is None:
+            return
 
-        if not ok:
+        btype, ptype, filename, label, uniqueId, extraPtr = data
+
+        if not self.host.add_plugin(btype, ptype, filename, None, label, uniqueId, extraPtr, 0x0):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"), self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     @pyqtSlot()
