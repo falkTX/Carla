@@ -3768,6 +3768,7 @@ int CarlaStyle::styleHint(StyleHint hint, const QStyleOption* option, const QWid
     //case SH_DialogButtonBox_ButtonsHaveIcons:
     case SH_MessageBox_CenterButtons:
     case SH_RubberBand_Mask:
+    case SH_UnderlineShortcut:
         return 0;
 
     case SH_Table_GridLineColor:
