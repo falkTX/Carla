@@ -390,6 +390,8 @@ class HostWindow(QMainWindow):
         self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
         self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
 
+        self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
+
         self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
         self.ui.graphicsView.verticalScrollBar().valueChanged.connect(self.slot_verticalScrollBarChanged)
 
@@ -739,6 +741,58 @@ class HostWindow(QMainWindow):
         extraPtr = self.getExtraPtr(dialog.fRetPlugin)
 
         return (btype, ptype, filename, label, uniqueId, extraPtr)
+
+    @pyqtSlot()
+    def showPluginActionsMenu(self):
+        menu = QMenu(self)
+
+        if config_UseQt5:
+            menu.addSection("Plugins")
+        else:
+            # fake section
+            act  = menu.addAction("  Plugins")
+            font = act.font()
+            font.setBold(True)
+            act.setFont(font)
+            act.setEnabled(False)
+            menu.addSeparator()
+
+        menu.addAction(self.ui.act_plugin_add)
+        menu.addAction(self.ui.act_plugin_remove_all)
+
+        if config_UseQt5:
+            menu.addSection("All plugins (macros)")
+        else:
+            # fake space
+            act  = menu.addAction(" ")
+            font = act.font()
+            font.setBold(True)
+            font.setPointSize(font.pointSize()/2)
+            act.setEnabled(False)
+
+            # fake section
+            act  = menu.addAction("  All plugins (macros)")
+            font = act.font()
+            font.setBold(True)
+            act.setFont(font)
+            act.setEnabled(False)
+            menu.addSeparator()
+
+        menu.addAction(self.ui.act_plugins_enable)
+        menu.addAction(self.ui.act_plugins_disable)
+        menu.addSeparator()
+        menu.addAction(self.ui.act_plugins_volume100)
+        menu.addAction(self.ui.act_plugins_mute)
+        menu.addSeparator()
+        menu.addAction(self.ui.act_plugins_wet100)
+        menu.addAction(self.ui.act_plugins_bypass)
+        menu.addSeparator()
+        menu.addAction(self.ui.act_plugins_center)
+        menu.addSeparator()
+        menu.addAction(self.ui.act_plugins_compact)
+        menu.addAction(self.ui.act_plugins_expand)
+
+        menu.exec_(QCursor.pos())
 
     @pyqtSlot()
     def slot_pluginAdd(self):
@@ -1958,6 +2012,9 @@ def canvasCallback(action, value1, value2, valueStr):
 
         if pwidget is not None:
             pwidget.showCustomUI()
+
+    elif action == patchcanvas.ACTION_BG_RIGHT_CLICK:
+        gCarla.gui.showPluginActionsMenu()
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine callback

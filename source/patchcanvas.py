@@ -76,6 +76,7 @@ ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
 ACTION_PLUGIN_REPLACE   = 11 # plugin_id, N, N
 ACTION_PLUGIN_REMOVE    = 12 # plugin_id, N, N
 ACTION_PLUGIN_SHOW_UI   = 13 # plugin_id, N, N
+ACTION_BG_RIGHT_CLICK   = 14 # N, N, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -1360,8 +1361,12 @@ class PatchScene(QGraphicsScene):
 
         QGraphicsScene.wheelEvent(self, event)
 
-    #def contextMenuEvent(self, event):
-        #print("context menu event")
+    def contextMenuEvent(self, event):
+        if len(self.selectedItems()) == 0:
+            event.accept()
+            canvas.callback(ACTION_BG_RIGHT_CLICK, 0, 0, "")
+        else:
+            QGraphicsScene.contextMenuEvent(self, event)
 
 # ------------------------------------------------------------------------------
 # canvasfadeanimation.cpp
