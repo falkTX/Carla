@@ -40,9 +40,19 @@ protected:
         return "MVerb";
     }
 
+    const char* getDescription() const override
+    {
+        return "Studio quality reverb, provides a practical demonstration of Dattorro’s figure-of-eight reverb structure.";
+    }
+
     const char* getMaker() const noexcept override
     {
         return "Martin Eastwood, falkTX";
+    }
+
+    const char* getHomePage() const override
+    {
+        return "https://github.com/DISTRHO/MVerb";
     }
 
     const char* getLicense() const noexcept override
@@ -52,7 +62,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return 0x1000;
+        return d_version(1, 0, 0);
     }
 
     int64_t getUniqueId() const noexcept override

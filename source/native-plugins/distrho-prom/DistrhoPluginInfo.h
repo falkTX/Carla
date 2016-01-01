@@ -17,7 +17,8 @@
 #ifndef DISTRHO_PLUGIN_INFO_H_INCLUDED
 #define DISTRHO_PLUGIN_INFO_H_INCLUDED
 
-#define DISTRHO_PLUGIN_NAME "ProM"
+#define DISTRHO_PLUGIN_BRAND "DISTRHO"
+#define DISTRHO_PLUGIN_NAME  "ProM"
 #define DISTRHO_PLUGIN_URI   "http://distrho.sf.net/plugins/ProM"
 
 #define DISTRHO_PLUGIN_HAS_UI        1

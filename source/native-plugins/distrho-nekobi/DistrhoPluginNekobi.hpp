@@ -57,9 +57,19 @@ protected:
         return "Nekobi";
     }
 
+    const char* getDescription() const override
+    {
+        return "Simple single-oscillator synth based on the Roland TB-303.";
+    }
+
     const char* getMaker() const noexcept override
     {
         return "Sean Bolton, falkTX";
+    }
+
+    const char* getHomePage() const override
+    {
+        return "https://github.com/DISTRHO/Nekobi";
     }
 
     const char* getLicense() const noexcept override
@@ -69,7 +79,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return 0x1000;
+        return d_version(1, 0, 0);
     }
 
     int64_t getUniqueId() const noexcept override

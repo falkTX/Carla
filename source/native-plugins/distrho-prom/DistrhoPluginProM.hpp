@@ -43,9 +43,19 @@ protected:
         return "ProM";
     }
 
+    const char* getDescription() const override
+    {
+        return "ProjectM visualizer.";
+    }
+
     const char* getMaker() const noexcept override
     {
         return "DISTRHO";
+    }
+
+    const char* getHomePage() const override
+    {
+        return "https://github.com/DISTRHO/ProM";
     }
 
     const char* getLicense() const noexcept override
@@ -55,7 +65,7 @@ protected:
 
     uint32_t getVersion() const noexcept override
     {
-        return 0x1000;
+        return d_version(1, 0, 0);
     }
 
     int64_t getUniqueId() const noexcept override

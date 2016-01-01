@@ -61,6 +61,7 @@ protected:
 private:
     Image  fImgBackground;
     NanoVG fNanoText;
+    NanoVG::FontId fNanoFont;
     std::vector<ImageKnob*> fKnobs;
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(DistrhoUIMVerb)

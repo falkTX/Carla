@@ -54,7 +54,7 @@ void DistrhoPluginPingPongPan::initParameter(uint32_t index, Parameter& paramete
     case paramWidth:
         parameter.hints      = kParameterIsAutomable;
         parameter.name       = "Width";
-        parameter.symbol     = "with";
+        parameter.symbol     = "width";
         parameter.unit       = "%";
         parameter.ranges.def = 75.0f;
         parameter.ranges.min = 0.0f;

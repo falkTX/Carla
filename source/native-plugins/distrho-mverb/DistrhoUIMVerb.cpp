@@ -19,8 +19,6 @@
 #include "DistrhoUIMVerb.hpp"
 #include "MVerb.h"
 
-#include "font/Kh-Kangrey.h"
-
 START_NAMESPACE_DISTRHO
 
 namespace Art = DistrhoArtworkMVerb;
@@ -34,7 +32,8 @@ DistrhoUIMVerb::DistrhoUIMVerb()
       fImgBackground(Art::backgroundData, Art::backgroundWidth, Art::backgroundHeight, GL_BGR)
 {
     // text
-    fNanoText.createFontFromMemory("kh", (const uchar*)khkangrey_ttf, khkangrey_ttfSize, false);
+    fNanoText.loadSharedResources();
+    fNanoFont = fNanoText.findFont(NANOVG_DEJAVU_SANS_TTF);
 
     // knobs
     Image knobImage(Art::knobData, Art::knobWidth, Art::knobHeight);
@@ -231,8 +230,8 @@ void DistrhoUIMVerb::onDisplay()
     // text display
     fNanoText.beginFrame(this);
 
-    fNanoText.fontFace("kh");
-    fNanoText.fontSize(20);
+    fNanoText.fontFaceId(fNanoFont);
+    fNanoText.fontSize(13);
     fNanoText.textAlign(NanoVG::ALIGN_CENTER|NanoVG::ALIGN_TOP);
     fNanoText.fillColor(Color(1.0f, 1.0f, 1.0f));
 
@@ -242,7 +241,7 @@ void DistrhoUIMVerb::onDisplay()
     for (std::size_t i=0; i<MVerb<float>::NUM_PARAMS; ++i)
     {
         std::snprintf(strBuf, 32, "%i%%", int(fKnobs[i]->getValue()));
-        fNanoText.textBox(58.0f + float(fKnobs[i]->getAbsoluteX()) - 56.0f, 73.0f, 30.0f, strBuf, nullptr);
+        fNanoText.textBox(56.0f + float(fKnobs[i]->getAbsoluteX()) - 56.0f, 76.0f, 34.0f, strBuf, nullptr);
     }
 
     fNanoText.endFrame();

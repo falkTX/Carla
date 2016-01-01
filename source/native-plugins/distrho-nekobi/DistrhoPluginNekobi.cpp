@@ -163,7 +163,7 @@ void DistrhoPluginNekobi::initParameter(uint32_t index, Parameter& parameter)
     switch (index)
     {
     case paramWaveform:
-        parameter.hints      = kParameterIsAutomable|kParameterIsBoolean;
+        parameter.hints      = kParameterIsAutomable|kParameterIsInteger;
         parameter.name       = "Waveform";
         parameter.symbol     = "waveform";
         parameter.ranges.def = 0.0f;
