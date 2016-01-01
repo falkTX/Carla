@@ -1938,6 +1938,13 @@ def canvasCallback(action, value1, value2, valueStr):
         if pwidget is not None:
             pwidget.showRenameDialog()
 
+    elif action == patchcanvas.ACTION_PLUGIN_REPLACE:
+        pluginId = value1
+        pwidget  = gCarla.gui.getPluginSlotWidget(pluginId)
+
+        if pwidget is not None:
+            pwidget.showReplaceDialog()
+
     elif action == patchcanvas.ACTION_PLUGIN_REMOVE:
         pluginId = value1
 

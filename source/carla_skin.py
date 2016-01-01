@@ -1033,8 +1033,8 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Other stuff
 
         actClone   = menu.addAction(self.tr("Clone"))
-        actReplace = menu.addAction(self.tr("Replace..."))
         actRename  = menu.addAction(self.tr("Rename..."))
+        actReplace = menu.addAction(self.tr("Replace..."))
         actRemove  = menu.addAction(self.tr("Remove"))
 
         if self.fIdleTimerId != 0:

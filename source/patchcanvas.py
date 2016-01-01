@@ -73,8 +73,9 @@ ACTION_PORTS_DISCONNECT =  7 # conn_id, N, N
 ACTION_PLUGIN_CLONE     =  8 # plugin_id, N, N
 ACTION_PLUGIN_EDIT      =  9 # plugin_id, N, N
 ACTION_PLUGIN_RENAME    = 10 # plugin_id, N, N
-ACTION_PLUGIN_REMOVE    = 11 # plugin_id, N, N
-ACTION_PLUGIN_SHOW_UI   = 12 # plugin_id, N, N
+ACTION_PLUGIN_REPLACE   = 11 # plugin_id, N, N
+ACTION_PLUGIN_REMOVE    = 12 # plugin_id, N, N
+ACTION_PLUGIN_SHOW_UI   = 13 # plugin_id, N, N
 
 # Icon
 ICON_APPLICATION = 0
@@ -2527,8 +2528,8 @@ class CanvasBox(QGraphicsItem):
         menu.addMenu(discMenu)
         act_x_disc_all = menu.addAction("Disconnect &All")
         act_x_sep1 = menu.addSeparator()
-        act_x_info = menu.addAction("&Info")
-        act_x_rename = menu.addAction("&Rename")
+        act_x_info = menu.addAction("Info")
+        act_x_rename = menu.addAction("Rename")
         act_x_sep2 = menu.addSeparator()
         act_x_split_join = menu.addAction("Join" if self.m_splitted else "Split")
 
@@ -2543,19 +2544,21 @@ class CanvasBox(QGraphicsItem):
 
         if self.m_plugin_id >= 0:
             menu.addSeparator()
-            act_p_edit = menu.addAction("&Edit")
-            act_p_ui   = menu.addAction("&Show Custom UI")
+            act_p_edit = menu.addAction("Edit")
+            act_p_ui   = menu.addAction("Show Custom UI")
             menu.addSeparator()
-            act_p_clone  = menu.addAction("&Clone")
-            act_p_rename = menu.addAction("&Rename...")
-            act_p_remove = menu.addAction("Re&move")
+            act_p_clone   = menu.addAction("Clone")
+            act_p_rename  = menu.addAction("Rename...")
+            act_p_replace = menu.addAction("Replace...")
+            act_p_remove  = menu.addAction("Remove")
 
             if not self.m_plugin_ui:
                 act_p_ui.setVisible(False)
 
         else:
-            act_p_edit  = act_p_ui = None
-            act_p_clone = act_p_rename = act_p_remove = None
+            act_p_edit    = act_p_ui     = None
+            act_p_clone   = act_p_rename = None
+            act_p_replace = act_p_remove = None
 
         haveIns = haveOuts = False
         for port in canvas.port_list:
@@ -2601,6 +2604,9 @@ class CanvasBox(QGraphicsItem):
 
         elif act_selected == act_p_rename:
             canvas.callback(ACTION_PLUGIN_RENAME, self.m_plugin_id, 0, "")
+
+        elif act_selected == act_p_replace:
+            canvas.callback(ACTION_PLUGIN_REPLACE, self.m_plugin_id, 0, "")
 
         elif act_selected == act_p_remove:
             canvas.callback(ACTION_PLUGIN_REMOVE, self.m_plugin_id, 0, "")
