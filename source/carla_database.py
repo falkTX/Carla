@@ -1255,7 +1255,6 @@ class PluginDatabaseW(QDialog):
     def loadSettings(self):
         settings = QSettings("falkTX", "CarlaDatabase2")
         self.restoreGeometry(settings.value("PluginDatabase/Geometry", b""))
-        self.ui.tableWidget.horizontalHeader().restoreState(settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"), b""))
         self.ui.ch_effects.setChecked(settings.value("PluginDatabase/ShowEffects", True, type=bool))
         self.ui.ch_instruments.setChecked(settings.value("PluginDatabase/ShowInstruments", True, type=bool))
         self.ui.ch_midi.setChecked(settings.value("PluginDatabase/ShowMIDI", True, type=bool))
@@ -1275,6 +1274,12 @@ class PluginDatabaseW(QDialog):
         self.ui.ch_gui.setChecked(settings.value("PluginDatabase/ShowHasGUI", False, type=bool))
         self.ui.ch_stereo.setChecked(settings.value("PluginDatabase/ShowStereoOnly", False, type=bool))
         self.ui.lineEdit.setText(settings.value("PluginDatabase/SearchText", "", type=str))
+
+        tableGeometry = settings.value("PluginDatabase/TableGeometry%s" % ("_5" if config_UseQt5 else "_4"))
+        if tableGeometry:
+            self.ui.tableWidget.horizontalHeader().restoreState(tableGeometry)
+        else:
+            self.ui.tableWidget.sortByColumn(0, Qt.AscendingOrder)
 
         self._showFilters(settings.value("PluginDatabase/ShowFilters", False, type=bool))
 
@@ -1684,7 +1689,6 @@ class PluginDatabaseW(QDialog):
         # ----------------------------------------------------------------------------------------------------
 
         self.ui.tableWidget.setSortingEnabled(True)
-        self.ui.tableWidget.sortByColumn(0, Qt.AscendingOrder)
 
         if MACOS:
             self.ui.label.setText(self.tr("Have %i Internal, %i LADSPA, %i DSSI, %i LV2, %i VST, %i VST3 and %i AudioUnit plugins, plus %i Sound Kits" % (
