@@ -187,9 +187,7 @@ public:
 
     void getRealName(char* const strBuf) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(fInstance != nullptr,);
-
-        std::strncpy(strBuf, fInstance->getName().toRawUTF8(), STR_MAX);
+        std::strncpy(strBuf, fDesc.descriptiveName.toRawUTF8(), STR_MAX);
     }
 
     void getParameterName(const uint32_t parameterId, char* const strBuf) const noexcept override
