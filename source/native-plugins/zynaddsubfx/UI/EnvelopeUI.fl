@@ -146,14 +146,12 @@ sustaincounter->update();
         label frcR
         tooltip {Forced Release} xywh {410 165 40 15} down_box DOWN_BOX labelsize 10
         code0 {o->init("Pforcedrelease");}
-        code1 {//TODO if (Pfreemode==0) o->hide();}
         class Fl_Osc_Check
       }
       Fl_Dial envstretchdial {
         label {Str.}
         tooltip {Envelope stretch (on lower notes make the envelope longer)} xywh {380 155 25 25} box ROUND_UP_BOX labelsize 10 align 4 maximum 127 step 1
         code0 {o->init("Penvstretch");}
-        code1 {//TODO if (Pfreemode==0) o->hide();}
         class Fl_Osc_Dial
       }
       Fl_Button {} {
@@ -165,7 +163,6 @@ sustaincounter->update();
         label L
         tooltip {Linear Envelope} xywh {410 151 30 15} down_box DOWN_BOX labelsize 10
         code0 {o->init("Plinearenvelope");}
-        code1 {//TODO if ((Pfreemode==0)||(Envmode>2)) o->hide();}
         class Fl_Osc_Check
       }
       Fl_Counter sustaincounter {
@@ -616,8 +613,12 @@ refresh_display();} {}
 
     envstretchdial->value(Penvstretch);
 
-    linearenvelopecheck->value(Plinearenvelope);
-    linearenvelopecheck->show();
+    if (Envmode > 2)
+      linearenvelopecheck->hide();
+    else {
+      linearenvelopecheck->value(Plinearenvelope);
+      linearenvelopecheck->show();
+    }
 
     forcedreleasecheck->value(Pforcedrelease);
 

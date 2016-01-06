@@ -87,17 +87,21 @@ int EnvelopeFreeEdit::getpointy(int n) const
     return (1.0-Penvval[n]/127.0)*ly;
 }
 
+static inline int distance_fn(int dx, int dy) {
+    return dx*dx+dy*dy;
+}
+
 int EnvelopeFreeEdit::getnearest(int x,int y) const
 {
     x-=5;y-=5;
 
     int nearestpoint=0;
-    int nearestval=1000000;//a big value
-    for(int i=0; i<Penvpoints; ++i){
-        int distance=abs(x-getpointx(i))+abs(y-getpointy(i));
-        if (distance<nearestval) {
+    int nearest_distance_sq=distance_fn(x-getpointx(0), y-getpointy(0));
+    for(int i=1; i<Penvpoints; ++i){
+        int distance_sq=distance_fn(x-getpointx(i), y-getpointy(i));
+        if (distance_sq<nearest_distance_sq) {
             nearestpoint=i;
-            nearestval=distance;
+            nearest_distance_sq=distance_sq;
         }
     }
 
@@ -114,7 +118,7 @@ float EnvelopeFreeEdit::getdt(int i) const
     return dt(Penvdt[i]);
 }
 
-static bool ctrldown;
+static bool ctrldown, altdown;
 
 void EnvelopeFreeEdit::draw(void)
 {
@@ -135,8 +139,9 @@ void EnvelopeFreeEdit::draw(void)
     //draw the lines
     fl_color(FL_GRAY);
 
+    const int midline = oy+ly*(1-64.0/127);
     fl_line_style(FL_SOLID);
-    fl_line(ox+2,oy+ly/2,ox+lx-2,oy+ly/2);
+    fl_line(ox+2,midline,ox+lx-2,midline);
 
     //draws the evelope points and lines
     Fl_Color alb=FL_WHITE;
@@ -180,14 +185,18 @@ void EnvelopeFreeEdit::draw(void)
         time=getdt(lastpoint);
     }
     char tmpstr[20];
-    if (time<1000.0)
-        snprintf((char *)&tmpstr,20,"%.1fms",time);
-    else
-        snprintf((char *)&tmpstr,20,"%.2fs",time/1000.0);
-    fl_draw(tmpstr,ox+lx-20,oy+ly-10,20,10,FL_ALIGN_RIGHT,NULL,0);
-    if (lastpoint>=0){
-        snprintf((char *)&tmpstr,20,"%d", Penvval[lastpoint]);
-        fl_draw(tmpstr,ox+lx-20,oy+ly-23,20,10,FL_ALIGN_RIGHT,NULL,0);
+    if (!altdown || ctrldown) {
+        if (time<1000.0)
+            snprintf((char *)&tmpstr,20,"%.1fms",time);
+        else
+            snprintf((char *)&tmpstr,20,"%.2fs",time/1000.0);
+        fl_draw(tmpstr,ox+lx-20,oy+ly-10,20,10,FL_ALIGN_RIGHT,NULL,0);
+    }
+    if (!altdown || !ctrldown) {
+        if (lastpoint>=0){
+            snprintf((char *)&tmpstr,20,"%d", Penvval[lastpoint]);
+            fl_draw(tmpstr,ox+lx-20,oy+ly-23,20,10,FL_ALIGN_RIGHT,NULL,0);
+        }
     }
 }
 
@@ -196,7 +205,7 @@ int EnvelopeFreeEdit::handle(int event)
     const int x_=Fl::event_x()-x();
     const int y_=Fl::event_y()-y();
     static Fl_Widget *old_focus;
-    int key;
+    int key, old_mod_state;
 
     switch(event) {
       case FL_ENTER:
@@ -211,6 +220,11 @@ int EnvelopeFreeEdit::handle(int event)
       case FL_KEYDOWN:
       case FL_KEYUP:
           key = Fl::event_key();
+          if (key==FL_Alt_L || key==FL_Alt_R) {
+              altdown = (event==FL_KEYDOWN);
+              redraw();
+              if (pair!=NULL) pair->redraw();
+          }
           if (key==FL_Control_L || key==FL_Control_R){
               ctrldown = (event==FL_KEYDOWN);
               redraw();
@@ -220,7 +234,9 @@ int EnvelopeFreeEdit::handle(int event)
       case FL_PUSH:
             currentpoint=getnearest(x_,y_);
             cpx=x_;
+            cpy=y_;
             cpdt=Penvdt[currentpoint];
+            cpval=Penvval[currentpoint];
             lastpoint=currentpoint;
             redraw();
             if (pair)
@@ -233,15 +249,18 @@ int EnvelopeFreeEdit::handle(int event)
                 pair->redraw();
             return 1;
       case FL_MOUSEWHEEL:
+          if (Fl::event_buttons())
+              return 1;
           if (lastpoint>=0) {
+              int delta = Fl::event_dy() * (Fl::event_shift() ? 4 : 1);
               if (!ctrldown) {
-                  int ny = Penvval[lastpoint] - Fl::event_dy();
+                  int ny = Penvval[lastpoint] - delta;
                   ny = ny < 0 ? 0 : ny > 127 ? 127 : ny;
                   Penvval[lastpoint] = ny;
                   oscWrite(to_s("Penvval")+to_s(lastpoint), "c", ny);
                   oscWrite("Penvval","");
               } else if (lastpoint > 0) {
-                  int newdt = Fl::event_dy() + Penvdt[lastpoint];
+                  int newdt = Penvdt[lastpoint] - delta;
                   newdt = newdt < 0 ? 0 : newdt > 127 ? 127 : newdt;
                   Penvdt[lastpoint] = newdt;
                   oscWrite(to_s("Penvdt")+to_s(lastpoint),  "c", newdt);
@@ -253,22 +272,37 @@ int EnvelopeFreeEdit::handle(int event)
           }
       case FL_DRAG:
           if (currentpoint>=0){
-              int ny=limit(127-(int) (y_*127.0/h()), 0, 127);
+              old_mod_state = mod_state;
+              mod_state = ctrldown << 1 | altdown;
+              if (old_mod_state != mod_state) {
+                  cpx=x_;
+                  cpy=y_;
+                  cpdt=Penvdt[currentpoint];
+                  cpval=Penvval[currentpoint];
+                  old_mod_state = mod_state;
+              }
 
-              Penvval[currentpoint]=ny;
+              if (!altdown || !ctrldown) {
+                  const int dy=(int)((cpy-y_)/3.0);
+                  const int newval=limit(cpval+dy, 0, 127);
 
-              const int dx=(int)((x_-cpx)*0.1);
-              const int newdt=limit(cpdt+dx,0,127);
+                  Penvval[currentpoint]=newval;
+                  oscWrite(to_s("Penvval")+to_s(currentpoint), "c", newval);
+                  oscWrite("Penvval","");
+              }
 
-              if(currentpoint!=0)
-                  Penvdt[currentpoint]=newdt;
-              else
-                  Penvdt[currentpoint]=0;
+              if (!altdown || ctrldown) {
+                  const int dx=(int)((x_-cpx)*0.1);
+                  const int newdt=limit(cpdt+dx,0,127);
 
-              oscWrite(to_s("Penvval")+to_s(currentpoint), "c", ny);
-              oscWrite(to_s("Penvdt")+to_s(currentpoint),  "c", newdt);
-              oscWrite("Penvdt","");
-              oscWrite("Penvval","");
+                  if(currentpoint!=0)
+                      Penvdt[currentpoint]=newdt;
+                  else
+                      Penvdt[currentpoint]=0;
+                  oscWrite(to_s("Penvdt")+to_s(currentpoint),  "c", newdt);
+                  oscWrite("Penvdt","");
+              }
+
               redraw();
 
               if(pair)

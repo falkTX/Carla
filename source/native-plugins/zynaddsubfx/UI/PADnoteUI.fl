@@ -386,7 +386,7 @@ cbwidget->do_callback();}}
               callback {opui->update();
                   hpui->update();
 cbwidget->do_callback();}
-              xywh {425 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              xywh {425 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 255 step 1
               code0 {o->init("Phrpos.par1");o->reset_value=64;}
               class Fl_Osc_Dial
             }
@@ -394,7 +394,7 @@ cbwidget->do_callback();}
               label Par2
               callback {opui->update();
 cbwidget->do_callback();}
-              xywh {460 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              xywh {460 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 255 step 1
               code0 {o->init("Phrpos.par2");o->reset_value=64;}
               class Fl_Osc_Dial
             }
@@ -402,7 +402,7 @@ cbwidget->do_callback();}
               label ForceH
               callback {opui->update();
 cbwidget->do_callback();}
-              xywh {495 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 127 step 1
+              xywh {495 310 25 25} box ROUND_UP_BOX labelsize 10 align 1 maximum 255 step 1
               code0 {o->init("Phrpos.par3");}
               class Fl_Osc_Dial
             }

@@ -45,10 +45,11 @@ Envelope::Envelope(EnvelopeParams &pars, float basefreq, float bufferdt)
     if((mode == 2) && linearenvelope)
         mode = 1;                              //change to linear
 
-    for(int i = 0; i < MAX_ENVELOPE_POINTS; ++i) {
+    for(int i = 0; i < envpoints; ++i) {
         const float tmp = pars.getdt(i) / 1000.0f * envstretch;
         if(tmp > bufferdt)
-            envdt[i] = bufferdt / tmp;
+            envdt[i] =
+                i == envpoints ? bufferdt / tmp : 1 / ceil(tmp / bufferdt);
         else
             envdt[i] = 2.0f;  //any value larger than 1
 

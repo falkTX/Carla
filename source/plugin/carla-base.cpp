@@ -69,6 +69,7 @@ struct PluginListManager {
             if (std::strcmp(desc->label, "bypass"       ) == 0 ||
                 std::strcmp(desc->label, "3bandeq"      ) == 0 ||
                 std::strcmp(desc->label, "3bandsplitter") == 0 ||
+                std::strcmp(desc->label, "kars"         ) == 0 ||
                 std::strcmp(desc->label, "mverb"        ) == 0 ||
                 std::strcmp(desc->label, "nekobi"       ) == 0 ||
                 std::strcmp(desc->label, "pingpongpan"  ) == 0 ||

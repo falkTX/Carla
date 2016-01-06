@@ -40,11 +40,13 @@ class EnvelopeFreeEdit : public Fl_Box, public Fl_Osc_Widget
         Fl_Box *pair; //XXX what the heck is this?
 
         //cursor state
-        int currentpoint, cpx, cpdt;
+        int currentpoint, cpx, cpy, cpdt, cpval;
 
         //The Points
         char Penvdt[MAX_ENVELOPE_POINTS];
         char Penvval[MAX_ENVELOPE_POINTS];
         //The Sustain point
         char Penvsustain;
+        int button_state;
+        int mod_state;
 };

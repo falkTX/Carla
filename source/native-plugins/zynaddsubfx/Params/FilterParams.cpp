@@ -38,14 +38,11 @@ constexpr int sizeof_pvowels = sizeof(FilterParams::Pvowels);
 
 #define rObject FilterParams::Pvowels_t::formants_t
 
-#undef rChangeCb
-#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports subsubports = {
     rParamZyn(freq, "Formant frequency"),
     rParamZyn(amp,  "Strength of formant"),
     rParamZyn(q,    "Quality Factor"),
 };
-#undef rChangeCb
 #undef rObject
 
 static const rtosc::Ports subports = {
@@ -59,13 +56,12 @@ static const rtosc::Ports subports = {
             FilterParams::Pvowels_t *obj = (FilterParams::Pvowels_t *) d.obj;
             d.obj = (void*) &obj->formants[idx];
             subsubports.dispatch(msg, d);
-            if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
         }},
 };
 
 #define rObject FilterParams
 #undef  rChangeCb
-#define rChangeCb obj->changed = true; if ( obj->time) { \
+#define rChangeCb obj->changed = true; if ( obj->time) {      \
     obj->last_update_timestamp = obj->time->time(); }
 const rtosc::Ports FilterParams::ports = {
     rSelf(FilterParams),
@@ -189,13 +185,10 @@ void FilterParams::defaults(int n)
 {
     int j = n;
 
-    Pvowels[j].time = time;
-
     for(int i = 0; i < FF_MAX_FORMANTS; ++i) {
         Pvowels[j].formants[i].freq = (int)(RND * 127.0f); //some random freqs
         Pvowels[j].formants[i].q    = 64;
         Pvowels[j].formants[i].amp  = 127;
-        Pvowels[j].formants[i].time = time;
     }
 }
 

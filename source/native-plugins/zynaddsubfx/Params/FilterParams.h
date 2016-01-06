@@ -68,19 +68,10 @@ class FilterParams:public PresetsArray
         unsigned char Pcenterfreq, Poctavesfreq; //the center frequency of the res. func., and the number of octaves
 
         struct Pvowels_t {
-            Pvowels_t() : last_update_timestamp(0) {}
             struct formants_t {
-                formants_t() : last_update_timestamp(0) {}
                 unsigned char freq, amp, q; //frequency,amplitude,Q
-
-                const AbsTime *time;
-                int64_t last_update_timestamp;
             } formants[FF_MAX_FORMANTS];
-
-            const AbsTime *time;
-            int64_t last_update_timestamp;
         } Pvowels[FF_MAX_VOWELS];
-
 
         unsigned char Psequencesize; //how many vowels are in the sequence
         unsigned char Psequencestretch; //how the sequence is stretched (how the input from filter envelopes/LFOs/etc. is "stretched")
@@ -104,7 +95,8 @@ class FilterParams:public PresetsArray
         bool changed;
 
         const AbsTime *time;
-        int64_t last_update_timestamp;
+        int64_t last_update_timestamp; // timestamp of last update to this structure,
+        // including any change to the vowels/formats
 
         static const rtosc::Ports ports;
     private:
