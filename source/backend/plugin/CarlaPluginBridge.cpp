@@ -2673,7 +2673,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_START_NAMESPACE
 
-CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* const bridgeBinary)
+CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, PluginType ptype, const char* bridgeBinary)
 {
     carla_debug("CarlaPlugin::newBridge({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label, BinaryType2Str(btype), PluginType2Str(ptype), bridgeBinary);
 
@@ -2682,6 +2682,12 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
         init.engine->setLastError("Bridge not possible, bridge-binary not found");
         return nullptr;
     }
+
+#ifndef CARLA_OS_WIN
+    // FIXME: somewhere, somehow, we end up with double slashes, wine doesn't like that.
+    if (std::strncmp(bridgeBinary, "//", 2) == 0)
+        ++bridgeBinary;
+#endif
 
     CarlaPluginBridge* const plugin(new CarlaPluginBridge(init.engine, init.id, btype, ptype));
 
