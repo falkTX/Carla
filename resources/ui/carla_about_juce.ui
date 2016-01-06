@@ -108,8 +108,10 @@
 
 It contains pretty much everything you're likely to need to create most applications, and is particularly well-suited for building highly-customised GUIs, and for handling graphics and sound.
 
-Most JUCE modules are shared under the GNU Public Licence (GPLv2, v3, and the AGPLv3).
-One module (the juce_core module) is permissively licensed under the ISC.</string>
+JUCE is licensed under the GNU Public Licence version 2.0.
+One module (juce_core) is permissively licensed under the ISC.
+
+Copyright (C) 2015 - ROLI Ltd.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>
