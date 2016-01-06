@@ -147,7 +147,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
 
 #if defined(CARLA_OS_WIN)
-    return (::WaitForSingleObject(sem.handle, secs*1000 + msecs) == WAIT_OBJECT_0);
+    return (::WaitForSingleObject(sem.handle, msecs) == WAIT_OBJECT_0);
 #elif defined(CARLA_OS_MAC)
     return false; // TODO
 #elif defined(CARLA_USE_FUTEXES)
@@ -155,21 +155,14 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
     timeout.tv_sec  = static_cast<time_t>(msecs / 1000);
     timeout.tv_nsec = static_cast<time_t>(msecs % 1000);
 
-    for (; ! __sync_bool_compare_and_swap(&sem.count, 1, 0);)
+    for (;;)
     {
-        if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) == 0)
-        {
-            __sync_sub_and_fetch(&sem.count, 1);
+        if (__sync_bool_compare_and_swap(&sem.count, 1, 0))
             return true;
-        }
 
-        if (errno == EWOULDBLOCK)
-            continue;
-
-        return false;
+        if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) != 0 && errno != EWOULDBLOCK)
+            return false;
     }
-
-    return true;
 #else
     if (::sem_trywait(&sem.sem) == 0)
         return true;
