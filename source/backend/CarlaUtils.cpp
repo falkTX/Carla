@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -120,6 +120,7 @@ const char* carla_get_complete_license_text()
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
         "<li>MVerb plugin code by Martin Eastwood</li>"
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
+        "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
 #ifdef HAVE_ZYN_DEPS
         "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
 #endif

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla widgets code
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -77,7 +77,7 @@ class CarlaAboutW(QDialog):
         self.ui.l_about.setText(self.tr(""
                                      "<br>Version %s"
                                      "<br>Carla is a fully-featured audio plugin host%s.<br>"
-                                     "<br>Copyright (C) 2011-2014 falkTX<br>"
+                                     "<br>Copyright (C) 2011-2016 falkTX<br>"
                                      "" % (VERSION, extraInfo)))
 
         if host.isControl:
@@ -150,7 +150,25 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
-        self.ui.l_vst.setText(self.tr("<p>About 85&#37; complete (missing vst bank/presets and some minor stuff)</p>"))
+        if MACOS or WINDOWS:
+            self.ui.l_vst2.setText(self.tr("Using Juce host"))
+            self.ui.l_vst3.setText(self.tr("Using Juce host"))
+
+            if MACOS:
+                self.ui.l_au.setText(self.tr("Using Juce host"))
+            else:
+                self.ui.line_vst3.hide()
+                self.ui.l_au.hide()
+                self.ui.lid_au.hide()
+
+        else:
+            self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
+            self.ui.line_vst2.hide()
+            self.ui.l_vst3.hide()
+            self.ui.lid_vst3.hide()
+            self.ui.line_vst3.hide()
+            self.ui.l_au.hide()
+            self.ui.lid_au.hide()
 
         # 2nd tab is usually longer than the 1st
         # adjust appropriately
