@@ -248,6 +248,10 @@ public:
 
     bool needsInit;
 
+    const LilvPlugins* allPlugins;
+    const LilvPlugin** cachedPlugins;
+    uint pluginCount;
+
     // -------------------------------------------------------------------
 
     Lv2WorldClass()
@@ -365,7 +369,22 @@ public:
           rdf_type           (new_uri(NS_rdf "type")),
           rdfs_label         (new_uri(NS_rdfs "label")),
 
-          needsInit(true)    {}
+          needsInit(true),
+          allPlugins(nullptr),
+          cachedPlugins(nullptr),
+          pluginCount(0) {}
+
+    ~Lv2WorldClass() override
+    {
+        pluginCount = 0;
+        allPlugins = nullptr;
+
+        if (cachedPlugins != nullptr)
+        {
+            delete[] cachedPlugins;
+            cachedPlugins = nullptr;
+        }
+    }
 
     static Lv2WorldClass& getInstance()
     {
@@ -383,57 +402,69 @@ public:
         needsInit = false;
 
         Lilv::World::load_all(LV2_PATH);
+
+        allPlugins = lilv_world_get_all_plugins(this->me);
+        CARLA_SAFE_ASSERT_RETURN(allPlugins != nullptr,);
+
+        if ((pluginCount = lilv_plugins_size(allPlugins)))
+        {
+            cachedPlugins = new const LilvPlugin*[pluginCount+1];
+            carla_zeroPointers(cachedPlugins, pluginCount+1);
+
+            int i = 0;
+            for (LilvIter* it = lilv_plugins_begin(allPlugins); ! lilv_plugins_is_end(allPlugins, it); it = lilv_plugins_next(allPlugins, it))
+                cachedPlugins[i++] = lilv_plugins_get(allPlugins, it);
+        }
     }
 
     void load_bundle(const char* const bundle)
     {
         CARLA_SAFE_ASSERT_RETURN(bundle != nullptr && bundle[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(needsInit,);
 
         needsInit = false;
         Lilv::World::load_bundle(Lilv::Node(new_uri(bundle)));
+
+        allPlugins = lilv_world_get_all_plugins(this->me);
+        CARLA_SAFE_ASSERT_RETURN(allPlugins != nullptr,);
+
+        if ((pluginCount = lilv_plugins_size(allPlugins)))
+        {
+            cachedPlugins = new const LilvPlugin*[pluginCount+1];
+            carla_zeroPointers(cachedPlugins, pluginCount+1);
+
+            int i = 0;
+            for (LilvIter* it = lilv_plugins_begin(allPlugins); ! lilv_plugins_is_end(allPlugins, it); it = lilv_plugins_next(allPlugins, it))
+                cachedPlugins[i++] = lilv_plugins_get(allPlugins, it);
+        }
     }
 
     uint getPluginCount() const
     {
         CARLA_SAFE_ASSERT_RETURN(! needsInit, 0);
 
-        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
-        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, 0);
-
-        return lilv_plugins_size(cPlugins);
+        return pluginCount;
     }
 
     const LilvPlugin* getPluginFromIndex(const uint index) const
     {
         CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(cachedPlugins != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(index < pluginCount, nullptr);
 
-        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
-        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, nullptr);
-
-        uint32_t i=0;
-        for (LilvIter *it = lilv_plugins_begin(cPlugins); ! lilv_plugins_is_end(cPlugins, it); it = lilv_plugins_next(cPlugins, it), ++i)
-        {
-            if (index != i)
-                continue;
-
-            return lilv_plugins_get(cPlugins, it);
-        }
-
-        return nullptr;
+        return cachedPlugins[index];
     }
 
     const LilvPlugin* getPluginFromURI(const LV2_URI uri) const
     {
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', nullptr);
         CARLA_SAFE_ASSERT_RETURN(! needsInit, nullptr);
-
-        const LilvPlugins* const cPlugins(lilv_world_get_all_plugins(this->me));
-        CARLA_SAFE_ASSERT_RETURN(cPlugins != nullptr, nullptr);
+        CARLA_SAFE_ASSERT_RETURN(allPlugins != nullptr, nullptr);
 
         LilvNode* const uriNode(lilv_new_uri(this->me, uri));
         CARLA_SAFE_ASSERT_RETURN(uriNode != nullptr, nullptr);
 
-        const LilvPlugin* const cPlugin(lilv_plugins_get_by_uri(cPlugins, uriNode));
+        const LilvPlugin* const cPlugin(lilv_plugins_get_by_uri(allPlugins, uriNode));
         lilv_node_free(uriNode);
 
         return cPlugin;

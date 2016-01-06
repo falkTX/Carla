@@ -120,7 +120,6 @@ const char* carla_get_complete_license_text()
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
         "<li>MVerb plugin code by Martin Eastwood</li>"
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
-        "<li>NekoFilter plugin code based on lv2fil by Nedko Arnaudov and Fons Adriaensen</li>"
 #ifdef HAVE_ZYN_DEPS
         "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
 #endif
@@ -237,14 +236,13 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 #ifdef CARLA_OS_MAC
         static bool initiated = false;
 
-        if (initiated)
-            return static_cast<uint>(gCachedAuPluginResults.size());
-
-        using namespace juce;
-
-        initiated = true;
-        AudioUnitPluginFormat auFormat;
-        gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false);
+        if (! initiated)
+        {
+            using namespace juce;
+            initiated = true;
+            AudioUnitPluginFormat auFormat;
+            gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false);
+        }
 
         return static_cast<uint>(gCachedAuPluginResults.size());
 #else
