@@ -34,10 +34,10 @@
 #include "CarlaHost.h"
 #include "CarlaNative.hpp"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_gui_basics.h"
+# include "juce_gui_basics/juce_gui_basics.h"
 #else
 namespace juce {
 # include "juce_events/messages/juce_Initialisation.h"

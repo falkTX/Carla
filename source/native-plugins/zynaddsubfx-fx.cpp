@@ -27,7 +27,8 @@
 #include "Effects/Reverb.h"
 #include "Misc/Allocator.h"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
+
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::SharedResourcePointer;

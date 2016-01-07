@@ -21,7 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 CARLA_BACKEND_START_NAMESPACE
 

@@ -21,7 +21,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 using juce::jmax;
 using juce::String;

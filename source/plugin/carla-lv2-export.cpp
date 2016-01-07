@@ -18,7 +18,7 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"

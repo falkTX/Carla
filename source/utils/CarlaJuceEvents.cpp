@@ -22,8 +22,8 @@
 #if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
 
 #undef KeyPress
-#include "juce_audio_processors.h"
-#include "juce_events.h"
+#include "juce_audio_processors/juce_audio_processors.h"
+#include "juce_events/juce_events.h"
 
 namespace juce {
 
@@ -31,6 +31,7 @@ namespace juce {
 #include "juce_events/broadcasters/juce_AsyncUpdater.cpp"
 #include "juce_events/messages/juce_DeletedAtShutdown.cpp"
 #include "juce_events/messages/juce_MessageManager.cpp"
+#include "juce_audio_processors/processors/juce_AudioChannelSet.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
 

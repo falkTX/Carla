@@ -20,7 +20,7 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#include "juce_gui_basics.h"
+#include "juce_gui_basics/juce_gui_basics.h"
 
 #ifdef HAVE_X11
 # include <X11/Xlib.h>

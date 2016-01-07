@@ -1613,7 +1613,7 @@ private:
         headerParsed = sideParsed = dataParsed = isFreeFormat = wasFreeFormat = false;
         lastFrameSize = -1;
         needToSyncBitStream = true;
-        frameSize = sideInfoSize = dataSize = frameSize = bitIndex = 0;
+        frameSize = sideInfoSize = dataSize = bitIndex = 0;
         lastFrameSizeNoPadding = bufferSpaceIndex = 0;
         bufferPointer = bufferSpace[bufferSpaceIndex] + 512;
         synthBo = 1;
@@ -3020,7 +3020,7 @@ public:
             }
 
             const int numToCopy = jmin (decodedEnd - decodedStart, numSamples);
-            float* const* const dst = reinterpret_cast <float**> (destSamples);
+            float* const* const dst = reinterpret_cast<float**> (destSamples);
             memcpy (dst[0] + startOffsetInDestBuffer, decoded0 + decodedStart, sizeof (float) * (size_t) numToCopy);
 
             if (numDestChannels > 1 && dst[1] != nullptr)

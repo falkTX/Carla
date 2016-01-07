@@ -25,7 +25,7 @@
 
 #include <ctime>
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 using juce::CharPointer_UTF8;
 using juce::File;

@@ -19,7 +19,7 @@
 #include "CarlaPluginUI.hpp"
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-# include "juce_gui_basics.h"
+# include "juce_gui_basics/juce_gui_basics.h"
 using juce::Colour;
 using juce::Colours;
 using juce::ComponentPeer;
@@ -38,7 +38,7 @@ using juce::Graphics;
 // AutoResizingNSViewComponentWithParent, see juce_audio_processors.cpp
 
 #ifdef CARLA_OS_MAC
-# include "juce_gui_extra.h"
+# include "juce_gui_extra/juce_gui_extra.h"
 
 # ifdef CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
 #  include "juce_core/native/juce_BasicNativeHeaders.h"

@@ -28,7 +28,7 @@
 #include "CarlaHost.h"
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 namespace CB = CarlaBackend;
 

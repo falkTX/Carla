@@ -20,7 +20,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-#include "juce_audio_formats.h"
+#include "juce_audio_formats/juce_audio_formats.h"
 
 using namespace juce;
 

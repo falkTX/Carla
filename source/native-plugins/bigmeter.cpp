@@ -20,7 +20,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNativeExtUI.hpp"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
+
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::Range;

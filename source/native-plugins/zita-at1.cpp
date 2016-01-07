@@ -18,7 +18,7 @@
 #include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 
 #include "zita-at1/jclient.cc"
 #include "zita-at1/retuner.cc"

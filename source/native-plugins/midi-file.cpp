@@ -18,7 +18,7 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 
 // -----------------------------------------------------------------------
 

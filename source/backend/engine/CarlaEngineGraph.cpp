@@ -22,6 +22,15 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+// FIXME: update to new Juce API
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 using juce::AudioPluginInstance;
 using juce::AudioProcessor;
 using juce::AudioProcessorEditor;
@@ -1045,12 +1054,12 @@ const String getProcessorFullPortName(AudioProcessor* const proc, const uint32_t
     }
     else if (portId >= kAudioOutputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getNumOutputChannels() > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumOutputChannels() > 0, String());
         fullPortName += ":" + proc->getOutputChannelName(static_cast<int>(portId-kAudioOutputPortOffset));
     }
     else if (portId >= kAudioInputPortOffset)
     {
-        CARLA_SAFE_ASSERT_RETURN(proc->getNumInputChannels() > 0, String());
+        CARLA_SAFE_ASSERT_RETURN(proc->getTotalNumInputChannels() > 0, String());
         fullPortName += ":" + proc->getInputChannelName(static_cast<int>(portId-kAudioInputPortOffset));
     }
     else
@@ -1070,13 +1079,13 @@ void addNodeToPatchbay(CarlaEngine* const engine, const uint32_t groupId, const 
     const int icon((clientId >= 0) ? PATCHBAY_ICON_PLUGIN : PATCHBAY_ICON_HARDWARE);
     engine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, groupId, icon, clientId, 0.0f, proc->getName().toRawUTF8());
 
-    for (int i=0, numInputs=proc->getNumInputChannels(); i<numInputs; ++i)
+    for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
     {
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioInputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, proc->getInputChannelName(i).toRawUTF8());
     }
 
-    for (int i=0, numOutputs=proc->getNumOutputChannels(); i<numOutputs; ++i)
+    for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
     {
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, groupId, static_cast<int>(kAudioOutputPortOffset)+i,
                          PATCHBAY_PORT_TYPE_AUDIO, 0.0f, proc->getOutputChannelName(i).toRawUTF8());
@@ -1101,13 +1110,13 @@ void removeNodeFromPatchbay(CarlaEngine* const engine, const uint32_t groupId, c
     CARLA_SAFE_ASSERT_RETURN(engine != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(proc != nullptr,);
 
-    for (int i=0, numInputs=proc->getNumInputChannels(); i<numInputs; ++i)
+    for (int i=0, numInputs=proc->getTotalNumInputChannels(); i<numInputs; ++i)
     {
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, groupId, static_cast<int>(kAudioInputPortOffset)+i,
                          0, 0.0f, nullptr);
     }
 
-    for (int i=0, numOutputs=proc->getNumOutputChannels(); i<numOutputs; ++i)
+    for (int i=0, numOutputs=proc->getTotalNumOutputChannels(); i<numOutputs; ++i)
     {
         engine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_REMOVED, groupId, static_cast<int>(kAudioOutputPortOffset)+i,
                          0, 0.0f, nullptr);
@@ -1799,7 +1808,7 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
             return true;
         }
 
-        for (int j=0, numInputs=proc->getNumInputChannels(); j<numInputs; ++j)
+        for (int j=0, numInputs=proc->getTotalNumInputChannels(); j<numInputs; ++j)
         {
             if (proc->getInputChannelName(j) != portName)
                 continue;
@@ -1808,7 +1817,7 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
             return true;
         }
 
-        for (int j=0, numOutputs=proc->getNumOutputChannels(); j<numOutputs; ++j)
+        for (int j=0, numOutputs=proc->getTotalNumOutputChannels(); j<numOutputs; ++j)
         {
             if (proc->getOutputChannelName(j) != portName)
                 continue;
@@ -2251,5 +2260,12 @@ bool CarlaEngine::disconnectExternalGraphPort(const uint connectionType, const u
 // -----------------------------------------------------------------------
 
 CARLA_BACKEND_END_NAMESPACE
+
+// enable -Wdeprecated-declarations again
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 // -----------------------------------------------------------------------

@@ -37,7 +37,7 @@ extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 using juce::File;
 

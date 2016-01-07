@@ -24,7 +24,7 @@
 #include "RtLinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"

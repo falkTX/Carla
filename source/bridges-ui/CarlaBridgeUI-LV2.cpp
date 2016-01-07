@@ -21,7 +21,7 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 #define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 

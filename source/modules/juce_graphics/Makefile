@@ -10,7 +10,11 @@ include ../Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -w
+BUILD_CXX_FLAGS += $(JUCE_GRAPHICS_FLAGS) -I..
+
+ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -Wno-missing-field-initializers -Wno-strict-overflow
+endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

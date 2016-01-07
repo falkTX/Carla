@@ -35,7 +35,7 @@
 #include <ctime>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_core.h"
+# include "juce_core/juce_core.h"
 #else
 # include <cerrno>
 # include <fcntl.h>

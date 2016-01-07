@@ -26,7 +26,7 @@
 #include "CarlaStringList.hpp"
 
 #include "jackey.h"
-#include "juce_audio_basics.h"
+#include "juce_audio_basics/juce_audio_basics.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>

@@ -24,7 +24,7 @@
 #include "CarlaMathUtils.hpp"
 #include "JucePluginWindow.hpp"
 
-#include "juce_audio_processors.h"
+#include "juce_audio_processors/juce_audio_processors.h"
 
 using namespace juce;
 
@@ -359,9 +359,9 @@ public:
         bool needsCtrlIn, needsCtrlOut;
         needsCtrlIn = needsCtrlOut = false;
 
-        aIns   = (fInstance->getNumInputChannels() > 0)  ? static_cast<uint32_t>(fInstance->getNumInputChannels())  : 0;
-        aOuts  = (fInstance->getNumOutputChannels() > 0) ? static_cast<uint32_t>(fInstance->getNumOutputChannels()) : 0;
-        params = (fInstance->getNumParameters() > 0)     ? static_cast<uint32_t>(fInstance->getNumParameters())     : 0;
+        aIns   = (fInstance->getTotalNumInputChannels() > 0)  ? static_cast<uint32_t>(fInstance->getTotalNumInputChannels())  : 0;
+        aOuts  = (fInstance->getTotalNumOutputChannels() > 0) ? static_cast<uint32_t>(fInstance->getTotalNumOutputChannels()) : 0;
+        params = (fInstance->getNumParameters() > 0)          ? static_cast<uint32_t>(fInstance->getNumParameters())          : 0;
 
         if (fInstance->acceptsMidi())
         {

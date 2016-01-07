@@ -23,7 +23,8 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#include "juce_audio_processors.h"
+#include "juce_audio_processors/juce_audio_processors.h"
+
 using juce::AudioProcessorGraph;
 using juce::AudioSampleBuffer;
 using juce::MidiBuffer;

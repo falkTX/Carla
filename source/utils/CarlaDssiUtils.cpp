@@ -17,7 +17,7 @@
 
 #include "CarlaDssiUtils.hpp"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 // -----------------------------------------------------------------------
 

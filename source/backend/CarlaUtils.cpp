@@ -25,10 +25,10 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
-#include "juce_audio_formats.h"
+#include "juce_audio_formats/juce_audio_formats.h"
 
 #ifdef CARLA_OS_MAC
-# include "juce_audio_processors.h"
+# include "juce_audio_processors/juce_audio_processors.h"
 #endif
 
 #include "../native-plugins/_data.cpp"

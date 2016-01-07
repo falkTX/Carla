@@ -29,7 +29,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
 
 #include <pthread.h>
 

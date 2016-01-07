@@ -23,7 +23,7 @@
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # define USE_JUCE_PROCESSORS
-# include "juce_audio_processors.h"
+# include "juce_audio_processors/juce_audio_processors.h"
 #endif
 
 #ifdef BUILD_BRIDGE
@@ -46,13 +46,14 @@
 
 #include <iostream>
 
-#include "juce_core.h"
+#include "juce_core/juce_core.h"
+
+#define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
+
 using juce::CharPointer_UTF8;
 using juce::File;
 using juce::String;
 using juce::StringArray;
-
-#define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
 CARLA_BACKEND_USE_NAMESPACE
 
