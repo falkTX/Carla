@@ -319,13 +319,17 @@
     Enabling this flag means that DirectWrite will be used when available for font
     management and layout.
 */
-#define JUCE_USE_DIRECTWRITE 1
+#define JUCE_USE_DIRECTWRITE 0
 
 #define JUCE_INCLUDE_PNGLIB_CODE 1
 
 #define JUCE_INCLUDE_JPEGLIB_CODE 1
 
-#define USE_COREGRAPHICS_RENDERING 1
+#ifdef APPCONFIG_OS_MAC
+# define USE_COREGRAPHICS_RENDERING 1
+#else
+# define USE_COREGRAPHICS_RENDERING 0
+#endif
 
 // --------------------------------------------------------------------------------------------------------------------
 // juce_gui_basics
