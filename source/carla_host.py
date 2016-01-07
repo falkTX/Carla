@@ -509,6 +509,8 @@ class HostWindow(QMainWindow):
     def loadProjectNow(self):
         if not self.fProjectFilename:
             return qCritical("ERROR: loading project without filename set")
+        if self.host.nsmOK and not os.path.exists(self.fProjectFilename):
+            return
 
         self.projectLoadingStarted()
         self.fIsProjectLoading = True
@@ -652,16 +654,19 @@ class HostWindow(QMainWindow):
     def engineStopFinal(self):
         self.killTimers()
         self.removeAllPlugins()
-        self.host.remove_all_plugins()
 
-        if self.host.is_engine_running() and not self.host.engine_close():
-            print(self.host.get_last_error())
+        if self.host.is_engine_running():
+            self.host.remove_all_plugins()
+
+            if not self.host.engine_close():
+                print(self.host.get_last_error())
 
         if self.fCustomStopAction == 1:
             self.close()
         elif self.fCustomStopAction == 2:
             self.slot_engineStart()
             self.loadProjectNow()
+            self.host.nsm_ready(2) # open
 
         self.fCustomStopAction = 0
 
@@ -1711,11 +1716,8 @@ class HostWindow(QMainWindow):
             self.setProperWindowTitle()
 
             self.fCustomStopAction = 2
-            if not self.slot_engineStop(True):
-                return
-
-            self.slot_engineStart()
-            self.loadProjectNow()
+            self.slot_engineStop(True)
+            return
 
         # Save
         elif value1 == 3:
