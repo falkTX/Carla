@@ -81,6 +81,7 @@ public:
           fMidiEventCount(0),
           fTimeInfo(),
           fVstRect(),
+          fHostType(kHostTypeNull),
           fMidiOutEvents(),
           fStateChunk(nullptr),
           sJuceInitialiser()
@@ -91,6 +92,7 @@ public:
 
         // find resource dir
         using juce::File;
+        using juce::String;
 
         File curExe = File::getSpecialLocation(File::currentExecutableFile).getLinkedTarget();
         File resDir = curExe.getSiblingFile("carla-resources");
@@ -98,6 +100,12 @@ public:
             resDir = curExe.getSiblingFile("resources");
         if (! resDir.exists())
             resDir = File("/usr/share/carla/resources/");
+
+        // find host type
+        const String hostFilename(File::getSpecialLocation(File::hostApplicationPath).getFileName());
+
+        if (hostFilename.startsWith("Bitwig"))
+            fHostType = kHostTypeBitwig;
 
         fHost.resourceDir = carla_strdup(resDir.getFullPathName().toRawUTF8());
 
@@ -388,6 +396,24 @@ public:
         if (sampleFrames <= 0)
             return;
 
+        if (fHostType == kHostTypeBitwig && static_cast<int32_t>(fBufferSize) != sampleFrames)
+        {
+            // deactivate first if needed
+            if (fIsActive && fDescriptor->deactivate != nullptr)
+                fDescriptor->deactivate(fHandle);
+
+            fBufferSize = static_cast<uint32_t>(sampleFrames);
+
+            if (fDescriptor->dispatcher != nullptr)
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, sampleFrames, nullptr, 0.0f);
+
+            // activate again
+            if (fDescriptor->activate != nullptr)
+                fDescriptor->activate(fHandle);
+
+            fIsActive = true;
+        }
+
         if (! fIsActive)
         {
             // host has not activated the plugin yet, nasty!
@@ -548,6 +574,13 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
     ERect           fVstRect;
+
+    // Host data
+    enum HostType {
+        kHostTypeNull = 0,
+        kHostTypeBitwig
+    };
+    HostType fHostType;
 
     // host callback
     intptr_t hostCallback(const int32_t opcode,
