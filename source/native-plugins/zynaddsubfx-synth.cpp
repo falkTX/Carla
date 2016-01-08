@@ -35,6 +35,7 @@
 
 using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
+using juce::ScopedPointer;
 
 // #define ZYN_MSG_ANYWHERE
 
@@ -188,8 +189,80 @@ static ZynAddSubFxPrograms sPrograms;
 
 // -----------------------------------------------------------------------
 
-class ZynAddSubFxPlugin : public NativePluginAndUiClass,
-                          private CarlaThread
+class MiddleWareThread : public CarlaThread
+{
+public:
+      class ScopedStopper
+      {
+      public:
+          ScopedStopper(MiddleWareThread& mwt) noexcept
+              : wasRunning(mwt.isThreadRunning()),
+                thread(mwt),
+                middleWare(mwt.fMiddleWare)
+          {
+              if (wasRunning)
+                  thread.stop();
+          }
+
+          ~ScopedStopper() noexcept
+          {
+              if (wasRunning)
+                  thread.start(middleWare);
+          }
+
+          void updateMiddleWare(MiddleWare* const mw) noexcept
+          {
+              middleWare = mw;
+          }
+
+      private:
+          const bool wasRunning;
+          MiddleWareThread& thread;
+          MiddleWare* middleWare;
+
+          CARLA_PREVENT_HEAP_ALLOCATION
+          CARLA_DECLARE_NON_COPY_CLASS(ScopedStopper)
+      };
+
+      MiddleWareThread()
+          : CarlaThread("ZynMiddleWare"),
+            fMiddleWare(nullptr) {}
+
+      void start(MiddleWare* const mw) noexcept
+      {
+          fMiddleWare = mw;
+          startThread();
+      }
+
+      void stop() noexcept
+      {
+          stopThread(1000);
+          fMiddleWare = nullptr;
+      }
+
+private:
+    MiddleWare* fMiddleWare;
+
+    void run() noexcept override
+    {
+        for (; ! shouldThreadExit();)
+        {
+            CARLA_SAFE_ASSERT_RETURN(fMiddleWare != nullptr,);
+
+            try {
+                fMiddleWare->tick();
+            } CARLA_SAFE_EXCEPTION("ZynAddSubFX MiddleWare tick");
+
+            carla_msleep(1);
+        }
+    }
+
+    CARLA_DECLARE_NON_COPY_CLASS(MiddleWareThread)
+};
+
+// -----------------------------------------------------------------------
+
+class ZynAddSubFxPlugin : public NativePluginAndUiClass
 {
 public:
     enum Parameters {
@@ -210,12 +283,12 @@ public:
 
     ZynAddSubFxPlugin(const NativeHostDescriptor* const host)
         : NativePluginAndUiClass(host, "zynaddsubfx-ui"),
-          CarlaThread("ZynAddSubFxPlugin"),
           fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),
           fIsActive(false),
-          fMutex()
+          fMutex(),
+          fMiddleWareThread(new MiddleWareThread())
     {
         sPrograms.initIfNeeded();
         fConfig.init();
@@ -249,10 +322,13 @@ public:
 
         _initMaster();
         _setMasterParameters();
+
+        fMiddleWareThread->start(fMiddleWare);
     }
 
     ~ZynAddSubFxPlugin() override
     {
+        fMiddleWareThread->stop();
         _deleteMaster();
     }
 
@@ -687,19 +763,10 @@ protected:
 
     char* getState() const override
     {
+        const MiddleWareThread::ScopedStopper mwss(*fMiddleWareThread);
+
         char* data = nullptr;
-
-        if (fIsActive)
-        {
-            fMiddleWare->doReadOnlyOp([this, &data]{
-                fMaster->getalldata(&data);
-            });
-        }
-        else
-        {
-            fMaster->getalldata(&data);
-        }
-
+        fMaster->getalldata(&data);
         return data;
     }
 
@@ -707,6 +774,7 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
 
+        const MiddleWareThread::ScopedStopper mwss(*fMiddleWareThread);
         const CarlaMutexLocker cml(fMutex);
 
         fMaster->putalldata(data);
@@ -723,6 +791,8 @@ protected:
 
     void bufferSizeChanged(const uint32_t bufferSize) final
     {
+        MiddleWareThread::ScopedStopper mwss(*fMiddleWareThread);
+
         char* const state(getState());
 
         _deleteMaster();
@@ -735,6 +805,7 @@ protected:
         fSynth.alias();
 
         _initMaster();
+        mwss.updateMiddleWare(fMiddleWare);
 
         setState(state);
         std::free(state);
@@ -742,6 +813,8 @@ protected:
 
     void sampleRateChanged(const double sampleRate) final
     {
+        MiddleWareThread::ScopedStopper mwss(*fMiddleWareThread);
+
         char* const state(getState());
 
         _deleteMaster();
@@ -750,6 +823,7 @@ protected:
         fSynth.alias();
 
         _initMaster();
+        mwss.updateMiddleWare(fMiddleWare);
 
         setState(state);
         std::free(state);
@@ -767,6 +841,7 @@ private:
     float fParameters[kParamCount];
 
     CarlaMutex fMutex;
+    ScopedPointer<MiddleWareThread> fMiddleWareThread;
 
     static MidiControllers getZynControlFromIndex(const uint index)
     {
@@ -810,18 +885,6 @@ private:
         }
     }
 
-    void run() noexcept override
-    {
-        for (; ! shouldThreadExit();)
-        {
-            try {
-                fMiddleWare->tick();
-            } CARLA_SAFE_EXCEPTION("ZynAddSubFX MiddleWare tick");
-
-            carla_msleep(1);
-        }
-    }
-
     // -------------------------------------------------------------------
 
     void _initMaster()
@@ -830,7 +893,6 @@ private:
         fMiddleWare->setUiCallback(__uiCallback, this);
         fMiddleWare->setIdleCallback(_idleCallback, this);
         _masterChangedCallback(fMiddleWare->spawnMaster());
-        startThread();
     }
 
     void _setMasterParameters()
@@ -887,8 +949,6 @@ private:
 
     void _deleteMaster()
     {
-        stopThread(1000);
-
         fMaster = nullptr;
         delete fMiddleWare;
         fMiddleWare = nullptr;
