@@ -70,6 +70,33 @@ void pass() noexcept {}
 // string print functions
 
 /*
+ * Internal noexcept-safe fopen function.
+ */
+static inline
+FILE* __carla_fopen(const char* const filename, FILE* const fallback) noexcept
+{
+#ifdef CARLA_OS_LINUX
+    if (std::getenv("CARLA_CAPTURE_CONSOLE_OUTPUT") == nullptr)
+        return fallback;
+
+    FILE* ret = nullptr;
+
+    try {
+        ret = std::fopen(filename, "a+");
+    } catch (...) {}
+
+    if (ret == nullptr)
+        ret = fallback;
+
+    return ret;
+#else
+    return fallback;
+    // unused
+    (void)filename;
+#endif
+}
+
+/*
  * Print a string to stdout with newline (gray color).
  * Does nothing if DEBUG is not defined.
  */
@@ -79,12 +106,25 @@ void pass() noexcept {}
 static inline
 void carla_debug(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __carla_fopen("/tmp/carla.debug.log", stdout);
+
     try {
         ::va_list args;
         ::va_start(args, fmt);
-        std::fprintf(stdout, "\x1b[30;1m");
-        std::vfprintf(stdout, fmt, args);
-        std::fprintf(stdout, "\x1b[0m\n");
+
+        if (output == stdout)
+        {
+            std::fprintf(output, "\x1b[30;1m");
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\x1b[0m\n");
+        }
+        else
+        {
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\n");
+            std::fflush(output);
+        }
+
         ::va_end(args);
     } catch (...) {}
 }
@@ -96,11 +136,15 @@ void carla_debug(const char* const fmt, ...) noexcept
 static inline
 void carla_stdout(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __carla_fopen("/tmp/carla.stdout.log", stdout);
+
     try {
         ::va_list args;
         ::va_start(args, fmt);
-        std::vfprintf(stdout, fmt, args);
-        std::fprintf(stdout, "\n");
+        std::vfprintf(output, fmt, args);
+        std::fprintf(output, "\n");
+        if (output != stdout)
+            std::fflush(output);
         ::va_end(args);
     } catch (...) {}
 }
@@ -111,11 +155,15 @@ void carla_stdout(const char* const fmt, ...) noexcept
 static inline
 void carla_stderr(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __carla_fopen("/tmp/carla.stderr.log", stderr);
+
     try {
         ::va_list args;
         ::va_start(args, fmt);
-        std::vfprintf(stderr, fmt, args);
-        std::fprintf(stderr, "\n");
+        std::vfprintf(output, fmt, args);
+        std::fprintf(output, "\n");
+        if (output != stderr)
+            std::fflush(output);
         ::va_end(args);
     } catch (...) {}
 }
@@ -126,12 +174,25 @@ void carla_stderr(const char* const fmt, ...) noexcept
 static inline
 void carla_stderr2(const char* const fmt, ...) noexcept
 {
+    static FILE* const output = __carla_fopen("/tmp/carla.stderr2.log", stderr);
+
     try {
         ::va_list args;
         ::va_start(args, fmt);
-        std::fprintf(stderr, "\x1b[31m");
-        std::vfprintf(stderr, fmt, args);
-        std::fprintf(stderr, "\x1b[0m\n");
+
+        if (output == stderr)
+        {
+            std::fprintf(output, "\x1b[31m");
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\x1b[0m\n");
+        }
+        else
+        {
+            std::vfprintf(output, fmt, args);
+            std::fprintf(output, "\n");
+            std::fflush(output);
+        }
+
         ::va_end(args);
     } catch (...) {}
 }
