@@ -100,7 +100,7 @@ class Master
         void vuUpdate(const float *outl, const float *outr);
 
         /**Audio Output*/
-        void AudioOut(float *outl, float *outr) REALTIME;
+        bool AudioOut(float *outl, float *outr) REALTIME;
         /**Audio Output (for callback mode).
          * This allows the program to be controled by an external program*/
         void GetAudioOutSamples(size_t nsamples,
