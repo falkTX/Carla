@@ -289,6 +289,8 @@ public:
           fMutex(),
           fMiddleWareThread(new MiddleWareThread())
     {
+        isPlugin = true;
+
         sPrograms.initIfNeeded();
         fConfig.init();
 

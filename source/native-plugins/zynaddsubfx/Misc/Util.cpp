@@ -44,6 +44,8 @@
 
 #include <rtosc/rtosc.h>
 
+bool isPlugin = false;
+
 prng_t prng_state = 0x1234;
 
 /*

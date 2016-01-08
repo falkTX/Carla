@@ -421,19 +421,6 @@ class MiddleWareImpl
     MiddleWare *parent;
     private:
 
-    //Detect if the name of the process is 'zynaddsubfx'
-    bool isPlugin() const
-    {
-        std::string proc_file = "/proc/" + to_s(getpid()) + "/comm";
-        std::ifstream ifs(proc_file);
-        if(ifs.good()) {
-            std::string comm_name;
-            ifs >> comm_name;
-            return comm_name != "zynaddsubfx";
-        }
-        return true;
-    }
-
 public:
     Config* const config;
     MiddleWareImpl(MiddleWare *mw, SYNTH_T synth, Config* config,

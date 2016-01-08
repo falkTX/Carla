@@ -243,13 +243,9 @@ class MasterUI {open
   } {
     Fl_Window masterwindow {
       label zynaddsubfx
-      callback {if ((
-\#ifdef PLUGINVERSION
-1
-\#elif USE_NSM 
-(nsm && nsm->is_active())
-\#else
-0
+      callback {if ((isPlugin
+\#if USE_NSM
+ || (nsm && nsm->is_active())
 \#endif
  || fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))) {
     close();
@@ -962,9 +958,8 @@ updatepanel();}
     }
     Fl_Window simplemasterwindow {
       label ZynAddSubFX
-      callback {\#ifndef PLUGINVERSION
-if (fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
-\#endif
+      callback {
+if (isPlugin || fl_choice("Exit and leave the unsaved data?","No","Yes",NULL))
 {
 	*exitprogram=1;
 };} open

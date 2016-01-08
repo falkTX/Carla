@@ -236,6 +236,7 @@ int main(int argc, const char* argv[])
     else
     {
         // full thing
+        isPlugin = true;
         MasterUI::menu_mastermenu[11].hide(); // file -> nio settings
     }
 

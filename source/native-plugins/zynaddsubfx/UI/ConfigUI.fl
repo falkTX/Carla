@@ -68,7 +68,7 @@ class ConfigUI {} {
       Fl_Tabs {} {
         xywh {5 5 500 330}
       } {
-        Fl_Group {} {
+        Fl_Group mainsettings {
           label {Main settings}
           xywh {5 25 500 310}
         } {
@@ -317,6 +317,9 @@ activatebutton_presetdir(true);}
   }
   Function {show()} {} {
     code {
+if (isPlugin) {
+    mainsettings->deactivate();
+}
     rootsbrowse->update();
     presetbrowse->update();
     configwindow->show();
