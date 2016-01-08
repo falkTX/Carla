@@ -2212,7 +2212,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
-                        CARLA_SAFE_ASSERT(fLatencyIndex == static_cast<int32_t>(j));
+                        CARLA_SAFE_ASSERT_INT2(fLatencyIndex == static_cast<int32_t>(j), fLatencyIndex, j);
                     }
                     else if (LV2_IS_PORT_DESIGNATION_SAMPLE_RATE(portDesignation))
                     {
@@ -4180,9 +4180,6 @@ public:
         fExt.state    = nullptr;
         fExt.worker   = nullptr;
 
-        if (fRdfDescriptor->ExtensionCount == 0 || fDescriptor->extension_data == nullptr)
-            return;
-
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
             CARLA_SAFE_ASSERT_CONTINUE(fRdfDescriptor->Extensions[i] != nullptr);
@@ -4229,14 +4226,15 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(fLatencyIndex == -1,);
 
-        for (uint32_t i=0, count=fRdfDescriptor->PortCount, iCtrl=0; i<count; ++i)
+        int32_t iCtrl=0;
+        for (uint32_t i=0, count=fRdfDescriptor->PortCount; i<count; ++i)
         {
             const LV2_Property portTypes(fRdfDescriptor->Ports[i].Types);
 
             if (! LV2_IS_PORT_CONTROL(portTypes))
                 continue;
 
-            iCtrl++;
+            const ScopedValueSetter<int32_t> svs(iCtrl, iCtrl, iCtrl+1);
 
             if (! LV2_IS_PORT_OUTPUT(portTypes))
                 continue;
@@ -4246,7 +4244,7 @@ public:
             if (! LV2_IS_PORT_DESIGNATION_LATENCY(portDesignation))
                 continue;
 
-            fLatencyIndex = static_cast<int32_t>(iCtrl);
+            fLatencyIndex = iCtrl;
             break;
         }
     }
