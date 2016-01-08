@@ -229,7 +229,15 @@ int main(int argc, const char* argv[])
     gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
 
     if (argc == 1)
+    {
+        // testing only
         GUI::raiseUi(gui, "/show", "i", 1);
+    }
+    else
+    {
+        // full thing
+        MasterUI::menu_mastermenu[11].hide(); // file -> nio settings
+    }
 
     if (uiTitle != nullptr && uiTitle[0] != '\0')
         GUI::raiseUi(gui, "/ui/title", "s", uiTitle);
