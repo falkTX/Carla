@@ -286,7 +286,6 @@ public:
           fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),
-          fIsActive(false),
           fMutex(),
           fMiddleWareThread(new MiddleWareThread())
     {
@@ -633,16 +632,6 @@ protected:
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void activate() override
-    {
-        fIsActive = true;
-    }
-
-    void deactivate() override
-    {
-        fIsActive = false;
-    }
-
     void process(float**, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount) override
     {
@@ -837,7 +826,6 @@ private:
     SYNTH_T     fSynth;
     Config      fConfig;
 
-    bool  fIsActive;
     float fParameters[kParamCount];
 
     CarlaMutex fMutex;
