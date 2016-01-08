@@ -2745,13 +2745,13 @@ public:
                         midiData[1] = k;
 
                         if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
-                            lv2_atom_buffer_write(&evInAtomIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+                            lv2_atom_buffer_write(&evInAtomIters[j], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
 
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                            lv2_event_write(&evInEventIters[k], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
+                            lv2_event_write(&evInEventIters[j], 0, 0, CARLA_URI_MAP_ID_MIDI_EVENT, 3, midiData);
 
                         else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                            lv2midi_put_event(&evInMidiStates[k], 0.0, 3, midiData);
+                            lv2midi_put_event(&evInMidiStates[j], 0.0, 3, midiData);
                     }
                 }
             }
