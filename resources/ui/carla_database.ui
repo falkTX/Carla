@@ -339,6 +339,17 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="b_cancel">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/16x16/dialog-cancel.png</normaloff>:/16x16/dialog-cancel.png</iconset>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
   </layout>

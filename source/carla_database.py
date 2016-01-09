@@ -1162,6 +1162,7 @@ class PluginDatabaseW(QDialog):
 
         self.finished.connect(self.slot_saveSettings)
         self.ui.b_add.clicked.connect(self.slot_addPlugin)
+        self.ui.b_cancel.clicked.connect(self.reject)
         self.ui.b_refresh.clicked.connect(self.slot_refreshPlugins)
         self.ui.tb_filters.clicked.connect(self.slot_maybeShowFilters)
         self.ui.lineEdit.textChanged.connect(self.slot_checkFilters)
