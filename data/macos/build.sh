@@ -97,6 +97,7 @@ cp build/carla-plugin.app/Contents/MacOS/carla-plugin build/Carla.app/Contents/M
 cp build/carla-plugin.app/Contents/MacOS/fcntl.so     build/Carla.app/Contents/MacOS/resources/ 2>/dev/null || true
 cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui   build/Carla.app/Contents/MacOS/resources/
 cp build/notes-ui.app/Contents/MacOS/notes-ui         build/Carla.app/Contents/MacOS/resources/
+cp bin/resources/zynaddsubfx-ui                       build/Carla.app/Contents/MacOS/resources/
 rm -rf build/carla-plugin.app build/bigmeter-ui.app build/notes-ui.app
 
 mkdir build/carla.lv2
