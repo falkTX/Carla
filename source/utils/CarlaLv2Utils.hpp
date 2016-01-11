@@ -595,8 +595,12 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     {
         rdfDescriptor->URI = carla_strdup(uri);
 
-        if (const char* const name = lilvPlugin.get_name().as_string())
-            rdfDescriptor->Name = carla_strdup(name);
+        if (LilvNode* const nameNode = lilv_plugin_get_name(lilvPlugin.me))
+        {
+            if (const char* const name = lilv_node_as_string(nameNode))
+                rdfDescriptor->Name = carla_strdup(name);
+            lilv_node_free(nameNode);
+        }
 
         if (const char* const author = lilvPlugin.get_author_name().as_string())
             rdfDescriptor->Author = carla_strdup(author);
@@ -675,10 +679,14 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             // -----------------------------------------------------------
             // Set Port Information
             {
-                if (const char* const name = Lilv::Node(lilvPort.get_name()).as_string())
-                    rdfPort->Name = carla_strdup(name);
+                if (LilvNode* const nameNode = lilv_port_get_name(lilvPlugin.me, lilvPort.me))
+                {
+                    if (const char* const name = lilv_node_as_string(nameNode))
+                        rdfPort->Name = carla_strdup(name);
+                    lilv_node_free(nameNode);
+                }
 
-                if (const char* const symbol = Lilv::Node(lilvPort.get_symbol()).as_string())
+                if (const char* const symbol = lilv_node_as_string(lilvPort.get_symbol()))
                     rdfPort->Symbol = carla_strdup(symbol);
             }
 
@@ -1120,7 +1128,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(it));
                         LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
-                        if (const char* const label = Lilv::Node(lilvScalePoint.get_label()).as_string())
+                        if (const char* const label = lilv_node_as_string(lilvScalePoint.get_label()))
                             rdfScalePoint->Label = carla_strdup(label);
 
                         rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
@@ -1217,13 +1225,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                     rdfPreset->URI = carla_strdup(presetURI);
 
-                    Lilv::Nodes presetLabelNodes(lv2World.find_nodes(presetNode, lv2World.rdfs_label, nullptr));
-
-                    if (presetLabelNodes.size() > 0)
-                    {
-                        if (const char* const label = presetLabelNodes.get_first().as_string())
-                            rdfPreset->Label = carla_strdup(label);
-                    }
+                    if (const char* const label = presetLabelNodes.get_first().as_string())
+                        rdfPreset->Label = carla_strdup(label);
 
                     lilv_nodes_free(const_cast<LilvNodes*>(presetLabelNodes.me));
                 }

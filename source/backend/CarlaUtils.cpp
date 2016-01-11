@@ -553,15 +553,15 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
 
         suri = lilvPlugin.get_uri().as_uri();
 
-        if (const char* const name = lilvPlugin.get_name().as_string())
-            sname = name;
-        else
-            sname.clear();
+        if (LilvNode* const nameNode = lilv_plugin_get_name(lilvPlugin.me))
+        {
+            if (const char* const name = lilv_node_as_string(nameNode))
+                sname = name;
+            lilv_node_free(nameNode);
+        }
 
         if (const char* const author = lilvPlugin.get_author_name().as_string())
             smaker = author;
-        else
-            smaker.clear();
 
         Lilv::Nodes licenseNodes(lilvPlugin.get_value(lv2World.doap_license));
 
