@@ -177,6 +177,8 @@ void carla_sem_post(carla_sem_t& sem, const bool server) noexcept
 #else
     ::sem_post(&sem.sem);
 #endif
+    // may be unused
+    return; (void)server;
 }
 
 /*
@@ -191,16 +193,16 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     return (::WaitForSingleObject(sem.handle, msecs) == WAIT_OBJECT_0);
 #else
     const uint secs  =  msecs / 1000;
-    const uint nsecs = (msecs % 1000) * 1000000;
+    const int  nsecs = (msecs % 1000) * 1000000;
 
 # if defined(CARLA_OS_MAC)
-    const mach_timespec timeout = { secs, static_cast<clock_res_t>(nsecs) };
+    const mach_timespec timeout = { secs, nsecs };
 
     try {
         return (::semaphore_timedwait(server ? sem.sem : sem.sem2, timeout) == KERN_SUCCESS);
     } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
 # elif defined(CARLA_USE_FUTEXES)
-    const timespec timeout = { secs, nsecs };
+    const timespec timeout = { static_cast<time_t>(secs), nsecs };
 
     for (;;)
     {
@@ -229,6 +231,8 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
 # endif
 #endif
+    // may be unused
+    (void)server;
 }
 
 // -----------------------------------------------------------------------

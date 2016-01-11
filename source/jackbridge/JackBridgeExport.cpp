@@ -550,12 +550,12 @@ bool jackbridge_sem_connect(void* sem) noexcept
 
 void jackbridge_sem_post(void* sem, bool server) noexcept
 {
-    getBridgeInstance().sem_post_ptr(sem);
+    getBridgeInstance().sem_post_ptr(sem, server);
 }
 
 bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
 {
-    return getBridgeInstance().sem_timedwait_ptr(sem, msecs);
+    return getBridgeInstance().sem_timedwait_ptr(sem, msecs, server);
 }
 
 bool jackbridge_shm_is_valid(const void* shm) noexcept
