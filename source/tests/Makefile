@@ -110,6 +110,12 @@ ansi-pedantic-test_cxxlang: ansi-pedantic-test.cpp ../backend/Carla*.h ../includ
 
 # --------------------------------------------------------------
 
+CachedPlugins: CachedPlugins.cpp
+	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a $(MODULEDIR)/lilv.a -ldl -lpthread
+ifneq ($(WIN32),true)
+	set -e; ./$@ && valgrind --leak-check=full ./$@
+endif
+
 CarlaRingBuffer: CarlaRingBuffer.cpp ../utils/CarlaRingBuffer.hpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@
 ifneq ($(WIN32),true)
