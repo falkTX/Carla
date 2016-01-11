@@ -43,23 +43,34 @@ void jackbridge_sem_destroy(void* sem) noexcept
 #endif
 }
 
-void jackbridge_sem_post(void* sem) noexcept
-{
-    CARLA_SAFE_ASSERT_RETURN(sem != nullptr,);
-
-#ifndef JACKBRIDGE_DUMMY
-    carla_sem_post(*(carla_sem_t*)sem);
-#endif
-}
-
-bool jackbridge_sem_timedwait(void* sem, uint msecs) noexcept
+bool jackbridge_sem_connect(void* sem) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
 
 #ifdef JACKBRIDGE_DUMMY
     return false;
 #else
-    return carla_sem_timedwait(*(carla_sem_t*)sem, msecs);
+    return carla_sem_connect(*(carla_sem_t*)sem);
+#endif
+}
+
+void jackbridge_sem_post(void* sem, bool server) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(sem != nullptr,);
+
+#ifndef JACKBRIDGE_DUMMY
+    carla_sem_post(*(carla_sem_t*)sem, server);
+#endif
+}
+
+bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(sem != nullptr, false);
+
+#ifdef JACKBRIDGE_DUMMY
+    return false;
+#else
+    return carla_sem_timedwait(*(carla_sem_t*)sem, msecs, server);
 #endif
 }
 

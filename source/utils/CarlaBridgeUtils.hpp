@@ -26,10 +26,10 @@
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Global\\carla-bridge_shm_nonrtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "Global\\carla-bridge_shm_nonrtS_"
 #else
-# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "/carla-bridge_shm_ap_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "/carla-bridge_shm_rtC_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "/carla-bridge_shm_nonrtC_"
-# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "/carla-bridge_shm_nonrtS_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "/crlbrdg_shm_ap_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "/crlbrdg_shm_rtC_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "/crlbrdg_shm_nonrtC_"
+# define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "/crlbrdg_shm_nonrtS_"
 #endif
 
 // -----------------------------------------------------------------------

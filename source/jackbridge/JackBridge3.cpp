@@ -128,6 +128,7 @@ const JackBridgeExportedFunctions* JACKBRIDGE_API jackbridge_get_exported_functi
     funcs.set_property_change_callback_ptr     = jackbridge_set_property_change_callback;
     funcs.sem_init_ptr                         = jackbridge_sem_init;
     funcs.sem_destroy_ptr                      = jackbridge_sem_destroy;
+    funcs.sem_connect_ptr                      = jackbridge_sem_connect;
     funcs.sem_post_ptr                         = jackbridge_sem_post;
     funcs.sem_timedwait_ptr                    = jackbridge_sem_timedwait;
     funcs.shm_is_valid_ptr                     = jackbridge_shm_is_valid;

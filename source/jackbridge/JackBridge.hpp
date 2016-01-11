@@ -396,8 +396,9 @@ JACKBRIDGE_API bool jackbridge_set_property_change_callback(jack_client_t* clien
 
 JACKBRIDGE_API bool jackbridge_sem_init(void* sem) noexcept;
 JACKBRIDGE_API void jackbridge_sem_destroy(void* sem) noexcept;
-JACKBRIDGE_API void jackbridge_sem_post(void* sem) noexcept;
-JACKBRIDGE_API bool jackbridge_sem_timedwait(void* sem, uint msecs) noexcept;
+JACKBRIDGE_API bool jackbridge_sem_connect(void* sem) noexcept;
+JACKBRIDGE_API void jackbridge_sem_post(void* sem, bool server) noexcept;
+JACKBRIDGE_API bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept;
 
 JACKBRIDGE_API bool  jackbridge_shm_is_valid(const void* shm) noexcept;
 JACKBRIDGE_API void  jackbridge_shm_init(void* shm) noexcept;

@@ -111,8 +111,9 @@ typedef bool (JACKBRIDGE_API *jackbridgesym_remove_all_properties)(jack_client_t
 typedef bool (JACKBRIDGE_API *jackbridgesym_set_property_change_callback)(jack_client_t*, JackPropertyChangeCallback, void*);
 typedef bool (JACKBRIDGE_API *jackbridgesym_sem_init)(void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_sem_destroy)(void*);
-typedef void (JACKBRIDGE_API *jackbridgesym_sem_post)(void*);
-typedef bool (JACKBRIDGE_API *jackbridgesym_sem_timedwait)(void*, uint);
+typedef bool (JACKBRIDGE_API *jackbridgesym_sem_connect)(void*);
+typedef void (JACKBRIDGE_API *jackbridgesym_sem_post)(void*, bool);
+typedef bool (JACKBRIDGE_API *jackbridgesym_sem_timedwait)(void*, uint, bool);
 typedef bool (JACKBRIDGE_API *jackbridgesym_shm_is_valid)(const void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_init)(void*);
 typedef void (JACKBRIDGE_API *jackbridgesym_shm_attach)(void*, const char*);
@@ -216,6 +217,7 @@ struct _JackBridgeExportedFunctions {
     jackbridgesym_set_property_change_callback set_property_change_callback_ptr;
     jackbridgesym_sem_init sem_init_ptr;
     jackbridgesym_sem_destroy sem_destroy_ptr;
+    jackbridgesym_sem_connect sem_connect_ptr;
     jackbridgesym_sem_post sem_post_ptr;
     jackbridgesym_sem_timedwait sem_timedwait_ptr;
     jackbridgesym_shm_is_valid shm_is_valid_ptr;

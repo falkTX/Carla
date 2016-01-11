@@ -543,12 +543,17 @@ void jackbridge_sem_destroy(void* sem) noexcept
     getBridgeInstance().sem_destroy_ptr(sem);
 }
 
-void jackbridge_sem_post(void* sem) noexcept
+bool jackbridge_sem_connect(void* sem) noexcept
+{
+    return getBridgeInstance().sem_connect_ptr(sem);
+}
+
+void jackbridge_sem_post(void* sem, bool server) noexcept
 {
     getBridgeInstance().sem_post_ptr(sem);
 }
 
-bool jackbridge_sem_timedwait(void* sem, uint msecs) noexcept
+bool jackbridge_sem_timedwait(void* sem, uint msecs, bool server) noexcept
 {
     return getBridgeInstance().sem_timedwait_ptr(sem, msecs);
 }

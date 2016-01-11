@@ -244,9 +244,9 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     {
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-        jackbridge_sem_post(&data->sem.server);
+        jackbridge_sem_post(&data->sem.server, true);
 
-        return jackbridge_sem_timedwait(&data->sem.client, msecs);
+        return jackbridge_sem_timedwait(&data->sem.client, msecs, true);
     }
 
     void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept

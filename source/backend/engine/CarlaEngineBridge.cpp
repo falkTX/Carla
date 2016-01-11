@@ -151,6 +151,9 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
         {
             CARLA_SAFE_ASSERT(data->midiOut[0] == 0);
             setRingBuffer(&data->ringBuffer, false);
+
+            CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.server), false);
+            CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.client), false);
             return true;
         }
 
@@ -175,12 +178,12 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         WaitHelper(BridgeRtClientControl& c) noexcept
             : data(c.data),
-              ok(jackbridge_sem_timedwait(&data->sem.server, 5000)) {}
+              ok(jackbridge_sem_timedwait(&data->sem.server, 5000, false)) {}
 
         ~WaitHelper() noexcept
         {
             if (ok)
-                jackbridge_sem_post(&data->sem.client);
+                jackbridge_sem_post(&data->sem.client, false);
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)

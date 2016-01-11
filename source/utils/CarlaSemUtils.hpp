@@ -30,8 +30,10 @@
 # endif
 struct carla_sem_t { HANDLE handle; };
 #elif defined(CARLA_OS_MAC)
-// TODO
-struct carla_sem_t { char dummy; };
+# include <mach/mach.h>
+# include <mach/semaphore.h>
+# include <servers/bootstrap.h>
+struct carla_sem_t { char bootname[32]; semaphore_t sem; semaphore_t sem2; };
 #elif defined(CARLA_USE_FUTEXES)
 # include <cerrno>
 # include <syscall.h>
@@ -63,7 +65,23 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
 
     return (sem.handle != INVALID_HANDLE_VALUE);
 #elif defined(CARLA_OS_MAC)
-    return false; // TODO
+    const mach_port_t task = mach_task_self();
+
+    mach_port_t bootport;
+    CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(task, &bootport) == KERN_SUCCESS, false);
+
+    if (::semaphore_create(task, &sem.sem, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS)
+    {
+        static int bootcounter = 0;
+        std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, getpid(), &sem);
+
+        if (bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
+            return true;
+
+        ::semaphore_destroy(task, sem.sem);
+    }
+
+    return false;
 #elif defined(CARLA_USE_FUTEXES)
     sem.count = 0;
     return true;
@@ -98,13 +116,13 @@ void carla_sem_destroy2(carla_sem_t& sem) noexcept
 #if defined(CARLA_OS_WIN)
     ::CloseHandle(sem.handle);
 #elif defined(CARLA_OS_MAC)
-    // TODO
+    ::semaphore_destroy(mach_task_self(), sem.sem);
 #elif defined(CARLA_USE_FUTEXES)
     // nothing to do
-    (void)sem;
 #else
     ::sem_destroy(&sem.sem);
 #endif
+    carla_zeroStruct(sem);
 }
 
 /*
@@ -120,15 +138,38 @@ void carla_sem_destroy(carla_sem_t* const sem) noexcept
 }
 
 /*
+ * Connect to semaphore.
+ */
+static inline
+bool carla_sem_connect(carla_sem_t& sem) noexcept
+{
+#ifdef CARLA_OS_MAC
+    mach_port_t bootport;
+    CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(mach_task_self(), &bootport) == KERN_SUCCESS, false);
+
+    try {
+        return (bootstrap_look_up(bootport, sem.bootname, &sem.sem2) == KERN_SUCCESS);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_connect", false);
+#else
+    // nothing to do
+    return true;
+    // unused
+    (void)sem;
+#endif
+}
+
+/*
  * Post semaphore (unlock).
  */
 static inline
-void carla_sem_post(carla_sem_t& sem) noexcept
+void carla_sem_post(carla_sem_t& sem, const bool server) noexcept
 {
 #ifdef CARLA_OS_WIN
     ::ReleaseSemaphore(sem.handle, 1, nullptr);
 #elif defined(CARLA_OS_MAC)
-    // TODO
+    try {
+        ::semaphore_signal(server ? sem.sem : sem.sem2);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_post",);
 #elif defined(CARLA_USE_FUTEXES)
     const bool unlocked = __sync_bool_compare_and_swap(&sem.count, 0, 1);
     CARLA_SAFE_ASSERT_RETURN(unlocked,);
@@ -142,18 +183,24 @@ void carla_sem_post(carla_sem_t& sem) noexcept
  * Wait for a semaphore (lock).
  */
 static inline
-bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
+bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
 
 #if defined(CARLA_OS_WIN)
     return (::WaitForSingleObject(sem.handle, msecs) == WAIT_OBJECT_0);
-#elif defined(CARLA_OS_MAC)
-    return false; // TODO
-#elif defined(CARLA_USE_FUTEXES)
-    timespec timeout;
-    timeout.tv_sec  = static_cast<time_t>(msecs / 1000);
-    timeout.tv_nsec = static_cast<time_t>(msecs % 1000);
+#else
+    const uint secs  =  msecs / 1000;
+    const uint nsecs = (msecs % 1000) * 1000000;
+
+# if defined(CARLA_OS_MAC)
+    const mach_timespec timeout = { secs, static_cast<clock_res_t>(nsecs) };
+
+    try {
+        return (::semaphore_timedwait(server ? sem.sem : sem.sem2, timeout) == KERN_SUCCESS);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
+# elif defined(CARLA_USE_FUTEXES)
+    const timespec timeout = { secs, nsecs };
 
     for (;;)
     {
@@ -163,18 +210,24 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs) noexcept
         if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) != 0 && errno != EWOULDBLOCK)
             return false;
     }
-#else
+# else
     if (::sem_trywait(&sem.sem) == 0)
         return true;
 
-    timespec timeout;
-    ::clock_gettime(CLOCK_REALTIME, &timeout);
-    timeout.tv_sec  += static_cast<time_t>(msecs / 1000);
-    timeout.tv_nsec += static_cast<time_t>(msecs % 1000);
+    timespec now;
+    ::clock_gettime(CLOCK_REALTIME, &now);
+
+    struct timespec delta = { secs, nsecs };
+    struct timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
+    if (end.tv_nsec >= 1000000000L) {
+        ++end.tv_sec;
+        end.tv_nsec -= 1000000000L;
+    }
 
     try {
-        return (::sem_timedwait(&sem.sem, &timeout) == 0);
-    } CARLA_SAFE_EXCEPTION_RETURN("sem_timedwait", false);
+        return (::sem_timedwait(&sem.sem, &end) == 0);
+    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
+# endif
 #endif
 }
 
