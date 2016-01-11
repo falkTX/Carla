@@ -42,7 +42,6 @@ class UICarla
 public:
     UICarla(const NativeHostDescriptor* const host, PluginExporter* const plugin)
         : fHost(host),
-          fPlugin(plugin),
           fUI(this, 0, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer())
     {
         fUI.setWindowTitle(host->uiName);
@@ -125,7 +124,6 @@ protected:
 private:
     // Plugin stuff
     const NativeHostDescriptor* const fHost;
-    PluginExporter* const fPlugin;
 
     // UI
     UIExporter fUI;

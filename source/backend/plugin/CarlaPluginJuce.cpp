@@ -46,7 +46,6 @@ public:
           fMidiBuffer(),
           fPosInfo(),
           fChunk(),
-          fUniqueId(nullptr),
           fWindow()
     {
         carla_debug("CarlaPluginJuce::CarlaPluginJuce(%p, %i)", engine, id);
@@ -1247,8 +1246,6 @@ private:
     MidiBuffer          fMidiBuffer;
     CurrentPositionInfo fPosInfo;
     MemoryBlock         fChunk;
-
-    const char* fUniqueId;
 
     ScopedPointer<JucePluginWindow> fWindow;
 

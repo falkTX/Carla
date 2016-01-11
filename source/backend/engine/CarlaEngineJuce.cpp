@@ -22,7 +22,7 @@
 
 #include "RtLinkedList.hpp"
 
-#include "juce_audio_devices.h"
+#include "juce_audio_devices/juce_audio_devices.h"
 
 using namespace juce;
 

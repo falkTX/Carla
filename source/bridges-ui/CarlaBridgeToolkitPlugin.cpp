@@ -21,7 +21,7 @@
 #include "CarlaPluginUI.hpp"
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-# include "juce_events.h"
+# include "juce_events/juce_events.h"
 using juce::MessageManager;
 using juce::ScopedJuceInitialiser_GUI;
 #endif

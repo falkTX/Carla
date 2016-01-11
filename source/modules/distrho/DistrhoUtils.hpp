@@ -33,7 +33,7 @@
 # include <stdint.h>
 #endif
 
-#if defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC)
+#if defined(DISTRHO_OS_MAC) && ! defined(CARLA_OS_MAC) && ! defined(DISTRHO_PROPER_CPP11_SUPPORT)
 namespace std {
 inline float fmin(float __x, float __y)
   { return __builtin_fminf(__x, __y); }

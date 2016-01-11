@@ -2082,6 +2082,12 @@ class CarlaHostNull(CarlaHostMeta):
     def get_host_osc_url_udp(self):
         return ""
 
+    def nsm_init(self, pid, executableName):
+        return False
+
+    def nsm_ready(self, action):
+        return
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object using a DLL
 

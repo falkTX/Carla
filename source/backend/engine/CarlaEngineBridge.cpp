@@ -537,7 +537,7 @@ public:
         return kEngineTypeBridge;
     }
 
-    const char* getCurrentDriverName() const noexcept
+    const char* getCurrentDriverName() const noexcept override
     {
         return "Bridge";
     }

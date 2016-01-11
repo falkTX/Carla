@@ -98,7 +98,7 @@ protected:
         return currentTime() > _delay;
     }
 
-    virtual void updateCurrentTime(int /*time*/)
+    virtual void updateCurrentTime(int /*time*/) override
     {
         if (QObject* tgt = target())
         {

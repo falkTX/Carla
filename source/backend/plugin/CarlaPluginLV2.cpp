@@ -520,7 +520,7 @@ public:
           fParamBuffers(nullptr),
           fCanInit2(true),
           fNeedsUiClose(false),
-          fLatencyChanged(false),
+          //fLatencyChanged(false),
           fLatencyIndex(-1),
           fAtomBufferIn(),
           fAtomBufferOut(),
@@ -5550,7 +5550,7 @@ private:
 
     bool    fCanInit2; // some plugins don't like 2 instances
     bool    fNeedsUiClose;
-    bool    fLatencyChanged;
+    //bool    fLatencyChanged;
     int32_t fLatencyIndex; // -1 if invalid
 
     Lv2AtomRingBuffer fAtomBufferIn;

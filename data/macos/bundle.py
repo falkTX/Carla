@@ -14,8 +14,9 @@ from carla_host import VERSION
 
 # ------------------------------------------------------------------------------------------------------------
 
-options  = {
+options = {
   "packages": ["re", "sip", "subprocess", "inspect"],
+  "excludes": ["PyQt5.QtNetwork", "PyQt5.QtSql", "PyQt5.QtTest", "PyQt5.QtXml", "XCTest"],
   "create_shared_zip":    False,
   "append_script_to_exe": True,
   "optimize":   True,

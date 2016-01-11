@@ -47,6 +47,7 @@ struct NSView;
 # endif
 
 namespace juce {
+
 //==============================================================================
 struct AutoResizingNSViewComponent : public NSViewComponent,
                                      private AsyncUpdater {
@@ -65,12 +66,10 @@ struct AutoResizingNSViewComponentWithParent : public AutoResizingNSViewComponen
 
 //==============================================================================
 # ifdef CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
-#  include "juce_core/native/juce_BasicNativeHeaders.h"
-
 AutoResizingNSViewComponent::AutoResizingNSViewComponent()
     : recursive (false) {}
 
-void AutoResizingNSViewComponent::childBoundsChanged(Component*) override
+void AutoResizingNSViewComponent::childBoundsChanged(Component*) /* override */
 {
     if (recursive)
     {
@@ -84,7 +83,7 @@ void AutoResizingNSViewComponent::childBoundsChanged(Component*) override
     }
 }
 
-void AutoResizingNSViewComponent::handleAsyncUpdate() override
+void AutoResizingNSViewComponent::handleAsyncUpdate() /* override */
 {
     resizeToFitView();
 }
@@ -107,7 +106,7 @@ NSView* AutoResizingNSViewComponentWithParent::getChildView() const
     return nil;
 }
 
-void AutoResizingNSViewComponentWithParent::timerCallback() override
+void AutoResizingNSViewComponentWithParent::timerCallback() /* override */
 {
     if (NSView* child = getChildView())
     {
@@ -115,9 +114,11 @@ void AutoResizingNSViewComponentWithParent::timerCallback() override
         setView(child);
     }
 }
-#endif
+# endif
+
 } // namespace juce
 using juce::AutoResizingNSViewComponentWithParent;
+
 #endif
 
 // -----------------------------------------------------
