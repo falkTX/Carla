@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -266,6 +266,18 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
+
+        strBuf[0] = '\0';
+
+        VstParameterProperties prop;
+        carla_zeroStruct(prop);
+
+        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop, 0) == 1)
+        {
+            std::strncpy(strBuf, prop.label, 64);
+            strBuf[64] = '\0';
+            return;
+        }
 
         strBuf[0] = '\0';
         dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
