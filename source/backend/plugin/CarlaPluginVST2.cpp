@@ -272,7 +272,7 @@ public:
         VstParameterProperties prop;
         carla_zeroStruct(prop);
 
-        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop, 0) == 1)
+        if (dispatcher(effGetParameterProperties, static_cast<int32_t>(parameterId), 0, &prop, 0) == 1 && prop.label[0] != '\0')
         {
             std::strncpy(strBuf, prop.label, 64);
             strBuf[64] = '\0';
