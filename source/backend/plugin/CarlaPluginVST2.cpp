@@ -36,6 +36,9 @@
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
+#undef kEffectMagic
+#define kEffectMagic (CCONST( 'V', 's', 't', 'P' ))
+
 using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE

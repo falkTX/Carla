@@ -58,7 +58,6 @@
 #define effConnectOutput 32
 #define effGetInputProperties 33
 #define effGetOutputProperties 34
-#define effGetPlugCategory 35
 #define effGetCurrentPosition 36
 #define effGetDestinationBuffer 37
 #define effOfflineNotify 38
@@ -71,7 +70,6 @@
 #define effGetErrorText 46
 #define effVendorSpecific 50
 #define effGetTailSize 52
-#define effIdle 53
 #define effGetIcon 54
 #define effSetViewPosition 55
 #define effKeysRequired 57
@@ -83,12 +81,7 @@
 #define effGetMidiProgramCategory 64
 #define effHasMidiProgramsChanged 65
 #define effGetMidiKeyName 66
-#define effBeginSetProgram 67
-#define effEndSetProgram 68
 #define effGetSpeakerArrangement 69
-#define effShellGetNextPlugin 70
-#define effStartProcess 71
-#define effStopProcess 72
 #define effSetTotalSampleToProcess 73
 #define effSetPanLaw 74
 #define effBeginLoadBank 75
