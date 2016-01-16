@@ -36,6 +36,7 @@
 # include "juce_gui_basics/juce_gui_basics.h"
 using juce::JUCEApplication;
 using juce::JUCEApplicationBase;
+using juce::ScopedJuceInitialiser_GUI;
 using juce::Timer;
 #endif
 
@@ -273,6 +274,10 @@ protected:
 private:
     const CarlaEngine* fEngine;
     bool               fUsingBridge;
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    const ScopedJuceInitialiser_GUI kJuceInitialiser;
+#endif
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {

@@ -209,7 +209,7 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
         if line == "carla-discovery::init::-----------":
             pinfo = deepcopy(PyPluginInfo)
             pinfo['type']     = itype
-            pinfo['filename'] = filename
+            pinfo['filename'] = filename if filename != ":all" else ""
 
         elif line == "carla-discovery::end::------------":
             if pinfo is not None:
@@ -501,6 +501,8 @@ class SearchPluginsThread(QThread):
             OS = "UNKNOWN"
 
         if not self.fContinueChecking: return
+
+        self.fSomethingChanged = True
 
         if self.fCheckLADSPA:
             checkValue = 0.0
@@ -1525,7 +1527,7 @@ class PluginDatabaseW(QDialog):
         if plugin['API'] != PLUGIN_QUERY_API_VERSION and ptype == self.tr("Internal"):
             return
 
-        if ptype in (self.tr("Internal"), "LV2", "AU", "GIG", "SF2", "SFZ"):
+        if ptype in (self.tr("Internal"), "LV2", "GIG", "SF2", "SFZ"):
             plugin['build'] = BINARY_NATIVE
 
         index = self.fLastTableIndex
