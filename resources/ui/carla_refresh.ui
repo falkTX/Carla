@@ -58,6 +58,13 @@
            </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="ch_lv2">
+            <property name="text">
+             <string>LV2</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QCheckBox" name="ch_vst">
             <property name="text">
              <string>VST</string>
@@ -68,6 +75,13 @@
            <widget class="QCheckBox" name="ch_vst3">
             <property name="text">
              <string>VST3</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="ch_au">
+            <property name="text">
+             <string>AU</string>
             </property>
            </widget>
           </item>
