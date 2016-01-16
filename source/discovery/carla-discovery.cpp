@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -35,6 +35,9 @@
 #include "CarlaDssiUtils.cpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
+
+// need to include this before linuxsampler
+#include "CarlaUtils.cpp"
 
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
@@ -401,6 +404,32 @@ private:
 #endif // HAVE_LINUXSAMPLER
 
 // ------------------------------ Plugin Checks -----------------------------
+
+static void do_cached_check(const PluginType type)
+{
+    const char* const plugPath = (type == PLUGIN_LV2) ? std::getenv("LV2_PATH") : nullptr;
+    const uint count = carla_get_cached_plugin_count(type, plugPath);
+
+    for (uint i=0; i<count; ++i)
+    {
+        const CarlaCachedPluginInfo* pinfo(carla_get_cached_plugin_info(type, i));
+        CARLA_SAFE_ASSERT_CONTINUE(pinfo != nullptr);
+
+        DISCOVERY_OUT("init", "-----------");
+        DISCOVERY_OUT("build", BINARY_NATIVE);
+        DISCOVERY_OUT("hints", pinfo->hints);
+        DISCOVERY_OUT("name", pinfo->name);
+        DISCOVERY_OUT("maker", pinfo->maker);
+        DISCOVERY_OUT("label", pinfo->label);
+        DISCOVERY_OUT("audio.ins", pinfo->audioIns);
+        DISCOVERY_OUT("audio.outs", pinfo->audioOuts);
+        DISCOVERY_OUT("midi.ins", pinfo->midiIns);
+        DISCOVERY_OUT("midi.outs", pinfo->midiOuts);
+        DISCOVERY_OUT("parameters.ins", pinfo->parameterIns);
+        DISCOVERY_OUT("parameters.outs", pinfo->parameterOuts);
+        DISCOVERY_OUT("end", "------------");
+    }
+}
 
 static void do_ladspa_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -1721,6 +1750,12 @@ int main(int argc, char* argv[])
             print_lib_error(filename);
             return 1;
         }
+    }
+
+    if (std::strcmp(filename, ":all") == 0)
+    {
+        do_cached_check(type);
+        return 0;
     }
 
     switch (type)
