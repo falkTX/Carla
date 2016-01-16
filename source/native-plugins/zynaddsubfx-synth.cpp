@@ -768,6 +768,7 @@ protected:
         const MiddleWareThread::ScopedStopper mwss(*fMiddleWareThread);
         const CarlaMutexLocker cml(fMutex);
 
+        fMaster->defaults();
         fMaster->putalldata(data);
         fMaster->applyparameters();
         fMaster->initialize_rt();
