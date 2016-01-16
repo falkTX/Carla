@@ -1030,6 +1030,14 @@ static rtosc::Ports middwareSnoopPorts = {
         else
             midi.map(addr.c_str(), true);
         rEnd},
+    {"unlearn:s", 0, 0,
+        rBegin;
+        string addr = rtosc_argument(msg, 0).s;
+        auto &midi  = impl.midi_mapper;
+        auto map    = midi.getMidiMappingStrings();
+        midi.unMap(addr.c_str(), false);
+        midi.unMap(addr.c_str(), true);
+        rEnd},
     //drop this message into the abyss
     {"ui/title:", 0, 0, [](const char *msg, RtData &d) {}}
 };

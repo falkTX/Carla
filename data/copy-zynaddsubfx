@@ -2,8 +2,8 @@
 
 set -e
 
-ORIG_ZYN_DIR="/home/falktx/FOSS/GIT-mine/falkTX/zynaddsubfx"
-CARLA_ZYN_DIR="/home/falktx/FOSS/GIT-mine/falkTX/Carla/source/native-plugins/zynaddsubfx"
+ORIG_ZYN_DIR="/home/falktx/Projects/FOSS/GIT-mine/zynaddsubfx-code"
+CARLA_ZYN_DIR="/home/falktx/Projects/FOSS/GIT-mine/Carla/source/native-plugins/zynaddsubfx"
 
 rm -f $CARLA_ZYN_DIR/*.cpp
 rm -f $CARLA_ZYN_DIR/*.h

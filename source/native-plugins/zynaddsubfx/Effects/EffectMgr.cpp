@@ -241,6 +241,7 @@ int EffectMgr::geteffect(void)
 // Initialize An Effect in RT context
 void EffectMgr::init(void)
 {
+    kill();
     changeeffectrt(nefx, true);
     changepresetrt(preset, true);
     for(int i=0; i<128; ++i)
