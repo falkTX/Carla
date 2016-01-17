@@ -757,13 +757,6 @@ public:
         return CarlaPlugin::getCategory();
     }
 
-    int64_t getUniqueId() const noexcept override
-    {
-        CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, 0);
-
-        return static_cast<int64_t>(fRdfDescriptor->UniqueID);
-    }
-
     // -------------------------------------------------------------------
     // Information (count)
 
