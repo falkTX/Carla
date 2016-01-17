@@ -25,7 +25,9 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
-#include "juce_audio_formats/juce_audio_formats.h"
+#ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
+# include "juce_audio_formats/juce_audio_formats.h"
+#endif
 
 #ifdef CARLA_OS_MAC
 # include "juce_audio_processors/juce_audio_processors.h"
@@ -56,161 +58,6 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
       label(gNullCharPtr),
       maker(gNullCharPtr),
       copyright(gNullCharPtr) {}
-
-// -------------------------------------------------------------------------------------------------------------------
-
-const char* carla_get_complete_license_text()
-{
-    carla_debug("carla_get_complete_license_text()");
-
-    static CarlaString retText;
-
-    if (retText.isEmpty())
-    {
-        retText =
-        "<p>This current Carla build is using the following features and 3rd-party code:</p>"
-        "<ul>"
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
-# define LS_NOTE_NO "2"
-#else
-# define LS_NOTE_NO "1"
-#endif
-
-        // Plugin formats
-        "<li>LADSPA plugin support</li>"
-        "<li>DSSI plugin support</li>"
-        "<li>LV2 plugin support</li>"
-#ifdef VESTIGE_HEADER
-        "<li>VST2 plugin support using VeSTige header by Javier Serrano Polo</li>"
-#else
-        "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
-#endif
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
-#endif
-#ifdef CARLA_OS_MAC
-        "<li>AU plugin support</li>"
-#endif
-
-        // Sample kit libraries
-#ifdef HAVE_FLUIDSYNTH
-        "<li>FluidSynth library for SF2 support</li>"
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
-#endif
-
-        // misc libs
-        "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
-#ifdef CARLA_OS_MAC
-        "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
-#endif
-        "<li>liblo library for OSC support</li>"
-        "<li>rtmempool library by Nedko Arnaudov"
-        "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
-#endif
-
-        // Internal plugins
-#ifdef HAVE_EXPERIMENTAL_PLUGINS
-        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
-#endif
-        "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
-        "<li>MVerb plugin code by Martin Eastwood</li>"
-        "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
-        "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
-#ifdef HAVE_ZYN_DEPS
-        "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
-#endif
-
-        // end
-        "</ul>"
-
-        "<p>"
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
-        // Required by VST SDK
-        "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        // LinuxSampler GPL exception
-        "&nbsp;[" LS_NOTE_NO "] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
-#endif
-        "</p>"
-        ;
-    }
-
-    return retText;
-}
-
-const char* carla_get_juce_version()
-{
-    carla_debug("carla_get_juce_version()");
-
-    static CarlaString retVersion;
-
-    if (retVersion.isEmpty())
-    {
-        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
-            retVersion = version+6;
-        else
-            retVersion = "3.0";
-    }
-
-    return retVersion;
-}
-
-const char* carla_get_supported_file_extensions()
-{
-    carla_debug("carla_get_supported_file_extensions()");
-
-    static CarlaString retText;
-
-    if (retText.isEmpty())
-    {
-        retText =
-        // Base types
-        "*.carxp;*.carxs"
-        // MIDI files
-        ";*.mid;*.midi"
-#ifdef HAVE_FLUIDSYNTH
-        // fluidsynth (sf2)
-        ";*.sf2"
-#endif
-#ifdef HAVE_LINUXSAMPLER
-        // linuxsampler (gig and sfz)
-        ";*.gig;*.sfz"
-#endif
-#ifdef HAVE_ZYN_DEPS
-        // zynaddsubfx presets
-        ";*.xmz;*.xiz"
-#endif
-        ;
-
-        // Audio files
-        {
-            using namespace juce;
-
-            AudioFormatManager afm;
-            afm.registerBasicFormats();
-
-            String juceFormats;
-
-            for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
-            {
-                const StringArray& exts((*it)->getFileExtensions());
-
-                for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
-                    juceFormats += String(";*" + (*eit)).toRawUTF8();
-            }
-
-            retText += juceFormats.toRawUTF8();
-        }
-    }
-
-    return retText;
-}
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -650,6 +497,162 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
     return &info;
 }
 
+#ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
+// -------------------------------------------------------------------------------------------------------------------
+
+const char* carla_get_complete_license_text()
+{
+    carla_debug("carla_get_complete_license_text()");
+
+    static CarlaString retText;
+
+    if (retText.isEmpty())
+    {
+        retText =
+        "<p>This current Carla build is using the following features and 3rd-party code:</p>"
+        "<ul>"
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
+# define LS_NOTE_NO "2"
+#else
+# define LS_NOTE_NO "1"
+#endif
+
+        // Plugin formats
+        "<li>LADSPA plugin support</li>"
+        "<li>DSSI plugin support</li>"
+        "<li>LV2 plugin support</li>"
+#ifdef VESTIGE_HEADER
+        "<li>VST2 plugin support using VeSTige header by Javier Serrano Polo</li>"
+#else
+        "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
+#endif
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+        "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
+#endif
+#ifdef CARLA_OS_MAC
+        "<li>AU plugin support</li>"
+#endif
+
+        // Sample kit libraries
+#ifdef HAVE_FLUIDSYNTH
+        "<li>FluidSynth library for SF2 support</li>"
+#endif
+#ifdef HAVE_LINUXSAMPLER
+        "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
+#endif
+
+        // misc libs
+        "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
+#ifdef CARLA_OS_MAC
+        "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
+#endif
+        "<li>liblo library for OSC support</li>"
+        "<li>rtmempool library by Nedko Arnaudov"
+        "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
+#endif
+
+        // Internal plugins
+#ifdef HAVE_EXPERIMENTAL_PLUGINS
+        "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
+#endif
+        "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
+        "<li>MVerb plugin code by Martin Eastwood</li>"
+        "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
+        "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
+#ifdef HAVE_ZYN_DEPS
+        "<li>ZynAddSubFX plugin code by Mark McCurry and Nasca Octavian Paul</li>"
+#endif
+
+        // end
+        "</ul>"
+
+        "<p>"
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
+        // Required by VST SDK
+        "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
+#endif
+#ifdef HAVE_LINUXSAMPLER
+        // LinuxSampler GPL exception
+        "&nbsp;[" LS_NOTE_NO "] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
+#endif
+        "</p>"
+        ;
+    }
+
+    return retText;
+}
+
+const char* carla_get_juce_version()
+{
+    carla_debug("carla_get_juce_version()");
+
+    static CarlaString retVersion;
+
+    if (retVersion.isEmpty())
+    {
+        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
+            retVersion = version+6;
+        else
+            retVersion = "3.0";
+    }
+
+    return retVersion;
+}
+
+const char* carla_get_supported_file_extensions()
+{
+    carla_debug("carla_get_supported_file_extensions()");
+
+    static CarlaString retText;
+
+    if (retText.isEmpty())
+    {
+        retText =
+        // Base types
+        "*.carxp;*.carxs"
+        // MIDI files
+        ";*.mid;*.midi"
+#ifdef HAVE_FLUIDSYNTH
+        // fluidsynth (sf2)
+        ";*.sf2"
+#endif
+#ifdef HAVE_LINUXSAMPLER
+        // linuxsampler (gig and sfz)
+        ";*.gig;*.sfz"
+#endif
+#ifdef HAVE_ZYN_DEPS
+        // zynaddsubfx presets
+        ";*.xmz;*.xiz"
+#endif
+        ;
+
+        // Audio files
+        {
+            using namespace juce;
+
+            AudioFormatManager afm;
+            afm.registerBasicFormats();
+
+            String juceFormats;
+
+            for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
+            {
+                const StringArray& exts((*it)->getFileExtensions());
+
+                for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
+                    juceFormats += String(";*" + (*eit)).toRawUTF8();
+            }
+
+            retText += juceFormats.toRawUTF8();
+        }
+    }
+
+    return retText;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 void carla_set_process_name(const char* name)
@@ -825,3 +828,4 @@ const char* carla_get_library_folder()
 #include "CarlaPipeUtils.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------
+#endif //  CARLA_UTILS_CACHED_PLUGINS_ONLY
