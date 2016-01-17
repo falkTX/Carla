@@ -1226,10 +1226,13 @@ public:
                 plugin->setEnabled(false);
 
                 // set new client data
-                jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
                 jackbridge_set_latency_callback(jackClient, carla_jack_latency_callback_plugin, plugin);
                 jackbridge_set_process_callback(jackClient, carla_jack_process_callback_plugin, plugin);
                 jackbridge_on_shutdown(jackClient, carla_jack_shutdown_callback_plugin, plugin);
+
+                // NOTE: jack1 locks up here
+                if (jackbridge_get_version_string() != nullptr)
+                    jackbridge_set_thread_init_callback(jackClient, carla_jack_thread_init_callback, nullptr);
 
                 /* The following code is because of a tricky situation.
                    We cannot lock or do jack operations during jack callbacks on jack1. jack2 events are asynchronous.
