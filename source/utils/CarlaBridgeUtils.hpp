@@ -87,9 +87,11 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerPluginInfo2,        // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
     kPluginBridgeNonRtServerAudioCount,         // uint/ins, uint/outs
     kPluginBridgeNonRtServerMidiCount,          // uint/ins, uint/outs
+    kPluginBridgeNonRtServerCvCount,            // uint/ins, uint/outs
     kPluginBridgeNonRtServerParameterCount,     // uint/count
     kPluginBridgeNonRtServerProgramCount,       // uint/count
     kPluginBridgeNonRtServerMidiProgramCount,   // uint/count
+    kPluginBridgeNonRtServerPortName,           // byte/type, uint/index, uint/size, str[] (name)
     kPluginBridgeNonRtServerParameterData1,     // uint/index, int/rindex, uint/type, uint/hints, short/cc
     kPluginBridgeNonRtServerParameterData2,     // uint/index, uint/size, str[] (name), uint/size, str[] (symbol), uint/size, str[] (unit)
     kPluginBridgeNonRtServerParameterRanges,    // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
@@ -107,6 +109,18 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,
     kPluginBridgeNonRtServerError               // uint/size, str[]
+};
+
+// used for kPluginBridgeNonRtServerPortName
+enum PluginBridgePortType {
+    kPluginBridgePortNull = 0,
+    kPluginBridgePortAudioInput,
+    kPluginBridgePortAudioOutput,
+    kPluginBridgePortCvInput,
+    kPluginBridgePortCvOutput,
+    kPluginBridgePortMidiInput,
+    kPluginBridgePortMidiOutput,
+    kPluginBridgePortTypeCount
 };
 
 // -----------------------------------------------------------------------
@@ -271,12 +285,16 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerAudioCount";
     case kPluginBridgeNonRtServerMidiCount:
         return "kPluginBridgeNonRtServerMidiCount";
+    case kPluginBridgeNonRtServerCvCount:
+        return "kPluginBridgeNonRtServerCvCount";
     case kPluginBridgeNonRtServerParameterCount:
         return "kPluginBridgeNonRtServerParameterCount";
     case kPluginBridgeNonRtServerProgramCount:
         return "kPluginBridgeNonRtServerProgramCount";
     case kPluginBridgeNonRtServerMidiProgramCount:
         return "kPluginBridgeNonRtServerMidiProgramCount";
+    case kPluginBridgeNonRtServerPortName:
+        return "kPluginBridgeNonRtServerPortName";
     case kPluginBridgeNonRtServerParameterData1:
         return "kPluginBridgeNonRtServerParameterData1";
     case kPluginBridgeNonRtServerParameterData2:
