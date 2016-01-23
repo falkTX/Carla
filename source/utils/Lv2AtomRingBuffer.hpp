@@ -205,7 +205,7 @@ private:
     HeapBuffer fHeapBuffer;
     const bool fNeedsDataDelete;
 
-    static const std::size_t kMaxAtomDataSize = 8192;
+    static const std::size_t kMaxAtomDataSize = 32768 - sizeof(LV2_Atom);
 
     struct RetAtom {
         LV2_Atom atom;
