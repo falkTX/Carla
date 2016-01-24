@@ -19,7 +19,6 @@
  * - complete processRack(): carefully add to input, sorted events
  * - implement processPatchbay()
  * - implement oscSend_control_switch_plugins()
- * - proper find&load plugins
  * - something about the peaks?
  */
 
@@ -37,11 +36,13 @@
 #include "jackbridge/JackBridge.hpp"
 #include "juce_core/juce_core.h"
 
+using juce::Array;
 using juce::CharPointer_UTF8;
 using juce::File;
 using juce::MemoryOutputStream;
 using juce::ScopedPointer;
 using juce::String;
+using juce::StringArray;
 using juce::XmlDocument;
 using juce::XmlElement;
 
@@ -1844,6 +1845,70 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     outStream << "</CARLA-PROJECT>\n";
 }
 
+static String findBinaryInCustomPath(const char* const searchPath, const char* const binary)
+{
+    const StringArray searchPaths(StringArray::fromTokens(searchPath, CARLA_OS_SPLIT_STR, ""));
+
+    // try direct filename first
+    String jbinary(binary);
+
+    // adjust for current platform
+#ifdef CARLA_OS_WIN
+    if (jbinary[0] == '/')
+        jbinary = "C:" + jbinary.replaceCharacter('/', '\\');
+#else
+    if (jbinary[1] == ':' && jbinary[2] == '\\')
+        jbinary = jbinary.substring(2).replaceCharacter('\\', '/');
+#endif
+
+    String filename = File(jbinary).getFileName();
+
+    int searchFlags = File::findFiles|File::ignoreHiddenFiles;
+#ifdef CARLA_OS_MAC
+    if (filename.endsWith(".vst") || filename.endsWith(".vst3"))
+        searchFlags |= File::findDirectories;
+#endif
+
+    Array<File> results;
+    for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
+    {
+        const File path(*it);
+
+        results.clear();
+        path.findChildFiles(results, searchFlags, true, filename);
+
+        if (results.size() > 0)
+            return results.getFirst().getFullPathName();
+    }
+
+    // try changing extension
+#if defined(CARLA_OS_MAC)
+    if (filename.endsWithIgnoreCase(".dll") || filename.endsWithIgnoreCase(".so"))
+        filename = File(jbinary).getFileNameWithoutExtension() + ".dylib";
+#elif defined(CARLA_OS_WIN)
+    if (filename.endsWithIgnoreCase(".dylib") || filename.endsWithIgnoreCase(".so"))
+        filename = File(jbinary).getFileNameWithoutExtension() + ".dll";
+#else
+    if (filename.endsWithIgnoreCase(".dll") || filename.endsWithIgnoreCase(".dylib"))
+        filename = File(jbinary).getFileNameWithoutExtension() + ".so";
+#endif
+    else
+        return String();
+
+    for (const String *it=searchPaths.begin(), *end=searchPaths.end(); it != end; ++it)
+    {
+        const File path(*it);
+
+        results.clear();
+        path.findChildFiles(results, searchFlags, true, filename);
+
+        if (results.size() > 0)
+            return results.getFirst().getFullPathName();
+    }
+
+    return String();
+}
+
 bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 {
     ScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
@@ -2001,23 +2066,66 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
             CARLA_SAFE_ASSERT_CONTINUE(stateSave.type != nullptr);
 
-            const void* extraStuff = nullptr;
+            const void* extraStuff    = nullptr;
+            static const char kTrue[] = "true";
 
-            // check if using GIG or SF2 16outs
-            static const char kTrue[]            = "true";
-            static const char kUse16OutsSuffix[] = " (16 outs)";
-
-            const BinaryType btype(getBinaryTypeFromFile(stateSave.binary));
             const PluginType ptype(getPluginTypeFromString(stateSave.type));
 
-            if ((ptype == PLUGIN_GIG || ptype == PLUGIN_SF2) && CarlaString(stateSave.label).endsWith(kUse16OutsSuffix))
+            switch (ptype)
             {
-                extraStuff = kTrue;
+            case PLUGIN_GIG:
+            case PLUGIN_SF2:
+                if (CarlaString(stateSave.label).endsWith(" (16 outs)"))
+                    extraStuff = kTrue;
+                // nobreak
+            case PLUGIN_LADSPA:
+            case PLUGIN_DSSI:
+            case PLUGIN_VST2:
+            case PLUGIN_VST3:
+            case PLUGIN_SFZ:
+                if (stateSave.binary != nullptr && stateSave.binary[0] != '\0' &&
+                    ! (File::isAbsolutePath(stateSave.binary) && File(stateSave.binary).exists()))
+                {
+                    const char* searchPath;
+
+                    switch (ptype)
+                    {
+                    case PLUGIN_LADSPA: searchPath = pData->options.pathLADSPA; break;
+                    case PLUGIN_DSSI:   searchPath = pData->options.pathDSSI;   break;
+                    case PLUGIN_VST2:   searchPath = pData->options.pathVST2;   break;
+                    case PLUGIN_VST3:   searchPath = pData->options.pathVST3;   break;
+                    case PLUGIN_GIG:    searchPath = pData->options.pathGIG;    break;
+                    case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
+                    case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
+                    default:            searchPath = nullptr;                   break;
+                    }
+
+                    if (searchPath != nullptr && searchPath[0] != '\0')
+                    {
+                        carla_stderr("Plugin binary '%s' doesn't exist on this filesystem, let's look for it...",
+                                     stateSave.binary);
+
+                        const String result(findBinaryInCustomPath(searchPath, stateSave.binary));
+
+                        if (result.isNotEmpty())
+                        {
+                            delete [] stateSave.binary;
+                            stateSave.binary = carla_strdup(result.toRawUTF8());
+                            carla_stderr("Found it! :)");
+                        }
+                        else
+                        {
+                            carla_stderr("Damn, we failed... :(");
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
             }
 
-            // TODO - proper find&load plugins
-
-            if (addPlugin(btype, ptype, stateSave.binary, stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
+            if (addPlugin(getBinaryTypeFromFile(stateSave.binary), ptype, stateSave.binary,
+                          stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
                 if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
                 {
