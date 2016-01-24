@@ -1865,7 +1865,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
 
     int searchFlags = File::findFiles|File::ignoreHiddenFiles;
 #ifdef CARLA_OS_MAC
-    if (filename.endsWith(".vst") || filename.endsWith(".vst3"))
+    if (filename.endsWithIgnoreCase(".vst") || filename.endsWithIgnoreCase(".vst3"))
         searchFlags |= File::findDirectories;
 #endif
 
@@ -2109,7 +2109,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
                         if (result.isNotEmpty())
                         {
-                            delete [] stateSave.binary;
+                            delete[] stateSave.binary;
                             stateSave.binary = carla_strdup(result.toRawUTF8());
                             carla_stderr("Found it! :)");
                         }
