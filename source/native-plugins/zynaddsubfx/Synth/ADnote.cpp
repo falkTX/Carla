@@ -1845,12 +1845,17 @@ void ADnote::releasekey()
 /*
  * Check if the note is finished
  */
-int ADnote::finished() const
+bool ADnote::finished() const
 {
     if(NoteEnabled == ON)
         return 0;
     else
         return 1;
+}
+
+void ADnote::entomb(void)
+{
+    NoteGlobalPar.AmpEnvelope->forceFinish();
 }
 
 void ADnote::Voice::releasekey()

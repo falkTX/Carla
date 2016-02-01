@@ -312,7 +312,7 @@ void Part::defaultsinstrument()
     Pdrummode = 0;
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
-        kit[n].Penabled    = false;
+        //kit[n].Penabled    = false;
         kit[n].Pmuted      = false;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -475,6 +475,9 @@ bool Part::NoteOn(unsigned char note,
         return true;
     }
 
+    if(Ppolymode)
+        notePool.makeUnsustainable(note);
+
     //Create New Notes
     for(uint8_t i = 0; i < NUM_KIT_ITEMS; ++i) {
         auto &item = kit[i];
@@ -522,7 +525,7 @@ void Part::NoteOff(unsigned char note) //release the key
         monomemPop(note);
 
     for(auto &desc:notePool.activeDesc()) {
-        if(desc.note != note || desc.status != KEY_PLAYING)
+        if(desc.note != note || !desc.playing())
             continue;
         if(!ctl.sustain.sustain) { //the sustain pedal is not pushed
             if((isMonoMode() || isLegatoMode()) && !monomemEmpty())
@@ -530,8 +533,12 @@ void Part::NoteOff(unsigned char note) //release the key
             else 
                 notePool.release(desc);
         }
-        else    //the sustain pedal is pushed
-            desc.status = KEY_RELEASED_AND_SUSTAINED;
+        else {   //the sustain pedal is pushed
+            if(desc.canSustain())
+                desc.doSustain();
+            else
+                notePool.release(desc);
+        }
     }
 }
 
@@ -550,7 +557,7 @@ void Part::PolyphonicAftertouch(unsigned char note,
 
     const float vel = getVelocity(velocity, Pvelsns, Pveloffs);
     for(auto &d:notePool.activeDesc()) {
-        if(d.note == note && d.status == KEY_PLAYING)
+        if(d.note == note && d.playing())
             for(auto &s:notePool.activeNotes(d))
                 s.note->setVelocity(vel);
     }
@@ -659,7 +666,7 @@ void Part::ReleaseSustainedKeys()
             MonoMemRenote();  // To play most recent still held note.
 
     for(auto &d:notePool.activeDesc())
-        if(d.status == KEY_RELEASED_AND_SUSTAINED)
+        if(d.sustained())
             for(auto &s:notePool.activeNotes(d))
                 s.note->releasekey();
 }
@@ -671,7 +678,7 @@ void Part::ReleaseSustainedKeys()
 void Part::ReleaseAllKeys()
 {
     for(auto &d:notePool.activeDesc())
-        if(d.status != KEY_RELEASED)
+        if(!d.released())
             for(auto &s:notePool.activeNotes(d))
                 s.note->releasekey();
 }
@@ -726,7 +733,7 @@ void Part::setkeylimit(unsigned char Pkeylimit_)
     if(keylimit == 0)
         keylimit = POLYPHONY - 5;
 
-    if(notePool.getRunningNotes() > keylimit)
+    if(notePool.getRunningNotes() >= keylimit)
         notePool.enforceKeyLimit(keylimit);
 }
 
@@ -840,6 +847,9 @@ void Part::setkititemstatus(unsigned kititem, bool Penabled_)
         delete kkit.adpars;
         delete kkit.subpars;
         delete kkit.padpars;
+        kkit.adpars  = nullptr;
+        kkit.subpars = nullptr;
+        kkit.padpars = nullptr;
         kkit.Pname[0] = '\0';
 
         notePool.killAllNotes();

@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <dirent.h>
 
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
@@ -19,6 +20,7 @@
 #include <map>
 
 #include "Util.h"
+#include "CallbackRepeater.h"
 #include "Master.h"
 #include "Part.h"
 #include "PresetExtractor.h"
@@ -576,14 +578,18 @@ public:
     {
         if(server)
             while(lo_server_recv_noblock(server, 0));
+
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
             bToUhandle(rtmsg);
         }
+
         while(auto *m = multi_thread_source.read()) {
             handleMsg(m->memory);
             multi_thread_source.free(m);
         }
+
+        autoSave.tick();
     }
 
 
@@ -659,6 +665,8 @@ public:
     const SYNTH_T synth;
 
     PresetsStore presetsstore;
+
+    CallbackRepeater autoSave;
 };
 
 /*****************************************************************************
@@ -965,6 +973,25 @@ static rtosc::Ports middwareSnoopPorts = {
         const char *file    = rtosc_argument(msg,1).s;
         impl.savePart(part_id, file);
         rEnd},
+    {"reload_auto_save:i", 0, 0,
+        rBegin
+        const int save_id      = rtosc_argument(msg,0).i;
+        const string save_dir  = string(getenv("HOME")) + "/.local";
+        const string save_file = "zynaddsubfx-"+to_s(save_id)+"-autosave.xmz";
+        const string save_loc  = save_dir + "/" + save_file;
+        impl.loadMaster(save_loc.c_str());
+        //XXX it would be better to remove the autosave after there is a new
+        //autosave, but this method should work for non-immediate crashes :-|
+        remove(save_loc.c_str());
+        rEnd},
+    {"delete_auto_save:i", 0, 0,
+        rBegin
+        const int save_id      = rtosc_argument(msg,0).i;
+        const string save_dir  = string(getenv("HOME")) + "/.local";
+        const string save_file = "zynaddsubfx-"+to_s(save_id)+"-autosave.xmz";
+        const string save_loc  = save_dir + "/" + save_file;
+        remove(save_loc.c_str());
+        rEnd},
     {"load_xmz:s", 0, 0,
         rBegin;
         const char *file = rtosc_argument(msg, 0).s;
@@ -1100,7 +1127,14 @@ static rtosc::Ports middlewareReplyPorts = {
 MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
     Config* config, int preferrred_port)
     :parent(mw), config(config), ui(nullptr), synth(std::move(synth_)),
-    presetsstore(*config)
+    presetsstore(*config), autoSave(-1, [this]() {
+            auto master = this->master;
+            this->doReadOnlyOp([master](){
+                std::string home = getenv("HOME");
+                std::string save_file = home+"/.local/zynaddsubfx-"+to_s(getpid())+"-autosave.xmz";
+                printf("doing an autosave <%s>...\n", save_file.c_str());
+                int res = master->saveXML(save_file.c_str());
+                (void)res;});})
 {
     bToU = new rtosc::ThreadLink(4096*2,1024);
     uToB = new rtosc::ThreadLink(4096*2,1024);
@@ -1425,24 +1459,86 @@ MiddleWare::MiddleWare(SYNTH_T synth, Config* config,
                        int preferred_port)
 :impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port))
 {}
+
 MiddleWare::~MiddleWare(void)
 {
     delete impl;
 }
+
 void MiddleWare::updateResources(Master *m)
 {
     impl->updateResources(m);
 }
+
 Master *MiddleWare::spawnMaster(void)
 {
     assert(impl->master);
     assert(impl->master->uToB);
     return impl->master;
 }
+
+void MiddleWare::enableAutoSave(int interval_sec)
+{
+    impl->autoSave.dt = interval_sec;
+}
+
+int MiddleWare::checkAutoSave(void)
+{
+    //save spec zynaddsubfx-PID-autosave.xmz
+    const std::string home     = getenv("HOME");
+    const std::string save_dir = home+"/.local/";
+
+    DIR *dir = opendir(save_dir.c_str());
+
+    if(dir == NULL)
+        return -1;
+
+    struct dirent *fn;
+    int    reload_save = -1;
+
+    while((fn = readdir(dir))) {
+        const char *filename = fn->d_name;
+        const char *prefix = "zynaddsubfx-";
+
+        //check for manditory prefix
+        if(strstr(filename, prefix) != filename)
+            continue;
+
+        int id = atoi(filename+strlen(prefix));
+
+        bool in_use = false;
+
+        std::string proc_file = "/proc/" + to_s(id) + "/comm";
+        std::ifstream ifs(proc_file);
+        if(ifs.good()) {
+            std::string comm_name;
+            ifs >> comm_name;
+            in_use = (comm_name == "zynaddsubfx");
+        }
+
+        if(!in_use) {
+            reload_save = id;
+            break;
+        }
+    }
+
+    closedir(dir);
+
+    return reload_save;
+}
+
+void MiddleWare::removeAutoSave(void)
+{
+    std::string home = getenv("HOME");
+    std::string save_file = home+"/.local/zynaddsubfx-"+to_s(getpid())+"-autosave.xmz";
+    remove(save_file.c_str());
+}
+
 Fl_Osc_Interface *MiddleWare::spawnUiApi(void)
 {
     return impl->osc;
 }
+
 void MiddleWare::tick(void)
 {
     impl->tick();

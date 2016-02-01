@@ -63,7 +63,10 @@ class SynthNote
 
         /**Return if note is finished.
          * @return finished=1 unfinished=0*/
-        virtual int finished() const = 0;
+        virtual bool finished() const = 0;
+
+        /**Make a note die off next buffer compute*/
+        virtual void entomb(void) = 0;
 
         virtual void legatonote(LegatoParams pars) = 0;
 

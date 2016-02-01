@@ -619,10 +619,15 @@ void SUBnote::releasekey()
 /*
  * Check if the note is finished
  */
-int SUBnote::finished() const
+bool SUBnote::finished() const
 {
     if(NoteEnabled == OFF)
         return 1;
     else
         return 0;
+}
+
+void SUBnote::entomb(void)
+{
+    AmpEnvelope->forceFinish();
 }

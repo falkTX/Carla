@@ -38,7 +38,8 @@ class SUBnote:public SynthNote
 
         int noteout(float *outl, float *outr); //note output,return 0 if the note is finished
         void releasekey();
-        int finished() const;
+        bool finished() const;
+        void entomb(void);
     private:
 
         void setup(float freq,

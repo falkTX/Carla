@@ -178,18 +178,13 @@ bankui->show();}
       }
       Fl_Check_Button partenabled {
         label 01
-        callback {o->oscWrite("Penabled", o->value() ? "T" : "F");
-if ((int) o->value()==0) panellistitemgroup->deactivate();
-  else {
-    panellistitemgroup->activate();
-    /*
-    if ((int)bankui->cbwig->value()!=(npart+1)){
-       bankui->cbwig->value(npart+1);
-       bankui->cbwig->do_callback();
-    };*/
-};
+        callback {
+            if ((int) o->value()==0) panellistitemgroup->deactivate();
+            else {
+                panellistitemgroup->activate();
+            };
 
-o->redraw();}
+            o->redraw();}
         private xywh {5 0 45 20} down_box DOWN_BOX labeltype EMBOSSED_LABEL labelfont 1 labelsize 13 align 24
         code0 {char tmp[10];snprintf(tmp,10,"%d",npart+1);o->copy_label(tmp);}
         code1 {o->init("Penabled");}
@@ -472,7 +467,7 @@ fl_filename_setext(filename,".wav");
 
 //TODO TODO Test if a file exists
 if (fl_choice("The file *might* exist. \\nOverwrite it?","No","Yes",NULL)) {
-    osc->write("/HDDRecorder/preparefile", "T");
+    osc->write("/HDDRecorder/preparefile", "s", filename);
     recordbutton->activate();//TODO make this button osc controlled
 }
 
@@ -765,7 +760,7 @@ stopbutton->activate();
 pausebutton->activate();
 pauselabel->activate();
 o->oscWrite("HDDRecorder/start");
-o->oscWrite("resetvu");
+o->oscWrite("reset-vu");
 mastermenu->redraw();}
             tooltip {Start Recording} xywh {159 46 21 21} box ROUND_UP_BOX color 88 labelfont 1 labelsize 10 align 2 deactivate
             class Fl_Osc_Button

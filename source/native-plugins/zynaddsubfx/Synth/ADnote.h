@@ -52,7 +52,9 @@ class ADnote:public SynthNote
 
         int noteout(float *outl, float *outr);
         void releasekey();
-        int finished() const;
+        bool finished() const;
+        void entomb(void);
+
 
         virtual SynthNote *cloneLegato(void) override;
     private:

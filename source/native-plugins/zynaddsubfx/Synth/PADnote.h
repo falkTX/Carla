@@ -38,7 +38,9 @@ class PADnote:public SynthNote
         void legatonote(LegatoParams pars);
 
         int noteout(float *outl, float *outr);
-        int finished() const;
+        bool finished() const;
+        void entomb(void);
+
         void releasekey();
     private:
         void setup(float freq, float velocity, int portamento_,

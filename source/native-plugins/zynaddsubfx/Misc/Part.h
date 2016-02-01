@@ -147,9 +147,6 @@ class Part
         float *partfxinputl[NUM_PART_EFX + 1], //Left and right signal that pass thru part effects;
         *partfxinputr[NUM_PART_EFX + 1];          //partfxinput l/r [NUM_PART_EFX] is for "no effect" buffer
 
-        enum NoteStatus {
-            KEY_OFF, KEY_PLAYING, KEY_RELEASED_AND_SUSTAINED, KEY_RELEASED
-        };
 
         float volume, oldvolumel, oldvolumer; //this is applied by Master
         float panning; //this is applied by Master, too

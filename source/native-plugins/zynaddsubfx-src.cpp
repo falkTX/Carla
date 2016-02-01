@@ -220,6 +220,13 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
+#include "zynaddsubfx/Misc/CallbackRepeater.cpp"
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
 #include "zynaddsubfx/Misc/Config.cpp"
 #undef rObject
 #undef rStdString

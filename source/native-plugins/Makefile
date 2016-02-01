@@ -331,17 +331,17 @@ $(OBJDIR)/zynaddsubfx-fx.cpp.o: zynaddsubfx-fx.cpp $(ZYN_UI_FILES_H)
 $(OBJDIR)/zynaddsubfx-synth.cpp.o: zynaddsubfx-synth.cpp $(ZYN_UI_FILES_H)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(ZYN_CXX_FLAGS) -c -o $@
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -c -o $@
 
 $(OBJDIR)/zynaddsubfx-src.cpp.o: zynaddsubfx-src.cpp $(ZYN_UI_FILES_H)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	@$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -c -o $@
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
 
 $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FILES_CPP)
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
-	$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
+	@$(CXX) $< $(ZYN_CXX_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

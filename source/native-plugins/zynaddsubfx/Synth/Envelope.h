@@ -35,6 +35,8 @@ class Envelope
         /**Destructor*/
         ~Envelope();
         void releasekey();
+        /**Push Envelope to finishing state*/
+        void forceFinish(void);
         float envout();
         float envout_dB();
         /**Determines the status of the Envelope

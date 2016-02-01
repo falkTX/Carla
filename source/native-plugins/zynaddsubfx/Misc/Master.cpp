@@ -237,6 +237,19 @@ static const Ports master_ports = {
         SNIP
             preset_ports.dispatch(msg, data);
         rBOIL_END},
+    {"HDDRecorder/preparefile:s", rDoc("Init WAV file"), 0, [](const char *msg, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.preparefile(rtosc_argument(msg, 0).s, 1);}},
+    {"HDDRecorder/start:", rDoc("Start recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.start();}},
+    {"HDDRecorder/stop:", rDoc("Stop recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.stop();}},
+    {"HDDRecorder/pause:", rDoc("Pause recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.pause();}},
+
 };
 const Ports &Master::ports = master_ports;
 
@@ -618,7 +631,7 @@ int msg_id=0;
 /*
  * Master audio out (the final sound)
  */
-bool Master::AudioOut(float *outl, float *outr)
+bool Master::AudioOut(float *outr, float *outl)
 {
     //Danger Limits
     if(memory->lowMemory(2,1024*1024))

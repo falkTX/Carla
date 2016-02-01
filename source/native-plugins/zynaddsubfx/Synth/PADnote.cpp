@@ -428,9 +428,14 @@ int PADnote::noteout(float *outl, float *outr)
     return 1;
 }
 
-int PADnote::finished() const
+bool PADnote::finished() const
 {
     return finished_;
+}
+
+void PADnote::entomb(void)
+{
+    NoteGlobalPar.AmpEnvelope->forceFinish();
 }
 
 void PADnote::releasekey()

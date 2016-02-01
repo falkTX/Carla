@@ -101,6 +101,11 @@ void Envelope::releasekey()
         t = 0.0f;
 }
 
+void Envelope::forceFinish(void)
+{
+    envfinish = true;
+}
+
 /*
  * Envelope Output
  */
