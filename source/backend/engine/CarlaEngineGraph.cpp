@@ -38,6 +38,7 @@ using juce::FloatVectorOperations;
 using juce::MemoryBlock;
 using juce::PluginDescription;
 using juce::String;
+using juce::StringArray;
 using juce::jmin;
 using juce::jmax;
 
@@ -343,9 +344,9 @@ void ExternalGraph::refresh(const char* const deviceName)
     char strBuf[STR_MAX+1];
     strBuf[STR_MAX] = '\0';
 
-    // Audio In
     if (isRack)
     {
+        // Audio In
         if (deviceName[0] != '\0')
             std::snprintf(strBuf, STR_MAX, "Capture (%s)", deviceName);
         else
@@ -353,22 +354,19 @@ void ExternalGraph::refresh(const char* const deviceName)
 
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, kExternalGraphGroupAudioIn, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
-        const CarlaString groupName(strBuf);
+        const CarlaString groupNameIn(strBuf);
 
         int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
-            portNameToId.setFullName(groupName + portNameToId.name);
+            portNameToId.setFullName(groupNameIn + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupAudioIn, ++h,
                               PATCHBAY_PORT_TYPE_AUDIO, 0.0f, portNameToId.name);
         }
-    }
 
-    // Audio Out
-    if (isRack)
-    {
+        // Audio Out
         if (deviceName[0] != '\0')
             std::snprintf(strBuf, STR_MAX, "Playback (%s)", deviceName);
         else
@@ -376,13 +374,13 @@ void ExternalGraph::refresh(const char* const deviceName)
 
         kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, kExternalGraphGroupAudioOut, PATCHBAY_ICON_HARDWARE, -1, 0.0f, strBuf);
 
-        const CarlaString groupName(strBuf);
+        const CarlaString groupNameOut(strBuf);
 
-        int h = 0;
+        h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin2(); it.valid(); it.next())
         {
             PortNameToId& portNameToId(it.getValue());
-            portNameToId.setFullName(groupName + portNameToId.name);
+            portNameToId.setFullName(groupNameOut + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupAudioOut, ++h,
                               PATCHBAY_PORT_TYPE_AUDIO|PATCHBAY_PORT_IS_INPUT, 0.0f, portNameToId.name);
@@ -1343,13 +1341,46 @@ private:
 // -----------------------------------------------------------------------
 // Patchbay Graph
 
+class NamedAudioGraphIOProcessor : public AudioProcessorGraph::AudioGraphIOProcessor
+{
+public:
+    NamedAudioGraphIOProcessor(const IODeviceType type)
+        : AudioProcessorGraph::AudioGraphIOProcessor(type) {}
+
+    const String getInputChannelName (int index) const override
+    {
+        if (index < inputNames.size())
+            return inputNames[index];
+        return String("Playback ") + String(index+1);
+    }
+
+    const String getOutputChannelName (int index) const override
+    {
+        if (index < outputNames.size())
+            return outputNames[index];
+        return String("Capture ") + String(index+1);
+    }
+
+    void setNames(const bool isInput, const StringArray& names)
+    {
+        if (isInput)
+            inputNames = names;
+        else
+            outputNames = names;
+    }
+
+private:
+    StringArray inputNames;
+    StringArray outputNames;
+};
+
 PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs)
     : connections(),
       graph(),
       audioBuffer(),
       midiBuffer(),
-      inputs(carla_fixedValue(0U, MAX_PATCHBAY_PLUGINS-2, ins)),
-      outputs(carla_fixedValue(0U, MAX_PATCHBAY_PLUGINS-2, outs)),
+      inputs(carla_fixedValue(0U, 32U, ins)),
+      outputs(carla_fixedValue(0U, 32U, outs)),
       retCon(),
       usingExternal(false),
       extGraph(engine),
@@ -1366,8 +1397,30 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
+    StringArray channelNames;
+
+    switch (inputs)
     {
-        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioInputNode));
+    case 2:
+        channelNames = {
+            "Left",
+            "Right",
+        };
+        break;
+    case 3:
+        channelNames = {
+            "Left",
+            "Right",
+            "Sidechain",
+        };
+        break;
+    }
+
+    {
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioInputNode));
+        proc->setNames(false, channelNames);
+
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
@@ -1378,7 +1431,10 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     }
 
     {
-        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::audioOutputNode));
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioOutputNode));
+        proc->setNames(true, channelNames);
+
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
@@ -1389,7 +1445,8 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     }
 
     {
-        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiInputNode));
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiInputNode));
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
@@ -1400,7 +1457,8 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     }
 
     {
-        AudioProcessorGraph::AudioGraphIOProcessor* const proc(new AudioProcessorGraph::AudioGraphIOProcessor(AudioProcessorGraph::AudioGraphIOProcessor::midiOutputNode));
+        NamedAudioGraphIOProcessor* const proc(
+            new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiOutputNode));
         AudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", true);
