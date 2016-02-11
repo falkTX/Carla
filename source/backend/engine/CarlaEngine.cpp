@@ -490,6 +490,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
             else if (uniqueId == 1397578034 && std::strstr(filename, "/Zebra2.") != nullptr)
                 preferBridges = true;
+            else if (uniqueId == 1397573722 && std::strstr(filename, "/ZebraHZ.") != nullptr)
+                preferBridges = true;
         }
         // FIXME: linuxsampler inside carla-rack/patchbay plugin has some issues (only last kit makes noise)
         else if (getType() == kEngineTypePlugin && (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ))
