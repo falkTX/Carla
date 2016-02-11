@@ -28,8 +28,8 @@
 #include "AnalogFilter.h"
 #include "../Params/FilterParams.h"
 
-FormantFilter::FormantFilter(FilterParams *pars, Allocator *alloc, unsigned int srate, int bufsize)
-    : Filter(srate, bufsize), memory(*alloc)
+FormantFilter::FormantFilter(const FilterParams *pars, Allocator *alloc, unsigned int srate, int bufsize)
+    :Filter(srate, bufsize), memory(*alloc)
 {
     numformants = pars->Pnumformants;
     for(int i = 0; i < numformants; ++i)

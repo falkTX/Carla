@@ -154,15 +154,9 @@ class ADnote:public SynthNote
             /******************************************
             *        FILTER GLOBAL PARAMETERS        *
             ******************************************/
-            class Filter * GlobalFilterL, *GlobalFilterR;
-
-            float FilterCenterPitch;  //octaves
-            float FilterQ;
-            float FilterFreqTracking;
-
-            Envelope *FilterEnvelope;
-
-            LFO *FilterLfo;
+            ModFilter *Filter;
+            Envelope  *FilterEnvelope;
+            LFO       *FilterLfo;
         } NoteGlobalPar;
 
 
@@ -226,15 +220,9 @@ class ADnote:public SynthNote
             /*************************
             *   FILTER PARAMETERS    *
             *************************/
-
-            class Filter * VoiceFilterL;
-            class Filter * VoiceFilterR;
-
-            float FilterCenterPitch;  /* Filter center Pitch*/
-            float FilterFreqTracking;
-
-            Envelope *FilterEnvelope;
-            LFO      *FilterLfo;
+            ModFilter *Filter;
+            Envelope  *FilterEnvelope;
+            LFO       *FilterLfo;
 
 
             /****************************

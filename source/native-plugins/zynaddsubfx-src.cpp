@@ -402,6 +402,13 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
+#include "zynaddsubfx/Synth/ModFilter.cpp"
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
 #include "zynaddsubfx/Synth/OscilGen.cpp"
 #undef PC
 #undef DIFF

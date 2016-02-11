@@ -237,21 +237,21 @@ void FilterParams::getfromFilterParams(FilterParams *pars)
 /*
  * Parameter control
  */
-float FilterParams::getfreq()
+float FilterParams::getfreq() const
 {
     return (Pfreq / 64.0f - 1.0f) * 5.0f;
 }
 
-float FilterParams::getq()
+float FilterParams::getq() const
 {
     return expf(powf((float) Pq / 127.0f, 2) * logf(1000.0f)) - 0.9f;
 }
-float FilterParams::getfreqtracking(float notefreq)
+float FilterParams::getfreqtracking(float notefreq) const
 {
     return logf(notefreq / 440.0f) * (Pfreqtrack - 64.0f) / (64.0f * LOG_2);
 }
 
-float FilterParams::getgain()
+float FilterParams::getgain() const
 {
     return (Pgain / 64.0f - 1.0f) * 30.0f; //-30..30dB
 }
@@ -259,7 +259,7 @@ float FilterParams::getgain()
 /*
  * Get the center frequency of the formant's graph
  */
-float FilterParams::getcenterfreq()
+float FilterParams::getcenterfreq() const
 {
     return 10000.0f * powf(10, -(1.0f - Pcenterfreq / 127.0f) * 2.0f);
 }
@@ -267,7 +267,7 @@ float FilterParams::getcenterfreq()
 /*
  * Get the number of octave that the formant functions applies to
  */
-float FilterParams::getoctavesfreq()
+float FilterParams::getoctavesfreq() const
 {
     return 0.25f + 10.0f * Poctavesfreq / 127.0f;
 }
@@ -275,7 +275,7 @@ float FilterParams::getoctavesfreq()
 /*
  * Get the frequency from x, where x is [0..1]
  */
-float FilterParams::getfreqx(float x)
+float FilterParams::getfreqx(float x) const
 {
     if(x > 1.0f)
         x = 1.0f;
@@ -286,7 +286,7 @@ float FilterParams::getfreqx(float x)
 /*
  * Get the x coordinate from frequency (used by the UI)
  */
-float FilterParams::getfreqpos(float freq)
+float FilterParams::getfreqpos(float freq) const
 {
     return (logf(freq) - logf(getfreqx(0.0f))) / logf(2.0f) / getoctavesfreq();
 }
@@ -294,19 +294,19 @@ float FilterParams::getfreqpos(float freq)
 /*
  * Transforms a parameter to the real value
  */
-float FilterParams::getformantfreq(unsigned char freq)
+float FilterParams::getformantfreq(unsigned char freq) const
 {
     float result = getfreqx(freq / 127.0f);
     return result;
 }
 
-float FilterParams::getformantamp(unsigned char amp)
+float FilterParams::getformantamp(unsigned char amp) const
 {
     float result = powf(0.1f, (1.0f - amp / 127.0f) * 4.0f);
     return result;
 }
 
-float FilterParams::getformantq(unsigned char q)
+float FilterParams::getformantq(unsigned char q) const
 {
     //temp
     float result = powf(25.0f, (q - 32.0f) / 64.0f);

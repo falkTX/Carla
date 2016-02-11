@@ -25,7 +25,6 @@
 
 #include "SynthNote.h"
 #include "../globals.h"
-#include "../DSP/Filter.h"
 
 class SUBnote:public SynthNote
 {
@@ -48,6 +47,10 @@ class SUBnote:public SynthNote
                    int midinote,
                    bool legato = false);
         void computecurrentparameters();
+        /*
+         * Initialize envelopes and global filter
+         * calls computercurrentparameters()
+         */
         void initparameters(float freq);
         void KillNote();
 
@@ -67,17 +70,13 @@ class SUBnote:public SynthNote
         Envelope *FreqEnvelope;
         Envelope *BandWidthEnvelope;
 
-        Filter *GlobalFilterL, *GlobalFilterR;
-
-        Envelope *GlobalFilterEnvelope;
+        ModFilter *GlobalFilter;
+        Envelope  *GlobalFilterEnvelope;
 
         //internal values
         ONOFFTYPE NoteEnabled;
         int       firsttick, portamento;
         float     volume, oldamplitude, newamplitude;
-
-        float GlobalFilterCenterPitch; //octaves
-        float GlobalFilterFreqTracking;
 
         struct bpfilter {
             float freq, bw, amp; //filter parameters

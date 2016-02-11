@@ -24,12 +24,43 @@
 #define MICROTONAL_H
 
 #include <cstdio>
+#include <stdint.h>
 #include "../globals.h"
 
 #define MAX_OCTAVE_SIZE 128
 #define MICROTONAL_MAX_NAME_LEN 120
 class XMLwrapper;
 
+struct KbmInfo
+{
+    uint8_t   Pmapsize;
+    uint8_t   Pfirstkey;
+    uint8_t   Plastkey;
+    uint8_t   Pmiddlenote;
+    uint8_t   PAnote;
+    float     PAfreq;
+    uint8_t   Pmappingenabled;
+    short int Pmapping[128];
+};
+
+struct OctaveTuning {
+    unsigned char type; //1 for cents or 2 for division
+
+    // the real tuning (eg. +1.05946f for one halftone)
+    // or 2.0f for one octave
+    float tuning;
+
+    //the real tunning is x1/x2
+    unsigned int x1, x2;
+};
+
+struct SclInfo
+{
+    char Pname[MICROTONAL_MAX_NAME_LEN];
+    char Pcomment[MICROTONAL_MAX_NAME_LEN];
+    unsigned char octavesize;
+    OctaveTuning octave[MAX_OCTAVE_SIZE];
+};
 
 /**Tuning settings and microtonal capabilities*/
 class Microtonal
@@ -88,9 +119,9 @@ class Microtonal
         /**Convert tunning to string*/
         void tuningtoline(int n, char *line, int maxn);
         /**load the tunnings from a .scl file*/
-        int loadscl(const char *filename);
+        static int loadscl(SclInfo &scl, const char *filename);
         /**load the mapping from .kbm file*/
-        int loadkbm(const char *filename);
+        static int loadkbm(KbmInfo &kbm, const char *filename);
         /**Load text into the internal tunings
          *
          *\todo better description*/
@@ -114,23 +145,19 @@ class Microtonal
         bool operator==(const Microtonal &micro) const;
         bool operator!=(const Microtonal &micro) const;
 
+        void clone(Microtonal &m);
+
         static const rtosc::Ports ports;
-    private:
-        int linetotunings(unsigned int nline, const char *line);
-        //loads a line from the text file, while ignoring the lines beggining with "!"
-        int loadline(FILE *file, char *line);
-        //Grab a 0..127 integer from the provided descriptor
+
+        //only paste handler should access there (quasi-private)
         unsigned char octavesize;
-        struct {
-            unsigned char type; //1 for cents or 2 for division
+        OctaveTuning octave[MAX_OCTAVE_SIZE];
+    private:
+        //loads a line from the text file, while ignoring the lines beggining with "!"
+        static int loadline(FILE *file, char *line);
+        //Grab a 0..127 integer from the provided descriptor
 
-            // the real tuning (eg. +1.05946f for one halftone)
-            // or 2.0f for one octave
-            float tuning;
-
-            //the real tunning is x1/x2
-            unsigned int x1, x2;
-        } octave[MAX_OCTAVE_SIZE], tmpoctave[MAX_OCTAVE_SIZE];
+        static int linetotunings(struct OctaveTuning &tune, const char *line);
 
         const int& gzip_compression;
 };

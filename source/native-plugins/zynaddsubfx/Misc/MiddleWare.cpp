@@ -157,6 +157,12 @@ void deallocate(const char *str, void *v)
         delete (Master*)v;
     else if(!strcmp(str, "fft_t"))
         delete[] (fft_t*)v;
+    else if(!strcmp(str, "KbmInfo"))
+        delete (KbmInfo*)v;
+    else if(!strcmp(str, "SclInfo"))
+        delete (SclInfo*)v;
+    else if(!strcmp(str, "Microtonal"))
+        delete (Microtonal*)v;
     else
         fprintf(stderr, "Unknown type '%s', leaking pointer %p!!\n", str, v);
 }
@@ -556,6 +562,48 @@ public:
         parent->transmitMsg("/load-master", "b", sizeof(Master*), &m);
     }
 
+    void loadXsz(const char *filename, rtosc::RtData &d)
+    {
+        Microtonal *micro = new Microtonal(master->gzip_compression);
+        int err = micro->loadXML(filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the xsz file.");
+            delete micro;
+        } else
+            d.chain("/microtonal/paste", "b", sizeof(void*), &micro);
+    }
+
+    void saveXsz(const char *filename, rtosc::RtData &d)
+    {
+        int err = 0;
+        doReadOnlyOp([this,filename,&err](){
+                err = master->microtonal.saveXML(filename);});
+        if(err)
+            d.reply("/alert", "s", "Error: Could not save the xsz file.");
+    }
+
+    void loadScl(const char *filename, rtosc::RtData &d)
+    {
+        SclInfo *scl = new SclInfo;
+        int err=Microtonal::loadscl(*scl, filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the scl file.");
+            delete scl;
+        } else
+            d.chain("/microtonal/paste_scl", "b", sizeof(void*), &scl);
+    }
+
+    void loadKbm(const char *filename, rtosc::RtData &d)
+    {
+        KbmInfo *kbm = new KbmInfo;
+        int err=Microtonal::loadkbm(*kbm, filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the kbm file.");
+            delete kbm;
+        } else
+            d.chain("/microtonal/paste_kbm", "b", sizeof(void*), &kbm);
+    }
+
     void updateResources(Master *m)
     {
         obj_store.clear();
@@ -861,6 +909,12 @@ rtosc::Ports bankPorts = {
         rBegin;
         impl.setLsb(rtosc_argument(msg, 0).i);
         rEnd},
+    {"newbank:s", 0, 0,
+        rBegin;
+        int err = impl.newbank(rtosc_argument(msg, 0).s);
+        if(err)
+            d.reply("/alert", "s", "Error: Could not make a new bank (directory)..");
+        rEnd},
 };
 
 /******************************************************************************
@@ -958,6 +1012,27 @@ static rtosc::Ports middwareSnoopPorts = {
         XMLwrapper xml;
         xml.loadXMLfile(file);
         loadMidiLearn(xml, impl.midi_mapper);
+        rEnd},
+    //scale file stuff
+    {"load_xsz:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadXsz(file, d);
+        rEnd},
+    {"save_xsz:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.saveXsz(file, d);
+        rEnd},
+    {"load_scl:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadScl(file, d);
+        rEnd},
+    {"load_kbm:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadKbm(file, d);
         rEnd},
     {"save_xmz:s", 0, 0,
         rBegin;

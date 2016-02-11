@@ -28,16 +28,24 @@
 #include "../globals.h"
 #include "SUBnote.h"
 #include "Envelope.h"
+#include "ModFilter.h"
 #include "../Params/Controller.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/FilterParams.h"
+#include "../Misc/Time.h"
 #include "../Misc/Util.h"
 #include "../Misc/Allocator.h"
 
 SUBnote::SUBnote(const SUBnoteParameters *parameters, SynthParams &spars)
-    :SynthNote(spars), pars(*parameters)
+    :SynthNote(spars), pars(*parameters),
+    AmpEnvelope(nullptr),
+    FreqEnvelope(nullptr),
+    BandWidthEnvelope(nullptr),
+    GlobalFilter(nullptr),
+    GlobalFilterEnvelope(nullptr),
+    NoteEnabled(ON),
+    lfilter(nullptr), rfilter(nullptr)
 {
-    NoteEnabled = ON;
     setup(spars.frequency, spars.velocity, spars.portamento, spars.note);
 }
 
@@ -56,12 +64,14 @@ void SUBnote::setup(float freq,
         panning = pars.PPanning / 127.0f;
     else
         panning = RND;
-    if(!legato) {
+
+    if(!legato) { //normal note
         numstages = pars.Pnumstages;
         stereo    = pars.Pstereo;
         start     = pars.Pstart;
         firsttick = 1;
     }
+
     int pos[MAX_SUB_HARMONICS];
 
     if(pars.Pfixedfreq == 0)
@@ -91,20 +101,6 @@ void SUBnote::setup(float freq,
     basefreq *= powf(2.0f, detune / 1200.0f); //detune
 //    basefreq*=ctl.pitchwheel.relfreq;//pitch wheel
 
-    //global filter
-    GlobalFilterCenterPitch = pars.GlobalFilter->getfreq() //center freq
-                              + (pars.PGlobalFilterVelocityScale / 127.0f
-                                 * 6.0f)                                           //velocity sensing
-                              * (VelF(velocity,
-                                      pars.PGlobalFilterVelocityScaleFunction)
-                                 - 1);
-
-    if(!legato) {
-        GlobalFilterL = NULL;
-        GlobalFilterR = NULL;
-        GlobalFilterEnvelope = NULL;
-    }
-
     int harmonics = 0;
 
     //select only harmonics that desire to compute
@@ -113,7 +109,7 @@ void SUBnote::setup(float freq,
             continue;
         pos[harmonics++] = n;
     }
-    if(!legato)
+    if(!legato) //normal note
         firstnumharmonics = numharmonics = harmonics;
     else {
         if(harmonics > firstnumharmonics)
@@ -129,7 +125,7 @@ void SUBnote::setup(float freq,
     }
 
 
-    if(!legato) {
+    if(!legato) { //normal note
         lfilter = memory.valloc<bpfilter>(numstages * numharmonics);
         if(stereo)
             rfilter = memory.valloc<bpfilter>(numstages * numharmonics);
@@ -199,7 +195,7 @@ void SUBnote::setup(float freq,
 
     oldpitchwheel = 0;
     oldbandwidth  = 64;
-    if(!legato) {
+    if(!legato) { //normal note
         if(pars.Pfixedfreq == 0)
             initparameters(basefreq);
         else
@@ -211,12 +207,13 @@ void SUBnote::setup(float freq,
         else
             freq *= basefreq / 440.0f;
 
-        if(pars.PGlobalFilterEnabled) {
-            globalfiltercenterq      = pars.GlobalFilter->getq();
-            GlobalFilterFreqTracking = pars.GlobalFilter->getfreqtracking(
-                basefreq);
-        }
+        if(GlobalFilter)
+            GlobalFilter->updateNoteFreq(basefreq);
     }
+
+    if(GlobalFilter)
+        GlobalFilter->updateSense(velocity, pars.PGlobalFilterVelocityScale,
+                                     pars.PGlobalFilterVelocityScaleFunction);
 
     oldamplitude = newamplitude;
 }
@@ -260,8 +257,7 @@ void SUBnote::KillNote()
         memory.dealloc(AmpEnvelope);
         memory.dealloc(FreqEnvelope);
         memory.dealloc(BandWidthEnvelope);
-        memory.dealloc(GlobalFilterL);
-        memory.dealloc(GlobalFilterR);
+        memory.dealloc(GlobalFilter);
         memory.dealloc(GlobalFilterEnvelope);
         NoteEnabled = OFF;
     }
@@ -383,23 +379,19 @@ void SUBnote::filter(bpfilter &filter, float *smps)
 void SUBnote::initparameters(float freq)
 {
     AmpEnvelope = memory.alloc<Envelope>(*pars.AmpEnvelope, freq, synth.dt());
+
     if(pars.PFreqEnvelopeEnabled)
         FreqEnvelope = memory.alloc<Envelope>(*pars.FreqEnvelope, freq, synth.dt());
-    else
-        FreqEnvelope = NULL;
+
     if(pars.PBandWidthEnvelopeEnabled)
         BandWidthEnvelope = memory.alloc<Envelope>(*pars.BandWidthEnvelope, freq, synth.dt());
-    else
-        BandWidthEnvelope = NULL;
+
     if(pars.PGlobalFilterEnabled) {
-        globalfiltercenterq = pars.GlobalFilter->getq();
-        GlobalFilterL = Filter::generate(memory, pars.GlobalFilter,
-                    synth.samplerate, synth.buffersize);
-        if(stereo)
-            GlobalFilterR = Filter::generate(memory, pars.GlobalFilter,
-                    synth.samplerate, synth.buffersize);
         GlobalFilterEnvelope = memory.alloc<Envelope>(*pars.GlobalFilterEnvelope, freq, synth.dt());
-        GlobalFilterFreqTracking = pars.GlobalFilter->getfreqtracking(basefreq);
+
+        GlobalFilter = memory.alloc<ModFilter>(*pars.GlobalFilter, synth, time, memory, stereo, freq);
+
+        GlobalFilter->addMod(*GlobalFilterEnvelope);
     }
     computecurrentparameters();
 }
@@ -492,21 +484,9 @@ void SUBnote::computecurrentparameters()
     newamplitude = volume * AmpEnvelope->envout_dB() * 2.0f;
 
     //Filter
-    if(GlobalFilterL != NULL) {
-        float globalfilterpitch = GlobalFilterCenterPitch
-                                  + GlobalFilterEnvelope->envout();
-        float filterfreq = globalfilterpitch + ctl.filtercutoff.relfreq
-                           + GlobalFilterFreqTracking;
-        filterfreq = Filter::getrealfreq(filterfreq);
-
-        GlobalFilterL->setfreq_and_q(filterfreq,
-                                     globalfiltercenterq * ctl.filterq.relq);
-        if(GlobalFilterR != NULL)
-            GlobalFilterR->setfreq_and_q(
-                filterfreq,
-                globalfiltercenterq
-                * ctl.filterq.relq);
-    }
+    if(GlobalFilter)
+        GlobalFilter->update(ctl.filtercutoff.relfreq,
+                             ctl.filterq.relq);
 }
 
 /*
@@ -534,8 +514,6 @@ int SUBnote::noteout(float *outl, float *outr)
             outl[i] += tmpsmp[i] * rolloff;
     }
 
-    if(GlobalFilterL != NULL)
-        GlobalFilterL->filterout(&outl[0]);
 
     //right channel
     if(stereo) {
@@ -549,11 +527,15 @@ int SUBnote::noteout(float *outl, float *outr)
             for(int i = 0; i < synth.buffersize; ++i)
                 outr[i] += tmpsmp[i] * rolloff;
         }
-        if(GlobalFilterR != NULL)
-            GlobalFilterR->filterout(&outr[0]);
-    }
-    else
+        if(GlobalFilter)
+            GlobalFilter->filter(outl, outr);
+
+    } else {
+        if(GlobalFilter)
+            GlobalFilter->filter(outl, 0);
+
         memcpy(outr, outl, synth.bufferbytes);
+    }
 
     if(firsttick != 0) {
         int n = 10;

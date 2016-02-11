@@ -62,6 +62,12 @@ class  Controller;
 class  Master;
 class  Part;
 
+class  Filter;
+class  AnalogFilter;
+class  SVFilter;
+class  FormantFilter;
+class  ModFilter;
+
 #if defined(__APPLE__) || defined(__FreeBSD__)
 #include <complex>
 #else

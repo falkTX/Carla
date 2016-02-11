@@ -336,9 +336,7 @@ filename=fl_file_chooser("Open:","({*.xsz})",NULL,0);
 if (filename==NULL) return;
 
 osc->write("/load_xsz", "s", filename);
-/*
-if (result==-10) fl_alert("Error: Could not load the file\\nbecause it is not a scale file.");
-      else if (result<0) fl_alert("Error: Could not load the file.");*/}
+}
               xywh {40 40 100 20}
             }
             MenuItem {} {
@@ -358,9 +356,7 @@ if (result) {
 };
 
 
-osc->write("/save_xsz", "s", filename);
-
-/*if (result<0) fl_alert("Error: Could not save the file.");*/}
+osc->write("/save_xsz", "s", filename); }
               xywh {30 30 100 20}
             }
             MenuItem {} {

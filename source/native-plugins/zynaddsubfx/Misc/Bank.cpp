@@ -212,6 +212,7 @@ int Bank::loadfromslot(unsigned int ninstrument, Part *part)
  */
 int Bank::loadbank(string bankdirname)
 {
+    normalizedirsuffix(bankdirname);
     DIR *dir = opendir(bankdirname.c_str());
     clearbank();
 
@@ -285,9 +286,8 @@ int Bank::newbank(string newbankdirname)
     string bankdir;
     bankdir = config->cfg.bankRootDirList[0];
 
-    if(((bankdir[bankdir.size() - 1]) != '/')
-       && ((bankdir[bankdir.size() - 1]) != '\\'))
-        bankdir += "/";
+    expanddirname(bankdir);
+    normalizedirsuffix(bankdir);
 
     bankdir += newbankdirname;
 #ifdef _WIN32
@@ -404,6 +404,8 @@ void Bank::setLsb(uint8_t lsb)
 
 void Bank::scanrootdir(string rootdir)
 {
+    expanddirname(rootdir);
+
     DIR *dir = opendir(rootdir.c_str());
     if(dir == NULL)
         return;
@@ -498,3 +500,23 @@ void Bank::deletefrombank(int pos)
 Bank::ins_t::ins_t()
     :name(""), filename("")
 {}
+
+void Bank::expanddirname(std::string &dirname) {
+    if (dirname.empty())
+        return;
+
+    // if the directory name starts with a ~ and the $HOME variable is
+    // defined in the environment, replace ~ by the content of $HOME
+    if (dirname.at(0) == '~') {
+        char *home_dirname = getenv("HOME");
+        if (home_dirname != NULL) {
+            dirname = std::string(home_dirname) + dirname.substr(1);
+        }
+    }
+}
+
+void Bank::normalizedirsuffix(string &dirname) const {
+    if(((dirname[dirname.size() - 1]) != '/')
+       && ((dirname[dirname.size() - 1]) != '\\'))
+        dirname += "/";
+}

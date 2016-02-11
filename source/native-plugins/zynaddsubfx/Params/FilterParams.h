@@ -48,10 +48,10 @@ class FilterParams:public PresetsArray
 
         void getfromFilterParams(FilterParams *pars);
 
-        float getfreq();
-        float getq();
-        float getfreqtracking(float notefreq);
-        float getgain();
+        float getfreq() const ;
+        float getq() const ;
+        float getfreqtracking(float notefreq) const ;
+        float getgain() const ;
 
         unsigned char Pcategory; //Filter category (Analog/Formant/StVar)
         unsigned char Ptype; // Filter type  (for analog lpf,hpf,bpf..)
@@ -80,14 +80,14 @@ class FilterParams:public PresetsArray
             unsigned char nvowel; //the vowel from the position
         } Psequence[FF_MAX_SEQUENCE];
 
-        float getcenterfreq();
-        float getoctavesfreq();
-        float getfreqpos(float freq);
-        float getfreqx(float x);
+        float getcenterfreq() const ;
+        float getoctavesfreq() const ;
+        float getfreqpos(float freq) const ;
+        float getfreqx(float x) const ;
 
-        float getformantfreq(unsigned char freq);
-        float getformantamp(unsigned char amp);
-        float getformantq(unsigned char q);
+        float getformantfreq(unsigned char freq) const ;
+        float getformantamp(unsigned char amp) const ;
+        float getformantq(unsigned char q) const ;
 
         void defaults(int n);
 

@@ -279,7 +279,7 @@ void NotePool::enforceKeyLimit(int limit)
 void NotePool::releasePlayingNotes(void)
 {
     for(auto &d:activeDesc()) {
-        if(d.playing()) {
+        if(d.playing() || d.sustained()) {
             d.setStatus(KEY_RELEASED);
             for(auto s:activeNotes(d))
                 s.note->releasekey();

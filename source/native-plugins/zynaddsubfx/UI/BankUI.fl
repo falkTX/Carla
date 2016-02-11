@@ -72,10 +72,7 @@ class BankUI {open
 dirname=fl_input("New empty Bank:");
 if (dirname==NULL) return;
 
-
-osc->write("/newbank", "s", dirname);
-/*if (result!=0) fl_alert("Error: Could not make a new bank (directory)..");*/
-
+osc->write("/bank/newbank", "s", dirname);
 refreshmainwindow();}
         xywh {685 5 93 25} labelfont 1 labelsize 11 align 128
       }

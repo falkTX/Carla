@@ -29,7 +29,7 @@ class Filter
 {
     public:
         static float getrealfreq(float freqpitch);
-        static Filter *generate(class Allocator &memory, class FilterParams *pars,
+        static Filter *generate(Allocator &memory, const FilterParams *pars,
                 unsigned int srate, int bufsize);
 
         Filter(unsigned int srate, int bufsize);

@@ -39,7 +39,7 @@ Filter::Filter(unsigned int srate, int bufsize)
     alias();
 }
 
-Filter *Filter::generate(Allocator &memory, FilterParams *pars,
+Filter *Filter::generate(Allocator &memory, const FilterParams *pars,
         unsigned int srate, int bufsize)
 {
     assert(srate != 0);

@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
     << "\nZynAddSubFX - Copyright (c) 2002-2013 Nasca Octavian Paul and others"
     << endl;
     cerr
-    << "                Copyright (c) 2009-2015 Mark McCurry [active maintainer]"
+    << "                Copyright (c) 2009-2016 Mark McCurry [active maintainer]"
     << endl;
     cerr << "Compiled: " << __DATE__ << " " << __TIME__ << endl;
     cerr << "This program is free software (GNU GPL v2 or later) and \n";

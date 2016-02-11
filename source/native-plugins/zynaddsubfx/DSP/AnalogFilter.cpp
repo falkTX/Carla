@@ -323,9 +323,11 @@ void AnalogFilter::setstages(int stages_)
 {
     if(stages_ >= MAX_FILTER_STAGES)
         stages_ = MAX_FILTER_STAGES - 1;
-    stages = stages_;
-    cleanup();
-    computefiltercoefs();
+    if(stages_  != stages) {
+        stages = stages_;
+        cleanup();
+        computefiltercoefs();
+    }
 }
 
 inline void AnalogBiquadFilterA(const float coeff[5], float &src, float work[4])
