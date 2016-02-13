@@ -27,6 +27,11 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMIDI.h"
 
+#ifdef __SSE2_MATH__
+# include <xmmintrin.h>
+#endif
+
+// must be last
 #include "jackbridge/JackBridge.hpp"
 
 using juce::File;
@@ -1254,6 +1259,11 @@ public:
 protected:
     void run() override
     {
+#ifdef __SSE2_MATH__
+        // Set FTZ and DAZ flags
+        _mm_setcsr(_mm_getcsr() | 0x8040);
+#endif
+
         bool quitReceived = false;
 
         for (; ! threadShouldExit();)
