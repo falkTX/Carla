@@ -30,9 +30,9 @@
 
 #include <sys/stat.h>
 GUI::ui_handle_t gui = 0;
+const char *embedId = NULL;
 #if USE_NSM
 NSM_Client *nsm = NULL;
-const char *embedId = NULL;
 #endif
 lo_server server;
 std::string sendtourl;
@@ -193,21 +193,24 @@ ui_handle_t GUI::createUi(Fl_Osc_Interface *osc, void *exit)
 
     ui = new MasterUI((int*)exit, osc);
 
-#ifdef NTK_GUI
     if (embedId != NULL)
     {
         if (long long winId = atoll(embedId))
         {
-            // running embed as plugin
+            // running as plugin
             isPlugin = true;
             MasterUI::menu_mastermenu[11].hide(); // file -> nio settings
-            MasterUI::menu_mastermenu[13].hide(); // file -> exit
             MasterUI::menu_mastermenu[26].deactivate(); // misc -> switch interface mode
-            fl_embed(ui->masterwindow, winId);
+#ifdef NTK_GUI
+            if (winId != 1)
+            {
+                MasterUI::menu_mastermenu[13].hide(); // file -> exit
+                fl_embed(ui->masterwindow, winId);
+            }
+#endif
             ui->masterwindow->show();
         }
     }
-#endif
 
     return (void*) ui;
 }
@@ -586,6 +589,7 @@ const char *help_message =
 int main(int argc, char *argv[])
 {
     const char *uri    = NULL;
+    const char *title  = NULL;
     bool        help   = false;
     bool        no_uri = false;
     for(int i=1; i<argc; ++i) {
@@ -593,10 +597,10 @@ int main(int argc, char *argv[])
             help = true;
         else if(!strcmp("--no-uri", argv[i]))
             no_uri = true;
-#if USE_NSM
         else if(!strcmp("--embed", argv[i]))
             embedId = argv[++i];
-#endif
+        else if(!strcmp("--title", argv[i]))
+            title = argv[++i];
         else
             uri = argv[i];
     }
@@ -618,6 +622,9 @@ int main(int argc, char *argv[])
     std::thread lo_watch(watch_lo);
 
     gui = GUI::createUi(new UI_Interface(), &Pexitprogram);
+
+    if (title != NULL)
+        GUI::raiseUi(gui, "/ui/title", "s", title);
 
     GUI::raiseUi(gui, "/show",  "i", 1);
     while(Pexitprogram == 0) {
