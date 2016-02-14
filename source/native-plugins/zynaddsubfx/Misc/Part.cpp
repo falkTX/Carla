@@ -16,7 +16,7 @@
 
   You should have received a copy of the GNU General Public License (version 2)
   along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 */
 
@@ -257,6 +257,17 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     assert(partefx[0]);
 }
 
+Part::Kit::Kit(void)
+    :parent(nullptr),
+     Penabled(false), Pmuted(false),
+     Pminkey(0), Pmaxkey(127),
+     Pname(nullptr),
+     Padenabled(false), Psubenabled(false),
+     Ppadenabled(false), Psendtoparteffect(0),
+     adpars(nullptr), subpars(nullptr), padpars(nullptr)
+{
+}
+
 void Part::cloneTraits(Part &p) const
 {
 #define CLONE(x) p.x = this->x
@@ -312,7 +323,7 @@ void Part::defaultsinstrument()
     Pdrummode = 0;
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
-        kit[n].Penabled    = false;
+        //kit[n].Penabled    = false;
         kit[n].Pmuted      = false;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -847,6 +858,9 @@ void Part::setkititemstatus(unsigned kititem, bool Penabled_)
         delete kkit.adpars;
         delete kkit.subpars;
         delete kkit.padpars;
+        kkit.adpars  = nullptr;
+        kkit.subpars = nullptr;
+        kkit.padpars = nullptr;
         kkit.Pname[0] = '\0';
 
         notePool.killAllNotes();
