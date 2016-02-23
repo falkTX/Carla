@@ -211,10 +211,6 @@ void SUBnote::setup(float freq,
             GlobalFilter->updateNoteFreq(basefreq);
     }
 
-    if(GlobalFilter)
-        GlobalFilter->updateSense(velocity, pars.PGlobalFilterVelocityScale,
-                                     pars.PGlobalFilterVelocityScaleFunction);
-
     oldamplitude = newamplitude;
 }
 
@@ -390,6 +386,9 @@ void SUBnote::initparameters(float freq)
         GlobalFilterEnvelope = memory.alloc<Envelope>(*pars.GlobalFilterEnvelope, freq, synth.dt());
 
         GlobalFilter = memory.alloc<ModFilter>(*pars.GlobalFilter, synth, time, memory, stereo, freq);
+
+        GlobalFilter->updateSense(velocity, pars.PGlobalFilterVelocityScale,
+                                  pars.PGlobalFilterVelocityScaleFunction);
 
         GlobalFilter->addMod(*GlobalFilterEnvelope);
     }

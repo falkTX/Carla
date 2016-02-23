@@ -28,6 +28,7 @@ using namespace std;
 #include "../Misc/Config.h"
 #include "InMgr.h"
 #include "AlsaEngine.h"
+#include "Nio.h"
 
 AlsaEngine::AlsaEngine(const SYNTH_T &synth)
     :AudioOut(synth)
@@ -212,7 +213,13 @@ bool AlsaEngine::openMidi()
     if(snd_seq_open(&midi.handle, "default", SND_SEQ_OPEN_INPUT, 0) != 0)
         return false;
 
-    snd_seq_set_client_name(midi.handle, "ZynAddSubFX");
+    string clientname = "ZynAddSubFX";
+    string postfix = Nio::getPostfix();
+    if (!postfix.empty())
+        clientname += "_" + postfix;
+    if(Nio::pidInClientName)
+        clientname += "_" + os_pid_as_padded_string();
+    snd_seq_set_client_name(midi.handle, clientname.c_str());
 
     alsaport = snd_seq_create_simple_port(
         midi.handle,
