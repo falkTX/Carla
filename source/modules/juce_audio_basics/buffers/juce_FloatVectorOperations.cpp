@@ -979,6 +979,7 @@ double JUCE_CALLTYPE FloatVectorOperations::findMaximum (const double* src, int 
    #endif
 }
 
+#if ! JUCE_MINGW
 void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) noexcept
 {
    #if JUCE_USE_SSE_INTRINSICS
@@ -994,6 +995,7 @@ void JUCE_CALLTYPE FloatVectorOperations::disableDenormalisedNumberSupport() noe
     _mm_setcsr (mxcsr | 0x8040); // add the DAZ and FZ bits
    #endif
 }
+#endif
 
 //==============================================================================
 //==============================================================================
