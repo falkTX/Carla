@@ -125,18 +125,15 @@ public:
     */
     MPEZone* getZoneByNoteChannel (int midiChannel) const noexcept;
 
-    //==========================================================================
+    //==============================================================================
     /** Listener class. Derive from this class to allow your class to be
         notified about changes to the zone layout.
     */
     class Listener
     {
     public:
-        /** Constructor. */
-        Listener();
-
         /** Destructor. */
-        virtual ~Listener();
+        virtual ~Listener() {}
 
         /** Implement this callback to be notified about any changes to this
             MPEZoneLayout. Will be called whenever a zone is added, zones are
@@ -145,7 +142,7 @@ public:
         virtual void zoneLayoutChanged (const MPEZoneLayout& layout) = 0;
     };
 
-    //==========================================================================
+    //==============================================================================
     /** Adds a listener. */
     void addListener (Listener* const listenerToAdd) noexcept;
 
@@ -153,7 +150,7 @@ public:
     void removeListener (Listener* const listenerToRemove) noexcept;
 
 private:
-    //==========================================================================
+    //==============================================================================
     Array<MPEZone> zones;
     MidiRPNDetector rpnDetector;
     ListenerList<Listener> listeners;

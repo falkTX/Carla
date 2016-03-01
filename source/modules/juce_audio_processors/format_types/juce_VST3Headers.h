@@ -25,9 +25,6 @@
 #ifndef JUCE_VST3HEADERS_H_INCLUDED
 #define JUCE_VST3HEADERS_H_INCLUDED
 
-#undef Point
-#undef Component
-
 // Wow, those Steinberg guys really don't worry too much about compiler warnings.
 #if _MSC_VER
  #pragma warning (disable: 4505)
@@ -85,8 +82,6 @@
  #if JUCE_MINGW
   #define _set_abort_behavior(...)
  #endif
- #define Point CarbonDummyPointName // The VST headers include some system headers that need
-                                    // to match the name our hacky Carbon workaround used.
  #include <base/source/baseiids.cpp>
  #include <base/source/fatomic.cpp>
  #include <base/source/fbuffer.cpp>
@@ -112,7 +107,6 @@
  #include <public.sdk/source/vst/vstcomponentbase.cpp>
  #include <public.sdk/source/vst/vstparameters.cpp>
  #include <public.sdk/source/vst/hosting/hostclasses.cpp>
- #undef Point
 
 //==============================================================================
 namespace Steinberg
@@ -177,7 +171,5 @@ namespace Steinberg
 #undef DEF_CLASS2
 #undef DEF_CLASS_W
 #undef END_FACTORY
-#undef Point
-#undef Component
 
 #endif   // JUCE_VST3HEADERS_H_INCLUDED

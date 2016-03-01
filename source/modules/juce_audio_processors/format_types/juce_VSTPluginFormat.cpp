@@ -890,23 +890,18 @@ public:
         return uid;
     }
 
-    bool silenceInProducesSilenceOut() const override
-    {
-        return effect == nullptr || (effect->flags & effFlagsNoSoundInStop) != 0;
-    }
-
     double getTailLengthSeconds() const override
     {
         if (effect == nullptr)
             return 0.0;
 
-        const double currentSampleRate = getSampleRate();
+        const double sampleRate = getSampleRate();
 
-        if (currentSampleRate <= 0)
+        if (sampleRate <= 0)
             return 0.0;
 
         VstIntPtr samples = dispatch (effGetTailSize, 0, 0, 0, 0);
-        return samples / currentSampleRate;
+        return samples / sampleRate;
     }
 
     bool acceptsMidi() const override    { return wantsMidiMessages; }
@@ -2915,11 +2910,11 @@ FileSearchPath VSTPluginFormat::getDefaultLocationsToSearch()
     const String programFiles (File::getSpecialLocation (File::globalApplicationsDirectory).getFullPathName());
 
     FileSearchPath paths;
-    paths.add (WindowsRegistry::getValue ("HKLM\\Software\\VST\\VSTPluginsPath",
+    paths.add (WindowsRegistry::getValue ("HKEY_LOCAL_MACHINE\\Software\\VST\\VSTPluginsPath",
                                           programFiles + "\\Steinberg\\VstPlugins"));
     paths.removeNonExistentPaths();
 
-    paths.add (WindowsRegistry::getValue ("HKLM\\Software\\VST\\VSTPluginsPath",
+    paths.add (WindowsRegistry::getValue ("HKEY_LOCAL_MACHINE\\Software\\VST\\VSTPluginsPath",
                                           programFiles + "\\VstPlugins"));
     return paths;
    #endif

@@ -58,9 +58,7 @@
 #endif
 
 #if (JUCE_MAC || JUCE_IOS) && JUCE_USE_VDSP_FRAMEWORK
- #define Point CarbonDummyPointName // (workaround to avoid definition of "Point" by old Carbon headers)
  #include <Accelerate/Accelerate.h>
- #undef Point
 #else
  #undef JUCE_USE_VDSP_FRAMEWORK
 #endif
@@ -81,6 +79,7 @@ namespace juce
 #include "effects/juce_IIRFilter.cpp"
 #include "effects/juce_IIRFilterOld.cpp"
 #include "effects/juce_LagrangeInterpolator.cpp"
+#include "effects/juce_CatmullRomInterpolator.cpp"
 #include "effects/juce_FFT.cpp"
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiFile.cpp"
