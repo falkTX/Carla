@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
 
 #include "DistrhoPluginInternal.hpp"
 
-#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+#if DISTRHO_PLUGIN_HAS_UI && ! DISTRHO_PLUGIN_HAS_EMBED_UI
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif

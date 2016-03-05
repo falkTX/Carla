@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -16,7 +16,7 @@
 
 #include "DistrhoPluginInternal.hpp"
 
-#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+#if DISTRHO_PLUGIN_HAS_UI && ! DISTRHO_PLUGIN_HAS_EMBED_UI
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
@@ -340,6 +340,10 @@ public:
 
     intptr_t vst_dispatcher(const int32_t opcode, const int32_t index, const intptr_t value, void* const ptr, const float opt)
     {
+#if DISTRHO_PLUGIN_WANT_STATE
+        intptr_t ret = 0;
+#endif
+
         switch (opcode)
         {
         case effGetProgram:
@@ -512,7 +516,7 @@ public:
             {
                 fStateChunk    = new char[1];
                 fStateChunk[0] = '\0';
-                return 1;
+                ret = 1;
             }
             else
             {
@@ -546,7 +550,7 @@ public:
 
                 fStateChunk = new char[chunkSize];
                 std::memcpy(fStateChunk, chunkStr.buffer(), chunkStr.length());
-                fStateChunk[chunkSize] = '\0';
+                fStateChunk[chunkSize-1] = '\0';
 
                 for (std::size_t i=0; i<chunkSize; ++i)
                 {
@@ -554,11 +558,11 @@ public:
                         fStateChunk[i] = '\0';
                 }
 
-                return chunkSize;
+                ret = chunkSize;
             }
 
             *(void**)ptr = fStateChunk;
-            break;
+            return ret;
 
         case effSetChunk:
         {
@@ -634,36 +638,38 @@ public:
             }
             break;
 
-#if DISTRHO_PLUGIN_WANT_MIDI_INPUT || DISTRHO_PLUGIN_WANT_MIDI_OUTPUT || DISTRHO_PLUGIN_WANT_TIMEPOS || DISTRHO_OS_MAC
         case effCanDo:
             if (const char* const canDo = (const char*)ptr)
             {
-# if DISTRHO_OS_MAC && DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_OS_MAC && DISTRHO_PLUGIN_HAS_UI
                 if (std::strcmp(canDo, "hasCockosViewAsConfig") == 0)
                 {
                     fUsingNsView = true;
                     return 0xbeef0000;
                 }
-# endif
-# if DISTRHO_PLUGIN_WANT_MIDI_INPUT
-                if (std::strcmp(canDo, "receiveVstEvents") == 0)
+#endif
+                if (std::strcmp(canDo, "receiveVstEvents") == 0 ||
+                    std::strcmp(canDo, "receiveVstMidiEvent") == 0)
+#if DISTRHO_PLUGIN_WANT_MIDI_INPUT
                     return 1;
-                if (std::strcmp(canDo, "receiveVstMidiEvent") == 0)
+#else
+                    return -1;
+#endif
+                if (std::strcmp(canDo, "sendVstEvents") == 0 ||
+                    std::strcmp(canDo, "sendVstMidiEvent") == 0)
+#if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
                     return 1;
-# endif
-# if DISTRHO_PLUGIN_WANT_MIDI_OUTPUT
-                if (std::strcmp(canDo, "sendVstEvents") == 0)
-                    return 1;
-                if (std::strcmp(canDo, "sendVstMidiEvent") == 0)
-                    return 1;
-# endif
-# if DISTRHO_PLUGIN_WANT_TIMEPOS
+#else
+                    return -1;
+#endif
                 if (std::strcmp(canDo, "receiveVstTimeInfo") == 0)
+#if DISTRHO_PLUGIN_WANT_TIMEPOS
                     return 1;
-# endif
+#else
+                    return -1;
+#endif
             }
             break;
-#endif
 
         //case effStartProcess:
         //case effStopProcess:

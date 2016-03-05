@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -40,6 +40,10 @@
 # elif defined(__linux__)
 #  define DISTRHO_OS_LINUX      1
 # endif
+#endif
+
+#if defined(DISTRHO_OS_LINUX) || defined(DISTRHO_OS_MAC)
+# define DISTRHO_OS_UNIX
 #endif
 
 #ifndef DISTRHO_DLL_EXTENSION
