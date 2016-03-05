@@ -14,8 +14,8 @@
  * For a full copy of the license see the LICENSE file.
  */
 
-#ifndef DISTRHO_UI_3BANDEQ_HPP_INCLUDED
-#define DISTRHO_UI_3BANDEQ_HPP_INCLUDED
+#ifndef DISTRHO_UI_PROM_HPP_INCLUDED
+#define DISTRHO_UI_PROM_HPP_INCLUDED
 
 #include "DistrhoUI.hpp"
 
@@ -60,4 +60,4 @@ private:
 
 END_NAMESPACE_DISTRHO
 
-#endif // DISTRHO_UI_3BANDEQ_HPP_INCLUDED
+#endif // DISTRHO_UI_PROM_HPP_INCLUDED
