@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  EngineMgr.h - MIDI/Audio Factory
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #ifndef ENGINE_MGR_H
 #define ENGINE_MGR_H
 

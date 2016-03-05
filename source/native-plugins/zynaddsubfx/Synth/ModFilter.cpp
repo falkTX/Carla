@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  ModFilter.cpp - Modulated Filter
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "ModFilter.h"
 #include "Envelope.h"
 #include "LFO.h"
@@ -114,6 +125,7 @@ static int current_category(Filter *f)
         return 2;
 
     assert(false);
+    return -1;
 }
 
 void ModFilter::paramUpdate(Filter *&f)

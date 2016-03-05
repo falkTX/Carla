@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #include "Part.h"
@@ -84,7 +75,7 @@ static const Ports partPorts = {
     rString(info.Pauthor, MAX_INFO_TEXT_SIZE, "Instrument author"),
     rString(info.Pcomments, MAX_INFO_TEXT_SIZE, "Instrument comments"),
     rString(Pname, PART_MAX_NAME_LEN, "User specified label"),
-    rArray(Pefxroute, NUM_PART_EFX,  "Effect Routing"),
+    rArrayI(Pefxroute, NUM_PART_EFX,  "Effect Routing"),
     rArrayT(Pefxbypass, NUM_PART_EFX, "If an effect is bypassed"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)

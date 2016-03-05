@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #ifndef FFT_WRAPPER_H
@@ -58,10 +49,10 @@ std::complex<_Tp>
 FFTpolar(const _Tp& __rho, const _Tp& __theta = _Tp(0))
 {
         _Tp __x = __rho * cos(__theta);
-        if (isnan(__x))
+        if (std::isnan(__x))
                 __x = 0;
         _Tp __y = __rho * sin(__theta);
-        if (isnan(__y))
+        if (std::isnan(__y))
                 __y = 0;
         return std::complex<_Tp>(__x, __y);
 }

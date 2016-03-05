@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  Fl_Osc_Pane.H - OSC Subwindow
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #ifndef FL_OSC_PANE_H
 #define FL_OSC_PANE_H
 #include <FL/Fl_Group.H>

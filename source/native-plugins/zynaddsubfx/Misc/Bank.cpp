@@ -7,19 +7,10 @@
   Author: Nasca Octavian Paul
           Mark McCurry
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #include "Bank.h"
@@ -370,21 +361,21 @@ void Bank::rescanforbanks()
     sort(banks.begin(), banks.end());
 
     //remove duplicate bank names
-    int dupl = 0;
-    for(int j = 0; j < (int) banks.size() - 1; ++j)
+    for(int j = 0; j < (int) banks.size() - 1; ++j) {
+        int dupl = 0;
         for(int i = j + 1; i < (int) banks.size(); ++i) {
             if(banks[i].name == banks[j].name) {
                 //add a [1] to the first bankname and [n] to others
                 banks[i].name = banks[i].name + '['
                                 + stringFrom(dupl + 2) + ']';
-                if(dupl == 0)
-                    banks[j].name += "[1]";
-
                 dupl++;
             }
-            else
-                dupl = 0;
         }
+        if(dupl != 0)
+            banks[j].name += "[1]";
+        if(dupl)
+            j += dupl;
+    }
 }
 
 void Bank::setMsb(uint8_t msb)

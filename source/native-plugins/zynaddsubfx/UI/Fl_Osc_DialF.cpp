@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  Fl_Osc_DialF.cpp - OSC Powered Real Valued Dial
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "Fl_Osc_DialF.H"
 #include "Fl_Osc_Interface.h"
 #include "Fl_Osc_Pane.H"

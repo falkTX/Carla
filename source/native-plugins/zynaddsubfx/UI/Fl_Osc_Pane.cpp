@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  Fl_Osc_Pane.cpp - OSC Subwindow
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "Fl_Osc_Pane.H"
 #include "Fl_Osc_Widget.H"
 #include <cassert>
@@ -16,6 +27,7 @@ void Fl_Osc_Window::init(Fl_Osc_Interface *osc_, std::string loc_)
 {
     title_ext  = new Osc_DataModel(osc_);
     title_ext->doUpdate("/ui/title");
+#if 0
     title_ext->callback = [this](string next) {
         rewrite_rule = next;
         //printf("old: %s\n", title_orig.c_str());
@@ -35,6 +47,9 @@ void Fl_Osc_Window::init(Fl_Osc_Interface *osc_, std::string loc_)
         //title_new = title_orig + next;
         this->label(title_new.c_str());
     };
+#else
+    title_ext->callback = [this](string next) {};
+#endif
     title_orig = label();
 
     osc   = osc_;

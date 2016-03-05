@@ -643,6 +643,7 @@ else {propta->deactivate();proptb->deactivate();}}
         insefftype->oscMove("partefx"+to_s(ninseff)+"/efftype");
         inseffectuigroup->reext("partefx"+to_s(ninseff)+"/");
         bypasseff->oscMove("Pefxbypass"+to_s(ninseff));
+        sendtochoice->oscMove("Pefxroute"+to_s(ninseff));
 /*insefftype->value(part->partefx[ninseff]->geteffect());*/
 //insefftype->do_callback();
 inseffectui->refresh();

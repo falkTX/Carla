@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #ifndef SUB_NOTE_H
@@ -46,6 +37,7 @@ class SUBnote:public SynthNote
                    int portamento_,
                    int midinote,
                    bool legato = false);
+        float setupFilters(int *pos, bool automation);
         void computecurrentparameters();
         /*
          * Initialize envelopes and global filter
@@ -74,9 +66,10 @@ class SUBnote:public SynthNote
         Envelope  *GlobalFilterEnvelope;
 
         //internal values
-        ONOFFTYPE NoteEnabled;
-        int       firsttick, portamento;
-        float     volume, oldamplitude, newamplitude;
+        bool   NoteEnabled;
+        bool   firsttick, portamento;
+        float  volume, oldamplitude, newamplitude;
+        float  oldreduceamp;
 
         struct bpfilter {
             float freq, bw, amp; //filter parameters
@@ -84,12 +77,16 @@ class SUBnote:public SynthNote
             float xn1, xn2, yn1, yn2; //filter internal values
         };
 
+        void chanOutput(float *out, bpfilter *bp, int buffer_size);
+
         void initfilter(bpfilter &filter,
                         float freq,
                         float bw,
                         float amp,
-                        float mag);
+                        float mag,
+                        bool automation);
         float computerolloff(float freq);
+        void computeallfiltercoefs(bpfilter *filters, float envfreq, float envbw, float gain);
         void computefiltercoefs(bpfilter &filter,
                                 float freq,
                                 float bw,

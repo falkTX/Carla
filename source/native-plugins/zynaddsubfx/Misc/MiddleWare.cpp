@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  MiddleWare.cpp - Glue Logic And Home Of Non-RT Operations
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "MiddleWare.h"
 
 #include <cstring>
@@ -338,7 +349,8 @@ struct NonRtObjStore
             d.matches++;
             d.reply((obj_rl+"needPrepare").c_str(), "F");
         } else {
-            assert(pad);
+            if(!pad)
+                return;
             strcpy(d.loc, obj_rl.c_str());
             d.obj = pad;
             PADnoteParameters::non_realtime_ports.dispatch(msg, d);
