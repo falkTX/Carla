@@ -559,7 +559,6 @@ const char* carla_get_complete_license_text()
         "<li>AT1, BLS1 and REV1 plugin code by Fons Adriaensen</li>"
 #endif
         "<li>MIDI Sequencer UI code by Perry Nguyen</li>"
-        "<li>MVerb plugin code by Martin Eastwood</li>"
         "<li>Nekobi plugin code based on nekobee by Sean Bolton and others</li>"
         "<li>VectorJuice and WobbleJuice plugin code by Andre Sklenar</li>"
 #ifdef HAVE_ZYN_DEPS

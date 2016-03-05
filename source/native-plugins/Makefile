@@ -99,7 +99,6 @@ OBJS += \
 	$(OBJDIR)/distrho-3bandeq.cpp.o \
 	$(OBJDIR)/distrho-3bandsplitter.cpp.o \
 	$(OBJDIR)/distrho-kars.cpp.o \
-	$(OBJDIR)/distrho-mverb.cpp.o \
 	$(OBJDIR)/distrho-nekobi.cpp.o \
 	$(OBJDIR)/distrho-pingpongpan.cpp.o
 
@@ -286,12 +285,6 @@ $(OBJDIR)/distrho-kars.cpp.o: distrho-kars.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_Kars -Idistrho-kars -I$(CWD)/modules/dgl -Wno-effc++ -c -o $@
-
-$(OBJDIR)/distrho-mverb.cpp.o: distrho-mverb.cpp
-	-@mkdir -p $(OBJDIR)
-	# FIXME - fix mverb strict warnings
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DDISTRHO_NAMESPACE=DISTRHO_MVerb -Idistrho-mverb -I$(CWD)/modules/dgl -Wno-conversion -Wno-effc++ -Wno-shadow -c -o $@
 
 $(OBJDIR)/distrho-nekobi.cpp.o: distrho-nekobi.cpp
 	-@mkdir -p $(OBJDIR)
