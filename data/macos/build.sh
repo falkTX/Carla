@@ -10,6 +10,7 @@ fi
 
 TARGETDIR=$HOME/builds
 
+export CLANG="true"
 export MACOS="true"
 export CC=clang
 export CXX=clang++
