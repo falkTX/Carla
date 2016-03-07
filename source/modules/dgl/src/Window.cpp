@@ -17,7 +17,7 @@
 // we need this for now
 //#define PUGL_GRAB_FOCUS 1
 
-#include "../../distrho/src/DistrhoDefines.h"
+#include "../Base.hpp"
 
 #undef PUGL_HAVE_CAIRO
 #undef PUGL_HAVE_GL

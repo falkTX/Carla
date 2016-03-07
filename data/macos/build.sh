@@ -30,7 +30,7 @@ export LDFLAGS="-m64"
 export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
 
-make HAVE_DGL=false $JOBS
+make $JOBS
 
 ##############################################################################################
 # Build 32bit bridges
@@ -42,7 +42,7 @@ export LDFLAGS="-m32"
 export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
 
-make HAVE_DGL=false posix32 $JOBS
+make posix32 $JOBS
 
 ##############################################################################################
 # Build Mac App
