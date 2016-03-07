@@ -472,11 +472,11 @@ make install
 ln -s $PREFIX/lib/QtCore.framework/Headers    $PREFIX/include/qt5/QtCore
 ln -s $PREFIX/lib/QtGui.framework/Headers     $PREFIX/include/qt5/QtGui
 ln -s $PREFIX/lib/QtWidgets.framework/Headers $PREFIX/include/qt5/QtWidgets
-sed -i -e "s/ -lqtpcre/ /" $PREFIX/lib/pkgconfig/QtCore.pc
-sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtCore.pc
-sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtCore.pc
-sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtGui.pc
-sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/QtGui.pc
+sed -i -e "s/ -lqtpcre/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Core.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
+sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Gui.pc
 sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
 sed -i -e "s/ '/ /" $PREFIX/lib/pkgconfig/Qt5Widgets.pc
 touch build-done
