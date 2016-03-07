@@ -14,7 +14,6 @@ export CLANG="true"
 export MACOS="true"
 export CC=clang
 export CXX=clang++
-export CXFREEZE="/opt/carla/bin/cxfreeze --include-modules=re,sip,subprocess,inspect"
 export DEFAULT_QT=5
 export PYUIC5=$TARGETDIR/carla/bin/pyuic5
 
@@ -23,7 +22,7 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-O3 -m64"
+export CFLAGS="-O2 -m64"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 
@@ -35,7 +34,7 @@ make $JOBS
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-O3 -m32"
+export CFLAGS="-O2 -m32"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m32"
 
@@ -84,14 +83,19 @@ rm build/Carla.app/Contents/MacOS/resources/carla-plugin
 rm build/Carla.app/Contents/MacOS/resources/*-ui
 rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
 
+cd build/Carla.app/Contents/MacOS
+for f in `find . | grep -e Qt -e libq -e carlastyle.dylib`; do
+install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $f
+install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $f
+install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $f
+install_name_tool -change "@rpath/QtPrintSupport.framework/Versions/5/QtPrintSupport" @executable_path/QtPrintSupport $f
+install_name_tool -change "@rpath/QtSvg.framework/Versions/5/QtSvg"                   @executable_path/QtSvg          $f
+install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"           @executable_path/QtWidgets      $f
+done
+cd ../../../..
+
 cd build/Carla.app/Contents/MacOS/resources/
 ln -sf ../*.so* ../Qt* ../imageformats ../platforms .
-cd ../../../../..
-
-cd build/Carla.app/Contents/MacOS/styles
-install_name_tool -change "/opt/carla/lib/QtCore.framework/Versions/5/QtCore"       @executable_path/QtCore    carlastyle.dylib
-install_name_tool -change "/opt/carla/lib/QtGui.framework/Versions/5/QtGui"         @executable_path/QtGui     carlastyle.dylib
-install_name_tool -change "/opt/carla/lib/QtWidgets.framework/Versions/5/QtWidgets" @executable_path/QtWidgets carlastyle.dylib
 cd ../../../../..
 
 cp build/carla-plugin.app/Contents/MacOS/carla-plugin build/Carla.app/Contents/MacOS/resources/
