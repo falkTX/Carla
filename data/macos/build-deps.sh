@@ -47,6 +47,7 @@ rm -rf libvorbis-*
 rm -rf linuxsampler-*
 rm -rf mxml-*
 rm -rf pkg-config-*
+rm -rf pyliblo-*
 rm -rf qtbase-*
 rm -rf qtmacextras-*
 rm -rf qtsvg-*
@@ -69,7 +70,7 @@ export PREFIX=$TARGETDIR/carla$ARCH
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -m$ARCH -fPIC -DPIC -I$PREFIX/include"
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m$ARCH -fPIC -DPIC -I$PREFIX/include"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m$ARCH -L$PREFIX/lib"
 
@@ -77,7 +78,7 @@ export LDFLAGS="-m$ARCH -L$PREFIX/lib"
 # pkgconfig
 
 if [ ! -d pkg-config-0.28 ]; then
-curl -O http://pkgconfig.freedesktop.org/releases/pkg-config-0.28.tar.gz
+curl -O https://pkg-config.freedesktop.org/releases/pkg-config-0.28.tar.gz
 tar -xf pkg-config-0.28.tar.gz
 fi
 
@@ -224,13 +225,13 @@ fi
 # ------------------------------------------------------------------------------------
 # libsndfile
 
-if [ ! -d libsndfile-1.0.25 ]; then
-curl -O http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.25.tar.gz
-tar -xf libsndfile-1.0.25.tar.gz
+if [ ! -d libsndfile-1.0.26 ]; then
+curl -O http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.26.tar.gz
+tar -xf libsndfile-1.0.26.tar.gz
 fi
 
-if [ ! -f libsndfile-1.0.25/build-done ]; then
-cd libsndfile-1.0.25
+if [ ! -f libsndfile-1.0.26/build-done ]; then
+cd libsndfile-1.0.26
 sed -i -e "s/#include <Carbon.h>//" programs/sndfile-play.c
 ./configure --enable-static --disable-shared --disable-sqlite --prefix=$PREFIX
 make
@@ -431,7 +432,7 @@ build_base
 # ------------------------------------------------------------------------------------
 # set flags for qt stuff
 
-export CFLAGS="-O3 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
+export CFLAGS="-O2 -mtune=generic -msse -msse2 -m64 -fPIC -DPIC"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 
@@ -446,7 +447,7 @@ export QMAKESPEC=macx-clang
 # qt5-base download
 
 if [ ! -d qtbase-opensource-src-5.5.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtbase-opensource-src-5.5.1.tar.gz -o qtbase-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtbase-opensource-src-5.5.1.tar.gz -o qtbase-opensource-src-5.5.1.tar.gz
 tar -xf qtbase-opensource-src-5.5.1.tar.gz
 fi
 
@@ -486,7 +487,7 @@ fi
 # qt5-mac-extras
 
 if [ ! -d qtmacextras-opensource-src-5.5.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtmacextras-opensource-src-5.5.1.tar.gz -o qtmacextras-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtmacextras-opensource-src-5.5.1.tar.gz -o qtmacextras-opensource-src-5.5.1.tar.gz
 tar -xf qtmacextras-opensource-src-5.5.1.tar.gz
 fi
 
@@ -503,7 +504,7 @@ fi
 # qt5-svg
 
 if [ ! -d qtsvg-opensource-src-5.5.1 ]; then
-curl -L http://download.qt-project.org/official_releases/qt/5.5/5.5.1/submodules/qtsvg-opensource-src-5.5.1.tar.gz -o qtsvg-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtsvg-opensource-src-5.5.1.tar.gz -o qtsvg-opensource-src-5.5.1.tar.gz
 tar -xf qtsvg-opensource-src-5.5.1.tar.gz
 fi
 
@@ -519,13 +520,13 @@ fi
 # ------------------------------------------------------------------------------------
 # python
 
-if [ ! -d Python-3.4.2 ]; then
-curl -O https://www.python.org/ftp/python/3.4.2/Python-3.4.2.tgz
-tar -xf Python-3.4.2.tgz
+if [ ! -d Python-3.4.4 ]; then
+curl -O https://www.python.org/ftp/python/3.4.4/Python-3.4.4.tgz
+tar -xf Python-3.4.4.tgz
 fi
 
-if [ ! -f Python-3.4.2/build-done ]; then
-cd Python-3.4.2
+if [ ! -f Python-3.4.4/build-done ]; then
+cd Python-3.4.4
 ./configure --prefix=$PREFIX
 make
 make install
