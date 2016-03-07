@@ -108,6 +108,7 @@ data/windows/Carla-*-win64/
 source/bridges/jackplugin/libjack.so.0
 source/frontend/Makefile
 source/tests/ansi-pedantic-test_*
+source/tests/CachedPlugins
 source/tests/CarlaRingBuffer
 source/tests/CarlaPipeUtils
 source/tests/CarlaString

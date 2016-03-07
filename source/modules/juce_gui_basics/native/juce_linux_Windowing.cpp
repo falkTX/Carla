@@ -44,7 +44,6 @@ struct Atoms
         pid                             = getCreating ("_NET_WM_PID");
         windowType                      = getIfExists ("_NET_WM_WINDOW_TYPE");
         windowState                     = getIfExists ("_NET_WM_STATE");
-        compositingManager              = getCreating ("_NET_WM_CM_S0");
 
         XdndAware                       = getCreating ("XdndAware");
         XdndEnter                       = getCreating ("XdndEnter");
@@ -66,9 +65,6 @@ struct Atoms
         allowedMimeTypes[2]             = getCreating ("text/plain");
         allowedMimeTypes[3]             = getCreating ("text/uri-list");
 
-        externalAllowedFileMimeTypes[0] = getCreating ("text/uri-list");
-        externalAllowedTextMimeTypes[0] = getCreating ("text/plain");
-
         allowedActions[0]               = getCreating ("XdndActionMove");
         allowedActions[1]               = XdndActionCopy;
         allowedActions[2]               = getCreating ("XdndActionLink");
@@ -84,14 +80,12 @@ struct Atoms
     };
 
     Atom protocols, protocolList[3], changeState, state, userTime,
-         activeWin, pid, windowType, windowState, compositingManager,
+         activeWin, pid, windowType, windowState,
          XdndAware, XdndEnter, XdndLeave, XdndPosition, XdndStatus,
          XdndDrop, XdndFinished, XdndSelection, XdndTypeList, XdndActionList,
          XdndActionDescription, XdndActionCopy, XdndActionPrivate,
          allowedActions[5],
-         allowedMimeTypes[4],
-         externalAllowedFileMimeTypes[1],
-         externalAllowedTextMimeTypes[1];
+         allowedMimeTypes[4];
 
     static const unsigned long DndVersion;
 
@@ -225,41 +219,42 @@ namespace XSHMHelpers
                     XShmSegmentInfo segmentInfo;
                     zerostruct (segmentInfo);
 
-                    XImage* xImage = XShmCreateImage (display, DefaultVisual (display, DefaultScreen (display)),
-                                                      24, ZPixmap, 0, &segmentInfo, 50, 50);
-
-                    if ((segmentInfo.shmid = shmget (IPC_PRIVATE,
-                                                     (size_t) (xImage->bytes_per_line * xImage->height),
-                                                     IPC_CREAT | 0777)) >= 0)
+                    if (XImage* xImage = XShmCreateImage (display, DefaultVisual (display, DefaultScreen (display)),
+                                                          24, ZPixmap, 0, &segmentInfo, 50, 50))
                     {
-                        segmentInfo.shmaddr = (char*) shmat (segmentInfo.shmid, 0, 0);
-
-                        if (segmentInfo.shmaddr != (void*) -1)
+                        if ((segmentInfo.shmid = shmget (IPC_PRIVATE,
+                                                         (size_t) (xImage->bytes_per_line * xImage->height),
+                                                         IPC_CREAT | 0777)) >= 0)
                         {
-                            segmentInfo.readOnly = False;
-                            xImage->data = segmentInfo.shmaddr;
-                            XSync (display, False);
+                            segmentInfo.shmaddr = (char*) shmat (segmentInfo.shmid, 0, 0);
 
-                            if (XShmAttach (display, &segmentInfo) != 0)
+                            if (segmentInfo.shmaddr != (void*) -1)
                             {
+                                segmentInfo.readOnly = False;
+                                xImage->data = segmentInfo.shmaddr;
                                 XSync (display, False);
-                                XShmDetach (display, &segmentInfo);
 
-                                isAvailable = true;
+                                if (XShmAttach (display, &segmentInfo) != 0)
+                                {
+                                    XSync (display, False);
+                                    XShmDetach (display, &segmentInfo);
+
+                                    isAvailable = true;
+                                }
                             }
+
+                            XFlush (display);
+                            XDestroyImage (xImage);
+
+                            shmdt (segmentInfo.shmaddr);
                         }
 
-                        XFlush (display);
-                        XDestroyImage (xImage);
+                        shmctl (segmentInfo.shmid, IPC_RMID, 0);
 
-                        shmdt (segmentInfo.shmaddr);
+                        XSetErrorHandler (oldHandler);
+                        if (trappedErrorCode != 0)
+                            isAvailable = false;
                     }
-
-                    shmctl (segmentInfo.shmid, IPC_RMID, 0);
-
-                    XSetErrorHandler (oldHandler);
-                    if (trappedErrorCode != 0)
-                        isAvailable = false;
                 }
             }
         }
@@ -320,10 +315,10 @@ namespace XRender
         return xRenderQueryVersion != nullptr;
     }
 
-    static bool hasCompositingWindowManager()
+    static bool hasCompositingWindowManager() noexcept
     {
-        const Atom compositingManager = Atoms::getCreating ("_NET_WM_CM_S0");
-        return display != nullptr && XGetSelectionOwner (display, compositingManager) != 0;
+        return display != nullptr
+                && XGetSelectionOwner (display, Atoms::getCreating ("_NET_WM_CM_S0")) != 0;
     }
 
     static XRenderPictFormat* findPictureFormat()
@@ -399,12 +394,10 @@ namespace Visuals
             desiredMask |= VisualBitsPerRGBMask;
         }
 
-        XVisualInfo* xvinfos = XGetVisualInfo (display,
-                                               desiredMask,
-                                               &desiredVisual,
-                                               &numVisuals);
-
-        if (xvinfos != nullptr)
+        if (XVisualInfo* xvinfos = XGetVisualInfo (display,
+                                                   desiredMask,
+                                                   &desiredVisual,
+                                                   &numVisuals))
         {
             for (int i = 0; i < numVisuals; i++)
             {
@@ -433,9 +426,7 @@ namespace Visuals
                #if JUCE_USE_XRENDER
                 if (XRender::isAvailable())
                 {
-                    XRenderPictFormat* pictFormat = XRender::findPictureFormat();
-
-                    if (pictFormat != 0)
+                    if (XRenderPictFormat* pictFormat = XRender::findPictureFormat())
                     {
                         int numVisuals = 0;
                         XVisualInfo desiredVisual;
@@ -443,10 +434,9 @@ namespace Visuals
                         desiredVisual.depth = 32;
                         desiredVisual.bits_per_rgb = 8;
 
-                        XVisualInfo* xvinfos = XGetVisualInfo (display,
-                                                               VisualScreenMask | VisualDepthMask | VisualBitsPerRGBMask,
-                                                               &desiredVisual, &numVisuals);
-                        if (xvinfos != nullptr)
+                        if (XVisualInfo* xvinfos = XGetVisualInfo (display,
+                                                                   VisualScreenMask | VisualDepthMask | VisualBitsPerRGBMask,
+                                                                   &desiredVisual, &numVisuals))
                         {
                             for (int i = 0; i < numVisuals; ++i)
                             {
@@ -2507,7 +2497,7 @@ public:
         return currentScaleFactor;
     }
 
-    //===============================================================================
+    //==============================================================================
     void addOpenGLRepaintListener (Component* dummy)
     {
         if (dummy != nullptr)
@@ -2834,6 +2824,14 @@ private:
             ScopedXLock xlock;
             xchangeProperty (wndH, hints, hints, 32, &kwmHints, 1);
         }
+
+        hints = Atoms::getIfExists ("_KDE_NET_WM_WINDOW_TYPE_OVERRIDE");
+
+        if (hints != None)
+        {
+            ScopedXLock xlock;
+            xchangeProperty (wndH, atoms.windowType, XA_ATOM, 32, &hints, 1);
+        }
     }
 
     void addWindowButtons (Window wndH)
@@ -2909,9 +2907,7 @@ private:
         else
             netHints [0] = Atoms::getIfExists ("_NET_WM_WINDOW_TYPE_NORMAL");
 
-        netHints[1] = Atoms::getIfExists ("_KDE_NET_WM_WINDOW_TYPE_OVERRIDE");
-
-        xchangeProperty (windowH, atoms.windowType, XA_ATOM, 32, &netHints, 2);
+        xchangeProperty (windowH, atoms.windowType, XA_ATOM, 32, &netHints, 1);
 
         int numHints = 0;
 
@@ -3121,10 +3117,14 @@ private:
     //==============================================================================
     struct DragState
     {
-        DragState() noexcept
+        DragState()
            : isText (false), dragging (false), expectingStatus (false),
              canDrop (false), targetWindow (None), xdndVersion (-1)
         {
+            if (isText)
+                allowedTypes.add (Atoms::getCreating ("text/plain"));
+            else
+                allowedTypes.add (Atoms::getCreating ("text/uri-list"));
         }
 
         bool isText;
@@ -3135,27 +3135,7 @@ private:
         int xdndVersion;       // negotiated version with target
         Rectangle<int> silentRect;
         String textOrFiles;
-
-        const Atom* getMimeTypes (const Atoms& atoms) const noexcept
-        {
-            return isText ? atoms.externalAllowedTextMimeTypes
-                          : atoms.externalAllowedFileMimeTypes;
-        }
-
-        int getNumMimeTypes (const Atoms& atoms) const noexcept
-        {
-            return isText ? numElementsInArray (atoms.externalAllowedTextMimeTypes)
-                          : numElementsInArray (atoms.externalAllowedFileMimeTypes);
-        }
-
-        bool matchesTarget (const Atoms& atoms, Atom targetType) const
-        {
-            for (int i = getNumMimeTypes(atoms); --i >= 0;)
-                if (getMimeTypes(atoms)[i] == targetType)
-                    return true;
-
-            return false;
-        }
+        Array<Atom> allowedTypes;
     };
 
     //==============================================================================
@@ -3216,13 +3196,8 @@ private:
 
         msg.message_type = atoms.XdndEnter;
 
-        const Atom* mimeTypes  = dragState.getMimeTypes (atoms);
-        const int numMimeTypes = dragState.getNumMimeTypes (atoms);
-
-        msg.data.l[1] = (dragState.xdndVersion << 24) | (numMimeTypes > 3);
-        msg.data.l[2] = numMimeTypes > 0 ? (long) mimeTypes[0] : 0;
-        msg.data.l[3] = numMimeTypes > 1 ? (long) mimeTypes[1] : 0;
-        msg.data.l[4] = numMimeTypes > 2 ? (long) mimeTypes[2] : 0;
+        msg.data.l[1] = (dragState.xdndVersion << 24);
+        msg.data.l[2] = (long) dragState.allowedTypes[0];
 
         sendExternalDragAndDropMessage (msg, targetWindow);
     }
@@ -3296,7 +3271,7 @@ private:
         s.xselection.property = None;
         s.xselection.time = evt.xselectionrequest.time;
 
-        if (dragState.matchesTarget (atoms, targetType))
+        if (dragState.allowedTypes.contains (targetType))
         {
             s.xselection.property = evt.xselectionrequest.property;
 
@@ -3570,15 +3545,15 @@ private:
     bool isWindowDnDAware (Window w) const
     {
         int numProperties = 0;
-        Atom* const watoms = XListProperties (display, w, &numProperties);
+        Atom* const properties = XListProperties (display, w, &numProperties);
 
         bool dndAwarePropFound = false;
         for (int i = 0; i < numProperties; ++i)
-            if (watoms[i] == atoms.XdndAware)
+            if (properties[i] == atoms.XdndAware)
                 dndAwarePropFound = true;
 
-        if (watoms != nullptr)
-            XFree (watoms);
+        if (properties != nullptr)
+            XFree (properties);
 
         return dndAwarePropFound;
     }
@@ -3622,8 +3597,8 @@ private:
 
             // save the available types to XdndTypeList
             xchangeProperty (windowH, atoms.XdndTypeList, XA_ATOM, 32,
-                             dragState.getMimeTypes (atoms),
-                             dragState.getNumMimeTypes (atoms));
+                             dragState.allowedTypes.getRawDataPointer(),
+                             dragState.allowedTypes.size());
 
             dragState.dragging = true;
             handleExternalDragMotionNotify();
@@ -3740,6 +3715,8 @@ void Desktop::setKioskComponent (Component* comp, bool enableOrDisable, bool /* 
     if (enableOrDisable)
         comp->setBounds (getDisplays().getMainDisplay().totalArea);
 }
+
+void Desktop::allowedOrientationsChanged() {}
 
 //==============================================================================
 ComponentPeer* Component::createNewPeer (int styleFlags, void* nativeWindowToAttachTo)

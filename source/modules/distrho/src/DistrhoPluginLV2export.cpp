@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -49,12 +49,7 @@
 # define DISTRHO_PLUGIN_USES_MODGUI 0
 #endif
 
-#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
-# undef DISTRHO_PLUGIN_HAS_UI
-# define DISTRHO_PLUGIN_HAS_UI 0
-#endif
-
-#if DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_HAS_EMBED_UI
 # if DISTRHO_OS_HAIKU
 #  define DISTRHO_LV2_UI_TYPE "BeUI"
 # elif DISTRHO_OS_MAC
@@ -64,6 +59,8 @@
 # else
 #  define DISTRHO_LV2_UI_TYPE "X11UI"
 # endif
+#else
+# define DISTRHO_LV2_UI_TYPE "UI"
 #endif
 
 #define DISTRHO_LV2_USE_EVENTS_IN  (DISTRHO_PLUGIN_WANT_MIDI_INPUT || DISTRHO_PLUGIN_WANT_TIMEPOS || (DISTRHO_PLUGIN_WANT_STATE && DISTRHO_PLUGIN_HAS_UI))
@@ -137,10 +134,12 @@ void lv2_generate_ttl(const char* const basename)
         manifestString += "                      ui:showInterface ;\n";
 #  endif
         manifestString += "\n";
+#  if DISTRHO_PLUGIN_HAS_EMBED_UI
         manifestString += "    lv2:optionalFeature ui:noUserResize ,\n";
         manifestString += "                        ui:resize ,\n";
         manifestString += "                        ui:touch ;\n";
         manifestString += "\n";
+#  endif
         manifestString += "    lv2:requiredFeature <" LV2_DATA_ACCESS_URI "> ,\n";
         manifestString += "                        <" LV2_INSTANCE_ACCESS_URI "> ,\n";
         manifestString += "                        <" LV2_OPTIONS__options "> ,\n";
@@ -558,10 +557,12 @@ void lv2_generate_ttl(const char* const basename)
         uiString += "                      ui:showInterface ;\n";
 #  endif
         uiString += "\n";
+#  if DISTRHO_PLUGIN_HAS_EMBED_UI
         uiString += "    lv2:optionalFeature ui:noUserResize ,\n";
         uiString += "                        ui:resize ,\n";
         uiString += "                        ui:touch ;\n";
         uiString += "\n";
+#  endif
         uiString += "    lv2:requiredFeature <" LV2_OPTIONS__options "> ,\n";
         uiString += "                        <" LV2_URID__map "> .\n";
 

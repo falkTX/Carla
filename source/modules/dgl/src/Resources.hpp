@@ -5,11 +5,8 @@
 
 namespace dpf_resources
 {
-    extern const char*  blender_icons16_png;
-    const unsigned int  blender_icons16_png_size = 250706;
-
-    extern const char*  dejavusans_ttf;
-    const unsigned int  dejavusans_ttf_size = 741536;
+    extern const char* dejavusans_ttf;
+    const unsigned int dejavusans_ttf_size = 741536;
 };
 
 #endif

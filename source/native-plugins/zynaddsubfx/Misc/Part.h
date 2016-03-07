@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #ifndef PART_H
@@ -90,6 +81,7 @@ class Part
 
         //the part's kit
         struct Kit {
+            Kit(void);
             Part              *parent;
             bool               Penabled, Pmuted;
             unsigned char      Pminkey, Pmaxkey;
@@ -147,9 +139,6 @@ class Part
         float *partfxinputl[NUM_PART_EFX + 1], //Left and right signal that pass thru part effects;
         *partfxinputr[NUM_PART_EFX + 1];          //partfxinput l/r [NUM_PART_EFX] is for "no effect" buffer
 
-        enum NoteStatus {
-            KEY_OFF, KEY_PLAYING, KEY_RELEASED_AND_SUSTAINED, KEY_RELEASED
-        };
 
         float volume, oldvolumel, oldvolumer; //this is applied by Master
         float panning; //this is applied by Master, too

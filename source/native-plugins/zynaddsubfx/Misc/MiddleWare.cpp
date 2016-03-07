@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  MiddleWare.cpp - Glue Logic And Home Of Non-RT Operations
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "MiddleWare.h"
 
 #include <cstring>
@@ -5,6 +16,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <dirent.h>
 
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
@@ -19,6 +31,7 @@
 #include <map>
 
 #include "Util.h"
+#include "CallbackRepeater.h"
 #include "Master.h"
 #include "Part.h"
 #include "PresetExtractor.h"
@@ -155,6 +168,12 @@ void deallocate(const char *str, void *v)
         delete (Master*)v;
     else if(!strcmp(str, "fft_t"))
         delete[] (fft_t*)v;
+    else if(!strcmp(str, "KbmInfo"))
+        delete (KbmInfo*)v;
+    else if(!strcmp(str, "SclInfo"))
+        delete (SclInfo*)v;
+    else if(!strcmp(str, "Microtonal"))
+        delete (Microtonal*)v;
     else
         fprintf(stderr, "Unknown type '%s', leaking pointer %p!!\n", str, v);
 }
@@ -330,7 +349,8 @@ struct NonRtObjStore
             d.matches++;
             d.reply((obj_rl+"needPrepare").c_str(), "F");
         } else {
-            assert(pad);
+            if(!pad)
+                return;
             strcpy(d.loc, obj_rl.c_str());
             d.obj = pad;
             PADnoteParameters::non_realtime_ports.dispatch(msg, d);
@@ -554,6 +574,48 @@ public:
         parent->transmitMsg("/load-master", "b", sizeof(Master*), &m);
     }
 
+    void loadXsz(const char *filename, rtosc::RtData &d)
+    {
+        Microtonal *micro = new Microtonal(master->gzip_compression);
+        int err = micro->loadXML(filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the xsz file.");
+            delete micro;
+        } else
+            d.chain("/microtonal/paste", "b", sizeof(void*), &micro);
+    }
+
+    void saveXsz(const char *filename, rtosc::RtData &d)
+    {
+        int err = 0;
+        doReadOnlyOp([this,filename,&err](){
+                err = master->microtonal.saveXML(filename);});
+        if(err)
+            d.reply("/alert", "s", "Error: Could not save the xsz file.");
+    }
+
+    void loadScl(const char *filename, rtosc::RtData &d)
+    {
+        SclInfo *scl = new SclInfo;
+        int err=Microtonal::loadscl(*scl, filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the scl file.");
+            delete scl;
+        } else
+            d.chain("/microtonal/paste_scl", "b", sizeof(void*), &scl);
+    }
+
+    void loadKbm(const char *filename, rtosc::RtData &d)
+    {
+        KbmInfo *kbm = new KbmInfo;
+        int err=Microtonal::loadkbm(*kbm, filename);
+        if(err) {
+            d.reply("/alert", "s", "Error: Could not load the kbm file.");
+            delete kbm;
+        } else
+            d.chain("/microtonal/paste_kbm", "b", sizeof(void*), &kbm);
+    }
+
     void updateResources(Master *m)
     {
         obj_store.clear();
@@ -576,14 +638,18 @@ public:
     {
         if(server)
             while(lo_server_recv_noblock(server, 0));
+
         while(bToU->hasNext()) {
             const char *rtmsg = bToU->read();
             bToUhandle(rtmsg);
         }
+
         while(auto *m = multi_thread_source.read()) {
             handleMsg(m->memory);
             multi_thread_source.free(m);
         }
+
+        autoSave.tick();
     }
 
 
@@ -659,6 +725,8 @@ public:
     const SYNTH_T synth;
 
     PresetsStore presetsstore;
+
+    CallbackRepeater autoSave;
 };
 
 /*****************************************************************************
@@ -853,6 +921,12 @@ rtosc::Ports bankPorts = {
         rBegin;
         impl.setLsb(rtosc_argument(msg, 0).i);
         rEnd},
+    {"newbank:s", 0, 0,
+        rBegin;
+        int err = impl.newbank(rtosc_argument(msg, 0).s);
+        if(err)
+            d.reply("/alert", "s", "Error: Could not make a new bank (directory)..");
+        rEnd},
 };
 
 /******************************************************************************
@@ -951,6 +1025,27 @@ static rtosc::Ports middwareSnoopPorts = {
         xml.loadXMLfile(file);
         loadMidiLearn(xml, impl.midi_mapper);
         rEnd},
+    //scale file stuff
+    {"load_xsz:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadXsz(file, d);
+        rEnd},
+    {"save_xsz:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.saveXsz(file, d);
+        rEnd},
+    {"load_scl:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadScl(file, d);
+        rEnd},
+    {"load_kbm:s", 0, 0,
+        rBegin;
+        const char *file = rtosc_argument(msg, 0).s;
+        impl.loadKbm(file, d);
+        rEnd},
     {"save_xmz:s", 0, 0,
         rBegin;
         const char *file = rtosc_argument(msg, 0).s;
@@ -964,6 +1059,25 @@ static rtosc::Ports middwareSnoopPorts = {
         const int   part_id = rtosc_argument(msg,0).i;
         const char *file    = rtosc_argument(msg,1).s;
         impl.savePart(part_id, file);
+        rEnd},
+    {"reload_auto_save:i", 0, 0,
+        rBegin
+        const int save_id      = rtosc_argument(msg,0).i;
+        const string save_dir  = string(getenv("HOME")) + "/.local";
+        const string save_file = "zynaddsubfx-"+to_s(save_id)+"-autosave.xmz";
+        const string save_loc  = save_dir + "/" + save_file;
+        impl.loadMaster(save_loc.c_str());
+        //XXX it would be better to remove the autosave after there is a new
+        //autosave, but this method should work for non-immediate crashes :-|
+        remove(save_loc.c_str());
+        rEnd},
+    {"delete_auto_save:i", 0, 0,
+        rBegin
+        const int save_id      = rtosc_argument(msg,0).i;
+        const string save_dir  = string(getenv("HOME")) + "/.local";
+        const string save_file = "zynaddsubfx-"+to_s(save_id)+"-autosave.xmz";
+        const string save_loc  = save_dir + "/" + save_file;
+        remove(save_loc.c_str());
         rEnd},
     {"load_xmz:s", 0, 0,
         rBegin;
@@ -1100,7 +1214,14 @@ static rtosc::Ports middlewareReplyPorts = {
 MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
     Config* config, int preferrred_port)
     :parent(mw), config(config), ui(nullptr), synth(std::move(synth_)),
-    presetsstore(*config)
+    presetsstore(*config), autoSave(-1, [this]() {
+            auto master = this->master;
+            this->doReadOnlyOp([master](){
+                std::string home = getenv("HOME");
+                std::string save_file = home+"/.local/zynaddsubfx-"+to_s(getpid())+"-autosave.xmz";
+                printf("doing an autosave <%s>...\n", save_file.c_str());
+                int res = master->saveXML(save_file.c_str());
+                (void)res;});})
 {
     bToU = new rtosc::ThreadLink(4096*2,1024);
     uToB = new rtosc::ThreadLink(4096*2,1024);
@@ -1425,24 +1546,86 @@ MiddleWare::MiddleWare(SYNTH_T synth, Config* config,
                        int preferred_port)
 :impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port))
 {}
+
 MiddleWare::~MiddleWare(void)
 {
     delete impl;
 }
+
 void MiddleWare::updateResources(Master *m)
 {
     impl->updateResources(m);
 }
+
 Master *MiddleWare::spawnMaster(void)
 {
     assert(impl->master);
     assert(impl->master->uToB);
     return impl->master;
 }
+
+void MiddleWare::enableAutoSave(int interval_sec)
+{
+    impl->autoSave.dt = interval_sec;
+}
+
+int MiddleWare::checkAutoSave(void)
+{
+    //save spec zynaddsubfx-PID-autosave.xmz
+    const std::string home     = getenv("HOME");
+    const std::string save_dir = home+"/.local/";
+
+    DIR *dir = opendir(save_dir.c_str());
+
+    if(dir == NULL)
+        return -1;
+
+    struct dirent *fn;
+    int    reload_save = -1;
+
+    while((fn = readdir(dir))) {
+        const char *filename = fn->d_name;
+        const char *prefix = "zynaddsubfx-";
+
+        //check for manditory prefix
+        if(strstr(filename, prefix) != filename)
+            continue;
+
+        int id = atoi(filename+strlen(prefix));
+
+        bool in_use = false;
+
+        std::string proc_file = "/proc/" + to_s(id) + "/comm";
+        std::ifstream ifs(proc_file);
+        if(ifs.good()) {
+            std::string comm_name;
+            ifs >> comm_name;
+            in_use = (comm_name == "zynaddsubfx");
+        }
+
+        if(!in_use) {
+            reload_save = id;
+            break;
+        }
+    }
+
+    closedir(dir);
+
+    return reload_save;
+}
+
+void MiddleWare::removeAutoSave(void)
+{
+    std::string home = getenv("HOME");
+    std::string save_file = home+"/.local/zynaddsubfx-"+to_s(getpid())+"-autosave.xmz";
+    remove(save_file.c_str());
+}
+
 Fl_Osc_Interface *MiddleWare::spawnUiApi(void)
 {
     return impl->osc;
 }
+
 void MiddleWare::tick(void)
 {
     impl->tick();

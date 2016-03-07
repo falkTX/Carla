@@ -74,6 +74,7 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
     {
         static int bootcounter = 0;
         std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, getpid(), &sem);
+        sem.bootname[31] = '\0';
 
         if (bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
             return true;
@@ -83,7 +84,6 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
 
     return false;
 #elif defined(CARLA_USE_FUTEXES)
-    sem.count = 0;
     return true;
 #else
     return (::sem_init(&sem.sem, 1, 0) == 0);
@@ -219,8 +219,8 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     timespec now;
     ::clock_gettime(CLOCK_REALTIME, &now);
 
-    struct timespec delta = { secs, nsecs };
-    struct timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
+    timespec delta = { secs, nsecs };
+    timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
     if (end.tv_nsec >= 1000000000L) {
         ++end.tv_sec;
         end.tv_nsec -= 1000000000L;

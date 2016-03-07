@@ -37,6 +37,7 @@
 #include "CarlaVstUtils.hpp"
 
 // need to include this before linuxsampler
+#define CARLA_UTILS_CACHED_PLUGINS_ONLY
 #include "CarlaUtils.cpp"
 
 #ifdef HAVE_FLUIDSYNTH

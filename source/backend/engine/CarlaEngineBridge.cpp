@@ -27,6 +27,11 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaMIDI.h"
 
+#ifdef __SSE2_MATH__
+# include <xmmintrin.h>
+#endif
+
+// must be last
 #include "jackbridge/JackBridge.hpp"
 
 using juce::File;
@@ -561,6 +566,7 @@ public:
             char bufStr[STR_MAX+1];
             uint32_t bufStrSize;
 
+            const CarlaEngineClient* const client(plugin->getEngineClient());
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
             // kPluginBridgeNonRtServerPluginInfo1
@@ -609,12 +615,49 @@ public:
 
             // kPluginBridgeNonRtServerAudioCount
             {
+                const uint32_t aIns  = plugin->getAudioInCount();
+                const uint32_t aOuts = plugin->getAudioOutCount();
+
                 // uint/ins, uint/outs
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerAudioCount);
-                fShmNonRtServerControl.writeUInt(plugin->getAudioInCount());
-                fShmNonRtServerControl.writeUInt(plugin->getAudioOutCount());
+                fShmNonRtServerControl.writeUInt(aIns);
+                fShmNonRtServerControl.writeUInt(aOuts);
                 fShmNonRtServerControl.commitWrite();
+
+                // kPluginBridgeNonRtServerPortName
+                for (uint32_t i=0; i<aIns; ++i)
+                {
+                    const char* const portName(client->getAudioPortName(true, i));
+                    CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+
+                    // byte/type, uint/index, uint/size, str[] (name)
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPortName);
+                    fShmNonRtServerControl.writeByte(kPluginBridgePortAudioInput);
+                    fShmNonRtServerControl.writeUInt(i);
+
+                    bufStrSize = std::strlen(portName);
+                    fShmNonRtServerControl.writeUInt(bufStrSize);
+                    fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
+                }
+
+                // kPluginBridgeNonRtServerPortName
+                for (uint32_t i=0; i<aOuts; ++i)
+                {
+                    const char* const portName(client->getAudioPortName(false, i));
+                    CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+
+                    // byte/type, uint/index, uint/size, str[] (name)
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPortName);
+                    fShmNonRtServerControl.writeByte(kPluginBridgePortAudioOutput);
+                    fShmNonRtServerControl.writeUInt(i);
+
+                    bufStrSize = std::strlen(portName);
+                    fShmNonRtServerControl.writeUInt(bufStrSize);
+                    fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
+                }
             }
+
+            fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
             // kPluginBridgeNonRtServerMidiCount
             {
@@ -622,6 +665,17 @@ public:
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerMidiCount);
                 fShmNonRtServerControl.writeUInt(plugin->getMidiInCount());
                 fShmNonRtServerControl.writeUInt(plugin->getMidiOutCount());
+                fShmNonRtServerControl.commitWrite();
+            }
+
+            fShmNonRtServerControl.waitIfDataIsReachingLimit();
+
+            // kPluginBridgeNonRtServerCvCount
+            {
+                // uint/ins, uint/outs
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerCvCount);
+                fShmNonRtServerControl.writeUInt(plugin->getCVInCount());
+                fShmNonRtServerControl.writeUInt(plugin->getCVOutCount());
                 fShmNonRtServerControl.commitWrite();
             }
 
@@ -1205,6 +1259,11 @@ public:
 protected:
     void run() override
     {
+#ifdef __SSE2_MATH__
+        // Set FTZ and DAZ flags
+        _mm_setcsr(_mm_getcsr() | 0x8040);
+#endif
+
         bool quitReceived = false;
 
         for (; ! threadShouldExit();)

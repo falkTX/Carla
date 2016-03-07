@@ -725,7 +725,11 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
             const NativePluginDescriptor* pluginDesc  = nullptr;
 #if CARLA_PLUGIN_PATCHBAY
+# if CARLA_PLUGIN_16CH
+            const char* const pluginLabel = "carlapatchbay16";
+# else
             const char* const pluginLabel = "carlapatchbay";
+# endif
 #else
             const char* const pluginLabel = "carlarack";
 #endif
@@ -790,7 +794,11 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         {
 #if CARLA_PLUGIN_PATCHBAY
 # if CARLA_PLUGIN_SYNTH
+#  if CARLA_PLUGIN_16CH
+            std::strncpy(cptr, "Carla-Patchbay16", 32);
+#  else
             std::strncpy(cptr, "Carla-Patchbay", 32);
+#  endif
 # else
             std::strncpy(cptr, "Carla-PatchbayFX", 32);
 # endif
@@ -818,7 +826,11 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         {
 #if CARLA_PLUGIN_PATCHBAY
 # if CARLA_PLUGIN_SYNTH
+#  if CARLA_PLUGIN_16CH
+            std::strncpy(cptr, "CarlaPatchbay16", 32);
+#  else
             std::strncpy(cptr, "CarlaPatchbay", 32);
+#  endif
 # else
             std::strncpy(cptr, "CarlaPatchbayFX", 32);
 # endif
@@ -908,7 +920,11 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
 # if CARLA_PLUGIN_PATCHBAY
+#  if CARLA_PLUGIN_16CH
+    effect->uniqueID = uniqueId+5;
+#  else
     effect->uniqueID = uniqueId+4;
+#  endif
 # else
     effect->uniqueID = uniqueId+3;
 # endif
@@ -923,8 +939,13 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     // plugin fields
     effect->numParams   = 0;
     effect->numPrograms = 0;
+#if CARLA_PLUGIN_16CH
+    effect->numInputs   = 16;
+    effect->numOutputs  = 16;
+#else
     effect->numInputs   = 2;
     effect->numOutputs  = 2;
+#endif
 
     // plugin flags
     effect->flags |= effFlagsCanReplacing;

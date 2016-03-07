@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -18,7 +18,6 @@
 #define DGL_COMMON_HPP_INCLUDED
 
 #include "../ImageWidgets.hpp"
-#include "../NanoWidgets.hpp"
 
 START_NAMESPACE_DGL
 
@@ -35,15 +34,13 @@ struct ButtonImpl {
     int state;
     Widget* self;
 
-    BlendishButton::Callback* callback_b;
-    ImageButton::Callback* callback_i;
+    ImageButton::Callback* callback_img;
 
     ButtonImpl(Widget* const s) noexcept
         : button(-1),
           state(kStateNormal),
           self(s),
-          callback_b(nullptr),
-          callback_i(nullptr) {}
+          callback_img(nullptr) {}
 
     bool onMouse(const Widget::MouseEvent& ev)
     {
@@ -68,10 +65,8 @@ struct ButtonImpl {
             state = kStateHover;
             self->repaint();
 
-            if (callback_b != nullptr)
-                callback_b->blendishButtonClicked((BlendishButton*)self, button2);
-            if (callback_i != nullptr)
-                callback_i->imageButtonClicked((ImageButton*)self, button2);
+            if (callback_img != nullptr)
+                callback_img->imageButtonClicked((ImageButton*)self, button2);
 
             return true;
         }

@@ -96,7 +96,8 @@ class MicrotonalUI {} {
         Fl_Input tuningsinput {
           label {Tunings:}
           xywh {8 144 182 264} type Multiline labelfont 1 labelsize 11 align 5 when 2
-          code0 {updateTuningsInput();}
+          code0 {o->init("tunings");}
+          class Fl_Osc_Input
         }
         Fl_Input commentinput {
           label {Comment:}
@@ -113,23 +114,18 @@ class MicrotonalUI {} {
         }
         Fl_Button {} {
           label {Import .SCL file}
-          callback {/*const char *filename;
+          callback {const char *filename;
 filename=fl_file_chooser("Open:","(*.scl)",NULL,0);
 if (filename==NULL) return;
-int result=microtonal->loadscl(filename);
-if (result==0) {
+osc->write("/load_scl", "s", filename);
+if (true) {
        updateTuningsInput();
-       nameinput->cut(0,nameinput->maximum_size());
-       nameinput->insert((char *)microtonal->Pname);
-       nameinput->position(0);
-       commentinput->cut(0,commentinput->maximum_size());
-       commentinput->insert((char *)microtonal->Pname);
-       commentinput->position(0);
+       nameinput->update();
+       commentinput->update();
        tuningsinput->position(0);
-       octavesizeoutput->do_callback();
-     } else {
-	fl_alert("Error: Could not load the file.");   
-     };*/}
+       octavesizeoutput->update();
+     }
+     }
           tooltip {Inport Scala .scl file (tunnings)} xywh {243 411 84 15} box THIN_UP_BOX labelfont 1 labelsize 10
         }
         Fl_Group keymappinggroup {
@@ -138,7 +134,8 @@ if (result==0) {
         } {
           Fl_Input mappinginput {
             xywh {250 147 146 258} type Multiline labelfont 1 labelsize 11 align 5 when 2
-            code0 {updateMappingInput();}
+            code0 {o->init("mapping");}
+            class Fl_Osc_Input
           }
           Fl_Counter firstnotecounter {
             label {First note}
@@ -177,12 +174,11 @@ o->show();}
         Fl_Button {} {
           label {Import .kbm file}
           callback {
-          //TODO Disabled until this can be moved into middleware
-          /*const char *filename;
+          const char *filename;
 filename=fl_file_chooser("Open:","(*.kbm)",NULL,0);
 if (filename==NULL) return;
-int result=microtonal->loadkbm(filename);
-if (result==0) {
+osc->write("/load_kbm", "s", filename);
+if (true) {
        updateMappingInput();
        mappinginput->position(0);
        mapsizeoutput->update();
@@ -192,9 +188,7 @@ if (result==0) {
        mappingenabledbutton->update();
        afreqinput->update();
        anotecounter->update();
-     } else {
-	fl_alert("Error: Could not load the file.");   
-     };*/}
+     }}
           tooltip {Inport Scala .kbm file (keyboard mapping)} xywh {243 428 84 16} box THIN_UP_BOX labelfont 1 labelsize 10
         }
       }
@@ -236,39 +230,13 @@ o->redraw();}
     }
   }
   Function {updateTuningsInput()} {} {
-    code {char *tmpbuf=new char[100];
-
-/*
-tuningsinput->cut(0,tuningsinput->maximum_size());
-
-for (int i=0;i<microtonal->getoctavesize();i++){
-   if (i!=0) tuningsinput->insert("\\n");
-   microtonal->tuningtoline(i,tmpbuf,100);
-   tuningsinput->insert(tmpbuf);
-};
-*/
-
-delete []tmpbuf;} {}
+    code {tuningsinput->update();} {}
   }
   Function {updateMappingInput()} {} {
-    code {char *tmpbuf=new char[100];
-
-/*
-mappinginput->cut(0,tuningsinput->maximum_size());
-
-for (int i=0;i<microtonal->Pmapsize;i++){
-   if (i!=0) mappinginput->insert("\\n");
-   if ((microtonal->Pmapping[i])==-1)
-        snprintf(tmpbuf,100,"x");
-   else snprintf(tmpbuf,100,"%d",microtonal->Pmapping[i]);
-   mappinginput->insert(tmpbuf);
-};
-*/
-
-delete []tmpbuf;} {}
+    code { mappinginput->update(); } {}
   }
-  Function {MicrotonalUI(Fl_Osc_Interface *osc, std::string base)} {} {
-    code {make_window(osc, base);} {}
+  Function {MicrotonalUI(Fl_Osc_Interface *osc_, std::string base)} {} {
+    code {osc=osc_;make_window(osc, base);} {}
   }
   Function {~MicrotonalUI()} {} {
     code {microtonaluiwindow->hide();
@@ -278,15 +246,14 @@ delete(microtonaluiwindow);} {}
     code {microtonaluiwindow->show();} {}
   }
   Function {apply()} {} {
-    code {/*int err=microtonal->texttotunings(tuningsinput->value());
-if (err>=0) fl_alert("Parse Error: The input may contain only numbers (like 232.59)\\n or divisions (like 121/64).");
-if (err==-2) fl_alert("Parse Error: The input is empty.");
-octavesizeoutput->do_callback();
-
-microtonal->texttomapping(mappinginput->value());
-mapsizeoutput->do_callback();
-anotecounter->do_callback();
-*/
-//applybutton->color(FL_GRAY);} {}
+    code {
+    osc->write("/microtonal/tunings", "s", tuningsinput->value());
+    osc->write("/microtonal/mapping", "s", mappinginput->value());
+    octavesizeoutput->update();
+    mapsizeoutput->update();
+    anotecounter->update();
+    } {}
+  }
+  decl {Fl_Osc_Interface *osc;} {private local
   }
 } 

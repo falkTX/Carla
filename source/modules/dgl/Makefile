@@ -15,9 +15,6 @@ BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
 # needed by sofd right now, fix later
 BUILD_CXX_FLAGS += -Wno-type-limits -fpermissive
 
-# needed by oui-blendish
-BUILD_CXX_FLAGS += -Wno-unused-parameter
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS = \
@@ -27,7 +24,6 @@ OBJS = \
 	$(OBJDIR)/Image.cpp.o \
 	$(OBJDIR)/ImageWidgets.cpp.o \
 	$(OBJDIR)/NanoVG.cpp.o \
-	$(OBJDIR)/NanoWidgets.cpp.o \
 	$(OBJDIR)/Resources.cpp.o \
 	$(OBJDIR)/Widget.cpp.o
 

@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Copyright (C) 2012-2014 Mark McCurry
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 
@@ -109,6 +100,7 @@ void exitprogram(const Config& config)
 {
     Nio::stop();
     config.save();
+    middleware->removeAutoSave();
 
     GUI::destroyUi(gui);
     delete middleware;
@@ -135,7 +127,7 @@ int main(int argc, char *argv[])
     << "\nZynAddSubFX - Copyright (c) 2002-2013 Nasca Octavian Paul and others"
     << endl;
     cerr
-    << "                Copyright (c) 2009-2015 Mark McCurry [active maintainer]"
+    << "                Copyright (c) 2009-2016 Mark McCurry [active maintainer]"
     << endl;
     cerr << "Compiled: " << __DATE__ << " " << __TIME__ << endl;
     cerr << "This program is free software (GNU GPL v2 or later) and \n";
@@ -194,6 +186,9 @@ int main(int argc, char *argv[])
             "auto-connect", 0, NULL, 'a'
         },
         {
+            "auto-save", 0, NULL, 'A'
+        },
+        {
             "pid-in-client-name", 0, NULL, 'p'
         },
         {
@@ -221,6 +216,7 @@ int main(int argc, char *argv[])
     opterr = 0;
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
     int prefered_port = -1;
+    int auto_save_interval = 60;
 
     string loadfile, loadinstrument, execAfterInit, ui_title;
 
@@ -230,7 +226,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:P:u:hvapSDUY",
+                          "l:L:r:b:o:I:O:N:e:P:A:u:hvapSDUY",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -321,6 +317,10 @@ int main(int argc, char *argv[])
                 if(optarguments)
                     prefered_port = atoi(optarguments);
                 break;
+            case 'A':
+                if(optarguments)
+                    auto_save_interval = atoi(optarguments);
+                break;
             case 'e':
                 GETOP(execAfterInit);
                 break;
@@ -370,6 +370,7 @@ int main(int argc, char *argv[])
         "  -U , --no-gui\t\t\t\t Run ZynAddSubFX without user interface\n"
              << "  -N , --named\t\t\t\t Postfix IO Name when possible\n"
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
+             << "  -A , --auto-save=INTERVAL\t\t Automatically save at interval (disabled for negative intervals)\n"
              << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
                 "client name\n"
              << "  -P , --preferred-port\t\t\t Preferred OSC Port\n"
@@ -474,6 +475,13 @@ int main(int argc, char *argv[])
         if(!ioGood)
             GUI::raiseUi(gui, "/alert", "s",
                     "Default IO did not initialize.\nDefaulting to NULL backend.");
+    }
+
+    if(auto_save_interval >= 0) {
+        int old_save = middleware->checkAutoSave();
+        if(old_save > 0)
+            GUI::raiseUi(gui, "/alert-reload", "i", old_save);
+        middleware->enableAutoSave(auto_save_interval);
     }
 
 #if USE_NSM

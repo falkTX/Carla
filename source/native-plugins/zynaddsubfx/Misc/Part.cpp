@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #include "Part.h"
@@ -84,7 +75,7 @@ static const Ports partPorts = {
     rString(info.Pauthor, MAX_INFO_TEXT_SIZE, "Instrument author"),
     rString(info.Pcomments, MAX_INFO_TEXT_SIZE, "Instrument comments"),
     rString(Pname, PART_MAX_NAME_LEN, "User specified label"),
-    rArray(Pefxroute, NUM_PART_EFX,  "Effect Routing"),
+    rArrayI(Pefxroute, NUM_PART_EFX,  "Effect Routing"),
     rArrayT(Pefxbypass, NUM_PART_EFX, "If an effect is bypassed"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
@@ -257,6 +248,17 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     assert(partefx[0]);
 }
 
+Part::Kit::Kit(void)
+    :parent(nullptr),
+     Penabled(false), Pmuted(false),
+     Pminkey(0), Pmaxkey(127),
+     Pname(nullptr),
+     Padenabled(false), Psubenabled(false),
+     Ppadenabled(false), Psendtoparteffect(0),
+     adpars(nullptr), subpars(nullptr), padpars(nullptr)
+{
+}
+
 void Part::cloneTraits(Part &p) const
 {
 #define CLONE(x) p.x = this->x
@@ -312,7 +314,7 @@ void Part::defaultsinstrument()
     Pdrummode = 0;
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
-        kit[n].Penabled    = false;
+        //kit[n].Penabled    = false;
         kit[n].Pmuted      = false;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -475,6 +477,9 @@ bool Part::NoteOn(unsigned char note,
         return true;
     }
 
+    if(Ppolymode)
+        notePool.makeUnsustainable(note);
+
     //Create New Notes
     for(uint8_t i = 0; i < NUM_KIT_ITEMS; ++i) {
         auto &item = kit[i];
@@ -522,7 +527,7 @@ void Part::NoteOff(unsigned char note) //release the key
         monomemPop(note);
 
     for(auto &desc:notePool.activeDesc()) {
-        if(desc.note != note || desc.status != KEY_PLAYING)
+        if(desc.note != note || !desc.playing())
             continue;
         if(!ctl.sustain.sustain) { //the sustain pedal is not pushed
             if((isMonoMode() || isLegatoMode()) && !monomemEmpty())
@@ -530,8 +535,12 @@ void Part::NoteOff(unsigned char note) //release the key
             else 
                 notePool.release(desc);
         }
-        else    //the sustain pedal is pushed
-            desc.status = KEY_RELEASED_AND_SUSTAINED;
+        else {   //the sustain pedal is pushed
+            if(desc.canSustain())
+                desc.doSustain();
+            else
+                notePool.release(desc);
+        }
     }
 }
 
@@ -550,7 +559,7 @@ void Part::PolyphonicAftertouch(unsigned char note,
 
     const float vel = getVelocity(velocity, Pvelsns, Pveloffs);
     for(auto &d:notePool.activeDesc()) {
-        if(d.note == note && d.status == KEY_PLAYING)
+        if(d.note == note && d.playing())
             for(auto &s:notePool.activeNotes(d))
                 s.note->setVelocity(vel);
     }
@@ -659,7 +668,7 @@ void Part::ReleaseSustainedKeys()
             MonoMemRenote();  // To play most recent still held note.
 
     for(auto &d:notePool.activeDesc())
-        if(d.status == KEY_RELEASED_AND_SUSTAINED)
+        if(d.sustained())
             for(auto &s:notePool.activeNotes(d))
                 s.note->releasekey();
 }
@@ -671,7 +680,7 @@ void Part::ReleaseSustainedKeys()
 void Part::ReleaseAllKeys()
 {
     for(auto &d:notePool.activeDesc())
-        if(d.status != KEY_RELEASED)
+        if(!d.released())
             for(auto &s:notePool.activeNotes(d))
                 s.note->releasekey();
 }
@@ -726,7 +735,7 @@ void Part::setkeylimit(unsigned char Pkeylimit_)
     if(keylimit == 0)
         keylimit = POLYPHONY - 5;
 
-    if(notePool.getRunningNotes() > keylimit)
+    if(notePool.getRunningNotes() >= keylimit)
         notePool.enforceKeyLimit(keylimit);
 }
 
@@ -840,6 +849,9 @@ void Part::setkititemstatus(unsigned kititem, bool Penabled_)
         delete kkit.adpars;
         delete kkit.subpars;
         delete kkit.padpars;
+        kkit.adpars  = nullptr;
+        kkit.subpars = nullptr;
+        kkit.padpars = nullptr;
         kkit.Pname[0] = '\0';
 
         notePool.killAllNotes();

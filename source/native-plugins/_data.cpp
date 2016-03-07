@@ -413,29 +413,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS
 },
 {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_DELAY,
-#ifdef HAVE_DGL
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
-                                                  |NATIVE_PLUGIN_USES_PARENT_ID),
-#else
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE),
-#endif
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
-    /* audioIns  */ 2,
-    /* audioOuts */ 2,
-    /* midiIns   */ 0,
-    /* midiOuts  */ 0,
-    /* paramIns  */ 9,
-    /* paramOuts */ 0,
-    /* name      */ "MVerb",
-    /* label     */ "mverb",
-    /* maker     */ "falkTX, Martin Eastwood",
-    /* copyright */ "GPL v3+",
-    DESCFUNCS
-},
-{
     /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
 #ifdef HAVE_DGL
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE

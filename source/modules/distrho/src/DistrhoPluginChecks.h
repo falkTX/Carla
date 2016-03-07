@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -45,6 +45,10 @@
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
 
+#ifndef DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+# define DISTRHO_PLUGIN_HAS_EXTERNAL_UI 0
+#endif
+
 #ifndef DISTRHO_PLUGIN_IS_RT_SAFE
 # define DISTRHO_PLUGIN_IS_RT_SAFE 0
 #endif
@@ -86,6 +90,17 @@
 #endif
 
 // -----------------------------------------------------------------------
+// Define DISTRHO_PLUGIN_HAS_EMBED_UI if needed
+
+#ifndef DISTRHO_PLUGIN_HAS_EMBED_UI
+# ifdef HAVE_DGL
+#  define DISTRHO_PLUGIN_HAS_EMBED_UI 1
+# else
+#  define DISTRHO_PLUGIN_HAS_EMBED_UI 0
+# endif
+#endif
+
+// -----------------------------------------------------------------------
 // Define DISTRHO_UI_URI if needed
 
 #ifndef DISTRHO_UI_URI
@@ -117,9 +132,9 @@
 #endif
 
 // -----------------------------------------------------------------------
-// Disable UI if DGL is not available
+// Disable UI if DGL or External UI is not available
 
-#if DISTRHO_PLUGIN_HAS_UI && ! defined(HAVE_DGL)
+#if DISTRHO_PLUGIN_HAS_UI && ! DISTRHO_PLUGIN_HAS_EXTERNAL_UI && ! defined(HAVE_DGL)
 # undef DISTRHO_PLUGIN_HAS_UI
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif

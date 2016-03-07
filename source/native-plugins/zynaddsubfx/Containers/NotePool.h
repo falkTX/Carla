@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  NotePool.h - Pool of Synthesizer Engines And Note Instances
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #pragma once
 #include <stdint.h>
 #include <functional>
@@ -24,6 +35,19 @@ class NotePool
             uint8_t status;
             bool    legatoMirror;
             bool operator==(NoteDescriptor);
+
+            //status checks
+            bool playing(void) const;
+            bool off(void) const;
+            bool sustained(void) const;
+            bool released(void) const;
+
+            //status transitions
+            void setStatus(uint8_t s);
+            void doSustain(void);
+
+            bool canSustain(void) const;
+            void makeUnsustainable(void);
         };
 
         //To be pedantic this wastes 2 or 6 bytes per descriptor
@@ -84,6 +108,10 @@ class NotePool
         activeDescIter activeDesc(void);
         constActiveDescIter activeDesc(void) const;
 
+        //Counts of descriptors used for tests
+        int usedNoteDesc(void) const;
+        int usedSynthDesc(void) const;
+
         NotePool(void);
 
         //Operations
@@ -93,13 +121,15 @@ class NotePool
         void upgradeToLegato(void);
         void applyLegato(LegatoParams &par);
 
+        void makeUnsustainable(uint8_t note);
+
         bool full(void) const;
         bool synthFull(int sdesc_count) const;
 
         //Note that isn't KEY_PLAYING or KEY_RELASED_AND_SUSTAINING
         bool existsRunningNote(void) const;
         int getRunningNotes(void) const;
-        int enforceKeyLimit(int limit) const;
+        void enforceKeyLimit(int limit);
 
         void releasePlayingNotes(void);
         void releaseNote(note_t note);
@@ -109,6 +139,7 @@ class NotePool
         void killNote(note_t note);
         void kill(NoteDescriptor &d);
         void kill(SynthDescriptor &s);
+        void entomb(NoteDescriptor &d);
 
         void cleanup(void);
 

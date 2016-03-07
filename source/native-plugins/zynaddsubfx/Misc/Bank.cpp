@@ -7,19 +7,10 @@
   Author: Nasca Octavian Paul
           Mark McCurry
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #include "Bank.h"
@@ -212,6 +203,7 @@ int Bank::loadfromslot(unsigned int ninstrument, Part *part)
  */
 int Bank::loadbank(string bankdirname)
 {
+    normalizedirsuffix(bankdirname);
     DIR *dir = opendir(bankdirname.c_str());
     clearbank();
 
@@ -285,9 +277,8 @@ int Bank::newbank(string newbankdirname)
     string bankdir;
     bankdir = config->cfg.bankRootDirList[0];
 
-    if(((bankdir[bankdir.size() - 1]) != '/')
-       && ((bankdir[bankdir.size() - 1]) != '\\'))
-        bankdir += "/";
+    expanddirname(bankdir);
+    normalizedirsuffix(bankdir);
 
     bankdir += newbankdirname;
 #ifdef _WIN32
@@ -370,21 +361,21 @@ void Bank::rescanforbanks()
     sort(banks.begin(), banks.end());
 
     //remove duplicate bank names
-    int dupl = 0;
-    for(int j = 0; j < (int) banks.size() - 1; ++j)
+    for(int j = 0; j < (int) banks.size() - 1; ++j) {
+        int dupl = 0;
         for(int i = j + 1; i < (int) banks.size(); ++i) {
             if(banks[i].name == banks[j].name) {
                 //add a [1] to the first bankname and [n] to others
                 banks[i].name = banks[i].name + '['
                                 + stringFrom(dupl + 2) + ']';
-                if(dupl == 0)
-                    banks[j].name += "[1]";
-
                 dupl++;
             }
-            else
-                dupl = 0;
         }
+        if(dupl != 0)
+            banks[j].name += "[1]";
+        if(dupl)
+            j += dupl;
+    }
 }
 
 void Bank::setMsb(uint8_t msb)
@@ -404,6 +395,8 @@ void Bank::setLsb(uint8_t lsb)
 
 void Bank::scanrootdir(string rootdir)
 {
+    expanddirname(rootdir);
+
     DIR *dir = opendir(rootdir.c_str());
     if(dir == NULL)
         return;
@@ -498,3 +491,23 @@ void Bank::deletefrombank(int pos)
 Bank::ins_t::ins_t()
     :name(""), filename("")
 {}
+
+void Bank::expanddirname(std::string &dirname) {
+    if (dirname.empty())
+        return;
+
+    // if the directory name starts with a ~ and the $HOME variable is
+    // defined in the environment, replace ~ by the content of $HOME
+    if (dirname.at(0) == '~') {
+        char *home_dirname = getenv("HOME");
+        if (home_dirname != NULL) {
+            dirname = std::string(home_dirname) + dirname.substr(1);
+        }
+    }
+}
+
+void Bank::normalizedirsuffix(string &dirname) const {
+    if(((dirname[dirname.size() - 1]) != '/')
+       && ((dirname[dirname.size() - 1]) != '\\'))
+        dirname += "/";
+}

@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  MiddleWare.h - RT & Non-RT Glue Layer
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #pragma once
 #include <functional>
 #include <cstdarg>
@@ -17,6 +28,18 @@ class MiddleWare
         void updateResources(Master *m);
         //returns internal master pointer
         class Master *spawnMaster(void);
+
+        //Enable AutoSave Functionality
+        void enableAutoSave(int interval_sec=60);
+
+        //Check for old automatic saves which should only exist if multiple
+        //instances are in use OR when there was a crash
+        //
+        //When an old save is found return the id of the save file
+        int checkAutoSave(void);
+
+        void removeAutoSave(void);
+
         //return  UI interface
         class Fl_Osc_Interface *spawnUiApi(void);
         //Set callback to push UI events to
@@ -40,6 +63,7 @@ class MiddleWare
         //Indicate that a bank will be loaded
         //NOTE: Can only be called by realtime thread
         void pendingSetBank(int bank);
+
         //Indicate that a program will be loaded on a known part
         //NOTE: Can only be called by realtime thread
         void pendingSetProgram(int part, int program);

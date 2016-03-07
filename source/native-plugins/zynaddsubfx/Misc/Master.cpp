@@ -6,19 +6,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #include "Master.h"
@@ -237,6 +228,19 @@ static const Ports master_ports = {
         SNIP
             preset_ports.dispatch(msg, data);
         rBOIL_END},
+    {"HDDRecorder/preparefile:s", rDoc("Init WAV file"), 0, [](const char *msg, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.preparefile(rtosc_argument(msg, 0).s, 1);}},
+    {"HDDRecorder/start:", rDoc("Start recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.start();}},
+    {"HDDRecorder/stop:", rDoc("Stop recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.stop();}},
+    {"HDDRecorder/pause:", rDoc("Pause recording"), 0, [](const char *, RtData &d) {
+       Master *m = (Master*)d.obj;
+       m->HDDRecorder.pause();}},
+
 };
 const Ports &Master::ports = master_ports;
 
@@ -618,7 +622,7 @@ int msg_id=0;
 /*
  * Master audio out (the final sound)
  */
-bool Master::AudioOut(float *outl, float *outr)
+bool Master::AudioOut(float *outr, float *outl)
 {
     //Danger Limits
     if(memory->lowMemory(2,1024*1024))

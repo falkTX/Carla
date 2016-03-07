@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -20,7 +20,10 @@
 #include "extra/LeakDetector.hpp"
 #include "src/DistrhoPluginChecks.h"
 
-#if DISTRHO_UI_USE_NANOVG
+#ifndef HAVE_DGL
+# include "extra/ExternalWindow.hpp"
+typedef DISTRHO_NAMESPACE::ExternalWindow UIWidget;
+#elif DISTRHO_UI_USE_NANOVG
 # include "../dgl/NanoVG.hpp"
 typedef DGL::NanoWidget UIWidget;
 #else
@@ -41,9 +44,8 @@ START_NAMESPACE_DISTRHO
 /**
    DPF UI class from where UI instances are created.
 
-   TODO.
-
-   must call setSize during construction,
+   @note You must call setSize during construction,
+   @TODO Detailed information about this class.
  */
 class UI : public UIWidget
 {
@@ -69,25 +71,29 @@ public:
     double getSampleRate() const noexcept;
 
    /**
-      TODO: Document this.
+      editParameter.
+      @TODO Document this.
     */
     void editParameter(uint32_t index, bool started);
 
    /**
-      TODO: Document this.
+      setParameterValue.
+      @TODO Document this.
     */
     void setParameterValue(uint32_t index, float value);
 
 #if DISTRHO_PLUGIN_WANT_STATE
    /**
-      TODO: Document this.
+      setState.
+      @TODO Document this.
     */
     void setState(const char* key, const char* value);
 #endif
 
 #if DISTRHO_PLUGIN_IS_SYNTH
    /**
-      TODO: Document this.
+      sendNote.
+      @TODO Document this.
     */
     void sendNote(uint8_t channel, uint8_t note, uint8_t velocity);
 #endif
@@ -97,9 +103,22 @@ public:
     * Direct DSP access - DO NOT USE THIS UNLESS STRICTLY NECESSARY!! */
 
    /**
-      TODO: Document this.
+      getPluginInstancePointer.
+      @TODO Document this.
     */
     void* getPluginInstancePointer() const noexcept;
+#endif
+
+#if DISTRHO_PLUGIN_HAS_EMBED_UI && DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+   /* --------------------------------------------------------------------------------------------------------
+    * External embeddable UI helpers */
+
+   /**
+      Get the Window Id that will be used for the next created window.
+      @note: This function is only valid during createUI(),
+             it will return 0 when called from anywhere else.
+    */
+    static uintptr_t getNextWindowId() noexcept;
 #endif
 
 protected:
@@ -137,11 +156,13 @@ protected:
     */
     virtual void sampleRateChanged(double newSampleRate);
 
+#ifdef HAVE_DGL
    /* --------------------------------------------------------------------------------------------------------
     * UI Callbacks (optional) */
 
    /**
-      TODO: Document this.
+      uiIdle.
+      @TODO Document this.
     */
     virtual void uiIdle() {}
 
@@ -167,6 +188,7 @@ protected:
       @see Widget::onResize(const ResizeEvent&)
     */
     void onResize(const ResizeEvent& ev) override;
+#endif
 
     // -------------------------------------------------------------------------------------------------------
 
@@ -176,11 +198,13 @@ private:
     friend class UIExporter;
     friend class UIExporterWindow;
 
+#ifdef HAVE_DGL
     // these should not be used
     void setAbsoluteX(int) const noexcept {}
     void setAbsoluteY(int) const noexcept {}
     void setAbsolutePos(int, int) const noexcept {}
     void setAbsolutePos(const DGL::Point<int>&) const noexcept {}
+#endif
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(UI)
 };
@@ -196,7 +220,8 @@ private:
  */
 
 /**
-   TODO.
+   createUI.
+   @TODO Document this.
  */
 extern UI* createUI();
 

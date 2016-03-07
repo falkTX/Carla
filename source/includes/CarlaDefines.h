@@ -255,11 +255,15 @@ private:                                        \
 
 /* Define CARLA_OS_SEP */
 #ifdef CARLA_OS_WIN
-# define CARLA_OS_SEP     '\\'
-# define CARLA_OS_SEP_STR "\\"
+# define CARLA_OS_SEP       '\\'
+# define CARLA_OS_SEP_STR   "\\"
+# define CARLA_OS_SPLIT     ';'
+# define CARLA_OS_SPLIT_STR ";"
 #else
-# define CARLA_OS_SEP     '/'
-# define CARLA_OS_SEP_STR "/"
+# define CARLA_OS_SEP       '/'
+# define CARLA_OS_SEP_STR   "/"
+# define CARLA_OS_SPLIT     ':'
+# define CARLA_OS_SPLIT_STR ":"
 #endif
 
 /* Useful typedefs */

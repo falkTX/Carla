@@ -1,11 +1,31 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  NotePool.cpp - Pool of Synthesizer Engines And Note Instances
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "NotePool.h"
-//XXX eliminate dependence on Part.h
-#include "../Misc/Part.h"
 #include "../Misc/Allocator.h"
 #include "../Synth/SynthNote.h"
 #include <cstring>
 #include <cassert>
 #include <iostream>
+
+#define SUSTAIN_BIT 0x04
+#define NOTE_MASK   0x03
+
+enum NoteStatus {
+    KEY_OFF                    = 0x00,
+    KEY_PLAYING                = 0x01,
+    KEY_RELEASED_AND_SUSTAINED = 0x02,
+    KEY_RELEASED               = 0x03
+};
+
 
 NotePool::NotePool(void)
     :needs_cleaning(0)
@@ -13,6 +33,48 @@ NotePool::NotePool(void)
     memset(ndesc, 0, sizeof(ndesc));
     memset(sdesc, 0, sizeof(sdesc));
 }
+
+bool NotePool::NoteDescriptor::playing(void) const
+{
+    return (status&NOTE_MASK) == KEY_PLAYING;
+}
+
+bool NotePool::NoteDescriptor::sustained(void) const
+{
+    return (status&NOTE_MASK) == KEY_RELEASED_AND_SUSTAINED;
+}
+
+bool NotePool::NoteDescriptor::released(void) const
+{
+    return (status&NOTE_MASK) == KEY_RELEASED;
+}
+
+bool NotePool::NoteDescriptor::off(void) const
+{
+    return (status&NOTE_MASK) == KEY_OFF;
+}
+
+void NotePool::NoteDescriptor::setStatus(uint8_t s)
+{
+    status &= ~NOTE_MASK;
+    status |= (NOTE_MASK&s);
+}
+
+void NotePool::NoteDescriptor::doSustain(void)
+{
+    setStatus(KEY_RELEASED_AND_SUSTAINED);
+}
+
+bool NotePool::NoteDescriptor::canSustain(void) const
+{
+    return !(status & SUSTAIN_BIT);
+}
+
+void NotePool::NoteDescriptor::makeUnsustainable(void)
+{
+    status |= SUSTAIN_BIT;
+}
+
 NotePool::activeNotesIter NotePool::activeNotes(NoteDescriptor &n)
 {
     const int off_d1 = &n-ndesc;
@@ -35,18 +97,18 @@ static int getMergeableDescriptor(uint8_t note, uint8_t sendto, bool legato,
 {
     int desc_id = 0;
     for(int i=0; i<POLYPHONY; ++i, ++desc_id)
-        if(ndesc[desc_id].status == Part::KEY_OFF)
+        if(ndesc[desc_id].off())
             break;
 
     if(desc_id != 0) {
         auto &nd = ndesc[desc_id-1];
         if(nd.age == 0 && nd.note == note && nd.sendto == sendto
-                && nd.status == Part::KEY_PLAYING && nd.legatoMirror == legato)
+                && nd.playing() && nd.legatoMirror == legato && nd.canSustain())
             return desc_id-1;
     }
 
     //Out of free descriptors
-    if(desc_id >= POLYPHONY || ndesc[desc_id].status != Part::KEY_OFF) {
+    if(desc_id >= POLYPHONY || !ndesc[desc_id].off()) {
         return -1;
     }
 
@@ -65,6 +127,28 @@ NotePool::constActiveDescIter NotePool::activeDesc(void) const
     return constActiveDescIter{*this};
 }
 
+int NotePool::usedNoteDesc(void) const
+{
+    if(needs_cleaning)
+        const_cast<NotePool*>(this)->cleanup();
+
+    int cnt = 0;
+    for(int i=0; i<POLYPHONY; ++i)
+        cnt += (ndesc[i].size != 0);
+    return cnt;
+}
+
+int NotePool::usedSynthDesc(void) const
+{
+    if(needs_cleaning)
+        const_cast<NotePool*>(this)->cleanup();
+
+    int cnt = 0;
+    for(int i=0; i<POLYPHONY*EXPECTED_USAGE; ++i)
+        cnt += (bool)sdesc[i].note;
+    return cnt;
+}
+
 void NotePool::insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bool legato)
 {
     //Get first free note descriptor
@@ -74,7 +158,7 @@ void NotePool::insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bo
     ndesc[desc_id].note         = note;
     ndesc[desc_id].sendto       = sendto;
     ndesc[desc_id].size        += 1;
-    ndesc[desc_id].status       = Part::KEY_PLAYING;
+    ndesc[desc_id].status       = KEY_PLAYING;
     ndesc[desc_id].legatoMirror = legato;
 
     //Get first free synth descriptor
@@ -90,7 +174,7 @@ void NotePool::insertNote(uint8_t note, uint8_t sendto, SynthDescriptor desc, bo
 void NotePool::upgradeToLegato(void)
 {
     for(auto &d:activeDesc())
-        if(d.status == Part::KEY_PLAYING)
+        if(d.playing())
             for(auto &s:activeNotes(d))
                 insertLegatoNote(d.note, d.sendto, s);
 }
@@ -118,12 +202,23 @@ void NotePool::applyLegato(LegatoParams &par)
                 std::cerr << "failed to create legato note: " << ba.what() << std::endl;
             }
     }
-};
+}
+
+void NotePool::makeUnsustainable(uint8_t note)
+{
+    for(auto &desc:activeDesc()) {
+        if(desc.note == note) {
+            desc.makeUnsustainable();
+            if(desc.sustained())
+                release(desc);
+        }
+    }
+}
 
 bool NotePool::full(void) const
 {
     for(int i=0; i<POLYPHONY; ++i)
-        if(ndesc[i].status == Part::KEY_OFF)
+        if(ndesc[i].off())
             return false;
     return true;
 }
@@ -149,8 +244,7 @@ int NotePool::getRunningNotes(void) const
     bool running[256] = {0};
     for(auto &desc:activeDesc()) {
         //printf("note!(%d)\n", desc.note);
-        if(desc.status == Part::KEY_PLAYING ||
-                desc.status == Part::KEY_RELEASED_AND_SUSTAINED)
+        if(desc.playing() || desc.sustained())
             running[desc.note] = true;
     }
 
@@ -160,30 +254,44 @@ int NotePool::getRunningNotes(void) const
 
     return running_count;
 }
-int NotePool::enforceKeyLimit(int limit) const
+void NotePool::enforceKeyLimit(int limit)
 {
-        //{
-        //int oldestnotepos = -1;
-        //if(notecount > keylimit)   //find out the oldest note
-        //    for(int i = 0; i < POLYPHONY; ++i) {
-        //        int maxtime = 0;
-        //        if(((partnote[i].status == KEY_PLAYING) || (partnote[i].status == KEY_RELEASED_AND_SUSTAINED)) && (partnote[i].time > maxtime)) {
-        //            maxtime = partnote[i].time;
-        //            oldestnotepos = i;
-        //        }
-        //    }
-        //if(oldestnotepos != -1)
-        //    ReleaseNotePos(oldestnotepos);
-        //}
-    //printf("Unimplemented enforceKeyLimit()\n");
-    return -1;
+    int notes_to_kill = getRunningNotes() - limit;
+    if(notes_to_kill <= 0)
+        return;
+
+    NoteDescriptor *to_kill = NULL;
+    unsigned oldest = 0;
+    for(auto &nd : activeDesc()) {
+        if(to_kill == NULL) {
+            //There must be something to kill
+            oldest  = nd.age;
+            to_kill = &nd;
+        } else if(to_kill->released() && nd.playing()) {
+            //Prefer to kill off a running note
+            oldest = nd.age;
+            to_kill = &nd;
+        } else if(nd.age > oldest && !(to_kill->playing() && nd.released())) {
+            //Get an older note when it doesn't move from running to released
+            oldest = nd.age;
+            to_kill = &nd;
+        }
+    }
+
+    if(to_kill) {
+        auto &tk = *to_kill;
+        if(tk.released() || tk.sustained())
+            kill(*to_kill);
+        else
+            entomb(*to_kill);
+    }
 }
 
 void NotePool::releasePlayingNotes(void)
 {
     for(auto &d:activeDesc()) {
-        if(d.status == Part::KEY_PLAYING) {
-            d.status = Part::KEY_RELEASED;
+        if(d.playing() || d.sustained()) {
+            d.setStatus(KEY_RELEASED);
             for(auto s:activeNotes(d))
                 s.note->releasekey();
         }
@@ -192,7 +300,7 @@ void NotePool::releasePlayingNotes(void)
 
 void NotePool::release(NoteDescriptor &d)
 {
-    d.status = Part::KEY_RELEASED;
+    d.setStatus(KEY_RELEASED);
     for(auto s:activeNotes(d))
         s.note->releasekey();
 }
@@ -213,7 +321,7 @@ void NotePool::killNote(uint8_t note)
 
 void NotePool::kill(NoteDescriptor &d)
 {
-    d.status = Part::KEY_OFF;
+    d.setStatus(KEY_OFF);
     for(auto &s:activeNotes(d))
         kill(s);
 }
@@ -223,6 +331,13 @@ void NotePool::kill(SynthDescriptor &s)
     //printf("Kill synth...\n");
     s.note->memory.dealloc(s.note);
     needs_cleaning = true;
+}
+
+void NotePool::entomb(NoteDescriptor &d)
+{
+    d.setStatus(KEY_RELEASED);
+    for(auto &s:activeNotes(d))
+        s.note->entomb();
 }
 
 const char *getStatus(int status_bits)
@@ -252,7 +367,7 @@ void NotePool::cleanup(void)
 
     int last_valid_desc = 0;
     for(int i=0; i<POLYPHONY; ++i)
-        if(ndesc[i].status != Part::KEY_OFF)
+        if(!ndesc[i].off())
             last_valid_desc = i;
 
     //Find the real numbers of allocated notes
@@ -275,7 +390,7 @@ void NotePool::cleanup(void)
             if(new_length[i] != 0)
                 ndesc[cum_new++] = ndesc[i];
             else
-                ndesc[i].status = Part::KEY_OFF;
+                ndesc[i].setStatus(KEY_OFF);
         }
         memset(ndesc+cum_new, 0, sizeof(*ndesc)*(POLYPHONY-cum_new));
     }

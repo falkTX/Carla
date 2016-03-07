@@ -1256,7 +1256,11 @@ public:
                 portName += ":";
             }
 
-            if (fInfo.aIns > 1)
+            if (fInfo.aInNames != nullptr && fInfo.aInNames[j] != nullptr)
+            {
+                portName += fInfo.aInNames[j];
+            }
+            else if (fInfo.aIns > 1)
             {
                 portName += "input_";
                 portName += CarlaString(j+1);
@@ -1281,7 +1285,11 @@ public:
                 portName += ":";
             }
 
-            if (fInfo.aOuts > 1)
+            if (fInfo.aOutNames != nullptr && fInfo.aOutNames[j] != nullptr)
+            {
+                portName += fInfo.aOutNames[j];
+            }
+            else if (fInfo.aOuts > 1)
             {
                 portName += "output_";
                 portName += CarlaString(j+1);
@@ -1294,6 +1302,8 @@ public:
             pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
+
+        // TODO - MIDI
 
         // TODO - CV
 
@@ -2049,12 +2059,34 @@ public:
                 // uint/ins, uint/outs
                 fInfo.aIns  = fShmNonRtServerControl.readUInt();
                 fInfo.aOuts = fShmNonRtServerControl.readUInt();
+
+                CARLA_SAFE_ASSERT(fInfo.aInNames  == nullptr);
+                CARLA_SAFE_ASSERT(fInfo.aOutNames == nullptr);
+
+                if (fInfo.aIns > 0)
+                {
+                    fInfo.aInNames = new const char*[fInfo.aIns];
+                    carla_zeroPointers(fInfo.aInNames, fInfo.aIns);
+                }
+
+                if (fInfo.aOuts > 0)
+                {
+                    fInfo.aOutNames = new const char*[fInfo.aOuts];
+                    carla_zeroPointers(fInfo.aOutNames, fInfo.aOuts);
+                }
+
             }   break;
 
             case kPluginBridgeNonRtServerMidiCount: {
                 // uint/ins, uint/outs
                 fInfo.mIns  = fShmNonRtServerControl.readUInt();
                 fInfo.mOuts = fShmNonRtServerControl.readUInt();
+            }   break;
+
+            case kPluginBridgeNonRtServerCvCount: {
+                // uint/ins, uint/outs
+                fInfo.cvIns  = fShmNonRtServerControl.readUInt();
+                fInfo.cvOuts = fShmNonRtServerControl.readUInt();
             }   break;
 
             case kPluginBridgeNonRtServerParameterCount: {
@@ -2103,6 +2135,33 @@ public:
 
                 if (const uint32_t count = fShmNonRtServerControl.readUInt())
                     pData->midiprog.createNew(static_cast<uint32_t>(count));
+
+            }   break;
+
+            case kPluginBridgeNonRtServerPortName: {
+                // byte/type, uint/index, uint/size, str[] (name)
+                const uint8_t  portType = fShmNonRtServerControl.readByte();
+                const uint32_t index    = fShmNonRtServerControl.readUInt();
+
+                // name
+                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
+                char* const name = new char[nameSize+1];
+                carla_zeroChars(name, nameSize+1);
+                fShmNonRtServerControl.readCustomData(name, nameSize);
+
+                CARLA_SAFE_ASSERT_BREAK(portType > kPluginBridgePortNull && portType < kPluginBridgePortTypeCount);
+
+                switch (portType)
+                {
+                case kPluginBridgePortAudioInput:
+                    CARLA_SAFE_ASSERT_BREAK(index < fInfo.aIns);
+                    fInfo.aInNames[index] = name;
+                    break;
+                case kPluginBridgePortAudioOutput:
+                    CARLA_SAFE_ASSERT_BREAK(index < fInfo.aOuts);
+                    fInfo.aOutNames[index] = name;
+                    break;
+                }
 
             }   break;
 
@@ -2619,6 +2678,8 @@ private:
         CarlaString label;
         CarlaString maker;
         CarlaString copyright;
+        const char** aInNames;
+        const char** aOutNames;
         std::vector<uint8_t> chunk;
 
         Info()
@@ -2634,6 +2695,8 @@ private:
               label(),
               maker(),
               copyright(),
+              aInNames(nullptr),
+              aOutNames(nullptr),
               chunk() {}
     } fInfo;
 

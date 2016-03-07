@@ -286,6 +286,7 @@ public:
           fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),
+          fDefaultState(nullptr),
           fMutex(),
           fMiddleWareThread(new MiddleWareThread())
     {
@@ -324,6 +325,8 @@ public:
         _initMaster();
         _setMasterParameters();
 
+        fMaster->getalldata(&fDefaultState);
+
         fMiddleWareThread->start(fMiddleWare);
     }
 
@@ -331,6 +334,7 @@ public:
     {
         fMiddleWareThread->stop();
         _deleteMaster();
+        std::free(fDefaultState);
     }
 
 protected:
@@ -594,7 +598,7 @@ protected:
         if (bank == 0)
         {
             // reset part to default
-            // TODO
+            setState(fDefaultState);
             return;
         }
 
@@ -828,6 +832,7 @@ private:
     Master*     fMaster;
     SYNTH_T     fSynth;
     Config      fConfig;
+    char*       fDefaultState;
 
     float fParameters[kParamCount];
 

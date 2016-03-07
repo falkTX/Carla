@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -54,11 +54,20 @@ public:
     /*
      * Simple char string.
      */
-    explicit String(char* const strBuf) noexcept
+    explicit String(char* const strBuf, const bool copyData = true) noexcept
         : fBuffer(_null()),
           fBufferLen(0)
     {
-        _dup(strBuf);
+        if (copyData || strBuf == nullptr)
+        {
+            _dup(strBuf);
+        }
+        else
+        {
+            fBuffer    = strBuf;
+            fBufferLen = std::strlen(strBuf);
+        }
+
     }
 
     /*

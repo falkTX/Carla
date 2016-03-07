@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -15,20 +15,27 @@
  */
 
 #include "DistrhoUIInternal.hpp"
-#include "src/WidgetPrivateData.hpp"
+
+#ifdef HAVE_DGL
+# include "src/WidgetPrivateData.hpp"
+#endif
 
 START_NAMESPACE_DISTRHO
 
 /* ------------------------------------------------------------------------------------------------------------
  * Static data, see DistrhoUIInternal.hpp */
 
-double  d_lastUiSampleRate = 0.0;
-void*   d_lastUiDspPtr = nullptr;
-Window* d_lastUiWindow = nullptr;
+double    d_lastUiSampleRate = 0.0;
+void*     d_lastUiDspPtr     = nullptr;
+#ifdef HAVE_DGL
+Window*   d_lastUiWindow     = nullptr;
+#endif
+uintptr_t g_nextWindowId     = 0;
 
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
 
+#ifdef HAVE_DGL
 UI::UI(uint width, uint height)
     : UIWidget(*d_lastUiWindow),
       pData(new PrivateData())
@@ -38,6 +45,11 @@ UI::UI(uint width, uint height)
     if (width > 0 && height > 0)
         setSize(width, height);
 }
+#else
+UI::UI(uint width, uint height)
+    : UIWidget(width, height),
+      pData(new PrivateData()) {}
+#endif
 
 UI::~UI()
 {
@@ -86,11 +98,22 @@ void* UI::getPluginInstancePointer() const noexcept
 }
 #endif
 
+#if DISTRHO_PLUGIN_HAS_EMBED_UI && DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+/* ------------------------------------------------------------------------------------------------------------
+ * External embeddable UI helpers */
+
+uintptr_t UI::getNextWindowId() noexcept
+{
+    return g_nextWindowId;
+}
+#endif
+
 /* ------------------------------------------------------------------------------------------------------------
  * DSP/Plugin Callbacks (optional) */
 
 void UI::sampleRateChanged(double) {}
 
+#ifdef HAVE_DGL
 /* ------------------------------------------------------------------------------------------------------------
  * UI Callbacks (optional) */
 
@@ -117,6 +140,7 @@ void UI::onResize(const ResizeEvent& ev)
 {
     pData->setSizeCallback(ev.size.getWidth(), ev.size.getHeight());
 }
+#endif
 
 // -----------------------------------------------------------------------------------------------------------
 

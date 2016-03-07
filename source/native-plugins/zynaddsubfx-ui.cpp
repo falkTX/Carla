@@ -41,8 +41,6 @@ static CarlaString getResourceDir()
 }
 
 CarlaString gUiPixmapPath(getResourceDir());
-
-const char* embedId = nullptr;
 #endif
 
 // base c-style headers

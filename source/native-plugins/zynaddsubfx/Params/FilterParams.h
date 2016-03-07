@@ -5,19 +5,10 @@
   Copyright (C) 2002-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of version 2 of the GNU General Public License
-  as published by the Free Software Foundation.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License (version 2 or later) for more details.
-
-  You should have received a copy of the GNU General Public License (version 2)
-  along with this program; if not, write to the Free Software Foundation,
-  Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
-
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
 */
 
 #ifndef FILTER_PARAMS_H
@@ -48,10 +39,10 @@ class FilterParams:public PresetsArray
 
         void getfromFilterParams(FilterParams *pars);
 
-        float getfreq();
-        float getq();
-        float getfreqtracking(float notefreq);
-        float getgain();
+        float getfreq() const ;
+        float getq() const ;
+        float getfreqtracking(float notefreq) const ;
+        float getgain() const ;
 
         unsigned char Pcategory; //Filter category (Analog/Formant/StVar)
         unsigned char Ptype; // Filter type  (for analog lpf,hpf,bpf..)
@@ -80,14 +71,14 @@ class FilterParams:public PresetsArray
             unsigned char nvowel; //the vowel from the position
         } Psequence[FF_MAX_SEQUENCE];
 
-        float getcenterfreq();
-        float getoctavesfreq();
-        float getfreqpos(float freq);
-        float getfreqx(float x);
+        float getcenterfreq() const ;
+        float getoctavesfreq() const ;
+        float getfreqpos(float freq) const ;
+        float getfreqx(float x) const ;
 
-        float getformantfreq(unsigned char freq);
-        float getformantamp(unsigned char amp);
-        float getformantq(unsigned char q);
+        float getformantfreq(unsigned char freq) const ;
+        float getformantamp(unsigned char amp) const ;
+        float getformantq(unsigned char q) const ;
 
         void defaults(int n);
 

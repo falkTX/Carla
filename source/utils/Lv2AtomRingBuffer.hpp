@@ -184,17 +184,15 @@ protected:
 
     bool writeAtom(const LV2_Atom* const atom, const int32_t portIndex) noexcept
     {
-        tryWrite(atom,       sizeof(LV2_Atom));
-        tryWrite(&portIndex, sizeof(int32_t));
-        tryWrite(LV2_ATOM_BODY_CONST(atom), atom->size);
+        if (tryWrite(atom, sizeof(LV2_Atom)) && tryWrite(&portIndex, sizeof(int32_t)))
+            tryWrite(LV2_ATOM_BODY_CONST(atom), atom->size);
         return commitWrite();
     }
 
     bool writeAtomChunk(const LV2_Atom* const atom, const void* const data, const int32_t portIndex) noexcept
     {
-        tryWrite(atom,       sizeof(LV2_Atom));
-        tryWrite(&portIndex, sizeof(int32_t));
-        tryWrite(data,       atom->size);
+        if (tryWrite(atom, sizeof(LV2_Atom)) && tryWrite(&portIndex, sizeof(int32_t)))
+            tryWrite(data, atom->size);
         return commitWrite();
     }
 
@@ -205,7 +203,7 @@ private:
     HeapBuffer fHeapBuffer;
     const bool fNeedsDataDelete;
 
-    static const std::size_t kMaxAtomDataSize = 8192;
+    static const std::size_t kMaxAtomDataSize = 32768 - sizeof(LV2_Atom);
 
     struct RetAtom {
         LV2_Atom atom;

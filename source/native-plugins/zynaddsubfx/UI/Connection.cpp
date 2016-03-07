@@ -1,3 +1,14 @@
+/*
+  ZynAddSubFX - a software synthesizer
+
+  Connection.cpp - In-Process GUI Stubs
+  Copyright (C) 2016 Mark McCurry
+
+  This program is free software; you can redistribute it and/or
+  modify it under the terms of the GNU General Public License
+  as published by the Free Software Foundation; either version 2
+  of the License, or (at your option) any later version.
+*/
 #include "Connection.h"
 #include "Fl_Osc_Interface.h"
 #include "../globals.h"
@@ -134,7 +145,7 @@ void GUI::destroyUi(ui_handle_t ui)
     delete static_cast<MasterUI*>(ui);
 }
 
-#define BEGIN(x) {x,":non-realtime\0",NULL,[](const char *m, rtosc::RtData d){ \
+#define BEGIN(x) {x,":non-realtime\0",NULL,[](const char *m, rtosc::RtData &d){ \
     MasterUI *ui   = static_cast<MasterUI*>(d.obj); \
     rtosc_arg_t a0 = {0}, a1 = {0}; \
     if(rtosc_narguments(m) > 0) \
@@ -156,6 +167,18 @@ rtosc::Ports uiPorts::ports = {
     } END
     BEGIN("alert:s") {
         fl_alert("%s",a0.s);
+    } END
+    BEGIN("alert-reload:i") {
+        int res = fl_choice("Old autosave found, do you want to reload?",
+                "Delete", "Reload", "Ignore");
+        //       0        1          2
+        if(1==res) {
+            d.reply("/reload_auto_save", "i", a0.i);
+            ui->refresh_master_ui();
+            ui->updatepanel();
+        } else if(0==res) {
+            d.reply("/delete_auto_save", "i", a0.i);
+        }
     } END
     BEGIN("session-type:s") {
         if(strcmp(a0.s,"LASH"))
@@ -188,6 +211,26 @@ rtosc::Ports uiPorts::ports = {
     } END
 };
 
+//very tiny rtdata ext
+class RtDataUI: public rtosc::RtData {
+public:
+
+    RtDataUI(Fl_Osc_Interface *osc_)
+        :osc(osc_)
+    {}
+
+    void reply(const char *path, const char *args, ...) override
+    {
+        va_list va;
+        va_start(va,args);
+        char buf[2048];
+        rtosc_vmessage(buf,sizeof(buf),path,args,va);
+        osc->writeRaw(buf);
+        va_end(va);
+    }
+
+    Fl_Osc_Interface *osc;
+};
 
 void GUI::raiseUi(ui_handle_t gui, const char *message)
 {
@@ -209,7 +252,7 @@ void GUI::raiseUi(ui_handle_t gui, const char *message)
     //printf("got message for UI '%s'\n", message);
     char buffer[1024];
     memset(buffer, 0, sizeof(buffer));
-    rtosc::RtData d;
+    RtDataUI d(mui->osc);
     d.loc = buffer;
     d.loc_size = 1024;
     d.obj = gui;
