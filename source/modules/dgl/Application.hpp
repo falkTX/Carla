@@ -49,7 +49,7 @@ public:
    /**
       Destructor.
     */
-    ~Application();
+    virtual ~Application();
 
    /**
       Idle function.

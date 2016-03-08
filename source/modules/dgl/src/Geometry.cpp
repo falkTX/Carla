@@ -655,13 +655,13 @@ void Circle<T>::_draw(const bool outline)
 {
     DISTRHO_SAFE_ASSERT_RETURN(fNumSegments >= 3 && fSize > 0.0f,);
 
-    float t, x = fSize, y = 0.0f;
+    double t, x = fSize, y = 0.0;
 
     glBegin(outline ? GL_LINE_LOOP : GL_POLYGON);
 
     for (uint i=0; i<fNumSegments; ++i)
     {
-        glVertex2f(x + fPos.fX, y + fPos.fY);
+        glVertex2d(x + fPos.fX, y + fPos.fY);
 
         t = x;
         x = fCos * x - fSin * y;

@@ -79,7 +79,7 @@ private:
     struct PrivateData;
     PrivateData* const pData;
 
-    DISTRHO_LEAK_DETECTOR(ImageButton)
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageButton)
 };
 
 // -----------------------------------------------------------------------
@@ -225,7 +225,7 @@ private:
     void setAbsolutePos(int, int) const noexcept {}
     void setAbsolutePos(const Point<int>&) const noexcept {}
 
-    DISTRHO_LEAK_DETECTOR(ImageSlider)
+    DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ImageSlider)
 };
 
 // -----------------------------------------------------------------------

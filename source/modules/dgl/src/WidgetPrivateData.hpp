@@ -44,6 +44,7 @@ struct Widget::PrivateData {
           parent(p),
           absolutePos(0, 0),
           size(0, 0),
+          subWidgets(),
           id(0),
           needsFullViewport(false),
           needsScaling(false),
@@ -81,7 +82,7 @@ struct Widget::PrivateData {
         {
             // limit viewport to widget bounds
             glViewport(absolutePos.getX(),
-                       height - static_cast<int>(self->getHeight()) - absolutePos.getY(),
+                       static_cast<int>(height - self->getHeight()) - absolutePos.getY(),
                        static_cast<GLsizei>(self->getWidth()),
                        static_cast<GLsizei>(self->getHeight()));
         }
@@ -89,13 +90,13 @@ struct Widget::PrivateData {
         {
             // only set viewport pos
             glViewport(absolutePos.getX(),
-                        /*height - static_cast<int>(self->getHeight())*/ - absolutePos.getY(),
-                        static_cast<GLsizei>(width),
-                        static_cast<GLsizei>(height));
+                       /*static_cast<int>(height - self->getHeight())*/ - absolutePos.getY(),
+                       static_cast<GLsizei>(width),
+                       static_cast<GLsizei>(height));
 
             // then cut the outer bounds
             glScissor(absolutePos.getX(),
-                      height - static_cast<int>(self->getHeight()) - absolutePos.getY(),
+                      static_cast<int>(height - self->getHeight()) - absolutePos.getY(),
                       static_cast<GLsizei>(self->getWidth()),
                       static_cast<GLsizei>(self->getHeight()));
 
