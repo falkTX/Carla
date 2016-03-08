@@ -544,9 +544,6 @@ const char* carla_get_complete_license_text()
 
         // misc libs
         "<li>base64 utilities based on code by Ren\u00E9 Nyffenegger</li>"
-#ifdef CARLA_OS_MAC
-        "<li>sem_timedwait for Mac OS by Keith Shortridge</li>"
-#endif
         "<li>liblo library for OSC support</li>"
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
@@ -595,7 +592,7 @@ const char* carla_get_juce_version()
         if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
             retVersion = version+6;
         else
-            retVersion = "3.0";
+            retVersion = "4.0";
     }
 
     return retVersion;
