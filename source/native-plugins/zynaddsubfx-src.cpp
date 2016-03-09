@@ -25,6 +25,8 @@
 using std::isnan;
 #else
 # include <err.h>
+#include <cmath>
+using std::isnan;
 #endif
 
 #define PLUGINVERSION
