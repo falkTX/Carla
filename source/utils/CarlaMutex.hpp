@@ -1,6 +1,6 @@
 /*
  * Carla Mutex
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -32,19 +32,15 @@ public:
      * Constructor.
      */
     CarlaMutex() noexcept
-#if 0 //def CARLA_OS_WIN
-        : fAlreadyLocked(false),
-          fSection(),
-#else
         : fMutex(),
-#endif
           fTryLockWasCalled(false)
     {
-#if 0 //def CARLA_OS_WIN
-        InitializeCriticalSection(&fSection);
-#else
-        pthread_mutex_init(&fMutex, nullptr);
-#endif
+        pthread_mutexattr_t atts;
+        pthread_mutexattr_init(&atts);
+        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_NORMAL);
+        pthread_mutex_init(&fMutex, &atts);
+        pthread_mutexattr_destroy(&atts);
     }
 
     /*
@@ -52,11 +48,7 @@ public:
      */
     ~CarlaMutex() noexcept
     {
-#if 0 //def CARLA_OS_WIN
-        DeleteCriticalSection(&fSection);
-#else
         pthread_mutex_destroy(&fMutex);
-#endif
     }
 
     /*
@@ -74,16 +66,7 @@ public:
      */
     void lock() const noexcept
     {
-#if 0 //def CARLA_OS_WIN
-        EnterCriticalSection(&fSection);
-
-        for (;fAlreadyLocked;)
-            Sleep(500);
-
-        fAlreadyLocked = true;
-#else
         pthread_mutex_lock(&fMutex);
-#endif
     }
 
     /*
@@ -94,21 +77,7 @@ public:
     {
         fTryLockWasCalled = true;
 
-#if 0 //def CARLA_OS_WIN
-        if (TryEnterCriticalSection(&fSection) == FALSE)
-            return false;
-
-        if (fAlreadyLocked)
-        {
-            LeaveCriticalSection(&fSection);
-            return false;
-        }
-
-        fAlreadyLocked = true;
-        return true;
-#else
         return (pthread_mutex_trylock(&fMutex) == 0);
-#endif
     }
 
     /*
@@ -119,21 +88,11 @@ public:
         if (resetTryLock)
             fTryLockWasCalled = false;
 
-#if 0 //def CARLA_OS_WIN
-        fAlreadyLocked = false;
-        LeaveCriticalSection(&fSection);
-#else
         pthread_mutex_unlock(&fMutex);
-#endif
     }
 
 private:
-#if 0 //def CARLA_OS_WIN
-    mutable volatile bool fAlreadyLocked;
-    mutable CRITICAL_SECTION fSection;
-#else
     mutable pthread_mutex_t fMutex;
-#endif
     mutable volatile bool fTryLockWasCalled; // true if "tryLock()" was called at least once
 
     CARLA_PREVENT_HEAP_ALLOCATION
@@ -161,6 +120,7 @@ public:
 #else
         pthread_mutexattr_t atts;
         pthread_mutexattr_init(&atts);
+        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
         pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&fMutex, &atts);
         pthread_mutexattr_destroy(&atts);
