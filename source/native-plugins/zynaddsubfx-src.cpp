@@ -21,6 +21,7 @@
 # include <cmath>
 # define errx(...) {}
 # define warnx(...) {}
+# define index strchr
 # define rindex strrchr
 #else
 # include <err.h>

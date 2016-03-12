@@ -13,6 +13,7 @@ include ../Makefile.mk
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_DEVICES_FLAGS) -I..
 
 ifeq ($(WIN32),true)
+BUILD_CXX_FLAGS += -Wno-missing-field-initializers
 # BUILD_CXX_FLAGS += -I$(CWD)/includes/asio
 BUILD_CXX_FLAGS += -I$(CWD)/modules/rtaudio/include
 endif
