@@ -1498,7 +1498,6 @@ public:
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
-                                break;
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
@@ -1506,7 +1505,6 @@ public:
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
-                                break;
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -1534,7 +1532,6 @@ public:
                                 setBalanceRight(right, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                                break;
                             }
                         }
 #endif

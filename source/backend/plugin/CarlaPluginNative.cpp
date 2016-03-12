@@ -1584,8 +1584,9 @@ public:
                             nativeEvent.data[2] = uint8_t(ctrlEvent.value*127.0f);
                             nativeEvent.size    = 3;
                         }
+
                         break;
-                    }
+                    } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
                         if (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)

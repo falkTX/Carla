@@ -766,7 +766,6 @@ public:
                                 value = ctrlEvent.value;
                                 setDryWet(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_DRYWET, 0, value);
-                                break;
                             }
 
                             if (MIDI_IS_CONTROL_CHANNEL_VOLUME(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_VOLUME) != 0)
@@ -774,7 +773,6 @@ public:
                                 value = ctrlEvent.value*127.0f/100.0f;
                                 setVolume(value, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_VOLUME, 0, value);
-                                break;
                             }
 
                             if (MIDI_IS_CONTROL_BALANCE(ctrlEvent.param) && (pData->hints & PLUGIN_CAN_BALANCE) != 0)
@@ -802,7 +800,6 @@ public:
                                 setBalanceRight(right, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_LEFT, 0, left);
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
-                                break;
                             }
                         }
 #endif
@@ -835,12 +832,7 @@ public:
 
                             setParameterValue(k, value, false, false, false);
                             pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 0, value);
-                            break;
                         }
-
-                        // check if event is already handled
-                        if (k != pData->param.count)
-                            break;
 
                         if ((pData->options & PLUGIN_OPTION_SEND_CONTROL_CHANGES) != 0 && ctrlEvent.param < MAX_MIDI_CONTROL)
                         {
@@ -851,6 +843,7 @@ public:
 
                             fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
                         }
+
                         break;
                     } // case kEngineControlEventTypeParameter
 
