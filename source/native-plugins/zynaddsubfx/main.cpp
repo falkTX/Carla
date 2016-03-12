@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
             "swap", 2, NULL, 'S'
         },
         {
-            "no-gui", 2, NULL, 'U'
+            "no-gui", 0, NULL, 'U'
         },
         {
             "dummy", 2, NULL, 'Y'
@@ -207,6 +207,9 @@ int main(int argc, char *argv[])
             "dump-oscdoc", 2, NULL, 'd'
         },
         {
+            "dump-json-schema", 2, NULL, 'D'
+        },
+        {
             "ui-title", 1, NULL, 'u'
         },
         {
@@ -226,7 +229,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:P:A:u:hvapSDUY",
+                          "l:L:r:b:o:I:O:N:e:P:A:u:D:hvapSDUY",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -336,6 +339,15 @@ int main(int argc, char *argv[])
                     s.author_first = "Mark";
                     s.author_last  = "McCurry";
                     outfile << s;
+                }
+                break;
+            case 'D':
+                if(optarguments)
+                {
+                    ofstream outfile(optarguments);
+                    void dump_json(std::ostream &o,
+                            const rtosc::Ports &p);
+                    dump_json(outfile, Master::ports);
                 }
                 break;
             case 'u':

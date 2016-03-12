@@ -44,10 +44,10 @@ static const Ports partPorts = {
     rRecurs(kit, 16, "Kit"),//NUM_KIT_ITEMS
     rRecursp(partefx, 3, "Part Effect"),
     rRecur(ctl,       "Controller"),
-    rToggle(Penabled, "Part enable"),
+    rToggle(Penabled, rShort("enable"), "Part enable"),
 #undef rChangeCb
 #define rChangeCb obj->setPvolume(obj->Pvolume);
-    rParamZyn(Pvolume, "Part Volume"),
+    rParamZyn(Pvolume, rShort("Vol"), "Part Volume"),
 #undef rChangeCb
 #define rChangeCb obj->setPpanning(obj->Ppanning);
     rParamZyn(Ppanning, "Set Panning"),
@@ -56,9 +56,9 @@ static const Ports partPorts = {
     rParamI(Pkeylimit, rProp(parameter), rMap(min,0), rMap(max, POLYPHONY), "Key limit per part"),
 #undef rChangeCb
 #define rChangeCb
-    rParamZyn(Pminkey, "Min Used Key"),
-    rParamZyn(Pmaxkey, "Max Used Key"),
-    rParamZyn(Pkeyshift, "Part keyshift"),
+    rParamZyn(Pminkey, rShort("min"), "Min Used Key"),
+    rParamZyn(Pmaxkey, rShort("max"), "Max Used Key"),
+    rParamZyn(Pkeyshift, rShort("shift"), "Part keyshift"),
     rParamZyn(Prcvchn,  "Active MIDI channel"),
     rParamZyn(Pvelsns,   "Velocity sensing"),
     rParamZyn(Pveloffs,  "Velocity offset"),

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013 Mark McCurry
+ * Copyright (c) 2016 Mark McCurry
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -210,6 +210,9 @@ template<class T> constexpr T spice(T*t) {return *t;}
 #define rDoc(doc) ":documentation\0=" doc "\0"
 #define rOpt(numeric,symbolic) rMap(map numeric, symbolic)
 #define rOptions(...) OPTIONS(__VA_ARGS__)
+
+//Zest Metadata
+#define rShort(name) ":shortname\0=" name "\0"
 
 
 //Callback Implementations

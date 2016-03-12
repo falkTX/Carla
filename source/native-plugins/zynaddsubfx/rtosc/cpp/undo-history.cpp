@@ -71,7 +71,6 @@ static char tmp[256];
 void UndoHistoryImpl::rewind(const char *msg)
 {
     memset(tmp, 0, sizeof(tmp));
-    printf("rewind('%s')\n", msg);
     rtosc_arg_t arg = rtosc_argument(msg,1);
     rtosc_amessage(tmp, 256, rtosc_argument(msg,0).s,
             rtosc_argument_string(msg)+2,
@@ -81,9 +80,7 @@ void UndoHistoryImpl::rewind(const char *msg)
 
 void UndoHistoryImpl::replay(const char *msg)
 {
-    printf("replay...'%s'\n", msg);
     rtosc_arg_t arg = rtosc_argument(msg,2);
-    printf("replay address: '%s'\n", rtosc_argument(msg, 0).s);
     int len = rtosc_amessage(tmp, 256, rtosc_argument(msg,0).s,
             rtosc_argument_string(msg)+2,
             &arg);
@@ -141,8 +138,6 @@ void UndoHistory::seekHistory(int distance)
     if(!distance)
         return;
     
-    printf("distance == '%d'\n", distance);
-    printf("history_pos == '%ld'\n", impl->history_pos);
     //TODO account for traveling back in time
     if(distance<0)
         while(distance++)

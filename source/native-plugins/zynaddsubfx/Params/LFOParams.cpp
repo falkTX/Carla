@@ -16,6 +16,7 @@
 #include "../globals.h"
 #include "../Misc/Util.h"
 #include "../Misc/XMLwrapper.h"
+#include "../Misc/Time.h"
 #include "LFOParams.h"
 
 #include <rtosc/port-sugar.h>
@@ -29,19 +30,21 @@ using namespace rtosc;
 static const rtosc::Ports _ports = {
     rSelf(LFOParams),
     rPaste,
-    rParamF(Pfreq, rLinear(0.0,1.0), "frequency of LFO\n"
+    rParamF(Pfreq, rShort("freq"), rLinear(0.0,1.0), "frequency of LFO\n"
             "lfo frequency = (2^(10*Pfreq)-1)/12 * stretch\n"
             "true frequency is [0,85.33] Hz"),
-    rParamZyn(Pintensity, "Intensity of LFO"),
-    rParamZyn(Pstartphase, rSpecial(random), "Starting Phase"),
-    rOption(PLFOtype, rOptions(sine, triangle, square, ramp-up, ramp-down,
+    rParamZyn(Pintensity, rShort("depth"), "Intensity of LFO"),
+    rParamZyn(Pstartphase, rShort("start"), rSpecial(random), "Starting Phase"),
+    rOption(PLFOtype, rShort("type"), rOptions(sine, triangle, square, ramp-up, ramp-down,
                 exponential-down1, exponential-down2), "Shape of LFO"),
-    rParamZyn(Prandomness, rSpecial(disable), "Amplitude Randomness (calculated uniformly at each cycle)"),
-    rParamZyn(Pfreqrand, rSpecial(disable), "Frequency Randomness (calculated uniformly at each cycle)"),
-    rParamZyn(Pdelay, rSpecial(disable), "Delay before LFO start\n"
+    rParamZyn(Prandomness, rShort("a.r."), rSpecial(disable),
+            "Amplitude Randomness (calculated uniformly at each cycle)"),
+    rParamZyn(Pfreqrand, rShort("f.r."), rSpecial(disable),
+            "Frequency Randomness (calculated uniformly at each cycle)"),
+    rParamZyn(Pdelay, rShort("delay"), rSpecial(disable), "Delay before LFO start\n"
             "0..4 second delay"),
-    rToggle(Pcontinous, "Enable for global operation"),
-    rParamZyn(Pstretch, rCentered, "Note frequency stretch"),
+    rToggle(Pcontinous, rShort("c"), "Enable for global operation"),
+    rParamZyn(Pstretch, rShort("str"), rCentered, "Note frequency stretch"),
 };
 #undef rChangeCb
 
