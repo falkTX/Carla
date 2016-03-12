@@ -26,8 +26,8 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import Qt
-    from PyQt5.QtGui import QCursor
-    from PyQt5.QtWidgets import QGraphicsView, QMouseEvent
+    from PyQt5.QtGui import QCursor, QMouseEvent
+    from PyQt5.QtWidgets import QGraphicsView
 else:
     from PyQt4.QtCore import Qt
     from PyQt4.QtGui import QCursor, QGraphicsView, QMouseEvent
