@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -27,11 +27,11 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QImage, QPalette
-    from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
     from PyQt5.QtWidgets import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
     from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
-    from PyQt4.QtGui import QAction, QApplication, QFileSystemModel, QImage, QListWidgetItem, QMainWindow, QPalette, QPrinter, QPrintDialog
+    from PyQt4.QtGui import QImage, QPalette
+    from PyQt4.QtGui import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -140,8 +140,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff (patchbay)
 
-        self.fExportImage   = QImage()
-        self.fExportPrinter = None
+        self.fExportImage = QImage()
 
         self.fPeaksCleared = True
 
@@ -216,7 +215,6 @@ class HostWindow(QMainWindow):
             self.ui.act_canvas_show_internal.setVisible(False)
             self.ui.act_canvas_show_external.setVisible(False)
             self.ui.act_canvas_arrange.setVisible(False)
-            self.ui.act_canvas_print.setVisible(False)
             self.ui.act_canvas_refresh.setVisible(False)
             self.ui.act_canvas_save_image.setVisible(False)
             self.ui.act_canvas_zoom_100.setVisible(False)
@@ -374,7 +372,6 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_zoom_in.triggered.connect(self.slot_canvasZoomIn)
         self.ui.act_canvas_zoom_out.triggered.connect(self.slot_canvasZoomOut)
         self.ui.act_canvas_zoom_100.triggered.connect(self.slot_canvasZoomReset)
-        self.ui.act_canvas_print.triggered.connect(self.slot_canvasPrint)
         self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
@@ -1118,23 +1115,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_canvasZoomReset(self):
         self.scene.zoom_reset()
-
-    @pyqtSlot()
-    def slot_canvasPrint(self):
-        self.scene.clearSelection()
-
-        if self.fExportPrinter is None:
-            self.fExportPrinter = QPrinter()
-
-        dialog = QPrintDialog(self.fExportPrinter, self)
-
-        if dialog.exec_():
-            painter = QPainter(self.fExportPrinter)
-            painter.save()
-            painter.setRenderHint(QPainter.Antialiasing)
-            painter.setRenderHint(QPainter.TextAntialiasing)
-            self.scene.render(painter)
-            painter.restore()
 
     @pyqtSlot()
     def slot_canvasSaveImage(self):

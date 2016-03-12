@@ -218,7 +218,6 @@
     <addaction name="act_canvas_refresh"/>
     <addaction name="menu_Canvas_Zoom"/>
     <addaction name="separator"/>
-    <addaction name="act_canvas_print"/>
     <addaction name="act_canvas_save_image"/>
    </widget>
    <widget class="QMenu" name="menu_Settings">
