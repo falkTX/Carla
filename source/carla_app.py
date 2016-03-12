@@ -66,9 +66,11 @@ class CarlaApplication(object):
             self.createApp(appName)
             return
 
+        forceTheme  = MACOS or (WINDOWS and not config_UseQt5)
+
         # base settings
         settings    = QSettings("falkTX", appName)
-        useProTheme = settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
+        useProTheme = forceTheme or settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool)
 
         if not useProTheme:
             self.createApp(appName)
@@ -88,7 +90,7 @@ class CarlaApplication(object):
         # set palette
         proThemeColor = settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str).lower()
 
-        if proThemeColor == "black":
+        if forceTheme or proThemeColor == "black":
             self.fPalBlack = QPalette()
             self.fPalBlack.setColor(QPalette.Disabled, QPalette.Window, QColor(14, 14, 14))
             self.fPalBlack.setColor(QPalette.Active,   QPalette.Window, QColor(17, 17, 17))

@@ -234,8 +234,9 @@ class CarlaSettingsW(QDialog):
         for i in range(Theme.THEME_MAX):
             self.ui.cb_canvas_theme.addItem(getThemeName(i))
 
-        if WINDOWS and not config_UseQt5:
+        if MACOS or (WINDOWS and not config_UseQt5):
             self.ui.group_main_theme.setEnabled(False)
+            self.ui.group_main_theme.setVisible(False)
 
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
