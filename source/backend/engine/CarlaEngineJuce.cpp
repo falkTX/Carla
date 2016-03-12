@@ -29,6 +29,33 @@ using namespace juce;
 CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
+
+struct MidiInPort {
+    MidiInput* port;
+    char name[STR_MAX+1];
+};
+
+struct MidiOutPort {
+    MidiOutput* port;
+    char name[STR_MAX+1];
+};
+
+struct RtMidiEvent {
+    uint64_t time; // needs to compare to internal time
+    uint8_t  size;
+    uint8_t  data[EngineMidiEvent::kDataSize];
+};
+
+// -------------------------------------------------------------------------------------------------------------------
+// Fallback data
+
+static const MidiInPort  kMidiInPortFallback    = { nullptr, { '\0' } };
+static /* */ MidiInPort  kMidiInPortFallbackNC  = { nullptr, { '\0' } };
+static const MidiOutPort kMidiOutPortFallback   = { nullptr, { '\0' } };
+static /* */ MidiOutPort kMidiOutPortFallbackNC = { nullptr, { '\0' } };
+static const RtMidiEvent kRtMidiEventFallback   = { 0, 0, { 0 } };
+
+// -------------------------------------------------------------------------------------------------------------------
 // Global static data
 
 static CharStringListPtr             gDeviceNames;
@@ -204,7 +231,7 @@ public:
 
         for (LinkedList<MidiInPort>::Itenerator it = fMidiIns.begin2(); it.valid(); it.next())
         {
-            MidiInPort& inPort(it.getValue());
+            MidiInPort& inPort(it.getValue(kMidiInPortFallbackNC));
             CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
             inPort.port->stop();
@@ -218,7 +245,7 @@ public:
 
         for (LinkedList<MidiOutPort>::Itenerator it = fMidiOuts.begin2(); it.valid(); it.next())
         {
-            MidiOutPort& outPort(it.getValue());
+            MidiOutPort& outPort(it.getValue(kMidiOutPortFallbackNC));
             CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
             outPort.port->stopBackgroundThread();
@@ -349,7 +376,8 @@ public:
 
         for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
         {
-            const MidiInPort& inPort(it.getValue());
+            const MidiInPort& inPort(it.getValue(kMidiInPortFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
             const uint portId(extGraph.midiPorts.getPortId(true, inPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.ins.count());
@@ -368,7 +396,8 @@ public:
 
         for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
         {
-            const MidiOutPort& outPort(it.getValue());
+            const MidiOutPort& outPort(it.getValue(kMidiOutPortFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
             const uint portId(extGraph.midiPorts.getPortId(false, outPort.name));
             CARLA_SAFE_ASSERT_CONTINUE(portId < extGraph.midiPorts.outs.count());
@@ -439,8 +468,10 @@ protected:
 
             for (LinkedList<RtMidiEvent>::Itenerator it = fMidiInEvents.data.begin2(); it.valid(); it.next())
             {
-                const RtMidiEvent& midiEvent(it.getValue());
-                EngineEvent&       engineEvent(pData->events.in[engineEventIndex++]);
+                const RtMidiEvent& midiEvent(it.getValue(kRtMidiEventFallback));
+                CARLA_SAFE_ASSERT_CONTINUE(midiEvent.size > 0);
+
+                EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
 
                 if (midiEvent.time < pData->timeInfo.frame)
                 {
@@ -509,7 +540,7 @@ protected:
 
                     for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
                     {
-                        MidiOutPort& outPort(it.getValue());
+                        MidiOutPort& outPort(it.getValue(kMidiOutPortFallbackNC));
                         CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
                         outPort.port->sendMessageNow(message);
@@ -634,7 +665,7 @@ protected:
         case kExternalGraphConnectionMidiInput:
             for (LinkedList<MidiInPort>::Itenerator it=fMidiIns.begin2(); it.valid(); it.next())
             {
-                MidiInPort& inPort(it.getValue());
+                MidiInPort& inPort(it.getValue(kMidiInPortFallbackNC));
                 CARLA_SAFE_ASSERT_CONTINUE(inPort.port != nullptr);
 
                 if (std::strcmp(inPort.name, portName) != 0)
@@ -653,7 +684,7 @@ protected:
 
             for (LinkedList<MidiOutPort>::Itenerator it=fMidiOuts.begin2(); it.valid(); it.next())
             {
-                MidiOutPort& outPort(it.getValue());
+                MidiOutPort& outPort(it.getValue(kMidiOutPortFallbackNC));
                 CARLA_SAFE_ASSERT_CONTINUE(outPort.port != nullptr);
 
                 if (std::strcmp(outPort.name, portName) != 0)
@@ -676,22 +707,6 @@ protected:
 private:
     ScopedPointer<AudioIODevice> fDevice;
     AudioIODeviceType* const     fDeviceType;
-
-    struct MidiInPort {
-        MidiInput* port;
-        char name[STR_MAX+1];
-    };
-
-    struct MidiOutPort {
-        MidiOutput* port;
-        char name[STR_MAX+1];
-    };
-
-    struct RtMidiEvent {
-        uint64_t time; // needs to compare to internal time
-        uint8_t  size;
-        uint8_t  data[EngineMidiEvent::kDataSize];
-    };
 
     struct RtMidiEvents {
         CarlaMutex mutex;
