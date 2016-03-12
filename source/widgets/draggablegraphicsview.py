@@ -50,9 +50,11 @@ class DraggableGraphicsView(QGraphicsView):
         QGraphicsView.mousePressEvent(self, event)
 
     def mouseReleaseEvent(self, event):
-        if self.fPanning:
-            self.fPanning = False
-            self.setDragMode(QGraphicsView.NoDrag)
-            self.setCursor(QCursor(Qt.ArrowCursor))
-
         QGraphicsView.mouseReleaseEvent(self, event)
+
+        if not self.fPanning:
+            return
+
+        self.fPanning = False
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.setCursor(QCursor(Qt.ArrowCursor))
