@@ -28,16 +28,12 @@
 #endif
 
 #if (defined(__GNUC__) || defined(__clang__)) && ! defined(__STRICT_ANSI__)
-# define container_of(ptr, type, member) ({                   \
+# define list_entry(ptr, type, member) ({                     \
     typeof( ((type*)nullptr)->member ) *__mptr = (ptr);       \
     (type*)( (char*)__mptr - offsetof(type, member) );})
-# define container_of_const(ptr, type, member) ({             \
+# define list_entry_const(ptr, type, member) ({               \
     const typeof( ((type*)nullptr)->member ) *__mptr = (ptr); \
     (const type*)( (const char*)__mptr - offsetof(type, member) );})
-# define list_entry(ptr, type, member)       \
-    container_of(ptr, type, member)
-# define list_entry_const(ptr, type, member) \
-    container_of_const(ptr, type, member)
 #else
 # define list_entry(ptr, type, member)       \
     ((type*)((char*)(ptr)-offsetof(type, member)))
@@ -67,11 +63,10 @@ protected:
 
     AbstractLinkedList() noexcept
         : kDataSize(sizeof(Data)),
-          fCount(0),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fQueue({&fQueue, &fQueue}),
 #endif
-          fUsingItenerator(false)
+          fCount(0)
     {
 #ifndef CARLA_PROPER_CPP11_SUPPORT
         fQueue.next = &fQueue;
@@ -87,20 +82,13 @@ public:
 
     class Itenerator {
     public:
-        Itenerator(const ListHead& queue, bool* usingItenerator) noexcept
+        Itenerator(const ListHead& queue) noexcept
             : fEntry(queue.next),
               fEntry2(fEntry->next),
-              kQueue(queue),
-              fUsingItenerator(usingItenerator)
+              kQueue(queue)
         {
             CARLA_SAFE_ASSERT(fEntry != nullptr);
             CARLA_SAFE_ASSERT(fEntry2 != nullptr);
-        }
-
-        ~Itenerator()
-        {
-            if (fUsingItenerator != nullptr)
-                *fUsingItenerator = false;
         }
 
         bool valid() const noexcept
@@ -138,48 +126,22 @@ public:
             data->value = value;
         }
 
-        // TODO: remove this, fallback should be mandatory
-        T& getValue() const noexcept
-        {
-            static T& fallback(_getFallback());
-
-            Data* const data(list_entry(fEntry, Data, siblings));
-            CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);
-
-            return data->value;
-        }
-
     private:
         ListHead* fEntry;
         ListHead* fEntry2;
         const ListHead& kQueue;
-        bool* const fUsingItenerator;
-
-        static T& _getFallback()
-        {
-            static T data;
-            carla_zeroStruct(data);
-            return data;
-        }
 
         friend class AbstractLinkedList;
     };
 
     class AutoItenerator {
     public:
-        AutoItenerator(const ListHead* entry, bool* usingItenerator) noexcept
+        AutoItenerator(const ListHead* entry) noexcept
             : fEntry(entry),
-              fEntry2(entry != nullptr ? entry->next : nullptr),
-              fUsingItenerator(usingItenerator)
+              fEntry2(entry != nullptr ? entry->next : nullptr)
         {
             CARLA_SAFE_ASSERT(fEntry != nullptr);
             CARLA_SAFE_ASSERT(fEntry2 != nullptr);
-        }
-
-        ~AutoItenerator() noexcept
-        {
-            if (fUsingItenerator != nullptr)
-                *fUsingItenerator = false;
         }
 
         bool operator!=(AutoItenerator& it) const noexcept
@@ -220,7 +182,6 @@ public:
     private:
         ListHead* fEntry;
         ListHead* fEntry2;
-        bool* const fUsingItenerator;
 
         static T& _getFallback()
         {
@@ -232,24 +193,17 @@ public:
 
     Itenerator begin2() const noexcept
     {
-        static const ListHead fallback = { nullptr, nullptr };
-        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, Itenerator(fallback, nullptr));
-
-        fUsingItenerator = true;
-        return Itenerator(fQueue, &fUsingItenerator);
+        return Itenerator(fQueue);
     }
 
     AutoItenerator begin() const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, AutoItenerator(nullptr, nullptr));
-
-        fUsingItenerator = true;
-        return AutoItenerator(fQueue.next, &fUsingItenerator);
+        return AutoItenerator(fQueue.next);
     }
 
     AutoItenerator end() const noexcept
     {
-        return AutoItenerator(&fQueue, nullptr);
+        return AutoItenerator(&fQueue);
     }
 
     void clear() noexcept
@@ -437,8 +391,6 @@ public:
     bool moveTo(AbstractLinkedList<T>& list, const bool inTail = true) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0, false);
-        CARLA_SAFE_ASSERT_RETURN(! fUsingItenerator, false);
-        CARLA_SAFE_ASSERT_RETURN(! list.fUsingItenerator, false);
 
         if (inTail)
             __list_splice_tail(&fQueue, &list.fQueue);
@@ -457,10 +409,8 @@ public:
 protected:
     const std::size_t kDataSize;
 
-    std::size_t fCount;
     ListHead    fQueue;
-
-    mutable bool fUsingItenerator;
+    std::size_t fCount;
 
     virtual Data* _allocate() noexcept = 0;
     virtual void  _deallocate(Data* const dataPtr) noexcept = 0;

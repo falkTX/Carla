@@ -1393,7 +1393,6 @@ public:
                 for (; midiEventCount < kPluginMaxMidiEvents && ! pData->extNotes.data.isEmpty();)
                 {
                     note = pData->extNotes.data.getFirst(note, true);
-
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     snd_seq_event_t& seqEvent(fMidiEvents[midiEventCount++]);

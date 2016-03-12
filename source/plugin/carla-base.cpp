@@ -89,6 +89,8 @@ struct PluginListManager {
         for (LinkedList<const DSSI_Descriptor*>::Itenerator it = dssiDescs.begin2(); it.valid(); it.next())
         {
             const DSSI_Descriptor* const dssiDesc(it.getValue());
+            CARLA_SAFE_ASSERT_CONTINUE(dssiDesc != nullptr);
+
             //delete[] lv2Desc->URI;
             delete dssiDesc;
         }
@@ -98,7 +100,9 @@ struct PluginListManager {
 #ifdef CARLA_NATIVE_PLUGIN_LV2
         for (LinkedList<const LV2_Descriptor*>::Itenerator it = lv2Descs.begin2(); it.valid(); it.next())
         {
-            const LV2_Descriptor* const lv2Desc(it.getValue());
+            const LV2_Descriptor* const lv2Desc(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(lv2Desc != nullptr);
+
             delete[] lv2Desc->URI;
             delete lv2Desc;
         }

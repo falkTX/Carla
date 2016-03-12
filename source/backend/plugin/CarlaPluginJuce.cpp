@@ -30,7 +30,12 @@ using namespace juce;
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -----------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
+// Fallback data
+
+static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
+
+// -------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginJuce : public CarlaPlugin,
                         private AudioPlayHead,
@@ -707,8 +712,7 @@ public:
             {
                 for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin2(); it.valid(); it.next())
                 {
-                    const ExternalMidiNote& note(it.getValue());
-
+                    const ExternalMidiNote& note(it.getValue(kExternalMidiNoteFallback));
                     CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                     uint8_t midiEvent[3];

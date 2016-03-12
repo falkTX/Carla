@@ -45,7 +45,14 @@ using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -----------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
+// Fallback data
+
+static const CustomData       kCustomDataFallback       = { nullptr, nullptr, nullptr };
+static /* */ CustomData       kCustomDataFallbackNC     = { nullptr, nullptr, nullptr };
+static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
+
+// -------------------------------------------------------------------------------------------------------------------
 
 // Maximum default buffer size
 const uint MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
@@ -157,7 +164,7 @@ const uint32_t kFeatureIdExternalUi       = 32;
 const uint32_t kFeatureIdExternalUiOld    = 33;
 const uint32_t kFeatureCountAll           = 34;
 
-// -----------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 struct Lv2EventData {
     uint32_t type;
@@ -279,7 +286,7 @@ struct CarlaPluginLV2EventData {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2EventData)
 };
 
-// -----------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 struct CarlaPluginLV2Options {
     enum OptIndex {
@@ -393,7 +400,7 @@ struct CarlaPluginLV2Options {
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaPluginLV2Options);
 };
 
-// -----------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginLV2;
 
@@ -501,7 +508,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeServerLV2)
 };
 
-// -----------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginLV2 : public CarlaPlugin,
                        private CarlaPluginUI::CloseCallback
@@ -697,7 +704,7 @@ public:
 
         for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin2(); it.valid(); it.next())
         {
-            const char* const uri(it.getValue());
+            const char* const uri(it.getValue(nullptr));
 
             if (uri != nullptr)
                 delete[] uri;
@@ -2971,8 +2978,7 @@ public:
 
                     for (RtLinkedList<ExternalMidiNote>::Itenerator it = pData->extNotes.data.begin2(); it.valid(); it.next())
                     {
-                        const ExternalMidiNote& note(it.getValue());
-
+                        const ExternalMidiNote& note(it.getValue(kExternalMidiNoteFallback));
                         CARLA_SAFE_ASSERT_CONTINUE(note.channel >= 0 && note.channel < MAX_MIDI_CHANNELS);
 
                         uint8_t midiEvent[3];
@@ -4367,18 +4373,18 @@ public:
         // Check if we already have this key
         for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
         {
-            CustomData& data(it.getValue());
+            CustomData& cData(it.getValue(kCustomDataFallbackNC));
+            CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
 
-            if (std::strcmp(data.key, skey) == 0)
+            if (std::strcmp(cData.key, skey) == 0)
             {
                 // found it
-                if (data.value != nullptr)
-                    delete[] data.value;
+                delete[] cData.value;
 
                 if (type == CARLA_URI_MAP_ID_ATOM_STRING || type == CARLA_URI_MAP_ID_ATOM_PATH)
-                    data.value = carla_strdup((const char*)value);
+                    cData.value = carla_strdup((const char*)value);
                 else
-                    data.value = CarlaString::asBase64(value, size).dup();
+                    cData.value = CarlaString::asBase64(value, size).dup();
 
                 return LV2_STATE_SUCCESS;
             }
@@ -4416,12 +4422,13 @@ public:
 
         for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
         {
-            const CustomData& data(it.getValue());
+            const CustomData& cData(it.getValue(kCustomDataFallback));
+            CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
 
-            if (std::strcmp(data.key, skey) == 0)
+            if (std::strcmp(cData.key, skey) == 0)
             {
-                stype      = data.type;
-                stringData = data.value;
+                stype      = cData.type;
+                stringData = cData.value;
                 break;
             }
         }

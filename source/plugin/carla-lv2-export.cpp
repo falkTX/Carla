@@ -117,7 +117,9 @@ static void writeManifestFile(PluginListManager& plm)
 
     for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
     {
-        const NativePluginDescriptor* const& pluginDesc(it.getValue());
+        const NativePluginDescriptor* const& pluginDesc(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(pluginDesc != nullptr);
+
         const String label(pluginDesc->label);
 
         text += "<http://kxstudio.sf.net/carla/plugins/" + label + ">\n";
@@ -641,7 +643,9 @@ int main()
 
     for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
     {
-        const NativePluginDescriptor* const& pluginDesc(it.getValue());
+        const NativePluginDescriptor* const& pluginDesc(it.getValue(nullptr));
+        CARLA_SAFE_ASSERT_CONTINUE(pluginDesc != nullptr);
+
         writePluginFile(pluginDesc);
     }
 

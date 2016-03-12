@@ -68,7 +68,7 @@ EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
       value(0),
-      mutex() {}
+      mutex(false) {}
 
 EngineNextAction::~EngineNextAction() noexcept
 {

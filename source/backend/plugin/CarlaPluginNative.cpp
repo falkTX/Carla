@@ -91,6 +91,11 @@ const NativePluginDescriptor* carla_getNativePluginDescriptor(const std::size_t 
 
 CARLA_BACKEND_START_NAMESPACE
 
+// -------------------------------------------------------------------
+// Fallback data
+
+static const CustomData kCustomDataFallback = { nullptr, nullptr, nullptr };
+
 // -----------------------------------------------------------------------
 
 struct NativePluginMidiData {
@@ -753,7 +758,8 @@ public:
         {
             for (LinkedList<CustomData>::Itenerator it = pData->custom.begin2(); it.valid(); it.next())
             {
-                const CustomData& cData(it.getValue());
+                const CustomData& cData(it.getValue(kCustomDataFallback));
+                CARLA_SAFE_ASSERT_CONTINUE(cData.isValid());
 
                 if (std::strcmp(cData.type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(cData.key, "midiPrograms") != 0)
                     fDescriptor->ui_set_custom_data(fHandle, cData.key, cData.value);
@@ -2303,8 +2309,7 @@ public:
 
         for (LinkedList<const NativePluginDescriptor*>::Itenerator it = gPluginDescriptors.begin2(); it.valid(); it.next())
         {
-            fDescriptor = it.getValue();
-
+            fDescriptor = it.getValue(nullptr);
             CARLA_SAFE_ASSERT_BREAK(fDescriptor != nullptr);
 
             carla_debug("Check vs \"%s\"", fDescriptor->label);

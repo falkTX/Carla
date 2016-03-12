@@ -45,6 +45,12 @@ using juce::jmax;
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
+// Fallback data
+
+static const PortNameToId kPortNameToIdFallback   = { 0, 0, { '\0' }, { '\0' } };
+static /* */ PortNameToId kPortNameToIdFallbackNC = { 0, 0, { '\0' }, { '\0' } };
+
+// -----------------------------------------------------------------------
 // External Graph stuff
 
 static inline
@@ -103,9 +109,7 @@ const char* ExternalGraphPorts::getName(const bool isInput, const uint portId) c
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
     {
-        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
 
         if (portNameToId.port == portId)
@@ -119,9 +123,7 @@ uint ExternalGraphPorts::getPortId(const bool isInput, const char portName[], bo
 {
     for (LinkedList<PortNameToId>::Itenerator it = isInput ? ins.begin2() : outs.begin2(); it.valid(); it.next())
     {
-        static const PortNameToId portNameFallback = { 0, 0, { '\0' }, { '\0' } };
-
-        const PortNameToId& portNameToId(it.getValue(portNameFallback));
+        const PortNameToId& portNameToId(it.getValue(kPortNameToIdFallback));
         CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
 
         if (std::strncmp(portNameToId.name, portName, STR_MAX) == 0)
@@ -359,7 +361,9 @@ void ExternalGraph::refresh(const char* const deviceName)
         int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.ins.begin2(); it.valid(); it.next())
         {
-            PortNameToId& portNameToId(it.getValue());
+            PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
+
             portNameToId.setFullName(groupNameIn + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupAudioIn, ++h,
@@ -379,7 +383,9 @@ void ExternalGraph::refresh(const char* const deviceName)
         h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = audioPorts.outs.begin2(); it.valid(); it.next())
         {
-            PortNameToId& portNameToId(it.getValue());
+            PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
+
             portNameToId.setFullName(groupNameOut + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupAudioOut, ++h,
@@ -396,7 +402,9 @@ void ExternalGraph::refresh(const char* const deviceName)
         int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.ins.begin2(); it.valid(); it.next())
         {
-            PortNameToId& portNameToId(it.getValue());
+            PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
+
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupMidiIn, ++h,
@@ -413,7 +421,9 @@ void ExternalGraph::refresh(const char* const deviceName)
         int h = 0;
         for (LinkedList<PortNameToId>::Itenerator it = midiPorts.outs.begin2(); it.valid(); it.next())
         {
-            PortNameToId& portNameToId(it.getValue());
+            PortNameToId& portNameToId(it.getValue(kPortNameToIdFallbackNC));
+            CARLA_SAFE_ASSERT_CONTINUE(portNameToId.group > 0);
+
             portNameToId.setFullName(groupNamePlus + portNameToId.name);
 
             kEngine->callback(ENGINE_CALLBACK_PATCHBAY_PORT_ADDED, kExternalGraphGroupMidiOut, ++h,

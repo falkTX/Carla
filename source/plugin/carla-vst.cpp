@@ -738,7 +738,8 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
             for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
             {
-                const NativePluginDescriptor* const& tmpDesc(it.getValue());
+                const NativePluginDescriptor* const& tmpDesc(it.getValue(nullptr));
+                CARLA_SAFE_ASSERT_CONTINUE(tmpDesc != nullptr);
 
                 if (std::strcmp(tmpDesc->label, pluginLabel) == 0)
                 {
