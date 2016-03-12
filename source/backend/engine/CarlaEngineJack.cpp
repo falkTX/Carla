@@ -1063,36 +1063,6 @@ public:
 #endif
     }
 
-#ifndef BUILD_BRIDGE
-    void idle() noexcept override
-    {
-        CarlaEngine::idle();
-
-        if (fNewGroups.count() == 0)
-            return;
-
-        LinkedList<uint> newPlugins;
-        fNewGroups.moveTo(newPlugins);
-
-        for (LinkedList<uint>::Itenerator it = newPlugins.begin2(); it.valid(); it.next())
-        {
-            const uint groupId(it.getValue(0));
-            CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
-
-            const char* const groupName(fUsedGroups.getGroupName(groupId));
-            CARLA_SAFE_ASSERT_CONTINUE(groupName != nullptr && groupName[0] != '\0');
-
-            int pluginId = -1;
-            PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
-
-            if (findPluginIdAndIcon(groupName, pluginId, icon))
-                callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, groupId, icon, pluginId, 0.0f, nullptr);
-        }
-
-        newPlugins.clear();
-    }
-#endif
-
     bool isRunning() const noexcept override
     {
 #ifdef BUILD_BRIDGE
@@ -2299,7 +2269,9 @@ private:
 
     void run() override
     {
-        LinkedList<PostPonedJackEvent> events; // copy
+        LinkedList<PostPonedJackEvent> events;
+        LinkedList<uint> newPlugins;
+
         PostPonedJackEvent nullEvent;
         carla_zeroStruct(nullEvent);
 
@@ -2310,12 +2282,15 @@ private:
 
                 if (fPostPonedEvents.count() > 0)
                     fPostPonedEvents.moveTo(events);
+
+                if (fNewGroups.count() > 0)
+                    fNewGroups.moveTo(newPlugins);
             }
 
             if (fClient == nullptr)
                 break;
 
-            if (events.count() == 0)
+            if (events.count() == 0 && newPlugins.count() == 0)
             {
                 carla_msleep(200);
                 continue;
@@ -2345,11 +2320,27 @@ private:
                 }
             }
 
+            for (LinkedList<uint>::Itenerator it = newPlugins.begin2(); it.valid(); it.next())
+            {
+                const uint groupId(it.getValue(0));
+                CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
+
+                const char* const groupName(fUsedGroups.getGroupName(groupId));
+                CARLA_SAFE_ASSERT_CONTINUE(groupName != nullptr && groupName[0] != '\0');
+
+                int pluginId = -1;
+                PatchbayIcon icon = PATCHBAY_ICON_PLUGIN;
+
+                if (findPluginIdAndIcon(groupName, pluginId, icon))
+                    callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_DATA_CHANGED, groupId, icon, pluginId, 0.0f, nullptr);
+            }
+
             events.clear();
+            newPlugins.clear();
         }
 
-        if (events.count() > 0)
-            events.clear();
+        events.clear();
+        newPlugins.clear();
     }
 #endif //  BUILD_BRIDGE
 
