@@ -40,7 +40,12 @@ public:
     Mutex() noexcept
         : fMutex()
     {
-        pthread_mutex_init(&fMutex, nullptr);
+        pthread_mutexattr_t atts;
+        pthread_mutexattr_init(&atts);
+        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_NORMAL);
+        pthread_mutex_init(&fMutex, &atts);
+        pthread_mutexattr_destroy(&atts);
     }
 
     /*
@@ -104,6 +109,7 @@ public:
 #else
         pthread_mutexattr_t atts;
         pthread_mutexattr_init(&atts);
+        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
         pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
         pthread_mutex_init(&fMutex, &atts);
         pthread_mutexattr_destroy(&atts);
