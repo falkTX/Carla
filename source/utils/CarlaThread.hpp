@@ -35,7 +35,7 @@ protected:
      * Constructor.
      */
     CarlaThread(const char* const threadName = nullptr) noexcept
-        : fLock(),
+        : fLock(false),
           fName(threadName),
 #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),

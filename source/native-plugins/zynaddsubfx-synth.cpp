@@ -189,7 +189,7 @@ static ZynAddSubFxPrograms sPrograms;
 
 // -----------------------------------------------------------------------
 
-class MiddleWareThread : public CarlaThread
+class MiddleWareThread : private CarlaThread
 {
 public:
       class ScopedStopper
