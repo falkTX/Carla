@@ -127,7 +127,7 @@
          <number>1</number>
         </property>
         <item row="0" column="1">
-         <widget class="QGraphicsView" name="graphicsView"/>
+         <widget class="DraggableGraphicsView" name="graphicsView"/>
         </item>
         <item row="0" column="2">
          <widget class="DigitalPeakMeter" name="peak_out" native="true"/>
@@ -863,6 +863,11 @@
    <class>RackListWidget</class>
    <extends>QListWidget</extends>
    <header>racklistwidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>DraggableGraphicsView</class>
+   <extends>QGraphicsView</extends>
+   <header>draggablegraphicsview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

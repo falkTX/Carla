@@ -59,6 +59,7 @@ ui_*.py
 source/canvaspreviewframe.py
 source/carla_config.py
 source/digitalpeakmeter.py
+source/draggablegraphicsview.py
 source/ledbutton.py
 source/paramspinbox.py
 source/pianoroll.py

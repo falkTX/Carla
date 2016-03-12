@@ -266,6 +266,7 @@ RES = \
 	bin/resources/carla_widgets.py \
 	bin/resources/canvaspreviewframe.py \
 	bin/resources/digitalpeakmeter.py \
+	bin/resources/draggablegraphicsview.py \
 	bin/resources/externalui.py \
 	bin/resources/ledbutton.py \
 	bin/resources/paramspinbox.py \
@@ -354,6 +355,7 @@ endif
 WIDGETS = \
 	source/canvaspreviewframe.py \
 	source/digitalpeakmeter.py \
+	source/draggablegraphicsview.py \
 	source/ledbutton.py \
 	source/paramspinbox.py \
 	source/pianoroll.py \
@@ -628,6 +630,7 @@ endif
 	$(LINK) $(DATADIR)/carla/carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/canvaspreviewframe.py       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/digitalpeakmeter.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/draggablegraphicsview.py    $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ledbutton.py                $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/paramspinbox.py             $(DESTDIR)$(DATADIR)/carla/resources
