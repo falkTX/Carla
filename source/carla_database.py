@@ -161,6 +161,15 @@ PyPluginInfo = {
 global gDiscoveryProcess
 gDiscoveryProcess = None
 
+def findWinePrefix(filename):
+    if (len(filename) < 3 or not("/" in filename)):
+        return None
+    path = filename[:filename.rfind("/")]
+    if (os.path.isdir(path + "/dosdevices")):
+        return path
+    else:
+        return findWinePrefix(path)
+
 def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
     if not os.path.exists(tool):
         qWarning("runCarlaDiscovery() - tool '%s' does not exist" % tool)
@@ -173,6 +182,11 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
         command.append("LANG=C")
         command.append("LD_PRELOAD=")
         if isWine:
+            if os.environ.get('WINEPREFIX') == None:
+                winePrefix = findWinePrefix(filename)
+                if winePrefix != None:
+                    print("Using WINEPREFIX " + winePrefix)
+                    command.append("WINEPREFIX=" + winePrefix)
             command.append("WINEDEBUG=-all")
             command.append("wine")
 
