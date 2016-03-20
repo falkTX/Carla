@@ -725,7 +725,6 @@ endif
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-ifeq ($(DEFAULT_QT),4)
 	# Install vst plugin
 	install -d $(DESTDIR)$(LIBDIR)/vst/carla.vst
 
@@ -747,7 +746,6 @@ ifeq ($(DEFAULT_QT),4)
 	# Link styles for vst plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-endif
 endif
 endif
 
@@ -814,14 +812,10 @@ else
 	@echo "LV2 plugin: $(ANS_NO) $(mZ)Not available for Windows$(mE)"
 endif
 ifeq ($(LINUX),true)
-ifeq ($(DEFAULT_QT),4)
 ifeq ($(HAVE_X11),true)
 	@echo "VST plugin: $(ANS_YES)"
 else # HAVE_X11
 	@echo "VST plugin: $(ANS_NO) $(mS)X11 missing$(mE)"
-endif
-else # DEFAULT_QT
-	@echo "VST plugin: $(ANS_NO) $(mZ)Qt4 only$(mE)"
 endif
 else # LINUX
 	@echo "VST plugin: $(ANS_NO) $(mZ)Linux only$(mE)"

@@ -33,6 +33,10 @@
 # include "juce_audio_processors/juce_audio_processors.h"
 #endif
 
+#ifdef HAVE_X11
+# include <X11/Xlib.h>
+#endif
+
 #include "../native-plugins/_data.cpp"
 
 namespace CB = CarlaBackend;
@@ -817,6 +821,61 @@ const char* carla_get_library_folder()
     }
 
     return ret;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2)
+{
+    carla_debug("carla_x11_reparent_window()");
+
+#ifdef HAVE_X11
+    if (::Display* const disp = XOpenDisplay(nullptr))
+    {
+        XReparentWindow(disp, winId1, winId2, 0, 0);
+        XMapWindow(disp, winId1);
+        XCloseDisplay(disp);
+    }
+#endif
+}
+
+void carla_x11_move_window(uintptr_t winId, int x, int y)
+{
+#ifdef HAVE_X11
+    if (::Display* const disp = XOpenDisplay(nullptr))
+    {
+        XMoveWindow(disp, winId, x, y);
+        XCloseDisplay(disp);
+    }
+#endif
+}
+
+int* carla_x11_get_window_pos(uintptr_t winId)
+{
+    carla_debug("carla_x11_get_window_pos()");
+
+    static int pos[2];
+
+#ifdef HAVE_X11
+    if (::Display* const disp = XOpenDisplay(nullptr))
+    {
+        int x, y;
+        Window child;
+        XWindowAttributes xwa;
+        XTranslateCoordinates(disp, winId, XRootWindow(disp, 0), 0, 0, &x, &y, &child);
+        XGetWindowAttributes(disp, winId, &xwa);
+        XCloseDisplay(disp);
+        pos[0] = x - xwa.x;
+        pos[1] = y - xwa.y;
+    }
+    else
+#endif
+    {
+        pos[0] = 0;
+        pos[1] = 0;
+    }
+
+    return pos;
 }
 
 // -------------------------------------------------------------------------------------------------------------------

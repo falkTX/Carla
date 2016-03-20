@@ -215,6 +215,15 @@ class CarlaUtils(object):
         self.lib.carla_pipe_client_destroy.argtypes = [CarlaPipeClientHandle]
         self.lib.carla_pipe_client_destroy.restype = None
 
+        self.lib.carla_x11_reparent_window.argtypes = [c_uintptr, c_uintptr]
+        self.lib.carla_x11_reparent_window.restype = None
+
+        self.lib.carla_x11_move_window.argtypes = [c_uintptr, c_int, c_int]
+        self.lib.carla_x11_move_window.restype = None
+
+        self.lib.carla_x11_get_window_pos.argtypes = [c_uintptr]
+        self.lib.carla_x11_get_window_pos.restype = POINTER(c_int)
+
         # use _putenv on windows
         if not WINDOWS:
             self.msvcrt = None
@@ -313,5 +322,15 @@ class CarlaUtils(object):
 
     def pipe_client_destroy(self, handle):
         self.lib.carla_pipe_client_destroy(handle)
+
+    def x11_reparent_window(self, winId1, winId2):
+        self.lib.carla_x11_reparent_window(winId1, winId2)
+
+    def x11_move_window(self, winId, x, y):
+        self.lib.carla_x11_move_window(winId, x, y)
+
+    def x11_get_window_pos(self, winId):
+        data = self.lib.carla_x11_get_window_pos(winId)
+        return (int(data[0]), int(data[1]))
 
 # ------------------------------------------------------------------------------------------------------------

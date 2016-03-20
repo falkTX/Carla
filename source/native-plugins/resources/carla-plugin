@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin host (plugin UI)
-# Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -15,6 +15,20 @@
 # GNU General Public License for more details.
 #
 # For a full copy of the GNU General Public License see the GPL.txt file
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Config)
+
+from carla_config import *
+
+# ------------------------------------------------------------------------------------------------------------
+# Imports (Global)
+
+if config_UseQt5:
+    from PyQt5.QtGui import QKeySequence
+    from PyQt5.QtWidgets import QHBoxLayout
+else:
+    from PyQt4.QtGui import QHBoxLayout, QKeySequence
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom Stuff)
@@ -381,117 +395,160 @@ class CarlaMiniW(ExternalUI, HostWindow):
             print("unknown message: \"" + msg + "\"")
 
 # ------------------------------------------------------------------------------------------------------------
-# Embed plugin UI
+# Embed Widget
 
-if LINUX and not config_UseQt5:
-    from PyQt4.QtGui import QHBoxLayout, QKeySequence, QX11EmbedWidget
+if LINUX and config_UseQt5:
+    from PyQt5.QtGui import QMouseEvent, QWindow
 
-    class CarlaEmbedW(QX11EmbedWidget):
-        def __init__(self, host, winId):
+    class QEmbedWidget(QWidget):
+        def __init__(self):
+            QWidget.__init__(self)
+            self.setAttribute(Qt.WA_LayoutUsesWidgetRect)
+
+            self.fPos = (0, 0)
+            self.move(0, 0)
+
+            self.fWinId = 0
+
+        def eventFilter(self, obj, ev):
+            if isinstance(ev, QMouseEvent):
+                pos = gCarla.utils.x11_get_window_pos(self.fWinId)
+                if self.fPos != pos:
+                    self.fPos = pos
+                    self.move(pos[0], pos[1])
+                    gCarla.utils.x11_move_window(self.fWinId, 0, 0)
+            return False
+
+        def finalSetup(self, gui, winId):
+            self.fWinId = int(self.winId())
+            gui.ui.menubar.installEventFilter(self)
+            gCarla.utils.x11_reparent_window(self.fWinId, winId)
+            self.show()
+
+elif LINUX and not config_UseQt5:
+    from PyQt4.QtGui import QX11EmbedWidget
+
+    class QEmbedWidget(QX11EmbedWidget):
+        def __init__(self):
             QX11EmbedWidget.__init__(self)
-            self.host = host
 
-            self.fWinId = winId
-
-            self.fLayout = QVBoxLayout(self)
-            self.fLayout.setContentsMargins(0, 0, 0, 0)
-            self.fLayout.setSpacing(0)
-            self.setLayout(self.fLayout)
-
-            self.gui = CarlaMiniW(host, self)
-            self.gui.hide()
-
-            self.gui.ui.act_file_quit.setEnabled(False)
-            self.gui.ui.act_file_quit.setVisible(False)
-
-            self.fShortcutActions = []
-            self.addShortcutActions(self.gui.ui.menu_File.actions())
-            self.addShortcutActions(self.gui.ui.menu_Plugin.actions())
-            self.addShortcutActions(self.gui.ui.menu_PluginMacros.actions())
-            self.addShortcutActions(self.gui.ui.menu_Settings.actions())
-            self.addShortcutActions(self.gui.ui.menu_Help.actions())
-
-            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
-                self.addShortcutActions(self.gui.ui.menu_Canvas.actions())
-                self.addShortcutActions(self.gui.ui.menu_Canvas_Zoom.actions())
-
-            self.addWidget(self.gui.ui.menubar)
-            self.addLine()
-            self.addWidget(self.gui.ui.toolBar)
-
-            if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
-                self.addLine()
-
-            self.addWidget(self.gui.centralWidget())
-
-            self.setFixedSize(740, 512)
+        def finalSetup(self, gui, winId):
             self.embedInto(winId)
             self.show()
 
-        def addShortcutActions(self, actions):
-            for action in actions:
-                if not action.shortcut().isEmpty():
-                    self.fShortcutActions.append(action)
+else:
+    class QEmbedWidget(object):
+        def __init__(self, winId, width, height):
+            print("Cannot use embed UI with this configuration")
+            raise Exception
 
-        def addWidget(self, widget):
-            widget.setParent(self)
-            self.fLayout.addWidget(widget)
+# ------------------------------------------------------------------------------------------------------------
+# Embed plugin UI
 
-        def addLine(self):
-            line = QFrame(self)
-            line.setFrameShadow(QFrame.Sunken)
-            line.setFrameShape(QFrame.HLine)
-            line.setLineWidth(0)
-            line.setMidLineWidth(1)
-            self.fLayout.addWidget(line)
+class CarlaEmbedW(QEmbedWidget):
+    def __init__(self, host, winId):
+        QEmbedWidget.__init__(self)
+        self.setFixedSize(740, 512)
 
-        def keyPressEvent(self, event):
-            modifiers    = event.modifiers()
-            modifiersStr = ""
+        self.host = host
+        self.fWinId = winId
 
-            if modifiers & Qt.ShiftModifier:
-                modifiersStr += "Shift+"
-            if modifiers & Qt.ControlModifier:
-                modifiersStr += "Ctrl+"
-            if modifiers & Qt.AltModifier:
-                modifiersStr += "Alt+"
-            if modifiers & Qt.MetaModifier:
-                modifiersStr += "Meta+"
+        self.fLayout = QVBoxLayout(self)
+        self.fLayout.setContentsMargins(0, 0, 0, 0)
+        self.fLayout.setSpacing(0)
+        self.setLayout(self.fLayout)
 
-            keyStr = QKeySequence(event.key()).toString()
-            keySeq = QKeySequence(modifiersStr + keyStr)
+        self.gui = CarlaMiniW(host, self)
+        self.gui.hide()
 
-            for action in self.fShortcutActions:
-                if not action.isEnabled():
-                    continue
-                if keySeq.matches(action.shortcut()) != QKeySequence.ExactMatch:
-                    continue
-                event.accept()
-                action.trigger()
-                return
+        self.gui.ui.act_file_quit.setEnabled(False)
+        self.gui.ui.act_file_quit.setVisible(False)
 
-            QX11EmbedWidget.keyPressEvent(self, event)
+        self.fShortcutActions = []
+        self.addShortcutActions(self.gui.ui.menu_File.actions())
+        self.addShortcutActions(self.gui.ui.menu_Plugin.actions())
+        self.addShortcutActions(self.gui.ui.menu_PluginMacros.actions())
+        self.addShortcutActions(self.gui.ui.menu_Settings.actions())
+        self.addShortcutActions(self.gui.ui.menu_Help.actions())
 
-        def showEvent(self, event):
-            QX11EmbedWidget.showEvent(self, event)
+        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+            self.addShortcutActions(self.gui.ui.menu_Canvas.actions())
+            self.addShortcutActions(self.gui.ui.menu_Canvas_Zoom.actions())
 
-            # set our gui as parent for all plugins UIs
-            winIdStr = "%x" % self.fWinId
-            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+        self.addWidget(self.gui.ui.menubar)
+        self.addLine()
+        self.addWidget(self.gui.ui.toolBar)
 
-        def hideEvent(self, event):
-            # disable parent
-            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
+            self.addLine()
 
-            QX11EmbedWidget.hideEvent(self, event)
+        self.addWidget(self.gui.centralWidget())
+        self.finalSetup(self.gui, winId)
 
-        def closeEvent(self, event):
-            self.gui.close()
-            self.gui.closeExternalUI()
-            QX11EmbedWidget.closeEvent(self, event)
+    def addShortcutActions(self, actions):
+        for action in actions:
+            if not action.shortcut().isEmpty():
+                self.fShortcutActions.append(action)
 
-            # there might be other qt windows open which will block carla-plugin from quitting
-            app.quit()
+    def addWidget(self, widget):
+        widget.setParent(self)
+        self.fLayout.addWidget(widget)
+
+    def addLine(self):
+        line = QFrame(self)
+        line.setFrameShadow(QFrame.Sunken)
+        line.setFrameShape(QFrame.HLine)
+        line.setLineWidth(0)
+        line.setMidLineWidth(1)
+        self.fLayout.addWidget(line)
+
+    def keyPressEvent(self, event):
+        modifiers    = event.modifiers()
+        modifiersStr = ""
+
+        if modifiers & Qt.ShiftModifier:
+            modifiersStr += "Shift+"
+        if modifiers & Qt.ControlModifier:
+            modifiersStr += "Ctrl+"
+        if modifiers & Qt.AltModifier:
+            modifiersStr += "Alt+"
+        if modifiers & Qt.MetaModifier:
+            modifiersStr += "Meta+"
+
+        keyStr = QKeySequence(event.key()).toString()
+        keySeq = QKeySequence(modifiersStr + keyStr)
+
+        for action in self.fShortcutActions:
+            if not action.isEnabled():
+                continue
+            if keySeq.matches(action.shortcut()) != QKeySequence.ExactMatch:
+                continue
+            event.accept()
+            action.trigger()
+            return
+
+        QEmbedWidget.keyPressEvent(self, event)
+
+    def showEvent(self, event):
+        QEmbedWidget.showEvent(self, event)
+
+        # set our gui as parent for all plugins UIs
+        winIdStr = "%x" % self.fWinId
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+
+    def hideEvent(self, event):
+        # disable parent
+        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0")
+
+        QEmbedWidget.hideEvent(self, event)
+
+    def closeEvent(self, event):
+        self.gui.close()
+        self.gui.closeExternalUI()
+        QEmbedWidget.closeEvent(self, event)
+
+        # there might be other qt windows open which will block carla-plugin from quitting
+        app.quit()
 
 # ------------------------------------------------------------------------------------------------------------
 # Main
@@ -526,7 +583,7 @@ if __name__ == '__main__':
 
     gCarla.utils.setenv("CARLA_PLUGIN_EMBED_WINID", "0")
 
-    if LINUX and winId != 0 and not config_UseQt5:
+    if LINUX and winId != 0:
         gui = CarlaEmbedW(host, winId)
     else:
         gui = CarlaMiniW(host)
