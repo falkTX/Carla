@@ -20,6 +20,7 @@
 
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include <algorithm>
 
 // -----------------------------------------------------------------------
 // CarlaString class
@@ -585,7 +586,7 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
-        const std::size_t kTmpBufSize = carla_nextPowerOf2(static_cast<uint32_t>(dataSize/3));
+        const std::size_t kTmpBufSize = std::min(carla_nextPowerOf2(static_cast<uint32_t>(dataSize/3)), 65536U);
 
         const uchar* bytesToEncode((const uchar*)data);
 
