@@ -93,7 +93,7 @@ public:
         // check if already running
         DISTRHO_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
 
-        fLock.lock();
+        const MutexLocker ml(fLock);
 
         fShouldExit = false;
 
@@ -114,7 +114,6 @@ public:
             return true;
         }
 
-        fLock.unlock();
         return false;
     }
 

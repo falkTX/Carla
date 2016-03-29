@@ -91,7 +91,7 @@ public:
         // check if already running
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
 
-        fLock.lock();
+        const CarlaMutexLocker cml(fLock);
 
         fShouldExit = false;
 
@@ -112,7 +112,6 @@ public:
             return true;
         }
 
-        fLock.unlock();
         return false;
     }
 
