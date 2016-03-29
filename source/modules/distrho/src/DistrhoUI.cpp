@@ -25,12 +25,13 @@ START_NAMESPACE_DISTRHO
 /* ------------------------------------------------------------------------------------------------------------
  * Static data, see DistrhoUIInternal.hpp */
 
-double    d_lastUiSampleRate = 0.0;
-void*     d_lastUiDspPtr     = nullptr;
+double      d_lastUiSampleRate = 0.0;
+void*       d_lastUiDspPtr     = nullptr;
 #ifdef HAVE_DGL
-Window*   d_lastUiWindow     = nullptr;
+Window*     d_lastUiWindow     = nullptr;
 #endif
-uintptr_t g_nextWindowId     = 0;
+uintptr_t   g_nextWindowId     = 0;
+const char* g_nextBundlePath   = nullptr;
 
 /* ------------------------------------------------------------------------------------------------------------
  * UI */
@@ -98,14 +99,21 @@ void* UI::getPluginInstancePointer() const noexcept
 }
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EMBED_UI && DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
 /* ------------------------------------------------------------------------------------------------------------
- * External embeddable UI helpers */
+ * External UI helpers */
 
+const char* UI::getNextBundlePath() noexcept
+{
+    return g_nextBundlePath;
+}
+
+# if DISTRHO_PLUGIN_HAS_EMBED_UI
 uintptr_t UI::getNextWindowId() noexcept
 {
     return g_nextWindowId;
 }
+# endif
 #endif
 
 /* ------------------------------------------------------------------------------------------------------------

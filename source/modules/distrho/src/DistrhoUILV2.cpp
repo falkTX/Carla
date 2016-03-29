@@ -39,11 +39,11 @@ START_NAMESPACE_DISTRHO
 class UiLv2
 {
 public:
-    UiLv2(const intptr_t winId,
+    UiLv2(const char* const bundlePath, const intptr_t winId,
           const LV2_Options_Option* options, const LV2_URID_Map* const uridMap, const LV2UI_Resize* const uiResz, const LV2UI_Touch* uiTouch,
           const LV2UI_Controller controller, const LV2UI_Write_Function writeFunc,
           LV2UI_Widget* const widget, void* const dspPtr)
-        : fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, dspPtr),
+        : fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, dspPtr, bundlePath),
           fUridMap(uridMap),
           fUiResize(uiResz),
           fUiTouch(uiTouch),
@@ -319,7 +319,8 @@ private:
 
 // -----------------------------------------------------------------------
 
-static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, const char*, LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
+static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, const char* bundlePath,
+                                      LV2UI_Write_Function writeFunction, LV2UI_Controller controller, LV2UI_Widget* widget, const LV2_Feature* const* features)
 {
     if (uri == nullptr || std::strcmp(uri, DISTRHO_PLUGIN_URI) != 0)
     {
@@ -421,7 +422,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
         d_lastUiSampleRate = 44100.0;
     }
 
-    return new UiLv2(winId, options, uridMap, uiResize, uiTouch, controller, writeFunction, widget, instance);
+    return new UiLv2(bundlePath, winId, options, uridMap, uiResize, uiTouch, controller, writeFunction, widget, instance);
 }
 
 #define uiPtr ((UiLv2*)ui)

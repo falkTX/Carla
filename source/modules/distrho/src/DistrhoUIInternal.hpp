@@ -32,12 +32,13 @@ START_NAMESPACE_DISTRHO
 // -----------------------------------------------------------------------
 // Static data, see DistrhoUI.cpp
 
-extern double    d_lastUiSampleRate;
-extern void*     d_lastUiDspPtr;
+extern double      d_lastUiSampleRate;
+extern void*       d_lastUiDspPtr;
 #ifdef HAVE_DGL
-extern Window*   d_lastUiWindow;
+extern Window*     d_lastUiWindow;
 #endif
-extern uintptr_t g_nextWindowId;
+extern uintptr_t   g_nextWindowId;
+extern const char* g_nextBundlePath;
 
 // -----------------------------------------------------------------------
 // UI callbacks
@@ -199,13 +200,15 @@ private:
 };
 #else
 static inline
-UI* createUiWrapper(void* const dspPtr, const uintptr_t winId)
+UI* createUiWrapper(void* const dspPtr, const uintptr_t winId, const char* const bundlePath)
 {
-    d_lastUiDspPtr = dspPtr;
-    g_nextWindowId = winId;
-    UI* const ret  = createUI();
-    d_lastUiDspPtr = nullptr;
-    g_nextWindowId = 0;
+    d_lastUiDspPtr   = dspPtr;
+    g_nextWindowId   = winId;
+    g_nextBundlePath = bundlePath;
+    UI* const ret    = createUI();
+    d_lastUiDspPtr   = nullptr;
+    g_nextWindowId   = 0;
+    g_nextBundlePath = nullptr;
     return ret;
 }
 #endif
@@ -218,14 +221,15 @@ class UIExporter
 public:
     UIExporter(void* const ptr, const intptr_t winId,
                const editParamFunc editParamCall, const setParamFunc setParamCall, const setStateFunc setStateCall, const sendNoteFunc sendNoteCall, const setSizeFunc setSizeCall,
-               void* const dspPtr = nullptr)
+               void* const dspPtr = nullptr,
+               const char* const bundlePath = nullptr)
 #ifdef HAVE_DGL
         : glApp(),
           glWindow(glApp, winId, dspPtr),
           fChangingSize(false),
           fUI(glWindow.getUI()),
 #else
-        : fUI(createUiWrapper(dspPtr, winId)),
+        : fUI(createUiWrapper(dspPtr, winId, bundlePath)),
 #endif
           fData((fUI != nullptr) ? fUI->pData : nullptr)
     {
@@ -238,6 +242,11 @@ public:
         fData->setStateCallbackFunc  = setStateCall;
         fData->sendNoteCallbackFunc  = sendNoteCall;
         fData->setSizeCallbackFunc   = setSizeCall;
+
+#ifdef HAVE_DGL
+        // unused
+        return; (void)bundlePath;
+#endif
     }
 
     // -------------------------------------------------------------------

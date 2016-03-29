@@ -378,7 +378,7 @@ public:
 
                     if (fLastPositionData.barBeat >= 0.0f)
                     {
-                        const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
+                        const double rest = std::fmod(fLastPositionData.barBeat, 1.0f);
                         fTimePosition.bbt.beat = fLastPositionData.barBeat-rest+1.0;
                         fTimePosition.bbt.tick = rest*fTimePosition.bbt.ticksPerBeat+0.5;
                     }
@@ -554,9 +554,9 @@ public:
                     if (fLastPositionData.barBeat >= 0.0f)
                     {
                         fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+addedBarBeats,
-                                                              fLastPositionData.beatsPerBar);
+                                                              (double)fLastPositionData.beatsPerBar);
 
-                        const double rest = std::fmod(fLastPositionData.barBeat, 1.0);
+                        const double rest = std::fmod(fLastPositionData.barBeat, 1.0f);
                         fTimePosition.bbt.beat = fLastPositionData.barBeat-rest+1.0;
                         fTimePosition.bbt.tick = rest*fTimePosition.bbt.ticksPerBeat+0.5;
 

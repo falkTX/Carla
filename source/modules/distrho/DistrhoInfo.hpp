@@ -91,11 +91,10 @@ START_NAMESPACE_DISTRHO
 
      /**
         Get the plugin version, in hexadecimal.
-        TODO format to be defined
       */
       uint32_t getVersion() const override
       {
-          return 0x1000;
+          return d_version(1, 0, 0);
       }
 
      /**
@@ -104,7 +103,7 @@ START_NAMESPACE_DISTRHO
       */
       int64_t getUniqueId() const override
       {
-          return cconst('M', 'u', 't', 'e');
+          return d_cconst('M', 'u', 't', 'e');
       }
 
      /* ----------------------------------------------------------------------------------------
@@ -186,12 +185,12 @@ START_NAMESPACE_DISTRHO
 
       uint32_t getVersion() const override
       {
-          return 0x1000;
+          return d_version(1, 0, 0);
       }
 
       int64_t getUniqueId() const override
       {
-          return cconst('G', 'a', 'i', 'n');
+          return d_cconst('G', 'a', 'i', 'n');
       }
 
      /* ----------------------------------------------------------------------------------------
@@ -298,12 +297,12 @@ START_NAMESPACE_DISTRHO
 
       uint32_t getVersion() const override
       {
-          return 0x1000;
+          return d_version(1, 0, 0);
       }
 
       int64_t getUniqueId() const override
       {
-          return cconst('P', 'r', 'o', 'g');
+          return d_cconst('P', 'r', 'o', 'g');
       }
 
      /* ----------------------------------------------------------------------------------------

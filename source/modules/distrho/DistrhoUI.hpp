@@ -109,16 +109,25 @@ public:
     void* getPluginInstancePointer() const noexcept;
 #endif
 
-#if DISTRHO_PLUGIN_HAS_EMBED_UI && DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+#if DISTRHO_PLUGIN_HAS_EXTERNAL_UI
    /* --------------------------------------------------------------------------------------------------------
-    * External embeddable UI helpers */
+    * External UI helpers */
 
+   /**
+      Get the bundle path that will be used for the next UI.
+      @note: This function is only valid during createUI(),
+             it will return null when called from anywhere else.
+    */
+    static const char* getNextBundlePath() noexcept;
+
+# if DISTRHO_PLUGIN_HAS_EMBED_UI
    /**
       Get the Window Id that will be used for the next created window.
       @note: This function is only valid during createUI(),
              it will return 0 when called from anywhere else.
     */
     static uintptr_t getNextWindowId() noexcept;
+# endif
 #endif
 
 protected:
