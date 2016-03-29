@@ -35,7 +35,8 @@ protected:
      * Constructor.
      */
     CarlaThread(const char* const threadName = nullptr) noexcept
-        : fLock(false),
+        : fLock(),
+          fSignal(fLock),
           fName(threadName),
 #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),
@@ -90,7 +91,7 @@ public:
         // check if already running
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
 
-        const CarlaMutexLocker cml(fLock);
+        fLock.lock();
 
         fShouldExit = false;
 
@@ -107,11 +108,11 @@ public:
             _copyFrom(handle);
 
             // wait for thread to start
-            fLock.lock();
-
+            fSignal.wait();
             return true;
         }
 
+        fLock.unlock();
         return false;
     }
 
@@ -208,6 +209,7 @@ public:
 
 private:
     CarlaMutex         fLock;       // Thread lock
+    CarlaSignal        fSignal;     // Thread start wait signal
     const CarlaString  fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
@@ -256,10 +258,10 @@ private:
      */
     void _runEntryPoint() noexcept
     {
-        // report ready
-        fLock.unlock();
-
         setCurrentThreadName(fName);
+
+        // report ready
+        fSignal.broadcast();
 
         try {
             run();
