@@ -28,6 +28,8 @@
 
 START_NAMESPACE_DISTRHO
 
+class Signal;
+
 // -----------------------------------------------------------------------
 // Mutex class
 
@@ -40,12 +42,14 @@ public:
     Mutex(bool inheritPriority = true) noexcept
         : fMutex()
     {
-        pthread_mutexattr_t atts;
-        pthread_mutexattr_init(&atts);
-        pthread_mutexattr_setprotocol(&atts, inheritPriority ? PTHREAD_PRIO_INHERIT : PTHREAD_PRIO_NONE);
-        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init(&fMutex, &atts);
-        pthread_mutexattr_destroy(&atts);
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_setprotocol(&attr, inheritPriority ? PTHREAD_PRIO_INHERIT : PTHREAD_PRIO_NONE);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
+        pthread_mutexattr_setrobust(&attr, PTHREAD_MUTEX_ROBUST);
+        pthread_mutex_init(&fMutex, &attr);
+        pthread_mutexattr_destroy(&attr);
     }
 
     /*
@@ -84,6 +88,7 @@ public:
 private:
     mutable pthread_mutex_t fMutex;
 
+    friend class Signal;
     DISTRHO_PREVENT_HEAP_ALLOCATION
     DISTRHO_DECLARE_NON_COPY_CLASS(Mutex)
 };
@@ -107,12 +112,12 @@ public:
 #ifdef DISTRHO_OS_WINDOWS
         InitializeCriticalSection(&fSection);
 #else
-        pthread_mutexattr_t atts;
-        pthread_mutexattr_init(&atts);
-        pthread_mutexattr_setprotocol(&atts, PTHREAD_PRIO_INHERIT);
-        pthread_mutexattr_settype(&atts, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&fMutex, &atts);
-        pthread_mutexattr_destroy(&atts);
+        pthread_mutexattr_t attr;
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&fMutex, &attr);
+        pthread_mutexattr_destroy(&attr);
 #endif
     }
 
@@ -174,6 +179,68 @@ private:
 
     DISTRHO_PREVENT_HEAP_ALLOCATION
     DISTRHO_DECLARE_NON_COPY_CLASS(RecursiveMutex)
+};
+
+// -----------------------------------------------------------------------
+// Signal class
+
+class Signal
+{
+public:
+    /*
+     * Constructor.
+     */
+    Signal(Mutex& mutex) noexcept
+        : fCondition(),
+          fMutex(mutex.fMutex)
+    {
+        pthread_condattr_t attr;
+        pthread_condattr_init(&attr);
+        pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE);
+        pthread_cond_init(&fCondition, &attr);
+        pthread_condattr_destroy(&attr);
+    }
+
+    /*
+     * Destructor.
+     */
+    ~Signal() noexcept
+    {
+        pthread_cond_destroy(&fCondition);
+    }
+
+    /*
+     * Wait for a broadcast.
+     */
+    bool wait() noexcept
+    {
+        try {
+            return (pthread_cond_wait(&fCondition, &fMutex) == 0);
+        } DISTRHO_SAFE_EXCEPTION_RETURN("pthread_cond_wait", false);
+    }
+
+    /*
+     * Wake up one waiting thread.
+     */
+    void signal() noexcept
+    {
+        pthread_cond_signal(&fCondition);
+    }
+
+    /*
+     * Wake up all waiting threads.
+     */
+    void broadcast() noexcept
+    {
+        pthread_cond_broadcast(&fCondition);
+    }
+
+private:
+    pthread_cond_t   fCondition;
+    pthread_mutex_t& fMutex;
+
+    DISTRHO_PREVENT_HEAP_ALLOCATION
+    DISTRHO_DECLARE_NON_COPY_CLASS(Signal)
 };
 
 // -----------------------------------------------------------------------

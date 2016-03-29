@@ -21,6 +21,7 @@
 
 #ifdef DISTRHO_OS_UNIX
 # include <cerrno>
+# include <signal.h>
 # include <sys/wait.h>
 # include <unistd.h>
 #else

@@ -37,7 +37,8 @@ protected:
      * Constructor.
      */
     Thread(const char* const threadName = nullptr) noexcept
-        : fLock(false),
+        : fLock(),
+          fSignal(fLock),
           fName(threadName),
 #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),
@@ -92,7 +93,7 @@ public:
         // check if already running
         DISTRHO_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
 
-        const MutexLocker cml(fLock);
+        fLock.lock();
 
         fShouldExit = false;
 
@@ -109,11 +110,11 @@ public:
             _copyFrom(handle);
 
             // wait for thread to start
-            fLock.lock();
-
+            fSignal.wait();
             return true;
         }
 
+        fLock.unlock();
         return false;
     }
 
@@ -210,6 +211,7 @@ public:
 
 private:
     Mutex              fLock;       // Thread lock
+    Signal             fSignal;     // Thread start wait signal
     const String       fName;       // Thread name
     volatile pthread_t fHandle;     // Handle for this thread
     volatile bool      fShouldExit; // true if thread should exit
@@ -258,10 +260,10 @@ private:
      */
     void _runEntryPoint() noexcept
     {
-        // report ready
-        fLock.unlock();
-
         setCurrentThreadName(fName);
+
+        // report ready
+        fSignal.broadcast();
 
         try {
             run();

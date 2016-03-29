@@ -19,6 +19,8 @@
 
 #include "../DistrhoUtils.hpp"
 
+#include <algorithm>
+
 START_NAMESPACE_DISTRHO
 
 // -----------------------------------------------------------------------
@@ -577,7 +579,7 @@ public:
             "abcdefghijklmnopqrstuvwxyz"
             "0123456789+/";
 
-        const std::size_t kTmpBufSize = d_nextPowerOf2(dataSize/3);
+        const std::size_t kTmpBufSize = std::min(d_nextPowerOf2(dataSize/3), 65536U);
 
         const uchar* bytesToEncode((const uchar*)data);
 
