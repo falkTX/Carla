@@ -199,15 +199,22 @@ public:
     /*
      * Constructor.
      */
-    CarlaSignal(CarlaMutex& mutex) noexcept
+    CarlaSignal() noexcept
         : fCondition(),
-          fMutex(mutex.fMutex)
+          fMutex()
     {
-        pthread_condattr_t attr;
-        pthread_condattr_init(&attr);
-        pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE);
-        pthread_cond_init(&fCondition, &attr);
-        pthread_condattr_destroy(&attr);
+        pthread_mutexattr_t mattr;
+        pthread_mutexattr_init(&mattr);
+        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&fMutex, &mattr);
+        pthread_mutexattr_destroy(&mattr);
+
+        pthread_condattr_t cattr;
+        pthread_condattr_init(&cattr);
+        pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_PRIVATE);
+        pthread_cond_init(&fCondition, &cattr);
+        pthread_condattr_destroy(&cattr);
     }
 
     /*
@@ -221,11 +228,15 @@ public:
     /*
      * Wait for a broadcast.
      */
-    bool wait() noexcept
+    void wait() noexcept
     {
+        pthread_mutex_lock(&fMutex);
+
         try {
-            return (pthread_cond_wait(&fCondition, &fMutex) == 0);
-        } CARLA_SAFE_EXCEPTION_RETURN("pthread_cond_wait", false);
+            pthread_cond_wait(&fCondition, &fMutex);
+        } CARLA_SAFE_EXCEPTION("pthread_cond_wait");
+
+        pthread_mutex_unlock(&fMutex);
     }
 
     /*
@@ -233,7 +244,9 @@ public:
      */
     void signal() noexcept
     {
+        pthread_mutex_lock(&fMutex);
         pthread_cond_signal(&fCondition);
+        pthread_mutex_unlock(&fMutex);
     }
 
     /*
@@ -241,12 +254,14 @@ public:
      */
     void broadcast() noexcept
     {
+        pthread_mutex_lock(&fMutex);
         pthread_cond_broadcast(&fCondition);
+        pthread_mutex_unlock(&fMutex);
     }
 
 private:
-    pthread_cond_t   fCondition;
-    pthread_mutex_t& fMutex;
+    pthread_cond_t  fCondition;
+    pthread_mutex_t fMutex;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaSignal)
