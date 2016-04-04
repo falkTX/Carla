@@ -38,7 +38,7 @@ protected:
      */
     Thread(const char* const threadName = nullptr) noexcept
         : fLock(),
-          fSignal(fLock),
+          fSignal(),
           fName(threadName),
 #ifdef PTW32_DLLPORT
           fHandle({nullptr, 0}),
@@ -126,7 +126,7 @@ public:
      */
     bool stopThread(const int timeOutMilliseconds) noexcept
     {
-        const MutexLocker cml(fLock);
+        const MutexLocker ml(fLock);
 
         if (isThreadRunning())
         {
@@ -262,7 +262,7 @@ private:
         setCurrentThreadName(fName);
 
         // report ready
-        fSignal.broadcast();
+        fSignal.signal();
 
         try {
             run();

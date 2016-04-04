@@ -86,7 +86,6 @@ public:
 private:
     mutable pthread_mutex_t fMutex;
 
-    friend class Signal;
     DISTRHO_PREVENT_HEAP_ALLOCATION
     DISTRHO_DECLARE_NON_COPY_CLASS(Mutex)
 };
@@ -188,15 +187,23 @@ public:
     /*
      * Constructor.
      */
-    Signal(Mutex& mutex) noexcept
+    Signal() noexcept
         : fCondition(),
-          fMutex(mutex.fMutex)
+          fMutex(),
+          fTriggered(false)
     {
-        pthread_condattr_t attr;
-        pthread_condattr_init(&attr);
-        pthread_condattr_setpshared(&attr, PTHREAD_PROCESS_PRIVATE);
-        pthread_cond_init(&fCondition, &attr);
-        pthread_condattr_destroy(&attr);
+        pthread_condattr_t cattr;
+        pthread_condattr_init(&cattr);
+        pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_PRIVATE);
+        pthread_cond_init(&fCondition, &cattr);
+        pthread_condattr_destroy(&cattr);
+
+        pthread_mutexattr_t mattr;
+        pthread_mutexattr_init(&mattr);
+        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);
+        pthread_mutex_init(&fMutex, &mattr);
+        pthread_mutexattr_destroy(&mattr);
     }
 
     /*
@@ -205,37 +212,48 @@ public:
     ~Signal() noexcept
     {
         pthread_cond_destroy(&fCondition);
+        pthread_mutex_destroy(&fMutex);
     }
 
     /*
-     * Wait for a broadcast.
+     * Wait for a signal.
      */
-    bool wait() noexcept
+    void wait() noexcept
     {
-        try {
-            return (pthread_cond_wait(&fCondition, &fMutex) == 0);
-        } DISTRHO_SAFE_EXCEPTION_RETURN("pthread_cond_wait", false);
-    }
+        pthread_mutex_lock(&fMutex);
 
-    /*
-     * Wake up one waiting thread.
-     */
-    void signal() noexcept
-    {
-        pthread_cond_signal(&fCondition);
+        while (! fTriggered)
+        {
+            try {
+                pthread_cond_wait(&fCondition, &fMutex);
+            } DISTRHO_SAFE_EXCEPTION("pthread_cond_wait");
+        }
+
+        fTriggered = false;
+
+        pthread_mutex_unlock(&fMutex);
     }
 
     /*
      * Wake up all waiting threads.
      */
-    void broadcast() noexcept
+    void signal() noexcept
     {
-        pthread_cond_broadcast(&fCondition);
+        pthread_mutex_lock(&fMutex);
+
+        if (! fTriggered)
+        {
+            fTriggered = true;
+            pthread_cond_broadcast(&fCondition);
+        }
+
+        pthread_mutex_unlock(&fMutex);
     }
 
 private:
-    pthread_cond_t   fCondition;
-    pthread_mutex_t& fMutex;
+    pthread_cond_t  fCondition;
+    pthread_mutex_t fMutex;
+    volatile bool   fTriggered;
 
     DISTRHO_PREVENT_HEAP_ALLOCATION
     DISTRHO_DECLARE_NON_COPY_CLASS(Signal)

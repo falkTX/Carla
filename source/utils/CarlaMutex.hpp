@@ -97,7 +97,6 @@ private:
     mutable pthread_mutex_t fMutex;
     mutable volatile bool fTryLockWasCalled; // true if "tryLock()" was called at least once
 
-    friend class CarlaSignal;
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaMutex)
 };
