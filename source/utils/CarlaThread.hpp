@@ -260,7 +260,7 @@ private:
         setCurrentThreadName(fName);
 
         // report ready
-        fSignal.broadcast();
+        fSignal.signal();
 
         try {
             run();

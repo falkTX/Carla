@@ -201,20 +201,21 @@ public:
      */
     CarlaSignal() noexcept
         : fCondition(),
-          fMutex()
+          fMutex(),
+          fTriggered(false)
     {
-        pthread_mutexattr_t mattr;
-        pthread_mutexattr_init(&mattr);
-        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
-        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&fMutex, &mattr);
-        pthread_mutexattr_destroy(&mattr);
-
         pthread_condattr_t cattr;
         pthread_condattr_init(&cattr);
         pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_PRIVATE);
         pthread_cond_init(&fCondition, &cattr);
         pthread_condattr_destroy(&cattr);
+
+        pthread_mutexattr_t mattr;
+        pthread_mutexattr_init(&mattr);
+        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);
+        pthread_mutex_init(&fMutex, &mattr);
+        pthread_mutexattr_destroy(&mattr);
     }
 
     /*
@@ -223,45 +224,48 @@ public:
     ~CarlaSignal() noexcept
     {
         pthread_cond_destroy(&fCondition);
+        pthread_mutex_destroy(&fMutex);
     }
 
     /*
-     * Wait for a broadcast.
+     * Wait for a signal.
      */
     void wait() noexcept
     {
         pthread_mutex_lock(&fMutex);
 
-        try {
-            pthread_cond_wait(&fCondition, &fMutex);
-        } CARLA_SAFE_EXCEPTION("pthread_cond_wait");
+        while (! fTriggered)
+        {
+            try {
+                pthread_cond_wait(&fCondition, &fMutex);
+            } CARLA_SAFE_EXCEPTION("pthread_cond_wait");
+        }
 
-        pthread_mutex_unlock(&fMutex);
-    }
+        fTriggered = false;
 
-    /*
-     * Wake up one waiting thread.
-     */
-    void signal() noexcept
-    {
-        pthread_mutex_lock(&fMutex);
-        pthread_cond_signal(&fCondition);
         pthread_mutex_unlock(&fMutex);
     }
 
     /*
      * Wake up all waiting threads.
      */
-    void broadcast() noexcept
+    void signal() noexcept
     {
         pthread_mutex_lock(&fMutex);
-        pthread_cond_broadcast(&fCondition);
+
+        if (! fTriggered)
+        {
+            fTriggered = true;
+            pthread_cond_broadcast(&fCondition);
+        }
+
         pthread_mutex_unlock(&fMutex);
     }
 
 private:
     pthread_cond_t  fCondition;
     pthread_mutex_t fMutex;
+    volatile bool   fTriggered;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaSignal)
