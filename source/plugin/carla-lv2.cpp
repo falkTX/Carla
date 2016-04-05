@@ -315,7 +315,7 @@ public:
                                         fURIs.timeFrame, &frame,
                                         fURIs.timeSpeed, &speed,
                                         fURIs.timeTicksPerBeat, &ticksPerBeat,
-                                        nullptr);
+                                        0);
 
                     // need to handle this first as other values depend on it
                     if (ticksPerBeat != nullptr)
