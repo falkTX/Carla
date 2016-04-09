@@ -1362,6 +1362,8 @@ void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
     if(dest == "GUI") {
         cb(ui, rtmsg);
     } else if(!dest.empty()) {
+        printf("Testing sendToRemote: '%s'\n", rtmsg);
+
         lo_message msg  = lo_message_deserialise((void*)rtmsg,
                 rtosc_message_length(rtmsg, bToU->buffer_size()), NULL);
 
