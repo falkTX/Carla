@@ -1216,6 +1216,7 @@ class CarlaHostMeta(object):
         self.preferPluginBridges = False
         self.preferUIBridges     = False
         self.preventBadBehaviour = False
+        self.manageUIs           = False
         self.uisAlwaysOnTop      = False
         self.maxParameters       = 0
         self.uiBridgesTimeout    = 0

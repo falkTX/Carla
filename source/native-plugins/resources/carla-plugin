@@ -533,8 +533,9 @@ class CarlaEmbedW(QEmbedWidget):
         QEmbedWidget.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        winIdStr = "%x" % self.fWinId
-        self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
+        if self.host.manageUIs:
+            winIdStr = "%x" % self.fWinId
+            self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):
         # disable parent

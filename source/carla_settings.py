@@ -238,6 +238,10 @@ class CarlaSettingsW(QDialog):
             self.ui.group_main_theme.setEnabled(False)
             self.ui.group_main_theme.setVisible(False)
 
+        if MACOS or WINDOWS:
+            self.ui.ch_main_manage_uis.setEnabled(False)
+            self.ui.ch_main_manage_uis.setVisible(False)
+
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
@@ -320,11 +324,14 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
+        self.ui.ch_main_manage_uis.setChecked(self.host.manageUIs)
+        self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
+
         self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, type=str))
         self.ui.ch_main_theme_pro.setChecked(settings.value(CARLA_KEY_MAIN_USE_PRO_THEME, CARLA_DEFAULT_MAIN_USE_PRO_THEME, type=bool) and self.ui.group_main_theme.isEnabled())
         self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, CARLA_DEFAULT_MAIN_PRO_THEME_COLOR, type=str)))
         self.ui.sb_main_refresh_interval.setValue(settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL, CARLA_DEFAULT_MAIN_REFRESH_INTERVAL, type=int))
-        self.ui.cb_main_use_custom_skins.setChecked(settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool))
+        self.ui.ch_main_use_custom_skins.setChecked(settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS, type=bool))
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas
@@ -374,7 +381,6 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_process_mode_other.setCurrentIndex(0)
 
         self.ui.sb_engine_max_params.setValue(self.host.maxParameters)
-        self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
         self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
         self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
@@ -442,11 +448,17 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
+        self.host.manageUIs      = self.ui.ch_main_manage_uis.isChecked()
+        self.host.uisAlwaysOnTop = self.ui.ch_engine_uis_always_on_top.isChecked()
+
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
-        settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.cb_main_use_custom_skins.isChecked())
+        settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.ch_main_use_custom_skins.isChecked())
+
+        settings.setValue(CARLA_KEY_MAIN_MANAGE_UIS,          self.host.manageUIs)
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.host.uisAlwaysOnTop)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas
@@ -484,7 +496,6 @@ class CarlaSettingsW(QDialog):
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
         self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
-        self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
 
@@ -502,7 +513,6 @@ class CarlaSettingsW(QDialog):
 
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
-        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
         settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
         settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
 
@@ -572,7 +582,8 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_theme_pro.setChecked(CARLA_DEFAULT_MAIN_USE_PRO_THEME and self.ui.group_main_theme.isEnabled())
             self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
-            self.ui.cb_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
+            self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
+            self.ui.ch_main_manage_uis.setChecked(CARLA_DEFAULT_MAIN_MANAGE_UIS)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas

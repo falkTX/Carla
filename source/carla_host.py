@@ -1842,7 +1842,7 @@ class HostWindow(QMainWindow):
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
-        if not (self.host.isControl or self.host.isPlugin):
+        if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):
             winIdStr = "%x" % self.winId()
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
@@ -2242,6 +2242,16 @@ def loadHostSettings(host):
 
     # bool values
     try:
+        host.manageUIs = settings.value(CARLA_KEY_MAIN_MANAGE_UIS, CARLA_DEFAULT_MAIN_MANAGE_UIS, type=bool)
+    except:
+        host.manageUIs = CARLA_DEFAULT_MAIN_MANAGE_UIS
+
+    try:
+        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
+    except:
+        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
+
+    try:
         host.forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
     except:
         host.forceStereo = CARLA_DEFAULT_FORCE_STEREO
@@ -2255,11 +2265,6 @@ def loadHostSettings(host):
         host.preferUIBridges = settings.value(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES, CARLA_DEFAULT_PREFER_UI_BRIDGES, type=bool)
     except:
         host.preferUIBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
-
-    try:
-        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
-    except:
-        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
 
     # int values
     try:
