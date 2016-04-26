@@ -1,6 +1,6 @@
 /*
  * Carla common utils
- * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -344,7 +344,7 @@ const char* carla_strdup(const char* const strBuf)
     const std::size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
     char* const       buffer    = new char[bufferLen+1];
 
-    if (strBuf != nullptr && bufferLen > 0)
+    if (bufferLen > 0)
         std::memcpy(buffer, strBuf, bufferLen);
 
     buffer[bufferLen] = '\0';
@@ -382,7 +382,7 @@ const char* carla_strdup_safe(const char* const strBuf) noexcept
         buffer = new char[bufferLen+1];
     } CARLA_SAFE_EXCEPTION_RETURN("carla_strdup_safe", nullptr);
 
-    if (strBuf != nullptr && bufferLen > 0)
+    if (bufferLen > 0)
         std::memcpy(buffer, strBuf, bufferLen);
 
     buffer[bufferLen] = '\0';
@@ -402,6 +402,7 @@ void carla_add(T dest[], const T src[], const std::size_t count) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dest != src,);
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     for (std::size_t i=0; i<count; ++i)
@@ -417,6 +418,7 @@ void carla_copy(T dest[], const T src[], const std::size_t count) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dest != src,);
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memcpy(dest, src, count*sizeof(T));
@@ -522,6 +524,7 @@ void carla_copyStructs(T dest[], const T src[], const std::size_t count) noexcep
 {
     CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dest != src,);
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memcpy(dest, src, count*sizeof(T));
