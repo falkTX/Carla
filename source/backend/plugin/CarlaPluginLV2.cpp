@@ -39,6 +39,9 @@ extern "C" {
 
 #include "juce_core/juce_core.h"
 
+#include <string>
+#include <vector>
+
 using juce::File;
 
 #define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
@@ -508,7 +511,7 @@ public:
           fEventsOut(),
           fLv2Options(),
           fPipeServer(engine, this),
-          fCustomURIDs(),
+          fCustomURIDs(CARLA_URI_MAP_ID_COUNT, std::string("urn:null")),
           fFirstActive(true),
           fLastStateChunk(nullptr),
           fLastTimeInfo(),
@@ -516,11 +519,9 @@ public:
           fUI()
     {
         carla_debug("CarlaPluginLV2::CarlaPluginLV2(%p, %i)", engine, id);
+        CARLA_SAFE_ASSERT(fCustomURIDs.size() == CARLA_URI_MAP_ID_COUNT);
 
         carla_zeroPointers(fFeatures, kFeatureCountAll+1);
-
-        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
-            fCustomURIDs.append(nullptr);
 
 #if defined(__clang__)
 # pragma clang diagnostic push
@@ -673,16 +674,6 @@ public:
                 fFeatures[i] = nullptr;
             }
         }
-
-        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin2(); it.valid(); it.next())
-        {
-            const char* const uri(it.getValue(nullptr));
-
-            if (uri != nullptr)
-                delete[] uri;
-        }
-
-        fCustomURIDs.clear();
 
         if (fLastStateChunk != nullptr)
         {
@@ -1272,13 +1263,18 @@ public:
                     const ScopedLocale csl;
 
                     // write URI mappings
-                    for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
+                    uint32_t i = 0;
+                    for (auto it=fCustomURIDs.begin(), end=fCustomURIDs.end(); it != end; ++it, ++i)
                     {
-                        std::snprintf(tmpBuf, 0xff, P_SIZE "\n", i);
+                        if (i < CARLA_URI_MAP_ID_COUNT)
+                            continue;
+                        const std::string& uri(*it);
+
+                        std::snprintf(tmpBuf, 0xff, "%u\n", i);
 
                         fPipeServer.writeMessage("urid\n", 5);
                         fPipeServer.writeMessage(tmpBuf);
-                        fPipeServer.writeAndFixMessage(fCustomURIDs.getAt(i, nullptr));
+                        fPipeServer.writeAndFixMessage(uri.c_str());
                     }
 
                     // write UI options
@@ -4297,31 +4293,30 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
         carla_debug("CarlaPluginLV2::getCustomURID(\"%s\")", uri);
 
-        for (size_t i=0; i < fCustomURIDs.count(); ++i)
-        {
-            const char* const thisUri(fCustomURIDs.getAt(i, nullptr));
-            if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
-                return static_cast<LV2_URID>(i);
-        }
+        const std::size_t uriCount(fCustomURIDs.size());
 
-        const LV2_URID urid(static_cast<LV2_URID>(fCustomURIDs.count()));
+        const std::string s_uri(uri);
+        const std::size_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
 
-        fCustomURIDs.append(carla_strdup(uri));
+        if (s_pos < uriCount)
+            return static_cast<LV2_URID>(s_pos);
+
+        fCustomURIDs.push_back(uri);
 
         if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
-            fPipeServer.writeLv2UridMessage(urid, uri);
+            fPipeServer.writeLv2UridMessage(uriCount, uri);
 
-        return urid;
+        return uriCount;
     }
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
     {
         static const char* const sFallback = "urn:null";
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, sFallback);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), sFallback);
         carla_debug("CarlaPluginLV2::getCustomURIString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid, sFallback);
+        return fCustomURIDs[urid].c_str();
     }
 
     // -------------------------------------------------------------------
@@ -5529,9 +5524,11 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL,);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
-        carla_debug("CarlaPluginLV2::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.count()-1, uri);
+        carla_debug("CarlaPluginLV2::handleUridMap(%i v " P_SIZE ", \"%s\")", urid, fCustomURIDs.size()-1, uri);
 
-        if (urid < fCustomURIDs.count())
+        const std::size_t uriCount(fCustomURIDs.size());
+
+        if (urid < uriCount)
         {
             const char* const ourURI(carla_lv2_urid_unmap(this, urid));
             CARLA_SAFE_ASSERT_RETURN(ourURI != nullptr,);
@@ -5543,8 +5540,8 @@ public:
         }
         else
         {
-            CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
-            fCustomURIDs.append(carla_strdup(uri));
+            CARLA_SAFE_ASSERT_RETURN(urid == uriCount,);
+            fCustomURIDs.push_back(uri);
         }
     }
 
@@ -5578,7 +5575,7 @@ private:
     CarlaPluginLV2Options   fLv2Options;
     CarlaPipeServerLV2      fPipeServer;
 
-    LinkedList<const char*> fCustomURIDs;
+    std::vector<std::string> fCustomURIDs;
 
     bool fFirstActive; // first process() call after activate()
     void* fLastStateChunk;

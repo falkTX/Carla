@@ -23,6 +23,9 @@
 
 #include "juce_core/juce_core.h"
 
+#include <string>
+#include <vector>
+
 #define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 
 using juce::File;
@@ -224,13 +227,12 @@ public:
           fRdfUiDescriptor(nullptr),
           fLv2Options(),
           fUiOptions(),
-          fCustomURIDs(),
+          fCustomURIDs(CARLA_URI_MAP_ID_COUNT, std::string("urn:null")),
           fExt()
     {
-        carla_zeroPointers(fFeatures, kFeatureCount+1);
+        CARLA_SAFE_ASSERT(fCustomURIDs.size() == CARLA_URI_MAP_ID_COUNT);
 
-        for (uint32_t i=0; i < CARLA_URI_MAP_ID_COUNT; ++i)
-            fCustomURIDs.append(nullptr);
+        carla_zeroPointers(fFeatures, kFeatureCount+1);
 
         // ---------------------------------------------------------------
         // initialize options
@@ -376,16 +378,6 @@ public:
                 fFeatures[i] = nullptr;
             }
         }
-
-        for (LinkedList<const char*>::Itenerator it = fCustomURIDs.begin2(); it.valid(); it.next())
-        {
-            const char* const uri(it.getValue(nullptr));
-
-            if (uri != nullptr)
-                delete[] uri;
-        }
-
-        fCustomURIDs.clear();
     }
 
     // ---------------------------------------------------------------------
@@ -622,10 +614,10 @@ public:
 
     void dspURIDReceived(const LV2_URID urid, const char* const uri)
     {
-        CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.count(),);
+        CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.size(),);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);
 
-        fCustomURIDs.append(carla_strdup(uri));
+        fCustomURIDs.push_back(uri);
     }
 
     void uiOptionsChanged(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) override
@@ -655,21 +647,19 @@ public:
 
         LV2_URID urid = CARLA_URI_MAP_ID_NULL;
 
-        for (uint32_t i=0, count=static_cast<uint32_t>(fCustomURIDs.count()); i<count; ++i)
-        {
-            const char* const thisUri(fCustomURIDs.getAt(i, nullptr));
+        const std::size_t uriCount(fCustomURIDs.size());
 
-            if (thisUri != nullptr && std::strcmp(thisUri, uri) == 0)
-            {
-                urid = i;
-                break;
-            }
+        const std::string s_uri(uri);
+        const std::size_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
+
+        if (s_pos < uriCount)
+        {
+            urid = static_cast<LV2_URID>(s_pos);
         }
-
-        if (urid == CARLA_URI_MAP_ID_NULL)
+        else
         {
-            urid = static_cast<LV2_URID>(fCustomURIDs.count());
-            fCustomURIDs.append(carla_strdup(uri));
+            urid = static_cast<LV2_URID>(uriCount);
+            fCustomURIDs.push_back(uri);
         }
 
         if (isPipeRunning())
@@ -682,10 +672,10 @@ public:
     {
         static const char* const sFallback = "urn:null";
         CARLA_SAFE_ASSERT_RETURN(urid != CARLA_URI_MAP_ID_NULL, sFallback);
-        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.count(), sFallback);
+        CARLA_SAFE_ASSERT_RETURN(urid < fCustomURIDs.size(), sFallback);
         carla_debug("CarlaLv2Client::getCustomURIDString(%i)", urid);
 
-        return fCustomURIDs.getAt(urid, sFallback);
+        return fCustomURIDs[urid].c_str();
     }
 
     // ---------------------------------------------------------------------
@@ -765,7 +755,7 @@ private:
     Lv2PluginOptions          fLv2Options;
 
     Options fUiOptions;
-    LinkedList<const char*> fCustomURIDs;
+    std::vector<std::string> fCustomURIDs;
 
     struct Extensions {
         const LV2_Options_Interface* options;
