@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -441,7 +441,7 @@ public:
         fUiURI     = uiURI;
     }
 
-    bool startPipeServer() noexcept
+    bool startPipeServer(const int size) noexcept
     {
         const ScopedEngineEnvironmentLocker _seel(kEngine);
         const ScopedEnvVar _sev1("LV2_PATH", kEngine->getOptions().pathLV2);
@@ -449,36 +449,7 @@ public:
         const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
 #endif
 
-        return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI);
-    }
-
-    void writeUiOptionsMessage(const double sampleRate, const bool useTheme, const bool useThemeColors, const char* const windowTitle, uintptr_t transientWindowId) const noexcept
-    {
-        char tmpBuf[0xff+1];
-        tmpBuf[0xff] = '\0';
-
-        const CarlaMutexLocker cml(getPipeLock());
-        const ScopedLocale csl;
-
-        _writeMsgBuffer("uiOptions\n", 10);
-
-        {
-            std::snprintf(tmpBuf, 0xff, "%g\n", sampleRate);
-            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-
-            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(useTheme));
-            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-
-            std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(useThemeColors));
-            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-
-            writeAndFixMessage(windowTitle != nullptr ? windowTitle : "");
-
-            std::snprintf(tmpBuf, 0xff, P_INTPTR "\n", transientWindowId);
-            _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-        }
-
-        flushMessages();
+        return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI, size);
     }
 
     void writeUiTitleMessage(const char* const title) const noexcept
@@ -1279,22 +1250,65 @@ public:
                     return;
                 }
 
-                if (! fPipeServer.startPipeServer())
+                if (! fPipeServer.startPipeServer(std::min(fLv2Options.sequenceSize, 819200)))
                 {
                     pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
                     return;
                 }
 
-                for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
-                    fPipeServer.writeLv2UridMessage(static_cast<uint32_t>(i), fCustomURIDs.getAt(i, nullptr));
+                // manually write messages so we can take the lock for ourselves
+                {
+                    char tmpBuf[0xff+1];
+                    tmpBuf[0xff] = '\0';
 
-                fPipeServer.writeUiOptionsMessage(pData->engine->getSampleRate(), true, true, fLv2Options.windowTitle, frontendWinId);
+                    const CarlaMutexLocker cml(fPipeServer.getPipeLock());
+                    const ScopedLocale csl;
 
-                // send control ports
-                for (uint32_t i=0; i < pData->param.count; ++i)
-                    fPipeServer.writeControlMessage(static_cast<uint32_t>(pData->param.data[i].rindex), getParameterValue(i));
+                    // write URI mappings
+                    for (std::size_t i=CARLA_URI_MAP_ID_COUNT, count=fCustomURIDs.count(); i < count; ++i)
+                    {
+                        std::snprintf(tmpBuf, 0xff, P_SIZE "\n", i);
 
-                fPipeServer.writeShowMessage();
+                        fPipeServer.writeMessage("urid\n", 5);
+                        fPipeServer.writeMessage(tmpBuf);
+                        fPipeServer.writeAndFixMessage(fCustomURIDs.getAt(i, nullptr));
+                    }
+
+                    // write UI options
+                    fPipeServer.writeMessage("uiOptions\n", 10);
+
+                    std::snprintf(tmpBuf, 0xff, "%g\n", pData->engine->getSampleRate());
+                    fPipeServer.writeMessage(tmpBuf);
+
+                    std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(true)); // useTheme
+                    fPipeServer.writeMessage(tmpBuf);
+
+                    std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(true)); // useThemeColors
+                    fPipeServer.writeMessage(tmpBuf);
+
+                    fPipeServer.writeAndFixMessage(fLv2Options.windowTitle != nullptr ? fLv2Options.windowTitle : "");
+
+                    std::snprintf(tmpBuf, 0xff, P_INTPTR "\n", frontendWinId);
+                    fPipeServer.writeMessage(tmpBuf);
+
+                    // write parameter values
+                    for (uint32_t i=0; i < pData->param.count; ++i)
+                    {
+                        fPipeServer.writeMessage("control\n", 8);
+
+                        std::snprintf(tmpBuf, 0xff, "%i\n", pData->param.data[i].rindex);
+                        fPipeServer.writeMessage(tmpBuf);
+
+                        std::snprintf(tmpBuf, 0xff, "%f\n", getParameterValue(i));
+                        fPipeServer.writeMessage(tmpBuf);
+                    }
+
+                    // ready to show
+                    fPipeServer.writeMessage("show\n", 5);
+
+                    fPipeServer.flushMessages();
+                }
+
 #ifndef BUILD_BRIDGE
                 if (fUI.rdfDescriptor->Type == LV2_UI_MOD)
                     pData->tryTransient();
