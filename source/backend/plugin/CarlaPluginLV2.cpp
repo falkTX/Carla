@@ -503,6 +503,7 @@ public:
           fAtomBufferIn(),
           fAtomBufferOut(),
           fAtomForge(),
+          fTmpAtomBuffer(nullptr),
           fEventsIn(),
           fEventsOut(),
           fLv2Options(),
@@ -687,6 +688,12 @@ public:
         {
             std::free(fLastStateChunk);
             fLastStateChunk = nullptr;
+        }
+
+        if (fTmpAtomBuffer != nullptr)
+        {
+            delete[] fTmpAtomBuffer;
+            fTmpAtomBuffer = nullptr;
         }
 
         clearBuffers();
@@ -1505,9 +1512,7 @@ public:
     {
         if (fAtomBufferOut.isDataAvailableForReading())
         {
-            uint8_t dumpBuf[fAtomBufferOut.getSize()];
-
-            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferOut, dumpBuf);
+            Lv2AtomRingBuffer tmpRingBuffer(fAtomBufferOut, fTmpAtomBuffer);
             CARLA_SAFE_ASSERT(tmpRingBuffer.isDataAvailableForReading());
 
             uint32_t portIndex;
@@ -2342,7 +2347,10 @@ public:
             fAtomBufferIn.createBuffer(eventBufferSize);
 
         if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
+        {
             fAtomBufferOut.createBuffer(eventBufferSize);
+            fTmpAtomBuffer = new uint8_t[fAtomBufferOut.getSize()];
+        }
 
         if (fEventsIn.ctrl != nullptr && fEventsIn.ctrl->port == nullptr)
             fEventsIn.ctrl->port = pData->event.portIn;
@@ -5563,6 +5571,7 @@ private:
     Lv2AtomRingBuffer fAtomBufferIn;
     Lv2AtomRingBuffer fAtomBufferOut;
     LV2_Atom_Forge    fAtomForge;
+    uint8_t*          fTmpAtomBuffer;
 
     CarlaPluginLV2EventData fEventsIn;
     CarlaPluginLV2EventData fEventsOut;
