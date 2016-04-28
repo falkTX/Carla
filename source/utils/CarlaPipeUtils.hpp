@@ -259,7 +259,7 @@ public:
      * Start the pipe server using @a filename with 2 arguments.
      * @see fail()
      */
-    bool startPipeServer(const char* const filename, const char* const arg1, const char* const arg2) noexcept;
+    bool startPipeServer(const char* const filename, const char* const arg1, const char* const arg2, const int size = -1) noexcept;
 
     /*!
      * Stop the pipe server.

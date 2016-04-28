@@ -1133,7 +1133,10 @@ uintptr_t CarlaPipeServer::getPID() const noexcept
 
 // -----------------------------------------------------------------------
 
-bool CarlaPipeServer::startPipeServer(const char* const filename, const char* const arg1, const char* const arg2) noexcept
+bool CarlaPipeServer::startPipeServer(const char* const filename,
+                                      const char* const arg1,
+                                      const char* const arg2,
+                                      const int size) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->pipeRecv == INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend == INVALID_PIPE_VALUE, false);
@@ -1326,10 +1329,22 @@ bool CarlaPipeServer::startPipeServer(const char* const filename, const char* co
     pipeRecvServer = pipeSendServer = INVALID_PIPE_VALUE;
 
 #ifndef CARLA_OS_WIN
+    int ret;
+
+    //----------------------------------------------------------------
+    // set size
+
+    if (size > 4096)
+    {
+        try {
+            ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
+        } catch (...) {
+            // non-fatal
+        }
+    }
+
     //----------------------------------------------------------------
     // set non-block reading
-
-    int ret = 0;
 
     try {
         ret = ::fcntl(pipeRecvClient, F_SETFL, ::fcntl(pipeRecvClient, F_GETFL) | O_NONBLOCK);
