@@ -136,6 +136,7 @@ public:
 
         // all ok
         fBuffer->head = fBuffer->wrtn;
+        fErrorWriting = false;
         return true;
     }
 
@@ -410,7 +411,6 @@ protected:
         }
 
         fBuffer->wrtn = writeto;
-        fErrorWriting = false;
         return true;
     }
 
