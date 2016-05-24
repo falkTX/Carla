@@ -670,7 +670,7 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Engine (host callbacks)
 
-    @pyqtSlot(str)
+    @pyqtSlot(int, int, str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
