@@ -1273,35 +1273,35 @@ class PluginEdit(QDialog):
 
     #------------------------------------------------------------------
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_dryWetChanged(self, value):
         self.host.set_drywet(self.fPluginId, value)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_DRYWET, value)
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_volumeChanged(self, value):
         self.host.set_volume(self.fPluginId, value)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_VOLUME, value)
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_balanceLeftChanged(self, value):
         self.host.set_balance_left(self.fPluginId, value)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_LEFT, value)
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_balanceRightChanged(self, value):
         self.host.set_balance_right(self.fPluginId, value)
 
         if self.fParent is not None:
             self.fParent.editDialogParameterValueChanged(self.fPluginId, PARAMETER_BALANCE_RIGHT, value)
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_panChanged(self, value):
         self.host.set_panning(self.fPluginId, value)
 

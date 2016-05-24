@@ -222,7 +222,7 @@ class CarlaPanelTime(QDialog):
     # --------------------------------------------------------------------------------------------------------
     # Engine callbacks
 
-    @pyqtSlot(str)
+    @pyqtSlot(int, int, str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.fSampleRate = self.host.get_sample_rate()
         self.refreshTransport(True)

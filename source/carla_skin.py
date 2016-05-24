@@ -1217,7 +1217,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
     #------------------------------------------------------------------
 
-    @pyqtSlot(int)
+    @pyqtSlot(float)
     def slot_parameterValueChanged(self, value):
         index = self.sender().getIndex()
 
