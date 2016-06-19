@@ -194,7 +194,7 @@ void* carla_shm_map(carla_shm_t& shm, const std::size_t size) noexcept
             CARLA_SAFE_ASSERT_RETURN(ret == 0, nullptr);
         }
 
-        void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0));
+        void* const ptr(::mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_LOCKED, shm.fd, 0));
 
         if (ptr == nullptr)
         {
