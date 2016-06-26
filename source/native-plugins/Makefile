@@ -19,7 +19,7 @@ BUILD_CXX_FLAGS += -I.. -isystem $(CWD)/modules -I$(CWD)/modules/distrho
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 ZITA_DSP_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Wno-unused-parameter
 ZITA_DSP_CXX_FLAGS += $(shell pkg-config --cflags fftw3f)
-ZITA_UI_CXX_FLAGS   = $(BUILD_CXX_FLAGS) -Wno-unused-parameter -Wno-ignored-qualifiers
+ZITA_UI_CXX_FLAGS   = $(BUILD_CXX_FLAGS) -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-unused-result
 ZITA_UI_CXX_FLAGS  += $(shell pkg-config --cflags cairo libpng12 freetype2 x11 xft zlib)
 ZITA_UI_LINK_FLAGS  = $(LINK_FLAGS) -lclxclient -lclthreads
 ZITA_UI_LINK_FLAGS += $(shell pkg-config --libs cairo libpng12 freetype2 x11 xft zlib)
@@ -31,6 +31,7 @@ endif # EXPERIMENTAL_PLUGINS
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Izynaddsubfx -Izynaddsubfx/rtosc
+ZYN_CXX_FLAGS += -Wno-misleading-indentation -Wno-shift-negative-value
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(shell pkg-config --libs liblo)
 ZYN_LD_FLAGS  += -ldl -lpthread
