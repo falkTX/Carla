@@ -1843,7 +1843,7 @@ class HostWindow(QMainWindow):
 
         # set our gui as parent for all plugins UIs
         if self.host.manageUIs and not (self.host.isControl or self.host.isPlugin):
-            winIdStr = "%x" % self.winId()
+            winIdStr = "%x" % int(self.winId())
             self.host.set_engine_option(ENGINE_OPTION_FRONTEND_WIN_ID, 0, winIdStr)
 
     def hideEvent(self, event):

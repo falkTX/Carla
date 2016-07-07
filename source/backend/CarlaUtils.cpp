@@ -27,14 +27,13 @@
 
 #ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
 # include "juce_audio_formats/juce_audio_formats.h"
+# ifdef HAVE_X11
+#  include <X11/Xlib.h>
+# endif
 #endif
 
 #ifdef CARLA_OS_MAC
 # include "juce_audio_processors/juce_audio_processors.h"
-#endif
-
-#ifdef HAVE_X11
-# include <X11/Xlib.h>
 #endif
 
 #include "../native-plugins/_data.cpp"
