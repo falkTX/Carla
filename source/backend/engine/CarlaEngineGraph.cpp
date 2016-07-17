@@ -1011,7 +1011,7 @@ static const uint32_t kAudioOutputPortOffset = MAX_PATCHBAY_PLUGINS*2;
 static const uint32_t kMidiInputPortOffset   = MAX_PATCHBAY_PLUGINS*3;
 static const uint32_t kMidiOutputPortOffset  = MAX_PATCHBAY_PLUGINS*3+1;
 
-static const uint kMidiChannelIndex = static_cast<uint>(AudioProcessorGraph::midiChannelIndex);
+static const uint kMidiChannelIndex = static_cast<uint>(CarlaAudioProcessorGraph::midiChannelIndex);
 
 static inline
 bool adjustPatchbayPortIdForJuce(uint& portId)
@@ -1351,11 +1351,11 @@ private:
 // -----------------------------------------------------------------------
 // Patchbay Graph
 
-class NamedAudioGraphIOProcessor : public AudioProcessorGraph::AudioGraphIOProcessor
+class NamedAudioGraphIOProcessor : public CarlaAudioProcessorGraph::AudioGraphIOProcessor
 {
 public:
     NamedAudioGraphIOProcessor(const IODeviceType type)
-        : AudioProcessorGraph::AudioGraphIOProcessor(type) {}
+        : CarlaAudioProcessorGraph::AudioGraphIOProcessor(type) {}
 
     const String getInputChannelName (int index) const override
     {
@@ -1431,7 +1431,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioInputNode));
         proc->setNames(false, channelNames);
 
-        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", true);
@@ -1445,7 +1445,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioOutputNode));
         proc->setNames(true, channelNames);
 
-        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", true);
@@ -1457,7 +1457,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiInputNode));
-        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", false);
         node->properties.set("isAudio", false);
@@ -1469,7 +1469,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::midiOutputNode));
-        AudioProcessorGraph::Node* const node(graph.addNode(proc));
+        CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
         node->properties.set("isOutput", true);
         node->properties.set("isAudio", false);
@@ -1515,7 +1515,7 @@ void PatchbayGraph::addPlugin(CarlaPlugin* const plugin)
     carla_debug("PatchbayGraph::addPlugin(%p)", plugin);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, plugin));
-    AudioProcessorGraph::Node* const node(graph.addNode(instance));
+    CarlaAudioProcessorGraph::Node* const node(graph.addNode(instance));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     plugin->setPatchbayNodeId(node->nodeId);
@@ -1534,7 +1534,7 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     CARLA_SAFE_ASSERT_RETURN(oldPlugin != newPlugin,);
     CARLA_SAFE_ASSERT_RETURN(oldPlugin->getId() == newPlugin->getId(),);
 
-    AudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
+    CarlaAudioProcessorGraph::Node* const oldNode(graph.getNodeForId(oldPlugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(oldNode != nullptr,);
 
     if (! usingExternal)
@@ -1548,7 +1548,7 @@ void PatchbayGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* con
     graph.removeNode(oldNode->nodeId);
 
     CarlaPluginInstance* const instance(new CarlaPluginInstance(kEngine, newPlugin));
-    AudioProcessorGraph::Node* const node(graph.addNode(instance));
+    CarlaAudioProcessorGraph::Node* const node(graph.addNode(instance));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     newPlugin->setPatchbayNodeId(node->nodeId);
@@ -1565,7 +1565,7 @@ void PatchbayGraph::renamePlugin(CarlaPlugin* const plugin, const char* const ne
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::renamePlugin(%p)", plugin, newName);
 
-    AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
+    CarlaAudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     if (! usingExternal)
@@ -1577,7 +1577,7 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     carla_debug("PatchbayGraph::removePlugin(%p)", plugin);
 
-    AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
+    CarlaAudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
     CARLA_SAFE_ASSERT_RETURN(node != nullptr,);
 
     if (! usingExternal)
@@ -1594,7 +1594,7 @@ void PatchbayGraph::removePlugin(CarlaPlugin* const plugin)
         CarlaPlugin* const plugin2(kEngine->getPlugin(i));
         CARLA_SAFE_ASSERT_BREAK(plugin2 != nullptr);
 
-        if (AudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
+        if (CarlaAudioProcessorGraph::Node* const node2 = graph.getNodeForId(plugin2->getPatchbayNodeId()))
         {
             CARLA_SAFE_ASSERT_CONTINUE(node2->properties.getWithDefault("pluginId", -1) != juce::var(-1));
             node2->properties.set("pluginId", static_cast<int>(i-1));
@@ -1613,7 +1613,7 @@ void PatchbayGraph::removeAllPlugins()
         CarlaPlugin* const plugin(kEngine->getPlugin(i));
         CARLA_SAFE_ASSERT_CONTINUE(plugin != nullptr);
 
-        AudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
+        CarlaAudioProcessorGraph::Node* const node(graph.getNodeForId(plugin->getPatchbayNodeId()));
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
         if (! usingExternal)
@@ -1744,7 +1744,7 @@ void PatchbayGraph::refresh(const char* const deviceName)
 
     for (int i=0, count=graph.getNumNodes(); i<count; ++i)
     {
-        AudioProcessorGraph::Node* const node(graph.getNode(i));
+        CarlaAudioProcessorGraph::Node* const node(graph.getNode(i));
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
         AudioProcessor* const proc(node->getProcessor());
@@ -1764,7 +1764,7 @@ void PatchbayGraph::refresh(const char* const deviceName)
 
     for (int i=0, count=graph.getNumConnections(); i<count; ++i)
     {
-        const AudioProcessorGraph::Connection* const conn(graph.getConnection(i));
+        const CarlaAudioProcessorGraph::Connection* const conn(graph.getConnection(i));
         CARLA_SAFE_ASSERT_CONTINUE(conn != nullptr);
         CARLA_SAFE_ASSERT_CONTINUE(conn->sourceChannelIndex >= 0);
         CARLA_SAFE_ASSERT_CONTINUE(conn->destChannelIndex >= 0);
@@ -1813,10 +1813,10 @@ const char* const* PatchbayGraph::getConnections(const bool external) const
         const ConnectionToId& connectionToId(it.getValue(fallback));
         CARLA_SAFE_ASSERT_CONTINUE(connectionToId.id > 0);
 
-        AudioProcessorGraph::Node* const nodeA(graph.getNodeForId(connectionToId.groupA));
+        CarlaAudioProcessorGraph::Node* const nodeA(graph.getNodeForId(connectionToId.groupA));
         CARLA_SAFE_ASSERT_CONTINUE(nodeA != nullptr);
 
-        AudioProcessorGraph::Node* const nodeB(graph.getNodeForId(connectionToId.groupB));
+        CarlaAudioProcessorGraph::Node* const nodeB(graph.getNodeForId(connectionToId.groupB));
         CARLA_SAFE_ASSERT_CONTINUE(nodeB != nullptr);
 
         AudioProcessor* const procA(nodeA->getProcessor());
@@ -1853,7 +1853,7 @@ bool PatchbayGraph::getGroupAndPortIdFromFullName(const bool external, const cha
 
     for (int i=0, count=graph.getNumNodes(); i<count; ++i)
     {
-        AudioProcessorGraph::Node* const node(graph.getNode(i));
+        CarlaAudioProcessorGraph::Node* const node(graph.getNode(i));
         CARLA_SAFE_ASSERT_CONTINUE(node != nullptr);
 
         AudioProcessor* const proc(node->getProcessor());

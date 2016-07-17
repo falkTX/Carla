@@ -25,7 +25,12 @@
 
 #include "juce_audio_processors/juce_audio_processors.h"
 
-using juce::AudioProcessorGraph;
+#if 0
+typedef juce::AudioProcessorGraph CarlaAudioProcessorGraph;
+#else
+typedef juce::AudioProcessorGraphMultiThreaded CarlaAudioProcessorGraph;
+#endif
+
 using juce::AudioSampleBuffer;
 using juce::MidiBuffer;
 
@@ -147,7 +152,7 @@ struct RackGraph {
 
 struct PatchbayGraph {
     PatchbayConnectionList connections;
-    AudioProcessorGraph graph;
+    CarlaAudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
     MidiBuffer midiBuffer;
     const uint32_t inputs;

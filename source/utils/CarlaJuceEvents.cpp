@@ -34,6 +34,7 @@ namespace juce {
 #include "juce_audio_processors/processors/juce_AudioChannelSet.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
+#include "juce_audio_processors/processors/AudioProcessorGraphMultiThreaded.cpp"
 
 class JuceEventsThread : public Thread
 {

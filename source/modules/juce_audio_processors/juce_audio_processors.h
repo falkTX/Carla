@@ -83,6 +83,7 @@ class AudioProcessor;
 #include "processors/juce_AudioPluginInstance.h"
 #include "processors/juce_AudioProcessorGraph.h"
 #include "processors/juce_GenericAudioProcessorEditor.h"
+#include "processors/AudioProcessorGraphMultiThreaded.h"
 #include "format/juce_AudioPluginFormat.h"
 #include "format/juce_AudioPluginFormatManager.h"
 #include "scanning/juce_KnownPluginList.h"

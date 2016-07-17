@@ -153,6 +153,7 @@ void AutoResizingNSViewComponentWithParent::timerCallback()
 #include "processors/juce_AudioProcessorGraph.cpp"
 #include "processors/juce_GenericAudioProcessorEditor.cpp"
 #include "processors/juce_PluginDescription.cpp"
+#include "processors/AudioProcessorGraphMultiThreaded.cpp"
 #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
