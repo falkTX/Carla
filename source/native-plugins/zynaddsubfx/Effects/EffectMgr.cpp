@@ -131,9 +131,12 @@ static const rtosc::Ports local_ports = {
             //Return the old data for distruction
             d.reply("/free", "sb", "EffectMgr", sizeof(EffectMgr*), &eff_);
         }},
-    rSubtype(Echo),
     rSubtype(Alienwah),
+    rSubtype(Chorus),
     rSubtype(Distorsion),
+    rSubtype(Echo),
+    rSubtype(Phaser),
+    rSubtype(Reverb),
 };
 
 const rtosc::Ports &EffectMgr::ports = local_ports;

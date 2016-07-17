@@ -35,7 +35,7 @@
 #include "Misc/Master.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
-#include "version.h"
+#include "zyn-version.h"
 
 //Nio System
 #include "Nio/Nio.h"

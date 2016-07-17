@@ -17,6 +17,36 @@
 #include "../DSP/AnalogFilter.h"
 #include "../DSP/Unison.h"
 #include <cmath>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+
+#define rObject Reverb
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports Reverb::ports = {
+    {"preset::i", rOptions(Cathedral1, Cathedral2, Cathedral3,
+            Hall1, Hall2, Room1, Room2, Basement,
+            Tunnel, Echoed1, Echoed2, VeryLong1, VeryLong2)
+                  rProp(parameter)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    rEffPar(Ptime,    2, rShort("time"),     "Length of Reverb"),
+    rEffPar(Pidelay,  3, rShort("i.time"),   "Delay for first impulse"),
+    rEffPar(Pidelayfb,4, rShort("i.fb"),     "Feedback for first impulse"),
+    rEffPar(Plpf,     7, rShort("lpf"),      "Low pass filter"),
+    rEffPar(Phpf,     8, rShort("lpf"),      "High pass filter"),
+    rEffPar(Plohidamp,9, rShort("damp"),     "Dampening"),
+    //Todo make this a selector
+    rEffPar(Ptype,    10,rShort("type"),     "Type"),
+    rEffPar(Proomsize,11,rShort("size"),     "Room Size"),
+    rEffPar(Pbandwidth,12,rShort("bw"),      "Bandwidth"),
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 Reverb::Reverb(EffectParams pars)
     :Effect(pars),

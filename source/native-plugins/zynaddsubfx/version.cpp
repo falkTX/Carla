@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-#include "version.h"
+#include "zyn-version.h"
 
 constexpr int version_type::v_strcmp(const version_type& v2, int i) const
 {

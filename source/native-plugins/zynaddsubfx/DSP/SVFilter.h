@@ -36,6 +36,15 @@ class SVFilter:public Filter
         void setstages(int stages_);
         void cleanup();
 
+        struct response {
+            response(float b0, float b1, float b2,
+                     float a0, float a1 ,float a2);
+            float a[3];
+            float b[3];
+        };
+        static response computeResponse(int type,
+                float freq, float pq, int stages, float g, float fs);
+
     private:
         struct fstage {
             float low, high, band, notch;

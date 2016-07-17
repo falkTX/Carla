@@ -15,6 +15,7 @@
 #include "../Misc/Util.h"
 #include "../Misc/Time.h"
 #include "../DSP/AnalogFilter.h"
+#include "../DSP/SVFilter.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -89,6 +90,9 @@ const rtosc::Ports FilterParams::ports = {
     rToggle(Psequencereversed, "If the modulator input is inverted"),
 
     //{"Psequence#" FF_MAX_SEQUENCE "/nvowel", "", NULL, [](){}},
+    {"type-svf::i", rProp(parameter) rShort("type")
+        rOptions(low, high, band, notch)
+            rDoc("Filter Type"), 0, rOptionCb(Ptype)},
 
     //UI reader
     {"Pvowels:", rDoc("Get Formant Vowels"), NULL,
@@ -132,24 +136,37 @@ const rtosc::Ports FilterParams::ports = {
         rDoc("Get a frequency response"),
         NULL, [](const char *, RtData &d) {
             FilterParams *obj = (FilterParams *) d.obj;
-            int order = 0;
-            float gain = dB2rap(obj->getgain());
-            if(obj->Ptype != 6 && obj->Ptype != 7 && obj->Ptype != 8)
-                gain = 1.0;
-            auto cf = AnalogFilter::computeCoeff(obj->Ptype,
-                    Filter::getrealfreq(obj->getfreq()),
-                    obj->getq(), obj->Pstages,
-                    gain, 48000, order);
-            if(order == 2) {
+            if(obj->Pcategory == 0) {
+                int order = 0;
+                float gain = dB2rap(obj->getgain());
+                if(obj->Ptype != 6 && obj->Ptype != 7 && obj->Ptype != 8)
+                    gain = 1.0;
+                auto cf = AnalogFilter::computeCoeff(obj->Ptype,
+                        Filter::getrealfreq(obj->getfreq()),
+                        obj->getq(), obj->Pstages,
+                        gain, 48000, order);
+                if(order == 2) {
+                    d.reply(d.loc, "fffffff",
+                            (float)obj->Pstages,
+                            cf.c[0], cf.c[1], cf.c[2],
+                            0.0,     cf.d[1], cf.d[2]);
+                } else if(order == 1) {
+                    d.reply(d.loc, "fffff",
+                            (float)obj->Pstages,
+                            cf.c[0], cf.c[1],
+                            0.0,     cf.d[1]);
+                }
+            } else if(obj->Pcategory == 2) {
+                int order = 0;
+                float gain = dB2rap(obj->getgain());
+                auto cf = SVFilter::computeResponse(obj->Ptype,
+                        Filter::getrealfreq(obj->getfreq()),
+                        obj->getq(), obj->Pstages,
+                        gain, 48000);
                 d.reply(d.loc, "fffffff",
                         (float)obj->Pstages,
-                        cf.c[0], cf.c[1], cf.c[2],
-                        0.0,     cf.d[1], cf.d[2]);
-            } else if(order == 1) {
-                d.reply(d.loc, "fffff",
-                        (float)obj->Pstages,
-                        cf.c[0], cf.c[1],
-                        0.0,     cf.d[1]);
+                        cf.b[0], cf.b[1], cf.b[2],
+                        0.0,     -cf.a[1], -cf.a[2]);
             }
         }},
     //    "", NULL, [](){}},"/freq"

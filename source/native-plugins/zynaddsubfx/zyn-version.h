@@ -33,7 +33,7 @@ public:
 
     //! constructs the current zynaddsubfx version
     constexpr version_type() :
-        version_type(2, 5, 4)
+        version_type(2, 4, 4)
     {
     }
 

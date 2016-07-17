@@ -32,6 +32,7 @@ class Reverb:public Effect
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;
 
+        static rtosc::Ports ports;
     private:
         //Parametrii
         unsigned char Pvolume;

@@ -16,7 +16,7 @@
 #include <mxml.h>
 #include <string>
 #include <vector>
-#include "../version.h"
+#include "../zyn-version.h"
 
 #ifndef XML_WRAPPER_H
 #define XML_WRAPPER_H

@@ -51,6 +51,51 @@ void SVFilter::cleanup()
     abovenq    = false;
 }
 
+SVFilter::response::response(float b0, float b1, float b2,
+                             float a0, float a1 ,float a2)
+{
+    a[0] = a0;
+    a[1] = a1;
+    a[2] = a2;
+    b[0] = b0;
+    b[1] = b1;
+    b[2] = b2;
+}
+
+SVFilter::response SVFilter::computeResponse(int type,
+        float freq, float pq, int stages, float gain, float fs)
+{
+    typedef SVFilter::response res;
+    float f = freq / fs * 4.0;
+    if(f > 0.99999f)
+       f = 0.99999f;
+    float q   = 1.0f - atanf(sqrtf(pq)) * 2.0f / PI;
+    q         =  powf(q, 1.0f / (stages + 1));
+    float qrt = sqrtf(q);
+    float g   = powf(gain, 1.0 / (stages + 1));
+    if(type == 0) { //Low
+        return res{0, g*f*f*qrt, 0,
+                   1,   (q*f+f*f-2),    (1-q*f)};
+    }
+    if(type == 1) {//High
+        //g *= qrt/(1+f*q);
+        g *= qrt;
+        return res{g,    -2*g,    g,
+                   //1,   (f*f-2*f*q-2)/(1+f*q),    1};
+                   1,   (q*f+f*f-2),    (1-q*f)};
+    }
+    if(type == 2) {//Band
+        g *= f*qrt;
+        return res{g,   -g, 0,
+                   1,   (q*f+f*f-2),    (1-q*f)};
+    }
+    if(type == 3 || true) {//Notch
+        g *= qrt;
+        return res{g, -2*g+g*f*f, g,
+                   1,   (q*f+f*f-2),    (1-q*f)};
+    }
+}
+
 void SVFilter::computefiltercoefs(void)
 {
     par.f = freq / samplerate_f * 4.0f;
@@ -136,7 +181,8 @@ void SVFilter::singlefilterout(float *smp, fstage &x, parameters &par)
             out = &x.notch;
             break;
         default:
-            errx(1, "Impossible SVFilter type encountered [%d]", type);
+            out = &x.low;
+            warnx("Impossible SVFilter type encountered [%d]", type);
     }
 
     for(int i = 0; i < buffersize; ++i) {
@@ -147,6 +193,17 @@ void SVFilter::singlefilterout(float *smp, fstage &x, parameters &par)
         smp[i]  = *out;
     }
 }
+
+// simplifying the responses
+// xl = xl*z(-1) +      pf*xb*z(-1)
+// xh = pq1*x    - xl - pq*xb*z(-1)
+// xb = pf*xh    +         xb*z(-1)
+// xn = xh       + xl
+//
+// xl = pf*xb*z(-1)/(1-z(-1))
+// xb = pf*xh/(1-z(-1))
+// xl = pf*pfxh*z(-1)/(1-z(-1))^2
+
 
 void SVFilter::filterout(float *smp)
 {
