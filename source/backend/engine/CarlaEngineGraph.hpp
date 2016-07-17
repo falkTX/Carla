@@ -25,7 +25,7 @@
 
 #include "juce_audio_processors/juce_audio_processors.h"
 
-#if 0
+#if 1
 typedef juce::AudioProcessorGraph CarlaAudioProcessorGraph;
 #else
 typedef juce::AudioProcessorGraphMultiThreaded CarlaAudioProcessorGraph;
