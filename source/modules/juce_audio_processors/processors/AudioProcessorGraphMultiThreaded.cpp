@@ -80,8 +80,8 @@ void AudioProcessorGraphMultiThreaded::Node::prepare (const double sampleRate, c
 		buffer= new AudioSampleBuffer(jmax(processor->getNumInputChannels(),processor->getNumOutputChannels()),blockSize);
 		buffer->clear();
 
-	
-	
+		midiBuffer.clear();
+
 
         processor->setPlayConfigDetails (processor->getNumInputChannels(),
                                          processor->getNumOutputChannels(),
@@ -145,53 +145,66 @@ bool AudioProcessorGraphMultiThreaded::Node::process()
 
 //	DBG("ProcessNode "+ getProcessor()->getName());
 
-	for (int o=0; o<buffer->getNumChannels(); o++)
-	{
-		bool unwritten=true;
+        const int numChans = buffer->getNumChannels();
+        const int numSamples = buffer->getNumSamples();
 
-		for (int i=0; i<requiredInputs.size();i++)
-		{
-			NodeChannel* ri=requiredInputs[i];
-			if (ri->inputConnection->destChannelIndex==o)
-			{
-				if (ri->inputConnection->sourceChannelIndex<ri->node->buffer->getNumChannels())
-				{
-					if (unwritten)
-					{
-						buffer->copyFrom(o,0,*ri->node->buffer,ri->inputConnection->sourceChannelIndex,0,buffer->getNumSamples());		
-						unwritten=false;
-					} else
-					{
-						buffer->addFrom(o,0,*ri->node->buffer,ri->inputConnection->sourceChannelIndex,0,buffer->getNumSamples());		
-					};
-				} else
-				{
-					DBG("Impossible Connection: Source Channel "+String(ri->inputConnection->sourceChannelIndex)+" is higher than available channels "+String(buffer->getNumChannels()));
-				}
-			};
-		}
+        bool unwritten;
 
-		if (unwritten)
-		{
-			buffer->clear(o,0,buffer->getNumSamples());
-		};
-	};
+        for (int o = numChans; --o >= 0;)
+        {
+            unwritten = true;
 
-	
+            for (int i = requiredInputs.size(); --i >= 0;)
+            {
+                NodeChannel* const ri = requiredInputs[i];
 
-	processor->processBlock(*buffer, midiFakeBufferNotImplemented);
+                if (ri->inputConnection->destChannelIndex != o)
+                    continue;
 
-	for (int i=0; i<outputNodesToInform.size();i++)
-	{
-		NodeChannel* ri=outputNodesToInform[i];
-		++(ri->node->numberOfProcessedInputs);
-	}
+                if (ri->inputConnection->sourceChannelIndex < ri->node->buffer->getNumChannels())
+                {
+                    if (unwritten)
+                    {
+                        buffer->copyFrom(o,0,*ri->node->buffer,ri->inputConnection->sourceChannelIndex,0,numSamples);
+                        unwritten = false;
+                    }
+                    else
+                    {
+                        buffer->addFrom(o,0,*ri->node->buffer,ri->inputConnection->sourceChannelIndex,0,numSamples);
+                    }
+                }
+                else
+                {
+                    DBG("Impossible Connection: Source Channel "+
+                        String(ri->inputConnection->sourceChannelIndex)+" is higher than available channels "+String(numChans));
+                }
+            }
+
+            if (unwritten)
+                buffer->clear(o,0,numSamples);
+        }
+
+        midiBuffer.clear();
+
+        for (int i = requiredInputs.size(); --i >= 0;)
+        {
+            NodeChannel* const ri = requiredInputs[i];
+
+            //if (ri->inputConnection->sourceChannelIndex == AudioProcessorGraphMultiThreaded::midiChannelIndex)
+                midiBuffer.addEvents(ri->node->midiBuffer,0,numSamples,0);
+        }
+
+        processor->processBlock(*buffer, midiBuffer);
+
+        for (int i = outputNodesToInform.size(); --i >= 0;)
+        {
+            NodeChannel* const ri = outputNodesToInform[i];
+            ++(ri->node->numberOfProcessedInputs);
+        }
 
 
-	processingDone=true;
-
-	return true;
-
+        processingDone=true;
+        return true;
 }
 
 
