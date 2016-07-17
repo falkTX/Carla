@@ -67,7 +67,10 @@ extern "C" {
 #include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
 // zynaddsubfx includes
+#include "zynaddsubfx/version.cpp"
+
 #include "zynaddsubfx/Containers/MultiPseudoStack.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -75,6 +78,15 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Containers/NotePool.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Containers/ScratchString.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -82,6 +94,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/AnalogFilter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -89,6 +102,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/FFTwrapper.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -96,6 +110,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/Filter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -103,6 +118,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/FormantFilter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -110,6 +126,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/SVFilter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -117,6 +134,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/DSP/Unison.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -124,6 +142,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/Alienwah.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -131,6 +150,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/Chorus.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -138,6 +158,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/Distorsion.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -145,6 +166,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/DynamicFilter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -153,6 +175,7 @@ extern "C" {
 
 #include "zynaddsubfx/Effects/Echo.cpp"
 #undef MAX_DELAY
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -160,6 +183,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/Effect.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -167,6 +191,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/EffectLFO.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -174,6 +199,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/EffectMgr.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -181,6 +207,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/EQ.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -188,16 +215,18 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Effects/Phaser.cpp"
+#undef PHASER_LFO_SHAPE
+#undef ONE_
+#undef ZERO_
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
 #undef rChangeCb
 #define rChangeCb
-#undef PHASER_LFO_SHAPE
-#undef ONE_
-#undef ZERO_
 
 #include "zynaddsubfx/Effects/Reverb.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -205,6 +234,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/Allocator.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -214,6 +244,15 @@ extern "C" {
 #include "zynaddsubfx/Misc/Bank.cpp"
 #undef INSTRUMENT_EXTENSION
 #undef FORCE_BANK_DIR_FILE
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Misc/BankDb.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -221,6 +260,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/CallbackRepeater.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -228,6 +268,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/Config.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -243,6 +284,7 @@ extern "C" {
 
 #include "zynaddsubfx/Misc/Microtonal.cpp"
 #undef MAX_LINE_SIZE
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -250,6 +292,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/MiddleWare.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -258,6 +301,7 @@ extern "C" {
 
 #include "zynaddsubfx/Misc/Part.cpp"
 #undef CLONE
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -265,6 +309,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/PresetExtractor.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -272,6 +317,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/Recorder.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -279,6 +325,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/Util.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -286,6 +333,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/WavFile.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -293,6 +341,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/WaveShapeSmps.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -300,6 +349,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Misc/XMLwrapper.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -308,6 +358,7 @@ extern "C" {
 
 #include "zynaddsubfx/Params/ADnoteParameters.cpp"
 #undef EXPAND
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -315,6 +366,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/Controller.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -322,6 +374,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/EnvelopeParams.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -329,6 +382,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/FilterParams.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -336,6 +390,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/LFOParams.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -345,6 +400,7 @@ extern "C" {
 #include "zynaddsubfx/Params/PADnoteParameters.cpp"
 #undef PC
 #undef P_C
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -352,6 +408,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/Presets.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -359,6 +416,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/PresetsArray.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -366,6 +424,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Params/PresetsStore.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -375,6 +434,7 @@ extern "C" {
 #include "zynaddsubfx/Params/SUBnoteParameters.cpp"
 #undef doPaste
 #undef doPPaste
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -382,6 +442,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/ADnote.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -389,6 +450,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/Envelope.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -396,6 +458,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/LFO.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -403,6 +466,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/ModFilter.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -416,6 +480,7 @@ extern "C" {
 #undef RESTORE
 #undef FUNC
 #undef FILTER
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -423,6 +488,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/PADnote.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -430,6 +496,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/Resonance.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -437,6 +504,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/SUBnote.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -444,6 +512,15 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/Synth/SynthNote.cpp"
+#undef rBegin
+#undef rObject
+#undef rStdString
+#undef rStdStringCb
+#undef rChangeCb
+#define rChangeCb
+
+#include "zynaddsubfx/Synth/WatchPoint.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb
@@ -451,6 +528,7 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/UI/ConnectionDummy.cpp"
+#undef rBegin
 #undef rObject
 #undef rStdString
 #undef rStdStringCb

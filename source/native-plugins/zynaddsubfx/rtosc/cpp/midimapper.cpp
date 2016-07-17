@@ -342,6 +342,16 @@ void MidiMappernRT::delMapping(int ID, bool coarse, const char *addr){
 };
 void MidiMappernRT::replaceMapping(int, bool, const char *){};
 
+void MidiMappernRT::clear(void)
+{
+    storage = new MidiMapperStorage();
+    learnQueue.clear();
+    inv_map.clear();
+    char buf[1024];
+    rtosc_message(buf, 1024, "/midi-learn/midi-bind", "b", sizeof(storage), &storage);
+    rt_cb(buf);
+}
+
 
 
 std::map<std::string, std::string> MidiMappernRT::getMidiMappingStrings(void)

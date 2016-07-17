@@ -16,6 +16,33 @@
 #include "../Misc/WaveShapeSmps.h"
 #include "../Misc/Allocator.h"
 #include <cmath>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+
+#define rObject Distorsion
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports Distorsion::ports = {
+    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    rEffPar(Plrcross, 2, rShort("l/r") "Left/Right Crossover"),
+    rEffPar(Pdrive,   3, rShort("drive"), "Input amplification"),
+    rEffPar(Plevel,   4, rShort("output"), "Output amplification"),
+    rEffPar(Ptype,    5, rShort("type"), "Distortion Shape"),
+    rEffParTF(Pnegate, 6, rShort("neg"), "Negate Signal"),
+    rEffPar(Plpf, 7, rShort("lpf"), "Low Pass Cutoff"),
+    rEffPar(Phpf, 8, rShort("hpf"), "High Pass Cutoff"),
+    rEffParTF(Pstereo, 9, rShort("stereo"), "Stereo"),
+    rEffParTF(Pprefiltering, 10, rShort("p.filt"),
+                  "Filtering before/after non-linearity"),
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 Distorsion::Distorsion(EffectParams pars)
     :Effect(pars),

@@ -14,6 +14,7 @@
 #include "FilterParams.h"
 #include "../Misc/Util.h"
 #include "../Misc/Time.h"
+#include "../DSP/AnalogFilter.h"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -58,18 +59,29 @@ const rtosc::Ports FilterParams::ports = {
     rSelf(FilterParams),
     rPaste,
     rArrayPaste,
-    rParamZyn(Pcategory,   "Class of filter"),
-    rParamZyn(Ptype,       "Filter Type"),
-    rParamZyn(Pfreq,        "Center Freq"),
-    rParamZyn(Pq,           "Quality Factor (resonance/bandwidth)"),
-    rParamZyn(Pstages,      "Filter Stages + 1"),
-    rParamZyn(Pfreqtrack,   "Frequency Tracking amount"),
-    rParamZyn(Pgain,        "Output Gain"),
-    rParamZyn(Pnumformants, "Number of formants to be used"),
-    rParamZyn(Pformantslowness, "Rate that formants change"),
-    rParamZyn(Pvowelclearness, "Cost for mixing vowels"),
-    rParamZyn(Pcenterfreq,     "Center Freq (formant)"),
-    rParamZyn(Poctavesfreq,    "Number of octaves for formant"),
+    rOption(Pcategory,          rShort("class"),
+            rOptions(analog, formant, st.var.), "Class of filter"),
+    rOption(Ptype,              rShort("type"),
+            rOptions(LP1, HP1, LP2, HP2, BP, notch, peak,
+                l.shelf, h.shelf), "Filter Type"),
+    rParamZyn(Pfreq,            rShort("cutoff"),   "Center Freq"),
+    rParamZyn(Pq,               rShort("q"),
+            "Quality Factor (resonance/bandwidth)"),
+    rOption(Pstages,            rShort("stages"),
+            rOptions(1, 2, 3, 4, 5), "Filter Stages"),
+    rParamZyn(Pfreqtrack,       rShort("f.track"),
+            "Frequency Tracking amount"),
+    rParamZyn(Pgain,            rShort("gain"),     "Output Gain"),
+    rParamZyn(Pnumformants,     rShort("formants"),
+            "Number of formants to be used"),
+    rParamZyn(Pformantslowness, rShort("slew"),
+            "Rate that formants change"),
+    rParamZyn(Pvowelclearness,  rShort("clarity"),
+            "Cost for mixing vowels"),
+    rParamZyn(Pcenterfreq,      rShort("cutoff"),
+            "Center Freq (formant)"),
+    rParamZyn(Poctavesfreq,     rShort("octaves"),
+            "Number of octaves for formant"),
 
     //TODO check if FF_MAX_SEQUENCE is acutally expanded or not
     rParamZyn(Psequencesize, rMap(max, FF_MAX_SEQUENCE), "Length of vowel sequence"),
@@ -110,11 +122,79 @@ const rtosc::Ports FilterParams::ports = {
             FilterParams *obj = (FilterParams *) d.obj;
             d.reply(d.loc, "f", obj->getoctavesfreq());
         }},
+    {"q_value:",
+        rDoc("Q value for UI Response Graphs"),
+        NULL, [](const char *, RtData &d) {
+            FilterParams *obj = (FilterParams *) d.obj;
+            d.reply(d.loc, "f", obj->getq());
+        }},
+    {"response:",
+        rDoc("Get a frequency response"),
+        NULL, [](const char *, RtData &d) {
+            FilterParams *obj = (FilterParams *) d.obj;
+            int order = 0;
+            float gain = dB2rap(obj->getgain());
+            if(obj->Ptype != 6 && obj->Ptype != 7 && obj->Ptype != 8)
+                gain = 1.0;
+            auto cf = AnalogFilter::computeCoeff(obj->Ptype,
+                    Filter::getrealfreq(obj->getfreq()),
+                    obj->getq(), obj->Pstages,
+                    gain, 48000, order);
+            if(order == 2) {
+                d.reply(d.loc, "fffffff",
+                        (float)obj->Pstages,
+                        cf.c[0], cf.c[1], cf.c[2],
+                        0.0,     cf.d[1], cf.d[2]);
+            } else if(order == 1) {
+                d.reply(d.loc, "fffff",
+                        (float)obj->Pstages,
+                        cf.c[0], cf.c[1],
+                        0.0,     cf.d[1]);
+            }
+        }},
     //    "", NULL, [](){}},"/freq"
     //{"Pvowels#" FF_MAX_VOWELS "/formants#" FF_MAX_FORMANTS "/amp",
     //    "", NULL, [](){}},
     //{"Pvowels#" FF_MAX_VOWELS "/formants#" FF_MAX_FORMANTS "/q",
     //    "", NULL, [](){}},
+    //
+        //struct Pvowels_t {
+        //    struct formants_t {
+        //        unsigned char freq, amp, q; //frequency,amplitude,Q
+        //    } formants[FF_MAX_FORMANTS];
+        //} Pvowels[FF_MAX_VOWELS];
+    {"vowels:",
+        rDoc("Get info for formant graph"),
+        NULL, [](const char *, RtData &d) {
+            FilterParams *obj = (FilterParams *) d.obj;
+
+            rtosc_arg_t args[2+3*FF_MAX_FORMANTS*FF_MAX_VOWELS];
+            char type[2+3*FF_MAX_FORMANTS*FF_MAX_VOWELS + 1] = {0};
+
+            type[0] = 'i';
+            type[1] = 'i';
+
+            args[0].i = FF_MAX_VOWELS;
+            args[1].i = FF_MAX_FORMANTS;
+
+
+            for(int i=0; i<FF_MAX_VOWELS; ++i) {
+                auto &val = obj->Pvowels[i];
+                for(int j=0; j<FF_MAX_FORMANTS; ++j) {
+                    auto &f = val.formants[j];
+                    //each formant is 3 arguments
+                    //each vowel is FF_MAX_FORMANTS * length of formants long
+                    auto *a = args + i*FF_MAX_FORMANTS*3 + j*3 + 2;
+                    auto *t = type + i*FF_MAX_FORMANTS*3 + j*3 + 2;
+                    a[0].f = obj->getformantfreq(f.freq);
+                    a[1].f = obj->getformantamp(f.amp);
+                    a[2].f = obj->getformantq(f.q);
+                    //printf("<%d,%d,%d,%d,%d,%f,%f,%f>\n", i, j, f.freq, f.amp, f.q, a[0].f, a[1].f, a[2].f);
+                    t[0] = t[1] = t[2] = 'f';
+                }
+            }
+            d.replyArray(d.loc, type, args);
+        }},
 };
 #undef rChangeCb
 #define rChangeCb
@@ -287,21 +367,18 @@ float FilterParams::getfreqpos(float freq) const
  */
 float FilterParams::getformantfreq(unsigned char freq) const
 {
-    float result = getfreqx(freq / 127.0f);
-    return result;
+    return getfreqx(freq / 127.0f);
 }
 
 float FilterParams::getformantamp(unsigned char amp) const
 {
-    float result = powf(0.1f, (1.0f - amp / 127.0f) * 4.0f);
-    return result;
+    return powf(0.1f, (1.0f - amp / 127.0f) * 4.0f);
 }
 
 float FilterParams::getformantq(unsigned char q) const
 {
     //temp
-    float result = powf(25.0f, (q - 32.0f) / 64.0f);
-    return result;
+    return  powf(25.0f, (q - 32.0f) / 64.0f);
 }
 
 

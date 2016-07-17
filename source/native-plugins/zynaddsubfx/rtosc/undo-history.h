@@ -13,6 +13,7 @@ class UndoHistory
     //TODO think about the consequences of largish loads
     public:
         UndoHistory(void);
+        ~UndoHistory(void);
 
         //Records any undoable event
         void recordEvent(const char *msg);

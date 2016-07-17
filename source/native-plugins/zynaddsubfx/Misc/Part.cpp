@@ -25,6 +25,7 @@
 #include "../Synth/ADnote.h"
 #include "../Synth/SUBnote.h"
 #include "../Synth/PADnote.h"
+#include "../Containers/ScratchString.h"
 #include "../DSP/FFTwrapper.h"
 #include "../Misc/Util.h"
 #include <cstdlib>
@@ -59,7 +60,8 @@ static const Ports partPorts = {
     rParamZyn(Pminkey, rShort("min"), "Min Used Key"),
     rParamZyn(Pmaxkey, rShort("max"), "Max Used Key"),
     rParamZyn(Pkeyshift, rShort("shift"), "Part keyshift"),
-    rParamZyn(Prcvchn,  "Active MIDI channel"),
+    rParamZyn(Prcvchn, rOptions(ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10, ch11, ch12, ch13, ch14, ch15, ch16),
+                "Active MIDI channel"),
     rParamZyn(Pvelsns,   "Velocity sensing"),
     rParamZyn(Pveloffs,  "Velocity offset"),
     rToggle(Pnoteon,  "If the channel accepts note on events"),
@@ -163,7 +165,9 @@ static const Ports kitPorts = {
     rToggle(Padenabled, "ADsynth enable"),
     rToggle(Psubenabled, "SUBsynth enable"),
     rToggle(Ppadenabled, "PADsynth enable"),
-    rParamZyn(Psendtoparteffect, "Effect Levels"),
+    rParamZyn(Psendtoparteffect,
+            rOptions(FX1, FX2, FX3, Off),
+            "Effect Levels"),
     rString(Pname, PART_MAX_NAME_LEN, "Kit User Specified Label"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
@@ -195,7 +199,7 @@ const Ports &Part::ports = partPorts;
 
 Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     const int &gzip_compression, const int &interpolation,
-    Microtonal *microtonal_, FFTwrapper *fft_)
+    Microtonal *microtonal_, FFTwrapper *fft_, WatchManager *wm_, const char *prefix_)
     :Pdrummode(false),
     Ppolymode(true),
     Plegatomode(false),
@@ -204,12 +208,18 @@ Part::Part(Allocator &alloc, const SYNTH_T &synth_, const AbsTime &time_,
     ctl(synth_, &time_),
     microtonal(microtonal_),
     fft(fft_),
+    wm(wm_),
     memory(alloc),
     synth(synth_),
     time(time_),
     gzip_compression(gzip_compression),
     interpolation(interpolation)
 {
+    if(prefix_)
+        strncpy(prefix, prefix_, sizeof(prefix));
+    else
+        memset(prefix, 0, sizeof(prefix));
+
     monomemClear();
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
@@ -482,6 +492,7 @@ bool Part::NoteOn(unsigned char note,
 
     //Create New Notes
     for(uint8_t i = 0; i < NUM_KIT_ITEMS; ++i) {
+        ScratchString pre = prefix;
         auto &item = kit[i];
         if(Pkitmode != 0 && !item.validNote(note))
             continue;
@@ -493,13 +504,15 @@ bool Part::NoteOn(unsigned char note,
         try {
             if(item.Padenabled)
                 notePool.insertNote(note, sendto,
-                        {memory.alloc<ADnote>(kit[i].adpars, pars), 0, i});
+                        {memory.alloc<ADnote>(kit[i].adpars, pars,
+                            wm, (pre+"kit"+i+"/adpars/").c_str), 0, i});
             if(item.Psubenabled)
                 notePool.insertNote(note, sendto,
                         {memory.alloc<SUBnote>(kit[i].subpars, pars), 1, i});
             if(item.Ppadenabled)
                 notePool.insertNote(note, sendto,
-                        {memory.alloc<PADnote>(kit[i].padpars, pars, interpolation), 2, i});
+                        {memory.alloc<PADnote>(kit[i].padpars, pars, interpolation, wm,
+                            (pre+"kit"+i+"/padpars/").c_str), 2, i});
         } catch (std::bad_alloc & ba) {
             std::cerr << "dropped new note: " << ba.what() << std::endl;
         }

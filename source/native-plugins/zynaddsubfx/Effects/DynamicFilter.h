@@ -30,6 +30,7 @@ class DynamicFilter:public Effect
         unsigned char getpar(int npar) const;
         void cleanup(void);
 
+        static rtosc::Ports ports;
     private:
         //Parametrii DynamicFilter
         EffectLFO     lfo;          //lfo-ul DynamicFilter

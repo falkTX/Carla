@@ -200,8 +200,8 @@ static bool is_charwise(uint8_t c)
 int rtosc_subpath_pat_type(const char *pattern)
 {
     int charwise_only = 1;
-    const char *last_star = rindex(pattern, '*');
-    const char *pound = index(pattern, '#');
+    const char *last_star = strrchr(pattern, '*');
+    const char *pound = strchr(pattern, '#');
     if(!strcmp("*", pattern))
         return RTOSC_MATCH_ALL;
 

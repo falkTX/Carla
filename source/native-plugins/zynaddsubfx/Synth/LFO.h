@@ -16,6 +16,7 @@
 
 #include "../globals.h"
 #include "../Misc/Time.h"
+#include "WatchPoint.h"
 
 /**Class for creating Low Frequency Oscillators*/
 class LFO
@@ -26,7 +27,8 @@ class LFO
          * @param lfopars pointer to a LFOParams object
          * @param basefreq base frequency of LFO
          */
-        LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t);
+        LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t, WatchManager *m=0,
+                const char *watch_prefix=0);
         ~LFO();
 
         float lfoout();
@@ -62,6 +64,8 @@ class LFO
         const float     dt_;
         const LFOParams &lfopars_;
         const float basefreq_;
+
+        VecWatchPoint watchOut;
 
         void computeNextFreqRnd(void);
 };

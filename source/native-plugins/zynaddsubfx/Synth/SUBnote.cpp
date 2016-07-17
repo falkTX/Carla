@@ -20,6 +20,7 @@
 #include "SUBnote.h"
 #include "Envelope.h"
 #include "ModFilter.h"
+#include "../Containers/ScratchString.h"
 #include "../Params/Controller.h"
 #include "../Params/SUBnoteParameters.h"
 #include "../Params/FilterParams.h"
@@ -35,7 +36,8 @@ SUBnote::SUBnote(const SUBnoteParameters *parameters, SynthParams &spars)
     GlobalFilter(nullptr),
     GlobalFilterEnvelope(nullptr),
     NoteEnabled(true),
-    lfilter(nullptr), rfilter(nullptr)
+    lfilter(nullptr), rfilter(nullptr),
+    wm(nullptr)
 {
     setup(spars.frequency, spars.velocity, spars.portamento, spars.note);
 }
@@ -46,46 +48,19 @@ float SUBnote::setupFilters(int *pos, bool automation)
     float reduceamp = 0.0f;
 
     for(int n = 0; n < numharmonics; ++n) {
-        float freq =  basefreq * pars.POvertoneFreqMult[pos[n]];
+        const float freq =  basefreq * pars.POvertoneFreqMult[pos[n]];
         overtone_freq[n] = freq;
         overtone_rolloff[n] = computerolloff(freq);
 
         //the bandwidth is not absolute(Hz); it is relative to frequency
-        float bw =
-            powf(10, (pars.Pbandwidth - 127.0f) / 127.0f * 4) * numstages;
-
-        //Bandwidth Scale
-        bw *= powf(1000 / freq, (pars.Pbwscale - 64.0f) / 64.0f * 3.0f);
-
-        //Relative BandWidth
-        bw *= powf(100, (pars.Phrelbw[pos[n]] - 64.0f) / 64.0f);
-
-        if(bw > 25.0f)
-            bw = 25.0f;
+        const float bw = SUBnoteParameters::convertBandwidth(pars.Pbandwidth,
+                numstages, freq, pars.Pbwscale, pars.Phrelbw[pos[n]]);
 
         //try to keep same amplitude on all freqs and bw. (empirically)
-        float gain = sqrt(1500.0f / (bw * freq));
+        const float hgain = SUBnoteParameters::convertHarmonicMag(pars.Phmag[pos[n]],
+                pars.Phmagtype);
+        const float gain  = hgain * sqrt(1500.0f / (bw * freq));
 
-        float hmagnew = 1.0f - pars.Phmag[pos[n]] / 127.0f;
-        float hgain;
-
-        switch(pars.Phmagtype) {
-            case 1:
-                hgain = expf(hmagnew * logf(0.01f));
-                break;
-            case 2:
-                hgain = expf(hmagnew * logf(0.001f));
-                break;
-            case 3:
-                hgain = expf(hmagnew * logf(0.0001f));
-                break;
-            case 4:
-                hgain = expf(hmagnew * logf(0.00001f));
-                break;
-            default:
-                hgain = 1.0f - hmagnew;
-        }
-        gain      *= hgain;
         reduceamp += hgain;
 
         for(int nph = 0; nph < numstages; ++nph) {
@@ -158,14 +133,10 @@ void SUBnote::setup(float freq,
 //    basefreq*=ctl.pitchwheel.relfreq;//pitch wheel
 
     int pos[MAX_SUB_HARMONICS];
-    int harmonics = 0;
+    int harmonics;
 
-    //select only harmonics that desire to compute
-    for(int n = 0; n < MAX_SUB_HARMONICS; ++n) {
-        if(pars.Phmag[n] == 0)
-            continue;
-        pos[harmonics++] = n;
-    }
+    pars.activeHarmonics(pos, harmonics);
+
     if(!legato) //normal note
         firstnumharmonics = numharmonics = harmonics;
     else {
@@ -198,9 +169,9 @@ void SUBnote::setup(float freq,
     oldbandwidth  = 64;
     if(!legato) { //normal note
         if(pars.Pfixedfreq == 0)
-            initparameters(basefreq);
+            initparameters(basefreq, wm);
         else
-            initparameters(basefreq / 440.0f * freq);
+            initparameters(basefreq / 440.0f * freq, wm);
     }
     else {
         if(pars.Pfixedfreq == 0)
@@ -376,18 +347,25 @@ void SUBnote::filter(bpfilter &filter, float *smps)
 /*
  * Init Parameters
  */
-void SUBnote::initparameters(float freq)
+void SUBnote::initparameters(float freq, WatchManager *wm)
 {
-    AmpEnvelope = memory.alloc<Envelope>(*pars.AmpEnvelope, freq, synth.dt());
+    //TODO populate this base string
+    ScratchString pre;
+    AmpEnvelope = memory.alloc<Envelope>(*pars.AmpEnvelope, freq,
+            synth.dt(), wm, (pre+"AmpEnvelope/").c_str);
 
     if(pars.PFreqEnvelopeEnabled)
-        FreqEnvelope = memory.alloc<Envelope>(*pars.FreqEnvelope, freq, synth.dt());
+        FreqEnvelope = memory.alloc<Envelope>(*pars.FreqEnvelope, freq,
+            synth.dt(), wm, (pre+"FreqEnvelope/").c_str);
 
     if(pars.PBandWidthEnvelopeEnabled)
-        BandWidthEnvelope = memory.alloc<Envelope>(*pars.BandWidthEnvelope, freq, synth.dt());
+        BandWidthEnvelope = memory.alloc<Envelope>(*pars.BandWidthEnvelope,
+                freq, synth.dt(), wm, (pre+"BandWidthEnvelope/").c_str);
 
     if(pars.PGlobalFilterEnabled) {
-        GlobalFilterEnvelope = memory.alloc<Envelope>(*pars.GlobalFilterEnvelope, freq, synth.dt());
+        GlobalFilterEnvelope =
+            memory.alloc<Envelope>(*pars.GlobalFilterEnvelope, freq,
+                    synth.dt(), wm, (pre+"GlobalFilterEnvelope/").c_str);
 
         GlobalFilter = memory.alloc<ModFilter>(*pars.GlobalFilter, synth, time, memory, stereo, freq);
 
@@ -429,14 +407,9 @@ void SUBnote::computecurrentparameters()
         //A little bit of copy/paste for now
 
         int pos[MAX_SUB_HARMONICS];
-        int harmonics = 0;
+        int harmonics;
 
-        //select only harmonics that desire to compute
-        for(int n = 0; n < MAX_SUB_HARMONICS; ++n) {
-            if(pars.Phmag[n] == 0)
-                continue;
-            pos[harmonics++] = n;
-        }
+        pars.activeHarmonics(pos, harmonics);
 
         bool delta_harmonics = (harmonics != numharmonics);
         if(delta_harmonics) {

@@ -16,6 +16,7 @@
 #include <mxml.h>
 #include <string>
 #include <vector>
+#include "../version.h"
 
 #ifndef XML_WRAPPER_H
 #define XML_WRAPPER_H
@@ -272,12 +273,7 @@ class XMLwrapper
         mxml_node_t *addparams(const char *name, unsigned int params,
                                ...) const;
 
-        /**@todo keep these numbers up to date*/
-        struct {
-            int Major; /**<major version number.*/
-            int Minor; /**<minor version number.*/
-            int Revision; /**<version revision number.*/
-        } version;
+        version_type fileversion;
 };
 
 #endif

@@ -22,6 +22,27 @@
 class FilterParams;
 class Allocator;
 
+#ifndef rEffPar
+#define rEffPar(name, idx, ...) \
+  {STRINGIFY(name) "::i",  rProp(parameter) DOC(__VA_ARGS__), NULL, rEffParCb(idx)}
+#define rEffParTF(name, idx, ...) \
+  {STRINGIFY(name) "::T:F",  rProp(parameter) DOC(__VA_ARGS__), NULL, rEffParTFCb(idx)}
+#define rEffParCb(idx) \
+    [](const char *msg, rtosc::RtData &d) {\
+        rObject &obj = *(rObject*)d.obj; \
+        if(rtosc_narguments(msg)) \
+            obj.changepar(idx, rtosc_argument(msg, 0).i); \
+        else \
+            d.reply(d.loc, "i", obj.getpar(idx));}
+#define rEffParTFCb(idx) \
+    [](const char *msg, rtosc::RtData &d) {\
+        rObject &obj = *(rObject*)d.obj; \
+        if(rtosc_narguments(msg)) \
+            obj.changepar(idx, rtosc_argument(msg, 0).T*127); \
+        else \
+            d.reply(d.loc, obj.getpar(idx)?"T":"F");}
+#endif
+
 struct EffectParams
 {
     /**

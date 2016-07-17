@@ -87,10 +87,6 @@ const char *mxmlElementGetAttr(const mxml_node_t *node, const char *name)
 
 XMLwrapper::XMLwrapper()
 {
-    version.Major    = 2;
-    version.Minor    = 5;
-    version.Revision = 3;
-
     minimal = true;
 
     node = tree = mxmlNewElement(MXML_NO_PARENT,
@@ -106,11 +102,11 @@ XMLwrapper::XMLwrapper()
 
     node = root = addparams("ZynAddSubFX-data", 4,
                             "version-major", stringFrom<int>(
-                                version.Major).c_str(),
+                                version.major()).c_str(),
                             "version-minor", stringFrom<int>(
-                                version.Minor).c_str(),
+                                version.minor()).c_str(),
                             "version-revision",
-                            stringFrom<int>(version.Revision).c_str(),
+                            stringFrom<int>(version.revision()).c_str(),
                             "ZynAddSubFX-author", "Nasca Octavian Paul");
 
     //make the empty branch that will contain the information parameters
@@ -327,14 +323,13 @@ int XMLwrapper::loadXMLfile(const string &filename)
         return -3;  //the XML doesnt embbed zynaddsubfx data
 
     //fetch version information
-    version.Major    = stringTo<int>(mxmlElementGetAttr(root, "version-major"));
-    version.Minor    = stringTo<int>(mxmlElementGetAttr(root, "version-minor"));
-    version.Revision =
-        stringTo<int>(mxmlElementGetAttr(root, "version-revision"));
+    fileversion.set_major(stringTo<int>(mxmlElementGetAttr(root, "version-major")));
+    fileversion.set_minor(stringTo<int>(mxmlElementGetAttr(root, "version-minor")));
+    fileversion.set_revision(
+        stringTo<int>(mxmlElementGetAttr(root, "version-revision")));
 
     if(verbose)
-        cout << "loadXMLfile() version: " << version.Major << '.'
-             << version.Minor << '.' << version.Revision << endl;
+        cout << "loadXMLfile() version: " << fileversion << endl;
 
     return 0;
 }

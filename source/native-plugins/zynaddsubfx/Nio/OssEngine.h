@@ -71,6 +71,10 @@ class OssEngine:public AudioOut, MidiIn
                 short int *ps16;
                 int *ps32;
             } smps;
+
+            /* peak values used for compressor */
+            float peaks[1];
+
             bool en;
             bool is32bit;
         } audio;

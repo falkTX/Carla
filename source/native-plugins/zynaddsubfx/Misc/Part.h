@@ -31,7 +31,7 @@ class Part
          * @param fft_ Pointer to the FFTwrapper*/
         Part(Allocator &alloc, const SYNTH_T &synth, const AbsTime &time,
              const int& gzip_compression, const int& interpolation,
-             Microtonal *microtonal_, FFTwrapper *fft_);
+             Microtonal *microtonal_, FFTwrapper *fft_, WatchManager *wm=0, const char *prefix=0);
         /**Destructor*/
         ~Part();
 
@@ -192,6 +192,8 @@ class Part
         float oldfreq;    //this is used for portamento
         Microtonal *microtonal;
         FFTwrapper *fft;
+        WatchManager *wm;
+        char prefix[64];
         Allocator  &memory;
         const SYNTH_T &synth;
         const AbsTime &time;

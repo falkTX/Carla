@@ -26,102 +26,147 @@
 #define rObject SUBnoteParameters
 using namespace rtosc;
 
+#define rBegin [](const char *msg, RtData &d) { \
+    SUBnoteParameters *obj = (SUBnoteParameters*) d.obj
+#define rEnd }
+
+
 #undef rChangeCb
 #define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 static const rtosc::Ports SUBnotePorts = {
     rSelf(SUBnoteParameters),
     rPaste,
-    rToggle(Pstereo, "Stereo Enable"),
-    rParamZyn(PVolume,  "Volume"),
-    rParamZyn(PPanning, "Left Right Panning"),
-    rParamZyn(PAmpVelocityScaleFunction, "Amplitude Velocity Sensing function"),
-    rParamI(PDetune, "Detune in detune type units"),
-    rParamI(PCoarseDetune, "Coarse Detune"),
+    rToggle(Pstereo,    rShort("stereo"), "Stereo Enable"),
+    rParamZyn(PVolume,  rShort("volume"), "Volume"),
+    rParamZyn(PPanning, rShort("panning"), "Left Right Panning"),
+    rParamZyn(PAmpVelocityScaleFunction, rShort("sense"), "Amplitude Velocity Sensing function"),
+    rParamI(PDetune,       rShort("detune"), "Detune in detune type units"),
+    rParamI(PCoarseDetune, rShort("cdetune"), "Coarse Detune"),
     //Real values needed
-    rOption(PDetuneType, rOptions("100 cents", "200 cents", "500 cents"), "Detune Scale"),
-    rToggle(PFreqEnvelopeEnabled, "Enable for Frequency Envelope"),
-    rToggle(PBandWidthEnvelopeEnabled, "Enable for Bandwidth Envelope"),
-    rToggle(PGlobalFilterEnabled, "Enable for Global Filter"),
-    rParamZyn(PGlobalFilterVelocityScale, "Filter Velocity Magnitude"),
-    rParamZyn(PGlobalFilterVelocityScaleFunction, "Filter Velocity Function Shape"),
+    rOption(PDetuneType,               rShort("det. scl."), rOptions(100 cents, 200 cents, 500 cents), "Detune Scale"),
+    rToggle(PFreqEnvelopeEnabled,      rShort("enable"), "Enable for Frequency Envelope"),
+    rToggle(PBandWidthEnvelopeEnabled, rShort("enable"), "Enable for Bandwidth Envelope"),
+    rToggle(PGlobalFilterEnabled,                 rShort("enable"), "Enable for Global Filter"),
+    rParamZyn(PGlobalFilterVelocityScale,         rShort("scale"), "Filter Velocity Magnitude"),
+    rParamZyn(PGlobalFilterVelocityScaleFunction, rShort("sense"), "Filter Velocity Function Shape"),
     //rRecur(FreqEnvelope, EnvelopeParams),
     //rToggle(),//continue
-    rToggle(Pfixedfreq, "Base frequency fixed frequency enable"),
-    rParamZyn(PfixedfreqET, "Equal temeperate control for fixed frequency operation"),
-    rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
-    rParamZyn(POffsetHz,            "Voice constant offset"),
+    rToggle(Pfixedfreq,     rShort("fixed freq"), "Base frequency fixed frequency enable"),
+    rParamZyn(PfixedfreqET, rShort("fixed ET"),   "Equal temeperate control for fixed frequency operation"),
+    rParamZyn(PBendAdjust,  rShort("bend"),       "Pitch bend adjustment"),
+    rParamZyn(POffsetHz,    rShort("+ Hz"),       "Voice constant offset"),
 #undef rChangeCb
 #define rChangeCb obj->updateFrequencyMultipliers(); if (obj->time) { \
     obj->last_update_timestamp = obj->time->time(); }
-    rParamI(POvertoneSpread.type, rMap(min, 0), rMap(max, 7),
+    rParamI(POvertoneSpread.type, rMap(min, 0), rMap(max, 7), rShort("spread type")
+            rOptions(Harmonic, ShiftU, ShiftL, PowerU, PowerL, Sine, Power, Shift),
             "Spread of harmonic frequencies"),
-    rParamI(POvertoneSpread.par1, rMap(min, 0), rMap(max, 255),
+    rParamI(POvertoneSpread.par1, rMap(min, 0), rMap(max, 255), rShort("p1"),
             "Overtone Parameter"),
-    rParamI(POvertoneSpread.par2, rMap(min, 0), rMap(max, 255),
+    rParamI(POvertoneSpread.par2, rMap(min, 0), rMap(max, 255), rShort("p2"),
             "Overtone Parameter"),
-    rParamI(POvertoneSpread.par3, rMap(min, 0), rMap(max, 255),
+    rParamI(POvertoneSpread.par3, rMap(min, 0), rMap(max, 255), rShort("p3"),
             "Overtone Parameter"),
 #undef rChangeCb
 #define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
-    rParamZyn(Pnumstages, rMap(min, 1), rMap(max, 5), "Number of filter stages"),
-    rParamZyn(Pbandwidth, "Bandwidth of filters"),
-    rParamZyn(Phmagtype, "How the magnitudes are computed (0=linear,1=-60dB,2=-60dB)"),
+    rParamZyn(Pnumstages, rShort("stages"), rMap(min, 1), rMap(max, 5), "Number of filter stages"),
+    rParamZyn(Pbandwidth, rShort("bandwidth"), "Bandwidth of filters"),
+    rParamZyn(Phmagtype,  rShort("mag. type"),"How the magnitudes are computed (0=linear,1=-60dB,2=-60dB)"),
     rArray(Phmag, MAX_SUB_HARMONICS, "Harmonic magnitudes"),
     rArray(Phrelbw, MAX_SUB_HARMONICS, "Relative bandwidth"),
-    rParamZyn(Pbwscale, "Bandwidth scaling with frequency"),
+    rParamZyn(Pbwscale, rShort("stretch"), "Bandwidth scaling with frequency"),
     rRecurp(AmpEnvelope,          "Amplitude envelope"),
     rRecurp(FreqEnvelope,         "Frequency Envelope"),
     rRecurp(BandWidthEnvelope,    "Bandwidth Envelope"),
     rRecurp(GlobalFilterEnvelope, "Post Filter Envelope"),
     rRecurp(GlobalFilter,         "Post Filter"),
-    rOption(Pstart, rOptions("zero", "random", "ones"), "How harmonics are initialized"),
+    rOption(Pstart, rShort("initial"), rOptions(zero, random, ones), "How harmonics are initialized"),
 
-    {"clear:", rDoc("Reset all harmonics to equal bandwidth/zero amplitude"), NULL, [](const char *, RtData &d)
-        {
-            SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
-            for(int i=0; i<MAX_SUB_HARMONICS; ++i) {
-                obj->Phmag[i]   = 0;
-                obj->Phrelbw[i] = 64;
-            }
-            obj->Phmag[0] = 127;
-        }},
-    {"detunevalue:", rDoc("Get note detune value"), NULL, [](const char *, RtData &d)
-        {
-            SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
-            d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
-        }},
+    {"clear:", rDoc("Reset all harmonics to equal bandwidth/zero amplitude"), NULL,
+        rBegin;
+        for(int i=0; i<MAX_SUB_HARMONICS; ++i) {
+            obj->Phmag[i]   = 0;
+            obj->Phrelbw[i] = 64;
+        }
+        obj->Phmag[0] = 127;
+        rEnd},
+    {"detunevalue:", rDoc("Get note detune value"), NULL,
+        rBegin;
+        d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
+        rEnd},
     //weird stuff for PCoarseDetune
     {"octave::c:i", rProp(parameter) rDoc("Note octave shift"), NULL,
-        [](const char *msg, RtData &d)
-        {
-            SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
-            if(!rtosc_narguments(msg)) {
-                int k=obj->PCoarseDetune/1024;
-                if (k>=8) k-=16;
-                d.reply(d.loc, "i", k);
-            } else {
-                int k=(int) rtosc_argument(msg, 0).i;
-                if (k<0) k+=16;
-                obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
-            }
-        }},
+        rBegin;
+        if(!rtosc_narguments(msg)) {
+            int k=obj->PCoarseDetune/1024;
+            if (k>=8) k-=16;
+            d.reply(d.loc, "i", k);
+        } else {
+            int k=(int) rtosc_argument(msg, 0).i;
+            if (k<0) k+=16;
+            obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
+        }
+        rEnd},
     {"coarsedetune::c:i", rProp(parameter) rDoc("Note coarse detune"), NULL,
-        [](const char *msg, RtData &d)
-        {
-            SUBnoteParameters *obj = (SUBnoteParameters *)d.obj;
-            if(!rtosc_narguments(msg)) {
-                int k=obj->PCoarseDetune%1024;
-                if (k>=512) k-=1024;
-                d.reply(d.loc, "i", k);
-            } else {
-                int k=(int) rtosc_argument(msg, 0).i;
-                if (k<0) k+=1024;
-                obj->PCoarseDetune = k + (obj->PCoarseDetune/1024)*1024;
-            }
-        }},
+        rBegin;
+        if(!rtosc_narguments(msg)) {
+            int k=obj->PCoarseDetune%1024;
+            if (k>=512) k-=1024;
+            d.reply(d.loc, "i", k);
+        } else {
+            int k=(int) rtosc_argument(msg, 0).i;
+            if (k<0) k+=1024;
+            obj->PCoarseDetune = k + (obj->PCoarseDetune/1024)*1024;
+        }
+        rEnd},
+    {"response:", rDoc("Filter response at 440Hz. with 48kHz sample rate\n\n"
+            "Format: stages, filter*active_filters\n"
+            "        filter = [frequency, bandwidth, amplitude]"),
+    NULL,
+    rBegin;
+
+    //Identify the active harmonics
+    int pos[MAX_SUB_HARMONICS];
+    int harmonics;
+    obj->activeHarmonics(pos, harmonics);
+
+    float base_freq = 440.0f;
+
+    char        types[3*MAX_SUB_HARMONICS+2];
+    rtosc_arg_t args[3*MAX_SUB_HARMONICS+1];
+
+    args[0].i = obj->Pnumstages;
+    types[0]  = 'i';
+
+    for(int n=0; n<harmonics; ++n) {
+        const float freq = base_freq * obj->POvertoneFreqMult[pos[n]];
+        //the bandwidth is not absolute(Hz); it is relative to frequency
+        const float bw = obj->convertBandwidth(obj->Pbandwidth,
+                obj->Pnumstages, freq, obj->Pbwscale, obj->Phrelbw[pos[n]]);
+
+        //try to keep same amplitude on all freqs and bw. (empirically)
+        const float hgain = obj->convertHarmonicMag(obj->Phmag[pos[n]],
+                                                    obj->Phmagtype);
+        const float gain  = hgain * sqrt(1500.0f / (bw * freq));
+
+        int base = 1+3*n;
+        args[base + 0].f = freq;
+        args[base + 1].f = bw;
+        args[base + 2].f = gain;
+        types[base + 0] = 'f';
+        types[base + 1] = 'f';
+        types[base + 2] = 'f';
+    }
+
+    types[3*harmonics+1] = 0;
+    d.replyArray(d.loc, types, args);
+    rEnd},
+
 
 };
 #undef rChangeCb
+#undef rBegin
+#undef rEnd
 
 const rtosc::Ports &SUBnoteParameters::ports = SUBnotePorts;
 
@@ -141,6 +186,56 @@ SUBnoteParameters::SUBnoteParameters(const AbsTime *time_)
     GlobalFilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
 
     defaults();
+}
+
+void SUBnoteParameters::activeHarmonics(int *pos, int &harmonics) const
+{
+    harmonics = 0;
+    for(int n = 0; n < MAX_SUB_HARMONICS; ++n) {
+        if(Phmag[n] == 0)
+            continue;
+        pos[harmonics++] = n;
+    }
+}
+
+float SUBnoteParameters::convertBandwidth(int bw_, int stages, float freq,
+        int scale, int relbw)
+{
+    //the bandwidth is not absolute(Hz); it is relative to frequency
+    float bw = powf(10, (bw_ - 127.0f) / 127.0f * 4) * stages;
+
+    //Bandwidth Scale
+    bw *= powf(1000 / freq, (scale - 64.0f) / 64.0f * 3.0f);
+
+    //Relative BandWidth
+    bw *= powf(100, (relbw - 64.0f) / 64.0f);
+
+    if(bw > 25.0f)
+        bw = 25.0f;
+
+    return bw;
+}
+
+float SUBnoteParameters::convertHarmonicMag(int mag, int type)
+{
+    const float hmagnew = 1.0f - mag / 127.0f;
+
+    switch(type) {
+        case 1:
+            return expf(hmagnew * logf(0.01f));
+            break;
+        case 2:
+            return expf(hmagnew * logf(0.001f));
+            break;
+        case 3:
+            return expf(hmagnew * logf(0.0001f));
+            break;
+        case 4:
+            return expf(hmagnew * logf(0.00001f));
+            break;
+        default:
+            return 1.0f - hmagnew;
+    }
 }
 
 

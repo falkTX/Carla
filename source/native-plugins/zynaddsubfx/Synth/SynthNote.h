@@ -108,6 +108,7 @@ class SynthNote
         const Controller &ctl;
         const SYNTH_T    &synth;
         const AbsTime    &time;
+        WatchManager     *wm;
 };
 
 #endif

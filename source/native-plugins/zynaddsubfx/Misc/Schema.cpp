@@ -12,6 +12,7 @@ using namespace rtosc;
  *   - 'tooltip'   : string [OPTIONAL]
  *   - 'type'      : type
  *   - 'domain'    : range [OPTIONAL]
+ *   - 'options'   : [option...] [OPTIONAL]
  * type : {'int', 'float', 'boolean'}
  * action :
  *   - 'path' : path-id
@@ -19,6 +20,9 @@ using namespace rtosc;
  * arg :
  *   - 'type'   : type
  *   - 'domain' : range [OPTIONAL]
+ * option :
+ *   - 'id'    : id-number
+ *   - 'value' : string-rep
  */
 
 void walk_ports2(const rtosc::Ports *base,
@@ -98,15 +102,24 @@ static ostream &add_options(ostream &o, Port::MetaContainer meta)
  *   - 'domain'    : range [OPTIONAL]
  */
 static bool first = true;
-void dump_param_cb(const rtosc::Port *p, const char *name, void *v)
+void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
 {
+    typedef std::vector<std::pair<int,string>> opts;
     std::ostream &o  = *(std::ostream*)v;
     auto meta        = p->meta();
     const char *args = strchr(p->name, ':');
     auto mparameter  = meta.find("parameter");
     auto mdoc        = meta.find("documentation");
     auto msname      = meta.find("shortname");
+    opts options;
     string doc;
+    string name      = p->name;;
+
+    {
+        size_t pos = 0;
+        if((pos = name.find_first_of(":")) != string::npos)
+            name = name.substr(0, pos);
+    }
 
     //Escape Characters
     if(mdoc != p->meta().end()) {
@@ -139,7 +152,7 @@ void dump_param_cb(const rtosc::Port *p, const char *name, void *v)
         }
 
         if(!type) {
-            fprintf(stderr, "rtosc port dumper: Cannot handle '%s'\n", name);
+            fprintf(stderr, "rtosc port dumper: Cannot handle '%s'\n", full_name);
             fprintf(stderr, "    args = <%s>\n", args);
             return;
         }
@@ -154,23 +167,43 @@ void dump_param_cb(const rtosc::Port *p, const char *name, void *v)
     const char *min = meta["min"];
     const char *max = meta["max"];
 
+    for(auto m:meta) {
+        if(strlen(m.title) >= 5 && !bcmp(m.title, "map ", 4)) {
+            int id = atoi(m.title+4);
+            std::string val = m.value;
+            options.push_back(std::make_pair(id, val));
+        }
+    }
+
     if(!first)
         o << ",\n";
     else
         first = false;
 
     o << "    {\n";
-    o << "        \"path\"     : \"" << name << "\",\n";
+    o << "        \"path\"     : \"" << full_name << "\",\n";
     if(msname != meta.end())
         o << "        \"shortname\": \"" << msname.value << "\",\n";
-    o << "        \"name\"     : \"" << p->name << "\",\n";
+    o << "        \"name\"     : \"" << name << "\",\n";
     o << "        \"tooltip\"  : \"" << doc  << "\",\n";
     o << "        \"type\"     : \"" << type  << "\"";
     if(min && max)
-    o << ",\n        \"range\"    : [" << min << "," << max << "]\n";
-    else
-        o << "\n";
-    o << "    }";
+        o << ",\n        \"range\"    : [" << min << "," << max << "]";
+    if(!options.empty()) {
+        o << ",\n        \"options\"  : [\n";
+        int N = options.size();
+        for(int i=0; i<N; ++i) {
+            o << "        {\n";
+            o << "            \"id\"     : "   << options[i].first << ",\n";
+            o << "            \"value\"  : \"" << options[i].second << "\"\n";
+            o << "        }";
+            if(i != N-1)
+                o << ",";
+            o << "\n";
+        }
+        o << "        ]";
+    }
+    o << "\n    }";
 }
 
 void dump_json(std::ostream &o, const rtosc::Ports &p)

@@ -17,10 +17,42 @@
 
 #include <cmath>
 #include <algorithm>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
 #include "../Misc/Allocator.h"
 #include "Phaser.h"
 
 using namespace std;
+
+#define rObject Phaser
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports Phaser::ports = {
+    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    rEffPar(lfo.Pfreq, 2, ""),
+    rEffPar(lfo.Prandomness, 3, ""),
+    rEffPar(lfo.PLFOtype, 4, ""),
+    rEffPar(lfo.Pstereo, 5, ""),
+    rEffPar(Pdepth, 6, ""),
+    rEffPar(Pfb, 7, ""),
+    rEffPar(Pstages, 8, ""),
+    rEffPar(Plrcross, 9, ""),
+    rEffPar(Poffset, 9, ""),
+    rEffParTF(Poutsub, 10, ""),
+    rEffPar(Pphase, 11, ""),
+    rEffPar(Pwidth, 11, ""),
+    rEffPar(Phyper, 12, ""),
+    rEffPar(Pdistortion, 13, ""),
+    rEffPar(Panalog, 14, ""),
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 #define PHASER_LFO_SHAPE 2
 #define ONE_  0.99999f        // To prevent LFO ever reaching 1.0f for filter stability purposes

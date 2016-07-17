@@ -34,6 +34,7 @@ class Phaser:public Effect
         unsigned char getpar(int npar) const;
         void cleanup();
 
+        static rtosc::Ports ports;
     private:
         //Phaser parameters
         EffectLFO     lfo;          //Phaser modulator

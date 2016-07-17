@@ -144,7 +144,7 @@ struct rtosc_hack_decltype_t
 #define rArrayF(name, length, ...) \
 {STRINGIFY(name) "#" STRINGIFY(length) "::f", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayFCb(name)}
 #define rArray(name, length, ...) \
-{STRINGIFY(name) "#" STRINGIFY(length) "::c", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayCb(name)}
+{STRINGIFY(name) "#" STRINGIFY(length) "::c:i", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayCb(name)}
 #define rArrayT(name, length, ...) \
 {STRINGIFY(name) "#" STRINGIFY(length) "::T:F", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayTCb(name)}
 #define rArrayI(name, length, ...) \

@@ -12,11 +12,38 @@
 */
 
 #include <cmath>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
 #include "../Misc/Allocator.h"
 #include "Chorus.h"
 #include <iostream>
 
 using namespace std;
+
+#define rObject Chorus
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports Chorus::ports = {
+    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    rEffPar(Pfreq,    2, rShort("freq"), "Effect Frequency"),
+    rEffPar(Pfreqrnd, 3, rShort("rand"), "Frequency Randomness"),
+    rEffPar(PLFOtype, 4, rShort("shape"), "LFO Shape"),
+    rEffParTF(PStereo,5, rShort("stereo"), "Stereo/Mono Mode"),
+    rEffPar(Pdepth,   6, rShort("depth"), "LFO Depth"),
+    rEffPar(Pdelay,   7, rShort("delay"), "Delay"),
+    rEffPar(Pfeedback,8, rShort("fb"), "Feedback"),
+    rEffPar(Plrcross, 9, rShort("l/r"), "Left/Right Crossover"),
+    rEffParTF(Pflangemode, 10, rShort("flange"), "Flange Mode"),
+    rEffParTF(Poutsub, 11, rShort("sub"), "Output Subtraction"),
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 Chorus::Chorus(EffectParams pars)
     :Effect(pars),

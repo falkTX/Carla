@@ -29,6 +29,7 @@
 #include "Config.h"
 #include "Util.h"
 #include "Part.h"
+#include "BankDb.h"
 
 #define INSTRUMENT_EXTENSION ".xiz"
 
@@ -39,7 +40,7 @@ using namespace std;
 
 Bank::Bank(Config *config)
     :bankpos(0), defaultinsname(" "), config(config),
-     bank_msb(0), bank_lsb(0)
+    db(new BankDb), bank_msb(0), bank_lsb(0)
 {
     clearbank();
     bankfiletitle = dirname;
@@ -57,6 +58,7 @@ Bank::Bank(Config *config)
 Bank::~Bank()
 {
     clearbank();
+    delete db;
 }
 
 /*
@@ -179,7 +181,8 @@ int Bank::savetoslot(unsigned int ninstrument, Part *part)
     err = part->saveXML(filename.c_str());
     if(err)
         return err;
-    addtobank(ninstrument, legalizeFilename(tmpfilename) + ".xiz", (char *) part->Pname);
+    addtobank(ninstrument, legalizeFilename(tmpfilename) + ".xiz",
+              (char *) part->Pname);
     return 0;
 }
 
@@ -350,6 +353,7 @@ bool Bank::bankstruct::operator<(const bankstruct &b) const
 
 void Bank::rescanforbanks()
 {
+    db->clear();
     //remove old banks
     banks.clear();
 
@@ -362,6 +366,7 @@ void Bank::rescanforbanks()
 
     //remove duplicate bank names
     for(int j = 0; j < (int) banks.size() - 1; ++j) {
+        db->addBankDir(banks[j].dir);
         int dupl = 0;
         for(int i = j + 1; i < (int) banks.size(); ++i) {
             if(banks[i].name == banks[j].name) {
@@ -376,6 +381,7 @@ void Bank::rescanforbanks()
         if(dupl)
             j += dupl;
     }
+    db->scanBanks();
 }
 
 void Bank::setMsb(uint8_t msb)
@@ -451,6 +457,17 @@ void Bank::clearbank()
 
     bankfiletitle.clear();
     dirname.clear();
+}
+
+std::vector<std::string> Bank::search(std::string s) const
+{
+    std::vector<std::string> out;
+    auto vec = db->search(s);
+    for(auto e:vec) {
+        out.push_back(e.name);
+        out.push_back(e.bank+e.file);
+    }
+    return out;
 }
 
 int Bank::addtobank(int pos, string filename, string name)

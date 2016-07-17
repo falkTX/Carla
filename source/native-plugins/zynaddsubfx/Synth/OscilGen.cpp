@@ -34,54 +34,54 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
     rSelf(OscilGen),
     rPaste,
     //TODO ensure min/max
-    rOption(Phmagtype,
+    rOption(Phmagtype, rShort("scale"),
             rOptions(linear,dB scale (-40),
                      dB scale (-60), dB scale (-80),
                      dB scale (-100)),
             "Type of magnitude for harmonics"),
-    rOption(Pcurrentbasefunc,
+    rOption(Pcurrentbasefunc, rShort("base"),
             rOptions(sine, triangle, pulse, saw, power, gauss,
                 diode, abssine, pulsesine, stretchsine,
                 chirp, absstretchsine, chebyshev, sqr,
                 spike, circle), rOpt(127,use-as-base waveform),
             "Base Waveform for harmonics"),
-    rParamZyn(Pbasefuncpar,
+    rParamZyn(Pbasefuncpar, rShort("shape"),
             "Morph between possible base function shapes "
             "(e.g. rising sawtooth vs a falling sawtooth)"),
-    rOption(Pbasefuncmodulation,
+    rOption(Pbasefuncmodulation, rShort("mod"),
             rOptions(None, Rev, Sine, Power, Chop),
             "Modulation applied to Base function spectra"),
-    rParamZyn(Pbasefuncmodulationpar1,
+    rParamZyn(Pbasefuncmodulationpar1, rShort("p1"),
             "Base function modulation parameter"),
-    rParamZyn(Pbasefuncmodulationpar2,
+    rParamZyn(Pbasefuncmodulationpar2, rShort("p2"),
             "Base function modulation parameter"),
-    rParamZyn(Pbasefuncmodulationpar3,
+    rParamZyn(Pbasefuncmodulationpar3, rShort("p3"),
             "Base function modulation parameter"),
     rParamZyn(Pwaveshaping, "Degree Of Waveshaping"),
-    rOption(Pwaveshapingfunction,
+    rOption(Pwaveshapingfunction, rShort("distort"),
             rOptions(Undistorted,
                 Arctangent, Asymmetric, Pow, Sine, Quantisize,
                 Zigzag, Limiter, Upper Limiter, Lower Limiter,
                 Inverse Limiter, Clip, Asym2, Pow2, sigmoid),
             "Shape of distortion to be applied"),
-    rOption(Pfiltertype, rOptions(No Filter,
+    rOption(Pfiltertype, rShort("filter"), rOptions(No Filter,
             lp, hp1, hp1b, bp1, bs1, lp2, hp2, bp2, bs2,
             cos, sin, low_shelf, s), "Harmonic Filter"),
-    rParamZyn(Pfilterpar1, "Filter parameter"),
-    rParamZyn(Pfilterpar2, "Filter parameter"),
-    rToggle(Pfilterbeforews, "Filter before waveshaping spectra;"
+    rParamZyn(Pfilterpar1, rShort("p1"), "Filter parameter"),
+    rParamZyn(Pfilterpar2, rShort("p2"), "Filter parameter"),
+    rToggle(Pfilterbeforews, rShort("pre/post"), "Filter before waveshaping spectra;"
             "When enabled oscilfilter(freqs); then waveshape(freqs);, "
             "otherwise waveshape(freqs); then oscilfilter(freqs);"),
-    rOption(Psatype, rOptions(None, Pow, ThrsD, ThrsU),
+    rOption(Psatype, rShort("spec. adj."), rOptions(None, Pow, ThrsD, ThrsU),
             "Spectral Adjustment Type"),
-    rParamZyn(Psapar, "Spectral Adjustment Parameter"),
-    rParamI(Pharmonicshift, "Amount of shift on harmonics"),
-    rToggle(Pharmonicshiftfirst, "If harmonics are shifted before waveshaping/filtering"),
-    rOption(Pmodulation, rOptions(None, Rev, Sine, Power),
+    rParamZyn(Psapar, rShort("p1"), "Spectral Adjustment Parameter"),
+    rParamI(Pharmonicshift, rShort("shift"), "Amount of shift on harmonics"),
+    rToggle(Pharmonicshiftfirst, rShort("pre/post"), "If harmonics are shifted before waveshaping/filtering"),
+    rOption(Pmodulation, rShort("FM"), rOptions(None, Rev, Sine, Power),
             "Frequency Modulation To Combined Spectra"),
-    rParamZyn(Pmodulationpar1, "modulation parameter"),
-    rParamZyn(Pmodulationpar2, "modulation parameter"),
-    rParamZyn(Pmodulationpar3, "modulation parameter"),
+    rParamZyn(Pmodulationpar1, rShort("p1"), "modulation parameter"),
+    rParamZyn(Pmodulationpar2, rShort("p2"), "modulation parameter"),
+    rParamZyn(Pmodulationpar3, rShort("p3"), "modulation parameter"),
 
 
     //TODO update to rArray and test
@@ -91,9 +91,20 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             while(*mm && !isdigit(*mm)) ++mm;
             unsigned char &phase = ((OscilGen*)d.obj)->Phphase[atoi(mm)];
             if(!rtosc_narguments(m))
-                d.reply(d.loc, "c", phase);
-            else
+                d.reply(d.loc, "i", phase);
+            else {
                 phase = rtosc_argument(m,0).i;
+                //XXX hack hack
+                char *repath = strdup(d.loc);
+                char *edit   = strrchr(repath, '/')+1;
+                strcpy(edit, "prepare");
+                OscilGen &o = *((OscilGen*)d.obj);
+                fft_t *data = new fft_t[o.synth.oscilsize / 2];
+                o.prepare(data);
+                // fprintf(stderr, "sending '%p' of fft data\n", data);
+                d.chain(repath, "b", sizeof(fft_t*), &data);
+                o.pendingfreqs = data;
+            }
         }},
     //TODO update to rArray and test
     {"magnitude#128::c:i", rProp(parameter) rLinear(0,127) rDoc("Sets harmonic magnitude"),
@@ -103,13 +114,13 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             while(*mm && !isdigit(*mm)) ++mm;
             unsigned char &mag = ((OscilGen*)d.obj)->Phmag[atoi(mm)];
             if(!rtosc_narguments(m))
-                d.reply(d.loc, "c", mag);
+                d.reply(d.loc, "i", mag);
             else {
                 mag = rtosc_argument(m,0).i;
                 //printf("setting magnitude\n\n");
                 //XXX hack hack
                 char *repath = strdup(d.loc);
-                char *edit   = rindex(repath, '/')+1;
+                char *edit   = strrchr(repath, '/')+1;
                 strcpy(edit, "prepare");
                 OscilGen &o = *((OscilGen*)d.obj);
                 fft_t *data = new fft_t[o.synth.oscilsize / 2];
@@ -163,20 +174,20 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
 const rtosc::Ports OscilGen::realtime_ports{
     rSelf(OscilGen),
     rPresetType,
-    rParamZyn(Prand, "Oscilator Phase Randomness: smaller than 0 is \""
+    rParamZyn(Prand, rShort("phase rnd"), "Oscilator Phase Randomness: smaller than 0 is \""
             "group\", larger than 0 is for each harmonic"),
-    rParamZyn(Pamprandpower,
+    rParamZyn(Pamprandpower, rShort("variance"),
             "Variance of harmonic randomness"),
-    rOption(Pamprandtype, rOptions(None, Pow, Sin),
+    rOption(Pamprandtype, rShort("distribution"), rOptions(None, Pow, Sin),
             "Harmonic random distribution to select from"),
-    rOption(Padaptiveharmonics,
+    rOption(Padaptiveharmonics, rShort("adapt")
             rOptions(OFF, ON, Square, 2xSub, 2xAdd, 3xSub, 3xAdd, 4xSub, 4xAdd),
             "Adaptive Harmonics Mode"),
-    rParamI(Padaptiveharmonicsbasefreq, rLinear(0,255),
+    rParamI(Padaptiveharmonicsbasefreq, rShort("c. freq"), rLinear(0,255),
             "Base frequency of adaptive harmonic (30..3000Hz)"),
-    rParamI(Padaptiveharmonicspower,rLinear(0,200),
+    rParamI(Padaptiveharmonicspower, rShort("amount"), rLinear(0,200),
             "Adaptive Harmonic Strength"),
-    rParamZyn(Padaptiveharmonicspar,
+    rParamZyn(Padaptiveharmonicspar, rShort("par"),
             "Adaptive Harmonics Postprocessing Power"),
     {"waveform:", rDoc("Returns waveform points"),
         NULL, [](const char *, rtosc::RtData &d) {

@@ -46,6 +46,9 @@ class AnalogFilter:public Filter
                   d[3];    //Feed Back
         } coeff, oldCoeff;
 
+        static Coeff computeCoeff(int type, float cutoff, float q, int stages,
+                float gain, float fs, int &order);
+
     private:
         struct fstage {
             float x1, x2; //Input History

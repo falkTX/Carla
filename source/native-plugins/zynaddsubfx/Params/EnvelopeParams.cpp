@@ -23,6 +23,9 @@
 
 #define rObject EnvelopeParams
 using namespace rtosc;
+#define rBegin [](const char *msg, RtData &d) { \
+    EnvelopeParams *env = (rObject*) d.obj
+#define rEnd }
 
 static const rtosc::Ports localPorts = {
     rSelf(EnvelopeParams),
@@ -32,60 +35,85 @@ static const rtosc::Ports localPorts = {
         obj->last_update_timestamp = obj->time->time(); }
     rToggle(Pfreemode, "Complex Envelope Definitions"),
 #undef  rChangeCb
-#define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
+#define rChangeCb if(!obj->Pfreemode) obj->converttofree(); \
+                  if(obj->time) { obj->last_update_timestamp = obj->time->time(); }
     rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
     rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
     rParams(Penvval, MAX_ENVELOPE_POINTS, "Envelope Values"),
-    rParamZyn(Penvstretch, "Stretch with respect to frequency"),
-    rToggle(Pforcedrelease, "Force Envelope to fully evaluate"),
-    rToggle(Plinearenvelope, "Linear or Logarithmic Envelopes"),
-    rParamZyn(PA_dt,  "Attack Time"),
-    rParamZyn(PA_val, "Attack Value"),
-    rParamZyn(PD_dt,  "Decay Time"),
-    rParamZyn(PD_val, "Decay Value"),
-    rParamZyn(PS_val, "Sustain Value"),
-    rParamZyn(PR_dt,  "Release Time"),
-    rParamZyn(PR_val, "Release Value"),
+    rParamZyn(Penvstretch,  rShort("stretch"),
+            "Stretch with respect to frequency"),
+    rToggle(Pforcedrelease, rShort("frcr"),
+            "Force Envelope to fully evaluate"),
+    rToggle(Plinearenvelope, rShort("lin/log"),
+            "Linear or Logarithmic Envelopes"),
+    rParamZyn(PA_dt,  rShort("a.dt"),  "Attack Time"),
+    rParamZyn(PA_val, rShort("a.val"), "Attack Value"),
+    rParamZyn(PD_dt,  rShort("d.dt"),  "Decay Time"),
+    rParamZyn(PD_val, rShort("d.val"), "Decay Value"),
+    rParamZyn(PS_val, rShort("s.val"), "Sustain Value"),
+    rParamZyn(PR_dt,  rShort("r.dt"),  "Release Time"),
+    rParamZyn(PR_val, rShort("r.val"), "Release Value"),
+    
+    {"envdt:", rDoc("Envelope Delay Times"), NULL,
+        rBegin;
+        const int N = MAX_ENVELOPE_POINTS;
+        rtosc_arg_t args[N];
+        char arg_types[N+1] = {0};
+        for(int i=0; i<N; ++i) {
+            args[i].f    = env->getdt(i);
+            arg_types[i] = 'f';
+        }
+        d.replyArray(d.loc, arg_types, args);
+        rEnd},
+    {"envval:", rDoc("Envelope Delay Times"), NULL,
+        rBegin;
+        const int N = MAX_ENVELOPE_POINTS;
+        rtosc_arg_t args[N];
+        char arg_types[N+1] = {0};
+        for(int i=0; i<N; ++i) {
+            args[i].f    = env->Penvval[i]/127.0f;
+            arg_types[i] = 'f';
+        }
+        d.replyArray(d.loc, arg_types, args);
+        rEnd},
 
-    {"addPoint:i", rProp(internal) rDoc("Add point to envelope"), NULL, [](const char *msg, RtData &d)
-        {
-            EnvelopeParams *env = (rObject*) d.obj;
-            const int curpoint = rtosc_argument(msg, 0).i;
-            //int curpoint=freeedit->lastpoint;
-            if (curpoint<0 || curpoint>env->Penvpoints || env->Penvpoints>=MAX_ENVELOPE_POINTS)
-                return;
+    {"addPoint:i", rProp(internal) rDoc("Add point to envelope"), NULL,
+        rBegin;
+        const int curpoint = rtosc_argument(msg, 0).i;
+        //int curpoint=freeedit->lastpoint;
+        if (curpoint<0 || curpoint>env->Penvpoints || env->Penvpoints>=MAX_ENVELOPE_POINTS)
+            return;
 
-            for (int i=env->Penvpoints; i>=curpoint+1; i--) {
-                env->Penvdt[i]=env->Penvdt[i-1];
-                env->Penvval[i]=env->Penvval[i-1];
-            }
+        for (int i=env->Penvpoints; i>=curpoint+1; i--) {
+            env->Penvdt[i]=env->Penvdt[i-1];
+            env->Penvval[i]=env->Penvval[i-1];
+        }
 
-            if (curpoint==0) {
-                env->Penvdt[1]=64;
-            }
+        if (curpoint==0)
+            env->Penvdt[1]=64;
 
-            env->Penvpoints++;
-            if (curpoint<=env->Penvsustain) env->Penvsustain++;
-        }},
-    {"delPoint:i", rProp(internal) rDoc("Delete Envelope Point"), NULL, [](const char *msg, RtData &d)
-        {
-            EnvelopeParams *env = (rObject*) d.obj;
-            const int curpoint=rtosc_argument(msg, 0).i;
-            if(curpoint<1 || curpoint>=env->Penvpoints-1 || env->Penvpoints<=3)
-                return;
+        env->Penvpoints++;
+        if (curpoint<=env->Penvsustain)
+            env->Penvsustain++;
+        rEnd},
+    {"delPoint:i", rProp(internal) rDoc("Delete Envelope Point"), NULL,
+        rBegin;
+        const int curpoint=rtosc_argument(msg, 0).i;
+        if(curpoint<1 || curpoint>=env->Penvpoints-1 || env->Penvpoints<=3)
+            return;
 
-            for (int i=curpoint+1;i<env->Penvpoints;i++){
-                env->Penvdt[i-1]=env->Penvdt[i];
-                env->Penvval[i-1]=env->Penvval[i];
-            };
+        for (int i=curpoint+1;i<env->Penvpoints;i++){
+            env->Penvdt[i-1]=env->Penvdt[i];
+            env->Penvval[i-1]=env->Penvval[i];
+        };
 
-            env->Penvpoints--;
+        env->Penvpoints--;
 
-            if (curpoint<=env->Penvsustain)
-                env->Penvsustain--;
+        if (curpoint<=env->Penvsustain)
+            env->Penvsustain--;
 
-        }},
+        rEnd},
 };
 #undef  rChangeCb
 

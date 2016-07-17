@@ -14,10 +14,33 @@
 */
 
 #include <cmath>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
 #include "../Misc/Allocator.h"
 #include "Echo.h"
 
 #define MAX_DELAY 2
+
+#define rObject Echo
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports Echo::ports = {
+    {"preset::i", rOptions(Echo 1, Echo 2, Echo 3, Simple Echo, Canyon, Panning Echo 1, Panning Echo 2, Panning Echo 3, Feedback Echo)
+                  rProp(parameter)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    rEffPar(Pdelay,   2, rShort("delay"),    "Length of Echo"),
+    rEffPar(Plrdelay, 3, rShort("lr delay"), "Difference In Left/Right Delay"),
+    rEffPar(Plrcross, 4, rShort("cross"),    "Left/Right Crossover"),
+    rEffPar(Pfb,      5, rShort("feedback"), "Echo Feedback"),
+    rEffPar(Phidamp,  6, rShort("damp"),     "Dampen High Frequencies"),
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 Echo::Echo(EffectParams pars)
     :Effect(pars),

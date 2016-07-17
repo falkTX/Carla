@@ -28,6 +28,11 @@ LockFreeQueue::LockFreeQueue(qli_t *data_, int n)
         tag[i] = INVALID;
 }
 
+LockFreeQueue::~LockFreeQueue(void)
+{
+    delete [] tag;
+}
+
 
 qli_t *LockFreeQueue::read(void) {
 retry:

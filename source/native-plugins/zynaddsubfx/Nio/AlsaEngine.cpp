@@ -11,6 +11,7 @@
   of the License, or (at your option) any later version.
 */
 
+#include <stdlib.h>
 #include <iostream>
 #include <cmath>
 
@@ -20,6 +21,7 @@ using namespace std;
 #include "../Misc/Config.h"
 #include "InMgr.h"
 #include "AlsaEngine.h"
+#include "Compressor.h"
 #include "Nio.h"
 
 AlsaEngine::AlsaEngine(const SYNTH_T &synth)
@@ -28,6 +30,7 @@ AlsaEngine::AlsaEngine(const SYNTH_T &synth)
     audio.buffer = new short[synth.buffersize * 2];
     name = "ALSA";
     audio.handle = NULL;
+    audio.peaks[0] = 0;
 
     midi.handle  = NULL;
     midi.alsaId  = -1;
@@ -251,9 +254,13 @@ short *AlsaEngine::interleave(const Stereo<float *> &smps)
     int    idx = 0; //possible off by one error here
     double scaled;
     for(int frame = 0; frame < bufferSize; ++frame) { // with a nod to libsamplerate ...
-        scaled = smps.l[frame] * (8.0f * 0x10000000);
+        float l = smps.l[frame];
+        float r = smps.r[frame];
+        stereoCompressor(synth.samplerate, audio.peaks[0], l, r);
+
+        scaled = l * (8.0f * 0x10000000);
         shortInterleaved[idx++] = (short int)(lrint(scaled) >> 16);
-        scaled = smps.r[frame] * (8.0f * 0x10000000);
+        scaled = r * (8.0f * 0x10000000);
         shortInterleaved[idx++] = (short int)(lrint(scaled) >> 16);
     }
     return shortInterleaved;
@@ -267,7 +274,12 @@ bool AlsaEngine::openAudio()
     int rc = 0;
     /* Open PCM device for playback. */
     audio.handle = NULL;
-    rc = snd_pcm_open(&audio.handle, "hw:0",
+
+    const char *device = getenv("ALSA_DEVICE");
+    if(device == 0)
+        device = "hw:0";
+
+    rc = snd_pcm_open(&audio.handle, device,
                       SND_PCM_STREAM_PLAYBACK, 0);
     if(rc < 0) {
         fprintf(stderr,

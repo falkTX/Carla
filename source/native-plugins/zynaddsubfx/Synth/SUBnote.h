@@ -43,7 +43,7 @@ class SUBnote:public SynthNote
          * Initialize envelopes and global filter
          * calls computercurrentparameters()
          */
-        void initparameters(float freq);
+        void initparameters(float freq, WatchManager *wm);
         void KillNote();
 
         const SUBnoteParameters &pars;
@@ -101,6 +101,7 @@ class SUBnote:public SynthNote
         int   oldpitchwheel, oldbandwidth;
         float globalfiltercenterq;
         float velocity;
+        WatchManager *wm;
 };
 
 #endif

@@ -34,6 +34,7 @@ class LockFreeQueue
     std::atomic<int32_t>   avail;
     public:
     LockFreeQueue(qli_t *data_, int n);
+    ~LockFreeQueue(void);
     qli_t *read(void);
     void write(qli_t *Q);
 };

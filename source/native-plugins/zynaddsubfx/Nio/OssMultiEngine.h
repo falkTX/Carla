@@ -52,6 +52,9 @@ class OssMultiEngine : public AudioOut
             int *ps32;
         } smps;
 
+        /* peak values used for compressor */
+        float *peaks;
+
         bool en;
         bool is32bit;
 

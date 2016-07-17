@@ -20,17 +20,19 @@
 #include <rtosc/port-sugar.h>
 
 #define rObject Resonance
+#define rBegin [](const char *msg, RtData &d) { rObject &o = *(rObject*)d.obj
 
+#define rEnd }
 using namespace rtosc;
 const rtosc::Ports Resonance::ports = {
     rSelf(Resonance),
     rPaste,
-    rToggle(Penabled, "resonance enable"),
-    rToggle(Pprotectthefundamental, "Disable resonance filter on first harmonic"),
+    rToggle(Penabled,      rShort("enable"), "resonance enable"),
+    rToggle(Pprotectthefundamental, rShort("p.fund."), "Disable resonance filter on first harmonic"),
     rParams(Prespoints, N_RES_POINTS, "Resonance data points"),
-    rParamZyn(PmaxdB, "how many dB the signal may be amplified"),
-    rParamZyn(Pcenterfreq, "Center frequency"),
-    rParamZyn(Poctavesfreq, "The number of octaves..."),
+    rParamZyn(PmaxdB,      rShort("max"),  "how many dB the signal may be amplified"),
+    rParamZyn(Pcenterfreq, rShort("c.freq"), "Center frequency"),
+    rParamZyn(Poctavesfreq, rShort("oct"), "The number of octaves..."),
     rActioni(randomize, rMap(min,0), rMap(max, 2), "Randomize frequency response"),
     rActioni(interpolatepeaks, rMap(min,0), rMap(max, 2), "Generate response from peak values"),
     rAction(smooth, "Smooth out frequency response"),
@@ -42,7 +44,29 @@ const rtosc::Ports Resonance::ports = {
     {"octavesfreq:", rDoc("Get center freq of graph"), NULL,
             [](const char *, RtData &d)
         {d.reply(d.loc, "f", ((rObject*)d.obj)->getoctavesfreq());}},
+    {"respoints", 0, 0,
+        rBegin;
+        if(rtosc_narguments(msg)) {
+            int i=0;
+            auto itr = rtosc_itr_begin(msg);
+            while(!rtosc_itr_end(itr) && i < N_RES_POINTS) {
+                auto ival = rtosc_itr_next(&itr);
+                if(ival.type == 'f')
+                    o.Prespoints[i++] = ival.val.f*127;
+            }
+        } else {
+            rtosc_arg_t args[N_RES_POINTS];
+            char        types[N_RES_POINTS+1] = {0};
+            for(int i=0; i<N_RES_POINTS; ++i) {
+                args[i].f = o.Prespoints[i]/127.0;
+                types[i]  = 'f';
+            }
+            d.replyArray(d.loc, types, args);
+        }
+        rEnd},
 };
+#undef rBegin
+#undef rEnd
 
 Resonance::Resonance():Presets()
 {

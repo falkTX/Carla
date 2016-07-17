@@ -68,13 +68,15 @@ class Bank
 
         std::vector<bankstruct> banks;
         int bankpos;
-        
+
         struct ins_t {
             ins_t(void);
             std::string name;
             //All valid instruments must have a non-empty filename
             std::string filename;
         } ins[BANK_SIZE];
+
+        std::vector<std::string> search(std::string) const;
 
     private:
 
@@ -100,6 +102,7 @@ class Bank
         void normalizedirsuffix(std::string &dirname) const;
 
         Config* const config;
+        class BankDb *db;
 
     public:
         uint8_t bank_msb;

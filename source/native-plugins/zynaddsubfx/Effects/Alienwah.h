@@ -33,6 +33,7 @@ class Alienwah:public Effect
         unsigned char getpar(int npar) const;
         void cleanup(void);
 
+        static rtosc::Ports ports;
     private:
         //Alienwah Parameters
         EffectLFO     lfo;      //lfo-ul Alienwah

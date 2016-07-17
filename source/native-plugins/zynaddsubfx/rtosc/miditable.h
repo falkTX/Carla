@@ -115,6 +115,8 @@ class MidiMappernRT
         void delMapping(int ID, bool coarse, const char *addr);
         void replaceMapping(int, bool, const char *);
 
+        void clear(void);
+
         std::map<std::string, std::string> getMidiMappingStrings(void);
 
         //unclear if this should be be here as a helper or not

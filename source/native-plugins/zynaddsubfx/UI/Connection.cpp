@@ -407,7 +407,7 @@ class UI_Interface:public Fl_Osc_Interface
         virtual void damage(const char *path) override
         {
 #ifndef NO_UI
-            printf("\n\nDamage(\"%s\")\n", path);
+            //printf("\n\nDamage(\"%s\")\n", path);
             std::set<Fl_Osc_Widget*> to_update;
             for(auto pair:map) {
                 if(strstr(pair.first.c_str(), path)) {
@@ -428,7 +428,7 @@ class UI_Interface:public Fl_Osc_Interface
             //DEBUG
             //if(strcmp(msg, "/vu-meter"))//Ignore repeated message
             //    printf("trying the link for a '%s'<%s>\n", msg, rtosc_argument_string(msg));
-            const char *handle = rindex(msg,'/');
+            const char *handle = strrchr(msg,'/');
             if(handle)
                 ++handle;
 

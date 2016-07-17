@@ -68,6 +68,7 @@ class Chorus:public Effect
         unsigned char getpar(int npar) const;
         void cleanup(void);
 
+        static rtosc::Ports ports;
     private:
         //Chorus Parameters
         unsigned char Pvolume;

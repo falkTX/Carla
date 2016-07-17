@@ -29,6 +29,7 @@ class Distorsion:public Effect
         void cleanup(void);
         void applyfilters(float *efxoutl, float *efxoutr);
 
+        static rtosc::Ports ports;
     private:
         //Parameters
         unsigned char Pvolume;       //Volume or E/R

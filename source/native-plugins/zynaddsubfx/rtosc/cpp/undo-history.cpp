@@ -16,6 +16,10 @@ class UndoHistoryImpl
         UndoHistoryImpl(void)
             :max_history_size(20)
         {}
+        ~UndoHistoryImpl(void)
+        {
+            clear();
+        }
         std::deque<pair<time_t, const char *>> history;
         long history_pos;
         unsigned max_history_size;//XXX Expose this via a public API
@@ -24,12 +28,18 @@ class UndoHistoryImpl
         void rewind(const char *msg);
         void replay(const char *msg);
         bool mergeEvent(time_t t, const char *msg, char *buf, size_t N);
+        void clear(void);
 };
 
 UndoHistory::UndoHistory(void)
 {
     impl = new UndoHistoryImpl;
     impl->history_pos  = 0;
+}
+
+UndoHistory::~UndoHistory(void)
+{
+    delete impl;
 }
 
 void UndoHistory::recordEvent(const char *msg)
@@ -119,6 +129,14 @@ bool UndoHistoryImpl::mergeEvent(time_t now, const char *msg, char *buf, size_t 
         }
     }
     return false;
+}
+
+void UndoHistoryImpl::clear(void)
+{
+    for(auto elm : history)
+        delete [] elm.second;
+    history.clear();
+    history_pos = 0;
 }
 
 

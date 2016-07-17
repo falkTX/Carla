@@ -59,6 +59,8 @@ class Echo:public Effect
         unsigned char getpar(int npar) const;
         int getnumparams(void);
         void cleanup(void);
+
+        static rtosc::Ports ports;
     private:
         //Parameters
         unsigned char Pvolume;  /**<#1 Volume or Dry/Wetness*/

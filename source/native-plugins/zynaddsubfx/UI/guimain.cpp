@@ -470,7 +470,7 @@ class UI_Interface:public Fl_Osc_Interface
             //DEBUG
             //if(strcmp(msg, "/vu-meter"))//Ignore repeated message
             //    printf("trying the link for a '%s'<%s>\n", msg, rtosc_argument_string(msg));
-            const char *handle = rindex(msg,'/');
+            const char *handle = strrchr(msg,'/');
             if(handle)
                 ++handle;
 
@@ -572,9 +572,11 @@ const char *help_message =
 "zynaddsubfx-ext-gui [options] uri - Connect to remote ZynAddSubFX\n"
 "    --help   print this help message\n"
 "    --no-uri run without a remote ZynAddSubFX\n"
+"    --embed  window ID [Internal Flag For Embedding Windows]\n"
 "\n"
 "    example: zynaddsubfx-ext-gui osc.udp://localhost:1234/\n"
-"       use the -P option for zynaddsubfx to specify the port of the backend\n";
+"      This will connect to a running zynaddsubfx instance on the same\n"
+"      machine on port 1234.\n";
 
 #ifndef CARLA_VERSION_STRING
 int main(int argc, char *argv[])

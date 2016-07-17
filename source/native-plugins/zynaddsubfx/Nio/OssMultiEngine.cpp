@@ -29,6 +29,7 @@
 #include "../Misc/Util.h"
 
 #include "OssMultiEngine.h"
+#include "Compressor.h"
 
 extern MiddleWare *middleware;
 
@@ -53,12 +54,18 @@ OssMultiEngine :: OssMultiEngine(const SYNTH_T &synth,
     /* allocate buffer */
     smps.ps32 = new int[maxbuffersize / sizeof(int)];
     memset(smps.ps32, 0, maxbuffersize);
+
+    /* setup compressor */
+    unsigned peaksize = NUM_MIDI_PARTS * sizeof(float);
+    peaks = new float[peaksize / sizeof(float)];
+    memset(peaks, 0, peaksize);
 }
 
 OssMultiEngine :: ~OssMultiEngine()
 {
     Stop();
     delete [] smps.ps32;
+    delete [] peaks;
 }
 
     bool
@@ -213,8 +220,6 @@ OssMultiEngine :: audioThreadCb()
 
     while(getAudioEn()) {
         int error;
-        float l;
-        float r;
         int x;
         int y;
 
@@ -227,32 +232,18 @@ OssMultiEngine :: audioThreadCb()
 
             if (is32bit) {
                 for (y = 0; y != synth.buffersize; y++) {
-                    l = part->partoutl[y];
-                    if (l < -1.0f)
-                        l = -1.0f;
-                    else if (l > 1.0f)
-                        l = 1.0f;
+                    float l = part->partoutl[y];
+                    float r = part->partoutr[y];
+                    stereoCompressor(synth.samplerate, peaks[x/2], l, r);
                     smps.ps32[y * channels + x] = (int)(l * 2147483647.0f);
-                    r = part->partoutr[y];
-                    if (r < -1.0f)
-                        r = -1.0f;
-                    else if (r > 1.0f)
-                        r = 1.0f;
                     smps.ps32[y * channels + x + 1] = (int)(r * 2147483647.0f);
                 }
             } else {
                 for (y = 0; y != synth.buffersize; y++) {
-                    l = part->partoutl[y];
-                    if (l < -1.0f)
-                        l = -1.0f;
-                    else if (l > 1.0f)
-                        l = 1.0f;
+                    float l = part->partoutl[y];
+                    float r = part->partoutr[y];
+                    stereoCompressor(synth.samplerate, peaks[x/2], l, r);
                     smps.ps16[y * channels + x] = (short int)(l * 32767.0f);
-                    r = part->partoutr[y];
-                    if (r < -1.0f)
-                        r = -1.0f;
-                    else if (r > 1.0f)
-                        r = 1.0f;
                     smps.ps16[y * channels + x + 1] = (short int)(r * 32767.0f);
                 }
             }

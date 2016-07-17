@@ -67,6 +67,7 @@ class AlsaEngine:public AudioOut, MidiIn
             unsigned int      periods;
             short    *buffer;
             pthread_t pThread;
+            float peaks[1];
         } audio;
 
         void *processAudio();

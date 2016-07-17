@@ -131,6 +131,10 @@ int JackMultiEngine::processAudio(jack_nframes_t nframes)
     float *buffers[NUM_MIDI_PARTS * 2 + 2];
 
     for(int i = 0; i < NUM_MIDI_PARTS * 2 + 2; ++i) {
+        //Abort if ports are only partially initialized
+        if(!impl->ports[i])
+            return false;
+
         buffers[i] =
             (float *)jack_port_get_buffer(impl->ports[i], nframes);
         assert(buffers[i]);

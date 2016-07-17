@@ -54,12 +54,18 @@ struct RtData
     const Port *port;
     const char *message;
 
+    virtual void replyArray(const char *path, const char *args,
+            rtosc_arg_t *vals){};
     virtual void reply(const char *path, const char *args, ...);
     virtual void reply(const char *msg);
     virtual void chain(const char *path, const char *args, ...){};
     virtual void chain(const char *msg){};
+    virtual void chainArray(const char *path, const char *args,
+            rtosc_arg_t *vals){};
     virtual void broadcast(const char *path, const char *args, ...);
     virtual void broadcast(const char *msg);
+    virtual void broadcastArray(const char *path, const char *args,
+            rtosc_arg_t *vals){};
 
     virtual void forward(const char *rational=NULL);
 };

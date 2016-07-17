@@ -34,7 +34,8 @@ class ADnote:public SynthNote
         /**Constructor.
          * @param pars Note Parameters
          * @param spars Synth Engine Agnostic Parameters*/
-        ADnote(ADnoteParameters *pars, SynthParams &spars);
+        ADnote(ADnoteParameters *pars, SynthParams &spars,
+                WatchManager *wm=0, const char *prefix=0);
         /**Destructor*/
         ~ADnote();
 
@@ -62,7 +63,7 @@ class ADnote:public SynthNote
         /**Compute parameters for next tick*/
         void computecurrentparameters();
         /**Initializes All Parameters*/
-        void initparameters();
+        void initparameters(WatchManager *wm, const char *prefix);
         /**Deallocate/Cleanup given voice*/
         void KillVoice(int nvoice);
         /**Deallocate Note resources and voice resources*/
@@ -117,7 +118,9 @@ class ADnote:public SynthNote
                                 const AbsTime &time,
                                 class Allocator &memory,
                                 float basefreq, float velocity,
-                                bool stereo);
+                                bool stereo,
+                                WatchManager *wm,
+                                const char *prefix);
             /******************************************
             *     FREQUENCY GLOBAL PARAMETERS        *
             ******************************************/

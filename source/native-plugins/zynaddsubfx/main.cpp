@@ -3,7 +3,7 @@
 
   main.cpp  -  Main file of the synthesizer
   Copyright (C) 2002-2005 Nasca Octavian Paul
-  Copyright (C) 2012-2014 Mark McCurry
+  Copyright (C) 2012-2016 Mark McCurry
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -35,6 +35,7 @@
 #include "Misc/Master.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
+#include "version.h"
 
 //Nio System
 #include "Nio/Nio.h"
@@ -364,7 +365,7 @@ int main(int argc, char *argv[])
     synth.alias();
 
     if(exitwithversion) {
-        cout << "Version: " << VERSION << endl;
+        cout << "Version: " << version << endl;
         return 0;
     }
     if(exitwithhelp != 0) {
@@ -382,7 +383,7 @@ int main(int argc, char *argv[])
         "  -U , --no-gui\t\t\t\t Run ZynAddSubFX without user interface\n"
              << "  -N , --named\t\t\t\t Postfix IO Name when possible\n"
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
-             << "  -A , --auto-save=INTERVAL\t\t Automatically save at interval (disabled for negative intervals)\n"
+             << "  -A , --auto-save=INTERVAL\t\t Automatically save at interval (disabled with 0 interval)\n"
              << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
                 "client name\n"
              << "  -P , --preferred-port\t\t\t Preferred OSC Port\n"
@@ -489,7 +490,7 @@ int main(int argc, char *argv[])
                     "Default IO did not initialize.\nDefaulting to NULL backend.");
     }
 
-    if(auto_save_interval >= 0) {
+    if(auto_save_interval > 0) {
         int old_save = middleware->checkAutoSave();
         if(old_save > 0)
             GUI::raiseUi(gui, "/alert-reload", "i", old_save);

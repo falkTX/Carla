@@ -33,6 +33,14 @@
 
 
 #define rObject EffectMgr
+#define rSubtype(name) \
+    {STRINGIFY(name)"/", NULL, &name::ports,\
+        [](const char *msg, rtosc::RtData &data){\
+            rObject &o = *(rObject*)data.obj; \
+            data.obj = o.efx; \
+            SNIP \
+            name::ports.dispatch(msg, data); \
+        }}
 static const rtosc::Ports local_ports = {
     rSelf(EffectMgr),
     rPaste,
@@ -71,7 +79,7 @@ static const rtosc::Ports local_ports = {
 
                 //update parameters as well
                 strncpy(loc, d.loc, 1024);
-                char *tail = rindex(loc, '/');
+                char *tail = strrchr(loc, '/');
                 if(!tail)
                     return;
                 for(int i=0;i<128;++i) {
@@ -94,7 +102,9 @@ static const rtosc::Ports local_ports = {
             eq->getFilter(a,b);
             d.reply(d.loc, "bb", sizeof(a), a, sizeof(b), b);
         }},
-    {"efftype::i", rProp(parameter) rDoc("Get Effect Type"), NULL,
+    {"efftype::i", rOptions(Disabled, Reverb, Echo, Chorus,
+            Phaser, Alienwah, Distorsion, EQ, DynamicFilter)
+            rProp(parameter) rDoc("Get Effect Type"), NULL,
         [](const char *m, rtosc::RtData &d)
         {
             EffectMgr *eff  = (EffectMgr*)d.obj;
@@ -121,7 +131,9 @@ static const rtosc::Ports local_ports = {
             //Return the old data for distruction
             d.reply("/free", "sb", "EffectMgr", sizeof(EffectMgr*), &eff_);
         }},
-
+    rSubtype(Echo),
+    rSubtype(Alienwah),
+    rSubtype(Distorsion),
 };
 
 const rtosc::Ports &EffectMgr::ports = local_ports;

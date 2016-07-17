@@ -24,6 +24,15 @@ class SUBnoteParameters:public Presets
         SUBnoteParameters(const AbsTime *time_ = nullptr);
         ~SUBnoteParameters();
 
+        //Identify active harmonic positions
+        // - pos       : int[MAX_SUB_HARMONICS] offsets of active harmonics
+        // - harmonics : number of active harmonics
+        void activeHarmonics(int *pos, int &harmonics) const;
+
+        static float convertBandwidth(int bw, int stages, float freq,
+                int scale, int relbw);
+        static float convertHarmonicMag(int mag, int type);
+
         void add2XML(XMLwrapper& xml);
         void defaults();
         void getfromXML(XMLwrapper& xml);
@@ -31,7 +40,7 @@ class SUBnoteParameters:public Presets
         void paste(SUBnoteParameters &sub);
 
         //Parameters
-        //AMPLITUDE PARAMETRERS
+        //AMPLITUDE PARAMETERS
         unsigned char   Pstereo; //0 for mono,1 for stereo
         unsigned char   PVolume;
         unsigned char   PPanning;

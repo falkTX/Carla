@@ -16,6 +16,55 @@
 #include "DynamicFilter.h"
 #include "../DSP/Filter.h"
 #include "../Misc/Allocator.h"
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+
+#define rObject DynamicFilter
+#define rBegin [](const char *, rtosc::RtData &) {
+#define rEnd }
+
+rtosc::Ports DynamicFilter::ports = {
+    {"preset::i", rOptions(WahWah, AutoWah, Sweep, VocalMorph1, VocalMorph1)
+                  rDoc("Instrument Presets"), 0,
+                  rBegin;
+                  rEnd},
+    //Pvolume/Ppanning are common
+    {"Pfreq::i", rShort("freq")
+                   rDoc("Effect Frequency"), 0,
+                   rBegin;
+                   rEnd},
+    {"Pfreqrnd::i", rShort("rand")
+                    rDoc("Frequency Randomness"), 0,
+                    rBegin;
+                    rEnd},
+    {"PLFOtype::i", rShort("shape")
+                    rDoc("LFO Shape"), 0,
+                    rBegin;
+                    rEnd},
+    {"PStereo::T:F", rShort("stereo")
+                     rDoc("Stereo/Mono Mode"), 0,
+                     rBegin;
+                     rEnd},
+    {"Pdepth::i", rShort("depth")
+                  rDoc("LFO Depth"), 0,
+                  rBegin;
+                  rEnd},
+    {"Pampsns::i", rShort("sense")
+                  rDoc("how the filter varies according to the input amplitude"), 0,
+                  rBegin;
+                  rEnd},
+    {"Pampsnsinv::T:F", rShort("sns.inv")
+                   rDoc("Sense Inversion"), 0,
+                   rBegin;
+                   rEnd},
+    {"Pampsmooth::i", rShort("smooth")
+                    rDoc("how smooth the input amplitude changes the filter"), 0,
+                    rBegin;
+                    rEnd},
+};
+#undef rBegin
+#undef rEnd
+#undef rObject
 
 DynamicFilter::DynamicFilter(EffectParams pars, const AbsTime *time)
     :Effect(pars),
