@@ -1192,7 +1192,10 @@ public:
                             }
                             else
                             {
-                                value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
+                                if (pData->param.data[k].hints & PARAMETER_IS_LOGARITHMIC)
+                                    value = pData->param.ranges[k].getUnnormalizedLogValue(ctrlEvent.value);
+                                else
+                                    value = pData->param.ranges[k].getUnnormalizedValue(ctrlEvent.value);
 
                                 if (pData->param.data[k].hints & PARAMETER_IS_INTEGER)
                                     value = std::rint(value);

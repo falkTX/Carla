@@ -20,6 +20,8 @@
 
 #include "CarlaDefines.h"
 
+#include <cmath>
+
 #ifdef CARLA_PROPER_CPP11_SUPPORT
 # include <cstdint>
 #else
@@ -1383,6 +1385,19 @@ typedef struct {
             return max;
 
         return value * (max - min) + min;
+    }
+
+    /*!
+     * Get a logarithmic value previously normalized to 0.0<->1.0.
+     */
+    float getUnnormalizedLogValue(const float& value) const noexcept
+    {
+        if (value <= 0.0f)
+            return min;
+        if (value >= 1.0f)
+            return max;
+
+        return min * std::pow(max/min, value);
     }
 #endif /* __cplusplus */
 
