@@ -1,0 +1,10 @@
+sudo: required
+dist: trusty
+language: cpp
+compiler: gcc
+before_install:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.before_install.sh
+install:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.install.sh
+script:
+    - sh ${TRAVIS_BUILD_DIR}/.travis/${TRAVIS_OS_NAME}.${TARGET_OS}.script.sh
