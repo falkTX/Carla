@@ -67,6 +67,10 @@ CarlaPluginGui::CarlaPluginGui(CarlaEngine* const engine, Callback* const callba
         if (! lastGeometry.isNull())
             restoreGeometry(lastGeometry);
     }
+
+    return;
+    // may be unused
+    (void)engine;
 }
 
 CarlaPluginGui::~CarlaPluginGui()

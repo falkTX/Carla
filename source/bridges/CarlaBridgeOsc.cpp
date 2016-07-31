@@ -207,6 +207,9 @@ int CarlaBridgeOsc::handleMessage(const char* const path, const int argc, const 
 
     carla_stderr("CarlaBridgeOsc::handleMessage(\"%s\", ...) - received unsupported OSC method '%s'", path, method);
     return 1;
+
+    // may be unused
+    (void)msg;
 }
 
 #ifdef BUILD_BRIDGE_UI

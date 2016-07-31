@@ -438,6 +438,9 @@ int CarlaBridgeOsc::handleMsgPluginSetParameterMidiChannel(CARLA_BRIDGE_OSC_HAND
     // TODO
 
     return 0;
+
+    // unused
+    (void)argc; (void)argv; (void)types;
 }
 
 int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_ARGS)
@@ -449,6 +452,9 @@ int CarlaBridgeOsc::handleMsgPluginSetParameterMidiCC(CARLA_BRIDGE_OSC_HANDLE_AR
     // TODO
 
     return 0;
+
+    // unused
+    (void)argc; (void)argv; (void)types;
 }
 
 int CarlaBridgeOsc::handleMsgPluginSetChunk(CARLA_BRIDGE_OSC_HANDLE_ARGS)

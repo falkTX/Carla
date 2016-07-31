@@ -29,6 +29,8 @@
 
 #include "RtList.hpp"
 
+#include <cmath>
+
 #define CARLA_PROCESS_CONTINUE_CHECK if (! fEnabled) { kData->engine->callback(CALLBACK_DEBUG, fId, 0, 0, 0.0f, "Processing while plugin is disabled!!"); return; }
 
 CARLA_BACKEND_START_NAMESPACE

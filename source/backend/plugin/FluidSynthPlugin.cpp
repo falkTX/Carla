@@ -907,7 +907,7 @@ public:
         fluid_preset_t f_preset;
 
         bool hasDrums = false;
-        uint32_t drumIndex, drumProg;
+        uint32_t drumIndex = 0, drumProg = 0;
 
         f_sfont = fluid_synth_get_sfont_by_id(fSynth, fSynthId);
 

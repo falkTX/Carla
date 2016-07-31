@@ -27,11 +27,12 @@ extern "C" {
 
 // Declare non copyable and prevent heap allocation
 #define LIST_DECLARATIONS(ClassName)                       \
+private:                                                   \
     ClassName(ClassName&);                                 \
     ClassName(const ClassName&);                           \
+    ClassName& operator=(ClassName&);                      \
     ClassName& operator=(const ClassName&);                \
-    static void* operator new (size_t) { return nullptr; } \
-    static void operator delete (void*) {}
+    static void* operator new (size_t);
 
 typedef struct list_head k_list_head;
 
