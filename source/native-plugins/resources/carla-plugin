@@ -485,6 +485,8 @@ class CarlaEmbedW(QEmbedWidget):
         self.addWidget(self.gui.centralWidget())
         self.finalSetup(self.gui, winId)
 
+        self.gui.send(["ready"])
+
     def addShortcutActions(self, actions):
         for action in actions:
             if not action.shortcut().isEmpty():
