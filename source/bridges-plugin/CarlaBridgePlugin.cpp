@@ -80,21 +80,19 @@ static void initSignalHandler()
 #ifdef CARLA_OS_WIN
     SetConsoleCtrlHandler(winSignalHandler, TRUE);
 #elif defined(CARLA_OS_LINUX)
-    struct sigaction sterm;
-    struct sigaction susr1;
+    struct sigaction sig;
+    carla_zeroStruct(sig);
 
-    sterm.sa_handler  = closeSignalHandler;
-    sterm.sa_flags    = SA_RESTART;
-    sterm.sa_restorer = nullptr;
-    sigemptyset(&sterm.sa_mask);
-    sigaction(SIGTERM, &sterm, nullptr);
-    sigaction(SIGINT, &sterm, nullptr);
+    sig.sa_handler = closeSignalHandler;
+    sig.sa_flags   = SA_RESTART;
+    sigemptyset(&sig.sa_mask);
+    sigaction(SIGTERM, &sig, nullptr);
+    sigaction(SIGINT, &sig, nullptr);
 
-    susr1.sa_handler  = saveSignalHandler;
-    susr1.sa_flags    = SA_RESTART;
-    susr1.sa_restorer = nullptr;
-    sigemptyset(&susr1.sa_mask);
-    sigaction(SIGUSR1, &susr1, nullptr);
+    sig.sa_handler = saveSignalHandler;
+    sig.sa_flags   = SA_RESTART;
+    sigemptyset(&sig.sa_mask);
+    sigaction(SIGUSR1, &sig, nullptr);
 #endif
 }
 
