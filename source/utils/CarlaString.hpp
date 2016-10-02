@@ -489,9 +489,7 @@ public:
         if (n >= fBufferLen)
             return *this;
 
-        for (std::size_t i=n; i < fBufferLen; ++i)
-            fBuffer[i] = '\0';
-
+        fBuffer[n] = '\0';
         fBufferLen = n;
 
         return *this;
@@ -520,7 +518,7 @@ public:
     }
 
     /*
-     * Convert to all ascii characters to lowercase.
+     * Convert all ascii characters to lowercase.
      */
     CarlaString& toLower() noexcept
     {
@@ -536,7 +534,7 @@ public:
     }
 
     /*
-     * Convert to all ascii characters to uppercase.
+     * Convert all ascii characters to uppercase.
      */
     CarlaString& toUpper() noexcept
     {
