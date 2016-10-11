@@ -537,7 +537,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if "calf" in self.fSkinStyle:
                 maxWidgets = 7
             else:
-                maxWidgets = 12
+                maxWidgets = 8
 
             index = 0
             for i in range(parameterCount):
@@ -1539,14 +1539,8 @@ class PluginSlot_Default(AbstractPluginSlot):
     def getFixedHeight(self):
         if self.fSkinStyle == "mod":
             return 86
-        
 
         return 80
-        #print('fizelij height')
-        #if self.cb_presets:
-            #return self.cb_presets.height() + 62
-        #else:
-            #return 80
 
     #------------------------------------------------------------------
 
