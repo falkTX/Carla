@@ -335,7 +335,7 @@ class ParamSpinBox(QAbstractSpinBox):
             self.fUseScalePoints = False
             return
 
-        self.fScalePoints    = scalePoints
+        self.fScalePoints    = sorted(scalePoints, key=lambda x: x['value'])
         self.fUseScalePoints = useScalePoints
 
         if not useScalePoints:
@@ -351,7 +351,7 @@ class ParamSpinBox(QAbstractSpinBox):
         # Add items, sorted
         boxItemValues = []
 
-        for scalePoint in scalePoints:
+        for scalePoint in self.fScalePoints:
             value = scalePoint['value']
 
             if self.fStep == 1.0:
