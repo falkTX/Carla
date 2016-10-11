@@ -537,7 +537,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
             if "calf" in self.fSkinStyle:
                 maxWidgets = 7
             else:
-                maxWidgets = 8
+                maxWidgets = 12
 
             index = 0
             for i in range(parameterCount):
@@ -547,7 +547,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
                 paramData   = self.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
-
+                
                 if paramData['type'] != PARAMETER_INPUT:
                     continue
                 if paramData['hints'] & PARAMETER_IS_BOOLEAN:
@@ -560,11 +560,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                     continue
 
                 paramName = getParameterShortName(paramInfo['name'])
+                
+                scalePointValueList = []
+                for j in range(paramInfo['scalePointCount']):
+                    scalePointValueList.append(self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)['value'])
+                scalePointValueList.sort()
 
                 widget = PixmapDial(self, i)
                 widget.setLabel(paramName)
                 widget.setMinimum(paramRanges['min'])
                 widget.setMaximum(paramRanges['max'])
+                widget.setSteps(paramRanges['step'],paramRanges['stepSmall'])
+                widget.setScalePoints(scalePointValueList)
                 setPixmapDialStyle(widget, i, parameterCount, self.fSkinStyle)
 
                 index += 1
@@ -1532,8 +1539,14 @@ class PluginSlot_Default(AbstractPluginSlot):
     def getFixedHeight(self):
         if self.fSkinStyle == "mod":
             return 86
+        
 
         return 80
+        #print('fizelij height')
+        #if self.cb_presets:
+            #return self.cb_presets.height() + 62
+        #else:
+            #return 80
 
     #------------------------------------------------------------------
 
@@ -1651,6 +1664,11 @@ class PluginSlot_Presets(AbstractPluginSlot):
 
             if paramName.startswith("unused"):
                 continue
+            
+            scalePointValueList = []
+            for j in range(paramInfo['scalePointCount']):
+                scalePointValueList.append(self.host.get_parameter_scalepoint_info(self.fPluginId, i, j)['value'])
+            scalePointValueList.sort()
 
             # real zyn fx plugins
             if self.fPluginInfo['label'] == "zynalienwah":
@@ -1721,6 +1739,8 @@ class PluginSlot_Presets(AbstractPluginSlot):
             widget.setLabel(paramName)
             widget.setMinimum(paramRanges['min'])
             widget.setMaximum(paramRanges['max'])
+            widget.setSteps(paramRanges['step'], paramRanges['stepSmall'])
+            widget.setScalePoints(scalePointValueList)
             widget.setPixmap(3)
             widget.setCustomPaintColor(QColor(83, 173, 10))
             widget.setCustomPaintMode(PixmapDial.CUSTOM_PAINT_MODE_COLOR)

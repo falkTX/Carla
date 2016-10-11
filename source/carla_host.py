@@ -97,6 +97,8 @@ class HostWindow(QMainWindow):
 
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
+        
+        self.f_ctrl_down = False
 
         self.fIdleTimerFast = 0
         self.fIdleTimerSlow = 0
@@ -1922,6 +1924,19 @@ class HostWindow(QMainWindow):
             self.idleSlow()
 
         QMainWindow.timerEvent(self, event)
+        
+    def isCtrlPressed(self):
+         return self.f_ctrl_down
+     
+    def keyPressEvent(self, event):
+         if event.key() == Qt.Key_Control:
+             self.f_ctrl_down = True
+         QMainWindow.keyPressEvent(self, event)
+         
+    def keyReleaseEvent(self, event):
+         if event.key() == Qt.Key_Control:
+             self.f_ctrl_down = False
+         QMainWindow.keyPressEvent(self, event)
 
     # --------------------------------------------------------------------------------------------------------
     # paint event
