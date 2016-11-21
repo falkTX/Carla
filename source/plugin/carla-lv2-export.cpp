@@ -500,7 +500,9 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
         else
             text += "        lv2:name \"Port " + String(i+1) + "\" ;\n";
 
-        text += "        lv2:default " + String::formatted("%f", paramInfo->ranges.def) + " ;\n";
+        if ((paramInfo->hints & NATIVE_PARAMETER_IS_OUTPUT) == 0)
+            text += "        lv2:default " + String::formatted("%f", paramInfo->ranges.def) + " ;\n";
+
         text += "        lv2:minimum " + String::formatted("%f", paramInfo->ranges.min) + " ;\n";
         text += "        lv2:maximum " + String::formatted("%f", paramInfo->ranges.max) + " ;\n";
 
