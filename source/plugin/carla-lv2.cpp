@@ -517,7 +517,6 @@ public:
                 mData.capacity = seq->atom.size;
                 mData.offset   = 0;
 
-                LV2_Atom_Sequence* const mOut(fPorts.midiOuts[i]);
                 seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
                 seq->atom.type = fURIs.atomSequence;
                 seq->body.unit = 0;
