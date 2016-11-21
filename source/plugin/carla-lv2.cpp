@@ -516,6 +516,12 @@ public:
                 Ports::MidiOutData& mData(fPorts.midiOutData[i]);
                 mData.capacity = seq->atom.size;
                 mData.offset   = 0;
+
+                LV2_Atom_Sequence* const mOut(fPorts.midiOuts[i]);
+                seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
+                seq->atom.type = fURIs.atomSequence;
+                seq->body.unit = 0;
+                seq->body.pad  = 0;
             }
         }
 
@@ -942,14 +948,6 @@ protected:
 
         if (sizeof(LV2_Atom_Event) + event->size > mData.capacity - mData.offset)
             return false;
-
-        if (mData.offset == 0)
-        {
-            seq->atom.size = 0;
-            seq->atom.type = fURIs.atomSequence;
-            seq->body.unit = 0;
-            seq->body.pad  = 0;
-        }
 
         LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
 
