@@ -25,6 +25,8 @@
 # define rindex strrchr
 #else
 # include <err.h>
+#include <cmath>
+using std::isnan;
 #endif
 
 #define PLUGINVERSION
