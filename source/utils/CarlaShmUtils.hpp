@@ -278,14 +278,12 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
         if (carla_is_shm_valid(shm))
             return shm;
 
-        // file already exists, keep trying
-#ifdef CARLA_OS_WIN
-        if (::GetLastError() == ERROR_ALREADY_EXISTS)
-            continue;
-#else
+#ifndef CARLA_OS_WIN
+        // if file already exists, keep trying
         if (errno == EEXIST)
             continue;
-        carla_stderr("carla_shm_create_temp(%s) - failed, error code %i", fileBase, errno);
+        const int localerrno = errno;
+        carla_stderr("carla_shm_create_temp(%s) - failed, error code %i", fileBase, localerrno);
 #endif
 
         // some unknown error occurred, return null
