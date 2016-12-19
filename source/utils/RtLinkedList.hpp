@@ -153,7 +153,9 @@ private:
 
     bool _add_sleepy(const T& value, const bool inTail) noexcept
     {
-        return this->_add_internal(_allocate_sleepy(), value, inTail, &this->fQueue);
+        if (typename AbstractLinkedList<T>::Data* const data = _allocate_sleepy())
+            return this->_add_internal(data, value, inTail, &this->fQueue);
+        return false;
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION

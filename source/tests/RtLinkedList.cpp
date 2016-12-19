@@ -21,7 +21,7 @@
 #include "CarlaMutex.hpp"
 
 const unsigned short MIN_RT_EVENTS = 5;
-const unsigned short MAX_RT_EVENTS = 10;
+const unsigned short MAX_RT_EVENTS = 12;
 
 struct MyData {
     char str[234];
@@ -79,8 +79,8 @@ void run5Tests()
 
     while (! postRtEvents.data.isEmpty())
     {
-        static MyData fallback = { { '\0' }, 0 };
-        const MyData& my(postRtEvents.data.getFirst(fallback, true));
+        static MyData kFallback = { { '\0' }, 0 };
+        const MyData& my(postRtEvents.data.getFirst(kFallback, true));
         allMyData[k++] = my;
     }
 
@@ -102,6 +102,51 @@ void run5Tests()
 
         carla_stdout("Got data: %i %s", my.id, my.str);
     }
+
+    // append events past minimum size
+    MyData dummyData = { { '\0' }, 0 };
+    // 5 initial go ok
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    // afterwards it fails
+    assert(! postRtEvents.dataPendingRT.append(dummyData));
+    assert(! postRtEvents.dataPendingRT.append(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // adding sleepy works
+    assert(postRtEvents.dataPendingRT.append_sleepy(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // now atomic works too, size was increased
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // fails here now
+    assert(! postRtEvents.dataPendingRT.append(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // adding sleepy still works
+    assert(postRtEvents.dataPendingRT.append_sleepy(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // now atomic works for 1 more
+    assert(postRtEvents.dataPendingRT.append(dummyData));
+    assert(! postRtEvents.dataPendingRT.append(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // and adding sleepy no longer works
+    assert(! postRtEvents.dataPendingRT.append_sleepy(dummyData));
+    carla_stdout("here %i", __LINE__);
+
+    // cleanup
+    postRtEvents.trySplice();
+    postRtEvents.clear();
 }
 
 int main()
@@ -138,7 +183,8 @@ int main()
 
     for (RtLinkedList<MyData>::Itenerator it = postRtEvents.data.begin2(); it.valid(); it.next())
     {
-        const MyData& my(it.getValue());
+        static const MyData kFallback = { { '\0' }, 0 };
+        const MyData& my(it.getValue(kFallback));
 
         carla_stdout("FOR DATA!!!: %i %s", my.id, my.str);
 
@@ -151,8 +197,10 @@ int main()
         }
     }
 
+#if 0
     for (const MyData& my : postRtEvents.data)
         carla_stdout("FOR DATA!!! NEW AUTO Itenerator!!!: %i %s", my.id, my.str);
+#endif
 
     postRtEvents.trySplice();
     assert(postRtEvents.data.count() == 5);
