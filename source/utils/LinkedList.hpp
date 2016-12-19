@@ -252,55 +252,17 @@ public:
         return _add(value, false, it.fEntry->prev);
     }
 
-    T getAt(const std::size_t index, T& fallback, const bool removeObj) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
-
-        std::size_t i = 0;
-
-        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
-        {
-            if (index != i++)
-                continue;
-
-            return _get(entry, fallback, removeObj);
-        }
-
-        return fallback;
-    }
-
-    T& getAt(const std::size_t index, T& fallback) const noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
-
-        std::size_t i = 0;
-
-        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
-        {
-            if (index != i++)
-                continue;
-
-            return _get(entry, fallback);
-        }
-
-        return fallback;
-    }
-
+    // NOTE: do not use this function unless strictly needed. it can be very expensive if the list is big
     const T& getAt(const std::size_t index, const T& fallback) const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, fallback);
 
         std::size_t i = 0;
+        ListHead* entry = fQueue.next;
 
-        for (ListHead *entry = fQueue.next, *entry2 = entry->next; entry != &fQueue; entry = entry2, entry2 = entry->next)
-        {
-            if (index != i++)
-                continue;
+        for (; i++ != index; entry = entry->next) {}
 
-            return _get(entry, fallback);
-        }
-
-        return fallback;
+        return _get(entry, fallback);
     }
 
     T getFirst(T& fallback, const bool removeObj) noexcept
@@ -502,7 +464,7 @@ private:
         return data->value;
     }
 
-    const T& _get(ListHead* const entry, const T& fallback) const noexcept
+    const T& _get(const ListHead* const entry, const T& fallback) const noexcept
     {
         const Data* const data(list_entry_const(entry, Data, siblings));
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, fallback);

@@ -144,7 +144,7 @@ const char* CarlaEngineClient::getAudioPortName(const bool isInput, const uint i
     CarlaStringList& portList(isInput ? pData->audioInList : pData->audioOutList);
     CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
 
-    return portList.getAt(index, nullptr);
+    return portList.getAt(index);
 }
 
 const char* CarlaEngineClient::getCVPortName(const bool isInput, const uint index) const noexcept
@@ -152,7 +152,7 @@ const char* CarlaEngineClient::getCVPortName(const bool isInput, const uint inde
     CarlaStringList& portList(isInput ? pData->cvInList : pData->cvOutList);
     CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
 
-    return portList.getAt(index, nullptr);
+    return portList.getAt(index);
 }
 
 const char* CarlaEngineClient::getEventPortName(const bool isInput, const uint index) const noexcept
@@ -160,7 +160,7 @@ const char* CarlaEngineClient::getEventPortName(const bool isInput, const uint i
     CarlaStringList& portList(isInput ? pData->eventInList : pData->eventOutList);
     CARLA_SAFE_ASSERT_RETURN(index < portList.count(), nullptr);
 
-    return portList.getAt(index, nullptr);
+    return portList.getAt(index);
 }
 
 void CarlaEngineClient::_addAudioPortName(const bool isInput, const char* const name)

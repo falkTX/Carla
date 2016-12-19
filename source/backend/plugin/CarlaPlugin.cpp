@@ -263,7 +263,6 @@ const MidiProgramData& CarlaPlugin::getMidiProgramData(const uint32_t index) con
 
 const CustomData& CarlaPlugin::getCustomData(const uint32_t index) const noexcept
 {
-    CARLA_SAFE_ASSERT_RETURN(index < pData->custom.count(), kCustomDataNull);
     return pData->custom.getAt(index, kCustomDataFallback);
 }
 

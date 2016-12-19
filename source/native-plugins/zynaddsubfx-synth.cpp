@@ -49,20 +49,18 @@ public:
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fRetProgram({0, 0, nullptr}),
 #endif
-          fPrograms() {}
+          fProgramCount(0),
+          fPrograms(nullptr) {}
 
     ~ZynAddSubFxPrograms() noexcept
     {
         if (! fInitiated)
             return;
 
-        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin2(); it.valid(); it.next())
-        {
-            const ProgramInfo* const& pInfo(it.getValue(nullptr));
-            delete pInfo;
-        }
+        for (uint32_t i=0; i<fProgramCount; ++i)
+            delete fPrograms[i];
 
-        fPrograms.clear();
+        delete[] fPrograms;
     }
 
     void initIfNeeded()
@@ -71,7 +69,8 @@ public:
             return;
         fInitiated = true;
 
-        fPrograms.append(new ProgramInfo(0, 0, "default", ""));
+        std::vector<const ProgramInfo*> programs;
+        programs.push_back(new ProgramInfo(0, 0, "default", ""));
 
         Config config;
         config.init();
@@ -98,22 +97,27 @@ public:
                 if (instrument.name.empty() || instrument.name[0] == ' ')
                     continue;
 
-                fPrograms.append(new ProgramInfo(i+1, ninstrument, instrument.name.c_str(), instrument.filename.c_str()));
+                programs.push_back(new ProgramInfo(i+1, ninstrument, instrument.name.c_str(), instrument.filename.c_str()));
             }
         }
+
+        fPrograms = new const ProgramInfo*[programs.size()];
+
+        for (const ProgramInfo* p : programs)
+            fPrograms[fProgramCount++] = p;
     }
 
     uint32_t getNativeMidiProgramCount() const noexcept
     {
-        return static_cast<uint32_t>(fPrograms.count());
+        return fProgramCount;
     }
 
     const NativeMidiProgram* getNativeMidiProgramInfo(const uint32_t index) const noexcept
     {
-        if (index >= fPrograms.count())
+        if (index >= fProgramCount)
             return nullptr;
 
-        const ProgramInfo* const pInfo(fPrograms.getAt(index, nullptr));
+        const ProgramInfo* const pInfo(fPrograms[index]);
         CARLA_SAFE_ASSERT_RETURN(pInfo != nullptr, nullptr);
 
         fRetProgram.bank    = pInfo->bank;
@@ -125,9 +129,9 @@ public:
 
     const char* getZynProgramFilename(const uint32_t bank, const uint32_t program) const noexcept
     {
-        for (LinkedList<const ProgramInfo*>::Itenerator it = fPrograms.begin2(); it.valid(); it.next())
+        for (uint32_t i=0; i<fProgramCount; ++i)
         {
-            const ProgramInfo* const& pInfo(it.getValue(nullptr));
+            const ProgramInfo* const pInfo(fPrograms[i]);
 
             if (pInfo->bank != bank)
                 continue;
@@ -179,7 +183,8 @@ private:
 
     bool fInitiated;
     mutable NativeMidiProgram fRetProgram;
-    LinkedList<const ProgramInfo*> fPrograms;
+    uint32_t fProgramCount;
+    const ProgramInfo** fPrograms;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(ZynAddSubFxPrograms)

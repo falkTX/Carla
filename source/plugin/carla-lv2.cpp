@@ -1753,11 +1753,15 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
     /* extension_data */ lv2_extension_data
     };
 
-    LV2_Descriptor* const lv2Desc(new LV2_Descriptor);
+    LV2_Descriptor* lv2Desc;
+
+    try {
+        lv2Desc = new LV2_Descriptor;
+    } CARLA_SAFE_EXCEPTION_RETURN("new LV2_Descriptor", nullptr);
+
     std::memcpy(lv2Desc, &lv2DescTmp, sizeof(LV2_Descriptor));
 
     plm.lv2Descs.append(lv2Desc);
-
     return lv2Desc;
 }
 

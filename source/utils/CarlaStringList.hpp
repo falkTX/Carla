@@ -244,6 +244,23 @@ public:
 
     // -------------------------------------------------------------------
 
+    const char* getAt(const std::size_t index) const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0 && index < fCount, nullptr);
+
+        std::size_t i = 0;
+        ListHead* entry = fQueue.next;
+
+        for (; i++ != index; entry = entry->next) {}
+
+        const Data* const data(list_entry_const(entry, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        return data->value;
+    }
+
+    // -------------------------------------------------------------------
+
     void remove(Itenerator& it) noexcept
     {
         if (const char* const string = it.getValue(nullptr))
