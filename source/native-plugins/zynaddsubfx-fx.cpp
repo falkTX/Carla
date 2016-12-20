@@ -43,6 +43,9 @@ protected:
         : NativePluginClass(host),
           fParamCount(paramCount-2), // volume and pan handled by host
           fProgramCount(programCount),
+          fParamValues(new uchar[paramCount]),
+          fParamsChanged(new bool[paramCount]),
+          fNextProgram(-1),
           fBufferSize(getBufferSize()),
           fSampleRate(getSampleRate()),
           fFilterParams(nullptr),
@@ -56,6 +59,8 @@ protected:
         efxoutr = new float[fBufferSize];
         FloatVectorOperations::clear(efxoutl, ibufferSize);
         FloatVectorOperations::clear(efxoutr, ibufferSize);
+
+        std::memset(fParamsChanged, 0, sizeof(bool)*fParamCount);
 
         doReinit(true);
     }
@@ -109,16 +114,13 @@ protected:
     {
         const int ivalue(roundToIntAccurate(carla_fixedValue(0.0f, 127.0f, value)));
 
-        fEffect->changepar(static_cast<int>(index+2), static_cast<uchar>(ivalue));
+        fParamValues[index] = static_cast<uchar>(ivalue);
+        fParamsChanged[index] = true;
     }
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
-        fEffect->setpreset(static_cast<uchar>(program));
-
-        // reset volume and pan
-        fEffect->changepar(0, 127);
-        fEffect->changepar(1, 64);
+        fNextProgram = program;
     }
 
     // -------------------------------------------------------------------
@@ -142,6 +144,32 @@ protected:
             FloatVectorOperations::copyWithMultiply(outBuffer[1], inBuffer[1], 0.5f, iframes);
         else
             FloatVectorOperations::multiply(outBuffer[1], 0.5f, iframes);
+
+        const int32_t nextProgram = fNextProgram;
+        fNextProgram = -1;
+
+        if (nextProgram >= 0)
+        {
+            fEffect->setpreset(static_cast<uchar>(nextProgram));
+
+            // reset volume and pan
+            fEffect->changepar(0, 127);
+            fEffect->changepar(1, 64);
+
+            // ignore next
+            std::memset(fParamsChanged, 0, sizeof(bool)*fParamCount);
+        }
+        else
+        {
+            for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
+            {
+                if (! fParamsChanged[i])
+                    continue;
+
+                fEffect->changepar(i+2, fParamValues[i]);
+                fParamsChanged[i] = false;
+            }
+        }
 
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
@@ -200,6 +228,9 @@ protected:
         if (firstInit)
         {
             fEffect->setpreset(0);
+
+            for (int i=0, count=static_cast<int>(fParamCount); i<count; ++i)
+                fParamValues[i] = fEffect->getpar(i+2);
         }
         else
         {
@@ -216,6 +247,10 @@ protected:
 
     const uint32_t fParamCount;
     const uint32_t fProgramCount;
+
+    uchar* const fParamValues;
+    bool*  const fParamsChanged;
+    int32_t      fNextProgram;
 
     uint32_t fBufferSize;
     double   fSampleRate;
