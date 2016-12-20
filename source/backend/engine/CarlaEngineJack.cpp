@@ -1555,18 +1555,25 @@ protected:
 #else
         if (pData->curPluginCount == 0 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
-            // pass-through
-            // TODO MIDI as well
             float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
             float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
             float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
             float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
-            void*  const eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
+            // assert buffers
+            CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioIn2 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioOut1 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioOut2 != nullptr,);
+
+            // pass-through
             FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
             FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
 
-            jackbridge_midi_clear_buffer(eventOut);
+            // TODO pass-through MIDI as well
+            if (void* const eventOut = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes))
+                jackbridge_midi_clear_buffer(eventOut);
+
             return;
         }
 
@@ -1598,15 +1605,11 @@ protected:
             void* const  eventIn   = jackbridge_port_get_buffer(fRackPorts[kRackPortEventIn],  nframes);
             void* const  eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
 
-#if 1
             // assert buffers
-            CARLA_SAFE_ASSERT(audioIn1 != nullptr);
-            CARLA_SAFE_ASSERT(audioIn2 != nullptr);
-            CARLA_SAFE_ASSERT(audioOut1 != nullptr);
-            CARLA_SAFE_ASSERT(audioOut2 != nullptr);
-            CARLA_SAFE_ASSERT(eventIn != nullptr);
-            CARLA_SAFE_ASSERT(eventOut != nullptr);
-#endif
+            CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioIn2 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioOut1 != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(audioOut2 != nullptr,);
 
             // create audio buffers
             const float* inBuf[2]  = { audioIn1, audioIn2 };
@@ -1616,6 +1619,7 @@ protected:
             carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
             carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
 
+            if (eventIn != nullptr)
             {
                 ushort engineEventIndex = 0;
 
@@ -1645,6 +1649,7 @@ protected:
                 pData->graph.process(pData, inBuf, outBuf, nframes);
 
             // output control
+            if (eventOut != nullptr)
             {
                 jackbridge_midi_clear_buffer(eventOut);
 
