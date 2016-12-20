@@ -651,6 +651,8 @@ void ADnote::legatonote(LegatoParams lpars)
                  * (1.0f - pars.VoicePar[nvoice].PVolume / 127.0f))             // -60 dB .. 0 dB
             * VelF(velocity,
                    pars.VoicePar[nvoice].PAmpVelocityScaleFunction); //velocity
+        if(pars.VoicePar[nvoice].PVolume == 0)
+            NoteVoicePar[nvoice].Volume = 0;
 
         if(pars.VoicePar[nvoice].PVolumeminus != 0)
             NoteVoicePar[nvoice].Volume = -NoteVoicePar[nvoice].Volume;
@@ -808,6 +810,8 @@ void ADnote::initparameters(WatchManager *wm, const char *prefix)
         /* Voice Amplitude Parameters Init */
         vce.Volume = powf(0.1f, 3.0f * (1.0f - param.PVolume / 127.0f)) // -60dB..0dB
                      * VelF(velocity, param.PAmpVelocityScaleFunction);
+        if(param.PVolume == 0)
+            vce.Volume = 0;
 
         if(param.PVolumeminus)
             vce.Volume = -vce.Volume;
@@ -1523,6 +1527,15 @@ inline void ADnote::ComputeVoicePinkNoise(int nvoice)
     }
 }
 
+inline void ADnote::ComputeVoiceDC(int nvoice)
+{
+    for(int k = 0; k < unison_size[nvoice]; ++k) {
+        float *tw = tmpwave_unison[k];
+        for(int i = 0; i < synth.buffersize; ++i)
+            tw[i] = 1.0f;
+    }
+}
+
 
 
 /*
@@ -1568,8 +1581,11 @@ int ADnote::noteout(float *outl, float *outr)
             case 1:
                 ComputeVoiceWhiteNoise(nvoice);
                 break;
-            default:
+            case 2:
                 ComputeVoicePinkNoise(nvoice);
+                break;
+            default:
+                ComputeVoiceDC(nvoice);
                 break;
         }
         // Voice Processing

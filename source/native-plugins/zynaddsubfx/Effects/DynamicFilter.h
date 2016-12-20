@@ -25,7 +25,8 @@ class DynamicFilter:public Effect
         ~DynamicFilter();
         void out(const Stereo<float *> &smp);
 
-        void setpreset(unsigned char npreset);
+        void setpreset(unsigned char npreset) { setpreset(npreset, false); };
+        void setpreset(unsigned char npreset, bool protect);
         void changepar(int npar, unsigned char value);
         unsigned char getpar(int npar) const;
         void cleanup(void);
@@ -45,6 +46,7 @@ class DynamicFilter:public Effect
         void setdepth(unsigned char _Pdepth);
         void setampsns(unsigned char _Pampsns);
 
+        void setfilterpreset(unsigned char npreset);
         void reinitfilter(void);
 
         //Internal Values

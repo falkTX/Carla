@@ -119,7 +119,8 @@ void *WavEngine::AudioThread()
                                                -32768,
                                                32767);
         }
-        file->writeStereoSamples(synth.buffersize, recordbuf_16bit);
+        if(file)
+            file->writeStereoSamples(synth.buffersize, recordbuf_16bit);
     }
 
     delete[] recordbuf_16bit;

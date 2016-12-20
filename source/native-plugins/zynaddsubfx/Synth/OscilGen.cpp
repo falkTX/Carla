@@ -27,8 +27,6 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
-pthread_t main_thread;
-
 #define rObject OscilGen
 const rtosc::Ports OscilGen::non_realtime_ports = {
     rSelf(OscilGen),
@@ -57,7 +55,7 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             "Base function modulation parameter"),
     rParamZyn(Pbasefuncmodulationpar3, rShort("p3"),
             "Base function modulation parameter"),
-    rParamZyn(Pwaveshaping, "Degree Of Waveshaping"),
+    rParamZyn(Pwaveshaping, rShort("amount"), "Degree Of Waveshaping"),
     rOption(Pwaveshapingfunction, rShort("distort"),
             rOptions(Undistorted,
                 Arctangent, Asymmetric, Pow, Sine, Quantisize,
@@ -75,7 +73,7 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
     rOption(Psatype, rShort("spec. adj."), rOptions(None, Pow, ThrsD, ThrsU),
             "Spectral Adjustment Type"),
     rParamZyn(Psapar, rShort("p1"), "Spectral Adjustment Parameter"),
-    rParamI(Pharmonicshift, rShort("shift"), "Amount of shift on harmonics"),
+    rParamI(Pharmonicshift, rLinear(-64,64), rShort("shift"), "Amount of shift on harmonics"),
     rToggle(Pharmonicshiftfirst, rShort("pre/post"), "If harmonics are shifted before waveshaping/filtering"),
     rOption(Pmodulation, rShort("FM"), rOptions(None, Rev, Sine, Power),
             "Frequency Modulation To Combined Spectra"),
@@ -95,7 +93,8 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
             else {
                 phase = rtosc_argument(m,0).i;
                 //XXX hack hack
-                char *repath = strdup(d.loc);
+                char  repath[128];
+                strcpy(repath, d.loc);
                 char *edit   = strrchr(repath, '/')+1;
                 strcpy(edit, "prepare");
                 OscilGen &o = *((OscilGen*)d.obj);
@@ -119,7 +118,8 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
                 mag = rtosc_argument(m,0).i;
                 //printf("setting magnitude\n\n");
                 //XXX hack hack
-                char *repath = strdup(d.loc);
+                char  repath[128];
+                strcpy(repath, d.loc);
                 char *edit   = strrchr(repath, '/')+1;
                 strcpy(edit, "prepare");
                 OscilGen &o = *((OscilGen*)d.obj);
@@ -163,10 +163,22 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
     {"convert2sine:", rProp(non-realtime) rDoc("Translates waveform into FS"),
         NULL, [](const char *, rtosc::RtData &d) {
             ((OscilGen*)d.obj)->convert2sine();
+            //XXX hack hack
+            char  repath[128];
+            strcpy(repath, d.loc);
+            char *edit   = strrchr(repath, '/')+1;
+            *edit = 0;
+            d.reply("/damage", "s", repath);
         }},
     {"use-as-base:", rProp(non-realtime) rDoc("Translates current waveform into base"),
         NULL, [](const char *, rtosc::RtData &d) {
             ((OscilGen*)d.obj)->useasbase();
+            //XXX hack hack
+            char  repath[128];
+            strcpy(repath, d.loc);
+            char *edit   = strrchr(repath, '/')+1;
+            *edit = 0;
+            d.reply("/damage", "s", repath);
         }}};
 
 #define rForwardCb [](const char *msg, rtosc::RtData &d) {\
@@ -174,7 +186,7 @@ const rtosc::Ports OscilGen::non_realtime_ports = {
 const rtosc::Ports OscilGen::realtime_ports{
     rSelf(OscilGen),
     rPresetType,
-    rParamZyn(Prand, rShort("phase rnd"), "Oscilator Phase Randomness: smaller than 0 is \""
+    rParamZyn(Prand, rLinear(-64, 63), rShort("phase rnd"), "Oscillator Phase Randomness: smaller than 0 is \""
             "group\", larger than 0 is for each harmonic"),
     rParamZyn(Pamprandpower, rShort("variance"),
             "Variance of harmonic randomness"),
@@ -187,7 +199,7 @@ const rtosc::Ports OscilGen::realtime_ports{
             "Base frequency of adaptive harmonic (30..3000Hz)"),
     rParamI(Padaptiveharmonicspower, rShort("amount"), rLinear(0,200),
             "Adaptive Harmonic Strength"),
-    rParamZyn(Padaptiveharmonicspar, rShort("par"),
+    rParamI(Padaptiveharmonicspar, rShort("power"), rLinear(0,100),
             "Adaptive Harmonics Postprocessing Power"),
     {"waveform:", rDoc("Returns waveform points"),
         NULL, [](const char *, rtosc::RtData &d) {
@@ -227,6 +239,10 @@ const rtosc::MergePorts OscilGen::ports{
     &OscilGen::realtime_ports,
     &OscilGen::non_realtime_ports
 };
+
+#ifndef M_PI_2
+# define M_PI_2		1.57079632679489661923	/* pi/2 */
+#endif
 
 
 //operations on FFTfreqs

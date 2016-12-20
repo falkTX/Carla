@@ -364,9 +364,11 @@ void Bank::rescanforbanks()
     //sort the banks
     sort(banks.begin(), banks.end());
 
+    for(int i = 0; i < (int) banks.size(); ++i)
+        db->addBankDir(banks[i].dir);
+
     //remove duplicate bank names
     for(int j = 0; j < (int) banks.size() - 1; ++j) {
-        db->addBankDir(banks[j].dir);
         int dupl = 0;
         for(int i = j + 1; i < (int) banks.size(); ++i) {
             if(banks[i].name == banks[j].name) {
@@ -466,6 +468,20 @@ std::vector<std::string> Bank::search(std::string s) const
     for(auto e:vec) {
         out.push_back(e.name);
         out.push_back(e.bank+e.file);
+    }
+    return out;
+}
+        
+std::vector<std::string> Bank::blist(std::string s)
+{
+    std::vector<std::string> out;
+    int result = loadbank(s);
+    for(int i=0; i<128; ++i) {
+        if(ins[i].filename.empty())
+            out.push_back("Empty Preset");
+        else
+            out.push_back(ins[i].name);
+        out.push_back(to_s(i));
     }
     return out;
 }

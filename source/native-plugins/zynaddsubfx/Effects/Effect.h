@@ -55,7 +55,8 @@ struct EffectParams
      * @param Ppreset_     chosen preset
      * @return Initialized Effect Parameter object*/
     EffectParams(Allocator &alloc_, bool insertion_, float *efxoutl_, float *efxoutr_,
-            unsigned char Ppreset_, unsigned int srate, int bufsize, FilterParams *filterpars_=0);
+            unsigned char Ppreset_, unsigned int srate, int bufsize, FilterParams *filterpars_,
+            bool filterprotect=false);
 
 
     Allocator &alloc;
@@ -66,6 +67,7 @@ struct EffectParams
     unsigned int srate;
     int bufsize;
     FilterParams *filterpars;
+    bool filterprotect;
 };
 
 /**this class is inherited by the all effects(Reverb, Echo, ..)*/

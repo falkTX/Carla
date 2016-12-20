@@ -445,7 +445,7 @@ if (filterwindow!=NULL){
         class Fl_Osc_Check
       }
       Fl_Check_Button chorusp11 {
-        label Substract
+        label Subtract
         tooltip {inverts the output} xywh {185 10 70 20} box THIN_UP_BOX down_box DOWN_BOX color 51 labelsize 10
         code0 {o->init("parameter11");}
         class Fl_Osc_Check
@@ -599,7 +599,7 @@ if (filterwindow!=NULL){
         class Fl_Osc_Dial
       }
       Fl_Check_Button phaserp10 {
-        label Substract
+        label Subtract
         tooltip {inverts output} xywh {200 10 74 20} box THIN_UP_BOX down_box DOWN_BOX color 51 labelfont 1 labelsize 10
         code0 {o->init("parameter10");}
         class Fl_Osc_Check

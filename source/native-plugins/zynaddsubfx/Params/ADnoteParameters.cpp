@@ -78,25 +78,29 @@ static const Ports voicePorts = {
             "Subvoice vibratto speed"),
     rOption(Unison_invert_phase,       rShort("inv."),
             rOptions(none, random, 50%, 33%, 25%), "Subvoice Phases"),
-    rOption(Type,            rShort("type"), rOptions(Sound,White,Pink), "Type of Sound"),
+    rOption(Type,            rShort("type"), rOptions(Sound,White,Pink,DC), "Type of Sound"),
     rParamZyn(PDelay,        rShort("delay"), "Voice Startup Delay"),
     rToggle(Presonance,      rShort("enable"), "Resonance Enable"),
     rParamI(Pextoscil,       rShort("ext."),
-            rMap(min, -1), rMap(max, 16), "External Oscilator Selection"),
+            rMap(min, -1), rMap(max, 16), "External Oscillator Selection"),
     rParamI(PextFMoscil,     rShort("ext."),
-            rMap(min, -1), rMap(max, 16), "External FM Oscilator Selection"),
+            rMap(min, -1), rMap(max, 16), "External FM Oscillator Selection"),
     rParamZyn(Poscilphase,   rShort("phase"),    "Oscillator Phase"),
     rParamZyn(PFMoscilphase, rShort("phase"),  "FM Oscillator Phase"),
     rToggle(Pfilterbypass,   rShort("bypass"), "Filter Bypass"),
 
     //Freq Stuff
     rToggle(Pfixedfreq,           rShort("fixed"),  "If frequency is fixed"),
-    rParamZyn(PfixedfreqET,       rShort("e.t."),   "Equal Tempermant Parameter"),
+    rParamZyn(PfixedfreqET,       rShort("e.t."),   "Equal Temperament Parameter"),
     rParamZyn(PBendAdjust,        rShort("bend"),   "Pitch bend adjustment"),
     rParamZyn(POffsetHz,          rShort("offset"), "Voice constant offset"),
-    rParamI(PDetune,              rShort("fine"),   "Fine Detune"),
+    //nominally -8192..8191
+    rParamI(PDetune,              rShort("fine"),
+            rLinear(0, 16383), "Fine Detune"),
     rParamI(PCoarseDetune,        rShort("coarse"), "Coarse Detune"),
-    rParamZyn(PDetuneType,        rShort("type"),   "Magnitude of Detune"),
+    rParamZyn(PDetuneType,        rShort("type"),
+            rOptions(L35cents, L10cents, E100cents, E1200cents),
+            "Magnitude of Detune"),
     rToggle(PFreqEnvelopeEnabled, rShort("enable"), "Frequency Envelope Enable"),
     rToggle(PFreqLfoEnabled,      rShort("enable"), "Frequency LFO Enable"),
 
@@ -118,14 +122,18 @@ static const Ports voicePorts = {
 
     //Modulator Stuff
     rOption(PFMEnabled, rShort("mode"), rOptions(none, morph, ring, phase,
-                frequency, pitch), "Modulator mode"),
+                frequency, pulse), "Modulator mode"),
     rParamI(PFMVoice,                   rShort("voice"),  "Modulator Oscillator Selection"),
     rParamZyn(PFMVolume,                rShort("vol."),   "Modulator Magnitude"),
     rParamZyn(PFMVolumeDamp,            rShort("damp."),  "Modulator HF dampening"),
     rParamZyn(PFMVelocityScaleFunction, rShort("sense"),  "Modulator Velocity Function"),
-    rParamI(PFMDetune,                  rShort("fine"),   "Modulator Fine Detune"),
+    //nominally -8192..8191
+    rParamI(PFMDetune,                  rShort("fine"),
+            rLinear(0, 16383), "Modulator Fine Detune"),
     rParamI(PFMCoarseDetune,            rShort("coarse"), "Modulator Coarse Detune"),
-    rParamZyn(PFMDetuneType,            rShort("type"),   "Modulator Detune Magnitude"),
+    rParamZyn(PFMDetuneType,            rShort("type"),
+            rOptions(L35cents, L10cents, E100cents, E1200cents),
+            "Modulator Detune Magnitude"),
     rToggle(PFMFixedFreq,               rShort("fixed"),  "Modulator Frequency Fixed"),
     rToggle(PFMFreqEnvelopeEnabled,  rShort("enable"), "Modulator Frequency Envelope"),
     rToggle(PFMAmpEnvelopeEnabled,   rShort("enable"), "Modulator Amplitude Envelope"),
@@ -143,7 +151,8 @@ static const Ports voicePorts = {
             //TODO do the same for the other engines
             d.reply(d.loc, "f", getdetune(detuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+    {"octave::c:i", rProp(parameter) rShort("octave") rLinear(-8, 7) rDoc("Octave note offset"),
+        NULL,
         [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
@@ -157,7 +166,8 @@ static const Ports voicePorts = {
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+    {"coarsedetune::c:i", rProp(parameter) rShort("coarse") rLinear(-64,63)
+        rDoc("Coarse note detune"), NULL,
         [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
@@ -183,7 +193,7 @@ static const Ports voicePorts = {
             //TODO do the same for the other engines
             d.reply(d.loc, "f", getdetune(detuneType, 0, obj->PFMDetune));
         }},
-    {"FMoctave::c:i", rProp(parameter) rDoc("Octave note offset for modulator"), NULL,
+    {"FMoctave::c:i", rProp(parameter) rShort("octave") rLinear(-8,7) rDoc("Octave note offset for modulator"), NULL,
         [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
@@ -197,7 +207,8 @@ static const Ports voicePorts = {
                 obj->PFMCoarseDetune = k*1024 + obj->PFMCoarseDetune%1024;
             }
         }},
-    {"FMcoarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune for modulator"),
+    {"FMcoarsedetune::c:i", rProp(parameter) rShort("coarse") rLinear(-64,63)
+        rDoc("Coarse note detune for modulator"),
         NULL, [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
@@ -239,7 +250,9 @@ static const Ports globalPorts = {
     rToggle(PStereo, rShort("stereo"), "Mono/Stereo Enable"),
 
     //Frequency
-    rParamI(PDetune,         rShort("fine"),   "Fine Detune"),
+    //nominally -8192..8191
+    rParamI(PDetune,              rShort("fine"),
+            rLinear(0, 16383), "Fine Detune"),
     rParamI(PCoarseDetune,   rShort("coarse"), "Coarse Detune"),
     rParamZyn(PDetuneType,   rShort("type"),
             rOptions(L35cents, L10cents, E100cents, E1200cents),
@@ -272,7 +285,8 @@ static const Ports globalPorts = {
             rObject *obj = (rObject *)d.obj;
             d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+    {"octave::c:i", rProp(parameter) rShort("octave") rLinear(-8,7)
+        rDoc("Octave note offset"), NULL,
         [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;
@@ -286,7 +300,8 @@ static const Ports globalPorts = {
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+    {"coarsedetune::c:i", rProp(parameter) rShort("coarse") rLinear(-64, 63)
+        rDoc("Coarse note detune"), NULL,
         [](const char *msg, RtData &d)
         {
             rObject *obj = (rObject *)d.obj;

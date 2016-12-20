@@ -56,6 +56,7 @@ class AlsaEngine:public AudioOut, MidiIn
             std::string device;
             snd_seq_t  *handle;
             int alsaId;
+            bool exiting;
             pthread_t pThread;
         } midi;
 

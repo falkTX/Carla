@@ -77,6 +77,7 @@ class Bank
         } ins[BANK_SIZE];
 
         std::vector<std::string> search(std::string) const;
+        std::vector<std::string> blist(std::string);
 
     private:
 

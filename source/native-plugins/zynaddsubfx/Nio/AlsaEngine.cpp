@@ -105,7 +105,15 @@ void *AlsaEngine::MidiThread(void)
     snd_seq_event_t *event;
     MidiEvent ev;
     set_realtime();
-    while(snd_seq_event_input(midi.handle, &event) > 0) {
+    while(1) {
+        if(midi.exiting)
+            break;
+        if(snd_seq_event_input_pending(midi.handle, 1) <= 0) {
+            usleep(10);
+            continue;
+        }
+        if(snd_seq_event_input(midi.handle, &event) < 0)
+            break;
         //ensure ev is empty
         ev.channel = 0;
         ev.num     = 0;
@@ -225,6 +233,7 @@ bool AlsaEngine::openMidi()
     if(alsaport < 0)
         return false;
 
+    midi.exiting = false;
     pthread_attr_t attr;
 
     pthread_attr_init(&attr);
@@ -239,8 +248,10 @@ void AlsaEngine::stopMidi()
         return;
 
     snd_seq_t *handle = midi.handle;
-    if((NULL != midi.handle) && midi.pThread)
-        pthread_cancel(midi.pThread);
+    if((NULL != midi.handle) && midi.pThread) {
+        midi.exiting = true;
+        pthread_join(midi.pThread, 0);
+    }
     midi.handle = NULL;
     if(handle)
         snd_seq_close(handle);
@@ -319,6 +330,18 @@ bool AlsaEngine::openAudio()
     snd_pcm_hw_params_set_periods_near(audio.handle,
                                        audio.params, &audio.periods, NULL);
 
+    /* Set buffer size (in frames). The resulting latency is given by */
+    /* latency = periodsize * periods / (rate * bytes_per_frame)      */
+    snd_pcm_uframes_t alsa_buffersize = synth.buffersize;
+    rc = snd_pcm_hw_params_set_buffer_size_near(audio.handle,
+                                               audio.params,
+                                               &alsa_buffersize);
+
+    /* At this place, ALSA's and zyn's buffer sizes may differ. */
+    /* This should not be a problem.                            */
+    if((int)alsa_buffersize != synth.buffersize)
+     cerr << "ALSA buffer size: " << alsa_buffersize << endl;
+
     /* Write the parameters to the driver */
     rc = snd_pcm_hw_params(audio.handle, audio.params);
     if(rc < 0) {
@@ -327,12 +350,6 @@ bool AlsaEngine::openAudio()
                 snd_strerror(rc));
         return false;
     }
-
-    /* Set buffer size (in frames). The resulting latency is given by */
-    /* latency = periodsize * periods / (rate * bytes_per_frame)     */
-    snd_pcm_hw_params_set_buffer_size(audio.handle,
-                                      audio.params,
-                                      synth.buffersize);
 
     //snd_pcm_hw_params_get_period_size(audio.params, &audio.frames, NULL);
     //snd_pcm_hw_params_get_period_time(audio.params, &val, NULL);
@@ -371,8 +388,12 @@ void *AlsaEngine::processAudio()
             snd_pcm_prepare(handle);
         }
         else
-        if(rc < 0)
-            cerr << "error from writei: " << snd_strerror(rc) << endl;
+        if(rc < 0) {
+            cerr << "AlsaEngine: Recovering connection..." << endl;
+            rc = snd_pcm_recover(handle, rc, 0);
+            if(rc < 0)
+             throw "Could not recover ALSA connection";
+        }
     }
     return NULL;
 }

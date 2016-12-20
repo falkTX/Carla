@@ -45,6 +45,7 @@ protected:
           fProgramCount(programCount),
           fBufferSize(getBufferSize()),
           fSampleRate(getSampleRate()),
+          fFilterParams(nullptr),
           fEffect(nullptr),
           efxoutl(nullptr),
           efxoutr(nullptr)
@@ -191,7 +192,9 @@ protected:
             delete fEffect;
         }
 
-        EffectParams pars(fAllocator.getObject(), false, efxoutl, efxoutr, 0, static_cast<uint>(fSampleRate), static_cast<int>(fBufferSize));
+        EffectParams pars(fAllocator.getObject(), false, efxoutl, efxoutr, 0,
+                          static_cast<uint>(fSampleRate), static_cast<int>(fBufferSize), &fFilterParams);
+
         fEffect = new ZynFX(pars);
 
         if (firstInit)
@@ -217,6 +220,7 @@ protected:
     uint32_t fBufferSize;
     double   fSampleRate;
 
+    FilterParams fFilterParams;
     Effect* fEffect;
     float*  efxoutl;
     float*  efxoutr;

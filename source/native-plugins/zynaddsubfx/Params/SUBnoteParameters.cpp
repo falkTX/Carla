@@ -40,10 +40,11 @@ static const rtosc::Ports SUBnotePorts = {
     rParamZyn(PVolume,  rShort("volume"), "Volume"),
     rParamZyn(PPanning, rShort("panning"), "Left Right Panning"),
     rParamZyn(PAmpVelocityScaleFunction, rShort("sense"), "Amplitude Velocity Sensing function"),
-    rParamI(PDetune,       rShort("detune"), "Detune in detune type units"),
+    rParamI(PDetune,       rShort("detune"), rLinear(0, 16383), "Detune in detune type units"),
     rParamI(PCoarseDetune, rShort("cdetune"), "Coarse Detune"),
     //Real values needed
-    rOption(PDetuneType,               rShort("det. scl."), rOptions(100 cents, 200 cents, 500 cents), "Detune Scale"),
+    rOption(PDetuneType,               rShort("det. scl."),
+            rOptions(L35 cents, L10 cents, E100 cents, E1200 cents), "Detune Scale"),
     rToggle(PFreqEnvelopeEnabled,      rShort("enable"), "Enable for Frequency Envelope"),
     rToggle(PBandWidthEnvelopeEnabled, rShort("enable"), "Enable for Bandwidth Envelope"),
     rToggle(PGlobalFilterEnabled,                 rShort("enable"), "Enable for Global Filter"),
@@ -65,13 +66,13 @@ static const rtosc::Ports SUBnotePorts = {
             "Overtone Parameter"),
     rParamI(POvertoneSpread.par2, rMap(min, 0), rMap(max, 255), rShort("p2"),
             "Overtone Parameter"),
-    rParamI(POvertoneSpread.par3, rMap(min, 0), rMap(max, 255), rShort("p3"),
-            "Overtone Parameter"),
+    rParamI(POvertoneSpread.par3, rMap(min, 0), rMap(max, 255), rShort("forceH"),
+            "Force Overtones To Harmonics"),
 #undef rChangeCb
 #define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
-    rParamZyn(Pnumstages, rShort("stages"), rMap(min, 1), rMap(max, 5), "Number of filter stages"),
+    rParamI(Pnumstages, rShort("stages"), rMap(min, 1), rMap(max, 5), "Number of filter stages"),
     rParamZyn(Pbandwidth, rShort("bandwidth"), "Bandwidth of filters"),
-    rParamZyn(Phmagtype,  rShort("mag. type"),"How the magnitudes are computed (0=linear,1=-60dB,2=-60dB)"),
+    rParamZyn(Phmagtype,  rShort("mag. type"), rOptions(linear, -40dB, -60dB, -80dB, -100dB), "Magnitude scale"),
     rArray(Phmag, MAX_SUB_HARMONICS, "Harmonic magnitudes"),
     rArray(Phrelbw, MAX_SUB_HARMONICS, "Relative bandwidth"),
     rParamZyn(Pbwscale, rShort("stretch"), "Bandwidth scaling with frequency"),
@@ -95,7 +96,8 @@ static const rtosc::Ports SUBnotePorts = {
         d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         rEnd},
     //weird stuff for PCoarseDetune
-    {"octave::c:i", rProp(parameter) rDoc("Note octave shift"), NULL,
+    {"octave::c:i", rProp(parameter) rShort("octave") rLinear(-8,7)
+        rDoc("Note octave shift"), NULL,
         rBegin;
         if(!rtosc_narguments(msg)) {
             int k=obj->PCoarseDetune/1024;
@@ -107,7 +109,8 @@ static const rtosc::Ports SUBnotePorts = {
             obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
         }
         rEnd},
-    {"coarsedetune::c:i", rProp(parameter) rDoc("Note coarse detune"), NULL,
+    {"coarsedetune::c:i", rProp(parameter) rShort("coarse") rLinear(-64, 63)
+        rDoc("Note coarse detune"), NULL,
         rBegin;
         if(!rtosc_narguments(msg)) {
             int k=obj->PCoarseDetune%1024;

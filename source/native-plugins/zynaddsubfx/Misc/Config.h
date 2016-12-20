@@ -46,6 +46,7 @@ class Config
             int   Interpolation;
             std::string bankRootDirList[MAX_BANK_ROOT_DIRS], currentBankDir;
             std::string presetsDirList[MAX_BANK_ROOT_DIRS];
+            std::string favoriteList[MAX_BANK_ROOT_DIRS];
             int CheckPADsynth;
             int IgnoreProgramChange;
             int UserInterfaceMode;

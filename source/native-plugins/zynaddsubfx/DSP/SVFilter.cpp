@@ -18,6 +18,8 @@
 #include "../Misc/Util.h"
 #include "SVFilter.h"
 
+#define errx(...) {}
+#define warnx(...) {}
 #ifndef errx
 #include <err.h>
 #endif

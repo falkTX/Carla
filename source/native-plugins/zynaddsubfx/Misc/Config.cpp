@@ -19,7 +19,7 @@
 #include <rtosc/port-sugar.h>
 
 #include "Config.h"
-#include "globals.h"
+#include "../globals.h"
 #include "XMLwrapper.h"
 
 #define rStdString(name, len, ...) \
@@ -135,6 +135,37 @@ static const rtosc::Ports ports = {
             float val = powf(2.0, rtosc_argument(msg, 0).i);
             c.cfg.OscilSize = val;
             d.broadcast(d.loc, "i", (int)(log(c.cfg.OscilSize*1.0)/log(2.0)));
+        }},
+    {"add-favorite:s", rDoc("Add favorite directory"), 0,
+        [](const char *msg, rtosc::RtData &d)
+        {
+            Config &c = *(Config*)d.obj;
+            for(int i=0; i<MAX_BANK_ROOT_DIRS; ++i) {
+                if(c.cfg.favoriteList[i].empty()) {
+                    c.cfg.favoriteList[i] = rtosc_argument(msg, 0).s;
+                    return;
+                }
+            }
+
+        }},
+    {"favorites:", rProp(parameter), 0,
+        [](const char *msg, rtosc::RtData &d)
+        {
+            Config &c = *(Config*)d.obj;
+            char        *argt = new char[MAX_BANK_ROOT_DIRS+1];
+            rtosc_arg_t *args = new rtosc_arg_t[MAX_BANK_ROOT_DIRS];
+            memset(argt, 0, MAX_BANK_ROOT_DIRS+1);
+            int j = 0;
+            for(int i=0; i<MAX_BANK_ROOT_DIRS; ++i) {
+                if(!c.cfg.favoriteList[i].empty()) {
+                    argt[j] = 's';
+                    args[j].s = c.cfg.favoriteList[i].c_str();
+                    j++;
+                }
+            }
+            d.replyArray(d.loc, argt, args);
+            delete [] argt;
+            delete [] args;
         }},
 };
 const rtosc::Ports &Config::ports = ::ports;
@@ -319,6 +350,13 @@ void Config::readConfig(const char *filename)
                 cfg.presetsDirList[i] = xmlcfg.getparstr("presets_root", "");
                 xmlcfg.exitbranch();
             }
+        
+        //Get favs
+        for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
+            if(xmlcfg.enterbranch("FAVSROOT", i)) {
+                cfg.favoriteList[i] = xmlcfg.getparstr("favoirtes_root", "");
+                xmlcfg.exitbranch();
+            }
 
         //linux stuff
         xmlcfg.getparstr("linux_oss_wave_out_dev",
@@ -378,6 +416,13 @@ void Config::saveConfig(const char *filename) const
         if(!cfg.presetsDirList[i].empty()) {
             xmlcfg->beginbranch("PRESETSROOT", i);
             xmlcfg->addparstr("presets_root", cfg.presetsDirList[i]);
+            xmlcfg->endbranch();
+        }
+        
+    for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
+        if(!cfg.favoriteList[i].empty()) {
+            xmlcfg->beginbranch("FAVSROOT", i);
+            xmlcfg->addparstr("favoirtes_root", cfg.favoriteList[i]);
             xmlcfg->endbranch();
         }
 

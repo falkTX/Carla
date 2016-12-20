@@ -19,6 +19,13 @@ RtData::RtData(void)
     :loc(NULL), loc_size(0), obj(NULL), matches(0), message(NULL)
 {}
 
+void RtData::replyArray(const char *path, const char *args,
+        rtosc_arg_t *vals)
+{
+    (void) path;
+    (void) args;
+    (void) vals;
+}
 void RtData::reply(const char *path, const char *args, ...)
 {
     va_list va;
@@ -30,6 +37,23 @@ void RtData::reply(const char *path, const char *args, ...)
 };
 void RtData::reply(const char *msg)
 {(void)msg;};
+void RtData::chain(const char *path, const char *args, ...)
+{
+    (void) path;
+    (void) args;
+}
+
+void RtData::chain(const char *msg)
+{
+    (void) msg;
+};
+void RtData::chainArray(const char *path, const char *args,
+        rtosc_arg_t *vals)
+{
+    (void) path;
+    (void) args;
+    (void) vals;
+};
 void RtData::broadcast(const char *path, const char *args, ...)
 {
     va_list va;
@@ -41,9 +65,18 @@ void RtData::broadcast(const char *path, const char *args, ...)
 }
 void RtData::broadcast(const char *msg)
 {reply(msg);};
+void RtData::broadcastArray(const char *path, const char *args,
+        rtosc_arg_t *vals)
+{
+    (void) path;
+    (void) args;
+    (void) vals;
+}
 
 void RtData::forward(const char *rational)
-{}
+{
+    (void) rational;
+}
 
 void metaiterator_advance(const char *&title, const char *&value)
 {

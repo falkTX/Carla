@@ -173,14 +173,6 @@ float Envelope::envout(bool doWatch)
     return out;
 }
 
-inline float Envelope::env_dB2rap(float db) {
-    return (powf(10.0f, db / 20.0f) - 0.01)/.99f;
-}
-
-inline float Envelope::env_rap2dB(float rap) {
-    return 20.0f * log10f(rap * 0.99f + 0.01);
-}
-
 /*
  * Envelope Output (dB)
  */
@@ -191,8 +183,8 @@ float Envelope::envout_dB()
         return envout(true);
 
     if((currentpoint == 1) && (!keyreleased || !forcedrelease)) { //first point is always lineary interpolated
-        float v1 = env_dB2rap(envval[0]);
-        float v2 = env_dB2rap(envval[1]);
+        float v1 = EnvelopeParams::env_dB2rap(envval[0]);
+        float v2 = EnvelopeParams::env_dB2rap(envval[1]);
         out = v1 + (v2 - v1) * t;
 
         t += inct;
@@ -204,11 +196,11 @@ float Envelope::envout_dB()
         }
 
         if(out > 0.001f)
-            envoutval = env_rap2dB(out);
+            envoutval = EnvelopeParams::env_rap2dB(out);
         else
             envoutval = MIN_ENVELOPE_DB;
     } else
-        out = env_dB2rap(envout(false));
+        out = EnvelopeParams::env_dB2rap(envout(false));
 
     float pos[2] = {(float)currentpoint + t, out};
     watchOut(pos, 2);

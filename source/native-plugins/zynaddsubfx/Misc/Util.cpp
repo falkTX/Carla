@@ -29,6 +29,7 @@
 #include <sched.h>
 #endif
 
+#define errx(...) {}
 #ifndef errx
 #include <err.h>
 #endif

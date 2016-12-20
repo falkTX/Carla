@@ -149,6 +149,7 @@ class Microtonal
         //Grab a 0..127 integer from the provided descriptor
 
         static int linetotunings(struct OctaveTuning &tune, const char *line);
+        void apply(void);
 
         const int& gzip_compression;
 };

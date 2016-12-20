@@ -11,6 +11,7 @@
   of the License, or (at your option) any later version.
 */
 
+#include <cassert>
 #include <cmath>
 #include <iostream>
 #include "DynamicFilter.h"
@@ -20,47 +21,29 @@
 #include <rtosc/port-sugar.h>
 
 #define rObject DynamicFilter
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
 rtosc::Ports DynamicFilter::ports = {
     {"preset::i", rOptions(WahWah, AutoWah, Sweep, VocalMorph1, VocalMorph1)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
-    {"Pfreq::i", rShort("freq")
-                   rDoc("Effect Frequency"), 0,
-                   rBegin;
-                   rEnd},
-    {"Pfreqrnd::i", rShort("rand")
-                    rDoc("Frequency Randomness"), 0,
-                    rBegin;
-                    rEnd},
-    {"PLFOtype::i", rShort("shape")
-                    rDoc("LFO Shape"), 0,
-                    rBegin;
-                    rEnd},
-    {"PStereo::T:F", rShort("stereo")
-                     rDoc("Stereo/Mono Mode"), 0,
-                     rBegin;
-                     rEnd},
-    {"Pdepth::i", rShort("depth")
-                  rDoc("LFO Depth"), 0,
-                  rBegin;
-                  rEnd},
-    {"Pampsns::i", rShort("sense")
-                  rDoc("how the filter varies according to the input amplitude"), 0,
-                  rBegin;
-                  rEnd},
-    {"Pampsnsinv::T:F", rShort("sns.inv")
-                   rDoc("Sense Inversion"), 0,
-                   rBegin;
-                   rEnd},
-    {"Pampsmooth::i", rShort("smooth")
-                    rDoc("how smooth the input amplitude changes the filter"), 0,
-                    rBegin;
-                    rEnd},
+    rEffPar(Pfreq,      2, rShort("freq"),      "Effect Frequency"),
+    rEffPar(Pfreqrnd,   3, rShort("rand"),      "Frequency Randomness"),
+    rEffPar(PLFOtype,   4, rShort("shape"),
+          rOptions(sin, tri), "LFO Shape"),
+    rEffPar(PStereo,    5, rShort("stereo"),    "Stereo Mode"),
+    rEffPar(Pdepth,     6, rShort("depth"),     "LFO Depth"),
+    rEffPar(Pampsns,    7, rShort("sense"),     "how the filter varies according to the input amplitude"),
+    rEffPar(Pampsnsinv, 8, rShort("sns.inv"),   "Sense Inversion"),
+    rEffPar(Pampsmooth, 9, rShort("smooth"),    "how smooth the input amplitude changes the filter"),
 };
 #undef rBegin
 #undef rEnd
@@ -77,14 +60,13 @@ DynamicFilter::DynamicFilter(EffectParams pars, const AbsTime *time)
       filterl(NULL),
       filterr(NULL)
 {
-    filterpars = memory.alloc<FilterParams>(0,0,0,time);
-    setpreset(Ppreset);
+    filterpars = pars.filterpars;
+    setpreset(Ppreset, pars.filterprotect);
     cleanup();
 }
 
 DynamicFilter::~DynamicFilter()
 {
-    memory.dealloc(filterpars);
     memory.dealloc(filterl);
     memory.dealloc(filterr);
 }
@@ -188,28 +170,8 @@ void DynamicFilter::reinitfilter(void)
     }
 }
 
-void DynamicFilter::setpreset(unsigned char npreset)
+void DynamicFilter::setfilterpreset(unsigned char npreset)
 {
-    const int     PRESET_SIZE = 10;
-    const int     NUM_PRESETS = 5;
-    unsigned char presets[NUM_PRESETS][PRESET_SIZE] = {
-        //WahWah
-        {110, 64, 80, 0, 0, 64, 0,  90, 0, 60},
-        //AutoWah
-        {110, 64, 70, 0, 0, 80, 70, 0,  0, 60},
-        //Sweep
-        {100, 64, 30, 0, 0, 50, 80, 0,  0, 60},
-        //VocalMorph1
-        {110, 64, 80, 0, 0, 64, 0,  64, 0, 60},
-        //VocalMorph1
-        {127, 64, 50, 0, 0, 96, 64, 0,  0, 60}
-    };
-
-    if(npreset >= NUM_PRESETS)
-        npreset = NUM_PRESETS - 1;
-    for(int n = 0; n < PRESET_SIZE; ++n)
-        changepar(n, presets[npreset][n]);
-
     filterpars->defaults();
 
     switch(npreset) {
@@ -298,10 +260,36 @@ void DynamicFilter::setpreset(unsigned char npreset)
 //	    for (int i=0;i<5;i++){
 //		printf("freq=%d  amp=%d  q=%d\n",filterpars->Pvowels[0].formants[i].freq,filterpars->Pvowels[0].formants[i].amp,filterpars->Pvowels[0].formants[i].q);
 //	    };
+    reinitfilter();
+}
+
+void DynamicFilter::setpreset(unsigned char npreset, bool protect)
+{
+    const int     PRESET_SIZE = 10;
+    const int     NUM_PRESETS = 5;
+    unsigned char presets[NUM_PRESETS][PRESET_SIZE] = {
+        //WahWah
+        {110, 64, 80, 0, 0, 64, 0,  90, 0, 60},
+        //AutoWah
+        {110, 64, 70, 0, 0, 80, 70, 0,  0, 60},
+        //Sweep
+        {100, 64, 30, 0, 0, 50, 80, 0,  0, 60},
+        //VocalMorph1
+        {110, 64, 80, 0, 0, 64, 0,  64, 0, 60},
+        //VocalMorph1
+        {127, 64, 50, 0, 0, 96, 64, 0,  0, 60}
+    };
+
+    if(npreset >= NUM_PRESETS)
+        npreset = NUM_PRESETS - 1;
+    for(int n = 0; n < PRESET_SIZE; ++n)
+        changepar(n, presets[npreset][n]);
+
     if(insertion == 0) //lower the volume if this is system effect
         changepar(0, presets[npreset][0] * 0.5f);
     Ppreset = npreset;
-    reinitfilter();
+    if(!protect)
+        setfilterpreset(npreset);
 }
 
 

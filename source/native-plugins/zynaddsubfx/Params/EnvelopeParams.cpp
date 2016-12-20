@@ -17,6 +17,7 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
+#include "zyn-version.h"
 #include "EnvelopeParams.h"
 #include "../Misc/Util.h"
 #include "../Misc/Time.h"
@@ -38,7 +39,7 @@ static const rtosc::Ports localPorts = {
 #define rChangeCb if(!obj->Pfreemode) obj->converttofree(); \
                   if(obj->time) { obj->last_update_timestamp = obj->time->time(); }
     rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
-    rParamZyn(Penvsustain, rProp(internal), "Location of the sustain point"),
+    rParamZyn(Penvsustain, "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
     rParams(Penvval, MAX_ENVELOPE_POINTS, "Envelope Values"),
     rParamZyn(Penvstretch,  rShort("stretch"),
@@ -54,28 +55,46 @@ static const rtosc::Ports localPorts = {
     rParamZyn(PS_val, rShort("s.val"), "Sustain Value"),
     rParamZyn(PR_dt,  rShort("r.dt"),  "Release Time"),
     rParamZyn(PR_val, rShort("r.val"), "Release Value"),
-    
-    {"envdt:", rDoc("Envelope Delay Times"), NULL,
+
+    {"Envmode:", rDoc("Envelope variant type"), NULL,
         rBegin;
-        const int N = MAX_ENVELOPE_POINTS;
-        rtosc_arg_t args[N];
-        char arg_types[N+1] = {0};
-        for(int i=0; i<N; ++i) {
-            args[i].f    = env->getdt(i);
-            arg_types[i] = 'f';
-        }
-        d.replyArray(d.loc, arg_types, args);
+        d.reply(d.loc, "i", env->Envmode);
         rEnd},
-    {"envval:", rDoc("Envelope Delay Times"), NULL,
+
+    {"envdt", rDoc("Envelope Delay Times"), NULL,
         rBegin;
         const int N = MAX_ENVELOPE_POINTS;
-        rtosc_arg_t args[N];
-        char arg_types[N+1] = {0};
-        for(int i=0; i<N; ++i) {
-            args[i].f    = env->Penvval[i]/127.0f;
-            arg_types[i] = 'f';
+        const int M = rtosc_narguments(msg);
+        if(M == 0) {
+            rtosc_arg_t args[N];
+            char arg_types[N+1] = {0};
+            for(int i=0; i<N; ++i) {
+                args[i].f    = env->getdt(i);
+                arg_types[i] = 'f';
+            }
+            d.replyArray(d.loc, arg_types, args);
+        } else {
+            for(int i=0; i<N && i<M; ++i)
+                env->Penvdt[i] = env->inv_dt(rtosc_argument(msg, i).f);
         }
-        d.replyArray(d.loc, arg_types, args);
+        rEnd},
+    {"envval", rDoc("Envelope Delay Times"), NULL,
+        rBegin;
+        const int N = MAX_ENVELOPE_POINTS;
+        const int M = rtosc_narguments(msg);
+        if(M == 0) {
+            rtosc_arg_t args[N];
+            char arg_types[N+1] = {0};
+            for(int i=0; i<N; ++i) {
+                args[i].f    = env->Penvval[i]/127.0f;
+                arg_types[i] = 'f';
+            }
+            d.replyArray(d.loc, arg_types, args);
+        } else {
+            for(int i=0; i<N && i<M; ++i) {
+                env->Penvval[i] = limit(roundf(rtosc_argument(msg,i).f*127.0f), 0.0f, 127.0f);
+            }
+        }
         rEnd},
 
     {"addPoint:i", rProp(internal) rDoc("Add point to envelope"), NULL,
@@ -188,6 +207,12 @@ float EnvelopeParams::getdt(char i) const
 float EnvelopeParams::dt(char val)
 {
     return (powf(2.0f, val / 127.0f * 12.0f) - 1.0f) * 10.0f; //miliseconds
+}
+
+char EnvelopeParams::inv_dt(float val)
+{
+    int ival = roundf(logf(val/10.0f + 1.0f)/logf(2.0f) * 127.0f/12.0f);
+    return limit(ival, 0, 127);
 }
 
 
@@ -358,7 +383,42 @@ void EnvelopeParams::add2XML(XMLwrapper& xml)
         }
 }
 
+float EnvelopeParams::env_dB2rap(float db) {
+    return (powf(10.0f, db / 20.0f) - 0.01)/.99f;
+}
 
+float EnvelopeParams::env_rap2dB(float rap) {
+    return 20.0f * log10f(rap * 0.99f + 0.01);
+}
+
+/**
+    since commit 5334d94283a513ae42e472aa020db571a3589fb9, i.e. between
+    versions 2.4.3 and 2.4.4, the amplitude envelope has been converted
+    differently from dB to rap for AmplitudeEnvelope (mode 2)
+    this converts the values read from an XML file once
+*/
+struct version_fixer_t
+{
+    const bool mismatch;
+public:
+    int operator()(int input) const
+    {
+        return (mismatch)
+            // The errors occured when calling env_dB2rap. Let f be the
+            // conversion function for mode 2 (see Envelope.cpp), then we
+            // load values with (let "o" be the function composition symbol):
+            //   f^{-1} o (env_dB2rap^{-1}) o dB2rap o f
+            // from the xml file. This results in the following formula:
+            ? roundf(127.0f * (0.5f *
+			       log10f( 0.01f + 0.99f *
+                                       powf(100, input/127.0f - 1))
+                               + 1))
+            : input;
+    }
+    version_fixer_t(const version_type& fileversion, int env_mode) :
+        mismatch(fileversion < version_type(2,4,4) &&
+                 (env_mode == 2)) {}
+};
 
 void EnvelopeParams::getfromXML(XMLwrapper& xml)
 {
@@ -369,20 +429,22 @@ void EnvelopeParams::getfromXML(XMLwrapper& xml)
     Pforcedrelease  = xml.getparbool("forced_release", Pforcedrelease);
     Plinearenvelope = xml.getparbool("linear_envelope", Plinearenvelope);
 
+    version_fixer_t version_fix(xml.fileversion(), Envmode);
+
     PA_dt  = xml.getpar127("A_dt", PA_dt);
     PD_dt  = xml.getpar127("D_dt", PD_dt);
     PR_dt  = xml.getpar127("R_dt", PR_dt);
-    PA_val = xml.getpar127("A_val", PA_val);
-    PD_val = xml.getpar127("D_val", PD_val);
-    PS_val = xml.getpar127("S_val", PS_val);
-    PR_val = xml.getpar127("R_val", PR_val);
+    PA_val = version_fix(xml.getpar127("A_val", PA_val));
+    PD_val = version_fix(xml.getpar127("D_val", PD_val));
+    PS_val = version_fix(xml.getpar127("S_val", PS_val));
+    PR_val = version_fix(xml.getpar127("R_val", PR_val));
 
     for(int i = 0; i < Penvpoints; ++i) {
         if(xml.enterbranch("POINT", i) == 0)
             continue;
         if(i != 0)
             Penvdt[i] = xml.getpar127("dt", Penvdt[i]);
-        Penvval[i] = xml.getpar127("val", Penvval[i]);
+        Penvval[i] = version_fix(xml.getpar127("val", Penvval[i]));
         xml.exitbranch();
     }
 

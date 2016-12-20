@@ -31,6 +31,8 @@ class EQ:public Effect
 
         void getFilter(float *a/*[MAX_EQ_BANDS*MAX_FILTER_STAGES*3]*/,
                        float *b/*[MAX_EQ_BANDS*MAX_FILTER_STAGES*3]*/) const;
+
+        static rtosc::Ports ports;
     private:
         //Parameters
         unsigned char Pvolume;
@@ -41,7 +43,7 @@ class EQ:public Effect
             //parameters
             unsigned char Ptype, Pfreq, Pgain, Pq, Pstages;
             //internal values
-            
+
             /* TODO
              * The analog filters here really ought to be dumbed down some as
              * you are just looking to do a batch convolution in the end

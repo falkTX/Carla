@@ -21,4 +21,7 @@ class Fl_Osc_Value: public Fl_Value_Input, public Fl_Osc_Widget
         
         //Normal Initialization
         void init(const char *path);
+        void OSC_value(float v);
+
+        void cb();
 };

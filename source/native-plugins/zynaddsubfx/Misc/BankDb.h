@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
 struct BankEntry
 {
@@ -15,16 +16,20 @@ struct BankEntry
     bool        add;
     bool        pad;
     bool        sub;
+    int         time;//last update
     typedef std::vector<std::string> svec;
     svec tags(void) const;
     bool match(std::string) const;
+    bool operator<(const BankEntry &b) const;
 };
+
 
 class BankDb
 {
     public:
-        typedef std::vector<std::string> svec;
-        typedef std::vector<BankEntry>   bvec;
+        typedef std::vector<std::string>        svec;
+        typedef std::vector<BankEntry>          bvec;
+        typedef std::map<std::string,BankEntry> bmap;
 
         //search for banks
         //uses a space separated list of keywords and
@@ -44,7 +49,7 @@ class BankDb
         void scanBanks(void);
 
     private:
-        BankEntry processXiz(std::string, std::string) const;
+        BankEntry processXiz(std::string, std::string, bmap&) const;
         bvec fields;
         svec banks;
 };

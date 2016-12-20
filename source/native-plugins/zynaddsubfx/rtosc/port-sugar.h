@@ -91,7 +91,7 @@ struct rtosc_hack_decltype_t
     rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)
 #define OPTIONS_IMP13(a,b,c,d,e,f,g,h,i,j,k,l,m) \
     rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
-    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)rOpt(13,n)
+    rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)rOpt(12,m)
 #define OPTIONS_IMP12(a,b,c,d,e,f,g,h,i,j,k,l) \
     rOpt(0,a) rOpt(1,b) rOpt(2,c) rOpt(3,d) rOpt(4,e) rOpt(5,f) rOpt(6,g) \
     rOpt(7,h) rOpt(8,i) rOpt(9,j) rOpt(10,k)rOpt(11,l)

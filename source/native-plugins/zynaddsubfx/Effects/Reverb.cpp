@@ -21,7 +21,7 @@
 #include <rtosc/port-sugar.h>
 
 #define rObject Reverb
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
 rtosc::Ports Reverb::ports = {
@@ -31,16 +31,22 @@ rtosc::Ports Reverb::ports = {
                   rProp(parameter)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
     rEffPar(Ptime,    2, rShort("time"),     "Length of Reverb"),
     rEffPar(Pidelay,  3, rShort("i.time"),   "Delay for first impulse"),
     rEffPar(Pidelayfb,4, rShort("i.fb"),     "Feedback for first impulse"),
     rEffPar(Plpf,     7, rShort("lpf"),      "Low pass filter"),
-    rEffPar(Phpf,     8, rShort("lpf"),      "High pass filter"),
+    rEffPar(Phpf,     8, rShort("hpf"),      "High pass filter"),
     rEffPar(Plohidamp,9, rShort("damp"),     "Dampening"),
     //Todo make this a selector
-    rEffPar(Ptype,    10,rShort("type"),     "Type"),
+    rEffPar(Ptype,    10,rShort("type"),
+            rOptions(Random, Freeverb, Bandwidth), "Type"),
     rEffPar(Proomsize,11,rShort("size"),     "Room Size"),
     rEffPar(Pbandwidth,12,rShort("bw"),      "Bandwidth"),
 };

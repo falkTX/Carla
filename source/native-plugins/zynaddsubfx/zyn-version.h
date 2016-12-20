@@ -23,8 +23,15 @@ class version_type
     char version[3];
 
     // strcmp-like comparison against another version_type
-    constexpr int v_strcmp(const version_type& v2, int i) const;
-
+    constexpr int v_strcmp(const version_type& v2, int i) const
+    {
+        return (i == sizeof(version))
+            ? 0
+            : ((version[i] == v2.version[i])
+                ? v_strcmp(v2, i+1)
+                : (version[i] - v2.version[i]));
+    }
+    
 public:
     constexpr version_type(char maj, char min, char rev) :
         version{maj, min, rev}
@@ -33,7 +40,9 @@ public:
 
     //! constructs the current zynaddsubfx version
     constexpr version_type() :
-        version_type(2, 4, 4)
+        version_type(3,
+                     0,
+                     1)
     {
     }
 
@@ -41,11 +50,14 @@ public:
     void set_minor(int min) { version[1] = min; }
     void set_revision(int rev) { version[2] = rev; }
 
-    int major() const { return version[0]; }
-    int minor() const { return version[1]; }
-    int revision() const { return version[2]; }
+    int get_major() const { return version[0]; }
+    int get_minor() const { return version[1]; }
+    int get_revision() const { return version[2]; }
 
-    constexpr bool operator<(const version_type& other) const;
+    constexpr bool operator<(const version_type& other) const
+    {
+        return v_strcmp(other, 0) < 0;
+    }
 
     //! prints version as <major>.<minor>.<revision>
     friend std::ostream& operator<< (std::ostream& os,

@@ -17,13 +17,6 @@
 
 #include "CarlaPipeUtils.cpp"
 
-#ifdef CARLA_OS_WIN
-# define errx(...)
-# define warnx(...)
-#else
-# include <err.h>
-#endif
-
 #define PLUGINVERSION
 #define SOURCE_DIR "/usr/share/zynaddsubfx"
 #undef override

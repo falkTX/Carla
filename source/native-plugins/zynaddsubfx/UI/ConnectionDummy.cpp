@@ -27,7 +27,7 @@ void raiseUi(ui_handle_t, const char *, const char *, ...)
 }
 void tickUi(ui_handle_t)
 {
-    usleep(100000);
+    usleep(1000);
 }
 Fl_Osc_Interface *genOscInterface(MiddleWare*)
 {

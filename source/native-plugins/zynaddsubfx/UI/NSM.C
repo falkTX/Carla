@@ -22,7 +22,7 @@
 
 #include "../Nio/Nio.h"
 
-#ifndef NO_UI
+#if defined(FLTK_UI) || defined(NTK_UI)
 #include <FL/Fl.H>
 #endif
 #include <cstdio>
@@ -30,9 +30,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <stdlib.h>
 
 extern int Pexitprogram;
-#ifndef NO_UI
+#if defined(FLTK_UI) || defined(NTK_UI)
 #include "MasterUI.h"
 extern MasterUI *ui;
 #endif
@@ -40,10 +41,11 @@ extern MasterUI *ui;
 extern NSM_Client *nsm;
 extern char       *instance_name;
 
-NSM_Client::NSM_Client()
+NSM_Client::NSM_Client(MiddleWare *m)
+    :project_filename(0),
+     display_name(0),
+     middleware(m)
 {
-    project_filename = 0;
-    display_name     = 0;
 }
 
 int command_open(const char *name,
@@ -58,9 +60,7 @@ NSM_Client::command_save(char **out_msg)
     (void) out_msg;
     int r = ERR_OK;
 
-#ifndef NO_UI 
-    ui->do_save_master(project_filename);
-#endif
+    middleware->transmitMsg("/save_xmz", "s", project_filename);
 
     return r;
 }
@@ -82,24 +82,19 @@ NSM_Client::command_open(const char *name,
 
     char *new_filename;
 
+    //if you're on windows enjoy the undefined behavior...
+#ifndef WIN32
     asprintf(&new_filename, "%s.xmz", name);
+#endif
 
     struct stat st;
 
     int r = ERR_OK;
 
-#ifndef NO_UI
-    if(0 == stat(new_filename, &st)) {
-        if(ui->do_load_master_unconditional(new_filename, display_name) < 0) {
-            *out_msg = strdup("Failed to load for unknown reason");
-            r = ERR_GENERAL;
-
-            return r;
-        }
-    }
+    if(0 == stat(new_filename, &st))
+        middleware->transmitMsg("/load_xmz", "s", new_filename);
     else
-        ui->do_new_master_unconditional();
-#endif
+        middleware->transmitMsg("/reset_master", "");
 
     if(project_filename)
         free(project_filename);
@@ -114,7 +109,7 @@ NSM_Client::command_open(const char *name,
     return r;
 }
 
-#ifndef NO_UI
+#if defined(FLTK_UI) || defined(NTK_UI)
 static void save_callback(Fl_Widget *, void *v)
 {
     MasterUI *ui = static_cast<MasterUI*>(v);
@@ -125,7 +120,7 @@ static void save_callback(Fl_Widget *, void *v)
 void
 NSM_Client::command_active(bool active)
 {
-#ifndef NO_UI 
+#if defined(FLTK_UI) || defined(NTK_UI)
     if(active) {
         Fl_Menu_Item *m;
         //TODO see if there is a cleaner way of doing this without voiding

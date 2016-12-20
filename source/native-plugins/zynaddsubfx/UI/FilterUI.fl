@@ -333,7 +333,7 @@ formantfiltergraph->redraw();}
         }
         Fl_Counter {} {
           label {S.Pos.}
-          callback {nseqpos = o->value();update_formant_window();}
+          callback {nseqpos = o->value();update_formant_window();vowel_counter->oscMove("vowel_seq"+to_s(nseqpos));}
           tooltip {Current position from the sequence} xywh {595 97 40 15} type Simple labelfont 1 labelsize 10 align 9 minimum 0 maximum 127 step 1 textsize 10
           code0 {o->bounds(0,FF_MAX_SEQUENCE-2);}
           code1 {o->value(nseqpos);}
@@ -343,6 +343,8 @@ formantfiltergraph->redraw();}
           callback {(void)o;//pars->Psequence[nseqpos].nvowel=(int) o->value(); pars->changed=true;}
           xywh {640 97 40 15} type Simple labelsize 10 align 1 minimum 0 maximum 127 step 1 textsize 10
           code0 {o->bounds(0,FF_MAX_VOWELS-1);}
+          code1 {o->init("vowel_seq0");}
+          class Fl_Osc_Counter
         }
         Fl_Check_Button {} {
           label {Neg.Input}

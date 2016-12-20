@@ -12,9 +12,87 @@
 */
 
 #include <cmath>
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
 #include "EQ.h"
 #include "../DSP/AnalogFilter.h"
 #include "../Misc/Allocator.h"
+
+using rtosc::RtData;
+#define rObject EQ
+#define rBegin [](const char *msg, RtData &d) {\
+    rObject *obj = (rObject*)d.obj;
+#define rEQ(offset) \
+    int nfilt = atoi(msg-2); \
+    int id    = 10+nfilt*5+offset; \
+    if(rtosc_narguments(msg)) \
+        obj->changepar(id, rtosc_argument(msg,0).i);\
+    else \
+        d.reply(d.loc, "i", obj->getpar(id))
+
+#define rEnd }
+
+static rtosc::Ports filterports {
+    {"Ptype::i", rProp(parameter) rOptions(Off, LP1, HP1, LP2,
+            HP2, BP, notch, peak, l.shelf, h.shelf)
+        rShort("type") rDoc("Filter Type"), 0,
+        rBegin;
+        rEQ(0);
+        rEnd},
+    {"Pfreq::i", rProp(parameter) rMap(min, 0) rMap(max, 127)
+        rShort("freq"), 0,
+        rBegin;
+        rEQ(1);
+        rEnd},
+    {"Pgain::i", rProp(parameter) rMap(min, 0) rMap(max, 127)
+        rShort("gain"), 0,
+        rBegin;
+        rEQ(2);
+        rEnd},
+    {"Pq::i",    rProp(parameter) rMap(min, 0) rMap(max, 127)
+        rShort("q") rDoc("Resonance/Bandwidth"), 0,
+        rBegin;
+        rEQ(3);
+        rEnd},
+    {"Pstages::i", rProp(parameter) rMap(min, 0) rMap(max, 4)
+        rShort("stages") rDoc("Additional filter stages"), 0,
+        rBegin;
+        rEQ(4);
+        rEnd},
+};
+
+rtosc::Ports EQ::ports = {
+    {"filter#8/", 0, &filterports,
+        rBegin;
+        (void)obj;
+        SNIP;
+        filterports.dispatch(msg, d);
+        rEnd},
+    {"coeff:", rProp(internal) rDoc("Get equalizer Coefficients"), NULL,
+        [](const char *, rtosc::RtData &d)
+        {
+            EQ *eq = (EQ*)d.obj;
+            float a[MAX_EQ_BANDS*MAX_FILTER_STAGES*3];
+            float b[MAX_EQ_BANDS*MAX_FILTER_STAGES*3];
+            memset(a, 0, sizeof(a));
+            memset(b, 0, sizeof(b));
+            eq->getFilter(a,b);
+
+            char        type[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2+1] = {0};
+            rtosc_arg_t  val[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2] = {0};
+            for(int i=0; i<MAX_EQ_BANDS*MAX_FILTER_STAGES*3; ++i) {
+                int stride = MAX_EQ_BANDS*MAX_FILTER_STAGES*3;
+                type[i]  = type[i+stride] = 'f';
+                val[i].f = b[i];
+                val[i+stride].f = a[i];
+            }
+            d.replyArray(d.loc, type, val);
+        }},
+};
+
+#undef rObject
+#undef rBegin
+#undef rEnd
 
 EQ::EQ(EffectParams pars)
     :Effect(pars)

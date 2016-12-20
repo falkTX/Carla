@@ -25,30 +25,50 @@
 using namespace std;
 
 #define rObject Phaser
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
+#define ucharParamCb(pname) rBegin \
+        rObject &p = *(rObject*)d.obj; \
+        if(rtosc_narguments(msg)) \
+            p.set##pname(rtosc_argument(msg, 0).i); \
+        else \
+            d.reply(d.loc, "i", p.P##pname); \
+        rEnd
+#define rParamPhaser(name, ...) \
+  {STRINGIFY(P##name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, ucharParamCb(name)}
+
 rtosc::Ports Phaser::ports = {
-    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+    {"preset::i", rProp(parameter)
+                  rOptions(Phaser 1, Phaser 2, Phaser 3, Phaser 4,
+                           Phaser 5, Phaser 6,
+                           APhaser 1, APhaser 2, APhaser 3, APhaser 4,
+                           APhaser 5, APhaser 6)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
-    rEffPar(lfo.Pfreq,       2, rShort("freq"),     ""),
-    rEffPar(lfo.Prandomness, 3, rShort("rnd."),     ""),
-    rEffPar(lfo.PLFOtype,    4, rShort("type"),     ""),
-    rEffParTF(lfo.Pstereo,   5, rShort("stereo"),   ""),
-    rEffPar(Pdepth,          6, rShort("depth"),    ""),
-    rEffPar(Pfb,             7, rShort("fb"),       ""),
-    rEffPar(Pstages,         8, rShort("stages"),   ""),
-    rEffPar(Plrcross,        9, rShort("cross"),    ""),
-    rEffPar(Poffset,         9, rShort("off"),      ""),
-    rEffParTF(Poutsub,      10, rShort("sub")       ""),
-    rEffPar(Pphase,         11, rShort("phase"),    ""),
-    rEffPar(Pwidth,         11, rShort("width"),    ""),
-    rEffParTF(Phyper,       12, rShort("hyp."),     ""),
+    rEffPar(lfo.Pfreq,       2, rShort("freq"),     "LFO frequency"),
+    rEffPar(lfo.Prandomness, 3, rShort("rnd."),     "LFO randomness"),
+    rEffPar(lfo.PLFOtype,    4, rShort("type"),
+          rOptions(sine, tri), "lfo shape"),
+    rEffPar(lfo.Pstereo,     5, rShort("stereo"),   "Left/right channel phase shift"),
+    rEffPar(Pdepth,          6, rShort("depth"),    "LFP depth"),
+    rEffPar(Pfb,             7, rShort("fb"),       "Feedback"),
+    rEffPar(Pstages,         8, rLinear(1,12), rShort("stages"),   ""),
+    rParamPhaser(lrcross,       rShort("cross"),    "Channel routing"),
+    rParamPhaser(offset,        rShort("off"),      "Offset"),
+    rEffParTF(Poutsub,      10, rShort("sub"),      "Invert output"),
+    rParamPhaser(phase,         rShort("phase"),    ""),
+    rParamPhaser(width,         rShort("width"),    ""),
+    rEffParTF(Phyper,       12, rShort("hyp."),     "Square the LFO"),
     rEffPar(Pdistortion,    13, rShort("distort"),  "Distortion"),
-    rEffParTF(Panalog,      14, rShort("analog"),   ""),
+    rEffParTF(Panalog,      14, rShort("analog"),   "Use analog phaser"),
 };
 #undef rBegin
 #undef rEnd
@@ -316,7 +336,7 @@ void Phaser::setoffset(unsigned char Poffset)
     offsetpct     = (float)Poffset / 127.0f;
 }
 
-void Phaser::setstages(unsigned char Pstages)
+void Phaser::setstages(unsigned char Pstages_)
 {
     memory.devalloc(old.l);
     memory.devalloc(old.r);
@@ -325,7 +345,7 @@ void Phaser::setstages(unsigned char Pstages)
     memory.devalloc(yn1.l);
     memory.devalloc(yn1.r);
 
-    this->Pstages = min(MAX_PHASER_STAGES, (int)Pstages);
+    Pstages = limit<int>(Pstages_, 1, MAX_PHASER_STAGES);
 
     old = Stereo<float *>(memory.valloc<float>(Pstages * 2),
                           memory.valloc<float>(Pstages * 2));

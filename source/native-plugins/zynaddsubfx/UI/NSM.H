@@ -21,6 +21,7 @@
 
 #if USE_NSM
 #include "NSM/Client.H"
+#include "../Misc/MiddleWare.h"
 
 class NSM_Client:public NSM::Client
 {
@@ -28,8 +29,9 @@ class NSM_Client:public NSM::Client
 
         char *project_filename;
         char *display_name;
+        MiddleWare *middleware;
 
-        NSM_Client();
+        NSM_Client(MiddleWare *m);
         ~NSM_Client() { }
 
     protected:

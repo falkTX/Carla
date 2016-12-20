@@ -40,31 +40,33 @@ static const rtosc::Ports realtime_ports =
     rRecurp(GlobalFilter, "Post Filter"),
 
     //Volume
-    rToggle(PStereo, "Stereo/Mono Mode"),
-    rParamZyn(PPanning, "Left Right Panning"),
-    rParamZyn(PVolume, "Synth Volume"),
-    rParamZyn(PAmpVelocityScaleFunction, "Amplitude Velocity Sensing function"),
+    rToggle(PStereo,    rShort("stereo"), "Stereo/Mono Mode"),
+    rParamZyn(PPanning, rShort("panning"), "Left Right Panning"),
+    rParamZyn(PVolume,  rShort("vol"), "Synth Volume"),
+    rParamZyn(PAmpVelocityScaleFunction, rShort("sense"), "Amplitude Velocity Sensing function"),
 
-    rParamZyn(Fadein_adjustment, "Adjustment for anti-pop strategy."),
+    rParamZyn(Fadein_adjustment, rShort("a.pop."), "Adjustment for anti-pop strategy."),
 
     //Punch
-    rParamZyn(PPunchStrength, "Punch Strength"),
-    rParamZyn(PPunchTime, "UNKNOWN"),
-    rParamZyn(PPunchStretch, "How Punch changes with note frequency"),
-    rParamZyn(PPunchVelocitySensing, "Punch Velocity control"),
+    rParamZyn(PPunchStrength, rShort("strength"), "Punch Strength"),
+    rParamZyn(PPunchTime,     rShort("time"),     "Length of punch"),
+    rParamZyn(PPunchStretch,  rShort("stretch"), "How Punch changes with note frequency"),
+    rParamZyn(PPunchVelocitySensing, rShort("sense"), "Punch Velocity control"),
 
     //Filter
-    rParamZyn(PFilterVelocityScale, "Filter Velocity Magnitude"),
-    rParamZyn(PFilterVelocityScaleFunction, "Filter Velocity Function Shape"),
+    rParamZyn(PFilterVelocityScale,         rShort("scale"), "Filter Velocity Magnitude"),
+    rParamZyn(PFilterVelocityScaleFunction, rShort("sense"), "Filter Velocity Function Shape"),
 
     //Freq
-    rToggle(Pfixedfreq, "Base frequency fixed frequency enable"),
-    rParamZyn(PfixedfreqET, "Equal temeperate control for fixed frequency operation"),
+    rToggle(Pfixedfreq,     rShort("fixed"),  "Base frequency fixed frequency enable"),
+    rParamZyn(PfixedfreqET, rShort("f.ET"),   "Equal temeperate control for fixed frequency operation"),
     rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
-    rParamZyn(POffsetHz,          "Voice constant offset"),
-    rParamI(PDetune,        "Fine Detune"),
-    rParamI(PCoarseDetune,  "Coarse Detune"),
-    rParamZyn(PDetuneType,  "Magnitude of Detune"),
+    rParamZyn(POffsetHz,    rShort("offset"), "Voice constant offset"),
+    rParamI(PDetune,        rShort("fine"), rLinear(0, 16383), "Fine Detune"),
+    rParamI(PCoarseDetune,  rShort("coarse"), "Coarse Detune"),
+    rParamZyn(PDetuneType,  rShort("type"),
+            rOptions(L35cents, L10cents, E100cents, E1200cents),
+            "Magnitude of Detune"),
 
     {"sample#64:ifb", rProp(internal) rDoc("Nothing to see here"), 0,
         [](const char *m, rtosc::RtData &d)
@@ -86,7 +88,8 @@ static const rtosc::Ports realtime_ports =
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;
             d.reply(d.loc, "f", getdetune(obj->PDetuneType, 0, obj->PDetune));
         }},
-    {"octave::c:i", rProp(parameter) rDoc("Octave note offset"), NULL,
+    {"octave::c:i", rProp(parameter) rShort("octave") rLinear(-8,7)
+        rDoc("Octave note offset"), NULL,
         [](const char *msg, RtData &d)
         {
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;
@@ -100,7 +103,8 @@ static const rtosc::Ports realtime_ports =
                 obj->PCoarseDetune = k*1024 + obj->PCoarseDetune%1024;
             }
         }},
-    {"coarsedetune::c:i", rProp(parameter) rDoc("Coarse note detune"), NULL,
+    {"coarsedetune::c:i", rProp(parameter) rShort("coarse") rLinear(-64, 63)
+        rDoc("Coarse note detune"), NULL,
         [](const char *msg, RtData &d)
         {
             PADnoteParameters *obj = (PADnoteParameters *)d.obj;

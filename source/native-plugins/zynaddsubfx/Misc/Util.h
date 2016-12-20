@@ -20,6 +20,9 @@
 #include <algorithm>
 #include <set>
 
+#include <rtosc/ports.h>
+#include <rtosc/port-sugar.h>
+
 using std::min;
 using std::max;
 

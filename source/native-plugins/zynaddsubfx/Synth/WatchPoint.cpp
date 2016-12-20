@@ -69,6 +69,11 @@ WatchManager::WatchManager(thrlnk *link)
     
 void WatchManager::add_watch(const char *id)
 {
+    //Don't add duplicate watchs
+    for(int i=0; i<MAX_WATCH; ++i)
+        if(!strcmp(active_list[i], id))
+            return;
+
     //Apply to a free slot
     for(int i=0; i<MAX_WATCH; ++i) {
         if(!active_list[i][0]) {

@@ -32,9 +32,9 @@ constexpr int sizeof_pvowels = sizeof(FilterParams::Pvowels);
 #define rObject FilterParams::Pvowels_t::formants_t
 
 static const rtosc::Ports subsubports = {
-    rParamZyn(freq, "Formant frequency"),
-    rParamZyn(amp,  "Strength of formant"),
-    rParamZyn(q,    "Quality Factor"),
+    rParamZyn(freq, rShort("f.freq"), "Formant frequency"),
+    rParamZyn(amp,  rShort("f.str"),  "Strength of formant"),
+    rParamZyn(q,    rShort("f.q"),    "The formant's quality factor, also known as resonance bandwidth or Q for short"),
 };
 #undef rObject
 
@@ -68,28 +68,37 @@ const rtosc::Ports FilterParams::ports = {
     rParamZyn(Pfreq,            rShort("cutoff"),   "Center Freq"),
     rParamZyn(Pq,               rShort("q"),
             "Quality Factor (resonance/bandwidth)"),
-    rOption(Pstages,            rShort("stages"),
-            rOptions(1, 2, 3, 4, 5), "Filter Stages"),
+    rParamI(Pstages,            rShort("stages"),
+            rLinear(0,5),  "Filter Stages"),
     rParamZyn(Pfreqtrack,       rShort("f.track"),
             "Frequency Tracking amount"),
     rParamZyn(Pgain,            rShort("gain"),     "Output Gain"),
-    rParamZyn(Pnumformants,     rShort("formants"),
-            "Number of formants to be used"),
+    rParamI(Pnumformants,       rShort("formants"),
+            rLinear(1,12),  "Number of formants to be used"),
     rParamZyn(Pformantslowness, rShort("slew"),
             "Rate that formants change"),
     rParamZyn(Pvowelclearness,  rShort("clarity"),
-            "Cost for mixing vowels"),
+            "How much each vowel is smudged with the next in sequence. A high clarity will avoid smudging."),
     rParamZyn(Pcenterfreq,      rShort("cutoff"),
             "Center Freq (formant)"),
     rParamZyn(Poctavesfreq,     rShort("octaves"),
             "Number of octaves for formant"),
 
-    //TODO check if FF_MAX_SEQUENCE is acutally expanded or not
-    rParamZyn(Psequencesize, rMap(max, FF_MAX_SEQUENCE), "Length of vowel sequence"),
-    rParamZyn(Psequencestretch, "How modulators stretch the sequence"),
-    rToggle(Psequencereversed, "If the modulator input is inverted"),
+    rParamI(Psequencesize,    rShort("seq.size"), rLinear(0, FF_MAX_SEQUENCE), "Length of vowel sequence"),
+    rParamZyn(Psequencestretch, rShort("seq.str"), "How modulators stretch the sequence"),
+    rToggle(Psequencereversed,  rShort("reverse"), "If the modulator input is inverted"),
 
-    //{"Psequence#" FF_MAX_SEQUENCE "/nvowel", "", NULL, [](){}},
+    {"vowel_seq#" STRINGIFY(FF_MAX_SEQUENCE) "::i", rShort("vowel") rDoc("Vowel number of this sequence position"), NULL,
+        [](const char *msg, RtData &d){
+            FilterParams *obj = (FilterParams *) d.obj;
+            const char *mm = msg;
+            while(*mm && !isdigit(*mm)) ++mm;
+            unsigned idx = atoi(mm);
+            if(rtosc_narguments(msg)) {
+                obj->Psequence[idx].nvowel = rtosc_argument(msg, 0).i;
+            } else
+                d.broadcast(d.loc, "i", obj->Psequence[idx].nvowel);
+        }},
     {"type-svf::i", rProp(parameter) rShort("type")
         rOptions(low, high, band, notch)
             rDoc("Filter Type"), 0, rOptionCb(Ptype)},

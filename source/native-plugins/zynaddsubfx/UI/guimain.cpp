@@ -46,7 +46,7 @@ bool fileexists(const char *filename)
     return false;
 }
 
-int Pexitprogram = 0;
+int Pexitprogram=0;
 
 
 #include "Connection.h"

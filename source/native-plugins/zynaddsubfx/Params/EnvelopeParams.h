@@ -44,6 +44,7 @@ class EnvelopeParams:public Presets
 
         float getdt(char i) const;
         static float dt(char val);
+        static char inv_dt(float val);
 
         /* MIDI Parameters */
         unsigned char Pfreemode; //1 for free mode, 0 otherwise
@@ -70,6 +71,10 @@ class EnvelopeParams:public Presets
         int64_t last_update_timestamp;
 
         static const rtosc::Ports &ports;
+
+        static float env_rap2dB(float rap);
+        static float env_dB2rap(float db);
+
     private:
         void store2defaults();
 

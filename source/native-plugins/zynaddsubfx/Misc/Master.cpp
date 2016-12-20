@@ -116,7 +116,7 @@ static const Ports master_ports = {
     rRecursp(insefx, 8, "Insertion Effect"),//NUM_INS_EFX
     rRecur(microtonal, "Micrtonal Mapping Functionality"),
     rRecur(ctl, "Controller"),
-    rArrayI(Pinsparts, NUM_INS_EFX, rOpt(-1, Master),
+    rArrayI(Pinsparts, NUM_INS_EFX, rOpt(-2, Master), rOpt(-1, Off)
             rOptions(Part1, Part2, Part3, Part4,  Part5, Part6,
                  Part7, Part8, Part9, Part10, Part11, Part12,
                  Part13, Part14, Part15, Part16),
@@ -682,27 +682,8 @@ void dump_msg(const char* ptr, std::ostream& os = std::cerr)
 #endif
 int msg_id=0;
 
-/*
- * Master audio out (the final sound)
- */
-bool Master::AudioOut(float *outr, float *outl)
+bool Master::runOSC(float *outl, float *outr, bool offline)
 {
-    //Danger Limits
-    if(memory->lowMemory(2,1024*1024))
-        printf("QUITE LOW MEMORY IN THE RT POOL BE PREPARED FOR WEIRD BEHAVIOR!!\n");
-    //Normal Limits
-    if(!pendingMemory && memory->lowMemory(4,1024*1024)) {
-        printf("Requesting more memory\n");
-        bToU->write("/request-memory", "");
-        pendingMemory = true;
-    }
-
-
-    //Handle watch points
-    if(bToU)
-        watcher.write_back = bToU;
-    watcher.tick();
-
     //Handle user events TODO move me to a proper location
     char loc_buf[1024];
     DataObj d{loc_buf, 1024, this, bToU};
@@ -714,7 +695,8 @@ bool Master::AudioOut(float *outr, float *outl)
         if(!strcmp(msg, "/load-master")) {
             Master *this_master = this;
             Master *new_master  = *(Master**)rtosc_argument(msg, 0).b.data;
-            new_master->AudioOut(outl, outr);
+            if(!offline)
+                new_master->AudioOut(outl, outr);
             Nio::masterSwap(new_master);
             if (mastercb)
                 mastercb(mastercb_ptr, new_master);
@@ -731,22 +713,54 @@ bool Master::AudioOut(float *outr, float *outl)
         }
         ports.dispatch(msg, d, true);
         events++;
+        if(!d.matches) {
+            //workaround for requesting voice status
+            int a=0, b=0, c=0;
+            char e=0;
+            if(4 == sscanf(msg, "/part%d/kit%d/adpars/VoicePar%d/Enable%c", &a, &b, &c, &e)) {
+                d.reply(msg, "F");
+                d.matches++;
+            }
+        }
         if(!d.matches) {// && !ports.apropos(msg)) {
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 1, 7 + 30, 0 + 40);
-            fprintf(stderr, "Unknown address<BACKEND> '%s:%s'\n", uToB->peak(), rtosc_argument_string(uToB->peak()));
-#if 0
-            if(strstr(msg, "PFMVelocity"))
-                dump_msg(msg);
-            if(ports.apropos(msg))
-                fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg)->name);
-            if(ports.apropos(msg+1))
-                fprintf(stderr, "  -> best match: '%s'\n", ports.apropos(msg+1)->name);
-#endif
+            fprintf(stderr, "Unknown address<BACKEND:%s> '%s:%s'\n", 
+                    offline ? "offline" : "online",
+                    uToB->peak(),
+                    rtosc_argument_string(uToB->peak()));
             fprintf(stderr, "%c[%d;%d;%dm", 0x1B, 0, 7 + 30, 0 + 40);
         }
     }
     if(events>1 && false)
         fprintf(stderr, "backend: %d events per cycle\n",events);
+
+    return true;
+}
+
+/*
+ * Master audio out (the final sound)
+ */
+bool Master::AudioOut(float *outr, float *outl)
+{
+    //Danger Limits
+    if(memory->lowMemory(2,1024*1024))
+        printf("QUITE LOW MEMORY IN THE RT POOL BE PREPARED FOR WEIRD BEHAVIOR!!\n");
+    //Normal Limits
+    if(!pendingMemory && memory->lowMemory(4,1024*1024)) {
+        printf("Requesting more memory\n");
+        bToU->write("/request-memory", "");
+        pendingMemory = true;
+    }
+
+    //work through events
+    if(!runOSC(outl, outr, false))
+        return false;
+
+
+    //Handle watch points
+    if(bToU)
+        watcher.write_back = bToU;
+    watcher.tick();
 
 
     //Swaps the Left channel with Right Channel
@@ -896,6 +910,22 @@ bool Master::AudioOut(float *outr, float *outl)
     //update the global frame timer
     time++;
 
+#ifdef DEMO_VERSION
+    double seconds = time.time()*synth.buffersize_f/synth.samplerate_f;
+    if(seconds > 10*60) {//10 minute trial
+        shutup = true;
+        for(int i = 0; i < synth.buffersize; ++i) {
+            float tmp = (synth.buffersize_f - i) / synth.buffersize_f;
+            outl[i] *= 0.0f;
+            outr[i] *= 0.0f;
+        }
+    }
+#endif
+
+    //Update pulse
+    last_ack = last_beat;
+
+
     return true;
 }
 
@@ -998,6 +1028,8 @@ void Master::ShutUp()
         insefx[nefx]->cleanup();
     for(int nefx = 0; nefx < NUM_SYS_EFX; ++nefx)
         sysefx[nefx]->cleanup();
+    for(int i = 0; i < int(sizeof(activeNotes)/sizeof(activeNotes[0])); ++i)
+        activeNotes[i] = 0;
     vuresetpeaks();
     shutup = 0;
 }

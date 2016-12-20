@@ -3,6 +3,7 @@
 
   Microtonal.cpp - Tuning settings and microtonal capabilities
   Copyright (C) 2002-2005 Nasca Octavian Paul
+  Copyright (C) 2016      Mark McCurry
   Author: Nasca Octavian Paul
 
   This program is free software; you can redistribute it and/or
@@ -39,25 +40,25 @@ using namespace rtosc;
  * A good lookup table should be a good finalization of this
  */
 const rtosc::Ports Microtonal::ports = {
-    rToggle(Pinvertupdown, "key mapping inverse"),
-    rParamZyn(Pinvertupdowncenter, "center of the inversion"),
-    rToggle(Penabled, "Enable for microtonal mode"),
-    rParamZyn(PAnote, "The note for 'A'"),
-    rParamF(PAfreq, "Frequency of the 'A' note"),
-    rParamZyn(Pscaleshift, "UNDOCUMENTED"),
-    rParamZyn(Pfirstkey, "First key to retune"),
-    rParamZyn(Plastkey,  "Last key to retune"),
-    rParamZyn(Pmiddlenote, "Scale degree 0 note"),
+    rToggle(Pinvertupdown, rShort("inv."), "key mapping inverse"),
+    rParamZyn(Pinvertupdowncenter, rShort("center"), "center of the inversion"),
+    rToggle(Penabled, rShort("enable"), "Enable for microtonal mode"),
+    rParamZyn(PAnote, rShort("A note"), "The note for 'A'"),
+    rParamF(PAfreq,   rShort("A freq"), "Frequency of the 'A' note"),
+    rParamZyn(Pscaleshift, rShort("shift"), "UNDOCUMENTED"),
+    rParamZyn(Pfirstkey, rShort("first key"), "First key to retune"),
+    rParamZyn(Plastkey,  rShort("last key"), "Last key to retune"),
+    rParamZyn(Pmiddlenote, rShort("middle"), "Scale degree 0 note"),
 
     //TODO check to see if this should be exposed
     rParamZyn(Pmapsize, "Size of key map"),
     rToggle(Pmappingenabled, "Mapping Enable"),
 
     rParams(Pmapping, 128, "Mapping of keys"),
-    rParamZyn(Pglobalfinedetune, "Fine detune for all notes"),
+    rParamZyn(Pglobalfinedetune, rShort("fine"), "Fine detune for all notes"),
 
-    rString(Pname, MICROTONAL_MAX_NAME_LEN, "Microtonal Name"),
-    rString(Pcomment, MICROTONAL_MAX_NAME_LEN, "Microtonal Name"),
+    rString(Pname, MICROTONAL_MAX_NAME_LEN,    rShort("name"), "Microtonal Name"),
+    rString(Pcomment, MICROTONAL_MAX_NAME_LEN, rShort("comment"), "Microtonal comments"),
 
     {"octavesize:", rDoc("Get octave size"), 0, [](const char*, RtData &d)
         {
@@ -790,6 +791,7 @@ void Microtonal::getfromXML(XMLwrapper& xml)
         }
         xml.exitbranch();
     }
+    apply();
 }
 
 
@@ -818,4 +820,35 @@ int Microtonal::loadXML(const char *filename)
     xml.exitbranch();
 
     return 0;
+}
+
+//roundabout function, but it works
+void Microtonal::apply(void)
+{
+    {
+        char buf[100*MAX_OCTAVE_SIZE] = {0};
+        char tmpbuf[100] = {0};
+        for (int i=0;i<Pmapsize;i++) {
+            if (i!=0)
+                strncat(buf, "\n", sizeof(buf)-1);
+            if (Pmapping[i]==-1)
+                snprintf(tmpbuf,100,"x");
+            else
+                snprintf(tmpbuf,100,"%d",Pmapping[i]);
+            strncat(buf, tmpbuf, sizeof(buf)-1);
+        }
+        texttomapping(buf);
+    }
+
+    {
+        char buf[100*MAX_OCTAVE_SIZE] = {0};
+        char tmpbuf[100] = {0};
+        for (int i=0;i<getoctavesize();i++){
+            if (i!=0)
+                strncat(buf, "\n", sizeof(buf)-1);
+            tuningtoline(i,tmpbuf,100);
+            strncat(buf, tmpbuf, sizeof(buf)-1);
+        }
+        int err = texttotunings(buf);
+    }
 }

@@ -2,8 +2,8 @@
 
 set -e
 
-ORIG_ZYN_DIR="/home/falktx/Projects/FOSS/GIT-mine/zynaddsubfx-code"
-CARLA_ZYN_DIR="/home/falktx/Projects/FOSS/GIT-mine/Carla/source/native-plugins/zynaddsubfx"
+ORIG_ZYN_DIR="/home/falktx/FOSS/GIT-mine/falkTX/zynaddsubfx"
+CARLA_ZYN_DIR="/home/falktx/FOSS/GIT-mine/falkTX/Carla/source/native-plugins/zynaddsubfx"
 
 rm -f $CARLA_ZYN_DIR/*.cpp
 rm -f $CARLA_ZYN_DIR/*.h
@@ -36,7 +36,12 @@ cp $ORIG_ZYN_DIR/tlsf/*.c $CARLA_ZYN_DIR/tlsf/
 rm $CARLA_ZYN_DIR/*/CMakeLists.txt
 rm $CARLA_ZYN_DIR/UI/zynaddsubfx.xpm
 
-sed -i "s|emplace_uint32(|emplace_uint32_cpp(|"  $CARLA_ZYN_DIR/rtosc/cpp/subtree-serialize.cpp
+cp $ORIG_ZYN_DIR/src/zyn-version.h.in $CARLA_ZYN_DIR/zyn-version.h
+sed -i 's|${VERSION_MAJOR}|3|'    $CARLA_ZYN_DIR/zyn-version.h
+sed -i 's|${VERSION_MINOR}|0|'    $CARLA_ZYN_DIR/zyn-version.h
+sed -i 's|${VERSION_REVISION}|1|' $CARLA_ZYN_DIR/zyn-version.h
+
+sed -i "s|emplace_uint32(|emplace_uint32_cpp(|" $CARLA_ZYN_DIR/rtosc/cpp/subtree-serialize.cpp
 sed -i "s|../../include/rtosc/|../|" $CARLA_ZYN_DIR/rtosc/cpp/*.cpp
 sed -i "s|../../tlsf/tlsf.h|tlsf/tlsf.h|" $CARLA_ZYN_DIR/Misc/Allocator.cpp
 sed -i "s|../src/globals.h|globals.h|" $CARLA_ZYN_DIR/Misc/Config.cpp

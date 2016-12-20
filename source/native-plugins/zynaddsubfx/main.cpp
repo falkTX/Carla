@@ -17,15 +17,17 @@
 #include <map>
 #include <cmath>
 #include <cctype>
+#include <ctime>
 #include <algorithm>
 #include <signal.h>
 
+#include <err.h>
 #include <unistd.h>
 #include <pthread.h>
 
 #include <getopt.h>
 
-#include <lo/lo.h>
+#include <rtosc/rtosc.h>
 #include <rtosc/ports.h>
 #include <rtosc/thread-link.h>
 #include "Params/PADnoteParameters.h"
@@ -39,6 +41,7 @@
 
 //Nio System
 #include "Nio/Nio.h"
+#include "Nio/InMgr.h"
 
 //GUI System
 #include "UI/Connection.h"
@@ -53,7 +56,7 @@ using namespace std;
 Master   *master;
 int       swaplr = 0; //1 for left-right swapping
 
-int Pexitprogram = 0;     //if the UI set this to 1, the program will exit
+extern int Pexitprogram;     //if the UI set this to 1, the program will exit
 
 #if LASH
 #include "Misc/LASHClient.h"
@@ -70,7 +73,6 @@ char *instance_name = 0;
 
 void exitprogram(const Config &config);
 
-extern pthread_t main_thread;
 
 //cleanup on signaled exit
 void sigterm_exit(int /*sig*/)
@@ -117,9 +119,88 @@ void exitprogram(const Config& config)
     FFT_cleanup();
 }
 
+//Windows MIDI OH WHAT A HACK...
+#ifdef WIN32
+#include <windows.h>
+#include <mmsystem.h>
+extern InMgr  *in;
+HMIDIIN winmidiinhandle = 0;
+
+void CALLBACK WinMidiInProc(HMIDIIN hMidiIn,UINT wMsg,DWORD dwInstance,
+                            DWORD dwParam1,DWORD dwParam2)
+{
+    int midicommand=0;
+    if (wMsg==MIM_DATA) {
+        int cmd,par1,par2;
+        cmd=dwParam1&0xff;
+        if (cmd==0xfe) return;
+        par1=(dwParam1>>8)&0xff;
+        par2=dwParam1>>16;
+        int cmdchan=cmd&0x0f;
+        int cmdtype=(cmd>>4)&0x0f;
+
+        int tmp=0;
+        MidiEvent ev;
+        switch (cmdtype) {
+            case(0x8)://noteon
+                ev.type = 1;
+                ev.num = par1;
+                ev.channel = cmdchan;
+                ev.value = 0;
+                in->putEvent(ev);
+                break;
+            case(0x9)://noteoff
+                ev.type = 1;
+                ev.num = par1;
+                ev.channel = cmdchan;
+                ev.value = par2&0xff;
+                in->putEvent(ev);
+                break;
+            case(0xb)://controller
+                ev.type = 2;
+                ev.num = par1;
+                ev.channel = cmdchan;
+                ev.value = par2&0xff;
+                in->putEvent(ev);
+                break;
+            case(0xe)://pitch wheel
+                //tmp=(par1+par2*(long int) 128)-8192;
+                //winmaster->SetController(cmdchan,C_pitchwheel,tmp);
+                break;
+            default:
+                break;
+        };
+
+    };
+};
+
+void InitWinMidi(int midi)
+{
+(void)midi;
+    for(int i=0; i<10; ++i) {
+        long int res=midiInOpen(&winmidiinhandle,i,(DWORD_PTR)(void*)WinMidiInProc,0,CALLBACK_FUNCTION);
+        if(res == MMSYSERR_NOERROR) {
+            res=midiInStart(winmidiinhandle);
+            printf("[INFO] Starting Windows MIDI At %d with code %d(noerror=%d)\n", i, res, MMSYSERR_NOERROR);
+            if(res == 0)
+                return;
+        } else
+            printf("[INFO] No Windows MIDI Device At id %d\n", i);
+    }
+};
+
+//void StopWinMidi()
+//{
+//    midiInStop(winmidiinhandle);
+//    midiInClose(winmidiinhandle);
+//};
+#else
+void InitWinMidi(int) {}
+#endif
+
+
 int main(int argc, char *argv[])
 {
-    main_thread = pthread_self();
     SYNTH_T synth;
     Config config;
     config.init();
@@ -155,6 +236,9 @@ int main(int argc, char *argv[])
         },
         {
             "load-instrument", 2, NULL, 'L'
+        },
+        {
+            "midi-learn", 2, NULL, 'M'
         },
         {
             "sample-rate", 2, NULL, 'r'
@@ -211,9 +295,6 @@ int main(int argc, char *argv[])
             "dump-json-schema", 2, NULL, 'D'
         },
         {
-            "ui-title", 1, NULL, 'u'
-        },
-        {
             0, 0, 0, 0
         }
     };
@@ -221,8 +302,9 @@ int main(int argc, char *argv[])
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
     int prefered_port = -1;
     int auto_save_interval = 60;
+int wmidi = -1;
 
-    string loadfile, loadinstrument, execAfterInit, ui_title;
+    string loadfile, loadinstrument, execAfterInit, loadmidilearn;
 
     while(1) {
         int tmp = 0;
@@ -230,7 +312,7 @@ int main(int argc, char *argv[])
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:r:b:o:I:O:N:e:P:A:u:D:hvapSDUY",
+                          "l:L:M:r:b:o:I:O:N:e:P:A:D:hvapSDUYZ",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -266,6 +348,9 @@ int main(int argc, char *argv[])
                 break;
             case 'L':
                 GETOP(loadinstrument);
+                break;
+            case 'M':
+                GETOP(loadmidilearn);
                 break;
             case 'r':
                 GETOPNUM(synth.samplerate);
@@ -351,9 +436,9 @@ int main(int argc, char *argv[])
                     dump_json(outfile, Master::ports);
                 }
                 break;
-            case 'u':
+            case 'Z':
                 if(optarguments)
-                    ui_title = optarguments;
+                    wmidi = atoi(optarguments);
                 break;
             case '?':
                 cerr << "ERROR:Bad option or parameter.\n" << endl;
@@ -374,6 +459,7 @@ int main(int argc, char *argv[])
              << "  -v , --version \t\t\t Display version and exit\n"
              << "  -l file, --load=FILE\t\t\t Loads a .xmz file\n"
              << "  -L file, --load-instrument=FILE\t Loads a .xiz file\n"
+             << "  -M file, --midi-learn=FILE\t\t Loads a .xlz file\n"
              << "  -r SR, --sample-rate=SR\t\t Set the sample rate SR\n"
              <<
         "  -b BS, --buffer-size=SR\t\t Set the buffer size (granularity)\n"
@@ -391,7 +477,6 @@ int main(int argc, char *argv[])
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"
              << "  -d , --dump-oscdoc=FILE\t\t Dump oscdoc xml to file\n"
-             << "  -u , --ui-title=TITLE\t\t Extend UI Window Titles\n"
              << endl;
 
         return 0;
@@ -441,22 +526,34 @@ int main(int argc, char *argv[])
         }
     }
 
+    if(!loadmidilearn.empty()) {
+        char msg[1024];
+        rtosc_message(msg, sizeof(msg), "/load_xlz",
+                "s", loadmidilearn.c_str());
+        middleware->transmitMsg(msg);
+    }
+
     if(altered_master)
         middleware->updateResources(master);
 
     //Run the Nio system
+    printf("[INFO] Nio::start()\n");
     bool ioGood = Nio::start();
 
+    printf("[INFO] exec-after-init\n");
     if(!execAfterInit.empty()) {
         cout << "Executing user supplied command: " << execAfterInit << endl;
         if(system(execAfterInit.c_str()) == -1)
             cerr << "Command Failed..." << endl;
     }
 
+    InitWinMidi(wmidi);
+
 
     gui = NULL;
 
     //Capture Startup Responses
+    printf("[INFO] startup OSC\n");
     typedef std::vector<const char *> wait_t;
     wait_t msg_waitlist;
     middleware->setUiCallback([](void*v,const char*msg) {
@@ -467,20 +564,18 @@ int main(int argc, char *argv[])
             wait.push_back(copy);
             }, &msg_waitlist);
 
+    printf("[INFO] UI calbacks\n");
     if(!noui)
         gui = GUI::createUi(middleware->spawnUiApi(), &Pexitprogram);
     middleware->setUiCallback(GUI::raiseUi, gui);
     middleware->setIdleCallback([](void*){GUI::tickUi(gui);}, NULL);
 
     //Replay Startup Responses
+    printf("[INFO] OSC replay\n");
     for(auto msg:msg_waitlist) {
         GUI::raiseUi(gui, msg);
         delete [] msg;
     }
-
-    //set titles
-    if(!ui_title.empty())
-        GUI::raiseUi(gui, "/ui/title", "s", ui_title.c_str());
 
     if(!noui)
     {
@@ -490,18 +585,31 @@ int main(int argc, char *argv[])
                     "Default IO did not initialize.\nDefaulting to NULL backend.");
     }
 
-    if(auto_save_interval > 0) {
+    printf("[INFO] auto_save setup\n");
+    if(auto_save_interval > 0 && false) {
         int old_save = middleware->checkAutoSave();
         if(old_save > 0)
             GUI::raiseUi(gui, "/alert-reload", "i", old_save);
         middleware->enableAutoSave(auto_save_interval);
     }
+    printf("[INFO] NSM Stuff\n");
+
+    //TODO move this stuff into Cmake
+#if USE_NSM && defined(WIN32)
+#undef USE_NSM
+#define USE_NSM 0
+#endif
+
+#if LASH && defined(WIN32)
+#undef LASH
+#define LASH 0
+#endif
 
 #if USE_NSM
     char *nsm_url = getenv("NSM_URL");
 
     if(nsm_url) {
-        nsm = new NSM_Client;
+        nsm = new NSM_Client(middleware);
 
         if(!nsm->init(nsm_url))
             nsm->announce("ZynAddSubFX", ":switch:", argv[0]);
@@ -512,6 +620,7 @@ int main(int argc, char *argv[])
     }
 #endif
 
+    printf("[INFO] LASH Stuff\n");
 #if USE_NSM
     if(!nsm)
 #endif
@@ -522,7 +631,22 @@ int main(int argc, char *argv[])
 #endif
     }
 
+#ifdef ZEST_GUI
+    if(!noui) {
+        printf("[INFO] Launching Zyn-Fusion...\n");
+        const char *addr = middleware->getServerAddress();
+        if(fork() == 0) {
+            execlp("zyn-fusion", "zyn-fusion", addr, "--builtin", "--no-hotload",  0);
+            execlp("./zyn-fusion", "zyn-fusion", addr, "--builtin", "--no-hotload",  0);
+
+            err(1,"Failed to launch Zyn-Fusion");
+        }
+    }
+#endif
+
+    printf("[INFO] Main Loop...\n");
     while(Pexitprogram == 0) {
+#ifndef WIN32
 #if USE_NSM
         if(nsm) {
             nsm->check();
@@ -553,7 +677,11 @@ int main(int argc, char *argv[])
 done:
 #endif
         GUI::tickUi(gui);
+#endif
         middleware->tick();
+#ifdef WIN32
+        Sleep(1);
+#endif
     }
 
     exitprogram(config);

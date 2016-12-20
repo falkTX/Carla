@@ -22,14 +22,20 @@
 #define MAX_DELAY 2
 
 #define rObject Echo
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
 rtosc::Ports Echo::ports = {
-    {"preset::i", rOptions(Echo 1, Echo 2, Echo 3, Simple Echo, Canyon, Panning Echo 1, Panning Echo 2, Panning Echo 3, Feedback Echo)
+    {"preset::i", rOptions(Echo 1, Echo 2, Echo 3, Simple Echo, Canyon, Panning Echo 1,
+            Panning Echo 2, Panning Echo 3, Feedback Echo)
                   rProp(parameter)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
     rEffPar(Pdelay,   2, rShort("delay"),    "Length of Echo"),

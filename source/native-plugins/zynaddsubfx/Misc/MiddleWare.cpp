@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
@@ -49,11 +50,14 @@
 #include <atomic>
 #include <list>
 
+#define errx(...) {}
+#define warnx(...) {}
 #ifndef errx
 #include <err.h>
 #endif
 
 using std::string;
+int Pexitprogram = 0;
 
 /******************************************************************************
  *                        LIBLO And Reflection Code                           *
@@ -459,8 +463,16 @@ public:
                    int preferred_port);
     ~MiddleWareImpl(void);
 
+    //Check offline vs online mode in plugins
+    void heartBeat(Master *m);
+    int64_t start_time_sec;
+    int64_t start_time_nsec;
+    bool offline;
+
     //Apply function while parameters are write locked
     void doReadOnlyOp(std::function<void()> read_only_fn);
+    void doReadOnlyOpPlugin(std::function<void()> read_only_fn);
+    bool doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail=false);
 
     void savePart(int npart, const char *filename)
     {
@@ -489,7 +501,7 @@ public:
         assert(actual_load[npart] <= pending_load[npart]);
 
         //load part in async fashion when possible
-#if HAVE_ASYNC
+#ifndef WIN32
         auto alloc = std::async(std::launch::async,
                 [master,filename,this,npart](){
                 Part *p = new Part(*master->memory, synth,
@@ -663,6 +675,13 @@ public:
         }
 
         autoSave.tick();
+
+        heartBeat(master);
+
+        //XXX This might have problems with a master swap operation
+        if(offline)
+            master->runOSC(0,0,true);
+
     }
 
 
@@ -838,6 +857,47 @@ class MwDataObj:public rtosc::RtData
         MiddleWareImpl   *mwi;
 };
 
+static std::vector<std::string> getFiles(const char *folder, bool finddir)
+{
+    DIR *dir = opendir(folder);
+
+    if(dir == NULL) {
+        return {};
+    }
+
+    struct dirent *fn;
+    std::vector<string> files;
+
+    while((fn = readdir(dir))) {
+#ifndef WIN32
+        bool is_dir = fn->d_type & DT_DIR;
+        //it could still be a symbolic link
+        if(!is_dir) {
+            string path = string(folder) + "/" + fn->d_name;
+            struct stat buf;
+            memset((void*)&buf, 0, sizeof(buf));
+            int err = stat(path.c_str(), &buf);
+            if(err)
+                printf("[Zyn:Error] stat cannot handle <%s>:%d\n", path.c_str(), err);
+            if(S_ISDIR(buf.st_mode)) {
+                is_dir = true;
+            }
+        }
+#else
+        std::string darn_windows = folder + std::string("/") + std::string(fn->d_name);
+        printf("attr on <%s> => %x\n", darn_windows.c_str(), GetFileAttributes(darn_windows.c_str()));
+        printf("desired mask =  %x\n", mask);
+        printf("error = %x\n", INVALID_FILE_ATTRIBUTES);
+        bool is_dir = GetFileAttributes(darn_windows.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
+#endif
+        if(finddir == is_dir)
+            files.push_back(fn->d_name);
+    }
+
+    closedir(dir);
+    std::sort(begin(files), end(files));
+    return files;
+}
 
 
 
@@ -926,6 +986,25 @@ const rtosc::Ports bankPorts = {
         }
         d.replyArray("/bank/types", t, args);
         rEnd},
+    {"tags:", 0, 0,
+        rBegin;
+        const char *types[8];
+        types[ 0] = "fast";
+        types[ 1] = "slow";
+        types[ 2] = "saw";
+        types[ 3] = "bell";
+        types[ 4] = "lead";
+        types[ 5] = "ambient";
+        types[ 6] = "horn";
+        types[ 7] = "alarm";
+        char        t[8+1]={0};
+        rtosc_arg_t args[8];
+        for(int i=0; i<8; ++i) {
+            t[i]      = 's';
+            args[i].s = types[i];
+        }
+        d.replyArray(d.loc, t, args);
+        rEnd},
     {"slot#1024:", 0, 0,
         rBegin;
         const int loc = extractInt(msg);
@@ -1010,7 +1089,7 @@ const rtosc::Ports bankPorts = {
     {"search:s", 0, 0,
         rBegin;
         auto res = impl.search(rtosc_argument(msg, 0).s);
-#define MAX_SEARCH 128
+#define MAX_SEARCH 300
         char res_type[MAX_SEARCH+1] = {0};
         rtosc_arg_t res_dat[MAX_SEARCH] = {0};
         for(unsigned i=0; i<res.size() && i<MAX_SEARCH; ++i) {
@@ -1019,6 +1098,23 @@ const rtosc::Ports bankPorts = {
         }
         d.replyArray("/bank/search_results", res_type, res_dat);
 #undef MAX_SEARCH
+        rEnd},
+    {"blist:s", 0, 0,
+        rBegin;
+        auto res = impl.blist(rtosc_argument(msg, 0).s);
+#define MAX_SEARCH 300
+        char res_type[MAX_SEARCH+1] = {0};
+        rtosc_arg_t res_dat[MAX_SEARCH] = {0};
+        for(unsigned i=0; i<res.size() && i<MAX_SEARCH; ++i) {
+            res_type[i]  = 's';
+            res_dat[i].s = res[i].c_str();
+        }
+        d.replyArray("/bank/search_results", res_type, res_dat);
+#undef MAX_SEARCH
+        rEnd},
+    {"search_results:", 0, 0,
+        rBegin;
+        d.reply("/bank/search_results", "");
         rEnd},
 };
 
@@ -1157,6 +1253,63 @@ static rtosc::Ports middwareSnoopPorts = {
         const char *file    = rtosc_argument(msg,1).s;
         impl.savePart(part_id, file);
         rEnd},
+    {"file_home_dir:", 0, 0,
+        rBegin;
+        const char *home = getenv("PWD");
+        if(!home)
+            home = getenv("HOME");
+        if(!home)
+            home = getenv("USERPROFILE");
+        if(!home)
+            home = getenv("HOMEPATH");
+        if(!home)
+            home = "/";
+
+        string home_ = home;
+#ifndef WIN32
+        if(home_[home_.length()-1] != '/')
+            home_ += '/';
+#endif
+        d.reply(d.loc, "s", home_.c_str());
+        rEnd},
+    {"file_list_files:s", 0, 0,
+        rBegin;
+        const char *folder = rtosc_argument(msg, 0).s;
+
+        auto files = getFiles(folder, false);
+
+        const int N = files.size();
+        rtosc_arg_t *args  = new rtosc_arg_t[N];
+        char        *types = new char[N+1];
+        types[N] = 0;
+        for(int i=0; i<N; ++i) {
+            args[i].s = files[i].c_str();
+            types[i]  = 's';
+        }
+
+        d.replyArray(d.loc, types, args);
+        delete [] types;
+        delete [] args;
+        rEnd},
+    {"file_list_dirs:s", 0, 0,
+        rBegin;
+        const char *folder = rtosc_argument(msg, 0).s;
+
+        auto files = getFiles(folder, true);
+
+        const int N = files.size();
+        rtosc_arg_t *args  = new rtosc_arg_t[N];
+        char        *types = new char[N+1];
+        types[N] = 0;
+        for(int i=0; i<N; ++i) {
+            args[i].s = files[i].c_str();
+            types[i]  = 's';
+        }
+
+        d.replyArray(d.loc, types, args);
+        delete [] types;
+        delete [] args;
+        rEnd},
     {"reload_auto_save:i", 0, 0,
         rBegin
         const int save_id      = rtosc_argument(msg,0).i;
@@ -1180,10 +1333,12 @@ static rtosc::Ports middwareSnoopPorts = {
         rBegin;
         const char *file = rtosc_argument(msg, 0).s;
         impl.loadMaster(file);
+        d.reply("/damage", "s", "/");
         rEnd},
     {"reset_master:", 0, 0,
         rBegin;
         impl.loadMaster(NULL);
+        d.reply("/damage", "s", "/");
         rEnd},
     {"load_xiz:is", 0, 0,
         rBegin;
@@ -1221,7 +1376,9 @@ static rtosc::Ports middwareSnoopPorts = {
         rEnd},
     {"part#16/clear:", 0, 0,
         rBegin;
-        impl.loadClearPart(extractInt(msg));
+        int id = extractInt(msg);
+        impl.loadClearPart(id);
+        d.reply("/damage", "s", ("/part"+to_s(id)).c_str());
         rEnd},
     {"undo:", 0, 0,
         rBegin;
@@ -1240,16 +1397,20 @@ static rtosc::Ports middwareSnoopPorts = {
 #define MAX_MIDI 32
         rtosc_arg_t args[MAX_MIDI*4];
         char        argt[MAX_MIDI*4+1] = {0};
+        int j=0;
         for(unsigned i=0; i<key.size() && i<MAX_MIDI; ++i) {
             auto val = midi.inv_map[key[i]];
-            argt[4*i+0]   = 'i';
-            args[4*i+0].i = std::get<1>(val);
-            argt[4*i+1]   = 's';
-            args[4*i+1].s = key[i].c_str();
-            argt[4*i+2]   = 'i';
-            args[4*i+2].i = 0;
-            argt[4*i+3]   = 'i';
-            args[4*i+3].i = 127;
+            if(std::get<1>(val) == -1)
+                continue;
+            argt[4*j+0]   = 'i';
+            args[4*j+0].i = std::get<1>(val);
+            argt[4*j+1]   = 's';
+            args[4*j+1].s = key[i].c_str();
+            argt[4*j+2]   = 'i';
+            args[4*j+2].i = 0;
+            argt[4*j+3]   = 'i';
+            args[4*j+3].i = 127;
+            j++;
 
         }
         d.replyArray(d.loc, argt, args);
@@ -1274,7 +1435,8 @@ static rtosc::Ports middwareSnoopPorts = {
         midi.unMap(addr.c_str(), true);
         rEnd},
     //drop this message into the abyss
-    {"ui/title:", 0, 0, [](const char *msg, RtData &d) {}}
+    {"ui/title:", 0, 0, [](const char *msg, RtData &d) {}},
+    {"quit:", 0, 0, [](const char *, RtData&) {Pexitprogram = 1;}},
 };
 
 static rtosc::Ports middlewareReplyPorts = {
@@ -1344,8 +1506,8 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
                 int res = master->saveXML(save_file.c_str());
                 (void)res;});})
 {
-    bToU = new rtosc::ThreadLink(4096*2,1024);
-    uToB = new rtosc::ThreadLink(4096*2,1024);
+    bToU = new rtosc::ThreadLink(4096*2*16,1024/16);
+    uToB = new rtosc::ThreadLink(4096*2*16,1024/16);
     midi_mapper.base_ports = &Master::ports;
     midi_mapper.rt_cb      = [this](const char *msg){handleMsg(msg);};
     if(preferrred_port != -1)
@@ -1390,6 +1552,14 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
             rtosc_message(buf, 1024, "/undo_resume","");
             handleMsg(buf);
             });
+
+    //Setup starting time
+    struct timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    start_time_sec  = time.tv_sec;
+    start_time_nsec = time.tv_nsec;
+
+    offline = false;
 }
 
 MiddleWareImpl::~MiddleWareImpl(void)
@@ -1464,6 +1634,130 @@ void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
     }
 }
 
+//Offline detection code:
+// - Assume that the audio callback should be run at least once every 50ms
+// - Atomically provide the number of ms since start to Master
+// - Every time middleware ticks provide a heart beat
+// - If when the heart beat is provided the backend is more than 200ms behind
+//   the last heartbeat then it must be offline
+// - When marked offline the backend doesn't receive another heartbeat until it
+//   registers the current beat that it's behind on
+void MiddleWareImpl::heartBeat(Master *master)
+{
+    //Current time
+    //Last provided beat
+    //Last acknowledged beat
+    //Current offline status
+    
+    struct timespec time;
+    clock_gettime(CLOCK_MONOTONIC, &time);
+    uint32_t now = (time.tv_sec-start_time_sec)*100 +
+                   (time.tv_nsec-start_time_nsec)*1e-9*100;
+    int32_t last_ack   = master->last_ack;
+    int32_t last_beat  = master->last_beat;
+
+    //everything is considered online for the first second
+    if(now < 100)
+        return;
+
+    if(offline) {
+        if(last_beat == last_ack) {
+            //XXX INSERT MESSAGE HERE ABOUT TRANSITION TO ONLINE
+            offline = false;
+
+            //Send new heart beat
+            master->last_beat = now;
+        }
+    } else {
+        //it's unquestionably alive
+        if(last_beat == last_ack) {
+
+            //Send new heart beat
+            master->last_beat = now;
+            return;
+        }
+
+        //it's pretty likely dead
+        if(last_beat-last_ack > 0 && now-last_beat > 20) {
+            //The backend has had 200 ms to acquire a new beat
+            //The backend instead has an older beat
+            //XXX INSERT MESSAGE HERE ABOUT TRANSITION TO OFFLINE
+            offline = true;
+            return;
+        }
+
+        //who knows if it's alive or not here, give it a few ms to acquire or
+        //not
+    }
+
+}
+
+void MiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
+{
+    assert(uToB);
+    int offline = 0;
+    if(offline) {
+        std::atomic_thread_fence(std::memory_order_acquire);
+
+        //Now it is safe to do any read only operation
+        read_only_fn();
+    } else if(!doReadOnlyOpNormal(read_only_fn, true)) {
+        //check if we just transitioned to offline mode
+
+        std::atomic_thread_fence(std::memory_order_acquire);
+
+        //Now it is safe to do any read only operation
+        read_only_fn();
+    }
+}
+
+bool MiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail)
+{
+    assert(uToB);
+    uToB->write("/freeze_state","");
+
+    std::list<const char *> fico;
+    int tries = 0;
+    while(tries++ < 2000) {
+        if(!bToU->hasNext()) {
+            usleep(500);
+            continue;
+        }
+        const char *msg = bToU->read();
+        if(!strcmp("/state_frozen", msg))
+            break;
+        size_t bytes = rtosc_message_length(msg, bToU->buffer_size());
+        char *save_buf = new char[bytes];
+        memcpy(save_buf, msg, bytes);
+        fico.push_back(save_buf);
+    }
+
+    if(canfail) {
+        //Now to resume normal operations
+        uToB->write("/thaw_state","");
+        for(auto x:fico) {
+            uToB->raw_write(x);
+            delete [] x;
+        }
+        return false;
+    }
+
+    assert(tries < 10000);//if this happens, the backend must be dead
+
+    std::atomic_thread_fence(std::memory_order_acquire);
+
+    //Now it is safe to do any read only operation
+    read_only_fn();
+
+    //Now to resume normal operations
+    uToB->write("/thaw_state","");
+    for(auto x:fico) {
+        uToB->raw_write(x);
+        delete [] x;
+    }
+    return true;
+}
+
 void MiddleWareImpl::broadcastToRemote(const char *rtmsg)
 {
     //Always send to the local UI
@@ -1479,6 +1773,11 @@ void MiddleWareImpl::broadcastToRemote(const char *rtmsg)
 
 void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
 {
+    if(!rtmsg || rtmsg[0] != '/' || !rtosc_message_length(rtmsg, -1)) {
+        printf("[Warning] Invalid message in sendToRemote <%s>...\n", rtmsg);
+        return;
+    }
+
     //printf("sendToRemote(%s:%s,%s)\n", rtmsg, rtosc_argument_string(rtmsg),
     //        dest.c_str());
     if(dest == "GUI") {
@@ -1486,6 +1785,10 @@ void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
     } else if(!dest.empty()) {
         lo_message msg  = lo_message_deserialise((void*)rtmsg,
                 rtosc_message_length(rtmsg, bToU->buffer_size()), NULL);
+        if(!msg) {
+            printf("[ERROR] OSC to <%s> Failed To Parse In Liblo\n", rtmsg);
+            return;
+        }
 
         //Send to known url
         lo_address addr = lo_address_new_from_url(dest.c_str());
@@ -1521,6 +1824,11 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
 
     MwDataObj d(this);
     middlewareReplyPorts.dispatch(rtmsg, d, true);
+
+    if(!rtmsg) {
+        fprintf(stderr, "[ERROR] Unexpected Null OSC In Zyn\n");
+        return;
+    }
 
     in_order = true;
     //Normal message not captured by the ports

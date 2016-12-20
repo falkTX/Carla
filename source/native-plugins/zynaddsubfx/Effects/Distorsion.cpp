@@ -20,25 +20,55 @@
 #include <rtosc/port-sugar.h>
 
 #define rObject Distorsion
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
 rtosc::Ports Distorsion::ports = {
-    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+    {"preset::i", rProp(parameter)
+                  rOptions(Overdrive 1, Overdrive 2, A. Exciter 1, A. Exciter 2, Guitar Amp,
+                    Quantisize)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
-    rEffPar(Plrcross, 2, rShort("l/r") "Left/Right Crossover"),
+    rEffPar(Plrcross, 2, rShort("l/r"), "Left/Right Crossover"),
     rEffPar(Pdrive,   3, rShort("drive"), "Input amplification"),
     rEffPar(Plevel,   4, rShort("output"), "Output amplification"),
-    rEffPar(Ptype,    5, rShort("type"), "Distortion Shape"),
+    rEffPar(Ptype,    5, rShort("type"),
+            rOptions(Arctangent, Asymmetric, Pow, Sine, Quantisize,
+                Zigzag, Limiter, Upper Limiter, Lower Limiter,
+                Inverse Limiter, Clip, Asym2, Pow2, sigmoid),
+            "Distortion Shape"),
     rEffParTF(Pnegate, 6, rShort("neg"), "Negate Signal"),
     rEffPar(Plpf, 7, rShort("lpf"), "Low Pass Cutoff"),
     rEffPar(Phpf, 8, rShort("hpf"), "High Pass Cutoff"),
     rEffParTF(Pstereo, 9, rShort("stereo"), "Stereo"),
     rEffParTF(Pprefiltering, 10, rShort("p.filt"),
                   "Filtering before/after non-linearity"),
+    {"waveform:", 0, 0, [](const char *, rtosc::RtData &d)
+        {
+            Distorsion  &dd = *(Distorsion*)d.obj;
+            float        buffer[128];
+            rtosc_arg_t  args[128];
+            char         arg_str[128+1] = {0};
+
+            for(int i=0; i<128; ++i)
+                buffer[i] = 2*(i/128.0)-1;
+
+            waveShapeSmps(sizeof(buffer), buffer, dd.Ptype + 1, dd.Pdrive);
+
+            for(int i=0; i<128; ++i) {
+                arg_str[i] = 'f';
+                args[i].f  = buffer[i];
+            }
+
+            d.replyArray(d.loc, arg_str, args);
+        }},
 };
 #undef rBegin
 #undef rEnd

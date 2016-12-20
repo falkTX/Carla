@@ -17,16 +17,6 @@
 
 #include "CarlaDefines.h"
 
-#ifdef CARLA_OS_WIN
-# include <cmath>
-# define errx(...) {}
-# define warnx(...) {}
-# define index strchr
-# define rindex strrchr
-#else
-# include <err.h>
-#endif
-
 #define PLUGINVERSION
 #define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
 #undef override

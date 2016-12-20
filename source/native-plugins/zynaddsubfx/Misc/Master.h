@@ -91,6 +91,9 @@ class Master
 
         void vuUpdate(const float *outl, const float *outr);
 
+        //Process a set of OSC events in the bToU buffer
+        bool runOSC(float *outl, float *outr, bool offline=false);
+
         /**Audio Output*/
         bool AudioOut(float *outl, float *outr) REALTIME;
         /**Audio Output (for callback mode).
@@ -175,6 +178,11 @@ class Master
         bool pendingMemory;
         const SYNTH_T &synth;
         const int& gzip_compression; //!< value from config
+
+        //Heartbeat for identifying plugin offline modes
+        //in units of 10 ms (done s.t. overflow is in 497 days)
+        uint32_t last_beat;
+        uint32_t last_ack;
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];

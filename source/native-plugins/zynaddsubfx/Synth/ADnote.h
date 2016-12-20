@@ -95,6 +95,7 @@ class ADnote:public SynthNote
         /**Generate Noise Samples for Voice*/
         inline void ComputeVoiceWhiteNoise(int nvoice);
         inline void ComputeVoicePinkNoise(int nvoice);
+        inline void ComputeVoiceDC(int nvoice);
 
         /**Fadein in a way that removes clicks but keep sound "punchy"*/
         inline void fadein(float *smps) const;

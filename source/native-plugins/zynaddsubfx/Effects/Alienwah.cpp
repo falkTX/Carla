@@ -20,22 +20,29 @@
 using std::complex;
 
 #define rObject Alienwah
-#define rBegin [](const char *, rtosc::RtData &) {
+#define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
 
 rtosc::Ports Alienwah::ports = {
-    {"preset::i", rOptions(Alienwah 1, Alienwah 2, Alienwah 3, Alienwah 4)
+    {"preset::i", rProp(parameter)
+                  rOptions(wah 1, wah 2, wah 3, wah 4)
                   rDoc("Instrument Presets"), 0,
                   rBegin;
+                  rObject *o = (rObject*)d.obj;
+                  if(rtosc_narguments(msg))
+                      o->setpreset(rtosc_argument(msg, 0).i);
+                  else
+                      d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
     //Pvolume/Ppanning are common
     rEffPar(Pfreq,     2, rShort("freq"), "Effect Frequency"),
     rEffPar(Pfreqrnd,  3, rShort("rand"), "Frequency Randomness"),
-    rEffPar(PLFOtype,  4, rShort("shape"), "LFO Shape"),
-    rEffParTF(PStereo, 5, rShort("stereo"), "Stereo/Mono Mode"),
+    rEffPar(PLFOtype,  4, rShort("shape"),
+            rOptions(sine, triangle), "LFO Shape"),
+    rEffPar(PStereo,   5, rShort("stereo"), "Stereo Mode"),
     rEffPar(Pdepth,    6, rShort("depth"), "LFO Depth"),
     rEffPar(Pfeedback, 7, rShort("fb"), "Feedback"),
-    rEffPar(Pdelay,    8, rShort("delay"), "Delay"),
+    rEffPar(Pdelay,    8, rLinear(1,100), rShort("delay"), "Delay"),
     rEffPar(Plrcross,  9, rShort("l/r"), "Left/Right Crossover"),
     rEffPar(Pphase,   10, rShort("phase"), "Phase"),
 };
@@ -159,7 +166,7 @@ void Alienwah::setdelay(unsigned char _Pdelay)
 {
     memory.devalloc(oldl);
     memory.devalloc(oldr);
-    Pdelay = (_Pdelay >= MAX_ALIENWAH_DELAY) ? MAX_ALIENWAH_DELAY : _Pdelay;
+    Pdelay = limit<int>(_Pdelay, 1, MAX_ALIENWAH_DELAY);
     oldl   = memory.valloc<complex<float>>(Pdelay);
     oldr   = memory.valloc<complex<float>>(Pdelay);
     cleanup();

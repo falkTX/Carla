@@ -102,11 +102,11 @@ XMLwrapper::XMLwrapper()
 
     node = root = addparams("ZynAddSubFX-data", 4,
                             "version-major", stringFrom<int>(
-                                version.major()).c_str(),
+                                version.get_major()).c_str(),
                             "version-minor", stringFrom<int>(
-                                version.minor()).c_str(),
+                                version.get_minor()).c_str(),
                             "version-revision",
-                            stringFrom<int>(version.revision()).c_str(),
+                            stringFrom<int>(version.get_revision()).c_str(),
                             "ZynAddSubFX-author", "Nasca Octavian Paul");
 
     //make the empty branch that will contain the information parameters
@@ -125,10 +125,21 @@ XMLwrapper::XMLwrapper()
     endbranch();
 }
 
-XMLwrapper::~XMLwrapper()
+void
+XMLwrapper::cleanup(void)
 {
     if(tree)
         mxmlDelete(tree);
+
+    /* make sure freed memory is not referenced */
+    tree = 0;
+    node = 0;
+    root = 0;
+}
+
+XMLwrapper::~XMLwrapper()
+{
+    cleanup();
 }
 
 void XMLwrapper::setPadSynth(bool enabled)
@@ -297,9 +308,7 @@ const char *trimLeadingWhite(const char *c)
 
 int XMLwrapper::loadXMLfile(const string &filename)
 {
-    if(tree != NULL)
-        mxmlDelete(tree);
-    tree = NULL;
+    cleanup();
 
     const char *xmldata = doloadfile(filename);
     if(xmldata == NULL)
@@ -323,13 +332,13 @@ int XMLwrapper::loadXMLfile(const string &filename)
         return -3;  //the XML doesnt embbed zynaddsubfx data
 
     //fetch version information
-    fileversion.set_major(stringTo<int>(mxmlElementGetAttr(root, "version-major")));
-    fileversion.set_minor(stringTo<int>(mxmlElementGetAttr(root, "version-minor")));
-    fileversion.set_revision(
+    _fileversion.set_major(stringTo<int>(mxmlElementGetAttr(root, "version-major")));
+    _fileversion.set_minor(stringTo<int>(mxmlElementGetAttr(root, "version-minor")));
+    _fileversion.set_revision(
         stringTo<int>(mxmlElementGetAttr(root, "version-revision")));
 
     if(verbose)
-        cout << "loadXMLfile() version: " << fileversion << endl;
+        cout << "loadXMLfile() version: " << _fileversion << endl;
 
     return 0;
 }
@@ -367,10 +376,8 @@ char *XMLwrapper::doloadfile(const string &filename) const
 
 bool XMLwrapper::putXMLdata(const char *xmldata)
 {
-    if(tree != NULL)
-        mxmlDelete(tree);
+    cleanup();
 
-    tree = NULL;
     if(xmldata == NULL)
         return false;
 

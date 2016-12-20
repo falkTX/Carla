@@ -168,7 +168,7 @@ void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
     const char *max = meta["max"];
 
     for(auto m:meta) {
-        if(strlen(m.title) >= 5 && !bcmp(m.title, "map ", 4)) {
+        if(strlen(m.title) >= 5 && !memcmp(m.title, "map ", 4)) {
             int id = atoi(m.title+4);
             std::string val = m.value;
             options.push_back(std::make_pair(id, val));

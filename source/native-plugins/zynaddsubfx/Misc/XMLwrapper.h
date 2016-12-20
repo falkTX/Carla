@@ -16,7 +16,7 @@
 #include <mxml.h>
 #include <string>
 #include <vector>
-#include "../zyn-version.h"
+#include "zyn-version.h"
 
 #ifndef XML_WRAPPER_H
 #define XML_WRAPPER_H
@@ -233,6 +233,10 @@ class XMLwrapper
 
         std::vector<XmlNode> getBranch(void) const;
 
+        const version_type& fileversion() const {
+            return _fileversion;
+        }
+
     private:
 
         /**
@@ -254,6 +258,11 @@ class XMLwrapper
          */
         char *doloadfile(const std::string &filename) const;
 
+        /**
+         * Cleanup XML tree before loading new one.
+         */
+        void cleanup(void);
+
         mxml_node_t *tree; /**<all xml data*/
         mxml_node_t *root; /**<xml data used by zynaddsubfx*/
         mxml_node_t *node; /**<current subtree in parsing or writing */
@@ -272,8 +281,8 @@ class XMLwrapper
          */
         mxml_node_t *addparams(const char *name, unsigned int params,
                                ...) const;
-
-        version_type fileversion;
+public:
+        version_type _fileversion;
 };
 
 #endif
