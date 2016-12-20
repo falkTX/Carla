@@ -198,14 +198,10 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 #ifndef BUILD_BRIDGE
     // Initial path check
     if (std::strcmp(path, "/register") == 0)
-    {
-        const lo_address source(lo_message_get_source(msg));
-        return handleMsgRegister(isTCP, argc, argv, types, source);
-    }
+        return handleMsgRegister(isTCP, argc, argv, types);
+
     if (std::strcmp(path, "/unregister") == 0)
-    {
         return handleMsgUnregister();
-    }
 #endif
 
     const std::size_t nameSize(fName.length());
@@ -331,7 +327,7 @@ int CarlaEngineOsc::handleMessage(const bool isTCP, const char* const path, cons
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source)
+int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types)
 {
     carla_debug("CarlaEngineOsc::handleMsgRegister()");
     CARLA_ENGINE_OSC_CHECK_OSC_TYPES(1, "s");
@@ -347,8 +343,9 @@ int CarlaEngineOsc::handleMsgRegister(const bool isTCP, const int argc, const lo
     carla_debug("CarlaEngineOsc::handleMsgRegister() - OSC backend registered to %s", url);
 
     {
-        const char* host = lo_address_get_hostname(source);
-        const char* port = lo_address_get_port(source);
+        const lo_address  addr = lo_address_new_from_url(url);
+        const char* const host = lo_address_get_hostname(addr);
+        const char* const port = lo_address_get_port(addr);
 
         fControlData.source = lo_address_new_with_proto(isTCP ? LO_TCP : LO_UDP, host, port);
         fControlData.path   = carla_strdup_free(lo_url_get_path(url));

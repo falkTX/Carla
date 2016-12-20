@@ -112,7 +112,7 @@ private:
     int handleMessage(const bool isTCP, const char* const path, const int argc, const lo_arg* const* const argv, const char* const types, const lo_message msg);
 
 #ifndef BUILD_BRIDGE
-    int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types, const lo_address source);
+    int handleMsgRegister(const bool isTCP, const int argc, const lo_arg* const* const argv, const char* const types);
     int handleMsgUnregister();
 #endif
 
