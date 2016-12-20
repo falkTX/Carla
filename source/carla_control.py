@@ -465,7 +465,10 @@ class HostWindowOSC(HostWindow):
         self.ui.act_file_refresh.setEnabled(False)
 
         if lo_target is not None:
-            lo_send(lo_target, "/unregister")
+            try:
+                lo_send(lo_target, "/unregister")
+            except:
+                pass
 
         self.killTimer(self.fIdleTimer)
         self.fIdleTimer = 0
