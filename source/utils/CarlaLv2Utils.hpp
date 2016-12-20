@@ -386,6 +386,7 @@ public:
         }
     }
 
+    // FIXME - remove this
     static Lv2WorldClass& getInstance()
     {
         static Lv2WorldClass lv2World;
@@ -478,6 +479,8 @@ public:
 
         LilvNode* const uriNode(lilv_new_uri(this->me, uri));
         CARLA_SAFE_ASSERT_RETURN(uriNode != nullptr, nullptr);
+
+        CARLA_SAFE_ASSERT(lilv_world_load_resource(this->me, uriNode) >= 0);
 
         LilvState* const cState(lilv_state_new_from_world(this->me, uridMap, uriNode));
         lilv_node_free(uriNode);

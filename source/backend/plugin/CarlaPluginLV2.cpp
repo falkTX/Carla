@@ -1176,14 +1176,16 @@ public:
 
         if (index >= 0 && index < static_cast<int32_t>(fRdfDescriptor->PresetCount))
         {
-            CARLA_SAFE_ASSERT_RETURN(fExt.state != nullptr,);
+            const LV2_URID_Map* const uridMap = (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data;
 
-            LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fRdfDescriptor->Presets[index].URI, (const LV2_URID_Map*)fFeatures[kFeatureIdUridMap]->data);
+            LilvState* const state = Lv2WorldClass::getInstance().getStateFromURI(fRdfDescriptor->Presets[index].URI,
+                                                                                  uridMap);
             CARLA_SAFE_ASSERT_RETURN(state != nullptr,);
 
             // invalidate midi-program selection
             CarlaPlugin::setMidiProgram(-1, false, false, sendCallback);
 
+            if (fExt.state != nullptr)
             {
                 const ScopedSingleProcessLocker spl(this, (sendGui || sendOsc || sendCallback));
 
@@ -1191,6 +1193,10 @@ public:
 
                 if (fHandle2 != nullptr)
                     lilv_state_restore(state, fExt.state, fHandle2, carla_lilv_set_port_value, this, 0, fFeatures);
+            }
+            else
+            {
+                lilv_state_emit_port_values(state, carla_lilv_set_port_value, this);
             }
 
             lilv_state_free(state);
