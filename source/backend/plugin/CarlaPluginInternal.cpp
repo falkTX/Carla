@@ -763,7 +763,7 @@ void CarlaPlugin::ProtectedData::updateParameterValues(CarlaPlugin* const plugin
             param.ranges[i].def = value;
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-        if (sendOsc)
+        if (sendOsc && i < 50)
         {
             if (useDefault)
                 engine->oscSend_control_set_default_value(id, i, value);

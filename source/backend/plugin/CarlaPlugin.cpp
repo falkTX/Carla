@@ -1304,7 +1304,7 @@ void CarlaPlugin::setProgram(const int32_t index, const bool sendGui, const bool
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
 
-    if (reallySendOsc)
+    if (reallySendOsc && index < 50)
         pData->engine->oscSend_control_set_current_program(pData->id, index);
 #else
     const bool reallySendOsc(false);
@@ -1338,7 +1338,7 @@ void CarlaPlugin::setMidiProgram(const int32_t index, const bool sendGui, const 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     const bool reallySendOsc(sendOsc && pData->engine->isOscControlRegistered());
 
-    if (reallySendOsc)
+    if (reallySendOsc && index < 50)
         pData->engine->oscSend_control_set_current_midi_program(pData->id, index);
 #else
     const bool reallySendOsc(false);
@@ -1483,7 +1483,7 @@ void CarlaPlugin::idle()
                 const float paramValue(getParameterValue(j));
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-                if (sendOsc)
+                if (sendOsc && j < 50)
                 {
                     pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
                     pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
@@ -1520,7 +1520,7 @@ void CarlaPlugin::idle()
                 const float paramValue(getParameterValue(j));
 
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
-                if (sendOsc)
+                if (sendOsc && j < 50)
                 {
                     pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(j), paramValue);
                     pData->engine->oscSend_control_set_default_value(pData->id, j, paramDefault);
@@ -1661,9 +1661,15 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // Base count
+    uint32_t paramIns, paramOuts;
+
     {
-        uint32_t paramIns, paramOuts;
         getParameterCountInfo(paramIns, paramOuts);
+
+        if (paramIns > 49)
+            paramIns = 49;
+        if (paramOuts > 49)
+            paramOuts = 49;
 
         pData->engine->oscSend_control_set_audio_count(pData->id, getAudioInCount(), getAudioOutCount());
         pData->engine->oscSend_control_set_midi_count(pData->id, getMidiInCount(), getMidiOutCount());
@@ -1671,32 +1677,52 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // Plugin Parameters
-    if (const uint32_t count = pData->param.count)
+    if (const uint32_t count = std::min<uint32_t>(pData->param.count, 98U))
     {
         char bufName[STR_MAX+1], bufUnit[STR_MAX+1];
 
-        for (uint32_t i=0, maxParams=pData->engine->getOptions().maxParameters; i<count && i<maxParams; ++i)
+        for (uint32_t i=0; i<count; ++i)
         {
+            const ParameterData& paramData(pData->param.data[i]);
+
+            if (paramData.type == PARAMETER_INPUT)
+            {
+                if (--paramIns == 0)
+                    break;
+            }
+            else if (paramData.type == PARAMETER_INPUT)
+            {
+                if (--paramOuts == 0)
+                    break;
+            }
+            else
+            {
+                continue;
+            }
+
+            const ParameterRanges& paramRanges(pData->param.ranges[i]);
+
             carla_zeroChars(bufName, STR_MAX);
             carla_zeroChars(bufUnit, STR_MAX);
 
             getParameterName(i, bufName);
             getParameterUnit(i, bufUnit);
 
-            const ParameterData& paramData(pData->param.data[i]);
-            const ParameterRanges& paramRanges(pData->param.ranges[i]);
-
             pData->engine->oscSend_control_set_parameter_data(pData->id, i, paramData.type, paramData.hints, bufName, bufUnit);
             pData->engine->oscSend_control_set_parameter_ranges1(pData->id, i, paramRanges.def, paramRanges.min, paramRanges.max);
             pData->engine->oscSend_control_set_parameter_ranges2(pData->id, i, paramRanges.step, paramRanges.stepSmall, paramRanges.stepLarge);
             pData->engine->oscSend_control_set_parameter_value(pData->id, static_cast<int32_t>(i), getParameterValue(i));
-            pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, i, paramData.midiCC);
-            pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, i, paramData.midiChannel);
+
+            if (paramData.midiCC >= 0)
+                pData->engine->oscSend_control_set_parameter_midi_cc(pData->id, i, paramData.midiCC);
+
+            if (paramData.midiChannel != 0)
+                pData->engine->oscSend_control_set_parameter_midi_channel(pData->id, i, paramData.midiChannel);
         }
     }
 
     // Programs
-    if (const uint32_t count = pData->prog.count)
+    if (const uint32_t count = std::min<uint32_t>(pData->prog.count, 50U))
     {
         pData->engine->oscSend_control_set_program_count(pData->id, count);
 
@@ -1707,7 +1733,7 @@ void CarlaPlugin::registerToOscClient() noexcept
     }
 
     // MIDI Programs
-    if (const uint32_t count = pData->midiprog.count)
+    if (const uint32_t count = std::min<uint32_t>(pData->midiprog.count, 50U))
     {
         pData->engine->oscSend_control_set_midi_program_count(pData->id, count);
 
