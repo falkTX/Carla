@@ -386,10 +386,7 @@ protected:
 
             switch (index)
             {
-            case kParamPart01Enabled:
-                param.name = "Part 01 Enabled";
-                param.ranges.def = 1.0f;
-                break;
+            PARAM_PART_ENABLE_DESC( 1)
             PARAM_PART_ENABLE_DESC( 2)
             PARAM_PART_ENABLE_DESC( 3)
             PARAM_PART_ENABLE_DESC( 4)
