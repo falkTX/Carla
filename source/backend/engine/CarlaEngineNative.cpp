@@ -570,7 +570,8 @@ private:
     void _updateParamValues(CarlaPlugin* const plugin, const uint32_t pluginId) const noexcept
     {
         for (uint32_t i=0, count=plugin->getParameterCount(); i<count; ++i)
-            fEngine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pluginId, i, 0, plugin->getParameterValue(i), nullptr);
+            fEngine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED,
+                              pluginId, static_cast<int>(i), 0, plugin->getParameterValue(i), nullptr);
     }
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineNativeUI)
@@ -1645,8 +1646,8 @@ protected:
     void setState(const char* const data)
     {
         // remove all plugins from UI side
-        for (int i=pData->curPluginCount; --i >= 0;)
-            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, i, 0, 0, 0.0f, nullptr);
+        for (uint i=0, count=pData->curPluginCount; i < count; ++i)
+            CarlaEngine::callback(ENGINE_CALLBACK_PLUGIN_REMOVED, count-i-1, 0, 0, 0.0f, nullptr);
 
         // remove all plugins from backend, no lock
         fIsRunning = false;

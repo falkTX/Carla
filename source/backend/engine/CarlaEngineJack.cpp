@@ -355,12 +355,12 @@ public:
 
         if (kIndexOffset < 0xFF /* uint8_t max */)
         {
-            port = kIndexOffset;
+            port = static_cast<uint8_t>(kIndexOffset);
         }
         else
         {
             port = 0;
-            carla_safe_assert_int("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
+            carla_safe_assert_uint("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
         }
 
         fRetEvent.time = jackEvent.time;
@@ -455,7 +455,9 @@ public:
           fUseClient(engine.getProccessMode() == ENGINE_PROCESS_MODE_SINGLE_CLIENT || engine.getProccessMode() == ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
           fAudioPorts(),
           fCVPorts(),
-          fEventPorts()
+          fEventPorts(),
+          fPreRenameMutex(),
+          fPreRenameConnections()
     {
         carla_debug("CarlaEngineJackClient::CarlaEngineJackClient(%p)", jackClient);
 
@@ -820,7 +822,9 @@ public:
           fUsedPorts(),
           fUsedConnections(),
           fNewGroups(),
-          fRetConns()
+          fRetConns(),
+          fPostPonedEvents(),
+          fPostPonedEventsMutex()
 #endif
     {
         carla_debug("CarlaEngineJack::CarlaEngineJack()");

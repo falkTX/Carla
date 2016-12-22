@@ -26,7 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-//#define RTMEMPOOL_THREAD_SAFETY 1
+#define RTMEMPOOL_THREAD_SAFETY 0
 
 #if RTMEMPOOL_THREAD_SAFETY
 #define rtmempool_mutex_lock(m) pthread_mutex_lock(m)

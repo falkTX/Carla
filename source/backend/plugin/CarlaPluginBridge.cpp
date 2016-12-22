@@ -2699,6 +2699,8 @@ private:
               aInNames(nullptr),
               aOutNames(nullptr),
               chunk() {}
+
+        CARLA_DECLARE_NON_COPY_STRUCT(Info)
     } fInfo;
 
     int64_t fUniqueId;

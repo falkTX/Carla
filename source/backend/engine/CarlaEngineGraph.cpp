@@ -31,6 +31,7 @@
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+using juce::AudioBuffer;
 using juce::AudioPluginInstance;
 using juce::AudioProcessor;
 using juce::AudioProcessorEditor;
@@ -1210,7 +1211,7 @@ public:
         return fPlugin->getName();
     }
 
-    void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi) override
+    void processBlock(AudioBuffer<float>& audio, MidiBuffer& midi) override
     {
         if (fPlugin == nullptr || ! fPlugin->isEnabled())
         {
@@ -1257,7 +1258,7 @@ public:
             float outPeaks[2] = { 0.0f };
             juce::Range<float> range;
 
-            for (int i=jmin(fPlugin->getAudioInCount(), 2U); --i>=0;)
+            for (int i=static_cast<int>(jmin(fPlugin->getAudioInCount(), 2U)); --i>=0;)
             {
                 range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
                 inPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
@@ -1265,7 +1266,7 @@ public:
 
             fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, static_cast<uint32_t>(numSamples));
 
-            for (int i=jmin(fPlugin->getAudioOutCount(), 2U); --i>=0;)
+            for (int i=static_cast<int>(jmin(fPlugin->getAudioOutCount(), 2U)); --i>=0;)
             {
                 range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
                 outPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
@@ -1290,6 +1291,11 @@ public:
         }
 
         fPlugin->unlock();
+    }
+
+    void processBlock(AudioBuffer<double>& audio, MidiBuffer& midi) override
+    {
+        ignoreUnused(audio, midi);
     }
 
     const String getInputChannelName(int i)  const override
@@ -1354,8 +1360,10 @@ private:
 class NamedAudioGraphIOProcessor : public CarlaAudioProcessorGraph::AudioGraphIOProcessor
 {
 public:
-    NamedAudioGraphIOProcessor(const IODeviceType type)
-        : CarlaAudioProcessorGraph::AudioGraphIOProcessor(type) {}
+    NamedAudioGraphIOProcessor(const IODeviceType iotype)
+        : CarlaAudioProcessorGraph::AudioGraphIOProcessor(iotype),
+          inputNames(),
+          outputNames() {}
 
     const String getInputChannelName (int index) const override
     {
@@ -1371,9 +1379,9 @@ public:
         return String("Capture ") + String(index+1);
     }
 
-    void setNames(const bool isInput, const StringArray& names)
+    void setNames(const bool setInputNames, const StringArray& names)
     {
-        if (isInput)
+        if (setInputNames)
             inputNames = names;
         else
             outputNames = names;

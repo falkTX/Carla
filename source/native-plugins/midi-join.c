@@ -63,7 +63,7 @@ static void midijoin_process(NativePluginHandle handle, float** inBuffer, float*
 
         tmpEvent.port    = 0;
         tmpEvent.time    = midiEvent->time;
-        tmpEvent.data[0] = status | (midiEvent->port & MIDI_CHANNEL_BIT);
+        tmpEvent.data[0] = (uint8_t)(status | (midiEvent->port & MIDI_CHANNEL_BIT));
         tmpEvent.data[1] = midiEvent->data[1];
         tmpEvent.data[2] = midiEvent->data[2];
         tmpEvent.data[3] = midiEvent->data[3];

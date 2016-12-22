@@ -489,6 +489,7 @@ public:
     }
 
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2WorldClass)
 };
 
 // -----------------------------------------------------------------------

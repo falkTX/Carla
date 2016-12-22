@@ -138,6 +138,10 @@ CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++ -Wnon-virtual-dtor -Woverlo
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
 CXXFLAGS   += -isystem /opt/kxstudio/include/ntk
+CXXFLAGS   += -isystem /usr/include/glib-2.0
+CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
+CXXFLAGS   += -isystem /usr/include/gtk-2.0
+CXXFLAGS   += -isystem /usr/include/gtk-2.0/gio
 CXXFLAGS   += -isystem /usr/include/qt4
 endif
 ifeq ($(MACOS),true)

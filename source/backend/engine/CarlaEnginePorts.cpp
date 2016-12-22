@@ -265,12 +265,12 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
         if (kIndexOffset < 0xFF /* uint8_t max */)
         {
-            event.midi.port = kIndexOffset;
+            event.midi.port = static_cast<uint8_t>(kIndexOffset);
         }
         else
         {
             event.midi.port = 0;
-            carla_safe_assert_int("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
+            carla_safe_assert_uint("kIndexOffset < 0xFF", __FILE__, __LINE__, kIndexOffset);
         }
 
         event.midi.data[0] = status;

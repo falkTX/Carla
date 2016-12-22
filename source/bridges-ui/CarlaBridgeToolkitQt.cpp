@@ -201,9 +201,9 @@ public:
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
         if (ui->getOptions().isResizable)
-            fWindow->resize(width, height);
+            fWindow->resize(static_cast<int>(width), static_cast<int>(height));
         else
-            fWindow->setFixedSize(width, height);
+            fWindow->setFixedSize(static_cast<int>(width), static_cast<int>(height));
     }
 
     void setTitle(const char* const title) override

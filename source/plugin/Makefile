@@ -189,7 +189,7 @@ $(OBJDIR)/carla-vst.cpp.patchbay-syn.o: carla-vst.cpp
 $(OBJDIR)/carla-vst.cpp.patchbay-syn16.o: carla-vst.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (PatchbaySynth 16ch)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH=1 -c -o $@
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_PATCHBAY=1 -DCARLA_PLUGIN_SYNTH=1 -DCARLA_PLUGIN_16CH -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

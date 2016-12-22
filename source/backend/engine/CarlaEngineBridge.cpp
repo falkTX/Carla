@@ -635,7 +635,7 @@ public:
                     fShmNonRtServerControl.writeByte(kPluginBridgePortAudioInput);
                     fShmNonRtServerControl.writeUInt(i);
 
-                    bufStrSize = std::strlen(portName);
+                    bufStrSize = static_cast<uint32_t>(std::strlen(portName));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
                     fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
                 }
@@ -651,7 +651,7 @@ public:
                     fShmNonRtServerControl.writeByte(kPluginBridgePortAudioOutput);
                     fShmNonRtServerControl.writeUInt(i);
 
-                    bufStrSize = std::strlen(portName);
+                    bufStrSize = static_cast<uint32_t>(std::strlen(portName));
                     fShmNonRtServerControl.writeUInt(bufStrSize);
                     fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
                 }

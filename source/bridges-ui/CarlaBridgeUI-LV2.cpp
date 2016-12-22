@@ -645,22 +645,21 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
         carla_debug("CarlaLv2Client::getCustomURID(\"%s\")", uri);
 
-        LV2_URID urid = CARLA_URI_MAP_ID_NULL;
+        const std::string    s_uri(uri);
+        const std::ptrdiff_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
 
-        const std::size_t uriCount(fCustomURIDs.size());
+        if (s_pos <= 0 || s_pos >= UINT32_MAX)
+            return CARLA_URI_MAP_ID_NULL;
 
-        const std::string s_uri(uri);
-        const std::size_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
+        const LV2_URID urid     = static_cast<LV2_URID>(s_pos);
+        const LV2_URID uriCount = static_cast<LV2_URID>(fCustomURIDs.size());
 
-        if (s_pos < uriCount)
-        {
-            urid = static_cast<LV2_URID>(s_pos);
-        }
-        else
-        {
-            urid = static_cast<LV2_URID>(uriCount);
-            fCustomURIDs.push_back(uri);
-        }
+        if (urid < uriCount)
+            return urid;
+
+        CARLA_SAFE_ASSERT(urid == uriCount);
+
+        fCustomURIDs.push_back(uri);
 
         if (isPipeRunning())
             writeLv2UridMessage(urid, uri);

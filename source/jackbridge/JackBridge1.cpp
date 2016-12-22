@@ -1581,7 +1581,7 @@ int jackbridge_port_type_size()
     return 32;
 }
 
-uint32_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type)
+size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type)
 {
 #if defined(JACKBRIDGE_DUMMY)
 #elif defined(JACKBRIDGE_DIRECT)

@@ -351,9 +351,9 @@ JACKBRIDGE_API bool jackbridge_connect(jack_client_t* client, const char* source
 JACKBRIDGE_API bool jackbridge_disconnect(jack_client_t* client, const char* source_port, const char* destination_port);
 JACKBRIDGE_API bool jackbridge_port_disconnect(jack_client_t* client, jack_port_t* port);
 
-JACKBRIDGE_API int      jackbridge_port_name_size();
-JACKBRIDGE_API int      jackbridge_port_type_size();
-JACKBRIDGE_API uint32_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type);
+JACKBRIDGE_API int    jackbridge_port_name_size();
+JACKBRIDGE_API int    jackbridge_port_type_size();
+JACKBRIDGE_API size_t jackbridge_port_type_get_buffer_size(jack_client_t* client, const char* port_type);
 
 JACKBRIDGE_API void jackbridge_port_get_latency_range(jack_port_t* port, uint32_t mode, jack_latency_range_t* range);
 JACKBRIDGE_API void jackbridge_port_set_latency_range(jack_port_t* port, uint32_t mode, jack_latency_range_t* range);

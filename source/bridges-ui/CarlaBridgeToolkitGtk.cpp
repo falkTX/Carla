@@ -149,7 +149,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::resize(%i, %i)", width, height);
 
-        gtk_window_resize(GTK_WINDOW(fWindow), width, height);
+        gtk_window_resize(GTK_WINDOW(fWindow), static_cast<gint>(width), static_cast<gint>(height));
     }
 
     void setTitle(const char* const title) override

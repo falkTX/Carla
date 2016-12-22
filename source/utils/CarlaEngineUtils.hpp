@@ -189,7 +189,7 @@ void fillJuceMidiBufferFromEngineEvents(juce::MidiBuffer& midiBuffer, const Engi
                 // copy
                 carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
                 // add channel
-                mdataTmp[0] |= (engineEvent.channel & MIDI_CHANNEL_BIT);
+                mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
                 // done
                 mdataPtr = mdataTmp;
             }

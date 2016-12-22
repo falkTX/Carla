@@ -193,7 +193,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     return (::WaitForSingleObject(sem.handle, msecs) == WAIT_OBJECT_0);
 #else
     const uint secs  =  msecs / 1000;
-    const int  nsecs = (msecs % 1000) * 1000000;
+    const uint nsecs = (msecs % 1000) * 1000000;
 
 # if defined(CARLA_OS_MAC)
     const mach_timespec timeout = { secs, nsecs };

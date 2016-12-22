@@ -294,8 +294,8 @@ protected:
 
             const double ticksPerBeat  = 48.0;
             const double ticksPerFrame = ticksPerBeat / (60.0 / beatsPerMinute * getSampleRate());
-            const double fullTicks     = static_cast<double>(ticksPerFrame*static_cast<long double>(fTimeInfo.frame));
-            const double fullBeats     = fullTicks/ticksPerBeat;
+            const double fullTicks     = static_cast<double>(ticksPerFrame * static_cast<long double>(fTimeInfo.frame));
+            const double fullBeats     = fullTicks / ticksPerBeat;
 
             const uint32_t tick = static_cast<uint32_t>(std::floor(std::fmod(fullTicks, ticksPerBeat)));
             const uint32_t beat = static_cast<uint32_t>(std::floor(std::fmod(fullBeats, static_cast<double>(beatsPerBar))));
@@ -349,7 +349,8 @@ protected:
         midiEvent.size    = event->size;
 
         carla_stdout("Playing at %f :: %03X:%03i:%03i",
-                     float(double(midiEvent.time)*fTicksPerFrame), midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
+                     float(double(midiEvent.time)*fTicksPerFrame),
+                     midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
 
         NativePluginAndUiClass::writeMidiEvent(&midiEvent);
     }

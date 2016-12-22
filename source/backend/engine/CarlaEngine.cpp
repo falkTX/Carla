@@ -789,8 +789,8 @@ bool CarlaEngine::removeAllPlugins()
 # ifdef HAVE_LIBLO
     if (isOscControlRegistered())
     {
-        for (int i=curPluginCount; --i >= 0;)
-            oscSend_control_remove_plugin(i);
+        for (uint i=0; i < curPluginCount; ++i)
+            oscSend_control_remove_plugin(curPluginCount-i-1);
     }
 # endif
 #endif

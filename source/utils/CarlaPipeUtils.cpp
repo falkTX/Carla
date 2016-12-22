@@ -168,7 +168,7 @@ uint32_t getMillisecondCounter() noexcept
     uint32_t now;
     timespec t;
     clock_gettime(CLOCK_MONOTONIC, &t);
-    now =  t.tv_sec * 1000 + t.tv_nsec / 1000000;
+    now = static_cast<uint32_t>(t.tv_sec * 1000 + t.tv_nsec / 1000000);
 
     if (now < lastMSCounterValue)
     {

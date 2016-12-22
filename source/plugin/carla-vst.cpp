@@ -236,7 +236,7 @@ public:
                         fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, (int32_t)value, nullptr, 0.0f);
                 }
 
-                if (sampleRate != 0.0 && carla_isNotEqual(fSampleRate, sampleRate))
+                if (carla_isNotZero(sampleRate) && carla_isNotEqual(fSampleRate, sampleRate))
                 {
                     fSampleRate = sampleRate;
 
@@ -752,7 +752,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
 
             const NativePluginDescriptor* pluginDesc  = nullptr;
 #if CARLA_PLUGIN_PATCHBAY
-# if CARLA_PLUGIN_16CH
+# ifdef CARLA_PLUGIN_16CH
             const char* const pluginLabel = "carlapatchbay16";
 # else
             const char* const pluginLabel = "carlapatchbay";
@@ -822,7 +822,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         {
 #if CARLA_PLUGIN_PATCHBAY
 # if CARLA_PLUGIN_SYNTH
-#  if CARLA_PLUGIN_16CH
+#  ifdef CARLA_PLUGIN_16CH
             std::strncpy(cptr, "Carla-Patchbay16", 32);
 #  else
             std::strncpy(cptr, "Carla-Patchbay", 32);
@@ -854,7 +854,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
         {
 #if CARLA_PLUGIN_PATCHBAY
 # if CARLA_PLUGIN_SYNTH
-#  if CARLA_PLUGIN_16CH
+#  ifdef CARLA_PLUGIN_16CH
             std::strncpy(cptr, "CarlaPatchbay16", 32);
 #  else
             std::strncpy(cptr, "CarlaPatchbay", 32);
@@ -948,7 +948,7 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
 # if CARLA_PLUGIN_PATCHBAY
-#  if CARLA_PLUGIN_16CH
+#  ifdef CARLA_PLUGIN_16CH
     effect->uniqueID = uniqueId+5;
 #  else
     effect->uniqueID = uniqueId+4;
@@ -967,7 +967,7 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     // plugin fields
     effect->numParams   = 0;
     effect->numPrograms = 0;
-#if CARLA_PLUGIN_16CH
+#ifdef CARLA_PLUGIN_16CH
     effect->numInputs   = 16;
     effect->numOutputs  = 16;
 #else

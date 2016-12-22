@@ -316,6 +316,7 @@ struct CarlaPluginLV2Options {
     CarlaPluginLV2Options() noexcept
         : maxBufferSize(0),
           minBufferSize(0),
+          nominalBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
           frontendWinId(0),
@@ -1269,14 +1270,14 @@ public:
                     const ScopedLocale csl;
 
                     // write URI mappings
-                    uint32_t i = 0;
-                    for (auto it=fCustomURIDs.begin(), end=fCustomURIDs.end(); it != end; ++it, ++i)
+                    uint32_t u = 0;
+                    for (auto it=fCustomURIDs.begin(), end=fCustomURIDs.end(); it != end; ++it, ++u)
                     {
-                        if (i < CARLA_URI_MAP_ID_COUNT)
+                        if (u < CARLA_URI_MAP_ID_COUNT)
                             continue;
                         const std::string& uri(*it);
 
-                        std::snprintf(tmpBuf, 0xff, "%u\n", i);
+                        std::snprintf(tmpBuf, 0xff, "%u\n", u);
 
                         fPipeServer.writeMessage("urid\n", 5);
                         fPipeServer.writeMessage(tmpBuf);
@@ -4302,20 +4303,26 @@ public:
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0', CARLA_URI_MAP_ID_NULL);
         carla_debug("CarlaPluginLV2::getCustomURID(\"%s\")", uri);
 
-        const std::size_t uriCount(fCustomURIDs.size());
+        const std::string    s_uri(uri);
+        const std::ptrdiff_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
 
-        const std::string s_uri(uri);
-        const std::size_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
+        if (s_pos <= 0 || s_pos >= UINT32_MAX)
+            return CARLA_URI_MAP_ID_NULL;
 
-        if (s_pos < uriCount)
-            return static_cast<LV2_URID>(s_pos);
+        const LV2_URID urid     = static_cast<LV2_URID>(s_pos);
+        const LV2_URID uriCount = static_cast<LV2_URID>(fCustomURIDs.size());
+
+        if (urid < uriCount)
+            return urid;
+
+        CARLA_SAFE_ASSERT(urid == uriCount);
 
         fCustomURIDs.push_back(uri);
 
         if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
             fPipeServer.writeLv2UridMessage(uriCount, uri);
 
-        return uriCount;
+        return urid;
     }
 
     const char* getCustomURIDString(const LV2_URID urid) const noexcept
