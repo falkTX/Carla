@@ -99,6 +99,8 @@ public:
 
     void run()
     {
+        carla_stdout("DSSI UI thread started");
+
         if (fProcess == nullptr)
         {
             fProcess = new ChildProcess();
@@ -107,9 +109,9 @@ public:
         {
             carla_stderr("CarlaThreadDSSI::run() - already running, giving up...");
 
-            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
             fProcess->kill();
             fProcess = nullptr;
+            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
             return;
         }
 
@@ -208,19 +210,17 @@ public:
                 carla_stderr("CarlaThreadDSSIUI::run() - UI crashed while running");
             else
                 carla_stdout("CarlaThreadDSSIUI::run() - UI closed cleanly");
-
-            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
         }
         else
         {
             fProcess->kill();
-
             carla_stdout("CarlaThreadDSSIUI::run() - GUI timeout");
-            kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
         }
 
-        carla_stdout("DSSI UI finished");
         fProcess = nullptr;
+        kEngine->callback(CarlaBackend::ENGINE_CALLBACK_UI_STATE_CHANGED, kPlugin->getId(), 0, 0, 0.0f, nullptr);
+
+        carla_stdout("DSSI UI thread finished");
     }
 
 private:
@@ -236,10 +236,10 @@ private:
     bool waitForOscGuiShow()
     {
         carla_stdout("CarlaThreadDSSIUI::waitForOscGuiShow()");
-        uint i=0, oscUiTimeout = kEngine->getOptions().uiBridgesTimeout;
+        const uint uiBridgesTimeout = kEngine->getOptions().uiBridgesTimeout;
 
         // wait for UI 'update' call
-        for (; i < oscUiTimeout/100; ++i)
+        for (uint i=0; i < uiBridgesTimeout/100; ++i)
         {
             if (fOscData.target != nullptr)
             {
@@ -248,13 +248,14 @@ private:
                 return true;
             }
 
-            if (fProcess != nullptr && fProcess->isRunning())
+            if (fProcess != nullptr && fProcess->isRunning() && ! shouldThreadExit())
                 carla_msleep(100);
             else
                 return false;
         }
 
-        carla_stdout("CarlaThreadDSSIUI::waitForOscGuiShow() - Timeout while waiting for UI to respond (waited %u msecs)", oscUiTimeout);
+        carla_stdout("CarlaThreadDSSIUI::waitForOscGuiShow() - Timeout while waiting for UI to respond"
+                     "(waited %u msecs)", uiBridgesTimeout);
         return false;
     }
 
@@ -2411,7 +2412,7 @@ public:
         for (uint32_t i=0; i < pData->param.count; ++i)
             osc_send_control(fOscData, pData->param.data[i].rindex, getParameterValue(i));
 
-        if ((pData->hints & PLUGIN_HAS_CUSTOM_UI) != 0 && pData->engine->getOptions().frontendWinId != 0)
+        if (pData->engine->getOptions().frontendWinId != 0)
             pData->transientTryCounter = 1;
 
         carla_stdout("CarlaPluginDSSI::updateOscData() - done");

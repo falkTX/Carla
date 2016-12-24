@@ -1,6 +1,6 @@
 /*
  * Carla DSSI utils
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,11 +21,11 @@
 #include "CarlaLadspaUtils.hpp"
 #include "dssi/dssi.h"
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Find UI binary for a plugin (returned value must be deleted)
 
 const char* find_dssi_ui(const char* const filename, const char* const label) noexcept;
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_DSSI_UTILS_HPP_INCLUDED
