@@ -1404,18 +1404,18 @@ public:
     {
         if (fForcedStereoIn)
         {
-            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getFirst(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input)");
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input, first)");
             }
 
-            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input)");
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo input, last)");
             }
         }
         else
@@ -1436,18 +1436,18 @@ public:
 
         if (fForcedStereoOut)
         {
-            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getFirst(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output)");
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output, first)");
             }
 
-            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output)");
+                } CARLA_SAFE_EXCEPTION("LADSPA connect_port (forced stereo output, last)");
             }
         }
         else
@@ -1541,7 +1541,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const uint options,
+    bool init(const char* const filename, const char* name, const char* const label, const uint options,
               const LADSPA_RDF_Descriptor* const rdfDescriptor)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
@@ -1633,15 +1633,17 @@ public:
         if (is_ladspa_rdf_descriptor_valid(rdfDescriptor, fDescriptor))
             fRdfDescriptor = ladspa_rdf_dup(rdfDescriptor);
 
-        if (name != nullptr && name[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(name);
-        else if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr && fRdfDescriptor->Title[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(fRdfDescriptor->Title);
-        else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
-        else
-            pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
+        if (name == nullptr || name[0] == '\0')
+        {
+            /**/ if (fRdfDescriptor != nullptr && fRdfDescriptor->Title != nullptr && fRdfDescriptor->Title[0] != '\0')
+                name = fRdfDescriptor->Title;
+            else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
+                name = fDescriptor->Name;
+            else
+                name = fDescriptor->Label;
+        }
 
+        pData->name = pData->engine->getUniquePluginName(name);
         pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------

@@ -90,7 +90,7 @@ public:
             fLabel = "\"\"";
     }
 
-    uintptr_t getProcessPID() const noexcept
+    uintptr_t getProcessId() const noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fProcess != nullptr, 0);
 
@@ -158,8 +158,13 @@ public:
 
             if (winId != 0)
             {
-                std::snprintf(winIdStr, STR_MAX, P_UINTPTR, kEngine->getOptions().frontendWinId);
-                ldPreloadValue = (CarlaString(kEngine->getOptions().binaryDir) + CARLA_OS_SEP_STR "libcarla_interposer-x11.so");
+                std::snprintf(winIdStr, STR_MAX, P_UINTPTR, winId);
+                ldPreloadValue = (CarlaString(kEngine->getOptions().binaryDir)
+                               + CARLA_OS_SEP_STR "libcarla_interposer-x11.so");
+            }
+            else
+            {
+                winIdStr[0] = '\0';
             }
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
@@ -2100,18 +2105,18 @@ public:
     {
         if (fForcedStereoIn)
         {
-            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getFirst(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[0].rindex, fAudioInBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input)");
+                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input, first)");
             }
 
-            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioIn.ports[1].rindex, fAudioInBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input)");
+                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo input, last)");
             }
         }
         else
@@ -2132,18 +2137,18 @@ public:
 
         if (fForcedStereoOut)
         {
-            if (LADSPA_Handle const handle = fHandles.getAt(0, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getFirst(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[0].rindex, fAudioOutBuffers[0]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output)");
+                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output, first)");
             }
 
-            if (LADSPA_Handle const handle = fHandles.getAt(1, nullptr))
+            if (LADSPA_Handle const handle = fHandles.getLast(nullptr))
             {
                 try {
                     fDescriptor->connect_port(handle, pData->audioOut.ports[1].rindex, fAudioOutBuffers[1]);
-                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output)");
+                } CARLA_SAFE_EXCEPTION("DSSI connect_port (forced stereo output, last)");
             }
         }
         else
@@ -2496,7 +2501,7 @@ public:
 #ifdef HAVE_LIBLO
     uintptr_t getUiBridgeProcessId() const noexcept override
     {
-        return fThreadUI.getProcessPID();
+        return fThreadUI.getProcessId();
     }
 
     const void* getExtraStuff() const noexcept override
@@ -2507,7 +2512,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const label, const uint options)
+    bool init(const char* const filename, const char* name, const char* const label, const uint options)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -2615,13 +2620,15 @@ public:
         // ---------------------------------------------------------------
         // get info
 
-        if (name != nullptr && name[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(name);
-        else if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
-            pData->name = pData->engine->getUniquePluginName(fDescriptor->Name);
-        else
-            pData->name = pData->engine->getUniquePluginName(fDescriptor->Label);
+        if (name == nullptr || name[0] == '\0')
+        {
+            if (fDescriptor->Name != nullptr && fDescriptor->Name[0] != '\0')
+                name = fDescriptor->Name;
+            else
+                name = fDescriptor->Label;
+        }
 
+        pData->name = pData->engine->getUniquePluginName(name);
         pData->filename = carla_strdup(filename);
 
         // ---------------------------------------------------------------
