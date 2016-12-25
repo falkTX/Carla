@@ -436,20 +436,9 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
 {
     CARLA_SAFE_ASSERT_RETURN(channels != newChannels || frames != newFrames,);
 
-    // delete old buffer
-    if (buffers != nullptr)
-    {
-        for (uint32_t i=0; i < channels; ++i)
-        {
-            CARLA_SAFE_ASSERT_CONTINUE(buffers[i] != nullptr);
-
-            delete[] buffers[i];
-            buffers[i] = nullptr;
-        }
-
-        delete[] buffers;
-        buffers = nullptr;
-    }
+    const bool retrieveOldBuffer = (channels == newChannels && channels > 0 && frames > 0 && newFrames > 0);
+    float** const oldBuffers = buffers;
+    const uint32_t oldFrames = frames;
 
     channels = newChannels;
     frames   = newFrames;
@@ -461,8 +450,44 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
         for (uint32_t i=0; i < channels; ++i)
         {
             buffers[i] = new float[frames];
-            FloatVectorOperations::clear(buffers[i], static_cast<int>(frames));
+
+            if (retrieveOldBuffer)
+            {
+                if (oldFrames > frames)
+                {
+                    const uint32_t diff = oldFrames - frames;
+                    FloatVectorOperations::copy(buffers[i], oldBuffers[i] + diff, static_cast<int>(frames));
+                }
+                else
+                {
+                    const uint32_t diff = frames - oldFrames;
+                    FloatVectorOperations::clear(buffers[i], static_cast<int>(diff));
+                    FloatVectorOperations::copy(buffers[i] + diff, oldBuffers[i], static_cast<int>(oldFrames));
+                }
+            }
+            else
+            {
+                FloatVectorOperations::clear(buffers[i], static_cast<int>(frames));
+            }
         }
+    }
+    else
+    {
+        buffers = nullptr;
+    }
+
+    // delete old buffer
+    if (oldBuffers != nullptr)
+    {
+        for (uint32_t i=0; i < channels; ++i)
+        {
+            CARLA_SAFE_ASSERT_CONTINUE(oldBuffers[i] != nullptr);
+
+            delete[] oldBuffers[i];
+            oldBuffers[i] = nullptr;
+        }
+
+        delete[] oldBuffers;
     }
 }
 

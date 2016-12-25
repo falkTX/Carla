@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin, LADSPA implementation
- * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,7 +40,7 @@ public:
           fLatencyIndex(-1),
           fForcedStereoIn(false),
           fForcedStereoOut(false),
-          fIsDssiVst(false)
+          fNeedsFixedBuffers(false)
     {
         carla_debug("CarlaPluginLADSPA::CarlaPluginLADSPA(%p, %i)", engine, id);
 
@@ -162,16 +162,17 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
 
+        if (fRdfDescriptor == nullptr)
+            return 0;
+
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      0);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, 0);
 
-        if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
-        {
-            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            return static_cast<uint32_t>(port->ScalePointCount);
-        }
+        if (rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
+            return 0;
 
-        return 0;
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        return static_cast<uint32_t>(port.ScalePointCount);
     }
 
     // -------------------------------------------------------------------
@@ -186,7 +187,7 @@ public:
     {
         uint options = 0x0;
 
-        if (! fIsDssiVst)
+        if (! fNeedsFixedBuffers)
         {
             // can't disable fixed buffers if using latency
             if (fLatencyIndex == -1)
@@ -222,18 +223,14 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      0.0f);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                                              0.0f);
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->PortCount), 0.0f);
 
-        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
-        {
-            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, 0.0f);
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < port.ScalePointCount, 0.0f);
 
-            const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
-            return pData->param.ranges[parameterId].getFixedValue(scalePoint->Value);
-        }
-
-        return 0.0f;
+        const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
+        return pData->param.ranges[parameterId].getFixedValue(scalePoint.Value);
     }
 
     void getLabel(char* const strBuf) const noexcept override
@@ -286,8 +283,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
-
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                                           nullStrBuf(strBuf));
         CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fDescriptor->PortCount), nullStrBuf(strBuf));
         CARLA_SAFE_ASSERT_RETURN(fDescriptor->PortNames[rindex] != nullptr,             nullStrBuf(strBuf));
 
@@ -297,43 +293,20 @@ public:
         std::strncpy(strBuf, fDescriptor->PortNames[rindex], STR_MAX);
     }
 
-    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
-    {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
-
-        const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
-
-        if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
-        {
-            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-
-            if (LADSPA_PORT_HAS_LABEL(port->Hints))
-            {
-                CARLA_SAFE_ASSERT_RETURN(port->Label != nullptr, nullStrBuf(strBuf));
-
-                std::strncpy(strBuf, port->Label, STR_MAX);
-                return;
-            }
-        }
-
-        nullStrBuf(strBuf);
-    }
-
     void getParameterUnit(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, nullStrBuf(strBuf));
 
         if (fRdfDescriptor != nullptr && rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
         {
-            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
+            const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
 
-            if (LADSPA_PORT_HAS_UNIT(port->Hints))
+            if (LADSPA_PORT_HAS_UNIT(port.Hints))
             {
-                switch (port->Unit)
+                switch (port.Unit)
                 {
                 case LADSPA_UNIT_DB:
                     std::strncpy(strBuf, "dB", STR_MAX);
@@ -366,27 +339,45 @@ public:
         nullStrBuf(strBuf);
     }
 
+    void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+
+        if (fRdfDescriptor == nullptr)
+            return nullStrBuf(strBuf);
+
+        const int32_t rindex(pData->param.data[parameterId].rindex);
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0, nullStrBuf(strBuf));
+
+        if (rindex >= static_cast<int32_t>(fRdfDescriptor->PortCount))
+            return nullStrBuf(strBuf);
+
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+
+        if (! LADSPA_PORT_HAS_LABEL(port.Hints))
+            return nullStrBuf(strBuf);
+
+        CARLA_SAFE_ASSERT_RETURN(port.Label != nullptr, nullStrBuf(strBuf));
+
+        std::strncpy(strBuf, port.Label, STR_MAX);
+    }
+
     void getParameterScalePointLabel(const uint32_t parameterId, const uint32_t scalePointId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr,        nullStrBuf(strBuf));
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
 
         const int32_t rindex(pData->param.data[parameterId].rindex);
-        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                      nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex >= 0,                                              nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(rindex < static_cast<int32_t>(fRdfDescriptor->PortCount), nullStrBuf(strBuf));
 
-        if (rindex < static_cast<int32_t>(fRdfDescriptor->PortCount))
-        {
-            const LADSPA_RDF_Port* const port(&fRdfDescriptor->Ports[rindex]);
-            CARLA_SAFE_ASSERT_RETURN(scalePointId < port->ScalePointCount, nullStrBuf(strBuf));
+        const LADSPA_RDF_Port& port(fRdfDescriptor->Ports[rindex]);
+        CARLA_SAFE_ASSERT_RETURN(scalePointId < port.ScalePointCount, nullStrBuf(strBuf));
 
-            const LADSPA_RDF_ScalePoint* const scalePoint(&port->ScalePoints[scalePointId]);
-            CARLA_SAFE_ASSERT_RETURN(scalePoint->Label != nullptr,         nullStrBuf(strBuf));
+        const LADSPA_RDF_ScalePoint& scalePoint(port.ScalePoints[scalePointId]);
+        CARLA_SAFE_ASSERT_RETURN(scalePoint.Label != nullptr, nullStrBuf(strBuf));
 
-            std::strncpy(strBuf, scalePoint->Label, STR_MAX);
-            return;
-        }
-
-        nullStrBuf(strBuf);
+        std::strncpy(strBuf, scalePoint.Label, STR_MAX);
     }
 
     // -------------------------------------------------------------------
@@ -917,6 +908,15 @@ public:
         }
 
         // --------------------------------------------------------------------------------------------------------
+        // Check if needs reset
+
+        if (pData->needsReset)
+        {
+            // nothing to do
+            pData->needsReset = false;
+        }
+
+        // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing
 
         if (pData->event.portIn != nullptr)
@@ -926,10 +926,9 @@ public:
 
             const bool isSampleAccurate = (pData->options & PLUGIN_OPTION_FIXED_BUFFERS) == 0;
 
-            uint32_t numEvents  = pData->event.portIn->getEventCount();
             uint32_t timeOffset = 0;
 
-            for (uint32_t i=0; i < numEvents; ++i)
+            for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
 
@@ -1132,20 +1131,6 @@ public:
         }
 
         const int iframes(static_cast<int>(frames));
-
-        // --------------------------------------------------------------------------------------------------------
-        // Handle needsReset
-
-        if (pData->needsReset)
-        {
-            if (pData->latency.frames > 0)
-            {
-                for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::clear(pData->latency.buffers[i], static_cast<int>(pData->latency.frames));
-            }
-
-            pData->needsReset = false;
-        }
 
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
@@ -1692,14 +1677,14 @@ public:
         // ---------------------------------------------------------------
         // check if this is dssi-vst
 
-        fIsDssiVst = CarlaString(filename).contains("dssi-vst", true);
+        fNeedsFixedBuffers = CarlaString(filename).contains("dssi-vst", true);
 
         // ---------------------------------------------------------------
         // set default options
 
         pData->options = 0x0;
 
-        /**/ if (fLatencyIndex >= 0 || fIsDssiVst)
+        /**/ if (fLatencyIndex >= 0 || fNeedsFixedBuffers)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
          else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -1727,7 +1712,7 @@ private:
     int32_t fLatencyIndex; // -1 if invalid
     bool    fForcedStereoIn;
     bool    fForcedStereoOut;
-    bool    fIsDssiVst;
+    bool    fNeedsFixedBuffers;
 
     // -------------------------------------------------------------------
 

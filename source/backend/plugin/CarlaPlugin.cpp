@@ -1420,7 +1420,7 @@ void CarlaPlugin::idle()
 
     if (pData->latency.frames != latency)
     {
-        carla_stdout("latency changed to %i", latency);
+        carla_stdout("latency changed to %i samples", latency);
 
         const ScopedSingleProcessLocker sspl(this, true);
 
