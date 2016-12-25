@@ -142,7 +142,11 @@ CXXFLAGS   += -isystem /usr/include/glib-2.0
 CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
 CXXFLAGS   += -isystem /usr/include/gtk-2.0
 CXXFLAGS   += -isystem /usr/include/gtk-2.0/gio
+ifeq ($(DEFAULT_QT),4)
 CXXFLAGS   += -isystem /usr/include/qt4
+else
+CXXFLAGS   += -isystem /usr/include/qt5
+endif
 endif
 ifeq ($(MACOS),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
