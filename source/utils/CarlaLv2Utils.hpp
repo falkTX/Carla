@@ -1,6 +1,6 @@
 /*
  * Carla LV2 utils
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -83,6 +83,10 @@
 #else
 # include "juce_core/juce_core.h"
 #endif
+
+// used for scalepoint sorting
+#include <map>
+typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 
 // -----------------------------------------------------------------------
 // Define namespaces and missing prefixes
@@ -1124,18 +1128,36 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->ScalePointCount = lilvScalePoints.size();
                     rdfPort->ScalePoints = new LV2_RDF_PortScalePoint[rdfPort->ScalePointCount];
 
-                    uint32_t h = 0;
+                    // get all scalepoints and sort them by value
+                    LilvScalePointMap sortedpoints;
+
                     LILV_FOREACH(scale_points, it, lilvScalePoints)
                     {
-                        CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
-
                         Lilv::ScalePoint lilvScalePoint(lilvScalePoints.get(it));
+
+                        CARLA_SAFE_ASSERT_CONTINUE(lilvScalePoint.get_label() != nullptr);
+
+                        if (const LilvNode* const valuenode = lilvScalePoint.get_value())
+                        {
+                            const double valueid = lilv_node_as_float(valuenode);
+                            sortedpoints[valueid] = lilvScalePoint.me;
+                        }
+                    }
+
+                    // now safe to store, sorted by using std::map
+                    uint32_t h = 0;
+                    for (LilvScalePointMap::iterator it=sortedpoints.begin(), end=sortedpoints.end(); it != end; ++it)
+                    {
+                        CARLA_SAFE_ASSERT_BREAK(h < rdfPort->ScalePointCount);
                         LV2_RDF_PortScalePoint* const rdfScalePoint(&rdfPort->ScalePoints[h++]);
 
-                        if (const char* const label = lilv_node_as_string(lilvScalePoint.get_label()))
-                            rdfScalePoint->Label = carla_strdup(label);
+                        const LilvScalePoint* const scalepoint = it->second;
 
-                        rdfScalePoint->Value = Lilv::Node(lilvScalePoint.get_value()).as_float();
+                        const LilvNode* const xlabel = lilv_scale_point_get_label(scalepoint);
+                        const LilvNode* const xvalue = lilv_scale_point_get_value(scalepoint);
+
+                        rdfScalePoint->Label = carla_strdup(lilv_node_as_string(xlabel));
+                        rdfScalePoint->Value = lilv_node_as_float(xvalue);
                     }
                 }
 
