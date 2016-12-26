@@ -151,6 +151,9 @@ public:
         options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         options |= PLUGIN_OPTION_USE_CHUNKS;
 
+        if (fInstance->getNumPrograms() > 1)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
         if (fInstance->acceptsMidi())
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
@@ -1220,7 +1223,7 @@ public:
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (fDesc.isInstrument)
+        if (fInstance->getNumPrograms() > 1)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fInstance->acceptsMidi())
@@ -1229,10 +1232,10 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
-        }
 
-        // TODO: read some options
-        ignoreUnused(options);
+            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        }
 
         return true;
     }

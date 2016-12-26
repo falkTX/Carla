@@ -150,8 +150,6 @@ public:
 
     uint32_t getParameterScalePointCount(const uint32_t parameterId) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0);
-
         switch (parameterId)
         {
         case FluidSynthChorusType:
@@ -193,9 +191,6 @@ public:
 
     float getParameterScalePointValue(const uint32_t parameterId, const uint32_t scalePointId) const noexcept override
     {
-        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
-        CARLA_SAFE_ASSERT_RETURN(scalePointId < getParameterScalePointCount(parameterId), 0.0f);
-
         switch (parameterId)
         {
         case FluidSynthChorusType:
@@ -1632,11 +1627,10 @@ public:
         pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
         pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
-        // TODO: read some options
+        if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+            pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
 
         return true;
-
-        (void)options;
     }
 
 private:

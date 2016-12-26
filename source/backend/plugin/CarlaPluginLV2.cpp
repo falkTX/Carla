@@ -808,28 +808,25 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
-        const bool hasMidiIn(getMidiInCount() > 0);
+        const uint32_t midiOutCount(getMidiOutCount());
 
         uint options = 0x0;
+
+        // can't disable fixed buffers if using latency or MIDI output
+        if (fLatencyIndex == -1 && midiOutCount == 0 && ! fNeedsFixedBuffers)
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
+        // can't disable forced stereo if in rack mode
+        if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            pass();
+        // if inputs or outputs are just 1, then yes we can force stereo
+        else if ((pData->audioIn.count == 1 || pData->audioOut.count == 1) && fCanInit2)
+            options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fExt.programs != nullptr)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        // can't disable fixed buffers if using latency or MIDI
-        if (fLatencyIndex >= 0 || hasMidiIn || fNeedsFixedBuffers)
-            pass();
-        else
-            options |= PLUGIN_OPTION_FIXED_BUFFERS;
-
-        if (fCanInit2 && pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-            else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
-
-        if (hasMidiIn)
+        if (midiOutCount != 0)
         {
             options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
@@ -5020,14 +5017,13 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
+        const uint32_t midiOutCount(getMidiOutCount());
+
         pData->options = 0x0;
 
-        if (fExt.programs != nullptr && getCategory() == PLUGIN_CATEGORY_SYNTH)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (fLatencyIndex >= 0 || getMidiInCount() > 0 || fNeedsFixedBuffers)
+        if (fLatencyIndex >= 0 || midiOutCount != 0 || fNeedsFixedBuffers)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (fCanInit2)
@@ -5038,12 +5034,18 @@ public:
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        if (getMidiInCount() > 0)
+        if (fExt.programs != nullptr)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (midiOutCount != 0)
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         }
 
         // ---------------------------------------------------------------

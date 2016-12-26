@@ -417,22 +417,22 @@ public:
 
         uint options = 0x0;
 
-        if (! fNeedsFixedBuffers)
-        {
-            // can't disable fixed buffers if using latency
-            if (fLatencyIndex == -1)
-                options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        // can't disable fixed buffers if using latency
+        if (fLatencyIndex == -1 && ! fNeedsFixedBuffers)
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            // can't disable forced stereo if in rack mode
-            if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-                pass();
-            // if inputs or outputs are just 1, then yes we can force stereo
-            else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
+        // can't disable forced stereo if in rack mode
+        if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            pass();
+        // if inputs or outputs are just 1, then yes we can force stereo
+        else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
+            options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+
+        if (fUsesCustomData)
+            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         if (fDssiDescriptor->run_synth != nullptr)
         {
@@ -442,9 +442,6 @@ public:
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
-
-        if (fUsesCustomData)
-            options |= PLUGIN_OPTION_USE_CHUNKS;
 
         return options;
     }
@@ -2174,8 +2171,8 @@ public:
 
         if (fOscData.source == nullptr)
         {
-            // if no UI is registered yet only "update" message is valid
-            CARLA_SAFE_ASSERT_RETURN(std::strcmp(method, "update") == 0,)
+            // if no UI is registered yet only "configure" and "update" messages are valid
+            CARLA_SAFE_ASSERT_RETURN(std::strcmp(method, "configure") == 0 || std::strcmp(method, "update") == 0,)
         }
         else
         {
@@ -2333,11 +2330,7 @@ public:
         if (pData->midiprog.current >= 0)
         {
             const MidiProgramData& curMidiProg(pData->midiprog.getCurrent());
-
-            if (getType() == PLUGIN_DSSI)
-                osc_send_program(fOscData, curMidiProg.bank, curMidiProg.program);
-            else
-                osc_send_midi_program(fOscData, curMidiProg.bank, curMidiProg.program);
+            osc_send_program(fOscData, curMidiProg.bank, curMidiProg.program);
         }
 
         for (uint32_t i=0; i < pData->param.count; ++i)
@@ -2651,13 +2644,16 @@ public:
 
         /**/ if (fLatencyIndex >= 0 || fNeedsFixedBuffers)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
-         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         /**/ if (pData->engine->getOptions().forceStereo)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
-         else if (options & PLUGIN_OPTION_FORCE_STEREO)
+        else if (options & PLUGIN_OPTION_FORCE_STEREO)
             pData->options |= PLUGIN_OPTION_FORCE_STEREO;
+
+        if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fUsesCustomData)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
@@ -2669,8 +2665,8 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
-            if (fDssiDescriptor->get_program != nullptr && fDssiDescriptor->select_program != nullptr)
-                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         }
 
         return true;

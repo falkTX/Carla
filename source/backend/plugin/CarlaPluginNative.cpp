@@ -330,23 +330,29 @@ public:
     uint getOptionsAvailable() const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fDescriptor != nullptr, 0x0);
-        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, 0);
+        CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr,     0x0);
 
-        // FIXME - try
-        const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
+        bool hasMidiProgs = false;
+
+        if (fDescriptor->get_midi_program_count != nullptr)
+        {
+            try {
+                hasMidiProgs = fDescriptor->get_midi_program_count(fHandle) > 0;
+            } catch (...) {}
+        }
 
         uint options = 0x0;
 
-        if (getMidiInCount() == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
+        // can't disable fixed buffers if using MIDI output
+        if (getMidiOutCount() == 0 && (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) == 0)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-        {
-            if (pData->options & PLUGIN_OPTION_FORCE_STEREO)
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-            else if (pData->audioIn.count <= 1 && pData->audioOut.count <= 1 && (pData->audioIn.count != 0 || pData->audioOut.count != 0))
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
+        // can't disable forced stereo if in rack mode
+        if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            pass();
+        // if inputs or outputs are just 1, then yes we can force stereo
+        else if (pData->audioIn.count == 1 || pData->audioOut.count == 1)
+            options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
@@ -2383,11 +2389,18 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
-        const bool hasMidiProgs(fDescriptor->get_midi_program_count != nullptr && fDescriptor->get_midi_program_count(fHandle) > 0);
+        bool hasMidiProgs = false;
+
+        if (fDescriptor->get_midi_program_count != nullptr)
+        {
+            try {
+                hasMidiProgs = fDescriptor->get_midi_program_count(fHandle) > 0;
+            } catch (...) {}
+        }
 
         pData->options = 0x0;
 
-        if (getMidiInCount() > 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
+        if (getMidiOutCount() != 0 || (fDescriptor->hints & NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS) != 0)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
          else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -2406,15 +2419,18 @@ public:
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_ALL_SOUND_OFF)
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
 
+        if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
+        {
+            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+        }
+
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_PROGRAM_CHANGES)
         {
             CARLA_SAFE_ASSERT(! hasMidiProgs);
             pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
-
-            if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
-                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         }
-        else if (hasMidiProgs && fDescriptor->category == NATIVE_PLUGIN_CATEGORY_SYNTH)
+        else if (hasMidiProgs)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;

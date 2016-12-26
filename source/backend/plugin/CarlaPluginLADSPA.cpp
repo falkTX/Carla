@@ -187,19 +187,16 @@ public:
     {
         uint options = 0x0;
 
-        if (! fNeedsFixedBuffers)
-        {
-            // can't disable fixed buffers if using latency
-            if (fLatencyIndex == -1)
-                options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        // can't disable fixed buffers if using latency
+        if (fLatencyIndex == -1 && ! fNeedsFixedBuffers)
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-            // can't disable forced stereo if in rack mode
-            if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-                pass();
-            // if inputs or outputs are just 1, then yes we can force stereo
-            else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
-                options |= PLUGIN_OPTION_FORCE_STEREO;
-        }
+        // can't disable forced stereo if in rack mode
+        if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            pass();
+        // if inputs or outputs are just 1, then yes we can force stereo
+        else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)
+            options |= PLUGIN_OPTION_FORCE_STEREO;
 
         return options;
     }

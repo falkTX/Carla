@@ -1345,8 +1345,6 @@ public:
         if (kIsGIG)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        // TODO: read some options
-
         return true;
 
         (void)options;

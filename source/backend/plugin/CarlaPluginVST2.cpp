@@ -205,18 +205,21 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 
+        const bool hasMidiOut(hasMidiOutput());
+
         uint options = 0x0;
 
-        options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
+        // can't disable fixed buffers if using latency or MIDI output
+        if (pData->latency.frames == 0 && ! hasMidiOut)
+            options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
+        if (fEffect->numPrograms > 1)
+            options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (getMidiInCount() == 0)
-        {
-            options |= PLUGIN_OPTION_FIXED_BUFFERS;
-        }
-        else
+        if (hasMidiOut)
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -1795,7 +1798,8 @@ protected:
 
         case audioMasterGetNumAutomatableParameters:
             // Deprecated in VST SDK 2.4
-            ret = carla_fixedValue<intptr_t>(0, static_cast<intptr_t>(pData->engine->getOptions().maxParameters), fEffect->numParams);
+            ret = static_cast<intptr_t>(pData->engine->getOptions().maxParameters);
+            ret = carla_minPositive<intptr_t>(ret, fEffect->numParams);
             break;
 
         case audioMasterGetParameterQuantization:
@@ -2181,24 +2185,31 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
+        const bool hasMidiOut(hasMidiOutput());
+
         pData->options = 0x0;
 
-        if (fEffect->flags & effFlagsIsSynth)
+        if (pData->latency.frames != 0 || hasMidiOut)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
+
+        if (fEffect->numPrograms > 1)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         if (fEffect->flags & effFlagsProgramChunks)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (hasMidiInput())
+        if (hasMidiOut)
         {
-            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+
+            if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
         }
-        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
-            pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         return true;
 
@@ -2338,7 +2349,7 @@ private:
             return 1;
 
         case audioMasterGetVendorVersion:
-            return 0x110; // 1.1.0
+            return CARLA_VERSION_HEX;
 
         case audioMasterCanDo:
             CARLA_SAFE_ASSERT_RETURN(ptr != nullptr, 0);
