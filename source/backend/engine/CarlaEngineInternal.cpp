@@ -169,7 +169,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     {
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         maxPluginNumber = MAX_RACK_PLUGINS;
-        options.forceStereo = true; // just in case
+        options.forceStereo = true;
         break;
     case ENGINE_PROCESS_MODE_PATCHBAY:
         maxPluginNumber = MAX_PATCHBAY_PLUGINS;

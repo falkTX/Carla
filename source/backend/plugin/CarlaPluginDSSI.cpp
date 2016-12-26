@@ -421,8 +421,8 @@ public:
         if (fLatencyIndex == -1 && ! fNeedsFixedBuffers)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        // can't disable forced stereo if in rack mode
-        if (pData->engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        // can't disable forced stereo if enabled in the engine
+        if (pData->engine->getOptions().forceStereo)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
         else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fForcedStereoIn || fForcedStereoOut)

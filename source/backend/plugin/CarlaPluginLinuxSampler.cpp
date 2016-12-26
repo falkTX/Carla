@@ -1409,7 +1409,8 @@ CarlaPlugin* CarlaPlugin::newLinuxSampler(const Initializer& init, const char* c
 
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only sample-library version");
+        init.engine->setLastError("Carla's rack mode can only work with Stereo modules,"
+                                  "please choose the 2-channel only sample-library version");
         return nullptr;
     }
 

@@ -1683,7 +1683,8 @@ CarlaPlugin* CarlaPlugin::newFluidSynth(const Initializer& init, const bool use1
 #ifdef HAVE_FLUIDSYNTH
     if (init.engine->getProccessMode() == ENGINE_PROCESS_MODE_CONTINUOUS_RACK && use16Outs)
     {
-        init.engine->setLastError("Carla's rack mode can only work with Stereo modules, please choose the 2-channel only SoundFont version");
+        init.engine->setLastError("Carla's rack mode can only work with Stereo modules,"
+                                  "please choose the 2-channel only SoundFont version");
         return nullptr;
     }
 

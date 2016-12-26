@@ -1201,8 +1201,8 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
     }
 
     effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
-    effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRate);
-    effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
+    effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRatef);
+    effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRatef);
     effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
     effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
@@ -1251,8 +1251,8 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
             effect = vstFn(vstHostCallback);
 
             effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdentify), 0, 0, nullptr, 0.0f);
-            effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRate);
-            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRate);
+            effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effSetBlockSizeAndSampleRate), 0, kBufferSize, nullptr, kSampleRatef);
+            effect->dispatcher(effect, effSetSampleRate, 0, 0, nullptr, kSampleRatef);
             effect->dispatcher(effect, effSetBlockSize, 0, kBufferSize, nullptr, 0.0f);
             effect->dispatcher(effect, effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
 
