@@ -205,12 +205,10 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr, 0);
 
-        const bool hasMidiOut(hasMidiOutput());
-
         uint options = 0x0;
 
         // can't disable fixed buffers if using latency or MIDI output
-        if (pData->latency.frames == 0 && ! hasMidiOut)
+        if (pData->latency.frames == 0 && ! hasMidiOutput())
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (fEffect->numPrograms > 1)
@@ -219,7 +217,7 @@ public:
         if (fEffect->flags & effFlagsProgramChunks)
             options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (hasMidiOut)
+        if (hasMidiInput())
         {
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -2185,11 +2183,9 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
-        const bool hasMidiOut(hasMidiOutput());
-
         pData->options = 0x0;
 
-        if (pData->latency.frames != 0 || hasMidiOut)
+        if (pData->latency.frames != 0 || hasMidiOutput())
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -2200,7 +2196,7 @@ public:
         if (fEffect->flags & effFlagsProgramChunks)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (hasMidiOut)
+        if (hasMidiInput())
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;

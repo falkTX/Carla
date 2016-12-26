@@ -808,12 +808,10 @@ public:
 
     uint getOptionsAvailable() const noexcept override
     {
-        const uint32_t midiOutCount(getMidiOutCount());
-
         uint options = 0x0;
 
         // can't disable fixed buffers if using latency or MIDI output
-        if (fLatencyIndex == -1 && midiOutCount == 0 && ! fNeedsFixedBuffers)
+        if (fLatencyIndex == -1 && getMidiOutCount() == 0 && ! fNeedsFixedBuffers)
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         // can't disable forced stereo if enabled in the engine
@@ -826,14 +824,14 @@ public:
         if (fExt.programs != nullptr)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (midiOutCount != 0)
+        if (getMidiInCount() != 0)
         {
-            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
             options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
             options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         return options;
@@ -5017,11 +5015,9 @@ public:
         // ---------------------------------------------------------------
         // set default options
 
-        const uint32_t midiOutCount(getMidiOutCount());
-
         pData->options = 0x0;
 
-        if (fLatencyIndex >= 0 || midiOutCount != 0 || fNeedsFixedBuffers)
+        if (fLatencyIndex >= 0 || getMidiOutCount() != 0 || fNeedsFixedBuffers)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
@@ -5034,10 +5030,7 @@ public:
                 pData->options |= PLUGIN_OPTION_FORCE_STEREO;
         }
 
-        if (fExt.programs != nullptr)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
-        if (midiOutCount != 0)
+        if (getMidiInCount() != 0)
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
             pData->options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
@@ -5046,7 +5039,12 @@ public:
 
             if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
+
+        if (fExt.programs != nullptr && (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0)
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         // ---------------------------------------------------------------
         // gui stuff
