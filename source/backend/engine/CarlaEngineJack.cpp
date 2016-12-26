@@ -851,6 +851,7 @@ public:
         fUsedPorts.clear();
         fUsedConnections.clear();
         fNewGroups.clear();
+        CARLA_SAFE_ASSERT(fPostPonedEvents.count() == 0);
 #endif
     }
 
@@ -1023,9 +1024,7 @@ public:
         return true;
 #else
         stopThread(-1);
-
-        if (fPostPonedEvents.count() > 0)
-            fPostPonedEvents.clear();
+        fPostPonedEvents.clear();
 
         CARLA_SAFE_ASSERT_RETURN_ERR(fClient != nullptr, "JACK Client is null");
 
@@ -1039,6 +1038,7 @@ public:
         fUsedPorts.clear();
         fUsedConnections.clear();
         fNewGroups.clear();
+        fPostPonedEvents.clear();
 
         // clear rack/patchbay stuff
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
