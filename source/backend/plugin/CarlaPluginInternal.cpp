@@ -615,7 +615,7 @@ CarlaPlugin::ProtectedData::ProtectedData(CarlaEngine* const eng, const uint idx
 
 CarlaPlugin::ProtectedData::~ProtectedData() noexcept
 {
-    CARLA_SAFE_ASSERT(! needsReset);
+    CARLA_SAFE_ASSERT(! (active && needsReset));
     CARLA_SAFE_ASSERT(transientTryCounter == 0);
 
     {

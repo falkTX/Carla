@@ -142,6 +142,7 @@ class group_dict_t(object):
         'split',
         'icon',
         'plugin_id',
+        'plugin_ui',
         'widgets'
     ]
 
@@ -461,6 +462,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
     group_dict.split = bool(split == SPLIT_YES)
     group_dict.icon = icon
     group_dict.plugin_id = -1
+    group_dict.plugin_ui = False
     group_dict.widgets = [group_box, None]
 
     if split == SPLIT_YES:
@@ -578,6 +580,8 @@ def splitGroup(group_id):
     item = None
     group_name = ""
     group_icon = ICON_APPLICATION
+    plugin_id  = -1
+    plugin_ui  = False
     ports_data = []
     conns_data = []
 
@@ -591,6 +595,8 @@ def splitGroup(group_id):
             item = group.widgets[0]
             group_name = group.group_name
             group_icon = group.icon
+            plugin_id  = group.plugin_id
+            plugin_ui  = group.plugin_ui
             break
 
     if not item:
@@ -634,6 +640,9 @@ def splitGroup(group_id):
     # Step 3 - Re-create Item, now splitted
     addGroup(group_id, group_name, SPLIT_YES, group_icon)
 
+    if plugin_id >= 0:
+        setGroupAsPlugin(group_id, plugin_id, plugin_ui)
+
     for port in ports_data:
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
 
@@ -650,6 +659,8 @@ def joinGroup(group_id):
     s_item = None
     group_name = ""
     group_icon = ICON_APPLICATION
+    plugin_id  = -1
+    plugin_ui  = False
     ports_data = []
     conns_data = []
 
@@ -664,6 +675,8 @@ def joinGroup(group_id):
             s_item = group.widgets[1]
             group_name = group.group_name
             group_icon = group.icon
+            plugin_id  = group.plugin_id
+            plugin_ui  = group.plugin_ui
             break
 
     # FIXME
@@ -712,6 +725,9 @@ def joinGroup(group_id):
 
     # Step 3 - Re-create Item, now together
     addGroup(group_id, group_name, SPLIT_NO, group_icon)
+
+    if plugin_id >= 0:
+        setGroupAsPlugin(group_id, plugin_id, plugin_ui)
 
     for port in ports_data:
         addPort(group_id, port.port_id, port.port_name, port.port_mode, port.port_type, port.is_alternate)
@@ -776,17 +792,6 @@ def setGroupIcon(group_id, icon):
 
     qCritical("PatchCanvas::setGroupIcon(%i, %s) - unable to find group to change icon" % (group_id, icon2str(icon)))
 
-def getPluginAsGroup(plugin_id):
-    if canvas.debug:
-        print("PatchCanvas::getPluginAsGroup(%i)" % plugin_id)
-
-    for group in canvas.group_list:
-        if group.plugin_id == plugin_id:
-            return (True, group.group_id)
-
-    qCritical("PatchCanvas::getPluginAsGroup(%i) - no such plugin" % plugin_id)
-    return (False, -1)
-
 def setGroupAsPlugin(group_id, plugin_id, hasUi):
     if canvas.debug:
         print("PatchCanvas::setGroupAsPlugin(%i, %i, %s)" % (group_id, plugin_id, bool2str(hasUi)))
@@ -794,6 +799,7 @@ def setGroupAsPlugin(group_id, plugin_id, hasUi):
     for group in canvas.group_list:
         if group.group_id == group_id:
             group.plugin_id = plugin_id
+            group.plugin_ui = hasUi
             group.widgets[0].setAsPlugin(plugin_id, hasUi)
 
             if group.split and group.widgets[1]:
@@ -1017,11 +1023,14 @@ def handleAllPluginsRemoved():
         print("PatchCanvas::handleAllPluginsRemoved()")
 
     for group in canvas.group_list:
-        group.plugin_id -= 1
-        group.widgets[0].m_plugin_id -= 1
+        group.plugin_id = -1
+        group.plugin_ui = False
+        group.widgets[0].m_plugin_id = -1
+        group.widgets[0].m_plugin_ui = False
 
         if group.split and group.widgets[1]:
-            group.widgets[1].m_plugin_id -= 1
+            group.widgets[1].m_plugin_id = -1
+            group.widgets[1].m_plugin_ui = False
 
 # Extra Internal functions
 
