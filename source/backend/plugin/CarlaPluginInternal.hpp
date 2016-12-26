@@ -269,14 +269,18 @@ struct CarlaPlugin::ProtectedData {
     } extNotes;
 
     struct Latency {
-        uint32_t channels;
         uint32_t frames;
+#ifndef BUILD_BRIDGE
+        uint32_t channels;
         float**  buffers;
+#endif
 
         Latency() noexcept;
+#ifndef BUILD_BRIDGE
         ~Latency() noexcept;
         void clearBuffers() noexcept;
         void recreateBuffers(const uint32_t newChannels, const uint32_t newFrames);
+#endif
 
         CARLA_DECLARE_NON_COPY_STRUCT(Latency)
 

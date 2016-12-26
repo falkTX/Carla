@@ -851,24 +851,22 @@ public:
             deactivate();
         }
 
-#if 0 // TODO
-        // check latency
-        if (pData->hints & PLUGIN_CAN_DRYWET)
-        {
+        // check initial latency
 #ifdef VESTIGE_HEADER
-            char* const empty3Ptr = &fEffect->empty3[0];
-            int32_t initialDelay = *(int32_t*)empty3Ptr;
-            pData->latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
+        char* const empty3Ptr = &fEffect->empty3[0];
+        int32_t initialDelay = *(int32_t*)empty3Ptr;
+        const uint32_t latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
 #else
-            pData->latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
+        const uint32_t latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
 #endif
 
-            pData->client->setLatency(pData->latency);
+        if (latency != 0)
+        {
+            pData->client->setLatency(latency);
 #ifndef BUILD_BRIDGE
-            pData->recreateLatencyBuffers();
+            pData->latency.recreateBuffers(std::max(aIns, aOuts), latency);
 #endif
         }
-#endif
 
         //bufferSizeChanged(pData->engine->getBufferSize());
         reloadPrograms(true);
@@ -1056,16 +1054,6 @@ public:
                     fMidiEvents[i].midiData[1] = char(i);
                 }
             }
-
-#ifndef BUILD_BRIDGE
-#if 0 // TODO
-            if (pData->latency > 0)
-            {
-                for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::clear(pData->latencyBuffers[i], static_cast<int>(pData->latency));
-            }
-#endif
-#endif
 
             pData->needsReset = false;
         }
@@ -2209,7 +2197,7 @@ public:
             pData->options |= PLUGIN_OPTION_SEND_PITCHBEND;
             pData->options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
         }
-         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
+        else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         return true;

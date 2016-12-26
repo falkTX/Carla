@@ -403,10 +403,15 @@ void CarlaPlugin::ProtectedData::ExternalNotes::clear() noexcept
 // ProtectedData::Latency
 
 CarlaPlugin::ProtectedData::Latency::Latency() noexcept
-    : channels(0),
-      frames(0),
+#ifdef BUILD_BRIDGE
+    : frames(0) {}
+#else
+    : frames(0),
+      channels(0),
       buffers(nullptr) {}
+#endif
 
+#ifndef BUILD_BRIDGE
 CarlaPlugin::ProtectedData::Latency::~Latency() noexcept
 {
     clearBuffers();
@@ -490,6 +495,7 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
         delete[] oldBuffers;
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // ProtectedData::PostRtEvents
@@ -708,7 +714,9 @@ void CarlaPlugin::ProtectedData::clearBuffers() noexcept
     cvOut.clear();
     param.clear();
     event.clear();
+#ifndef BUILD_BRIDGE
     latency.clearBuffers();
+#endif
 }
 
 // -----------------------------------------------------------------------

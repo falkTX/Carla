@@ -702,6 +702,12 @@ protected:
         return pHost->is_offline(pHost->handle);
     }
 
+    bool usesConstantBufferSize() const noexcept override
+    {
+        // TODO
+        return true;
+    }
+
     EngineType getType() const noexcept override
     {
         return kEngineTypePlugin;

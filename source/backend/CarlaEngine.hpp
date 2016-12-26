@@ -759,6 +759,12 @@ public:
     virtual bool isOffline() const noexcept = 0;
 
     /*!
+     * Check if engine runs on a constant buffer size value.
+     * Default implementation returns true.
+     */
+    virtual bool usesConstantBufferSize() const noexcept;
+
+    /*!
      * Get engine type.
      */
     virtual EngineType getType() const noexcept = 0;

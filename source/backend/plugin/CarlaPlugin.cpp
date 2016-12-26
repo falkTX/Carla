@@ -1425,7 +1425,11 @@ void CarlaPlugin::idle()
         const ScopedSingleProcessLocker sspl(this, true);
 
         pData->client->setLatency(latency);
+#ifndef BUILD_BRIDGE
         pData->latency.recreateBuffers(pData->latency.channels, latency);
+#else
+        pData->latency.frames = latency;
+#endif
     }
 
     const CarlaMutexLocker sl(pData->postRtEvents.mutex);

@@ -283,6 +283,11 @@ bool CarlaEngine::close()
     return true;
 }
 
+bool CarlaEngine::usesConstantBufferSize() const noexcept
+{
+    return true;
+}
+
 void CarlaEngine::idle() noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,); // FIXME REMOVE

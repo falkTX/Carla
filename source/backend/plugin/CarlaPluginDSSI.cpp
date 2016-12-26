@@ -957,7 +957,7 @@ public:
                         stepSmall = 1.0f;
                         stepLarge = 1.0f;
                         pData->param.special[j] = PARAMETER_SPECIAL_LATENCY;
-                        CARLA_SAFE_ASSERT(fLatencyIndex == static_cast<int32_t>(j));
+                        CARLA_SAFE_ASSERT_INT2(fLatencyIndex == static_cast<int32_t>(j), fLatencyIndex, j);
                     }
                     else
                     {
@@ -1147,7 +1147,9 @@ public:
         if (const uint32_t latency = getLatencyInFrames())
         {
             pData->client->setLatency(latency);
+#ifndef BUILD_BRIDGE
             pData->latency.recreateBuffers(std::max(aIns, aOuts), latency);
+#endif
         }
     }
 
@@ -1900,14 +1902,6 @@ public:
 
         } // End of Post-processing
 
-#else // BUILD_BRIDGE
-        for (uint32_t i=0; i < pData->audioOut.count; ++i)
-        {
-            for (uint32_t k=0; k < frames; ++k)
-                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
-        }
-#endif
-
         // --------------------------------------------------------------------------------------------------------
         // Save latency values for next callback
 
@@ -1936,6 +1930,14 @@ public:
                 }
             }
         }
+
+#else // BUILD_BRIDGE
+        for (uint32_t i=0; i < pData->audioOut.count; ++i)
+        {
+            for (uint32_t k=0; k < frames; ++k)
+                audioOut[i][k+timeOffset] = fAudioOutBuffers[i][k];
+        }
+#endif
 
         // --------------------------------------------------------------------------------------------------------
 
@@ -2548,6 +2550,18 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // check for fixed buffer size requirement
+
+        fNeedsFixedBuffers = CarlaString(filename).contains("dssi-vst", true);
+
+        if (fNeedsFixedBuffers && ! pData->engine->usesConstantBufferSize())
+        {
+            pData->engine->setLastError("Cannot use this plugin under the current engine.\n"
+                                        "The plugin requires a fixed block size which is not possible right now.");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
         // get info
 
         if (name == nullptr || name[0] == '\0')
@@ -2618,11 +2632,6 @@ public:
                 std::free(error);
             }
         }
-
-        // ---------------------------------------------------------------
-        // check if this is dssi-vst
-
-        fNeedsFixedBuffers = CarlaString(filename).contains("dssi-vst", true);
 
 #ifdef HAVE_LIBLO
         // ---------------------------------------------------------------
