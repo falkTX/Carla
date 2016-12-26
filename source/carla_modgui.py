@@ -30,7 +30,8 @@ if config_UseQt5:
     from PyQt5.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
     from PyQt5.QtGui import QImage, QPainter, QPalette
     from PyQt5.QtWidgets import QMainWindow
-    from PyQt5.QtWebKitWidgets import QWebElement, QWebSettings, QWebView
+    from PyQt5.QtWebKit import QWebElement, QWebSettings
+    from PyQt5.QtWebKitWidgets import QWebView
 else:
     from PyQt4.QtCore import pyqtSlot, QPoint, QThread, QSize, QUrl
     from PyQt4.QtGui import QImage, QPainter, QPalette
