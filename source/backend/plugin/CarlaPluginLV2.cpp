@@ -815,7 +815,10 @@ public:
         if (fExt.programs != nullptr)
             options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (! (hasMidiIn || fNeedsFixedBuffers))
+        // can't disable fixed buffers if using latency or MIDI
+        if (fLatencyIndex >= 0 || hasMidiIn || fNeedsFixedBuffers)
+            pass();
+        else
             options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
         if (fCanInit2 && pData->engine->getProccessMode() != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -5022,7 +5025,7 @@ public:
         if (fExt.programs != nullptr && getCategory() == PLUGIN_CATEGORY_SYNTH)
             pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
-        if (getMidiInCount() > 0 || fNeedsFixedBuffers)
+        if (fLatencyIndex >= 0 || getMidiInCount() > 0 || fNeedsFixedBuffers)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
          else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
