@@ -126,6 +126,10 @@ bool is_ladspa_rdf_descriptor_valid(const LADSPA_RDF_Descriptor* const rdfDescri
 
     for (ulong i=0; i < rdfDescriptor->PortCount; ++i)
     {
+        // no type set, ignore
+        if (rdfDescriptor->Ports[i].Type == 0)
+            continue;
+
         if (! is_ladspa_port_good(rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]))
         {
             carla_stderr("WARNING - Plugin has RDF data, but invalid PortTypes: %i != %i", rdfDescriptor->Ports[i].Type, descriptor->PortDescriptors[i]);
