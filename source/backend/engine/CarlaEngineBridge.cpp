@@ -372,10 +372,42 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
 };
 
+// -----------------------------------------------------------------------
+// Bridge Engine client
+
+struct LatencyChangedCallback {
+    virtual ~LatencyChangedCallback() noexcept {}
+    virtual void latencyChanged(const uint32_t samples) noexcept = 0;
+};
+
+class CarlaEngineBridgeClient : public CarlaEngineClient
+{
+public:
+    CarlaEngineBridgeClient(const CarlaEngine& engine, LatencyChangedCallback* const cb)
+        : CarlaEngineClient(engine),
+          fLatencyCallback(cb) {}
+
+protected:
+    void setLatency(const uint32_t samples) noexcept
+    {
+        if (getLatency() == samples)
+            return;
+
+        fLatencyCallback->latencyChanged(samples);
+        CarlaEngineClient::setLatency(samples);
+    }
+
+private:
+    LatencyChangedCallback* const fLatencyCallback;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaEngineBridgeClient)
+};
+
 // -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          public Thread
+                          private Thread,
+                          private LatencyChangedCallback
 {
 public:
     CarlaEngineBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
@@ -548,6 +580,11 @@ public:
     const char* getCurrentDriverName() const noexcept override
     {
         return "Bridge";
+    }
+
+    CarlaEngineClient* addClient(CarlaPlugin* const) override
+    {
+        return new CarlaEngineBridgeClient(*this, this);
     }
 
     void idle() noexcept override
@@ -817,6 +854,13 @@ public:
                     fShmNonRtServerControl.commitWrite();
                     fShmNonRtServerControl.waitIfDataIsReachingLimit();
                 }
+            }
+
+            if (const uint32_t latency = plugin->getLatencyInFrames())
+            {
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetLatency);
+                fShmNonRtServerControl.writeUInt(latency);
+                fShmNonRtServerControl.commitWrite();
             }
 
             // ready!
@@ -1583,6 +1627,15 @@ protected:
                 return event;
         }
         return nullptr;
+    }
+
+    void latencyChanged(const uint32_t samples) noexcept
+    {
+        const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+        fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetLatency);
+        fShmNonRtServerControl.writeUInt(samples);
+        fShmNonRtServerControl.commitWrite();
     }
 
     // -------------------------------------------------------------------

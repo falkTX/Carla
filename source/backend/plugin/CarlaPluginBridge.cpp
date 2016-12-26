@@ -744,6 +744,7 @@ public:
           fShmNonRtServerControl(),
           fInfo(),
           fUniqueId(0),
+          fLatency(0),
           fParams(nullptr)
     {
         carla_debug("CarlaPluginBridge::CarlaPluginBridge(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
@@ -816,6 +817,11 @@ public:
     int64_t getUniqueId() const noexcept override
     {
         return fUniqueId;
+    }
+
+    uint32_t getLatencyInFrames() const noexcept override
+    {
+        return fLatency;
     }
 
     // -------------------------------------------------------------------
@@ -1191,7 +1197,8 @@ public:
             fTimedOut   = true;
             fTimedError = true;
             fInitiated  = false;
-            pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f, "plugin bridge has been stopped or crashed");
+            pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f,
+                                    "Plugin bridge has been stopped or crashed");
         }
 
         CarlaPlugin::idle();
@@ -1699,7 +1706,8 @@ public:
         } // End of Control and MIDI Output
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames)
+    bool processSingle(const float** const audioIn, float** const audioOut,
+                       const float** const cvIn, float** const cvOut, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
@@ -1721,6 +1729,8 @@ public:
             CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
+        const int iframes(static_cast<int>(frames));
+
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
@@ -1731,9 +1741,9 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(audioOut[i], iframes);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
+                FloatVectorOperations::clear(cvOut[i], iframes);
             return false;
         }
 
@@ -1741,7 +1751,7 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), audioIn[i], static_cast<int>(frames));
+            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), audioIn[i], iframes);
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1785,7 +1795,7 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), static_cast<int>(frames));
+            FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), iframes);
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1795,6 +1805,7 @@ public:
             const bool doVolume  = (pData->hints & PLUGIN_CAN_VOLUME) != 0 && carla_isNotEqual(pData->postProc.volume, 1.0f);
             const bool doDryWet  = (pData->hints & PLUGIN_CAN_DRYWET) != 0 && carla_isNotEqual(pData->postProc.dryWet, 1.0f);
             const bool doBalance = (pData->hints & PLUGIN_CAN_BALANCE) != 0 && ! (carla_isEqual(pData->postProc.balanceLeft, -1.0f) && carla_isEqual(pData->postProc.balanceRight, 1.0f));
+            const bool isMono    = (pData->audioIn.count == 1);
 
             bool isPair;
             float bufValue, oldBufLeft[doBalance ? frames : 1];
@@ -1804,9 +1815,17 @@ public:
                 // Dry/Wet
                 if (doDryWet)
                 {
+                    const uint32_t c = isMono ? 0 : i;
+
                     for (uint32_t k=0; k < frames; ++k)
                     {
-                        bufValue        = audioIn[(pData->audioIn.count == 1) ? 0 : i][k];
+                        if (k < pData->latency.frames)
+                            bufValue = pData->latency.buffers[c][k];
+                        else if (pData->latency.frames < frames)
+                            bufValue = audioIn[c][k-pData->latency.frames];
+                        else
+                            bufValue = audioIn[c][k];
+
                         audioOut[i][k] = (audioOut[i][k] * pData->postProc.dryWet) + (bufValue * (1.0f - pData->postProc.dryWet));
                     }
                 }
@@ -1819,7 +1838,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, audioOut[i], static_cast<int>(frames));
+                        FloatVectorOperations::copy(oldBufLeft, audioOut[i], iframes);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1851,6 +1870,33 @@ public:
             }
 
         } // End of Post-processing
+
+        // --------------------------------------------------------------------------------------------------------
+        // Save latency values for next callback
+
+        if (const uint32_t latframes = pData->latency.frames)
+        {
+            if (latframes <= frames)
+            {
+                for (uint32_t i=0; i < pData->audioIn.count; ++i)
+                    FloatVectorOperations::copy(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+            }
+            else
+            {
+                const uint32_t diff = pData->latency.frames-frames;
+
+                for (uint32_t i=0, k; i<pData->audioIn.count; ++i)
+                {
+                    // push back buffer by 'frames'
+                    for (k=0; k < diff; ++k)
+                        pData->latency.buffers[i][k] = pData->latency.buffers[i][k+frames];
+
+                    // put current input at the end
+                    for (uint32_t j=0; k < latframes; ++j, ++k)
+                        pData->latency.buffers[i][k] = audioIn[i][j];
+                }
+            }
+        }
 
 #endif // BUILD_BRIDGE
 
@@ -2413,9 +2459,14 @@ public:
                 }
             }   break;
 
-            case kPluginBridgeNonRtServerSetLatency: {
+            case kPluginBridgeNonRtServerSetLatency:
                 // uint
-            }   break;
+                fLatency = fShmNonRtServerControl.readUInt();
+#ifndef BUILD_BRIDGE
+                if (! fInitiated)
+                    pData->latency.recreateBuffers(std::max(fInfo.aIns, fInfo.aOuts), fLatency);
+#endif
+                break;
 
             case kPluginBridgeNonRtServerReady:
                 fInitiated = true;
@@ -2703,7 +2754,8 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
     } fInfo;
 
-    int64_t fUniqueId;
+    int64_t  fUniqueId;
+    uint32_t fLatency;
 
     BridgeParamInfo* fParams;
 
