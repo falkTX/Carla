@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -26,14 +26,14 @@
 #ifndef LV2_MORPH_H
 #define LV2_MORPH_H
 
-#define LV2_MORPH_URI    "http://lv2plug.in/ns/ext/morph"
-#define LV2_MORPH_PREFIX LV2_MORPH_URI "#"
+#define LV2_MORPH_URI    "http://lv2plug.in/ns/ext/morph"  ///< http://lv2plug.in/ns/ext/morph
+#define LV2_MORPH_PREFIX LV2_MORPH_URI "#"                 ///< http://lv2plug.in/ns/ext/morph#
 
-#define LV2_MORPH__AutoMorphPort LV2_MORPH_PREFIX "AutoMorphPort"
-#define LV2_MORPH__MorphPort     LV2_MORPH_PREFIX "MorphPort"
-#define LV2_MORPH__interface     LV2_MORPH_PREFIX "interface"
-#define LV2_MORPH__supportsType  LV2_MORPH_PREFIX "supportsType"
-#define LV2_MORPH__currentType   LV2_MORPH_PREFIX "currentType"
+#define LV2_MORPH__AutoMorphPort LV2_MORPH_PREFIX "AutoMorphPort"  ///< http://lv2plug.in/ns/ext/morph#AutoMorphPort
+#define LV2_MORPH__MorphPort     LV2_MORPH_PREFIX "MorphPort"      ///< http://lv2plug.in/ns/ext/morph#MorphPort
+#define LV2_MORPH__interface     LV2_MORPH_PREFIX "interface"      ///< http://lv2plug.in/ns/ext/morph#interface
+#define LV2_MORPH__supportsType  LV2_MORPH_PREFIX "supportsType"   ///< http://lv2plug.in/ns/ext/morph#supportsType
+#define LV2_MORPH__currentType   LV2_MORPH_PREFIX "currentType"    ///< http://lv2plug.in/ns/ext/morph#currentType
 
 #endif  /* LV2_MORPH_H */
 

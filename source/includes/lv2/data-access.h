@@ -1,6 +1,6 @@
 /*
   LV2 Data Access Extension
-  Copyright 2008-2011 David Robillard <http://drobilla.net>
+  Copyright 2008-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -27,7 +27,8 @@
 #ifndef LV2_DATA_ACCESS_H
 #define LV2_DATA_ACCESS_H
 
-#define LV2_DATA_ACCESS_URI "http://lv2plug.in/ns/ext/data-access"
+#define LV2_DATA_ACCESS_URI    "http://lv2plug.in/ns/ext/data-access"  ///< http://lv2plug.in/ns/ext/data-access
+#define LV2_DATA_ACCESS_PREFIX LV2_DATA_ACCESS_URI "#"                 ///< http://lv2plug.in/ns/ext/data-access#
 
 #ifdef __cplusplus
 extern "C" {

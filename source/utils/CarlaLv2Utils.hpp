@@ -103,7 +103,6 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 
 #define LV2_MIDI_LL__MidiPort "http://ll-plugins.nongnu.org/lv2/ext/MidiPort"
 
-#define LV2_UI__Qt5UI              LV2_UI_PREFIX "Qt5UI"
 #define LV2_UI__makeResident       LV2_UI_PREFIX "makeResident"
 #define LV2_UI__makeSONameResident LV2_UI_PREFIX "makeSONameResident"
 

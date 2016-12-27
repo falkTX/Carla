@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2012 David Robillard <http://drobilla.net>
+  Copyright 2008-2016 David Robillard <http://drobilla.net>
   Copyright 2011 Gabriel M. Beddingfield <gabrbedd@gmail.com>
 
   Permission to use, copy, modify, and/or distribute this software for any
@@ -27,15 +27,14 @@
 #ifndef LV2_URID_H
 #define LV2_URID_H
 
-#define LV2_URID_URI     "http://lv2plug.in/ns/ext/urid"
-#define LV2_URID_PREFIX  LV2_URID_URI "#"
+#define LV2_URID_URI    "http://lv2plug.in/ns/ext/urid"  ///< http://lv2plug.in/ns/ext/urid
+#define LV2_URID_PREFIX LV2_URID_URI "#"                 ///< http://lv2plug.in/ns/ext/urid#
 
-#define LV2_URID__map   LV2_URID_PREFIX "map"
-#define LV2_URID__unmap LV2_URID_PREFIX "unmap"
+#define LV2_URID__map   LV2_URID_PREFIX "map"    ///< http://lv2plug.in/ns/ext/urid#map
+#define LV2_URID__unmap LV2_URID_PREFIX "unmap"  ///< http://lv2plug.in/ns/ext/urid#unmap
 
-/* Legacy defines */
-#define LV2_URID_MAP_URI   LV2_URID__map
-#define LV2_URID_UNMAP_URI LV2_URID__unmap
+#define LV2_URID_MAP_URI   LV2_URID__map    ///< Legacy
+#define LV2_URID_UNMAP_URI LV2_URID__unmap  ///< Legacy
 
 #include <stdint.h>
 

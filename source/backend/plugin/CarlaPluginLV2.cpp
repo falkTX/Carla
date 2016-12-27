@@ -1172,6 +1172,9 @@ public:
             case LV2_STATE_ERR_NO_PROPERTY:
                 carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, missing property", type, key, bool2str(sendGui));
                 break;
+            case LV2_STATE_ERR_NO_SPACE:
+                carla_stderr("CarlaPluginLV2::setCustomData(\"%s\", \"%s\", <value>, %s) - error, insufficient space", type, key, bool2str(sendGui));
+                break;
             }
             return;
         }

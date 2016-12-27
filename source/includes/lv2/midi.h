@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -19,6 +19,8 @@
 
    Definitions of standard MIDI messages, see <http://lv2plug.in/ns/ext/midi>
    for details.
+
+   @{
 */
 
 #ifndef LV2_MIDI_H
@@ -32,50 +34,50 @@ extern "C" {
 #    include <stdbool.h>
 #endif
 
-#define LV2_MIDI_URI    "http://lv2plug.in/ns/ext/midi"
-#define LV2_MIDI_PREFIX LV2_MIDI_URI "#"
+#define LV2_MIDI_URI    "http://lv2plug.in/ns/ext/midi"  ///< http://lv2plug.in/ns/ext/midi
+#define LV2_MIDI_PREFIX LV2_MIDI_URI "#"                 ///< http://lv2plug.in/ns/ext/midi#
 
-#define LV2_MIDI__ActiveSense      LV2_MIDI_PREFIX "ActiveSense"
-#define LV2_MIDI__Aftertouch       LV2_MIDI_PREFIX "Aftertouch"
-#define LV2_MIDI__Bender           LV2_MIDI_PREFIX "Bender"
-#define LV2_MIDI__ChannelPressure  LV2_MIDI_PREFIX "ChannelPressure"
-#define LV2_MIDI__Chunk            LV2_MIDI_PREFIX "Chunk"
-#define LV2_MIDI__Clock            LV2_MIDI_PREFIX "Clock"
-#define LV2_MIDI__Continue         LV2_MIDI_PREFIX "Continue"
-#define LV2_MIDI__Controller       LV2_MIDI_PREFIX "Controller"
-#define LV2_MIDI__MidiEvent        LV2_MIDI_PREFIX "MidiEvent"
-#define LV2_MIDI__NoteOff          LV2_MIDI_PREFIX "NoteOff"
-#define LV2_MIDI__NoteOn           LV2_MIDI_PREFIX "NoteOn"
-#define LV2_MIDI__ProgramChange    LV2_MIDI_PREFIX "ProgramChange"
-#define LV2_MIDI__QuarterFrame     LV2_MIDI_PREFIX "QuarterFrame"
-#define LV2_MIDI__Reset            LV2_MIDI_PREFIX "Reset"
-#define LV2_MIDI__SongPosition     LV2_MIDI_PREFIX "SongPosition"
-#define LV2_MIDI__SongSelect       LV2_MIDI_PREFIX "SongSelect"
-#define LV2_MIDI__Start            LV2_MIDI_PREFIX "Start"
-#define LV2_MIDI__Stop             LV2_MIDI_PREFIX "Stop"
-#define LV2_MIDI__SystemCommon     LV2_MIDI_PREFIX "SystemCommon"
-#define LV2_MIDI__SystemExclusive  LV2_MIDI_PREFIX "SystemExclusive"
-#define LV2_MIDI__SystemMessage    LV2_MIDI_PREFIX "SystemMessage"
-#define LV2_MIDI__SystemRealtime   LV2_MIDI_PREFIX "SystemRealtime"
-#define LV2_MIDI__Tick             LV2_MIDI_PREFIX "Tick"
-#define LV2_MIDI__TuneRequest      LV2_MIDI_PREFIX "TuneRequest"
-#define LV2_MIDI__VoiceMessage     LV2_MIDI_PREFIX "VoiceMessage"
-#define LV2_MIDI__benderValue      LV2_MIDI_PREFIX "benderValue"
-#define LV2_MIDI__binding          LV2_MIDI_PREFIX "binding"
-#define LV2_MIDI__byteNumber       LV2_MIDI_PREFIX "byteNumber"
-#define LV2_MIDI__channel          LV2_MIDI_PREFIX "channel"
-#define LV2_MIDI__chunk            LV2_MIDI_PREFIX "chunk"
-#define LV2_MIDI__controllerNumber LV2_MIDI_PREFIX "controllerNumber"
-#define LV2_MIDI__controllerValue  LV2_MIDI_PREFIX "controllerValue"
-#define LV2_MIDI__noteNumber       LV2_MIDI_PREFIX "noteNumber"
-#define LV2_MIDI__pressure         LV2_MIDI_PREFIX "pressure"
-#define LV2_MIDI__programNumber    LV2_MIDI_PREFIX "programNumber"
-#define LV2_MIDI__property         LV2_MIDI_PREFIX "property"
-#define LV2_MIDI__songNumber       LV2_MIDI_PREFIX "songNumber"
-#define LV2_MIDI__songPosition     LV2_MIDI_PREFIX "songPosition"
-#define LV2_MIDI__status           LV2_MIDI_PREFIX "status"
-#define LV2_MIDI__statusMask       LV2_MIDI_PREFIX "statusMask"
-#define LV2_MIDI__velocity         LV2_MIDI_PREFIX "velocity"
+#define LV2_MIDI__ActiveSense      LV2_MIDI_PREFIX "ActiveSense"       ///< http://lv2plug.in/ns/ext/midi#ActiveSense
+#define LV2_MIDI__Aftertouch       LV2_MIDI_PREFIX "Aftertouch"        ///< http://lv2plug.in/ns/ext/midi#Aftertouch
+#define LV2_MIDI__Bender           LV2_MIDI_PREFIX "Bender"            ///< http://lv2plug.in/ns/ext/midi#Bender
+#define LV2_MIDI__ChannelPressure  LV2_MIDI_PREFIX "ChannelPressure"   ///< http://lv2plug.in/ns/ext/midi#ChannelPressure
+#define LV2_MIDI__Chunk            LV2_MIDI_PREFIX "Chunk"             ///< http://lv2plug.in/ns/ext/midi#Chunk
+#define LV2_MIDI__Clock            LV2_MIDI_PREFIX "Clock"             ///< http://lv2plug.in/ns/ext/midi#Clock
+#define LV2_MIDI__Continue         LV2_MIDI_PREFIX "Continue"          ///< http://lv2plug.in/ns/ext/midi#Continue
+#define LV2_MIDI__Controller       LV2_MIDI_PREFIX "Controller"        ///< http://lv2plug.in/ns/ext/midi#Controller
+#define LV2_MIDI__MidiEvent        LV2_MIDI_PREFIX "MidiEvent"         ///< http://lv2plug.in/ns/ext/midi#MidiEvent
+#define LV2_MIDI__NoteOff          LV2_MIDI_PREFIX "NoteOff"           ///< http://lv2plug.in/ns/ext/midi#NoteOff
+#define LV2_MIDI__NoteOn           LV2_MIDI_PREFIX "NoteOn"            ///< http://lv2plug.in/ns/ext/midi#NoteOn
+#define LV2_MIDI__ProgramChange    LV2_MIDI_PREFIX "ProgramChange"     ///< http://lv2plug.in/ns/ext/midi#ProgramChange
+#define LV2_MIDI__QuarterFrame     LV2_MIDI_PREFIX "QuarterFrame"      ///< http://lv2plug.in/ns/ext/midi#QuarterFrame
+#define LV2_MIDI__Reset            LV2_MIDI_PREFIX "Reset"             ///< http://lv2plug.in/ns/ext/midi#Reset
+#define LV2_MIDI__SongPosition     LV2_MIDI_PREFIX "SongPosition"      ///< http://lv2plug.in/ns/ext/midi#SongPosition
+#define LV2_MIDI__SongSelect       LV2_MIDI_PREFIX "SongSelect"        ///< http://lv2plug.in/ns/ext/midi#SongSelect
+#define LV2_MIDI__Start            LV2_MIDI_PREFIX "Start"             ///< http://lv2plug.in/ns/ext/midi#Start
+#define LV2_MIDI__Stop             LV2_MIDI_PREFIX "Stop"              ///< http://lv2plug.in/ns/ext/midi#Stop
+#define LV2_MIDI__SystemCommon     LV2_MIDI_PREFIX "SystemCommon"      ///< http://lv2plug.in/ns/ext/midi#SystemCommon
+#define LV2_MIDI__SystemExclusive  LV2_MIDI_PREFIX "SystemExclusive"   ///< http://lv2plug.in/ns/ext/midi#SystemExclusive
+#define LV2_MIDI__SystemMessage    LV2_MIDI_PREFIX "SystemMessage"     ///< http://lv2plug.in/ns/ext/midi#SystemMessage
+#define LV2_MIDI__SystemRealtime   LV2_MIDI_PREFIX "SystemRealtime"    ///< http://lv2plug.in/ns/ext/midi#SystemRealtime
+#define LV2_MIDI__Tick             LV2_MIDI_PREFIX "Tick"              ///< http://lv2plug.in/ns/ext/midi#Tick
+#define LV2_MIDI__TuneRequest      LV2_MIDI_PREFIX "TuneRequest"       ///< http://lv2plug.in/ns/ext/midi#TuneRequest
+#define LV2_MIDI__VoiceMessage     LV2_MIDI_PREFIX "VoiceMessage"      ///< http://lv2plug.in/ns/ext/midi#VoiceMessage
+#define LV2_MIDI__benderValue      LV2_MIDI_PREFIX "benderValue"       ///< http://lv2plug.in/ns/ext/midi#benderValue
+#define LV2_MIDI__binding          LV2_MIDI_PREFIX "binding"           ///< http://lv2plug.in/ns/ext/midi#binding
+#define LV2_MIDI__byteNumber       LV2_MIDI_PREFIX "byteNumber"        ///< http://lv2plug.in/ns/ext/midi#byteNumber
+#define LV2_MIDI__channel          LV2_MIDI_PREFIX "channel"           ///< http://lv2plug.in/ns/ext/midi#channel
+#define LV2_MIDI__chunk            LV2_MIDI_PREFIX "chunk"             ///< http://lv2plug.in/ns/ext/midi#chunk
+#define LV2_MIDI__controllerNumber LV2_MIDI_PREFIX "controllerNumber"  ///< http://lv2plug.in/ns/ext/midi#controllerNumber
+#define LV2_MIDI__controllerValue  LV2_MIDI_PREFIX "controllerValue"   ///< http://lv2plug.in/ns/ext/midi#controllerValue
+#define LV2_MIDI__noteNumber       LV2_MIDI_PREFIX "noteNumber"        ///< http://lv2plug.in/ns/ext/midi#noteNumber
+#define LV2_MIDI__pressure         LV2_MIDI_PREFIX "pressure"          ///< http://lv2plug.in/ns/ext/midi#pressure
+#define LV2_MIDI__programNumber    LV2_MIDI_PREFIX "programNumber"     ///< http://lv2plug.in/ns/ext/midi#programNumber
+#define LV2_MIDI__property         LV2_MIDI_PREFIX "property"          ///< http://lv2plug.in/ns/ext/midi#property
+#define LV2_MIDI__songNumber       LV2_MIDI_PREFIX "songNumber"        ///< http://lv2plug.in/ns/ext/midi#songNumber
+#define LV2_MIDI__songPosition     LV2_MIDI_PREFIX "songPosition"      ///< http://lv2plug.in/ns/ext/midi#songPosition
+#define LV2_MIDI__status           LV2_MIDI_PREFIX "status"            ///< http://lv2plug.in/ns/ext/midi#status
+#define LV2_MIDI__statusMask       LV2_MIDI_PREFIX "statusMask"        ///< http://lv2plug.in/ns/ext/midi#statusMask
+#define LV2_MIDI__velocity         LV2_MIDI_PREFIX "velocity"          ///< http://lv2plug.in/ns/ext/midi#velocity
 
 /**
    MIDI Message Type.

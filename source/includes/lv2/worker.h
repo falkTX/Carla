@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -30,11 +30,11 @@
 
 #include "lv2.h"
 
-#define LV2_WORKER_URI    "http://lv2plug.in/ns/ext/worker"
-#define LV2_WORKER_PREFIX LV2_WORKER_URI "#"
+#define LV2_WORKER_URI    "http://lv2plug.in/ns/ext/worker"  ///< http://lv2plug.in/ns/ext/worker
+#define LV2_WORKER_PREFIX LV2_WORKER_URI "#"                 ///< http://lv2plug.in/ns/ext/worker#
 
-#define LV2_WORKER__interface LV2_WORKER_PREFIX "interface"
-#define LV2_WORKER__schedule  LV2_WORKER_PREFIX "schedule"
+#define LV2_WORKER__interface LV2_WORKER_PREFIX "interface"  ///< http://lv2plug.in/ns/ext/worker#interface
+#define LV2_WORKER__schedule  LV2_WORKER_PREFIX "schedule"   ///< http://lv2plug.in/ns/ext/worker#schedule
 
 #ifdef __cplusplus
 extern "C" {
@@ -77,8 +77,11 @@ typedef struct _LV2_Worker_Interface {
 	   as requested, possibly with an arbitrary message to handle.
 
 	   A response can be sent to run() using `respond`.  The plugin MUST NOT
-	   make any assumptions about which thread calls this method, other than
-	   the fact that there are no real-time requirements.
+	   make any assumptions about which thread calls this method, except that
+	   there are no real-time requirements and only one call may be executed at
+	   a time.  That is, the host MAY call this method from any non-real-time
+	   thread, but MUST NOT make concurrent calls to this method from several
+	   threads.
 
 	   @param instance The LV2 instance this is a method on.
 	   @param respond  A function for sending a response to run().

@@ -1,5 +1,5 @@
 /*
-  Copyright 2007-2012 David Robillard <http://drobilla.net>
+  Copyright 2007-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -28,12 +28,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LV2_RESIZE_PORT_URI    "http://lv2plug.in/ns/ext/resize-port"
-#define LV2_RESIZE_PORT_PREFIX LV2_RESIZE_PORT_URI "#"
+#define LV2_RESIZE_PORT_URI    "http://lv2plug.in/ns/ext/resize-port"  ///< http://lv2plug.in/ns/ext/resize-port
+#define LV2_RESIZE_PORT_PREFIX LV2_RESIZE_PORT_URI "#"                 ///< http://lv2plug.in/ns/ext/resize-port#
 
-#define LV2_RESIZE_PORT__asLargeAs   LV2_RESIZE_PORT_PREFIX "asLargeAs"
-#define LV2_RESIZE_PORT__minimumSize LV2_RESIZE_PORT_PREFIX "minimumSize"
-#define LV2_RESIZE_PORT__resize      LV2_RESIZE_PORT_PREFIX "resize"
+#define LV2_RESIZE_PORT__asLargeAs   LV2_RESIZE_PORT_PREFIX "asLargeAs"    ///< http://lv2plug.in/ns/ext/port#asLargeAs
+#define LV2_RESIZE_PORT__minimumSize LV2_RESIZE_PORT_PREFIX "minimumSize"  ///< http://lv2plug.in/ns/ext/port#minimumSize
+#define LV2_RESIZE_PORT__resize      LV2_RESIZE_PORT_PREFIX "resize"       ///< http://lv2plug.in/ns/ext/port#resize
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,10 +48,12 @@ typedef enum {
 	LV2_RESIZE_PORT_ERR_NO_SPACE = 2   /**< Insufficient space. */
 } LV2_Resize_Port_Status;
 
+/** Opaque data for resize method. */
 typedef void* LV2_Resize_Port_Feature_Data;
 
 /** Host feature to allow plugins to resize their port buffers. */
 typedef struct {
+	/** Opaque data for resize method. */
 	LV2_Resize_Port_Feature_Data data;
 
 	/**

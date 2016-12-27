@@ -1,5 +1,5 @@
 /*
-  Copyright 2012-2013 David Robillard <http://drobilla.net>
+  Copyright 2012-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -50,6 +50,25 @@ typedef struct {
 } LV2_Log_Logger;
 
 /**
+   Set `map` as the URI map for `logger`.
+
+   This affects the message type URIDs (Error, Warning, etc) which are passed
+   to the log's print functions.
+*/
+static inline void
+lv2_log_logger_set_map(LV2_Log_Logger* logger, LV2_URID_Map* map)
+{
+	if (map) {
+		logger->Error   = map->map(map->handle, LV2_LOG__Error);
+		logger->Note    = map->map(map->handle, LV2_LOG__Note);
+		logger->Trace   = map->map(map->handle, LV2_LOG__Trace);
+		logger->Warning = map->map(map->handle, LV2_LOG__Warning);
+	} else {
+		logger->Error = logger->Note = logger->Trace = logger->Warning = 0;
+	}
+}
+
+/**
    Initialise `logger`.
 
    URIs will be mapped using `map` and stored, a reference to `map` itself is
@@ -61,14 +80,8 @@ lv2_log_logger_init(LV2_Log_Logger* logger,
                     LV2_URID_Map*   map,
                     LV2_Log_Log*    log)
 {
-	memset(logger, 0, sizeof(LV2_Log_Logger));
 	logger->log = log;
-	if (map) {
-		logger->Error   = map->map(map->handle, LV2_LOG__Error);
-		logger->Note    = map->map(map->handle, LV2_LOG__Note);
-		logger->Trace   = map->map(map->handle, LV2_LOG__Trace);
-		logger->Warning = map->map(map->handle, LV2_LOG__Warning);
-	}
+	lv2_log_logger_set_map(logger, map);
 }
 
 /**
@@ -81,7 +94,7 @@ lv2_log_vprintf(LV2_Log_Logger* logger,
                 const char*     fmt,
                 va_list         args)
 {
-	if (logger->log) {
+	if (logger && logger->log) {
 		return logger->log->vprintf(logger->log->handle, type, fmt, args);
 	} else {
 		return vfprintf(stderr, fmt, args);

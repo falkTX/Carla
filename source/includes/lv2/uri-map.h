@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2011 David Robillard <http://drobilla.net>
+  Copyright 2008-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -33,7 +33,8 @@
 #ifndef LV2_URI_MAP_H
 #define LV2_URI_MAP_H
 
-#define LV2_URI_MAP_URI "http://lv2plug.in/ns/ext/uri-map"
+#define LV2_URI_MAP_URI    "http://lv2plug.in/ns/ext/uri-map"  ///< http://lv2plug.in/ns/ext/uri-map
+#define LV2_URI_MAP_PREFIX LV2_URI_MAP_URI "#"                 ///< http://lv2plug.in/ns/ext/uri-map#
 
 #include <stdint.h>
 

@@ -1,5 +1,5 @@
 /*
-  Copyright 2012 David Robillard <http://drobilla.net>
+  Copyright 2012-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -26,15 +26,15 @@
 #ifndef LV2_LOG_H
 #define LV2_LOG_H
 
-#define LV2_LOG_URI    "http://lv2plug.in/ns/ext/log"
-#define LV2_LOG_PREFIX LV2_LOG_URI "#"
+#define LV2_LOG_URI    "http://lv2plug.in/ns/ext/log"  ///< http://lv2plug.in/ns/ext/log
+#define LV2_LOG_PREFIX LV2_LOG_URI "#"                 ///< http://lv2plug.in/ns/ext/log#
 
-#define LV2_LOG__Entry   LV2_LOG_PREFIX "Entry"
-#define LV2_LOG__Error   LV2_LOG_PREFIX "Error"
-#define LV2_LOG__Note    LV2_LOG_PREFIX "Note"
-#define LV2_LOG__Trace   LV2_LOG_PREFIX "Trace"
-#define LV2_LOG__Warning LV2_LOG_PREFIX "Warning"
-#define LV2_LOG__log     LV2_LOG_PREFIX "log"
+#define LV2_LOG__Entry   LV2_LOG_PREFIX "Entry"    ///< http://lv2plug.in/ns/ext/log#Entry
+#define LV2_LOG__Error   LV2_LOG_PREFIX "Error"    ///< http://lv2plug.in/ns/ext/log#Error
+#define LV2_LOG__Note    LV2_LOG_PREFIX "Note"     ///< http://lv2plug.in/ns/ext/log#Note
+#define LV2_LOG__Trace   LV2_LOG_PREFIX "Trace"    ///< http://lv2plug.in/ns/ext/log#Trace
+#define LV2_LOG__Warning LV2_LOG_PREFIX "Warning"  ///< http://lv2plug.in/ns/ext/log#Warning
+#define LV2_LOG__log     LV2_LOG_PREFIX "log"      ///< http://lv2plug.in/ns/ext/log#log
 
 #include <stdarg.h>
 
@@ -44,12 +44,14 @@
 extern "C" {
 #endif
 
+/** @cond */
 #ifdef __GNUC__
 /** Allow type checking of printf-like functions. */
 #    define LV2_LOG_FUNC(fmt, arg1) __attribute__((format(printf, fmt, arg1)))
 #else
 #    define LV2_LOG_FUNC(fmt, arg1)
 #endif
+/** @endcond */
 
 /**
    Opaque data to host data for LV2_Log_Log.

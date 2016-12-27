@@ -31,7 +31,8 @@
 
 #include "lv2.h"
 
-#define LV2_DYN_MANIFEST_URI "http://lv2plug.in/ns/ext/dynmanifest"
+#define LV2_DYN_MANIFEST_URI    "http://lv2plug.in/ns/ext/dynmanifest"  ///< http://lv2plug.in/ns/ext/dynmanifest
+#define LV2_DYN_MANIFEST_PREFIX LV2_DYN_MANIFEST_URI "#"                ///< http://lv2plug.in/ns/ext/dynmanifest#
 
 #ifdef __cplusplus
 extern "C" {
