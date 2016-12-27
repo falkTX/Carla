@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2014 David Robillard <http://drobilla.net>
+  Copyright 2008-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -64,6 +64,15 @@
 extern "C" {
 #else
 #    include <stdbool.h>
+#endif
+
+// Disable deprecation warnings for Blank and Resource
+#if defined(__clang__)
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 /** Handle for LV2_Atom_Forge_Sink. */
@@ -133,13 +142,6 @@ lv2_atom_forge_set_buffer(LV2_Atom_Forge* forge, uint8_t* buf, size_t size);
 static inline void
 lv2_atom_forge_init(LV2_Atom_Forge* forge, LV2_URID_Map* map)
 {
-#if defined(__clang__)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	lv2_atom_forge_set_buffer(forge, NULL, 0);
 	forge->Blank    = map->map(map->handle, LV2_ATOM__Blank);
 	forge->Bool     = map->map(map->handle, LV2_ATOM__Bool);
@@ -159,13 +161,9 @@ lv2_atom_forge_init(LV2_Atom_Forge* forge, LV2_URID_Map* map)
 	forge->URI      = map->map(map->handle, LV2_ATOM__URI);
 	forge->URID     = map->map(map->handle, LV2_ATOM__URID);
 	forge->Vector   = map->map(map->handle, LV2_ATOM__Vector);
-#if defined(__clang__)
-#    pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic pop
-#endif
 }
 
+/** Access the Atom pointed to by a reference. */
 static inline LV2_Atom*
 lv2_atom_forge_deref(LV2_Atom_Forge* forge, LV2_Atom_Forge_Ref ref)
 {
@@ -218,21 +216,9 @@ lv2_atom_forge_top_is(LV2_Atom_Forge* forge, uint32_t type)
 static inline bool
 lv2_atom_forge_is_object_type(const LV2_Atom_Forge* forge, uint32_t type)
 {
-#if defined(__clang__)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	return (type == forge->Object ||
 	        type == forge->Blank ||
 	        type == forge->Resource);
-#if defined(__clang__)
-#    pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic pop
-#endif
 }
 
 /** Return true iff `type` is an atom:Object with a blank ID. */
@@ -241,20 +227,8 @@ lv2_atom_forge_is_blank(const LV2_Atom_Forge*       forge,
                         uint32_t                    type,
                         const LV2_Atom_Object_Body* body)
 {
-#if defined(__clang__)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	return (type == forge->Blank ||
 	        (type == forge->Object && body->id == 0));
-#if defined(__clang__)
-#    pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic pop
-#endif
 }
 
 /**
@@ -322,7 +296,7 @@ lv2_atom_forge_raw(LV2_Atom_Forge* forge, const void* data, uint32_t size)
 	if (forge->sink) {
 		out = forge->sink(forge->handle, data, size);
 	} else {
-		out = (LV2_Atom_Forge_Ref)forge->buf + (LV2_Atom_Forge_Ref)forge->offset;
+		out = (LV2_Atom_Forge_Ref)forge->buf + forge->offset;
 		uint8_t* mem = forge->buf + forge->offset;
 		if (forge->offset + size > forge->size) {
 			return 0;
@@ -623,24 +597,12 @@ lv2_atom_forge_resource(LV2_Atom_Forge*       forge,
                         LV2_URID              id,
                         LV2_URID              otype)
 {
-#if defined(__clang__)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	const LV2_Atom_Object a = {
 		{ (uint32_t)sizeof(LV2_Atom_Object_Body), forge->Resource },
 		{ id, otype }
 	};
 	return lv2_atom_forge_push(
 		forge, frame, lv2_atom_forge_write(forge, &a, sizeof(a)));
-#if defined(__clang__)
-#    pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic pop
-#endif
 }
 
 /**
@@ -656,24 +618,12 @@ lv2_atom_forge_blank(LV2_Atom_Forge*       forge,
                      uint32_t              id,
                      LV2_URID              otype)
 {
-#if defined(__clang__)
-#    pragma clang diagnostic push
-#    pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic push
-#    pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
 	const LV2_Atom_Object a = {
 		{ (uint32_t)sizeof(LV2_Atom_Object_Body), forge->Blank },
 		{ id, otype }
 	};
 	return lv2_atom_forge_push(
 		forge, frame, lv2_atom_forge_write(forge, &a, sizeof(a)));
-#if defined(__clang__)
-#    pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-#    pragma GCC diagnostic pop
-#endif
 }
 
 /**
@@ -746,6 +696,12 @@ lv2_atom_forge_beat_time(LV2_Atom_Forge* forge, double beats)
    @}
    @}
 */
+
+#if defined(__clang__)
+#    pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#    pragma GCC diagnostic pop
+#endif
 
 #ifdef __cplusplus
 }  /* extern "C" */

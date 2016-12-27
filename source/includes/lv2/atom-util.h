@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2014 David Robillard <http://drobilla.net>
+  Copyright 2008-2015 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -221,14 +221,14 @@ lv2_atom_tuple_next(const LV2_Atom* i)
 
    This macro is used similarly to a for loop (which it expands to), e.g.:
    @code
-   LV2_ATOMO_TUPLE_FOREACH(tuple, elem) {
+   LV2_ATOM_TUPLE_FOREACH(tuple, elem) {
        // Do something with elem (an LV2_Atom*) here...
    }
    @endcode
 */
 #define LV2_ATOM_TUPLE_FOREACH(tuple, iter) \
 	for (const LV2_Atom* (iter) = lv2_atom_tuple_begin(tuple); \
-	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tuple), (tuple)->size, (iter)); \
+	     !lv2_atom_tuple_is_end(LV2_ATOM_BODY_CONST(tuple), (tuple)->atom.size, (iter)); \
 	     (iter) = lv2_atom_tuple_next(iter))
 
 /** Like LV2_ATOM_TUPLE_FOREACH but for a headerless tuple body. */
@@ -436,6 +436,62 @@ lv2_atom_object_get(const LV2_Atom_Object* object, ...)
 			uint32_t         qkey = va_arg(args, uint32_t);
 			const LV2_Atom** qval = va_arg(args, const LV2_Atom**);
 			if (qkey == prop->key && !*qval) {
+				*qval = &prop->value;
+				if (++matches == n_queries) {
+					return matches;
+				}
+				break;
+			}
+		}
+		va_end(args);
+	}
+	return matches;
+}
+
+/**
+   Variable argument version of lv2_atom_object_query() with types.
+
+   This is like lv2_atom_object_get(), but each entry has an additional
+   parameter to specify the required type.  Only atoms with a matching type
+   will be selected.
+
+   The arguments should be a series of uint32_t key, const LV2_Atom**, uint32_t
+   type triples, terminated by a zero key.  The value pointers MUST be
+   initialized to NULL.  For example:
+
+   @code
+   const LV2_Atom_String* name = NULL;
+   const LV2_Atom_Int*    age  = NULL;
+   lv2_atom_object_get(obj,
+                       uris.name_key, &name, uris.atom_String,
+                       uris.age_key,  &age, uris.atom_Int
+                       0);
+   @endcode
+*/
+static inline int
+lv2_atom_object_get_typed(const LV2_Atom_Object* object, ...)
+{
+	int matches   = 0;
+	int n_queries = 0;
+
+	/* Count number of keys so we can short-circuit when done */
+	va_list args;
+	va_start(args, object);
+	for (n_queries = 0; va_arg(args, uint32_t); ++n_queries) {
+		if (!va_arg(args, const LV2_Atom**) ||
+		    !va_arg(args, uint32_t)) {
+			return -1;
+		}
+	}
+	va_end(args);
+
+	LV2_ATOM_OBJECT_FOREACH(object, prop) {
+		va_start(args, object);
+		for (int i = 0; i < n_queries; ++i) {
+			const uint32_t   qkey  = va_arg(args, uint32_t);
+			const LV2_Atom** qval  = va_arg(args, const LV2_Atom**);
+			const uint32_t   qtype = va_arg(args, uint32_t);
+			if (!*qval && qkey == prop->key && qtype == prop->value.type) {
 				*qval = &prop->value;
 				if (++matches == n_queries) {
 					return matches;

@@ -1,5 +1,5 @@
 /*
-  Copyright 2008-2014 David Robillard <http://drobilla.net>
+  Copyright 2008-2016 David Robillard <http://drobilla.net>
 
   Permission to use, copy, modify, and/or distribute this software for any
   purpose with or without fee is hereby granted, provided that the above
@@ -29,50 +29,52 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define LV2_ATOM_URI    "http://lv2plug.in/ns/ext/atom"
-#define LV2_ATOM_PREFIX LV2_ATOM_URI "#"
+#define LV2_ATOM_URI    "http://lv2plug.in/ns/ext/atom"  ///< http://lv2plug.in/ns/ext/atom
+#define LV2_ATOM_PREFIX LV2_ATOM_URI "#"                 ///< http://lv2plug.in/ns/ext/atom#
 
-#define LV2_ATOM__Atom          LV2_ATOM_PREFIX "Atom"
-#define LV2_ATOM__AtomPort      LV2_ATOM_PREFIX "AtomPort"
-#define LV2_ATOM__Blank         LV2_ATOM_PREFIX "Blank"
-#define LV2_ATOM__Bool          LV2_ATOM_PREFIX "Bool"
-#define LV2_ATOM__Chunk         LV2_ATOM_PREFIX "Chunk"
-#define LV2_ATOM__Double        LV2_ATOM_PREFIX "Double"
-#define LV2_ATOM__Event         LV2_ATOM_PREFIX "Event"
-#define LV2_ATOM__Float         LV2_ATOM_PREFIX "Float"
-#define LV2_ATOM__Int           LV2_ATOM_PREFIX "Int"
-#define LV2_ATOM__Literal       LV2_ATOM_PREFIX "Literal"
-#define LV2_ATOM__Long          LV2_ATOM_PREFIX "Long"
-#define LV2_ATOM__Number        LV2_ATOM_PREFIX "Number"
-#define LV2_ATOM__Object        LV2_ATOM_PREFIX "Object"
-#define LV2_ATOM__Path          LV2_ATOM_PREFIX "Path"
-#define LV2_ATOM__Property      LV2_ATOM_PREFIX "Property"
-#define LV2_ATOM__Resource      LV2_ATOM_PREFIX "Resource"
-#define LV2_ATOM__Sequence      LV2_ATOM_PREFIX "Sequence"
-#define LV2_ATOM__Sound         LV2_ATOM_PREFIX "Sound"
-#define LV2_ATOM__String        LV2_ATOM_PREFIX "String"
-#define LV2_ATOM__Tuple         LV2_ATOM_PREFIX "Tuple"
-#define LV2_ATOM__URI           LV2_ATOM_PREFIX "URI"
-#define LV2_ATOM__URID          LV2_ATOM_PREFIX "URID"
-#define LV2_ATOM__Vector        LV2_ATOM_PREFIX "Vector"
-#define LV2_ATOM__atomTransfer  LV2_ATOM_PREFIX "atomTransfer"
-#define LV2_ATOM__beatTime      LV2_ATOM_PREFIX "beatTime"
-#define LV2_ATOM__bufferType    LV2_ATOM_PREFIX "bufferType"
-#define LV2_ATOM__childType     LV2_ATOM_PREFIX "childType"
-#define LV2_ATOM__eventTransfer LV2_ATOM_PREFIX "eventTransfer"
-#define LV2_ATOM__frameTime     LV2_ATOM_PREFIX "frameTime"
-#define LV2_ATOM__supports      LV2_ATOM_PREFIX "supports"
-#define LV2_ATOM__timeUnit      LV2_ATOM_PREFIX "timeUnit"
+#define LV2_ATOM__Atom          LV2_ATOM_PREFIX "Atom"           ///< http://lv2plug.in/ns/ext/atom#Atom
+#define LV2_ATOM__AtomPort      LV2_ATOM_PREFIX "AtomPort"       ///< http://lv2plug.in/ns/ext/atom#AtomPort
+#define LV2_ATOM__Blank         LV2_ATOM_PREFIX "Blank"          ///< http://lv2plug.in/ns/ext/atom#Blank
+#define LV2_ATOM__Bool          LV2_ATOM_PREFIX "Bool"           ///< http://lv2plug.in/ns/ext/atom#Bool
+#define LV2_ATOM__Chunk         LV2_ATOM_PREFIX "Chunk"          ///< http://lv2plug.in/ns/ext/atom#Chunk
+#define LV2_ATOM__Double        LV2_ATOM_PREFIX "Double"         ///< http://lv2plug.in/ns/ext/atom#Double
+#define LV2_ATOM__Event         LV2_ATOM_PREFIX "Event"          ///< http://lv2plug.in/ns/ext/atom#Event
+#define LV2_ATOM__Float         LV2_ATOM_PREFIX "Float"          ///< http://lv2plug.in/ns/ext/atom#Float
+#define LV2_ATOM__Int           LV2_ATOM_PREFIX "Int"            ///< http://lv2plug.in/ns/ext/atom#Int
+#define LV2_ATOM__Literal       LV2_ATOM_PREFIX "Literal"        ///< http://lv2plug.in/ns/ext/atom#Literal
+#define LV2_ATOM__Long          LV2_ATOM_PREFIX "Long"           ///< http://lv2plug.in/ns/ext/atom#Long
+#define LV2_ATOM__Number        LV2_ATOM_PREFIX "Number"         ///< http://lv2plug.in/ns/ext/atom#Number
+#define LV2_ATOM__Object        LV2_ATOM_PREFIX "Object"         ///< http://lv2plug.in/ns/ext/atom#Object
+#define LV2_ATOM__Path          LV2_ATOM_PREFIX "Path"           ///< http://lv2plug.in/ns/ext/atom#Path
+#define LV2_ATOM__Property      LV2_ATOM_PREFIX "Property"       ///< http://lv2plug.in/ns/ext/atom#Property
+#define LV2_ATOM__Resource      LV2_ATOM_PREFIX "Resource"       ///< http://lv2plug.in/ns/ext/atom#Resource
+#define LV2_ATOM__Sequence      LV2_ATOM_PREFIX "Sequence"       ///< http://lv2plug.in/ns/ext/atom#Sequence
+#define LV2_ATOM__Sound         LV2_ATOM_PREFIX "Sound"          ///< http://lv2plug.in/ns/ext/atom#Sound
+#define LV2_ATOM__String        LV2_ATOM_PREFIX "String"         ///< http://lv2plug.in/ns/ext/atom#String
+#define LV2_ATOM__Tuple         LV2_ATOM_PREFIX "Tuple"          ///< http://lv2plug.in/ns/ext/atom#Tuple
+#define LV2_ATOM__URI           LV2_ATOM_PREFIX "URI"            ///< http://lv2plug.in/ns/ext/atom#URI
+#define LV2_ATOM__URID          LV2_ATOM_PREFIX "URID"           ///< http://lv2plug.in/ns/ext/atom#URID
+#define LV2_ATOM__Vector        LV2_ATOM_PREFIX "Vector"         ///< http://lv2plug.in/ns/ext/atom#Vector
+#define LV2_ATOM__atomTransfer  LV2_ATOM_PREFIX "atomTransfer"   ///< http://lv2plug.in/ns/ext/atom#atomTransfer
+#define LV2_ATOM__beatTime      LV2_ATOM_PREFIX "beatTime"       ///< http://lv2plug.in/ns/ext/atom#beatTime
+#define LV2_ATOM__bufferType    LV2_ATOM_PREFIX "bufferType"     ///< http://lv2plug.in/ns/ext/atom#bufferType
+#define LV2_ATOM__childType     LV2_ATOM_PREFIX "childType"      ///< http://lv2plug.in/ns/ext/atom#childType
+#define LV2_ATOM__eventTransfer LV2_ATOM_PREFIX "eventTransfer"  ///< http://lv2plug.in/ns/ext/atom#eventTransfer
+#define LV2_ATOM__frameTime     LV2_ATOM_PREFIX "frameTime"      ///< http://lv2plug.in/ns/ext/atom#frameTime
+#define LV2_ATOM__supports      LV2_ATOM_PREFIX "supports"       ///< http://lv2plug.in/ns/ext/atom#supports
+#define LV2_ATOM__timeUnit      LV2_ATOM_PREFIX "timeUnit"       ///< http://lv2plug.in/ns/ext/atom#timeUnit
 
-#define LV2_ATOM_REFERENCE_TYPE 0
+#define LV2_ATOM_REFERENCE_TYPE 0  ///< The special type for a reference atom
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/** @cond */
 /** This expression will fail to compile if double does not fit in 64 bits. */
 typedef char lv2_atom_assert_double_fits_in_64_bits[
 	((sizeof(double) <= sizeof(uint64_t)) * 2) - 1];
+/** @endcond */
 
 /**
    Return a pointer to the contents of an Atom.  The "contents" of an atom
