@@ -2329,7 +2329,7 @@ public:
 
         if (fExt.worker != nullptr || (fUI.type != UI::TYPE_NULL && fEventsOut.count > 0 && (fEventsOut.data[0].type & CARLA_EVENT_DATA_ATOM) != 0))
         {
-            fAtomBufferOut.createBuffer(eventBufferSize);
+            fAtomBufferOut.createBuffer(std::min(eventBufferSize*32, 1638400U));
             fTmpAtomBuffer = new uint8_t[fAtomBufferOut.getSize()];
         }
 
@@ -2693,12 +2693,12 @@ public:
 
         if (pData->needsReset)
         {
-            uint8_t midiData[3] = { 0, 0, 0 };
-
             if (fEventsIn.ctrl != nullptr && (fEventsIn.ctrl->type & CARLA_EVENT_TYPE_MIDI) != 0)
             {
                 const uint32_t j = fEventsIn.ctrlIndex;
-                CARLA_SAFE_ASSERT(j < fEventsIn.count);
+                CARLA_ASSERT(j < fEventsIn.count);
+
+                uint8_t midiData[3] = { 0, 0, 0 };
 
                 if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                 {
