@@ -112,8 +112,10 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
 {
     carla_debug("CarlaBridgeUI::msgReceived(\"%s\")", msg);
 
-    if (! fGotOptions) {
-        CARLA_SAFE_ASSERT_RETURN(std::strcmp(msg, "urid") == 0 || std::strcmp(msg, "uiOptions") == 0, true);
+    if (! fGotOptions && std::strcmp(msg, "urid") != 0 && std::strcmp(msg, "uiOptions") != 0)
+    {
+        carla_stderr2("CarlaBridgeUI::msgReceived(\"%s\") - invalid message while waiting for options", msg);
+        return true;
     }
 
     if (fLastMsgTimer > 0)
