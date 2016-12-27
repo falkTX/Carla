@@ -597,7 +597,7 @@ public:
         midiEv.data[1] = note;
         midiEv.data[2] = velocity;
 
-        fDescriptor->port_event(fHandle, /* TODO */ 0, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM, &midiEv);
+        fDescriptor->port_event(fHandle, /* TODO */ 0, lv2_atom_total_size(midiEv), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, &midiEv);
     }
 
     void dspAtomReceived(const uint32_t portIndex, const LV2_Atom* const atom) override

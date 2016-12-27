@@ -178,6 +178,7 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         CARLA_SAFE_ASSERT_RETURN(readNextLineAsByte(velocity), true);
 
         dspNoteReceived(onOff, channel, note, velocity);
+        return true;
     }
 
     if (std::strcmp(msg, "atom") == 0)
