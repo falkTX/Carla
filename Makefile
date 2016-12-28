@@ -202,7 +202,11 @@ posix64: $(LIBS_POSIX64)
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win32)
 
+ifeq ($(BUILDING_FOR_WINDOWS),true)
+LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32.a
+else
 LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
+endif
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
@@ -220,7 +224,11 @@ win32: $(LIBS_WIN32)
 # ----------------------------------------------------------------------------------------------------------------------------
 # Binaries (win64)
 
+ifeq ($(BUILDING_FOR_WINDOWS),true)
+LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64.a
+else
 LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
+endif
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a

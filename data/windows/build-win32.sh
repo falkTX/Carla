@@ -38,7 +38,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 
 export DEFAULT_QT=5
 
-make $JOBS
+make BUILDING_FOR_WINDOWS=true $JOBS
 
 export PYTHONPATH=`pwd`/source
 
