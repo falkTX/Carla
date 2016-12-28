@@ -1,6 +1,6 @@
 /*
- * Carla Utility Tests
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Carla Pipe Utilities
+ * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -33,12 +33,12 @@
 
 #include <clocale>
 #include <ctime>
+#include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_core/juce_core.h"
 #else
 # include <cerrno>
-# include <fcntl.h>
 # include <signal.h>
 # include <sys/wait.h>
 #endif
@@ -53,100 +53,28 @@
 // -----------------------------------------------------------------------
 // win32 stuff
 
-struct OverlappedEvent {
-    OVERLAPPED over;
-
-    OverlappedEvent()
-        : over()
-    {
-        carla_zeroStruct(over);
-        over.hEvent = ::CreateEvent(nullptr, TRUE, FALSE, nullptr);
-    }
-
-    ~OverlappedEvent()
-    {
-        ::CloseHandle(over.hEvent);
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(OverlappedEvent)
-};
-
-// -----------------------------------------------------------------------
-// ReadFile
-
 static inline
-ssize_t ReadFileBlock(const HANDLE pipeh, void* const buf, const std::size_t numBytes)
-{
-    DWORD dsize;
-
-    if (::ReadFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
-        return static_cast<ssize_t>(dsize);
-
-    return -1;
-}
-
-static inline
-ssize_t ReadFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, void* const buf, const std::size_t numBytes)
+ssize_t ReadFileWin32(const HANDLE pipeh, void* const buf, const std::size_t numBytes)
 {
     DWORD dsize = numBytes;
-    OverlappedEvent over;
+    DWORD available = 0;
 
-    if (::ReadFile(pipeh, buf, numBytes, nullptr /*&dsize*/, &over.over) != FALSE)
-        return static_cast<ssize_t>(dsize);
+    if (::PeekNamedPipe(pipeh, nullptr, 0, nullptr, &available, nullptr) == FALSE || available == 0)
+        return -1;
 
-    if (::GetLastError() == ERROR_IO_PENDING)
-    {
-        HANDLE handles[] = { over.over.hEvent, cancelh };
-
-        if (::WaitForMultipleObjects(2, handles, FALSE, 0) != WAIT_OBJECT_0)
-        {
-            ::CancelIo(pipeh);
-            return -1;
-        }
-
-        if (::GetOverlappedResult(pipeh, &over.over, nullptr /*&dsize*/, FALSE) != FALSE)
-            return static_cast<ssize_t>(dsize);
-    }
-
-    return -1;
-}
-
-// -----------------------------------------------------------------------
-// WriteFile
-
-static inline
-ssize_t WriteFileBlock(const HANDLE pipeh, const void* const buf, const std::size_t numBytes)
-{
-    DWORD dsize;
-
-    if (::WriteFile(pipeh, buf, numBytes, &dsize, nullptr) != FALSE)
+    if (::ReadFile(pipeh, buf, dsize, &dsize, nullptr) != FALSE)
         return static_cast<ssize_t>(dsize);
 
     return -1;
 }
 
 static inline
-ssize_t WriteFileNonBlock(const HANDLE pipeh, const HANDLE cancelh, const void* const buf, const std::size_t numBytes)
+ssize_t WriteFileWin32(const HANDLE pipeh, const void* const buf, const std::size_t numBytes)
 {
     DWORD dsize = numBytes;
-    OverlappedEvent over;
 
-    if (::WriteFile(pipeh, buf, numBytes, nullptr /*&dsize*/, &over.over) != FALSE)
+    if (::WriteFile(pipeh, buf, dsize, &dsize, nullptr) != FALSE)
         return static_cast<ssize_t>(dsize);
-
-    if (::GetLastError() == ERROR_IO_PENDING)
-    {
-        HANDLE handles[] = { over.over.hEvent, cancelh };
-
-        if (::WaitForMultipleObjects(2, handles, FALSE, 0) != WAIT_OBJECT_0)
-        {
-            ::CancelIo(pipeh);
-            return -1;
-        }
-
-        if (::GetOverlappedResult(pipeh, &over.over, &dsize, FALSE) != FALSE)
-            return static_cast<ssize_t>(dsize);
-    }
 
     return -1;
 }
@@ -213,20 +141,52 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     }
 
     command = command.trim();
-    carla_stdout("startProcess() command:\n%s", command.toRawUTF8());
 
     STARTUPINFOW startupInfo;
     carla_zeroStruct(startupInfo);
-# if 0
-    startupInfo.hStdInput  = INVALID_HANDLE_VALUE;
-    startupInfo.hStdOutput = INVALID_HANDLE_VALUE;
-    startupInfo.hStdError  = INVALID_HANDLE_VALUE;
-    startupInfo.dwFlags    = STARTF_USESTDHANDLES;
-# endif
-    startupInfo.cb         = sizeof(STARTUPINFOW);
+    startupInfo.cb = sizeof(STARTUPINFOW);
 
     return CreateProcessW(nullptr, const_cast<LPWSTR>(command.toWideCharPointer()),
-                          nullptr, nullptr, TRUE, 0x0, nullptr, nullptr, &startupInfo, processInfo) != FALSE;
+                          nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                          nullptr, nullptr, &startupInfo, processInfo) != FALSE;
+}
+
+static inline
+bool waitForClientConnect(const HANDLE pipe, const uint32_t timeOutMilliseconds) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
+    CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
+
+    bool connecting = true;
+    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+
+    for (; connecting && ::ConnectNamedPipe(pipe, nullptr) == FALSE;)
+    {
+        const DWORD err = ::GetLastError();
+
+        switch (err)
+        {
+        case ERROR_PIPE_CONNECTED:
+            connecting = false;
+            break;
+
+        case ERROR_IO_PENDING:
+        case ERROR_PIPE_LISTENING:
+            if (getMillisecondCounter() < timeoutEnd)
+            {
+                carla_msleep(5);
+                continue;
+            }
+            carla_stderr("waitForClientFirstMessage() - connect timed out");
+            return false;
+
+        default:
+            carla_stderr("waitForClientFirstMessage() - connect returned %i", int(err));
+            return false;
+        }
+    }
+
+    return true;
 }
 #else
 static inline
@@ -262,33 +222,41 @@ template<typename P>
 static inline
 bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds) noexcept
 {
-#ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT_RETURN(pipe.handle != INVALID_HANDLE_VALUE, false);
-    CARLA_SAFE_ASSERT_RETURN(pipe.cancel != INVALID_HANDLE_VALUE, false);
-#else
-    CARLA_SAFE_ASSERT_RETURN(pipe > 0, false);
-#endif
+    CARLA_SAFE_ASSERT_RETURN(pipe != INVALID_PIPE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     char c;
     ssize_t ret;
     const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
+#ifdef CARLA_OS_WIN
+    if (! waitForClientConnect(pipe, timeOutMilliseconds))
+        return false;
+#endif
+
     for (;;)
     {
         try {
 #ifdef CARLA_OS_WIN
-            //ret = ::ReadFileBlock(pipe.handle, &c, 1);
-            ret = ::ReadFileNonBlock(pipe.handle, pipe.cancel, &c, 1);
+            ret = ::ReadFileWin32(pipe, &c, 1);
 #else
             ret = ::read(pipe, &c, 1);
 #endif
-        } CARLA_SAFE_EXCEPTION_BREAK("read pipefd");
+        } CARLA_SAFE_EXCEPTION_RETURN("read pipe", false);
 
         switch (ret)
         {
+        case 1:
+            if (c == '\n')
+                return true;
+
+            carla_stderr("waitForClientFirstMessage() - read has wrong first char '%c'", c);return false;
+            return false;
+
         case -1: // failed to read
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
+            if (::GetLastError() == ERROR_NO_DATA)
+#else
             if (errno == EAGAIN)
 #endif
             {
@@ -297,39 +265,24 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
                     carla_msleep(5);
                     continue;
                 }
-                carla_stderr("waitForClientFirstMessage() - timed out");
+                carla_stderr("waitForClientFirstMessage() - read timed out");
             }
-#ifndef CARLA_OS_WIN
             else
             {
+#ifdef CARLA_OS_WIN
                 carla_stderr("waitForClientFirstMessage() - read failed");
+#else
                 CarlaString error(std::strerror(errno));
                 carla_stderr("waitForClientFirstMessage() - read failed: %s", error.buffer());
-            }
 #endif
-            break;
-
-        case 1: // read ok
-            if (c == '\n')
-            {
-                // success
-                return true;
             }
-            else
-            {
-                carla_stderr("waitForClientFirstMessage() - read has wrong first char '%c'", c);
-            }
-            break;
+            return false;
 
         default: // ???
             carla_stderr("waitForClientFirstMessage() - read returned %i", int(ret));
-            break;
+            return false;
         }
-
-        break;
     }
-
-    return false;
 }
 
 // -----------------------------------------------------------------------
@@ -342,14 +295,16 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
     CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
-    // TODO - this code is completly wrong...
-
     const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
-        if (WaitForSingleObject(processInfo.hProcess, 0) == WAIT_OBJECT_0)
+        switch (WaitForSingleObject(processInfo.hProcess, 0))
+        {
+        case WAIT_OBJECT_0:
+        case -1:
             return true;
+        }
 
         if (getMillisecondCounter() >= timeoutEnd)
             break;
@@ -370,7 +325,7 @@ void waitForProcessToStopOrKillIt(const PROCESS_INFORMATION& processInfo, const 
     {
         carla_stderr("waitForProcessToStopOrKillIt() - process didn't stop, force termination");
 
-        if (TerminateProcess(processInfo.hProcess, 0) != FALSE)
+        if (TerminateProcess(processInfo.hProcess, 9) != FALSE)
         {
             // wait for process to stop
             waitForProcessToStop(processInfo, timeOutMilliseconds);
@@ -472,7 +427,6 @@ struct CarlaPipeCommon::PrivateData {
     // pipes
 #ifdef CARLA_OS_WIN
     PROCESS_INFORMATION processInfo;
-    HANDLE cancelEvent;
     HANDLE pipeRecv;
     HANDLE pipeSend;
 #else
@@ -494,7 +448,6 @@ struct CarlaPipeCommon::PrivateData {
     PrivateData() noexcept
 #ifdef CARLA_OS_WIN
         : processInfo(),
-          cancelEvent(INVALID_HANDLE_VALUE),
 #else
         : pid(-1),
 #endif
@@ -509,24 +462,9 @@ struct CarlaPipeCommon::PrivateData {
         carla_zeroStruct(processInfo);
         processInfo.hProcess = INVALID_HANDLE_VALUE;
         processInfo.hThread  = INVALID_HANDLE_VALUE;
-
-        try {
-            cancelEvent = ::CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        } CARLA_SAFE_EXCEPTION("CreateEvent");
 #endif
 
         carla_zeroChars(tmpBuf, 0xff+1);
-    }
-
-    ~PrivateData() noexcept
-    {
-#ifdef CARLA_OS_WIN
-        if (cancelEvent != INVALID_HANDLE_VALUE)
-        {
-            ::CloseHandle(cancelEvent);
-            cancelEvent = INVALID_HANDLE_VALUE;
-        }
-#endif
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(PrivateData)
@@ -820,23 +758,16 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
 
 bool CarlaPipeCommon::flushMessages() const noexcept
 {
-    // TESTING remove later (replace with trylock scope)
-    if (pData->writeLock.tryLock())
-    {
-        carla_safe_assert("! pData->writeLock.tryLock()", __FILE__, __LINE__);
-        pData->writeLock.unlock();
-        return false;
-    }
-
+#ifdef CARLA_OS_WIN
+    // TESTING remove later
+    const CarlaMutexTryLocker cmtl(pData->writeLock);
+    CARLA_SAFE_ASSERT_RETURN(cmtl.wasNotLocked(), false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
     try {
-#ifdef CARLA_OS_WIN
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
-#else
-        return (::fsync(pData->pipeSend) == 0);
-#endif
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
+#endif
 }
 
 // -------------------------------------------------------------------
@@ -1022,8 +953,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
     {
         try {
 #ifdef CARLA_OS_WIN
-            //ret = ::ReadFileBlock(pData->pipeRecv, &c, 1);
-            ret = ::ReadFileNonBlock(pData->pipeRecv, pData->cancelEvent, &c, 1);
+            ret = ::ReadFileWin32(pData->pipeRecv, &c, 1);
 #else
             ret = ::read(pData->pipeRecv, &c, 1);
 #endif
@@ -1092,14 +1022,18 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
 
     try {
 #ifdef CARLA_OS_WIN
-        //ret = ::WriteFileBlock(pData->pipeSend, msg, size);
-        ret = ::WriteFileNonBlock(pData->pipeSend, pData->cancelEvent, msg, size);
+        ret = ::WriteFileWin32(pData->pipeSend, msg, size);
 #else
         ret = ::write(pData->pipeSend, msg, size);
 #endif
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
 
-     return (ret == static_cast<ssize_t>(size));
+    if (ret == static_cast<ssize_t>(size))
+        return true;
+
+    fprintf(stderr, "CarlaPipeCommon::_writeMsgBuffer(..., " P_SIZE ") - failed with " P_SSIZE ". Message was:\n%s",
+                    size, ret, msg);
+    return false;
 }
 
 // -----------------------------------------------------------------------
@@ -1146,70 +1080,55 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     CARLA_SAFE_ASSERT_RETURN(arg2 != nullptr, false);
     carla_debug("CarlaPipeServer::startPipeServer(\"%s\", \"%s\", \"%s\")", filename, arg1, arg2);
 
+    char pipeRecvServerStr[100+1];
+    char pipeSendServerStr[100+1];
+    char pipeRecvClientStr[100+1];
+    char pipeSendClientStr[100+1];
+
+    pipeRecvServerStr[100] = '\0';
+    pipeSendServerStr[100] = '\0';
+    pipeRecvClientStr[100] = '\0';
+    pipeSendClientStr[100] = '\0';
+
     const CarlaMutexLocker cml(pData->writeLock);
 
     //----------------------------------------------------------------
     // create pipes
 
 #ifdef CARLA_OS_WIN
-    HANDLE pipe1[2]; // read by server, written by client
-    HANDLE pipe2[2]; // read by client, written by server
-
-    SECURITY_ATTRIBUTES sa;
-    carla_zeroStruct(sa);
-    sa.nLength        = sizeof(SECURITY_ATTRIBUTES);
-    sa.bInheritHandle = TRUE;
+    HANDLE pipe1, pipe2;
 
     std::srand(static_cast<uint>(std::time(nullptr)));
-
-    char strBuf[0xff+1];
-    strBuf[0xff] = '\0';
 
     static ulong sCounter = 0;
     ++sCounter;
 
     const int randint = std::rand();
 
-    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe1-%i-%li", randint, sCounter);
-    pipe1[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 300, &sa);
-    pipe1[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, nullptr);
+    std::snprintf(pipeRecvServerStr, 100, "\\\\.\\pipe\\carla-pipe1-%i-%li", randint, sCounter);
+    std::snprintf(pipeSendServerStr, 100, "\\\\.\\pipe\\carla-pipe2-%i-%li", randint, sCounter);
+    std::snprintf(pipeRecvClientStr, 100, "ignored");
+    std::snprintf(pipeSendClientStr, 100, "ignored");
 
-    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe2-%i-%li", randint, sCounter);
-    pipe2[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND|FILE_FLAG_OVERLAPPED, PIPE_TYPE_BYTE|PIPE_WAIT, 1, 4096, 4096, 300, &sa);
-    pipe2[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED, nullptr);
+    pipe1 = ::CreateNamedPipeA(pipeRecvServerStr, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT, 2, size, size, 0, nullptr);
 
-#if 0
-    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe1-%i-%li", randint, sCounter);
-    pipe1[1] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_OUTBOUND, PIPE_TYPE_BYTE|PIPE_NOWAIT, 1, 4096, 4096, 120*1000, &sa);
-    pipe1[0] = ::CreateFileA(strBuf, GENERIC_READ, 0x0, &sa, OPEN_EXISTING, 0x0, nullptr);
-
-    std::snprintf(strBuf, 0xff, "\\\\.\\pipe\\carla-pipe2-%i-%li", randint, sCounter);
-    pipe2[0] = ::CreateNamedPipeA(strBuf, PIPE_ACCESS_INBOUND, PIPE_TYPE_BYTE|PIPE_NOWAIT, 1, 4096, 4096, 120*1000, &sa); // NB
-    pipe2[1] = ::CreateFileA(strBuf, GENERIC_WRITE, 0x0, &sa, OPEN_EXISTING, 0x0, nullptr);
-#endif
-
-    if (pipe1[0] == INVALID_HANDLE_VALUE || pipe1[1] == INVALID_HANDLE_VALUE || pipe2[0] == INVALID_HANDLE_VALUE || pipe2[1] == INVALID_HANDLE_VALUE)
+    if (pipe1 == INVALID_HANDLE_VALUE)
     {
-        if (pipe1[0] != INVALID_HANDLE_VALUE) {
-            try { ::CloseHandle(pipe1[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[0])");
-        }
-        if (pipe1[1] != INVALID_HANDLE_VALUE) {
-            try { ::CloseHandle(pipe1[1]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[1])");
-        }
-        if (pipe2[0] != INVALID_HANDLE_VALUE) {
-            try { ::CloseHandle(pipe2[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2[0])");
-        }
-        if (pipe2[1] != INVALID_HANDLE_VALUE) {
-            try { ::CloseHandle(pipe2[1]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2[1])");
-        }
         fail("pipe creation failed");
         return false;
     }
 
-    HANDLE pipeRecvServer = pipe1[0];
-    HANDLE pipeRecvClient = pipe2[0];
-    HANDLE pipeSendClient = pipe1[1];
-    HANDLE pipeSendServer = pipe2[1];
+    pipe2 = ::CreateNamedPipeA(pipeSendServerStr, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_NOWAIT, 2, size, size, 0, nullptr);
+
+    if (pipe2 == INVALID_HANDLE_VALUE)
+    {
+        try { ::CloseHandle(pipe1); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1)");
+        fail("pipe creation failed");
+        return false;
+    }
+
+    const HANDLE pipeRecvClient = pipe2;
+    const HANDLE pipeSendClient = pipe1;
 #else
     int pipe1[2]; // read by server, written by client
     int pipe2[2]; // read by client, written by server
@@ -1228,10 +1147,57 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         return false;
     }
 
-    int pipeRecvServer = pipe1[0];
-    int pipeRecvClient = pipe2[0];
-    int pipeSendClient = pipe1[1];
-    int pipeSendServer = pipe2[1];
+    /* */ int pipeRecvServer = pipe1[0];
+    /* */ int pipeSendServer = pipe2[1];
+    const int pipeRecvClient = pipe2[0];
+    const int pipeSendClient = pipe1[1];
+
+    std::snprintf(pipeRecvServerStr, 100, "%i", pipeRecvServer);
+    std::snprintf(pipeSendServerStr, 100, "%i", pipeSendServer);
+    std::snprintf(pipeRecvClientStr, 100, "%i", pipeRecvClient);
+    std::snprintf(pipeSendClientStr, 100, "%i", pipeSendClient);
+
+    //----------------------------------------------------------------
+    // set size, non-fatal
+
+    try {
+        ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
+    } CARLA_SAFE_EXCEPTION("Set pipe size");
+
+    try {
+        ::fcntl(pipeRecvServer, F_SETPIPE_SZ, size);
+    } CARLA_SAFE_EXCEPTION("Set pipe size");
+
+    //----------------------------------------------------------------
+    // set non-block
+
+    int ret;
+
+    try {
+        ret = ::fcntl(pipeRecvClient, F_SETFL, ::fcntl(pipeRecvClient, F_GETFL) | O_NONBLOCK);
+    } catch (...) {
+        ret = -1;
+        fail("failed to set pipe as non-block");
+    }
+
+    if (ret == 0)
+    {
+        try {
+            ret = ::fcntl(pipeRecvServer, F_SETFL, ::fcntl(pipeRecvServer, F_GETFL) | O_NONBLOCK);
+        } catch (...) {
+            ret = -1;
+            fail("failed to set pipe as non-block");
+        }
+    }
+
+    if (ret < 0)
+    {
+        try { ::close(pipe1[0]); } CARLA_SAFE_EXCEPTION("close(pipe1[0])");
+        try { ::close(pipe1[1]); } CARLA_SAFE_EXCEPTION("close(pipe1[1])");
+        try { ::close(pipe2[0]); } CARLA_SAFE_EXCEPTION("close(pipe2[0])");
+        try { ::close(pipe2[1]); } CARLA_SAFE_EXCEPTION("close(pipe2[1])");
+        return false;
+    }
 #endif
 
     //----------------------------------------------------------------
@@ -1253,25 +1219,10 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //----------------------------------------------------------------
     // argv[3-6] => pipes
 
-    char pipeRecvServerStr[100+1];
-    char pipeRecvClientStr[100+1];
-    char pipeSendServerStr[100+1];
-    char pipeSendClientStr[100+1];
-
-    std::snprintf(pipeRecvServerStr, 100, P_INTPTR, (intptr_t)pipeRecvServer); // pipe1[0]
-    std::snprintf(pipeRecvClientStr, 100, P_INTPTR, (intptr_t)pipeRecvClient); // pipe2[0]
-    std::snprintf(pipeSendServerStr, 100, P_INTPTR, (intptr_t)pipeSendServer); // pipe2[1]
-    std::snprintf(pipeSendClientStr, 100, P_INTPTR, (intptr_t)pipeSendClient); // pipe1[1]
-
-    pipeRecvServerStr[100] = '\0';
-    pipeRecvClientStr[100] = '\0';
-    pipeSendServerStr[100] = '\0';
-    pipeSendClientStr[100] = '\0';
-
-    argv[3] = pipeRecvServerStr; // pipe1[0] close READ
-    argv[4] = pipeRecvClientStr; // pipe2[0] READ
-    argv[5] = pipeSendServerStr; // pipe2[1] close SEND
-    argv[6] = pipeSendClientStr; // pipe1[1] SEND
+    argv[3] = pipeRecvServerStr;
+    argv[4] = pipeSendServerStr;
+    argv[5] = pipeRecvClientStr;
+    argv[6] = pipeSendClientStr;
 
     //----------------------------------------------------------------
     // argv[7] => null
@@ -1287,17 +1238,15 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         carla_zeroStruct(pData->processInfo);
         pData->processInfo.hProcess = INVALID_HANDLE_VALUE;
         pData->processInfo.hThread  = INVALID_HANDLE_VALUE;
-        try { ::CloseHandle(pipe1[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[0])");
-        try { ::CloseHandle(pipe1[1]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1[1])");
-        try { ::CloseHandle(pipe2[0]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2[0])");
-        try { ::CloseHandle(pipe2[1]); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2[1])");
+        try { ::CloseHandle(pipe1); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe1)");
+        try { ::CloseHandle(pipe2); } CARLA_SAFE_EXCEPTION("CloseHandle(pipe2)");
         fail("startProcess() failed");
         return false;
     }
 
     // just to make sure
-    CARLA_SAFE_ASSERT(pData->processInfo.hThread  != nullptr);
-    CARLA_SAFE_ASSERT(pData->processInfo.hProcess != nullptr);
+    CARLA_SAFE_ASSERT(pData->processInfo.hThread  != INVALID_HANDLE_VALUE);
+    CARLA_SAFE_ASSERT(pData->processInfo.hProcess != INVALID_HANDLE_VALUE);
 #else
     if (! startProcess(argv, pData->pid))
     {
@@ -1309,58 +1258,23 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
         fail("startProcess() failed");
         return false;
     }
-#endif
 
     //----------------------------------------------------------------
     // close duplicated handles used by the client
 
-#ifdef CARLA_OS_WIN
-    try { ::CloseHandle(pipeRecvServer); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeRecvServer)");
-    try { ::CloseHandle(pipeSendServer); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeSendServer)");
-#else
-    try { ::close      (pipeRecvServer); } CARLA_SAFE_EXCEPTION("close(pipeRecvServer)");
-    try { ::close      (pipeSendServer); } CARLA_SAFE_EXCEPTION("close(pipeSendServer)");
-#endif
+    try { ::close(pipeRecvServer); } CARLA_SAFE_EXCEPTION("close(pipeRecvServer)");
+    try { ::close(pipeSendServer); } CARLA_SAFE_EXCEPTION("close(pipeSendServer)");
     pipeRecvServer = pipeSendServer = INVALID_PIPE_VALUE;
-
-#ifndef CARLA_OS_WIN
-    int ret;
-
-    //----------------------------------------------------------------
-    // set size
-
-    if (size > 4096)
-    {
-        try {
-            ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
-        } catch (...) {
-            // non-fatal
-        }
-    }
-
-    //----------------------------------------------------------------
-    // set non-block reading
-
-    try {
-        ret = ::fcntl(pipeRecvClient, F_SETFL, ::fcntl(pipeRecvClient, F_GETFL) | O_NONBLOCK);
-    } catch (...) {
-        ret = -1;
-        fail("failed to set pipe as non-block");
-    }
 #endif
 
     //----------------------------------------------------------------
     // wait for client to say something
 
-#ifdef CARLA_OS_WIN
-    struct { HANDLE handle; HANDLE cancel; } pipe;
-    pipe.handle = pipeRecvClient;
-    pipe.cancel = pData->cancelEvent;
-    if (             waitForClientFirstMessage(pipe, 10*1000 /* 10 secs */))
-#else
-    if (ret != -1 && waitForClientFirstMessage(pipeRecvClient, 10*1000 /* 10 secs */))
-#endif
+    if (waitForClientFirstMessage(pipeRecvClient, 10*1000 /* 10 secs */))
     {
+#ifdef CARLA_OS_WIN
+        CARLA_SAFE_ASSERT(waitForClientConnect(pipeSendClient, 1000 /* 1 sec */));
+#endif
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
         carla_stdout("ALL OK!");
@@ -1371,7 +1285,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     // failed to set non-block or get first child message, cannot continue
 
 #ifdef CARLA_OS_WIN
-    if (TerminateProcess(pData->processInfo.hProcess, 0) != FALSE)
+    if (TerminateProcess(pData->processInfo.hProcess, 9) != FALSE)
     {
         // wait for process to stop
         waitForProcessToStop(pData->processInfo, 2*1000);
@@ -1396,11 +1310,11 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     // close pipes
 
 #ifdef CARLA_OS_WIN
-    try { ::CloseHandle(pipeRecvServer); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeRecvServer)");
-    try { ::CloseHandle(pipeSendServer); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeSendServer)");
+    try { ::CloseHandle(pipeRecvClient); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeRecvClient)");
+    try { ::CloseHandle(pipeSendClient); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeSendClient)");
 #else
-    try { ::close      (pipeRecvServer); } CARLA_SAFE_EXCEPTION("close(pipeRecvServer)");
-    try { ::close      (pipeSendServer); } CARLA_SAFE_EXCEPTION("close(pipeSendServer)");
+    try { ::close      (pipeRecvClient); } CARLA_SAFE_EXCEPTION("close(pipeRecvClient)");
+    try { ::close      (pipeSendClient); } CARLA_SAFE_EXCEPTION("close(pipeSendClient)");
 #endif
 
     return false;
@@ -1411,12 +1325,15 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
     carla_debug("CarlaPipeServer::stopPipeServer(%i)", timeOutMilliseconds);
 
 #ifdef CARLA_OS_WIN
-    if (pData->processInfo.hProcess != INVALID_HANDLE_VALUE)
+    if (pData->processInfo.hThread != INVALID_HANDLE_VALUE || pData->processInfo.hProcess != INVALID_HANDLE_VALUE)
     {
         const CarlaMutexLocker cml(pData->writeLock);
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
+        {
             _writeMsgBuffer("quit\n", 5);
+            flushMessages();
+        }
 
         waitForProcessToStopOrKillIt(pData->processInfo, timeOutMilliseconds);
         try { CloseHandle(pData->processInfo.hThread);  } CARLA_SAFE_EXCEPTION("CloseHandle(pData->processInfo.hThread)");
@@ -1431,7 +1348,10 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
         const CarlaMutexLocker cml(pData->writeLock);
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
+        {
             _writeMsgBuffer("quit\n", 5);
+            flushMessages();
+        }
 
         waitForChildToStopOrKillIt(pData->pid, timeOutMilliseconds);
         pData->pid = -1;
@@ -1450,6 +1370,8 @@ void CarlaPipeServer::closePipeServer() noexcept
     if (pData->pipeRecv != INVALID_PIPE_VALUE)
     {
 #ifdef CARLA_OS_WIN
+        DisconnectNamedPipe(pData->pipeRecv);
+
         try { ::CloseHandle(pData->pipeRecv); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->pipeRecv)");
 #else
         try { ::close      (pData->pipeRecv); } CARLA_SAFE_EXCEPTION("close(pData->pipeRecv)");
@@ -1460,6 +1382,8 @@ void CarlaPipeServer::closePipeServer() noexcept
     if (pData->pipeSend != INVALID_PIPE_VALUE)
     {
 #ifdef CARLA_OS_WIN
+        DisconnectNamedPipe(pData->pipeSend);
+
         try { ::CloseHandle(pData->pipeSend); } CARLA_SAFE_EXCEPTION("CloseHandle(pData->pipeSend)");
 #else
         try { ::close      (pData->pipeSend); } CARLA_SAFE_EXCEPTION("close(pData->pipeSend)");
@@ -1516,51 +1440,31 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
     // read arguments
 
 #ifdef CARLA_OS_WIN
-    HANDLE pipeRecvServer = (HANDLE)std::atoll(argv[3]); // READ
-    HANDLE pipeRecvClient = (HANDLE)std::atoll(argv[4]);
-    HANDLE pipeSendServer = (HANDLE)std::atoll(argv[5]); // SEND
-    HANDLE pipeSendClient = (HANDLE)std::atoll(argv[6]);
+    const char* const pipeRecvServerStr = argv[3];
+    const char* const pipeSendServerStr = argv[4];
+
+    HANDLE pipeRecvServer = ::CreateFileA(pipeRecvServerStr, GENERIC_READ, 0x0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE pipeSendServer = ::CreateFileA(pipeSendServerStr, GENERIC_WRITE, 0x0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
     CARLA_SAFE_ASSERT_RETURN(pipeRecvServer != INVALID_HANDLE_VALUE, false);
-    CARLA_SAFE_ASSERT_RETURN(pipeRecvClient != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(pipeSendServer != INVALID_HANDLE_VALUE, false);
-    CARLA_SAFE_ASSERT_RETURN(pipeSendClient != INVALID_HANDLE_VALUE, false);
 #else
-    int pipeRecvServer = std::atoi(argv[3]); // READ
-    int pipeRecvClient = std::atoi(argv[4]);
-    int pipeSendServer = std::atoi(argv[5]); // SEND
-    int pipeSendClient = std::atoi(argv[6]);
+    const int pipeRecvServer = std::atoi(argv[3]);
+    const int pipeSendServer = std::atoi(argv[4]);
+    /* */ int pipeRecvClient = std::atoi(argv[5]);
+    /* */ int pipeSendClient = std::atoi(argv[6]);
 
     CARLA_SAFE_ASSERT_RETURN(pipeRecvServer > 0, false);
-    CARLA_SAFE_ASSERT_RETURN(pipeRecvClient > 0, false);
     CARLA_SAFE_ASSERT_RETURN(pipeSendServer > 0, false);
+    CARLA_SAFE_ASSERT_RETURN(pipeRecvClient > 0, false);
     CARLA_SAFE_ASSERT_RETURN(pipeSendClient > 0, false);
-#endif
 
     //----------------------------------------------------------------
     // close duplicated handles used by the client
 
-#ifdef CARLA_OS_WIN
-    try { ::CloseHandle(pipeRecvClient); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeRecvClient)");
-    try { ::CloseHandle(pipeSendClient); } CARLA_SAFE_EXCEPTION("CloseHandle(pipeSendClient)");
-#else
-    try { ::close      (pipeRecvClient); } CARLA_SAFE_EXCEPTION("close(pipeRecvClient)");
-    try { ::close      (pipeSendClient); } CARLA_SAFE_EXCEPTION("close(pipeSendClient)");
-#endif
+    try { ::close(pipeRecvClient); } CARLA_SAFE_EXCEPTION("close(pipeRecvClient)");
+    try { ::close(pipeSendClient); } CARLA_SAFE_EXCEPTION("close(pipeSendClient)");
     pipeRecvClient = pipeSendClient = INVALID_PIPE_VALUE;
-
-#ifndef CARLA_OS_WIN
-    //----------------------------------------------------------------
-    // set non-block reading
-
-    int ret = 0;
-
-    try {
-        ret = ::fcntl(pipeRecvServer, F_SETFL, ::fcntl(pipeRecvServer, F_GETFL) | O_NONBLOCK);
-    } catch (...) {
-        ret = -1;
-    }
-    CARLA_SAFE_ASSERT_RETURN(ret != -1, false);
 #endif
 
     //----------------------------------------------------------------

@@ -135,7 +135,7 @@ ifneq ($(WIN32),true)
 # 	./$@ &&
 endif
 
-CarlaPipeUtils.exe: CarlaPipeUtils.cpp
+CarlaPipeUtils.exe: CarlaPipeUtils.cpp ../utils/CarlaPipeUtils.cpp
 	$(CXX) $< $(PEDANTIC_CXX_FLAGS) -o $@ $(MODULEDIR)/juce_core.a -lole32 -lshlwapi -lversion -lwsock32 -lwininet -lwinmm -lws2_32 -lpthread
 
 CarlaUtils1: CarlaUtils1.cpp ../utils/*.hpp

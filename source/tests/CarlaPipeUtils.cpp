@@ -1,6 +1,6 @@
 /*
  * Carla Utility Tests
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,6 +16,7 @@
  */
 
 #include "CarlaPipeUtils.hpp"
+#include "juce_core/juce_core.h"
 
 // -----------------------------------------------------------------------
 
@@ -52,6 +53,7 @@ int main(int argc, const char* argv[])
     if (argc != 1)
     {
         carla_stdout("CLIENT STARTED %i", argc);
+        std::fflush(stdout);
 
         CarlaPipeClient2 p;
         const bool ok = p.initPipeClient(argv);
@@ -64,20 +66,22 @@ int main(int argc, const char* argv[])
 
         carla_msleep(500);
         carla_stderr2("CLIENT idle start");
+        std::fflush(stdout);
         p.idlePipe();
         carla_stderr2("CLIENT idle end");
+        std::fflush(stdout);
         carla_msleep(500);
     }
     else
     {
         carla_stdout("SERVER STARTED %i", argc);
 
+        using juce::File;
+        using juce::String;
+        String path = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName();
+
         CarlaPipeServer2 p;
-#ifdef CARLA_OS_WIN
-        const bool ok = p.startPipeServer("H:\\Source\\falkTX\\Carla\\source\\tests\\CarlaPipeUtils.exe", "/home/falktx/Videos", "/home/falktx");
-#else
-        const bool ok = p.startPipeServer("/home/falktx/Source/falkTX/Carla/source/tests/CarlaPipeUtils", "/home/falktx/Videos", "/home/falktx");
-#endif
+        const bool ok = p.startPipeServer(path.toRawUTF8(), "/home/falktx/Videos", "/home/falktx");
         CARLA_SAFE_ASSERT_RETURN(ok,1);
 
         p.lockPipe();

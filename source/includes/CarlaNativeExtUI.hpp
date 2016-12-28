@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin API (C++)
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -40,6 +40,9 @@ public:
     {
         fExtUiPath += CARLA_OS_SEP_STR;
         fExtUiPath += extUiPath;
+#ifdef CARLA_OS_WIN
+        fExtUiPath += ".exe";
+#endif
     }
 
     const char* getExtUiPath() const noexcept

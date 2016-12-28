@@ -86,35 +86,41 @@
 
 /* Define various string format types */
 #if defined(CARLA_OS_WIN64)
-# define P_INT64   "%I64i"
-# define P_UINT64  "%I64u"
+# define P_INT64   "%lli"
+# define P_UINT64  "%llu"
 # define P_INTPTR  "%lli"
 # define P_UINTPTR "%llx"
-# define P_SIZE    "%I64u"
+# define P_SIZE    "%llu"
+# define P_SSIZE   "%lli"
 #elif defined(CARLA_OS_WIN32)
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
+# define P_SSIZE   "%i"
 #elif defined(CARLA_OS_MAC)
+// FIXME adjust for 32bit bridges
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"
 # define P_INTPTR  "%li"
 # define P_UINTPTR "%lx"
 # define P_SIZE    "%lu"
+# define P_SSIZE   "%li"
 #elif defined(__WORDSIZE) && __WORDSIZE == 64
 # define P_INT64   "%li"
 # define P_UINT64  "%lu"
 # define P_INTPTR  "%li"
 # define P_UINTPTR "%lx"
 # define P_SIZE    "%lu"
+# define P_SSIZE   "%li"
 #else
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"
 # define P_INTPTR  "%i"
 # define P_UINTPTR "%x"
 # define P_SIZE    "%u"
+# define P_SSIZE   "%i"
 #endif
 
 /* Define BINARY_NATIVE */

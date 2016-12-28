@@ -205,7 +205,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#ifdef CARLA_OS_LINUX
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
@@ -225,12 +224,10 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
 
 // -----------------------------------------------------------------------
 // Carla
 
-#ifndef CARLA_OS_WIN
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -336,7 +333,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif // CARLA_OS_WIN
 
 // -----------------------------------------------------------------------
 // DISTRHO Plugins
@@ -542,7 +538,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // -----------------------------------------------------------------------
 // External-UI plugins
 
-#ifndef CARLA_OS_WIN
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
@@ -578,7 +573,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
 
 // -----------------------------------------------------------------------
 // ZynAddSubFX

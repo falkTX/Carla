@@ -84,14 +84,10 @@ void carla_register_all_native_plugins(void)
 
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
-#ifdef CARLA_OS_LINUX
     carla_register_native_plugin_midipattern();
-#endif
 
-#ifndef CARLA_OS_WIN
     // Carla
     carla_register_native_plugin_carla();
-#endif
 
     // DISTRHO Plugins
     carla_register_native_plugin_distrho_3bandeq();
@@ -109,11 +105,9 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_distrho_vectorjuice();
     carla_register_native_plugin_distrho_wobblejuice();
 
-#ifndef CARLA_OS_WIN
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
-#endif
 
 #ifdef HAVE_ZYN_DEPS
     // ZynAddSubFX

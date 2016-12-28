@@ -306,7 +306,10 @@ class CarlaUtils(object):
         return self.lib.carla_pipe_client_new(cargv, self._pipeClientCallback, None)
 
     def pipe_client_idle(self, handle):
-        self.lib.carla_pipe_client_idle(handle)
+        try:
+            self.lib.carla_pipe_client_idle(handle)
+        except OSError as e:
+            print("pipe_client_idle", e)
 
     def pipe_client_is_running(self, handle):
         return bool(self.lib.carla_pipe_client_is_running(handle))

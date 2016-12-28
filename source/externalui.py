@@ -184,7 +184,6 @@ class ExternalUI(object):
 
         gCarla.utils.pipe_client_lock(self.fPipeClient)
 
-        # this must never fail, we need to unlock at the end
         try:
             for line in lines:
                 if line is None:
@@ -202,7 +201,6 @@ class ExternalUI(object):
                     return
 
                 gCarla.utils.pipe_client_write_msg(self.fPipeClient, line2 + "\n")
-        except:
-            pass
 
-        gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient)
+        finally:
+            gCarla.utils.pipe_client_flush_and_unlock(self.fPipeClient)

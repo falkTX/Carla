@@ -1486,9 +1486,9 @@ protected:
                 path += CARLA_OS_SEP_STR "carla-plugin-patchbay";
             else
                 path += CARLA_OS_SEP_STR "carla-plugin";
-// #ifdef CARLA_OS_WIN
-//             path += ".exe";
-// #endif
+#ifdef CARLA_OS_WIN
+            path += ".exe";
+#endif
             carla_stdout("Trying to start carla-plugin using \"%s\"", path.buffer());
 
             fUiServer.setData(path, pData->sampleRate, pHost->uiName);
