@@ -1558,7 +1558,9 @@ protected:
 
             if (plugin != nullptr && plugin->isEnabled())
             {
-                if (plugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                const uint hints(plugin->getHints());
+
+                if ((hints & PLUGIN_HAS_CUSTOM_UI) != 0 && (hints & PLUGIN_NEEDS_UI_MAIN_THREAD) != 0)
                 {
                     try {
                         plugin->uiIdle();

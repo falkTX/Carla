@@ -1083,14 +1083,9 @@ const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) 
 
 bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept
 {
-    // TESTING remove later (replace with trylock scope)
-    if (pData->writeLock.tryLock())
-    {
-        carla_safe_assert("! pData->writeLock.tryLock()", __FILE__, __LINE__);
-        pData->writeLock.unlock();
-        return false;
-    }
-
+    // TESTING remove later
+    const CarlaMutexTryLocker cmtl(pData->writeLock);
+    CARLA_SAFE_ASSERT_RETURN(cmtl.wasNotLocked(), false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
     ssize_t ret;
