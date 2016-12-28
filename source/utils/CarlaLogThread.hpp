@@ -94,7 +94,7 @@ public:
 
     void stop()
     {
-        if (fStdOut != -1)
+        if (fStdOut == -1)
             return;
 
         stopThread(5000);

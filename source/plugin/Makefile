@@ -199,7 +199,11 @@ $(BINDIR)/carla.lv2/manifest.ttl: $(OBJDIR)/carla-lv2-export.cpp.o $(LIBS)
 	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_FLAGS) -o $(BINDIR)/carla-lv2-export$(APP_EXT)
 
 	@echo "Generating LV2 ttl data"
+ifeq ($(BUILDING_FOR_WINDOWS),true)
+	@cd $(BINDIR) && wine ./carla-lv2-export$(APP_EXT)
+else
 	@cd $(BINDIR) && ./carla-lv2-export$(APP_EXT)
+endif
 	@cd $(BINDIR)/carla.lv2 && ln -sf ../*bridge-* ../carla-discovery-* .
 
 $(BINDIR)/carla-lv2-export$(APP_EXT): $(OBJDIR)/carla-lv2-export.cpp.o $(LIBS)
