@@ -179,6 +179,12 @@ class CarlaUtils(object):
         self.lib.carla_get_cached_plugin_info.argtypes = [c_enum, c_uint]
         self.lib.carla_get_cached_plugin_info.restype = POINTER(CarlaCachedPluginInfo)
 
+        self.lib.carla_fflush.argtypes = [c_bool]
+        self.lib.carla_fflush.restype = None
+
+        self.lib.carla_fputs.argtypes = [c_bool, c_char_p]
+        self.lib.carla_fputs.restype = None
+
         self.lib.carla_set_process_name.argtypes = [c_char_p]
         self.lib.carla_set_process_name.restype = None
 
@@ -278,6 +284,12 @@ class CarlaUtils(object):
     # Get information about a cached plugin.
     def get_cached_plugin_info(self, ptype, index):
         return structToDict(self.lib.carla_get_cached_plugin_info(ptype, index).contents)
+
+    def fflush(self, err):
+        self.lib.carla_fflush(err)
+
+    def fputs(self, err, string):
+        self.lib.carla_fputs(err, string.encode("utf-8"))
 
     def set_process_name(self, name):
         self.lib.carla_set_process_name(name.encode("utf-8"))

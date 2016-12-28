@@ -654,6 +654,16 @@ const char* carla_get_supported_file_extensions()
 
 // -------------------------------------------------------------------------------------------------------------------
 
+void carla_fflush(bool err)
+{
+    std::fflush(err ? stderr : stdout);
+}
+
+void carla_fputs(bool err, const char* string)
+{
+    std::fputs(string, err ? stderr : stdout);
+}
+
 void carla_set_process_name(const char* name)
 {
     carla_debug("carla_set_process_name(\"%s\")", name);

@@ -1,6 +1,6 @@
 /*
- * Carla Log thread
- * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
+ * Carla Log Thread
+ * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,51 +24,67 @@
 
 #include <fcntl.h>
 
-using CarlaBackend::CallbackFunc;
+using CarlaBackend::EngineCallbackFunc;
 
 // -----------------------------------------------------------------------
 // Log thread
 
-class CarlaLogThread : public CarlaThread
+class CarlaLogThread : private CarlaThread
 {
 public:
     CarlaLogThread()
         : CarlaThread("CarlaLogThread"),
+          fStdOut(-1),
+          fStdErr(-1),
           fCallback(nullptr),
-          fCallbackPtr(nullptr)
-    {
-        pipe(fPipe);
-
-        fflush(stdout);
-        fflush(stderr);
-
-        //fPipe[1] = ::dup(STDOUT_FILENO);
-        //fPipe[1] = ::dup(STDERR_FILENO);
-        dup2(fPipe[1], STDOUT_FILENO);
-        dup2(fPipe[1], STDERR_FILENO);
-
-        fcntl(fPipe[0], F_SETFL, O_NONBLOCK);
-
-        start(2);
-    }
+          fCallbackPtr(nullptr) {}
 
     ~CarlaLogThread()
     {
-        fCallback    = nullptr;
-        fCallbackPtr = nullptr;
+        stop();
+    }
 
-        stop(5000);
+    void init()
+    {
+        CARLA_SAFE_ASSERT_RETURN(pipe(fPipe) == 0,);
+        CARLA_SAFE_ASSERT_RETURN(fcntl(fPipe[0], F_SETFL, O_NONBLOCK) == 0,);
 
-        fflush(stdout);
-        fflush(stderr);
+        std::fflush(stdout);
+        std::fflush(stderr);
+
+        fStdOut = dup(STDOUT_FILENO);
+        fStdErr = dup(STDERR_FILENO);
+
+        dup2(fPipe[1], STDOUT_FILENO);
+        dup2(fPipe[1], STDERR_FILENO);
+
+        startThread();
+    }
+
+    void stop()
+    {
+        if (fStdOut != -1)
+            return;
+
+        stopThread(5000);
+
+        std::fflush(stdout);
+        std::fflush(stderr);
 
         close(fPipe[0]);
         close(fPipe[1]);
+
+        dup2(fStdOut, STDOUT_FILENO);
+        dup2(fStdErr, STDERR_FILENO);
+        close(fStdOut);
+        close(fStdErr);
+        fStdOut = -1;
+        fStdErr = -1;
     }
 
-    void setCallback(CallbackFunc callback, void* callbackPtr)
+    void setCallback(EngineCallbackFunc callback, void* callbackPtr)
     {
-        CARLA_ASSERT(callback != nullptr);
+        CARLA_SAFE_ASSERT_RETURN(callback != nullptr,);
 
         fCallback    = callback;
         fCallbackPtr = callbackPtr;
@@ -77,56 +93,62 @@ public:
 protected:
     void run()
     {
-        while (! shouldExit())
+        CARLA_SAFE_ASSERT_RETURN(fCallback != nullptr,);
+
+        size_t k, bufTempPos;
+        ssize_t r, lastRead;
+        char bufTemp[1024+1];
+        char bufRead[1024+1];
+        char bufSend[2048+1];
+
+        bufTemp[0] = '\0';
+        bufTempPos = 0;
+
+        while (! shouldThreadExit())
         {
-            size_t r, lastRead;
-            ssize_t r2; // to avoid sign/unsign conversions
+            bufRead[0] = '\0';
 
-            static char bufTemp[1024+1] = { '\0' };
-            static char bufRead[1024+1];
-            static char bufSend[2048+1];
-
-            while ((r2 = read(fPipe[0], bufRead, sizeof(char)*1024)) > 0)
+            while ((r = read(fPipe[0], bufRead, 1024)) > 0)
             {
-                r = static_cast<size_t>(r2);
+                CARLA_SAFE_ASSERT_CONTINUE(r <= 1024);
 
                 bufRead[r] = '\0';
                 lastRead = 0;
 
-                for (size_t i=0; i < r; ++i)
+                for (ssize_t i=0; i<r; ++i)
                 {
-                    CARLA_ASSERT(bufRead[i] != '\0');
+                    CARLA_SAFE_ASSERT_BREAK(bufRead[i] != '\0');
 
-                    if (bufRead[i] == '\n')
+                    if (bufRead[i] != '\n')
+                        continue;
+
+                    k = static_cast<size_t>(i-lastRead);
+
+                    if (bufTempPos != 0)
                     {
-                        std::strcpy(bufSend, bufTemp);
-                        std::strncat(bufSend, bufRead+lastRead, i-lastRead);
-                        bufSend[std::strlen(bufTemp)+i-lastRead] = '\0';
-
-                        lastRead = i;
-                        bufTemp[0] = '\0';
-
-                        if (fCallback != nullptr)
-                        {
-                            if (fOldBuffer.isNotEmpty())
-                            {
-                                fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, fOldBuffer);
-                                fOldBuffer = nullptr;
-                            }
-
-                            fCallback(fCallbackPtr, CarlaBackend::CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
-                        }
-                        else
-                            fOldBuffer += bufSend;
+                        std::memcpy(bufSend, bufTemp, bufTempPos);
+                        std::memcpy(bufSend+bufTempPos, bufRead+lastRead, k);
+                        k += bufTempPos;
                     }
+                    else
+                    {
+                        std::memcpy(bufSend, bufRead+lastRead, k);
+                    }
+
+                    lastRead   = i+1;
+                    bufSend[k] = '\0';
+                    bufTemp[0] = '\0';
+                    bufTempPos = 0;
+
+                    fCallback(fCallbackPtr, CarlaBackend::ENGINE_CALLBACK_DEBUG, 0, 0, 0, 0.0f, bufSend);
                 }
 
-                CARLA_ASSERT(lastRead < r);
-
-                if (lastRead > 0 && r > 0 && lastRead+1 < r)
+                if (lastRead > 0 && lastRead != r)
                 {
-                    std::strncpy(bufTemp, bufRead+lastRead, r-lastRead);
-                    bufTemp[r-lastRead] = '\0';
+                    k = static_cast<size_t>(r-lastRead);
+                    std::memcpy(bufTemp, bufRead+lastRead, k);
+                    bufTemp[k] = '\0';
+                    bufTempPos = k;
                 }
             }
 
@@ -135,13 +157,14 @@ protected:
     }
 
 private:
-    int  fPipe[2];
+    int fPipe[2];
+    int fStdOut;
+    int fStdErr;
 
-    CallbackFunc fCallback;
-    void*        fCallbackPtr;
-    CarlaString  fOldBuffer;
+    EngineCallbackFunc fCallback;
+    void*              fCallbackPtr;
 
-    CARLA_PREVENT_HEAP_ALLOCATION
+    //CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaLogThread)
 };
 

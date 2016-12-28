@@ -159,6 +159,16 @@ CARLA_EXPORT const CarlaCachedPluginInfo* carla_get_cached_plugin_info(PluginTyp
  * set stuff */
 
 /*!
+ * Flush stdout or stderr.
+ */
+CARLA_EXPORT void carla_fflush(bool err);
+
+/*!
+ * Print the string @a string to stdout or stderr.
+ */
+CARLA_EXPORT void carla_fputs(bool err, const char* string);
+
+/*!
  * Set the current process name to @a name.
  */
 CARLA_EXPORT void carla_set_process_name(const char* name);

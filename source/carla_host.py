@@ -69,6 +69,19 @@ LADISH_APP_NAME   = os.getenv("LADISH_APP_NAME")
 NSM_URL           = os.getenv("NSM_URL")
 
 # ------------------------------------------------------------------------------------------------------------
+# Carla Print class
+
+class CarlaPrint:
+    def __init__(self, err):
+        self.err = err
+
+    def flush(self):
+        gCarla.utils.fflush(self.err)
+
+    def write(self, string):
+        gCarla.utils.fputs(self.err, string)
+
+# ------------------------------------------------------------------------------------------------------------
 # Host Window
 
 class HostWindow(QMainWindow):
@@ -167,6 +180,7 @@ class HostWindow(QMainWindow):
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
+            self.ui.tabWidget.removeTab(2)
 
             if self.host.isControl:
                 self.ui.act_file_new.setVisible(False)
@@ -443,6 +457,7 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Final setup
 
+        self.ui.text_logs.clear()
         self.setProperWindowTitle()
 
         # Qt needs this so it properly creates & resizes the canvas
@@ -613,8 +628,14 @@ class HostWindow(QMainWindow):
         firstInit   = self.fFirstEngineInit
 
         self.fFirstEngineInit = False
+        self.ui.text_logs.appendPlainText("======= Starting engine =======")
 
-        if self.host.engine_init(audioDriver, self.fClientName) or firstInit:
+        if self.host.engine_init(audioDriver, self.fClientName):
+            self.ui.text_logs.appendPlainText("======= Engine started ========")
+            return
+
+        elif firstInit:
+            self.ui.text_logs.appendPlainText("Failed to start engine on first try, ignored")
             return
 
         audioError = self.host.get_last_error()
@@ -626,6 +647,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot()
     def slot_engineStop(self, forced = False):
+        self.ui.text_logs.appendPlainText("======= Stopping engine =======")
+
         if self.fPluginCount == 0:
             self.engineStopFinal()
             return True
@@ -655,8 +678,11 @@ class HostWindow(QMainWindow):
         if self.host.is_engine_running():
             self.host.remove_all_plugins()
 
-            if not self.host.engine_close():
-                print(self.host.get_last_error())
+            if self.host.engine_close():
+                self.ui.text_logs.appendPlainText("======= Engine stopped ========")
+            else:
+                self.ui.text_logs.appendPlainText("Failed to stop engine, error was:")
+                self.ui.text_logs.appendPlainText(self.host.get_last_error())
 
         if self.fCustomStopAction == 1:
             self.close()
@@ -1601,7 +1627,9 @@ class HostWindow(QMainWindow):
         if self.fCanvasWidth == 0 or self.fCanvasHeight == 0:
             return
 
-        if self.ui.tabWidget.currentIndex() == 1:
+        currentIndex = self.ui.tabWidget.currentIndex()
+
+        if currentIndex == 1:
             width  = self.ui.graphicsView.width()
             height = self.ui.graphicsView.height()
         else:
@@ -1609,7 +1637,7 @@ class HostWindow(QMainWindow):
             self.ui.tabWidget.setCurrentIndex(1)
             width  = self.ui.graphicsView.width()
             height = self.ui.graphicsView.height()
-            self.ui.tabWidget.setCurrentIndex(0)
+            self.ui.tabWidget.setCurrentIndex(currentIndex)
             self.ui.tabWidget.blockSignals(False)
 
         self.ui.miniCanvasPreview.setViewSize(float(width)/self.fCanvasWidth, float(height)/self.fCanvasHeight)
@@ -1719,9 +1747,12 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
 
+    def fixLogText(self, text):
+        return text.replace("\x1b[30;1m", "").replace("\x1b[31m", "").replace("\x1b[0m", "")
+
     @pyqtSlot(int, int, int, float, str)
     def slot_handleDebugCallback(self, pluginId, value1, value2, value3, valueStr):
-        print("DEBUG:", pluginId, value1, value2, value3, valueStr)
+        self.ui.text_logs.appendPlainText(self.fixLogText(valueStr))
 
     @pyqtSlot(str)
     def slot_handleInfoCallback(self, info):
@@ -2224,7 +2255,14 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
     gCarla.utils.set_process_name(os.path.basename(initName))
-    #gCarla.utils.set_locale_C()
+
+    try:
+        sys.stdout.flush()
+    except:
+        pass
+
+    sys.stdout = CarlaPrint(False)
+    sys.stderr = CarlaPrint(True)
 
     # --------------------------------------------------------------------------------------------------------
     # Done

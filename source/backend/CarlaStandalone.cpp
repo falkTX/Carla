@@ -27,6 +27,10 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 
+#ifndef BUILD_BRIDGE
+# include "CarlaLogThread.hpp"
+#endif
+
 #include "juce_audio_formats/juce_audio_formats.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
@@ -49,6 +53,7 @@ struct CarlaBackendStandalone {
     void*              engineCallbackPtr;
 #ifndef BUILD_BRIDGE
     EngineOptions      engineOptions;
+    CarlaLogThread     logThread;
 #endif
 
     FileCallbackFunc fileCallback;
@@ -62,6 +67,7 @@ struct CarlaBackendStandalone {
           engineCallbackPtr(nullptr),
 #ifndef BUILD_BRIDGE
           engineOptions(),
+          logThread(),
 #endif
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
@@ -314,6 +320,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     {
 #ifndef BUILD_BRIDGE
         juce::initialiseJuce_GUI();
+        gStandalone.logThread.init();
 #endif
         gStandalone.lastError = "No error";
         return true;
@@ -402,7 +409,9 @@ bool carla_engine_close()
 
 #ifndef BUILD_BRIDGE
     juce::shutdownJuce_GUI();
+    gStandalone.logThread.stop();
 #endif
+
     delete gStandalone.engine;
     gStandalone.engine = nullptr;
 
@@ -436,12 +445,12 @@ void carla_set_engine_callback(EngineCallbackFunc func, void* ptr)
     gStandalone.engineCallback    = func;
     gStandalone.engineCallbackPtr = ptr;
 
+#ifndef BUILD_BRIDGE
+    gStandalone.logThread.setCallback(func, ptr);
+#endif
+
     if (gStandalone.engine != nullptr)
         gStandalone.engine->setCallback(func, ptr);
-
-//#ifdef WANT_LOGS
-//    gLogThread.setCallback(func, ptr);
-//#endif
 }
 
 #ifndef BUILD_BRIDGE
