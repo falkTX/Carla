@@ -320,7 +320,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     {
 #ifndef BUILD_BRIDGE
         juce::initialiseJuce_GUI();
-        gStandalone.logThread.init();
+        if (std::getenv("CARLA_LOGS_DISABLED") != nullptr)
+            gStandalone.logThread.init();
 #endif
         gStandalone.lastError = "No error";
         return true;
