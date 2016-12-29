@@ -20,8 +20,8 @@ WINE_32BIT_FLAGS = $(32BIT_FLAGS)
 WINE_64BIT_FLAGS = $(64BIT_FLAGS)
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lpthread
 else
-WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wine
-WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine
+WINE_32BIT_FLAGS = $(32BIT_FLAGS) -L/usr/lib32/wine -L/usr/lib/i386-linux-gnu/wine -L/opt/wine-staging/lib -L/opt/wine-staging/lib/wine/
+WINE_64BIT_FLAGS = $(64BIT_FLAGS) -L/usr/lib64/wine -L/usr/lib/x86_64-linux-gnu/wine -L/opt/wine-staging/lib64 -L/opt/wine-staging/lib64/wine/
 WINE_LINK_FLAGS  = $(LINK_FLAGS) -ldl -lrt -lpthread
 endif
 

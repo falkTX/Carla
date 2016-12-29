@@ -202,7 +202,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
         return (::semaphore_timedwait(server ? sem.sem : sem.sem2, timeout) == KERN_SUCCESS);
     } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
 # elif defined(CARLA_USE_FUTEXES)
-    const timespec timeout = { static_cast<time_t>(secs), nsecs };
+    const timespec timeout = { static_cast<time_t>(secs), static_cast<long>(nsecs) };
 
     for (;;)
     {

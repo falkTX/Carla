@@ -1873,7 +1873,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     if (jbinary[0] == '/')
         jbinary = "C:" + jbinary.replaceCharacter('/', '\\');
 #else
-    if (jbinary[1] == ':' && jbinary[2] == '\\')
+    if (jbinary[1] == ':' && (jbinary[2] == '\\' || jbinary[2] == '/'))
         jbinary = jbinary.substring(2).replaceCharacter('\\', '/');
 #endif
 
