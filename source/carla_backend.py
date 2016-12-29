@@ -2098,7 +2098,7 @@ class CarlaHostDLL(CarlaHostMeta):
         # info about this host object
         self.isPlugin = False
 
-        self.lib = cdll.LoadLibrary(libName)
+        self.lib = CDLL(libName, RTLD_GLOBAL)
 
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint

@@ -163,6 +163,7 @@ class CarlaUtils(object):
         object.__init__(self)
 
         self.lib = cdll.LoadLibrary(filename)
+        #self.lib = CDLL(filename, RTLD_GLOBAL)
 
         self.lib.carla_get_complete_license_text.argtypes = None
         self.lib.carla_get_complete_license_text.restype = c_char_p
