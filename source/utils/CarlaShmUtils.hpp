@@ -271,6 +271,27 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
         for (std::size_t c = fileBaseLen - 6; c < fileBaseLen; ++c)
             fileBase[c] = charSet[std::rand() % charSetLen];
 
+#ifdef CARLA_OS_WIN
+        // Windows: check if file already exists
+        const HANDLE h = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr,
+                                             PAGE_READWRITE|SEC_COMMIT, 0, 8, fileBase);
+
+        if (h == INVALID_HANDLE_VALUE)
+        {
+            carla_stderr("carla_shm_create_temp(%s) - file mapping test error", fileBase);
+            return gNullCarlaShm;
+        }
+
+        const DWORD error = ::GetLastError();
+        ::CloseHandle(h);
+
+        if (error == ERROR_ALREADY_EXISTS)
+        {
+            carla_stderr("carla_shm_create_temp(%s) - file exists, retrying", fileBase);
+            continue;
+        }
+#endif
+
         // (try to) create new shm for this filename
         const carla_shm_t shm = carla_shm_create(fileBase);
 
@@ -279,9 +300,12 @@ carla_shm_t carla_shm_create_temp(char* const fileBase) noexcept
             return shm;
 
 #ifndef CARLA_OS_WIN
-        // if file already exists, keep trying
+        // Non-Windows: if file already exists, keep trying
         if (errno == EEXIST)
+        {
+            carla_stderr("carla_shm_create_temp(%s) - file exists, retrying", fileBase);
             continue;
+        }
         const int localerrno = errno;
         carla_stderr("carla_shm_create_temp(%s) - failed, error code %i", fileBase, localerrno);
 #endif
