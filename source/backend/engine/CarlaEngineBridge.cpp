@@ -526,13 +526,6 @@ public:
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
         pData->sampleRate = fShmNonRtClientControl.readDouble();
 
-        carla_stdout("Carla Client Info:");
-        carla_stdout("  BufferSize: %i", pData->bufferSize);
-        carla_stdout("  SampleRate: %g", pData->sampleRate);
-        carla_stdout("  sizeof(BridgeRtClientData):    %i/" P_SIZE, shmRtClientDataSize,    sizeof(BridgeRtClientData));
-        carla_stdout("  sizeof(BridgeNonRtClientData): %i/" P_SIZE, shmNonRtClientDataSize, sizeof(BridgeNonRtClientData));
-        carla_stdout("  sizeof(BridgeNonRtServerData): %i/" P_SIZE, shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
-
         if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
             return false;
 
@@ -868,7 +861,7 @@ public:
             fShmNonRtServerControl.commitWrite();
             fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
-            carla_stdout("Carla Client Ready!");
+            carla_stdout("Carla Bridge Ready!");
             fLastPingTime = Time::currentTimeMillis();
         }
 

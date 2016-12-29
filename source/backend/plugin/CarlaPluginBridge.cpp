@@ -2591,11 +2591,6 @@ public:
 
         // ---------------------------------------------------------------
 
-        carla_stdout("Carla Server Info:");
-        carla_stdout("  sizeof(BridgeRtClientData):    " P_SIZE, sizeof(BridgeRtClientData));
-        carla_stdout("  sizeof(BridgeNonRtClientData): " P_SIZE, sizeof(BridgeNonRtClientData));
-        carla_stdout("  sizeof(BridgeNonRtServerData): " P_SIZE, sizeof(BridgeNonRtServerData));
-
         // initial values
         fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientNull);
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
