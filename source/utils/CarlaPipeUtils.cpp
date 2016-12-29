@@ -767,6 +767,9 @@ bool CarlaPipeCommon::flushMessages() const noexcept
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
+#else
+    // nothing to do
+    return true;
 #endif
 }
 
