@@ -186,6 +186,10 @@ WineJack: WineJack.cpp
 
 # --------------------------------------------------------------
 
+carla-uhe-test: carla-uhe-test.c
+	$(CC) $< -Wall -Wextra -O0 -g -I../backend -I../includes -DREAL_BUILD -ldl -o $@
+	./$@
+
 sem: sem.cpp $(MODULEDIR)/jackbridge/*
 	$(CXX) $< -Wall -Wextra -O0 -g -I../utils -I../includes -DREAL_BUILD -o $@
 	./$@
