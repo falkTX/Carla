@@ -693,6 +693,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 #ifndef BUILD_BRIDGE
     if (oldPlugin != nullptr)
     {
+        CARLA_SAFE_ASSERT(! pData->loadingProject);
+
         const ScopedThreadStopper sts(this);
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
@@ -714,10 +716,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, nullptr);
     }
-    else
+    else if (! pData->loadingProject)
 #endif
     {
         plugin->setActive(true, true, false);
+        plugin->setEnabled(true);
 
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
@@ -959,10 +962,6 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     if (isOscControlRegistered())
         oscSend_control_switch_plugins(idA, idB);
     */
-
-
-    if (isRunning() && ! pData->aboutToClose)
-        pData->thread.startThread();
 
     return true;
 }
@@ -2145,7 +2144,9 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             if (addPlugin(getBinaryTypeFromFile(stateSave.binary), ptype, stateSave.binary,
                           stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
-                if (CarlaPlugin* const plugin = getPlugin(pData->curPluginCount-1))
+                const uint pluginId = pData->curPluginCount;
+
+                if (CarlaPlugin* const plugin = getPluginUnchecked(pluginId))
                 {
                     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -2158,12 +2159,33 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                         plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
 #endif
                     plugin->loadStateSave(stateSave);
+
+                    /* NOTE: The following code is the same as the end of addPlugin().
+                     *       When project is loading we do not enable the plugin right away,
+                     *        as we want to load state first.
+                     */
+#ifdef BUILD_BRIDGE
+                    plugin->setActive(true, true, false);
+#endif
+                    plugin->setEnabled(true);
+
+                    ++pData->curPluginCount;
+                    callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
+
+#ifndef BUILD_BRIDGE
+                    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                        pData->graph.addPlugin(plugin);
+#endif
                 }
                 else
+                {
                     carla_stderr2("Failed to get new plugin, state will not be restored correctly\n");
+                }
             }
             else
+            {
                 carla_stderr2("Failed to load a plugin, error was:\n%s", getLastError());
+            }
         }
 
         if (isPreset)

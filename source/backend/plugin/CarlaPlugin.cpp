@@ -961,6 +961,10 @@ void CarlaPlugin::setEnabled(const bool yesNo) noexcept
 
     pData->masterMutex.lock();
     pData->enabled = yesNo;
+
+    if (yesNo && ! pData->client->isActive())
+        pData->client->activate();
+
     pData->masterMutex.unlock();
 }
 
@@ -2018,7 +2022,8 @@ void CarlaPlugin::setPatchbayNodeId(const uint32_t nodeId) noexcept
 // Scoped Disabler
 
 CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin) noexcept
-    : fPlugin(plugin)
+    : fPlugin(plugin),
+      fWasEnabled(false)
 {
     CARLA_SAFE_ASSERT_RETURN(plugin != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(plugin->pData != nullptr,);
@@ -2028,10 +2033,13 @@ CarlaPlugin::ScopedDisabler::ScopedDisabler(CarlaPlugin* const plugin) noexcept
     plugin->pData->masterMutex.lock();
 
     if (plugin->pData->enabled)
+    {
+        fWasEnabled = true;
         plugin->pData->enabled = false;
 
-    if (plugin->pData->client->isActive())
-        plugin->pData->client->deactivate();
+        if (plugin->pData->client->isActive())
+            plugin->pData->client->deactivate();
+    }
 }
 
 CarlaPlugin::ScopedDisabler::~ScopedDisabler() noexcept
@@ -2041,8 +2049,12 @@ CarlaPlugin::ScopedDisabler::~ScopedDisabler() noexcept
     CARLA_SAFE_ASSERT_RETURN(fPlugin->pData->client != nullptr,);
     carla_debug("CarlaPlugin::~ScopedDisabler()");
 
-    fPlugin->pData->enabled = true;
-    fPlugin->pData->client->activate();
+    if (fWasEnabled)
+    {
+        fPlugin->pData->enabled = true;
+        fPlugin->pData->client->activate();
+    }
+
     fPlugin->pData->masterMutex.unlock();
 }
 
