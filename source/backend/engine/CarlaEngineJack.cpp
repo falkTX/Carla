@@ -1557,28 +1557,39 @@ protected:
             plugin->unlock();
         }
 #else
-        if (pData->curPluginCount == 0 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         {
-            float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
-            float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
-            float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
-            float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
+            if (pData->aboutToClose)
+            {
+                if (float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes))
+                    FloatVectorOperations::clear(audioOut1, static_cast<int>(nframes));
 
-            // assert buffers
-            CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
-            CARLA_SAFE_ASSERT_RETURN(audioIn2 != nullptr,);
-            CARLA_SAFE_ASSERT_RETURN(audioOut1 != nullptr,);
-            CARLA_SAFE_ASSERT_RETURN(audioOut2 != nullptr,);
+                if (float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes))
+                    FloatVectorOperations::clear(audioOut2, static_cast<int>(nframes));
+            }
+            else if (pData->curPluginCount == 0)
+            {
+                float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
+                float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
+                float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
+                float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
 
-            // pass-through
-            FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
-            FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
+                // assert buffers
+                CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
+                CARLA_SAFE_ASSERT_RETURN(audioIn2 != nullptr,);
+                CARLA_SAFE_ASSERT_RETURN(audioOut1 != nullptr,);
+                CARLA_SAFE_ASSERT_RETURN(audioOut2 != nullptr,);
 
-            // TODO pass-through MIDI as well
-            if (void* const eventOut = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes))
-                jackbridge_midi_clear_buffer(eventOut);
+                // pass-through
+                FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
+                FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
 
-            return;
+                // TODO pass-through MIDI as well
+                if (void* const eventOut = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes))
+                    jackbridge_midi_clear_buffer(eventOut);
+
+                return;
+            }
         }
 
         if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)

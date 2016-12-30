@@ -2146,7 +2146,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             {
                 const uint pluginId = pData->curPluginCount;
 
-                if (CarlaPlugin* const plugin = getPluginUnchecked(pluginId))
+                if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
                 {
                     callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
