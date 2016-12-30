@@ -2409,13 +2409,14 @@ public:
             return;
 
         // we need to pre-run the plugin so it can update its latency control-port
-        float tmpIn [(aIns > 0)  ? aIns  : 1][2];
-        float tmpOut[(aOuts > 0) ? aOuts : 1][2];
+        const uint32_t bufferSize = static_cast<uint32_t>(fLv2Options.nominalBufferSize);
+
+        float tmpIn [(aIns > 0)  ? aIns  : 1][bufferSize];
+        float tmpOut[(aOuts > 0) ? aOuts : 1][bufferSize];
 
         for (uint32_t j=0; j < aIns; ++j)
         {
-            tmpIn[j][0] = 0.0f;
-            tmpIn[j][1] = 0.0f;
+            carla_zeroFloats(tmpIn[j], bufferSize);
 
             try {
                 fDescriptor->connect_port(fHandle, pData->audioIn.ports[j].rindex, tmpIn[j]);
@@ -2424,8 +2425,7 @@ public:
 
         for (uint32_t j=0; j < aOuts; ++j)
         {
-            tmpOut[j][0] = 0.0f;
-            tmpOut[j][1] = 0.0f;
+            carla_zeroFloats(tmpOut[j], bufferSize);
 
             try {
                 fDescriptor->connect_port(fHandle, pData->audioOut.ports[j].rindex, tmpOut[j]);
@@ -2440,7 +2440,7 @@ public:
         }
 
         try {
-            fDescriptor->run(fHandle, 2);
+            fDescriptor->run(fHandle, bufferSize);
         } CARLA_SAFE_EXCEPTION("LV2 latency run");
 
         if (fDescriptor->deactivate != nullptr)
