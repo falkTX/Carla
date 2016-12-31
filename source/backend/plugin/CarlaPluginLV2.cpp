@@ -501,9 +501,10 @@ public:
           fCvOutBuffers(nullptr),
           fParamBuffers(nullptr),
           fCanInit2(true),
+          fNeedsFixedBuffers(false),
           fNeedsUiClose(false),
           fLatencyIndex(-1),
-          fNeedsFixedBuffers(false),
+          fStrictBounds(-1),
           fAtomBufferIn(),
           fAtomBufferOut(),
           fAtomForge(),
@@ -842,8 +843,16 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fParamBuffers != nullptr, 0.0f);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, 0.0f);
 
-        if (pData->param.data[parameterId].hints & PARAMETER_IS_STRICT_BOUNDS)
-            pData->param.ranges[parameterId].fixValue(fParamBuffers[parameterId]);
+        if (pData->param.data[parameterId].type == PARAMETER_INPUT)
+        {
+            if (pData->param.data[parameterId].hints & PARAMETER_IS_STRICT_BOUNDS)
+                pData->param.ranges[parameterId].fixValue(fParamBuffers[parameterId]);
+        }
+        else
+        {
+            if (fStrictBounds >= 0 && (pData->param.data[parameterId].hints & PARAMETER_IS_STRICT_BOUNDS) == 0)
+                pData->param.ranges[parameterId].fixValue(fParamBuffers[parameterId]);
+        }
 
         return fParamBuffers[parameterId];
     }
@@ -3451,7 +3460,9 @@ public:
                 if (pData->param.data[k].type != PARAMETER_OUTPUT)
                     continue;
 
-                pData->param.ranges[k].fixValue(fParamBuffers[k]);
+                if (fStrictBounds >= 0 && (pData->param.data[k].hints & PARAMETER_IS_STRICT_BOUNDS) != 0)
+                    // plugin is responsible to ensure correct bounds
+                    pData->param.ranges[k].fixValue(fParamBuffers[k]);
 
                 if (pData->param.data[k].midiCC > 0)
                 {
@@ -4808,6 +4819,10 @@ public:
             {
                 fNeedsFixedBuffers = true;
             }
+            else if (std::strcmp(feature.URI, LV2_PORT_PROPS__supportsStrictBounds) == 0)
+            {
+                fStrictBounds = feature.Required ? 1 : 0;
+            }
             else if (feature.Required && ! is_lv2_feature_supported(feature.URI))
             {
                 CarlaString msg("Plugin wants a feature that is not supported:\n");
@@ -5529,9 +5544,10 @@ private:
     float*  fParamBuffers;
 
     bool    fCanInit2; // some plugins don't like 2 instances
+    bool    fNeedsFixedBuffers;
     bool    fNeedsUiClose;
     int32_t fLatencyIndex; // -1 if invalid
-    bool    fNeedsFixedBuffers;
+    int     fStrictBounds; // -1 unsupported, 0 optional, 1 required
 
     Lv2AtomRingBuffer fAtomBufferIn;
     Lv2AtomRingBuffer fAtomBufferOut;
