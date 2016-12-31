@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla bridge for LV2 modguis
-# Copyright (C) 2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2015-2016 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -43,6 +43,7 @@ else:
 
 from tornado.log import enable_pretty_logging
 from tornado.ioloop import IOLoop
+from tornado.util import unicode_type
 from tornado.web import HTTPError
 from tornado.web import Application, RequestHandler, StaticFileHandler
 
@@ -71,7 +72,6 @@ HTML_DIR = os.path.join(ROOT, "html")
 os.environ['MOD_DEV_HOST'] = "1"
 os.environ['MOD_DEV_HMI']  = "1"
 os.environ['MOD_DESKTOP']  = "1"
-os.environ['MOD_LOG']      = "1" # TESTING
 
 os.environ['MOD_DATA_DIR']           = DATA_DIR
 os.environ['MOD_HTML_DIR']           = HTML_DIR
@@ -86,12 +86,34 @@ os.environ['MOD_DEVICE_WEBSERVER_PORT'] = PORT
 # ------------------------------------------------------------------------------------------------------------
 # Imports (MOD)
 
-from mod.utils import get_plugin_info, init as lv2_init
+from mod.utils import get_plugin_info, get_plugin_gui, get_plugin_gui_mini, init as lv2_init
 
 # ------------------------------------------------------------------------------------------------------------
 # MOD related classes
 
-class EffectGet(RequestHandler):
+class JsonRequestHandler(RequestHandler):
+    def write(self, data):
+        if isinstance(data, (bytes, unicode_type, dict)):
+            RequestHandler.write(self, data)
+            self.finish()
+            return
+
+        elif data is True:
+            data = "true"
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+
+        elif data is False:
+            data = "false"
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+
+        else:
+            data = json.dumps(data)
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+
+        RequestHandler.write(self, data)
+        self.finish()
+
+class EffectGet(JsonRequestHandler):
     def get(self):
         uri = self.get_argument('uri')
 
@@ -101,74 +123,45 @@ class EffectGet(RequestHandler):
             print("ERROR: get_plugin_info for '%s' failed" % uri)
             raise HTTPError(404)
 
-        self.set_header('Content-type', 'application/json')
-        self.write(json.dumps(data))
-        self.finish()
+        self.write(data)
 
-class EffectHTML(RequestHandler):
-    def get(self, html):
+class EffectFile(StaticFileHandler):
+    def initialize(self):
+        # return custom type directly. The browser will do the parsing
+        self.custom_type = None
+
         uri = self.get_argument('uri')
 
         try:
-            data = get_plugin_info(uri)
+            self.modgui = get_plugin_gui(uri)
         except:
             raise HTTPError(404)
 
         try:
-            path = data['gui']['%sTemplate' % html]
+            root = self.modgui['resourcesDirectory']
         except:
             raise HTTPError(404)
 
-        if not os.path.exists(path):
-            raise HTTPError(404)
+        return StaticFileHandler.initialize(self, root)
 
-        with open(path, 'rb') as fd:
-            self.set_header('Content-type', 'text/html')
-            self.write(fd.read())
-
-class EffectStylesheet(RequestHandler):
-    def get(self):
-        uri = self.get_argument('uri')
-
+    def parse_url_path(self, prop):
         try:
-            data = get_plugin_info(uri)
+            path = self.modgui[prop]
         except:
             raise HTTPError(404)
 
-        try:
-            path = data['gui']['stylesheet']
-        except:
-            raise HTTPError(404)
+        if prop in ("iconTemplate", "settingsTemplate", "stylesheet", "javascript"):
+            self.custom_type = "text/plain"
 
-        if not os.path.exists(path):
-            raise HTTPError(404)
+        return path
 
-        with open(path, 'rb') as fd:
-            self.set_header('Content-type', 'text/css')
-            self.write(fd.read())
-
-class EffectJavascript(RequestHandler):
-    def get(self):
-        uri = self.get_argument('uri')
-
-        try:
-            data = get_plugin_info(uri)
-        except:
-            raise HTTPError(404)
-
-        try:
-            path = data['gui']['javascript']
-        except:
-            raise HTTPError(404)
-
-        if not os.path.exists(path):
-            raise HTTPError(404)
-
-        with open(path, 'rb') as fd:
-            self.set_header('Content-type', 'text/javascript')
-            self.write(fd.read())
+    def get_content_type(self):
+        if self.custom_type is not None:
+            return self.custom_type
+        return StaticFileHandler.get_content_type(self)
 
 class EffectResource(StaticFileHandler):
+
     def initialize(self):
         # Overrides StaticFileHandler initialize
         pass
@@ -180,12 +173,12 @@ class EffectResource(StaticFileHandler):
             return self.shared_resource(path)
 
         try:
-            data = get_plugin_info(uri)
+            modgui = get_plugin_gui_mini(uri)
         except:
             raise HTTPError(404)
 
         try:
-            root = data['gui']['resourcesDirectory']
+            root = modgui['resourcesDirectory']
         except:
             raise HTTPError(404)
 
@@ -216,9 +209,7 @@ class WebServerThread(QThread):
         self.fApplication = Application(
             [
                 (r"/effect/get/?", EffectGet),
-                (r"/effect/(icon|settings).html", EffectHTML),
-                (r"/effect/stylesheet.css", EffectStylesheet),
-                (r"/effect/gui.js", EffectJavascript),
+                (r"/effect/file/(.*)", EffectFile),
                 (r"/resources/(.*)", EffectResource),
                 (r"/(.*)", StaticFileHandler, {"path": HTML_DIR}),
             ],
@@ -230,7 +221,8 @@ class WebServerThread(QThread):
         if not self.fPrepareWasCalled:
             self.fPrepareWasCalled = True
             self.fApplication.listen(PORT, address="0.0.0.0")
-            enable_pretty_logging()
+            if int(os.getenv("MOD_LOG", "0")):
+                enable_pretty_logging()
 
         self.running.emit()
         IOLoop.instance().start()
@@ -271,8 +263,12 @@ class HostWindow(QMainWindow):
         self.fPortSymbols = {}
         self.fPortValues  = {}
 
-        for port in self.fPorts['control']['input'] + self.fPorts['control']['output']:
-            self.fPortSymbols[port['index']] = port['symbol']
+        for port in self.fPorts['control']['input']:
+            self.fPortSymbols[port['index']] = (port['symbol'], False)
+            self.fPortValues [port['index']] = port['ranges']['default']
+
+        for port in self.fPorts['control']['output']:
+            self.fPortSymbols[port['index']] = (port['symbol'], True)
             self.fPortValues [port['index']] = port['ranges']['default']
 
         # ----------------------------------------------------------------------------------------------------
@@ -415,9 +411,12 @@ class HostWindow(QMainWindow):
         self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue(':bypass', 0, null)")
 
         for index in self.fPortValues.keys():
-            symbol = self.fPortSymbols[index]
-            value  = self.fPortValues[index]
-            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
+            symbol, isOutput = self.fPortSymbols[index]
+            value            = self.fPortValues[index]
+            if isOutput:
+                self.fCurrentFrame.evaluateJavaScript("icongui.setOutputPortValue('%s', %f)" % (symbol, value))
+            else:
+                self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
 
         # final setup
         self.fCanSetValues = True
@@ -437,7 +436,11 @@ class HostWindow(QMainWindow):
             return
 
         for index in self.fPortValues.keys():
-            symbol   = self.fPortSymbols[index]
+            symbol, isOutput = self.fPortSymbols[index]
+
+            if isOutput:
+                continue
+
             oldValue = self.fPortValues[index]
             newValue = self.fCurrentFrame.evaluateJavaScript("icongui.getPortValue('%s')" % (symbol,))
 
@@ -536,8 +539,13 @@ class HostWindow(QMainWindow):
         self.fPortValues[index] = value
 
         if self.fCurrentFrame is not None and self.fCanSetValues:
-            symbol = self.fPortSymbols[index]
-            self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
+            symbol, isOutput = self.fPortSymbols[index]
+
+            if isOutput:
+                self.fPortValues[index] = value
+                self.fCurrentFrame.evaluateJavaScript("icongui.setOutputPortValue('%s', %f)" % (symbol, value))
+            else:
+                self.fCurrentFrame.evaluateJavaScript("icongui.setPortValue('%s', %f, null)" % (symbol, value))
 
     def dspProgramChanged(self, index):
         return
