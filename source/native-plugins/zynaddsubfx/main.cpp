@@ -71,7 +71,7 @@ NSM_Client *nsm = 0;
 
 char *instance_name = 0;
 
-void exitprogram(const Config &config);
+void exitprogram(const CarlaConfig &config);
 
 
 //cleanup on signaled exit
@@ -85,7 +85,7 @@ void sigterm_exit(int /*sig*/)
 /*
  * Program initialisation
  */
-void initprogram(SYNTH_T synth, Config* config, int prefered_port)
+void initprogram(SYNTH_T synth, CarlaConfig* config, int prefered_port)
 {
     middleware = new MiddleWare(std::move(synth), config, prefered_port);
     master = middleware->spawnMaster();
@@ -99,7 +99,7 @@ void initprogram(SYNTH_T synth, Config* config, int prefered_port)
 /*
  * Program exit
  */
-void exitprogram(const Config& config)
+void exitprogram(const CarlaConfig& config)
 {
     Nio::stop();
     config.save();
@@ -202,7 +202,7 @@ void InitWinMidi(int) {}
 int main(int argc, char *argv[])
 {
     SYNTH_T synth;
-    Config config;
+    CarlaConfig config;
     config.init();
     int noui = 0;
     cerr
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     if(argc == 1)
         cerr << "Try 'zynaddsubfx --help' for command-line options." << endl;
 
-    /* Get the settings from the Config*/
+    /* Get the settings from the CarlaConfig*/
     synth.samplerate = config.cfg.SampleRate;
     synth.buffersize = config.cfg.SoundBufferSize;
     synth.oscilsize  = config.cfg.OscilSize;

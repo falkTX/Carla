@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  Config.cpp - Configuration file functions
+  CarlaConfig.cpp - CarlaConfiguration file functions
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -37,7 +37,7 @@
 
 
 #if 1
-#define rObject Config
+#define rObject CarlaConfig
 static const rtosc::Ports ports = {
     //rString(cfg.LinuxOSSWaveOutDev),
     //rString(cfg.LinuxOSSSeqInDev),
@@ -51,7 +51,7 @@ static const rtosc::Ports ports = {
     {"cfg.presetsDirList", rDoc("list of preset search directories"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
-            Config &c = *(Config*)d.obj;
+            CarlaConfig &c = *(CarlaConfig*)d.obj;
             if(rtosc_narguments(msg) != 0) {
                 std::string args = rtosc_argument_string(msg);
 
@@ -84,7 +84,7 @@ static const rtosc::Ports ports = {
     {"cfg.bankRootDirList", rDoc("list of bank search directories"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
-            Config &c = *(Config*)d.obj;
+            CarlaConfig &c = *(CarlaConfig*)d.obj;
             if(rtosc_narguments(msg) != 0) {
                 std::string args = rtosc_argument_string(msg);
 
@@ -127,7 +127,7 @@ static const rtosc::Ports ports = {
     {"cfg.OscilPower::i", rProp(parameter) rDoc("Size Of Oscillator Wavetable"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
-            Config &c = *(Config*)d.obj;
+            CarlaConfig &c = *(CarlaConfig*)d.obj;
             if(rtosc_narguments(msg) == 0) {
                 d.reply(d.loc, "i", (int)(log(c.cfg.OscilSize*1.0)/log(2.0)));
                 return;
@@ -139,7 +139,7 @@ static const rtosc::Ports ports = {
     {"add-favorite:s", rDoc("Add favorite directory"), 0,
         [](const char *msg, rtosc::RtData &d)
         {
-            Config &c = *(Config*)d.obj;
+            CarlaConfig &c = *(CarlaConfig*)d.obj;
             for(int i=0; i<MAX_BANK_ROOT_DIRS; ++i) {
                 if(c.cfg.favoriteList[i].empty()) {
                     c.cfg.favoriteList[i] = rtosc_argument(msg, 0).s;
@@ -151,7 +151,7 @@ static const rtosc::Ports ports = {
     {"favorites:", rProp(parameter), 0,
         [](const char *msg, rtosc::RtData &d)
         {
-            Config &c = *(Config*)d.obj;
+            CarlaConfig &c = *(CarlaConfig*)d.obj;
             char        *argt = new char[MAX_BANK_ROOT_DIRS+1];
             rtosc_arg_t *args = new rtosc_arg_t[MAX_BANK_ROOT_DIRS];
             memset(argt, 0, MAX_BANK_ROOT_DIRS+1);
@@ -168,13 +168,13 @@ static const rtosc::Ports ports = {
             delete [] args;
         }},
 };
-const rtosc::Ports &Config::ports = ::ports;
+const rtosc::Ports &CarlaConfig::ports = ::ports;
 #endif
 
-Config::Config()
+CarlaConfig::CarlaConfig()
 {}
 
-void Config::init()
+void CarlaConfig::init()
 {
     maxstringsize = MAX_STRING_SIZE; //for ui
     //defaults
@@ -249,7 +249,7 @@ void Config::init()
     cfg.nameTag = "";
 }
 
-Config::~Config()
+CarlaConfig::~CarlaConfig()
 {
     delete [] cfg.oss_devs.linux_wave_out;
     delete [] cfg.oss_devs.linux_seq_in;
@@ -260,26 +260,26 @@ Config::~Config()
 }
 
 
-void Config::save() const
+void CarlaConfig::save() const
 {
     char filename[MAX_STRING_SIZE];
     getConfigFileName(filename, MAX_STRING_SIZE);
     saveConfig(filename);
 }
 
-void Config::clearbankrootdirlist()
+void CarlaConfig::clearbankrootdirlist()
 {
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
         cfg.bankRootDirList[i].clear();
 }
 
-void Config::clearpresetsdirlist()
+void CarlaConfig::clearpresetsdirlist()
 {
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
         cfg.presetsDirList[i].clear();
 }
 
-void Config::readConfig(const char *filename)
+void CarlaConfig::readConfig(const char *filename)
 {
     XMLwrapper xmlcfg;
     if(xmlcfg.loadXMLfile(filename) < 0)
@@ -350,7 +350,7 @@ void Config::readConfig(const char *filename)
                 cfg.presetsDirList[i] = xmlcfg.getparstr("presets_root", "");
                 xmlcfg.exitbranch();
             }
-        
+
         //Get favs
         for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
             if(xmlcfg.enterbranch("FAVSROOT", i)) {
@@ -382,7 +382,7 @@ void Config::readConfig(const char *filename)
     cfg.OscilSize = (int) powf(2, ceil(logf(cfg.OscilSize - 1.0f) / logf(2.0f)));
 }
 
-void Config::saveConfig(const char *filename) const
+void CarlaConfig::saveConfig(const char *filename) const
 {
     XMLwrapper *xmlcfg = new XMLwrapper();
 
@@ -418,7 +418,7 @@ void Config::saveConfig(const char *filename) const
             xmlcfg->addparstr("presets_root", cfg.presetsDirList[i]);
             xmlcfg->endbranch();
         }
-        
+
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
         if(!cfg.favoriteList[i].empty()) {
             xmlcfg->beginbranch("FAVSROOT", i);
@@ -444,7 +444,7 @@ void Config::saveConfig(const char *filename) const
     delete (xmlcfg);
 }
 
-void Config::getConfigFileName(char *name, int namesize) const
+void CarlaConfig::getConfigFileName(char *name, int namesize) const
 {
     name[0] = 0;
     snprintf(name, namesize, "%s%s", getenv("HOME"), "/.zynaddsubfxXML.cfg");

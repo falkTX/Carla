@@ -38,7 +38,7 @@
 
 using namespace std;
 
-Bank::Bank(Config *config)
+Bank::Bank(CarlaConfig *config)
     :bankpos(0), defaultinsname(" "), config(config),
     db(new BankDb), bank_msb(0), bank_lsb(0)
 {
@@ -471,7 +471,7 @@ std::vector<std::string> Bank::search(std::string s) const
     }
     return out;
 }
-        
+
 std::vector<std::string> Bank::blist(std::string s)
 {
     std::vector<std::string> out;

@@ -1,94 +1,94 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0302 
-header_name {.h} 
+version 1.0302
+header_name {.h}
 code_name {.cc}
 decl {//Copyright (c) 2002-2009 Nasca Octavian Paul - (c) 2009-2016 Mark McCurry} {private local
-} 
+}
 
 decl {//License: GNU GPL version 2 or later} {private local
-} 
+}
 
 decl {\#include <stdlib.h>} {public local
-} 
+}
 
 decl {\#include <stdio.h>} {public local
-} 
+}
 
 decl {\#include <string.h>} {public local
-} 
+}
 
 decl {\#if ! defined(PLUGINVERSION) && HAS_X11
 \#include "zynaddsubfx.xpm"
 \#endif} {private local
-} 
+}
 
 decl {\#include "WidgetPDial.h"} {public local
-} 
+}
 
 decl {\#include "ADnoteUI.h"} {public local
-} 
+}
 
 decl {\#include "SUBnoteUI.h"} {public local
-} 
+}
 
 decl {\#include "EffUI.h"} {public local
-} 
+}
 
 decl {\#include "VirKeyboard.h"} {public local
-} 
+}
 
 decl {\#include "ConfigUI.h"} {public local
-} 
+}
 
 decl {\#include "BankUI.h"} {public local
-} 
+}
 
 decl {\#include "PartUI.h"} {public local
-} 
+}
 
 decl {\#include "MicrotonalUI.h"} {public local
-} 
+}
 
 decl {\#include "PresetsUI.h"} {public local
-} 
+}
 
 decl {\#include "NioUI.h"} {public global
-} 
+}
 
 decl {\#include "VuPartMeter.h"} {public local
-} 
+}
 
 decl {\#include "Fl_Osc_Dial.H"} {private local
-} 
+}
 
 decl {\#include "Osc_DataModel.h"} {private local
-} 
+}
 
 decl {\#include "Fl_Osc_TSlider.H"} {private local
-} 
+}
 
 decl {\#include "VuMasterMeter.h"} {public local
-} 
+}
 
 decl {\#include "PartNameButton.h"} {public local
-} 
+}
 
 decl {\#include "common.H"} {public local
-} 
+}
 
 decl {\#if USE_NSM
 \#include "NSM.H"
 extern NSM_Client *nsm;
 \#endif} {public local
-} 
+}
 
 decl {\#if !defined(PLUGINVERSION) && HAS_X11
 \#include <X11/xpm.h>
 \#endif} {public local
-} 
+}
 
 decl {\#include "../globals.h"} {public local
-} 
+}
 
 class SysEffSend {: {public Fl_Osc_Dial}
 } {
@@ -111,7 +111,7 @@ this->copy_label(tmp);} {}
   Function {~SysEffSend()} {} {
     code {hide();} {}
   }
-} 
+}
 
 class Panellistitem {open : {public Fl_Osc_Group}
 } {
@@ -213,10 +213,10 @@ end();} {}
     partpanning->update();
     partvolume->update();
     partname->update();
-    
+
     if ((int)bankui->cbwig->value()!=(npart+1))
    panellistitemgroup->color(fl_rgb_color(160,160,160));
-else 
+else
    panellistitemgroup->color(fl_rgb_color(50,190,240));
 
 panellistitemgroup->redraw();} {}
@@ -230,7 +230,7 @@ panellistitemgroup->redraw();} {}
   }
   decl {PartUI *partui;} {private local
   }
-} 
+}
 
 class MasterUI {open
 } {
@@ -357,7 +357,7 @@ result=fileexists(filename);
 if (result) {
     result=0;
    if (!fl_choice("The file exists. \\nOverwrite it?","No","Yes",NULL)) return;
-       
+
 };
 
 
@@ -433,7 +433,7 @@ int result=fileexists(filename);
 if (result) {
     result=0;
    if (!fl_choice("The file exists. \\nOverwrite it?","No","Yes",NULL)) return;
-       
+
 };
 
 osc->write("/save_xiz", "is", npart, filename);
@@ -873,11 +873,11 @@ panelwindow->show();}
         xywh {15 35 335 55} labeltype EMBOSSED_LABEL labelsize 15 align 208
       }
       Fl_Box {} {
-        label {This is free software; you may redistribute it and/or modify it under the terms of the 
+        label {This is free software; you may redistribute it and/or modify it under the terms of the
 version 2 (or any later version) of the GNU General Public License as published by the Free Software Fundation.
   This program comes with
- ABSOLUTELY NO WARRANTY. 
- See the version 2 (or any later version) of the 
+ ABSOLUTELY NO WARRANTY.
+ See the version 2 (or any later version) of the
 GNU General Public License for details.}
         xywh {15 90 335 145} labelfont 1 labelsize 11 align 144
       }
@@ -1511,7 +1511,7 @@ osc->write("/config/cfg.UserInterfaceMode", "i", 2);}
     }
   }
   Function {updatesendwindow()} {} {
-    code {/*for (int neff1=0;neff1<NUM_SYS_EFX;neff1++) 
+    code {/*for (int neff1=0;neff1<NUM_SYS_EFX;neff1++)
   for (int neff2=neff1+1;neff2<NUM_SYS_EFX;neff2++)
     syseffsend[neff1][neff2]->value(master->Psysefxsend[neff1][neff2]);*/} {}
   }
@@ -1666,7 +1666,7 @@ return 1;} {}
     updatepanel();
 
     setfilelabel(display_name);
-    
+
     return 1;} {}
   }
   Function {do_load_master(const char* file = NULL)} {} {
@@ -1697,7 +1697,7 @@ char *tmp;
     if (result) {
       result=0;
       if (!fl_choice("The file exists. Overwrite it?","No","Yes",NULL)) return;
-      
+
     }
   }
   else {
@@ -1780,4 +1780,4 @@ bankui->hide();} {}
   } {
     code {*exitprogram=1;} {}
   }
-} 
+}

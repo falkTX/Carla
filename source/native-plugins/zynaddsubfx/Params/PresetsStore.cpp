@@ -28,7 +28,7 @@ using namespace std;
 //XXX to remove
 //PresetsStore presetsstore;
 
-PresetsStore::PresetsStore(const Config& config) : config(config)
+PresetsStore::PresetsStore(const CarlaConfig& config) : config(config)
 {
 }
 

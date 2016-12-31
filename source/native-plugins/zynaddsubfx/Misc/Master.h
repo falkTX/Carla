@@ -42,7 +42,7 @@ class Master
 {
     public:
         /** Constructor TODO make private*/
-        Master(const SYNTH_T &synth, class Config *config);
+        Master(const SYNTH_T &synth, class CarlaConfig *config);
         /** Destructor*/
         ~Master();
 

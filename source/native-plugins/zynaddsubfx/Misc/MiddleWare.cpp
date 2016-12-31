@@ -451,17 +451,17 @@ namespace Nio
 
 
 /* Implementation */
-class MiddleWareImpl
+class CarlaMiddleWareImpl
 {
     public:
     MiddleWare *parent;
     private:
 
 public:
-    Config* const config;
-    MiddleWareImpl(MiddleWare *mw, SYNTH_T synth, Config* config,
+    CarlaConfig* const config;
+    CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth, CarlaConfig* config,
                    int preferred_port);
-    ~MiddleWareImpl(void);
+    ~CarlaMiddleWareImpl(void);
 
     //Check offline vs online mode in plugins
     void heartBeat(Master *m);
@@ -774,7 +774,7 @@ public:
 class MwDataObj:public rtosc::RtData
 {
     public:
-        MwDataObj(MiddleWareImpl *mwi_)
+        MwDataObj(CarlaMiddleWareImpl *mwi_)
         {
             loc_size = 1024;
             loc = new char[loc_size];
@@ -854,7 +854,7 @@ class MwDataObj:public rtosc::RtData
         bool forwarded;
     private:
         char *buffer;
-        MiddleWareImpl   *mwi;
+        CarlaMiddleWareImpl   *mwi;
 };
 
 static std::vector<std::string> getFiles(const char *folder, bool finddir)
@@ -1129,7 +1129,7 @@ const rtosc::Ports bankPorts = {
  ******************************************************************************/
 
 #undef  rObject
-#define rObject MiddleWareImpl
+#define rObject CarlaMiddleWareImpl
 
 #ifndef STRINGIFY
 #define STRINGIFY2(a) #a
@@ -1181,13 +1181,13 @@ static rtosc::Ports middwareSnoopPorts = {
             GUI::raiseUi(impl.ui, buffer);
         }
         rEnd},
-    {"config/", 0, &Config::ports,
+    {"config/", 0, &CarlaConfig::ports,
         rBegin;
         d.obj = impl.config;
-        Config::ports.dispatch(chomp(msg), d);
+        CarlaConfig::ports.dispatch(chomp(msg), d);
         rEnd},
     {"presets/", 0,  &real_preset_ports,          [](const char *msg, RtData &d) {
-        MiddleWareImpl *obj = (MiddleWareImpl*)d.obj;
+        CarlaMiddleWareImpl *obj = (CarlaMiddleWareImpl*)d.obj;
         d.obj = (void*)obj->parent;
         real_preset_ports.dispatch(chomp(msg), d);
         if(strstr(msg, "paste") && rtosc_argument_string(msg)[0] == 's')
@@ -1494,8 +1494,8 @@ static rtosc::Ports middlewareReplyPorts = {
  *                         MiddleWare Implementation                          *
  ******************************************************************************/
 
-MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
-    Config* config, int preferrred_port)
+CarlaMiddleWareImpl::CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
+    CarlaConfig* config, int preferrred_port)
     :parent(mw), config(config), ui(nullptr), synth(std::move(synth_)),
     presetsstore(*config), autoSave(-1, [this]() {
             auto master = this->master;
@@ -1562,7 +1562,7 @@ MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
     offline = false;
 }
 
-MiddleWareImpl::~MiddleWareImpl(void)
+CarlaMiddleWareImpl::~CarlaMiddleWareImpl(void)
 {
 
     if(server)
@@ -1598,7 +1598,7 @@ MiddleWareImpl::~MiddleWareImpl(void)
  *   4) Observe /thaw_state and resume normal processing
  */
 
-void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
+void CarlaMiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
 {
     assert(uToB);
     uToB->write("/freeze_state","");
@@ -1642,7 +1642,7 @@ void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
 //   the last heartbeat then it must be offline
 // - When marked offline the backend doesn't receive another heartbeat until it
 //   registers the current beat that it's behind on
-void MiddleWareImpl::heartBeat(Master *master)
+void CarlaMiddleWareImpl::heartBeat(Master *master)
 {
     //Current time
     //Last provided beat
@@ -1692,7 +1692,7 @@ void MiddleWareImpl::heartBeat(Master *master)
 
 }
 
-void MiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
+void CarlaMiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
 {
     assert(uToB);
     int offline = 0;
@@ -1711,7 +1711,7 @@ void MiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
     }
 }
 
-bool MiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail)
+bool CarlaMiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail)
 {
     assert(uToB);
     uToB->write("/freeze_state","");
@@ -1758,7 +1758,7 @@ bool MiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool
     return true;
 }
 
-void MiddleWareImpl::broadcastToRemote(const char *rtmsg)
+void CarlaMiddleWareImpl::broadcastToRemote(const char *rtmsg)
 {
     //Always send to the local UI
     sendToRemote(rtmsg, "GUI");
@@ -1771,7 +1771,7 @@ void MiddleWareImpl::broadcastToRemote(const char *rtmsg)
     broadcast = false;
 }
 
-void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
+void CarlaMiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
 {
     if(!rtmsg || rtmsg[0] != '/' || !rtosc_message_length(rtmsg, -1)) {
         printf("[Warning] Invalid message in sendToRemote <%s>...\n", rtmsg);
@@ -1805,7 +1805,7 @@ void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
  * This includes forwarded events which need to be retransmitted to the backend
  * after the snooping code inspects the message
  */
-void MiddleWareImpl::bToUhandle(const char *rtmsg)
+void CarlaMiddleWareImpl::bToUhandle(const char *rtmsg)
 {
     //Verify Message isn't a known corruption bug
     assert(strcmp(rtmsg, "/part0/kit0/Ppadenableda"));
@@ -1846,7 +1846,7 @@ void MiddleWareImpl::bToUhandle(const char *rtmsg)
 }
 
 //Allocate kits on a as needed basis
-void MiddleWareImpl::kitEnable(const char *msg)
+void CarlaMiddleWareImpl::kitEnable(const char *msg)
 {
     const string argv = rtosc_argument_string(msg);
     if(argv != "T")
@@ -1880,7 +1880,7 @@ void MiddleWareImpl::kitEnable(const char *msg)
     kitEnable(part, kit, type);
 }
 
-void MiddleWareImpl::kitEnable(int part, int kit, int type)
+void CarlaMiddleWareImpl::kitEnable(int part, int kit, int type)
 {
     //printf("attempting a kit enable<%d,%d,%d>\n", part, kit, type);
     string url = "/part"+to_s(part)+"/kit"+to_s(kit)+"/";
@@ -1909,7 +1909,7 @@ void MiddleWareImpl::kitEnable(int part, int kit, int type)
 /*
  * Handle all messages traveling to the realtime side.
  */
-void MiddleWareImpl::handleMsg(const char *msg)
+void CarlaMiddleWareImpl::handleMsg(const char *msg)
 {
     //Check for known bugs
     assert(msg && *msg && strrchr(msg, '/')[1]);
@@ -1948,7 +1948,7 @@ void MiddleWareImpl::handleMsg(const char *msg)
     }
 }
 
-void MiddleWareImpl::write(const char *path, const char *args, ...)
+void CarlaMiddleWareImpl::write(const char *path, const char *args, ...)
 {
     //We have a free buffer in the threadlink, so use it
     va_list va;
@@ -1957,7 +1957,7 @@ void MiddleWareImpl::write(const char *path, const char *args, ...)
     va_end(va);
 }
 
-void MiddleWareImpl::write(const char *path, const char *args, va_list va)
+void CarlaMiddleWareImpl::write(const char *path, const char *args, va_list va)
 {
     //printf("is that a '%s' I see there?\n", path);
     char *buffer = uToB->buffer();
@@ -1974,9 +1974,9 @@ void MiddleWareImpl::write(const char *path, const char *args, va_list va)
 /******************************************************************************
  *                         MidleWare Forwarding Stubs                         *
  ******************************************************************************/
-MiddleWare::MiddleWare(SYNTH_T synth, Config* config,
+MiddleWare::MiddleWare(SYNTH_T synth, CarlaConfig* config,
                        int preferred_port)
-:impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port))
+:impl(new CarlaMiddleWareImpl(this, std::move(synth), config, preferred_port))
 {}
 
 MiddleWare::~MiddleWare(void)

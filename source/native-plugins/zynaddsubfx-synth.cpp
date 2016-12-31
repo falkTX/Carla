@@ -72,7 +72,7 @@ public:
         std::vector<const ProgramInfo*> programs;
         programs.push_back(new ProgramInfo(0, 0, "default", ""));
 
-        Config config;
+        CarlaConfig config;
         config.init();
 
         SYNTH_T synth;
@@ -833,7 +833,7 @@ private:
     MiddleWare* fMiddleWare;
     Master*     fMaster;
     SYNTH_T     fSynth;
-    Config      fConfig;
+    CarlaConfig fConfig;
     char*       fDefaultState;
 
     float fParameters[kParamCount];

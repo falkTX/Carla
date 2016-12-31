@@ -22,7 +22,7 @@ class PresetsStore;
 class MiddleWare
 {
     public:
-        MiddleWare(SYNTH_T synth, class Config *config,
+        MiddleWare(SYNTH_T synth, class CarlaConfig *config,
                    int preferred_port = -1);
         ~MiddleWare(void);
         void updateResources(Master *m);
@@ -79,5 +79,5 @@ class MiddleWare
         const PresetsStore& getPresetsStore() const;
         PresetsStore& getPresetsStore();
     private:
-        class MiddleWareImpl *impl;
+        class CarlaMiddleWareImpl *impl;
 };

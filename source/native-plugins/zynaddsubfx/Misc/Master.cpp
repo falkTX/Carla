@@ -261,7 +261,7 @@ static const Ports master_ports = {
         [](const char *, rtosc::RtData &d) {d.reply("/undo_pause", "");}},
     {"undo_resume:",rProp(internal) rDoc("resume undo event recording"),0,
         [](const char *, rtosc::RtData &d) {d.reply("/undo_resume", "");}},
-    {"config/", rDoc("Top Level Application Configuration Parameters"), &Config::ports,
+    {"config/", rDoc("Top Level Application CarlaConfiguration Parameters"), &CarlaConfig::ports,
         [](const char *, rtosc::RtData &d){d.forward();}},
     {"presets/", rDoc("Parameter Presets"), &preset_ports, rBOIL_BEGIN
         SNIP
@@ -359,7 +359,7 @@ vuData::vuData(void)
       rmspeakl(0.0f), rmspeakr(0.0f), clipped(0)
 {}
 
-Master::Master(const SYNTH_T &synth_, Config* config)
+Master::Master(const SYNTH_T &synth_, CarlaConfig* config)
     :HDDRecorder(synth_), time(synth_), ctl(synth_, &time),
     microtonal(config->cfg.GzipCompression), bank(config),
     frozenState(false), pendingMemory(false),

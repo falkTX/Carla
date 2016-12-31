@@ -20,9 +20,9 @@
 class XMLwrapper;
 class PresetsStore
 {
-        const class Config& config;
+        const class CarlaConfig& config;
     public:
-        PresetsStore(const class Config &config);
+        PresetsStore(const class CarlaConfig &config);
         ~PresetsStore();
 
         //Clipboard stuff

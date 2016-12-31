@@ -27,7 +27,7 @@ class Bank
 {
     public:
         /**Constructor*/
-        Bank(Config* config);
+        Bank(CarlaConfig* config);
         ~Bank();
         std::string getname(unsigned int ninstrument);
         std::string getnamenumbered(unsigned int ninstrument);
@@ -102,7 +102,7 @@ class Bank
          * directory separator */
         void normalizedirsuffix(std::string &dirname) const;
 
-        Config* const config;
+        CarlaConfig* const config;
         class BankDb *db;
 
     public:
