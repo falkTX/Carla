@@ -4259,7 +4259,7 @@ public:
         const std::string    s_uri(uri);
         const std::ptrdiff_t s_pos(std::find(fCustomURIDs.begin(), fCustomURIDs.end(), s_uri) - fCustomURIDs.begin());
 
-        if (s_pos <= 0 || s_pos >= UINT32_MAX)
+        if (s_pos <= 0 || s_pos >= INT32_MAX)
             return CARLA_URI_MAP_ID_NULL;
 
         const LV2_URID urid     = static_cast<LV2_URID>(s_pos);

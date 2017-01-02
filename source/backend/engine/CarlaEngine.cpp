@@ -426,6 +426,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         {
             if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
                 preferBridges = true;
+            if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Fluidsynth") == 0)
+                preferBridges = true;
             if (std::strcmp(label, "http://factorial.hu/plugins/lv2/ir") == 0)
                 preferBridges = true;
         }
