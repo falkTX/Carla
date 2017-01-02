@@ -327,6 +327,8 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
+    case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
+        return "ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT";
     }
 
     carla_stderr("CarlaBackend::EngineOption2Str(%i) - invalid option", option);

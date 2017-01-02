@@ -54,6 +54,7 @@ struct CarlaBackendStandalone {
 #ifndef BUILD_BRIDGE
     EngineOptions      engineOptions;
     CarlaLogThread     logThread;
+    bool               logThreadEnabled;
 #endif
 
     FileCallbackFunc fileCallback;
@@ -68,6 +69,7 @@ struct CarlaBackendStandalone {
 #ifndef BUILD_BRIDGE
           engineOptions(),
           logThread(),
+          logThreadEnabled(false),
 #endif
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
@@ -320,7 +322,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     {
 #ifndef BUILD_BRIDGE
         juce::initialiseJuce_GUI();
-        if (std::getenv("CARLA_LOGS_DISABLED") == nullptr)
+        if (gStandalone.logThreadEnabled && std::getenv("CARLA_LOGS_DISABLED") == nullptr)
             gStandalone.logThread.init();
 #endif
         gStandalone.lastError = "No error";
@@ -601,11 +603,15 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.preventBadBehaviour = (value != 0);
         break;
 
-    case CB::ENGINE_OPTION_FRONTEND_WIN_ID:
+    case CB::ENGINE_OPTION_FRONTEND_WIN_ID: {
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
         const long long winId(std::strtoll(valueStr, nullptr, 16));
         CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
         gStandalone.engineOptions.frontendWinId = static_cast<uintptr_t>(winId);
+    }   break;
+
+    case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
+        gStandalone.logThreadEnabled = (value != 0);
         break;
     }
 

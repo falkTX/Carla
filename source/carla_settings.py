@@ -325,6 +325,7 @@ class CarlaSettingsW(QDialog):
         # Main
 
         self.ui.ch_main_manage_uis.setChecked(self.host.manageUIs)
+        self.ui.ch_main_show_logs.setChecked(self.host.showLogs)
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
 
         self.ui.le_main_proj_folder.setText(settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER, CARLA_DEFAULT_MAIN_PROJECT_FOLDER, type=str))
@@ -449,6 +450,7 @@ class CarlaSettingsW(QDialog):
         # Main
 
         self.host.manageUIs      = self.ui.ch_main_manage_uis.isChecked()
+        self.host.showLogs       = self.ui.ch_main_show_logs.isChecked()
         self.host.uisAlwaysOnTop = self.ui.ch_engine_uis_always_on_top.isChecked()
 
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
@@ -458,6 +460,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.ch_main_use_custom_skins.isChecked())
 
         settings.setValue(CARLA_KEY_MAIN_MANAGE_UIS,          self.host.manageUIs)
+        settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,           self.host.showLogs)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.host.uisAlwaysOnTop)
 
         # ----------------------------------------------------------------------------------------------------
@@ -584,6 +587,7 @@ class CarlaSettingsW(QDialog):
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
             self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
             self.ui.ch_main_manage_uis.setChecked(CARLA_DEFAULT_MAIN_MANAGE_UIS)
+            self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas

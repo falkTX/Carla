@@ -1073,7 +1073,12 @@ typedef enum {
     /*!
      * Set frontend winId, used to define as parent window for plugin UIs.
      */
-    ENGINE_OPTION_FRONTEND_WIN_ID = 17
+    ENGINE_OPTION_FRONTEND_WIN_ID = 17,
+
+    /*!
+     * Capture console output into debug callbacks.
+     */
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 18
 
 } EngineOption;
 

@@ -2285,6 +2285,11 @@ def loadHostSettings(host):
         host.manageUIs = CARLA_DEFAULT_MAIN_MANAGE_UIS
 
     try:
+        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
+    except:
+        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
+
+    try:
         host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
     except:
         host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
@@ -2354,7 +2359,6 @@ def setHostSettings(host):
 
     # TEST
     #host.preventBadBehaviour = True
-
     host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,          host.forceStereo,         "")
     host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, host.preferPluginBridges, "")
     host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     host.preferUIBridges,     "")
@@ -2362,6 +2366,7 @@ def setHostSettings(host):
     host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        host.maxParameters,       "")
     host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    host.uiBridgesTimeout,    "")
     host.set_engine_option(ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, host.preventBadBehaviour, "")
+    host.set_engine_option(ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT,  host.showLogs,            "")
 
     if host.isPlugin:
         return
