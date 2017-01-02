@@ -5083,13 +5083,12 @@ public:
         int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, eMod, iCocoa, iWindows, iX11, iExt, iFinal;
         eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = eMod = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
-#if defined(BUILD_BRIDGE)
-        const bool preferUiBridges(false);
-#elif defined(LV2_UIS_ONLY_BRIDGES)
+#if defined(BUILD_BRIDGE) || defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges(true);
 #else
         const bool preferUiBridges(pData->engine->getOptions().preferUiBridges && (pData->hints & PLUGIN_IS_BRIDGE) == 0);
 #endif
+        bool hasShowInterface = false;
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
         {
@@ -5183,11 +5182,11 @@ public:
         else if (iExt >= 0)
             iFinal = iExt;
 
+#ifndef BUILD_BRIDGE
         if (iFinal < 0)
+#endif
         {
             // no suitable UI found, see if there's one which supports ui:showInterface
-            bool hasShowInterface = false;
-
             for (uint32_t i=0; i < fRdfDescriptor->UICount && ! hasShowInterface; ++i)
             {
                 LV2_RDF_UI* const ui(&fRdfDescriptor->UIs[i]);
@@ -5205,7 +5204,7 @@ public:
                 }
             }
 
-            if (! hasShowInterface)
+            if (iFinal < 0)
             {
                 if (eMod < 0)
                 {
@@ -5256,8 +5255,13 @@ public:
 
         const LV2_Property uiType(fUI.rdfDescriptor->Type);
 
-        if (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
-            iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt || iFinal == eMod)
+        if (
+            (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
+             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt || iFinal == eMod)
+#ifdef BUILD_BRIDGE
+            && preferUiBridges && ! hasShowInterface
+#endif
+            )
         {
             // -----------------------------------------------------------
             // initialize ui-bridge
