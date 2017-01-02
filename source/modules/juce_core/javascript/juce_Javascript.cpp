@@ -67,12 +67,13 @@ struct JavascriptEngine::RootObject   : public DynamicObject
 {
     RootObject()
     {
-        setMethod ("exec",      exec);
-        setMethod ("eval",      eval);
-        setMethod ("trace",     trace);
-        setMethod ("charToInt", charToInt);
-        setMethod ("parseInt",  IntegerClass::parseInt);
-        setMethod ("typeof",    typeof_internal);
+        setMethod ("exec",       exec);
+        setMethod ("eval",       eval);
+        setMethod ("trace",      trace);
+        setMethod ("charToInt",  charToInt);
+        setMethod ("parseInt",   IntegerClass::parseInt);
+        setMethod ("typeof",     typeof_internal);
+        setMethod ("parseFloat", parseFloat);
     }
 
     Time timeout;
@@ -410,22 +411,46 @@ struct JavascriptEngine::RootObject   : public DynamicObject
 
         var getResult (const Scope& s) const override
         {
-            if (const Array<var>* array = object->getResult (s).getArray())
-                return (*array) [static_cast<int> (index->getResult (s))];
+            var arrayVar (object->getResult (s)); // must stay alive for the scope of this method
+            var key = index->getResult (s);
+
+            if (const Array<var>* array = arrayVar.getArray())
+                if (key.isInt() || key.isInt64() || key.isDouble())
+                    return (*array) [static_cast<int> (key)];
+
+            if (DynamicObject* o = arrayVar.getDynamicObject())
+                if (key.isString())
+                    if (const var* v = getPropertyPointer (o, Identifier (key)))
+                        return *v;
 
             return var::undefined();
         }
 
         void assign (const Scope& s, const var& newValue) const override
         {
-            if (Array<var>* array = object->getResult (s).getArray())
-            {
-                const int i = index->getResult (s);
-                while (array->size() < i)
-                    array->add (var::undefined());
+            var arrayVar (object->getResult (s)); // must stay alive for the scope of this method
+            var key = index->getResult (s);
 
-                array->set (i, newValue);
-                return;
+            if (Array<var>* array = arrayVar.getArray())
+            {
+                if (key.isInt() || key.isInt64() || key.isDouble())
+                {
+                    const int i = key;
+                    while (array->size() < i)
+                        array->add (var::undefined());
+
+                    array->set (i, newValue);
+                    return;
+                }
+            }
+
+            if (DynamicObject* o = arrayVar.getDynamicObject())
+            {
+                if (key.isString())
+                {
+                    o->setProperty (Identifier (key), newValue);
+                    return;
+                }
             }
 
             Expression::assign (s, newValue);
@@ -1362,7 +1387,7 @@ struct JavascriptEngine::RootObject   : public DynamicObject
         {
             ScopedPointer<FunctionCall> f (new FunctionCall (location));
             f->object = new UnqualifiedName (location, "typeof");
-            f->arguments.add (parseExpression());
+            f->arguments.add (parseUnary());
             return f.release();
         }
 
@@ -1501,6 +1526,8 @@ struct JavascriptEngine::RootObject   : public DynamicObject
             setMethod ("remove",   remove);
             setMethod ("join",     join);
             setMethod ("push",     push);
+            setMethod ("splice",   splice);
+            setMethod ("indexOf",  indexOf);
         }
 
         static Identifier getClassName()   { static const Identifier i ("Array"); return i; }
@@ -1543,6 +1570,52 @@ struct JavascriptEngine::RootObject   : public DynamicObject
             }
 
             return var::undefined();
+        }
+
+        static var splice (Args a)
+        {
+            if (Array<var>* array = a.thisObject.getArray())
+            {
+                const int arraySize = array->size();
+                int start = get (a, 0);
+
+                if (start < 0)
+                    start = jmax (0, arraySize + start);
+                else if (start > arraySize)
+                    start = arraySize;
+
+                const int num = a.numArguments > 1 ? jlimit (0, arraySize - start, getInt (a, 1))
+                                                   : arraySize - start;
+
+                Array<var> itemsRemoved;
+                itemsRemoved.ensureStorageAllocated (num);
+
+                for (int i = 0; i < num; ++i)
+                    itemsRemoved.add (array->getReference (start + i));
+
+                array->removeRange (start, num);
+
+                for (int i = 2; i < a.numArguments; ++i)
+                    array->insert (start++, get (a, i));
+
+                return itemsRemoved;
+            }
+
+            return var::undefined();
+        }
+
+        static var indexOf (Args a)
+        {
+            if (const Array<var>* array = a.thisObject.getArray())
+            {
+                const var target (get (a, 0));
+
+                for (int i = (a.numArguments > 1 ? getInt (a, 1) : 0); i < array->size(); ++i)
+                    if (array->getReference(i) == target)
+                        return i;
+            }
+
+            return -1;
         }
     };
 
@@ -1673,6 +1746,7 @@ struct JavascriptEngine::RootObject   : public DynamicObject
     //==============================================================================
     static var trace (Args a)      { Logger::outputDebugString (JSON::toString (a.thisObject)); return var::undefined(); }
     static var charToInt (Args a)  { return (int) (getString (a, 0)[0]); }
+    static var parseFloat (Args a) { return getDouble (a, 0); }
 
     static var typeof_internal (Args a)
     {

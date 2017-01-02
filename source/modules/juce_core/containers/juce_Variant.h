@@ -70,8 +70,10 @@ public:
     /** Destructor. */
     ~var() noexcept;
 
+   #if JUCE_ALLOW_STATIC_NULL_VARIABLES
     /** A static var object that can be used where you need an empty variant object. */
     static const var null;
+   #endif
 
     var (const var& valueToCopy);
     var (int value) noexcept;
@@ -95,17 +97,18 @@ public:
     var& operator= (const char* value);
     var& operator= (const wchar_t* value);
     var& operator= (const String& value);
+    var& operator= (const MemoryBlock& value);
     var& operator= (const Array<var>& value);
     var& operator= (ReferenceCountedObject* object);
     var& operator= (NativeFunction method);
 
    #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
-    var (var&& other) noexcept;
-    var (String&& value);
-    var (MemoryBlock&& binaryData);
-    var (Array<var>&& value);
-    var& operator= (var&& other) noexcept;
-    var& operator= (String&& value);
+    var (var&&) noexcept;
+    var (String&&);
+    var (MemoryBlock&&);
+    var (Array<var>&&);
+    var& operator= (var&&) noexcept;
+    var& operator= (String&&);
    #endif
 
     void swapWith (var& other) noexcept;
@@ -314,13 +317,30 @@ private:
 };
 
 /** Compares the values of two var objects, using the var::equals() comparison. */
-bool operator== (const var& v1, const var& v2) noexcept;
+bool operator== (const var&, const var&) noexcept;
 /** Compares the values of two var objects, using the var::equals() comparison. */
-bool operator!= (const var& v1, const var& v2) noexcept;
-bool operator== (const var& v1, const String& v2);
-bool operator!= (const var& v1, const String& v2);
-bool operator== (const var& v1, const char* v2);
-bool operator!= (const var& v1, const char* v2);
+bool operator!= (const var&, const var&) noexcept;
+bool operator== (const var&, const String&);
+bool operator!= (const var&, const String&);
+bool operator== (const var&, const char*);
+bool operator!= (const var&, const char*);
+
+//==============================================================================
+/** This template-overloaded class can be used to convert between var and custom types. */
+template <typename Type>
+struct VariantConverter
+{
+    static Type fromVar (const var& v)             { return static_cast<Type> (v); }
+    static var toVar (const Type& t)               { return t; }
+};
+
+/** This template-overloaded class can be used to convert between var and custom types. */
+template <>
+struct VariantConverter<String>
+{
+    static String fromVar (const var& v)           { return v.toString(); }
+    static var toVar (const String& s)             { return s; }
+};
 
 
 #endif   // JUCE_VARIANT_H_INCLUDED

@@ -39,6 +39,7 @@ Array<AppInactivityCallback*> appBecomingInactiveCallbacks;
 {
 }
 
+@property (strong, nonatomic) UIWindow *window;
 - (void) applicationDidFinishLaunching: (UIApplication*) application;
 - (void) applicationWillTerminate: (UIApplication*) application;
 - (void) applicationDidEnterBackground: (UIApplication*) application;
@@ -117,8 +118,7 @@ int juce_iOSMain (int argc, const char* argv[])
 //==============================================================================
 void LookAndFeel::playAlertSound()
 {
-    //xxx
-    //AudioServicesPlaySystemSound ();
+    // TODO
 }
 
 //==============================================================================
@@ -334,11 +334,15 @@ bool DragAndDropContainer::performExternalDragDropOfText (const String&)
 //==============================================================================
 void Desktop::setScreenSaverEnabled (const bool isEnabled)
 {
-    [[UIApplication sharedApplication] setIdleTimerDisabled: ! isEnabled];
+    if (! SystemStats::isRunningInAppExtensionSandbox())
+        [[UIApplication sharedApplication] setIdleTimerDisabled: ! isEnabled];
 }
 
 bool Desktop::isScreenSaverEnabled()
 {
+    if (SystemStats::isRunningInAppExtensionSandbox())
+        return true;
+
     return ! [[UIApplication sharedApplication] isIdleTimerDisabled];
 }
 
@@ -351,7 +355,7 @@ bool juce_areThereAnyAlwaysOnTopWindows()
 //==============================================================================
 Image juce_createIconForFile (const File&)
 {
-    return Image::null;
+    return Image();
 }
 
 //==============================================================================
@@ -394,7 +398,10 @@ double Desktop::getDefaultMasterScale()
 
 Desktop::DisplayOrientation Desktop::getCurrentOrientation() const
 {
-    return Orientations::convertToJuce ([[UIApplication sharedApplication] statusBarOrientation]);
+    UIInterfaceOrientation orientation = SystemStats::isRunningInAppExtensionSandbox() ? UIInterfaceOrientationPortrait
+                                                                                       : [[UIApplication sharedApplication] statusBarOrientation];
+
+    return Orientations::convertToJuce (orientation);
 }
 
 void Desktop::Displays::findDisplays (float masterScale)

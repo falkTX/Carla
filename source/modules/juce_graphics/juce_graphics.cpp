@@ -31,6 +31,8 @@
  #error "Incorrect use of JUCE cpp file"
 #endif
 
+#include "AppConfig.h"
+
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 #define JUCE_CORE_INCLUDE_COM_SMART_PTR 1
 #define JUCE_CORE_INCLUDE_JNI_HELPERS 1
@@ -44,6 +46,12 @@
  #import <QuartzCore/QuartzCore.h>
 
 #elif JUCE_WINDOWS
+  // get rid of some warnings in Window's own headers
+ #ifdef JUCE_MSVC
+  #pragma warning (push)
+  #pragma warning (disable : 4458)
+ #endif
+
  #if JUCE_MINGW && JUCE_USE_DIRECTWRITE
   #warning "DirectWrite not currently implemented with mingw..."
   #undef JUCE_USE_DIRECTWRITE
@@ -60,6 +68,10 @@
 
  #if JUCE_MINGW
   #include <malloc.h>
+ #endif
+
+ #ifdef JUCE_MSVC
+  #pragma warning (pop)
  #endif
 
 #elif JUCE_IOS

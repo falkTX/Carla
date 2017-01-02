@@ -145,16 +145,22 @@ public:
     /** Returns the value of a named property.
         If no such property has been set, this will return a void variant.
         You can also use operator[] to get a property.
-        @see var, setProperty, hasProperty
+        @see var, setProperty, getPropertyPointer, hasProperty
     */
     const var& getProperty (const Identifier& name) const noexcept;
 
-    /** Returns the value of a named property, or a user-specified default if the property doesn't exist.
-        If no such property has been set, this will return the value of defaultReturnValue.
+    /** Returns the value of a named property, or the value of defaultReturnValue
+        if the property doesn't exist.
         You can also use operator[] and getProperty to get a property.
-        @see var, getProperty, setProperty, hasProperty
+        @see var, getProperty, getPropertyPointer, setProperty, hasProperty
     */
     var getProperty (const Identifier& name, const var& defaultReturnValue) const;
+
+    /** Returns a pointer to the value of a named property, or nullptr if the property
+        doesn't exist.
+        @see var, getProperty, setProperty, hasProperty
+    */
+    const var* getPropertyPointer (const Identifier& name) const noexcept;
 
     /** Returns the value of a named property.
         If no such property has been set, this will return a void variant. This is the same as
@@ -321,6 +327,25 @@ public:
         If the requested position is beyond the range of available nodes, this will return ValueTree::invalid.
     */
     ValueTree getSibling (int delta) const noexcept;
+
+    //==============================================================================
+    struct Iterator
+    {
+        Iterator (const ValueTree&, bool isEnd) noexcept;
+        Iterator& operator++() noexcept;
+
+        bool operator!= (const Iterator&) const noexcept;
+        ValueTree operator*() const;
+
+    private:
+        void* internal;
+    };
+
+    /** Returns a start iterator for the children in this tree. */
+    Iterator begin() const noexcept;
+
+    /** Returns an end iterator for the children in this tree. */
+    Iterator end() const noexcept;
 
     //==============================================================================
     /** Creates an XmlElement that holds a complete image of this node and all its children.
@@ -498,10 +523,13 @@ public:
         }
     }
 
+   #if JUCE_ALLOW_STATIC_NULL_VARIABLES
     /** An invalid ValueTree that can be used if you need to return one as an error condition, etc.
-        This invalid object is equivalent to ValueTree created with its default constructor.
+        This invalid object is equivalent to ValueTree created with its default constructor, but
+        you should always prefer to avoid it and use ValueTree() or {} instead.
     */
     static const ValueTree invalid;
+   #endif
 
     /** Returns the total number of references to the shared underlying data structure that this
         ValueTree is using.

@@ -127,7 +127,12 @@ const String& StringArray::operator[] (const int index) const noexcept
     if (isPositiveAndBelow (index, strings.size()))
         return strings.getReference (index);
 
+   #if JUCE_ALLOW_STATIC_NULL_VARIABLES
     return String::empty;
+   #else
+    static String empty;
+    return empty;
+   #endif
 }
 
 String& StringArray::getReference (const int index) noexcept
@@ -152,10 +157,13 @@ void StringArray::insert (const int index, const String& newString)
     strings.insert (index, newString);
 }
 
-void StringArray::addIfNotAlreadyThere (const String& newString, const bool ignoreCase)
+bool StringArray::addIfNotAlreadyThere (const String& newString, const bool ignoreCase)
 {
-    if (! contains (newString, ignoreCase))
-        add (newString);
+    if (contains (newString, ignoreCase))
+        return false;
+
+    add (newString);
+    return true;
 }
 
 void StringArray::addArray (const StringArray& otherArray, int startIndex, int numElementsToAdd)

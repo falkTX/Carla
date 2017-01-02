@@ -72,7 +72,7 @@ public:
         }
     }
 
-    ImagePixelData* clone() override
+    ImagePixelData::Ptr clone() override
     {
         CoreGraphicsImage* im = new CoreGraphicsImage (pixelFormat, width, height, false);
         memcpy (im->imageData, imageData, (size_t) (lineStride * height));
@@ -172,7 +172,7 @@ CoreGraphicsContext::CoreGraphicsContext (CGContextRef c, const float h, const f
       state (new SavedState())
 {
     CGContextRetain (context);
-    CGContextSaveGState(context);
+    CGContextSaveGState (context);
     CGContextSetShouldSmoothFonts (context, true);
     CGContextSetAllowsFontSmoothing (context, true);
     CGContextSetShouldAntialias (context, true);
@@ -385,9 +385,13 @@ void CoreGraphicsContext::setOpacity (float newOpacity)
 
 void CoreGraphicsContext::setInterpolationQuality (Graphics::ResamplingQuality quality)
 {
-    CGContextSetInterpolationQuality (context, quality == Graphics::lowResamplingQuality
-                                                ? kCGInterpolationLow
-                                                : kCGInterpolationHigh);
+    switch (quality)
+    {
+        case Graphics::lowResamplingQuality:    CGContextSetInterpolationQuality (context, kCGInterpolationNone);   return;
+        case Graphics::mediumResamplingQuality: CGContextSetInterpolationQuality (context, kCGInterpolationMedium); return;
+        case Graphics::highResamplingQuality:   CGContextSetInterpolationQuality (context, kCGInterpolationHigh);   return;
+        default: return;
+    }
 }
 
 //==============================================================================
@@ -707,6 +711,10 @@ static CGGradientRef createGradient (const ColourGradient& g, CGColorSpaceRef co
         *comps++ = (CGFloat) colour.getFloatBlue();
         *comps++ = (CGFloat) colour.getFloatAlpha();
         locations[i] = (CGFloat) g.getColourPosition (i);
+
+        // There's a bug (?) in the way the CG renderer works where it seems
+        // to go wrong if you have two colour stops both at position 0..
+        jassert (i == 0 || locations[i] != 0);
     }
 
     return CGGradientCreateWithColorComponents (colourSpace, components, locations, (size_t) numColours);
@@ -863,7 +871,7 @@ Image juce_loadWithCoreImage (InputStream& input)
         }
     }
 
-    return Image::null;
+    return Image();
 }
 #endif
 

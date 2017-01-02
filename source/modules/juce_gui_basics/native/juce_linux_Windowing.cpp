@@ -92,7 +92,7 @@ struct Atoms
     static Atom getIfExists (const char* name)    { return XInternAtom (display, name, True); }
     static Atom getCreating (const char* name)    { return XInternAtom (display, name, False); }
 
-    static String getName (const Atom& atom)
+    static String getName (const Atom atom)
     {
         if (atom == None)
             return "None";
@@ -100,7 +100,7 @@ struct Atoms
         return String (XGetAtomName (display, atom));
     }
 
-    static bool isMimeTypeFile (const Atom& atom) { return getName (atom).equalsIgnoreCase ("text/uri-list"); }
+    static bool isMimeTypeFile (const Atom atom)  { return getName (atom).equalsIgnoreCase ("text/uri-list"); }
 };
 
 const unsigned long Atoms::DndVersion = 3;
@@ -635,7 +635,7 @@ public:
             sendDataChangeMessage();
     }
 
-    ImagePixelData* clone() override
+    ImagePixelData::Ptr clone() override
     {
         jassertfalse;
         return nullptr;
@@ -1214,7 +1214,10 @@ private:
                                         e.dpi = ((static_cast<double> (crtc->width) * 25.4 * 0.5) / static_cast<double> (output->mm_width))
                                             + ((static_cast<double> (crtc->height) * 25.4 * 0.5) / static_cast<double> (output->mm_height));
 
-                                    e.scale = masterScale * getScaleForDisplay (output->name, e);
+                                    double scale = getScaleForDisplay (output->name, e);
+                                    scale = (scale <= 0.1 ? 1.0 : scale);
+
+                                    e.scale = masterScale * scale;
 
                                     infos.add (e);
                                 }
@@ -2308,7 +2311,7 @@ public:
 
         // if we have opengl contexts then just repaint them all
         // regardless if this is really necessary
-        repaintOpenGLContexts ();
+        repaintOpenGLContexts();
 
         if (exposeEvent.window != windowH)
         {
@@ -2568,7 +2571,7 @@ private:
             else if (Time::getApproximateMillisecondCounter() > lastTimeImageUsed + 3000)
             {
                 stopTimer();
-                image = Image::null;
+                image = Image();
             }
         }
 
@@ -2950,7 +2953,7 @@ private:
         swa.border_pixel = 0;
         swa.background_pixmap = None;
         swa.colormap = colormap;
-        swa.override_redirect = (styleFlags & windowIsTemporary) ? True : False;
+        swa.override_redirect = ((styleFlags & windowIsTemporary) != 0) ? True : False;
         swa.event_mask = getAllEventsMask();
 
         windowH = XCreateWindow (display, parentToAddTo != 0 ? parentToAddTo : root,
@@ -3510,7 +3513,7 @@ private:
             if (Atoms::isMimeTypeFile (dragAndDropCurrentMimeType))
             {
                 for (int i = 0; i < lines.size(); ++i)
-                    dragInfo.files.add (URL::removeEscapeChars (lines[i].replace ("file://", String::empty, true)));
+                    dragInfo.files.add (URL::removeEscapeChars (lines[i].replace ("file://", String(), true)));
 
                 dragInfo.files.trim();
                 dragInfo.files.removeEmptyStrings();
@@ -3959,9 +3962,8 @@ void* CustomMouseCursorInfo::create() const
             hotspotX = (hotspotX * (int) cursorW) / (int) imageW;
             hotspotY = (hotspotY * (int) cursorH) / (int) imageH;
 
-            g.drawImageWithin (image, 0, 0, (int) imageW, (int) imageH,
-                               RectanglePlacement::xLeft | RectanglePlacement::yTop | RectanglePlacement::onlyReduceInSize,
-                               false);
+            g.drawImage (image, Rectangle<float> ((float) imageW, (float) imageH),
+                         RectanglePlacement::xLeft | RectanglePlacement::yTop | RectanglePlacement::onlyReduceInSize);
         }
         else
         {
@@ -4080,7 +4082,7 @@ void MouseCursor::showInAllWindows() const
 //==============================================================================
 Image juce_createIconForFile (const File& /* file */)
 {
-    return Image::null;
+    return Image();
 }
 
 //==============================================================================
@@ -4157,7 +4159,7 @@ void JUCE_CALLTYPE NativeMessageBox::showMessageBoxAsync (AlertWindow::AlertIcon
                                                           Component* associatedComponent,
                                                           ModalComponentManager::Callback* callback)
 {
-    AlertWindow::showMessageBoxAsync (iconType, title, message, String::empty, associatedComponent, callback);
+    AlertWindow::showMessageBoxAsync (iconType, title, message, String(), associatedComponent, callback);
 }
 
 bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox (AlertWindow::AlertIconType iconType,
@@ -4165,7 +4167,7 @@ bool JUCE_CALLTYPE NativeMessageBox::showOkCancelBox (AlertWindow::AlertIconType
                                                       Component* associatedComponent,
                                                       ModalComponentManager::Callback* callback)
 {
-    return AlertWindow::showOkCancelBox (iconType, title, message, String::empty, String::empty,
+    return AlertWindow::showOkCancelBox (iconType, title, message, String(), String(),
                                          associatedComponent, callback);
 }
 
@@ -4175,7 +4177,7 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconTy
                                                         ModalComponentManager::Callback* callback)
 {
     return AlertWindow::showYesNoCancelBox (iconType, title, message,
-                                            String::empty, String::empty, String::empty,
+                                            String(), String(), String(),
                                             associatedComponent, callback);
 }
 

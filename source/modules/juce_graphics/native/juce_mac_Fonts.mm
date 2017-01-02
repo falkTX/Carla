@@ -245,9 +245,9 @@ namespace CoreTextTypeLayout
     {
         switch (text.getReadingDirection())
         {
-            case AttributedString::ReadingDirection::rightToLeft:   return kCTWritingDirectionRightToLeft;
-            case AttributedString::ReadingDirection::leftToRight:   return kCTWritingDirectionLeftToRight;
-            default:                                                return kCTWritingDirectionNatural;
+            case AttributedString::rightToLeft:   return kCTWritingDirectionRightToLeft;
+            case AttributedString::leftToRight:   return kCTWritingDirectionLeftToRight;
+            default:                              return kCTWritingDirectionNatural;
         }
     }
 
@@ -545,7 +545,7 @@ public:
           ascent (0.0f),
           unitsToHeightScaleFactor (0.0f)
     {
-        CFDataRef cfData = CFDataCreate (kCFAllocatorDefault, (const UInt8*) data, (CFIndex) dataSize);
+        CFDataRef cfData = CFDataCreateWithBytesNoCopy (kCFAllocatorDefault, (const UInt8*) data, (CFIndex) dataSize, kCFAllocatorNull);
         CGDataProviderRef provider = CGDataProviderCreateWithCFData (cfData);
         CFRelease (cfData);
 

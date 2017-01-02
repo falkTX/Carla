@@ -35,7 +35,7 @@
     See also SystemStats::getJUCEVersion() for a string version.
 */
 #define JUCE_MAJOR_VERSION      4
-#define JUCE_MINOR_VERSION      1
+#define JUCE_MINOR_VERSION      3
 #define JUCE_BUILDNUMBER        0
 
 /** Current Juce version number.
@@ -50,8 +50,14 @@
 
 
 //==============================================================================
-#include <vector>  // included before platform defs to provide a definition of _LIBCPP_VERSION
+#include <memory>
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <functional>
+#include <algorithm>
 
+//==============================================================================
 #include "juce_CompilerSupport.h"
 #include "juce_PlatformDefs.h"
 
@@ -60,23 +66,6 @@
 #if JUCE_MSVC
  #pragma warning (push)
  #pragma warning (disable: 4514 4245 4100)
-#endif
-
-#include <cstdlib>
-#include <cstdarg>
-#include <climits>
-#include <limits>
-#include <cmath>
-#include <cwchar>
-#include <stdexcept>
-#include <typeinfo>
-#include <cstring>
-#include <cstdio>
-#include <iostream>
-#include <algorithm>
-#include <functional>
-
-#if JUCE_USE_MSVC_INTRINSICS
  #include <intrin.h>
 #endif
 
@@ -85,6 +74,8 @@
 #endif
 
 #if JUCE_LINUX
+ #include <cstring>
+ #include <limits>
  #include <signal.h>
 
  #if __INTEL_COMPILER
@@ -105,10 +96,12 @@
 #endif
 
 #if JUCE_MINGW
+ #include <cstring>
  #include <sys/types.h>
 #endif
 
 #if JUCE_ANDROID
+ #include <cstring>
  #include <atomic>
  #include <byteswap.h>
 #endif

@@ -409,7 +409,7 @@ struct Component::ComponentHelpers
 
             if (child.isVisible() && ! child.isTransformed())
             {
-                const Rectangle<int> newClip (clipRect.getIntersection (child.bounds));
+                const Rectangle<int> newClip (clipRect.getIntersection (child.boundsRelativeToParent));
 
                 if (! newClip.isEmpty())
                 {
@@ -437,6 +437,15 @@ struct Component::ComponentHelpers
             return p->getLocalBounds();
 
         return Desktop::getInstance().getDisplays().getMainDisplay().userArea;
+    }
+
+    static void releaseAllCachedImageResources (Component& c)
+    {
+        if (CachedComponentImage* cached = c.getCachedComponentImage())
+            cached->releaseResources();
+
+        for (int i = c.getNumChildComponents(); --i >= 0;)
+            releaseAllCachedImageResources (*c.getChildComponent (i));
     }
 };
 
@@ -528,8 +537,7 @@ void Component::setVisible (bool shouldBeVisible)
 
         if (! shouldBeVisible)
         {
-            if (cachedImage != nullptr)
-                cachedImage->releaseResources();
+            ComponentHelpers::releaseAllCachedImageResources (*this);
 
             if (currentlyFocusedComponent == this || isParentOf (currentlyFocusedComponent))
             {
@@ -657,7 +665,7 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
 
             Desktop::getInstance().addDesktopComponent (this);
 
-            bounds.setPosition (topLeft);
+            boundsRelativeToParent.setPosition (topLeft);
             peer->updateBounds();
 
             if (oldRenderingEngine >= 0)
@@ -797,7 +805,7 @@ public:
             if (! owner.isOpaque())
             {
                 lg.setFill (Colours::transparentBlack);
-                lg.fillRect (imageBounds, true);
+                lg.fillRect (compBounds, true);
                 lg.setFill (Colours::black);
             }
 
@@ -813,7 +821,7 @@ public:
 
     bool invalidateAll() override                            { validArea.clear(); return true; }
     bool invalidate (const Rectangle<int>& area) override    { validArea.subtract (area); return true; }
-    void releaseResources() override                         { image = Image::null; }
+    void releaseResources() override                         { image = Image(); }
 
 private:
     Image image;
@@ -1023,8 +1031,8 @@ bool Component::isAlwaysOnTop() const noexcept
 }
 
 //==============================================================================
-int Component::proportionOfWidth  (const float proportion) const noexcept   { return roundToInt (proportion * bounds.getWidth()); }
-int Component::proportionOfHeight (const float proportion) const noexcept   { return roundToInt (proportion * bounds.getHeight()); }
+int Component::proportionOfWidth  (const float proportion) const noexcept   { return roundToInt (proportion * boundsRelativeToParent.getWidth()); }
+int Component::proportionOfHeight (const float proportion) const noexcept   { return roundToInt (proportion * boundsRelativeToParent.getHeight()); }
 
 int Component::getParentWidth() const noexcept
 {
@@ -1127,7 +1135,7 @@ void Component::setBounds (const int x, const int y, int w, int h)
                 repaintParent();
         }
 
-        bounds.setBounds (x, y, w, h);
+        boundsRelativeToParent.setBounds (x, y, w, h);
 
         if (showing)
         {
@@ -1547,8 +1555,7 @@ Component* Component::removeChildComponent (const int index, bool sendParentEven
         childComponentList.remove (index);
         child->parentComponent = nullptr;
 
-        if (child->cachedImage != nullptr)
-            child->cachedImage->releaseResources();
+        ComponentHelpers::releaseAllCachedImageResources (*child);
 
         // (NB: there are obscure situations where child->isShowing() = false, but it still has the focus)
         if (currentlyFocusedComponent == child || child->isParentOf (currentlyFocusedComponent))
@@ -1705,7 +1712,7 @@ int Component::runModalLoop()
                                            ->callFunctionOnMessageThread (&ComponentHelpers::runModalLoopCallback, this);
     }
 
-    if (! isCurrentlyModal())
+    if (! isCurrentlyModal (false))
         enterModalState (true);
 
     return ModalComponentManager::getInstance()->runEventLoopForCurrentComponent();
@@ -1721,7 +1728,7 @@ void Component::enterModalState (const bool shouldTakeKeyboardFocus,
     // thread, you'll need to use a MessageManagerLock object to make sure it's thread-safe.
     ASSERT_MESSAGE_MANAGER_IS_LOCKED
 
-    if (! isCurrentlyModal())
+    if (! isCurrentlyModal (false))
     {
         ModalComponentManager& mcm = *ModalComponentManager::getInstance();
         mcm.startModal (this, deleteWhenDismissed);
@@ -1741,7 +1748,7 @@ void Component::enterModalState (const bool shouldTakeKeyboardFocus,
 
 void Component::exitModalState (const int returnValue)
 {
-    if (isCurrentlyModal())
+    if (isCurrentlyModal (false))
     {
         if (MessageManager::getInstance()->isThisTheMessageThread())
         {
@@ -1770,9 +1777,15 @@ void Component::exitModalState (const int returnValue)
     }
 }
 
-bool Component::isCurrentlyModal() const noexcept
+bool Component::isCurrentlyModal (bool onlyConsiderForemostModalComponent) const noexcept
 {
-    return getCurrentlyModalComponent() == this;
+    const int n = onlyConsiderForemostModalComponent ? 1 : getNumCurrentlyModalComponents();
+
+    for (int i = 0; i < n; ++i)
+        if (getCurrentlyModalComponent (i) == this)
+            return true;
+
+    return false;
 }
 
 bool Component::isCurrentlyBlockedByAnotherModalComponent() const
@@ -2236,13 +2249,13 @@ void Component::setPositioner (Positioner* newPositioner)
 //==============================================================================
 Rectangle<int> Component::getLocalBounds() const noexcept
 {
-    return bounds.withZeroOrigin();
+    return boundsRelativeToParent.withZeroOrigin();
 }
 
 Rectangle<int> Component::getBoundsInParent() const noexcept
 {
-    return affineTransform == nullptr ? bounds
-                                      : bounds.transformedBy (*affineTransform);
+    return affineTransform == nullptr ? boundsRelativeToParent
+                                      : boundsRelativeToParent.transformedBy (*affineTransform);
 }
 
 //==============================================================================
@@ -2476,7 +2489,7 @@ void Component::internalMouseDown (MouseInputSource source, Point<float> relativ
 }
 
 void Component::internalMouseUp (MouseInputSource source, Point<float> relativePos,
-                                 Time time, const ModifierKeys oldModifiers)
+                                 Time time, const ModifierKeys oldModifiers, float pressure)
 {
     if (flags.mouseDownWasBlocked && isCurrentlyBlockedByAnotherModalComponent())
         return;
@@ -2487,7 +2500,7 @@ void Component::internalMouseUp (MouseInputSource source, Point<float> relativeP
         repaint();
 
     const MouseEvent me (source, relativePos,
-                         oldModifiers, MouseInputSource::invalidPressure, this, this, time,
+                         oldModifiers, pressure, this, this, time,
                          getLocalPoint (nullptr, source.getLastMouseDownPosition()),
                          source.getLastMouseDownTime(),
                          source.getNumberOfMultipleClicks(),
@@ -2672,7 +2685,7 @@ void Component::internalFocusLoss (const FocusChangeType cause)
 {
     const WeakReference<Component> safePointer (this);
 
-    focusLost (focusChangedDirectly);
+    focusLost (cause);
 
     if (safePointer != nullptr)
         internalChildFocusChange (cause, safePointer);

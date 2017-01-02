@@ -59,7 +59,7 @@ import android.media.MediaScannerConnection.MediaScannerConnectionClient;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.app.ActivityCompat;
 import android.Manifest;
-$$JuceAndroidMidiImports$$ // If you get an error here, you need to re-save your project with the introjucer!
+$$JuceAndroidMidiImports$$ // If you get an error here, you need to re-save your project with the Projucer!
 
 
 //==============================================================================
@@ -136,7 +136,9 @@ public class JuceAppActivity   extends Activity
         }
     }
 
-    $$JuceAndroidRuntimePermissionsCode$$ // If you get an error here, you need to re-save your project with the introjucer!
+    private native void androidRuntimePermissionsCallback (boolean permissionWasGranted, long ptrToCallback);
+
+    $$JuceAndroidRuntimePermissionsCode$$ // If you get an error here, you need to re-save your project with the Projucer!
 
     //==============================================================================
     public static class MidiPortID extends Object
@@ -187,7 +189,7 @@ public class JuceAppActivity   extends Activity
     }
 
     //==============================================================================
-    $$JuceAndroidMidiCode$$ // If you get an error here, you need to re-save your project with the introjucer!
+    $$JuceAndroidMidiCode$$ // If you get an error here, you need to re-save your project with the Projucer!
 
     //==============================================================================
     @Override
@@ -218,6 +220,13 @@ public class JuceAppActivity   extends Activity
     protected void onPause()
     {
         suspendApp();
+
+        try
+        {
+            Thread.sleep (1000); // This is a bit of a hack to avoid some hard-to-track-down
+                                 // openGL glitches when pausing/resuming apps..
+        } catch (InterruptedException e) {}
+
         super.onPause();
     }
 

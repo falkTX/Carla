@@ -183,7 +183,7 @@ public:
 
             // open output ports
             const StringArray outputChannels (getOutputChannelNames());
-            for (int i = 0; i < outputChannels.size (); ++i)
+            for (int i = 0; i < outputChannels.size(); ++i)
             {
                 String outputName;
                 outputName << "out_" << ++totalNumberOfOutputChannels;
@@ -289,6 +289,8 @@ public:
                 }
             }
         }
+
+        updateActivePorts();
 
         return lastError;
     }

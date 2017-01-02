@@ -332,11 +332,21 @@ uint64 File::getFileIdentifier() const
     return juce_stat (fullPath, info) ? (uint64) info.st_ino : 0;
 }
 
+static bool hasEffectiveRootFilePermissions()
+{
+   #if JUCE_LINUX
+    return (geteuid() == 0);
+   #else
+    return false;
+   #endif
+}
+
 //==============================================================================
 bool File::hasWriteAccess() const
 {
     if (exists())
-        return access (fullPath.toUTF8(), W_OK) == 0;
+        return (hasEffectiveRootFilePermissions()
+             || access (fullPath.toUTF8(), W_OK) == 0);
 
     if ((! isDirectory()) && fullPath.containsChar (separator))
         return getParentDirectory().hasWriteAccess();
@@ -428,6 +438,11 @@ bool File::moveInternal (const File& dest) const
     }
 
     return false;
+}
+
+bool File::replaceInternal (const File& dest) const
+{
+    return moveInternal (dest);
 }
 
 Result File::createDirectoryInternal (const String& fileName) const
@@ -576,7 +591,7 @@ String SystemStats::getEnvironmentVariable (const String& name, const String& de
 }
 
 //==============================================================================
-void MemoryMappedFile::openInternal (const File& file, AccessMode mode)
+void MemoryMappedFile::openInternal (const File& file, AccessMode mode, bool exclusive)
 {
     jassert (mode == readOnly || mode == readWrite);
 
@@ -593,7 +608,7 @@ void MemoryMappedFile::openInternal (const File& file, AccessMode mode)
     {
         void* m = mmap (0, (size_t) range.getLength(),
                         mode == readWrite ? (PROT_READ | PROT_WRITE) : PROT_READ,
-                        MAP_SHARED, fileHandle,
+                        exclusive ? MAP_PRIVATE : MAP_SHARED, fileHandle,
                         (off_t) range.getStart());
 
         if (m != MAP_FAILED)
@@ -629,7 +644,8 @@ File juce_getExecutableFile()
         static String getFilename()
         {
             Dl_info exeInfo;
-            dladdr ((void*) juce_getExecutableFile, &exeInfo);
+            void* localSymbol = (void*) juce_getExecutableFile;
+            dladdr (localSymbol, &exeInfo);
             const CharPointer_UTF8 filename (exeInfo.dli_fname);
 
             // if the filename is absolute simply return it
@@ -1117,14 +1133,14 @@ public:
                 close (pipeHandles[0]);   // close the read handle
 
                 if ((streamFlags & wantStdOut) != 0)
-                    dup2 (pipeHandles[1], 1); // turns the pipe into stdout
+                    dup2 (pipeHandles[1], STDOUT_FILENO); // turns the pipe into stdout
                 else
-                    close (STDOUT_FILENO);
+                    dup2 (open ("/dev/null", O_WRONLY), STDOUT_FILENO);
 
                 if ((streamFlags & wantStdErr) != 0)
-                    dup2 (pipeHandles[1], 2);
+                    dup2 (pipeHandles[1], STDERR_FILENO);
                 else
-                    close (STDERR_FILENO);
+                    dup2 (open ("/dev/null", O_WRONLY), STDERR_FILENO);
 
                 close (pipeHandles[1]);
 #endif
@@ -1140,8 +1156,6 @@ public:
                 close (pipeHandles[1]); // close the write handle
             }
         }
-
-        ignoreUnused(streamFlags);
     }
 
     ~ActiveProcess()
@@ -1277,7 +1291,12 @@ struct HighResolutionTimer::Pimpl
             shouldStop = true;
 
             while (thread != 0 && thread != pthread_self())
+            {
+                // if the timer callback itself calls startTimer then we need
+                // to override this
+                shouldStop = true;
                 Thread::yield();
+            }
         }
     }
 
@@ -1309,6 +1328,10 @@ private:
         while (! shouldStop)
         {
             clock.wait();
+
+            if (shouldStop)
+                break;
+
             owner.hiResTimerCallback();
 
             if (lastPeriod != periodMs)

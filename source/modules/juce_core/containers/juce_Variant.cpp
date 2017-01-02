@@ -434,7 +434,9 @@ var::var() noexcept : type (&VariantType_Void::instance) {}
 var::var (const VariantType& t) noexcept  : type (&t) {}
 var::~var() noexcept  { type->cleanUp (value); }
 
+#if JUCE_ALLOW_STATIC_NULL_VARIABLES
 const var var::null;
+#endif
 
 //==============================================================================
 var::var (const var& valueToCopy)  : type (valueToCopy.type)
@@ -504,6 +506,7 @@ var& var::operator= (const double v)             { type->cleanUp (value); type =
 var& var::operator= (const char* const v)        { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 var& var::operator= (const wchar_t* const v)     { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 var& var::operator= (const String& v)            { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
+var& var::operator= (const MemoryBlock& v)       { type->cleanUp (value); type = &VariantType_Binary::instance; value.binaryValue = new MemoryBlock (v); return *this; }
 var& var::operator= (const Array<var>& v)        { var v2 (v); swapWith (v2); return *this; }
 var& var::operator= (ReferenceCountedObject* v)  { var v2 (v); swapWith (v2); return *this; }
 var& var::operator= (NativeFunction v)           { var v2 (v); swapWith (v2); return *this; }
@@ -581,7 +584,7 @@ const var& var::operator[] (const Identifier& propertyName) const
     if (DynamicObject* const o = getDynamicObject())
         return o->getProperty (propertyName);
 
-    return var::null;
+    return getNullVarRef();
 }
 
 const var& var::operator[] (const char* const propertyName) const

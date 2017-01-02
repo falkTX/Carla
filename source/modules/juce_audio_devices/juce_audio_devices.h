@@ -22,12 +22,39 @@
   ==============================================================================
 */
 
+/*******************************************************************************
+ The block below describes the properties of this module, and is read by
+ the Projucer to automatically generate project code that uses it.
+ For details about the syntax and how to create or use a module, see the
+ JUCE Module Format.txt file.
+
+
+ BEGIN_JUCE_MODULE_DECLARATION
+
+  ID:               juce_audio_devices
+  vendor:           juce
+  version:          4.3.0
+  name:             JUCE audio and MIDI I/O device classes
+  description:      Classes to play and record from audio and MIDI I/O devices
+  website:          http://www.juce.com/juce
+  license:          GPL/Commercial
+
+  dependencies:     juce_audio_basics, juce_events
+  OSXFrameworks:    CoreAudio CoreMIDI AudioToolbox
+  iOSFrameworks:    CoreAudio CoreMIDI AudioToolbox AVFoundation
+  linuxPackages:    alsa
+  mingwLibs:        winmm
+
+ END_JUCE_MODULE_DECLARATION
+
+*******************************************************************************/
+
+
 #ifndef JUCE_AUDIO_DEVICES_H_INCLUDED
 #define JUCE_AUDIO_DEVICES_H_INCLUDED
 
-#include "../juce_events/juce_events.h"
-#include "../juce_audio_basics/juce_audio_basics.h"
-#include "../juce_audio_formats/juce_audio_formats.h"
+#include <juce_events/juce_events.h>
+#include <juce_audio_basics/juce_audio_basics.h>
 
 //==============================================================================
 /** Config: JUCE_ASIO
@@ -91,21 +118,6 @@
 #endif
 
 //==============================================================================
-/** Config: JUCE_USE_CDREADER
-    Enables the AudioCDReader class (on supported platforms).
-*/
-#ifndef JUCE_USE_CDREADER
- #define JUCE_USE_CDREADER 0
-#endif
-
-/** Config: JUCE_USE_CDBURNER
-    Enables the AudioCDBurner class (on supported platforms).
-*/
-#ifndef JUCE_USE_CDBURNER
- #define JUCE_USE_CDBURNER 0
-#endif
-
-//==============================================================================
 namespace juce
 {
 
@@ -117,8 +129,6 @@ namespace juce
 #include "midi_io/juce_MidiOutput.h"
 #include "sources/juce_AudioSourcePlayer.h"
 #include "sources/juce_AudioTransportSource.h"
-#include "audio_cd/juce_AudioCDBurner.h"
-#include "audio_cd/juce_AudioCDReader.h"
 #include "audio_io/juce_AudioDeviceManager.h"
 
 }

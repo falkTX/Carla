@@ -26,6 +26,36 @@
   ==============================================================================
 */
 
+
+/*******************************************************************************
+ The block below describes the properties of this module, and is read by
+ the Projucer to automatically generate project code that uses it.
+ For details about the syntax and how to create or use a module, see the
+ JUCE Module Format.txt file.
+
+
+ BEGIN_JUCE_MODULE_DECLARATION
+
+  ID:               juce_core
+  vendor:           juce
+  version:          4.3.0
+  name:             JUCE core classes
+  description:      The essential set of basic JUCE classes, as required by all the other JUCE modules. Includes text, container, memory, threading and i/o functionality.
+  website:          http://www.juce.com/juce
+  license:          GPL/Commercial
+
+  dependencies:
+  OSXFrameworks:    Cocoa IOKit
+  iOSFrameworks:    Foundation
+  linuxLibs:        rt dl pthread
+  linuxPackages:    libcurl
+  mingwLibs:        uuid wsock32 wininet version ole32 ws2_32 oleaut32 imm32 comdlg32 shlwapi rpcrt4 winmm
+
+ END_JUCE_MODULE_DECLARATION
+
+*******************************************************************************/
+
+
 #ifndef JUCE_CORE_H_INCLUDED
 #define JUCE_CORE_H_INCLUDED
 
@@ -39,6 +69,7 @@
  #endif
 #endif
 
+#include "../AppConfig.h"
 #include "system/juce_TargetPlatform.h"
 
 //==============================================================================
@@ -109,7 +140,7 @@
 
 /** Config: JUCE_USE_CURL
     Enables http/https support via libcurl (Linux only). Enabling this will add an additional
-    run-time dynmic dependency to libcurl.
+    run-time dynamic dependency to libcurl.
 
     If you disable this then https/ssl support will not be available on linux.
 */
@@ -118,13 +149,23 @@
 #endif
 
 
-/*  Config: JUCE_CATCH_UNHANDLED_EXCEPTIONS
+/** Config: JUCE_CATCH_UNHANDLED_EXCEPTIONS
     If enabled, this will add some exception-catching code to forward unhandled exceptions
     to your JUCEApplicationBase::unhandledException() callback.
 */
 #ifndef JUCE_CATCH_UNHANDLED_EXCEPTIONS
  //#define JUCE_CATCH_UNHANDLED_EXCEPTIONS 1
 #endif
+
+/** Config: JUCE_ALLOW_STATIC_NULL_VARIABLES
+    If disabled, this will turn off dangerous static globals like String::empty, var::null, etc
+    which can cause nasty order-of-initialisation problems if they are referenced during static
+    constructor code.
+*/
+#ifndef JUCE_ALLOW_STATIC_NULL_VARIABLES
+ #define JUCE_ALLOW_STATIC_NULL_VARIABLES 1
+#endif
+
 
 #ifndef JUCE_STRING_UTF_TYPE
  #define JUCE_STRING_UTF_TYPE 8
@@ -312,6 +353,11 @@ extern JUCE_API void JUCE_CALLTYPE logAssertion (const char* file, int line) noe
 
 #if JUCE_MSVC
  #pragma warning (pop)
+
+ // In DLL builds, need to disable this warnings for other modules
+ #if defined (JUCE_DLL_BUILD) || defined (JUCE_DLL)
+  #pragma warning (disable: 4251)
+ #endif
 #endif
 
 #endif   // JUCE_CORE_H_INCLUDED

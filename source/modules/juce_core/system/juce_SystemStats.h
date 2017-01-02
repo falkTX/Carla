@@ -65,6 +65,7 @@ public:
         MacOSX_10_9     = MacOSX | 9,
         MacOSX_10_10    = MacOSX | 10,
         MacOSX_10_11    = MacOSX | 11,
+        MacOSX_10_12    = MacOSX | 12,
 
         Win2000         = Windows | 1,
         WinXP           = Windows | 2,
@@ -192,6 +193,12 @@ public:
         where the problem happened and log it, etc.
     */
     static void setApplicationCrashHandler (CrashHandlerFunction);
+
+    /** Returns true if this code is running inside an app extension sandbox.
+
+        This function will always return false on windows, linux and android.
+    */
+    static bool isRunningInAppExtensionSandbox() noexcept;
 
 private:
     //==============================================================================

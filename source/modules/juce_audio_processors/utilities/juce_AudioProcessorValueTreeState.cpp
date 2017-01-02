@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -22,11 +22,10 @@
   ==============================================================================
 */
 
-
 #if JUCE_COMPILER_SUPPORTS_LAMBDAS
 
 //==============================================================================
-struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParameter,
+struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParameterWithID,
                                                    private ValueTree::Listener
 {
     Parameter (AudioProcessorValueTreeState& s,
@@ -34,7 +33,8 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
                NormalisableRange<float> r, float defaultVal,
                std::function<String (float)> valueToText,
                std::function<float (const String&)> textToValue)
-        : owner (s), paramID (parameterID), name (paramName), label (labelText),
+        : AudioProcessorParameterWithID (parameterID, paramName),
+          owner (s), label (labelText),
           valueToTextFunction (valueToText),
           textToValueFunction (textToValue),
           range (r), value (defaultVal), defaultValue (defaultVal),
@@ -52,7 +52,6 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
 
     float getValue() const override                             { return range.convertTo0to1 (value); }
     float getDefaultValue() const override                      { return range.convertTo0to1 (defaultValue); }
-    String getName (int maximumStringLength) const override     { return name.substring (0, maximumStringLength); }
     String getLabel() const override                            { return label; }
 
     float getValueForText (const String& text) const override
@@ -65,6 +64,14 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
     {
         return valueToTextFunction != nullptr ? valueToTextFunction (range.convertFrom0to1 (v))
                                               : AudioProcessorParameter::getText (v, length);
+    }
+
+    int getNumSteps() const override
+    {
+        if (range.interval > 0)
+            return (static_cast<int> ((range.end - range.start) / range.interval) + 1);
+
+        return AudioProcessor::getDefaultNumParameterSteps();
     }
 
     void setValue (float newValue) override
@@ -142,7 +149,7 @@ struct AudioProcessorValueTreeState::Parameter   : public AudioProcessorParamete
 
     AudioProcessorValueTreeState& owner;
     ValueTree state;
-    String paramID, name, label;
+    String label;
     ListenerList<AudioProcessorValueTreeState::Listener> listeners;
     std::function<String (float)> valueToTextFunction;
     std::function<float (const String&)> textToValueFunction;
@@ -359,6 +366,18 @@ struct AttachedControlBase  : public AudioProcessorValueTreeState::Listener,
         }
     }
 
+    void beginParameterChange()
+    {
+        if (AudioProcessorParameter* p = state.getParameter (paramID))
+            p->beginChangeGesture();
+    }
+
+    void endParameterChange()
+    {
+        if (AudioProcessorParameter* p = state.getParameter (paramID))
+            p->endChangeGesture();
+    }
+
     void handleAsyncUpdate() override
     {
         setValue (lastValue);
@@ -382,6 +401,7 @@ struct AudioProcessorValueTreeState::SliderAttachment::Pimpl  : private Attached
     {
         NormalisableRange<float> range (s.getParameterRange (paramID));
         slider.setRange (range.start, range.end, range.interval);
+        slider.setSkewFactor (range.skew, range.symmetricSkew);
 
         if (AudioProcessorParameter* param = state.getParameter (paramID))
             slider.setDoubleClickReturnValue (true, range.convertFrom0to1 (param->getDefaultValue()));
@@ -407,17 +427,8 @@ struct AudioProcessorValueTreeState::SliderAttachment::Pimpl  : private Attached
             setNewUnnormalisedValue ((float) s->getValue());
     }
 
-    void sliderDragStarted (Slider*) override
-    {
-        if (AudioProcessorParameter* p = state.getParameter (paramID))
-            p->beginChangeGesture();
-    }
-
-    void sliderDragEnded (Slider*) override
-    {
-        if (AudioProcessorParameter* p = state.getParameter (paramID))
-            p->endChangeGesture();
-    }
+    void sliderDragStarted (Slider*) override { beginParameterChange(); }
+    void sliderDragEnded   (Slider*) override { endParameterChange();   }
 
     Slider& slider;
 
@@ -455,7 +466,9 @@ struct AudioProcessorValueTreeState::ComboBoxAttachment::Pimpl  : private Attach
 
     void comboBoxChanged (ComboBox* comboBox) override
     {
+        beginParameterChange();
         setNewUnnormalisedValue ((float) comboBox->getSelectedId() - 1.0f);
+        endParameterChange();
     }
 
     ComboBox& combo;
@@ -494,7 +507,9 @@ struct AudioProcessorValueTreeState::ButtonAttachment::Pimpl  : private Attached
 
     void buttonClicked (Button* b) override
     {
+        beginParameterChange();
         setNewUnnormalisedValue (b->getToggleState() ? 1.0f : 0.0f);
+        endParameterChange();
     }
 
     Button& button;

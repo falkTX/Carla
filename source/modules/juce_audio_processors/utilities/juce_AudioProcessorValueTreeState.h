@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2013 - Raw Material Software Ltd.
+   Copyright (c) 2015 - ROLI Ltd.
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
@@ -25,7 +25,7 @@
 #ifndef JUCE_AUDIOPROCESSORVALUETREESTATE_H_INCLUDED
 #define JUCE_AUDIOPROCESSORVALUETREESTATE_H_INCLUDED
 
-#if JUCE_COMPILER_SUPPORTS_LAMBDAS || defined (DOXYGEN)
+#if JUCE_COMPILER_SUPPORTS_LAMBDAS
 
 /**
     This class contains a ValueTree which is used to manage an AudioProcessor's entire state.
@@ -149,6 +149,7 @@ public:
 
     private:
         struct Pimpl;
+        friend struct ContainerDeletePolicy<Pimpl>;
         ScopedPointer<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SliderAttachment)
     };
@@ -157,7 +158,7 @@ public:
     /** An object of this class maintains a connection between a ComboBox and a parameter
         in an AudioProcessorValueTreeState.
 
-        During the lifetime of this SliderAttachment object, it keeps the two things in
+        During the lifetime of this ComboBoxAttachment object, it keeps the two things in
         sync, making it easy to connect a combo box to a parameter. When this object is
         deleted, the connection is broken. Make sure that your AudioProcessorValueTreeState
         and ComboBox aren't deleted before this object!
@@ -172,6 +173,7 @@ public:
 
     private:
         struct Pimpl;
+        friend struct ContainerDeletePolicy<Pimpl>;
         ScopedPointer<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComboBoxAttachment)
     };
@@ -180,7 +182,7 @@ public:
     /** An object of this class maintains a connection between a Button and a parameter
         in an AudioProcessorValueTreeState.
 
-        During the lifetime of this SliderAttachment object, it keeps the two things in
+        During the lifetime of this ButtonAttachment object, it keeps the two things in
         sync, making it easy to connect a button to a parameter. When this object is
         deleted, the connection is broken. Make sure that your AudioProcessorValueTreeState
         and Button aren't deleted before this object!
@@ -195,6 +197,7 @@ public:
 
     private:
         struct Pimpl;
+        friend struct ContainerDeletePolicy<Pimpl>;
         ScopedPointer<Pimpl> pimpl;
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ButtonAttachment)
     };

@@ -81,6 +81,7 @@ private:
 
 public:
     class CustomComponent;
+    class CustomCallback;
 
     //==============================================================================
     /** Creates an empty popup menu. */
@@ -103,6 +104,74 @@ public:
     //==============================================================================
     /** Resets the menu, removing all its items. */
     void clear();
+
+    /** Describes a popup menu item. */
+    struct JUCE_API  Item
+    {
+        /** Creates a null item.
+            You'll need to set some fields after creating an Item before you
+            can add it to a PopupMenu
+        */
+        Item() noexcept;
+
+        /** Creates a copy of an item. */
+        Item (const Item&);
+
+        /** Creates a copy of an item. */
+        Item& operator= (const Item&);
+
+        /** The menu item's name. */
+        String text;
+
+        /** The menu item's ID. This can not be 0 if you want the item to be triggerable! */
+        int itemID;
+
+        /** A sub-menu, or nullptr if there isn't one. */
+        ScopedPointer<PopupMenu> subMenu;
+
+        /** A drawable to use as an icon, or nullptr if there isn't one. */
+        ScopedPointer<Drawable> image;
+
+        /** A custom component for the item to display, or nullptr if there isn't one. */
+        ReferenceCountedObjectPtr<CustomComponent> customComponent;
+
+        /** A custom callback for the item to use, or nullptr if there isn't one. */
+        ReferenceCountedObjectPtr<CustomCallback> customCallback;
+
+        /** A command manager to use to automatically invoke the command, or nullptr if none is specified. */
+        ApplicationCommandManager* commandManager;
+
+        /** An optional string describing the shortcut key for this item.
+            This is only used for displaying at the right-hand edge of a menu item - the
+            menu won't attempt to actually catch or process the key. If you supply a
+            commandManager parameter then the menu will attempt to fill-in this field
+            automatically.
+        */
+        String shortcutKeyDescription;
+
+        /** A colour to use to draw the menu text.
+            By default this is transparent black, which means that the LookAndFeel should choose the colour.
+        */
+        Colour colour;
+
+        /** True if this menu item is enabled. */
+        bool isEnabled;
+
+        /** True if this menu item should have a tick mark next to it. */
+        bool isTicked;
+
+        /** True if this menu item is a separator line. */
+        bool isSeparator;
+
+        /** True if this menu item is a section header. */
+        bool isSectionHeader;
+    };
+
+    /** Adds an item to the menu.
+        You can call this method for full control over the item that is added, or use the other
+        addItem helper methods if you want to pass arguments rather than creating an Item object.
+    */
+    void addItem (const Item& newItem);
 
     /** Appends a new text item for this menu to show.
 
@@ -173,7 +242,7 @@ public:
     */
     void addCommandItem (ApplicationCommandManager* commandManager,
                          CommandID commandID,
-                         const String& displayName = String::empty,
+                         const String& displayName = String(),
                          Drawable* iconToUse = nullptr);
 
 
@@ -274,7 +343,6 @@ public:
                      int itemResultID = 0);
 
     /** Appends a separator to the menu, to help break it up into sections.
-
         The menu class is smart enough not to display separators at the top or bottom
         of the menu, and it will replace mutliple adjacent separators with a single
         one, so your code can be quite free and easy about adding these, and it'll
@@ -283,14 +351,12 @@ public:
     void addSeparator();
 
     /** Adds a non-clickable text item to the menu.
-
         This is a bold-font items which can be used as a header to separate the items
         into named groups.
     */
     void addSectionHeader (const String& title);
 
     /** Returns the number of items that the menu currently contains.
-
         (This doesn't count separators).
     */
     int getNumItems() const noexcept;
@@ -318,18 +384,31 @@ public:
     public:
         Options();
 
+        //==============================================================================
         Options withTargetComponent (Component* targetComponent) const noexcept;
         Options withTargetScreenArea (const Rectangle<int>& targetArea) const noexcept;
         Options withMinimumWidth (int minWidth) const noexcept;
         Options withMaximumNumColumns (int maxNumColumns) const noexcept;
         Options withStandardItemHeight (int standardHeight) const noexcept;
         Options withItemThatMustBeVisible (int idOfItemToBeVisible) const noexcept;
+        Options withParentComponent (Component* parentComponent) const noexcept;
+
+        //==============================================================================
+        Component* getParentComponent() const noexcept          { return parentComponent; }
+        Component* getTargetComponent() const noexcept          { return targetComponent; }
+        Rectangle<int> getTargetScreenArea() const noexcept     { return targetArea; }
+        int getMinimumWidth() const noexcept                    { return minWidth; }
+        int getMaximumNumColumns() const noexcept               { return maxColumns; }
+        int getStandardItemHeight() const noexcept              { return standardHeight; }
+        int getItemThatMustBeVisible() const noexcept           { return visibleItemID; }
 
     private:
+        //==============================================================================
         friend class PopupMenu;
         friend class PopupMenu::Window;
         Rectangle<int> targetArea;
         Component* targetComponent;
+        Component* parentComponent;
         int visibleItemID, minWidth, maxColumns, standardHeight;
     };
 
@@ -360,12 +439,12 @@ public:
                                         in zero.
         @param standardItemHeight       if this is non-zero, it will be used as the standard
                                         height for menu items (apart from custom items)
-        @param callback                 if this is non-zero, the menu will be launched asynchronously,
-                                        returning immediately, and the callback will receive a
-                                        call when the menu is either dismissed or has an item
-                                        selected. This object will be owned and deleted by the
-                                        system, so make sure that it works safely and that any
-                                        pointers that it uses are safely within scope.
+        @param callback                 if this is not a nullptr, the menu will be launched
+                                        asynchronously, returning immediately, and the callback
+                                        will receive a call when the menu is either dismissed or
+                                        has an item selected. This object will be owned and
+                                        deleted by the system, so make sure that it works safely
+                                        and that any pointers that it uses are safely within scope.
         @see showAt
     */
     int show (int itemIDThatMustBeVisible = 0,
@@ -486,21 +565,10 @@ public:
         */
         bool next();
 
-        /** Adds an item to the target menu which has all the properties of this item. */
-        void addItemTo (PopupMenu& targetMenu);
-
-        //==============================================================================
-        String itemName;
-        const PopupMenu* subMenu;
-        int itemId;
-        bool isSeparator;
-        bool isTicked;
-        bool isEnabled;
-        bool isCustomComponent;
-        bool isSectionHeader;
-        const Colour* customColour;
-        const Drawable* icon;
-        ApplicationCommandManager* commandManager;
+        /** Returns a reference to the description of the current item.
+            It is only valid to call this after next() has returned true!
+        */
+        const Item& getItem() const noexcept;
 
     private:
         //==============================================================================
@@ -562,6 +630,26 @@ public:
     };
 
     //==============================================================================
+    /** A user-defined callback that can be used for specific items in a popup menu.
+        @see PopupMenu::Item::customCallback
+    */
+    class JUCE_API  CustomCallback  : public SingleThreadedReferenceCountedObject
+    {
+    public:
+        CustomCallback();
+        ~CustomCallback();
+
+        /** Callback to indicate this item has been triggered.
+            @returns true if the itemID should be sent to the exitModalState method, or
+                     false if it should send 0, indicating no further action should be taken
+        */
+        virtual bool menuItemTriggered() = 0;
+
+    private:
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CustomCallback)
+    };
+
+    //==============================================================================
     /** This abstract base class is implemented by LookAndFeel classes to provide
         menu drawing functionality.
     */
@@ -617,11 +705,14 @@ public:
                                       bool isMenuOpen,
                                       bool isMouseOverBar,
                                       MenuBarComponent&) = 0;
+
+        virtual Component* getParentComponentForMenuOptions (const PopupMenu::Options& options) = 0;
+
+        virtual void preparePopupMenuWindow (Component& newWindow) = 0;
     };
 
 private:
     //==============================================================================
-    JUCE_PUBLIC_IN_DLL_BUILD (class Item)
     JUCE_PUBLIC_IN_DLL_BUILD (struct HelperClasses)
     friend struct HelperClasses;
     friend class MenuBarComponent;

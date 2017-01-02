@@ -136,6 +136,12 @@ public:
         return data.size();
     }
 
+    /** Returns true if the set is empty, false otherwise. */
+    inline bool isEmpty() const noexcept
+    {
+        return size() == 0;
+    }
+
     /** Returns one of the elements in the set.
 
         If the index passed in is beyond the range of valid elements, this
@@ -370,7 +376,7 @@ public:
     */
     ElementType remove (const int indexToRemove) noexcept
     {
-        return data.remove (indexToRemove);
+        return data.removeAndReturn (indexToRemove);
     }
 
     /** Removes an item from the set.

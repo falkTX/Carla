@@ -38,47 +38,30 @@ void Logger::outputDebugString (const String& text)
 #endif
 
 //==============================================================================
-#if JUCE_USE_MSVC_INTRINSICS
-
-// CPU info functions using intrinsics...
-
 #pragma intrinsic (__cpuid)
 #pragma intrinsic (__rdtsc)
 
+#if JUCE_MINGW
+static void callCPUID (int result[4], uint32 type)
+{
+  uint32 la = result[0], lb = result[1], lc = result[2], ld = result[3];
+
+  asm ("mov %%ebx, %%esi \n\t"
+       "cpuid \n\t"
+       "xchg %%esi, %%ebx"
+       : "=a" (la), "=S" (lb), "=c" (lc), "=d" (ld) : "a" (type)
+        #if JUCE_64BIT
+     , "b" (lb), "c" (lc), "d" (ld)
+        #endif
+       );
+
+  result[0] = la; result[1] = lb; result[2] = lc; result[3] = ld;
+}
+#else
 static void callCPUID (int result[4], int infoType)
 {
     __cpuid (result, infoType);
 }
-
-#else
-
-static void callCPUID (int result[4], int infoType)
-{
-   #if ! JUCE_MINGW
-    __try
-   #endif
-    {
-       #if JUCE_GCC || JUCE_CLANG
-        __asm__ __volatile__ ("cpuid" : "=a" (result[0]), "=b" (result[1]), "=c" (result[2]),"=d" (result[3]) : "a" (infoType));
-       #else
-        __asm
-        {
-            mov    esi, result
-            mov    eax, infoType
-            xor    ecx, ecx
-            cpuid
-            mov    dword ptr [esi +  0], eax
-            mov    dword ptr [esi +  4], ebx
-            mov    dword ptr [esi +  8], ecx
-            mov    dword ptr [esi + 12], edx
-        }
-       #endif
-    }
-   #if ! JUCE_MINGW
-    __except (EXCEPTION_EXECUTE_HANDLER) {}
-   #endif
-}
-
 #endif
 
 String SystemStats::getCpuVendor()
@@ -295,17 +278,6 @@ public:
     {
         LARGE_INTEGER ticks;
         QueryPerformanceCounter (&ticks);
-
-        const int64 mainCounterAsHiResTicks = (juce_millisecondsSinceStartup() * hiResTicksPerSecond) / 1000;
-        const int64 newOffset = mainCounterAsHiResTicks - ticks.QuadPart;
-
-        // fix for a very obscure PCI hardware bug that can make the counter
-        // sometimes jump forwards by a few seconds..
-        const int64 offsetDrift = abs64 (newOffset - hiResTicksOffset);
-
-        if (offsetDrift > (hiResTicksPerSecond >> 1))
-            hiResTicksOffset = newOffset;
-
         return ticks.QuadPart + hiResTicksOffset;
     }
 
@@ -327,7 +299,7 @@ double Time::getMillisecondCounterHiRes() noexcept       { return hiResCounterHa
 //==============================================================================
 static int64 juce_getClockCycleCounter() noexcept
 {
-   #if JUCE_USE_MSVC_INTRINSICS
+   #if JUCE_MSVC
     // MS intrinsics version...
     return (int64) __rdtsc();
 
@@ -348,19 +320,7 @@ static int64 juce_getClockCycleCounter() noexcept
 
     return (int64) ((((uint64) hi) << 32) | lo);
    #else
-    // MSVC inline asm version...
-    unsigned int hi = 0, lo = 0;
-
-    __asm
-    {
-        xor eax, eax
-        xor edx, edx
-        rdtsc
-        mov lo, eax
-        mov hi, edx
-    }
-
-    return (int64) ((((uint64) hi) << 32) | lo);
+    #error "unknown compiler?"
    #endif
 }
 
