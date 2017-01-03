@@ -45,8 +45,11 @@ make BUILDING_FOR_WINDOWS=true LDFLAGS="-L/opt/mingw32/i686-w64-mingw32/lib/" wi
 export PYTHONPATH=`pwd`/source
 
 rm -rf ./data/windows/Carla
+mkdir -p ./data/windows/Carla/Debug
 cp ./source/carla ./source/Carla.pyw
-$PYTHON_EXE ./data/windows/app.py build_exe
+$PYTHON_EXE ./data/windows/app-console.py build_exe
+mv ./data/windows/Carla/carla.exe ./data/windows/Carla/Debug/Carla.exe
+$PYTHON_EXE ./data/windows/app-gui.py build_exe
 rm -f ./source/Carla.pyw
 
 cd data/windows/

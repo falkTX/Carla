@@ -199,6 +199,9 @@ class HostWindow(QMainWindow):
         else:
             self.ui.act_engine_start.setEnabled(True)
 
+            if WINDOWS:
+                self.ui.tabWidget.removeTab(2)
+
         if not self.host.isControl:
             self.ui.act_file_connect.setEnabled(False)
             self.ui.act_file_connect.setVisible(False)

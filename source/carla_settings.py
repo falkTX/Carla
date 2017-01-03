@@ -242,6 +242,10 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_manage_uis.setEnabled(False)
             self.ui.ch_main_manage_uis.setVisible(False)
 
+        if WINDOWS:
+            self.ui.ch_main_show_logs.setEnabled(False)
+            self.ui.ch_main_show_logs.setVisible(False)
+
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
