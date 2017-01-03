@@ -61,6 +61,7 @@ $CXFREEZE ../../bin/resources/carla-plugin-patchbay
 
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
+rm Carla/carla-bridge-lv2-windows.exe
 rm Carla/carla-discovery-native.exe
 rm Carla/carla-lv2-export.exe
 
