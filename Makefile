@@ -542,6 +542,8 @@ ifeq ($(HAVE_PYQT),true)
 		data/carla \
 		data/carla-control \
 		data/carla-database \
+		data/carla-jack-multi \
+		data/carla-jack-single \
 		data/carla-patchbay \
 		data/carla-rack \
 		data/carla-settings \
@@ -552,6 +554,8 @@ ifeq ($(HAVE_PYQT),true)
 		$(DESTDIR)$(BINDIR)/carla \
 		$(DESTDIR)$(BINDIR)/carla-control \
 		$(DESTDIR)$(BINDIR)/carla-database \
+		$(DESTDIR)$(BINDIR)/carla-jack-multi \
+		$(DESTDIR)$(BINDIR)/carla-jack-single \
 		$(DESTDIR)$(BINDIR)/carla-patchbay \
 		$(DESTDIR)$(BINDIR)/carla-rack \
 		$(DESTDIR)$(BINDIR)/carla-settings
@@ -569,6 +573,8 @@ ifeq ($(HAVE_PYQT),true)
 	install -m 644 \
 		source/carla \
 		source/carla-control \
+		source/carla-jack-multi \
+		source/carla-jack-single \
 		source/carla-patchbay \
 		source/carla-rack \
 		source/*.py \
