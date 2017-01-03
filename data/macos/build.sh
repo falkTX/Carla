@@ -57,14 +57,16 @@ rm -rf ./build/Carla
 rm -rf ./build/exe.*
 rm -rf ./build/*.lv2
 
-cp ./source/carla               ./source/Carla.pyw
-cp ./bin/resources/carla-plugin ./source/carla-plugin.pyw
-cp ./bin/resources/bigmeter-ui  ./source/bigmeter-ui.pyw
-cp ./bin/resources/notes-ui     ./source/notes-ui.pyw
-env SCRIPT_NAME=Carla        python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
-env SCRIPT_NAME=carla-plugin python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
-env SCRIPT_NAME=bigmeter-ui  python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
-env SCRIPT_NAME=notes-ui     python3 ./data/macos/bundle.py bdist_mac --bundle-name=notes-ui
+cp ./source/carla                 ./source/Carla.pyw
+cp ./bin/resources/carla-plugin   ./source/carla-plugin.pyw
+cp ./bin/resources/bigmeter-ui    ./source/bigmeter-ui.pyw
+cp ./bin/resources/midipattern-ui ./source/midipattern-ui.pyw
+cp ./bin/resources/notes-ui       ./source/notes-ui.pyw
+env SCRIPT_NAME=Carla          python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
+env SCRIPT_NAME=carla-plugin   python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
+env SCRIPT_NAME=bigmeter-ui    python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
+env SCRIPT_NAME=midipattern-ui python3 ./data/macos/bundle.py bdist_mac --bundle-name=midipattern-ui
+env SCRIPT_NAME=notes-ui       python3 ./data/macos/bundle.py bdist_mac --bundle-name=notes-ui
 rm ./source/*.pyw
 
 mkdir -p build/Carla.app/Contents/MacOS/resources
@@ -98,12 +100,13 @@ cd build/Carla.app/Contents/MacOS/resources/
 ln -sf ../*.so* ../Qt* ../imageformats ../platforms .
 cd ../../../../..
 
-cp build/carla-plugin.app/Contents/MacOS/carla-plugin build/Carla.app/Contents/MacOS/resources/
-cp build/carla-plugin.app/Contents/MacOS/fcntl.so     build/Carla.app/Contents/MacOS/resources/ 2>/dev/null || true
-cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui   build/Carla.app/Contents/MacOS/resources/
-cp build/notes-ui.app/Contents/MacOS/notes-ui         build/Carla.app/Contents/MacOS/resources/
-cp bin/resources/zynaddsubfx-ui                       build/Carla.app/Contents/MacOS/resources/
-rm -rf build/carla-plugin.app build/bigmeter-ui.app build/notes-ui.app
+cp build/carla-plugin.app/Contents/MacOS/carla-plugin  build/Carla.app/Contents/MacOS/resources/
+cp build/carla-plugin.app/Contents/MacOS/fcntl.so      build/Carla.app/Contents/MacOS/resources/ 2>/dev/null || true
+cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui    build/Carla.app/Contents/MacOS/resources/
+cp build/bigmeter-ui.app/Contents/MacOS/midipattern-ui build/Carla.app/Contents/MacOS/resources/
+cp build/notes-ui.app/Contents/MacOS/notes-ui          build/Carla.app/Contents/MacOS/resources/
+cp bin/resources/zynaddsubfx-ui                        build/Carla.app/Contents/MacOS/resources/
+rm -rf build/carla-plugin.app build/bigmeter-ui.app build/midipattern-ui.app build/notes-ui.app
 
 mkdir build/carla.lv2
 mkdir build/carla.lv2/resources
