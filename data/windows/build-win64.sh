@@ -53,10 +53,10 @@ cd data/windows/
 
 rm -rf dist
 $CXFREEZE ../../bin/resources/bigmeter-ui
-$CXFREEZE ../../bin/resources/carla-plugin
-$CXFREEZE ../../bin/resources/carla-plugin-patchbay
 $CXFREEZE ../../bin/resources/midipattern-ui
 $CXFREEZE ../../bin/resources/notes-ui
+$CXFREEZE ../../bin/resources/carla-plugin
+$CXFREEZE ../../bin/resources/carla-plugin-patchbay
 
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/

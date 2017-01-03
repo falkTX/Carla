@@ -1782,7 +1782,7 @@ public:
         switch(opcode)
         {
         case NATIVE_PLUGIN_OPCODE_NULL:
-            if (static_cast<uint32_t>(index) == 0xDEADF00D && value == 0xC0C0B00B)
+            if (static_cast<uint32_t>(index) == 0xDEADF00D && static_cast<uintptr_t>(value) == 0xC0C0B00B)
                 handlePtr->fWaitForReadyMsg = true;
             return 0;
         case NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED:
