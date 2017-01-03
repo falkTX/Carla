@@ -53,16 +53,20 @@ unset LDLAGS
 unset PKG_CONFIG_PATH
 
 rm -rf ./build/Carla
+rm -rf ./build/CarlaControl
 rm -rf ./build/Carla.app
+rm -rf ./build/CarlaControl.app
 rm -rf ./build/exe.*
 rm -rf ./build/*.lv2
 
 cp ./source/carla                 ./source/Carla.pyw
+cp ./source/carla-control         ./source/Carla-Control.pyw
 cp ./bin/resources/carla-plugin   ./source/carla-plugin.pyw
 cp ./bin/resources/bigmeter-ui    ./source/bigmeter-ui.pyw
 cp ./bin/resources/midipattern-ui ./source/midipattern-ui.pyw
 cp ./bin/resources/notes-ui       ./source/notes-ui.pyw
 env SCRIPT_NAME=Carla          python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla
+env SCRIPT_NAME=Carla-Control  python3 ./data/macos/bundle.py bdist_mac --bundle-name=Carla-Control
 env SCRIPT_NAME=carla-plugin   python3 ./data/macos/bundle.py bdist_mac --bundle-name=carla-plugin
 env SCRIPT_NAME=bigmeter-ui    python3 ./data/macos/bundle.py bdist_mac --bundle-name=bigmeter-ui
 env SCRIPT_NAME=midipattern-ui python3 ./data/macos/bundle.py bdist_mac --bundle-name=midipattern-ui
@@ -71,11 +75,16 @@ rm ./source/*.pyw
 
 mkdir -p build/Carla.app/Contents/MacOS/resources
 mkdir -p build/Carla.app/Contents/MacOS/styles
+mkdir -p build/Carla-Control.app/Contents/MacOS/styles
+
 cp     bin/*.dylib           build/Carla.app/Contents/MacOS/
 cp     bin/carla-bridge-*    build/Carla.app/Contents/MacOS/
 cp     bin/carla-discovery-* build/Carla.app/Contents/MacOS/
 cp -LR bin/resources/*       build/Carla.app/Contents/MacOS/resources/
 cp     bin/styles/*          build/Carla.app/Contents/MacOS/styles/
+
+cp     bin/*utils.dylib      build/Carla-Control.app/Contents/MacOS/
+cp     bin/styles/*          build/Carla-Control.app/Contents/MacOS/styles/
 
 rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-modgui
 rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-qt5
@@ -85,8 +94,20 @@ rm build/Carla.app/Contents/MacOS/resources/carla-plugin
 rm build/Carla.app/Contents/MacOS/resources/carla-plugin-patchbay
 rm build/Carla.app/Contents/MacOS/resources/*-ui
 rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
+rm -rf build/Carla-Control.app/Contents/MacOS/resources/__pycache__
 
 cd build/Carla.app/Contents/MacOS
+for f in `find . | grep -e Qt -e libq -e carlastyle.dylib`; do
+install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $f
+install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $f
+install_name_tool -change "@rpath/QtOpenGL.framework/Versions/5/QtOpenGL"             @executable_path/QtOpenGL       $f
+install_name_tool -change "@rpath/QtPrintSupport.framework/Versions/5/QtPrintSupport" @executable_path/QtPrintSupport $f
+install_name_tool -change "@rpath/QtSvg.framework/Versions/5/QtSvg"                   @executable_path/QtSvg          $f
+install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"           @executable_path/QtWidgets      $f
+done
+cd ../../../..
+
+cd build/Carla-Control.app/Contents/MacOS
 for f in `find . | grep -e Qt -e libq -e carlastyle.dylib`; do
 install_name_tool -change "@rpath/QtCore.framework/Versions/5/QtCore"                 @executable_path/QtCore         $f
 install_name_tool -change "@rpath/QtGui.framework/Versions/5/QtGui"                   @executable_path/QtGui          $f
