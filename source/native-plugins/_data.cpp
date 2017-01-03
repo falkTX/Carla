@@ -19,6 +19,10 @@
 #include "CarlaMIDI.h"
 #include "CarlaUtils.hpp"
 
+#ifdef CARLA_OS_WIN
+#define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#endif
+
 #undef DESCFUNCS
 #define DESCFUNCS \
     nullptr, nullptr, nullptr, nullptr, nullptr, \
@@ -205,6 +209,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
@@ -224,10 +229,12 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+#endif
 
 // -----------------------------------------------------------------------
 // Carla
 
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -333,6 +340,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+#endif
 
 // -----------------------------------------------------------------------
 // DISTRHO Plugins
@@ -538,6 +546,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // -----------------------------------------------------------------------
 // External-UI plugins
 
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
@@ -573,6 +582,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+#endif
 
 // -----------------------------------------------------------------------
 // ZynAddSubFX
@@ -700,6 +710,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+# ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_SYNTH,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -724,6 +735,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+# endif // ! DISABLE_PLUGINS_FOR_WINDOWS_BUILD
 #endif // HAVE_ZYN_DEPS
 
 

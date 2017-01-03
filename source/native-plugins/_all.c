@@ -18,6 +18,10 @@
 #include "CarlaDefines.h"
 #include "CarlaNative.h"
 
+#ifdef CARLA_OS_WIN
+# define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#endif
+
 // -----------------------------------------------------------------------
 
 // Simple plugins
@@ -84,10 +88,14 @@ void carla_register_all_native_plugins(void)
 
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
     carla_register_native_plugin_midipattern();
+#endif
 
     // Carla
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
     carla_register_native_plugin_carla();
+#endif
 
     // DISTRHO Plugins
     carla_register_native_plugin_distrho_3bandeq();
@@ -105,14 +113,18 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_distrho_vectorjuice();
     carla_register_native_plugin_distrho_wobblejuice();
 
+#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
+#endif
 
 #ifdef HAVE_ZYN_DEPS
     // ZynAddSubFX
     carla_register_native_plugin_zynaddsubfx_fx();
+# ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
     carla_register_native_plugin_zynaddsubfx_synth();
+# endif
 #endif
 
 #ifdef HAVE_EXPERIMENTAL_PLUGINS
