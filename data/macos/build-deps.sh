@@ -136,13 +136,13 @@ fi
 # ------------------------------------------------------------------------------------
 # zlib
 
-if [ ! -d zlib-1.2.8 ]; then
-curl -O http://zlib.net/zlib-1.2.8.tar.gz
-tar -xf zlib-1.2.8.tar.gz
+if [ ! -d zlib-1.2.10 ]; then
+curl -L https://github.com/madler/zlib/archive/v1.2.10.tar.gz -o zlib-1.2.10.tar.gz
+tar -xf zlib-1.2.10.tar.gz
 fi
 
-if [ ! -f zlib-1.2.8/build-done ]; then
-cd zlib-1.2.8
+if [ ! -f zlib-1.2.10/build-done ]; then
+cd zlib-1.2.10
 ./configure --static --prefix=$PREFIX
 make
 make install
@@ -447,7 +447,7 @@ export QMAKESPEC=macx-clang
 # qt5-base download
 
 if [ ! -d qtbase-opensource-src-5.5.1 ]; then
-curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtbase-opensource-src-5.5.1.tar.gz -o qtbase-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/archive/qt/5.5/5.5.1/submodules/qtbase-opensource-src-5.5.1.tar.gz -o qtbase-opensource-src-5.5.1.tar.gz
 tar -xf qtbase-opensource-src-5.5.1.tar.gz
 fi
 
@@ -487,7 +487,7 @@ fi
 # qt5-mac-extras
 
 if [ ! -d qtmacextras-opensource-src-5.5.1 ]; then
-curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtmacextras-opensource-src-5.5.1.tar.gz -o qtmacextras-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/archive/qt/5.5/5.5.1/submodules/qtmacextras-opensource-src-5.5.1.tar.gz -o qtmacextras-opensource-src-5.5.1.tar.gz
 tar -xf qtmacextras-opensource-src-5.5.1.tar.gz
 fi
 
@@ -504,7 +504,7 @@ fi
 # qt5-svg
 
 if [ ! -d qtsvg-opensource-src-5.5.1 ]; then
-curl -L http://download.qt.io/official_releases/qt/5.5/5.5.1/submodules/qtsvg-opensource-src-5.5.1.tar.gz -o qtsvg-opensource-src-5.5.1.tar.gz
+curl -L http://download.qt.io/archive/qt/5.5/5.5.1/submodules/qtsvg-opensource-src-5.5.1.tar.gz -o qtsvg-opensource-src-5.5.1.tar.gz
 tar -xf qtsvg-opensource-src-5.5.1.tar.gz
 fi
 
