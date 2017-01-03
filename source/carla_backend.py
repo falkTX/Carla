@@ -1212,6 +1212,7 @@ class CarlaHostMeta(object):
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
         self.nextProcessMode   = ENGINE_PROCESS_MODE_PATCHBAY
         self.processModeForced = False
+        self.audioDriverForced = None
 
         # settings
         self.forceStereo         = False

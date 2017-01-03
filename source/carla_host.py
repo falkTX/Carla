@@ -2327,10 +2327,11 @@ def loadHostSettings(host):
         return
 
     # enums
-    try:
-        host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
-    except:
-        host.transportMode = CARLA_DEFAULT_TRANSPORT_MODE
+    if host.audioDriverForced is None:
+        try:
+            host.transportMode = settings.value(CARLA_KEY_ENGINE_TRANSPORT_MODE, CARLA_DEFAULT_TRANSPORT_MODE, type=int)
+        except:
+            host.transportMode = CARLA_DEFAULT_TRANSPORT_MODE
 
     if not host.processModeForced:
         try:
@@ -2430,10 +2431,13 @@ def setEngineSettings(host):
     # driver and device settings
 
     # driver name
-    try:
-        audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
-    except:
-        audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
+    if host.audioDriverForced is not None:
+        audioDriver = host.audioDriverForced
+    else:
+        try:
+            audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
+        except:
+            audioDriver = CARLA_DEFAULT_AUDIO_DRIVER
 
     # driver options
     try:

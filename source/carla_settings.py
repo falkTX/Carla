@@ -261,6 +261,10 @@ class CarlaSettingsW(QDialog):
         if host.isPlugin:
             self.ui.cb_engine_audio_driver.setEnabled(False)
 
+        if host.audioDriverForced is not None:
+            self.ui.cb_engine_audio_driver.setEnabled(False)
+            self.ui.tb_engine_driver_config.setEnabled(False)
+
         if host.processModeForced:
             self.ui.cb_engine_process_mode_jack.setEnabled(False)
             self.ui.cb_engine_process_mode_other.setEnabled(False)
@@ -361,6 +365,9 @@ class CarlaSettingsW(QDialog):
         if self.host.isPlugin:
             audioDriver = "Plugin"
             self.ui.cb_engine_audio_driver.setCurrentIndex(0)
+        elif self.host.audioDriverForced:
+            audioDriver = self.host.audioDriverForced
+            self.ui.cb_engine_audio_driver.setCurrentIndex(0)
         else:
             audioDriver = settings.value(CARLA_KEY_ENGINE_AUDIO_DRIVER, CARLA_DEFAULT_AUDIO_DRIVER, type=str)
 
@@ -376,7 +383,7 @@ class CarlaSettingsW(QDialog):
             self.ui.tb_engine_driver_config.setEnabled(False)
         else:
             self.ui.sw_engine_process_mode.setCurrentIndex(1)
-            self.ui.tb_engine_driver_config.setEnabled(not self.host.isPlugin)
+            self.ui.tb_engine_driver_config.setEnabled(self.host.audioDriverForced is None and not self.host.isPlugin)
 
         self.ui.cb_engine_process_mode_jack.setCurrentIndex(self.host.nextProcessMode)
 
@@ -489,7 +496,7 @@ class CarlaSettingsW(QDialog):
 
         audioDriver = self.ui.cb_engine_audio_driver.currentText()
 
-        if audioDriver and not self.host.isPlugin:
+        if audioDriver and self.host.audioDriverForced is None and not self.host.isPlugin:
             settings.setValue(CARLA_KEY_ENGINE_AUDIO_DRIVER, audioDriver)
 
         if not self.host.processModeForced:
