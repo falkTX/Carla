@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Common Carla code
-# Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -66,7 +66,7 @@ if WINDOWS:
 # ------------------------------------------------------------------------------------------------------------
 # Set Version
 
-VERSION = "1.9.6 (2.0-beta4)"
+VERSION = "1.9.7 (2.0-beta5)"
 
 # ------------------------------------------------------------------------------------------------------------
 # Set TMP
