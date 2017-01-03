@@ -3034,28 +3034,46 @@ public:
                         else
                             nextBankId = 0;
 
-                        // reset iters
-                        const uint32_t j = fEventsIn.ctrlIndex;
+                        for (uint32_t j=0; j < fEventsIn.count; ++j)
+                        {
+                            if (fEventsIn.data[j].type & CARLA_EVENT_DATA_ATOM)
+                            {
+                                lv2_atom_buffer_reset(fEventsIn.data[j].atom, true);
+                                lv2_atom_buffer_begin(&evInAtomIters[j], fEventsIn.data[j].atom);
+                            }
+                            else if (fEventsIn.data[j].type & CARLA_EVENT_DATA_EVENT)
+                            {
+                                lv2_event_buffer_reset(fEventsIn.data[j].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[j].event->data);
+                                lv2_event_begin(&evInEventIters[j], fEventsIn.data[j].event);
+                            }
+                            else if (fEventsIn.data[j].type & CARLA_EVENT_DATA_MIDI_LL)
+                            {
+                                fEventsIn.data[j].midi.event_count = 0;
+                                fEventsIn.data[j].midi.size        = 0;
+                                evInMidiStates[j].position         = event.time;
+                            }
+                        }
 
-                        if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_ATOM)
+                        for (uint32_t j=0; j < fEventsOut.count; ++j)
                         {
-                            lv2_atom_buffer_reset(fEventsIn.data[j].atom, true);
-                            lv2_atom_buffer_begin(&evInAtomIters[j], fEventsIn.data[j].atom);
-                        }
-                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_EVENT)
-                        {
-                            lv2_event_buffer_reset(fEventsIn.data[j].event, LV2_EVENT_AUDIO_STAMP, fEventsIn.data[j].event->data);
-                            lv2_event_begin(&evInEventIters[j], fEventsIn.data[j].event);
-                        }
-                        else if (fEventsIn.ctrl->type & CARLA_EVENT_DATA_MIDI_LL)
-                        {
-                            fEventsIn.data[j].midi.event_count = 0;
-                            fEventsIn.data[j].midi.size        = 0;
-                            evInMidiStates[j].position = event.time;
+                            if (fEventsOut.data[j].type & CARLA_EVENT_DATA_ATOM)
+                            {
+                                lv2_atom_buffer_reset(fEventsOut.data[j].atom, false);
+                            }
+                            else if (fEventsOut.data[j].type & CARLA_EVENT_DATA_EVENT)
+                            {
+                                lv2_event_buffer_reset(fEventsOut.data[j].event, LV2_EVENT_AUDIO_STAMP, fEventsOut.data[j].event->data);
+                            }
+                            else if (fEventsOut.data[j].type & CARLA_EVENT_DATA_MIDI_LL)
+                            {
+                                // not needed
+                            }
                         }
                     }
                     else
+                    {
                         startTime += timeOffset;
+                    }
                 }
 
                 switch (event.type)
