@@ -40,7 +40,7 @@ export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe
 export DEFAULT_QT=5
 
 make BUILDING_FOR_WINDOWS=true $JOBS
-make BUILDING_FOR_WINDOWS=true LDFLAGS="-L/opt/mingw32/i686-w64-mingw32/lib/" win32 $JOBS
+make BUILDING_FOR_WINDOWS=true LDFLAGS="-L/opt/mingw32/lib -L/opt/mingw32/i686-w64-mingw32/lib" win32 $JOBS
 
 export PYTHONPATH=`pwd`/source
 
@@ -63,6 +63,7 @@ $CXFREEZE ../../bin/resources/carla-plugin-patchbay
 
 cp ../../bin/*.dll Carla/
 cp ../../bin/*.exe Carla/
+rm Carla/carla-bridge-lv2-windows.exe
 rm Carla/carla-discovery-native.exe
 rm Carla/carla-lv2-export.exe
 
