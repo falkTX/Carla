@@ -1,0 +1,13 @@
+diff --git a/src/reader.c b/src/reader.c
+index 0cfa157..fad845a 100644
+--- a/src/reader.c
++++ b/src/reader.c
+@@ -1260,7 +1260,7 @@ read_predicateObjectList(SerdReader* reader, ReadContext ctx, bool* ate_dot)
+ 		} while (c == ';');
+ 
+ 		if (!ate_semi) {
+-			return r_err(reader, SERD_ERR_BAD_SYNTAX, "missing ';' or '.'\n");
++			r_err(reader, SERD_ERR_BAD_SYNTAX, "missing ';' or '.'\n");
+ 		}
+ 	}
+ 

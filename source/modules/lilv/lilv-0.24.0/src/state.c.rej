@@ -1,0 +1,42 @@
+--- src/state.c
++++ src/state.c
+@@ -415,35 +415,18 @@
+ 
+ LILV_API void
+ lilv_state_restore(const LilvState*           state,
+-                   LilvInstance*              instance,
++                   const LV2_State_Interface* iface,
++                   LV2_Handle                 handle,
+                    LilvSetPortValueFunc       set_value,
+                    void*                      user_data,
+                    uint32_t                   flags,
+                    const LV2_Feature *const * features)
+ {
+-	if (!state) {
+-		LILV_ERROR("lilv_state_restore() called on NULL state\n");
+-		return;
+-	}
+-
+-	LV2_State_Map_Path map_path = {
+-		(LilvState*)state, abstract_path, absolute_path };
+-	LV2_Feature map_feature = { LV2_STATE__mapPath, &map_path };
+-
+-	const LV2_Feature** sfeatures = add_features(features, &map_feature, NULL);
+-
+-	const LV2_Descriptor*      desc  = instance ? instance->lv2_descriptor : NULL;
+-	const LV2_State_Interface* iface = (desc && desc->extension_data)
+-		? (const LV2_State_Interface*)desc->extension_data(LV2_STATE__interface)
+-		: NULL;
+-
+ 	if (iface) {
+-		iface->restore(instance->lv2_handle, retrieve_callback,
+-		               (LV2_State_Handle)state, flags, sfeatures);
++		iface->restore(handle, retrieve_callback,
++		               (LV2_State_Handle)state, flags, features);
+ 	}
+ 
+-	free(sfeatures);
+-
+ 	if (set_value) {
+ 		lilv_state_emit_port_values(state, set_value, user_data);
+ 	}

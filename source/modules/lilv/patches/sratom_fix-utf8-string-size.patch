@@ -1,0 +1,58 @@
+From 9d5ddba1337babab9e684b770eed923f96208e19 Mon Sep 17 00:00:00 2001
+From: Hanspeter Portner <dev@open-music-kontrollers.ch>
+Date: Thu, 11 Feb 2016 20:21:11 +0100
+Subject: [PATCH] Fix UTF-8 string size in 'read_node'
+
+'sord_node_get_string_counted' returns character count, which then is used
+to forge strings and literals. But the character count is different from
+raw string size for strings containing multi-byte UTF-8 characters. Better
+use 'strlen' to get the raw byte size of the strings to be forged,
+if not, strings with multi-byte UTF-8 characters are truncatedly forged.
+---
+ src/sratom.c        | 12 ++++++++----
+ tests/sratom_test.c | 28 ++++++++++++++++++++++++++--
+ 2 files changed, 34 insertions(+), 6 deletions(-)
+
+diff --git a/src/sratom.c b/src/sratom.c
+index e0996c4..fdb4893 100644
+--- a/src/sratom.c
++++ b/src/sratom.c
+@@ -591,7 +591,8 @@ read_node(Sratom*         sratom,
+ 				lv2_atom_forge_write(forge, body, size);
+ 				free(body);
+ 			} else if (!strcmp(type_uri, LV2_ATOM__Path)) {
+-				lv2_atom_forge_path(forge, str, len);
++				const size_t str_len = str ? strlen(str) : 0;
++				lv2_atom_forge_path(forge, str, str_len);
+ 			} else if (!strcmp(type_uri, LV2_MIDI__MidiEvent)) {
+ 				lv2_atom_forge_atom(forge, len / 2, sratom->midi_MidiEvent);
+ 				for (const char* s = str; s < str + len; s += 2) {
+@@ -602,8 +603,9 @@ read_node(Sratom*         sratom,
+ 				}
+ 				lv2_atom_forge_pad(forge, len / 2);
+ 			} else {
++				const size_t str_len = str ? strlen(str) : 0;
+ 				lv2_atom_forge_literal(
+-					forge, str, len,
++					forge, str, str_len,
+ 					sratom->map->map(sratom->map->handle, type_uri),
+ 					0);
+ 			}
+@@ -611,13 +613,15 @@ read_node(Sratom*         sratom,
+ 			const char*  prefix   = "http://lexvo.org/id/iso639-3/";
+ 			const size_t lang_len = strlen(prefix) + strlen(language);
+ 			char*        lang_uri = (char*)calloc(lang_len + 1, 1);
++			const size_t str_len = str ? strlen(str) : 0;
+ 			snprintf(lang_uri, lang_len + 1, "%s%s", prefix, language);
+ 			lv2_atom_forge_literal(
+-				forge, str, len, 0,
++				forge, str, str_len, 0,
+ 				sratom->map->map(sratom->map->handle, lang_uri));
+ 			free(lang_uri);
+ 		} else {
+-			lv2_atom_forge_string(forge, str, len);
++			const size_t str_len = str ? strlen(str) : 0;
++			lv2_atom_forge_string(forge, str, str_len);
+ 		}
+ 	} else if (sord_node_get_type(node) == SORD_URI &&
+ 	           !(sratom->object_mode == SRATOM_OBJECT_MODE_BLANK_SUBJECT

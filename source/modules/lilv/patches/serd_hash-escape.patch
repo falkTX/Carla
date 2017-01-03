@@ -1,0 +1,13 @@
+diff --git a/src/node.c b/src/node.c
+index c25e06a..aa14416 100644
+--- a/src/node.c
++++ b/src/node.c
+@@ -173,6 +173,8 @@ serd_node_new_file_uri(const uint8_t* path,
+ 			serd_chunk_sink("/", 1, &chunk);
+ 		} else if (path[i] == '%') {
+ 			serd_chunk_sink("%%", 2, &chunk);
++		} else if (path[i] == '#') {
++			serd_chunk_sink("%23", 3, &chunk);
+ 		} else if (!escape || is_uri_path_char(path[i])) {
+ 			serd_chunk_sink(path + i, 1, &chunk);
+ 		} else {

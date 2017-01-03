@@ -1,0 +1,134 @@
+diff --git a/src/lilv_internal.h b/src/lilv_internal.h
+index af8e31a..72be413 100644
+--- a/src/lilv_internal.h
++++ b/src/lilv_internal.h
+@@ -185,6 +185,8 @@ struct LilvWorldImpl {
+ 		SordNode* lv2_requiredFeature;
+ 		SordNode* lv2_symbol;
+ 		SordNode* lv2_prototype;
++		SordNode* mod_builderVersion;
++		SordNode* mod_releaseNumber;
+ 		SordNode* owl_Ontology;
+ 		SordNode* pset_value;
+ 		SordNode* rdf_a;
+@@ -238,8 +240,10 @@ struct LilvUIImpl {
+ };
+ 
+ typedef struct LilvVersion {
++	int builder;
+ 	int minor;
+ 	int micro;
++	int release;
+ } LilvVersion;
+ 
+ /*
+@@ -335,6 +339,42 @@ lilv_version_cmp(const LilvVersion* a, const LilvVersion* b)
+ 	}
+ }
+ 
++static inline int
++lilv_version_cmp_mod(const LilvVersion* a, const LilvVersion* b)
++{
++	// same version
++	if (a->builder == b->builder && a->minor == b->minor
++	    && a->micro == b->micro && a->release == b->release)
++		return 0;
++
++	// check builder
++	if (a->builder < b->builder)
++		return -1;
++	if (a->builder > b->builder)
++		return 1;
++
++	// check minor
++	if (a->minor < b->minor)
++		return -1;
++	if (a->minor > b->minor)
++		return 1;
++
++	// check micro
++	if (a->micro < b->micro)
++		return -1;
++	if (a->micro > b->micro)
++		return 1;
++
++	// check release
++	if (a->release < b->release)
++		return -1;
++	if (a->release > b->release)
++		return 1;
++
++	// huh!?
++	return 0;
++}
++
+ struct LilvHeader*
+ lilv_collection_get_by_uri(const ZixTree* seq, const LilvNode* uri);
+ 
+diff --git a/src/world.c b/src/world.c
+index 1e51a2d..d52edf4 100644
+--- a/src/world.c
++++ b/src/world.c
+@@ -78,6 +78,8 @@ lilv_world_new(void)
+ 	world->uris.lv2_requiredFeature = NEW_URI(LV2_CORE__requiredFeature);
+ 	world->uris.lv2_symbol          = NEW_URI(LV2_CORE__symbol);
+ 	world->uris.lv2_prototype       = NEW_URI(LV2_CORE__prototype);
++	world->uris.mod_builderVersion  = NEW_URI("http://moddevices.com/ns/mod#builderVersion");
++	world->uris.mod_releaseNumber   = NEW_URI("http://moddevices.com/ns/mod#releaseNumber");
+ 	world->uris.owl_Ontology        = NEW_URI(NS_OWL "Ontology");
+ 	world->uris.pset_value          = NEW_URI(LV2_PRESETS__value);
+ 	world->uris.rdf_a               = NEW_URI(LILV_NS_RDF  "type");
+@@ -657,17 +659,27 @@ load_plugin_model(LilvWorld*      world,
+ static LilvVersion
+ get_version(LilvWorld* world, SordModel* model, const LilvNode* subject)
+ {
++	const SordNode* builder_node = sord_get(
++		model, subject->node, world->uris.mod_builderVersion, NULL, NULL);
+ 	const SordNode* minor_node = sord_get(
+ 		model, subject->node, world->uris.lv2_minorVersion, NULL, NULL);
+ 	const SordNode* micro_node = sord_get(
+ 		model, subject->node, world->uris.lv2_microVersion, NULL, NULL);
++	const SordNode* release_node = sord_get(
++		model, subject->node, world->uris.mod_releaseNumber, NULL, NULL);
+ 
+ 
+-	LilvVersion version = { 0, 0 };
++	LilvVersion version = { 0, 0, 0, 0 };
++	if (builder_node) {
++		version.builder = atoi((const char*)sord_node_get_string(builder_node));
++	}
+ 	if (minor_node && micro_node) {
+ 		version.minor = atoi((const char*)sord_node_get_string(minor_node));
+ 		version.micro = atoi((const char*)sord_node_get_string(micro_node));
+ 	}
++	if (release_node) {
++		version.release = atoi((const char*)sord_node_get_string(release_node));
++	}
+ 
+ 	return version;
+ }
+@@ -720,17 +732,19 @@ lilv_world_load_bundle(LilvWorld* world, const LilvNode* bundle_uri)
+ 		LilvVersion last_version = get_version(world, last_model, plugin_uri);
+ 		sord_free(this_model);
+ 		sord_free(last_model);
+-		const int cmp = lilv_version_cmp(&this_version, &last_version);
++		const int cmp = lilv_version_cmp_mod(&this_version, &last_version);
+ 		if (cmp > 0) {
+ 			zix_tree_insert((ZixTree*)unload_uris,
+ 			                lilv_node_duplicate(plugin_uri),
+ 			                NULL);
+-			LILV_WARNF("Replacing version %d.%d of <%s> from <%s>\n",
+-			           last_version.minor, last_version.micro,
++			LILV_WARNF("Replacing version %d:%d.%d-%d of <%s> from <%s>\n",
++			           last_version.builder, last_version.minor,
++			           last_version.micro, last_version.release,
+ 			           sord_node_get_string(plug),
+ 			           sord_node_get_string(last_bundle->node));
+-			LILV_NOTEF("New version %d.%d found in <%s>\n",
+-			           this_version.minor, this_version.micro,
++			LILV_NOTEF("New version %d:%d.%d-%d found in <%s>\n",
++			           this_version.builder, this_version.minor,
++			           this_version.micro, this_version.release,
+ 			           sord_node_get_string(bundle_node));
+ 		} else if (cmp < 0) {
+ 			LILV_WARNF("Ignoring bundle <%s>\n",

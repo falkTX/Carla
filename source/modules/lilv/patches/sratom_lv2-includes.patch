@@ -1,7 +1,24 @@
-diff --git a/source/modules/lilv/sratom-0.4.7/src/sratom.c b/source/modules/lilv/sratom-0.4.7/src/sratom.c
-index e0996c4..b6ea4b1 100644
---- a/source/modules/lilv/sratom-0.4.7/src/sratom.c
-+++ b/source/modules/lilv/sratom-0.4.7/src/sratom.c
+diff --git a/sratom/sratom.h b/sratom/sratom.h
+index 3e76954..5a9ec73 100644
+--- a/sratom/sratom.h
++++ b/sratom/sratom.h
+@@ -23,9 +23,9 @@
+ 
+ #include <stdint.h>
+ 
+-#include "lv2/lv2plug.in/ns/ext/urid/urid.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/atom.h"
+-#include "lv2/lv2plug.in/ns/ext/atom/forge.h"
++#include "lv2/urid.h"
++#include "lv2/atom.h"
++#include "lv2/atom-forge.h"
+ #include "serd/serd.h"
+ #include "sord/sord.h"
+ 
+diff --git a/src/sratom.c b/src/sratom.c
+index 04613fd..d220a6a 100644
+--- a/src/sratom.c
++++ b/src/sratom.c
 @@ -20,9 +20,9 @@
  #include <stdlib.h>
  #include <string.h>

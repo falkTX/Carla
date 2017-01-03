@@ -1,0 +1,10 @@
+--- src/util.c
++++ src/util.c
+@@ -29,7 +29,6 @@
+ #include <string.h>
+ 
+ #ifdef _WIN32
+-#    define _WIN32_WINNT 0x0600  /* for CreateSymbolicLink */
+ #    include <windows.h>
+ #    include <direct.h>
+ #    include <io.h>
