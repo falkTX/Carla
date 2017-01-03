@@ -1420,17 +1420,13 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     switch (inputs)
     {
     case 2:
-        channelNames = {
-            "Left",
-            "Right",
-        };
+        channelNames.add("Left");
+        channelNames.add("Right");
         break;
     case 3:
-        channelNames = {
-            "Left",
-            "Right",
-            "Sidechain",
-        };
+        channelNames.add("Left");
+        channelNames.add("Right");
+        channelNames.add("Sidechain");
         break;
     }
 

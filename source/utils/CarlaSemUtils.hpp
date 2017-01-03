@@ -196,7 +196,7 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     const uint nsecs = (msecs % 1000) * 1000000;
 
 # if defined(CARLA_OS_MAC)
-    const mach_timespec timeout = { secs, nsecs };
+    const mach_timespec timeout = { secs, static_cast<int>(nsecs) };
 
     try {
         return (::semaphore_timedwait(server ? sem.sem : sem.sem2, timeout) == KERN_SUCCESS);

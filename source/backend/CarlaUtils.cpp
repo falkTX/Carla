@@ -92,7 +92,7 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
             using namespace juce;
             initiated = true;
             AudioUnitPluginFormat auFormat;
-            gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false);
+            gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false, false);
         }
 
         return static_cast<uint>(gCachedAuPluginResults.size());

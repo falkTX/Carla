@@ -10,7 +10,6 @@ fi
 
 TARGETDIR=$HOME/builds
 
-export CLANG="true"
 export MACOS="true"
 export CC=clang
 export CXX=clang++
@@ -22,26 +21,26 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-O2 -m64"
+export CFLAGS="-O2 -m64 -DHAVE_CPP11_SUPPORT=0"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 
 export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
 
-make $JOBS
+make HAVE_ZYN_DEPS=false $JOBS
 
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-O2 -m32"
+export CFLAGS="-O2 -m32 -DHAVE_CPP11_SUPPORT=0"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m32"
 
 export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
 
-make posix32 $JOBS
+make HAVE_ZYN_DEPS=false posix32 $JOBS
 
 ##############################################################################################
 # Build Mac App
@@ -54,6 +53,7 @@ unset LDLAGS
 unset PKG_CONFIG_PATH
 
 rm -rf ./build/Carla
+rm -rf ./build/Carla.app
 rm -rf ./build/exe.*
 rm -rf ./build/*.lv2
 
@@ -82,6 +82,7 @@ rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-qt5
 
 find build/ -type f -name "*.py" -delete
 rm build/Carla.app/Contents/MacOS/resources/carla-plugin
+rm build/Carla.app/Contents/MacOS/resources/carla-plugin-patchbay
 rm build/Carla.app/Contents/MacOS/resources/*-ui
 rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
 
@@ -96,17 +97,18 @@ install_name_tool -change "@rpath/QtWidgets.framework/Versions/5/QtWidgets"     
 done
 cd ../../../..
 
+cp build/carla-plugin.app/Contents/MacOS/carla-plugin     build/Carla.app/Contents/MacOS/resources/
+cp build/carla-plugin.app/Contents/MacOS/fcntl.so         build/Carla.app/Contents/MacOS/resources/ 2>/dev/null || true
+cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui       build/Carla.app/Contents/MacOS/resources/
+cp build/midipattern-ui.app/Contents/MacOS/midipattern-ui build/Carla.app/Contents/MacOS/resources/
+cp build/notes-ui.app/Contents/MacOS/notes-ui             build/Carla.app/Contents/MacOS/resources/
+#cp bin/resources/zynaddsubfx-ui                           build/Carla.app/Contents/MacOS/resources/
+rm -rf build/carla-plugin.app build/bigmeter-ui.app build/midipattern-ui.app build/notes-ui.app
+
 cd build/Carla.app/Contents/MacOS/resources/
 ln -sf ../*.so* ../Qt* ../imageformats ../platforms .
+ln -sf carla-plugin carla-plugin-patchbay
 cd ../../../../..
-
-cp build/carla-plugin.app/Contents/MacOS/carla-plugin  build/Carla.app/Contents/MacOS/resources/
-cp build/carla-plugin.app/Contents/MacOS/fcntl.so      build/Carla.app/Contents/MacOS/resources/ 2>/dev/null || true
-cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui    build/Carla.app/Contents/MacOS/resources/
-cp build/bigmeter-ui.app/Contents/MacOS/midipattern-ui build/Carla.app/Contents/MacOS/resources/
-cp build/notes-ui.app/Contents/MacOS/notes-ui          build/Carla.app/Contents/MacOS/resources/
-cp bin/resources/zynaddsubfx-ui                        build/Carla.app/Contents/MacOS/resources/
-rm -rf build/carla-plugin.app build/bigmeter-ui.app build/midipattern-ui.app build/notes-ui.app
 
 mkdir build/carla.lv2
 mkdir build/carla.lv2/resources

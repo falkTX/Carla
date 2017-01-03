@@ -18,9 +18,7 @@
 #ifndef CARLA_STYLE_PLUGIN_HPP_INCLUDED
 #define CARLA_STYLE_PLUGIN_HPP_INCLUDED
 
-#include "CarlaDefines.h"
-
-#include <QtCore/Qt>
+#include "CarlaStyle.hpp"
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QStylePlugin>

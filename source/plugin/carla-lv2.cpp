@@ -633,7 +633,7 @@ public:
                     fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+static_cast<float>(addedBarBeats),
                                                           fLastPositionData.beatsPerBar);
 
-                    const double rest  = std::fmod(fLastPositionData.barBeat, 1.0);
+                    const double rest  = std::fmod(fLastPositionData.barBeat, 1.0f);
                     fTimeInfo.bbt.beat = static_cast<int32_t>(fLastPositionData.barBeat-rest+1.0);
                     fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
 

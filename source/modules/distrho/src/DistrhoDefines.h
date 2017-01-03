@@ -55,7 +55,9 @@
 
 /* Check for C++11 support */
 #if defined(HAVE_CPP11_SUPPORT)
-# define DISTRHO_PROPER_CPP11_SUPPORT
+# if HAVE_CPP11_SUPPORT
+#  define DISTRHO_PROPER_CPP11_SUPPORT
+# endif
 #elif __cplusplus >= 201103L || (defined(__GNUC__) && defined(__GXX_EXPERIMENTAL_CXX0X__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405) || __has_extension(cxx_noexcept)
 # define DISTRHO_PROPER_CPP11_SUPPORT
 # if (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) < 407 && ! defined(__clang__)) || (defined(__clang__) && ! __has_extension(cxx_override_control))

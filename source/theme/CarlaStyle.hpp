@@ -19,8 +19,19 @@
 #define CARLA_STYLE_HPP_INCLUDED
 
 #include "CarlaDefines.h"
+#undef noexcept
+#undef override
+#undef final
 
 #include <QtCore/Qt>
+
+#ifdef CARLA_OS_MAC
+# undef Q_COMPILER_UNICODE_STRINGS
+# undef Q_DECL_CONSTEXPR
+# undef Q_DECL_NOEXCEPT_EXPR
+# define Q_DECL_CONSTEXPR
+# define Q_DECL_NOEXCEPT_EXPR(x)
+#endif
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
 # include <QtWidgets/QCommonStyle>

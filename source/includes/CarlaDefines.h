@@ -58,7 +58,9 @@
 
 /* Check for C++11 support */
 #if defined(HAVE_CPP11_SUPPORT)
-# define CARLA_PROPER_CPP11_SUPPORT
+# if HAVE_CPP11_SUPPORT
+#   define CARLA_PROPER_CPP11_SUPPORT
+# endif
 #elif defined(__cplusplus)
 # if __cplusplus >= 201103L || (defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405 && defined(__GXX_EXPERIMENTAL_CXX0X__)) || __has_extension(cxx_noexcept)
 #  define CARLA_PROPER_CPP11_SUPPORT
