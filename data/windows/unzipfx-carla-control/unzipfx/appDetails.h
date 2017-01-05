@@ -2,6 +2,7 @@
 #ifndef __APP_DETAILS_H__
 #define __APP_DETAILS_H__
 
+#define REAL_BUILD
 #include "../../../../source/includes/CarlaDefines.h"
 
 #define SFX_APP_VERSION CARLA_VERSION_STRING
