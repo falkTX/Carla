@@ -16,7 +16,7 @@ make -C data/windows/unzipfx-carla-control/ -f Makefile.linux clean
 
 rm -rf Carla CarlaControl *.zip Carla-2.0* *.xz
 rm -rf build build-carla build-carla-control build-lv2 build-vst
-extra
+# extra
 
 apt-get install linuxsampler-static fluidsynth-static ntk-static fftw3-static mxml-static zlib-static liblo-static
 apt-get install libclthreads-static libclxclient-static zita-convolver-static zita-resampler-static
@@ -116,21 +116,35 @@ cxfreeze-python3 --include-modules=re,sip,subprocess,inspect build-carla/resourc
 
 cp /usr/lib/libpython3.2mu.so.1.0 build-carla/
 cp /usr/lib/libffi.so.5           build-carla/
+cp /usr/lib/libmagic.so.1         build-carla/
 cp /usr/lib/libssl.so.0.9.8       build-carla/
 cp /usr/lib/libcrypto.so.0.9.8    build-carla/
+cp /lib/libbz2.so.1.0             build-carla/
 cp /lib/libselinux.so.1           build-carla/
 
 cp /usr/lib/libpython3.2mu.so.1.0 build-carla-control/
+cp /usr/lib/libmagic.so.1         build-carla-control/
 cp /usr/lib/libffi.so.5           build-carla-control/
 cp /usr/lib/libssl.so.0.9.8       build-carla-control/
 cp /usr/lib/libcrypto.so.0.9.8    build-carla-control/
+cp /lib/libbz2.so.1.0             build-carla-control/
 cp /lib/libselinux.so.1           build-carla-control/
 
 find build-carla -name "*.py" -delete
+find build-carla -name PyQt4.QtAssistant.so -delete
+find build-carla -name PyQt4.QtNetwork.so -delete
+find build-carla -name PyQt4.QtScript.so -delete
+find build-carla -name PyQt4.QtTest.so -delete
+find build-carla -name PyQt4.QtXml.so -delete
 rm -rf build-carla/src
 rm -f  build-carla/*.def
 
 find build-carla-control -name "*.py" -delete
+find build-carla-control -name PyQt4.QtAssistant.so -delete
+find build-carla-control -name PyQt4.QtNetwork.so -delete
+find build-carla-control -name PyQt4.QtScript.so -delete
+find build-carla-control -name PyQt4.QtTest.so -delete
+find build-carla-control -name PyQt4.QtXml.so -delete
 rm -rf build-carla-control/src
 rm -f  build-carla-control/*.def
 
