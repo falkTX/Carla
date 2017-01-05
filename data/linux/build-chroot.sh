@@ -129,6 +129,7 @@ cp /usr/lib/libssl.so.0.9.8       build-carla-control/
 cp /usr/lib/libcrypto.so.0.9.8    build-carla-control/
 cp /lib/libbz2.so.1.0             build-carla-control/
 cp /lib/libselinux.so.1           build-carla-control/
+cp build-carla/libcarla_utils.so  build-carla-control/
 
 find build-carla -name "*.py" -delete
 find build-carla -name PyQt4.QtAssistant.so -delete
