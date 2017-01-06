@@ -22,7 +22,8 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginAU.cpp.o \
 	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
-	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o
+	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
+	$(OBJDIR)/CarlaPluginJack.cpp.o
 
 TARGETS = \
 	$(MODULEDIR)/carla_plugin.a

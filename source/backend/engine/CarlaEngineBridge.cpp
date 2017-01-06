@@ -587,7 +587,7 @@ public:
 
         const bool wasFirstIdle(fFirstIdle);
 
-        if (fFirstIdle)
+        if (wasFirstIdle)
         {
             fFirstIdle = false;
             fLastPingTime = Time::currentTimeMillis();

@@ -903,6 +903,8 @@ public:
     static CarlaPlugin* newFileGIG(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newFileSF2(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newFileSFZ(const Initializer& init);
+
+    static CarlaPlugin* newJackApp(const Initializer& init);
 #endif
 
     // -------------------------------------------------------------------

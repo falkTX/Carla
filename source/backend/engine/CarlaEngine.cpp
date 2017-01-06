@@ -638,6 +638,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         case PLUGIN_SFZ:
             plugin = CarlaPlugin::newFileSFZ(initializer);
             break;
+
+        case PLUGIN_JACK:
+#ifndef BUILD_BRIDGE
+            plugin = CarlaPlugin::newJackApp(initializer);
+#endif
+            break;
         }
     }
 
