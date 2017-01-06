@@ -30,8 +30,8 @@ ifeq ($(CARLA_VESTIGE_HEADER),true)
 BUILD_CXX_FLAGS += -DVESTIGE_HEADER
 endif
 
-32BIT_FLAGS += -DBRIDGE_PLUGIN
-64BIT_FLAGS += -DBRIDGE_PLUGIN
+32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
+64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -170,7 +170,6 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngineBridge.cpp.o \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
-	$(OBJDIR)/CarlaPluginBridge.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.o \

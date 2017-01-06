@@ -1,6 +1,6 @@
 /*
  * Carla Bridge utils
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,159 +18,20 @@
 #ifndef CARLA_BRIDGE_UTILS_HPP_INCLUDED
 #define CARLA_BRIDGE_UTILS_HPP_INCLUDED
 
-#include "CarlaRingBuffer.hpp"
+#include "CarlaBridgeDefines.hpp"
+#include "CarlaString.hpp"
 
 #if defined(CARLA_OS_WIN) && defined(BUILDING_CARLA_FOR_WINDOWS)
-# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "Global\\carla-bridge_shm_ap_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "Global\\carla-bridge_shm_rtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "Global\\carla-bridge_shm_nonrtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "Global\\carla-bridge_shm_nonrtS_"
 #else
-# define PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL    "/crlbrdg_shm_ap_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT     "/crlbrdg_shm_rtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "/crlbrdg_shm_nonrtC_"
 # define PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "/crlbrdg_shm_nonrtS_"
 #endif
 
-// -----------------------------------------------------------------------
-
-// Server sends these to client during RT
-enum PluginBridgeRtClientOpcode {
-    kPluginBridgeRtClientNull = 0,
-    kPluginBridgeRtClientSetAudioPool,            // ulong/ptr
-    kPluginBridgeRtClientControlEventParameter,   // uint/frame, byte/chan, ushort, float
-    kPluginBridgeRtClientControlEventMidiBank,    // uint/frame, byte/chan, ushort
-    kPluginBridgeRtClientControlEventMidiProgram, // uint/frame, byte/chan, ushort
-    kPluginBridgeRtClientControlEventAllSoundOff, // uint/frame, byte/chan
-    kPluginBridgeRtClientControlEventAllNotesOff, // uint/frame, byte/chan
-    kPluginBridgeRtClientMidiEvent,               // uint/frame, byte/port, byte/size, byte[]/data
-    kPluginBridgeRtClientProcess,
-    kPluginBridgeRtClientQuit
-};
-
-// Server sends these to client during non-RT
-enum PluginBridgeNonRtClientOpcode {
-    kPluginBridgeNonRtClientNull = 0,
-    kPluginBridgeNonRtClientPing,
-    kPluginBridgeNonRtClientPingOnOff,               // bool
-    kPluginBridgeNonRtClientActivate,
-    kPluginBridgeNonRtClientDeactivate,
-    kPluginBridgeNonRtClientSetBufferSize,           // uint
-    kPluginBridgeNonRtClientSetSampleRate,           // double
-    kPluginBridgeNonRtClientSetOffline,
-    kPluginBridgeNonRtClientSetOnline,
-    kPluginBridgeNonRtClientSetParameterValue,       // uint, float
-    kPluginBridgeNonRtClientSetParameterMidiChannel, // uint, byte
-    kPluginBridgeNonRtClientSetParameterMidiCC,      // uint, short
-    kPluginBridgeNonRtClientSetProgram,              // int
-    kPluginBridgeNonRtClientSetMidiProgram,          // int
-    kPluginBridgeNonRtClientSetCustomData,           // uint/size, str[], uint/size, str[], uint/size, str[]
-    kPluginBridgeNonRtClientSetChunkDataFile,        // uint/size, str[] (filename, base64 content)
-    kPluginBridgeNonRtClientSetCtrlChannel,          // short
-    kPluginBridgeNonRtClientSetOption,               // uint/option, bool
-    kPluginBridgeNonRtClientPrepareForSave,
-    kPluginBridgeNonRtClientShowUI,
-    kPluginBridgeNonRtClientHideUI,
-    kPluginBridgeNonRtClientUiParameterChange,       // uint, float
-    kPluginBridgeNonRtClientUiProgramChange,         // uint
-    kPluginBridgeNonRtClientUiMidiProgramChange,     // uint
-    kPluginBridgeNonRtClientUiNoteOn,                // byte, byte, byte
-    kPluginBridgeNonRtClientUiNoteOff,               // byte, byte
-    kPluginBridgeNonRtClientQuit
-};
-
-// Client sends these to server during non-RT
-enum PluginBridgeNonRtServerOpcode {
-    kPluginBridgeNonRtServerNull = 0,
-    kPluginBridgeNonRtServerPong,
-    kPluginBridgeNonRtServerPluginInfo1,        // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
-    kPluginBridgeNonRtServerPluginInfo2,        // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
-    kPluginBridgeNonRtServerAudioCount,         // uint/ins, uint/outs
-    kPluginBridgeNonRtServerMidiCount,          // uint/ins, uint/outs
-    kPluginBridgeNonRtServerCvCount,            // uint/ins, uint/outs
-    kPluginBridgeNonRtServerParameterCount,     // uint/count
-    kPluginBridgeNonRtServerProgramCount,       // uint/count
-    kPluginBridgeNonRtServerMidiProgramCount,   // uint/count
-    kPluginBridgeNonRtServerPortName,           // byte/type, uint/index, uint/size, str[] (name)
-    kPluginBridgeNonRtServerParameterData1,     // uint/index, int/rindex, uint/type, uint/hints, short/cc
-    kPluginBridgeNonRtServerParameterData2,     // uint/index, uint/size, str[] (name), uint/size, str[] (symbol), uint/size, str[] (unit)
-    kPluginBridgeNonRtServerParameterRanges,    // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
-    kPluginBridgeNonRtServerParameterValue,     // uint/index, float/value
-    kPluginBridgeNonRtServerParameterValue2,    // uint/index, float/value (used for init/output parameters only, don't resend values)
-    kPluginBridgeNonRtServerDefaultValue,       // uint/index, float/value
-    kPluginBridgeNonRtServerCurrentProgram,     // int/index
-    kPluginBridgeNonRtServerCurrentMidiProgram, // int/index
-    kPluginBridgeNonRtServerProgramName,        // uint/index, uint/size, str[] (name)
-    kPluginBridgeNonRtServerMidiProgramData,    // uint/index, uint/bank, uint/program, uint/size, str[] (name)
-    kPluginBridgeNonRtServerSetCustomData,      // uint/size, str[], uint/size, str[], uint/size, str[]
-    kPluginBridgeNonRtServerSetChunkDataFile,   // uint/size, str[] (filename, base64 content)
-    kPluginBridgeNonRtServerSetLatency,         // uint
-    kPluginBridgeNonRtServerReady,
-    kPluginBridgeNonRtServerSaved,
-    kPluginBridgeNonRtServerUiClosed,
-    kPluginBridgeNonRtServerError               // uint/size, str[]
-};
-
-// used for kPluginBridgeNonRtServerPortName
-enum PluginBridgePortType {
-    kPluginBridgePortNull = 0,
-    kPluginBridgePortAudioInput,
-    kPluginBridgePortAudioOutput,
-    kPluginBridgePortCvInput,
-    kPluginBridgePortCvOutput,
-    kPluginBridgePortMidiInput,
-    kPluginBridgePortMidiOutput,
-    kPluginBridgePortTypeCount
-};
-
-// -----------------------------------------------------------------------
-
-struct BridgeSemaphore {
-    union {
-        void* server;
-        char _padServer[64];
-    };
-    union {
-        void* client;
-        char _padClient[64];
-    };
-};
-
-// needs to be 64bit aligned
-struct BridgeTimeInfo {
-    uint64_t playing;
-    uint64_t frame;
-    uint64_t usecs;
-    uint32_t valid;
-    // bbt
-    int32_t bar, beat, tick;
-    float beatsPerBar, beatType;
-    double barStartTick, ticksPerBeat, beatsPerMinute;
-};
-
-// -----------------------------------------------------------------------
-
-static const std::size_t kBridgeRtClientDataMidiOutSize = 512*4;
-
-// Server => Client RT
-struct BridgeRtClientData {
-    BridgeSemaphore sem;
-    BridgeTimeInfo timeInfo;
-    SmallStackBuffer ringBuffer;
-    uint8_t midiOut[kBridgeRtClientDataMidiOutSize];
-};
-
-// Server => Client Non-RT
-struct BridgeNonRtClientData {
-    BigStackBuffer ringBuffer;
-};
-
-// Client => Server Non-RT
-struct BridgeNonRtServerData {
-    HugeStackBuffer ringBuffer;
-};
-
-// -----------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
 
 static inline
 const char* PluginBridgeRtClientOpcode2str(const PluginBridgeRtClientOpcode opcode) noexcept
@@ -335,6 +196,26 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
     return nullptr;
 }
 
-// -----------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------------------------
+
+struct BridgeAudioPool {
+    float* data;
+    std::size_t dataSize;
+    CarlaString filename;
+    char shm[64];
+
+    BridgeAudioPool() noexcept;
+    ~BridgeAudioPool() noexcept;
+
+    bool initializeServer() noexcept;
+    bool attachClient(const char* const fname) noexcept;
+    void clear() noexcept;
+
+    void resize(const uint32_t bufferSize, const uint32_t audioPortCount, const uint32_t cvPortCount) noexcept;
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
+};
+
+// -------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_BRIDGE_UTILS_HPP_INCLUDED

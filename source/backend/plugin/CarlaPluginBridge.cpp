@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Bridge
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,7 +15,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#if defined(BUILD_BRIDGE) && defined(BRIDGE_PLUGIN)
+#ifdef BUILD_BRIDGE
 # error This file should be used under bridge mode
 #endif
 
@@ -48,88 +48,6 @@ CARLA_BACKEND_START_NAMESPACE
 // Fallback data
 
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
-
-// -------------------------------------------------------------------------------------------------------------------
-
-struct BridgeAudioPool {
-    CarlaString filename;
-    std::size_t size;
-    float* data;
-    carla_shm_t shm;
-
-    BridgeAudioPool() noexcept
-        : filename(),
-          size(0),
-          data(nullptr)
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(carla_shm_t_INIT) {}
-#else
-    {
-        carla_shm_init(shm);
-    }
-#endif
-
-    ~BridgeAudioPool() noexcept
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    bool initialize() noexcept
-    {
-        char tmpFileBase[64];
-
-        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL "XXXXXX");
-
-        shm = carla_shm_create_temp(tmpFileBase);
-
-        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
-
-        filename = tmpFileBase;
-        return true;
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (! carla_is_shm_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
-            return;
-        }
-
-        if (data != nullptr)
-        {
-            carla_shm_unmap(shm, data);
-            data = nullptr;
-        }
-
-        size = 0;
-        carla_shm_close(shm);
-        carla_shm_init(shm);
-    }
-
-    void resize(const uint32_t bufferSize, const uint32_t audioPortCount, const uint32_t cvPortCount) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm),);
-
-        if (data != nullptr)
-            carla_shm_unmap(shm, data);
-
-        size = (audioPortCount+cvPortCount)*bufferSize*sizeof(float);
-
-        if (size == 0)
-            size = sizeof(float);
-
-        data = (float*)carla_shm_map(shm, size);
-        std::memset(data, 0, size);
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
-};
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -2559,7 +2477,7 @@ public:
         // ---------------------------------------------------------------
         // init sem/shm
 
-        if (! fShmAudioPool.initialize())
+        if (! fShmAudioPool.initializeServer())
         {
             carla_stderr("Failed to initialize shared memory audio pool");
             return false;
@@ -2757,7 +2675,7 @@ private:
         fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, fInfo.cvIns+fInfo.cvOuts);
 
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
-        fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.size));
+        fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.dataSize));
         fShmRtClientControl.commitWrite();
 
         waitForClient("resize-pool", 5000);
@@ -2814,3 +2732,5 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 CARLA_BACKEND_END_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
+
+#include "CarlaBridgeUtils.cpp"

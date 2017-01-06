@@ -51,58 +51,6 @@ CARLA_BACKEND_START_NAMESPACE
 
 // -------------------------------------------------------------------
 
-struct BridgeAudioPool {
-    CarlaString filename;
-    float* data;
-    char shm[64];
-
-    BridgeAudioPool() noexcept
-        : filename(),
-          data(nullptr)
-    {
-        carla_zeroChars(shm, 64);
-        jackbridge_shm_init(shm);
-    }
-
-    ~BridgeAudioPool() noexcept
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (! jackbridge_shm_is_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
-            return;
-        }
-
-        data = nullptr;
-
-        jackbridge_shm_close(shm);
-        jackbridge_shm_init(shm);
-    }
-
-    bool attach() noexcept
-    {
-        // must be invalid right now
-        CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
-
-        jackbridge_shm_attach(shm, filename);
-
-        return jackbridge_shm_is_valid(shm);
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
-};
-
-// -------------------------------------------------------------------
-
 struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     CarlaString filename;
     BridgeRtClientData* data;
@@ -417,14 +365,12 @@ public:
           fShmRtClientControl(),
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
+          fBaseNameAudioPool(audioPoolBaseName),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
-
-        fShmAudioPool.filename  = PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL;
-        fShmAudioPool.filename += audioPoolBaseName;
 
         fShmRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT;
         fShmRtClientControl.filename += rtClientBaseName;
@@ -456,7 +402,7 @@ public:
             return false;
         }
 
-        if (! fShmAudioPool.attach())
+        if (! fShmAudioPool.attachClient(fBaseNameAudioPool))
         {
             carla_stderr("Failed to attach to audio pool shared memory");
             return false;
@@ -1639,6 +1585,8 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
+    CarlaString fBaseNameAudioPool;
+
     bool fIsOffline;
     bool fFirstIdle;
     int64_t fLastPingTime;
@@ -1655,7 +1603,7 @@ CarlaEngine* CarlaEngine::newBridge(const char* const audioPoolBaseName, const c
 
 // -----------------------------------------------------------------------
 
-#ifdef BRIDGE_PLUGIN
+#ifdef BUILD_BRIDGE_ALTERNATIVE_ARCH
 CarlaPlugin* CarlaPlugin::newNative(const CarlaPlugin::Initializer&)              { return nullptr; }
 CarlaPlugin* CarlaPlugin::newFileGIG(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
 CarlaPlugin* CarlaPlugin::newFileSF2(const CarlaPlugin::Initializer&, const bool) { return nullptr; }
@@ -1673,5 +1621,7 @@ extern "C" __attribute__ ((visibility("default")))
 #endif
 void carla_register_native_plugin_carla();
 void carla_register_native_plugin_carla(){}
+
+#include "CarlaBridgeUtils.cpp"
 
 // -----------------------------------------------------------------------
