@@ -15,7 +15,7 @@ make -C data/windows/unzipfx-carla/ -f Makefile.linux clean
 make -C data/windows/unzipfx-carla-control/ -f Makefile.linux clean
 
 rm -rf Carla CarlaControl *.zip Carla-2.0* *.xz
-rm -rf build build-carla build-carla-control build-lv2 build-vst
+rm -rf build-carla build-carla-control build-lv2 build-vst carla carla-control
 # extra
 
 apt-get install linuxsampler-static fluidsynth-static ntk-static fftw3-static mxml-static zlib-static liblo-static
