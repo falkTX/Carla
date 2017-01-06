@@ -51,6 +51,8 @@ public:
         fParameters[kParameterMeasures]  = 4.0f;
         fParameters[kParameterDefLength] = 4.0f;
         fParameters[kParameterQuantize]  = 4.0f;
+
+        fMaxTicks = 48.0*fTimeSigNum*fParameters[kParameterMeasures] /2; // FIXME: why /2 ?
     }
 
 protected:
@@ -348,9 +350,11 @@ protected:
         midiEvent.data[3] = event->data[3];
         midiEvent.size    = event->size;
 
+#ifdef DEBUG
         carla_stdout("Playing at %f :: %03X:%03i:%03i",
                      float(double(midiEvent.time)*fTicksPerFrame),
                      midiEvent.data[0], midiEvent.data[1], midiEvent.data[2]);
+#endif
 
         NativePluginAndUiClass::writeMidiEvent(&midiEvent);
     }

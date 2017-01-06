@@ -57,9 +57,64 @@ void EngineInternalEvents::clear() noexcept
 // -----------------------------------------------------------------------
 // InternalTime
 
+static const float kTicksPerBeat = 1920.0f;
+
 EngineInternalTime::EngineInternalTime() noexcept
     : playing(false),
-      frame(0) {}
+      frame(0),
+      bpm(120.0),
+      sampleRate(0.0),
+      tick(0.0) {}
+
+void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t newFrames) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
+
+    info.playing = playing;
+    info.frame   = frame;
+    info.usecs   = 0;
+
+    if (newFrames == 0)
+    {
+        info.valid = EngineTimeInfo::kValidBBT;
+        info.bbt.beatsPerBar = 4.0f;
+        info.bbt.beatType = 4.0f;
+        info.bbt.ticksPerBeat = kTicksPerBeat;
+        info.bbt.beatsPerMinute = bpm;
+
+        double abs_beat, abs_tick;
+
+        {
+            const double min = frame / (sampleRate * 60.0);
+            abs_tick = min * bpm * kTicksPerBeat;
+            abs_beat = abs_tick / kTicksPerBeat;
+        }
+
+        info.bbt.bar  = abs_beat / info.bbt.beatsPerBar;
+        info.bbt.beat = abs_beat - (info.bbt.bar * info.bbt.beatsPerBar) + 1;
+        tick          = abs_tick - (abs_beat * kTicksPerBeat);
+        info.bbt.barStartTick = info.bbt.bar * info.bbt.beatsPerBar * kTicksPerBeat;
+        info.bbt.bar++;
+    }
+    else
+    {
+        tick += newFrames * kTicksPerBeat * bpm / (sampleRate * 60);
+
+        while (tick >= kTicksPerBeat)
+        {
+            tick -= kTicksPerBeat;
+
+            if (++info.bbt.beat > info.bbt.beatsPerBar)
+            {
+                info.bbt.beat = 1;
+                ++info.bbt.bar;
+                info.bbt.barStartTick += info.bbt.beatsPerBar * kTicksPerBeat;
+            }
+        }
+    }
+
+    info.bbt.tick = (int)(tick + 0.5);
+}
 
 // -----------------------------------------------------------------------
 // NextAction
@@ -253,6 +308,16 @@ void CarlaEngine::ProtectedData::close()
     name.clear();
 }
 
+void CarlaEngine::ProtectedData::initTime()
+{
+    time.playing    = false;
+    time.frame      = 0;
+    time.bpm        = 120.0;
+    time.sampleRate = sampleRate;
+    time.tick       = 0.0;
+    time.fillEngineTimeInfo(timeInfo, 0);
+}
+
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
@@ -351,13 +416,10 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 {
     pData->doNextPluginAction(true);
 
-    if (pData->time.playing)
-        pData->time.frame += pData->bufferSize;
-
-    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+    if (pData->time.playing && pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
     {
-        pData->timeInfo.playing = pData->time.playing;
-        pData->timeInfo.frame   = pData->time.frame;
+        pData->time.frame += pData->bufferSize;
+        pData->time.fillEngineTimeInfo(pData->timeInfo, pData->bufferSize);
     }
 }
 

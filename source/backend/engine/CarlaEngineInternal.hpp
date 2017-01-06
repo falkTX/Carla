@@ -112,8 +112,13 @@ private:
 struct EngineInternalTime {
     bool playing;
     uint64_t frame;
+    double bpm;
+    double sampleRate;
+    double tick;
 
     EngineInternalTime() noexcept;
+
+    void fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t newFrames) noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };
@@ -218,6 +223,8 @@ struct CarlaEngine::ProtectedData {
 
     bool init(const char* const clientName);
     void close();
+
+    void initTime();
 
     // -------------------------------------------------------------------
 

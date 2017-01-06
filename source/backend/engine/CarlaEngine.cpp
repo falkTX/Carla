@@ -1341,16 +1341,19 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 void CarlaEngine::transportPlay() noexcept
 {
     pData->time.playing = true;
+    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
 }
 
 void CarlaEngine::transportPause() noexcept
 {
     pData->time.playing = false;
+    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
 }
 
 void CarlaEngine::transportRelocate(const uint64_t frame) noexcept
 {
     pData->time.frame = frame;
+    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
 }
 
 // -----------------------------------------------------------------------
@@ -1663,6 +1666,9 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
         pData->graph.setSampleRate(newSampleRate);
     }
 #endif
+
+    pData->time.sampleRate = newSampleRate;
+    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {

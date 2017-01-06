@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin Host
- * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -953,6 +953,7 @@ public:
 
         pData->bufferSize = jackbridge_get_buffer_size(fClient);
         pData->sampleRate = jackbridge_get_sample_rate(fClient);
+        pData->initTime();
 
         jackbridge_set_thread_init_callback(fClient, carla_jack_thread_init_callback, nullptr);
         jackbridge_set_buffer_size_callback(fClient, carla_jack_bufsize_callback, this);
@@ -1117,6 +1118,7 @@ public:
             fClient = client;
             pData->bufferSize = jackbridge_get_buffer_size(client);
             pData->sampleRate = jackbridge_get_sample_rate(client);
+            pData->initTime();
 
             jackbridge_set_buffer_size_callback(client, carla_jack_bufsize_callback, this);
             jackbridge_set_sample_rate_callback(client, carla_jack_srate_callback, this);
@@ -1532,7 +1534,9 @@ protected:
                 pData->timeInfo.bbt.beatsPerMinute = fTransportPos.beats_per_minute;
             }
             else
+            {
                 pData->timeInfo.valid = 0x0;
+            }
         }
         else
         {
@@ -1544,6 +1548,8 @@ protected:
     void handleJackProcessCallback(const uint32_t nframes)
     {
         const PendingRtEventsRunner prt(this);
+
+        CARLA_SAFE_ASSERT_RETURN(nframes == pData->bufferSize,);
 
         saveTransportInfo();
 

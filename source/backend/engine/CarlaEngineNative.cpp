@@ -603,6 +603,7 @@ public:
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
         pData->sampleRate = pHost->get_sample_rate(pHost->handle);
+        pData->initTime();
 
         if (outChan == 0)
             outChan = inChan;

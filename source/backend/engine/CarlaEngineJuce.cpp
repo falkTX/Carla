@@ -200,6 +200,7 @@ public:
 
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
+        pData->initTime();
 
         pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
 
@@ -495,7 +496,7 @@ protected:
             fMidiInEvents.mutex.unlock();
         }
 
-        pData->graph.process(pData, inputChannelData, outputChannelData, static_cast<uint32_t>(numSamples));
+        pData->graph.process(pData, inputChannelData, outputChannelData, nframes);
 
         fMidiOutMutex.lock();
 

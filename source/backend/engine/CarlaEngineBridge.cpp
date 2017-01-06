@@ -472,6 +472,8 @@ public:
         CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
         pData->sampleRate = fShmNonRtClientControl.readDouble();
 
+        pData->initTime();
+
         if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
             return false;
 

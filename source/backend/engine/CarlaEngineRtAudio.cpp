@@ -282,6 +282,7 @@ public:
 
         pData->bufferSize = bufferFrames;
         pData->sampleRate = fAudio.getStreamSampleRate();
+        pData->initTime();
 
         fAudioInCount  = iParams.nChannels;
         fAudioOutCount = oParams.nChannels;
