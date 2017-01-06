@@ -51,6 +51,18 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
 // -------------------------------------------------------------------------------------------------------------------
 
+static String findWinePrefix(String filename) {
+    if (filename.length() < 3 || !filename.contains("/")) {
+        return "";
+    }
+    String path = filename.upToLastOccurrenceOf("/", false, false);
+    if (File(path + "/dosdevices").isDirectory()) {
+        return path;
+    } else {
+        return findWinePrefix(path);
+    }
+}
+
 struct BridgeAudioPool {
     CarlaString filename;
     std::size_t size;
@@ -654,6 +666,18 @@ protected:
             carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.toRawUTF8());
             carla_setenv("WINEDEBUG", "-all");
 
+#ifdef CARLA_OS_LINUX
+            const char* const oldWinePrefix(std::getenv("WINEPREFIX"));
+
+            if (oldWinePrefix == nullptr) {
+                String winePrefix = findWinePrefix(filename);
+                if (winePrefix.isNotEmpty()) {
+                    std::cout << "Using WINEPREFIX " << winePrefix.toStdString() << std::endl;
+                    carla_setenv("WINEPREFIX", winePrefix.toRawUTF8());
+                }
+            }
+#endif
+
             carla_stdout("starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
                          fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
@@ -662,6 +686,11 @@ protected:
 #ifdef CARLA_OS_LINUX
             if (oldPreload != nullptr)
                 ::setenv("LD_PRELOAD", oldPreload, 1);
+            if (oldWinePrefix != nullptr) {
+                ::setenv("WINEPREFIX", oldWinePrefix, 1);
+            } else {
+                ::unsetenv("WINEPREFIX");
+            }
 #endif
         }
 
@@ -2434,8 +2463,12 @@ public:
                     String wineDir;
                     if (const char* const WINEPREFIX = getenv("WINEPREFIX"))
                         wineDir = String(WINEPREFIX);
-                    else
-                        wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+                    else {
+                        wineDir = findWinePrefix(getFilename());
+                        if (wineDir.isEmpty()) {
+                            wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+                        }
+                    }
 
                     const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
 
