@@ -1,7 +1,9 @@
 [Desktop Entry]
 Name=Carla Control
 GenericName=Carla OSC Control
+GenericName[fr]=Contrôle OSC pour Carla
 Comment=Audio Plugin Host (OSC Control)
+Comment[fr]=Hôte de greffon audio (contrôle OSC)
 Exec=carla-control %u
 Icon=carla-control
 Terminal=false
