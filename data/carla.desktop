@@ -1,7 +1,9 @@
 [Desktop Entry]
 Name=Carla
 GenericName=Carla Plugin Host
+GenericName[fr]=Hôte de greffon Carla
 Comment=Audio Plugin Host
+Comment[fr]=Hôte de greffon Carla
 Exec=carla %u
 Icon=carla
 Terminal=false
