@@ -25,11 +25,11 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtSlot, pyqtWrapperType, Qt, QByteArray, QSettings, QTimer
+    from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
     from PyQt5.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt5.QtWidgets import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtSlot, pyqtWrapperType, Qt, QByteArray, QSettings, QTimer
+    from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QByteArray, QSettings, QTimer
     from PyQt4.QtGui import QColor, QCursor, QFontMetrics, QPainter, QPainterPath
     from PyQt4.QtGui import QDialog, QInputDialog, QLineEdit, QMenu, QVBoxLayout, QWidget
 
