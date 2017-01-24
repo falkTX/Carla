@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla Backend code (Qt stuff)
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -25,20 +25,14 @@ from carla_config import *
 # Imports (Global)
 
 if config_UseQt5:
-    from PyQt5.QtCore import pyqtSignal, pyqtWrapperType, QObject
+    from PyQt5.QtCore import pyqtSignal, QObject
 else:
-    from PyQt4.QtCore import pyqtSignal, pyqtWrapperType, QObject
+    from PyQt4.QtCore import pyqtSignal, QObject
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
 from carla_backend import *
-
-# ------------------------------------------------------------------------------------------------------------
-# An empty class used to resolve metaclass conflicts between ABC and PyQt modules
-
-class PyQtMetaClass(pyqtWrapperType, ABCMeta):
-    pass
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host PyQt signals
@@ -89,7 +83,6 @@ class CarlaHostSignals(QObject):
 # Carla Host object (dummy/null, does nothing)
 
 class CarlaHostQtNull(CarlaHostNull, CarlaHostSignals):
-#class CarlaHostQtDLL(CarlaHostNull, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self):
         CarlaHostSignals.__init__(self)
         CarlaHostNull.__init__(self)
@@ -98,7 +91,6 @@ class CarlaHostQtNull(CarlaHostNull, CarlaHostSignals):
 # Carla Host object using a DLL
 
 class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals):
-#class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self, libName):
         CarlaHostSignals.__init__(self)
         CarlaHostDLL.__init__(self, libName)
@@ -107,7 +99,6 @@ class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals):
 # Carla Host object for plugins (using pipes)
 
 class CarlaHostQtPlugin(CarlaHostPlugin, CarlaHostSignals):
-#class CarlaHostQtPlugin(CarlaHostPlugin, CarlaHostSignals, metaclass=PyQtMetaClass):
     def __init__(self):
         CarlaHostSignals.__init__(self)
         CarlaHostPlugin.__init__(self)
