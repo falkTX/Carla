@@ -442,9 +442,10 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData, int numOutputChannels, int numSamples) override
+    void audioDeviceIOCallback(const float** inputChannelData, int numInputChannels, float** outputChannelData,
+                               int numOutputChannels, int numSamples) override
     {
-        const PendingRtEventsRunner prt(this);
+        const PendingRtEventsRunner prt(this, numSamples);
 
         // assert juce buffers
         CARLA_SAFE_ASSERT_RETURN(numInputChannels >= 0,);

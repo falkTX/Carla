@@ -22,6 +22,8 @@
 #include "CarlaEngineThread.hpp"
 #include "CarlaEngineUtils.hpp"
 
+#include "hylia/hylia.h"
+
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
 
@@ -116,7 +118,14 @@ struct EngineInternalTime {
     double sampleRate;
     double tick;
 
+#ifndef BUILD_BRIDGE
+    hylia_t* hylia;
+    int hylia_enabled;
+    hylia_time_info_t hylia_time;
+#endif
+
     EngineInternalTime() noexcept;
+    ~EngineInternalTime() noexcept;
 
     void fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t newFrames) noexcept;
 
@@ -245,11 +254,12 @@ struct CarlaEngine::ProtectedData {
 class PendingRtEventsRunner
 {
 public:
-    PendingRtEventsRunner(CarlaEngine* const engine) noexcept;
+    PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t bufferSize) noexcept;
     ~PendingRtEventsRunner() noexcept;
 
 private:
     CarlaEngine::ProtectedData* const pData;
+    const uint32_t bufferSize;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(PendingRtEventsRunner)

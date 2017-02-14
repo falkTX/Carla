@@ -1329,7 +1329,7 @@ protected:
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames,
                  const NativeMidiEvent* const midiEvents, const uint32_t midiEventCount)
     {
-        const PendingRtEventsRunner prt(this);
+        const PendingRtEventsRunner prt(this, frames);
 
         // ---------------------------------------------------------------
         // Time Info

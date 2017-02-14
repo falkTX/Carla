@@ -1547,7 +1547,7 @@ protected:
 
     void handleJackProcessCallback(const uint32_t nframes)
     {
-        const PendingRtEventsRunner prt(this);
+        const PendingRtEventsRunner prt(this, nframes);
 
         CARLA_SAFE_ASSERT_RETURN(nframes == pData->bufferSize,);
 
@@ -1911,7 +1911,7 @@ protected:
         signalThreadShouldExit();
 #endif
 
-        const PendingRtEventsRunner prt(this);
+        const PendingRtEventsRunner prt(this, pData->bufferSize);
 
         for (uint i=0; i < pData->curPluginCount; ++i)
         {

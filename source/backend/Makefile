@@ -37,6 +37,10 @@ ifeq ($(HAVE_DGL),true)
 STANDALONE_LIBS += $(MODULEDIR)/dgl.a
 endif
 
+ifeq ($(HAVE_HYLIA),true)
+STANDALONE_LIBS += $(MODULEDIR)/hylia.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_processors.a

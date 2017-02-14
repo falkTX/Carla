@@ -553,7 +553,7 @@ public:
 protected:
     void handleAudioProcessCallback(void* outputBuffer, void* inputBuffer, uint nframes, double streamTime, RtAudioStreamStatus status)
     {
-        const PendingRtEventsRunner prt(this);
+        const PendingRtEventsRunner prt(this, nframes);
 
         // get buffers from RtAudio
         const float* const insPtr  = (const float*)inputBuffer;
@@ -694,14 +694,14 @@ protected:
             }
         }
 
+        fMidiOutMutex.unlock();
+
         if (fAudioInterleaved)
         {
             for (uint i=0; i < nframes; ++i)
                 for (uint j=0; j<fAudioOutCount; ++j)
                     outsPtr[i*fAudioOutCount+j] = outBuf[j][i];
         }
-
-        fMidiOutMutex.unlock();
 
         return; // unused
         (void)streamTime; (void)status;

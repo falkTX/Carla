@@ -41,6 +41,10 @@ ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a
 endif
 
+ifeq ($(HAVE_HYLIA),true)
+LIBS += $(MODULEDIR)/hylia.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_data_structures.a
