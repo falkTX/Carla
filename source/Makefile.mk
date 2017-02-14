@@ -166,12 +166,14 @@ endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL        = true
+HAVE_HYLIA      = true
 else
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
+HAVE_HYLIA      = true
 HAVE_NTK        = $(shell pkg-config --exists ntk ntk_images && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
@@ -286,16 +288,20 @@ ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
 endif
 
+ifeq ($(HAVE_FLUIDSYNTH),true)
+BASE_FLAGS += -DHAVE_FLUIDSYNTH
+endif
+
+ifeq ($(HAVE_HYLIA),true)
+BASE_FLAGS += -DHAVE_HYLIA
+endif
+
 ifeq ($(HAVE_LIBLO),true)
 BASE_FLAGS += -DHAVE_LIBLO
 endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
 BASE_FLAGS += -DHAVE_LIBMAGIC
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
-BASE_FLAGS += -DHAVE_FLUIDSYNTH
 endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
@@ -359,7 +365,12 @@ ifneq ($(HAIKU),true)
 RTMEMPOOL_LIBS = -lpthread
 endif
 
+ifeq ($(UNIX),true)
+HYLIA_FLAGS          +=
+endif
+
 ifeq ($(LINUX),true)
+HYLIA_FLAGS           = -DLINK_PLATFORM_UNIX=1 -DLINK_PLATFORM_LINUX=1
 JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
 JUCE_CORE_LIBS        = -ldl -lpthread -lrt
 LILV_LIBS             = -ldl -lm -lrt
@@ -381,6 +392,7 @@ endif
 
 ifeq ($(MACOS),true)
 DGL_LIBS                   = -framework OpenGL -framework Cocoa
+HYLIA_FLAGS                = -DLINK_PLATFORM_UNIX=1 -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS            = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
@@ -396,6 +408,7 @@ endif
 
 ifeq ($(WIN32),true)
 DGL_LIBS                   = -lopengl32 -lgdi32
+HYLIA_FLAGS                = -DLINK_PLATFORM_WINDOWS=1
 JACKBRIDGE_LIBS            = -lpthread
 JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
 JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm

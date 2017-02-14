@@ -65,6 +65,10 @@ ifeq ($(HAVE_DGL),true)
 ALL_LIBS += $(MODULEDIR)/dgl.a
 endif
 
+ifeq ($(HAVE_HYLIA),true)
+ALL_LIBS += $(MODULEDIR)/hylia.a
+endif
+
 ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
@@ -819,30 +823,35 @@ endif
 features:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
-	@echo "Front-End:  $(ANS_YES)(Using $(FEV))"
+	@echo "Front-End:   $(ANS_YES)(Using $(FEV))"
 ifneq ($(WIN32),true)
-	@echo "LV2 plugin: $(ANS_YES)"
+	@echo "LV2 plugin:  $(ANS_YES)"
 else
-	@echo "LV2 plugin: $(ANS_NO) $(mZ)Not available for Windows$(mE)"
+	@echo "LV2 plugin:  $(ANS_NO) $(mZ)Not available for Windows$(mE)"
 endif
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-	@echo "VST plugin: $(ANS_YES)"
+	@echo "VST plugin:  $(ANS_YES)"
 else # HAVE_X11
-	@echo "VST plugin: $(ANS_NO) $(mS)X11 missing$(mE)"
+	@echo "VST plugin:  $(ANS_NO) $(mS)X11 missing$(mE)"
 endif
 else # LINUX
-	@echo "VST plugin: $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "VST plugin:  $(ANS_NO) $(mZ)Linux only$(mE)"
 endif
 else
-	@echo "Front-End:  $(ANS_NO) $(mS)Missing PyQt$(mE)"
-	@echo "LV2 plugin: $(ANS_NO) $(mS)No front-end$(mE)"
-	@echo "VST plugin: $(ANS_NO) $(mS)No front-end$(mE)"
+	@echo "Front-End:   $(ANS_NO) $(mS)Missing PyQt$(mE)"
+	@echo "LV2 plugin:  $(ANS_NO) $(mS)No front-end$(mE)"
+	@echo "VST plugin:  $(ANS_NO) $(mS)No front-end$(mE)"
+endif
+ifeq ($(HAVE_HYLIA),true)
+	@echo "Link support:$(ANS_YES)"
+else
+	@echo "Link support:$(ANS_NO) $(mZ)Linux, MacOS and Windows only$(mE)"
 endif
 ifeq ($(HAVE_LIBLO),true)
-	@echo "OSC support:$(ANS_YES)"
+	@echo "OSC support: $(ANS_YES)"
 else
-	@echo "OSC support:$(ANS_NO) $(mS)Missing liblo$(mE)"
+	@echo "OSC support: $(ANS_NO) $(mS)Missing liblo$(mE)"
 endif
 	@echo ""
 
