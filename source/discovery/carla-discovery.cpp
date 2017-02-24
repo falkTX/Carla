@@ -1,6 +1,6 @@
 /*
  * Carla Plugin discovery
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,6 +20,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
+
+#include "AppConfig.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # define USE_JUCE_PROCESSORS

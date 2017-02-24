@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Standalone
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,6 +31,7 @@
 # include "CarlaLogThread.hpp"
 #endif
 
+#include "AppConfig.h"
 #include "juce_audio_formats/juce_audio_formats.h"
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)

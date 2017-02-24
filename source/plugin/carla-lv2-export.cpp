@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,6 +18,7 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
 
+#include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
 #include "lv2/atom.h"

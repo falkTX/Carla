@@ -1,6 +1,6 @@
 /*
  * Carla Plugin UI
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,8 @@
 
 #include "CarlaJuceUtils.hpp"
 #include "CarlaPluginUI.hpp"
+
+#include "AppConfig.h"
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
 # include "juce_gui_basics/juce_gui_basics.h"

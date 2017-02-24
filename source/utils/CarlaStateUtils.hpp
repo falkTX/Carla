@@ -1,6 +1,6 @@
 /*
  * Carla State utils
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
+#include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
 CARLA_BACKEND_START_NAMESPACE

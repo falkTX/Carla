@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Toolkit, Plugin version
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,6 +21,7 @@
 #include "CarlaPluginUI.hpp"
 
 #if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
+# include "AppConfig.h"
 # include "juce_events/juce_events.h"
 using juce::MessageManager;
 using juce::ScopedJuceInitialiser_GUI;
