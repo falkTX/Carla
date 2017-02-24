@@ -398,7 +398,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
 # Embed Widget
 
 if LINUX and config_UseQt5:
-    from PyQt5.QtGui import QMouseEvent, QWindow
+    from PyQt5.QtGui import QMouseEvent
 
     class QEmbedWidget(QWidget):
         def __init__(self):

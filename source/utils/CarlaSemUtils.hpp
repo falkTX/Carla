@@ -226,9 +226,17 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
         end.tv_nsec -= 1000000000L;
     }
 
-    try {
-        return (::sem_timedwait(&sem.sem, &end) == 0);
-    } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
+    for (int ret;;)
+    {
+        try {
+            ret = sem_timedwait(&sem.sem, &end);
+        } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_timedwait", false);
+
+        if (ret == 0)
+            return true;
+        if (errno != EINTR)
+            return false;
+    }
 # endif
 #endif
     // may be unused
