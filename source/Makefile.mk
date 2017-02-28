@@ -72,7 +72,10 @@ ifeq ($(MACOS),true)
 LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,-dead_strip -Wl,-dead_strip_dylibs
 else
 # Common linker flags
-LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
+LINK_OPTS  = -fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed
+ifneq ($(SKIP_STRIPPING),true)
+LINK_OPTS += -Wl,--strip-all
+endif
 endif
 
 ifeq ($(RASPPI),true)
