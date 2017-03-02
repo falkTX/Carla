@@ -77,7 +77,7 @@ EngineInternalTime::EngineInternalTime() noexcept
 
 EngineInternalTime::~EngineInternalTime() noexcept
 {
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
     hylia_cleanup(hylia);
 #endif
 }
@@ -100,7 +100,7 @@ void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t
 
         double abs_beat, abs_tick;
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
         if (hylia_enabled > 0 && hylia_time.bpm > 0.0)
         {
             const double beats = hylia_time.beats;
@@ -346,7 +346,7 @@ void CarlaEngine::ProtectedData::initTime()
     time.tick       = 0.0;
     time.fillEngineTimeInfo(timeInfo, 0);
 
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
     CARLA_SAFE_ASSERT_RETURN(time.hylia == nullptr,);
     time.hylia = hylia_create(120.0, bufferSize, sampleRate);
 
@@ -450,7 +450,7 @@ PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const ui
     : pData(engine->pData),
       bufferSize(bufSize)
 {
-#ifndef BUILD_BRIDGE
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
     if (pData->time.hylia_enabled > 0)
     {
         hylia_process(pData->time.hylia, bufferSize, &pData->time.hylia_time);
