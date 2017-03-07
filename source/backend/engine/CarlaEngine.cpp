@@ -2141,7 +2141,25 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                         carla_stderr("Plugin binary '%s' doesn't exist on this filesystem, let's look for it...",
                                      stateSave.binary);
 
-                        const String result(findBinaryInCustomPath(searchPath, stateSave.binary));
+                        String result = findBinaryInCustomPath(searchPath, stateSave.binary);
+
+                        if (result.isEmpty())
+                        {
+                            switch (ptype)
+                            {
+                            case PLUGIN_LADSPA: searchPath = std::getenv("LADSPA_PATH"); break;
+                            case PLUGIN_DSSI:   searchPath = std::getenv("DSSI_PATH");   break;
+                            case PLUGIN_VST2:   searchPath = std::getenv("VST_PATH");    break;
+                            case PLUGIN_VST3:   searchPath = std::getenv("VST3_PATH");   break;
+                            case PLUGIN_GIG:    searchPath = std::getenv("GIG_PATH");    break;
+                            case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
+                            case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
+                            default:            searchPath = nullptr;                    break;
+                            }
+
+                            if (searchPath != nullptr && searchPath[0] != '\0')
+                                result = findBinaryInCustomPath(searchPath, stateSave.binary);
+                        }
 
                         if (result.isNotEmpty())
                         {
