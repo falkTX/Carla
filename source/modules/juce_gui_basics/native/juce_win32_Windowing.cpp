@@ -658,6 +658,7 @@ private:
 
 juce_ImplementSingleton_SingleThreaded (OnScreenKeyboard)
 
+#if 0
 //==============================================================================
 class UWPUIViewSettings
 {
@@ -808,6 +809,7 @@ private:
     WindowsCreateStringFuncPtr createHString;
     WindowsDeleteStringFuncPtr deleteHString;
 };
+#endif
 
 //==============================================================================
 class HWNDComponentPeer  : public ComponentPeer,
@@ -1174,16 +1176,20 @@ public:
         ShowCaret (hwnd);
         SetCaretPos (0, 0);
 
+       #if 0
         if (uwpViewSettings.isTabletModeActivatedForWindow (hwnd))
             OnScreenKeyboard::getInstance()->activate();
+       #endif
     }
 
     void dismissPendingTextInput() override
     {
         imeHandler.handleSetContext (hwnd, false);
 
+       #if 0
         if (uwpViewSettings.isTabletModeActivatedForWindow (hwnd))
             OnScreenKeyboard::getInstance()->deactivate();
+       #endif
     }
 
     void repaint (const Rectangle<int>& area) override
@@ -1441,7 +1447,9 @@ private:
     HICON currentWindowIcon;
     JuceDropTarget* dropTarget;
     uint8 updateLayeredWindowAlpha;
+   #if 0
     UWPUIViewSettings uwpViewSettings;
+   #endif
     MultiTouchMapper<DWORD> currentTouches;
    #if JUCE_MODULE_AVAILABLE_juce_audio_plugin_client
     ModifierKeyProvider* modProvider;
