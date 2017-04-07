@@ -1271,6 +1271,7 @@ public:
             // reload plugin to recreate its ports
             plugin->reload();
             plugin->loadStateSave(*saveStatePtr);
+            plugin->setEnabled(true);
         }
 
         return plugin->getName();

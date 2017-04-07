@@ -723,6 +723,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin->setVolume(oldVolume, true, true);
 
         plugin->setActive(wasActive, true, true);
+        plugin->setEnabled(true);
 
         callback(ENGINE_CALLBACK_RELOAD_ALL, id, 0, 0, 0.0f, nullptr);
     }

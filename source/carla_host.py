@@ -658,10 +658,10 @@ class HostWindow(QMainWindow):
 
         if not forced:
             ask = QMessageBox.question(self, self.tr("Warning"), self.tr("There are still some plugins loaded, you need to remove them to stop the engine.\n"
-                                                                        "Do you want to do this now?"),
-                                                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                                                                         "Do you want to do this now?"),
+                                                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if ask != QMessageBox.Yes:
-                return
+                return False
 
         return self.slot_engineStopTryAgain()
 
