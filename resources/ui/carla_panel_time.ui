@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>133</height>
+    <width>199</width>
+    <height>234</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Time Panel</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
@@ -72,15 +72,138 @@
     </layout>
    </item>
    <item>
-    <widget class="QLabel" name="l_time">
-     <property name="font">
-      <font>
-       <family>DejaVu Sans Mono</family>
-      </font>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Time Information</string>
      </property>
-     <property name="text">
-      <string>00:00:00</string>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="label_time_frame">
+          <property name="text">
+           <string>Frame:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="l_time_frame">
+          <property name="font">
+           <font>
+            <family>DejaVu Sans Mono</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>00000000</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_time_clock">
+          <property name="text">
+           <string>Clock Time:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="l_time_clock">
+          <property name="font">
+           <font>
+            <family>DejaVu Sans Mono</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>00:00:00</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_2">
+        <item>
+         <widget class="QLabel" name="label_time_bbt">
+          <property name="text">
+           <string>Bar/Beat/Tick:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="l_time_bbt">
+          <property name="font">
+           <font>
+            <family>DejaVu Sans Mono</family>
+           </font>
+          </property>
+          <property name="text">
+           <string>000|0|000</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Settings</string>
      </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QDoubleSpinBox" name="dsb_bpm">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="suffix">
+         <string> BPM</string>
+        </property>
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="minimum">
+         <double>20.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>999.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="cb_transport_jack">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Use JACK Transport</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="cb_transport_link">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Use Ableton Link</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

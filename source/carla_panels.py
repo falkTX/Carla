@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla host code
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -26,10 +26,11 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSlot
+    from PyQt5.QtGui import QDialog, QFontMetrics
     from PyQt5.QtWidgets import QDialog
 else:
     from PyQt4.QtCore import pyqtSlot
-    from PyQt4.QtGui import QDialog
+    from PyQt4.QtGui import QDialog, QFontMetrics
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -56,19 +57,14 @@ class CarlaPanelTime(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Internal stuff
 
+        self.fLastTransportBPM   = 0.0
         self.fLastTransportFrame = 0
         self.fLastTransportState = False
         self.fSampleRate         = 0.0
 
-        #if view == TRANSPORT_VIEW_HMS:
-            #self.fCurTransportView = TRANSPORT_VIEW_HMS
-            #self.ui.label_time.setMinimumWidth(QFontMetrics(self.ui.label_time.font()).width("00:00:00") + 3)
-        #elif view == TRANSPORT_VIEW_BBT:
-            #self.fCurTransportView = TRANSPORT_VIEW_BBT
-            #self.ui.label_time.setMinimumWidth(QFontMetrics(self.ui.label_time.font()).width("000|00|0000") + 3)
-        #elif view == TRANSPORT_VIEW_FRAMES:
-            #self.fCurTransportView = TRANSPORT_VIEW_FRAMES
-            #self.ui.label_time.setMinimumWidth(QFontMetrics(self.ui.label_time.font()).width("000'000'000") + 3)
+        self.ui.l_time_frame.setMinimumWidth(QFontMetrics(self.ui.l_time_frame.font()).width("000'000'000") + 3)
+        self.ui.l_time_clock.setMinimumWidth(QFontMetrics(self.ui.l_time_clock.font()).width("00:00:00") + 3)
+        self.ui.l_time_bbt.setMinimumWidth(QFontMetrics(self.ui.l_time_bbt.font()).width("000|00|0000") + 3)
 
         # ----------------------------------------------------------------------------------------------------
         # Disable buttons if plugin
@@ -78,6 +74,8 @@ class CarlaPanelTime(QDialog):
             self.ui.b_stop.setEnabled(False)
             self.ui.b_backwards.setEnabled(False)
             self.ui.b_forwards.setEnabled(False)
+            self.ui.cb_transport_link.setEnabled(False)
+            self.ui.dsb_bpm.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Connect actions to functions
@@ -86,8 +84,11 @@ class CarlaPanelTime(QDialog):
         self.ui.b_stop.clicked.connect(self.slot_transportStop)
         self.ui.b_backwards.clicked.connect(self.slot_transportBackwards)
         self.ui.b_forwards.clicked.connect(self.slot_transportForwards)
+        self.ui.cb_transport_jack.clicked.connect(self.slot_transportJackEnabled)
+        self.ui.cb_transport_link.clicked.connect(self.slot_transportLinkEnabled)
 
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
+        host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
     # --------------------------------------------------------------------------------------------------------
@@ -135,13 +136,32 @@ class CarlaPanelTime(QDialog):
         newFrame = self.host.get_current_transport_frame() + int(self.fSampleRate*2.5)
         self.host.transport_relocate(newFrame)
 
+    @pyqtSlot(bool)
+    def slot_transportJackEnabled(self, clicked):
+        if not self.host.is_engine_running():
+            return
+        mode = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, "")
+
+    @pyqtSlot(bool)
+    def slot_transportLinkEnabled(self, clicked):
+        if not self.host.is_engine_running():
+            return
+
+    def showEvent(self, event):
+        self.refreshTransport(True)
+        QDialog.showEvent(self, event)
+
     def refreshTransport(self, forced = False):
+        if not self.isVisible():
+            return
         if self.fSampleRate == 0.0 or not self.host.is_engine_running():
             return
 
         timeInfo = self.host.get_transport_info()
         playing  = timeInfo['playing']
         frame    = timeInfo['frame']
+        bpm      = timeInfo['bpm']
 
         if playing != self.fLastTransportState or forced:
             if playing:
@@ -158,66 +178,32 @@ class CarlaPanelTime(QDialog):
             self.fLastTransportState = playing
 
         if frame != self.fLastTransportFrame or forced:
+            self.fLastTransportFrame = frame
+
             time = frame / self.fSampleRate
             secs =  time % 60
             mins = (time / 60) % 60
             hrs  = (time / 3600) % 60
+            self.ui.l_time_clock.setText("%02i:%02i:%02i" % (hrs, mins, secs))
 
-            self.fLastTransportFrame = frame
-            self.ui.l_time.setText("Transport %s, at %02i:%02i:%02i" % ("playing" if playing else "stopped", hrs, mins, secs))
+            frame1 =  frame % 1000
+            frame2 = (frame / 1000) % 1000
+            frame3 = (frame / 1000000) % 1000
+            self.ui.l_time_frame.setText("%03i'%03i'%03i" % (frame3, frame2, frame1))
 
-        #if self.fCurTransportView == TRANSPORT_VIEW_HMS:
-            #time = pos.frame / int(self.fSampleRate)
-            #secs = time % 60
-            #mins = (time / 60) % 60
-            #hrs  = (time / 3600) % 60
-            #self.ui.label_time.setText("%02i:%02i:%02i" % (hrs, mins, secs))
+            bar  = timeInfo['bar']
+            beat = timeInfo['beat']
+            tick = timeInfo['tick']
+            self.ui.l_time_bbt.setText("%03i|%02i|%04i" % (bar, beat, tick))
 
-        #elif self.fCurTransportView == TRANSPORT_VIEW_BBT:
-            #if pos.valid & jacklib.JackPositionBBT:
-                #bar  = pos.bar
-                #beat = pos.beat if bar != 0 else 0
-                #tick = pos.tick if bar != 0 else 0
-            #else:
-                #bar  = 0
-                #beat = 0
-                #tick = 0
+        if bpm != self.fLastTransportBPM or forced:
+            self.fLastTransportBPM = bpm
 
-            #self.ui.label_time.setText("%03i|%02i|%04i" % (bar, beat, tick))
-
-        #elif self.fCurTransportView == TRANSPORT_VIEW_FRAMES:
-            #frame1 =  pos.frame % 1000
-            #frame2 = (pos.frame / 1000) % 1000
-            #frame3 = (pos.frame / 1000000) % 1000
-            #self.ui.label_time.setText("%03i'%03i'%03i" % (frame3, frame2, frame1))
-
-        #if pos.valid & jacklib.JackPositionBBT:
-            #if self.fLastBPM != pos.beats_per_minute:
-                #self.ui.sb_bpm.setValue(pos.beats_per_minute)
-                #self.ui.sb_bpm.setStyleSheet("")
-        #else:
-            #pos.beats_per_minute = -1.0
-            #if self.fLastBPM != pos.beats_per_minute:
-                #self.ui.sb_bpm.setStyleSheet("QDoubleSpinBox { color: palette(mid); }")
-
-        #self.fLastBPM = pos.beats_per_minute
-
-        #if state != self.fLastTransportState:
-            #self.fLastTransportState = state
-
-            #if state == jacklib.JackTransportStopped:
-                #icon = getIcon("media-playback-start")
-                #self.ui.act_transport_play.setChecked(False)
-                #self.ui.act_transport_play.setText(self.tr("&Play"))
-                #self.ui.b_transport_play.setChecked(False)
-            #else:
-                #icon = getIcon("media-playback-pause")
-                #self.ui.act_transport_play.setChecked(True)
-                #self.ui.act_transport_play.setText(self.tr("&Pause"))
-                #self.ui.b_transport_play.setChecked(True)
-
-            #self.ui.act_transport_play.setIcon(icon)
-            #self.ui.b_transport_play.setIcon(icon)
+            if bpm > 0.0:
+                self.ui.dsb_bpm.setValue(bpm)
+                self.ui.dsb_bpm.setStyleSheet("")
+            else:
+                self.ui.dsb_bpm.setStyleSheet("QDoubleSpinBox { color: palette(mid); }")
 
     # --------------------------------------------------------------------------------------------------------
     # Engine callbacks
@@ -226,6 +212,9 @@ class CarlaPanelTime(QDialog):
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
         self.fSampleRate = self.host.get_sample_rate()
         self.refreshTransport(True)
+
+        self.ui.cb_transport_jack.setEnabled(driverName == "JACK")
+        self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
 
     @pyqtSlot(float)
     def slot_handleSampleRateChangedCallback(self, newSampleRate):

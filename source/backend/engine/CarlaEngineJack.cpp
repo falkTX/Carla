@@ -832,9 +832,6 @@ public:
 #else
         carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
-
-        // FIXME: Always enable JACK transport for now
-        pData->options.transportMode = ENGINE_TRANSPORT_MODE_JACK;
     }
 
     ~CarlaEngineJack() noexcept override
