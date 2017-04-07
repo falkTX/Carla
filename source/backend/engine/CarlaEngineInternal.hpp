@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -26,6 +26,8 @@
 
 // FIXME only use CARLA_PREVENT_HEAP_ALLOCATION for structs
 // maybe separate macro
+
+typedef struct _jack_position jack_position_t;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -112,15 +114,14 @@ private:
 // InternalTime
 
 struct EngineInternalTime {
-    bool playing;
-    uint64_t frame;
     double bpm;
     double sampleRate;
     double tick;
+    bool needsReset;
 
 #ifndef BUILD_BRIDGE
+    bool hylia_enabled;
     hylia_t* hylia;
-    int hylia_enabled;
     hylia_time_info_t hylia_time;
 #endif
 
@@ -128,6 +129,7 @@ struct EngineInternalTime {
     ~EngineInternalTime() noexcept;
 
     void fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t newFrames) noexcept;
+    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };

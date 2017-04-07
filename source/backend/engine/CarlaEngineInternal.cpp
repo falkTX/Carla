@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -17,6 +17,8 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
+
+#include "jackbridge/JackBridge.hpp"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -60,16 +62,15 @@ void EngineInternalEvents::clear() noexcept
 static const float kTicksPerBeat = 1920.0f;
 
 EngineInternalTime::EngineInternalTime() noexcept
-    : playing(false),
-      frame(0),
-      bpm(120.0),
+    : bpm(120.0),
       sampleRate(0.0),
-#ifdef BUILD_BRIDGE
-      tick(0.0) {}
-#else
       tick(0.0),
-      hylia(nullptr),
-      hylia_enabled(0)
+#ifdef BUILD_BRIDGE
+      needsReset(true) {}
+#else
+      needsReset(true),
+      hylia_enabled(false),
+      hylia(nullptr)
 {
     carla_zeroStruct(hylia_time);
 }
@@ -86,11 +87,9 @@ void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
 
-    info.playing = playing;
-    info.frame   = frame;
-    info.usecs   = 0;
+    info.usecs = 0;
 
-    if (newFrames == 0)
+    if (newFrames == 0 || needsReset)
     {
         info.valid = EngineTimeInfo::kValidBBT;
         info.bbt.beatsPerBar = 4.0f;
@@ -101,12 +100,9 @@ void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t
         double abs_beat, abs_tick;
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-        if (hylia_enabled > 0 && hylia_time.bpm > 0.0)
+        if (hylia_enabled && hylia_time.beats >= 0.0)
         {
             const double beats = hylia_time.beats;
-
-            if (beats < 0.0)
-                return;
 
             abs_beat = std::floor(beats);
             abs_tick = beats * kTicksPerBeat;
@@ -114,7 +110,7 @@ void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t
         else
 #endif
         {
-            const double min = frame / (sampleRate * 60.0);
+            const double min = info.frame / (sampleRate * 60.0);
             abs_tick = min * bpm * kTicksPerBeat;
             abs_beat = abs_tick / kTicksPerBeat;
         }
@@ -143,6 +139,64 @@ void EngineInternalTime::fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t
     }
 
     info.bbt.tick = (int)(tick + 0.5);
+    needsReset = false;
+}
+
+void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
+
+    if (newFrames == 0 || needsReset)
+    {
+        pos->valid = JackPositionBBT;
+        pos->beats_per_bar = 4.0f;
+        pos->beat_type = 4.0f;
+        pos->ticks_per_beat = kTicksPerBeat;
+        pos->beats_per_minute = bpm;
+
+        double abs_beat, abs_tick;
+
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+        if (hylia_enabled && hylia_time.beats >= 0.0)
+        {
+            const double beats = hylia_time.beats;
+
+            abs_beat = std::floor(beats);
+            abs_tick = beats * kTicksPerBeat;
+        }
+        else
+#endif
+        {
+            const double min = pos->frame / (sampleRate * 60.0);
+            abs_tick = min * bpm * kTicksPerBeat;
+            abs_beat = abs_tick / kTicksPerBeat;
+        }
+
+        pos->bar  = abs_beat / pos->beats_per_bar;
+        pos->beat = abs_beat - (pos->bar * pos->beats_per_bar) + 1;
+        tick      = abs_tick - (abs_beat * kTicksPerBeat);
+        pos->bar_start_tick = pos->bar * pos->beats_per_bar * kTicksPerBeat;
+        pos->bar++;
+    }
+    else
+    {
+        tick += newFrames * kTicksPerBeat * bpm / (sampleRate * 60);
+
+        while (tick >= kTicksPerBeat)
+        {
+            tick -= kTicksPerBeat;
+
+            if (++pos->beat > pos->beats_per_bar)
+            {
+                pos->beat = 1;
+                ++pos->bar;
+                pos->bar_start_tick += pos->beats_per_bar * pos->ticks_per_beat;
+            }
+        }
+    }
+
+    pos->tick = (int)(tick + 0.5);
+    needsReset = false;
 }
 
 // -----------------------------------------------------------------------
@@ -339,11 +393,10 @@ void CarlaEngine::ProtectedData::close()
 
 void CarlaEngine::ProtectedData::initTime()
 {
-    time.playing    = false;
-    time.frame      = 0;
     time.bpm        = 120.0;
     time.sampleRate = sampleRate;
     time.tick       = 0.0;
+    time.needsReset = true;
     time.fillEngineTimeInfo(timeInfo, 0);
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
@@ -451,15 +504,15 @@ PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const ui
       bufferSize(bufSize)
 {
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-    if (pData->time.hylia_enabled > 0)
+    if (pData->time.hylia_enabled)
     {
         hylia_process(pData->time.hylia, bufferSize, &pData->time.hylia_time);
         const double new_bpm = pData->time.hylia_time.bpm;
 
-        if (new_bpm > 0.0 && (pData->time.bpm != new_bpm || ++pData->time.hylia_enabled > 50))
+        if (new_bpm > 0.0 && pData->time.bpm != new_bpm)
         {
             pData->time.bpm = new_bpm;
-            pData->time.hylia_enabled = 1;
+            pData->time.needsReset = true;
 
             if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
                 pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
@@ -472,9 +525,9 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 {
     pData->doNextPluginAction(true);
 
-    if (pData->time.playing && pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+    if (pData->timeInfo.playing && pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
     {
-        pData->time.frame += bufferSize;
+        pData->timeInfo.frame += bufferSize;
         pData->time.fillEngineTimeInfo(pData->timeInfo, bufferSize);
     }
 }

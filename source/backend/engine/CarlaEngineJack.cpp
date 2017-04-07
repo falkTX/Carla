@@ -811,8 +811,6 @@ public:
           CarlaThread("CarlaEngineJackCallbacks"),
 #endif
           fClient(nullptr),
-          fTransportPos(),
-          fTransportState(JackTransportStopped),
           fExternalPatchbay(true),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
@@ -837,8 +835,6 @@ public:
 
         // FIXME: Always enable JACK transport for now
         pData->options.transportMode = ENGINE_TRANSPORT_MODE_JACK;
-
-        carla_zeroStruct(fTransportPos);
     }
 
     ~CarlaEngineJack() noexcept override
@@ -895,10 +891,7 @@ public:
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
         fFreewheel        = false;
-        fTransportState   = JackTransportStopped;
         fExternalPatchbay = true;
-
-        carla_zeroStruct(fTransportPos);
 
         CarlaString truncatedClientName(clientName);
         truncatedClientName.truncate(getMaxClientNameSize());
@@ -961,6 +954,7 @@ public:
         jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
         jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
+        jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
@@ -1378,6 +1372,13 @@ public:
 
         if (fClient != nullptr)
         {
+            if ((pData->timeInfo.valid & EngineTimeInfo::kValidBBT) == 0x0)
+            {
+                // old timebase master no longer active, make ourselves master again
+                pData->time.needsReset = true;
+                jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+            }
+
             try {
                 jackbridge_transport_start(fClient);
             } catch(...) {}
@@ -1511,28 +1512,30 @@ protected:
         if (pData->options.transportMode != ENGINE_TRANSPORT_MODE_JACK)
             return;
 
-        fTransportPos.unique_1 = fTransportPos.unique_2 + 1; // invalidate
+        jack_position_t jpos;
 
-        fTransportState = jackbridge_transport_query(fClient, &fTransportPos);
+        // invalidate
+        jpos.unique_1 = 1;
+        jpos.unique_2 = 2;
 
-        pData->timeInfo.playing = (fTransportState == JackTransportRolling);
+        pData->timeInfo.playing = (jackbridge_transport_query(fClient, &jpos) == JackTransportRolling);
 
-        if (fTransportPos.unique_1 == fTransportPos.unique_2)
+        if (jpos.unique_1 == jpos.unique_2)
         {
-            pData->timeInfo.frame = fTransportPos.frame;
-            pData->timeInfo.usecs = fTransportPos.usecs;
+            pData->timeInfo.frame = jpos.frame;
+            pData->timeInfo.usecs = jpos.usecs;
 
-            if (fTransportPos.valid & JackPositionBBT)
+            if (jpos.valid & JackPositionBBT)
             {
                 pData->timeInfo.valid              = EngineTimeInfo::kValidBBT;
-                pData->timeInfo.bbt.bar            = fTransportPos.bar;
-                pData->timeInfo.bbt.beat           = fTransportPos.beat;
-                pData->timeInfo.bbt.tick           = fTransportPos.tick;
-                pData->timeInfo.bbt.barStartTick   = fTransportPos.bar_start_tick;
-                pData->timeInfo.bbt.beatsPerBar    = fTransportPos.beats_per_bar;
-                pData->timeInfo.bbt.beatType       = fTransportPos.beat_type;
-                pData->timeInfo.bbt.ticksPerBeat   = fTransportPos.ticks_per_beat;
-                pData->timeInfo.bbt.beatsPerMinute = fTransportPos.beats_per_minute;
+                pData->timeInfo.bbt.bar            = jpos.bar;
+                pData->timeInfo.bbt.beat           = jpos.beat;
+                pData->timeInfo.bbt.tick           = jpos.tick;
+                pData->timeInfo.bbt.barStartTick   = jpos.bar_start_tick;
+                pData->timeInfo.bbt.beatsPerBar    = jpos.beats_per_bar;
+                pData->timeInfo.bbt.beatType       = jpos.beat_type;
+                pData->timeInfo.bbt.ticksPerBeat   = jpos.ticks_per_beat;
+                pData->timeInfo.bbt.beatsPerMinute = jpos.beats_per_minute;
             }
             else
             {
@@ -1722,6 +1725,14 @@ protected:
     }
 
 #ifndef BUILD_BRIDGE
+    void handleJackTimebaseCallback(jack_nframes_t nframes, jack_position_t* const pos, const int new_pos)
+    {
+        if (new_pos)
+            nframes = 0;
+
+        pData->time.fillJackTimeInfo(pos, nframes);
+    }
+
     void handleJackClientRegistrationCallback(const char* const name, const bool reg)
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
@@ -1955,9 +1966,7 @@ protected:
     // -------------------------------------------------------------------
 
 private:
-    jack_client_t*  fClient;
-    jack_position_t fTransportPos;
-    uint32_t        fTransportState;
+    jack_client_t* fClient;
     bool fExternalPatchbay;
     bool fFreewheel;
 
@@ -2421,6 +2430,11 @@ private:
     }
 
 #ifndef BUILD_BRIDGE
+    static void JACKBRIDGE_API carla_jack_timebase_callback(jack_transport_state_t, jack_nframes_t nframes, jack_position_t* pos, int new_pos, void* arg) __attribute__((annotate("realtime")))
+    {
+        handlePtr->handleJackTimebaseCallback(nframes, pos, new_pos);
+    }
+
     static void JACKBRIDGE_API carla_jack_client_registration_callback(const char* name, int reg, void* arg)
     {
         PostPonedJackEvent ev;
