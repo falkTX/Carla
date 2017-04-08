@@ -225,6 +225,7 @@ struct CARLA_API EngineEvent {
 struct CARLA_API EngineOptions {
     EngineProcessMode   processMode;
     EngineTransportMode transportMode;
+    const char*         transportExtra;
 
     bool forceStereo;
     bool preferPluginBridges;

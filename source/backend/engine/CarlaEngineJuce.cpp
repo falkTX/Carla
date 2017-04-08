@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -200,7 +200,7 @@ public:
 
         pData->bufferSize = static_cast<uint32_t>(fDevice->getCurrentBufferSizeSamples());
         pData->sampleRate = fDevice->getCurrentSampleRate();
-        pData->initTime();
+        pData->initTime(pData->options.transportExtra);
 
         pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
 

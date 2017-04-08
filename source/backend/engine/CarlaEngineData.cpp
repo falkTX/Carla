@@ -190,6 +190,7 @@ EngineOptions::EngineOptions() noexcept
     : processMode(ENGINE_PROCESS_MODE_PATCHBAY),
       transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
 #endif
+      transportExtra(nullptr),
       forceStereo(false),
       preferPluginBridges(false),
 #ifdef CARLA_OS_WIN

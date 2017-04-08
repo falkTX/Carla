@@ -113,23 +113,40 @@ private:
 // -----------------------------------------------------------------------
 // InternalTime
 
-struct EngineInternalTime {
+class EngineInternalTime {
+public:
+    EngineInternalTime(EngineTimeInfo& timeInfo, const EngineTransportMode& transportMode) noexcept;
+    ~EngineInternalTime() noexcept;
+
+    void init(const uint32_t bufferSize, double sampleRate);
+    void updateAudioValues(const uint32_t bufferSize, double sampleRate);
+
+    void preProcess(const uint32_t numFrames);
+    void postProcess(const uint32_t numFrames);
+
+    void enableLink(const bool enable);
+    void setNeedsReset();
+
+    void fillEngineTimeInfo(const uint32_t newFrames) noexcept;
+    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
+
+private:
     double bpm;
     double sampleRate;
     double tick;
     bool needsReset;
 
 #ifndef BUILD_BRIDGE
-    bool hylia_enabled;
-    hylia_t* hylia;
-    hylia_time_info_t hylia_time;
+    struct Hylia {
+        bool enabled;
+        hylia_t* instance;
+        hylia_time_info_t timeInfo;
+        Hylia();
+    } hylia;
 #endif
 
-    EngineInternalTime() noexcept;
-    ~EngineInternalTime() noexcept;
-
-    void fillEngineTimeInfo(EngineTimeInfo& info, const uint32_t newFrames) noexcept;
-    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
+    EngineTimeInfo& timeInfo;
+    const EngineTransportMode& transportMode;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };
@@ -235,7 +252,7 @@ struct CarlaEngine::ProtectedData {
     bool init(const char* const clientName);
     void close();
 
-    void initTime();
+    void initTime(const char* const features);
 
     // -------------------------------------------------------------------
 
@@ -256,12 +273,12 @@ struct CarlaEngine::ProtectedData {
 class PendingRtEventsRunner
 {
 public:
-    PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t bufferSize) noexcept;
+    PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t numFrames) noexcept;
     ~PendingRtEventsRunner() noexcept;
 
 private:
     CarlaEngine::ProtectedData* const pData;
-    const uint32_t bufferSize;
+    const uint32_t numFrames;
 
     CARLA_PREVENT_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(PendingRtEventsRunner)

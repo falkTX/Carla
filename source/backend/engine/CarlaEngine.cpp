@@ -1344,19 +1344,19 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 void CarlaEngine::transportPlay() noexcept
 {
     pData->timeInfo.playing = true;
-    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
+    pData->time.fillEngineTimeInfo(0);
 }
 
 void CarlaEngine::transportPause() noexcept
 {
     pData->timeInfo.playing = false;
-    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
+    pData->time.fillEngineTimeInfo(0);
 }
 
 void CarlaEngine::transportRelocate(const uint64_t frame) noexcept
 {
     pData->timeInfo.frame = frame;
-    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
+    pData->time.fillEngineTimeInfo(0);
 }
 
 // -----------------------------------------------------------------------
@@ -1416,6 +1416,16 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
     case ENGINE_OPTION_TRANSPORT_MODE:
         CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value <= ENGINE_TRANSPORT_MODE_BRIDGE,);
         pData->options.transportMode = static_cast<EngineTransportMode>(value);
+        delete[] pData->options.transportExtra;
+        pData->options.transportExtra = (valueStr != nullptr) ? carla_strdup_safe(valueStr) : nullptr;
+
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+        // enable link now if needed
+        {
+            const bool linkEnabled = pData->options.transportExtra != nullptr && std::strstr(pData->options.transportExtra, ":link:") != nullptr;
+            pData->time.enableLink(linkEnabled);
+        }
+#endif
         break;
 
     case ENGINE_OPTION_FORCE_STEREO:
@@ -1647,6 +1657,11 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
     }
 #endif
 
+    pData->time.updateAudioValues(newBufferSize, pData->sampleRate);
+
+    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        pData->time.fillEngineTimeInfo(0);
+
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
@@ -1670,8 +1685,10 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     }
 #endif
 
-    pData->time.sampleRate = newSampleRate;
-    pData->time.fillEngineTimeInfo(pData->timeInfo, 0);
+    pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
+
+    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        pData->time.fillEngineTimeInfo(0);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {

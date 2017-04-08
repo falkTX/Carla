@@ -314,7 +314,7 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PREFER_UI_BRIDGES,     false,                                                     nullptr);
 #else
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
-    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), nullptr);
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), gStandalone.engineOptions.transportExtra);
 #endif
 
     carla_engine_init_common();
@@ -473,8 +473,10 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         break;
 
     case CB::ENGINE_OPTION_TRANSPORT_MODE:
-        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_INTERNAL && value < CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_INTERNAL && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
         gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
+        delete[] gStandalone.engineOptions.transportExtra;
+        gStandalone.engineOptions.transportExtra = (valueStr != nullptr) ? carla_strdup_safe(valueStr) : nullptr;
         break;
 
     case CB::ENGINE_OPTION_FORCE_STEREO:

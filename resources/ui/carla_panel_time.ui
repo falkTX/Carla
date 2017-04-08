@@ -185,9 +185,6 @@
       </item>
       <item>
        <widget class="QCheckBox" name="cb_transport_jack">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="text">
          <string>Use JACK Transport</string>
         </property>
@@ -195,9 +192,6 @@
       </item>
       <item>
        <widget class="QCheckBox" name="cb_transport_link">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="text">
          <string>Use Ableton Link</string>
         </property>

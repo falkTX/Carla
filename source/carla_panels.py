@@ -139,13 +139,17 @@ class CarlaPanelTime(QDialog):
     def slot_transportJackEnabled(self, clicked):
         if not self.host.is_engine_running():
             return
-        mode = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
-        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, "")
+        mode  = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
+        extra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     @pyqtSlot(bool)
     def slot_transportLinkEnabled(self, clicked):
         if not self.host.is_engine_running():
             return
+        mode  = ENGINE_TRANSPORT_MODE_JACK if self.ui.cb_transport_jack.isChecked() else ENGINE_TRANSPORT_MODE_INTERNAL
+        extra = ":link:" if clicked else ""
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     def showEvent(self, event):
         self.refreshTransport(True)
