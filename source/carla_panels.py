@@ -88,7 +88,6 @@ class CarlaPanelTime(QDialog):
         self.ui.cb_transport_link.clicked.connect(self.slot_transportLinkEnabled)
 
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
-        host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
     # --------------------------------------------------------------------------------------------------------
