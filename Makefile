@@ -156,7 +156,7 @@ interposer:
 plugin: backend bridges-plugin bridges-ui discovery
 	@$(MAKE) -C source/plugin
 
-theme:
+theme: libs
 	@$(MAKE) -C source/theme
 
 # ----------------------------------------------------------------------------------------------------------------------------
