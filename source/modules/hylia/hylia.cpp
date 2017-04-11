@@ -23,56 +23,60 @@
 
 class HyliaTransport {
 public:
-    HyliaTransport(double bpm, double bufferSize, double sampleRate)
-        : link(bpm),
+    HyliaTransport()
+        : link(120.0),
           engine(link),
           outputLatency(0),
           sampleTime(0)
     {
-        outputLatency = std::chrono::microseconds(llround(1.0e6 * bufferSize / sampleRate));
     }
 
-    void setEnabled(bool enabled, double bpm)
+    void setEnabled(const bool enabled)
     {
-        link.enable(enabled);
-
         if (enabled)
-        {
             sampleTime = 0;
-            engine.setTempo(bpm);
-        }
+
+        link.enable(enabled);
     }
 
-    void setTempo(double tempo)
+    void setQuantum(const double quantum)
+    {
+        engine.setQuantum(quantum);
+    }
+
+    void setTempo(const double tempo)
     {
         engine.setTempo(tempo);
     }
 
-    void process(uint32_t frames, LinkTimeInfo* info)
+    void setOutputLatency(const uint32_t latency) noexcept
     {
-        const auto hostTime = hostTimeFilter.sampleTimeToHostTime(sampleTime);
-        const auto bufferBeginAtOutput = hostTime + outputLatency;
+        outputLatency = latency;
+    }
 
-        engine.timelineCallback(bufferBeginAtOutput, info);
+    void process(const uint32_t frames, LinkTimeInfo* const info)
+    {
+        const std::chrono::microseconds hostTime = hostTimeFilter.sampleTimeToHostTime(sampleTime)
+                                                 + std::chrono::microseconds(outputLatency);
+        engine.timelineCallback(hostTime, info);
 
         sampleTime += frames;
     }
 
 private:
     ableton::Link link;
-    ableton::linkaudio::AudioEngine engine;
+    ableton::link::AudioEngine engine;
+    ableton::link::HostTimeFilter<ableton::link::platform::Clock> hostTimeFilter;
 
-    ableton::link::HostTimeFilter<ableton::platforms::stl::Clock> hostTimeFilter;
-    std::chrono::microseconds outputLatency;
-    uint32_t sampleTime;
+    uint32_t outputLatency, sampleTime;
 };
 
-hylia_t* hylia_create(double bpm, uint32_t buffer_size, uint32_t sample_rate)
+hylia_t* hylia_create(void)
 {
     HyliaTransport* t;
 
     try {
-        t = new HyliaTransport(bpm, buffer_size, sample_rate);
+        t = new HyliaTransport();
     } catch (...) {
         return nullptr;
     }
@@ -80,14 +84,24 @@ hylia_t* hylia_create(double bpm, uint32_t buffer_size, uint32_t sample_rate)
     return (hylia_t*)t;
 }
 
-void hylia_enable(hylia_t* link, bool on, double bpm)
+void hylia_enable(hylia_t* link, bool on)
 {
-    ((HyliaTransport*)link)->setEnabled(on, bpm);
+    ((HyliaTransport*)link)->setEnabled(on);
 }
 
-void hylia_set_tempo(hylia_t* link, double bpm)
+void hylia_set_beats_per_bar(hylia_t* link, double beatsPerBar)
 {
-    ((HyliaTransport*)link)->setTempo(bpm);
+    ((HyliaTransport*)link)->setQuantum(beatsPerBar);
+}
+
+void hylia_set_beats_per_minute(hylia_t* link, double beatsPerMinute)
+{
+    ((HyliaTransport*)link)->setTempo(beatsPerMinute);
+}
+
+void hylia_set_output_latency(hylia_t* link, uint32_t latency)
+{
+    ((HyliaTransport*)link)->setOutputLatency(latency);
 }
 
 void hylia_process(hylia_t* link, uint32_t frames, hylia_time_info_t* info)

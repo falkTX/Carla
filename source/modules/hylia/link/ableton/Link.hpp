@@ -58,20 +58,20 @@ namespace ableton
  *  concurrently is not advised and will potentially lead to
  *  unexpected behavior.
  */
-class Link
+template <typename Clock>
+class BasicLink
 {
 public:
-  using Clock = link::platform::Clock;
   class Timeline;
 
   /*! @brief Construct with an initial tempo. */
-  Link(double bpm);
+  BasicLink(double bpm);
 
   /*! @brief Link instances cannot be copied or moved */
-  Link(const Link&) = delete;
-  Link& operator=(const Link&) = delete;
-  Link(Link&&) = delete;
-  Link& operator=(Link&&) = delete;
+  BasicLink(const BasicLink<Clock>&) = delete;
+  BasicLink& operator=(const BasicLink<Clock>&) = delete;
+  BasicLink(BasicLink<Clock>&&) = delete;
+  BasicLink& operator=(BasicLink<Clock>&&) = delete;
 
   /*! @brief Is Link currently enabled?
    *  Thread-safe: yes
@@ -287,19 +287,27 @@ public:
     void forceBeatAtTime(double beat, std::chrono::microseconds time, double quantum);
 
   private:
-    friend Link;
+    friend BasicLink<Clock>;
+
     link::Timeline mOriginalTimeline;
     bool mbRespectQuantum;
     link::Timeline mTimeline;
   };
 
 private:
+  using Controller = ableton::link::Controller<link::PeerCountCallback,
+    link::TempoCallback,
+    Clock,
+    link::platform::IoContext>;
+
   std::mutex mCallbackMutex;
   link::PeerCountCallback mPeerCountCallback;
   link::TempoCallback mTempoCallback;
   Clock mClock;
-  link::platform::Controller mController;
+  Controller mController;
 };
+
+using Link = BasicLink<link::platform::Clock>;
 
 } // ableton
 

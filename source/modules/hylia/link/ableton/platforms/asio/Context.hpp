@@ -22,7 +22,7 @@
 #include <ableton/discovery/IpV4Interface.hpp>
 #include <ableton/platforms/asio/AsioTimer.hpp>
 #include <ableton/platforms/asio/AsioWrapper.hpp>
-#include <ableton/platforms/asio/PooledHandlerContext.hpp>
+#include <ableton/platforms/asio/LockFreeCallbackDispatcher.hpp>
 #include <ableton/platforms/asio/Socket.hpp>
 #include <thread>
 
@@ -40,11 +40,11 @@ public:
   using Timer = AsioTimer;
   using Log = LogT;
 
+  template <typename Handler, typename Duration>
+  using LockFreeCallbackDispatcher = LockFreeCallbackDispatcher<Handler, Duration>;
+
   template <std::size_t BufferSize>
   using Socket = asio::Socket<BufferSize>;
-
-  template <typename IoContext>
-  using RealTimeContext = PooledHandlerContext<IoContext>;
 
   Context()
     : Context(DefaultHandler{})

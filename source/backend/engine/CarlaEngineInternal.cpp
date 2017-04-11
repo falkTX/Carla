@@ -61,72 +61,60 @@ void EngineInternalEvents::clear() noexcept
 
 static const float kTicksPerBeat = 1920.0f;
 
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+static uint32_t calculate_link_latency(const double bufferSize, const double sampleRate) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate), 0);
+
+    const long long int latency = llround(1.0e6 * bufferSize / sampleRate);
+    CARLA_SAFE_ASSERT_RETURN(latency >= 0 && latency < UINT32_MAX, 0);
+
+    return static_cast<uint32_t>(latency);
+}
+#endif
+
 EngineInternalTime::EngineInternalTime(EngineTimeInfo& ti, const EngineTransportMode& tm) noexcept
-    : bpm(120.0),
+    : beatsPerBar(4.0),
+      beatsPerMinute(120.0),
+      bufferSize(0.0),
       sampleRate(0.0),
       tick(0.0),
-      needsReset(true),
+      needsReset(false),
+      nextFrame(0),
       timeInfo(ti),
       transportMode(tm) {}
 
-EngineInternalTime::~EngineInternalTime() noexcept
+void EngineInternalTime::init(const uint32_t bsize, const double srate)
 {
-#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-    hylia_cleanup(hylia.instance);
-#endif
-}
-
-void EngineInternalTime::init(const uint32_t bufferSize, const double sr)
-{
-    sampleRate = sr;
+    bufferSize = bsize;
+    sampleRate = srate;
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-    hylia.instance = hylia_create(bpm, bufferSize, sr);
-
-    if (hylia.enabled)
-        hylia_enable(hylia.instance, true, bpm);
-#endif
-
-    fillEngineTimeInfo(0);
-}
-
-void EngineInternalTime::updateAudioValues(const uint32_t bufferSize, double sampleRate)
-{
-    // TODO
-}
-
-void EngineInternalTime::preProcess(const uint32_t numFrames)
-{
-#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-    if (hylia.enabled)
+    if (hylia.instance != nullptr)
     {
-        hylia_process(hylia.instance, numFrames, &hylia.timeInfo);
-        const double new_bpm = hylia.timeInfo.bpm;
+        hylia_set_beats_per_bar(hylia.instance, beatsPerBar);
+        hylia_set_beats_per_minute(hylia.instance, beatsPerMinute);
+        hylia_set_output_latency(hylia.instance, calculate_link_latency(bsize, srate));
 
-        if (new_bpm > 0.0 && bpm != new_bpm)
-        {
-            bpm = new_bpm;
-            needsReset = true;
-
-            if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-                fillEngineTimeInfo(0);
-        }
+        if (hylia.enabled)
+            hylia_enable(hylia.instance, true);
     }
-#else
-    return;
-
-    // unused
-    (void)numFrames;
 #endif
+
+    needsReset = true;
 }
 
-void EngineInternalTime::postProcess(const uint32_t numFrames)
+void EngineInternalTime::updateAudioValues(const uint32_t bsize, const double srate)
 {
-    if (timeInfo.playing && transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-    {
-        timeInfo.frame += numFrames;
-        fillEngineTimeInfo(numFrames);
-    }
+    bufferSize = bsize;
+    sampleRate = srate;
+
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+    if (hylia.instance != nullptr)
+        hylia_set_output_latency(hylia.instance, calculate_link_latency(bsize, srate));
+#endif
+
+    needsReset = true;
 }
 
 void EngineInternalTime::enableLink(const bool enable)
@@ -135,145 +123,220 @@ void EngineInternalTime::enableLink(const bool enable)
     if (hylia.enabled == enable)
         return;
 
-    hylia.enabled = enable;
-
     if (hylia.instance != nullptr)
-        hylia_enable(hylia.instance, enable, bpm);
+    {
+        hylia.enabled = enable;
+        hylia_enable(hylia.instance, enable);
+    }
 #else
-    return;
-
     // unused
     (void)enable;
 #endif
+
+    needsReset = true;
 }
 
-void EngineInternalTime::setNeedsReset()
+void EngineInternalTime::setNeedsReset() noexcept
 {
+    needsReset = true;
+}
+
+void EngineInternalTime::relocate(const uint64_t frame) noexcept
+{
+    timeInfo.frame = frame;
+    nextFrame = frame;
     needsReset = true;
 }
 
 void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
+    CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
 
     timeInfo.usecs = 0;
 
-    if (newFrames == 0 || needsReset)
+    if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        timeInfo.frame = nextFrame;
+
+    if (needsReset)
     {
         timeInfo.valid = EngineTimeInfo::kValidBBT;
-        timeInfo.bbt.beatsPerBar = 4.0f;
+        timeInfo.bbt.beatsPerBar = beatsPerBar;
         timeInfo.bbt.beatType = 4.0f;
         timeInfo.bbt.ticksPerBeat = kTicksPerBeat;
-        timeInfo.bbt.beatsPerMinute = bpm;
+        timeInfo.bbt.beatsPerMinute = beatsPerMinute;
 
         double abs_beat, abs_tick;
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-        if (hylia.enabled && hylia.timeInfo.beats >= 0.0)
+        if (hylia.enabled)
         {
-            const double beats = hylia.timeInfo.beats;
-
-            abs_beat = std::floor(beats);
-            abs_tick = beats * kTicksPerBeat;
+            if (hylia.timeInfo.beat >= 0.0)
+            {
+                const double beat = hylia.timeInfo.beat;
+                abs_beat = std::floor(beat);
+                abs_tick = beat * kTicksPerBeat;
+            }
+            else
+            {
+                abs_beat = 0.0;
+                abs_tick = 0.0;
+                timeInfo.playing = false;
+            }
         }
         else
 #endif
         {
             const double min = timeInfo.frame / (sampleRate * 60.0);
-            abs_tick = min * bpm * kTicksPerBeat;
+            abs_tick = min * beatsPerMinute * kTicksPerBeat;
             abs_beat = abs_tick / kTicksPerBeat;
+            needsReset = false;
         }
 
-        timeInfo.bbt.bar  = abs_beat / timeInfo.bbt.beatsPerBar;
+        timeInfo.bbt.bar  = (int32_t)(std::floor(abs_beat / timeInfo.bbt.beatsPerBar) + 0.5);
         timeInfo.bbt.beat = abs_beat - (timeInfo.bbt.bar * timeInfo.bbt.beatsPerBar) + 1;
-        tick              = abs_tick - (abs_beat * kTicksPerBeat);
-        timeInfo.bbt.barStartTick = timeInfo.bbt.bar * timeInfo.bbt.beatsPerBar * kTicksPerBeat;
+        timeInfo.bbt.barStartTick = timeInfo.bbt.bar * beatsPerBar * kTicksPerBeat;
         timeInfo.bbt.bar++;
+
+        tick = abs_tick - timeInfo.bbt.barStartTick;
     }
     else
     {
-        tick += newFrames * kTicksPerBeat * bpm / (sampleRate * 60);
+        tick += newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60);
 
         while (tick >= kTicksPerBeat)
         {
             tick -= kTicksPerBeat;
 
-            if (++timeInfo.bbt.beat > timeInfo.bbt.beatsPerBar)
+            if (++timeInfo.bbt.beat > beatsPerBar)
             {
                 timeInfo.bbt.beat = 1;
                 ++timeInfo.bbt.bar;
-                timeInfo.bbt.barStartTick += timeInfo.bbt.beatsPerBar * kTicksPerBeat;
+                timeInfo.bbt.barStartTick += beatsPerBar * kTicksPerBeat;
             }
         }
     }
 
-    timeInfo.bbt.tick = (int)(tick + 0.5);
-    needsReset = false;
+    timeInfo.bbt.tick = (int32_t)(tick + 0.5);
+
+    if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL && timeInfo.playing)
+        nextFrame += newFrames;
 }
 
 void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
+    CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
 
-    if (newFrames == 0 || needsReset)
+    if (needsReset)
     {
         pos->valid = JackPositionBBT;
-        pos->beats_per_bar = 4.0f;
+        pos->beats_per_bar = beatsPerBar;
         pos->beat_type = 4.0f;
         pos->ticks_per_beat = kTicksPerBeat;
-        pos->beats_per_minute = bpm;
+        pos->beats_per_minute = beatsPerMinute;
 
         double abs_beat, abs_tick;
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
-        if (hylia.enabled && hylia.timeInfo.beats >= 0.0)
+        if (hylia.enabled)
         {
-            const double beats = hylia.timeInfo.beats;
-
-            abs_beat = std::floor(beats);
-            abs_tick = beats * kTicksPerBeat;
+            if (hylia.timeInfo.beat >= 0.0)
+            {
+                const double beat = hylia.timeInfo.beat;
+                abs_beat = std::floor(beat);
+                abs_tick = beat * kTicksPerBeat;
+            }
+            else
+            {
+                abs_beat = 0.0;
+                abs_tick = 0.0;
+                timeInfo.playing = false;
+            }
         }
         else
 #endif
         {
-            const double min = pos->frame / (sampleRate * 60.0);
-            abs_tick = min * bpm * kTicksPerBeat;
+            const double min = static_cast<double>(pos->frame) / (sampleRate * 60.0);
+            abs_tick = min * beatsPerMinute * kTicksPerBeat;
             abs_beat = abs_tick / kTicksPerBeat;
+            needsReset = false;
         }
 
-        pos->bar  = abs_beat / pos->beats_per_bar;
+        pos->bar  = (int32_t)(std::floor(abs_beat / pos->beats_per_bar) + 0.5);
         pos->beat = abs_beat - (pos->bar * pos->beats_per_bar) + 1;
-        tick      = abs_tick - (abs_beat * kTicksPerBeat);
         pos->bar_start_tick = pos->bar * pos->beats_per_bar * kTicksPerBeat;
         pos->bar++;
+
+        tick = abs_tick - pos->bar_start_tick;
     }
     else
     {
-        tick += newFrames * kTicksPerBeat * bpm / (sampleRate * 60);
+        tick += newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60);
 
         while (tick >= kTicksPerBeat)
         {
             tick -= kTicksPerBeat;
 
-            if (++pos->beat > pos->beats_per_bar)
+            if (++pos->beat > beatsPerBar)
             {
                 pos->beat = 1;
                 ++pos->bar;
-                pos->bar_start_tick += pos->beats_per_bar * pos->ticks_per_beat;
+                pos->bar_start_tick += beatsPerBar * kTicksPerBeat;
             }
         }
     }
 
-    pos->tick = (int)(tick + 0.5);
-    needsReset = false;
+    pos->tick = (int32_t)(tick + 0.5);
 }
+
+void EngineInternalTime::preProcess(const uint32_t numFrames)
+{
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+    if (hylia.enabled)
+    {
+        hylia_process(hylia.instance, numFrames, &hylia.timeInfo);
+
+        const double new_bpb = hylia.timeInfo.beatsPerBar;
+        const double new_bpm = hylia.timeInfo.beatsPerMinute;
+
+        if (new_bpb >= 1.0 && beatsPerBar != new_bpb)
+        {
+            beatsPerBar = new_bpb;
+            needsReset = true;
+        }
+        if (new_bpm > 0.0 && beatsPerMinute != new_bpm)
+        {
+            beatsPerMinute = new_bpm;
+            needsReset = true;
+        }
+    }
+#endif
+
+    if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
+        fillEngineTimeInfo(numFrames);
+}
+
+// -----------------------------------------------------------------------
+// EngineInternalTime::Hylia
 
 #ifndef BUILD_BRIDGE
 EngineInternalTime::Hylia::Hylia()
     : enabled(false),
+# ifdef HAVE_HYLIA
+      instance(hylia_create())
+# else
       instance(nullptr)
+# endif
 {
     carla_zeroStruct(timeInfo);
+}
+
+EngineInternalTime::Hylia::~Hylia()
+{
+# ifdef HAVE_HYLIA
+    hylia_cleanup(instance);
+# endif
 }
 #endif
 
@@ -580,12 +643,6 @@ PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const ui
 PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 {
     pData->doNextPluginAction(true);
-
-    if (pData->timeInfo.playing && pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-    {
-        pData->timeInfo.frame += numFrames;
-        pData->time.fillEngineTimeInfo(numFrames);
-    }
 }
 
 // -----------------------------------------------------------------------

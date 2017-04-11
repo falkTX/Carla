@@ -1725,7 +1725,7 @@ protected:
     void handleJackTimebaseCallback(jack_nframes_t nframes, jack_position_t* const pos, const int new_pos)
     {
         if (new_pos)
-            nframes = 0;
+            pData->time.setNeedsReset();
 
         pData->time.fillJackTimeInfo(pos, nframes);
     }

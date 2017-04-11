@@ -116,25 +116,23 @@ private:
 class EngineInternalTime {
 public:
     EngineInternalTime(EngineTimeInfo& timeInfo, const EngineTransportMode& transportMode) noexcept;
-    ~EngineInternalTime() noexcept;
 
     void init(const uint32_t bufferSize, double sampleRate);
-    void updateAudioValues(const uint32_t bufferSize, double sampleRate);
-
-    void preProcess(const uint32_t numFrames);
-    void postProcess(const uint32_t numFrames);
+    void updateAudioValues(const uint32_t bufferSize, const double sampleRate);
 
     void enableLink(const bool enable);
-    void setNeedsReset();
-
-    void fillEngineTimeInfo(const uint32_t newFrames) noexcept;
-    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
+    void setNeedsReset() noexcept;
+    void relocate(const uint64_t frame) noexcept;
 
 private:
-    double bpm;
+    double beatsPerBar;
+    double beatsPerMinute;
+    double bufferSize;
     double sampleRate;
     double tick;
     bool needsReset;
+
+    uint64_t nextFrame;
 
 #ifndef BUILD_BRIDGE
     struct Hylia {
@@ -142,11 +140,19 @@ private:
         hylia_t* instance;
         hylia_time_info_t timeInfo;
         Hylia();
+        ~Hylia();
     } hylia;
 #endif
 
     EngineTimeInfo& timeInfo;
     const EngineTransportMode& transportMode;
+
+    friend class PendingRtEventsRunner;
+    void preProcess(const uint32_t numFrames);
+    void fillEngineTimeInfo(const uint32_t newFrames) noexcept;
+
+    friend class CarlaEngineJack;
+    void fillJackTimeInfo(jack_position_t* const pos, const uint32_t newFrames) noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineInternalTime)
 };

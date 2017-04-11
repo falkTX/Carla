@@ -24,10 +24,10 @@
 namespace ableton
 {
 
-inline Link::Link(const double bpm)
+template <typename Clock>
+inline BasicLink<Clock>::BasicLink(const double bpm)
   : mPeerCountCallback([](std::size_t) {})
   , mTempoCallback([](link::Tempo) {})
-  , mClock{}
   , mController(link::Tempo(bpm),
       [this](const std::size_t peers) {
         std::lock_guard<std::mutex> lock(mCallbackMutex);
@@ -42,46 +42,54 @@ inline Link::Link(const double bpm)
 {
 }
 
-inline bool Link::isEnabled() const
+template <typename Clock>
+inline bool BasicLink<Clock>::isEnabled() const
 {
   return mController.isEnabled();
 }
 
-inline void Link::enable(const bool bEnable)
+template <typename Clock>
+inline void BasicLink<Clock>::enable(const bool bEnable)
 {
   mController.enable(bEnable);
 }
 
-inline std::size_t Link::numPeers() const
+template <typename Clock>
+inline std::size_t BasicLink<Clock>::numPeers() const
 {
   return mController.numPeers();
 }
 
+template <typename Clock>
 template <typename Callback>
-void Link::setNumPeersCallback(Callback callback)
+void BasicLink<Clock>::setNumPeersCallback(Callback callback)
 {
   std::lock_guard<std::mutex> lock(mCallbackMutex);
   mPeerCountCallback = [callback](const std::size_t numPeers) { callback(numPeers); };
 }
 
+template <typename Clock>
 template <typename Callback>
-void Link::setTempoCallback(Callback callback)
+void BasicLink<Clock>::setTempoCallback(Callback callback)
 {
   std::lock_guard<std::mutex> lock(mCallbackMutex);
   mTempoCallback = [callback](const link::Tempo tempo) { callback(tempo.bpm()); };
 }
 
-inline Link::Clock Link::clock() const
+template <typename Clock>
+inline Clock BasicLink<Clock>::clock() const
 {
   return mClock;
 }
 
-inline Link::Timeline Link::captureAudioTimeline() const
+template <typename Clock>
+inline typename BasicLink<Clock>::Timeline BasicLink<Clock>::captureAudioTimeline() const
 {
-  return Link::Timeline{mController.timelineRtSafe(), numPeers() > 0};
+  return BasicLink<Clock>::Timeline{mController.timelineRtSafe(), numPeers() > 0};
 }
 
-inline void Link::commitAudioTimeline(const Link::Timeline timeline)
+template <typename Clock>
+inline void BasicLink<Clock>::commitAudioTimeline(const Timeline timeline)
 {
   if (timeline.mOriginalTimeline != timeline.mTimeline)
   {
@@ -89,12 +97,14 @@ inline void Link::commitAudioTimeline(const Link::Timeline timeline)
   }
 }
 
-inline Link::Timeline Link::captureAppTimeline() const
+template <typename Clock>
+inline typename BasicLink<Clock>::Timeline BasicLink<Clock>::captureAppTimeline() const
 {
-  return Link::Timeline{mController.timeline(), numPeers() > 0};
+  return Timeline{mController.timeline(), numPeers() > 0};
 }
 
-inline void Link::commitAppTimeline(const Link::Timeline timeline)
+template <typename Clock>
+inline void BasicLink<Clock>::commitAppTimeline(const Timeline timeline)
 {
   if (timeline.mOriginalTimeline != timeline.mTimeline)
   {
@@ -102,21 +112,27 @@ inline void Link::commitAppTimeline(const Link::Timeline timeline)
   }
 }
 
-// Link::Timeline
+////////////////////
+// Link::Timeline //
+////////////////////
 
-inline Link::Timeline::Timeline(const link::Timeline timeline, const bool bRespectQuantum)
+template <typename Clock>
+inline BasicLink<Clock>::Timeline::Timeline(
+  const link::Timeline timeline, const bool bRespectQuantum)
   : mOriginalTimeline(timeline)
   , mbRespectQuantum(bRespectQuantum)
   , mTimeline(timeline)
 {
 }
 
-inline double Link::Timeline::tempo() const
+template <typename Clock>
+inline double BasicLink<Clock>::Timeline::tempo() const
 {
   return mTimeline.tempo.bpm();
 }
 
-inline void Link::Timeline::setTempo(
+template <typename Clock>
+inline void BasicLink<Clock>::Timeline::setTempo(
   const double bpm, const std::chrono::microseconds atTime)
 {
   const auto desiredTl =
@@ -125,26 +141,30 @@ inline void Link::Timeline::setTempo(
   mTimeline.timeOrigin = desiredTl.fromBeats(mTimeline.beatOrigin);
 }
 
-inline double Link::Timeline::beatAtTime(
+template <typename Clock>
+inline double BasicLink<Clock>::Timeline::beatAtTime(
   const std::chrono::microseconds time, const double quantum) const
 {
   return link::toPhaseEncodedBeats(mTimeline, time, link::Beats{quantum}).floating();
 }
 
-inline double Link::Timeline::phaseAtTime(
+template <typename Clock>
+inline double BasicLink<Clock>::Timeline::phaseAtTime(
   const std::chrono::microseconds time, const double quantum) const
 {
   return link::phase(link::Beats{beatAtTime(time, quantum)}, link::Beats{quantum})
     .floating();
 }
 
-inline std::chrono::microseconds Link::Timeline::timeAtBeat(
+template <typename Clock>
+inline std::chrono::microseconds BasicLink<Clock>::Timeline::timeAtBeat(
   const double beat, const double quantum) const
 {
   return link::fromPhaseEncodedBeats(mTimeline, link::Beats{beat}, link::Beats{quantum});
 }
 
-inline void Link::Timeline::requestBeatAtTime(
+template <typename Clock>
+inline void BasicLink<Clock>::Timeline::requestBeatAtTime(
   const double beat, std::chrono::microseconds time, const double quantum)
 {
   if (mbRespectQuantum)
@@ -157,7 +177,8 @@ inline void Link::Timeline::requestBeatAtTime(
   forceBeatAtTime(beat, time, quantum);
 }
 
-inline void Link::Timeline::forceBeatAtTime(
+template <typename Clock>
+inline void BasicLink<Clock>::Timeline::forceBeatAtTime(
   const double beat, const std::chrono::microseconds time, const double quantum)
 {
   // There are two components to the beat adjustment: a phase shift

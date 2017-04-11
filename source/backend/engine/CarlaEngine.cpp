@@ -1344,19 +1344,18 @@ void CarlaEngine::setFileCallback(const FileCallbackFunc func, void* const ptr) 
 void CarlaEngine::transportPlay() noexcept
 {
     pData->timeInfo.playing = true;
-    pData->time.fillEngineTimeInfo(0);
+    pData->time.setNeedsReset();
 }
 
 void CarlaEngine::transportPause() noexcept
 {
     pData->timeInfo.playing = false;
-    pData->time.fillEngineTimeInfo(0);
+    pData->time.setNeedsReset();
 }
 
 void CarlaEngine::transportRelocate(const uint64_t frame) noexcept
 {
-    pData->timeInfo.frame = frame;
-    pData->time.fillEngineTimeInfo(0);
+    pData->time.relocate(frame);
 }
 
 // -----------------------------------------------------------------------
@@ -1415,9 +1414,12 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 
     case ENGINE_OPTION_TRANSPORT_MODE:
         CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value <= ENGINE_TRANSPORT_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(getType() == kEngineTypeJack || value != ENGINE_TRANSPORT_MODE_JACK,);
         pData->options.transportMode = static_cast<EngineTransportMode>(value);
         delete[] pData->options.transportExtra;
         pData->options.transportExtra = (valueStr != nullptr) ? carla_strdup_safe(valueStr) : nullptr;
+
+        pData->time.setNeedsReset();
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
         // enable link now if needed
@@ -1659,9 +1661,6 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
 
     pData->time.updateAudioValues(newBufferSize, pData->sampleRate);
 
-    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-        pData->time.fillEngineTimeInfo(0);
-
     for (uint i=0; i < pData->curPluginCount; ++i)
     {
         CarlaPlugin* const plugin(pData->plugins[i].plugin);
@@ -1686,9 +1685,6 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 #endif
 
     pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
-
-    if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
-        pData->time.fillEngineTimeInfo(0);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
     {

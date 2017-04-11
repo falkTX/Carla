@@ -29,13 +29,15 @@ extern "C" {
 typedef struct _hylia_t hylia_t;
 
 typedef struct _hylia_time_info_t {
-    double bpm, beats, phase;
+    double beatsPerBar, beatsPerMinute, beat, phase;
 } hylia_time_info_t;
 
-hylia_t* hylia_create(double bpm, uint32_t buffer_size, uint32_t sample_rate);
-void hylia_enable(hylia_t* link, bool on, double bpm);
+hylia_t* hylia_create(void);
+void hylia_enable(hylia_t* link, bool on);
 void hylia_process(hylia_t* link, uint32_t frames, hylia_time_info_t* info);
-void hylia_set_tempo(hylia_t* link, double tempo);
+void hylia_set_beats_per_bar(hylia_t* link, double beatsPerBar);
+void hylia_set_beats_per_minute(hylia_t* link, double beatsPerMinute);
+void hylia_set_output_latency(hylia_t* link, uint32_t latency);
 void hylia_cleanup(hylia_t* link);
 
 #ifdef __cplusplus

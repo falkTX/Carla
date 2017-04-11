@@ -22,15 +22,7 @@
 #include <array>
 #include <cfloat>
 #include <cmath>
-#include <limits>
 
-#if LINK_PLATFORM_WINDOWS
-// Windows.h (or more specifically, minwindef.h) define the max(a, b) macro
-// which conflicts with the symbol provided by std::numeric_limits.
-#ifdef max
-#undef max
-#endif
-#endif
 
 namespace ableton
 {
@@ -42,9 +34,6 @@ struct Kalman
 {
   Kalman()
     : mValue(0)
-    , mGain(0)
-    , mVVariance(1)
-    , mWVariance(1)
     , mCoVariance(1)
     , mVarianceLength(n)
     , mCounter(mVarianceLength)
@@ -124,21 +113,18 @@ struct Kalman
       // prediction equations
       const double prevFilterValue = mFilterValues[(mCounter - 1) % mVarianceLength];
       mFilterValues[currentIndex] = prevFilterValue;
-      mWVariance = calculateWVariance();
-      const double coVarianceEstimation = mCoVariance + mWVariance;
+      const auto wVariance = calculateWVariance();
+      const double coVarianceEstimation = mCoVariance + wVariance;
 
       // update equations
-      mVVariance = calculateVVariance();
-      if ((coVarianceEstimation + mVVariance) != 0)
-      {
-        mGain = coVarianceEstimation / (coVarianceEstimation + mVVariance);
-      }
-      else
-      {
-        mGain = std::numeric_limits<double>::max();
-      }
-      mValue = prevFilterValue + mGain * (value - prevFilterValue);
-      mCoVariance = (1 - mGain) * coVarianceEstimation;
+      const auto vVariance = calculateVVariance();
+      // Gain defines how easily the filter will adjust to a new condition
+      // With gain = 1 the output equals the input, with gain = 0 the input
+      // is ignored and the output equals the last filtered value
+      const auto divisor = coVarianceEstimation + vVariance;
+      const auto gain = divisor != 0. ? coVarianceEstimation / divisor : 0.7;
+      mValue = prevFilterValue + gain * (value - prevFilterValue);
+      mCoVariance = (1 - gain) * coVarianceEstimation;
     }
     mFilterValues[currentIndex] = mValue;
 
@@ -146,9 +132,6 @@ struct Kalman
   }
 
   double mValue;
-  double mGain;
-  double mVVariance;
-  double mWVariance;
   double mCoVariance;
   size_t mVarianceLength;
   size_t mCounter;

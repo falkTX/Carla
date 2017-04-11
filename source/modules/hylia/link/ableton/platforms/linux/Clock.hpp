@@ -19,46 +19,46 @@
 
 #pragma once
 
-// Make sure to define this before <cmath> is included for Windows
-#define _USE_MATH_DEFINES
-#include "ableton/Link.hpp"
-#include <mutex>
-
-struct LinkTimeInfo {
-    double beatsPerBar, beatsPerMinute, beat, phase;
-};
+#include <chrono>
+#include <cmath>
+#include <ctime>
 
 namespace ableton
 {
-namespace link
+namespace platforms
 {
 
-class AudioEngine
+#ifdef linux
+#undef linux
+#endif
+
+namespace linux
+{
+
+template <clockid_t CLOCK>
+class Clock
 {
 public:
-  AudioEngine(Link& link);
-  double beatTime() const;
-  void setTempo(double tempo);
-  double quantum() const;
-  void setQuantum(double quantum);
-
-  void timelineCallback(const std::chrono::microseconds hostTime, LinkTimeInfo* const info);
-
-private:
-  struct EngineData
+  std::chrono::microseconds micros() const
   {
-    double requestedTempo;
-    bool resetBeatTime;
-    double quantum;
-  };
-
-  EngineData pullEngineData();
-
-  Link& mLink;
-  EngineData mSharedEngineData;
-  std::mutex mEngineDataGuard;
+    ::timespec ts;
+    ::clock_gettime(CLOCK, &ts);
+    std::uint64_t ns = ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+    return std::chrono::microseconds(ns / 1000ULL);
+  }
 };
 
+using ClockMonotonic = Clock<CLOCK_MONOTONIC>;
+using ClockMonotonicRaw = Clock<CLOCK_MONOTONIC_RAW>;
 
-} // namespace link
+/* Warning: the realtime clock can be subject to time change.
+ * One of the hard requirements of Ableton Link is that the clock must be
+ * monotonic.
+ * Only use the Realtime Clock if you can't use the monotonic ones, and
+ * beware that things might go wrong if time jumps.
+ */
+using ClockRealtime = Clock<CLOCK_REALTIME>;
+
+} // namespace linux
+} // namespace platforms
 } // namespace ableton

@@ -32,8 +32,8 @@
 #include <ableton/platforms/posix/ScanIpIfAddrs.hpp>
 #elif LINK_PLATFORM_LINUX
 #include <ableton/platforms/asio/Context.hpp>
+#include <ableton/platforms/linux/Clock.hpp>
 #include <ableton/platforms/posix/ScanIpIfAddrs.hpp>
-#include <ableton/platforms/stl/Clock.hpp>
 #endif
 
 namespace ableton
@@ -54,7 +54,11 @@ using IoContext =
   platforms::asio::Context<platforms::posix::ScanIpIfAddrs, util::NullLog>;
 
 #elif LINK_PLATFORM_LINUX
-using Clock = platforms::stl::Clock;
+ #ifdef __ARM_ARCH_7A__
+using Clock = platforms::linux::ClockMonotonicRaw;
+ #else
+using Clock = platforms::linux::ClockMonotonic;
+ #endif
 using IoContext =
   platforms::asio::Context<platforms::posix::ScanIpIfAddrs, util::NullLog>;
 #endif

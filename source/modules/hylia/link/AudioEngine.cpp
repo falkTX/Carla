@@ -25,7 +25,7 @@
 
 namespace ableton
 {
-namespace linkaudio
+namespace link
 {
 
 AudioEngine::AudioEngine(Link& link)
@@ -42,7 +42,7 @@ double AudioEngine::beatTime() const
 
 void AudioEngine::setTempo(double tempo)
 {
-  std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  const std::lock_guard<std::mutex> lock(mEngineDataGuard);
   mSharedEngineData.requestedTempo = tempo;
 }
 
@@ -53,7 +53,7 @@ double AudioEngine::quantum() const
 
 void AudioEngine::setQuantum(double quantum)
 {
-  std::lock_guard<std::mutex> lock(mEngineDataGuard);
+  const std::lock_guard<std::mutex> lock(mEngineDataGuard);
   mSharedEngineData.quantum = quantum;
   mSharedEngineData.resetBeatTime = true;
 }
@@ -61,10 +61,12 @@ void AudioEngine::setQuantum(double quantum)
 AudioEngine::EngineData AudioEngine::pullEngineData()
 {
   auto engineData = EngineData{};
+
   if (mEngineDataGuard.try_lock())
   {
     engineData.requestedTempo = mSharedEngineData.requestedTempo;
     mSharedEngineData.requestedTempo = 0;
+
     engineData.resetBeatTime = mSharedEngineData.resetBeatTime;
     engineData.quantum = mSharedEngineData.quantum;
     mSharedEngineData.resetBeatTime = false;
@@ -98,10 +100,11 @@ void AudioEngine::timelineCallback(const std::chrono::microseconds hostTime, Lin
   mLink.commitAudioTimeline(timeline);
 
   // Save timeline info
-  info->bpm   = timeline.tempo();
-  info->beats = timeline.beatAtTime(hostTime, engineData.quantum);
-  info->phase = timeline.phaseAtTime(hostTime, engineData.quantum);
+  info->beatsPerBar    = engineData.quantum;
+  info->beatsPerMinute = timeline.tempo();
+  info->beat           = timeline.beatAtTime(hostTime, engineData.quantum);
+  info->phase          = timeline.phaseAtTime(hostTime, engineData.quantum);
 }
 
-} // namespace linkaudio
+} // namespace link
 } // namespace ableton
