@@ -15,8 +15,8 @@
  * along with Hylia.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef MOD_LINK_H_INCLUDED
-#define MOD_LINK_H_INCLUDED
+#ifndef HYLIA_H_INCLUDED
+#define HYLIA_H_INCLUDED
 
 #include <stdint.h>
 
@@ -44,4 +44,4 @@ void hylia_cleanup(hylia_t* link);
 }
 #endif
 
-#endif // MOD_LINK_H_INCLUDED
+#endif // HYLIA_H_INCLUDED

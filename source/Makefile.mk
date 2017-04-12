@@ -373,7 +373,7 @@ HYLIA_FLAGS          +=
 endif
 
 ifeq ($(LINUX),true)
-HYLIA_FLAGS           = -DLINK_PLATFORM_UNIX=1 -DLINK_PLATFORM_LINUX=1
+HYLIA_FLAGS           = -DLINK_PLATFORM_LINUX=1
 JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
 JUCE_CORE_LIBS        = -ldl -lpthread -lrt
 LILV_LIBS             = -ldl -lm -lrt
@@ -395,7 +395,7 @@ endif
 
 ifeq ($(MACOS),true)
 DGL_LIBS                   = -framework OpenGL -framework Cocoa
-HYLIA_FLAGS                = -DLINK_PLATFORM_UNIX=1 -DLINK_PLATFORM_MACOSX=1
+HYLIA_FLAGS                = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS            = -ldl -lpthread
 JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
 JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
