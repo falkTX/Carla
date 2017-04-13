@@ -26,7 +26,7 @@ from carla_config import *
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSlot
-    from PyQt5.QtGui import QDialog, QFontMetrics
+    from PyQt5.QtGui import QFontMetrics
     from PyQt5.QtWidgets import QDialog
 else:
     from PyQt4.QtCore import pyqtSlot
