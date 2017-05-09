@@ -1,6 +1,6 @@
 /*
  * Carla Plugin, DSSI implementation
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -2456,12 +2456,6 @@ public:
             return false;
         }
 
-        if (label == nullptr || label[0] == '\0')
-        {
-            pData->engine->setLastError("null label");
-            return false;
-        }
-
         // ---------------------------------------------------------------
         // open DLL
 
@@ -2484,6 +2478,9 @@ public:
 
         // ---------------------------------------------------------------
         // get descriptor that matches label
+
+        // if label is null, get first valid plugin
+        const bool nullLabel = (label == nullptr || label[0] == '\0');
 
         for (ulong d=0;; ++d)
         {
@@ -2523,7 +2520,7 @@ public:
                 break;
             }
 
-            if (std::strcmp(fDescriptor->Label, label) == 0)
+            if (nullLabel || std::strcmp(fDescriptor->Label, label) == 0)
                 break;
         }
 
