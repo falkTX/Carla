@@ -107,6 +107,9 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 #define LV2_UI__makeResident       LV2_UI_PREFIX "makeResident"
 #define LV2_UI__makeSONameResident LV2_UI_PREFIX "makeSONameResident"
 
+// TODO: update LV2 headers once again
+#define LV2_CORE__enabled LV2_CORE_PREFIX "enabled" ///< http://lv2plug.in/ns/lv2core#enabled
+
 // -----------------------------------------------------------------------
 // Custom Atom types
 
@@ -906,6 +909,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     {
                         /**/ if (std::strcmp(designation, LV2_CORE__control) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_CONTROL;
+                        else if (std::strcmp(designation, LV2_CORE__enabled) == 0)
+                            rdfPort->Designation = LV2_PORT_DESIGNATION_ENABLED;
                         else if (std::strcmp(designation, LV2_CORE__freeWheeling) == 0)
                             rdfPort->Designation = LV2_PORT_DESIGNATION_FREEWHEELING;
                         else if (std::strcmp(designation, LV2_CORE__latency) == 0)
