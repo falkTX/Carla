@@ -821,9 +821,8 @@ public:
 
         if (isEmbed)
         {
-            fUI.isVisible = true;
-
             intptr_t parentId = 0;
+            const LV2UI_Resize* uiResize = nullptr;
 
             for (int i=0; features[i] != nullptr; ++i)
             {
@@ -833,20 +832,40 @@ public:
                 }
                 else if (std::strcmp(features[i]->URI, LV2_UI__resize) == 0)
                 {
-                    const LV2UI_Resize* const uiResize((const LV2UI_Resize*)features[i]->data);
-                    uiResize->ui_resize(uiResize->handle, 740, 512);
+                    uiResize = (const LV2UI_Resize*)features[i]->data;
                 }
             }
 
-            char strBuf[0xff+1];
-            strBuf[0xff] = '\0';
-            std::snprintf(strBuf, 0xff, P_INTPTR, parentId);
+            // -----------------------------------------------------------
+            // see if the host can really embed the UI
 
-            carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
+            if (parentId != 0)
+            {
+                // wait for remote side to be ready
+                fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f);
 
-            fDescriptor->ui_show(fHandle, true);
+                if (uiResize && uiResize->ui_resize != nullptr)
+                    uiResize->ui_resize(uiResize->handle, 740, 512);
 
-            carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+                fHost.uiName = carla_strdup(fDescriptor->name);
+                fUI.isVisible = true;
+
+                char strBuf[0xff+1];
+                strBuf[0xff] = '\0';
+                std::snprintf(strBuf, 0xff, P_INTPTR, parentId);
+
+                carla_setenv("CARLA_PLUGIN_EMBED_WINID", strBuf);
+
+                fDescriptor->ui_show(fHandle, true);
+
+                carla_setenv("CARLA_PLUGIN_EMBED_WINID", "0");
+
+                const intptr_t winId(fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_NULL, (int32_t)0xDEADF00D, 0xC0C0B00B, nullptr, 0.0f));
+                CARLA_SAFE_ASSERT_RETURN(winId != 0,);
+
+                *widget = (LV2UI_Widget)winId;
+                return;
+            }
         }
 #endif
 
@@ -972,8 +991,6 @@ protected:
 
     void handleUiShow()
     {
-        CARLA_SAFE_ASSERT_RETURN(! fUI.isEmbed,);
-
         if (fDescriptor->ui_show != nullptr)
             fDescriptor->ui_show(fHandle, true);
 
