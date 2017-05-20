@@ -1,6 +1,6 @@
 /*
  * Carla LV2 Plugin
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -3373,17 +3373,19 @@ public:
         } // End of Plugin processing (no events)
 
         // --------------------------------------------------------------------------------------------------------
-        // MIDI Output
+        // Events/MIDI Output
 
-        if (fEventsOut.ctrl != nullptr)
+        for (uint32_t i=0; i < fEventsOut.count; ++i)
         {
-            if (fEventsOut.ctrl->type & CARLA_EVENT_DATA_ATOM)
+            Lv2EventData& evData(fEventsOut.data[i]);
+
+            if (evData.type & CARLA_EVENT_DATA_ATOM)
             {
                 const LV2_Atom_Event* ev;
                 LV2_Atom_Buffer_Iterator iter;
 
                 uint8_t* data;
-                lv2_atom_buffer_begin(&iter, fEventsOut.ctrl->atom);
+                lv2_atom_buffer_begin(&iter, evData.atom);
 
                 for (;;)
                 {
@@ -3395,29 +3397,29 @@ public:
 
                     if (ev->body.type == CARLA_URI_MAP_ID_MIDI_EVENT)
                     {
-                        if (fEventsOut.ctrl->port != nullptr)
+                        if (evData.port != nullptr)
                         {
                             CARLA_SAFE_ASSERT_CONTINUE(ev->time.frames >= 0);
                             CARLA_SAFE_ASSERT_CONTINUE(ev->body.size < 0xFF);
-                            fEventsOut.ctrl->port->writeMidiEvent(static_cast<uint32_t>(ev->time.frames), static_cast<uint8_t>(ev->body.size), data);
+                            evData.port->writeMidiEvent(static_cast<uint32_t>(ev->time.frames), static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
                     else //if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
                     {
                         //carla_stdout("Got out event, %s", carla_lv2_urid_unmap(this, ev->body.type));
-                        fAtomBufferOut.put(&ev->body, fEventsOut.ctrl->rindex);
+                        fAtomBufferOut.put(&ev->body, evData.rindex);
                     }
 
                     lv2_atom_buffer_increment(&iter);
                 }
             }
-            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_EVENT) != 0 && fEventsOut.ctrl->port != nullptr)
+            else if ((evData.type & CARLA_EVENT_DATA_EVENT) != 0 && evData.port != nullptr)
             {
                 const LV2_Event* ev;
                 LV2_Event_Iterator iter;
 
                 uint8_t* data;
-                lv2_event_begin(&iter, fEventsOut.ctrl->event);
+                lv2_event_begin(&iter, evData.event);
 
                 for (;;)
                 {
@@ -3430,15 +3432,15 @@ public:
                     if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
                     {
                         CARLA_SAFE_ASSERT_CONTINUE(ev->size < 0xFF);
-                        fEventsOut.ctrl->port->writeMidiEvent(ev->frames, static_cast<uint8_t>(ev->size), data);
+                        evData.port->writeMidiEvent(ev->frames, static_cast<uint8_t>(ev->size), data);
                     }
 
                     lv2_event_increment(&iter);
                 }
             }
-            else if ((fEventsOut.ctrl->type & CARLA_EVENT_DATA_MIDI_LL) != 0 && fEventsOut.ctrl->port != nullptr)
+            else if ((evData.type & CARLA_EVENT_DATA_MIDI_LL) != 0 && evData.port != nullptr)
             {
-                LV2_MIDIState state = { &fEventsOut.ctrl->midi, frames, 0 };
+                LV2_MIDIState state = { &evData.midi, frames, 0 };
 
                 uint32_t eventSize;
                 double   eventTime;
@@ -3457,7 +3459,7 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(eventSize < 0xFF);
                     CARLA_SAFE_ASSERT_CONTINUE(eventTime >= 0.0);
 
-                    fEventsOut.ctrl->port->writeMidiEvent(static_cast<uint32_t>(eventTime), static_cast<uint8_t>(eventSize), eventData);
+                    evData.port->writeMidiEvent(static_cast<uint32_t>(eventTime), static_cast<uint8_t>(eventSize), eventData);
                     lv2midi_step(&state);
                 }
             }
