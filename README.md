@@ -17,3 +17,18 @@ Features
 * Plugin bridge support (such as running 32bit plugins on a 64bit Carla)
 * Rack and Patchbay engine modes, plus Single and Multi-Client if using JACK
 * Native audio drivers (ALSA, DirectSound, CoreAudio) and low-latency (ASIO and JACK)
+
+Development Build
+---------------
+
+### Build
+
+* Install `pyqt5-dev-tools` and `python3-pyqt5.qtsvg`
+* `make`
+
+### Run
+
+* `mkdir dist`
+* `make install PREFIX=$(pwd)/dist`
+* `export PYTHONPATH=$(pwd)/dist/share/carla:$PYTHONPATH`
+* `dist/bin/carla`
