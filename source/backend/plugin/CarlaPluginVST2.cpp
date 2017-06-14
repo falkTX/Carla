@@ -224,6 +224,7 @@ public:
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         return options;
@@ -1301,7 +1302,28 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        break;
+                        if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            VstMidiEvent& vstMidiEvent_LSB(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent_LSB);
+
+                            vstMidiEvent_LSB.type        = kVstMidiType;
+                            vstMidiEvent_LSB.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent_LSB.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent_LSB.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent_LSB.midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
+                            vstMidiEvent_LSB.midiData[2] = char(ctrlEvent.value*127.0f);
+
+                            VstMidiEvent& vstMidiEvent_MSB(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent_MSB);
+
+                            vstMidiEvent_MSB.type        = kVstMidiType;
+                            vstMidiEvent_MSB.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent_MSB.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent_MSB.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent_MSB.midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            vstMidiEvent_MSB.midiData[2] = 0; 
+                        }
 
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
@@ -1313,6 +1335,17 @@ public:
                                 break;
                             }
                         }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
+
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = char(ctrlEvent.param);
+                        }                            
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
@@ -2190,9 +2223,6 @@ public:
         else if (options & PLUGIN_OPTION_FIXED_BUFFERS)
             pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
 
-        if (fEffect->numPrograms > 1)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fEffect->flags & effFlagsProgramChunks)
             pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
@@ -2205,7 +2235,12 @@ public:
 
             if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;            
         }
+
+        if ((fEffect->numPrograms > 1) & ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0))
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
 
         return true;
 
