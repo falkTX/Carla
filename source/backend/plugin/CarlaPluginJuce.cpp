@@ -161,6 +161,7 @@ public:
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         return options;
@@ -854,7 +855,19 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
-                        break;
+                        if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = uint8_t(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT__LSB;
+                            midiData[2] = uint8_t(ctrlEvent.value*127.0f);
+                            fMidiBuffer.addEvent(midiData, 3, static_cast<int>(event.time));
+
+                            midiData[1] = MIDI_CONTROL_BANK_SELECT; 
+                            midiData[2] = 0;
+                            fMidiBuffer.addEvent(midiData, 2, static_cast<int>(event.time));
+                        }
+                        break;                    
 
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
@@ -863,9 +876,15 @@ public:
                             {
                                 setProgram(ctrlEvent.param, false, false, false);
                                 pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
-                                break;
                             }
                         }
+                        else if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            uint8_t midiData[3];
+                            midiData[0] = uint8_t(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            midiData[1] = uint8_t(ctrlEvent.value*127.0f);
+                            fMidiBuffer.addEvent(midiData, 2, static_cast<int>(event.time));
+                        }                        
                         break;
 
                     case kEngineControlEventTypeAllSoundOff:
@@ -1223,9 +1242,6 @@ public:
         pData->options |= PLUGIN_OPTION_FIXED_BUFFERS;
         pData->options |= PLUGIN_OPTION_USE_CHUNKS;
 
-        if (fInstance->getNumPrograms() > 1)
-            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
-
         if (fInstance->acceptsMidi())
         {
             pData->options |= PLUGIN_OPTION_SEND_CHANNEL_PRESSURE;
@@ -1235,7 +1251,12 @@ public:
 
             if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                pData->options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;                            
         }
+
+        if ((fInstance->getNumPrograms() > 1) & ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) == 0))
+            pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;        
 
         return true;
     }

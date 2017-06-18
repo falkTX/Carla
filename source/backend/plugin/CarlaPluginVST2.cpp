@@ -1324,6 +1324,7 @@ public:
                             vstMidiEvent_MSB.midiData[1] = MIDI_CONTROL_BANK_SELECT;
                             vstMidiEvent_MSB.midiData[2] = 0; 
                         }
+                        break;
 
                     case kEngineControlEventTypeMidiProgram:
                         if (event.channel == pData->ctrlChannel && (pData->options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES) != 0)
