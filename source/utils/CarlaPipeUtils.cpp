@@ -36,14 +36,16 @@
 #include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "AppConfig.h"
 # include "juce_core/juce_core.h"
 #else
 # include <cerrno>
 # include <signal.h>
 # include <sys/wait.h>
-# ifndef F_SETPIPE_SZ
-#  define F_SETPIPE_SZ 1031
-# endif
+#endif
+
+#ifndef F_SETPIPE_SZ
+# define F_SETPIPE_SZ 1031
 #endif
 
 #ifdef CARLA_OS_WIN
@@ -1166,7 +1168,6 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //----------------------------------------------------------------
     // set size, non-fatal
 
-# ifndef CARLA_OS_MAC
     try {
         ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
@@ -1174,7 +1175,6 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     try {
         ::fcntl(pipeRecvServer, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
-# endif
 
     //----------------------------------------------------------------
     // set non-block
