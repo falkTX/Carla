@@ -41,7 +41,6 @@ import ui_carla_host
 
 from carla_app import *
 from carla_database import *
-from carla_panels import *
 from carla_settings import *
 from carla_utils import *
 from carla_widgets import *
@@ -124,6 +123,11 @@ class HostWindow(QMainWindow):
         self.fIsProjectLoading = False
         self.fCurrentlyRemovingAllPlugins = False
 
+        self.fLastTransportBPM   = 0.0
+        self.fLastTransportFrame = 0
+        self.fLastTransportState = False
+        self.fSampleRate         = 0.0
+
         # run a custom action after engine is properly closed
         # 1 for close carla, 2 for load project
         self.fCustomStopAction = 0
@@ -175,8 +179,6 @@ class HostWindow(QMainWindow):
             self.ui.act_engine_start.setVisible(False)
             self.ui.act_engine_stop.setEnabled(False)
             self.ui.act_engine_stop.setVisible(False)
-            self.ui.act_settings_show_time_panel.setEnabled(False)
-            self.ui.act_settings_show_time_panel.setVisible(False)
             self.ui.menu_Engine.setEnabled(False)
             self.ui.menu_Engine.setVisible(False)
             self.ui.menu_Engine.menuAction().setVisible(False)
@@ -268,11 +270,21 @@ class HostWindow(QMainWindow):
         self.ui.fileTreeView.setHeaderHidden(True)
 
         # ----------------------------------------------------------------------------------------------------
-        # Set up GUI (panels)
+        # Set up GUI (transport)
 
-        self.ui.panelTime = CarlaPanelTime(host, self)
-        self.ui.panelTime.setEnabled(False)
-        self.ui.panelTime.adjustSize()
+        self.ui.l_transport_bbt.setMinimumWidth(QFontMetrics(self.ui.l_transport_bbt.font()).width("000|00|0000") + 3)
+        self.ui.l_transport_frame.setMinimumWidth(QFontMetrics(self.ui.l_transport_frame.font()).width("000'000'000") + 3)
+        self.ui.l_transport_time.setMinimumWidth(QFontMetrics(self.ui.l_transport_time.font()).width("00:00:00") + 3)
+
+        if host.isPlugin:
+            self.ui.b_transport_play.setEnabled(False)
+            self.ui.b_transport_stop.setEnabled(False)
+            self.ui.b_transport_backwards.setEnabled(False)
+            self.ui.b_transport_forwards.setEnabled(False)
+            self.ui.cb_transport_link.setEnabled(False)
+            self.ui.dsb_transport_bpm.setEnabled(False)
+
+        self.ui.w_transport.setEnabled(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (rack)
@@ -392,7 +404,6 @@ class HostWindow(QMainWindow):
         self.ui.act_canvas_save_image.triggered.connect(self.slot_canvasSaveImage)
         self.ui.act_canvas_arrange.setEnabled(False) # TODO, later
 
-        self.ui.act_settings_show_time_panel.toggled.connect(self.slot_showTimePanel)
         self.ui.act_settings_show_toolbar.toggled.connect(self.slot_showToolbar)
         self.ui.act_settings_show_meters.toggled.connect(self.slot_showCanvasMeters)
         self.ui.act_settings_show_keyboard.toggled.connect(self.slot_showCanvasKeyboard)
@@ -408,6 +419,13 @@ class HostWindow(QMainWindow):
         self.ui.b_disk_remove.clicked.connect(self.slot_diskFolderRemove)
         self.ui.fileTreeView.doubleClicked.connect(self.slot_fileTreeDoubleClicked)
 
+        self.ui.b_transport_play.clicked.connect(self.slot_transportPlayPause)
+        self.ui.b_transport_stop.clicked.connect(self.slot_transportStop)
+        self.ui.b_transport_backwards.clicked.connect(self.slot_transportBackwards)
+        self.ui.b_transport_forwards.clicked.connect(self.slot_transportForwards)
+        self.ui.cb_transport_jack.clicked.connect(self.slot_transportJackEnabled)
+        self.ui.cb_transport_link.clicked.connect(self.slot_transportLinkEnabled)
+
         self.ui.listWidget.customContextMenuRequested.connect(self.showPluginActionsMenu)
 
         self.ui.graphicsView.horizontalScrollBar().valueChanged.connect(self.slot_horizontalScrollBarChanged)
@@ -418,7 +436,6 @@ class HostWindow(QMainWindow):
 
         self.ui.miniCanvasPreview.miniCanvasMoved.connect(self.slot_miniCanvasMoved)
 
-        self.ui.panelTime.finished.connect(self.slot_timePanelClosed)
         self.ui.tabWidget.currentChanged.connect(self.slot_tabChanged)
 
         self.scene.scaleChanged.connect(self.slot_canvasScaleChanged)
@@ -430,6 +447,7 @@ class HostWindow(QMainWindow):
 
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
+        host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
@@ -701,6 +719,8 @@ class HostWindow(QMainWindow):
 
     @pyqtSlot(int, int, str)
     def slot_handleEngineStartedCallback(self, processMode, transportMode, driverName):
+        self.fSampleRate = self.host.get_sample_rate()
+
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
 
@@ -726,11 +746,16 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
-            self.ui.panelTime.setEnabled(True)
+            self.ui.w_transport.setEnabled(True)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(True)
             self.ui.act_file_save_as.setEnabled(True)
+
+        self.refreshTransport(True)
+
+        self.ui.cb_transport_jack.setChecked(transportMode == ENGINE_TRANSPORT_MODE_JACK)
+        self.ui.cb_transport_jack.setEnabled(driverName == "JACK")
 
         self.startTimers()
 
@@ -749,11 +774,16 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(False)
             self.ui.act_engine_start.setEnabled(True)
             self.ui.act_engine_stop.setEnabled(False)
-            self.ui.panelTime.setEnabled(False)
+            self.ui.w_transport.setEnabled(False)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(False)
             self.ui.act_file_save_as.setEnabled(False)
+
+    @pyqtSlot(float)
+    def slot_handleSampleRateChangedCallback(self, newSampleRate):
+        self.fSampleRate = newSampleRate
+        self.refreshTransport(True)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -1308,12 +1338,8 @@ class HostWindow(QMainWindow):
         settings = QSettings()
 
         settings.setValue("Geometry", self.saveGeometry())
-        settings.setValue("TimePanelGeometry", self.ui.panelTime.saveGeometry())
 
         #settings.setValue("SplitterState", self.ui.splitter.saveState())
-
-        if not (self.host.isControl or self.host.isPlugin):
-            settings.setValue("ShowTimePanel", self.ui.panelTime.isVisible())
 
         settings.setValue("ShowToolbar", self.ui.toolBar.isEnabled())
 
@@ -1336,17 +1362,6 @@ class HostWindow(QMainWindow):
 
         if firstTime:
             self.restoreGeometry(settings.value("Geometry", b""))
-
-            if not (self.host.isControl or self.host.isPlugin):
-                self.ui.panelTime.restoreGeometry(settings.value("TimePanelGeometry", b""))
-
-                showTimePanel = settings.value("ShowTimePanel", True, type=bool)
-                self.ui.act_settings_show_time_panel.setChecked(showTimePanel)
-
-                if showTimePanel:
-                    QTimer.singleShot(0, self.ui.panelTime.show)
-                else:
-                    self.ui.panelTime.hide()
 
             showToolbar = settings.value("ShowToolbar", True, type=bool)
             self.ui.act_settings_show_toolbar.setChecked(showToolbar)
@@ -1421,10 +1436,6 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Settings (menu actions)
-
-    @pyqtSlot(bool)
-    def slot_showTimePanel(self, yesNo):
-        self.ui.panelTime.setVisible(yesNo)
 
     @pyqtSlot(bool)
     def slot_showSidePanel(self, yesNo):
@@ -1534,6 +1545,123 @@ class HostWindow(QMainWindow):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),
                              self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    # --------------------------------------------------------------------------------------------------------
+    # Transport
+
+    def refreshTransport(self, forced = False):
+        if not self.isVisible():
+            return
+        if self.fSampleRate == 0.0 or not self.host.is_engine_running():
+            return
+
+        timeInfo = self.host.get_transport_info()
+        playing  = timeInfo['playing']
+        frame    = timeInfo['frame']
+        bpm      = timeInfo['bpm']
+
+        if playing != self.fLastTransportState or forced:
+            if playing:
+                icon = getIcon("media-playback-pause")
+                self.ui.b_transport_play.setChecked(True)
+                self.ui.b_transport_play.setIcon(icon)
+                #self.ui.b_transport_play.setText(self.tr("&Pause"))
+            else:
+                icon = getIcon("media-playback-start")
+                self.ui.b_transport_play.setChecked(False)
+                self.ui.b_transport_play.setIcon(icon)
+                #self.ui.b_play.setText(self.tr("&Play"))
+
+            self.fLastTransportState = playing
+
+        if frame != self.fLastTransportFrame or forced:
+            self.fLastTransportFrame = frame
+
+            time = frame / self.fSampleRate
+            secs =  time % 60
+            mins = (time / 60) % 60
+            hrs  = (time / 3600) % 60
+            self.ui.l_transport_time.setText("%02i:%02i:%02i" % (hrs, mins, secs))
+
+            frame1 =  frame % 1000
+            frame2 = (frame / 1000) % 1000
+            frame3 = (frame / 1000000) % 1000
+            self.ui.l_transport_frame.setText("%03i'%03i'%03i" % (frame3, frame2, frame1))
+
+            bar  = timeInfo['bar']
+            beat = timeInfo['beat']
+            tick = timeInfo['tick']
+            self.ui.l_transport_bbt.setText("%03i|%02i|%04i" % (bar, beat, tick))
+
+        if bpm != self.fLastTransportBPM or forced:
+            self.fLastTransportBPM = bpm
+
+            if bpm > 0.0:
+                self.ui.dsb_transport_bpm.setValue(bpm)
+                self.ui.dsb_transport_bpm.setStyleSheet("")
+            else:
+                self.ui.dsb_transport_bpm.setStyleSheet("QDoubleSpinBox { color: palette(mid); }")
+
+    # --------------------------------------------------------------------------------------------------------
+    # Transport (menu actions)
+
+    @pyqtSlot(bool)
+    def slot_transportPlayPause(self, toggled):
+        if self.host.isPlugin or not self.host.is_engine_running():
+            return
+
+        if toggled:
+            self.host.transport_play()
+        else:
+            self.host.transport_pause()
+
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportStop(self):
+        if self.host.isPlugin or not self.host.is_engine_running():
+            return
+
+        self.host.transport_pause()
+        self.host.transport_relocate(0)
+
+        self.refreshTransport()
+
+    @pyqtSlot()
+    def slot_transportBackwards(self):
+        if self.host.isPlugin or not self.host.is_engine_running():
+            return
+
+        newFrame = self.host.get_current_transport_frame() - 100000
+
+        if newFrame < 0:
+            newFrame = 0
+
+        self.host.transport_relocate(newFrame)
+
+    @pyqtSlot()
+    def slot_transportForwards(self):
+        if self.fSampleRate == 0.0 or self.host.isPlugin or not self.host.is_engine_running():
+            return
+
+        newFrame = self.host.get_current_transport_frame() + int(self.fSampleRate*2.5)
+        self.host.transport_relocate(newFrame)
+
+    @pyqtSlot(bool)
+    def slot_transportJackEnabled(self, clicked):
+        if not self.host.is_engine_running():
+            return
+        mode  = ENGINE_TRANSPORT_MODE_JACK if clicked else ENGINE_TRANSPORT_MODE_INTERNAL
+        extra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
+
+    @pyqtSlot(bool)
+    def slot_transportLinkEnabled(self, clicked):
+        if not self.host.is_engine_running():
+            return
+        mode  = ENGINE_TRANSPORT_MODE_JACK if self.ui.cb_transport_jack.isChecked() else ENGINE_TRANSPORT_MODE_INTERNAL
+        extra = ":link:" if clicked else ""
+        self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, mode, extra)
 
     # --------------------------------------------------------------------------------------------------------
     # Canvas scrollbars
@@ -1683,10 +1811,6 @@ class HostWindow(QMainWindow):
 
     # --------------------------------------------------------------------------------------------------------
     # Misc
-
-    @pyqtSlot()
-    def slot_timePanelClosed(self):
-        self.ui.act_settings_show_time_panel.setChecked(False)
 
     @pyqtSlot(int)
     def slot_tabChanged(self, index):
@@ -1873,6 +1997,7 @@ class HostWindow(QMainWindow):
     # show/hide event
 
     def showEvent(self, event):
+        self.refreshTransport(True)
         QMainWindow.showEvent(self, event)
 
         # set our gui as parent for all plugins UIs
@@ -1908,7 +2033,7 @@ class HostWindow(QMainWindow):
 
     def idleFast(self):
         self.host.engine_idle()
-        self.ui.panelTime.refreshTransport()
+        self.refreshTransport()
 
         if self.fPluginCount == 0 or self.fCurrentlyRemovingAllPlugins:
             return

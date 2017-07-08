@@ -270,7 +270,6 @@ RES = \
 	bin/resources/carla_control.py \
 	bin/resources/carla_database.py \
 	bin/resources/carla_host.py \
-	bin/resources/carla_panels.py \
 	bin/resources/carla_settings.py \
 	bin/resources/carla_skin.py \
 	bin/resources/carla_shared.py \
@@ -295,7 +294,6 @@ RES = \
 	bin/resources/ui_carla_database.py \
 	bin/resources/ui_carla_edit.py \
 	bin/resources/ui_carla_host.py \
-	bin/resources/ui_carla_panel_time.py \
 	bin/resources/ui_carla_parameter.py \
 	bin/resources/ui_carla_plugin_calf.py \
 	bin/resources/ui_carla_plugin_classic.py \
@@ -340,7 +338,6 @@ UIs = \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
-	source/ui_carla_panel_time.py \
 	source/ui_carla_parameter.py \
 	source/ui_carla_plugin_calf.py \
 	source/ui_carla_plugin_classic.py \
@@ -640,7 +637,6 @@ endif
 	$(LINK) $(DATADIR)/carla/carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_modgui.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_panels.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
@@ -665,7 +661,6 @@ endif
 	$(LINK) $(DATADIR)/carla/ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_panel_time.py      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(DATADIR)/carla/resources
