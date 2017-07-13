@@ -1148,9 +1148,11 @@ public:
             }
         }
 
+        String fileOrIdentifier;
+
         if (std::strcmp(format, "AU") == 0)
         {
-            fDesc.fileOrIdentifier = label;
+            fileOrIdentifier = label;
         }
         else
         {
@@ -1172,18 +1174,30 @@ public:
             }
 #endif
 
-            fDesc.fileOrIdentifier = jfilename;
-            fDesc.uid = static_cast<int>(uniqueId);
+            fileOrIdentifier = jfilename;
 
             if (label != nullptr && label[0] != '\0')
                 fDesc.name = label;
         }
 
-        fDesc.pluginFormatName = format;
         fFormatManager.addDefaultFormats();
 
+        {
+            OwnedArray<PluginDescription> pluginDescriptions;
+            KnownPluginList plist;
+            for (int i = 0; i < fFormatManager.getNumFormats(); ++i)
+                plist.scanAndAddFile(fileOrIdentifier, true, pluginDescriptions, *fFormatManager.getFormat(i));
+            fDesc = *pluginDescriptions[0];
+        }
+
+        if (uniqueId != 0)
+            fDesc.uid = static_cast<int>(uniqueId);
+
         String error;
-        fInstance = fFormatManager.createPluginInstance(fDesc, 44100, 512, error);
+        fInstance = fFormatManager.createPluginInstance(fDesc,
+                                                        pData->engine->getSampleRate(),
+                                                        static_cast<int>(pData->engine->getBufferSize()),
+                                                        error);
 
         if (fInstance == nullptr)
         {
