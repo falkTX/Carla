@@ -194,6 +194,7 @@ CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 CARLA_KEY_MAIN_USE_CUSTOM_SKINS = "Main/UseCustomSkins"  # bool
 CARLA_KEY_MAIN_MANAGE_UIS       = "Main/ManageUIs"       # bool
 CARLA_KEY_MAIN_SHOW_LOGS        = "Main/ShowLogs"        # bool
+CARLA_KEY_MAIN_LOAD_LIB_LOCAL   = "Main/LoadLibsLocal"   # bool
 
 CARLA_KEY_CANVAS_THEME             = "Canvas/Theme"           # str
 CARLA_KEY_CANVAS_SIZE              = "Canvas/Size"            # str "NxN"
@@ -239,6 +240,7 @@ CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
 CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
 CARLA_DEFAULT_MAIN_MANAGE_UIS       = True
 CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not WINDOWS)
+CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL   = True
 
 # Canvas
 CARLA_DEFAULT_CANVAS_THEME             = "Modern Dark"

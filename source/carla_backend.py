@@ -2100,13 +2100,13 @@ class CarlaHostNull(CarlaHostMeta):
 # Carla Host object using a DLL
 
 class CarlaHostDLL(CarlaHostMeta):
-    def __init__(self, libName):
+    def __init__(self, libName, localLoad):
         CarlaHostMeta.__init__(self)
 
         # info about this host object
         self.isPlugin = False
 
-        self.lib = CDLL(libName, RTLD_GLOBAL)
+        self.lib = CDLL(libName, RTLD_LOCAL if localLoad else RTLD_GLOBAL)
 
         self.lib.carla_get_engine_driver_count.argtypes = None
         self.lib.carla_get_engine_driver_count.restype = c_uint

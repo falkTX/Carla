@@ -2326,6 +2326,16 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     pathBinaries, pathResources = getPaths(libPrefix)
 
     # --------------------------------------------------------------------------------------------------------
+    # Check if we should open main lib as local or global
+
+    settings = QSettings("falkTX", "Carla2")
+
+    try:
+        loadLocal = settings.value(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL, type=bool)
+    except:
+        loadLocal = CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL
+
+    # --------------------------------------------------------------------------------------------------------
     # Fail if binary dir is not found
 
     if not os.path.exists(pathBinaries):
@@ -2337,8 +2347,9 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Set Carla library name
 
-    libname   = "libcarla_%s2.%s"   % ("control" if isControl else "standalone", DLL_EXTENSION)
-    utilsname = "libcarla_utils.%s" % (DLL_EXTENSION)
+    libname   = "libcarla_%s2.%s" % ("control" if isControl else "standalone", DLL_EXTENSION)
+    libname   = os.path.join(pathBinaries, libname)
+    utilsname = os.path.join(pathBinaries, "libcarla_utils.%s" % (DLL_EXTENSION))
 
     # --------------------------------------------------------------------------------------------------------
     # Print info
@@ -2353,12 +2364,14 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Init host
 
+
+
     if failError:
         # no try
-        host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+        host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadLocal)
     else:
         try:
-            host = HostClass() if HostClass is not None else CarlaHostQtDLL(os.path.join(pathBinaries, libname))
+            host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadLocal)
         except:
             host = CarlaHostQtNull()
 
@@ -2381,7 +2394,7 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Init utils
 
-    gCarla.utils = CarlaUtils(os.path.join(pathBinaries, utilsname))
+    gCarla.utils = CarlaUtils(utilsname)
     gCarla.utils.set_process_name(os.path.basename(initName))
 
     try:
