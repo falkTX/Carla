@@ -272,6 +272,9 @@ class CarlaSettingsW(QDialog):
             if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
+        if host.isControl or host.isPlugin:
+            self.ui.group_main_advanced.hide()
+
         # FIXME, pipes on win32 not working
         if WINDOWS:
             self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
@@ -358,6 +361,11 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
 
         settings = QSettings("falkTX", "Carla2")
+
+        # ----------------------------------------------------------------------------------------------------
+        # Main
+
+        self.ui.ch_main_load_lib_local.setChecked(settings.value(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL, type=bool))
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -492,6 +500,11 @@ class CarlaSettingsW(QDialog):
         settings = QSettings("falkTX", "Carla2")
 
         # ----------------------------------------------------------------------------------------------------
+        # Main
+
+        settings.setValue(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, self.ui.ch_main_load_lib_local.isChecked())
+
+        # ----------------------------------------------------------------------------------------------------
         # Engine
 
         audioDriver = self.ui.cb_engine_audio_driver.currentText()
@@ -599,6 +612,7 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
             self.ui.ch_main_manage_uis.setChecked(CARLA_DEFAULT_MAIN_MANAGE_UIS)
             self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
+            self.ui.ch_main_load_lib_local.setChecked(CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas

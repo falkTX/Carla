@@ -396,6 +396,22 @@
           </widget>
          </item>
          <item>
+          <widget class="QGroupBox" name="group_main_advanced">
+           <property name="title">
+            <string>Advanced</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_10">
+            <item>
+             <widget class="QCheckBox" name="ch_main_load_lib_local">
+              <property name="text">
+               <string>Load Carla backend in local namespace (RECOMMENDED)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
