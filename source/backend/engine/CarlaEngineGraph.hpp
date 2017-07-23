@@ -156,14 +156,16 @@ struct PatchbayGraph {
     CarlaAudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
     MidiBuffer midiBuffer;
-    const uint32_t inputs;
-    const uint32_t outputs;
+    const uint32_t numAudioIns, numAudioOuts;
+    const uint32_t numMidiIns, numMidiOuts;
     mutable CharStringListPtr retCon;
     bool usingExternal;
 
     ExternalGraph extGraph;
 
-    PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
+    PatchbayGraph(CarlaEngine* const engine,
+                  const uint32_t numAudioIns, const uint32_t numAudioOuts,
+                  const uint32_t numMidiIns, const uint32_t numMidiOuts);
     ~PatchbayGraph();
 
     void setBufferSize(const uint32_t bufferSize);

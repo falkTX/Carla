@@ -46,12 +46,33 @@ if __name__ == '__main__':
     host = initHost(initName, libPrefix, False, False, True)
     host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
     host.processModeForced = True
+
+    printErr = False
+
+    # Find port setup argument
+    for arg in sys.argv[1:]:
+        if arg.startswith("--port-setup="):
+            tryPortSetup = arg.replace("--port-setup=", "").split(":")
+            if len(tryPortSetup) == 4:
+                try:
+                    tryPortSetup = tuple(int(p) for p in tryPortSetup)
+                except:
+                    printErr = True
+                else:
+                    host.patchbayPortSetup = tryPortSetup
+            else:
+                printErr = True
+            break
+
     loadHostSettings(host)
 
     # -------------------------------------------------------------
     # Create GUI
 
     gui = HostWindow(host, True)
+
+    if printErr:
+        print("WARNING: Invalid --port-setup argument used (must be 4 digits, separated by colon)")
 
     # -------------------------------------------------------------
     # Show GUI

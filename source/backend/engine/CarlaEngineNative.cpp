@@ -626,7 +626,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Patchbay");
-            pData->graph.create(inChan, outChan);
+            pData->graph.create(inChan, outChan, 1, 1);
         }
         else
         {
@@ -638,7 +638,7 @@ public:
             pData->options.preferPluginBridges = false;
             pData->options.preferUiBridges     = false;
             init("Carla-Rack");
-            pData->graph.create(0, 0);
+            pData->graph.create(0, 0, 0, 0);
         }
 
         if (pData->options.resourceDir != nullptr)

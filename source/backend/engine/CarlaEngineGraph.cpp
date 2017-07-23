@@ -1392,13 +1392,17 @@ private:
     StringArray outputNames;
 };
 
-PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs)
+PatchbayGraph::PatchbayGraph(CarlaEngine* const engine,
+                             const uint32_t numAudioInputs, const uint32_t numAudioOutputs,
+                             const uint32_t numMidiInputs, const uint32_t numMidiOutputs)
     : connections(),
       graph(),
       audioBuffer(),
       midiBuffer(),
-      inputs(carla_fixedValue(0U, 32U, ins)),
-      outputs(carla_fixedValue(0U, 32U, outs)),
+      numAudioIns(carla_fixedValue(0U, 128U, numAudioInputs)),
+      numAudioOuts(carla_fixedValue(0U, 128U, numAudioOutputs)),
+      numMidiIns(carla_fixedValue(0U, 32U, numMidiInputs)),
+      numMidiOuts(carla_fixedValue(0U, 32U, numMidiOutputs)),
       retCon(),
       usingExternal(false),
       extGraph(engine),
@@ -1407,33 +1411,60 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     const int    bufferSize(static_cast<int>(engine->getBufferSize()));
     const double sampleRate(engine->getSampleRate());
 
-    graph.setPlayConfigDetails(static_cast<int>(inputs), static_cast<int>(outputs), sampleRate, bufferSize);
+    graph.setPlayConfigDetails(static_cast<int>(numAudioInputs), static_cast<int>(numAudioOutputs), sampleRate, bufferSize);
     graph.prepareToPlay(sampleRate, bufferSize);
 
-    audioBuffer.setSize(static_cast<int>(jmax(inputs, outputs)), bufferSize);
+    audioBuffer.setSize(static_cast<int>(jmax(numAudioInputs, numAudioOutputs)), bufferSize);
 
     midiBuffer.ensureSize(kMaxEngineEventInternalCount*2);
     midiBuffer.clear();
 
-    StringArray channelNames;
+    StringArray inputChannelNames, outputChannelNames;
 
-    switch (inputs)
+    switch (numAudioInputs)
     {
+    case 1:
+        inputChannelNames.add("Capture");
+        break;
     case 2:
-        channelNames.add("Left");
-        channelNames.add("Right");
+        inputChannelNames.add("Left");
+        inputChannelNames.add("Right");
         break;
     case 3:
-        channelNames.add("Left");
-        channelNames.add("Right");
-        channelNames.add("Sidechain");
+        inputChannelNames.add("Left");
+        inputChannelNames.add("Right");
+        inputChannelNames.add("Sidechain");
+        break;
+    default:
+        for (uint32_t i=0; i<numAudioInputs; ++i)
+            inputChannelNames.add(String(i+1));
+        break;
+    }
+
+    switch (numAudioOutputs)
+    {
+    case 1:
+        outputChannelNames.add("Playback");
+        break;
+    case 2:
+        outputChannelNames.add("Left");
+        outputChannelNames.add("Right");
+        break;
+    case 3:
+        outputChannelNames.add("Left");
+        outputChannelNames.add("Right");
+        outputChannelNames.add("Sidechain");
+        break;
+    default:
+        for (uint32_t i=0; i<numAudioOutputs; ++i)
+            outputChannelNames.add(String(i+1));
         break;
     }
 
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioInputNode));
-        proc->setNames(false, channelNames);
+        proc->setNames(false, inputChannelNames);
 
         CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
@@ -1447,7 +1478,7 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
     {
         NamedAudioGraphIOProcessor* const proc(
             new NamedAudioGraphIOProcessor(NamedAudioGraphIOProcessor::audioOutputNode));
-        proc->setNames(true, channelNames);
+        proc->setNames(true, outputChannelNames);
 
         CarlaAudioProcessorGraph::Node* const node(graph.addNode(proc));
         node->properties.set("isPlugin", false);
@@ -1919,7 +1950,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
     {
         int i=0;
 
-        for (; i < static_cast<int>(inputs); ++i)
+        for (; i < static_cast<int>(numAudioIns); ++i)
             FloatVectorOperations::copy(audioBuffer.getWritePointer(i), inBuf[i], frames);
 
         // clear remaining channels
@@ -1931,7 +1962,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     // put juce audio in carla buffer
     {
-        for (int i=0; i < static_cast<int>(outputs); ++i)
+        for (int i=0; i < static_cast<int>(numAudioOuts); ++i)
             FloatVectorOperations::copy(outBuf[i], audioBuffer.getReadPointer(i), frames);
     }
 
@@ -1960,19 +1991,19 @@ EngineInternalGraph::~EngineInternalGraph() noexcept
     CARLA_SAFE_ASSERT(fRack == nullptr);
 }
 
-void EngineInternalGraph::create(const uint32_t inputs, const uint32_t outputs)
+void EngineInternalGraph::create(const uint32_t numAudioIns, const uint32_t numAudioOuts, const uint32_t numMidiIns, const uint32_t numMidiOuts)
 {
     fIsRack = (kEngine->getOptions().processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK);
 
     if (fIsRack)
     {
         CARLA_SAFE_ASSERT_RETURN(fRack == nullptr,);
-        fRack = new RackGraph(kEngine, inputs, outputs);
+        fRack = new RackGraph(kEngine, numAudioIns, numAudioOuts);
     }
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
-        fPatchbay = new PatchbayGraph(kEngine, inputs, outputs);
+        fPatchbay = new PatchbayGraph(kEngine, numAudioIns, numAudioOuts, numMidiIns, numMidiOuts);
     }
 
     fIsReady = true;

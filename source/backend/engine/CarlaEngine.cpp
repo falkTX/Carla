@@ -1604,6 +1604,13 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
 
+    case ENGINE_OPTION_PATCHBAY_PORT_SETUP: {
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+        uint patchbayPortSetup[4];
+        CARLA_SAFE_ASSERT_RETURN(std::sscanf(valueStr, "%u:%u:%u:%u", patchbayPortSetup, patchbayPortSetup+1, patchbayPortSetup+2, patchbayPortSetup+3) == 4,);
+        std::memcpy(pData->options.patchbayPortSetup, patchbayPortSetup, sizeof(patchbayPortSetup));
+    }   break;
+
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         break;
     }

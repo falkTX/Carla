@@ -784,8 +784,11 @@ ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR = 16
 # Set frontend winId, used to define as parent window for plugin UIs.
 ENGINE_OPTION_FRONTEND_WIN_ID = 17
 
+# Set Audio and MIDI ports used in standalone patchbay mode.
+ENGINE_OPTION_PATCHBAY_PORT_SETUP = 18
+
 # Capture console output into debug callbacks
-ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 18
+ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 19
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Process Mode
@@ -1214,6 +1217,7 @@ class CarlaHostMeta(object):
         self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
         self.nextProcessMode   = ENGINE_PROCESS_MODE_PATCHBAY
+        self.patchbayPortSetup = (2, 2, 1, 1)
         self.processModeForced = False
         self.audioDriverForced = None
 

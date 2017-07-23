@@ -202,7 +202,7 @@ public:
         pData->sampleRate = fDevice->getCurrentSampleRate();
         pData->initTime(pData->options.transportExtra);
 
-        pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()));
+        pData->graph.create(static_cast<uint32_t>(inputNames.size()), static_cast<uint32_t>(outputNames.size()), 1, 1);
 
         fDevice->start(this);
 

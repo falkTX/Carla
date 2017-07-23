@@ -2364,8 +2364,6 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Init host
 
-
-
     if failError:
         # no try
         host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadLocal)
@@ -2515,6 +2513,7 @@ def setHostSettings(host):
 
     host.set_engine_option(ENGINE_OPTION_PROCESS_MODE,          host.nextProcessMode,     "")
     host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE,        host.transportMode,       "")
+    host.set_engine_option(ENGINE_OPTION_PATCHBAY_PORT_SETUP,   0, "%i:%i:%i:%i" % host.patchbayPortSetup)
 
 # ------------------------------------------------------------------------------------------------------------
 # Set Engine settings according to carla preferences. Returns selected audio driver.

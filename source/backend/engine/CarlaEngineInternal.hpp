@@ -67,7 +67,7 @@ public:
     EngineInternalGraph(CarlaEngine* const engine) noexcept;
     ~EngineInternalGraph() noexcept;
 
-    void create(const uint32_t inputs, const uint32_t outputs);
+    void create(const uint32_t numAudioIns, const uint32_t numAudioOuts, const uint32_t numMidiIns, const uint32_t numMidiOuts);
     void destroy() noexcept;
 
     void setBufferSize(const uint32_t bufferSize);

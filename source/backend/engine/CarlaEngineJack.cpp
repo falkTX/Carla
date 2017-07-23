@@ -974,11 +974,12 @@ public:
 
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                pData->graph.create(0, 0);
+                pData->graph.create(0, 0, 0, 0);
             }
             else
             {
-                pData->graph.create(2, 2);
+                pData->graph.create(pData->options.patchbayPortSetup[0], pData->options.patchbayPortSetup[1],
+                                    pData->options.patchbayPortSetup[2], pData->options.patchbayPortSetup[3]);
                 patchbayRefresh(false);
             }
         }

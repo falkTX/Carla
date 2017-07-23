@@ -291,7 +291,7 @@ public:
         fAudioIntBufIn.setSize(static_cast<int>(fAudioInCount), static_cast<int>(bufferFrames));
         fAudioIntBufOut.setSize(static_cast<int>(fAudioOutCount), static_cast<int>(bufferFrames));
 
-        pData->graph.create(fAudioInCount, fAudioOutCount);
+        pData->graph.create(fAudioInCount, fAudioOutCount, 1, 1);
 
         try {
             fAudio.startStream();

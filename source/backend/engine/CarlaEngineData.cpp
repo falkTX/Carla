@@ -216,7 +216,8 @@ EngineOptions::EngineOptions() noexcept
       binaryDir(nullptr),
       resourceDir(nullptr),
       preventBadBehaviour(false),
-      frontendWinId(0) {}
+      frontendWinId(0),
+      patchbayPortSetup{2, 2, 1, 1} {}
 
 EngineOptions::~EngineOptions() noexcept
 {

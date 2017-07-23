@@ -253,6 +253,7 @@ struct CARLA_API EngineOptions {
 
     bool preventBadBehaviour;
     uintptr_t frontendWinId;
+    uint patchbayPortSetup[4];
 
 #ifndef DOXYGEN
     EngineOptions() noexcept;

@@ -1081,9 +1081,14 @@ typedef enum {
     ENGINE_OPTION_FRONTEND_WIN_ID = 17,
 
     /*!
+     * Set Audio and MIDI ports used in standalone patchbay mode.
+     */
+    ENGINE_OPTION_PATCHBAY_PORT_SETUP = 18,
+
+    /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 18
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 19
 
 } EngineOption;
 

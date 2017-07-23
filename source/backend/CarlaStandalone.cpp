@@ -56,6 +56,7 @@ struct CarlaBackendStandalone {
     EngineOptions      engineOptions;
     CarlaLogThread     logThread;
     bool               logThreadEnabled;
+    CarlaString        patchbayPortSetup;
 #endif
 
     FileCallbackFunc fileCallback;
@@ -71,6 +72,7 @@ struct CarlaBackendStandalone {
           engineOptions(),
           logThread(),
           logThreadEnabled(false),
+          patchbayPortSetup(),
 #endif
           fileCallback(nullptr),
           fileCallbackPtr(nullptr),
@@ -269,7 +271,11 @@ static void carla_engine_init_common()
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, strBuf);
     }
     else
+    {
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0");
+    }
+
+    gStandalone.engine->setOption(CB::ENGINE_OPTION_PATCHBAY_PORT_SETUP, 0, gStandalone.patchbayPortSetup);
 #endif
 }
 
@@ -612,6 +618,10 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
         gStandalone.engineOptions.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
+
+    case CB::ENGINE_OPTION_PATCHBAY_PORT_SETUP:
+        gStandalone.patchbayPortSetup = valueStr;
+        break;
 
     case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         gStandalone.logThreadEnabled = (value != 0);
