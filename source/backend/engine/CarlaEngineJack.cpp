@@ -816,6 +816,7 @@ public:
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
 #else
+          fManagedPorts(nullptr),
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
@@ -829,8 +830,6 @@ public:
 
 #ifdef BUILD_BRIDGE
         pData->options.processMode = ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS;
-#else
-        carla_zeroPointers(fRackPorts, kRackPortCount);
 #endif
     }
 
@@ -965,21 +964,58 @@ public:
         if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
             pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
-            fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-            fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
-            fRackPorts[kRackPortAudioOut1] = jackbridge_port_register(fClient, "audio-out1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-            fRackPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
-            fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
-            fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
-
             if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
-                pData->graph.create(0, 0, 0, 0);
+                fManagedPorts = new jack_port_t*[kRackPortCount];
+                fManagedPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+                fManagedPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+                fManagedPorts[kRackPortAudioOut1] = jackbridge_port_register(fClient, "audio-out1", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+                fManagedPorts[kRackPortAudioOut2] = jackbridge_port_register(fClient, "audio-out2", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+                fManagedPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
+                fManagedPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
+
+                fManagedPortsSetup[0] = fManagedPortsSetup[1] = 2;
+                fManagedPortsSetup[2] = fManagedPortsSetup[3] = 1;
+                pData->graph.create(2, 2, 1, 1);
             }
             else
             {
-                pData->graph.create(pData->options.patchbayPortSetup[0], pData->options.patchbayPortSetup[1],
-                                    pData->options.patchbayPortSetup[2], pData->options.patchbayPortSetup[3]);
+                carla_copy(fManagedPortsSetup, pData->options.patchbayPortSetup, 4);
+
+                const size_t portCount = fManagedPortsSetup[0] + fManagedPortsSetup[1]
+                                       + fManagedPortsSetup[2] + fManagedPortsSetup[3];
+                fManagedPorts = new jack_port_t*[portCount];
+
+                char portName[STR_MAX+1];
+                portName[STR_MAX] = '\0';
+                uint32_t pos = 0;
+
+                for (uint32_t i=0; i<fManagedPortsSetup[0]; ++i, ++pos)
+                {
+                    std::snprintf(portName, STR_MAX, "audio-in%i", i+1);
+                    fManagedPorts[pos]  = jackbridge_port_register(fClient, portName, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
+                }
+
+                for (uint32_t i=0; i<fManagedPortsSetup[1]; ++i, ++pos)
+                {
+                    std::snprintf(portName, STR_MAX, "audio-out%i", i+1);
+                    fManagedPorts[pos]  = jackbridge_port_register(fClient, portName, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
+                }
+
+                for (uint32_t i=0; i<fManagedPortsSetup[2]; ++i, ++pos)
+                {
+                    std::snprintf(portName, STR_MAX, "events-in%i", i+1);
+                    fManagedPorts[pos] = jackbridge_port_register(fClient, portName, JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
+                }
+
+                for (uint32_t i=0; i<fManagedPortsSetup[3]; ++i, ++pos)
+                {
+                    std::snprintf(portName, STR_MAX, "events-out%i", i+1);
+                    fManagedPorts[pos] = jackbridge_port_register(fClient, portName, JACK_DEFAULT_MIDI_TYPE, JackPortIsOutput, 0);
+                }
+
+                pData->graph.create(fManagedPortsSetup[0], fManagedPortsSetup[1],
+                                    fManagedPortsSetup[2], fManagedPortsSetup[3]);
                 patchbayRefresh(false);
             }
         }
@@ -1039,14 +1075,11 @@ public:
         {
             if (deactivated)
             {
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioIn2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut1]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortAudioOut2]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventIn]);
-                jackbridge_port_unregister(fClient, fRackPorts[kRackPortEventOut]);
+                for (int i = fManagedPortsSetup[0]+fManagedPortsSetup[1]+fManagedPortsSetup[2]+fManagedPortsSetup[3]; --i >= 0;)
+                    jackbridge_port_unregister(fClient, fManagedPorts[i]);
             }
-            carla_zeroPointers(fRackPorts, kRackPortCount);
+            delete[] fManagedPorts;
+            carla_zeroStructs(fManagedPortsSetup, 4);
 
             pData->graph.destroy();
         }
@@ -1569,18 +1602,18 @@ protected:
         {
             if (pData->aboutToClose)
             {
-                if (float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes))
+                if (float* const audioOut1 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut1], nframes))
                     FloatVectorOperations::clear(audioOut1, static_cast<int>(nframes));
 
-                if (float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes))
+                if (float* const audioOut2 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut2], nframes))
                     FloatVectorOperations::clear(audioOut2, static_cast<int>(nframes));
             }
             else if (pData->curPluginCount == 0)
             {
-                float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
-                float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
-                float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
-                float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
+                float* const audioIn1  = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioIn1], nframes);
+                float* const audioIn2  = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioIn2], nframes);
+                float* const audioOut1 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut1], nframes);
+                float* const audioOut2 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut2], nframes);
 
                 // assert buffers
                 CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
@@ -1593,40 +1626,22 @@ protected:
                 FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
 
                 // TODO pass-through MIDI as well
-                if (void* const eventOut = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes))
+                if (void* const eventOut = jackbridge_port_get_buffer(fManagedPorts[kRackPortEventOut], nframes))
                     jackbridge_midi_clear_buffer(eventOut);
 
                 return;
             }
-        }
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
-        {
-            for (uint i=0; i < pData->curPluginCount; ++i)
-            {
-                CarlaPlugin* const plugin(pData->plugins[i].plugin);
-
-                if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
-                {
-                    plugin->initBuffers();
-                    processPlugin(plugin, nframes);
-                    plugin->unlock();
-                }
-            }
-        }
-        else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-                 pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        {
             CARLA_SAFE_ASSERT_RETURN(pData->events.in  != nullptr,);
             CARLA_SAFE_ASSERT_RETURN(pData->events.out != nullptr,);
 
             // get buffers from jack
-            float* const audioIn1  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn1], nframes);
-            float* const audioIn2  = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioIn2], nframes);
-            float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes);
-            float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes);
-            void* const  eventIn   = jackbridge_port_get_buffer(fRackPorts[kRackPortEventIn],  nframes);
-            void* const  eventOut  = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes);
+            float* const audioIn1  = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioIn1], nframes);
+            float* const audioIn2  = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioIn2], nframes);
+            float* const audioOut1 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut1], nframes);
+            float* const audioOut2 = (float*)jackbridge_port_get_buffer(fManagedPorts[kRackPortAudioOut2], nframes);
+            void* const  eventIn   = jackbridge_port_get_buffer(fManagedPorts[kRackPortEventIn],  nframes);
+            void* const  eventOut  = jackbridge_port_get_buffer(fManagedPorts[kRackPortEventOut], nframes);
 
             // assert buffers
             CARLA_SAFE_ASSERT_RETURN(audioIn1 != nullptr,);
@@ -1666,10 +1681,7 @@ protected:
                 }
             }
 
-            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-                pData->graph.processRack(pData, inBuf, outBuf, nframes);
-            else
-                pData->graph.process(pData, inBuf, outBuf, nframes);
+            pData->graph.processRack(pData, inBuf, outBuf, nframes);
 
             // output control
             if (eventOut != nullptr)
@@ -1711,6 +1723,152 @@ protected:
 
                     if (size > 0)
                         jackbridge_midi_event_write(eventOut, engineEvent.time, dataPtr, size);
+                }
+            }
+        }
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                 pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            CARLA_SAFE_ASSERT_RETURN(pData->events.in  != nullptr,);
+            CARLA_SAFE_ASSERT_RETURN(pData->events.out != nullptr,);
+
+            const uint32_t numAudioIns  = fManagedPortsSetup[0];
+            const uint32_t numAudioOuts = fManagedPortsSetup[1];
+            const uint32_t numMidiIns   = fManagedPortsSetup[2];
+            const uint32_t numMidiOuts  = fManagedPortsSetup[3];
+
+            // get buffers from jack
+            float* audioIns [numAudioIns  ? numAudioIns  : 0];
+            float* audioOuts[numAudioOuts ? numAudioOuts : 0];
+            void*  eventsIn [numMidiIns   ? numMidiIns   : 0];
+            void*  eventsOut[numMidiOuts  ? numMidiOuts  : 0];
+            void* buf;
+
+            for (uint32_t i=0; i<numAudioIns; ++i)
+            {
+                buf = jackbridge_port_get_buffer(fManagedPorts[i], nframes);
+                CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
+                audioIns[i] = (float*)buf;
+            }
+
+            for (uint32_t i=0; i<numAudioOuts; ++i)
+            {
+                buf = jackbridge_port_get_buffer(fManagedPorts[numAudioIns+i], nframes);
+                CARLA_SAFE_ASSERT_RETURN(buf != nullptr,);
+                audioOuts[i] = (float*)buf;
+            }
+
+            if (numMidiIns > 0)
+            {
+                for (uint32_t i=0; i<numMidiIns; ++i)
+                    eventsIn[i] = jackbridge_port_get_buffer(fManagedPorts[numAudioIns+numAudioOuts+i], nframes);
+            }
+            else
+            {
+                eventsIn[0] = nullptr;
+            }
+
+            if (numMidiOuts > 0)
+            {
+                for (uint32_t i=0; i<numMidiOuts; ++i)
+                    eventsOut[i] = jackbridge_port_get_buffer(fManagedPorts[numAudioIns+numAudioOuts+numMidiIns+i], nframes);
+            }
+            else
+            {
+                eventsOut[0] = nullptr;
+            }
+
+            // initialize events
+            carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+            carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
+
+            // TODO: allow more than 1 MIDI in/out
+            void* const eventIn  = eventsIn[0];
+            void* const eventOut = eventsOut[0];
+
+            for (uint32_t i=1; i<numMidiOuts; ++i)
+                jackbridge_midi_clear_buffer(eventsOut[i]);
+
+            if (eventIn != nullptr)
+            {
+                ushort engineEventIndex = 0;
+
+                jack_midi_event_t jackEvent;
+                const uint32_t jackEventCount(jackbridge_midi_get_event_count(eventIn));
+
+                for (uint32_t jackEventIndex=0; jackEventIndex < jackEventCount; ++jackEventIndex)
+                {
+                    if (! jackbridge_midi_event_get(&jackEvent, eventIn, jackEventIndex))
+                        continue;
+
+                    CARLA_SAFE_ASSERT_CONTINUE(jackEvent.size < 0xFF /* uint8_t max */);
+
+                    EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
+
+                    engineEvent.time = jackEvent.time;
+                    engineEvent.fillFromMidiData(static_cast<uint8_t>(jackEvent.size), jackEvent.buffer, 0);
+
+                    if (engineEventIndex >= kMaxEngineEventInternalCount)
+                        break;
+                }
+            }
+
+            pData->graph.process(pData, audioIns, audioOuts, nframes);
+
+            // output control
+            if (eventOut != nullptr)
+            {
+                jackbridge_midi_clear_buffer(eventOut);
+
+                uint8_t        size    = 0;
+                uint8_t        data[3] = { 0, 0, 0 };
+                const uint8_t* dataPtr = data;
+
+                for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                {
+                    const EngineEvent& engineEvent(pData->events.out[i]);
+
+                    if (engineEvent.type == kEngineEventTypeNull)
+                        break;
+
+                    else if (engineEvent.type == kEngineEventTypeControl)
+                    {
+                        const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                        ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
+                        dataPtr = data;
+                    }
+                    else if (engineEvent.type == kEngineEventTypeMidi)
+                    {
+                        const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                        size = midiEvent.size;
+
+                        if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                            dataPtr = midiEvent.dataExt;
+                        else
+                            dataPtr = midiEvent.data;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    if (size > 0)
+                        jackbridge_midi_event_write(eventOut, engineEvent.time, dataPtr, size);
+                }
+            }
+        }
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_SINGLE_CLIENT)
+        {
+            for (uint i=0; i < pData->curPluginCount; ++i)
+            {
+                CarlaPlugin* const plugin(pData->plugins[i].plugin);
+
+                if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fFreewheel))
+                {
+                    plugin->initBuffers();
+                    processPlugin(plugin, nframes);
+                    plugin->unlock();
                 }
             }
         }
@@ -1938,7 +2096,8 @@ protected:
 
         fClient = nullptr;
 #ifndef BUILD_BRIDGE
-        carla_zeroPointers(fRackPorts, kRackPortCount);
+        // FIXME
+        carla_zeroPointers(fManagedPorts, kRackPortCount);
 #endif
 
         callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
@@ -1983,7 +2142,8 @@ private:
         kRackPortCount     = 6
     };
 
-    jack_port_t* fRackPorts[kRackPortCount];
+    jack_port_t** fManagedPorts;
+    uint fManagedPortsSetup[4]; // audio ins, outs; midi ins, outs
 
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
