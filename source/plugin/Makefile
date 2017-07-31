@@ -108,12 +108,14 @@ TARGETS = \
 
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
+ifeq ($(HAVE_PYQT),true)
 TARGETS += \
 	$(BINDIR)/CarlaRack$(LIB_EXT) \
 	$(BINDIR)/CarlaRackFX$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbay16$(LIB_EXT) \
 	$(BINDIR)/CarlaPatchbayFX$(LIB_EXT)
+endif
 endif
 endif
 
