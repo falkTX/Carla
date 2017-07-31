@@ -1003,7 +1003,7 @@ double JUCE_CALLTYPE FloatVectorOperations::findMaximum (const double* src, int 
 
 void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnable) noexcept
 {
-   #if JUCE_USE_SSE_INTRINSICS
+   #if JUCE_USE_SSE_INTRINSICS && ! JUCE_MINGW
     _MM_SET_FLUSH_ZERO_MODE (shouldEnable ? _MM_FLUSH_ZERO_ON : _MM_FLUSH_ZERO_OFF);
    #endif
     ignoreUnused (shouldEnable);
@@ -1011,7 +1011,7 @@ void JUCE_CALLTYPE FloatVectorOperations::enableFlushToZeroMode (bool shouldEnab
 
 void JUCE_CALLTYPE FloatVectorOperations::disableDenormalisedNumberSupport() noexcept
 {
-   #if JUCE_USE_SSE_INTRINSICS
+   #if JUCE_USE_SSE_INTRINSICS && ! JUCE_MINGW
     const unsigned int mxcsr = _mm_getcsr();
     _mm_setcsr (mxcsr | 0x8040); // add the DAZ and FZ bits
    #endif
