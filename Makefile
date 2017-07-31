@@ -989,13 +989,14 @@ else
 endif
 ifeq ($(HAVE_DGL),true)
 	@echo "DISTRHO Plugins:$(ANS_YES)(with UI)"
-else
-	@echo "DISTRHO Plugins:$(ANS_YES)(without UI)"
-endif
-ifeq ($(HAVE_PROJECTM),true)
+ifneq ($(HAVE_PROJECTM),true)
 	@echo "DISTRHO ProM:   $(ANS_YES)"
 else
 	@echo "DISTRHO ProM:   $(ANS_NO) (missing libprojectM)"
+endif
+else
+	@echo "DISTRHO Plugins:$(ANS_YES)(without UI)"
+	@echo "DISTRHO ProM:   $(ANS_NO) (missing OpenGL)"
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
