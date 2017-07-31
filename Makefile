@@ -423,6 +423,7 @@ install:
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 	install -d $(DESTDIR)$(DATADIR)
 	install -d $(DESTDIR)$(DATADIR)/carla
+	install -d $(DESTDIR)$(DATADIR)/carla/resources
 	install -d $(DESTDIR)$(INCLUDEDIR)
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
@@ -432,7 +433,6 @@ ifeq ($(HAVE_PYQT),true)
 	# Create directories (gui)
 	install -d $(DESTDIR)$(LIBDIR)/carla/styles
 	install -d $(DESTDIR)$(DATADIR)/applications
-	install -d $(DESTDIR)$(DATADIR)/carla/resources
 	install -d $(DESTDIR)$(DATADIR)/icons
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16
@@ -730,9 +730,11 @@ endif
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 	$(LINK) $(DATADIR)/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 
+ifeq ($(HAVE_PYQT),true)
 	# Link styles for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
 	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
+endif
 
 	# --------------------------------------------------------------------------------------------------------------------
 
@@ -767,6 +769,7 @@ endif
 ifneq ($(HAVE_PYQT),true)
 	# Remove gui files for non-gui build
 	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
+	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------------

@@ -20,7 +20,8 @@
 #include "CarlaUtils.hpp"
 
 #ifdef CARLA_OS_WIN
-#define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+# define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+# undef HAVE_PYQT
 #endif
 
 #undef DESCFUNCS
@@ -209,7 +210,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
@@ -234,7 +235,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // -----------------------------------------------------------------------
 // Carla
 
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
@@ -546,7 +547,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // -----------------------------------------------------------------------
 // External-UI plugins
 
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE

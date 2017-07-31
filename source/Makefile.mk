@@ -287,6 +287,10 @@ endif
 # --------------------------------------------------------------
 # Set base defines
 
+ifeq ($(HAVE_PYQT),true)
+BASE_FLAGS += -DHAVE_PYQT
+endif
+
 ifeq ($(HAVE_DGL),true)
 BASE_FLAGS += -DHAVE_DGL
 endif

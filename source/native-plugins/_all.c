@@ -20,6 +20,7 @@
 
 #ifdef CARLA_OS_WIN
 # define DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+# undef HAVE_PYQT
 #endif
 
 // -----------------------------------------------------------------------
@@ -88,12 +89,12 @@ void carla_register_all_native_plugins(void)
 
     // MIDI file and sequencer
     carla_register_native_plugin_midifile();
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
     carla_register_native_plugin_midipattern();
 #endif
 
     // Carla
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
     carla_register_native_plugin_carla();
 #endif
 
@@ -113,7 +114,7 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_distrho_vectorjuice();
     carla_register_native_plugin_distrho_wobblejuice();
 
-#ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
+#ifdef HAVE_PYQT
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
