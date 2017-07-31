@@ -56,13 +56,13 @@ Possible formats:
 
 Examples:
 $ %s internal midisplit
-$ %s dssi /usr/lib/dssi/hexter.so hexter
+$ %s dssi /usr/lib/dssi/whysynth.so
 $ %s lv2 http://calf.sourceforge.net/plugins/Compressor
 $ %s native vst /usr/lib/vst/TAL-NoiseMaker.so
 $ %s win32 vst \"~/.wine/drive_c/Program Files (x86)/VstPlugins/Kontakt 5.dll\"
 
 Format can be skipped for internal and lv2 plugins (auto-detected), like this:
-$ %s nekofilter
+$ %s midipattern
 $ %s http://synthv1.sourceforge.net/lv2""" % ((sys.argv[0],)*8)
 
 def printUsageAndQuit():
@@ -168,7 +168,7 @@ if ARCH in ("win32", "win64"):
 # Check for existing carla folder
 
 if not os.path.exists(CARLA_LIBDIR):
-    print("Carla library folder does not exist, is it installed?")
+    print("Carla library folder does not exist, is Carla installed?")
     sys.exit(2)
 
 # --------------------------------------------------------------------------------------------------------
