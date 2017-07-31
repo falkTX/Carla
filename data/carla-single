@@ -171,10 +171,6 @@ if not os.path.exists(CARLA_LIBDIR):
     print("Carla library folder does not exist, is it installed?")
     sys.exit(2)
 
-if not os.path.exists(CARLA_RESDIR):
-    print("Carla resource folder does not exist, is it installed?")
-    sys.exit(2)
-
 # --------------------------------------------------------------------------------------------------------
 # Check for existing arch binary
 
