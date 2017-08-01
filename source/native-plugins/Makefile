@@ -207,22 +207,22 @@ $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 resources/at1-ui$(APP_EXT): $(OBJDIR)/zita-at1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking at1-ui"
-	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LDFLAGS) $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/bls1-ui$(APP_EXT): $(OBJDIR)/zita-bls1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking bls1-ui"
-	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LDFLAGS) $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/rev1-ui$(APP_EXT): $(OBJDIR)/zita-rev1-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking rev1-ui"
-	@$(CXX) $^ $(ZITA_UI_LINK_FLAGS) -o $@
+	@$(CXX) $^ $(LDFLAGS) $(ZITA_UI_LINK_FLAGS) -o $@
 
 resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p $(OBJDIR)
 	@echo "Linking zynaddsubfx-ui"
-	@$(CXX) $^ $(ZYN_LD_FLAGS) -o $@
+	@$(CXX) $^ $(LDFLAGS) $(ZYN_LD_FLAGS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
