@@ -175,6 +175,11 @@ static const uint PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200;
  */
 static const uint PLUGIN_USES_MULTI_PROGS = 0x400;
 
+/*!
+ * Plugin can make use of inline display API.
+ */
+static const uint PLUGIN_HAS_INLINE_DISPLAY = 0x800;
+
 /** @} */
 
 /* ------------------------------------------------------------------------------------------------------------

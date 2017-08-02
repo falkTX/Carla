@@ -41,6 +41,7 @@
 // dynmanifest
 #include "lv2/event.h"
 #include "lv2/event-helpers.h"
+#include "lv2/inline-display.h"
 #include "lv2/instance-access.h"
 #include "lv2/log.h"
 // logger

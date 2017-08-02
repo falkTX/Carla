@@ -215,6 +215,9 @@ PLUGIN_NEEDS_UI_MAIN_THREAD = 0x200
 # @note: Only used in some internal plugins and gig+sf2 files.
 PLUGIN_USES_MULTI_PROGS = 0x400
 
+# Plugin can make use of inline display API.
+PLUGIN_HAS_INLINE_DISPLAY = 0x800
+
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Options
 # Various plugin options.
