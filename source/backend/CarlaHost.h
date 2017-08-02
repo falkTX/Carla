@@ -268,6 +268,17 @@ typedef struct _CarlaTransportInfo {
 
 } CarlaTransportInfo;
 
+/*!
+ * Image data for LV2 inline display API.
+ * raw image pixmap format is ARGB32,
+ */
+typedef struct {
+    unsigned char* data;
+    int width;
+    int height;
+    int stride;
+} CarlaInlineDisplayImageSurface;
+
 /* ------------------------------------------------------------------------------------------------------------
  * Carla Host API (C functions) */
 
@@ -708,6 +719,12 @@ CARLA_EXPORT float carla_get_input_peak_value(uint pluginId, bool isLeft);
  * @param isLeft   Wherever to get the left/mono value, otherwise right.
  */
 CARLA_EXPORT float carla_get_output_peak_value(uint pluginId, bool isLeft);
+
+/*!
+ * Render a plugin's inline display.
+ * @param pluginId Plugin
+ */
+CARLA_EXPORT CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int width, int height);
 
 /*!
  * Enable or disable a plugin.

@@ -1141,6 +1141,16 @@ class CarlaTransportInfo(Structure):
         ("bpm", c_double)
     ]
 
+# Image data for LV2 inline display API.
+# raw image pixmap format is ARGB32,
+class CarlaInlineDisplayImageSurface(Structure):
+    _fields_ = [
+        ("data", POINTER(c_ubyte)),
+        ("width", c_int),
+        ("height", c_int),
+        ("stride", c_int)
+    ]
+
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host API (Python compatible stuff)
 
@@ -1647,6 +1657,12 @@ class CarlaHostMeta(object):
     def get_output_peak_value(self, pluginId, isLeft):
         raise NotImplementedError
 
+    # Render a plugin's inline display.
+    # @param pluginId Plugin
+    @abstractmethod
+    def render_inline_display(self, pluginId, width, height):
+        raise NotImplementedError
+
     # Enable a plugin's option.
     # @param pluginId Plugin
     # @param option   An option from PluginOptions
@@ -2018,6 +2034,9 @@ class CarlaHostNull(CarlaHostMeta):
     def get_output_peak_value(self, pluginId, isLeft):
         return 0.0
 
+    def render_inline_display(self, pluginId, width, height):
+        return None
+
     def set_option(self, pluginId, option, yesNo):
         return
 
@@ -2291,6 +2310,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_get_output_peak_value.argtypes = [c_uint, c_bool]
         self.lib.carla_get_output_peak_value.restype = c_float
 
+        self.lib.carla_render_inline_display.argtypes = [c_uint, c_uint, c_uint]
+        self.lib.carla_render_inline_display.restype = POINTER(CarlaInlineDisplayImageSurface)
+
         self.lib.carla_set_option.argtypes = [c_uint, c_uint, c_bool]
         self.lib.carla_set_option.restype = None
 
@@ -2558,6 +2580,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def get_output_peak_value(self, pluginId, isLeft):
         return float(self.lib.carla_get_output_peak_value(pluginId, isLeft))
+
+    def render_inline_display(self, pluginId, width, height):
+        return structToDict(self.lib.carla_render_inline_display(pluginId, width, height))
 
     def set_option(self, pluginId, option, yesNo):
         self.lib.carla_set_option(pluginId, option, yesNo)
@@ -2893,6 +2918,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def get_output_peak_value(self, pluginId, isLeft):
         return self.fPluginsInfo[pluginId].peaks[2 if isLeft else 3]
+
+    def render_inline_display(self, pluginId, width, height):
+        return None
 
     def set_option(self, pluginId, option, yesNo):
         self.sendMsg(["set_option", pluginId, option, yesNo])

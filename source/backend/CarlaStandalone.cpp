@@ -1578,6 +1578,29 @@ float carla_get_output_peak_value(uint pluginId, bool isLeft)
 
 // -------------------------------------------------------------------------------------------------------------------
 
+CARLA_BACKEND_START_NAMESPACE
+
+// defined in CarlaPluginLV2.cpp
+void* carla_render_inline_display_lv2(CarlaPlugin* plugin, int width, int height);
+
+CARLA_BACKEND_END_NAMESPACE
+
+CarlaInlineDisplayImageSurface* carla_render_inline_display(uint pluginId, int width, int height)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr, nullptr);
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+    {
+        CARLA_SAFE_ASSERT_RETURN(plugin->getType() == CB::PLUGIN_LV2, nullptr);
+        return (CarlaInlineDisplayImageSurface*)CB::carla_render_inline_display_lv2(plugin, width, height);
+    }
+
+    carla_stderr2("carla_render_inline_display(%i, %i, %i) - could not find plugin", pluginId, width, height);
+    return nullptr;
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
 void carla_set_active(uint pluginId, bool onOff)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);

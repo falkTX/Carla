@@ -61,10 +61,11 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 const uint MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
 
 // Extra Plugin Hints
-const uint PLUGIN_HAS_EXTENSION_OPTIONS  = 0x1000;
-const uint PLUGIN_HAS_EXTENSION_PROGRAMS = 0x2000;
-const uint PLUGIN_HAS_EXTENSION_STATE    = 0x4000;
-const uint PLUGIN_HAS_EXTENSION_WORKER   = 0x8000;
+const uint PLUGIN_HAS_EXTENSION_OPTIONS        = 0x01000;
+const uint PLUGIN_HAS_EXTENSION_PROGRAMS       = 0x02000;
+const uint PLUGIN_HAS_EXTENSION_STATE          = 0x04000;
+const uint PLUGIN_HAS_EXTENSION_WORKER         = 0x08000;
+const uint PLUGIN_HAS_EXTENSION_INLINE_DISPLAY = 0x10000;
 
 // Extra Parameter Hints
 const uint PARAMETER_IS_STRICT_BOUNDS = 0x1000;
@@ -130,42 +131,45 @@ const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 47;
 const uint32_t CARLA_URI_MAP_ID_COUNT                  = 48;
 
 // LV2 Feature Ids
-const uint32_t kFeatureIdBufSizeBounded   =  0;
-const uint32_t kFeatureIdBufSizeFixed     =  1;
-const uint32_t kFeatureIdBufSizePowerOf2  =  2;
-const uint32_t kFeatureIdEvent            =  3;
-const uint32_t kFeatureIdHardRtCapable    =  4;
-const uint32_t kFeatureIdInPlaceBroken    =  5;
-const uint32_t kFeatureIdIsLive           =  6;
-const uint32_t kFeatureIdLogs             =  7;
-const uint32_t kFeatureIdOptions          =  8;
-const uint32_t kFeatureIdPrograms         =  9;
-const uint32_t kFeatureIdResizePort       = 10;
-const uint32_t kFeatureIdRtMemPool        = 11;
-const uint32_t kFeatureIdRtMemPoolOld     = 12;
-const uint32_t kFeatureIdStateMakePath    = 13;
-const uint32_t kFeatureIdStateMapPath     = 14;
-const uint32_t kFeatureIdStrictBounds     = 15;
-const uint32_t kFeatureIdUriMap           = 16;
-const uint32_t kFeatureIdUridMap          = 17;
-const uint32_t kFeatureIdUridUnmap        = 18;
-const uint32_t kFeatureIdWorker           = 19;
-const uint32_t kFeatureCountPlugin        = 20;
-const uint32_t kFeatureIdUiDataAccess     = 20;
-const uint32_t kFeatureIdUiInstanceAccess = 21;
-const uint32_t kFeatureIdUiIdleInterface  = 22;
-const uint32_t kFeatureIdUiFixedSize      = 23;
-const uint32_t kFeatureIdUiMakeResident   = 24;
-const uint32_t kFeatureIdUiMakeResident2  = 25;
-const uint32_t kFeatureIdUiNoUserResize   = 26;
-const uint32_t kFeatureIdUiParent         = 27;
-const uint32_t kFeatureIdUiPortMap        = 28;
-const uint32_t kFeatureIdUiPortSubscribe  = 29;
-const uint32_t kFeatureIdUiResize         = 30;
-const uint32_t kFeatureIdUiTouch          = 31;
-const uint32_t kFeatureIdExternalUi       = 32;
-const uint32_t kFeatureIdExternalUiOld    = 33;
-const uint32_t kFeatureCountAll           = 34;
+enum CarlaLv2Features {
+    kFeatureIdBufSizeBounded = 0,
+    kFeatureIdBufSizeFixed,
+    kFeatureIdBufSizePowerOf2,
+    kFeatureIdEvent,
+    kFeatureIdHardRtCapable,
+    kFeatureIdInPlaceBroken,
+    kFeatureIdIsLive,
+    kFeatureIdLogs,
+    kFeatureIdOptions,
+    kFeatureIdPrograms,
+    kFeatureIdResizePort,
+    kFeatureIdRtMemPool,
+    kFeatureIdRtMemPoolOld,
+    kFeatureIdStateMakePath,
+    kFeatureIdStateMapPath,
+    kFeatureIdStrictBounds,
+    kFeatureIdUriMap,
+    kFeatureIdUridMap,
+    kFeatureIdUridUnmap,
+    kFeatureIdWorker,
+    kFeatureIdInlineDisplay,
+    kFeatureCountPlugin,
+    kFeatureIdUiDataAccess,
+    kFeatureIdUiInstanceAccess,
+    kFeatureIdUiIdleInterface,
+    kFeatureIdUiFixedSize,
+    kFeatureIdUiMakeResident,
+    kFeatureIdUiMakeResident2,
+    kFeatureIdUiNoUserResize,
+    kFeatureIdUiParent,
+    kFeatureIdUiPortMap,
+    kFeatureIdUiPortSubscribe,
+    kFeatureIdUiResize,
+    kFeatureIdUiTouch,
+    kFeatureIdExternalUi,
+    kFeatureIdExternalUiOld,
+    kFeatureCountAll
+};
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -667,6 +671,9 @@ public:
 
         if (fFeatures[kFeatureIdWorker] != nullptr && fFeatures[kFeatureIdWorker]->data != nullptr)
             delete (LV2_Worker_Schedule*)fFeatures[kFeatureIdWorker]->data;
+
+        if (fFeatures[kFeatureIdInlineDisplay] != nullptr && fFeatures[kFeatureIdInlineDisplay]->data != nullptr)
+            delete (LV2_Inline_Display*)fFeatures[kFeatureIdInlineDisplay]->data;
 
         for (uint32_t i=0; i < kFeatureCountAll; ++i)
         {
@@ -4172,6 +4179,7 @@ public:
         fExt.programs = nullptr;
         fExt.state    = nullptr;
         fExt.worker   = nullptr;
+        fExt.inlineDisplay = nullptr;
 
         for (uint32_t i=0; i < fRdfDescriptor->ExtensionCount; ++i)
         {
@@ -4185,6 +4193,8 @@ public:
                 pData->hints |= PLUGIN_HAS_EXTENSION_STATE;
             else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_WORKER__interface) == 0)
                 pData->hints |= PLUGIN_HAS_EXTENSION_WORKER;
+            else if (std::strcmp(fRdfDescriptor->Extensions[i], LV2_INLINEDISPLAY__interface) == 0)
+                pData->hints |= PLUGIN_HAS_EXTENSION_INLINE_DISPLAY;
             else
                 carla_stdout("Plugin has non-supported extension: '%s'", fRdfDescriptor->Extensions[i]);
         }
@@ -4203,6 +4213,9 @@ public:
             if (pData->hints & PLUGIN_HAS_EXTENSION_WORKER)
                 fExt.worker = (const LV2_Worker_Interface*)fDescriptor->extension_data(LV2_WORKER__interface);
 
+            if (pData->hints & PLUGIN_HAS_EXTENSION_INLINE_DISPLAY)
+                fExt.inlineDisplay = (const LV2_Inline_Display_Interface*)fDescriptor->extension_data(LV2_INLINEDISPLAY__interface);
+
             // check if invalid
             if (fExt.options != nullptr && fExt.options->get == nullptr  && fExt.options->set == nullptr)
                 fExt.options = nullptr;
@@ -4215,6 +4228,14 @@ public:
 
             if (fExt.worker != nullptr && fExt.worker->work == nullptr)
                 fExt.worker = nullptr;
+
+            if (fExt.inlineDisplay != nullptr)
+            {
+                if (fExt.inlineDisplay->render != nullptr)
+                    pData->hints |= PLUGIN_HAS_INLINE_DISPLAY;
+                else
+                    fExt.inlineDisplay = nullptr;
+            }
         }
 
         CARLA_SAFE_ASSERT_RETURN(fLatencyIndex == -1,);
@@ -4494,6 +4515,20 @@ public:
         atom.type = CARLA_URI_MAP_ID_CARLA_ATOM_WORKER;
 
         return fAtomBufferIn.putChunk(&atom, data, fEventsIn.ctrlIndex) ? LV2_WORKER_SUCCESS : LV2_WORKER_ERR_NO_SPACE;
+    }
+
+    // -------------------------------------------------------------------
+
+    void handleInlineDisplayQueueRedraw()
+    {
+        // TODO
+    }
+
+    LV2_Inline_Display_Image_Surface* renderInlineDisplay(int width, int height)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fExt.inlineDisplay != nullptr && fExt.inlineDisplay->render != nullptr, nullptr);
+
+        return fExt.inlineDisplay->render(fHandle, width, height);
     }
 
     // -------------------------------------------------------------------
@@ -4964,6 +4999,10 @@ public:
         workerFt->handle                    = this;
         workerFt->schedule_work             = carla_lv2_worker_schedule;
 
+        LV2_Inline_Display* const inlineDisplay = new LV2_Inline_Display;
+        inlineDisplay->handle                   = this;
+        inlineDisplay->queue_draw               = carla_lv2_inline_display_queue_draw;
+
         // ---------------------------------------------------------------
         // initialize features (part 2)
 
@@ -5031,6 +5070,9 @@ public:
 
         fFeatures[kFeatureIdWorker]->URI     = LV2_WORKER__schedule;
         fFeatures[kFeatureIdWorker]->data    = workerFt;
+
+        fFeatures[kFeatureIdInlineDisplay]->URI  = LV2_INLINEDISPLAY__queue_draw;
+        fFeatures[kFeatureIdInlineDisplay]->data = inlineDisplay;
 
         // ---------------------------------------------------------------
         // initialize plugin
@@ -5593,6 +5635,7 @@ private:
         const LV2_Options_Interface* options;
         const LV2_State_Interface* state;
         const LV2_Worker_Interface* worker;
+        const LV2_Inline_Display_Interface* inlineDisplay;
         const LV2_Programs_Interface* programs;
         const LV2UI_Idle_Interface* uiidle;
         const LV2UI_Show_Interface* uishow;
@@ -5603,6 +5646,7 @@ private:
             : options(nullptr),
               state(nullptr),
               worker(nullptr),
+              inlineDisplay(nullptr),
               programs(nullptr),
               uiidle(nullptr),
               uishow(nullptr),
@@ -6088,6 +6132,17 @@ private:
     }
 
     // -------------------------------------------------------------------
+    // Inline Display Feature
+
+    static void carla_lv2_inline_display_queue_draw(LV2_Inline_Display_Handle handle)
+    {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+        carla_debug("carla_lv2_inline_display_queue_draw(%p)", handle);
+
+        ((CarlaPluginLV2*)handle)->handleInlineDisplayQueueRedraw();
+    }
+
+    // -------------------------------------------------------------------
     // External UI Feature
 
     static void carla_lv2_external_ui_closed(LV2UI_Controller controller)
@@ -6246,6 +6301,13 @@ CarlaPlugin* CarlaPlugin::newLV2(const Initializer& init)
     }
 
     return plugin;
+}
+
+void* carla_render_inline_display_lv2(CarlaPlugin* plugin, int width, int height)
+{
+    CarlaPluginLV2* const lv2Plugin = (CarlaPluginLV2*)plugin;
+
+    return lv2Plugin->renderInlineDisplay(width, height);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
