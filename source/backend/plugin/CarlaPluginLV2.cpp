@@ -132,6 +132,7 @@ const uint32_t CARLA_URI_MAP_ID_COUNT                  = 48;
 
 // LV2 Feature Ids
 enum CarlaLv2Features {
+    // DSP features
     kFeatureIdBufSizeBounded = 0,
     kFeatureIdBufSizeFixed,
     kFeatureIdBufSizePowerOf2,
@@ -154,7 +155,8 @@ enum CarlaLv2Features {
     kFeatureIdWorker,
     kFeatureIdInlineDisplay,
     kFeatureCountPlugin,
-    kFeatureIdUiDataAccess,
+    // UI features
+    kFeatureIdUiDataAccess = kFeatureCountPlugin,
     kFeatureIdUiInstanceAccess,
     kFeatureIdUiIdleInterface,
     kFeatureIdUiFixedSize,
@@ -5294,13 +5296,14 @@ public:
 
             if (! is_lv2_ui_feature_supported(uri))
             {
-                carla_stderr("Plugin UI requires a feature that is not supported:\n%s", uri);
-
                 if (fUI.rdfDescriptor->Features[i].Required)
                 {
+                    carla_stderr("Plugin UI requires a feature that is not supported:\n%s", uri);
                     canContinue = false;
                     break;
                 }
+
+                carla_stderr("Plugin UI wants a feature that is not supported (ignored):\n%s", uri);
             }
             if (std::strcmp(uri, LV2_UI__makeResident) == 0 || std::strcmp(uri, LV2_UI__makeSONameResident) == 0)
                 canDelete = false;
