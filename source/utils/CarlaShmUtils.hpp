@@ -27,6 +27,9 @@ struct carla_shm_t { HANDLE map; bool isServer; const char* filename; };
 # ifndef __WINE__
 #  include <cerrno>
 # endif
+# ifdef CARLA_OS_HAIKU
+#  define MAP_LOCKED 0x0
+# endif
 # include <fcntl.h>
 # include <sys/mman.h>
 struct carla_shm_t { int fd; const char* filename; std::size_t size; };

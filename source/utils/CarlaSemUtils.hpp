@@ -22,7 +22,9 @@
 
 #include <ctime>
 
-#define CARLA_USE_FUTEXES
+#ifndef CARLA_OS_HAIKU
+# define CARLA_USE_FUTEXES
+#endif
 
 #if defined(CARLA_OS_WIN)
 # ifdef __WINE__
