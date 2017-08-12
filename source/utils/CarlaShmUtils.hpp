@@ -110,9 +110,9 @@ carla_shm_t carla_shm_attach(const char* const filename) noexcept
     carla_shm_t ret;
 
 #ifdef CARLA_OS_WIN
-        ret.map      = INVALID_HANDLE_VALUE;
-        ret.isServer = false;
-        ret.filename = carla_strdup_safe(filename);
+    ret.map      = INVALID_HANDLE_VALUE;
+    ret.isServer = false;
+    ret.filename = carla_strdup_safe(filename);
 #else
     try {
         ret.fd       = ::shm_open(filename, O_RDWR, 0);
