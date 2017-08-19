@@ -29,6 +29,7 @@ STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_formats.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_core.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
 STANDALONE_LIBS += $(MODULEDIR)/lilv.a
 STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
@@ -45,7 +46,6 @@ ifeq ($(MACOS_OR_WIN32),true)
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_devices.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_audio_processors.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_data_structures.a
-STANDALONE_LIBS += $(MODULEDIR)/juce_events.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_graphics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_gui_basics.a
 ifeq ($(MACOS),true)
@@ -59,12 +59,12 @@ endif
 UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_audio_formats.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
+UTILS_LIBS += $(MODULEDIR)/juce_events.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
 
 ifeq ($(MACOS),true)
 UTILS_LIBS += $(MODULEDIR)/juce_audio_processors.a
 UTILS_LIBS += $(MODULEDIR)/juce_data_structures.a
-UTILS_LIBS += $(MODULEDIR)/juce_events.a
 UTILS_LIBS += $(MODULEDIR)/juce_graphics.a
 UTILS_LIBS += $(MODULEDIR)/juce_gui_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_gui_extra.a

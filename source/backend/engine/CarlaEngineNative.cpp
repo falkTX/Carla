@@ -39,21 +39,17 @@
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics/juce_gui_basics.h"
 #else
-namespace juce {
-# include "juce_events/messages/juce_Initialisation.h"
-} // namespace juce
+# include "juce_events/juce_events.h"
 #endif
 
 using juce::File;
 using juce::FloatVectorOperations;
 using juce::MemoryOutputStream;
+using juce::ScopedJuceInitialiser_GUI;
 using juce::ScopedPointer;
 using juce::String;
 using juce::XmlDocument;
 using juce::XmlElement;
-
-static bool gNeedsJuceHandling = false;
-static int  gJuceReferenceCounter = 0;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -603,11 +599,6 @@ public:
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
-        CARLA_SAFE_ASSERT_INT(gJuceReferenceCounter >= 0, gJuceReferenceCounter);
-
-        if (gNeedsJuceHandling && ++gJuceReferenceCounter == 1)
-            juce::initialiseJuce_GUI();
-
         carla_zeroChars(fTmpBuf, STR_MAX+1);
 
         pData->bufferSize = pHost->get_buffer_size(pHost->handle);
@@ -665,9 +656,6 @@ public:
         close();
 
         pData->graph.destroy();
-
-        if (gNeedsJuceHandling && --gJuceReferenceCounter == 0)
-            juce::shutdownJuce_GUI();
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
@@ -1846,6 +1834,8 @@ private:
     bool fWaitForReadyMsg;
     char fTmpBuf[STR_MAX+1];
 
+    const ScopedJuceInitialiser_GUI juceGuiInit;
+
     CarlaPlugin* _getFirstPlugin() const noexcept
     {
         if (pData->curPluginCount == 0 || pData->plugins == nullptr)
@@ -2097,9 +2087,6 @@ CARLA_EXPORT
 const NativePluginDescriptor* carla_get_native_rack_plugin();
 const NativePluginDescriptor* carla_get_native_rack_plugin()
 {
-    // if this is called then we're running as special plugin
-    gNeedsJuceHandling = true;
-
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaRackDesc;
 }
@@ -2108,9 +2095,6 @@ CARLA_EXPORT
 const NativePluginDescriptor* carla_get_native_patchbay_plugin();
 const NativePluginDescriptor* carla_get_native_patchbay_plugin()
 {
-    // if this is called then we're running as special plugin
-    gNeedsJuceHandling = true;
-
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaPatchbayDesc;
 }
@@ -2146,7 +2130,7 @@ CARLA_BACKEND_END_NAMESPACE
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
-#include "CarlaJuceEvents.cpp"
+#include "CarlaJuceAudioProcessors.cpp"
 
 #endif
 

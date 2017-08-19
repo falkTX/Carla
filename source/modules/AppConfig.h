@@ -66,8 +66,8 @@
 #define JUCE_USE_VFORK 1
 
 #if ! (defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN))
-# define JUCE_MODAL_LOOPS_PERMITTED  0
-# define JUCE_AUDIO_PROCESSOR_NO_GUI 1
+# define JUCE_MODAL_LOOPS_PERMITTED 0
+# define JUCE_AUDIOPROCESSOR_NO_GUI 1
 #endif
 
 // --------------------------------------------------------------------------------------------------------------------

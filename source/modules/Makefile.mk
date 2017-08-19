@@ -29,5 +29,6 @@ endif
 
 BUILD_C_FLAGS   += -I. -I$(CWD)/includes
 BUILD_CXX_FLAGS += -I. -I$(CWD)/includes -I$(CWD)/utils
+BUILD_CXX_FLAGS += -DJUCE_APP_CONFIG_HEADER='<AppConfig.h>'
 
 # ----------------------------------------------------------------------------------------------------------------------------

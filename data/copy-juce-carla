@@ -3,12 +3,13 @@
 set -e
 
 JUCE_MODULES_DIR="/Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO-Ports/libs/juce/source/modules/"
-CARLA_MODULES_DIR="/home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/"
+CARLA_MODULES_DIR="/Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/"
 
 MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra")
 
 for M in $MODULES; do
   echo $M;
+  #rm -rf $CARLA_MODULES_DIR/$M/*
   cp -r -v $JUCE_MODULES_DIR/$M/* $CARLA_MODULES_DIR/$M/
 done
 

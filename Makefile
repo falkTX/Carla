@@ -58,6 +58,7 @@ ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
+ALL_LIBS += $(MODULEDIR)/juce_events.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
@@ -73,7 +74,6 @@ ifeq ($(MACOS_OR_WIN32),true)
 ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
 ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
-ALL_LIBS += $(MODULEDIR)/juce_events.a
 ALL_LIBS += $(MODULEDIR)/juce_graphics.a
 ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
 ifeq ($(MACOS),true)

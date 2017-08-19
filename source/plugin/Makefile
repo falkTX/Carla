@@ -33,6 +33,7 @@ LIBS += $(MODULEDIR)/jackbridge.a
 LIBS += $(MODULEDIR)/juce_audio_basics.a
 LIBS += $(MODULEDIR)/juce_audio_formats.a
 LIBS += $(MODULEDIR)/juce_core.a
+LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
@@ -48,7 +49,6 @@ endif
 ifeq ($(MACOS_OR_WIN32),true)
 LIBS += $(MODULEDIR)/juce_audio_processors.a
 LIBS += $(MODULEDIR)/juce_data_structures.a
-LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/juce_graphics.a
 LIBS += $(MODULEDIR)/juce_gui_basics.a
 endif

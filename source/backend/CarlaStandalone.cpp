@@ -37,9 +37,7 @@
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics/juce_gui_basics.h"
 #else
-namespace juce {
-# include "juce_events/messages/juce_Initialisation.h"
-} // namespace juce
+# include "juce_events/juce_events.h"
 #endif
 
 namespace CB = CarlaBackend;
@@ -315,6 +313,8 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #else
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), gStandalone.engineOptions.transportExtra);
+
+    juce::initialiseJuce_GUI();
 #endif
 
     carla_engine_init_common();
@@ -322,7 +322,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
     if (gStandalone.engine->init(clientName))
     {
 #ifndef BUILD_BRIDGE
-        juce::initialiseJuce_GUI();
         if (gStandalone.logThreadEnabled && std::getenv("CARLA_LOGS_DISABLED") == nullptr)
             gStandalone.logThread.init();
 #endif
@@ -334,6 +333,9 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         gStandalone.lastError = gStandalone.engine->getLastError();
         delete gStandalone.engine;
         gStandalone.engine = nullptr;
+#ifndef BUILD_BRIDGE
+        juce::shutdownJuce_GUI();
+#endif
         return false;
     }
 }
@@ -411,13 +413,13 @@ bool carla_engine_close()
     if (! closed)
         gStandalone.lastError = gStandalone.engine->getLastError();
 
+    delete gStandalone.engine;
+    gStandalone.engine = nullptr;
+
 #ifndef BUILD_BRIDGE
     juce::shutdownJuce_GUI();
     gStandalone.logThread.stop();
 #endif
-
-    delete gStandalone.engine;
-    gStandalone.engine = nullptr;
 
     return closed;
 }
@@ -1954,6 +1956,6 @@ const char* carla_get_host_osc_url_udp()
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
-#include "CarlaJuceEvents.cpp"
+#include "CarlaJuceAudioProcessors.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------

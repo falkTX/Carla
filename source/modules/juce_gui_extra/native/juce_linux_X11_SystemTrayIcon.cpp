@@ -2,27 +2,27 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   Copyright (c) 2017 - ROLI Ltd.
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
+   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
+   27th April 2017).
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+   End User License Agreement: www.juce.com/juce-5-licence
+   Privacy Policy: www.juce.com/juce-5-privacy-policy
 
-   ------------------------------------------------------------------------------
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
+   EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
+   DISCLAIMED.
 
   ==============================================================================
 */
-
-extern ::Display* display;
 
 //==============================================================================
 class SystemTrayIconComponent::Pimpl
@@ -30,14 +30,17 @@ class SystemTrayIconComponent::Pimpl
 public:
     Pimpl (const Image& im, Window windowH)  : image (im)
     {
-        ScopedXLock xlock;
+        ScopedXDisplay xDisplay;
+        auto display = xDisplay.display;
+
+        ScopedXLock xlock (display);
 
         Screen* const screen = XDefaultScreenOfDisplay (display);
         const int screenNumber = XScreenNumberOfScreen (screen);
 
         String screenAtom ("_NET_SYSTEM_TRAY_S");
         screenAtom << screenNumber;
-        Atom selectionAtom = XInternAtom (display, screenAtom.toUTF8(), false);
+        Atom selectionAtom = Atoms::getCreating (display, screenAtom.toUTF8());
 
         XGrabServer (display);
         Window managerWin = XGetSelectionOwner (display, selectionAtom);
@@ -53,7 +56,7 @@ public:
             XEvent ev = { 0 };
             ev.xclient.type = ClientMessage;
             ev.xclient.window = managerWin;
-            ev.xclient.message_type = XInternAtom (display, "_NET_SYSTEM_TRAY_OPCODE", False);
+            ev.xclient.message_type = Atoms::getCreating (display, "_NET_SYSTEM_TRAY_OPCODE");
             ev.xclient.format = 32;
             ev.xclient.data.l[0] = CurrentTime;
             ev.xclient.data.l[1] = 0 /*SYSTEM_TRAY_REQUEST_DOCK*/;
@@ -67,11 +70,11 @@ public:
 
         // For older KDE's ...
         long atomData = 1;
-        Atom trayAtom = XInternAtom (display, "KWM_DOCKWINDOW", false);
+        Atom trayAtom = Atoms::getCreating (display, "KWM_DOCKWINDOW");
         XChangeProperty (display, windowH, trayAtom, trayAtom, 32, PropModeReplace, (unsigned char*) &atomData, 1);
 
         // For more recent KDE's...
-        trayAtom = XInternAtom (display, "_KDE_NET_WM_SYSTEM_TRAY_WINDOW_FOR", false);
+        trayAtom = Atoms::getCreating (display, "_KDE_NET_WM_SYSTEM_TRAY_WINDOW_FOR");
         XChangeProperty (display, windowH, trayAtom, XA_WINDOW, 32, PropModeReplace, (unsigned char*) &windowH, 1);
 
         // A minimum size must be specified for GNOME and Xfce, otherwise the icon is displayed with a width of 1
