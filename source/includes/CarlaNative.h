@@ -104,7 +104,8 @@ typedef enum {
     NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS  = 4, /** nothing                                           */
     NATIVE_HOST_OPCODE_RELOAD_ALL            = 5, /** nothing                                           */
     NATIVE_HOST_OPCODE_UI_UNAVAILABLE        = 6, /** nothing                                           */
-    NATIVE_HOST_OPCODE_HOST_IDLE             = 7  /** nothing                                           */
+    NATIVE_HOST_OPCODE_HOST_IDLE             = 7, /** nothing                                           */
+    NATIVE_HOST_OPCODE_INTERNAL_PLUGIN       = 8  /** nothing                                           */
 } NativeHostDispatcherOpcode;
 
 /* ------------------------------------------------------------------------------------------------------------

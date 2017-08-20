@@ -45,13 +45,33 @@
 using juce::File;
 using juce::FloatVectorOperations;
 using juce::MemoryOutputStream;
-using juce::ScopedJuceInitialiser_GUI;
 using juce::ScopedPointer;
 using juce::String;
 using juce::XmlDocument;
 using juce::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
+
+static int numScopedInitInstances = 0;
+
+class OptionalScopedJuceInitialiser_GUI
+{
+public:
+    OptionalScopedJuceInitialiser_GUI(bool performInit)
+        : fPerformInit(performInit)
+    {
+        if (fPerformInit && numScopedInitInstances++ == 0)
+            juce::initialiseJuce_GUI();
+    }
+    ~OptionalScopedJuceInitialiser_GUI()
+    {
+        if (fPerformInit && --numScopedInitInstances == 0)
+            juce::shutdownJuce_GUI();
+    }
+
+private:
+    bool fPerformInit;
+};
 
 // -----------------------------------------------------------------------
 
@@ -594,8 +614,11 @@ public:
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
+          fNeedsJuceMsgIdle(host->dispatcher(pHost->handle,
+                                             NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
           fOptionsForced(false),
-          fWaitForReadyMsg(false)
+          fWaitForReadyMsg(false),
+          kJuceGuiInit(fNeedsJuceMsgIdle)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -1640,6 +1663,18 @@ protected:
             fUiServer.stopPipeServer(1000);
             break;
         }
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        if (fNeedsJuceMsgIdle)
+        {
+            using juce::MessageManager;
+
+            const MessageManager* const msgMgr(MessageManager::getInstanceWithoutCreating());
+            CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
+
+            for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+        }
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -1830,11 +1865,12 @@ private:
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
+    bool fNeedsJuceMsgIdle;
     bool fOptionsForced;
     bool fWaitForReadyMsg;
     char fTmpBuf[STR_MAX+1];
 
-    const ScopedJuceInitialiser_GUI juceGuiInit;
+    const OptionalScopedJuceInitialiser_GUI kJuceGuiInit;
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {

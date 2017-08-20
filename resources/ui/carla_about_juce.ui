@@ -111,7 +111,7 @@ It contains pretty much everything you're likely to need to create most applicat
 JUCE is licensed under the GNU Public Licence version 2.0.
 One module (juce_core) is permissively licensed under the ISC.
 
-Copyright (C) 2015 - ROLI Ltd.</string>
+Copyright (C) 2017 ROLI Ltd.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

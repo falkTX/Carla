@@ -2267,6 +2267,9 @@ protected:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
             break;
+        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
+            ret = 1;
+            break;
         }
 
         return ret;

@@ -429,6 +429,15 @@ void carla_engine_idle()
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
     gStandalone.engine->idle();
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+    using juce::MessageManager;
+
+    const MessageManager* const msgMgr(MessageManager::getInstanceWithoutCreating());
+    CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
+
+    for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
+#endif
 }
 
 bool carla_is_engine_running()

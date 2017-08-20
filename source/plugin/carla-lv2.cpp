@@ -1087,6 +1087,7 @@ protected:
         case NATIVE_HOST_OPCODE_RELOAD_MIDI_PROGRAMS:
         case NATIVE_HOST_OPCODE_RELOAD_ALL:
         case NATIVE_HOST_OPCODE_HOST_IDLE:
+        case NATIVE_HOST_OPCODE_INTERNAL_PLUGIN:
             // nothing
             break;
         case NATIVE_HOST_OPCODE_UI_UNAVAILABLE:

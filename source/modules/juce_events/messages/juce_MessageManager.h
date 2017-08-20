@@ -189,6 +189,7 @@ public:
     // Internal methods - do not use!
     void deliverBroadcastMessage (const String&);
     ~MessageManager() noexcept;
+    static bool dispatchNextMessageOnSystemQueue (bool returnIfNoPendingMessages);
    #endif
 
 private:
@@ -212,7 +213,6 @@ private:
     static void* exitModalLoopCallback (void*);
     static void doPlatformSpecificInitialisation();
     static void doPlatformSpecificShutdown();
-    static bool dispatchNextMessageOnSystemQueue (bool returnIfNoPendingMessages);
 
     template <typename FunctionType>
     struct AsyncCallInvoker  : public MessageBase

@@ -61,6 +61,13 @@ LIBS_win32   += $(MODULEDIR)/juce_core.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_core.win64.a
 LINK_FLAGS   += $(JUCE_CORE_LIBS)
 
+LIBS_native  += $(MODULEDIR)/juce_events.a
+LIBS_posix32 += $(MODULEDIR)/juce_events.posix32.a
+LIBS_posix64 += $(MODULEDIR)/juce_events.posix64.a
+LIBS_win32   += $(MODULEDIR)/juce_events.win32.a
+LIBS_win64   += $(MODULEDIR)/juce_events.win64.a
+LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
+
 LIBS_native  += $(MODULEDIR)/lilv.a
 LIBS_posix32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_posix64 += $(MODULEDIR)/lilv.posix64.a
@@ -89,13 +96,6 @@ LIBS_posix64 += $(MODULEDIR)/juce_data_structures.posix64.a
 LIBS_win32   += $(MODULEDIR)/juce_data_structures.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_data_structures.win64.a
 LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
-
-LIBS_native  += $(MODULEDIR)/juce_events.a
-LIBS_posix32 += $(MODULEDIR)/juce_events.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_events.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_events.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_events.win64.a
-LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
 
 LIBS_native  += $(MODULEDIR)/juce_graphics.a
 LIBS_posix32 += $(MODULEDIR)/juce_graphics.posix32.a
