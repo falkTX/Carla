@@ -165,13 +165,13 @@ theme: libs
 LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 
 ifeq ($(MACOS),true)
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
@@ -187,13 +187,13 @@ posix32: $(LIBS_POSIX32)
 LIBS_POSIX64  = $(MODULEDIR)/jackbridge.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 
 ifeq ($(MACOS),true)
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
