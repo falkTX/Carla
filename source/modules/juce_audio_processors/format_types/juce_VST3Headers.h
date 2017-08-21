@@ -90,12 +90,13 @@
   #define _set_abort_behavior(...)
  #endif
  #include <base/source/baseiids.cpp>
+ #include <base/source/fatomic.cpp>
  #include <base/source/fbuffer.cpp>
  #include <base/source/fdebug.cpp>
  #include <base/source/fobject.cpp>
  #include <base/source/fstreamer.cpp>
  #include <base/source/fstring.cpp>
- #include <base/source/flock.cpp>
+ #include <base/source/fthread.cpp>
  #include <base/source/updatehandler.cpp>
  #include <pluginterfaces/base/conststringtable.cpp>
  #include <pluginterfaces/base/funknown.cpp>

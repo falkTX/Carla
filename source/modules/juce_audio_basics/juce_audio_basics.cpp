@@ -31,7 +31,7 @@
 
 #include "juce_audio_basics.h"
 
-#if JUCE_MINGW && ! defined (__SSE2__)
+#if JUCE_MINGW
  #define JUCE_USE_SSE_INTRINSICS 0
 #endif
 

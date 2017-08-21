@@ -104,7 +104,7 @@ namespace WindowsMessageHelpers
     }
 }
 
-#if JUCE_MODULE_AVAILABLE_juce_gui_extra
+#if JUCE_MODULE_AVAILABLE_juce_gui_extra && ! JUCE_MINGW
 LRESULT juce_offerEventToActiveXControl (::MSG&);
 #endif
 
@@ -119,7 +119,7 @@ bool MessageManager::dispatchNextMessageOnSystemQueue (const bool returnIfNoPend
 
     if (GetMessage (&m, (HWND) 0, 0, 0) >= 0)
     {
-      #if JUCE_MODULE_AVAILABLE_juce_gui_extra
+      #if JUCE_MODULE_AVAILABLE_juce_gui_extra && ! JUCE_MINGW
         if (juce_offerEventToActiveXControl (m) != S_FALSE)
             return true;
       #endif

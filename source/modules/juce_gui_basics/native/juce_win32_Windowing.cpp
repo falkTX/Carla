@@ -206,6 +206,10 @@ extern void* getUser32Function (const char*);
   };
 #endif
 
+#if JUCE_MINGW
+static bool canUseMultiTouch()   { return false; }
+static void checkForPointerAPI() { }
+#else
 typedef BOOL (WINAPI* RegisterTouchWindowFunc) (HWND, ULONG);
 typedef BOOL (WINAPI* GetTouchInputInfoFunc) (HTOUCHINPUT, UINT, TOUCHINPUT*, int);
 typedef BOOL (WINAPI* CloseTouchInputHandleFunc) (HTOUCHINPUT);
@@ -259,6 +263,7 @@ static void checkForPointerAPI()
                      && getPointerTouchInfo    != nullptr
                      && getPointerPenInfo      != nullptr);
 }
+#endif
 
 static Rectangle<int> rectangleFromRECT (const RECT& r) noexcept
 {
@@ -1578,7 +1583,9 @@ private:
                 case WM_MOUSEACTIVATE:
                 case WM_NCMOUSEHOVER:
                 case WM_MOUSEHOVER:
+#if ! JUCE_MINGW
                 case WM_TOUCH:
+#endif
                 case WM_POINTERUPDATE:
                 case WM_NCPOINTERUPDATE:
                 case WM_POINTERWHEEL:
@@ -1694,8 +1701,10 @@ private:
 
             RegisterDragDrop (hwnd, dropTarget);
 
+#if ! JUCE_MINGW
             if (canUseMultiTouch())
                 registerTouchWindow (hwnd, 0);
+#endif
 
             setDPIAwareness();
             setMessageFilter();
@@ -2025,8 +2034,10 @@ private:
 
     bool isTouchEvent() noexcept
     {
+#if ! JUCE_MINGW
         if (registerTouchWindow == nullptr)
             return false;
+#endif
 
         // Relevant info about touch/pen detection flags:
         // https://msdn.microsoft.com/en-us/library/windows/desktop/ms703320(v=vs.85).aspx
@@ -2194,6 +2205,7 @@ private:
 
     static MouseInputSource::InputSourceType getPointerType (WPARAM wParam)
     {
+#if ! JUCE_MINGW
         if (getPointerTypeFunction != nullptr)
         {
             POINTER_INPUT_TYPE pointerType;
@@ -2207,6 +2219,7 @@ private:
                     return MouseInputSource::InputSourceType::pen;
             }
         }
+#endif
 
         return MouseInputSource::InputSourceType::mouse;
     }
@@ -2228,6 +2241,7 @@ private:
             peer->handleMouseWheel (getPointerType (wParam), localPos, getMouseEventTime(), wheel);
     }
 
+#if ! JUCE_MINGW
     bool doGestureEvent (LPARAM lParam)
     {
         GESTUREINFO gi;
@@ -2403,6 +2417,7 @@ private:
 
         return touchInput;
     }
+#endif
 
     bool handlePenInput (POINTER_PEN_INFO penInfo, Point<float> pos, const float pressure, bool isDown, bool isUp)
     {
@@ -2945,6 +2960,7 @@ private:
 
                 return 1;
 
+#if ! JUCE_MINGW
             //==============================================================================
             case WM_POINTERUPDATE:
                 if (handlePointerInput (wParam, lParam, false, false))
@@ -2960,6 +2976,7 @@ private:
                 if (handlePointerInput (wParam, lParam, false, true))
                     return 0;
                 break;
+#endif
 
             //==============================================================================
             case WM_MOUSEMOVE:          doMouseMove (getPointFromLParam (lParam), false); return 0;
@@ -2990,6 +3007,7 @@ private:
 
                 return 0;
 
+#if ! JUCE_MINGW
             case WM_TOUCH:
                 if (getTouchInputInfo != nullptr)
                     return doTouchEvent ((int) wParam, (HTOUCHINPUT) lParam);
@@ -3001,6 +3019,7 @@ private:
                     return 0;
 
                 break;
+#endif
 
             //==============================================================================
             case WM_SIZING:                return handleSizeConstraining (*(RECT*) lParam, wParam);
@@ -3898,6 +3917,7 @@ static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userIn
     const bool isMain = (info.dwFlags & 1 /* MONITORINFOF_PRIMARY */) != 0;
     double dpi = 0;
 
+   #if ! JUCE_DISABLE_WIN32_DPI_AWARENESS
     if (getDPIForMonitor != nullptr)
     {
         UINT dpiX = 0, dpiY = 0;
@@ -3905,6 +3925,7 @@ static BOOL CALLBACK enumMonitorsProc (HMONITOR hm, HDC, LPRECT r, LPARAM userIn
         if (SUCCEEDED (getDPIForMonitor (hm, MDT_Default, &dpiX, &dpiY)))
             dpi = (dpiX + dpiY) / 2.0;
     }
+   #endif
 
     ((Array<MonitorInfo>*) userInfo)->add (MonitorInfo (rectangleFromRECT (*r), isMain, dpi));
 

@@ -83,6 +83,7 @@
 
  #if JUCE_MINGW
   #include <imm.h>
+  #define JUCE_DISABLE_WIN32_DPI_AWARENESS 1
  #endif
 
 //==============================================================================
