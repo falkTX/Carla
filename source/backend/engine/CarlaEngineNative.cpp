@@ -45,33 +45,71 @@
 using juce::File;
 using juce::FloatVectorOperations;
 using juce::MemoryOutputStream;
+using juce::MessageManager;
+using juce::ScopedJuceInitialiser_GUI;
 using juce::ScopedPointer;
+using juce::SharedResourcePointer;
 using juce::String;
 using juce::XmlDocument;
 using juce::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+
 static int numScopedInitInstances = 0;
 
-class OptionalScopedJuceInitialiser_GUI
+class SharedMessageThread : public juce::Thread
 {
 public:
-    OptionalScopedJuceInitialiser_GUI(bool performInit)
-        : fPerformInit(performInit)
+    SharedMessageThread()
+      : juce::Thread ("SharedMessageThread"),
+        initialised (false) {}
+
+    ~SharedMessageThread()
     {
-        if (fPerformInit && numScopedInitInstances++ == 0)
-            juce::initialiseJuce_GUI();
+        CARLA_SAFE_ASSERT(numScopedInitInstances == 0);
+
+        // in case something fails
+        MessageManager::getInstance()->stopDispatchLoop();
+        waitForThreadToExit (5000);
     }
-    ~OptionalScopedJuceInitialiser_GUI()
+
+    void incRef()
     {
-        if (fPerformInit && --numScopedInitInstances == 0)
-            juce::shutdownJuce_GUI();
+        if (numScopedInitInstances++ == 0)
+        {
+            startThread (7);
+
+            while (! initialised)
+                sleep (1);
+        }
+    }
+
+    void decRef()
+    {
+        if (--numScopedInitInstances == 0)
+        {
+            MessageManager::getInstance()->stopDispatchLoop();
+            waitForThreadToExit (5000);
+        }
+    }
+
+protected:
+    void run() override
+    {
+        const ScopedJuceInitialiser_GUI juceInitialiser;
+
+        MessageManager::getInstance()->setCurrentThreadAsMessageThread();
+        initialised = true;
+
+        MessageManager::getInstance()->runDispatchLoop();
     }
 
 private:
-    bool fPerformInit;
+    volatile bool initialised;
 };
+#endif
 
 // -----------------------------------------------------------------------
 
@@ -610,15 +648,16 @@ public:
     CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const uint32_t inChan = 2, uint32_t outChan = 0)
         : CarlaEngine(),
           pHost(host),
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+          kNeedsJuceMsgThread(host->dispatcher(pHost->handle,
+                                               NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
+#endif
           kIsPatchbay(isPatchbay),
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
-          fNeedsJuceMsgIdle(host->dispatcher(pHost->handle,
-                                             NATIVE_HOST_OPCODE_INTERNAL_PLUGIN, 0, 0, nullptr, 0.0f) == 0),
           fOptionsForced(false),
-          fWaitForReadyMsg(false),
-          kJuceGuiInit(fNeedsJuceMsgIdle)
+          fWaitForReadyMsg(false)
     {
         carla_debug("CarlaEngineNative::CarlaEngineNative()");
 
@@ -630,6 +669,11 @@ public:
 
         if (outChan == 0)
             outChan = inChan;
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        if (kNeedsJuceMsgThread)
+            fJuceMsgThread->incRef();
+#endif
 
         // set-up engine
         if (kIsPatchbay)
@@ -679,6 +723,11 @@ public:
         close();
 
         pData->graph.destroy();
+
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        if (kNeedsJuceMsgThread)
+            fJuceMsgThread->decRef();
+#endif
 
         carla_debug("CarlaEngineNative::~CarlaEngineNative() - END");
     }
@@ -1663,18 +1712,6 @@ protected:
             fUiServer.stopPipeServer(1000);
             break;
         }
-
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-        if (fNeedsJuceMsgIdle)
-        {
-            using juce::MessageManager;
-
-            const MessageManager* const msgMgr(MessageManager::getInstanceWithoutCreating());
-            CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
-
-            for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
-        }
-#endif
     }
 
     // -------------------------------------------------------------------
@@ -1861,16 +1898,18 @@ public:
 private:
     const NativeHostDescriptor* const pHost;
 
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+    const bool kNeedsJuceMsgThread;
+    const SharedResourcePointer<SharedMessageThread> fJuceMsgThread;
+#endif
+
     const bool kIsPatchbay; // rack if false
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
-    bool fNeedsJuceMsgIdle;
     bool fOptionsForced;
     bool fWaitForReadyMsg;
     char fTmpBuf[STR_MAX+1];
-
-    const OptionalScopedJuceInitialiser_GUI kJuceGuiInit;
 
     CarlaPlugin* _getFirstPlugin() const noexcept
     {
