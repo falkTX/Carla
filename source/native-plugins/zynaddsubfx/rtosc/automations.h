@@ -1,6 +1,7 @@
 #include <rtosc/ports.h>
 #include <rtosc/rtosc.h>
 #include <cassert>
+#pragma once
 namespace rtosc {
 struct AutomationMapping
 {

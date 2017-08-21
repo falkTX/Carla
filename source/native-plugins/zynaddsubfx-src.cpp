@@ -45,6 +45,7 @@ extern "C" {
 }
 
 // rtosc includes
+#include "zynaddsubfx/rtosc/cpp/automations.cpp"
 #include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
 #include "zynaddsubfx/rtosc/cpp/miditable.cpp"
 #undef RTOSC_INVALID_MIDI
