@@ -17,6 +17,8 @@
 #include <cassert>
 #include <rtosc/rtosc.h>
 
+using namespace zyncarla;
+
 EnvelopeFreeEdit::EnvelopeFreeEdit(int x,int y, int w, int h, const char *label)
 :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this)
 {

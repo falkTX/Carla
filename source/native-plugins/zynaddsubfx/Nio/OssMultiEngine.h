@@ -17,6 +17,8 @@
 #include "../globals.h"
 #include "AudioOut.h"
 
+namespace zyncarla {
+
 class OssMultiEngine : public AudioOut
 {
     public:
@@ -60,5 +62,7 @@ class OssMultiEngine : public AudioOut
 
         const char* linux_oss_wave_out_dev;
 };
+
+}
 
 #endif

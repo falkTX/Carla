@@ -27,6 +27,8 @@
 
 #define OSCIL_SMP_EXTRA_SAMPLES 5
 
+namespace zyncarla {
+
 /**The "additive" synthesizer*/
 class ADnote:public SynthNote
 {
@@ -50,6 +52,11 @@ class ADnote:public SynthNote
 
         virtual SynthNote *cloneLegato(void) override;
     private:
+
+        void setupVoice(int nvoice);
+        int  setupVoiceUnison(int nvoice);
+        void setupVoiceDetune(int nvoice);
+        void setupVoiceMod(int nvoice);
 
         /**Changes the frequency of an oscillator.
          * @param nvoice voice to run computations on
@@ -316,5 +323,7 @@ class ADnote:public SynthNote
         //how the fine detunes are made bigger or smaller
         float bandwidthDetuneMultiplier;
 };
+
+}
 
 #endif

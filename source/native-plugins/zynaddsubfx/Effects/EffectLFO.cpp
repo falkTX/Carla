@@ -17,6 +17,8 @@
 #include <cmath>
 #include "globals.h"
 
+namespace zyncarla {
+
 EffectLFO::EffectLFO(float srate_f, float bufsize_f)
     :Pfreq(40),
       Prandomness(0),
@@ -103,4 +105,6 @@ void EffectLFO::effectlfoout(float *outl, float *outr)
         ampr2 = (1.0f - lfornd) + lfornd * RND;
     }
     *outr = (out + 1.0f) * 0.5f;
+}
+
 }

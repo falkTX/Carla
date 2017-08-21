@@ -19,14 +19,15 @@
 #include "../Params/FilterParams.h"
 #include "../Misc/Stereo.h"
 
-class FilterParams;
-class Allocator;
-
+// bug: the effect parameters can currently be set, but such values
+//      will not be saved into XML files
 #ifndef rEffPar
 #define rEffPar(name, idx, ...) \
-  {STRINGIFY(name) "::i",  rProp(parameter) DOC(__VA_ARGS__), NULL, rEffParCb(idx)}
+  {STRINGIFY(name) "::i",  rProp(parameter) rDefaultDepends(preset) \
+   DOC(__VA_ARGS__), NULL, rEffParCb(idx)}
 #define rEffParTF(name, idx, ...) \
-  {STRINGIFY(name) "::T:F",  rProp(parameter) DOC(__VA_ARGS__), NULL, rEffParTFCb(idx)}
+  {STRINGIFY(name) "::T:F",  rProp(parameter) rDefaultDepends(preset) \
+   DOC(__VA_ARGS__), NULL, rEffParTFCb(idx)}
 #define rEffParCb(idx) \
     [](const char *msg, rtosc::RtData &d) {\
         rObject &obj = *(rObject*)d.obj; \
@@ -42,6 +43,32 @@ class Allocator;
         else \
             d.reply(d.loc, obj.getpar(idx)?"T":"F");}
 #endif
+
+#define rEffParCommon(pname, rshort, rdoc, idx, ...) \
+{STRINGIFY(pname) "::i", rProp(parameter) rLinear(0,127) \
+    rShort(rshort) rDoc(rdoc), \
+    0, \
+    [](const char *msg, rtosc::RtData &d) \
+    { \
+        rObject& eff = *(rObject*)d.obj; \
+        if(!rtosc_narguments(msg)) \
+            d.reply(d.loc, "i", eff.getpar(idx)); \
+        else { \
+            eff.changepar(0, rtosc_argument(msg, 0).i); \
+            d.broadcast(d.loc, "i", eff.getpar(idx)); \
+        } \
+    }}
+
+#define rEffParVol(...) rEffParCommon(Pvolume, "amt", "amount of effect", 0, \
+    __VA_ARGS__)
+#define rEffParPan(...) rEffParCommon(Ppanning, "pan", "panning", 1, \
+    __VA_ARGS__)
+
+
+namespace zyncarla {
+
+class FilterParams;
+class Allocator;
 
 struct EffectParams
 {
@@ -153,5 +180,7 @@ class Effect
             bufferbytes      = buffersize * sizeof(float);
         }
 };
+
+}
 
 #endif

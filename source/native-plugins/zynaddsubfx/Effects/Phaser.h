@@ -23,6 +23,8 @@
 
 #define MAX_PHASER_STAGES 12
 
+namespace zyncarla {
+
 class Phaser:public Effect
 {
     public:
@@ -86,5 +88,7 @@ class Phaser:public Effect
         void normalPhase(const Stereo<float *> &input);
         float applyPhase(float x, float g, float *old);
 };
+
+}
 
 #endif

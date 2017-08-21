@@ -18,6 +18,8 @@
 #include "../Misc/XMLwrapper.h"
 #include "PresetsArray.h"
 
+namespace zyncarla {
+
 class FilterParams:public PresetsArray
 {
     public:
@@ -44,13 +46,18 @@ class FilterParams:public PresetsArray
         float getfreqtracking(float notefreq) const ;
         float getgain() const ;
 
-        unsigned char Pcategory; //Filter category (Analog/Formant/StVar)
-        unsigned char Ptype; // Filter type  (for analog lpf,hpf,bpf..)
-        unsigned char Pfreq; // Frequency (64-central frequency)
-        unsigned char Pq; // Q parameters (resonance or bandwidth)
-        unsigned char Pstages; //filter stages+1
-        unsigned char Pfreqtrack; //how the filter frequency is changing according the note frequency
-        unsigned char Pgain; //filter's output gain
+        unsigned Pcategory:2;  //< Filter category (Analog/Formant/StVar)
+        unsigned Ptype:8;      //< Filter type  (for analog lpf,hpf,bpf..)
+        unsigned Pstages:8;    //< filter stages+1
+        float    basefreq;     //< Base cutoff frequency (Hz)
+        float    baseq;        //< Q parameters (resonance or bandwidth)
+        float    freqtracking; //< Tracking of center frequency with note frequency (percentage)
+        float    gain;         //< filter's output gain (dB)
+
+        int Pq;         //dummy
+        int Pfreq;      //dummy
+        int Pfreqtrack; //dummy
+        int Pgain;      //dummy
 
         //Formant filter parameters
         unsigned char Pnumformants; //how many formants are used
@@ -97,5 +104,7 @@ class FilterParams:public PresetsArray
         unsigned char Dfreq;
         unsigned char Dq;
 };
+
+}
 
 #endif

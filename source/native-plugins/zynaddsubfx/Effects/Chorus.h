@@ -19,6 +19,8 @@
 
 #define MAX_CHORUS_DELAY 250.0f //ms
 
+namespace zyncarla {
+
 /**Chorus and Flange effects*/
 class Chorus:public Effect
 {
@@ -94,5 +96,7 @@ class Chorus:public Effect
         int dlk, drk, dlhi;
         float getdelay(float xlfo);
 };
+
+}
 
 #endif

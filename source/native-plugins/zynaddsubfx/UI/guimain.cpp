@@ -36,16 +36,6 @@ void exitprogram()
     GUI::destroyUi(gui);
 }
 
-bool fileexists(const char *filename)
-{
-    struct stat tmp;
-    int result = stat(filename, &tmp);
-    if(result >= 0)
-        return true;
-
-    return false;
-}
-
 int Pexitprogram=0;
 
 
@@ -77,7 +67,21 @@ int Pexitprogram=0;
 
 using namespace GUI;
 class MasterUI *ui=0;
-bool isPlugin = false;
+
+// exceptionally extension of the namespace outside the core
+namespace zyncarla
+{
+    bool isPlugin = false;
+    bool fileexists(const char *filename)
+    {
+        struct stat tmp;
+        int result = stat(filename, &tmp);
+        if(result >= 0)
+            return true;
+
+        return false;
+    }
+}
 
 #ifdef NTK_GUI
 static Fl_Tiled_Image *module_backdrop;

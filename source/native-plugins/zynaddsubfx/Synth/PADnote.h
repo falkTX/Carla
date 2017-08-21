@@ -18,6 +18,8 @@
 #include "Envelope.h"
 #include "LFO.h"
 
+namespace zyncarla {
+
 /**The "pad" synthesizer*/
 class PADnote:public SynthNote
 {
@@ -100,5 +102,6 @@ class PADnote:public SynthNote
         const int& interpolation;
 };
 
+}
 
 #endif

@@ -17,6 +17,8 @@
 #include "../globals.h"
 #include "Filter.h"
 
+namespace zyncarla {
+
 class SVFilter:public Filter
 {
     public:
@@ -66,5 +68,7 @@ class SVFilter:public Filter
              oldabovenq;
         bool needsinterpolation, firsttime;
 };
+
+}
 
 #endif

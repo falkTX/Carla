@@ -15,6 +15,8 @@
 #include "Misc/Util.h"
 #include "globals.h"
 
+namespace zyncarla {
+
 void SYNTH_T::alias(bool randomize)
 {
     halfsamplerate_f = (samplerate_f = samplerate) / 2.0f;
@@ -31,4 +33,6 @@ void SYNTH_T::alias(bool randomize)
             denormalkillbuf[i] = (RND - 0.5f) * 1e-16;
         else
             denormalkillbuf[i] = 0;
+}
+
 }

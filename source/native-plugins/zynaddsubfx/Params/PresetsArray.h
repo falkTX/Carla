@@ -18,6 +18,8 @@
 
 #include "Presets.h"
 
+namespace zyncarla {
+
 /**PresetsArray and Clipboard management*/
 class PresetsArray:public Presets
 {
@@ -38,5 +40,7 @@ class PresetsArray:public Presets
         //virtual void defaults() = 0;
         //virtual void defaults(int n) = 0;
 };
+
+}
 
 #endif

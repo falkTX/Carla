@@ -2,6 +2,8 @@
 #include <cstring>
 #include <cstdio>
 
+namespace zyncarla {
+
 ScratchString::ScratchString(void)
 {
     memset(c_str, 0, sizeof(c_str));
@@ -37,3 +39,5 @@ ScratchString ScratchString::operator+(const ScratchString s)
 //{
 //    return c_str;
 //}
+
+}

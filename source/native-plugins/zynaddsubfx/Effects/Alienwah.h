@@ -20,6 +20,8 @@
 
 #define MAX_ALIENWAH_DELAY 100
 
+namespace zyncarla {
+
 /**"AlienWah" Effect*/
 class Alienwah:public Effect
 {
@@ -57,5 +59,7 @@ class Alienwah:public Effect
         std::complex<float>  oldclfol, oldclfor;
         int oldk;
 };
+
+}
 
 #endif

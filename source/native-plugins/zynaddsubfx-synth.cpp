@@ -38,6 +38,8 @@ using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::ScopedPointer;
 
+using namespace zyncarla;
+
 // #define ZYN_MSG_ANYWHERE
 
 // -----------------------------------------------------------------------
@@ -73,7 +75,7 @@ public:
         std::vector<const ProgramInfo*> programs;
         programs.push_back(new ProgramInfo(0, 0, "default", ""));
 
-        CarlaConfig config;
+        Config config;
         config.init();
 
         SYNTH_T synth;
@@ -834,7 +836,7 @@ private:
     MiddleWare* fMiddleWare;
     Master*     fMaster;
     SYNTH_T     fSynth;
-    CarlaConfig fConfig;
+    Config      fConfig;
     char*       fDefaultState;
 
     float fParameters[kParamCount];

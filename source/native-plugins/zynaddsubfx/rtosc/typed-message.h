@@ -19,7 +19,7 @@ template<> class rtMsg<>
         rtMsg(const char *arg = NULL, const char *spec=NULL, bool _=false)
             :msg(arg)
         {
-            if(arg && spec && !rtosc_match_path(spec, arg))
+            if(arg && spec && !rtosc_match_path(spec, arg, NULL))
                 msg = NULL;
             (void)_;
         }
@@ -62,7 +62,7 @@ bool validate(const char *arg)
 template<class T>
 bool match_path(std::false_type, const char *arg)
 {
-    return rtosc_match_path(T::data(), arg);
+    return rtosc_match_path(T::data(), arg, NULL);
 }
 
 template<class T>

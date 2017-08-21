@@ -18,21 +18,28 @@
 
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
+using namespace rtosc;
+
+namespace zyncarla {
 
 #define rObject Resonance
 #define rBegin [](const char *msg, RtData &d) { rObject &o = *(rObject*)d.obj
-
 #define rEnd }
-using namespace rtosc;
+
 const rtosc::Ports Resonance::ports = {
     rSelf(Resonance),
     rPaste,
-    rToggle(Penabled,      rShort("enable"), "resonance enable"),
-    rToggle(Pprotectthefundamental, rShort("p.fund."), "Disable resonance filter on first harmonic"),
-    rParams(Prespoints, N_RES_POINTS, "Resonance data points"),
-    rParamZyn(PmaxdB,      rShort("max"),  "how many dB the signal may be amplified"),
-    rParamZyn(Pcenterfreq, rShort("c.freq"), "Center frequency"),
-    rParamZyn(Poctavesfreq, rShort("oct"), "The number of octaves..."),
+    rToggle(Penabled,      rShort("enable"), rDefault(false),
+            "resonance enable"),
+    rToggle(Pprotectthefundamental, rShort("p.fund."), rDefault(false),
+            "Disable resonance filter on first harmonic"),
+    rParams(Prespoints, N_RES_POINTS, rDefaultMissing,
+            "Resonance data points"),
+    rParamZyn(PmaxdB,      rShort("max"), rDefault(20),
+              "how many dB the signal may be amplified"),
+    rParamZyn(Pcenterfreq, rShort("c.freq"), rDefault(64), "Center frequency"),
+    rParamZyn(Poctavesfreq, rShort("oct"), rDefault(64),
+              "The number of octaves..."),
     rActioni(randomize, rMap(min,0), rMap(max, 2), "Randomize frequency response"),
     rActioni(interpolatepeaks, rMap(min,0), rMap(max, 2), "Generate response from peak values"),
     rAction(smooth, "Smooth out frequency response"),
@@ -318,4 +325,6 @@ void Resonance::getfromXML(XMLwrapper& xml)
         Prespoints[i] = xml.getpar127("val", Prespoints[i]);
         xml.exitbranch();
     }
+}
+
 }

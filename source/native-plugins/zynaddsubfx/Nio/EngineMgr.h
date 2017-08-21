@@ -16,6 +16,7 @@
 #include <string>
 #include "Engine.h"
 
+namespace zyncarla {
 
 class MidiIn;
 class AudioOut;
@@ -54,4 +55,7 @@ class EngineMgr
     private:
         EngineMgr(const SYNTH_T *synth, const oss_devs_t &oss_devs);
 };
+
+}
+
 #endif

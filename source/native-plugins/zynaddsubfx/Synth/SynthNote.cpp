@@ -15,6 +15,8 @@
 #include <new>
 #include <iostream>
 
+namespace zyncarla {
+
 SynthNote::SynthNote(SynthParams &pars)
     :memory(pars.memory),
     legato(pars.synth, pars.frequency, pars.velocity, pars.portamento,
@@ -157,4 +159,6 @@ void SynthNote::setVelocity(float velocity_) {
         std::cerr << "failed to set velocity to legato note: " << ba.what() << std::endl;
     }
     legato.setDecounter(0); //avoid chopping sound due fade-in
+}
+
 }

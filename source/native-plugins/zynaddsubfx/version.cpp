@@ -15,6 +15,8 @@
 
 #include "zyn-version.h"
 
+namespace zyncarla {
+
 std::ostream& operator<< (std::ostream& os,
     const version_type& v)
 {
@@ -29,4 +31,6 @@ static_assert(version_type(2,9,9) < version_type(3,4,3),
     "version operator failed");
 static_assert(!(version_type(2,4,3) < version_type(2,4,3)),
     "version operator failed");
+
+}
 

@@ -14,6 +14,8 @@
 #define SYNTH_NOTE_H
 #include "../globals.h"
 
+namespace zyncarla {
+
 class Allocator;
 class Controller;
 struct SynthParams
@@ -110,5 +112,7 @@ class SynthNote
         const AbsTime    &time;
         WatchManager     *wm;
 };
+
+}
 
 #endif

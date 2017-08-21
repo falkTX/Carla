@@ -20,6 +20,8 @@
 #include <string>
 #include <functional>
 
+namespace zyncarla {
+
 /**
  * Parameters for PAD synthesis
  *
@@ -190,6 +192,6 @@ class PADnoteParameters:public Presets
         const SYNTH_T &synth;
 };
 
-
+}
 
 #endif

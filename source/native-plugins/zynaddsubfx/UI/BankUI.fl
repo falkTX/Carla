@@ -23,6 +23,9 @@ decl {\#include <FL/Fl_Button.H>} {public local
 decl {\#include <FL/Fl_File_Chooser.H>} {public local
 } 
 
+decl {\#include <FL/Fl_Input.H>} {public local
+}
+
 decl {\#include "Fl_Osc_Interface.h"} {public local
 } 
 
@@ -95,6 +98,15 @@ refreshmainwindow();}
 banklist->value(0);}
         tooltip {Refresh the bank list (rescan)} xywh {230 8 105 20} box THIN_UP_BOX color 50 labelsize 11
       }
+      Fl_Input {} {
+        label {Search by name: }
+        code0 {o->when(FL_WHEN_CHANGED);}
+        callback {
+           std::string str = o->value();
+           update_search(str)}
+        tooltip {Enter text to search for}
+        xywh {460 8 105 20} box THIN_UP_BOX color 50 labelsize 11
+      }
     }
   }
   Function {BankUI(int *npart_, Fl_Osc_Interface *osc_)} {open
@@ -138,6 +150,15 @@ bankview->refresh();} {}
     osc->write("/bank/rescan");
 if (banklist->size() == 0)
      banklist->add(" ");} {}
+  }
+  Function {update_search(std::string search_string)} {open
+  } {
+    code {if (search_string.empty()) {
+    refreshmainwindow();
+} else {
+    osc->write("/bank/search", "s", search_string.c_str());
+}
+    } {}
   }
   decl {Fl_Osc_Interface *osc;} {private local
   }

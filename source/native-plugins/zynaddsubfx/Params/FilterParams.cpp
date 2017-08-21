@@ -3,7 +3,9 @@
 
   FilterParams.cpp - Parameters for filter
   Copyright (C) 2002-2005 Nasca Octavian Paul
+  Copyright (C) 2017      Mark McCurry
   Author: Nasca Octavian Paul
+          Mark McCurry
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -23,8 +25,9 @@
 #include <rtosc/rtosc.h>
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
-
 using namespace rtosc;
+
+namespace zyncarla {
 
 // g++ 4.8 needs this variable saved separately, otherwise it segfaults
 constexpr int sizeof_pvowels = sizeof(FilterParams::Pvowels);
@@ -65,14 +68,16 @@ const rtosc::Ports FilterParams::ports = {
     rOption(Ptype,              rShort("type"),
             rOptions(LP1, HP1, LP2, HP2, BP, notch, peak,
                 l.shelf, h.shelf), "Filter Type"),
-    rParamZyn(Pfreq,            rShort("cutoff"),   "Center Freq"),
-    rParamZyn(Pq,               rShort("q"),
-            "Quality Factor (resonance/bandwidth)"),
     rParamI(Pstages,            rShort("stages"),
             rLinear(0,5),  "Filter Stages"),
-    rParamZyn(Pfreqtrack,       rShort("f.track"),
+    rParamF(baseq,               rShort("q"),      rUnit(none),  rLog(0.1, 1000),
+            "Quality Factor (resonance/bandwidth)"),
+    rParamF(basefreq,           rShort("cutoff"),  rUnit(Hz),    rLog(31.25, 32000),
+            "Base cutoff frequency"),
+    rParamF(freqtracking,       rShort("f.track"), rUnit(%),     rLinear(-100, 100),
             "Frequency Tracking amount"),
-    rParamZyn(Pgain,            rShort("gain"),     "Output Gain"),
+    rParamF(gain,               rShort("gain"),    rUnit(dB),    rLinear(-30, 30),
+            "Output Gain"),
     rParamI(Pnumformants,       rShort("formants"),
             rLinear(1,12),  "Number of formants to be used"),
     rParamZyn(Pformantslowness, rShort("slew"),
@@ -96,8 +101,9 @@ const rtosc::Ports FilterParams::ports = {
             unsigned idx = atoi(mm);
             if(rtosc_narguments(msg)) {
                 obj->Psequence[idx].nvowel = rtosc_argument(msg, 0).i;
-            } else
                 d.broadcast(d.loc, "i", obj->Psequence[idx].nvowel);
+            } else
+                d.reply(d.loc, "i", obj->Psequence[idx].nvowel);
         }},
     {"type-svf::i", rProp(parameter) rShort("type")
         rOptions(low, high, band, notch)
@@ -221,6 +227,65 @@ const rtosc::Ports FilterParams::ports = {
             }
             d.replyArray(d.loc, type, args);
         }},
+
+    //Old 0..127 parameter mappings
+    {"Pfreq::i",  rLinear(0, 127) rShort("cutoff")  rProp(deprecated)  rDoc("Center Freq"), 0,
+        [](const char *msg, RtData &d) {
+            FilterParams *obj = (FilterParams*)d.obj;
+            if(rtosc_narguments(msg)) {
+                int Pfreq = rtosc_argument(msg, 0).i;
+                obj->basefreq  = (Pfreq / 64.0f - 1.0f) * 5.0f;
+                obj->basefreq  = powf(2.0f, obj->basefreq + 9.96578428f);
+                rChangeCb;
+                d.broadcast(d.loc, "i", Pfreq);
+            } else {
+                float tmp = obj->basefreq;
+                tmp = log2f(tmp) - 9.96578428f;
+                tmp = (tmp / 5.0 + 1.0) * 64.0f;
+                int Pfreq = roundf(tmp);
+                d.reply(d.loc, "i", Pfreq);
+            }
+        }},
+    {"Pfreqtrack::i", rLinear(0, 127) rShort("f.track") rProp(deprecated) rDoc("Frequency Tracking amount"), 0,
+        [](const char *msg, RtData &d) {
+            FilterParams *obj = (FilterParams*)d.obj;
+            if(rtosc_narguments(msg)) {
+                int Pfreqtracking = rtosc_argument(msg, 0).i;
+                obj->freqtracking = 100 * (Pfreqtracking - 64.0f) / (64.0f);
+                rChangeCb;
+                d.broadcast(d.loc, "i", Pfreqtracking);
+            } else {
+                int Pfreqtracking = obj->freqtracking/100.0*64.0 + 64.0;
+                d.reply(d.loc, "i", Pfreqtracking);
+            }
+        }},
+    {"Pgain::i", rLinear(0, 127) rShort("gain") rProp(deprecated) rDoc("Output Gain"), 0,
+        [](const char *msg, RtData &d) {
+            FilterParams *obj = (FilterParams*)d.obj;
+            if(rtosc_narguments(msg)) {
+                int Pgain = rtosc_argument(msg, 0).i;
+                obj->gain   = (Pgain / 64.0f - 1.0f) * 30.0f; //-30..30dB
+                rChangeCb;
+                d.broadcast(d.loc, "i", Pgain);
+            } else {
+                int Pgain = roundf((obj->gain/30.0f + 1.0f) * 64.0f);
+                d.reply(d.loc, "i", Pgain);
+            }
+        }},
+    {"Pq::i", rLinear(0,127) rShort("q") rProp(deprecated)
+        rDoc("Quality Factor (resonance/bandwidth)"), 0,
+        [](const char *msg, RtData &d) {
+            FilterParams *obj = (FilterParams*)d.obj;
+            if(rtosc_narguments(msg)) {
+                int Pq = rtosc_argument(msg, 0).i;
+                obj->baseq  = expf(powf((float) Pq / 127.0f, 2) * logf(1000.0f)) - 0.9f;
+                rChangeCb;
+                d.broadcast(d.loc, "i", Pq);
+            } else {
+                int Pq = roundf(127.0f * sqrtf(logf(0.9f + obj->baseq)/logf(1000.0f)));
+                d.reply(d.loc, "i", Pq);
+            }
+        }},
 };
 #undef rChangeCb
 #define rChangeCb
@@ -256,16 +321,21 @@ void FilterParams::defaults()
     Pfreq = Dfreq;
     Pq    = Dq;
 
-    Pstages    = 0;
-    Pfreqtrack = 64;
-    Pgain      = 64;
-    Pcategory  = 0;
+    Pstages       = 0;
+    basefreq  = (Pfreq / 64.0f - 1.0f) * 5.0f;
+    basefreq  = powf(2.0f, basefreq + 9.96578428f);
+    baseq     = expf(powf((float) Pq / 127.0f, 2) * logf(1000.0f)) - 0.9f;
+
+    gain = 0.0f;
+    freqtracking = 0.0f;
+
+    Pcategory     = 0;
 
     Pnumformants     = 3;
     Pformantslowness = 64;
     for(int j = 0; j < FF_MAX_VOWELS; ++j)
         defaults(j);
-    ;
+
 
     Psequencesize = 3;
     for(int i = 0; i < FF_MAX_SEQUENCE; ++i)
@@ -305,10 +375,10 @@ void FilterParams::getfromFilterParams(FilterParams *pars)
     Pfreq = pars->Pfreq;
     Pq    = pars->Pq;
 
-    Pstages    = pars->Pstages;
-    Pfreqtrack = pars->Pfreqtrack;
-    Pgain      = pars->Pgain;
-    Pcategory  = pars->Pcategory;
+    Pstages       = pars->Pstages;
+    freqtracking  = pars->freqtracking;
+    gain          = pars->gain;
+    Pcategory     = pars->Pcategory;
 
     Pnumformants     = pars->Pnumformants;
     Pformantslowness = pars->Pformantslowness;
@@ -336,21 +406,21 @@ void FilterParams::getfromFilterParams(FilterParams *pars)
  */
 float FilterParams::getfreq() const
 {
-    return (Pfreq / 64.0f - 1.0f) * 5.0f;
+    return log2(basefreq) - log2f(1000.0f);
 }
 
 float FilterParams::getq() const
 {
-    return expf(powf((float) Pq / 127.0f, 2) * logf(1000.0f)) - 0.9f;
+    return baseq;
 }
 float FilterParams::getfreqtracking(float notefreq) const
 {
-    return logf(notefreq / 440.0f) * (Pfreqtrack - 64.0f) / (64.0f * LOG_2);
+    return log2f(notefreq / 440.0f) * (freqtracking / 100.0);
 }
 
 float FilterParams::getgain() const
 {
-    return (Pgain / 64.0f - 1.0f) * 30.0f; //-30..30dB
+    return gain;
 }
 
 /*
@@ -426,11 +496,11 @@ void FilterParams::add2XML(XMLwrapper& xml)
     //filter parameters
     xml.addpar("category", Pcategory);
     xml.addpar("type", Ptype);
-    xml.addpar("freq", Pfreq);
-    xml.addpar("q", Pq);
+    xml.addparreal("basefreq", basefreq);
+    xml.addparreal("baseq", baseq);
     xml.addpar("stages", Pstages);
-    xml.addpar("freq_track", Pfreqtrack);
-    xml.addpar("gain", Pgain);
+    xml.addparreal("freq_tracking", freqtracking);
+    xml.addparreal("gain",       gain);
 
     //formant filter parameters
     if((Pcategory == 1) || (!xml.minimal)) {
@@ -480,14 +550,28 @@ void FilterParams::getfromXMLsection(XMLwrapper& xml, int n)
 
 void FilterParams::getfromXML(XMLwrapper& xml)
 {
+    const bool upgrade_3_0_2 = (xml.fileversion() < version_type(3,0,2)) && (xml.getparreal("basefreq", -1) < 0);
+
     //filter parameters
-    Pcategory = xml.getpar127("category", Pcategory);
-    Ptype     = xml.getpar127("type", Ptype);
-    Pfreq     = xml.getpar127("freq", Pfreq);
-    Pq         = xml.getpar127("q", Pq);
-    Pstages    = xml.getpar127("stages", Pstages);
-    Pfreqtrack = xml.getpar127("freq_track", Pfreqtrack);
-    Pgain      = xml.getpar127("gain", Pgain);
+    Pcategory    = xml.getpar127("category", Pcategory);
+    Ptype        = xml.getpar127("type", Ptype);
+    Pstages      = xml.getpar127("stages", Pstages);
+    if(upgrade_3_0_2) {
+        int Pfreq = xml.getpar127("freq", 0);
+        basefreq  = (Pfreq / 64.0f - 1.0f) * 5.0f;
+        basefreq  = powf(2.0f, basefreq + 9.96578428f);
+        int Pq    = xml.getpar127("q", 0);
+        baseq     = expf(powf((float) Pq / 127.0f, 2) * logf(1000.0f)) - 0.9f;
+        int Pgain = xml.getpar127("gain", 0);
+        gain      = (Pgain / 64.0f - 1.0f) * 30.0f; //-30..30dB
+        int Pfreqtracking = xml.getpar127("freq_track", 0);
+        freqtracking = 100 * (Pfreqtracking - 64.0f) / (64.0f);
+    } else {
+        basefreq     = xml.getparreal("basefreq",   1000);
+        baseq        = xml.getparreal("baseq",      10);
+        gain         = xml.getparreal("gain",       0);
+        freqtracking = xml.getparreal("freq_tracking", 0);
+    }
 
     //formant filter parameters
     if(xml.enterbranch("FORMANT_FILTER")) {
@@ -525,11 +609,11 @@ void FilterParams::paste(FilterParams &x)
 {
     COPY(Pcategory);
     COPY(Ptype);
-    COPY(Pfreq);
+    COPY(basefreq);
     COPY(Pq);
     COPY(Pstages);
-    COPY(Pfreqtrack);
-    COPY(Pgain);
+    COPY(freqtracking);
+    COPY(gain);
 
     COPY(Pnumformants);
     COPY(Pformantslowness);
@@ -564,7 +648,6 @@ void FilterParams::paste(FilterParams &x)
 
 void FilterParams::pasteArray(FilterParams &x, int nvowel)
 {
-    printf("FilterParameters::pasting-an-array<%d>\n", nvowel);
     for(int nformant = 0; nformant < FF_MAX_FORMANTS; ++nformant) {
         auto &self   = Pvowels[nvowel].formants[nformant];
         auto &update = x.Pvowels[nvowel].formants[nformant];
@@ -576,4 +659,6 @@ void FilterParams::pasteArray(FilterParams &x, int nvowel)
     if ( time ) {
         last_update_timestamp = time->time();
     }
+}
+
 }

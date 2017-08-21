@@ -241,7 +241,9 @@ extern "C" {
 #undef rChangeCb
 #define rChangeCb
 
+#define INSTRUMENT_EXTENSION INSTRUMENT_EXTENSION_DB
 #include "zynaddsubfx/Misc/BankDb.cpp"
+#undef INSTRUMENT_EXTENSION
 #undef rBegin
 #undef rObject
 #undef rStdString
@@ -528,6 +530,7 @@ extern "C" {
 #include "zynaddsubfx/globals.cpp"
 
 // Dummy variables and functions for linking purposes
+namespace zyncarla {
 class WavFile;
 namespace Nio {
    void masterSwap(Master*){}
@@ -540,4 +543,5 @@ namespace Nio {
    void waveNew(WavFile*){}
    void waveStart(){}
    void waveStop(){}
+}
 }

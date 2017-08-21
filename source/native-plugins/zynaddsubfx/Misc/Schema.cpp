@@ -1,6 +1,40 @@
 #include <ostream>
 #include <rtosc/ports.h>
 using namespace rtosc;
+
+// forwards declaration from rtosc lib
+void walk_ports2(const rtosc::Ports *base,
+                 char         *name_buffer,
+                 size_t        buffer_size,
+                 void         *data,
+                 rtosc::port_walker_t walker);
+
+namespace zyncarla {
+
+static const char *escape_string(const char *msg)
+{
+    if(!msg)
+        return NULL;
+    char *out = (char*)malloc(strlen(msg)*2+1);
+    memset(out, 0, strlen(msg)*2+1);
+    char *itr = out;
+    while(*msg) {
+        if(*msg == '"') {
+            *itr++ = '\\';
+            *itr++ = '\"';
+        } else if(*msg == '\\') {
+            *itr++ = '\\';
+            *itr++ = '\\';
+        } else {
+            *itr++ = *msg;
+        }
+
+        msg++;
+
+    }
+    return out;
+}
+
 /*
  * root :
  *   - 'parameters' : [parameter...]
@@ -11,8 +45,12 @@ using namespace rtosc;
  *   - 'shortname' : string [OPTIONAL]
  *   - 'tooltip'   : string [OPTIONAL]
  *   - 'type'      : type
+ *   - 'units'     : unit-type
+ *   - 'scale'     : scale-type
  *   - 'domain'    : range [OPTIONAL]
  *   - 'options'   : [option...] [OPTIONAL]
+ *   - 'default'   : string
+ *   - 'defaults'  : defaults
  * type : {'int', 'float', 'boolean'}
  * action :
  *   - 'path' : path-id
@@ -23,14 +61,10 @@ using namespace rtosc;
  * option :
  *   - 'id'    : id-number
  *   - 'value' : string-rep
+ * defaults :
+ *   - 'id'    : id-number
+ *   - 'value' : string-rep
  */
-
-void walk_ports2(const rtosc::Ports *base,
-                 char         *name_buffer,
-                 size_t        buffer_size,
-                 void         *data,
-                 rtosc::port_walker_t walker);
-
 
 using std::ostream;
 using std::string;
@@ -102,7 +136,8 @@ static ostream &add_options(ostream &o, Port::MetaContainer meta)
  *   - 'domain'    : range [OPTIONAL]
  */
 static bool first = true;
-void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
+void dump_param_cb(const rtosc::Port *p, const char *full_name, const char*,
+                   const Ports&,void *v, void*)
 {
     typedef std::vector<std::pair<int,string>> opts;
     std::ostream &o  = *(std::ostream*)v;
@@ -111,6 +146,9 @@ void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
     auto mparameter  = meta.find("parameter");
     auto mdoc        = meta.find("documentation");
     auto msname      = meta.find("shortname");
+    auto units       = meta.find("unit");
+    auto scale       = meta.find("scale");
+
     opts options;
     string doc;
     string name      = p->name;;
@@ -166,6 +204,8 @@ void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
 
     const char *min = meta["min"];
     const char *max = meta["max"];
+    const char *def = meta["default"];
+    def = escape_string(def);
 
     for(auto m:meta) {
         if(strlen(m.title) >= 5 && !memcmp(m.title, "map ", 4)) {
@@ -186,9 +226,15 @@ void dump_param_cb(const rtosc::Port *p, const char *full_name, void *v)
         o << "        \"shortname\": \"" << msname.value << "\",\n";
     o << "        \"name\"     : \"" << name << "\",\n";
     o << "        \"tooltip\"  : \"" << doc  << "\",\n";
+    if(units != meta.end())
+        o << "        \"units\"    : \"" << units.value << "\",\n";
+    if(scale != meta.end())
+        o << "        \"scale\"    : \"" << scale.value << "\",\n";
     o << "        \"type\"     : \"" << type  << "\"";
     if(min && max)
         o << ",\n        \"range\"    : [" << min << "," << max << "]";
+    if(def)
+        o << ",\n        \"default\"  : \"" << def << "\"\n";
     if(!options.empty()) {
         o << ",\n        \"options\"  : [\n";
         int N = options.size();
@@ -221,4 +267,4 @@ void dump_json(std::ostream &o, const rtosc::Ports &p)
     o << "}";
 }
 
-
+}

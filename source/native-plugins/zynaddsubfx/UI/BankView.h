@@ -96,9 +96,6 @@ class BankView: public Fl_Group, public Fl_Osc_Widget
         BankViewControls *bvc;
         BankSlot *slots[160];
 
-        Fl_Osc_Interface *osc;
-        std::string loc;
-
         //XXX TODO locked banks...
         int nselected;
         int *npart;

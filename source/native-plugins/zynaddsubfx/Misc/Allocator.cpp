@@ -17,6 +17,8 @@
 #include "tlsf/tlsf.h"
 #include "Allocator.h"
 
+namespace zyncarla {
+
 //Used for dummy allocations
 DummyAllocator DummyAlloc;
 
@@ -230,3 +232,5 @@ void Allocator::rollbackTransaction() {
  *   pool size and the next pool in the list as this information is not
  *   accessible in O(good) time
  */
+
+}

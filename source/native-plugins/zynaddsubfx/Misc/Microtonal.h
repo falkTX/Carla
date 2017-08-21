@@ -20,6 +20,9 @@
 
 #define MAX_OCTAVE_SIZE 128
 #define MICROTONAL_MAX_NAME_LEN 120
+
+namespace zyncarla {
+
 class XMLwrapper;
 
 struct KbmInfo
@@ -153,5 +156,7 @@ class Microtonal
 
         const int& gzip_compression;
 };
+
+}
 
 #endif

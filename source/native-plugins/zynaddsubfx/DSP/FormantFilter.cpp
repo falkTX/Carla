@@ -19,6 +19,8 @@
 #include "AnalogFilter.h"
 #include "../Params/FilterParams.h"
 
+namespace zyncarla {
+
 FormantFilter::FormantFilter(const FilterParams *pars, Allocator *alloc, unsigned int srate, int bufsize)
     :Filter(srate, bufsize), memory(*alloc)
 {
@@ -214,4 +216,6 @@ void FormantFilter::filterout(float *smp)
                 smp[i] += tmpbuf[i] * currentformants[j].amp;
         oldformantamp[j] = currentformants[j].amp;
     }
+}
+
 }

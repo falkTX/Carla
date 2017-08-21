@@ -18,6 +18,8 @@
 #include "../DSP/AnalogFilter.h"
 #include "../Misc/Allocator.h"
 
+namespace zyncarla {
+
 using rtosc::RtData;
 #define rObject EQ
 #define rBegin [](const char *msg, RtData &d) {\
@@ -78,8 +80,8 @@ rtosc::Ports EQ::ports = {
             memset(b, 0, sizeof(b));
             eq->getFilter(a,b);
 
-            char        type[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2+1] = {0};
-            rtosc_arg_t  val[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2] = {0};
+            char        type[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2+1] = {};
+            rtosc_arg_t  val[MAX_EQ_BANDS*MAX_FILTER_STAGES*3*2] = {};
             for(int i=0; i<MAX_EQ_BANDS*MAX_FILTER_STAGES*3; ++i) {
                 int stride = MAX_EQ_BANDS*MAX_FILTER_STAGES*3;
                 type[i]  = type[i+stride] = 'f';
@@ -296,4 +298,6 @@ void EQ::getFilter(float *a, float *b) const
             }
         }
     }
+}
+
 }

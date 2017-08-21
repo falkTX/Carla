@@ -21,6 +21,8 @@
 #include "../DSP/FormantFilter.h"
 #include <cassert>
 
+namespace zyncarla {
+
 ModFilter::ModFilter(const FilterParams &pars_,
                      const SYNTH_T      &synth_,
                      const AbsTime      &time_,
@@ -158,4 +160,6 @@ void ModFilter::anParamUpdate(AnalogFilter &an)
     an.settype(pars.Ptype);
     an.setstages(pars.Pstages);
     an.setgain(pars.getgain());
+}
+
 }

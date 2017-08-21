@@ -1,56 +1,59 @@
 # data file for the Fltk User Interface Designer (fluid)
-version 1.0302
-header_name {.h}
+version 1.0302 
+header_name {.h} 
 code_name {.cc}
 decl {//Copyright (c) 2002-2005 Nasca Octavian Paul} {private local
-}
+} 
 
 decl {//License: GNU GPL version 2 or later} {private local
-}
+} 
 
 decl {\#include <stdio.h>} {public local
-}
+} 
 
 decl {\#include <math.h>} {public local
-}
+} 
 
 decl {\#include <stdlib.h>} {public local
-}
+} 
 
 decl {\#include <FL/Fl_File_Chooser.H>} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Button.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Counter.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Choice.H"} {public local
-}
+} 
 
 decl {\#include "Osc_IntModel.h"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Check.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Input.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Numeric_Input.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_ListView.H"} {public local
-}
+} 
 
 decl {\#include "Fl_Osc_Pane.H"} {public local
 }
 
 decl {\#include "../globals.h"} {public local
-}
+} 
 
 decl {\#include "../Misc/Util.h"} {public local
+} 
+
+decl {using namespace zyncarla;} {public local
 }
 
 class ConfigUI {} {
@@ -294,7 +297,7 @@ activatebutton_presetdir(true);}
         oscilsize_widget->value(i-7);
     };
     oscilsize->doUpdate("/config/cfg.OscilPower");
-
+    
     } {}
   }
   Function {activatebutton_rootdir(bool active)} {} {
@@ -329,4 +332,4 @@ if (isPlugin) {
   }
   decl {class Osc_IntModel *oscilsize;} {public local
   }
-}
+} 

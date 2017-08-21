@@ -16,6 +16,8 @@
 
 #include "Effect.h"
 
+namespace zyncarla {
+
 /**Distortion Effect*/
 class Distorsion:public Effect
 {
@@ -49,5 +51,7 @@ class Distorsion:public Effect
         //Real Parameters
         class AnalogFilter * lpfl, *lpfr, *hpfl, *hpfr;
 };
+
+}
 
 #endif

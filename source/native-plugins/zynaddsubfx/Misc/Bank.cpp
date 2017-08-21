@@ -30,15 +30,20 @@
 #include "Util.h"
 #include "Part.h"
 #include "BankDb.h"
-
-#define INSTRUMENT_EXTENSION ".xiz"
-
-//if this file exists into a directory, this make the directory to be considered as a bank, even if it not contains a instrument file
-#define FORCE_BANK_DIR_FILE ".bankdir"
+#ifdef WIN32
+#include <windows.h>
+#endif
 
 using namespace std;
 
-Bank::Bank(CarlaConfig *config)
+namespace zyncarla {
+
+static const char* INSTRUMENT_EXTENSION = ".xiz";
+
+//if this file exists into a directory, this make the directory to be considered as a bank, even if it not contains a instrument file
+const char* FORCE_BANK_DIR_FILE = ".bankdir";
+
+Bank::Bank(Config *config)
     :bankpos(0), defaultinsname(" "), config(config),
     db(new BankDb), bank_msb(0), bank_lsb(0)
 {
@@ -360,6 +365,18 @@ void Bank::rescanforbanks()
     for(int i = 0; i < MAX_BANK_ROOT_DIRS; ++i)
         if(!config->cfg.bankRootDirList[i].empty())
             scanrootdir(config->cfg.bankRootDirList[i]);
+#ifdef WIN32
+    {
+        //Search the VST Directory for banks/preset/etc
+        char path[1024];
+        GetModuleFileName(GetModuleHandle("ZynAddSubFX.dll"), path, sizeof(path));
+        if(strstr(path, "ZynAddSubFX.dll")) {
+            strstr(path, "ZynAddSubFX.dll")[0] = 0;
+            strcat(path, "banks");
+            scanrootdir(path);
+        }
+    }
+#endif
 
     //sort the banks
     sort(banks.begin(), banks.end());
@@ -471,7 +488,7 @@ std::vector<std::string> Bank::search(std::string s) const
     }
     return out;
 }
-
+        
 std::vector<std::string> Bank::blist(std::string s)
 {
     std::vector<std::string> out;
@@ -543,4 +560,6 @@ void Bank::normalizedirsuffix(string &dirname) const {
     if(((dirname[dirname.size() - 1]) != '/')
        && ((dirname[dirname.size() - 1]) != '\\'))
         dirname += "/";
+}
+
 }

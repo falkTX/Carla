@@ -21,8 +21,9 @@
 #include <rtosc/port-sugar.h>
 #include "../Misc/Allocator.h"
 #include "Phaser.h"
-
 using namespace std;
+
+namespace zyncarla {
 
 #define rObject Phaser
 #define rBegin [](const char *msg, rtosc::RtData &d) {
@@ -36,7 +37,8 @@ using namespace std;
             d.reply(d.loc, "i", p.P##pname); \
         rEnd
 #define rParamPhaser(name, ...) \
-  {STRINGIFY(P##name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, ucharParamCb(name)}
+  {STRINGIFY(P##name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) \
+   rDefaultDepends(preset) DOC(__VA_ARGS__), NULL, ucharParamCb(name)}
 
 rtosc::Ports Phaser::ports = {
     {"preset::i", rProp(parameter)
@@ -52,23 +54,52 @@ rtosc::Ports Phaser::ports = {
                   else
                       d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
-    //Pvolume/Ppanning are common
-    rEffPar(lfo.Pfreq,       2, rShort("freq"),     "LFO frequency"),
-    rEffPar(lfo.Prandomness, 3, rShort("rnd."),     "LFO randomness"),
+    rEffParVol(rDefault(64), rPreset(3, 39), rPreset(10, 25)),
+    rEffParPan(),
+    rEffPar(lfo.Pfreq,       2, rShort("freq"),
+            rPresets(36, 35, 31, 22, 20, 53, 14, 14, 9, 14, 127, 1),
+            "LFO frequency"),
+    rEffPar(lfo.Prandomness, 3, rShort("rnd."),
+            rPreset(5, 100), rPreset(7, 5), rPresetsAt(9, 10, 10, 10),
+            rDefault(0), "LFO randomness"),
     rEffPar(lfo.PLFOtype,    4, rShort("type"),
-          rOptions(sine, tri), "lfo shape"),
-    rEffPar(lfo.Pstereo,     5, rShort("stereo"),   "Left/right channel phase shift"),
-    rEffPar(Pdepth,          6, rShort("depth"),    "LFP depth"),
-    rEffPar(Pfb,             7, rShort("fb"),       "Feedback"),
-    rEffPar(Pstages,         8, rLinear(1,12), rShort("stages"),   ""),
-    rParamPhaser(lrcross,       rShort("cross"),    "Channel routing"),
-    rParamPhaser(offset,        rShort("off"),      "Offset"),
-    rEffParTF(Poutsub,      10, rShort("sub"),      "Invert output"),
-    rParamPhaser(phase,         rShort("phase"),    ""),
-    rParamPhaser(width,         rShort("width"),    ""),
-    rEffParTF(Phyper,       12, rShort("hyp."),     "Square the LFO"),
-    rEffPar(Pdistortion,    13, rShort("distort"),  "Distortion"),
-    rEffParTF(Panalog,      14, rShort("analog"),   "Use analog phaser"),
+            rPreset(4, tri), rPresetsAt(6, tri, tri), rPreset(11, tri),
+            rDefault(sine),
+            rOptions(sine, tri), "lfo shape"),
+    rEffPar(lfo.Pstereo,     5, rShort("stereo"),
+            rPresetsAt(1, 88, 66, 66, 110, 58), rDefault(64),
+            "Left/right channel phase shift"),
+    rEffPar(Pdepth,          6, rShort("depth"),
+            rPresets(110, 40, 68, 67, 67, 37, 64, 70, 60, 45, 25, 70),
+            "LFP depth"),
+    rEffPar(Pfb,             7, rShort("fb"),
+            rPresets(64, 64, 107, 10, 78, 78, 40, 40, 40, 80, 16, 40),
+            "Feedback"),
+    rEffPar(Pstages,         8, rLinear(1,12), rShort("stages"),
+            rPresets(1, 3, 2, 5, 10, 3, 4, 6, 8, 7, 8, 12),
+            ""),
+    rParamPhaser(lrcross,       rShort("cross"),
+            rPresetsAt(6, 10, 10, 10, 10, 100, 10) rDefault(0),
+            "Channel routing"),
+    rParamPhaser(offset,        rShort("off"),
+            rPresetsAt(6, 10, 10, 10, 10, 100, 10) rDefault(0),
+            "Offset"),
+    rEffParTF(Poutsub,      10, rShort("sub"),
+            rPreset(3, true), rPreset(9, true), rDefault(false),
+            "Invert output"),
+    rParamPhaser(phase,         rShort("phase"),
+            rPresets(20, 20, 20, 20, 20, 20, 110, 110, 40, 110, 25, 110), ""),
+    rParamPhaser(width,         rShort("width"),
+            rPresets(20, 20, 20, 20, 20, 20, 110, 110, 40, 110, 25, 110), ""),
+    rEffParTF(Phyper,       12, rShort("hyp."),
+            rPresetsAt(6, true, true, false, true, false, true),
+            rDefault(false), "Square the LFO"),
+    rEffPar(Pdistortion,    13, rShort("distort"),
+            rPresetsAt(6, 20, 20, 20, 20, 20, 20), rDefault(0),
+            "Distortion"),
+    rEffParTF(Panalog,      14, rShort("analog"),
+            rPresetsAt(6, true, true, true, true, true, true), rDefault(false),
+            "Use analog phaser"),
 };
 #undef rBegin
 #undef rEnd
@@ -495,4 +526,6 @@ unsigned char Phaser::getpar(int npar) const
         case 14: return Panalog;
         default: return 0;
     }
+}
+
 }

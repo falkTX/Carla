@@ -22,6 +22,8 @@
 #include "../Params/FilterParams.h"
 #include "../Misc/Allocator.h"
 
+namespace zyncarla {
+
 Filter::Filter(unsigned int srate, int bufsize)
     : outgain(1.0f),
       samplerate(srate),
@@ -64,4 +66,6 @@ Filter *Filter::generate(Allocator &memory, const FilterParams *pars,
 float Filter::getrealfreq(float freqpitch)
 {
     return powf(2.0f, freqpitch + 9.96578428f); //log2(1000)=9.95748f
+}
+
 }

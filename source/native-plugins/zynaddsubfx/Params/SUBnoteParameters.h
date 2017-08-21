@@ -18,6 +18,8 @@
 #include "../globals.h"
 #include "Presets.h"
 
+namespace zyncarla {
+
 class SUBnoteParameters:public Presets
 {
     public:
@@ -111,5 +113,7 @@ class SUBnoteParameters:public Presets
 
         static const rtosc::Ports &ports;
 };
+
+}
 
 #endif

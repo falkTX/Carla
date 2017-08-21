@@ -14,6 +14,8 @@
 #include <utility>
 #include <new>
 
+namespace zyncarla {
+
 //! Allocator Base class
 //! subclasses must specify allocation and deallocation
 class Allocator
@@ -198,3 +200,5 @@ extern DummyAllocator DummyAlloc;
  *     * A new one is constructed with a deep copy
  *     * The old one is returned to middleware for deallocation
  */
+
+ }

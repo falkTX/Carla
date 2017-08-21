@@ -18,8 +18,6 @@
 #include <rtosc/ports.h>
 #include "Presets.h"
 
-class XMLwrapper;
-
 #define LFO_SINE      0
 #define LFO_TRIANGLE  1
 #define LFO_SQUARE    2
@@ -28,6 +26,10 @@ class XMLwrapper;
 #define LFO_EXP_DOWN1 5
 #define LFO_EXP_DOWN2 6
 #define LFO_RANDOM    7
+
+namespace zyncarla {
+
+class XMLwrapper;
 
 class LFOParams:public Presets
 {
@@ -77,5 +79,7 @@ class LFOParams:public Presets
         unsigned char Ddelay;
         unsigned char Dcontinous;
 };
+
+}
 
 #endif

@@ -231,6 +231,270 @@ static size_t vsosc_null(const char        *address,
 
     return pos;
 }
+
+static const rtosc_cmp_options* default_cmp_options
+ = &((rtosc_cmp_options) { 0.0 });
+
+int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
+                      size_t lsize, size_t rsize,
+                      const rtosc_cmp_options* opt)
+{
+#define mfabs(val) (((val) >= 0) ? (val) : -(val))
+
+    if(!opt)
+        opt = default_cmp_options;
+    if(lsize != rsize)
+        return 0;
+
+    int rval = 1;
+    for(size_t i = 0; i < lsize && rval; ++i, ++lhs, ++rhs)
+    {
+        if(lhs->type == rhs->type)
+        switch(lhs->type)
+        {
+            case 'i':
+            case 'c':
+            case 'r':
+                rval = lhs->val.i == rhs->val.i;
+                break;
+            case 'I':
+            case 'T':
+            case 'F':
+            case 'N':
+                rval = 1;
+                break;
+            case 'f':
+                rval = (opt->float_tolerance == 0.0)
+                       ? lhs->val.f == rhs->val.f
+                       : mfabs(lhs->val.f - rhs->val.f) <=
+                       (float)opt->float_tolerance;
+                break;
+            case 'd':
+                rval = (opt->float_tolerance == 0.0)
+                       ? lhs->val.d == rhs->val.d
+                       : mfabs(lhs->val.d - rhs->val.d) <=
+                       opt->float_tolerance;
+                break;
+            case 'h':
+                rval = lhs->val.h == rhs->val.h;
+                break;
+            case 't':
+                rval = lhs->val.t == rhs->val.t;
+                break;
+            case 'm':
+                rval = 0 == memcmp(lhs->val.m, rhs->val.m, 4);
+                break;
+            case 's':
+            case 'S':
+	        rval = (lhs->val.s == NULL || rhs->val.s == NULL)
+                     ? lhs->val.s == rhs->val.s
+                     : (0 == strcmp(lhs->val.s, rhs->val.s));
+                break;
+            case 'b':
+            {
+                int32_t lbs = lhs->val.b.len,
+                        rbs = rhs->val.b.len;
+                rval = lbs == rbs;
+                if(rval)
+                    rval = 0 == memcmp(lhs->val.b.data, rhs->val.b.data, lbs);
+                break;
+            }
+        }
+        else
+        {
+            rval = 0;
+        }
+    }
+    return rval;
+#undef mfabs
+}
+
+int rtosc_arg_vals_cmp(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
+                       size_t lsize, size_t rsize,
+                       const rtosc_cmp_options* opt)
+{
+#define cmp_3way(val1,val2) (((val1) == (val2)) \
+                            ? 0 \
+                            : (((val1) > (val2)) ? 1 : -1))
+#define mfabs(val) (((val) >= 0) ? (val) : -(val))
+
+    if(!opt)
+        opt = default_cmp_options;
+
+    size_t rval = 0;
+    size_t min = lsize > rsize ? rsize : lsize;
+    for(size_t i = 0; i < min && !rval; ++i, ++lhs, ++rhs)
+    {
+        if(lhs->type == rhs->type)
+        switch(lhs->type)
+        {
+            case 'i':
+            case 'c':
+            case 'r':
+                rval = cmp_3way(lhs->val.i, rhs->val.i);
+                break;
+            case 'I':
+            case 'T':
+            case 'F':
+            case 'N':
+                rval = 0;
+                break;
+            case 'f':
+                rval = (opt->float_tolerance == 0.0)
+                       ? cmp_3way(lhs->val.f, rhs->val.f)
+                       : (mfabs(lhs->val.f - rhs->val.f)
+                          <= (float)opt->float_tolerance)
+                          ? 0
+                          : ((lhs->val.f > rhs->val.f) ? 1 : -1);
+                break;
+            case 'd':
+                rval = (opt->float_tolerance == 0.0)
+                       ? cmp_3way(lhs->val.d, rhs->val.d)
+                       : (mfabs(lhs->val.d - rhs->val.d)
+                          <= opt->float_tolerance)
+                          ? 0
+                          : ((lhs->val.d > rhs->val.d) ? 1 : -1);
+                break;
+            case 'h':
+                rval = cmp_3way(lhs->val.h, rhs->val.h);
+                break;
+            case 't':
+                // immediately is considered lower than everything else
+                // this means if you send two events to a client,
+                // one being "immediately" and one being different, the
+                // immediately-event has the higher priority, event if the
+                // other one is in the past
+                rval = (lhs->val.t == 1)
+                       ? (rhs->val.t == 1)
+                         ? 0
+                         : -1 // lhs has higher priority => lhs < rhs
+                       : (rhs->val.t == 1)
+                         ? 1
+                         : cmp_3way(lhs->val.t, rhs->val.t);
+                break;
+            case 'm':
+                rval = memcmp(lhs->val.m, rhs->val.m, 4);
+                break;
+            case 's':
+            case 'S':
+                rval = (lhs->val.s == NULL || rhs->val.s == NULL)
+                     ? cmp_3way(lhs->val.s, rhs->val.s)
+                     : strcmp(lhs->val.s, rhs->val.s);
+                break;
+            case 'b':
+            {
+                int32_t lbs = lhs->val.b.len,
+                        rbs = rhs->val.b.len;
+                int32_t minlen = (lbs < rbs) ? lbs : rbs;
+                rval = memcmp(lhs->val.b.data, rhs->val.b.data, minlen);
+                if(lbs != rbs && !rval)
+                {
+                    // both equal until here
+                    // the string that ends here is lexicographically smaller
+                    rval = (lbs > rbs)
+                           ? lhs->val.b.data[minlen]
+                           : -rhs->val.b.data[minlen];
+                }
+                else
+                    return rval;
+                break;
+            }
+        }
+        else
+        {
+            rval = (lhs->type > rhs->type) ? 1 : -1;
+        }
+    }
+
+    if(rval == 0 && lsize != rsize)
+    {
+        return (lsize > rsize) ? 1 : -1;
+    }
+    return rval;
+
+#undef mfabs
+#undef cmp_3way
+}
+
+void rtosc_v2args(rtosc_arg_t* args, size_t nargs, const char* arg_str,
+                  rtosc_va_list_t* ap)
+{
+    unsigned arg_pos = 0;
+    uint8_t *midi_tmp;
+
+    while(arg_pos < nargs)
+    {
+        switch(*arg_str++) {
+            case 'h':
+            case 't':
+                args[arg_pos++].h = va_arg(ap->a, int64_t);
+                break;
+            case 'd':
+                args[arg_pos++].d = va_arg(ap->a, double);
+                break;
+            case 'c':
+            case 'i':
+            case 'r':
+                args[arg_pos++].i = va_arg(ap->a, int);
+                break;
+            case 'm':
+                midi_tmp = va_arg(ap->a, uint8_t *);
+                args[arg_pos].m[0] = midi_tmp[0];
+                args[arg_pos].m[1] = midi_tmp[1];
+                args[arg_pos].m[2] = midi_tmp[2];
+                args[arg_pos++].m[3] = midi_tmp[3];
+                break;
+            case 'S':
+            case 's':
+                args[arg_pos++].s = va_arg(ap->a, const char *);
+                break;
+            case 'b':
+                args[arg_pos].b.len = va_arg(ap->a, int);
+                args[arg_pos].b.data = va_arg(ap->a, unsigned char *);
+                arg_pos++;
+                break;
+            case 'f':
+                args[arg_pos++].f = va_arg(ap->a, double);
+                break;
+            case 'T':
+            case 'F':
+            case 'N':
+            case 'I':
+                args[arg_pos++].T = arg_str[-1];
+                break;
+            default:
+                ;
+        }
+    }
+}
+
+void rtosc_2args(rtosc_arg_t* args, size_t nargs, const char* arg_str, ...)
+{
+    rtosc_va_list_t va;
+    va_start(va.a, arg_str);
+    rtosc_v2args(args, nargs, arg_str, &va);
+    va_end(va.a);
+}
+
+void rtosc_v2argvals(rtosc_arg_val_t* args, size_t nargs, const char* arg_str, va_list ap)
+{
+    rtosc_va_list_t ap2;
+    va_copy(ap2.a, ap);
+    for(size_t i=0; i<nargs; ++i, ++arg_str, ++args)
+    {
+        args->type = *arg_str;
+        rtosc_v2args(&args->val, 1, arg_str, &ap2);
+    }
+}
+
+void rtosc_2argvals(rtosc_arg_val_t* args, size_t nargs, const char* arg_str, ...)
+{
+    va_list va;
+    va_start(va, arg_str);
+    rtosc_v2argvals(args, nargs, arg_str, va);
+    va_end(va);
+}
+
 size_t rtosc_vmessage(char   *buffer,
                       size_t      len,
                       const char *address,
@@ -242,48 +506,9 @@ size_t rtosc_vmessage(char   *buffer,
         return rtosc_amessage(buffer,len,address,arguments,NULL);
 
     rtosc_arg_t args[nargs];
-
-    unsigned arg_pos = 0;
-    const char *arg_str = arguments;
-    uint8_t *midi_tmp;
-    while(arg_pos < nargs)
-    {
-        switch(*arg_str++) {
-            case 'h':
-            case 't':
-                args[arg_pos++].h = va_arg(ap, int64_t);
-                break;
-            case 'd':
-                args[arg_pos++].d = va_arg(ap, double);
-                break;
-            case 'c':
-            case 'i':
-            case 'r':
-                args[arg_pos++].i = va_arg(ap, int);
-                break;
-            case 'm':
-                midi_tmp = va_arg(ap, uint8_t *);
-                args[arg_pos].m[0] = midi_tmp[0];
-                args[arg_pos].m[1] = midi_tmp[1];
-                args[arg_pos].m[2] = midi_tmp[2];
-                args[arg_pos++].m[3] = midi_tmp[3];
-                break;
-            case 'S':
-            case 's':
-                args[arg_pos++].s = va_arg(ap, const char *);
-                break;
-            case 'b':
-                args[arg_pos].b.len = va_arg(ap, int);
-                args[arg_pos].b.data = va_arg(ap, unsigned char *);
-                arg_pos++;
-                break;
-            case 'f':
-                args[arg_pos++].f = va_arg(ap, double);
-                break;
-            default:
-                ;
-        }
-    }
+    rtosc_va_list_t ap2;
+    va_copy(ap2.a, ap);
+    rtosc_v2args(args, nargs, arguments, &ap2);
 
     return rtosc_amessage(buffer,len,address,arguments,args);
 }

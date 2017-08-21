@@ -17,12 +17,14 @@
 #include <string>
 #include <vector>
 
+namespace zyncarla {
+
 class XMLwrapper;
 class PresetsStore
 {
-        const class CarlaConfig& config;
+        const class Config& config;
     public:
-        PresetsStore(const class CarlaConfig &config);
+        PresetsStore(const class Config &config);
         ~PresetsStore();
 
         //Clipboard stuff
@@ -55,4 +57,7 @@ class PresetsStore
 };
 
 //extern PresetsStore presetsstore;
+
+}
+
 #endif

@@ -17,8 +17,9 @@
 #include "../Misc/Allocator.h"
 #include "Chorus.h"
 #include <iostream>
-
 using namespace std;
+
+namespace zyncarla {
 
 #define rObject Chorus
 #define rBegin [](const char *msg, rtosc::RtData &d) {
@@ -38,17 +39,32 @@ rtosc::Ports Chorus::ports = {
 
                   rEnd},
     //Pvolume/Ppanning are common
-    rEffPar(Pfreq,    2, rShort("freq"), "Effect Frequency"),
-    rEffPar(Pfreqrnd, 3, rShort("rand"), "Frequency Randomness"),
+    rEffParVol(rDefault(64)),
+    rEffParPan(),
+    rEffPar(Pfreq,    2, rShort("freq"),
+            rPresets(50, 45, 29, 26, 29, 57, 33, 53, 40, 55),
+            "Effect Frequency"),
+    rEffPar(Pfreqrnd, 3, rShort("rand"),
+            rPreset(4, 117) rPreset(6, 34) rPreset(7, 34) rPreset(9, 105)
+            rDefault(0), "Frequency Randomness"),
     rEffPar(PLFOtype, 4, rShort("shape"),
-            rOptions(sine, tri), "LFO Shape"),
-    rEffPar(PStereo,  5, rShort("stereo"), "Stereo Mode"),
-    rEffPar(Pdepth,   6, rShort("depth"), "LFO Depth"),
-    rEffPar(Pdelay,   7, rShort("delay"), "Delay"),
-    rEffPar(Pfeedback,8, rShort("fb"), "Feedback"),
-    rEffPar(Plrcross, 9, rShort("l/r"), "Left/Right Crossover"),
-    rEffParTF(Pflangemode, 10, rShort("flange"), "Flange Mode"),
-    rEffParTF(Poutsub, 11, rShort("sub"), "Output Subtraction"),
+            rOptions(sine, tri),
+            rPresets(sine, sine, tri, sine, sine, sine, tri, tri, tri, sine)
+            "LFO Shape"),
+    rEffPar(PStereo,  5, rShort("stereo"),
+            rPresets(90, 98, 42, 42, 50, 60, 40, 94, 62), "Stereo Mode"),
+    rEffPar(Pdepth,   6, rShort("depth"),
+            rPresets(40, 56, 97, 115, 115, 23, 35, 35, 12), "LFO Depth"),
+    rEffPar(Pdelay,   7, rShort("delay"),
+            rPresets(85, 90, 95, 18, 9, 3, 3, 3, 19), "Delay"),
+    rEffPar(Pfeedback,8, rShort("fb"),
+            rPresets(64, 64, 90, 90, 31, 62, 109, 54, 97), "Feedback"),
+    rEffPar(Plrcross, 9, rShort("l/r"), rPresets(119, 19, 127, 127, 127),
+            rDefault(0), "Left/Right Crossover"),
+    rEffParTF(Pflangemode, 10, rShort("flange"), rDefault(false),
+              "Flange Mode"),
+    rEffParTF(Poutsub, 11, rShort("sub"), rPreset(4, true), rPreset(7, true),
+              rDefault(false), "Output Subtraction"),
 };
 #undef rBegin
 #undef rEnd
@@ -293,4 +309,6 @@ unsigned char Chorus::getpar(int npar) const
         case 11: return Poutsub;
         default: return 0;
     }
+}
+
 }

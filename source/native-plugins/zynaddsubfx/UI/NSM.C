@@ -41,7 +41,7 @@ extern MasterUI *ui;
 extern NSM_Client *nsm;
 extern char       *instance_name;
 
-NSM_Client::NSM_Client(MiddleWare *m)
+NSM_Client::NSM_Client(zyn::MiddleWare *m)
     :project_filename(0),
      display_name(0),
      middleware(m)
@@ -71,14 +71,14 @@ NSM_Client::command_open(const char *name,
                          const char *client_id,
                          char **out_msg)
 {
-    Nio::stop();
+    zyn::Nio::stop();
 
     if(instance_name)
         free(instance_name);
 
     instance_name = strdup(client_id);
 
-    Nio::start();
+    zyn::Nio::start();
 
     char *new_filename;
 

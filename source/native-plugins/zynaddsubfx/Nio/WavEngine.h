@@ -20,6 +20,8 @@
 #include "ZynSema.h"
 #include "SafeQueue.h"
 
+namespace zyncarla {
+
 class WavFile;
 class WavEngine:public AudioOut
 {
@@ -50,4 +52,6 @@ class WavEngine:public AudioOut
 
         pthread_t *pThread;
 };
+
+}
 #endif

@@ -17,6 +17,8 @@
 #include "../globals.h"
 #include "PresetsArray.h"
 
+namespace zyncarla {
+
 enum FMTYPE {
     NONE, MORPH, RING_MOD, PHASE_MOD, FREQ_MOD, PW_MOD
 };
@@ -328,14 +330,16 @@ class ADnoteParameters:public PresetsArray
         void defaults(int n); //n is the nvoice
         void add2XMLsection(XMLwrapper& xml, int n);
         void getfromXMLsection(XMLwrapper& xml, int n);
-    private:
-
-        void EnableVoice(const SYNTH_T &synth, int nvoice, const AbsTime* time);
-        void KillVoice(int nvoice);
-        FFTwrapper *fft;
 
         const AbsTime *time;
         int64_t last_update_timestamp;
+
+    private:
+        void EnableVoice(const SYNTH_T &synth, int nvoice, const AbsTime* time);
+        void KillVoice(int nvoice);
+        FFTwrapper *fft;
 };
+
+}
 
 #endif

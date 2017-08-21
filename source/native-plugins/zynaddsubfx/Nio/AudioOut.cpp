@@ -15,11 +15,13 @@
 #include <cstring>
 #include "SafeQueue.h"
 
-using namespace std;
-
 #include "OutMgr.h"
 #include "../Misc/Master.h"
 #include "AudioOut.h"
+
+using namespace std;
+
+namespace zyncarla {
 
 AudioOut::AudioOut(const SYNTH_T &synth_)
     :synth(synth_), samplerate(synth.samplerate), bufferSize(synth.buffersize)
@@ -46,4 +48,6 @@ void AudioOut::setBufferSize(int _bufferSize)
 const Stereo<float *> AudioOut::getNext()
 {
     return OutMgr::getInstance().tick(bufferSize);
+}
+
 }

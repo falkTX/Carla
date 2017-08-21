@@ -15,6 +15,8 @@
 
 #include "AudioOut.h"
 
+namespace zyncarla {
+
 class JackMultiEngine:public AudioOut
 {
     public:
@@ -33,5 +35,7 @@ class JackMultiEngine:public AudioOut
 
         struct jack_multi *impl;
 };
+
+}
 
 #endif

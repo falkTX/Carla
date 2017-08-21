@@ -37,6 +37,8 @@
 #include <rtosc/port-sugar.h>
 #include <iostream>
 
+namespace zyncarla {
+
 using rtosc::Ports;
 using rtosc::RtData;
 
@@ -45,41 +47,55 @@ static const Ports partPorts = {
     rRecurs(kit, 16, "Kit"),//NUM_KIT_ITEMS
     rRecursp(partefx, 3, "Part Effect"),
     rRecur(ctl,       "Controller"),
-    rToggle(Penabled, rShort("enable"), "Part enable"),
-#undef rChangeCb
-#define rChangeCb obj->setPvolume(obj->Pvolume);
-    rParamZyn(Pvolume, rShort("Vol"), "Part Volume"),
-#undef rChangeCb
-#define rChangeCb obj->setPpanning(obj->Ppanning);
-    rParamZyn(Ppanning, rShort("pan"), "Set Panning"),
-#undef rChangeCb
-#define rChangeCb obj->setkeylimit(obj->Pkeylimit);
-    rParamI(Pkeylimit, rShort("limit"), rProp(parameter), rMap(min,0), rMap(max, POLYPHONY), "Key limit per part"),
+    rParamZyn(partno, rProp(internal),
+              "How many parts are before this in the Master"),
+#undef  rChangeCb
+#define rChangeCb if(obj->Penabled == false) obj->AllNotesOff();
+    rToggle(Penabled, rShort("enable"), rDefaultDepends(partno),
+            rPresets(true), rDefault(false), "Part enable"),
 #undef rChangeCb
 #define rChangeCb
-    rParamZyn(Pminkey, rShort("min"), "Min Used Key"),
-    rParamZyn(Pmaxkey, rShort("max"), "Max Used Key"),
-    rParamZyn(Pkeyshift, rShort("shift"), "Part keyshift"),
+#undef rChangeCb
+#define rChangeCb obj->setPvolume(obj->Pvolume);
+    rParamZyn(Pvolume, rShort("Vol"), rDefault(96),"Part Volume"),
+#undef rChangeCb
+#define rChangeCb obj->setPpanning(obj->Ppanning);
+    rParamZyn(Ppanning, rShort("pan"), rDefault(64), "Set Panning"),
+#undef rChangeCb
+#define rChangeCb obj->setkeylimit(obj->Pkeylimit);
+    rParamI(Pkeylimit, rShort("limit"), rProp(parameter),
+    rMap(min,0), rMap(max, POLYPHONY), rDefault(15), "Key limit per part"),
+#undef rChangeCb
+#define rChangeCb
+    rParamZyn(Pminkey, rShort("min"), rDefault(0), "Min Used Key"),
+    rParamZyn(Pmaxkey, rShort("max"), rDefault(127), "Max Used Key"),
+    rParamZyn(Pkeyshift, rShort("shift"), rDefault(64), "Part keyshift"),
     rParamZyn(Prcvchn, rOptions(ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10, ch11, ch12, ch13, ch14, ch15, ch16),
-                "Active MIDI channel"),
-    rParamZyn(Pvelsns,   rShort("sense"), "Velocity sensing"),
-    rParamZyn(Pveloffs,  rShort("offset"), "Velocity offset"),
-    rToggle(Pnoteon,  "If the channel accepts note on events"),
-    rOption(Pkitmode, rOptions(Off, Multi-Kit, Single-Kit), "Kit mode/enable\n"
+              rPresets(ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8, ch9, ch10, ch11, ch12, ch13, ch14, ch15, ch16),
+              "Active MIDI channel"),
+    rParamZyn(Pvelsns,   rShort("sense"), rDefault(64), "Velocity sensing"),
+    rParamZyn(Pveloffs,  rShort("offset"), rDefault(64),"Velocity offset"),
+    rToggle(Pnoteon, rDefault(true), "If the channel accepts note on events"),
+    rOption(Pkitmode, rOptions(Off, Multi-Kit, Single-Kit), rDefault(Off),
+            "Kit mode/enable\n"
             "Off        - Only the first kit is ever utilized\n"
             "Multi-kit  - Every applicable kit is run for a note\n"
             "Single-kit - The first applicable kit is run for a given note"),
-    rToggle(Pdrummode, "Drum mode enable\n"
+    rToggle(Pdrummode, rDefault(false), "Drum mode enable\n"
             "When drum mode is enabled all keys are mapped to 12tET and legato is disabled"),
-    rToggle(Ppolymode,  "Polyphony mode"),
-    rToggle(Plegatomode, "Legato mode"),
-    rParamZyn(info.Ptype, "Class of Instrument"),
-    rString(info.Pauthor, MAX_INFO_TEXT_SIZE, "Instrument author"),
-    rString(info.Pcomments, MAX_INFO_TEXT_SIZE, "Instrument comments"),
-    rString(Pname, PART_MAX_NAME_LEN, "User specified label"),
+    rToggle(Ppolymode, rDefault(true), "Polyphony mode"),
+    rToggle(Plegatomode, rDefault(false), "Legato mode"),
+    rParamZyn(info.Ptype, rDefault(0), "Class of Instrument"),
+    rString(info.Pauthor, MAX_INFO_TEXT_SIZE, rDefault(""),
+        "Instrument author"),
+    rString(info.Pcomments, MAX_INFO_TEXT_SIZE, rDefault(""),
+        "Instrument comments"),
+    rString(Pname, PART_MAX_NAME_LEN, rDefault(""), "User specified label"),
     rArrayI(Pefxroute, NUM_PART_EFX,
-            rOptions(Next Effect,Part Out,Dry Out), "Effect Routing"),
-    rArrayT(Pefxbypass, NUM_PART_EFX, "If an effect is bypassed"),
+            rOptions(Next Effect,Part Out,Dry Out), rDefaultId(Next Effect),
+            "Effect Routing"),
+    rArrayT(Pefxbypass, NUM_PART_EFX, rDefault(false),
+        "If an effect is bypassed"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
         {Part *p = (Part*)r.obj; p->Pminkey = p->lastnote;}},
@@ -156,20 +172,26 @@ static const Ports partPorts = {
 #undef  rObject
 #define rObject Part::Kit
 static const Ports kitPorts = {
+    rSelf(Part::Kit, rEnabledBy(Penabled)),
     rRecurp(padpars, "Padnote parameters"),
     rRecurp(adpars, "Adnote parameters"),
     rRecurp(subpars, "Adnote parameters"),
-    rToggle(Penabled, "Kit item enable"),
-    rToggle(Pmuted,   "Kit item mute"),
-    rParamZyn(Pminkey,   "Kit item min key"),
-    rParamZyn(Pmaxkey,   "Kit item max key"),
-    rToggle(Padenabled, "ADsynth enable"),
-    rToggle(Psubenabled, "SUBsynth enable"),
-    rToggle(Ppadenabled, "PADsynth enable"),
+    rToggle(firstkit, rProp(internal), "If this is the part's first kit"),
+    rToggle(Penabled, rDefaultDepends(firstkit),
+            rPreset(true, true), rPreset(false, false),
+            "Kit item enable"),
+    rToggle(Pmuted,  rDefault(false), "Kit item mute"),
+    rParamZyn(Pminkey, rDefault(0),  "Kit item min key"),
+    rParamZyn(Pmaxkey, rDefault(127)  "Kit item max key"),
+    rToggle(Padenabled, rDefaultDepends(firstkit),
+            rPreset(true, true), rPreset(false, false)
+            "ADsynth enable"),
+    rToggle(Psubenabled, rDefault(false), "SUBsynth enable"),
+    rToggle(Ppadenabled, rDefault(false), "PADsynth enable"),
     rParamZyn(Psendtoparteffect,
-            rOptions(FX1, FX2, FX3, Off),
+            rOptions(FX1, FX2, FX3, Off), rDefault(FX1),
             "Effect Levels"),
-    rString(Pname, PART_MAX_NAME_LEN, "Kit User Specified Label"),
+    rString(Pname, PART_MAX_NAME_LEN, rDefault(""), "Kit User Specified Label"),
     {"captureMin:", rDoc("Capture minimum valid note"), NULL,
         [](const char *, RtData &r)
         {Part::Kit *p = (Part::Kit*)r.obj; p->Pminkey = p->parent->lastnote;}},
@@ -326,6 +348,7 @@ void Part::defaultsinstrument()
 
     for(int n = 0; n < NUM_KIT_ITEMS; ++n) {
         //kit[n].Penabled    = false;
+        kit[n].firstkit    = false;
         kit[n].Pmuted      = false;
         kit[n].Pminkey     = 0;
         kit[n].Pmaxkey     = 127;
@@ -337,6 +360,7 @@ void Part::defaultsinstrument()
         if(n != 0)
             setkititemstatus(n, 0);
     }
+    kit[0].firstkit   = true;
     kit[0].Penabled   = 1;
     kit[0].Padenabled = 1;
     kit[0].adpars->defaults();
@@ -1207,4 +1231,6 @@ uint8_t Part::Kit::sendto(void) const
 bool Part::Kit::validNote(char note) const
 {
     return !Pmuted && inRange((uint8_t)note, Pminkey, Pmaxkey);
+}
+
 }

@@ -20,6 +20,8 @@
 #include "AudioOut.h"
 #include "MidiIn.h"
 
+namespace zyncarla {
+
 class NulEngine:public AudioOut, MidiIn
 {
     public:
@@ -43,5 +45,7 @@ class NulEngine:public AudioOut, MidiIn
         struct timeval playing_until;
         pthread_t     *pThread;
 };
+
+}
 
 #endif

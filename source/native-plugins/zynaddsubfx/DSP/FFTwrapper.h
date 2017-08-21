@@ -17,6 +17,8 @@
 #include <complex>
 #include "../globals.h"
 
+namespace zyncarla {
+
 /**A wrapper for the FFTW library (Fast Fourier Transforms)*/
 class FFTwrapper
 {
@@ -58,4 +60,7 @@ FFTpolar(const _Tp& __rho, const _Tp& __theta = _Tp(0))
 }
 
 void FFT_cleanup();
+
+}
+
 #endif

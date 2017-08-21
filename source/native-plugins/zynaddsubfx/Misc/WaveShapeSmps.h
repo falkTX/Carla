@@ -13,10 +13,14 @@
 #ifndef WAVESHAPESMPS_H
 #define WAVESHAPESMPS_H
 
+namespace zyncarla {
+
 //Waveshaping(called by Distorsion effect and waveshape from OscilGen)
 void waveShapeSmps(int n,
                    float *smps,
                    unsigned char type,
                    unsigned char drive);
+
+}
 
 #endif

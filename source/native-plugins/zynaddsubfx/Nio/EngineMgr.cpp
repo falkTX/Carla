@@ -19,6 +19,8 @@
 #include "AudioOut.h"
 #include "MidiIn.h"
 #include "NulEngine.h"
+using namespace std;
+
 #if OSS
 #include "OssEngine.h"
 #include "OssMultiEngine.h"
@@ -34,7 +36,7 @@
 #include "PaEngine.h"
 #endif
 
-using namespace std;
+namespace zyncarla {
 
 EngineMgr &EngineMgr::getInstance(const SYNTH_T *synth,
     const oss_devs_t *oss_devs)
@@ -171,4 +173,6 @@ bool EngineMgr::setOutDefault(string name)
     cerr << "Error: " << name << " is not a recognized audio backend" << endl;
     cerr << "       Defaulting to the NULL audio backend" << endl;
     return false;
+}
+
 }

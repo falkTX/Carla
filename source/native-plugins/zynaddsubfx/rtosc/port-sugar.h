@@ -22,6 +22,9 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+#include <assert.h>
+#include <type_traits>
+
 #ifndef RTOSC_PORT_SUGAR
 #define RTOSC_PORT_SUGAR
 
@@ -61,21 +64,52 @@ struct rtosc_hack_decltype_t
 #define DOC_I(count, ...) DOC_IMP(count,__VA_ARGS__)
 #define DOC(...) DOC_I(LAST_IMP(__VA_ARGS__), __VA_ARGS__)
 
-//XXX Currently unused macro
-#define MAC_EACH_0(mac, x, ...) INSUFFICIENT_ARGUMENTS_PROVIDED_TO_MAC_EACH
-#define MAC_EACH_1(mac, x, ...) mac(x)
-#define MAC_EACH_2(mac, x, ...) mac(x) MAC_EACH_1(mac, __VA_ARGS__)
-#define MAC_EACH_3(mac, x, ...) mac(x) MAC_EACH_2(mac, __VA_ARGS__)
-#define MAC_EACH_4(mac, x, ...) mac(x) MAC_EACH_3(mac, __VA_ARGS__)
-#define MAC_EACH_5(mac, x, ...) mac(x) MAC_EACH_4(mac, __VA_ARGS__)
-#define MAC_EACH_6(mac, x, ...) mac(x) MAC_EACH_5(mac, __VA_ARGS__)
-#define MAC_EACH_7(mac, x, ...) mac(x) MAC_EACH_6(mac, __VA_ARGS__)
-#define MAC_EACH_8(mac, x, ...) mac(x) MAC_EACH_7(mac, __VA_ARGS__)
-#define MAC_EACH_9(mac, x, ...) mac(x) MAC_EACH_8(mac, __VA_ARGS__)
 
-#define MAC_EACH_IMP(mac, count, ...) MAC_EACH_ ##count(mac,__VA_ARGS__)
-#define MAC_EACH_I(mac, count, ...) MAC_EACH_IMP(mac, count, __VA_ARGS__)
-#define MAC_EACH(mac, ...) MAC_EACH_I(mac, LAST_IMP(__VA_ARGS__), __VA_ARGS__)
+#define rINC(x) rINC_ ## x
+#define rINC_0 1
+#define rINC_1 2
+#define rINC_2 3
+#define rINC_3 4
+#define rINC_4 5
+#define rINC_5 6
+#define rINC_6 7
+#define rINC_7 8
+#define rINC_8 9
+#define rINC_9 10
+#define rINC_10 11
+#define rINC_11 12
+#define rINC_12 13
+#define rINC_13 14
+#define rINC_14 15
+#define rINC_15 16
+
+//Helper for applying macro on varargs
+//arguments: counting offset, macro, macro args
+#define MAC_EACH_0(o, m, x, ...) INSUFFICIENT_ARGUMENTS_PROVIDED_TO_MAC_EACH
+#define MAC_EACH_1(o, m, x, ...) m(o, x)
+#define MAC_EACH_2(o, m, x, ...) m(o, x) MAC_EACH_1(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_3(o, m, x, ...) m(o, x) MAC_EACH_2(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_4(o, m, x, ...) m(o, x) MAC_EACH_3(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_5(o, m, x, ...) m(o, x) MAC_EACH_4(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_6(o, m, x, ...) m(o, x) MAC_EACH_5(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_7(o, m, x, ...) m(o, x) MAC_EACH_6(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_8(o, m, x, ...) m(o, x) MAC_EACH_7(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_9(o, m, x, ...) m(o, x) MAC_EACH_8(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_10(o, m, x, ...) m(o, x) MAC_EACH_9(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_11(o, m, x, ...) m(o, x) MAC_EACH_10(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_12(o, m, x, ...) m(o, x) MAC_EACH_11(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_13(o, m, x, ...) m(o, x) MAC_EACH_12(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_14(o, m, x, ...) m(o, x) MAC_EACH_13(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_15(o, m, x, ...) m(o, x) MAC_EACH_14(rINC(o), m, __VA_ARGS__)
+#define MAC_EACH_16(o, m, x, ...) m(o, x) MAC_EACH_15(rINC(o), m, __VA_ARGS__)
+
+#define MAC_EACH_IMP(off, mac, count, ...) \
+    MAC_EACH_ ##count(off, mac,__VA_ARGS__)
+#define MAC_EACH_I(off, mac, count, ...) \
+    MAC_EACH_IMP(off, mac, count, __VA_ARGS__)
+#define MAC_EACH_OFF(off, mac, ...) \
+    MAC_EACH_I(off, mac, LAST_IMP(__VA_ARGS__), __VA_ARGS__)
+#define MAC_EACH(mac, ...) MAC_EACH_OFF(0, mac, __VA_ARGS__)
 
 //                    1 2 3 4 5 6 7 8 910111213141516
 #define OPTIONS_IMP16(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p) \
@@ -140,7 +174,7 @@ struct rtosc_hack_decltype_t
 #define rToggle(name, ...) \
   {STRINGIFY(name) "::T:F",rProp(parameter) DOC(__VA_ARGS__), NULL, rToggleCb(name)}
 #define rOption(name, ...) \
-  {STRINGIFY(name) "::i:c",rProp(parameter) rProp(enumerated) DOC(__VA_ARGS__), NULL, rOptionCb(name)}
+  {STRINGIFY(name) "::i:c:S",rProp(parameter) rProp(enumerated) DOC(__VA_ARGS__), NULL, rOptionCb(name)}
 
 //Array operators
 #define rArrayF(name, length, ...) \
@@ -151,6 +185,8 @@ struct rtosc_hack_decltype_t
 {STRINGIFY(name) "#" STRINGIFY(length) "::T:F", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayTCb(name)}
 #define rArrayI(name, length, ...) \
 {STRINGIFY(name) "#" STRINGIFY(length) "::i", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayICb(name)}
+#define rArrayOption(name, length, ...) \
+{STRINGIFY(name) "#" STRINGIFY(length) "::i:c:S", rProp(parameter) DOC(__VA_ARGS__), NULL, rArrayOptionCb(name)}
 
 
 //Method callback Actions
@@ -191,8 +227,23 @@ template<class T> constexpr T spice(T*t) {return *t;}
 
 //{STRINGIFY(name) ":", rProp(internal), NULL, rRecurPtrCb(name)}
 
+//let this recurring parameter depend on another port
+#define rEnabledBy(portname) rMap(enabled by, portname)
+#define rEnabledByCondition(cond_name) rEnabledBy(cond_name)
+#define rEnabledCondition(cond_name, condition) \
+    {STRINGIFY(cond_name) ":", rProp(internal), NULL, rEnabledIfCb(condition)}
+#define rEnabledIfCb(condition) rBOIL_BEGIN \
+    assert(!rtosc_narguments(msg)); \
+    data.reply(loc, (condition)?"T":"F"); \
+    rBOIL_END \
+
+#define rSelf(type, ...) \
+{"self:", rProp(internal) rMap(class, type) __VA_ARGS__ rDoc("port metadata"), 0, \
+    [](const char *, rtosc::RtData &d){ \
+        d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
+
 //Misc
-#define rDummy(name, ...) {STRINIFY(name), rProp(dummy), NULL, [](msg_t, rtosc::RtData &){}}
+#define rDummy(name, ...) {STRINGIFY(name), rProp(dummy), NULL, [](msg_t, rtosc::RtData &){}}
 #define rString(name, len, ...) \
     {STRINGIFY(name) "::s", rMap(length, len) rProp(parameter) DOC(__VA_ARGS__), NULL, rStringCb(name,len)}
 
@@ -207,6 +258,21 @@ template<class T> constexpr T spice(T*t) {return *t;}
 //Special values
 #define rSpecial(doc) ":special\0" STRINGIFY(doc) "\0"
 #define rCentered ":centered\0"
+
+//Default values
+#define rDefault(default_value_) rMap(default, default_value_)
+#define rDefaultId(default_value_) ":default\0=\"" STRINGIFY(default_value_) "\"S\0"
+//#define rDefaultArr(default_value_, idx_) rMap(default[idx_], default_value_)
+#define rPreset(no, default_value) \
+    ":default " STRINGIFY(no) "\0=" STRINGIFY(default_value) "\0"
+#define rPresetsAt(offs, ...) MAC_EACH_OFF(offs, rPreset, __VA_ARGS__)
+#define rPresets(...) rPresetsAt(0, __VA_ARGS__)
+#define rDefaultDepends(dep_path_) rMap(default depends, dep_path_)
+#define rDefaultMissing "" // macro to denote yet missing default values
+//#define rNoDefaults() ":no defaults\0" //!< this port (and all children) have no defaults
+//! @brief Denote that this port and its children must always be skipped from
+//!        port-walking if a runtime is being given.
+#define rNoWalk rProp(no walk)
 
 //Misc properties
 #define rDoc(doc) ":documentation\0=" doc "\0"
@@ -228,14 +294,16 @@ template<class T> constexpr T spice(T*t) {return *t;}
 #define rBOIL_END }
 
 #define rLIMIT(var, convert) \
-    if(prop["min"] && var < (decltype(var))convert(prop["min"])) \
+    if(prop["min"] && var < convert(prop["min"])) \
         var = convert(prop["min"]);\
-    if(prop["max"] && var > (decltype(var))convert(prop["max"])) \
+    if(prop["max"] && var > convert(prop["max"])) \
         var = convert(prop["max"]);
 
 #define rTYPE(n) decltype(obj->n)
 
-#define rAPPLY(n,t) if(obj->n != var) data.reply("undo_change", "s" #t #t, data.loc, obj->n, var); obj->n = var;
+//#define rAPPLY(n,t) if(obj->n != var) data.reply("undo_change", "s" #t #t, data.loc, obj->n, var); obj->n = var;
+#define rCAPPLY(getcode, t, setcode) if(getcode != var) data.reply("undo_change", "s" #t #t, data.loc, getcode, var); setcode;
+#define rAPPLY(n,t) rCAPPLY(obj->n, t, obj->n = var)
 
 #define rParamCb(name) rBOIL_BEGIN \
         if(!strcmp("", args)) {\
@@ -270,17 +338,40 @@ template<class T> constexpr T spice(T*t) {return *t;}
             rChangeCb \
         } rBOIL_END
 
-//TODO finish me (include string mapper action?)
+#define rCOptionCb_(getcode, setcode) { \
+            if(!strcmp("", args)) {\
+                data.reply(loc, "i", getcode); \
+            } else if(!strcmp("s", args) || !strcmp("S", args)) { \
+                auto var = \
+                    enum_key(prop, rtosc_argument(msg, 0).s); \
+                /* make sure we have no out-of-bound options */ \
+                assert(!prop["min"] || \
+                       var >= atoi(prop["min"])); \
+                assert(!prop["max"] || \
+                       var <= atoi(prop["max"])); \
+                rCAPPLY(getcode, i, setcode) \
+                data.broadcast(loc, "i", getcode); \
+                rChangeCb \
+            } else {\
+                auto var = \
+                    rtosc_argument(msg, 0).i; \
+                rLIMIT(var, atoi) \
+                rCAPPLY(getcode, i, setcode) \
+                data.broadcast(loc, rtosc_argument_string(msg), getcode);\
+                rChangeCb \
+            } \
+        }
+
+#define rOptionCb_(name) rCOptionCb_(obj->name, obj->name = var)
+
 #define rOptionCb(name) rBOIL_BEGIN \
-        if(!strcmp("", args)) {\
-            data.reply(loc, "i", obj->name); \
-        } else { \
-            rTYPE(name) var = rtosc_argument(msg, 0).i; \
-            rLIMIT(var, atoi) \
-            rAPPLY(name, i) \
-            data.broadcast(loc, rtosc_argument_string(msg), obj->name);\
-            rChangeCb \
-        } rBOIL_END
+    rOptionCb_(name) \
+    rBOIL_END
+
+#define rCOptionCb(getcode, setcode) rBOIL_BEGIN \
+    rCOptionCb_(getcode, setcode) \
+    rBOIL_END
+
 
 #define rToggleCb(name) rBOIL_BEGIN \
         if(!strcmp("", args)) {\
@@ -309,8 +400,8 @@ template<class T> constexpr T spice(T*t) {return *t;}
     rBOIL_END
 
 #define rRecurpCb(name) rBOIL_BEGIN \
-    if(obj->name == NULL) return; \
     data.obj = obj->name; \
+    if(obj->name == NULL) return; \
     SNIP \
     decltype(spice(rObject::name))::ports.dispatch(msg, data); \
     rBOIL_END
@@ -373,6 +464,18 @@ template<class T> constexpr T spice(T*t) {return *t;}
             obj->name[idx] = rtosc_argument(msg, 0).T; \
         } rBOILS_END
 
+#define rArrayTCbMember(name, member) rBOILS_BEGIN \
+        if(!strcmp("", args)) {\
+            data.reply(loc, obj->name[idx].member ? "T" : "F"); \
+        } else { \
+            if(obj->name[idx].member != rtosc_argument(msg, 0).T) { \
+                data.broadcast(loc, args);\
+                rChangeCb \
+            } \
+            obj->name[idx].member = rtosc_argument(msg, 0).T; \
+        } rBOILS_END
+
+
 #define rArrayICb(name) rBOILS_BEGIN \
         if(!strcmp("", args)) {\
             data.reply(loc, "i", obj->name[idx]); \
@@ -384,6 +487,11 @@ template<class T> constexpr T spice(T*t) {return *t;}
             rChangeCb \
         } rBOILS_END
 
+
+#define rArrayOptionCb(name) rBOILS_BEGIN \
+    rOptionCb_(name[idx]) \
+    rBOILS_END
+
 #define rParamsCb(name, length) rBOIL_BEGIN \
     data.reply(loc, "b", length, obj->name); rBOIL_END
 
@@ -391,7 +499,8 @@ template<class T> constexpr T spice(T*t) {return *t;}
         if(!strcmp("", args)) {\
             data.reply(loc, "s", obj->name); \
         } else { \
-            strncpy(obj->name, rtosc_argument(msg, 0).s, length); \
+            strncpy(obj->name, rtosc_argument(msg, 0).s, length-1); \
+            obj->name[length-1] = '\0'; \
             data.broadcast(loc, "s", obj->name);\
             rChangeCb \
         } rBOIL_END

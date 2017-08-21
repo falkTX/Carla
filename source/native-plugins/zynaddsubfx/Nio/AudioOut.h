@@ -18,6 +18,8 @@
 #include "../globals.h"
 #include "Engine.h"
 
+namespace zyncarla {
+
 class AudioOut:public virtual Engine
 {
     public:
@@ -49,5 +51,7 @@ class AudioOut:public virtual Engine
         int samplerate;
         int bufferSize;
 };
+
+}
 
 #endif

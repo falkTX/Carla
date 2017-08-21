@@ -125,7 +125,10 @@ size_t subtree_serialize(char *buffer, size_t buffer_size,
 
 
     //TODO FIXME this is not currently RT safe at the moment
-    walk_ports(ports, args.v.loc, 128, &args, [](const Port *p, const char *, void *dat) {
+    walk_ports(ports, args.v.loc, 128, &args, [](const Port *p, const char *,
+                                                 const char*,
+                                                 const Ports&, void *dat,
+						 void*) {
             if(p->meta().find("internal") != p->meta().end())
                 return;
 

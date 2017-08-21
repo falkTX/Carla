@@ -29,9 +29,9 @@ class NSM_Client:public NSM::Client
 
         char *project_filename;
         char *display_name;
-        MiddleWare *middleware;
+        zyn::MiddleWare *middleware;
 
-        NSM_Client(MiddleWare *m);
+        NSM_Client(zyn::MiddleWare *m);
         ~NSM_Client() { }
 
     protected:

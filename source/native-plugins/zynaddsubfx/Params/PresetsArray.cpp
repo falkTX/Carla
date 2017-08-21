@@ -15,6 +15,7 @@
 #include "PresetsArray.h"
 #include <string.h>
 
+namespace zyncarla {
 
 PresetsArray::PresetsArray()
 {
@@ -126,3 +127,5 @@ bool PresetsArray::checkclipboardtype(PresetsStore &ps)
 //
 //    presetsstore.rescanforpresets(type);
 //}
+
+}

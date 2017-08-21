@@ -1,7 +1,7 @@
 /*
   ZynAddSubFX - a software synthesizer
 
-  CarlaConfig.h - CarlaConfiguration file functions
+  Config.h - Configuration file functions
   Copyright (C) 2003-2005 Nasca Octavian Paul
   Author: Nasca Octavian Paul
 
@@ -23,6 +23,8 @@ namespace rtosc
     struct Ports;
 }
 
+namespace zyncarla {
+
 class oss_devs_t
 {
     public:
@@ -30,13 +32,13 @@ class oss_devs_t
 };
 
 /**Configuration file functions*/
-class CarlaConfig
+class Config
 {
     public:
-        CarlaConfig();
-        CarlaConfig(const CarlaConfig& ) = delete;
-        ~CarlaConfig();
-
+        Config();
+        Config(const Config& ) = delete;
+        ~Config();
+        
         struct {
             oss_devs_t oss_devs;
             int   SampleRate, SoundBufferSize, OscilSize, SwapStereo;
@@ -73,4 +75,7 @@ class CarlaConfig
         void saveConfig(const char *filename) const;
         void getConfigFileName(char *name, int namesize) const;
 };
+
+}
+
 #endif

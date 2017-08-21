@@ -15,6 +15,8 @@
 #include "Envelope.h"
 #include "../Params/EnvelopeParams.h"
 
+namespace zyncarla {
+
 Envelope::Envelope(EnvelopeParams &pars, float basefreq, float bufferdt,
         WatchManager *m, const char *watch_prefix)
     :watchOut(m, watch_prefix, "out")
@@ -211,4 +213,6 @@ float Envelope::envout_dB()
 bool Envelope::finished() const
 {
     return envfinish;
+}
+
 }

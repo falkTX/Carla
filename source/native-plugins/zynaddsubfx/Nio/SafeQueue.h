@@ -16,6 +16,8 @@
 #include "ZynSema.h"
 #include <pthread.h>
 
+namespace zyncarla {
+
 /**
  * C++ thread safe lockless queue
  * Based off of jack's ringbuffer*/
@@ -54,6 +56,8 @@ class SafeQueue
         const size_t bufSize;
         T *buffer;
 };
+
+}
 
 #include "SafeQueue.cpp"
 #endif

@@ -68,6 +68,9 @@ decl {\#include "common.H"} {public local
 decl {\#include "FormantFilterGraph.H"} {public local
 } 
 
+decl {using namespace zyncarla;} {public local
+}
+
 class FilterUI {open : {public Fl_Osc_Group,PresetsUI_}
 } {
   Function {FilterUI(int x,int y, int w, int h, const char *label=0):Fl_Osc_Group(x,y,w,h)} {} {

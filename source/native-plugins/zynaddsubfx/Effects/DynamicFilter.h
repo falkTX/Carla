@@ -17,6 +17,8 @@
 #include "Effect.h"
 #include "EffectLFO.h"
 
+namespace zyncarla {
+
 /**DynamicFilter Effect*/
 class DynamicFilter:public Effect
 {
@@ -55,5 +57,7 @@ class DynamicFilter:public Effect
         class Filter * filterl, *filterr;
         float ms1, ms2, ms3, ms4; //mean squares
 };
+
+}
 
 #endif

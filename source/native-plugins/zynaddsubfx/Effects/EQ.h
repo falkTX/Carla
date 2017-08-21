@@ -16,6 +16,8 @@
 
 #include "Effect.h"
 
+namespace zyncarla {
+
 /**EQ Effect*/
 class EQ:public Effect
 {
@@ -52,5 +54,7 @@ class EQ:public Effect
             class AnalogFilter *l, *r;
         } filter[MAX_EQ_BANDS];
 };
+
+}
 
 #endif

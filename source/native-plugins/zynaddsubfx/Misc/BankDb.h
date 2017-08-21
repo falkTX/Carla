@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 
+namespace zyncarla {
+
 struct BankEntry
 {
     BankEntry(void);
@@ -53,3 +55,5 @@ class BankDb
         bvec fields;
         svec banks;
 };
+
+}

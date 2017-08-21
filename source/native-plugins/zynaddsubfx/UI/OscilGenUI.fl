@@ -71,6 +71,9 @@ decl {\#include "PresetsUI.h"} {public local
 decl {\#include <FL/fl_draw.H>} {public local
 } 
 
+decl {using namespace zyncarla;} {public local
+}
+
 class OGSlider {: {public Fl_Osc_TSlider}
 } {
   Function {OGSlider(int x,int y, int w, int h, const char *label=0)

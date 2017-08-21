@@ -16,6 +16,8 @@
 
 #include "../globals.h"
 
+namespace zyncarla {
+
 class Filter
 {
     public:
@@ -52,5 +54,7 @@ class Filter
             bufferbytes      = buffersize * sizeof(float);
         }
 };
+
+}
 
 #endif

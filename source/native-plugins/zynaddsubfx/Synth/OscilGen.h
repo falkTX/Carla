@@ -18,6 +18,8 @@
 #include <rtosc/ports.h>
 #include "../Params/Presets.h"
 
+namespace zyncarla {
+
 class OscilGen:public Presets
 {
     public:
@@ -183,5 +185,6 @@ filter_func getFilter(unsigned char func);
 typedef float (*base_func)(float, float);
 base_func getBaseFunction(unsigned char func);
 
+}
 
 #endif

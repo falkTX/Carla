@@ -17,6 +17,7 @@
 #include <pthread.h>
 #include <lash/lash.h>
 
+namespace zyncarla {
 
 /** This class wraps up some functions for initialising and polling
  *  the LASH daemon.*/
@@ -50,5 +51,6 @@ class LASHClient
         lash_client_t *client;
 };
 
+}
 
 #endif

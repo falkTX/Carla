@@ -16,6 +16,7 @@
 #include "PresetsStore.h"
 #include <string.h>
 
+namespace zyncarla {
 
 Presets::Presets()
 {
@@ -94,4 +95,6 @@ bool Presets::checkclipboardtype(PresetsStore &ps)
 void Presets::deletepreset(PresetsStore &ps, int npreset)
 {
     ps.deletepreset(npreset);
+}
+
 }

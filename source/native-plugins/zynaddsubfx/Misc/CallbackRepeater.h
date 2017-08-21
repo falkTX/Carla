@@ -13,6 +13,8 @@
 #include <functional>
 #include <ctime>
 
+namespace zyncarla {
+
 struct CallbackRepeater
 {
     typedef std::function<void(void)> cb_t ;
@@ -27,3 +29,5 @@ struct CallbackRepeater
     std::time_t dt;
     cb_t        cb;
 };
+
+}

@@ -17,6 +17,8 @@
 #include "../Params/FilterParams.h"
 #include <cmath>
 
+namespace zyncarla {
+
 EffectParams::EffectParams(Allocator &alloc_, bool insertion_, float *efxoutl_, float *efxoutr_,
             unsigned char Ppreset_, unsigned int srate_, int bufsize_, FilterParams *filterpars_,
             bool filterprotect_)
@@ -62,4 +64,6 @@ void Effect::setlrcross(char Plrcross_)
 {
     Plrcross = Plrcross_;
     lrcross  = (float)Plrcross / 127.0f;
+}
+
 }

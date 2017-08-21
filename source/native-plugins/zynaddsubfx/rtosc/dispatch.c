@@ -67,12 +67,15 @@ try_next:
     return NULL;
 }
 
-const char *rtosc_match_path(const char *pattern, const char *msg)
+const char *rtosc_match_path(const char *pattern,
+                             const char *msg, const char** path_end)
 {
+    if(!path_end)
+        path_end = &msg; // writing *path_end = msg later will have no effect
     while(1) {
         //Check for special characters
         if(*pattern == ':' && !*msg)
-            return pattern;
+            return *path_end = msg, pattern;
         else if(*pattern == '{') {
             pattern = rtosc_match_options(pattern, &msg);
             if(!pattern)
@@ -88,7 +91,7 @@ const char *rtosc_match_path(const char *pattern, const char *msg)
             ++pattern;
             ++msg;
             if(*pattern == '\0' || *pattern == ':')
-                return pattern;
+                return *path_end = msg, pattern;
         } else if(*pattern == '#') {
             ++pattern;
             if(!rtosc_match_number(&pattern, &msg))
@@ -97,7 +100,7 @@ const char *rtosc_match_path(const char *pattern, const char *msg)
             if(*msg)
                 ++pattern, ++msg;
             else
-                return pattern;
+                return *path_end = msg, pattern;
         } else
             return NULL;
     }
@@ -126,9 +129,10 @@ static bool rtosc_match_args(const char *pattern, const char *msg)
     return arg_match;
 }
 
-bool rtosc_match(const char *pattern, const char *msg)
+bool rtosc_match(const char *pattern,
+                 const char *msg, const char** path_end)
 {
-    const char *arg_pattern = rtosc_match_path(pattern, msg);
+    const char *arg_pattern = rtosc_match_path(pattern, msg, path_end);
     if(!arg_pattern)
         return false;
     else if(*arg_pattern == ':')

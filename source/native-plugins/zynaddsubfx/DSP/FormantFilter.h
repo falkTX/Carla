@@ -17,6 +17,7 @@
 #include "../globals.h"
 #include "Filter.h"
 
+namespace zyncarla {
 
 class FormantFilter:public Filter
 {
@@ -54,5 +55,7 @@ class FormantFilter:public Filter
         float vowelclearness, sequencestretch;
         Allocator &memory;
 };
+
+}
 
 #endif

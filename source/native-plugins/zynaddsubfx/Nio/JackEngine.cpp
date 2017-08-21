@@ -32,9 +32,11 @@
 
 #include "JackEngine.h"
 
-using namespace std;
-
 extern char *instance_name;
+
+namespace zyncarla {
+
+using namespace std;
 
 JackEngine::JackEngine(const SYNTH_T &synth)
     :AudioOut(synth), jackClient(NULL)
@@ -437,4 +439,6 @@ void JackEngine::handleMidi(unsigned long frames)
                 /* XXX TODO: handle MSB/LSB controllers and RPNs and NRPNs */
         }
     }
+}
+
 }

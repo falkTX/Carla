@@ -22,38 +22,66 @@
 #include <rtosc/port-sugar.h>
 using namespace rtosc;
 
+namespace zyncarla {
+
 #define rObject Controller
 
 #undef rChangeCb
 #define rChangeCb if (obj->time) { obj->last_update_timestamp = obj->time->time(); }
 const rtosc::Ports Controller::ports = {
-    rParamZyn(panning.depth,       rShort("pan.d"), "Depth of Panning MIDI Control"),
-    rParamZyn(filtercutoff.depth,  rShort("fc.d"), "Depth of Filter Cutoff MIDI Control"),
-    rParamZyn(filterq.depth,       rShort("fq.d"), "Depth of Filter Q MIDI Control"),
-    rParamZyn(bandwidth.depth,     rShort("bw.d"), "Depth of Bandwidth MIDI Control"),
-    rToggle(bandwidth.exponential, rShort("bw.exp"), "Bandwidth Exponential Mode"),
-    rParamZyn(modwheel.depth,      rShort("mdw.d"), "Depth of Modwheel MIDI Control"),
-    rToggle(modwheel.exponential,  rShort("mdw.exp"), "Modwheel Exponential Mode"),
-    rToggle(pitchwheel.is_split,   "If PitchWheel Has unified bendrange or not"),
-    rParamI(pitchwheel.bendrange,  rShort("pch.d"), "Range of MIDI Pitch Wheel"),
-    rParamI(pitchwheel.bendrange_down, "Lower Range of MIDI Pitch Wheel"),
-    rToggle(expression.receive, rShort("exp.rcv"), "Expression MIDI Receive"),
-    rToggle(fmamp.receive,      rShort("fma.rcv"), "FM amplitude MIDI Receive"),
-    rToggle(volume.receive,     rShort("vol.rcv"), "Volume MIDI Receive"),
-    rToggle(sustain.receive,    rShort("sus.rcv"), "Sustain MIDI Receive"),
-    rToggle(portamento.receive, rShort("prt.rcv"), "Portamento MIDI Receive"),
-    rToggle(portamento.portamento, "Portamento Enable"),
-    rParamZyn(portamento.time,          rShort("time"), "Portamento Length"),
-    rToggle(portamento.proportional,    rShort("propt."), "Whether the portamento time is proportional"
+    rParamZyn(panning.depth,       rShort("pan.d"), rDefault(64),
+        "Depth of Panning MIDI Control"),
+    rParamZyn(filtercutoff.depth,  rShort("fc.d"), rDefault(64),
+        "Depth of Filter Cutoff MIDI Control"),
+    rParamZyn(filterq.depth,       rShort("fq.d"), rDefault(64),
+        "Depth of Filter Q MIDI Control"),
+    rParamZyn(bandwidth.depth,     rShort("bw.d"), rDefault(64),
+        "Depth of Bandwidth MIDI Control"),
+    rToggle(bandwidth.exponential, rShort("bw.exp"), rDefault(false),
+        "Bandwidth Exponential Mode"),
+    rParamZyn(modwheel.depth,      rShort("mdw.d"), rDefault(80),
+        "Depth of Modwheel MIDI Control"),
+    rToggle(modwheel.exponential,  rShort("mdw.exp"), rDefault(false),
+        "Modwheel Exponential Mode"),
+    rToggle(pitchwheel.is_split,   rDefault(false),
+        "If PitchWheel Has unified bendrange or not"),
+    rParamI(pitchwheel.bendrange,  rShort("pch.d"), rDefault(200),
+            rLinear(-6400, 6400),
+        "Range of MIDI Pitch Wheel"),
+    rParamI(pitchwheel.bendrange_down, rDefault(0),
+        "Lower Range of MIDI Pitch Wheel"),
+    rToggle(expression.receive, rShort("exp.rcv"), rDefault(true),
+        "Expression MIDI Receive"),
+    rToggle(fmamp.receive,      rShort("fma.rcv"), rDefault(true),
+        "FM amplitude MIDI Receive"),
+    rToggle(volume.receive,     rShort("vol.rcv"), rDefault(true),
+        "Volume MIDI Receive"),
+    rToggle(sustain.receive,    rShort("sus.rcv"), rDefault(true),
+        "Sustain MIDI Receive"),
+    rToggle(portamento.receive, rShort("prt.rcv"), rDefault(true),
+        "Portamento MIDI Receive"),
+    rToggle(portamento.portamento, rDefault(false),
+        "Portamento Enable"),
+    rParamZyn(portamento.time,          rShort("time"), rDefault(64),
+        "Portamento Length"),
+    rToggle(portamento.proportional,    rShort("propt."), rDefault(false),
+            "Whether the portamento time is proportional"
             "to the size of the interval between two notes."),
-    rParamZyn(portamento.propRate,      rShort("scale"), "Portamento proportional scale"),
-    rParamZyn(portamento.propDepth,     rShort("depth"), "Portamento proportional depth"),
-    rParamZyn(portamento.pitchthresh,   rShort("thresh"), "Threshold for portamento"),
-    rToggle(portamento.pitchthreshtype, rShort("tr.type"), "Type of threshold"),
-    rParamZyn(portamento.updowntimestretch, rShort("up/dwn"), "Relative length of glide up vs glide down"),
-    rParamZyn(resonancecenter.depth,    rShort("rfc.d"), "Resonance Center MIDI Depth"),
-    rParamZyn(resonancebandwidth.depth, rShort("rbw.d"), "Resonance Bandwidth MIDI Depth"),
-    rToggle(NRPN.receive, "NRPN MIDI Enable"),
+    rParamZyn(portamento.propRate,      rShort("scale"), rDefault(80),
+        "Portamento proportional scale"),
+    rParamZyn(portamento.propDepth,     rShort("depth"), rDefault(90),
+        "Portamento proportional depth"),
+    rParamZyn(portamento.pitchthresh,   rShort("thresh"), rDefault(3),
+        "Threshold for portamento"),
+    rToggle(portamento.pitchthreshtype, rShort("tr.type"), rDefault(true),
+        "Type of threshold"),
+    rParamZyn(portamento.updowntimestretch, rShort("up/dwn"), rDefault(64),
+        "Relative length of glide up vs glide down"),
+    rParamZyn(resonancecenter.depth,    rShort("rfc.d"), rDefault(64),
+        "Resonance Center MIDI Depth"),
+    rParamZyn(resonancebandwidth.depth, rShort("rbw.d"), rDefault(64),
+        "Resonance Bandwidth MIDI Depth"),
+    rToggle(NRPN.receive, rDefault(true), "NRPN MIDI Enable"),
     rAction(defaults),
 };
 #undef rChangeCb
@@ -466,4 +494,6 @@ void Controller::getfromXML(XMLwrapper& xml)
                                            resonancecenter.depth);
     resonancebandwidth.depth = xml.getpar127("resonance_bandwidth_depth",
                                               resonancebandwidth.depth);
+}
+
 }

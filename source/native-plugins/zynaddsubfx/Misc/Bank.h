@@ -22,12 +22,14 @@
 //entries in a bank
 #define BANK_SIZE 160
 
+namespace zyncarla {
+
 /**The instrument Bank*/
 class Bank
 {
     public:
         /**Constructor*/
-        Bank(CarlaConfig* config);
+        Bank(Config* config);
         ~Bank();
         std::string getname(unsigned int ninstrument);
         std::string getnamenumbered(unsigned int ninstrument);
@@ -102,12 +104,14 @@ class Bank
          * directory separator */
         void normalizedirsuffix(std::string &dirname) const;
 
-        CarlaConfig* const config;
+        Config* const config;
         class BankDb *db;
 
     public:
         uint8_t bank_msb;
         uint8_t bank_lsb;
 };
+
+}
 
 #endif

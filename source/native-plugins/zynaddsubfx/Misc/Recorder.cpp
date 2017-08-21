@@ -17,6 +17,8 @@
 #include "../globals.h"
 #include "../Nio/Nio.h"
 
+namespace zyncarla {
+
 Recorder::Recorder(const SYNTH_T &synth_)
     :status(0), notetrigger(0),synth(synth_)
 {}
@@ -81,3 +83,4 @@ void Recorder::triggernow()
 }
 
 //TODO move recorder inside nio system
+}

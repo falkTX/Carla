@@ -16,6 +16,7 @@
 
 #include "LASHClient.h"
 
+namespace zyncarla {
 
 LASHClient::LASHClient(int *argc, char ***argv)
 {
@@ -91,4 +92,6 @@ void LASHClient::confirmevent(Event event)
     else
     if(event == Restore)
         lash_send_event(client, lash_event_new_with_type(LASH_Restore_File));
+}
+
 }

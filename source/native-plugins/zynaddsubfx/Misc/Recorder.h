@@ -15,6 +15,8 @@
 #define RECORDER_H
 #include <string>
 
+namespace zyncarla {
+
 struct SYNTH_T;
 /**Records sound to a file*/
 class Recorder
@@ -42,5 +44,7 @@ class Recorder
         int notetrigger;
         const SYNTH_T &synth;
 };
+
+}
 
 #endif

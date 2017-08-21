@@ -14,6 +14,8 @@
 #include <string>
 #include <set>
 
+namespace zyncarla {
+
 class WavFile;
 class Master;
 struct SYNTH_T;
@@ -60,5 +62,7 @@ namespace Nio
     extern std::string defaultSource;
     extern std::string defaultSink;
 };
+
+}
 
 #endif

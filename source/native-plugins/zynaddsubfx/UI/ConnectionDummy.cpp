@@ -29,7 +29,7 @@ void tickUi(ui_handle_t)
 {
     usleep(1000);
 }
-Fl_Osc_Interface *genOscInterface(MiddleWare*)
+Fl_Osc_Interface *genOscInterface(zyncarla::MiddleWare*)
 {
     return NULL;
 }

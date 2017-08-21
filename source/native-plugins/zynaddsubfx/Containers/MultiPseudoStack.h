@@ -13,6 +13,8 @@
 #include <atomic>
 #include <cassert>
 
+namespace zyncarla {
+
 //XXX rename this thing
 typedef struct QueueListItem qli_t;
 struct QueueListItem
@@ -60,3 +62,5 @@ class MultiQueue
     void write(qli_t *q) {        m_msgs.write(q); }
     qli_t *read(void)    { return m_msgs.read();   }
 };
+
+}

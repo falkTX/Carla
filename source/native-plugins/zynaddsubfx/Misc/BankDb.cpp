@@ -6,7 +6,9 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
-#define INSTRUMENT_EXTENSION ".xiz"
+namespace zyncarla {
+
+static const char* INSTRUMENT_EXTENSION = ".xiz";
 
 using std::string;
 typedef BankDb::svec svec;
@@ -57,7 +59,7 @@ bool BankEntry::match(string s) const
 
 bool BankEntry::operator<(const BankEntry &b) const
 {
-    return this->file < b.file;
+    return (this->bank+this->file) < (b.bank+b.file);
 }
 
 static svec split(string s)
@@ -227,16 +229,20 @@ BankEntry BankDb::processXiz(std::string filename,
 {
     string fname = bank+filename;
 
-#ifdef WIN32
-    int ret, time = 0;
-#else
     //Grab a timestamp
     struct stat st;
-    int ret  = lstat(fname.c_str(), &st);
     int time = 0;
+
+    //gah windows, just implement the darn standard APIs
+#ifndef WIN32
+    int ret  = lstat(fname.c_str(), &st);
     if(ret != -1)
         time = st.st_mtim.tv_sec;
+#else
+    int ret = 0;
+    time = rand();
 #endif
+    
 
     //quickly check if the file exists in the cache and if it is up-to-date
     if(cache.find(fname) != cache.end() &&
@@ -342,4 +348,6 @@ BankEntry BankDb::processXiz(std::string filename,
     //printf("\tadd/pad/sub - %d/%d/%d\n", entry.add, entry.pad, entry.sub);
 
     return entry;
+}
+
 }

@@ -16,6 +16,8 @@
 
 #include <pthread.h>
 
+namespace zyncarla {
+
 class ZynSema
 {
 public:
@@ -77,9 +79,13 @@ private:
     pthread_cond_t   _cond;
 };
 
+}
+
 #else // POSIX sempahore
 
 #include <semaphore.h>
+
+namespace zyncarla {
 
 class ZynSema
 {
@@ -117,6 +123,8 @@ public:
 private:
     sem_t _sema;
 };
+
+}
 
 #endif // POSIX semapore
 

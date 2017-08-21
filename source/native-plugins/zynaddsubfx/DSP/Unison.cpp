@@ -24,6 +24,8 @@
 #include <err.h>
 #endif
 
+namespace zyncarla {
+
 Unison::Unison(Allocator *alloc_, int update_period_samples_, float max_delay_sec_, float srate_f)
     :unison_size(0),
       base_freq(1.0f),
@@ -195,4 +197,6 @@ void Unison::updateUnisonData()
         uv[k].step     = step;
     }
     first_time = false;
+}
+
 }

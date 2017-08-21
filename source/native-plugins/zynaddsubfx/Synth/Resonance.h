@@ -21,6 +21,8 @@
 
 #define N_RES_POINTS 256
 
+namespace zyncarla {
+
 class Resonance:public Presets
 {
     public:
@@ -60,5 +62,7 @@ class Resonance:public Presets
 
         static const rtosc::Ports ports;
 };
+
+}
 
 #endif

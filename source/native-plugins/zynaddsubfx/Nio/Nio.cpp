@@ -20,6 +20,9 @@
 #include <cstring>
 #include <iostream>
 #include <algorithm>
+
+namespace zyncarla {
+
 using std::string;
 using std::set;
 using std::cerr;
@@ -182,4 +185,6 @@ void Nio::waveStop(void)
 void Nio::waveEnd(void)
 {
     out->wave->destroyFile();
+}
+
 }

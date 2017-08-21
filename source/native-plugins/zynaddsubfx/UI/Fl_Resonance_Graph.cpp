@@ -14,6 +14,7 @@
 #include <FL/fl_draw.H>
 #include <FL/Fl_Value_Output.H>
 #include <rtosc/rtosc.h>
+using namespace zyncarla;
 
 Fl_Resonance_Graph::Fl_Resonance_Graph(int x,int y, int w, int h, const char *label)
     :Fl_Box(x,y,w,h,label), Fl_Osc_Widget(this), khzvalue(NULL), dbvalue(NULL),

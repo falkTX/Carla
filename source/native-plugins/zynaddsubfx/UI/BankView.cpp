@@ -19,6 +19,8 @@
 #include <cstring>
 #include <cassert>
 
+using namespace zyncarla;
+
 BankList::BankList(int x,int y, int w, int h, const char *label)
     :Fl_Osc_Choice(x,y,w,h,label)
 {}
@@ -223,15 +225,17 @@ void BankViewControls::mode(int m)
 
 
 BankView::BankView(int x,int y, int w, int h, const char *label)
-    :Fl_Group(x,y,w,h,label), bvc(NULL), slots{0}, osc(0),
-    loc(""), nselected(-1), npart(0), cbwig_(0)
+    :Fl_Group(x,y,w,h,label), Fl_Osc_Widget(),
+    bvc(NULL), slots{0}, nselected(-1), npart(0), cbwig_(0)
 {}
 
 
 BankView::~BankView(void)
 {
-    if(osc)
-        osc->removeLink("/bankview", this);
+    if(osc) {
+       osc->removeLink("/bankview", this);
+       osc->removeLink("/bank/search_results", this);
+    }
 }
 
 void BankView::init(Fl_Osc_Interface *osc_, BankViewControls *bvc_, int *npart_)
@@ -243,6 +247,7 @@ void BankView::init(Fl_Osc_Interface *osc_, BankViewControls *bvc_, int *npart_)
     npart = npart_;
 
     osc->createLink("/bankview", this);
+    osc->createLink("/bank/search_results", this);
 
     //Element Size
     const float width  = w()/5.0;
@@ -344,14 +349,30 @@ void BankView::react(int event, int nslot)
 
 void BankView::OSC_raw(const char *msg)
 {
-    if(!strcmp(rtosc_argument_string(msg), "iss")) {
+    if(!strcmp(msg, "/bank/search_results")) {
+	const char *ptr = rtosc_argument_string(msg);
+	int slot = 0;
+
+	while (ptr[0] == 's' && ptr[1] == 's') {
+		const char *bank = rtosc_argument(msg, 2*slot).s;
+		const char *fname = rtosc_argument(msg, 2*slot + 1).s;
+
+		/* store search results directly into slot */
+		slots[slot]->update(bank, fname);
+		if (++slot == 160)
+			break;
+		ptr += 2;
+	}
+	while (slot < 160)
+		slots[slot++]->update("", "");
+    } else if(!strcmp(rtosc_argument_string(msg), "iss")) {
         int nslot         = rtosc_argument(msg,0).i;
         const char *name  = rtosc_argument(msg,1).s;
         const char *fname = rtosc_argument(msg,2).s;
 
         if(0 <= nslot && nslot < 160)
             slots[nslot]->update(name, fname);
-    } if(!strcmp(rtosc_argument_string(msg), "ss")) {
+    } else if(!strcmp(rtosc_argument_string(msg), "ss")) {
         while(*msg && !isdigit(*msg)) msg++;
         int nslot         = atoi(msg);
         const char *name  = rtosc_argument(msg,0).s;

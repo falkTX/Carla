@@ -18,6 +18,7 @@
 #include <string>
 #include <semaphore.h>
 
+namespace zyncarla {
 
 class AudioOut;
 struct SYNTH_T;
@@ -77,5 +78,7 @@ class OutMgr
         int stales;
         const SYNTH_T &synth;
 };
+
+}
 
 #endif

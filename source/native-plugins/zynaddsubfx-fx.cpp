@@ -34,6 +34,8 @@ using juce::roundToIntAccurate;
 using juce::FloatVectorOperations;
 using juce::SharedResourcePointer;
 
+using namespace zyncarla;
+
 // -----------------------------------------------------------------------
 
 template<class ZynFX>

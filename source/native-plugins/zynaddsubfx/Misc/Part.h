@@ -22,6 +22,8 @@
 
 #include <functional>
 
+namespace zyncarla {
+
 /** Part implementation*/
 class Part
 {
@@ -83,6 +85,7 @@ class Part
         struct Kit {
             Kit(void);
             Part              *parent;
+            bool               firstkit;
             bool               Penabled, Pmuted;
             unsigned char      Pminkey, Pmaxkey;
             char              *Pname;
@@ -104,13 +107,14 @@ class Part
         void setkeylimit(unsigned char Pkeylimit);
         void setkititemstatus(unsigned kititem, bool Penabled_);
 
+        unsigned char partno; /**<if it's the Master's first part*/
         bool          Penabled; /**<if the part is enabled*/
         unsigned char Pvolume; /**<part volume*/
         unsigned char Pminkey; /**<the minimum key that the part receives noteon messages*/
         unsigned char Pmaxkey; //the maximum key that the part receives noteon messages
         void setPvolume(char Pvolume);
         unsigned char Pkeyshift; //Part keyshift
-        unsigned char Prcvchn; //from what midi channel it receive commnads
+        unsigned char Prcvchn; //from what midi channel it receives commands
         unsigned char Ppanning; //part panning
         void setPpanning(char Ppanning);
         unsigned char Pvelsns; //velocity sensing (amplitude velocity scale)
@@ -199,5 +203,7 @@ class Part
         const AbsTime &time;
         const int &gzip_compression, &interpolation;
 };
+
+}
 
 #endif

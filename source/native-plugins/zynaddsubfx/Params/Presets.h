@@ -15,6 +15,9 @@
 #define PRESETS_H
 
 #include "../globals.h"
+
+namespace zyncarla {
+
 class PresetsStore;
 
 /**Presets and Clipboard management*/
@@ -39,5 +42,7 @@ class Presets
         //virtual void getfromXML(XMLwrapper *xml) = 0;
         //virtual void defaults() = 0;
 };
+
+}
 
 #endif

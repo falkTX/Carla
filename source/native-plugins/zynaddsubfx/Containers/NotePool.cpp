@@ -19,6 +19,8 @@
 #define SUSTAIN_BIT 0x04
 #define NOTE_MASK   0x03
 
+namespace zyncarla {
+
 enum NoteStatus {
     KEY_OFF                    = 0x00,
     KEY_PLAYING                = 0x01,
@@ -429,4 +431,6 @@ void NotePool::dump(void)
         }
     }
     printf(">NotePool::dump\n");
+}
+
 }

@@ -32,6 +32,8 @@
 # define M_PI		3.14159265358979323846	/* pi */
 #endif
 
+namespace zyncarla {
+
 SUBnote::SUBnote(const SUBnoteParameters *parameters, SynthParams &spars)
     :SynthNote(spars), pars(*parameters),
     AmpEnvelope(nullptr),
@@ -617,4 +619,6 @@ bool SUBnote::finished() const
 void SUBnote::entomb(void)
 {
     AmpEnvelope->forceFinish();
+}
+
 }

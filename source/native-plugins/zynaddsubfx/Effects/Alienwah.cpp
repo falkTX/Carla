@@ -17,6 +17,8 @@
 #include "../Misc/Allocator.h"
 #include "Alienwah.h"
 
+namespace zyncarla {
+
 using std::complex;
 
 #define rObject Alienwah
@@ -34,17 +36,26 @@ rtosc::Ports Alienwah::ports = {
                   else
                       d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
-    //Pvolume/Ppanning are common
-    rEffPar(Pfreq,     2, rShort("freq"), "Effect Frequency"),
-    rEffPar(Pfreqrnd,  3, rShort("rand"), "Frequency Randomness"),
+    rEffParVol(rDefault(127), rPresetsAt(3, 93)),
+    rEffParPan(),
+    rEffPar(Pfreq,     2, rShort("freq") rPresets(70, 73, 63, 25),
+            "Effect Frequency"),
+    rEffPar(Pfreqrnd,  3, rShort("rand"), rPreset(1, 106) rDefault(0),
+            "Frequency Randomness"),
     rEffPar(PLFOtype,  4, rShort("shape"),
-            rOptions(sine, triangle), "LFO Shape"),
-    rEffPar(PStereo,   5, rShort("stereo"), "Stereo Mode"),
-    rEffPar(Pdepth,    6, rShort("depth"), "LFO Depth"),
-    rEffPar(Pfeedback, 7, rShort("fb"), "Feedback"),
-    rEffPar(Pdelay,    8, rLinear(1,100), rShort("delay"), "Delay"),
-    rEffPar(Plrcross,  9, rShort("l/r"), "Left/Right Crossover"),
-    rEffPar(Pphase,   10, rShort("phase"), "Phase"),
+            rOptions(sine, triangle), rPresets(sine, sine, triangle, triangle),
+            "LFO Shape"),
+    rEffPar(PStereo,   5, rShort("stereo"), rPresets(62, 101, 100, 66),
+            "Stereo Mode"),
+    rEffPar(Pdepth,    6, rShort("depth"), rPresets(60, 60, 112, 101),
+            "LFO Depth"),
+    rEffPar(Pfeedback, 7, rShort("fb"), rPreset(3, 11), rDefault(105),
+            "Feedback"),
+    rEffPar(Pdelay,    8, rLinear(1,100), rPresets(25, 17, 31, 47),
+            rShort("delay"), "Delay"),
+    rEffPar(Plrcross,  9, rShort("l/r"), rDefault(0), "Left/Right Crossover"),
+    rEffPar(Pphase,   10, rShort("phase"), rDefault(64), rPreset(2, 42),
+            rPreset(3, 86), "Phase"),
 };
 #undef rBegin
 #undef rEnd
@@ -256,4 +267,6 @@ unsigned char Alienwah::getpar(int npar) const
         case 10: return Pphase;
         default: return 0;
     }
+}
+
 }

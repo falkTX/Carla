@@ -19,6 +19,8 @@
 
 #include <rtosc/rtosc.h>
 
+using namespace zyncarla;
+
 #define MAX_DB 30
 
 Fl_EQGraph::Fl_EQGraph(int x,int y, int w, int h, const char *label)

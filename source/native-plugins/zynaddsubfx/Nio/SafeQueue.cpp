@@ -10,6 +10,8 @@
   of the License, or (at your option) any later version.
 */
 
+namespace zyncarla {
+
 template<class T>
 SafeQueue<T>::SafeQueue(size_t maxlen)
     :writePtr(0), readPtr(0), bufSize(maxlen)
@@ -97,4 +99,6 @@ void SafeQueue<T>::clear()
     while(!r_space.trywait())
         w_space.post();
     readPtr = writePtr;
+}
+
 }

@@ -17,8 +17,9 @@
 #include <cstdlib>
 #include "../Misc/WavFile.h"
 #include "../Misc/Util.h"
-
 using namespace std;
+
+namespace zyncarla {
 
 WavEngine::WavEngine(const SYNTH_T &synth_)
     :AudioOut(synth_), file(NULL), buffer(synth.samplerate * 4), pThread(NULL)
@@ -126,4 +127,6 @@ void *WavEngine::AudioThread()
     delete[] recordbuf_16bit;
 
     return NULL;
+}
+
 }

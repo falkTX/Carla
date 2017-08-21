@@ -22,8 +22,11 @@
 #include "../Misc/Util.h"
 #include "../Misc/Time.h"
 
-#define rObject EnvelopeParams
 using namespace rtosc;
+
+namespace zyncarla {
+
+#define rObject EnvelopeParams
 #define rBegin [](const char *msg, RtData &d) { \
     EnvelopeParams *env = (rObject*) d.obj
 #define rEnd }
@@ -34,27 +37,54 @@ static const rtosc::Ports localPorts = {
 #undef  rChangeCb
 #define rChangeCb if(!obj->Pfreemode) obj->converttofree(); if (obj->time) { \
         obj->last_update_timestamp = obj->time->time(); }
-    rToggle(Pfreemode, "Complex Envelope Definitions"),
+    rToggle(Pfreemode, rDefault(false), "Complex Envelope Definitions"),
 #undef  rChangeCb
 #define rChangeCb if(!obj->Pfreemode) obj->converttofree(); \
                   if(obj->time) { obj->last_update_timestamp = obj->time->time(); }
-    rParamZyn(Penvpoints, rProp(internal), "Number of points in complex definition"),
-    rParamZyn(Penvsustain, "Location of the sustain point"),
+    rOption(envelope_type, rProp(internal),
+            rOptions(ad_global_amp, ad_global_freq, ad_global_filter,
+                     ad_voice_amp, ad_voice_freq, ad_voice_filter,
+                     ad_voice_fm_freq, ad_voice_fm_amp,
+                     sub_freq_env, sub_bandwidth_env), "function of the envelope"),
+    rParamZyn(Penvpoints, rProp(internal), rDefaultDepends(envelope_type),
+            rPresets(4, 3, 4, 4, 3, 4, 3, 4, 3, 3),
+            "Number of points in complex definition"),
+    rParamZyn(Penvsustain, rDefaultDepends(envelope_type),
+            rPresets(2, 1, 2, 2, 1, 2, 1, 2, 1, 1),
+            "Location of the sustain point"),
     rParams(Penvdt,  MAX_ENVELOPE_POINTS, "Envelope Delay Times"),
     rParams(Penvval, MAX_ENVELOPE_POINTS, "Envelope Values"),
-    rParamZyn(Penvstretch,  rShort("stretch"),
+    rParamZyn(Penvstretch,  rShort("stretch"), rDefaultDepends(envelope_type),
+            rPresets(64, 0, 0, 64, 0, 0, 0, 64, 64, 64),
             "Stretch with respect to frequency"),
-    rToggle(Pforcedrelease, rShort("frcr"),
+    rToggle(Pforcedrelease, rShort("frcr"), rDefaultDepends(envelope_type),
+            rPresets(true, false, true, true, false,
+                     false, false, true, false, false),
             "Force Envelope to fully evaluate"),
-    rToggle(Plinearenvelope, rShort("lin/log"),
+    rToggle(Plinearenvelope, rShort("lin/log"), rDefault(false),
             "Linear or Logarithmic Envelopes"),
-    rParamZyn(PA_dt,  rShort("a.dt"),  "Attack Time"),
-    rParamZyn(PA_val, rShort("a.val"), "Attack Value"),
-    rParamZyn(PD_dt,  rShort("d.dt"),  "Decay Time"),
-    rParamZyn(PD_val, rShort("d.val"), "Decay Value"),
-    rParamZyn(PS_val, rShort("s.val"), "Sustain Value"),
-    rParamZyn(PR_dt,  rShort("r.dt"),  "Release Time"),
-    rParamZyn(PR_val, rShort("r.val"), "Release Value"),
+    rParamZyn(PA_dt,  rShort("a.dt"), rDefaultDepends(envelope_type),
+              rPresets(0, 50, 40, 0, 40, 70, 90, 80, 50, 70),
+              "Attack Time"),
+    rParamZyn(PA_val, rShort("a.val"), rDefaultDepends(envelope_type),
+              rDefault(64), rPresetsAt(4, 30, 90, 20, 64, 30, 100),
+              "Attack Value"),
+    rParamZyn(PD_dt,  rShort("d.dt"),  rDefaultDepends(envelope_type),
+              rDefault(10), rPresets(40, 10, 70, 100, 10, 70, 10, 90),
+              "Decay Time"),
+    rParamZyn(PD_val, rShort("d.val"), rDefaultDepends(envelope_type),
+              rDefault(64), rPresetsAt(5, 40),
+              "Decay Value"),
+    rParamZyn(PS_val, rShort("s.val"), rDefaultDepends(envelope_type),
+              rDefault(64),
+              rPresets(127), rPresetsAt(3, 127), rPresetsAt(7, 127),
+              "Sustain Value"),
+    rParamZyn(PR_dt,  rShort("r.dt"),  rDefaultDepends(envelope_type),
+              rPresets(25, 60, 60, 100, 60, 10, 80, 100, 60, 60),
+              "Release Time"),
+    rParamZyn(PR_val, rShort("r.val"), rDefaultDepends(envelope_type),
+              rDefault(64), rPresetsAt(5, 40, 40),
+              "Release Value"),
 
     {"Envmode:", rDoc("Envelope variant type"), NULL,
         rBegin;
@@ -199,6 +229,26 @@ void EnvelopeParams::paste(const EnvelopeParams &ep)
 }
 #undef COPY
 
+void EnvelopeParams::init(EnvelopeParams::envelope_type_t etype)
+{
+    switch(etype)
+    {
+        case ad_global_amp_env:    ADSRinit_dB(0, 40, 127, 25); break;
+        case ad_global_freq_env:   ASRinit(64, 50, 64, 60); break;
+        case ad_global_filter_env: ADSRinit_filter(64, 40, 64, 70, 60, 64);
+            break;
+        case ad_voice_amp_env:     ADSRinit_dB(0, 100, 127, 100); break;
+        case ad_voice_freq_env:    ASRinit(30, 40, 64, 60); break;
+        case ad_voice_filter_env:  ADSRinit_filter(90, 70, 40, 70, 10, 40);
+            break;
+        case ad_voice_fm_freq_env: ASRinit(20, 90, 40, 80); break;
+        case ad_voice_fm_amp_env:  ADSRinit(80, 90, 127, 100); break;
+        case sub_freq_env:         ASRinit(30, 50, 64, 60); break;
+        case sub_bandwidth_env:    ASRinit_bw(100, 70, 64, 60); break;
+    };
+    envelope_type = etype;
+}
+
 float EnvelopeParams::getdt(char i) const
 {
     return EnvelopeParams::dt(Penvdt[(int)i]);
@@ -301,16 +351,6 @@ void EnvelopeParams::converttofree()
 {
     switch(Envmode) {
         case 1:
-            Penvpoints  = 4;
-            Penvsustain = 2;
-            Penvval[0]  = 0;
-            Penvdt[1]   = PA_dt;
-            Penvval[1]  = 127;
-            Penvdt[2]   = PD_dt;
-            Penvval[2]  = PS_val;
-            Penvdt[3]   = PR_dt;
-            Penvval[3]  = 0;
-            break;
         case 2:
             Penvpoints  = 4;
             Penvsustain = 2;
@@ -323,6 +363,7 @@ void EnvelopeParams::converttofree()
             Penvval[3]  = 0;
             break;
         case 3:
+        case 5:
             Penvpoints  = 3;
             Penvsustain = 1;
             Penvval[0]  = PA_val;
@@ -341,15 +382,6 @@ void EnvelopeParams::converttofree()
             Penvval[2]  = 64;
             Penvdt[3]   = PR_dt;
             Penvval[3]  = PR_val;
-            break;
-        case 5:
-            Penvpoints  = 3;
-            Penvsustain = 1;
-            Penvval[0]  = PA_val;
-            Penvdt[1]   = PA_dt;
-            Penvval[1]  = 64;
-            Penvdt[2]   = PR_dt;
-            Penvval[2]  = PR_val;
             break;
     }
 }
@@ -410,7 +442,7 @@ public:
             //   f^{-1} o (env_dB2rap^{-1}) o dB2rap o f
             // from the xml file. This results in the following formula:
             ? roundf(127.0f * (0.5f *
-			       log10f( 0.01f + 0.99f *
+                   log10f( 0.01f + 0.99f *
                                        powf(100, input/127.0f - 1))
                                + 1))
             : input;
@@ -481,4 +513,6 @@ void EnvelopeParams::store2defaults()
     DD_val = PD_val;
     DS_val = PS_val;
     DR_val = PR_val;
+}
+
 }

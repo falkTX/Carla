@@ -18,6 +18,8 @@
 
 #include "Engine.h"
 
+namespace zyncarla {
+
 /**This class is inherited by all the Midi input classes*/
 class MidiIn:public virtual Engine
 {
@@ -30,5 +32,7 @@ class MidiIn:public virtual Engine
                                 unsigned char num,
                                 unsigned char value);
 };
+
+}
 
 #endif

@@ -17,6 +17,8 @@
 //Expected upper bound of synths given that max polyphony is hit
 #define EXPECTED_USAGE 3
 
+namespace zyncarla {
+
 struct LegatoParams;
 class NotePool
 {
@@ -145,3 +147,5 @@ class NotePool
 
         void dump(void);
 };
+
+}

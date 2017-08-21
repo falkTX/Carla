@@ -17,6 +17,8 @@
 #include "Effect.h"
 #include "../Misc/Stereo.h"
 
+namespace zyncarla {
+
 /**Echo Effect*/
 class Echo:public Effect
 {
@@ -93,5 +95,7 @@ class Echo:public Effect
         Stereo<int> delta;
         Stereo<int> ndelta;
 };
+
+}
 
 #endif

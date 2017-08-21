@@ -19,6 +19,8 @@
 #define REV_COMBS 8
 #define REV_APS 4
 
+namespace zyncarla {
+
 /**Creates Reverberation Effects*/
 class Reverb:public Effect
 {
@@ -82,5 +84,7 @@ class Reverb:public Effect
         float *idelay;
         class AnalogFilter * lpf, *hpf; //filters
 };
+
+}
 
 #endif

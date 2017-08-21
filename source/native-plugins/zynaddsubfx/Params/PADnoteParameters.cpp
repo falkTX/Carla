@@ -25,6 +25,7 @@
 #include <rtosc/port-sugar.h>
 using namespace rtosc;
 
+namespace zyncarla {
 
 #define rObject PADnoteParameters
 #undef rChangeCb
@@ -40,33 +41,46 @@ static const rtosc::Ports realtime_ports =
     rRecurp(GlobalFilter, "Post Filter"),
 
     //Volume
-    rToggle(PStereo,    rShort("stereo"), "Stereo/Mono Mode"),
-    rParamZyn(PPanning, rShort("panning"), "Left Right Panning"),
-    rParamZyn(PVolume,  rShort("vol"), "Synth Volume"),
-    rParamZyn(PAmpVelocityScaleFunction, rShort("sense"), "Amplitude Velocity Sensing function"),
+    rToggle(PStereo,    rShort("stereo"), rDefault(true), "Stereo/Mono Mode"),
+    rParamZyn(PPanning, rShort("panning"), rDefault(64), "Left Right Panning"),
+    rParamZyn(PVolume,  rShort("vol"), rDefault(90), "Synth Volume"),
+    rParamZyn(PAmpVelocityScaleFunction, rShort("sense"), rDefault(64),
+        "Amplitude Velocity Sensing function"),
 
-    rParamZyn(Fadein_adjustment, rShort("a.pop."), "Adjustment for anti-pop strategy."),
+    rParamZyn(Fadein_adjustment, rShort("a.pop."),
+        rDefault(FADEIN_ADJUSTMENT_SCALE), "Adjustment for anti-pop strategy."),
 
     //Punch
-    rParamZyn(PPunchStrength, rShort("strength"), "Punch Strength"),
-    rParamZyn(PPunchTime,     rShort("time"),     "Length of punch"),
-    rParamZyn(PPunchStretch,  rShort("stretch"), "How Punch changes with note frequency"),
-    rParamZyn(PPunchVelocitySensing, rShort("sense"), "Punch Velocity control"),
+    rParamZyn(PPunchStrength, rShort("strength"), rDefault(0),
+        "Punch Strength"),
+    rParamZyn(PPunchTime,     rShort("time"),     rDefault(60),
+        "Length of punch"),
+    rParamZyn(PPunchStretch,  rShort("stretch"), rDefault(64),
+        "How Punch changes with note frequency"),
+    rParamZyn(PPunchVelocitySensing, rShort("sense"), rDefault(72),
+        "Punch Velocity control"),
 
     //Filter
-    rParamZyn(PFilterVelocityScale,         rShort("scale"), "Filter Velocity Magnitude"),
-    rParamZyn(PFilterVelocityScaleFunction, rShort("sense"), "Filter Velocity Function Shape"),
+    rParamZyn(PFilterVelocityScale,         rShort("scale"), rDefault(64),
+        "Filter Velocity Magnitude"),
+    rParamZyn(PFilterVelocityScaleFunction, rShort("sense"), rDefault(64),
+        "Filter Velocity Function Shape"),
 
     //Freq
-    rToggle(Pfixedfreq,     rShort("fixed"),  "Base frequency fixed frequency enable"),
-    rParamZyn(PfixedfreqET, rShort("f.ET"),   "Equal temeperate control for fixed frequency operation"),
-    rParamZyn(PBendAdjust,          "Pitch bend adjustment"),
-    rParamZyn(POffsetHz,    rShort("offset"), "Voice constant offset"),
-    rParamI(PDetune,        rShort("fine"), rLinear(0, 16383), "Fine Detune"),
-    rParamI(PCoarseDetune,  rShort("coarse"), "Coarse Detune"),
+    rToggle(Pfixedfreq,     rShort("fixed"),  rDefault(false),
+        "Base frequency fixed frequency enable"),
+    rParamZyn(PfixedfreqET, rShort("f.ET"),   rDefault(0),
+        "Equal temeperate control for fixed frequency operation"),
+    rParamZyn(PBendAdjust,          rDefault(88),
+        "Pitch bend adjustment"),
+    rParamZyn(POffsetHz,    rShort("offset"), rDefault(64),
+        "Voice constant offset"),
+    rParamI(PDetune,        rShort("fine"), rLinear(0, 16383), rDefault(8192),
+        "Fine Detune"),
+    rParamI(PCoarseDetune,  rShort("coarse"), rDefault(0), "Coarse Detune"),
     rParamZyn(PDetuneType,  rShort("type"),
             rOptions(L35cents, L10cents, E100cents, E1200cents),
-            "Magnitude of Detune"),
+            rDefault(L10cents), "Magnitude of Detune"),
 
     {"sample#64:ifb", rProp(internal) rDoc("Nothing to see here"), 0,
         [](const char *m, rtosc::RtData &d)
@@ -141,58 +155,78 @@ static const rtosc::Ports non_realtime_ports =
     rRecurp(resonance, "Resonance"),
 
     //Harmonic Shape
-    rOption(Pmode, rMap(min, 0), rMap(max, 2), rShort("distribution"), rOptions(bandwidth,discrete,continious),
+    rOption(Pmode, rMap(min, 0), rMap(max, 2), rShort("distribution"),
+            rOptions(bandwidth,discrete,continious),
+            rDefault(bandwidth),
             "Harmonic Distribution Model"),
-    rOption(Php.base.type, rOptions(Gaussian, Rectanglar, Double Exponential), rShort("shape"),
+    rOption(Php.base.type, rOptions(Gaussian, Rectanglar, Double Exponential),
+            rShort("shape"), rDefault(Gaussian),
             "Harmonic profile shape"),
-    rParamZyn(Php.base.par1, rShort("warp"),       "Harmonic shape distribution parameter"),
-    rParamZyn(Php.freqmult,  rShort("clone"),     "Frequency multiplier on distribution"),
-    rParamZyn(Php.modulator.par1, rShort("p1"),   "Distribution modulator parameter"),
-    rParamZyn(Php.modulator.freq, rShort("freq"), "Frequency of modulator parameter"),
-    rParamZyn(Php.width,     rShort("bandwidth"), "Width of base harmonic"),
-    rOption(Php.amp.mode,    rShort("mode"),      rOptions(Sum, Mult, Div1, Div2),
+    rParamZyn(Php.base.par1, rShort("warp"),      rDefault(80),
+              "Harmonic shape distribution parameter"),
+    rParamZyn(Php.freqmult,  rShort("clone"),     rDefault(0),
+              "Frequency multiplier on distribution"),
+    rParamZyn(Php.modulator.par1, rShort("p1"),   rDefault(0),
+              "Distribution modulator parameter"),
+    rParamZyn(Php.modulator.freq, rShort("freq"), rDefault(30),
+              "Frequency of modulator parameter"),
+    rParamZyn(Php.width,     rShort("bandwidth"), rDefault(127),
+              "Width of base harmonic"),
+    rOption(Php.amp.mode,    rShort("mode"),
+            rOptions(Sum, Mult, Div1, Div2), rDefault(Sum),
             "Amplitude harmonic multiplier type"),
 
     //Harmonic Modulation
     rOption(Php.amp.type, rShort("mult"), rOptions(Off, Gauss, Sine, Flat),
-            "Type of amplitude multipler"),
-    rParamZyn(Php.amp.par1, rShort("p1"),   "Amplitude multiplier parameter"),
-    rParamZyn(Php.amp.par2, rShort("p2"),   "Amplitude multiplier parameter"),
-    rToggle(Php.autoscale,  rShort("auto"), "Autoscaling Harmonics"),
+            rDefault(Off), "Type of amplitude multipler"),
+    rParamZyn(Php.amp.par1, rShort("p1"),   rDefault(80),
+        "Amplitude multiplier parameter"),
+    rParamZyn(Php.amp.par2, rShort("p2"),   rDefault(60),
+        "Amplitude multiplier parameter"),
+    rToggle(Php.autoscale,  rShort("auto"), rDefault(true),
+        "Autoscaling Harmonics"),
     rOption(Php.onehalf, rShort("side"),
-            rOptions(Full, Upper Half, Lower Half),
+            rOptions(Full, Upper Half, Lower Half), rDefault(Full)
             "Harmonic cutoff model"),
 
     //Harmonic Bandwidth
     rOption(Pbwscale, rShort("bw scale"),
             rOptions(Normal,
-              EqualHz, Quater,
+              EqualHz, Quarter,
               Half, 75%, 150%,
               Double, Inv. Half),
+            rDefault(Normal),
             "Bandwidth scaling"),
 
     //Harmonic Position Modulation
     rOption(Phrpos.type,
             rOptions(Harmonic, ShiftU, ShiftL, PowerU, PowerL, Sine,
                 Power, Shift),
+            rDefault(Harmonic)
             "Harmonic Overtone shifting mode"),
-    rParamI(Phrpos.par1, rShort("p1"), rLinear(0,255), "Harmonic position parameter"),
-    rParamI(Phrpos.par2, rShort("p2"), rLinear(0,255), "Harmonic position parameter"),
-    rParamI(Phrpos.par3, rShort("force h."), rLinear(0,255), "Harmonic position parameter"),
+    rParamI(Phrpos.par1, rShort("p1"), rLinear(0,255), rDefault(0),
+        "Harmonic position parameter"),
+    rParamI(Phrpos.par2, rShort("p2"), rLinear(0,255), rDefault(0),
+        "Harmonic position parameter"),
+    rParamI(Phrpos.par3, rShort("force h."), rLinear(0,255), rDefault(0),
+        "Harmonic position parameter"),
 
     //Quality
     rOption(Pquality.samplesize, rShort("quality"),
             rOptions(16k (Tiny), 32k, 64k (Small), 128k,
               256k (Normal), 512k, 1M (Big)),
+            rDefaultId(128k),
             "Size of each wavetable element"),
     rOption(Pquality.basenote, rShort("basenote"),
             rOptions(C-2, G-2, C-3, G-3, C-4,
                 G-4, C-5, G-5, G-6,),
+            rDefaultId(C-4),
             "Base note for wavetable"),
     rOption(Pquality.smpoct, rShort("smp/oct"),
             rOptions(0.5, 1, 2, 3, 4, 6, 12),
+            rDefault(2),
             "Samples per octave"),
-    rParamI(Pquality.oct, rShort("octaves"), rLinear(0,7),
+    rParamI(Pquality.oct, rShort("octaves"), rLinear(0,7), rDefault(3),
             "Number of octaves to sample (above the first sample"),
 
     {"Pbandwidth::i", rShort("bandwidth") rProp(parameter) rLinear(0,1000) rDoc("Bandwith Of Harmonics"), NULL,
@@ -253,8 +287,8 @@ static const rtosc::Ports non_realtime_ports =
 };
 #undef rChangeCb
 
-const rtosc::Ports &PADnoteParameters::non_realtime_ports = ::non_realtime_ports;
-const rtosc::Ports &PADnoteParameters::realtime_ports     = ::realtime_ports;
+const rtosc::Ports &PADnoteParameters::non_realtime_ports = zyncarla::non_realtime_ports;
+const rtosc::Ports &PADnoteParameters::realtime_ports     = zyncarla::realtime_ports;
 
 
 const rtosc::MergePorts PADnoteParameters::ports =
@@ -277,16 +311,16 @@ PADnoteParameters::PADnoteParameters(const SYNTH_T &synth_, FFTwrapper *fft_,
     oscilgen->ADvsPAD = true;
 
     FreqEnvelope = new EnvelopeParams(0, 0, time_);
-    FreqEnvelope->ASRinit(64, 50, 64, 60);
+    FreqEnvelope->init(EnvelopeParams::ad_global_freq_env);
     FreqLfo = new LFOParams(70, 0, 64, 0, 0, 0, 0, 0, time_);
 
     AmpEnvelope = new EnvelopeParams(64, 1, time_);
-    AmpEnvelope->ADSRinit_dB(0, 40, 127, 25);
+    AmpEnvelope->init(EnvelopeParams::ad_global_amp_env);
     AmpLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 1, time_);
 
     GlobalFilter   = new FilterParams(2, 94, 40, time_);
     FilterEnvelope = new EnvelopeParams(0, 1, time_);
-    FilterEnvelope->ADSRinit_filter(64, 40, 64, 70, 60, 64);
+    FilterEnvelope->init(EnvelopeParams::ad_global_filter_env);
     FilterLfo = new LFOParams(80, 0, 64, 0, 0, 0, 0, 2, time_);
 
     for(int i = 0; i < PAD_MAX_SAMPLES; ++i)
@@ -848,6 +882,9 @@ void PADnoteParameters::sampleGenerator(PADnoteParameters::callback cb,
     if(samplemax == 0)
         samplemax = 1;
 
+    if(samplemax > PAD_MAX_SAMPLES)
+        samplemax = PAD_MAX_SAMPLES;
+
     //prepare a BIG FFT
     FFTwrapper *fft      = new FFTwrapper(samplesize);
     fft_t      *fftfreqs = new fft_t[samplesize / 2];
@@ -1241,3 +1278,5 @@ void PADnoteParameters::pasteRT(PADnoteParameters &x)
     }
 }
 #undef COPY
+
+}

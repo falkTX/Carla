@@ -107,7 +107,7 @@ class Fl_Osc_Tree: public Fl_Tree
                 const char *name  = port.name;
                 if(!index(name, '/'))//only accept objects that will have subports
                     continue;
-                if(rtosc_match(name, s.c_str())) {
+                if(rtosc_match(name, s.c_str(), NULL)) {
                     return subtree_lookup(port.ports,
                             s.substr(index(s.c_str(), '/')-s.c_str()+1));
                 }

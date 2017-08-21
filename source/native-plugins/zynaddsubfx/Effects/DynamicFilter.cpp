@@ -20,6 +20,8 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
+namespace zyncarla {
+
 #define rObject DynamicFilter
 #define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
@@ -34,16 +36,24 @@ rtosc::Ports DynamicFilter::ports = {
                   else
                       d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
-    //Pvolume/Ppanning are common
-    rEffPar(Pfreq,      2, rShort("freq"),      "Effect Frequency"),
-    rEffPar(Pfreqrnd,   3, rShort("rand"),      "Frequency Randomness"),
-    rEffPar(PLFOtype,   4, rShort("shape"),
-          rOptions(sin, tri), "LFO Shape"),
-    rEffPar(PStereo,    5, rShort("stereo"),    "Stereo Mode"),
-    rEffPar(Pdepth,     6, rShort("depth"),     "LFO Depth"),
-    rEffPar(Pampsns,    7, rShort("sense"),     "how the filter varies according to the input amplitude"),
-    rEffPar(Pampsnsinv, 8, rShort("sns.inv"),   "Sense Inversion"),
-    rEffPar(Pampsmooth, 9, rShort("smooth"),    "how smooth the input amplitude changes the filter"),
+    rEffParVol(rDefault(110), rPreset(2, 110), rPreset(4, 127)),
+    rEffParPan(),
+    rEffPar(Pfreq,      2, rShort("freq"),   rPresets(80, 70, 30, 80, 50),
+            "Effect Frequency"),
+    rEffPar(Pfreqrnd,   3, rShort("rand"),   rDefault(0),
+            "Frequency Randomness"),
+    rEffPar(PLFOtype,   4, rShort("shape"),  rOptions(sin, tri), rDefault(sin),
+            "LFO Shape"),
+    rEffPar(PStereo,    5, rShort("stereo"), rPresets(64, 80, 50, 64, 96),
+            "Stereo Mode"),
+    rEffPar(Pdepth,     6, rShort("depth"),  rPresets(0, 70, 80, 0, 64),
+            "LFO Depth"),
+    rEffPar(Pampsns,    7, rShort("sense"),
+            rPreset(0, 90) rPreset(3, 64) rDefault(0),
+            "how the filter varies according to the input amplitude"),
+    rEffPar(Pampsnsinv, 8, rShort("sns.inv"), rDefault(0),  "Sense Inversion"),
+    rEffPar(Pampsmooth, 9, rShort("smooth"),  rDefault(60),
+            "how smooth the input amplitude changes the filter"),
 };
 #undef rBegin
 #undef rEnd
@@ -350,4 +360,6 @@ unsigned char DynamicFilter::getpar(int npar) const
         case 9:  return Pampsmooth;
         default: return 0;
     }
+}
+
 }

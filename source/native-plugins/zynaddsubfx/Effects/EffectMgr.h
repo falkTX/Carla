@@ -16,13 +16,15 @@
 
 #include <pthread.h>
 
+#include "../Params/FilterParams.h"
+#include "../Params/Presets.h"
+
+namespace zyncarla {
+
 class Effect;
 class FilterParams;
 class XMLwrapper;
 class Allocator;
-
-#include "../Params/FilterParams.h"
-#include "../Params/Presets.h"
 
 /** Effect manager, an interface between the program and effects */
 class EffectMgr:public Presets
@@ -75,11 +77,37 @@ class EffectMgr:public Presets
 
         //Parameters Prior to initialization
         char preset;
+
+        /**
+         * When loading an effect from XML the child effect cannot be loaded
+         * directly as it would require access to the realtime memory pool,
+         * which cannot be done outside of the realtime thread.
+         * Therefore, parameters are loaded to this array which can then be used
+         * to construct the full effect (via init()) once the object is in the
+         * realtime context.
+         *
+         * Additionally this structure is used in the case of pasting effects as
+         * pasted effect object are *not* fully initialized when they're put on
+         * the middleware -> backend ringbuffer, but settings has the values
+         * loaded from the XML serialization.
+         * The settings values can be pasted once they're on the realtime thread
+         * and then they can be applied.
+         *
+         * The requirement that the realtime memory pool is used to create the
+         * effect is in place as it is possible to change the effect type in the
+         * realtime thread and thus the new effect would draw from the realtime
+         * memory pool and the old object would be expected to be freed to the
+         * realtime memory pool.
+         *
+         * See also: PresetExtractor.cpp
+         */
         char settings[128];
 
         bool dryonly;
         Allocator &memory;
         const SYNTH_T &synth;
 };
+
+}
 
 #endif

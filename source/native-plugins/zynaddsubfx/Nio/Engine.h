@@ -14,6 +14,9 @@
 #ifndef ENGINE_H
 #define ENGINE_H
 #include <string>
+
+namespace zyncarla {
+
 /**Marker for input/output driver*/
 class Engine
 {
@@ -29,4 +32,7 @@ class Engine
 
         std::string name;
 };
+
+}
+
 #endif

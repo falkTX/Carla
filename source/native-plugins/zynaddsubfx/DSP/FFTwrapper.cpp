@@ -17,6 +17,8 @@
 #include <pthread.h>
 #include "FFTwrapper.h"
 
+namespace zyncarla {
+
 static pthread_mutex_t *mutex = NULL;
 
 FFTwrapper::FFTwrapper(int fftsize_)
@@ -90,4 +92,6 @@ void FFT_cleanup()
     pthread_mutex_destroy(mutex);
     delete mutex;
     mutex = NULL;
+}
+
 }

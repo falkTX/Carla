@@ -20,6 +20,8 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
+namespace zyncarla {
+
 #define rObject Reverb
 #define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
@@ -37,18 +39,38 @@ rtosc::Ports Reverb::ports = {
                   else
                       d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
-    //Pvolume/Ppanning are common
-    rEffPar(Ptime,    2, rShort("time"),     "Length of Reverb"),
-    rEffPar(Pidelay,  3, rShort("i.time"),   "Delay for first impulse"),
-    rEffPar(Pidelayfb,4, rShort("i.fb"),     "Feedback for first impulse"),
-    rEffPar(Plpf,     7, rShort("lpf"),      "Low pass filter"),
-    rEffPar(Phpf,     8, rShort("hpf"),      "High pass filter"),
-    rEffPar(Plohidamp,9, rShort("damp"),     "Dampening"),
+    rEffParVol(rDefault(90), rPresets(80, 80, 80),
+               rPresetsAt(5, 100, 100, 110, 85, 95)),
+    rEffParPan(rPreset(8, 80)),
+    rEffPar(Ptime,    2, rShort("time"),
+            rPresets(63, 69, 69, 51, 53, 33, 21, 14, 84, 26, 40, 93, 111),
+            "Length of Reverb"),
+    rEffPar(Pidelay,  3, rShort("i.time"),
+            rPresets(24, 35, 24, 10, 20, 0, 26, 0, 20, 60, 88, 15, 30),
+            "Delay for first impulse"),
+    rEffPar(Pidelayfb,4, rShort("i.fb"), rPresetsAt(8, 42, 71, 71), rDefault(0),
+            "Feedback for first impulse"),
+    rEffPar(Plpf,     7, rShort("lpf"),
+            rPreset(1, 85), rPresetsAt(62, 127, 51, 114, 114, 114),
+            rDefault(127), "Low pass filter"),
+    rEffPar(Phpf,     8, rShort("hpf"),
+            rPresets(5), rPresetsAt(2, 75, 21, 75), rPreset(7, 50),
+            rPreset(12, 90), rDefault(0), "High pass filter"),
+    rEffPar(Plohidamp,9, rShort("damp"), rDefault(0),
+            rPresets(83, 71, 78, 78, 71, 106, 77, 71, 78, 64, 88, 77, 74)
+            "Dampening"),
     //Todo make this a selector
-    rEffPar(Ptype,    10,rShort("type"),
-            rOptions(Random, Freeverb, Bandwidth), "Type"),
-    rEffPar(Proomsize,11,rShort("size"),     "Room Size"),
-    rEffPar(Pbandwidth,12,rShort("bw"),      "Bandwidth"),
+    rEffPar(Ptype,    10, rShort("type"),
+            rOptions(Random, Freeverb, Bandwidth),
+            rPresets(Freeverb, Random, Freeverb, Freeverb, Freeverb, Random,
+                     Freeverb, Random, Freeverb, Freeverb, Freeverb, Random,
+                     Freeverb)
+            rDefault(Random), "Type"),
+    rEffPar(Proomsize,11,rShort("size"),
+            rPreset(2, 85), rPresetsAt(5, 30, 45, 25, 105),
+            rPresetsAt(11, 95, 80), rDefault(64),
+            "Room Size"),
+    rEffPar(Pbandwidth,12,rShort("bw"), rDefault(20), "Bandwidth"),
 };
 #undef rBegin
 #undef rEnd
@@ -215,7 +237,11 @@ void Reverb::setvolume(unsigned char _Pvolume)
 {
     Pvolume = _Pvolume;
     if(!insertion) {
-        outvolume = powf(0.01f, (1.0f - Pvolume / 127.0f)) * 4.0f;
+        if (Pvolume == 0) {
+            outvolume = 0.0f;
+        } else {
+            outvolume = powf(0.01f, (1.0f - Pvolume / 127.0f)) * 4.0f;
+        }
         volume    = 1.0f;
     }
     else {
@@ -511,4 +537,6 @@ unsigned char Reverb::getpar(int npar) const
         case 12: return Pbandwidth;
         default: return 0;
     }
+}
+
 }

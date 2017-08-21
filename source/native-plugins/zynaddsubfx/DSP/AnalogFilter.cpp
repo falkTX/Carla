@@ -20,6 +20,8 @@
 #include "../Misc/Util.h"
 #include "AnalogFilter.h"
 
+namespace zyncarla {
+
 AnalogFilter::AnalogFilter(unsigned char Ftype,
                            float Ffreq,
                            float Fq,
@@ -422,4 +424,6 @@ float AnalogFilter::H(float freq)
     }
     h = h / (x * x + y * y);
     return powf(h, (stages + 1.0f) / 2.0f);
+}
+
 }

@@ -22,6 +22,8 @@
 #include "../Containers/ScratchString.h"
 #include "../Misc/Util.h"
 
+namespace zyncarla {
+
 PADnote::PADnote(const PADnoteParameters *parameters,
                  SynthParams pars, const int& interpolation, WatchManager *wm,
                  const char *prefix)
@@ -445,4 +447,6 @@ void PADnote::releasekey()
     NoteGlobalPar.FreqEnvelope->releasekey();
     NoteGlobalPar.FilterEnvelope->releasekey();
     NoteGlobalPar.AmpEnvelope->releasekey();
+}
+
 }

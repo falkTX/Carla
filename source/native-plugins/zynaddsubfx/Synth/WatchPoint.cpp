@@ -23,6 +23,7 @@
 #include <cstring>
 #include <rtosc/thread-link.h>
 
+namespace zyncarla {
 
 WatchPoint::WatchPoint(WatchManager *ref, const char *prefix, const char *id)
     :active(false), samples_left(0), reference(ref)
@@ -165,4 +166,6 @@ void WatchManager::satisfy(const char *id, float *f, int n)
     //FIXME buffer overflow
     for(int i=0; i<n; ++i)
         data_list[selected][sample_list[selected]++] = f[i];
+}
+
 }

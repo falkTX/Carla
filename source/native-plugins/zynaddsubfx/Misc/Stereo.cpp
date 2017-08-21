@@ -11,6 +11,8 @@
   of the License, or (at your option) any later version.
 */
 
+namespace zyncarla {
+
 template<class T>
 Stereo<T>::Stereo(const T &left, const T &right)
     :l(left), r(right)
@@ -27,4 +29,6 @@ Stereo<T> &Stereo<T>::operator=(const Stereo<T> &nstr)
     l = nstr.l;
     r = nstr.r;
     return *this;
+}
+
 }

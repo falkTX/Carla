@@ -17,6 +17,8 @@
 #include "SynthNote.h"
 #include "../globals.h"
 
+namespace zyncarla {
+
 class SUBnote:public SynthNote
 {
     public:
@@ -103,5 +105,7 @@ class SUBnote:public SynthNote
         float velocity;
         WatchManager *wm;
 };
+
+}
 
 #endif

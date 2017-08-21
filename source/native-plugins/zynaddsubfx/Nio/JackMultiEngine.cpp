@@ -26,7 +26,10 @@
 
 #include "JackMultiEngine.h"
 
-extern MiddleWare *middleware;
+extern zyncarla::MiddleWare *middleware;
+
+namespace zyncarla {
+
 using std::string;
 
 struct jack_multi
@@ -169,4 +172,6 @@ void JackMultiEngine::Stop()
     impl->client = NULL;
 
     impl->running = false;
+}
+
 }

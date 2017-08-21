@@ -14,6 +14,8 @@
 #ifndef EFFECT_LFO_H
 #define EFFECT_LFO_H
 
+namespace zyncarla {
+
 /**LFO for some of the Effect objects
  * \todo see if this should inherit LFO*/
 class EffectLFO
@@ -40,5 +42,7 @@ class EffectLFO
         float samplerate_f;
         float buffersize_f;
 };
+
+}
 
 #endif

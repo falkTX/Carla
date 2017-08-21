@@ -14,6 +14,10 @@
 #include <cstdarg>
 #include <string>
 
+class Fl_Osc_Interface;
+
+namespace zyncarla {
+
 struct SYNTH_T;
 class  Master;
 class PresetsStore;
@@ -22,7 +26,7 @@ class PresetsStore;
 class MiddleWare
 {
     public:
-        MiddleWare(SYNTH_T synth, class CarlaConfig *config,
+        MiddleWare(SYNTH_T synth, class Config *config,
                    int preferred_port = -1);
         ~MiddleWare(void);
         void updateResources(Master *m);
@@ -41,7 +45,7 @@ class MiddleWare
         void removeAutoSave(void);
 
         //return  UI interface
-        class Fl_Osc_Interface *spawnUiApi(void);
+        Fl_Osc_Interface *spawnUiApi(void);
         //Set callback to push UI events to
         void setUiCallback(void(*cb)(void*,const char *),void *ui);
         //Set callback to run while busy
@@ -79,5 +83,8 @@ class MiddleWare
         const PresetsStore& getPresetsStore() const;
         PresetsStore& getPresetsStore();
     private:
-        class CarlaMiddleWareImpl *impl;
+        class MiddleWareImpl *impl;
 };
+
+}
+

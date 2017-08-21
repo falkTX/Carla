@@ -15,14 +15,16 @@
 #include <iostream>
 #include <cmath>
 
-using namespace std;
-
 #include "../Misc/Util.h"
 #include "../Misc/Config.h"
 #include "InMgr.h"
 #include "AlsaEngine.h"
 #include "Compressor.h"
 #include "Nio.h"
+
+using namespace std;
+
+namespace zyncarla {
 
 AlsaEngine::AlsaEngine(const SYNTH_T &synth)
     :AudioOut(synth)
@@ -396,4 +398,6 @@ void *AlsaEngine::processAudio()
         }
     }
     return NULL;
+}
+
 }

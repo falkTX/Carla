@@ -17,6 +17,8 @@
 #include "../globals.h"
 #include "WatchPoint.h"
 
+namespace zyncarla {
+
 /**Implementation of a general Envelope*/
 class Envelope
 {
@@ -54,5 +56,6 @@ class Envelope
         VecWatchPoint watchOut;
 };
 
+}
 
 #endif

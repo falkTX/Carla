@@ -13,6 +13,8 @@
 #include "../globals.h"
 #include "../Misc/Time.h"
 
+namespace zyncarla {
+
 //Modulated instance of one of the filters in src/DSP/
 //Supports stereo modes
 class ModFilter
@@ -64,3 +66,5 @@ class ModFilter
         Envelope     *env;  //center freq envelope
         LFO          *lfo;  //center freq lfo
 };
+
+}

@@ -15,6 +15,8 @@
 #include "../globals.h"
 #include "InMgr.h"
 
+namespace zyncarla {
+
 void MidiIn::midiProcess(unsigned char head,
                          unsigned char num,
                          unsigned char value)
@@ -65,4 +67,6 @@ void MidiIn::midiProcess(unsigned char head,
             InMgr::getInstance().putEvent(ev);
             break;
     }
+}
+
 }

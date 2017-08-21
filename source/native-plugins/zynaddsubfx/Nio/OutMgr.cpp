@@ -20,8 +20,9 @@
 #include "WavEngine.h"
 #include "../Misc/Master.h"
 #include "../Misc/Util.h" //for set_realtime()
-
 using namespace std;
+
+namespace zyncarla {
 
 OutMgr &OutMgr::getInstance(const SYNTH_T *synth)
 {
@@ -198,4 +199,6 @@ void OutMgr::removeStaleSmps()
         priBuffCurrent = priBuf;
 
     stales = 0;
+}
+
 }

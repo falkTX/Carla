@@ -1,6 +1,8 @@
 #pragma once
 #define SCRATCH_SIZE 128
 
+namespace zyncarla {
+
 //Fixed Size String Substitute
 struct ScratchString
 {
@@ -15,3 +17,6 @@ struct ScratchString
 
     char c_str[SCRATCH_SIZE];
 };
+
+}
+

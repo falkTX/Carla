@@ -15,6 +15,9 @@
 
 #define INVALID ((int32_t)0xffffffff)
 #define MAX     ((int32_t)0x7fffffff)
+
+namespace zyncarla {
+
 QueueListItem::QueueListItem(void)
     :memory(0), size(0)
 {
@@ -113,4 +116,6 @@ MultiQueue::~MultiQueue(void)
     for(int i=0; i<32; ++i)
         delete [] pool[i].memory;
     delete [] pool;
+}
+
 }

@@ -34,6 +34,8 @@
 
 using namespace std;
 
+namespace zyncarla {
+
 /*
  * The following statemachine converts MIDI commands to USB MIDI
  * packets, derived from Linux's usbmidi.c, which was written by
@@ -470,4 +472,6 @@ void *OssEngine::midiThreadCb()
 done:
     pthread_exit(NULL);
     return NULL;
+}
+
 }

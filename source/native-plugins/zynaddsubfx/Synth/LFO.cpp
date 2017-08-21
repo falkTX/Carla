@@ -19,6 +19,8 @@
 #include <cstdio>
 #include <cmath>
 
+namespace zyncarla {
+
 LFO::LFO(const LFOParams &lfopars, float basefreq, const AbsTime &t, WatchManager *m,
         const char *watch_prefix)
     :first_half(-1),
@@ -190,4 +192,6 @@ void LFO::computeNextFreqRnd()
         return;
     incrnd     = nextincrnd;
     nextincrnd = powf(0.5f, lfofreqrnd) + RND * (powf(2.0f, lfofreqrnd) - 1.0f);
+}
+
 }

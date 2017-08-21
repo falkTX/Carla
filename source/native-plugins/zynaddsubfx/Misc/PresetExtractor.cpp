@@ -31,8 +31,10 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 #include <string>
-using std::string;
 
+namespace zyncarla {
+
+using std::string;
 static void dummy(const char *, rtosc::RtData&) {}
 
 const rtosc::Ports real_preset_ports =
@@ -490,4 +492,6 @@ bool presetCheckClipboardType()
 {
     printf("PresetCheckClipboardType()<UNIMPLEMENTED>\n");
     return true;
+}
+
 }

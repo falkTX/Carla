@@ -12,8 +12,12 @@
 */
 #include "Engine.h"
 
+namespace zyncarla {
+
 Engine::Engine()
 {}
 
 Engine::~Engine()
 {}
+
+}

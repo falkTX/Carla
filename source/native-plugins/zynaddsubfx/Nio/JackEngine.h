@@ -23,6 +23,8 @@
 #include "MidiIn.h"
 #include "AudioOut.h"
 
+namespace zyncarla {
+
 typedef jack_default_audio_sample_t jsample_t;
 
 class JackEngine:public AudioOut, MidiIn
@@ -82,5 +84,7 @@ class JackEngine:public AudioOut, MidiIn
 
         void handleMidi(unsigned long frames);
 };
+
+}
 
 #endif

@@ -18,6 +18,8 @@
 #include "../Misc/Time.h"
 #include "WatchPoint.h"
 
+namespace zyncarla {
+
 /**Class for creating Low Frequency Oscillators*/
 class LFO
 {
@@ -69,5 +71,7 @@ class LFO
 
         void computeNextFreqRnd(void);
 };
+
+}
 
 #endif

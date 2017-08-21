@@ -18,6 +18,8 @@
 #include <stdint.h>
 #include "../globals.h"
 
+namespace zyncarla {
+
 /**(Midi) Controllers implementation*/
 class Controller
 {
@@ -215,5 +217,7 @@ class Controller
     private:
         const SYNTH_T &synth;
 };
+
+}
 
 #endif

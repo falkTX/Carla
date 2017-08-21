@@ -19,6 +19,8 @@
 #include "AudioOut.h"
 #include "MidiIn.h"
 
+namespace zyncarla {
+
 struct OssMidiParse {
         unsigned char *temp_cmd;
         unsigned char temp_0[4];
@@ -94,5 +96,7 @@ class OssEngine:public AudioOut, MidiIn
         
         const char* linux_oss_seq_in_dev;
 };
+
+}
 
 #endif

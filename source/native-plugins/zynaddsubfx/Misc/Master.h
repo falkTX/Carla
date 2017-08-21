@@ -16,7 +16,7 @@
 #define MASTER_H
 #include "../globals.h"
 #include "Microtonal.h"
-#include <rtosc/miditable.h>
+#include <rtosc/automations.h>
 #include <rtosc/ports.h>
 
 #include "Time.h"
@@ -25,6 +25,8 @@
 
 #include "../Params/Controller.h"
 #include "../Synth/WatchPoint.h"
+
+namespace zyncarla {
 
 class Allocator;
 
@@ -42,7 +44,7 @@ class Master
 {
     public:
         /** Constructor TODO make private*/
-        Master(const SYNTH_T &synth, class CarlaConfig *config);
+        Master(const SYNTH_T &synth, class Config *config);
         /** Destructor*/
         ~Master();
 
@@ -57,11 +59,22 @@ class Master
         /**This adds the parameters to the XML data*/
         void add2XML(XMLwrapper& xml);
 
+        static void saveAutomation(XMLwrapper &xml, const rtosc::AutomationMgr &midi);
+        static void loadAutomation(XMLwrapper &xml,       rtosc::AutomationMgr &midi);
+
         void defaults();
 
         /**loads all settings from a XML file
          * @return 0 for ok or -1 if there is an error*/
         int loadXML(const char *filename);
+
+        /**Save all settings to an OSC file (as specified by RT OSC)
+         * @param filename File to save to or NULL (useful for testing)
+         * @return 0 for ok or <0 if there is an error*/
+        int saveOSC(const char *filename);
+        /**loads all settings from an OSC file (as specified by RT OSC)
+         * @return 0 for ok or <0 if there is an error*/
+        int loadOSC(const char *filename);
 
         /**Regenerate PADsynth and other non-RT parameters
          * It is NOT SAFE to call this from a RT context*/
@@ -169,7 +182,7 @@ class Master
         WatchManager watcher;
 
         //Midi Learn
-        rtosc::MidiMapperRT midi;
+        rtosc::AutomationMgr automate;
 
         bool   frozenState;//read-only parameters for threadsafe actions
         Allocator *memory;
@@ -181,8 +194,8 @@ class Master
 
         //Heartbeat for identifying plugin offline modes
         //in units of 10 ms (done s.t. overflow is in 497 days)
-        uint32_t last_beat;
-        uint32_t last_ack;
+        uint32_t last_beat = 0;
+        uint32_t last_ack = 0;
     private:
         float  sysefxvol[NUM_SYS_EFX][NUM_MIDI_PARTS];
         float  sysefxsend[NUM_SYS_EFX][NUM_SYS_EFX];
@@ -197,6 +210,13 @@ class Master
         //Callback When Master changes
         void(*mastercb)(void*,Master*);
         void* mastercb_ptr;
+
+        //Return XML data as string. Must be freed.
+        char* getXMLData();
+        //Used by loadOSC and saveOSC
+        int loadOSCFromStr(const char *filename);
 };
+
+}
 
 #endif

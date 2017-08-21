@@ -18,24 +18,33 @@
 #include "../Misc/XMLwrapper.h"
 #include "Presets.h"
 
+namespace zyncarla {
+
 class EnvelopeParams:public Presets
 {
     public:
+        enum envelope_type_t
+        {
+            ad_global_amp_env,     // ADSRinit_dB(0, 40, 127, 25);
+            ad_global_freq_env,    // ASRinit(64, 50, 64, 60);
+            ad_global_filter_env,  // ADSRinit_filter(64, 40, 64, 70, 60, 64)
+
+            ad_voice_amp_env,      // ADSRinit_dB(0, 100, 127, 100);
+            ad_voice_freq_env,     // ASRinit(30, 40, 64, 60);
+            ad_voice_filter_env,   // ADSRinit_filter(90, 70, 40, 70, 10, 40);
+            ad_voice_fm_freq_env,  // ASRinit(20, 90, 40, 80);
+            ad_voice_fm_amp_env,   // ADSRinit(80, 90, 127, 100)
+            sub_freq_env,          // ASRinit(30, 50, 64, 60);
+            sub_bandwidth_env,     // ASRinit_bw(100, 70, 64, 60)
+        };
+
         EnvelopeParams(unsigned char Penvstretch_=64,
                        unsigned char Pforcedrelease_=0,
                        const AbsTime *time_ = nullptr);
         ~EnvelopeParams();
         void paste(const EnvelopeParams &ep);
-        void ADSRinit(char A_dt, char D_dt, char S_val, char R_dt);
-        void ADSRinit_dB(char A_dt, char D_dt, char S_val, char R_dt);
-        void ASRinit(char A_val, char A_dt, char R_val, char R_dt);
-        void ADSRinit_filter(char A_val,
-                             char A_dt,
-                             char D_val,
-                             char D_dt,
-                             char R_dt,
-                             char R_val);
-        void ASRinit_bw(char A_val, char A_dt, char R_val, char R_dt);
+
+        void init(envelope_type_t etype);
         void converttofree();
 
         void add2XML(XMLwrapper& xml);
@@ -45,6 +54,10 @@ class EnvelopeParams:public Presets
         float getdt(char i) const;
         static float dt(char val);
         static char inv_dt(float val);
+
+        //! @brief defines where it is used and its default settings
+	//! corresponds to envelope_type_t
+        int envelope_type;
 
         /* MIDI Parameters */
         unsigned char Pfreemode; //1 for free mode, 0 otherwise
@@ -76,6 +89,17 @@ class EnvelopeParams:public Presets
         static float env_dB2rap(float db);
 
     private:
+        void ADSRinit(char A_dt, char D_dt, char S_val, char R_dt);
+        void ADSRinit_dB(char A_dt, char D_dt, char S_val, char R_dt);
+        void ASRinit(char A_val, char A_dt, char R_val, char R_dt);
+        void ADSRinit_filter(char A_val,
+                             char A_dt,
+                             char D_val,
+                             char D_dt,
+                             char R_dt,
+                             char R_val);
+        void ASRinit_bw(char A_val, char A_dt, char R_val, char R_dt);
+
         void store2defaults();
 
         /* Default parameters */
@@ -85,5 +109,7 @@ class EnvelopeParams:public Presets
         unsigned char DA_dt, DD_dt, DR_dt,
                       DA_val, DD_val, DS_val, DR_val;
 };
+
+}
 
 #endif

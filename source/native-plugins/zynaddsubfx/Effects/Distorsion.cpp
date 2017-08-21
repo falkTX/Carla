@@ -19,6 +19,8 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
+namespace zyncarla {
+
 #define rObject Distorsion
 #define rBegin [](const char *msg, rtosc::RtData &d) {
 #define rEnd }
@@ -35,21 +37,29 @@ rtosc::Ports Distorsion::ports = {
                   else
                       d.reply(d.loc, "i", o->Ppreset);
                   rEnd},
-    //Pvolume/Ppanning are common
-    rEffPar(Plrcross, 2, rShort("l/r"), "Left/Right Crossover"),
-    rEffPar(Pdrive,   3, rShort("drive"), "Input amplification"),
-    rEffPar(Plevel,   4, rShort("output"), "Output amplification"),
+    rEffParVol(rDefault(127), rPresetsAt(2, 64, 64)),
+    rEffParPan(),
+    rEffPar(Plrcross, 2, rShort("l/r"), rDefault(35), "Left/Right Crossover"),
+    rEffPar(Pdrive,   3, rShort("drive"), rPresets(56, 29, 75, 85, 63, 88),
+            "Input amplification"),
+    rEffPar(Plevel,   4, rShort("output"), rPresets(70, 75, 80, 62, 75, 75),
+            "Output amplification"),
     rEffPar(Ptype,    5, rShort("type"),
             rOptions(Arctangent, Asymmetric, Pow, Sine, Quantisize,
-                Zigzag, Limiter, Upper Limiter, Lower Limiter,
-                Inverse Limiter, Clip, Asym2, Pow2, sigmoid),
+                     Zigzag, Limiter, Upper Limiter, Lower Limiter,
+                     Inverse Limiter, Clip, Asym2, Pow2, sigmoid),
+            rPresets(Arctangent, Asymmetric, Zigzag,
+                     Asymmetric, Pow, Quantisize),
             "Distortion Shape"),
-    rEffParTF(Pnegate, 6, rShort("neg"), "Negate Signal"),
-    rEffPar(Plpf, 7, rShort("lpf"), "Low Pass Cutoff"),
-    rEffPar(Phpf, 8, rShort("hpf"), "High Pass Cutoff"),
-    rEffParTF(Pstereo, 9, rShort("stereo"), "Stereo"),
-    rEffParTF(Pprefiltering, 10, rShort("p.filt"),
-                  "Filtering before/after non-linearity"),
+    rEffParTF(Pnegate, 6, rShort("neg"), rDefault(false), "Negate Signal"),
+    rEffPar(Plpf, 7, rShort("lpf"),
+            rPreset(0, 96), rPreset(4, 55), rDefault(127), "Low Pass Cutoff"),
+    rEffPar(Phpf, 8, rShort("hpf"),
+            rPreset(2, 105), rPreset(3, 118), rDefault(0), "High Pass Cutoff"),
+    rEffParTF(Pstereo, 9, rShort("stereo"),
+              rPresets(false, false, true, true, false, true), "Stereo"),
+    rEffParTF(Pprefiltering, 10, rShort("p.filt"), rDefault(false),
+              "Filtering before/after non-linearity"),
     {"waveform:", 0, 0, [](const char *, rtosc::RtData &d)
         {
             Distorsion  &dd = *(Distorsion*)d.obj;
@@ -60,7 +70,8 @@ rtosc::Ports Distorsion::ports = {
             for(int i=0; i<128; ++i)
                 buffer[i] = 2*(i/128.0)-1;
 
-            waveShapeSmps(sizeof(buffer), buffer, dd.Ptype + 1, dd.Pdrive);
+            waveShapeSmps(sizeof(buffer)/sizeof(buffer[0]), buffer,
+                    dd.Ptype + 1, dd.Pdrive);
 
             for(int i=0; i<128; ++i) {
                 arg_str[i] = 'f';
@@ -291,4 +302,6 @@ unsigned char Distorsion::getpar(int npar) const
         case 10: return Pprefiltering;
         default: return 0; //in case of bogus parameter number
     }
+}
+
 }

@@ -144,6 +144,7 @@ bin/resources/*.py
 source/native-plugins/resources/*.py
 
 # zynaddsubfx
+source/native-plugins/zynaddsubfx/rtosc/version.c.in
 source/native-plugins/zynaddsubfx/Output/
 source/native-plugins/zynaddsubfx/Tests/
 source/native-plugins/zynaddsubfx/UI/ADnoteUI.cpp

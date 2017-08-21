@@ -14,6 +14,7 @@ rm -f $CARLA_ZYN_DIR/Misc/*
 rm -f $CARLA_ZYN_DIR/Nio/*
 rm -f $CARLA_ZYN_DIR/Params/*
 rm -f $CARLA_ZYN_DIR/Synth/*
+rm -f $CARLA_ZYN_DIR/Tests/*
 rm -fr $CARLA_ZYN_DIR/UI/*
 rm -fr $CARLA_ZYN_DIR/rtosc/*
 rm -f $CARLA_ZYN_DIR/tlsf/*
@@ -39,7 +40,13 @@ rm $CARLA_ZYN_DIR/UI/zynaddsubfx.xpm
 cp $ORIG_ZYN_DIR/src/zyn-version.h.in $CARLA_ZYN_DIR/zyn-version.h
 sed -i 's|${VERSION_MAJOR}|3|'    $CARLA_ZYN_DIR/zyn-version.h
 sed -i 's|${VERSION_MINOR}|0|'    $CARLA_ZYN_DIR/zyn-version.h
-sed -i 's|${VERSION_REVISION}|1|' $CARLA_ZYN_DIR/zyn-version.h
+sed -i 's|${VERSION_REVISION}|2|' $CARLA_ZYN_DIR/zyn-version.h
+
+find $CARLA_ZYN_DIR -name "*.h"   -type f | xargs sed -i "s|namespace zyn|namespace zyncarla|g"
+find $CARLA_ZYN_DIR -name "*.fl"  -type f | xargs sed -i "s|namespace zyn|namespace zyncarla|g"
+find $CARLA_ZYN_DIR -name "*.cpp" -type f | xargs sed -i "s|namespace zyn|namespace zyncarla|g"
+sed -i "s|zyn::|zyncarla::|g" $CARLA_ZYN_DIR/*/*.h
+sed -i "s|zyn::|zyncarla::|g" $CARLA_ZYN_DIR/*/*.cpp
 
 sed -i "s|emplace_uint32(|emplace_uint32_cpp(|" $CARLA_ZYN_DIR/rtosc/cpp/subtree-serialize.cpp
 sed -i "s|../../include/rtosc/|../|" $CARLA_ZYN_DIR/rtosc/cpp/*.cpp

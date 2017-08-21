@@ -19,6 +19,8 @@
 #include "../globals.h"
 #include "Filter.h"
 
+namespace zyncarla {
+
 /**Implementation of Several analog filters (lowpass, highpass...)
  * Implemented with IIR filters
  * Coefficients generated with "Cookbook formulae for audio EQ"*/
@@ -77,5 +79,6 @@ class AnalogFilter:public Filter
                                       //(used to see if it needs interpolation)
 };
 
+}
 
 #endif

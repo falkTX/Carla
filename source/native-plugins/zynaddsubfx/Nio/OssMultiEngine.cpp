@@ -31,9 +31,11 @@
 #include "OssMultiEngine.h"
 #include "Compressor.h"
 
-extern MiddleWare *middleware;
-
 using namespace std;
+
+extern zyncarla::MiddleWare *middleware;
+
+namespace zyncarla {
 
 OssMultiEngine :: OssMultiEngine(const SYNTH_T &synth,
     const oss_devs_t &oss_devs)
@@ -264,4 +266,6 @@ OssMultiEngine :: audioThreadCb()
 done:
     pthread_exit(0);
     return (0);
+}
+
 }

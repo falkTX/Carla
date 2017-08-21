@@ -25,10 +25,12 @@
 
 using namespace std;
 
+namespace zyncarla {
+
 //XXX to remove
 //PresetsStore presetsstore;
 
-PresetsStore::PresetsStore(const CarlaConfig& config) : config(config)
+PresetsStore::PresetsStore(const Config& config) : config(config)
 {
 }
 
@@ -180,4 +182,6 @@ void PresetsStore::deletepreset(std::string filename)
             return;
         }
     }
+}
+
 }

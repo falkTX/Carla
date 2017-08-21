@@ -13,6 +13,8 @@
 #ifndef STEREO_H
 #define STEREO_H
 
+namespace zyncarla {
+
 template<class T>
 struct Stereo {
     public:
@@ -28,5 +30,8 @@ struct Stereo {
         //data
         T l, r;
 };
+
+}
+
 #include "Stereo.cpp"
 #endif

@@ -56,6 +56,8 @@
 #include <err.h>
 #endif
 
+namespace zyncarla {
+
 using std::string;
 int Pexitprogram = 0;
 
@@ -219,55 +221,6 @@ void preparePadSynth(string path, PADnoteParameters *p, rtosc::RtData &d)
         d.chain((path+to_s(i)).c_str(), "ifb",
                 0, 440.0f, sizeof(float*), NULL);
     }
-}
-
-/******************************************************************************
- *                      MIDI Serialization                                    *
- *                                                                            *
- ******************************************************************************/
-void saveMidiLearn(XMLwrapper &xml, const rtosc::MidiMappernRT &midi)
-{
-    xml.beginbranch("midi-learn");
-    for(auto value:midi.inv_map) {
-        XmlNode binding("midi-binding");
-        auto biject = std::get<3>(value.second);
-        binding["osc-path"]  = value.first;
-        binding["coarse-CC"] = to_s(std::get<1>(value.second));
-        binding["fine-CC"]   = to_s(std::get<2>(value.second));
-        binding["type"]      = "i";
-        binding["minimum"]   = to_s(biject.min);
-        binding["maximum"]   = to_s(biject.max);
-        xml.add(binding);
-    }
-    xml.endbranch();
-}
-
-void loadMidiLearn(XMLwrapper &xml, rtosc::MidiMappernRT &midi)
-{
-    using rtosc::Port;
-    if(xml.enterbranch("midi-learn")) {
-        auto nodes = xml.getBranch();
-
-        //TODO clear mapper
-
-        for(auto node:nodes) {
-            if(node.name != "midi-binding" ||
-                    !node.has("osc-path") ||
-                    !node.has("coarse-CC"))
-                continue;
-            const string path = node["osc-path"];
-            const int    CC   = atoi(node["coarse-CC"].c_str());
-            const Port  *p    = Master::ports.apropos(path.c_str());
-            if(p) {
-                printf("loading midi port...\n");
-                midi.addNewMapper(CC, *p, path);
-            } else {
-                printf("unknown midi bindable <%s>\n", path.c_str());
-            }
-        }
-        xml.exitbranch();
-    } else
-        printf("cannot find 'midi-learn' branch...\n");
 }
 
 /******************************************************************************
@@ -451,17 +404,17 @@ namespace Nio
 
 
 /* Implementation */
-class CarlaMiddleWareImpl
+class MiddleWareImpl
 {
     public:
     MiddleWare *parent;
     private:
 
 public:
-    CarlaConfig* const config;
-    CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth, CarlaConfig* config,
+    Config* const config;
+    MiddleWareImpl(MiddleWare *mw, SYNTH_T synth, Config* config,
                    int preferred_port);
-    ~CarlaMiddleWareImpl(void);
+    ~MiddleWareImpl(void);
 
     //Check offline vs online mode in plugins
     void heartBeat(Master *m);
@@ -745,7 +698,7 @@ public:
     rtosc::UndoHistory undo;
 
     //MIDI Learn
-    rtosc::MidiMappernRT midi_mapper;
+    //rtosc::MidiMappernRT midi_mapper;
 
     //Link To the Realtime
     rtosc::ThreadLink *bToU;
@@ -774,7 +727,7 @@ public:
 class MwDataObj:public rtosc::RtData
 {
     public:
-        MwDataObj(CarlaMiddleWareImpl *mwi_)
+        MwDataObj(MiddleWareImpl *mwi_)
         {
             loc_size = 1024;
             loc = new char[loc_size];
@@ -797,7 +750,7 @@ class MwDataObj:public rtosc::RtData
         //Chain calls repeat the call into handle()
 
         //Forward calls send the message directly to the realtime
-        virtual void reply(const char *path, const char *args, ...)
+        virtual void reply(const char *path, const char *args, ...) override
         {
             //printf("reply building '%s'\n", path);
             va_list va;
@@ -823,7 +776,7 @@ class MwDataObj:public rtosc::RtData
                 reply(buffer);
             }
         }
-        virtual void reply(const char *msg){
+        virtual void reply(const char *msg) override{
             mwi->sendToCurrentRemote(msg);
         };
         //virtual void broadcast(const char *path, const char *args, ...){(void)path;(void)args;};
@@ -854,7 +807,7 @@ class MwDataObj:public rtosc::RtData
         bool forwarded;
     private:
         char *buffer;
-        CarlaMiddleWareImpl   *mwi;
+        MiddleWareImpl   *mwi;
 };
 
 static std::vector<std::string> getFiles(const char *folder, bool finddir)
@@ -885,11 +838,12 @@ static std::vector<std::string> getFiles(const char *folder, bool finddir)
         }
 #else
         std::string darn_windows = folder + std::string("/") + std::string(fn->d_name);
-        printf("attr on <%s> => %x\n", darn_windows.c_str(), GetFileAttributes(darn_windows.c_str()));
-        printf("error = %x\n", INVALID_FILE_ATTRIBUTES);
+        //printf("attr on <%s> => %x\n", darn_windows.c_str(), GetFileAttributes(darn_windows.c_str()));
+        //printf("desired mask =  %x\n", mask);
+        //printf("error = %x\n", INVALID_FILE_ATTRIBUTES);
         bool is_dir = GetFileAttributes(darn_windows.c_str()) & FILE_ATTRIBUTE_DIRECTORY;
 #endif
-        if(finddir == is_dir)
+        if(finddir == is_dir && strcmp(".", fn->d_name))
             files.push_back(fn->d_name);
     }
 
@@ -935,13 +889,28 @@ extern const rtosc::Ports bankPorts;
 const rtosc::Ports bankPorts = {
     {"rescan:", 0, 0,
         rBegin;
+        impl.bankpos = 0;
         impl.rescanforbanks();
         //Send updated banks
         int i = 0;
         for(auto &elm : impl.banks)
             d.reply("/bank/bank_select", "iss", i++, elm.name.c_str(), elm.dir.c_str());
         d.reply("/bank/bank_select", "i", impl.bankpos);
+        if (i > 0) {
+            impl.loadbank(impl.banks[0].dir);
 
+            //Reload bank slots
+            for(int i=0; i<BANK_SIZE; ++i) {
+                d.reply("/bankview", "iss",
+                    i, impl.ins[i].name.c_str(),
+                    impl.ins[i].filename.c_str());
+            }
+        } else {
+            //Clear all bank slots
+            for(int i=0; i<BANK_SIZE; ++i) {
+                d.reply("/bankview", "iss", i, "", "");
+            }
+        }
         rEnd},
     {"bank_list:", 0, 0,
         rBegin;
@@ -1089,8 +1058,8 @@ const rtosc::Ports bankPorts = {
         rBegin;
         auto res = impl.search(rtosc_argument(msg, 0).s);
 #define MAX_SEARCH 300
-        char res_type[MAX_SEARCH+1] = {0};
-        rtosc_arg_t res_dat[MAX_SEARCH] = {0};
+        char res_type[MAX_SEARCH+1] = {};
+        rtosc_arg_t res_dat[MAX_SEARCH] = {};
         for(unsigned i=0; i<res.size() && i<MAX_SEARCH; ++i) {
             res_type[i]  = 's';
             res_dat[i].s = res[i].c_str();
@@ -1102,8 +1071,8 @@ const rtosc::Ports bankPorts = {
         rBegin;
         auto res = impl.blist(rtosc_argument(msg, 0).s);
 #define MAX_SEARCH 300
-        char res_type[MAX_SEARCH+1] = {0};
-        rtosc_arg_t res_dat[MAX_SEARCH] = {0};
+        char res_type[MAX_SEARCH+1] = {};
+        rtosc_arg_t res_dat[MAX_SEARCH] = {};
         for(unsigned i=0; i<res.size() && i<MAX_SEARCH; ++i) {
             res_type[i]  = 's';
             res_dat[i].s = res[i].c_str();
@@ -1128,7 +1097,7 @@ const rtosc::Ports bankPorts = {
  ******************************************************************************/
 
 #undef  rObject
-#define rObject CarlaMiddleWareImpl
+#define rObject MiddleWareImpl
 
 #ifndef STRINGIFY
 #define STRINGIFY2(a) #a
@@ -1180,13 +1149,13 @@ static rtosc::Ports middwareSnoopPorts = {
             GUI::raiseUi(impl.ui, buffer);
         }
         rEnd},
-    {"config/", 0, &CarlaConfig::ports,
+    {"config/", 0, &Config::ports,
         rBegin;
         d.obj = impl.config;
-        CarlaConfig::ports.dispatch(chomp(msg), d);
+        Config::ports.dispatch(chomp(msg), d);
         rEnd},
     {"presets/", 0,  &real_preset_ports,          [](const char *msg, RtData &d) {
-        CarlaMiddleWareImpl *obj = (CarlaMiddleWareImpl*)d.obj;
+        MiddleWareImpl *obj = (MiddleWareImpl*)d.obj;
         d.obj = (void*)obj->parent;
         real_preset_ports.dispatch(chomp(msg), d);
         if(strstr(msg, "paste") && rtosc_argument_string(msg)[0] == 's')
@@ -1201,21 +1170,26 @@ static rtosc::Ports middwareSnoopPorts = {
         rEnd},
     {"save_xlz:s", 0, 0,
         rBegin;
-        const char *file = rtosc_argument(msg, 0).s;
-        XMLwrapper xml;
-        saveMidiLearn(xml, impl.midi_mapper);
-        xml.saveXMLfile(file, impl.master->gzip_compression);
+        impl.doReadOnlyOp([&]() {
+                const char *file = rtosc_argument(msg, 0).s;
+                XMLwrapper xml;
+                Master::saveAutomation(xml, impl.master->automate);
+                xml.saveXMLfile(file, impl.master->gzip_compression);
+                });
         rEnd},
     {"load_xlz:s", 0, 0,
         rBegin;
         const char *file = rtosc_argument(msg, 0).s;
         XMLwrapper xml;
         xml.loadXMLfile(file);
-        loadMidiLearn(xml, impl.midi_mapper);
+        rtosc::AutomationMgr *mgr = new rtosc::AutomationMgr(16,4,8);
+        mgr->set_ports(Master::ports);
+        Master::loadAutomation(xml, *mgr);
+        d.chain("/automate/load-blob", "b", sizeof(void*), &mgr);
         rEnd},
     {"clear_xlz:", 0, 0,
         rBegin;
-        impl.midi_mapper.clear();
+        d.chain("/automate/clear", "");
         rEnd},
     //scale file stuff
     {"load_xsz:s", 0, 0,
@@ -1388,51 +1362,51 @@ static rtosc::Ports middwareSnoopPorts = {
         impl.undo.seekHistory(+1);
         rEnd},
     //port to observe the midi mappings
-    {"midi-learn-values:", 0, 0,
-        rBegin;
-        auto &midi  = impl.midi_mapper;
-        auto  key   = keys(midi.inv_map);
-        //cc-id, path, min, max
-#define MAX_MIDI 32
-        rtosc_arg_t args[MAX_MIDI*4];
-        char        argt[MAX_MIDI*4+1] = {0};
-        int j=0;
-        for(unsigned i=0; i<key.size() && i<MAX_MIDI; ++i) {
-            auto val = midi.inv_map[key[i]];
-            if(std::get<1>(val) == -1)
-                continue;
-            argt[4*j+0]   = 'i';
-            args[4*j+0].i = std::get<1>(val);
-            argt[4*j+1]   = 's';
-            args[4*j+1].s = key[i].c_str();
-            argt[4*j+2]   = 'i';
-            args[4*j+2].i = 0;
-            argt[4*j+3]   = 'i';
-            args[4*j+3].i = 127;
-            j++;
+    //{"midi-learn-values:", 0, 0,
+    //    rBegin;
+    //    auto &midi  = impl.midi_mapper;
+    //    auto  key   = keys(midi.inv_map);
+    //    //cc-id, path, min, max
+//#define MAX_MIDI 32
+    //    rtosc_arg_t args[MAX_MIDI*4];
+    //    char        argt[MAX_MIDI*4+1] = {};
+    //    int j=0;
+    //    for(unsigned i=0; i<key.size() && i<MAX_MIDI; ++i) {
+    //        auto val = midi.inv_map[key[i]];
+    //        if(std::get<1>(val) == -1)
+    //            continue;
+    //        argt[4*j+0]   = 'i';
+    //        args[4*j+0].i = std::get<1>(val);
+    //        argt[4*j+1]   = 's';
+    //        args[4*j+1].s = key[i].c_str();
+    //        argt[4*j+2]   = 'i';
+    //        args[4*j+2].i = 0;
+    //        argt[4*j+3]   = 'i';
+    //        args[4*j+3].i = 127;
+    //        j++;
 
-        }
-        d.replyArray(d.loc, argt, args);
-#undef  MAX_MIDI
-        rEnd},
-    {"learn:s", 0, 0,
-        rBegin;
-        string addr = rtosc_argument(msg, 0).s;
-        auto &midi  = impl.midi_mapper;
-        auto map    = midi.getMidiMappingStrings();
-        if(map.find(addr) != map.end())
-            midi.map(addr.c_str(), false);
-        else
-            midi.map(addr.c_str(), true);
-        rEnd},
-    {"unlearn:s", 0, 0,
-        rBegin;
-        string addr = rtosc_argument(msg, 0).s;
-        auto &midi  = impl.midi_mapper;
-        auto map    = midi.getMidiMappingStrings();
-        midi.unMap(addr.c_str(), false);
-        midi.unMap(addr.c_str(), true);
-        rEnd},
+    //    }
+    //    d.replyArray(d.loc, argt, args);
+//#undef  MAX_MIDI
+    //    rEnd},
+    //{"learn:s", 0, 0,
+    //    rBegin;
+    //    string addr = rtosc_argument(msg, 0).s;
+    //    auto &midi  = impl.midi_mapper;
+    //    auto map    = midi.getMidiMappingStrings();
+    //    if(map.find(addr) != map.end())
+    //        midi.map(addr.c_str(), false);
+    //    else
+    //        midi.map(addr.c_str(), true);
+    //    rEnd},
+    //{"unlearn:s", 0, 0,
+    //    rBegin;
+    //    string addr = rtosc_argument(msg, 0).s;
+    //    auto &midi  = impl.midi_mapper;
+    //    auto map    = midi.getMidiMappingStrings();
+    //    midi.unMap(addr.c_str(), false);
+    //    midi.unMap(addr.c_str(), true);
+    //    rEnd},
     //drop this message into the abyss
     {"ui/title:", 0, 0, [](const char *msg, RtData &d) {}},
     {"quit:", 0, 0, [](const char *, RtData&) {Pexitprogram = 1;}},
@@ -1479,10 +1453,6 @@ static rtosc::Ports middlewareReplyPorts = {
         if(impl.recording_undo)
             impl.undo.recordEvent(msg);
         rEnd},
-    {"midi-use-CC:i", 0, 0,
-        rBegin;
-        impl.midi_mapper.useFreeID(rtosc_argument(msg, 0).i);
-        rEnd},
     {"broadcast:", 0, 0, rBegin; impl.broadcast = true; rEnd},
     {"forward:", 0, 0, rBegin; impl.forward = true; rEnd},
 };
@@ -1493,8 +1463,8 @@ static rtosc::Ports middlewareReplyPorts = {
  *                         MiddleWare Implementation                          *
  ******************************************************************************/
 
-CarlaMiddleWareImpl::CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
-    CarlaConfig* config, int preferrred_port)
+MiddleWareImpl::MiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
+    Config* config, int preferrred_port)
     :parent(mw), config(config), ui(nullptr), synth(std::move(synth_)),
     presetsstore(*config), autoSave(-1, [this]() {
             auto master = this->master;
@@ -1507,8 +1477,8 @@ CarlaMiddleWareImpl::CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
 {
     bToU = new rtosc::ThreadLink(4096*2*16,1024/16);
     uToB = new rtosc::ThreadLink(4096*2*16,1024/16);
-    midi_mapper.base_ports = &Master::ports;
-    midi_mapper.rt_cb      = [this](const char *msg){handleMsg(msg);};
+    //midi_mapper.base_ports = &Master::ports;
+    //midi_mapper.rt_cb      = [this](const char *msg){handleMsg(msg);};
     if(preferrred_port != -1)
         server = lo_server_new_with_proto(to_s(preferrred_port).c_str(),
                                           LO_UDP, liblo_error_cb);
@@ -1561,7 +1531,7 @@ CarlaMiddleWareImpl::CarlaMiddleWareImpl(MiddleWare *mw, SYNTH_T synth_,
     offline = false;
 }
 
-CarlaMiddleWareImpl::~CarlaMiddleWareImpl(void)
+MiddleWareImpl::~MiddleWareImpl(void)
 {
 
     if(server)
@@ -1597,7 +1567,7 @@ CarlaMiddleWareImpl::~CarlaMiddleWareImpl(void)
  *   4) Observe /thaw_state and resume normal processing
  */
 
-void CarlaMiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
+void MiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
 {
     assert(uToB);
     uToB->write("/freeze_state","");
@@ -1606,7 +1576,7 @@ void CarlaMiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
     int tries = 0;
     while(tries++ < 10000) {
         if(!bToU->hasNext()) {
-            usleep(500);
+            os_usleep(500);
             continue;
         }
         const char *msg = bToU->read();
@@ -1641,13 +1611,13 @@ void CarlaMiddleWareImpl::doReadOnlyOp(std::function<void()> read_only_fn)
 //   the last heartbeat then it must be offline
 // - When marked offline the backend doesn't receive another heartbeat until it
 //   registers the current beat that it's behind on
-void CarlaMiddleWareImpl::heartBeat(Master *master)
+void MiddleWareImpl::heartBeat(Master *master)
 {
     //Current time
     //Last provided beat
     //Last acknowledged beat
     //Current offline status
-
+    
     struct timespec time;
     clock_gettime(CLOCK_MONOTONIC, &time);
     uint32_t now = (time.tv_sec-start_time_sec)*100 +
@@ -1691,7 +1661,7 @@ void CarlaMiddleWareImpl::heartBeat(Master *master)
 
 }
 
-void CarlaMiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
+void MiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
 {
     assert(uToB);
     int offline = 0;
@@ -1710,7 +1680,7 @@ void CarlaMiddleWareImpl::doReadOnlyOpPlugin(std::function<void()> read_only_fn)
     }
 }
 
-bool CarlaMiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail)
+bool MiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn, bool canfail)
 {
     assert(uToB);
     uToB->write("/freeze_state","");
@@ -1719,7 +1689,7 @@ bool CarlaMiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn,
     int tries = 0;
     while(tries++ < 2000) {
         if(!bToU->hasNext()) {
-            usleep(500);
+            os_usleep(500);
             continue;
         }
         const char *msg = bToU->read();
@@ -1757,7 +1727,7 @@ bool CarlaMiddleWareImpl::doReadOnlyOpNormal(std::function<void()> read_only_fn,
     return true;
 }
 
-void CarlaMiddleWareImpl::broadcastToRemote(const char *rtmsg)
+void MiddleWareImpl::broadcastToRemote(const char *rtmsg)
 {
     //Always send to the local UI
     sendToRemote(rtmsg, "GUI");
@@ -1770,7 +1740,7 @@ void CarlaMiddleWareImpl::broadcastToRemote(const char *rtmsg)
     broadcast = false;
 }
 
-void CarlaMiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
+void MiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
 {
     if(!rtmsg || rtmsg[0] != '/' || !rtosc_message_length(rtmsg, -1)) {
         printf("[Warning] Invalid message in sendToRemote <%s>...\n", rtmsg);
@@ -1804,7 +1774,7 @@ void CarlaMiddleWareImpl::sendToRemote(const char *rtmsg, std::string dest)
  * This includes forwarded events which need to be retransmitted to the backend
  * after the snooping code inspects the message
  */
-void CarlaMiddleWareImpl::bToUhandle(const char *rtmsg)
+void MiddleWareImpl::bToUhandle(const char *rtmsg)
 {
     //Verify Message isn't a known corruption bug
     assert(strcmp(rtmsg, "/part0/kit0/Ppadenableda"));
@@ -1845,7 +1815,7 @@ void CarlaMiddleWareImpl::bToUhandle(const char *rtmsg)
 }
 
 //Allocate kits on a as needed basis
-void CarlaMiddleWareImpl::kitEnable(const char *msg)
+void MiddleWareImpl::kitEnable(const char *msg)
 {
     const string argv = rtosc_argument_string(msg);
     if(argv != "T")
@@ -1879,7 +1849,7 @@ void CarlaMiddleWareImpl::kitEnable(const char *msg)
     kitEnable(part, kit, type);
 }
 
-void CarlaMiddleWareImpl::kitEnable(int part, int kit, int type)
+void MiddleWareImpl::kitEnable(int part, int kit, int type)
 {
     //printf("attempting a kit enable<%d,%d,%d>\n", part, kit, type);
     string url = "/part"+to_s(part)+"/kit"+to_s(kit)+"/";
@@ -1908,7 +1878,7 @@ void CarlaMiddleWareImpl::kitEnable(int part, int kit, int type)
 /*
  * Handle all messages traveling to the realtime side.
  */
-void CarlaMiddleWareImpl::handleMsg(const char *msg)
+void MiddleWareImpl::handleMsg(const char *msg)
 {
     //Check for known bugs
     assert(msg && *msg && strrchr(msg, '/')[1]);
@@ -1947,7 +1917,7 @@ void CarlaMiddleWareImpl::handleMsg(const char *msg)
     }
 }
 
-void CarlaMiddleWareImpl::write(const char *path, const char *args, ...)
+void MiddleWareImpl::write(const char *path, const char *args, ...)
 {
     //We have a free buffer in the threadlink, so use it
     va_list va;
@@ -1956,7 +1926,7 @@ void CarlaMiddleWareImpl::write(const char *path, const char *args, ...)
     va_end(va);
 }
 
-void CarlaMiddleWareImpl::write(const char *path, const char *args, va_list va)
+void MiddleWareImpl::write(const char *path, const char *args, va_list va)
 {
     //printf("is that a '%s' I see there?\n", path);
     char *buffer = uToB->buffer();
@@ -1973,9 +1943,9 @@ void CarlaMiddleWareImpl::write(const char *path, const char *args, va_list va)
 /******************************************************************************
  *                         MidleWare Forwarding Stubs                         *
  ******************************************************************************/
-MiddleWare::MiddleWare(SYNTH_T synth, CarlaConfig* config,
+MiddleWare::MiddleWare(SYNTH_T synth, Config* config,
                        int preferred_port)
-:impl(new CarlaMiddleWareImpl(this, std::move(synth), config, preferred_port))
+:impl(new MiddleWareImpl(this, std::move(synth), config, preferred_port))
 {}
 
 MiddleWare::~MiddleWare(void)
@@ -2163,4 +2133,6 @@ const PresetsStore& MiddleWare::getPresetsStore() const
 PresetsStore& MiddleWare::getPresetsStore()
 {
     return impl->presetsstore;
+}
+
 }

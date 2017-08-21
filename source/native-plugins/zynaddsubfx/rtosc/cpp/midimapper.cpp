@@ -319,6 +319,12 @@ void MidiMappernRT::unMap(const char *addr, bool coarse)
         inv_map[addr] = make_tuple(get<0>(imap), get<1>(imap), -1,  get<3>(imap));
     }
 
+    {
+        auto tmp = inv_map[addr];
+        if(get<1>(tmp) == -1 && get<2>(tmp) == -1)
+            inv_map.erase(addr);
+    }
+
     if(kill_id == -1)
         return;
 

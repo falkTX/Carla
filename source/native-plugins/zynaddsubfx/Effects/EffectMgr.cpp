@@ -16,7 +16,6 @@
 #include <iostream>
 #include <cassert>
 
-
 #include "EffectMgr.h"
 #include "Effect.h"
 #include "Alienwah.h"
@@ -32,21 +31,23 @@
 #include "../Params/FilterParams.h"
 #include "../Misc/Allocator.h"
 
+namespace zyncarla {
 
 #define rObject EffectMgr
 #define rSubtype(name) \
     {STRINGIFY(name)"/", NULL, &name::ports,\
         [](const char *msg, rtosc::RtData &data){\
             rObject &o = *(rObject*)data.obj; \
-            data.obj = o.efx; \
-            if(!dynamic_cast<name*>(o.efx)) \
+            data.obj = dynamic_cast<name*>(o.efx); \
+            if(!data.obj) \
                 return; \
             SNIP \
             name::ports.dispatch(msg, data); \
         }}
 static const rtosc::Ports local_ports = {
-    rSelf(EffectMgr),
+    rSelf(EffectMgr, rEnabledByCondition(self-enabled)),
     rPaste,
+    rEnabledCondition(self-enabled, obj->geteffect()),
     rRecurp(filterpars, "Filter Parameter for Dynamic Filter"),
     {"Pvolume::i", rProp(parameter) rLinear(0,127) rShort("amt") rDoc("amount of effect"),
         0,
@@ -93,7 +94,8 @@ static const rtosc::Ports local_ports = {
                 d.broadcast(d.loc, "i", eff->geteffectparrt(atoi(mm)));
             }
         }},
-    {"preset::i", rProp(parameter) rProp(alias) rDoc("Effect Preset Selector"), NULL,
+    {"preset::i", rProp(parameter) rProp(alias) rDoc("Effect Preset Selector")
+        rDefault(0), NULL,
         [](const char *msg, rtosc::RtData &d)
         {
             char loc[1024];
@@ -129,18 +131,10 @@ static const rtosc::Ports local_ports = {
             eq->getFilter(a,b);
             d.reply(d.loc, "bb", sizeof(a), a, sizeof(b), b);
         }},
-    {"efftype::i", rOptions(Disabled, Reverb, Echo, Chorus,
-            Phaser, Alienwah, Distorsion, EQ, DynFilter)
-            rProp(parameter) rDoc("Get Effect Type"), NULL,
-        [](const char *m, rtosc::RtData &d)
-        {
-            EffectMgr *eff  = (EffectMgr*)d.obj;
-            if(rtosc_narguments(m))  {
-                eff->changeeffectrt(rtosc_argument(m,0).i);
-                d.broadcast(d.loc, "i", eff->nefx);
-            } else
-                d.reply(d.loc, "i", eff->nefx);
-        }},
+    {"efftype::i:c:S", rOptions(Disabled, Reverb, Echo, Chorus,
+     Phaser, Alienwah, Distortion, EQ, DynFilter) rDefault(Disabled)
+     rProp(parameter) rDoc("Get Effect Type"), NULL,
+     rCOptionCb(obj->nefx, obj->changeeffectrt(var))},
     {"efftype:b", rProp(internal) rDoc("Pointer swap EffectMgr"), NULL,
         [](const char *msg, rtosc::RtData &d)
         {
@@ -472,7 +466,12 @@ void EffectMgr::add2XML(XMLwrapper& xml)
 
     xml.beginbranch("EFFECT_PARAMETERS");
     for(int n = 0; n < 128; ++n) {
-        int par = geteffectpar(n);
+        int par = 0;
+        if(efx)
+            par = efx->getpar(n);
+        else if(n<128)
+            par = settings[n];
+
         if(par == 0)
             continue;
         xml.beginbranch("par_no", n);
@@ -514,4 +513,6 @@ void EffectMgr::getfromXML(XMLwrapper& xml)
         xml.exitbranch();
     }
     cleanup();
+}
+
 }

@@ -20,9 +20,12 @@
  * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
- *
+ */
+
+/**
  * @file rtosc.h
  */
+
 #ifndef RTOSC_H
 #define RTOSC_H
 #include <stdarg.h>
@@ -125,6 +128,70 @@ typedef struct {
     rtosc_arg_t val;
 } rtosc_arg_val_t;
 
+typedef struct
+{
+    //!< tolerance to when two floats or doubles are equal
+    double float_tolerance;
+} rtosc_cmp_options;
+
+/**
+ * @brief Check if two arrays of rtosc_arg_val_t are equal
+ *
+ * @param opt Comparison options or NULL for default options
+ * @return One if they are equal, zero if not
+ */
+int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
+                      size_t lsize, size_t rsize,
+                      const rtosc_cmp_options* opt);
+
+/**
+ * @brief Compare two arrays of rtosc_arg_val_t.
+ *
+ * Whether an argument value is less or greater than another is computed
+ * - using memcmp for blobs
+ * - using strcmp for strings and identifiers
+ * - using numerical comparison for all other types.
+ * As an exception, the timestamp "immediately" is defined to be smaller than
+ * every other timestamp.
+ *
+ * @param opt Comparison options or NULL for default options
+ * @return An integer less than, equal to, or greater than zero if lhs is found,
+ *         respectively, to be less than, to match, or be greater than rhs.
+ */
+int rtosc_arg_vals_cmp(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
+                       size_t lsize, size_t rsize,
+                       const rtosc_cmp_options* opt);
+
+//! va_list container, required for passing va_list as pointers to functions
+typedef struct { va_list a; } rtosc_va_list_t;
+
+/**
+ * @brief Pack arguments into pre-allocated rtosc_arg_t array
+ *
+ * @param args Pre-allocated array; size must be greater or equal @p nargs
+ * @param nargs Size of elements to pack
+ * @param arg_str Rtosc string specifying the arguments' types
+ * @param ap The parameters that shall be packed
+ */
+void rtosc_v2args(rtosc_arg_t* args, size_t nargs,
+                  const char* arg_str, rtosc_va_list_t* ap);
+
+/**
+ * @brief Pack parameters into pre-allocated rtosc_arg_val-t array
+ *
+ * @see rtosc_v2args
+ */
+void rtosc_v2argvals(rtosc_arg_val_t* args, size_t nargs,
+                     const char* arg_str, va_list ap);
+
+/**
+ * @brief Pack parameters into pre-allocated rtosc_arg_val-t array
+ *
+ * @see rtosc_v2args
+ */
+void rtosc_2argvals(rtosc_arg_val_t* args, size_t nargs,
+                    const char* arg_str, ...);
+
 /**
  * Create an argument iterator for a message
  * @param msg OSC message
@@ -197,7 +264,7 @@ const char *rtosc_argument_string(const char *msg);
  * @param tt     OSC time tag
  * @param elms   Number of sub messages
  * @param ...    Messages
- * @returns legnth of generated bundle or zero on failure
+ * @returns length of generated bundle or zero on failure
  */
 size_t rtosc_bundle(char *buffer, size_t len, uint64_t tt, int elms, ...);
 
@@ -250,9 +317,12 @@ uint64_t rtosc_bundle_timetag(const char *msg);
  *
  * @param pattern The pattern string stored in the Port
  * @param msg     The OSC message to be matched
+ * @param path_end if non-NULL, will point to where parsing stopped in the path
+ *   (in case of a match, *path_end is always '/' or '\0')
  * @returns true if a normal match and false if unmatched
  */
-bool rtosc_match(const char *pattern, const char *msg);
+bool rtosc_match(const char *pattern,
+                 const char *msg, const char** path_end);
 
 
 /**
@@ -260,8 +330,11 @@ bool rtosc_match(const char *pattern, const char *msg);
  *
  * @param pattern rtosc pattern
  * @param msg a normal C string or a rtosc message
+ * @param path_end if non-NULL, will point to where parsing stopped in the path
+ *   (in case of a match, *path_end is always '/' or '\0')
  */
-const char *rtosc_match_path(const char *pattern, const char *msg);
+const char *rtosc_match_path(const char *pattern,
+                             const char *msg, const char** path_end);
 
 #ifdef __cplusplus
 };

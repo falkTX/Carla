@@ -13,8 +13,11 @@
 #include <string>
 #include <rtosc/ports.h>
 
+namespace zyncarla {
+
 extern const rtosc::Ports real_preset_ports;
 extern const rtosc::Ports preset_ports;
+
 struct Clipboard {
     std::string data;
     std::string type;
@@ -31,3 +34,5 @@ void presetDelete(int);
 void presetRescan();
 std::string presetClipboardType();
 bool presetCheckClipboardType();
+
+}

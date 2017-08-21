@@ -23,15 +23,16 @@
 #include <rtosc/ports.h>
 #include <rtosc/port-sugar.h>
 
+namespace zyncarla {
+
+extern bool isPlugin;
+bool fileexists(const char *filename);
+
 using std::min;
 using std::max;
 
 //Velocity Sensing function
 extern float VelF(float velocity, unsigned char scaling);
-
-extern bool isPlugin;
-
-bool fileexists(const char *filename);
 
 #define N_DETUNE_TYPES 4 //the number of detune types
 extern float getdetune(unsigned char type,
@@ -45,7 +46,7 @@ extern float getdetune(unsigned char type,
 void set_realtime();
 
 /**Os independent sleep in microsecond*/
-void os_sleep(long length);
+void os_usleep(long length);
 
 //! returns pid padded to maximum pid lenght, posix conform
 std::string os_pid_as_padded_string();
@@ -152,11 +153,6 @@ char *rtosc_splat(const char *path, std::set<std::string>);
 #define rParamZyn(name, ...) \
   {STRINGIFY(name) "::i",  rProp(parameter) rMap(min, 0) rMap(max, 127) DOC(__VA_ARGS__), NULL, rParamICb(name)}
 
-#define rSelf(type) \
-{"self:", rProp(internal) rMap(class, type) rDoc("port metadata"), 0, \
-    [](const char *, rtosc::RtData &d){ \
-        d.reply(d.loc, "b", sizeof(d.obj), &d.obj);}}\
-
 #define rPresetType \
 {"preset-type:", rProp(internal) rDoc("clipboard type of object"), 0, \
     [](const char *, rtosc::RtData &d){ \
@@ -180,5 +176,9 @@ rPresetType, \
         int field = rtosc_argument(m,1).i; \
         rObject &o = *(rObject*)d.obj;\
         o.pasteArray(paste,field);}}
+
+}
+
+#define rUnit(x) rMap(unit, x)
 
 #endif

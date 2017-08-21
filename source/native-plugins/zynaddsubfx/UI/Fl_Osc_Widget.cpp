@@ -96,7 +96,7 @@ void Fl_Osc_Widget::oscRegister(const char *path)
 
 void Fl_Osc_Widget::update(void)
 {
-    if(*((loc+ext).rbegin()) != '/')
+    if(*((loc+ext).rbegin()) != '/' && osc)
         osc->requestValue(loc+ext);
 }
 

@@ -13,8 +13,11 @@
 
 #pragma once
 
-struct WatchManager;
 namespace rtosc {class ThreadLink;}
+
+namespace zyncarla {
+
+struct WatchManager;
 
 struct WatchPoint
 {
@@ -79,3 +82,5 @@ struct VecWatchPoint : public WatchPoint
         }
     }
 };
+
+}

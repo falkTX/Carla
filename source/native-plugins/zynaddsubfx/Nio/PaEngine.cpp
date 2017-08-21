@@ -13,8 +13,9 @@
 
 #include "PaEngine.h"
 #include <iostream>
-
 using namespace std;
+
+namespace zyncarla {
 
 PaEngine::PaEngine(const SYNTH_T &synth)
     :AudioOut(synth), stream(NULL)
@@ -106,4 +107,6 @@ void PaEngine::Stop()
     Pa_CloseStream(stream);
     stream = NULL;
     Pa_Terminate();
+}
+
 }

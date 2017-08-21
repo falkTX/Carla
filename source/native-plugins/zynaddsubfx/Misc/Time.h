@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include "../globals.h"
 
+namespace zyncarla {
+
 class AbsTime
 {
     public:
@@ -51,3 +53,5 @@ class RelTime
         int32_t sample;
         const AbsTime &t;
 };
+
+}

@@ -18,6 +18,9 @@
 
 //how much the unison frequencies varies (always >= 1.0)
 #define UNISON_FREQ_SPAN 2.0f
+
+namespace zyncarla {
+
 class Allocator;
 
 class Unison
@@ -67,4 +70,7 @@ class Unison
         float samplerate_f;
         Allocator &alloc;
 };
+
+}
+
 #endif

@@ -27,6 +27,8 @@
 
 using namespace std;
 
+namespace zyncarla {
+
 int  xml_k   = 0;
 bool verbose = false;
 
@@ -251,7 +253,7 @@ void XMLwrapper::addparreal(const string &name, float val)
     union { float in; uint32_t out; } convert;
     char buf[11];
     convert.in = val;
-    sprintf(buf, "0x%8X", convert.out);
+    sprintf(buf, "0x%0.8X", convert.out);
     addparams("par_real", 3, "name", name.c_str(), "value",
               stringFrom<float>(val).c_str(), "exact_value", buf);
 }
@@ -394,6 +396,12 @@ bool XMLwrapper::putXMLdata(const char *xmldata)
                                   MXML_DESCEND);
     if(root == NULL)
         return false;
+
+    //fetch version information
+    _fileversion.set_major(stringTo<int>(mxmlElementGetAttr(root, "version-major")));
+    _fileversion.set_minor(stringTo<int>(mxmlElementGetAttr(root, "version-minor")));
+    _fileversion.set_revision(
+        stringTo<int>(mxmlElementGetAttr(root, "version-revision")));
 
     return true;
 }
@@ -676,4 +684,6 @@ std::vector<XmlNode> XMLwrapper::getBranch(void) const
         current = mxmlWalkNext(current, node, MXML_NO_DESCEND);
     }
     return res;
+}
+
 }

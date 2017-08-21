@@ -54,7 +54,10 @@ decl {\#include "PresetsUI.h"} {public local
 } 
 
 decl {\#include "common.H"} {public local
-} 
+}
+
+decl {using namespace zyncarla;} {public local
+}
 
 class EffUI {open : {public Fl_Osc_Group,public PresetsUI_}
 } {

@@ -25,11 +25,13 @@
 #include "Util.h"
 #include "Microtonal.h"
 
+using namespace rtosc;
 
 #define MAX_LINE_SIZE 80
 
+namespace zyncarla {
+
 #define rObject Microtonal
-using namespace rtosc;
 
 /**
  * TODO
@@ -40,25 +42,37 @@ using namespace rtosc;
  * A good lookup table should be a good finalization of this
  */
 const rtosc::Ports Microtonal::ports = {
-    rToggle(Pinvertupdown, rShort("inv."), "key mapping inverse"),
-    rParamZyn(Pinvertupdowncenter, rShort("center"), "center of the inversion"),
-    rToggle(Penabled, rShort("enable"), "Enable for microtonal mode"),
-    rParamZyn(PAnote, rShort("A note"), "The note for 'A'"),
-    rParamF(PAfreq,   rShort("A freq"), "Frequency of the 'A' note"),
-    rParamZyn(Pscaleshift, rShort("shift"), "UNDOCUMENTED"),
-    rParamZyn(Pfirstkey, rShort("first key"), "First key to retune"),
-    rParamZyn(Plastkey,  rShort("last key"), "Last key to retune"),
-    rParamZyn(Pmiddlenote, rShort("middle"), "Scale degree 0 note"),
+    rToggle(Pinvertupdown, rShort("inv."), rDefault(false),
+        "key mapping inverse"),
+    rParamZyn(Pinvertupdowncenter, rShort("center"), rDefault(60),
+        "center of the inversion"),
+    rToggle(Penabled, rShort("enable"), rDefault(false),
+        "Enable for microtonal mode"),
+    rParamZyn(PAnote, rShort("1/1 midi note"), rDefault(69),
+        "The note for 'A'"),
+    rParamF(PAfreq,   rShort("ref freq"), rDefault(440.0f),
+        "Frequency of the 'A' note"),
+    rParamZyn(Pscaleshift, rShort("shift"), rDefault(64),
+        "UNDOCUMENTED"),
+    rParamZyn(Pfirstkey, rShort("first key"), rDefault(0),
+        "First key to retune"),
+    rParamZyn(Plastkey,  rShort("last key"), rDefault(127),
+        "Last key to retune"),
+    rParamZyn(Pmiddlenote, rShort("middle"), rDefault(60),
+        "Scale degree 0 note"),
 
     //TODO check to see if this should be exposed
-    rParamZyn(Pmapsize, "Size of key map"),
-    rToggle(Pmappingenabled, "Mapping Enable"),
+    rParamZyn(Pmapsize, rDefault(12), "Size of key map"),
+    rToggle(Pmappingenabled, rDefault(false), "Mapping Enable"),
 
-    rParams(Pmapping, 128, "Mapping of keys"),
-    rParamZyn(Pglobalfinedetune, rShort("fine"), "Fine detune for all notes"),
+    rParams(Pmapping, 128, rDefaultMissing, "Mapping of keys"),
+    rParamZyn(Pglobalfinedetune, rShort("fine"), rDefault(64),
+        "Fine detune for all notes"),
 
-    rString(Pname, MICROTONAL_MAX_NAME_LEN,    rShort("name"), "Microtonal Name"),
-    rString(Pcomment, MICROTONAL_MAX_NAME_LEN, rShort("comment"), "Microtonal comments"),
+    rString(Pname, MICROTONAL_MAX_NAME_LEN,    rShort("name"),
+        rDefault("12tET"), "Microtonal Name"),
+    rString(Pcomment, MICROTONAL_MAX_NAME_LEN, rShort("comment"),
+        rDefault("Equal Temperament 12 notes per octave"), "Microtonal comments"),
 
     {"octavesize:", rDoc("Get octave size"), 0, [](const char*, RtData &d)
         {
@@ -570,6 +584,9 @@ int Microtonal::loadscl(SclInfo &scl, const char *filename)
     char  tmp[500];
     OctaveTuning tmpoctave[MAX_OCTAVE_SIZE];
 
+    if(!file)
+        return 2;
+
     fseek(file, 0, SEEK_SET);
 
     //loads the short description
@@ -620,6 +637,9 @@ int Microtonal::loadkbm(KbmInfo &kbm, const char *filename)
     int   x;
     float tmpPAfreq = 440.0f;
     char  tmp[500];
+
+    if(!file)
+        return 2;
 
     fseek(file, 0, SEEK_SET);
     //loads the mapsize
@@ -843,7 +863,7 @@ void Microtonal::apply(void)
     {
         char buf[100*MAX_OCTAVE_SIZE] = {0};
         char tmpbuf[100] = {0};
-        for (int i=0;i<getoctavesize();i++){
+        for (int i=0;i<octavesize;i++){
             if (i!=0)
                 strncat(buf, "\n", sizeof(buf)-1);
             tuningtoline(i,tmpbuf,100);
@@ -851,4 +871,6 @@ void Microtonal::apply(void)
         }
         int err = texttotunings(buf);
     }
+}
+
 }

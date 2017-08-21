@@ -10,6 +10,9 @@
   of the License, or (at your option) any later version.
 */
 #include "CallbackRepeater.h"
+
+namespace zyncarla {
+
 CallbackRepeater::CallbackRepeater(int interval, cb_t cb_)
     :last(time(0)), dt(interval), cb(cb_)
 {}
@@ -21,4 +24,6 @@ void CallbackRepeater::tick(void)
         cb();
         last = now;
     }
+}
+
 }

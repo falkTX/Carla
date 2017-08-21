@@ -25,7 +25,18 @@
 #endif
 
 //Forward Declarations
-namespace rtosc{struct Ports; struct ClonePorts; struct MergePorts; class ThreadLink;};
+
+#if defined(__APPLE__) || defined(__FreeBSD__)
+#include <complex>
+#else
+namespace std {
+    template<class T> struct complex;
+}
+#endif
+
+namespace rtosc{struct Ports; struct ClonePorts; struct MergePorts; class ThreadLink;}
+namespace zyncarla {
+
 class  EffectMgr;
 class  ADnoteParameters;
 struct ADnoteGlobalParam;
@@ -59,14 +70,6 @@ class  AnalogFilter;
 class  SVFilter;
 class  FormantFilter;
 class  ModFilter;
-
-#if defined(__APPLE__) || defined(__FreeBSD__)
-#include <complex>
-#else
-namespace std {
-    template<class T> struct complex;
-};
-#endif
 
 typedef double fftw_real;
 typedef std::complex<fftw_real> fft_t;
@@ -336,4 +339,6 @@ struct SYNTH_T {
     void alias(bool randomize=true);
     static float numRandom(void); //defined in Util.cpp for now
 };
+
+}
 #endif

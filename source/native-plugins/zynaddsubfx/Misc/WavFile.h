@@ -16,6 +16,8 @@
 #define WAVFILE_H
 #include <string>
 
+namespace zyncarla {
+
 class WavFile
 {
     public:
@@ -33,4 +35,7 @@ class WavFile
         int   channels;
         FILE *file;
 };
+
+}
+
 #endif

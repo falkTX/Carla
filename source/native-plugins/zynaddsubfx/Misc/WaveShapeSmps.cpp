@@ -14,6 +14,8 @@
 #include "WaveShapeSmps.h"
 #include <cmath>
 
+namespace zyncarla {
+
 void waveShapeSmps(int n,
                    float *smps,
                    unsigned char type,
@@ -177,4 +179,6 @@ void waveShapeSmps(int n,
             }
             break;
     }
+}
+
 }

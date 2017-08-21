@@ -14,7 +14,11 @@
 //remove the tendrils of the UI from the RT code
 
 class Fl_Osc_Interface;
-class MiddleWare;
+namespace zyncarla
+{
+    class MiddleWare;
+}
+
 namespace GUI
 {
 typedef void *ui_handle_t;
@@ -25,5 +29,5 @@ void raiseUi(ui_handle_t, const char *);
 void raiseUi(ui_handle_t, const char *, const char *, ...);
 void tickUi(ui_handle_t);
 
-Fl_Osc_Interface *genOscInterface(MiddleWare*);
+Fl_Osc_Interface *genOscInterface(zyncarla::MiddleWare*);
 };

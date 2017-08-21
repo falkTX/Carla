@@ -3,7 +3,7 @@
 
   main.cpp  -  Main file of the synthesizer
   Copyright (C) 2002-2005 Nasca Octavian Paul
-  Copyright (C) 2012-2016 Mark McCurry
+  Copyright (C) 2012-2017 Mark McCurry
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License
@@ -21,7 +21,9 @@
 #include <algorithm>
 #include <signal.h>
 
+#ifndef WIN32
 #include <err.h>
+#endif
 #include <unistd.h>
 #include <pthread.h>
 
@@ -47,16 +49,30 @@
 #include "UI/Connection.h"
 GUI::ui_handle_t gui;
 
+#ifdef ZEST_GUI
+#ifndef WIN32
+#include <sys/wait.h>
+#endif
+#endif
+
 //Glue Layer
 #include "Misc/MiddleWare.h"
-MiddleWare *middleware;
 
 using namespace std;
+using namespace zyncarla;
+
+MiddleWare *middleware;
 
 Master   *master;
 int       swaplr = 0; //1 for left-right swapping
 
-extern int Pexitprogram;     //if the UI set this to 1, the program will exit
+// forward declarations of namespace zyncarla
+namespace zyncarla
+{
+    extern int Pexitprogram;     //if the UI set this to 1, the program will exit
+    void dump_json(std::ostream &o,
+                   const rtosc::Ports &p);
+}
 
 #if LASH
 #include "Misc/LASHClient.h"
@@ -71,7 +87,7 @@ NSM_Client *nsm = 0;
 
 char *instance_name = 0;
 
-void exitprogram(const CarlaConfig &config);
+void exitprogram(const Config &config);
 
 
 //cleanup on signaled exit
@@ -85,7 +101,7 @@ void sigterm_exit(int /*sig*/)
 /*
  * Program initialisation
  */
-void initprogram(SYNTH_T synth, CarlaConfig* config, int prefered_port)
+void initprogram(SYNTH_T synth, Config* config, int prefered_port)
 {
     middleware = new MiddleWare(std::move(synth), config, prefered_port);
     master = middleware->spawnMaster();
@@ -99,7 +115,7 @@ void initprogram(SYNTH_T synth, CarlaConfig* config, int prefered_port)
 /*
  * Program exit
  */
-void exitprogram(const CarlaConfig& config)
+void exitprogram(const Config& config)
 {
     Nio::stop();
     config.save();
@@ -123,7 +139,9 @@ void exitprogram(const CarlaConfig& config)
 #ifdef WIN32
 #include <windows.h>
 #include <mmsystem.h>
+namespace zyncarla{
 extern InMgr  *in;
+}
 HMIDIIN winmidiinhandle = 0;
 
 void CALLBACK WinMidiInProc(HMIDIIN hMidiIn,UINT wMsg,DWORD dwInstance,
@@ -202,14 +220,13 @@ void InitWinMidi(int) {}
 int main(int argc, char *argv[])
 {
     SYNTH_T synth;
-    CarlaConfig config;
-    config.init();
+    Config config;
     int noui = 0;
     cerr
     << "\nZynAddSubFX - Copyright (c) 2002-2013 Nasca Octavian Paul and others"
     << endl;
     cerr
-    << "                Copyright (c) 2009-2016 Mark McCurry [active maintainer]"
+    << "                Copyright (c) 2009-2017 Mark McCurry [active maintainer]"
     << endl;
     cerr << "Compiled: " << __DATE__ << " " << __TIME__ << endl;
     cerr << "This program is free software (GNU GPL v2 or later) and \n";
@@ -217,7 +234,7 @@ int main(int argc, char *argv[])
     if(argc == 1)
         cerr << "Try 'zynaddsubfx --help' for command-line options." << endl;
 
-    /* Get the settings from the CarlaConfig*/
+    /* Get the settings from the Config*/
     synth.samplerate = config.cfg.SampleRate;
     synth.buffersize = config.cfg.SoundBufferSize;
     synth.oscilsize  = config.cfg.OscilSize;
@@ -301,7 +318,7 @@ int main(int argc, char *argv[])
     opterr = 0;
     int option_index = 0, opt, exitwithhelp = 0, exitwithversion = 0;
     int prefered_port = -1;
-    int auto_save_interval = 60;
+    int auto_save_interval = 0;
 int wmidi = -1;
 
     string loadfile, loadinstrument, execAfterInit, loadmidilearn;
@@ -312,7 +329,7 @@ int wmidi = -1;
         /**\todo check this process for a small memory leak*/
         opt = getopt_long(argc,
                           argv,
-                          "l:L:M:r:b:o:I:O:N:e:P:A:D:hvapSDUYZ",
+                          "l:L:M:r:b:o:I:O:N:e:P:A:d:D:hvapSDUYZ",
                           opts,
                           &option_index);
         char *optarguments = optarg;
@@ -431,8 +448,6 @@ int wmidi = -1;
                 if(optarguments)
                 {
                     ofstream outfile(optarguments);
-                    void dump_json(std::ostream &o,
-                            const rtosc::Ports &p);
                     dump_json(outfile, Master::ports);
                 }
                 break;
@@ -469,7 +484,8 @@ int wmidi = -1;
         "  -U , --no-gui\t\t\t\t Run ZynAddSubFX without user interface\n"
              << "  -N , --named\t\t\t\t Postfix IO Name when possible\n"
              << "  -a , --auto-connect\t\t\t AutoConnect when using JACK\n"
-             << "  -A , --auto-save=INTERVAL\t\t Automatically save at interval (disabled with 0 interval)\n"
+             << "  -A , --auto-save=INTERVAL\t\t Automatically save at interval\n"
+             << "\t\t\t\t\t (disabled with 0 interval)\n"
              << "  -p , --pid-in-client-name\t\t Append PID to (JACK) "
                 "client name\n"
              << "  -P , --preferred-port\t\t\t Preferred OSC Port\n"
@@ -477,6 +493,7 @@ int wmidi = -1;
              << "  -I , --input\t\t\t\t Set Input Engine\n"
              << "  -e , --exec-after-init\t\t Run post-initialization script\n"
              << "  -d , --dump-oscdoc=FILE\t\t Dump oscdoc xml to file\n"
+             << "  -D , --dump-json-schema=FILE\t\t Dump osc schema (.json) to file\n"
              << endl;
 
         return 0;
@@ -586,7 +603,7 @@ int wmidi = -1;
     }
 
     printf("[INFO] auto_save setup\n");
-    if(auto_save_interval > 0 && false) {
+    if(auto_save_interval > 0) {
         int old_save = middleware->checkAutoSave();
         if(old_save > 0)
             GUI::raiseUi(gui, "/alert-reload", "i", old_save);
@@ -632,15 +649,42 @@ int wmidi = -1;
     }
 
 #ifdef ZEST_GUI
+#ifndef WIN32
+    pid_t gui_pid = 0;
+#endif
     if(!noui) {
         printf("[INFO] Launching Zyn-Fusion...\n");
         const char *addr = middleware->getServerAddress();
-        if(fork() == 0) {
+#ifndef WIN32
+        gui_pid = fork();
+        if(gui_pid == 0) {
             execlp("zyn-fusion", "zyn-fusion", addr, "--builtin", "--no-hotload",  0);
             execlp("./zyn-fusion", "zyn-fusion", addr, "--builtin", "--no-hotload",  0);
 
             err(1,"Failed to launch Zyn-Fusion");
         }
+#else
+        STARTUPINFO si;
+PROCESS_INFORMATION pi;
+memset(&si, 0, sizeof(si));
+memset(&pi, 0, sizeof(pi));
+char *why_windows = strrchr(addr, ':');
+char *seriously_why = why_windows + 1;
+char start_line[256] = {0};
+if(why_windows)
+    snprintf(start_line, sizeof(start_line), "zyn-fusion.exe osc.udp://127.0.0.1:%s", seriously_why);
+else {
+    printf("COULD NOT PARSE <%s>\n", addr);
+    exit(1);
+}
+printf("[INFO] starting subprocess via <%s>\n", start_line);
+if(!CreateProcess(NULL, start_line,
+NULL, NULL, 0, 0, NULL, NULL, &si, &pi)) {
+    printf("Failed to launch Zyn-Fusion...\n");
+    exit(1);
+}
+
+#endif
     }
 #endif
 
@@ -681,6 +725,17 @@ done:
         middleware->tick();
 #ifdef WIN32
         Sleep(1);
+#endif
+
+#ifdef ZEST_GUI
+#ifndef WIN32
+        if(!noui) {
+            int status = 0;
+            int ret = waitpid(gui_pid, &status, WNOHANG);
+            if(ret == gui_pid)
+                Pexitprogram = 1;
+        }
+#endif
 #endif
     }
 
