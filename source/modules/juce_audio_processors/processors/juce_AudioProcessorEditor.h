@@ -175,7 +175,6 @@ private:
     bool resizable;
     ComponentBoundsConstrainer defaultConstrainer;
     ComponentBoundsConstrainer* constrainer = {};
-    Component::SafePointer<Component> splashScreen;
 
     JUCE_DECLARE_NON_COPYABLE (AudioProcessorEditor)
 };
