@@ -38,8 +38,9 @@
 # include "juce_gui_basics/juce_gui_basics.h"
 using juce::JUCEApplication;
 using juce::JUCEApplicationBase;
-using juce::ScopedJuceInitialiser_GUI;
 using juce::Timer;
+#else
+# include "juce_events/juce_events.h"
 #endif
 
 using CarlaBackend::CarlaEngine;
@@ -48,6 +49,7 @@ using CarlaBackend::EngineCallbackOpcode2Str;
 
 using juce::CharPointer_UTF8;
 using juce::File;
+using juce::ScopedJuceInitialiser_GUI;
 using juce::String;
 
 // -------------------------------------------------------------------------
@@ -269,9 +271,7 @@ private:
     const CarlaEngine* fEngine;
     bool               fUsingBridge;
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
     const ScopedJuceInitialiser_GUI kJuceInitialiser;
-#endif
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {
