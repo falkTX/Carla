@@ -380,6 +380,9 @@ private:
     template <typename floatType>
     void processAudio (AudioBuffer<floatType>& buffer, MidiBuffer& midiMessages);
 
+    template <typename floatType>
+    void sliceAndProcess (AudioBuffer<floatType>& buffer, MidiBuffer& midiMessages);
+
     //==============================================================================
     ReferenceCountedArray<Node> nodes;
     OwnedArray<Connection> connections;
