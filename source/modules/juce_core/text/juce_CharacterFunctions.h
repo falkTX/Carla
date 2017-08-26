@@ -218,17 +218,17 @@ public:
                 *currentCharacter++ = '0';
         }
 
-        double result = 0;
-        const size_t stringSize = (size_t) (currentCharacter - &buffer[0]) + 1;
-
-        if (stringSize > 1)
-        {
-            std::istringstream is (std::string (&buffer[0], stringSize));
-            is.imbue (std::locale ("C"));
-            is >> result;
-        }
-
-        return result;
+      #if JUCE_WINDOWS
+        static _locale_t locale = _create_locale (LC_ALL, "C");
+        return _strtod_l (&buffer[0], nullptr, locale);
+      #else
+        static locale_t locale = newlocale (LC_ALL_MASK, "C", nullptr);
+       #if JUCE_ANDROID
+        return (double) strtold_l (&buffer[0], nullptr, locale);
+       #else
+        return strtod_l (&buffer[0], nullptr, locale);
+       #endif
+      #endif
     }
 
     /** Parses a character string, to read a floating-point value. */
@@ -243,7 +243,9 @@ public:
     template <typename IntType, typename CharPointerType>
     static IntType getIntValue (const CharPointerType text) noexcept
     {
-        IntType v = 0;
+        typedef typename std::make_unsigned<IntType>::type UIntType;
+
+        UIntType v = 0;
         auto s = text.findEndOfWhitespace();
         const bool isNeg = *s == '-';
 
@@ -255,12 +257,12 @@ public:
             auto c = s.getAndAdvance();
 
             if (c >= '0' && c <= '9')
-                v = v * 10 + (IntType) (c - '0');
+                v = v * 10 + (UIntType) (c - '0');
             else
                 break;
         }
 
-        return isNeg ? -v : v;
+        return isNeg ? - (IntType) v : (IntType) v;
     }
 
     template <typename ResultType>

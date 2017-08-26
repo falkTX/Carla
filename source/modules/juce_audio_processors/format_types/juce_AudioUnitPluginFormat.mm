@@ -55,6 +55,8 @@
  #include <CoreAudioKit/AUViewController.h>
 #endif
 
+#include <unordered_map>
+
 namespace juce
 {
 
@@ -1265,7 +1267,7 @@ private:
     };
 
     OwnedArray<ParamInfo> parameters;
-    std::unordered_map<AudioUnitParameterID, int> paramIDToIndex;
+    std::unordered_map<AudioUnitParameterID, size_t> paramIDToIndex;
 
     MidiDataConcatenator midiConcatenator;
     CriticalSection midiInLock;
@@ -1351,10 +1353,10 @@ private:
          || event.mEventType == kAudioUnitEvent_BeginParameterChangeGesture
          || event.mEventType == kAudioUnitEvent_EndParameterChangeGesture)
         {
-            auto it = paramIDToIndex.find (event.mArgument.mParameter.mParameterID)
+            auto it = paramIDToIndex.find (event.mArgument.mParameter.mParameterID);
 
             if (it != paramIDToIndex.end())
-                paramIndex = it->second;
+                paramIndex = (int) it->second;
 
             if (! isPositiveAndBelow (paramIndex, parameters.size()))
                 return;

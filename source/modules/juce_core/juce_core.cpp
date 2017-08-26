@@ -60,6 +60,7 @@
 
  #if JUCE_MINGW
   #include <ws2spi.h>
+  _locale_t _create_locale(int, const char*) { _locale_t loc; juce::zeromem(&loc, sizeof(loc)); return loc; }
  #endif
 
 #else

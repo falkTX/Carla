@@ -3440,7 +3440,7 @@ private:
                 HeapBlock<TCHAR> buffer;
                 buffer.calloc (stringSizeBytes / sizeof (TCHAR) + 1);
                 ImmGetCompositionString (hImc, type, buffer, (DWORD) stringSizeBytes);
-                return String (buffer);
+                return String (buffer.getData());
             }
 
             return {};
