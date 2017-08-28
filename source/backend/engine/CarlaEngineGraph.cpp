@@ -37,6 +37,7 @@ using juce::AudioProcessor;
 using juce::AudioProcessorEditor;
 using juce::FloatVectorOperations;
 using juce::MemoryBlock;
+using juce::MessageManagerLock;
 using juce::PluginDescription;
 using juce::String;
 using juce::StringArray;
@@ -1995,6 +1996,9 @@ void EngineInternalGraph::destroy() noexcept
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+        const MessageManagerLock mml;
+#endif
         delete fPatchbay;
         fPatchbay = nullptr;
     }
