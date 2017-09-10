@@ -417,14 +417,11 @@ stoat:
 install:
 	# Create directories
 	install -d $(DESTDIR)$(BINDIR)
-	install -d $(DESTDIR)$(LIBDIR)
 	install -d $(DESTDIR)$(LIBDIR)/carla
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
-	install -d $(DESTDIR)$(DATADIR)
 	install -d $(DESTDIR)$(DATADIR)/carla
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
-	install -d $(DESTDIR)$(INCLUDEDIR)
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
@@ -433,19 +430,11 @@ ifeq ($(HAVE_PYQT),true)
 	# Create directories (gui)
 	install -d $(DESTDIR)$(LIBDIR)/carla/styles
 	install -d $(DESTDIR)$(DATADIR)/applications
-	install -d $(DESTDIR)$(DATADIR)/icons
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/16x16/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/48x48/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/128x128/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/256x256/apps
-	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable
 	install -d $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
-	install -d $(DESTDIR)$(DATADIR)/mime
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 endif
 
@@ -541,7 +530,6 @@ ifeq ($(HAVE_PYQT),true)
 	# Install script files (gui)
 	install -m 755 \
 		data/carla \
-		data/carla-control \
 		data/carla-database \
 		data/carla-jack-multi \
 		data/carla-jack-single \
@@ -553,13 +541,21 @@ ifeq ($(HAVE_PYQT),true)
 	# Adjust PREFIX value in script files (gui)
 	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(BINDIR)/carla \
-		$(DESTDIR)$(BINDIR)/carla-control \
 		$(DESTDIR)$(BINDIR)/carla-database \
 		$(DESTDIR)$(BINDIR)/carla-jack-multi \
 		$(DESTDIR)$(BINDIR)/carla-jack-single \
 		$(DESTDIR)$(BINDIR)/carla-patchbay \
 		$(DESTDIR)$(BINDIR)/carla-rack \
 		$(DESTDIR)$(BINDIR)/carla-settings
+
+ifeq ($(HAVE_LIBLO),true)
+	install -m 755 \
+		data/carla-control \
+		$(DESTDIR)$(BINDIR)
+
+	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+		$(DESTDIR)$(BINDIR)/carla-control
+endif
 
 	# Install the real modgui bridge
 	install -m 755 \
@@ -603,7 +599,10 @@ ifeq ($(HAVE_THEME),true)
 endif
 
 	# Install desktop files
-	install -m 644 data/*.desktop $(DESTDIR)$(DATADIR)/applications
+	install -m 644 data/carla.desktop         $(DESTDIR)$(DATADIR)/applications
+ifeq ($(HAVE_LIBLO),true)
+	install -m 644 data/carla-control.desktop $(DESTDIR)$(DATADIR)/applications
+endif
 
 	# Install mime package
 	install -m 644 data/carla.xml $(DESTDIR)$(DATADIR)/mime/packages
