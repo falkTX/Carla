@@ -483,7 +483,7 @@ You can disable these checks to get a faster scanning time (at your own risk).</
      <item>
       <widget class="QPushButton" name="b_start">
        <property name="text">
-        <string>Start</string>
+        <string>Scan</string>
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
