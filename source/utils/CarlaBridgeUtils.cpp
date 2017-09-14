@@ -126,6 +126,7 @@ void BridgeAudioPool::clear() noexcept
     jackbridge_shm_init(shm);
 }
 
+#ifndef BUILD_BRIDGE
 void BridgeAudioPool::resize(const uint32_t bufferSize, const uint32_t audioPortCount, const uint32_t cvPortCount) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(jackbridge_shm_is_valid(shm),);
@@ -143,6 +144,7 @@ void BridgeAudioPool::resize(const uint32_t bufferSize, const uint32_t audioPort
 
     std::memset(data, 0, dataSize);
 }
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -258,15 +260,15 @@ bool BridgeRtClientControl::mapData() noexcept
 
     if (jackbridge_shm_map2<BridgeRtClientData>(shm, data))
     {
-#ifndef BUILD_BRIDGE
-        std::memset(data, 0, sizeof(BridgeRtClientData));
-        setRingBuffer(&data->ringBuffer, true);
-#else
+#ifdef BUILD_BRIDGE
         CARLA_SAFE_ASSERT(data->midiOut[0] == 0);
         setRingBuffer(&data->ringBuffer, false);
 
         CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.server), false);
         CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.client), false);
+#else
+        std::memset(data, 0, sizeof(BridgeRtClientData));
+        setRingBuffer(&data->ringBuffer, true);
 #endif
         return true;
     }
@@ -286,34 +288,26 @@ void BridgeRtClientControl::unmapData() noexcept
     setRingBuffer(nullptr, false);
 }
 
+#ifndef BUILD_BRIDGE
 bool BridgeRtClientControl::waitForClient(const uint msecs) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
     CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
 
-#ifndef BUILD_BRIDGE
     jackbridge_sem_post(&data->sem.server, true);
 
     return jackbridge_sem_timedwait(&data->sem.client, msecs, true);
-#else
     return false;
-#endif
-}
-
-PluginBridgeRtClientOpcode BridgeRtClientControl::readOpcode() noexcept
-{
-#ifdef BUILD_BRIDGE
-    return static_cast<PluginBridgeRtClientOpcode>(readUInt());
-#else
-    return kPluginBridgeRtClientNull;
-#endif
 }
 
 void BridgeRtClientControl::writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
 {
-#ifndef BUILD_BRIDGE
     writeUInt(static_cast<uint32_t>(opcode));
-#endif
+}
+#else
+PluginBridgeRtClientOpcode BridgeRtClientControl::readOpcode() noexcept
+{
+    return static_cast<PluginBridgeRtClientOpcode>(readUInt());
 }
 
 BridgeRtClientControl::WaitHelper::WaitHelper(BridgeRtClientControl& c) noexcept
@@ -325,5 +319,297 @@ BridgeRtClientControl::WaitHelper::~WaitHelper() noexcept
     if (ok)
         jackbridge_sem_post(&data->sem.client, false);
 }
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
+BridgeNonRtClientControl::BridgeNonRtClientControl() noexcept
+    : data(nullptr),
+      filename(),
+      mutex()
+{
+    carla_zeroChars(shm, 64);
+    jackbridge_shm_init(shm);
+}
+
+BridgeNonRtClientControl::~BridgeNonRtClientControl() noexcept
+{
+    // should be cleared by now
+    CARLA_SAFE_ASSERT(data == nullptr);
+
+    clear();
+}
+
+bool BridgeNonRtClientControl::initializeServer() noexcept
+{
+#ifndef BUILD_BRIDGE
+    char tmpFileBase[64];
+    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT "XXXXXX");
+
+    const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
+    CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
+
+    void* const shmptr = shm;
+    carla_shm_t& shm1  = *(carla_shm_t*)shmptr;
+    carla_copyStruct(shm1, shm2);
+
+    if (! mapData())
+    {
+        jackbridge_shm_close(shm);
+        jackbridge_shm_init(shm);
+        return false;
+    }
+
+    CARLA_SAFE_ASSERT(data != nullptr);
+
+    filename = tmpFileBase;
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool BridgeNonRtClientControl::attachClient(const char* const basename) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(basename != nullptr && basename[0] != '\0', false);
+
+#ifdef BUILD_BRIDGE
+    // must be invalid right now
+    CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
+
+    filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT;
+    filename += basename;
+
+    jackbridge_shm_attach(shm, filename);
+
+    return jackbridge_shm_is_valid(shm);
+#else
+    return false;
+#endif
+}
+
+void BridgeNonRtClientControl::clear() noexcept
+{
+    filename.clear();
+
+    if (data != nullptr)
+        unmapData();
+
+    if (! jackbridge_shm_is_valid(shm))
+    {
+#ifdef BUILD_BRIDGE
+        CARLA_SAFE_ASSERT(data == nullptr);
+#endif
+        return;
+    }
+
+    jackbridge_shm_close(shm);
+    jackbridge_shm_init(shm);
+}
+
+bool BridgeNonRtClientControl::mapData() noexcept
+{
+    CARLA_SAFE_ASSERT(data == nullptr);
+
+    if (jackbridge_shm_map2<BridgeNonRtClientData>(shm, data))
+    {
+#ifdef BUILD_BRIDGE
+        setRingBuffer(&data->ringBuffer, false);
+#else
+        setRingBuffer(&data->ringBuffer, true);
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+void BridgeNonRtClientControl::unmapData() noexcept
+{
+#ifndef BUILD_BRIDGE
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+    jackbridge_shm_unmap(shm, data);
+#endif
+
+    data = nullptr;
+    setRingBuffer(nullptr, false);
+}
+
+#ifndef BUILD_BRIDGE
+void BridgeNonRtClientControl::waitIfDataIsReachingLimit() noexcept
+{
+    if (getAvailableDataSize() < BigStackBuffer::size/4)
+        return;
+
+    for (int i=50; --i >= 0;)
+    {
+        if (getAvailableDataSize() >= BigStackBuffer::size*3/4)
+        {
+            writeOpcode(kPluginBridgeNonRtClientPing);
+            commitWrite();
+            return;
+        }
+        carla_msleep(20);
+    }
+
+    carla_stderr("Server waitIfDataIsReachingLimit() reached and failed");
+}
+
+void BridgeNonRtClientControl::writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept
+{
+    writeUInt(static_cast<uint32_t>(opcode));
+}
+#else
+PluginBridgeNonRtClientOpcode BridgeNonRtClientControl::readOpcode() noexcept
+{
+    return static_cast<PluginBridgeNonRtClientOpcode>(readUInt());
+    return kPluginBridgeNonRtClientNull;
+}
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------
+
+BridgeNonRtServerControl::BridgeNonRtServerControl() noexcept
+    : data(nullptr),
+      filename(),
+      mutex()
+{
+    carla_zeroChars(shm, 64);
+    jackbridge_shm_init(shm);
+}
+
+BridgeNonRtServerControl::~BridgeNonRtServerControl() noexcept
+{
+    // should be cleared by now
+    CARLA_SAFE_ASSERT(data == nullptr);
+
+    clear();
+}
+
+bool BridgeNonRtServerControl::initializeServer() noexcept
+{
+#ifndef BUILD_BRIDGE
+    char tmpFileBase[64];
+    std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER "XXXXXX");
+
+    const carla_shm_t shm2 = carla_shm_create_temp(tmpFileBase);
+    CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm2), false);
+
+    void* const shmptr = shm;
+    carla_shm_t& shm1  = *(carla_shm_t*)shmptr;
+    carla_copyStruct(shm1, shm2);
+
+    if (! mapData())
+    {
+        jackbridge_shm_close(shm);
+        jackbridge_shm_init(shm);
+        return false;
+    }
+
+    CARLA_SAFE_ASSERT(data != nullptr);
+
+    filename = tmpFileBase;
+    return true;
+#else
+    return false;
+#endif
+}
+
+bool BridgeNonRtServerControl::attachClient(const char* const basename) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(basename != nullptr && basename[0] != '\0', false);
+
+#ifdef BUILD_BRIDGE
+    // must be invalid right now
+    CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
+
+    filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER;
+    filename += basename;
+
+    jackbridge_shm_attach(shm, filename);
+
+    return jackbridge_shm_is_valid(shm);
+#else
+    return false;
+#endif
+}
+
+void BridgeNonRtServerControl::clear() noexcept
+{
+    filename.clear();
+
+    if (data != nullptr)
+        unmapData();
+
+    if (! jackbridge_shm_is_valid(shm))
+    {
+        CARLA_SAFE_ASSERT(data == nullptr);
+        return;
+    }
+
+    jackbridge_shm_close(shm);
+    jackbridge_shm_init(shm);
+}
+
+bool BridgeNonRtServerControl::mapData() noexcept
+{
+    CARLA_SAFE_ASSERT(data == nullptr);
+
+    if (jackbridge_shm_map2<BridgeNonRtServerData>(shm, data))
+    {
+#ifdef BUILD_BRIDGE
+        setRingBuffer(&data->ringBuffer, false);
+#else
+        setRingBuffer(&data->ringBuffer, true);
+#endif
+        return true;
+    }
+
+    return false;
+}
+
+void BridgeNonRtServerControl::unmapData() noexcept
+{
+#ifndef BUILD_BRIDGE
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+
+    jackbridge_shm_unmap(shm, data);
+#endif
+
+    data = nullptr;
+    setRingBuffer(nullptr, false);
+}
+
+#ifndef BUILD_BRIDGE
+PluginBridgeNonRtServerOpcode BridgeNonRtServerControl::readOpcode() noexcept
+{
+    return static_cast<PluginBridgeNonRtServerOpcode>(readUInt());
+}
+#else
+void BridgeNonRtServerControl::waitIfDataIsReachingLimit() noexcept
+{
+    if (getAvailableDataSize() < HugeStackBuffer::size/4)
+        return;
+
+    for (int i=50; --i >= 0;)
+    {
+        if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
+        {
+            writeOpcode(kPluginBridgeNonRtServerPong);
+            commitWrite();
+            return;
+        }
+        carla_msleep(20);
+    }
+
+    carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");
+}
+
+void BridgeNonRtServerControl::writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept
+{
+    writeUInt(static_cast<uint32_t>(opcode));
+}
+#endif
 
 // -------------------------------------------------------------------------------------------------------------------

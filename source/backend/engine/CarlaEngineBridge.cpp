@@ -40,189 +40,7 @@ using juce::String;
 using juce::Time;
 using juce::Thread;
 
-template<typename T>
-bool jackbridge_shm_map3(void* shm, T*& value) noexcept
-{
-    value = (T*)jackbridge_shm_map(shm, sizeof(T));
-    return (value != nullptr);
-}
-
 CARLA_BACKEND_START_NAMESPACE
-
-// -------------------------------------------------------------------
-
-struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
-    CarlaString filename;
-    BridgeNonRtClientData* data;
-    char shm[64];
-
-    BridgeNonRtClientControl() noexcept
-        : filename(),
-          data(nullptr)
-    {
-        carla_zeroChars(shm, 64);
-        jackbridge_shm_init(shm);
-    }
-
-    ~BridgeNonRtClientControl() noexcept override
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (data != nullptr)
-            unmapData();
-
-        if (! jackbridge_shm_is_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
-            return;
-        }
-
-        jackbridge_shm_close(shm);
-        jackbridge_shm_init(shm);
-    }
-
-    bool attach() noexcept
-    {
-        // must be invalid right now
-        CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
-
-        jackbridge_shm_attach(shm, filename);
-
-        return jackbridge_shm_is_valid(shm);
-    }
-
-    bool mapData() noexcept
-    {
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        if (jackbridge_shm_map3<BridgeNonRtClientData>(shm, data))
-        {
-            setRingBuffer(&data->ringBuffer, false);
-            return true;
-        }
-
-        return false;
-    }
-
-    void unmapData() noexcept
-    {
-        data = nullptr;
-        setRingBuffer(nullptr, false);
-    }
-
-    PluginBridgeNonRtClientOpcode readOpcode() noexcept
-    {
-        return static_cast<PluginBridgeNonRtClientOpcode>(readUInt());
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtClientControl)
-};
-
-// -------------------------------------------------------------------
-
-struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer> {
-    CarlaMutex mutex;
-    CarlaString filename;
-    BridgeNonRtServerData* data;
-    char shm[64];
-
-    BridgeNonRtServerControl() noexcept
-        :  mutex(),
-           filename(),
-           data(nullptr)
-    {
-        carla_zeroChars(shm, 64);
-        jackbridge_shm_init(shm);
-    }
-
-    ~BridgeNonRtServerControl() noexcept override
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (data != nullptr)
-            unmapData();
-
-        if (! jackbridge_shm_is_valid(shm))
-        {
-            CARLA_SAFE_ASSERT(data == nullptr);
-            return;
-        }
-
-        jackbridge_shm_close(shm);
-        jackbridge_shm_init(shm);
-    }
-
-    bool attach() noexcept
-    {
-        // must be invalid right now
-        CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
-
-        jackbridge_shm_attach(shm, filename);
-
-        return jackbridge_shm_is_valid(shm);
-    }
-
-    bool mapData() noexcept
-    {
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        if (jackbridge_shm_map3<BridgeNonRtServerData>(shm, data))
-        {
-            setRingBuffer(&data->ringBuffer, false);
-            return true;
-        }
-
-        return false;
-    }
-
-    void unmapData() noexcept
-    {
-        data = nullptr;
-        setRingBuffer(nullptr, false);
-    }
-
-    void writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept
-    {
-        writeUInt(static_cast<uint32_t>(opcode));
-    }
-
-    void waitIfDataIsReachingLimit() noexcept
-    {
-        if (getAvailableDataSize() < HugeStackBuffer::size/4)
-            return;
-
-        for (int i=50; --i >= 0;)
-        {
-            if (getAvailableDataSize() >= HugeStackBuffer::size*3/4)
-            {
-                writeOpcode(kPluginBridgeNonRtServerPong);
-                commitWrite();
-                return;
-            }
-            carla_msleep(20);
-        }
-
-        carla_stderr("Client waitIfDataIsReachingLimit() reached and failed");
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
-};
 
 // -----------------------------------------------------------------------
 // Bridge Engine client
@@ -271,17 +89,13 @@ public:
           fShmNonRtServerControl(),
           fBaseNameAudioPool(audioPoolBaseName),
           fBaseNameRtClientControl(rtClientBaseName),
+          fBaseNameNonRtClientControl(nonRtClientBaseName),
+          fBaseNameNonRtServerControl(nonRtServerBaseName),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
-
-        fShmNonRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT;
-        fShmNonRtClientControl.filename += nonRtClientBaseName;
-
-        fShmNonRtServerControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_SERVER;
-        fShmNonRtServerControl.filename += nonRtServerBaseName;
     }
 
     ~CarlaEngineBridge() noexcept override
@@ -324,7 +138,7 @@ public:
             return false;
         }
 
-        if (! fShmNonRtClientControl.attach())
+        if (! fShmNonRtClientControl.attachClient(fBaseNameNonRtClientControl))
         {
             clear();
             carla_stderr("Failed to attach to non-rt client control shared memory");
@@ -338,7 +152,7 @@ public:
             return false;
         }
 
-        if (! fShmNonRtServerControl.attach())
+        if (! fShmNonRtServerControl.attachClient(fBaseNameNonRtServerControl))
         {
             clear();
             carla_stderr("Failed to attach to non-rt server control shared memory");
@@ -1491,6 +1305,8 @@ private:
 
     CarlaString fBaseNameAudioPool;
     CarlaString fBaseNameRtClientControl;
+    CarlaString fBaseNameNonRtClientControl;
+    CarlaString fBaseNameNonRtServerControl;
 
     bool fIsOffline;
     bool fFirstIdle;
