@@ -218,4 +218,43 @@ struct BridgeAudioPool {
 
 // -------------------------------------------------------------------------------------------------------------------
 
+struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
+    BridgeRtClientData* data;
+    CarlaString filename;
+    bool needsSemDestroy; // client only
+    char shm[64];
+
+    BridgeRtClientControl() noexcept;
+    ~BridgeRtClientControl() noexcept override;
+
+    bool initializeServer() noexcept;
+    bool attachClient(const char* const basename) noexcept;
+    void clear() noexcept;
+
+    bool mapData() noexcept;
+    void unmapData() noexcept;
+
+    // Client calls
+    bool waitForClient(const uint msecs) noexcept;
+    void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept;
+
+    // Servers calls
+    PluginBridgeRtClientOpcode readOpcode() noexcept;
+
+    // helper class that automatically posts semaphore on destructor
+    struct WaitHelper {
+        BridgeRtClientData* const data;
+        const bool ok;
+
+        WaitHelper(BridgeRtClientControl& c) noexcept;
+        ~WaitHelper() noexcept;
+
+        CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)
+    };
+
+    CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
+};
+
+// -------------------------------------------------------------------------------------------------------------------
+
 #endif // CARLA_BRIDGE_UTILS_HPP_INCLUDED

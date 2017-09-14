@@ -51,137 +51,6 @@ static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
 // -------------------------------------------------------------------------------------------------------------------
 
-struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
-    BridgeRtClientData* data;
-    CarlaString filename;
-    bool needsSemDestroy;
-    carla_shm_t shm;
-
-    BridgeRtClientControl()
-        : data(nullptr),
-          filename(),
-          needsSemDestroy(false)
-#ifdef CARLA_PROPER_CPP11_SUPPORT
-        , shm(carla_shm_t_INIT) {}
-#else
-    {
-        carla_shm_init(shm);
-    }
-#endif
-
-    ~BridgeRtClientControl() noexcept override
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    bool initialize() noexcept
-    {
-        char tmpFileBase[64];
-
-        std::sprintf(tmpFileBase, PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT "XXXXXX");
-
-        shm = carla_shm_create_temp(tmpFileBase);
-
-        CARLA_SAFE_ASSERT_RETURN(carla_is_shm_valid(shm), false);
-
-        if (! mapData())
-        {
-            carla_shm_close(shm);
-            carla_shm_init(shm);
-            return false;
-        }
-
-        CARLA_SAFE_ASSERT(data != nullptr);
-
-        if (! jackbridge_sem_init(&data->sem.server))
-        {
-            unmapData();
-            carla_shm_close(shm);
-            carla_shm_init(shm);
-            return false;
-        }
-
-        if (! jackbridge_sem_init(&data->sem.client))
-        {
-            jackbridge_sem_destroy(&data->sem.server);
-            unmapData();
-            carla_shm_close(shm);
-            carla_shm_init(shm);
-            return false;
-        }
-
-        filename = tmpFileBase;
-        needsSemDestroy = true;
-        return true;
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (needsSemDestroy)
-        {
-            jackbridge_sem_destroy(&data->sem.client);
-            jackbridge_sem_destroy(&data->sem.server);
-            needsSemDestroy = false;
-        }
-
-        if (data != nullptr)
-            unmapData();
-
-        if (! carla_is_shm_valid(shm))
-            return;
-
-        carla_shm_close(shm);
-        carla_shm_init(shm);
-    }
-
-    bool mapData() noexcept
-    {
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        if (carla_shm_map<BridgeRtClientData>(shm, data))
-        {
-            std::memset(data, 0, sizeof(BridgeRtClientData));
-            setRingBuffer(&data->ringBuffer, true);
-            return true;
-        }
-
-        return false;
-    }
-
-    void unmapData() noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
-
-        carla_shm_unmap(shm, data);
-        data = nullptr;
-
-        setRingBuffer(nullptr, false);
-    }
-
-    bool waitForClient(const uint msecs) noexcept
-    {
-        CARLA_SAFE_ASSERT_RETURN(data != nullptr, false);
-
-        jackbridge_sem_post(&data->sem.server, true);
-
-        return jackbridge_sem_timedwait(&data->sem.client, msecs, true);
-    }
-
-    void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept
-    {
-        writeUInt(static_cast<uint32_t>(opcode));
-    }
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
-};
-
-// -------------------------------------------------------------------------------------------------------------------
-
 struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> {
     BridgeNonRtClientData* data;
     CarlaString filename;
@@ -2483,7 +2352,7 @@ public:
             return false;
         }
 
-        if (! fShmRtClientControl.initialize())
+        if (! fShmRtClientControl.initializeServer())
         {
             carla_stderr("Failed to initialize RT client control");
             fShmAudioPool.clear();

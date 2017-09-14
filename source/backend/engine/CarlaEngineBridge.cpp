@@ -41,109 +41,13 @@ using juce::Time;
 using juce::Thread;
 
 template<typename T>
-bool jackbridge_shm_map2(void* shm, T*& value) noexcept
+bool jackbridge_shm_map3(void* shm, T*& value) noexcept
 {
     value = (T*)jackbridge_shm_map(shm, sizeof(T));
     return (value != nullptr);
 }
 
 CARLA_BACKEND_START_NAMESPACE
-
-// -------------------------------------------------------------------
-
-struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
-    CarlaString filename;
-    BridgeRtClientData* data;
-    char shm[64];
-
-    BridgeRtClientControl() noexcept
-        : filename(),
-          data(nullptr)
-    {
-        carla_zeroChars(shm, 64);
-        jackbridge_shm_init(shm);
-    }
-
-    ~BridgeRtClientControl() noexcept override
-    {
-        // should be cleared by now
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        clear();
-    }
-
-    void clear() noexcept
-    {
-        filename.clear();
-
-        if (data != nullptr)
-            unmapData();
-
-        if (! jackbridge_shm_is_valid(shm))
-            return;
-
-        jackbridge_shm_close(shm);
-        jackbridge_shm_init(shm);
-    }
-
-    bool attach() noexcept
-    {
-        // must be invalid right now
-        CARLA_SAFE_ASSERT_RETURN(! jackbridge_shm_is_valid(shm), false);
-
-        jackbridge_shm_attach(shm, filename);
-
-        return jackbridge_shm_is_valid(shm);
-    }
-
-    bool mapData() noexcept
-    {
-        CARLA_SAFE_ASSERT(data == nullptr);
-
-        if (jackbridge_shm_map2<BridgeRtClientData>(shm, data))
-        {
-            CARLA_SAFE_ASSERT(data->midiOut[0] == 0);
-            setRingBuffer(&data->ringBuffer, false);
-
-            CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.server), false);
-            CARLA_SAFE_ASSERT_RETURN(jackbridge_sem_connect(&data->sem.client), false);
-            return true;
-        }
-
-        return false;
-    }
-
-    void unmapData() noexcept
-    {
-        data = nullptr;
-        setRingBuffer(nullptr, false);
-    }
-
-    PluginBridgeRtClientOpcode readOpcode() noexcept
-    {
-        return static_cast<PluginBridgeRtClientOpcode>(readUInt());
-    }
-
-    // helper class that automatically posts semaphore on destructor
-    struct WaitHelper {
-        BridgeRtClientData* const data;
-        const bool ok;
-
-        WaitHelper(BridgeRtClientControl& c) noexcept
-            : data(c.data),
-              ok(jackbridge_sem_timedwait(&data->sem.server, 5000, false)) {}
-
-        ~WaitHelper() noexcept
-        {
-            if (ok)
-                jackbridge_sem_post(&data->sem.client, false);
-        }
-
-        CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)
-    };
-
-    CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
-};
 
 // -------------------------------------------------------------------
 
@@ -199,7 +103,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
-        if (jackbridge_shm_map2<BridgeNonRtClientData>(shm, data))
+        if (jackbridge_shm_map3<BridgeNonRtClientData>(shm, data))
         {
             setRingBuffer(&data->ringBuffer, false);
             return true;
@@ -278,7 +182,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
     {
         CARLA_SAFE_ASSERT(data == nullptr);
 
-        if (jackbridge_shm_map2<BridgeNonRtServerData>(shm, data))
+        if (jackbridge_shm_map3<BridgeNonRtServerData>(shm, data))
         {
             setRingBuffer(&data->ringBuffer, false);
             return true;
@@ -366,14 +270,12 @@ public:
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
           fBaseNameAudioPool(audioPoolBaseName),
+          fBaseNameRtClientControl(rtClientBaseName),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1)
     {
         carla_debug("CarlaEngineBridge::CarlaEngineBridge(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
-
-        fShmRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_RT_CLIENT;
-        fShmRtClientControl.filename += rtClientBaseName;
 
         fShmNonRtClientControl.filename  = PLUGIN_BRIDGE_NAMEPREFIX_NON_RT_CLIENT;
         fShmNonRtClientControl.filename += nonRtClientBaseName;
@@ -408,7 +310,7 @@ public:
             return false;
         }
 
-        if (! fShmRtClientControl.attach())
+        if (! fShmRtClientControl.attachClient(fBaseNameRtClientControl))
         {
             clear();
             carla_stderr("Failed to attach to rt client control shared memory");
@@ -1588,6 +1490,7 @@ private:
     BridgeNonRtServerControl fShmNonRtServerControl;
 
     CarlaString fBaseNameAudioPool;
+    CarlaString fBaseNameRtClientControl;
 
     bool fIsOffline;
     bool fFirstIdle;
