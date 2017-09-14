@@ -304,7 +304,7 @@ struct CarlaPluginLV2Options {
         NominalBlockLenth,
         SequenceSize,
         SampleRate,
-        FrontendWinId,
+        TransientWinId,
         WindowTitle,
         Null,
         Count
@@ -315,7 +315,7 @@ struct CarlaPluginLV2Options {
     int nominalBufferSize;
     int sequenceSize;
     double sampleRate;
-    int64_t frontendWinId;
+    int64_t transientWinId;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
@@ -325,7 +325,7 @@ struct CarlaPluginLV2Options {
           nominalBufferSize(0),
           sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
           sampleRate(0.0),
-          frontendWinId(0),
+          transientWinId(0),
           windowTitle(nullptr)
     {
         LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
@@ -368,13 +368,13 @@ struct CarlaPluginLV2Options {
         optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
         optSampleRate.value   = &sampleRate;
 
-        LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
-        optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
-        optFrontendWinId.subject = 0;
-        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
-        optFrontendWinId.size    = sizeof(int64_t);
-        optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
-        optFrontendWinId.value   = &frontendWinId;
+        LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
+        optTransientWinId.context = LV2_OPTIONS_INSTANCE;
+        optTransientWinId.subject = 0;
+        optTransientWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
+        optTransientWinId.size    = sizeof(int64_t);
+        optTransientWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
+        optTransientWinId.value   = &transientWinId;
 
         LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
         optWindowTitle.context = LV2_OPTIONS_INSTANCE;
@@ -4932,7 +4932,7 @@ public:
         fLv2Options.maxBufferSize     = bufferSize;
         fLv2Options.nominalBufferSize = bufferSize;
         fLv2Options.sampleRate        = pData->engine->getSampleRate();
-        fLv2Options.frontendWinId     = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
+        fLv2Options.transientWinId    = static_cast<int64_t>(pData->engine->getOptions().frontendWinId);
 
         uint32_t eventBufferSize = MAX_DEFAULT_BUFFER_SIZE;
 
@@ -4957,23 +4957,23 @@ public:
         eventFt->lv2_event_ref           = carla_lv2_event_ref;
         eventFt->lv2_event_unref         = carla_lv2_event_unref;
 
-        LV2_Log_Log* const logFt         = new LV2_Log_Log;
-        logFt->handle                    = this;
-        logFt->printf                    = carla_lv2_log_printf;
-        logFt->vprintf                   = carla_lv2_log_vprintf;
+        LV2_Log_Log* const logFt = new LV2_Log_Log;
+        logFt->handle            = this;
+        logFt->printf            = carla_lv2_log_printf;
+        logFt->vprintf           = carla_lv2_log_vprintf;
 
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;
         stateMakePathFt->path                      = carla_lv2_state_make_path;
 
-        LV2_State_Map_Path* const stateMapPathFt   = new LV2_State_Map_Path;
-        stateMapPathFt->handle                     = this;
-        stateMapPathFt->abstract_path              = carla_lv2_state_map_abstract_path;
-        stateMapPathFt->absolute_path              = carla_lv2_state_map_absolute_path;
+        LV2_State_Map_Path* const stateMapPathFt = new LV2_State_Map_Path;
+        stateMapPathFt->handle                   = this;
+        stateMapPathFt->abstract_path            = carla_lv2_state_map_abstract_path;
+        stateMapPathFt->absolute_path            = carla_lv2_state_map_absolute_path;
 
-        LV2_Programs_Host* const programsFt   = new LV2_Programs_Host;
-        programsFt->handle                    = this;
-        programsFt->program_changed           = carla_lv2_program_changed;
+        LV2_Programs_Host* const programsFt = new LV2_Programs_Host;
+        programsFt->handle                  = this;
+        programsFt->program_changed         = carla_lv2_program_changed;
 
         LV2_Resize_Port_Resize* const rsPortFt = new LV2_Resize_Port_Resize;
         rsPortFt->data                         = this;
@@ -4989,13 +4989,13 @@ public:
         uriMapFt->callback_data             = this;
         uriMapFt->uri_to_id                 = carla_lv2_uri_to_id;
 
-        LV2_URID_Map* const uridMapFt       = new LV2_URID_Map;
-        uridMapFt->handle                   = this;
-        uridMapFt->map                      = carla_lv2_urid_map;
+        LV2_URID_Map* const uridMapFt = new LV2_URID_Map;
+        uridMapFt->handle             = this;
+        uridMapFt->map                = carla_lv2_urid_map;
 
-        LV2_URID_Unmap* const uridUnmapFt   = new LV2_URID_Unmap;
-        uridUnmapFt->handle                 = this;
-        uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
+        LV2_URID_Unmap* const uridUnmapFt = new LV2_URID_Unmap;
+        uridUnmapFt->handle               = this;
+        uridUnmapFt->unmap                = carla_lv2_urid_unmap;
 
         LV2_Worker_Schedule* const workerFt = new LV2_Worker_Schedule;
         workerFt->handle                    = this;

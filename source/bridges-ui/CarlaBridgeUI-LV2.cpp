@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI, LV2 version
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -34,7 +34,6 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -----------------------------------------------------
 
-static int    gBufferSize = 1024;
 static double gSampleRate = 44100.0;
 
 // Maximum default buffer size
@@ -92,91 +91,50 @@ const uint32_t CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID = 47;
 const uint32_t CARLA_URI_MAP_ID_COUNT                  = 48;
 
 // LV2 Feature Ids
-const uint32_t kFeatureIdLogs             =  0;
-const uint32_t kFeatureIdOptions          =  1;
-const uint32_t kFeatureIdPrograms         =  2;
-const uint32_t kFeatureIdStateMakePath    =  3;
-const uint32_t kFeatureIdStateMapPath     =  4;
-const uint32_t kFeatureIdUriMap           =  5;
-const uint32_t kFeatureIdUridMap          =  6;
-const uint32_t kFeatureIdUridUnmap        =  7;
-const uint32_t kFeatureIdUiIdleInterface  =  8;
-const uint32_t kFeatureIdUiFixedSize      =  9;
-const uint32_t kFeatureIdUiMakeResident   = 10;
-const uint32_t kFeatureIdUiMakeResident2  = 11;
-const uint32_t kFeatureIdUiNoUserResize   = 12;
-const uint32_t kFeatureIdUiParent         = 13;
-const uint32_t kFeatureIdUiPortMap        = 14;
-const uint32_t kFeatureIdUiPortSubscribe  = 15;
-const uint32_t kFeatureIdUiResize         = 16;
-const uint32_t kFeatureIdUiTouch          = 17;
-const uint32_t kFeatureCount              = 18;
+enum CarlaLv2Features {
+    // DSP features
+    kFeatureIdLogs = 0,
+    kFeatureIdOptions,
+    kFeatureIdPrograms,
+    kFeatureIdStateMakePath,
+    kFeatureIdStateMapPath,
+    kFeatureIdUriMap,
+    kFeatureIdUridMap,
+    kFeatureIdUridUnmap,
+    kFeatureIdUiIdleInterface,
+    kFeatureIdUiFixedSize,
+    kFeatureIdUiMakeResident,
+    kFeatureIdUiMakeResident2,
+    kFeatureIdUiNoUserResize,
+    kFeatureIdUiParent,
+    kFeatureIdUiPortMap,
+    kFeatureIdUiPortSubscribe,
+    kFeatureIdUiResize,
+    kFeatureIdUiTouch,
+    kFeatureCount
+};
 
 // -------------------------------------------------------------------------
 
 struct Lv2PluginOptions {
     enum OptIndex {
-        MaxBlockLenth = 0,
-        MinBlockLenth,
-        NominalBlockLenth,
-        SequenceSize,
         SampleRate,
-        FrontendWinId,
-        //WindowTitle,
+        TransientWinId,
+        WindowTitle,
         Null,
         Count
     };
 
-    int maxBufferSize;
-    int minBufferSize;
-    int nominalBufferSize;
-    int sequenceSize;
     double sampleRate;
-    int64_t frontendWinId;
+    int64_t transientWinId;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
-        : maxBufferSize(0),
-          minBufferSize(0),
-          nominalBufferSize(0),
-          sequenceSize(MAX_DEFAULT_BUFFER_SIZE),
-          sampleRate(0.0),
-          frontendWinId(0),
+        : sampleRate(0.0),
+          transientWinId(0),
           windowTitle(nullptr)
     {
-        LV2_Options_Option& optMaxBlockLenth(opts[MaxBlockLenth]);
-        optMaxBlockLenth.context = LV2_OPTIONS_INSTANCE;
-        optMaxBlockLenth.subject = 0;
-        optMaxBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MAX_LENGTH;
-        optMaxBlockLenth.size    = sizeof(int);
-        optMaxBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
-        optMaxBlockLenth.value   = &maxBufferSize;
-
-        LV2_Options_Option& optMinBlockLenth(opts[MinBlockLenth]);
-        optMinBlockLenth.context = LV2_OPTIONS_INSTANCE;
-        optMinBlockLenth.subject = 0;
-        optMinBlockLenth.key     = CARLA_URI_MAP_ID_BUF_MIN_LENGTH;
-        optMinBlockLenth.size    = sizeof(int);
-        optMinBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
-        optMinBlockLenth.value   = &minBufferSize;
-
-        LV2_Options_Option& optNominalBlockLenth(opts[NominalBlockLenth]);
-        optNominalBlockLenth.context = LV2_OPTIONS_INSTANCE;
-        optNominalBlockLenth.subject = 0;
-        optNominalBlockLenth.key     = CARLA_URI_MAP_ID_BUF_NOMINAL_LENGTH;
-        optNominalBlockLenth.size    = sizeof(int);
-        optNominalBlockLenth.type    = CARLA_URI_MAP_ID_ATOM_INT;
-        optNominalBlockLenth.value   = &nominalBufferSize;
-
-        LV2_Options_Option& optSequenceSize(opts[SequenceSize]);
-        optSequenceSize.context = LV2_OPTIONS_INSTANCE;
-        optSequenceSize.subject = 0;
-        optSequenceSize.key     = CARLA_URI_MAP_ID_BUF_SEQUENCE_SIZE;
-        optSequenceSize.size    = sizeof(int);
-        optSequenceSize.type    = CARLA_URI_MAP_ID_ATOM_INT;
-        optSequenceSize.value   = &sequenceSize;
-
         LV2_Options_Option& optSampleRate(opts[SampleRate]);
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
         optSampleRate.subject = 0;
@@ -185,15 +143,14 @@ struct Lv2PluginOptions {
         optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
         optSampleRate.value   = &sampleRate;
 
-        LV2_Options_Option& optFrontendWinId(opts[FrontendWinId]);
-        optFrontendWinId.context = LV2_OPTIONS_INSTANCE;
-        optFrontendWinId.subject = 0;
-        optFrontendWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
-        optFrontendWinId.size    = sizeof(int64_t);
-        optFrontendWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
-        optFrontendWinId.value   = &frontendWinId;
+        LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
+        optTransientWinId.context = LV2_OPTIONS_INSTANCE;
+        optTransientWinId.subject = 0;
+        optTransientWinId.key     = CARLA_URI_MAP_ID_CARLA_TRANSIENT_WIN_ID;
+        optTransientWinId.size    = sizeof(int64_t);
+        optTransientWinId.type    = CARLA_URI_MAP_ID_ATOM_LONG;
+        optTransientWinId.value   = &transientWinId;
 
-        /*
         LV2_Options_Option& optWindowTitle(opts[WindowTitle]);
         optWindowTitle.context = LV2_OPTIONS_INSTANCE;
         optWindowTitle.subject = 0;
@@ -201,7 +158,6 @@ struct Lv2PluginOptions {
         optWindowTitle.size    = 0;
         optWindowTitle.type    = CARLA_URI_MAP_ID_ATOM_STRING;
         optWindowTitle.value   = nullptr;
-        */
 
         LV2_Options_Option& optNull(opts[Null]);
         optNull.context = LV2_OPTIONS_INSTANCE;
@@ -237,43 +193,40 @@ public:
         // ---------------------------------------------------------------
         // initialize options
 
-        fLv2Options.minBufferSize     = gBufferSize;
-        fLv2Options.maxBufferSize     = gBufferSize;
-        fLv2Options.nominalBufferSize = gBufferSize;
-        fLv2Options.sampleRate        = gSampleRate;
+        fLv2Options.sampleRate = gSampleRate;
 
         // ---------------------------------------------------------------
         // initialize features (part 1)
 
-        LV2_Log_Log* const logFt         = new LV2_Log_Log;
-        logFt->handle                    = this;
-        logFt->printf                    = carla_lv2_log_printf;
-        logFt->vprintf                   = carla_lv2_log_vprintf;
+        LV2_Log_Log* const logFt = new LV2_Log_Log;
+        logFt->handle            = this;
+        logFt->printf            = carla_lv2_log_printf;
+        logFt->vprintf           = carla_lv2_log_vprintf;
 
         LV2_State_Make_Path* const stateMakePathFt = new LV2_State_Make_Path;
         stateMakePathFt->handle                    = this;
         stateMakePathFt->path                      = carla_lv2_state_make_path;
 
-        LV2_State_Map_Path* const stateMapPathFt   = new LV2_State_Map_Path;
-        stateMapPathFt->handle                     = this;
-        stateMapPathFt->abstract_path              = carla_lv2_state_map_abstract_path;
-        stateMapPathFt->absolute_path              = carla_lv2_state_map_absolute_path;
+        LV2_State_Map_Path* const stateMapPathFt = new LV2_State_Map_Path;
+        stateMapPathFt->handle                   = this;
+        stateMapPathFt->abstract_path            = carla_lv2_state_map_abstract_path;
+        stateMapPathFt->absolute_path            = carla_lv2_state_map_absolute_path;
 
-        LV2_Programs_Host* const programsFt   = new LV2_Programs_Host;
-        programsFt->handle                    = this;
-        programsFt->program_changed           = carla_lv2_program_changed;
+        LV2_Programs_Host* const programsFt = new LV2_Programs_Host;
+        programsFt->handle                  = this;
+        programsFt->program_changed         = carla_lv2_program_changed;
 
         LV2_URI_Map_Feature* const uriMapFt = new LV2_URI_Map_Feature;
         uriMapFt->callback_data             = this;
         uriMapFt->uri_to_id                 = carla_lv2_uri_to_id;
 
-        LV2_URID_Map* const uridMapFt       = new LV2_URID_Map;
-        uridMapFt->handle                   = this;
-        uridMapFt->map                      = carla_lv2_urid_map;
+        LV2_URID_Map* const uridMapFt = new LV2_URID_Map;
+        uridMapFt->handle             = this;
+        uridMapFt->map                = carla_lv2_urid_map;
 
-        LV2_URID_Unmap* const uridUnmapFt   = new LV2_URID_Unmap;
-        uridUnmapFt->handle                 = this;
-        uridUnmapFt->unmap                  = carla_lv2_urid_unmap;
+        LV2_URID_Unmap* const uridUnmapFt = new LV2_URID_Unmap;
+        uridUnmapFt->handle               = this;
+        uridUnmapFt->unmap                = carla_lv2_urid_unmap;
 
         LV2UI_Port_Map* const uiPortMapFt = new LV2UI_Port_Map;
         uiPortMapFt->handle               = this;
@@ -624,7 +577,13 @@ public:
     {
         carla_debug("CarlaLv2Client::uiOptionsChanged(%g, %s, %s, \"%s\", " P_UINTPTR ")", sampleRate, bool2str(useTheme), bool2str(useThemeColors), windowTitle, transientWindowId);
 
-        fLv2Options.sampleRate = gSampleRate = sampleRate;
+        delete[] fLv2Options.windowTitle;
+
+        gSampleRate = sampleRate;
+
+        fLv2Options.sampleRate     = sampleRate;
+        fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
+        fLv2Options.windowTitle    = carla_strdup_safe(windowTitle);
 
         fUiOptions.useTheme          = useTheme;
         fUiOptions.useThemeColors    = useThemeColors;
@@ -711,33 +670,40 @@ public:
         return 0;
     }
 
-    void handleUiWrite(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
+    void handleUiWrite(uint32_t rindex, uint32_t bufferSize, uint32_t format, const void* buffer)
     {
         CARLA_SAFE_ASSERT_RETURN(buffer != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(bufferSize > 0,);
-        carla_debug("CarlaLv2Client::handleUiWrite(%i, %i, %i, %p)", portIndex, bufferSize, format, buffer);
+        carla_debug("CarlaLv2Client::handleUiWrite(%i, %i, %i, %p)", rindex, bufferSize, format, buffer);
 
-        if (format == 0)
+        switch (format)
         {
+        case CARLA_URI_MAP_ID_NULL: {
             CARLA_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),);
 
             const float value(*(const float*)buffer);
 
             if (isPipeRunning())
-                writeControlMessage(portIndex, value);
-        }
-        else if (format == CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM || CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT)
-        {
+                writeControlMessage(rindex, value);
+
+        } break;
+
+        case CARLA_URI_MAP_ID_ATOM_TRANSFER_ATOM:
+        case CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT: {
             CARLA_SAFE_ASSERT_RETURN(bufferSize >= sizeof(LV2_Atom),);
 
             const LV2_Atom* const atom((const LV2_Atom*)buffer);
 
+            // plugins sometimes fail on this, not good...
+            CARLA_SAFE_ASSERT_INT2(bufferSize == lv2_atom_total_size(atom), bufferSize, atom->size);
+
             if (isPipeRunning())
-                writeLv2AtomMessage(portIndex, atom);
-        }
-        else
-        {
-            carla_stdout("CarlaLv2Client::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", portIndex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+                writeLv2AtomMessage(rindex, atom);
+        } break;
+
+        default:
+            carla_stdout("CarlaLv2Client::handleUiWrite(%i, %i, %i:\"%s\", %p) - unknown format", rindex, bufferSize, format, carla_lv2_urid_unmap(this, format), buffer);
+            break;
         }
     }
 
@@ -869,8 +835,8 @@ private:
 
     static char* carla_lv2_state_map_abstract_path(LV2_State_Map_Path_Handle handle, const char* absolute_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', nullptr);
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(""));
+        CARLA_SAFE_ASSERT_RETURN(absolute_path != nullptr && absolute_path[0] != '\0', strdup(""));
         carla_debug("carla_lv2_state_map_abstract_path(%p, \"%s\")", handle, absolute_path);
 
         // may already be an abstract path
@@ -882,8 +848,9 @@ private:
 
     static char* carla_lv2_state_map_absolute_path(LV2_State_Map_Path_Handle handle, const char* abstract_path)
     {
-        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, nullptr);
-        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', nullptr);
+        const char* const cwd(File::getCurrentWorkingDirectory().getFullPathName().toRawUTF8());
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr, strdup(cwd));
+        CARLA_SAFE_ASSERT_RETURN(abstract_path != nullptr && abstract_path[0] != '\0', strdup(cwd));
         carla_debug("carla_lv2_state_map_absolute_path(%p, \"%s\")", handle, abstract_path);
 
         // may already be an absolute path
