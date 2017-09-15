@@ -21,8 +21,12 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I$(CWD)/includes -I$(CWD)/utils
-LINK_FLAGS      += -ldl
+BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
+
+INTERPOSER_SAFE_LIBS = -ldl
+INTERPOSER_X11_LIBS  = $(X11_LIBS) -ldl
+LIBJACK_LIBS         = $(MODULEDIR)/juce_core.a
+LIBJACK_LIBS        += $(JUCE_CORE_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -31,10 +35,14 @@ TARGETS =
 
 ifeq ($(LINUX),true)
 OBJS    += $(OBJDIR)/interposer-safe.cpp.o
-TARGETS += $(BINDIR)/libcarla_interposer-safe$(LIB_EXT)
+TARGETS += $(BINDIR)/libcarla_interposer-safe.so
+
+OBJS    += $(OBJDIR)/libjack.cpp.o
+TARGETS += $(BINDIR)/jack/libjack.so.0
+
 ifeq ($(HAVE_X11),true)
 OBJS    += $(OBJDIR)/interposer-x11.cpp.o
-TARGETS += $(BINDIR)/libcarla_interposer-x11$(LIB_EXT)
+TARGETS += $(BINDIR)/libcarla_interposer-x11.so
 endif
 endif
 
@@ -52,15 +60,20 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/libcarla_interposer-safe$(LIB_EXT): $(OBJDIR)/interposer-safe.cpp.o
+$(BINDIR)/libcarla_interposer-safe.so: $(OBJDIR)/interposer-safe.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking libcarla_interposer-safe$(LIB_EXT)"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) -o $@
+	@echo "Linking libcarla_interposer-safe.so"
+	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_SAFE_LIBS) -o $@
 
-$(BINDIR)/libcarla_interposer-x11$(LIB_EXT): $(OBJDIR)/interposer-x11.cpp.o
+$(BINDIR)/libcarla_interposer-x11.so: $(OBJDIR)/interposer-x11.cpp.o
 	-@mkdir -p $(BINDIR)
-	@echo "Linking libcarla_interposer-x11$(LIB_EXT)"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(X11_LIBS) -o $@
+	@echo "Linking libcarla_interposer-x11.so"
+	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(INTERPOSER_X11_LIBS) -o $@
+
+$(BINDIR)/jack/libjack.so.0: $(OBJDIR)/libjack.cpp.o
+	-@mkdir -p $(BINDIR)/jack
+	@echo "Linking libjack.so.0"
+	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
@@ -73,6 +86,12 @@ $(OBJDIR)/interposer-x11.cpp.o: interposer-x11.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(X11_FLAGS) -c -o $@
+
+$(OBJDIR)/libjack.cpp.o: libjack.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+	# -Wno-missing-declarations
 
 -include $(OBJS:%.o=%.d)
 

@@ -32,7 +32,10 @@ if not host.engine_init("JACK", "Carla-Plugin-JACK"):
     print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
     exit(1)
 
-if not host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, "/usr/bin/lmms", "", "", 0, None, 0):
+fname = "/usr/bin/pulseaudio"
+label = "--high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play.pa -n"
+
+if not host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", label, 0, None, 0):
     print("Failed to load plugin, possible reasons:\n%s" % host.get_last_error())
     host.engine_close()
     exit(1)
