@@ -25,14 +25,14 @@ def signalHandler(sig, frame):
 # --------------------------------------------------------------------------------------------------------
 
 binaryDir = "/home/falktx/Personal/FOSS/GIT/falkTX/Carla/bin"
-host = CarlaHostDLL("/home/falktx/FOSS/GIT-mine/falkTX/Carla/bin/libcarla_standalone2.so", False)
+host = CarlaHostDLL("/home/falktx/FOSS/GIT-mine/falkTX/Carla/bin/libcarla_standalone2.so", True)
 host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, binaryDir)
 
-if not host.engine_init("JACK", "Carla-uhe-test"):
+if not host.engine_init("JACK", "Carla-Plugin-JACK"):
     print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
     exit(1)
 
-if not host.add_plugin(BINARY_NATIVE, PLUGIN_VST2, "/home/falktx/.vst/u-he/ACE.64.so", "", "", 0, None, 0):
+if not host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, "/usr/bin/lmms", "", "", 0, None, 0):
     print("Failed to load plugin, possible reasons:\n%s" % host.get_last_error())
     host.engine_close()
     exit(1)
