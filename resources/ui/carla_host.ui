@@ -193,7 +193,7 @@
      <x>0</x>
      <y>0</y>
      <width>1058</width>
-     <height>37</height>
+     <height>20</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -285,12 +285,23 @@
     <addaction name="act_help_about_juce"/>
     <addaction name="act_help_about_qt"/>
    </widget>
+   <widget class="QMenu" name="menu_Secrets">
+    <property name="title">
+     <string>Secrets</string>
+    </property>
+    <addaction name="act_secret_1"/>
+    <addaction name="act_secret_2"/>
+    <addaction name="act_secret_3"/>
+    <addaction name="act_secret_4"/>
+    <addaction name="act_secret_5"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Engine"/>
    <addaction name="menu_Plugin"/>
    <addaction name="menu_Canvas"/>
    <addaction name="menu_Settings"/>
    <addaction name="menu_Help"/>
+   <addaction name="menu_Secrets"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -1099,6 +1110,31 @@
   <action name="act_plugins_expand">
    <property name="text">
     <string>Expand Slots</string>
+   </property>
+  </action>
+  <action name="act_secret_1">
+   <property name="text">
+    <string>Perform secret 1</string>
+   </property>
+  </action>
+  <action name="act_secret_2">
+   <property name="text">
+    <string>Perform secret 2</string>
+   </property>
+  </action>
+  <action name="act_secret_3">
+   <property name="text">
+    <string>Perform secret 3</string>
+   </property>
+  </action>
+  <action name="act_secret_4">
+   <property name="text">
+    <string>Perform secret 4</string>
+   </property>
+  </action>
+  <action name="act_secret_5">
+   <property name="text">
+    <string>Perform secret 5</string>
    </property>
   </action>
  </widget>

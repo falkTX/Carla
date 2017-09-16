@@ -27,11 +27,11 @@ from carla_config import *
 if config_UseQt5:
     from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QImage, QPalette
-    from PyQt5.QtWidgets import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
+    from PyQt5.QtWidgets import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 else:
     from PyQt4.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt4.QtGui import QImage, QPalette
-    from PyQt4.QtGui import QAction, QApplication, QFileSystemModel, QListWidgetItem, QMainWindow
+    from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -346,7 +346,13 @@ class HostWindow(QMainWindow):
             self.ui.act_help_about_juce.setMenuRole(QAction.ApplicationSpecificRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
-            self.ui.menu_Help.hide()
+            self.ui.menu_Help.menuAction().setVisible(False)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Set up GUI (secrets when running local)
+
+        if CWD != "/Shared/Personal/FOSS/GIT/falkTX/Carla/source":
+            self.ui.menu_Secrets.menuAction().setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Load Settings
@@ -413,6 +419,12 @@ class HostWindow(QMainWindow):
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
+
+        self.ui.act_secret_1.triggered.connect(self.slot_runSecret1)
+        self.ui.act_secret_2.triggered.connect(self.slot_runSecret2)
+        self.ui.act_secret_3.triggered.connect(self.slot_runSecret3)
+        self.ui.act_secret_4.triggered.connect(self.slot_runSecret4)
+        self.ui.act_secret_5.triggered.connect(self.slot_runSecret5)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
         self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
@@ -1496,6 +1508,43 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutQt(self):
         QApplication.instance().aboutQt()
+
+    # --------------------------------------------------------------------------------------------------------
+    # Secret (menu actions)
+
+    @pyqtSlot()
+    def slot_runSecret1(self):
+        print("secret 1")
+        fname = "/usr/bin/audacious -p"
+        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
+
+    @pyqtSlot()
+    def slot_runSecret2(self):
+        print("secret 2")
+        fname  = "/usr/bin/pulseaudio"
+        fname += " --high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play+rec.pa -n"
+        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
+
+    @pyqtSlot()
+    def slot_runSecret3(self):
+        print("secret 3")
+        fname = "/usr/bin/lmms"
+        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
+
+    @pyqtSlot()
+    def slot_runSecret4(self):
+        print("secret 4")
+        ret = QInputDialog.getText(self, "Command", "command to run")
+        if ret[1] and len(ret[0]) > 1:
+            fname = ret[0]
+            if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0):
+                CustomMessageBox(self, QMessageBox.Critical,
+                                 self.tr("Error"), self.tr("Failed to load plugin"),
+                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+    @pyqtSlot()
+    def slot_runSecret5(self):
+        print("secret 5")
 
     # --------------------------------------------------------------------------------------------------------
     # Disk (menu actions)

@@ -58,16 +58,14 @@ public:
           kEngine(engine),
           kPlugin(plugin),
           fShmIds(),
-          fExtraArgs(),
           fProcess() {}
 
-    void setData(const char* const shmIds, const char* const args) noexcept
+    void setData(const char* const shmIds) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
         fShmIds = shmIds;
-        fExtraArgs = args;
     }
 
     uintptr_t getProcessID() const noexcept
@@ -100,8 +98,7 @@ protected:
         StringArray arguments;
 
         // binary
-        arguments.add(filename);
-        arguments.addTokens(fExtraArgs, true);
+        arguments.addTokens(filename, true);
 
         bool started;
 
@@ -181,7 +178,6 @@ private:
     CarlaPlugin* const kPlugin;
 
     String fShmIds;
-    String fExtraArgs;
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -1371,7 +1367,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name, const char* const args)
+    bool init(const char* const filename, const char* const name)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1460,7 +1456,7 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(shmIdsStr, args);
+            fBridgeThread.setData(shmIdsStr);
             fBridgeThread.startThread();
         }
 
@@ -1608,7 +1604,7 @@ CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
 
     CarlaPluginJack* const plugin(new CarlaPluginJack(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name, init.label))
+    if (! plugin->init(init.filename, init.name))
     {
         delete plugin;
         return nullptr;

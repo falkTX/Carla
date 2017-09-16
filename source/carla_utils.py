@@ -52,6 +52,8 @@ def getPluginTypeAsString(ptype):
         return "SF2"
     if ptype == PLUGIN_SFZ:
         return "SFZ"
+    if ptype == PLUGIN_JACK:
+        return "JACK"
 
     print("getPluginTypeAsString(%i) - invalid type" % ptype);
     return "Unknown"
@@ -84,6 +86,8 @@ def getPluginTypeFromString(stype):
         return PLUGIN_SF2
     if stype == "sfz":
         return PLUGIN_SFZ
+    if stype == "jack":
+        return PLUGIN_JACK
 
     print("getPluginTypeFromString(\"%s\") - invalid string type" % stype)
     return PLUGIN_NONE

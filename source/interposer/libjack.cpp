@@ -490,6 +490,13 @@ public:
 // #ifdef DEBUG
             if (opcode != kPluginBridgeNonRtClientPing)
             {
+                static int shownNull = 0;
+                if (opcode == kPluginBridgeNonRtClientNull)
+                {
+                    if (shownNull > 5)
+                        continue;
+                    ++shownNull;
+                }
                 carla_stdout("CarlaJackClient::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
             }
 // #endif
@@ -546,8 +553,15 @@ public:
             case kPluginBridgeNonRtClientSetMidiProgram:
             case kPluginBridgeNonRtClientSetCustomData:
             case kPluginBridgeNonRtClientSetChunkDataFile:
-            case kPluginBridgeNonRtClientSetCtrlChannel:
+                break;
+
             case kPluginBridgeNonRtClientSetOption:
+                fShmNonRtClientControl.readUInt();
+                fShmNonRtClientControl.readBool();
+                break;
+
+            case kPluginBridgeNonRtClientSetCtrlChannel:
+                fShmNonRtClientControl.readShort();
                 break;
 
             case kPluginBridgeNonRtClientPrepareForSave:
@@ -982,6 +996,15 @@ int jack_activate(jack_client_t* client)
     const JackClientState& jstate(jclient->fState);
     CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
 
+#if 0
+    // needed for pulseaudio
+    static bool skipFirstActivate = true;
+    if (skipFirstActivate) {
+        skipFirstActivate = false;
+        return 0;
+    }
+#endif
+
     jclient->activate();
     return 0;
 }
@@ -1191,7 +1214,7 @@ int jack_transport_locate(jack_client_t*, jack_nframes_t)
 CARLA_EXPORT
 jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+    carla_debug("CarlaJackClient :: %s", __FUNCTION__);
 
     CarlaJackClient* const jclient = (CarlaJackClient*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, JackTransportStopped);
@@ -1360,7 +1383,7 @@ const char** jack_get_ports(jack_client_t*, const char* a, const char* b, unsign
     static const char* playback_1 = "system:playback_1";
     static const char* playback_2 = "system:playback_2";
 
-    if (flags == 0 || (flags & (JackPortIsInput|JackPortIsOutput)) != 0)
+    if (flags == 0 || (flags & (JackPortIsInput|JackPortIsOutput)) == (JackPortIsInput|JackPortIsOutput))
     {
         if (const char** const ret = (const char**)calloc(5, sizeof(const char*)))
         {
@@ -1481,6 +1504,25 @@ int jack_set_thread_init_callback(jack_client_t*, JackThreadInitCallback, void*)
 {
     return 0;
 }
+
+CARLA_EXPORT
+int jack_port_name_size(void)
+{
+    return STR_MAX;
+}
+
+CARLA_EXPORT
+const char* JACK_METADATA_PRETTY_NAME;
+
+CARLA_EXPORT
+const char* JACK_METADATA_PRETTY_NAME = "http://jackaudio.org/metadata/pretty-name";
+
+// jack_ringbuffer_create
+// jack_port_connected
+// jack_port_is_mine
+// jack_port_set_name
+// jack_port_get_all_connections
+// jack_port_uuid
 
 // --------------------------------------------------------------------------------------------------------------------
 
