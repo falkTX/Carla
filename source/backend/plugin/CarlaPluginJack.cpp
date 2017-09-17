@@ -20,6 +20,9 @@
 #endif
 
 #include "CarlaPluginInternal.hpp"
+#include "CarlaEngine.hpp"
+
+#ifdef CARLA_OS_LINUX
 
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
@@ -139,7 +142,7 @@ protected:
         }
 
         for (; fProcess->isRunning() && ! shouldThreadExit();)
-            carla_sleep(1);
+            carla_msleep(50);
 
         // we only get here if bridge crashed or thread asked to exit
         if (fProcess->isRunning() && shouldThreadExit())
@@ -168,6 +171,10 @@ protected:
                                         "Please remove this plugin, and not rely on it from this point.");
                 kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0.0f, errorString);
             }
+            else
+            {
+                carla_stderr("CarlaPluginJackThread::run() - bridge closed itself");
+            }
         }
 
         fProcess = nullptr;
@@ -195,6 +202,7 @@ public:
           fInitError(false),
           fTimedOut(false),
           fTimedError(false),
+          fProcCanceled(false),
           fProcWaitTime(0),
           fLastPongTime(-1),
           fBridgeThread(engine, this),
@@ -231,11 +239,11 @@ public:
 
         if (fBridgeThread.isThreadRunning())
         {
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientQuit);
-            fShmNonRtClientControl.commitWrite();
-
             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientQuit);
             fShmRtClientControl.commitWrite();
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientQuit);
+            fShmNonRtClientControl.commitWrite();
 
             if (! fTimedOut)
                 waitForClient("stopping", 3000);
@@ -374,6 +382,7 @@ public:
             fTimedOut   = true;
             fTimedError = true;
             fInitiated  = false;
+            carla_stderr2("Plugin bridge has been stopped or crashed");
             pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f,
                                     "Plugin bridge has been stopped or crashed");
         }
@@ -551,6 +560,11 @@ public:
 
     void activate() noexcept override
     {
+        if (! fBridgeThread.isThreadRunning())
+        {
+            CARLA_SAFE_ASSERT_RETURN(restartBridgeThread(),);
+        }
+
         CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
 
         {
@@ -569,6 +583,9 @@ public:
 
     void deactivate() noexcept override
     {
+        if (! fBridgeThread.isThreadRunning())
+            return;
+
         CARLA_SAFE_ASSERT_RETURN(! fTimedError,);
 
         {
@@ -590,7 +607,7 @@ public:
         // --------------------------------------------------------------------------------------------------------
         // Check if active
 
-        if (fTimedOut || fTimedError || ! pData->active)
+        if (fProcCanceled || fTimedOut || fTimedError || ! pData->active)
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -943,6 +960,13 @@ public:
         {
             pData->singleMutex.unlock();
             return false;
+        }
+
+        if (fShmRtClientControl.data->procFlags)
+        {
+            carla_stdout("PROC Flags active, disabling plugin");
+            fInitiated    = false;
+            fProcCanceled = true;
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
@@ -1329,7 +1353,20 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerSaved:
+                break;
+
             case kPluginBridgeNonRtServerUiClosed:
+                carla_stdout("bridge closed cleanly?");
+                pData->active = false;
+
+#ifdef HAVE_LIBLO
+                if (pData->engine->isOscControlRegistered())
+                    pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
+#endif
+
+                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
+
+                fBridgeThread.stopThread(1000);
                 break;
 
             case kPluginBridgeNonRtServerError: {
@@ -1428,24 +1465,6 @@ public:
 
         // ---------------------------------------------------------------
 
-        // initial values
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientNull);
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
-        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
-
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetBufferSize);
-        fShmNonRtClientControl.writeUInt(pData->engine->getBufferSize());
-
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetSampleRate);
-        fShmNonRtClientControl.writeDouble(pData->engine->getSampleRate());
-
-        fShmNonRtClientControl.commitWrite();
-
-        // testing dummy message
-        fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
-        fShmRtClientControl.commitWrite();
-
         // init bridge thread
         {
             char shmIdsStr[6*4+1];
@@ -1457,51 +1476,10 @@ public:
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
             fBridgeThread.setData(shmIdsStr);
-            fBridgeThread.startThread();
         }
 
-        fInitiated = false;
-        fLastPongTime = Time::currentTimeMillis();
-        CARLA_SAFE_ASSERT(fLastPongTime > 0);
-
-        static bool sFirstInit = true;
-
-        int64_t timeoutEnd = 5000;
-
-        if (sFirstInit)
-            timeoutEnd *= 2;
-        sFirstInit = false;
-
-        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
-
-        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
-        {
-            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-            if (needsEngineIdle)
-                pData->engine->idle();
-
-            idle();
-
-            if (fInitiated)
-                break;
-            if (pData->engine->isAboutToClose())
-                break;
-
-            carla_msleep(20);
-        }
-
-        fLastPongTime = -1;
-
-        if (fInitError || ! fInitiated)
-        {
-            fBridgeThread.stopThread(6000);
-
-            if (! fInitError)
-                pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n(or the plugin crashed on initialization?)");
-
+        if (! restartBridgeThread())
             return false;
-        }
 
         // ---------------------------------------------------------------
         // register client
@@ -1525,6 +1503,7 @@ private:
     bool fInitError;
     bool fTimedOut;
     bool fTimedError;
+    bool fProcCanceled;
     uint fProcWaitTime;
 
     int64_t fLastPongTime;
@@ -1589,10 +1568,110 @@ private:
         carla_stderr("waitForClient(%s) timed out", action);
     }
 
+    bool restartBridgeThread()
+    {
+        fInitiated  = false;
+        fInitError  = false;
+        fTimedError = false;
+
+        // cleanup of previous data
+        delete[] fInfo.aInNames;
+        fInfo.aInNames = nullptr;
+
+        delete[] fInfo.aOutNames;
+        fInfo.aOutNames = nullptr;
+
+        // reset memory
+        fProcCanceled = false;
+        fShmRtClientControl.data->procFlags = 0;
+        carla_zeroStruct(fShmRtClientControl.data->timeInfo);
+        carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
+
+        fShmRtClientControl.clearData();
+        fShmNonRtClientControl.clearData();
+        fShmNonRtServerControl.clearData();
+
+        // initial values
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientNull);
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
+        fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetBufferSize);
+        fShmNonRtClientControl.writeUInt(pData->engine->getBufferSize());
+
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetSampleRate);
+        fShmNonRtClientControl.writeDouble(pData->engine->getSampleRate());
+
+        fShmNonRtClientControl.commitWrite();
+
+        if (fShmAudioPool.dataSize != 0)
+        {
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
+            fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.dataSize));
+            fShmRtClientControl.commitWrite();
+        }
+        else
+        {
+            // testing dummy message
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
+            fShmRtClientControl.commitWrite();
+        }
+
+        fBridgeThread.startThread();
+
+        fLastPongTime = Time::currentTimeMillis();
+        CARLA_SAFE_ASSERT(fLastPongTime > 0);
+
+        static bool sFirstInit = true;
+
+        int64_t timeoutEnd = 5000;
+
+        if (sFirstInit)
+            timeoutEnd *= 2;
+        sFirstInit = false;
+
+        const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
+
+        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
+        {
+            pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+            if (needsEngineIdle)
+                pData->engine->idle();
+
+            idle();
+
+            if (fInitiated)
+                break;
+            if (pData->engine->isAboutToClose())
+                break;
+
+            carla_msleep(20);
+        }
+
+        fLastPongTime = -1;
+
+        if (fInitError || ! fInitiated)
+        {
+            fBridgeThread.stopThread(6000);
+
+            if (! fInitError)
+                pData->engine->setLastError("Timeout while waiting for a response from plugin-bridge\n"
+                                            "(or the plugin crashed on initialization?)");
+
+            return false;
+        }
+
+        return true;
+    }
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginJack)
 };
 
 CARLA_BACKEND_END_NAMESPACE
+
+#endif // CARLA_OS_LINUX
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -1602,6 +1681,7 @@ CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newJackApp({%p, \"%s\", \"%s\", \"%s\"}, %s, %s, \"%s\")", init.engine, init.filename, init.name, init.label);
 
+#ifdef CARLA_OS_LINUX
     CarlaPluginJack* const plugin(new CarlaPluginJack(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name))
@@ -1611,6 +1691,10 @@ CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
     }
 
     return plugin;
+#else
+    init.engine->setLastError("JACK Application support not available");
+    return nullptr;
+#endif
 }
 
 CARLA_BACKEND_END_NAMESPACE

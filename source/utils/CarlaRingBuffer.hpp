@@ -106,7 +106,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    void clear() noexcept
+    void clearData() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
 
@@ -315,7 +315,7 @@ protected:
         fBuffer = ringBuf;
 
         if (resetBuffer && ringBuf != nullptr)
-            clear();
+            clearData();
     }
 
     // -------------------------------------------------------------------

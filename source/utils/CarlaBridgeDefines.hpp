@@ -138,7 +138,7 @@ struct BridgeTimeInfo {
 
 // -------------------------------------------------------------------------------------------------------------------
 
-static const std::size_t kBridgeRtClientDataMidiOutSize = 512*4;
+static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
 
 // Server => Client RT
 struct BridgeRtClientData {
@@ -146,6 +146,7 @@ struct BridgeRtClientData {
     BridgeTimeInfo timeInfo;
     SmallStackBuffer ringBuffer;
     uint8_t midiOut[kBridgeRtClientDataMidiOutSize];
+    uint32_t procFlags;
 };
 
 // Server => Client Non-RT

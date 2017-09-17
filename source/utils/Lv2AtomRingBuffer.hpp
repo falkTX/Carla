@@ -55,7 +55,7 @@ public:
         {
             const CarlaMutexLocker cml(ringBuf.fMutex);
             fHeapBuffer.copyDataFrom(ringBuf.fHeapBuffer);
-            ringBuf.clear();
+            ringBuf.clearData();
         }
 
         setRingBuffer(&fHeapBuffer, false);
