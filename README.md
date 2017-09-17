@@ -1,4 +1,4 @@
-#![Carla Logo](https://raw.githubusercontent.com/falkTX/Carla/master/resources/48x48/carla.png) Carla Plugin Host
+# ![Carla Logo](https://raw.githubusercontent.com/falkTX/Carla/master/resources/48x48/carla.png) Carla Plugin Host
 [![Build Status](https://travis-ci.org/falkTX/Carla.png)](https://travis-ci.org/falkTX/Carla)
 
 What is Carla?
