@@ -33,7 +33,23 @@
 
 #include "juce_core/juce_core.h"
 
+// -----------------------------------------------------------------------
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
+
 #include <linuxsampler/Sampler.h>
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 // -----------------------------------------------------------------------
 

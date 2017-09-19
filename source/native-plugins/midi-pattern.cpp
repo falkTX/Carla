@@ -198,7 +198,7 @@ protected:
                 fTimeSigNum = 2;
             else
                 fTimeSigNum = 1;
-            // nobreak
+            // fall through
         case kParameterMeasures:
             fMaxTicks = 48.0*fTimeSigNum*fParameters[kParameterMeasures] /2; // FIXME: why /2 ?
             break;

@@ -1064,7 +1064,7 @@ int jack_activate(jack_client_t* client)
 }
 
 CARLA_EXPORT
-int jack_deactivate(jack_client_t* client)
+int jack_deactivate(jack_client_t* /*client*/)
 {
     carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
 
@@ -1636,8 +1636,6 @@ int jack_port_connected(const jack_port_t*)
 
 CARLA_EXPORT
 const char* JACK_METADATA_PRETTY_NAME;
-
-CARLA_EXPORT
 const char* JACK_METADATA_PRETTY_NAME = "http://jackaudio.org/metadata/pretty-name";
 
 // jack_ringbuffer_create

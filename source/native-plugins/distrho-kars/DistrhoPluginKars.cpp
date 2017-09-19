@@ -111,7 +111,7 @@ void DistrhoPluginKars::run(const float**, float** outputs, uint32_t frames, con
                     fNotes[note].velocity = velo;
                     break;
                 }
-                // nobreak
+                // fall through
             case 0x80:
                 note = data[1];
                 DISTRHO_SAFE_ASSERT_BREAK(note < 128); // kMaxNotes

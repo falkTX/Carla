@@ -1373,6 +1373,7 @@ void CarlaStyle::drawControl(ControlElement element, const QStyleOption *option,
             painter->restore();
             return;
         }
+        break;
     case CE_SizeGrip:
         painter->save();
     {
@@ -3681,11 +3682,13 @@ QRect CarlaStyle::subControlRect(ComplexControl control, const QStyleOptionCompl
             case SC_TitleBarContextHelpButton:
                 if (tb->titleBarFlags & Qt::WindowContextHelpButtonHint)
                     offset += delta;
+                // fall through
             case SC_TitleBarMinButton:
                 if (!isMinimized && (tb->titleBarFlags & Qt::WindowMinimizeButtonHint))
                     offset += delta;
                 else if (sc == SC_TitleBarMinButton)
                     break;
+                // fall through
             case SC_TitleBarNormalButton:
                 if (isMinimized && (tb->titleBarFlags & Qt::WindowMinimizeButtonHint))
                     offset += delta;
@@ -3693,21 +3696,25 @@ QRect CarlaStyle::subControlRect(ComplexControl control, const QStyleOptionCompl
                     offset += delta;
                 else if (sc == SC_TitleBarNormalButton)
                     break;
+                // fall through
             case SC_TitleBarMaxButton:
                 if (!isMaximized && (tb->titleBarFlags & Qt::WindowMaximizeButtonHint))
                     offset += delta;
                 else if (sc == SC_TitleBarMaxButton)
                     break;
+                // fall through
             case SC_TitleBarShadeButton:
                 if (!isMinimized && (tb->titleBarFlags & Qt::WindowShadeButtonHint))
                     offset += delta;
                 else if (sc == SC_TitleBarShadeButton)
                     break;
+                // fall through
             case SC_TitleBarUnshadeButton:
                 if (isMinimized && (tb->titleBarFlags & Qt::WindowShadeButtonHint))
                     offset += delta;
                 else if (sc == SC_TitleBarUnshadeButton)
                     break;
+                // fall through
             case SC_TitleBarCloseButton:
                 if (tb->titleBarFlags & Qt::WindowSystemMenuHint)
                     offset += delta;

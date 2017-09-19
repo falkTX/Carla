@@ -1550,7 +1550,7 @@ public:
                 break;
             case CarlaPipeServerLV2::UiHide:
                 fPipeServer.stopPipeServer(2000);
-                // nobreak
+                // fall through
             case CarlaPipeServerLV2::UiCrashed:
                 pData->transientTryCounter = 0;
                 pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);

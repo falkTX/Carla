@@ -2127,7 +2127,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             case PLUGIN_SF2:
                 if (CarlaString(stateSave.label).endsWith(" (16 outs)"))
                     extraStuff = kTrue;
-                // nobreak
+                // fall through
             case PLUGIN_LADSPA:
             case PLUGIN_DSSI:
             case PLUGIN_VST2:

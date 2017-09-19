@@ -21,10 +21,18 @@
 #ifndef __LS_ENGINEFACTORY_H__
 #define __LS_ENGINEFACTORY_H__
 
-#include <linuxsampler/engines/Engine.h>
-
 #include <set>
 #include <vector>
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated"
+#endif
+
+#include <linuxsampler/engines/Engine.h>
 
 namespace LinuxSampler {
 
@@ -42,5 +50,11 @@ protected:
 };
 
 } // namespace LinuxSampler
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 #endif // __LS_ENGINEFACTORY_H__
