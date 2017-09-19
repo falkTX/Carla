@@ -24,6 +24,8 @@
 
 /**
  * @file ports.h
+ * Collection of functions for ports.
+ * This includes dispatchin, reading metadata etc.
  */
 
 #ifndef RTOSC_PORTS
@@ -54,8 +56,7 @@ struct RtData
     RtData(void);
 
     /**
-     * @brief location of where the dispatch routine is currently being called
-     *
+     * Location of where the dispatch routine is currently being called.
      * If non-NULL, the dispatch routine will update the port name here while
      * walking through the Ports tree
      */
@@ -253,7 +254,7 @@ struct MergePorts:public Ports
 };
 
 /**
- * @brief Returns a port's default value
+ * Return a port's default value
  *
  * Returns the default value of a given port, if any exists, as a string.
  * For the parameters, see the overloaded function.
@@ -266,7 +267,7 @@ const char* get_default_value(const char* port_name, const Ports& ports,
                               int32_t idx = -1, int recursive = 1);
 
 /**
- * @brief Returns a port's default value
+ * Return a port's default value
  *
  * Returns the default value of a given port, if any exists, as an array of
  * rtosc_arg_vals . The values in the resulting array are being canonicalized,
@@ -299,7 +300,7 @@ int get_default_value(const char* port_name, const char *port_args,
 
 
 /**
- * @brief Return a string list of all changed values
+ * Return a string list of all changed values
  *
  * Return a human readable list of the value that changed
  * corresponding to the rDefault macro
@@ -309,9 +310,8 @@ int get_default_value(const char* port_name, const char *port_args,
  */
 std::string get_changed_values(const Ports& ports, void* runtime);
 
-//! @brief Class to modify messages loaded from savefiles
-//!
-//! Object of this class shall be passed to savefile loading routines. You can
+//! Class to modify messages loaded from savefiles.
+//! Objects of this class shall be passed to savefile loading routines. You can
 //! inherit to change the behaviour, e.g. to modify or discard such messages.
 class savefile_dispatcher_t
 {
@@ -362,8 +362,7 @@ private:
 };
 
 /**
- * @brief Scan OSC messages from human readable format and dispatch them
- *
+ * Scan OSC messages from human readable format and dispatch them.
  * @param messages The OSC messages, whitespace-separated
  * @param ports The static ports structure
  * @param runtime The runtime object
@@ -378,9 +377,7 @@ int dispatch_printed_messages(const char* messages,
                               savefile_dispatcher_t *dispatcher = NULL);
 
 /**
- * @brief Return a savefile containing all values that differ from the default
- *   values.
- *
+ * Return a savefile containing all values that differ from the default values.
  * @param ports The static ports structure
  * @param runtime The runtime object
  * @param appname Name of the application calling this function
@@ -391,8 +388,7 @@ std::string save_to_file(const Ports& ports, void* runtime,
                          const char* appname, rtosc_version appver);
 
 /**
- * @brief Read save file and dispatch contained parameters
- *
+ * Read save file and dispatch contained parameters.
  * @param file_content The file as a C string
  * @param ports The static ports structure
  * @param runtime The runtime object
@@ -410,9 +406,9 @@ int load_from_file(const char* file_content,
                    savefile_dispatcher_t* dispatcher = NULL);
 
 /**
- * @brief Convert given argument values to their canonical representation, e.g.
- * to the ports first (or-wise) argument types.
+ * Convert given argument values to their canonical representation.
  *
+ * The ports first (or-wise) argument types are defined as canonical.
  * E.g. if passing two 'S' argument values, the
  * port could be `portname::ii:cc:SS` or `portname::ii:t`.
  *
@@ -428,8 +424,7 @@ int canonicalize_arg_vals(rtosc_arg_val_t* av, size_t n,
                           const char* port_args, Port::MetaContainer meta);
 
 /**
- * @brief Converts each of the given arguments to their mapped symbol, if
- *        possible
+ * Convert each of the given arguments to their mapped symbol, if possible.
  * @param av The input and output argument values
  * @param n The size of @p av
  * @param meta The port's metadata container
@@ -442,7 +437,7 @@ void map_arg_vals(rtosc_arg_val_t* av, size_t n,
  *********************/
 //typedef std::function<void(const Port*,const char*)> port_walker_t;
 /**
- * @brief function pointer type for port walking
+ * Function pointer type for port walking.
  *
  * accepts:
  * - the currently walked port
@@ -458,7 +453,7 @@ typedef void(*port_walker_t)(const Port*,const char*,const char*,
                              const Ports&,void*,void*);
 
 /**
- * @brief Call a function on all ports and subports
+ * Call a function on all ports and subports.
  * @param base The base port of traversing
  * @param name_buffer Buffer which will be filled with the port name; must be
  *   reset to zero over the full length!
@@ -474,7 +469,7 @@ void walk_ports(const Ports *base,
                 void *runtime = NULL);
 
 /**
- * @brief Return the index with value @p value from the metadata's enumeration
+ * Return the index with value @p value from the metadata's enumeration.
  * @param meta The metadata
  * @param value The value to search the key for
  * @return The first key holding value, or `std::numeric_limits<int>::min()`

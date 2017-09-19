@@ -870,6 +870,7 @@ void Microtonal::apply(void)
             strncat(buf, tmpbuf, sizeof(buf)-1);
         }
         int err = texttotunings(buf);
+        (void) err;
     }
 }
 

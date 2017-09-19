@@ -253,7 +253,7 @@ void XMLwrapper::addparreal(const string &name, float val)
     union { float in; uint32_t out; } convert;
     char buf[11];
     convert.in = val;
-    sprintf(buf, "0x%0.8X", convert.out);
+    sprintf(buf, "0x%.8X", convert.out);
     addparams("par_real", 3, "name", name.c_str(), "value",
               stringFrom<float>(val).c_str(), "exact_value", buf);
 }

@@ -68,6 +68,7 @@ static const char *escape_string(const char *msg)
 
 using std::ostream;
 using std::string;
+#if 0
 static int enum_min(Port::MetaContainer meta)
 {
     int min = 0;
@@ -125,6 +126,7 @@ static ostream &add_options(ostream &o, Port::MetaContainer meta)
 
     return o;
 }
+#endif
 
 /*
  * parameter :

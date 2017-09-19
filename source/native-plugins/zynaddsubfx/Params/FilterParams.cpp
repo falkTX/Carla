@@ -172,7 +172,6 @@ const rtosc::Ports FilterParams::ports = {
                             0.0,     cf.d[1]);
                 }
             } else if(obj->Pcategory == 2) {
-                int order = 0;
                 float gain = dB2rap(obj->getgain());
                 auto cf = SVFilter::computeResponse(obj->Ptype,
                         Filter::getrealfreq(obj->getfreq()),

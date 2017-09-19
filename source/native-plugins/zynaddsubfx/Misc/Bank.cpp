@@ -492,7 +492,7 @@ std::vector<std::string> Bank::search(std::string s) const
 std::vector<std::string> Bank::blist(std::string s)
 {
     std::vector<std::string> out;
-    int result = loadbank(s);
+    loadbank(s);
     for(int i=0; i<128; ++i) {
         if(ins[i].filename.empty())
             out.push_back("Empty Preset");

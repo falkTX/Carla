@@ -24,6 +24,7 @@
 
 /**
  * @file rtosc.h
+ * Functions handling messages and arguments
  */
 
 #ifndef RTOSC_H
@@ -135,7 +136,7 @@ typedef struct
 } rtosc_cmp_options;
 
 /**
- * @brief Check if two arrays of rtosc_arg_val_t are equal
+ * Check if two arrays of rtosc_arg_val_t are equal
  *
  * @param opt Comparison options or NULL for default options
  * @return One if they are equal, zero if not
@@ -145,8 +146,7 @@ int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
                       const rtosc_cmp_options* opt);
 
 /**
- * @brief Compare two arrays of rtosc_arg_val_t.
- *
+ * Compare two arrays of rtosc_arg_val_t.
  * Whether an argument value is less or greater than another is computed
  * - using memcmp for blobs
  * - using strcmp for strings and identifiers
@@ -166,7 +166,7 @@ int rtosc_arg_vals_cmp(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
 typedef struct { va_list a; } rtosc_va_list_t;
 
 /**
- * @brief Pack arguments into pre-allocated rtosc_arg_t array
+ * Pack arguments into pre-allocated rtosc_arg_t array
  *
  * @param args Pre-allocated array; size must be greater or equal @p nargs
  * @param nargs Size of elements to pack
@@ -177,16 +177,14 @@ void rtosc_v2args(rtosc_arg_t* args, size_t nargs,
                   const char* arg_str, rtosc_va_list_t* ap);
 
 /**
- * @brief Pack parameters into pre-allocated rtosc_arg_val-t array
- *
+ * Pack parameters into pre-allocated rtosc_arg_val-t array
  * @see rtosc_v2args
  */
 void rtosc_v2argvals(rtosc_arg_val_t* args, size_t nargs,
                      const char* arg_str, va_list ap);
 
 /**
- * @brief Pack parameters into pre-allocated rtosc_arg_val-t array
- *
+ * Pack parameters into pre-allocated rtosc_arg_val-t array
  * @see rtosc_v2args
  */
 void rtosc_2argvals(rtosc_arg_val_t* args, size_t nargs,

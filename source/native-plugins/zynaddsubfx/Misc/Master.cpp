@@ -186,6 +186,7 @@ static const Ports auto_param_ports = {
         rEnd},
     {"mapping/", 0, &mapping_ports,
         rBegin;
+        (void) a;
         SNIP;
         mapping_ports.dispatch(msg, d);
         rEnd},
@@ -664,7 +665,6 @@ void Master::loadAutomation(XMLwrapper &xml, rtosc::AutomationMgr &midi)
             auto &slot = midi.slots[i];
             if(xml.enterbranch("slot", i)) {
                 for(int j=0; j<midi.per_slot; ++j) {
-                    auto &au = slot.automations[j];
                     if(xml.enterbranch("automation", j)) {
                         float gain       = 1.0;
                         float offset     = 0.0;

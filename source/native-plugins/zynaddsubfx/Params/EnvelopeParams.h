@@ -55,8 +55,8 @@ class EnvelopeParams:public Presets
         static float dt(char val);
         static char inv_dt(float val);
 
-        //! @brief defines where it is used and its default settings
-	//! corresponds to envelope_type_t
+        //! Defines where it is used and its default settings.
+	//! Corresponds to envelope_type_t
         int envelope_type;
 
         /* MIDI Parameters */

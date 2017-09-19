@@ -39,8 +39,10 @@ void AutomationMgr::createBinding(int slot, const char *path, bool start_midi_le
     }
     auto meta = port->meta();
     if(!(meta.find("min") && meta.find("max"))) {
-        fprintf(stderr, "No bounds for '%s' known\n", path);
-        return;
+        if(!strstr(port->name, ":T")) {
+            fprintf(stderr, "No bounds for '%s' known\n", path);
+            return;
+        }
     }
     if(meta.find("internal") || meta.find("no learn")) {
         fprintf(stderr, "[Warning] port '%s' is unlearnable\n", path);
@@ -63,11 +65,18 @@ void AutomationMgr::createBinding(int slot, const char *path, bool start_midi_le
 
     au.used   = true;
     au.active = true;
-    au.param_min = atof(meta["min"]);
-    au.param_max = atof(meta["max"]);
     au.param_type = 'i';
     if(strstr(port->name, ":f"))
         au.param_type = 'f';
+    else if(strstr(port->name, ":T"))
+        au.param_type = 'T';
+    if(au.param_type == 'T') {
+        au.param_min = 0.0;
+        au.param_max = 1.0;
+    } else {
+        au.param_min = atof(meta["min"]);
+        au.param_max = atof(meta["max"]);
+    }
     strncpy(au.param_path, path, sizeof(au.param_path));
 
     au.map.gain   = 100.0;

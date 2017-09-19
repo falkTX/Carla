@@ -24,6 +24,7 @@
 
 /**
  * @file rtosc-version.h
+ * Definition of rtosc's version struct
  * @note the implementation is in version.c.in
  */
 

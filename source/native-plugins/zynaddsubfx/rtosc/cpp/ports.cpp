@@ -688,6 +688,7 @@ class CapturePretty : public RtData
         size_t wrt = rtosc_print_arg_vals(arg_vals, nargs,
                                           buffer, buffersize, NULL,
                                           cols_used);
+        (void) wrt;
         va_end(va);
         assert(wrt);
     }

@@ -294,9 +294,9 @@ template<class T> constexpr T spice(T*t) {return *t;}
 #define rBOIL_END }
 
 #define rLIMIT(var, convert) \
-    if(prop["min"] && var < convert(prop["min"])) \
+    if(prop["min"] && var < (decltype(var)) convert(prop["min"])) \
         var = convert(prop["min"]);\
-    if(prop["max"] && var > convert(prop["max"])) \
+    if(prop["max"] && var > (decltype(var)) convert(prop["max"])) \
         var = convert(prop["max"]);
 
 #define rTYPE(n) decltype(obj->n)

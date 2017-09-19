@@ -80,17 +80,17 @@ static svec split(string s)
     return vec;
 }
 
-static string line(string s)
-{
-    string ss;
-    for(char c:s) {
-        if(c != '\n')
-            ss.push_back(c);
-        else
-            return ss;
-    }
-    return ss;
-}
+//static string line(string s)
+//{
+//    string ss;
+//    for(char c:s) {
+//        if(c != '\n')
+//            ss.push_back(c);
+//        else
+//            return ss;
+//    }
+//    return ss;
+//}
 
 bvec BankDb::search(std::string ss) const
 {

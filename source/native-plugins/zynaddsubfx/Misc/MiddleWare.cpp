@@ -18,6 +18,7 @@
 #include <iostream>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <mutex>
 
 #include <rtosc/undo-history.h>
 #include <rtosc/thread-link.h>
@@ -59,6 +60,7 @@
 namespace zyncarla {
 
 using std::string;
+using std::mutex;
 int Pexitprogram = 0;
 
 /******************************************************************************
@@ -207,17 +209,19 @@ void preparePadSynth(string path, PADnoteParameters *p, rtosc::RtData &d)
     assert(!path.empty());
     path += "sample";
 
-    unsigned max = 0;
-    p->sampleGenerator([&max,&path,&d]
-            (unsigned N, PADnoteParameters::Sample &s)
-            {
-            max = max<N ? N : max;
-            //printf("sending info to '%s'\n", (path+to_s(N)).c_str());
-            d.chain((path+to_s(N)).c_str(), "ifb",
-                s.size, s.basefreq, sizeof(float*), &s.smp);
-            }, []{return false;});
+    std::mutex rtdata_mutex;
+    unsigned num = p->sampleGenerator([&rtdata_mutex,&path,&d]
+                       (unsigned N, PADnoteParameters::Sample &s)
+                       {
+                           //printf("sending info to '%s'\n",
+                           //       (path+to_s(N)).c_str());
+                           rtdata_mutex.lock();
+                           d.chain((path+to_s(N)).c_str(), "ifb",
+                                   s.size, s.basefreq, sizeof(float*), &s.smp);
+                           rtdata_mutex.unlock();
+                       }, []{return false;});
     //clear out unused samples
-    for(unsigned i = max+1; i < PAD_MAX_SAMPLES; ++i) {
+    for(unsigned i = num; i < PAD_MAX_SAMPLES; ++i) {
         d.chain((path+to_s(i)).c_str(), "ifb",
                 0, 440.0f, sizeof(float*), NULL);
     }
@@ -1617,7 +1621,7 @@ void MiddleWareImpl::heartBeat(Master *master)
     //Last provided beat
     //Last acknowledged beat
     //Current offline status
-    
+
     struct timespec time;
     clock_gettime(CLOCK_MONOTONIC, &time);
     uint32_t now = (time.tv_sec-start_time_sec)*100 +
