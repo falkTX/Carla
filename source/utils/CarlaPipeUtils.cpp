@@ -197,6 +197,8 @@ bool waitForClientConnect(const HANDLE pipe, const uint32_t timeOutMilliseconds)
 static inline
 bool startProcess(const char* const argv[], pid_t& pidinst) noexcept
 {
+    const ScopedEnvVar sev("LD_LIBRARY_PATH", nullptr);
+
     const pid_t ret = pidinst = vfork();
 
     switch (ret)
