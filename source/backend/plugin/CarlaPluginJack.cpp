@@ -28,6 +28,7 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
@@ -106,32 +107,24 @@ protected:
         bool started;
 
         {
+            const EngineOptions& options(kEngine->getOptions());
+
             char strBuf[STR_MAX+1];
+            std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
             strBuf[STR_MAX] = '\0';
 
-            const EngineOptions& options(kEngine->getOptions());
+            CarlaString libjackdir(options.binaryDir);
+            libjackdir += "/jack";
+
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
-#ifdef CARLA_OS_LINUX
-            const char* const oldPreload(std::getenv("LD_PRELOAD"));
+            const ScopedEnvVar sev1("LD_PRELOAD", nullptr);
+            const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
 
-            if (oldPreload != nullptr)
-                ::unsetenv("LD_PRELOAD");
-#endif
-
-            std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
             carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
             carla_setenv("CARLA_SHM_IDS", fShmIds.toRawUTF8());
-            carla_setenv("LD_LIBRARY_PATH", "/home/falktx/Personal/FOSS/GIT/falkTX/Carla/bin/jack");
 
             started = fProcess->start(arguments);
-
-#ifdef CARLA_OS_LINUX
-            if (oldPreload != nullptr)
-                ::setenv("LD_PRELOAD", oldPreload, 1);
-
-            ::unsetenv("LD_LIBRARY_PATH");
-#endif
         }
 
         if (! started)

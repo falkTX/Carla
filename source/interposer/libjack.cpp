@@ -888,6 +888,14 @@ int jack_client_close(jack_client_t* client)
 
     if (--gClientRefCount == 0)
     {
+#if 0
+        static bool ignoreFirstClientClose = true;
+        if (ignoreFirstClientClose)
+        {
+            ignoreFirstClientClose = false;
+            return 0;
+        }
+#endif
         jclient->close();
         delete jclient;
         gClient = nullptr;
