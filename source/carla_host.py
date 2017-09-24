@@ -351,7 +351,8 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (secrets when running local)
 
-        if CWD != "/Shared/Personal/FOSS/GIT/falkTX/Carla/source":
+        if CWD not in ("/Shared/Personal/FOSS/GIT/falkTX/Carla/source",
+                       "/home/falktx/Personal/GIT-mine/falkTX/Carla/source"):
             self.ui.menu_Secrets.menuAction().setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
