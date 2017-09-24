@@ -58,6 +58,11 @@ extern "C" {
 #undef static
 #include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"
 #include "zynaddsubfx/UI/WidgetPDial.cpp"
@@ -103,6 +108,10 @@ extern "C" {
 #include "zynaddsubfx/UI/TipWin.cpp"
 #include "zynaddsubfx/UI/VirKeyboard.cpp"
 #include "zynaddsubfx/UI/guimain.cpp"
+
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic pop
+#endif
 
 class ZynPipeClient : public CarlaPipeClient
 {
