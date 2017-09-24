@@ -27,6 +27,7 @@
 *.so
 
 # Binary dir
+bin/jack/
 bin/styles/
 build/
 
