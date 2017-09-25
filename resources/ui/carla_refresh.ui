@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>556</width>
-    <height>323</height>
+    <height>311</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -148,7 +148,7 @@
          </layout>
         </item>
         <item>
-         <widget class="Line" name="line_2">
+         <widget class="Line" name="sep_format">
           <property name="lineWidth">
            <number>0</number>
           </property>

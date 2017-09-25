@@ -1043,6 +1043,40 @@ class PluginRefreshW(QDialog):
 
         self.loadSettings()
 
+        # ----------------------------------------------------------------------------------------------------
+        # Disable bridges (experimental for now)
+
+        if not host.experimental:
+            self.ui.ch_native.setChecked(True)
+            self.ui.ch_native.setEnabled(False)
+            self.ui.ch_native.setVisible(False)
+            self.ui.ch_posix32.setChecked(False)
+            self.ui.ch_posix32.setEnabled(False)
+            self.ui.ch_posix32.setVisible(False)
+            self.ui.ch_posix64.setChecked(False)
+            self.ui.ch_posix64.setEnabled(False)
+            self.ui.ch_posix64.setVisible(False)
+            self.ui.ch_win32.setChecked(False)
+            self.ui.ch_win32.setEnabled(False)
+            self.ui.ch_win32.setVisible(False)
+            self.ui.ch_win64.setChecked(False)
+            self.ui.ch_win64.setEnabled(False)
+            self.ui.ch_win64.setVisible(False)
+            self.ui.ico_posix32.hide()
+            self.ui.ico_posix64.hide()
+            self.ui.ico_win32.hide()
+            self.ui.ico_win64.hide()
+            self.ui.label_posix32.hide()
+            self.ui.label_posix64.hide()
+            self.ui.label_win32.hide()
+            self.ui.label_win64.hide()
+            self.ui.sep_format.hide()
+
+        # ----------------------------------------------------------------------------------------------------
+        # Resize to minimum size, as it's very likely UI stuff was hidden
+
+        self.resize(self.minimumSize())
+
         # --------------------------------------------------------------------------------------------------------------
         # Set-up connections
 
