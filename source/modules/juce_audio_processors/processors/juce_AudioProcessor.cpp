@@ -24,6 +24,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 static ThreadLocalValue<AudioProcessor::WrapperType> wrapperTypeBeingCreated;
 
 void JUCE_CALLTYPE AudioProcessor::setTypeOfNextNewPlugin (AudioProcessor::WrapperType type)
@@ -625,6 +628,14 @@ int AudioProcessor::getParameterNumSteps (int index)
 int AudioProcessor::getDefaultNumParameterSteps() noexcept
 {
     return 0x7fffffff;
+}
+
+bool AudioProcessor::isParameterDiscrete (int index) const
+{
+    if (auto* p = managedParameters[index])
+        return p->isDiscrete();
+
+    return false;
 }
 
 String AudioProcessor::getParameterLabel (int index) const
@@ -1342,20 +1353,22 @@ int32 AudioProcessor::getAAXPluginIDForMainBusConfig (const AudioChannelSet& mai
         const AudioChannelSet& set = (isInput ? mainInputLayout : mainOutputLayout);
         int aaxFormatIndex = 0;
 
-        if      (set == AudioChannelSet::disabled())           aaxFormatIndex = 0;
-        else if (set == AudioChannelSet::mono())               aaxFormatIndex = 1;
-        else if (set == AudioChannelSet::stereo())             aaxFormatIndex = 2;
-        else if (set == AudioChannelSet::createLCR())          aaxFormatIndex = 3;
-        else if (set == AudioChannelSet::createLCRS())         aaxFormatIndex = 4;
-        else if (set == AudioChannelSet::quadraphonic())       aaxFormatIndex = 5;
-        else if (set == AudioChannelSet::create5point0())      aaxFormatIndex = 6;
-        else if (set == AudioChannelSet::create5point1())      aaxFormatIndex = 7;
-        else if (set == AudioChannelSet::create6point0())      aaxFormatIndex = 8;
-        else if (set == AudioChannelSet::create6point1())      aaxFormatIndex = 9;
-        else if (set == AudioChannelSet::create7point0())      aaxFormatIndex = 10;
-        else if (set == AudioChannelSet::create7point1())      aaxFormatIndex = 11;
-        else if (set == AudioChannelSet::create7point0SDDS())  aaxFormatIndex = 12;
-        else if (set == AudioChannelSet::create7point1SDDS())  aaxFormatIndex = 13;
+        if      (set == AudioChannelSet::disabled())             aaxFormatIndex = 0;
+        else if (set == AudioChannelSet::mono())                 aaxFormatIndex = 1;
+        else if (set == AudioChannelSet::stereo())               aaxFormatIndex = 2;
+        else if (set == AudioChannelSet::createLCR())            aaxFormatIndex = 3;
+        else if (set == AudioChannelSet::createLCRS())           aaxFormatIndex = 4;
+        else if (set == AudioChannelSet::quadraphonic())         aaxFormatIndex = 5;
+        else if (set == AudioChannelSet::create5point0())        aaxFormatIndex = 6;
+        else if (set == AudioChannelSet::create5point1())        aaxFormatIndex = 7;
+        else if (set == AudioChannelSet::create6point0())        aaxFormatIndex = 8;
+        else if (set == AudioChannelSet::create6point1())        aaxFormatIndex = 9;
+        else if (set == AudioChannelSet::create7point0())        aaxFormatIndex = 10;
+        else if (set == AudioChannelSet::create7point1())        aaxFormatIndex = 11;
+        else if (set == AudioChannelSet::create7point0SDDS())    aaxFormatIndex = 12;
+        else if (set == AudioChannelSet::create7point1SDDS())    aaxFormatIndex = 13;
+        else if (set == AudioChannelSet::create7point0point2())  aaxFormatIndex = 14;
+        else if (set == AudioChannelSet::create7point1point2())  aaxFormatIndex = 15;
         else
         {
             // AAX does not support this format and the wrapper should not have
@@ -1405,11 +1418,12 @@ void AudioProcessorParameter::endChangeGesture()
     processor->endParameterChangeGesture (parameterIndex);
 }
 
-bool AudioProcessorParameter::isOrientationInverted() const                    { return false; }
-bool AudioProcessorParameter::isAutomatable() const                            { return true; }
-bool AudioProcessorParameter::isMetaParameter() const                          { return false; }
-AudioProcessorParameter::Category AudioProcessorParameter::getCategory() const { return genericParameter; }
-int AudioProcessorParameter::getNumSteps() const            { return AudioProcessor::getDefaultNumParameterSteps(); }
+bool AudioProcessorParameter::isOrientationInverted() const                      { return false; }
+bool AudioProcessorParameter::isAutomatable() const                              { return true; }
+bool AudioProcessorParameter::isMetaParameter() const                            { return false; }
+AudioProcessorParameter::Category AudioProcessorParameter::getCategory() const   { return genericParameter; }
+int AudioProcessorParameter::getNumSteps() const                                 { return AudioProcessor::getDefaultNumParameterSteps(); }
+bool AudioProcessorParameter::isDiscrete() const                                 { return false; }
 
 String AudioProcessorParameter::getText (float value, int /*maximumStringLength*/) const
 {
@@ -1446,3 +1460,5 @@ void AudioPlayHead::CurrentPositionInfo::resetToDefault()
     timeSigDenominator = 4;
     bpm = 120;
 }
+
+} // namespace juce

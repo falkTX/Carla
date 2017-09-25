@@ -24,6 +24,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 const int AudioProcessorGraph::midiChannelIndex = 0x1000;
 
 //==============================================================================
@@ -1695,3 +1698,5 @@ void AudioProcessorGraph::AudioGraphIOProcessor::setParentGraph (AudioProcessorG
         updateHostDisplay();
     }
 }
+
+} // namespace juce

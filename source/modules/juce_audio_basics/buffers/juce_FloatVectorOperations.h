@@ -20,7 +20,8 @@
   ==============================================================================
 */
 
-#pragma once
+namespace juce
+{
 
 #if JUCE_INTEL
  #define JUCE_SNAP_TO_ZERO(n)    if (! (n < -1.0e-8f || n > 1.0e-8f)) n = 0;
@@ -219,3 +220,35 @@ public:
     */
     static void JUCE_CALLTYPE disableDenormalisedNumberSupport() noexcept;
 };
+
+//==============================================================================
+/**
+     Helper class providing an RAII-based mechanism for temporarily disabling
+     denormals on your CPU.
+*/
+class ScopedNoDenormals
+{
+public:
+    inline ScopedNoDenormals() noexcept
+    {
+       #if JUCE_USE_SSE_INTRINSICS
+        mxcsr = _mm_getcsr();
+        _mm_setcsr (mxcsr | 0x8040); // add the DAZ and FZ bits
+       #endif
+    }
+
+
+    inline ~ScopedNoDenormals() noexcept
+    {
+       #if JUCE_USE_SSE_INTRINSICS
+        _mm_setcsr (mxcsr);
+       #endif
+    }
+
+private:
+    #if JUCE_USE_SSE_INTRINSICS
+     unsigned int mxcsr;
+    #endif
+};
+
+} // namespace juce

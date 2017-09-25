@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 class iOSAudioIODevice;
 
 static const char* const iOSAudioDeviceName = "iOS Audio";
@@ -183,6 +186,10 @@ bool getNotificationValueForKey (NSNotification* notification, NSString* key, NS
 @end
 
 //==============================================================================
+#if JUCE_MODULE_AVAILABLE_juce_graphics
+ #include <juce_graphics/native/juce_mac_CoreGraphicsHelpers.h>
+#endif
+
 namespace juce {
 
 #ifndef JUCE_IOS_AUDIO_LOGGING
@@ -205,10 +212,6 @@ static void logNSError (NSError* e)
 }
 
 #define JUCE_NSERROR_CHECK(X)     { NSError* error = nil; X; logNSError (error); }
-
-#if JUCE_MODULE_AVAILABLE_juce_graphics
-#include <juce_graphics/native/juce_mac_CoreGraphicsHelpers.h>
-#endif
 
 //==============================================================================
 struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
@@ -310,6 +313,9 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
     {
         close();
 
+        firstHostTime = true;
+        lastNumFrames = 0;
+        xrun = 0;
         lastError.clear();
         preferredBufferSize = bufferSize <= 0 ? defaultBufferSize : bufferSize;
 
@@ -711,6 +717,8 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
     {
         OSStatus err = noErr;
 
+        recordXruns (time, numFrames);
+
         if (audioInputIsAvailable && numInputChannels > 0)
             err = AudioUnitRender (audioUnit, flags, time, 1, numFrames, data);
 
@@ -794,6 +802,26 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
         JUCE_NSERROR_CHECK ([[AVAudioSession sharedInstance] setPreferredIOBufferDuration: bufferDuration
                                                                                     error: &error]);
         updateSampleRateAndAudioInput();
+    }
+
+    void recordXruns (const AudioTimeStamp* time, UInt32 numFrames)
+    {
+        if (time != nullptr && (time->mFlags & kAudioTimeStampSampleTimeValid) != 0)
+        {
+            if (! firstHostTime)
+            {
+                if ((time->mSampleTime - lastSampleTime) != lastNumFrames)
+                    xrun++;
+            }
+            else
+                firstHostTime = false;
+
+            lastSampleTime = time->mSampleTime;
+        }
+        else
+            firstHostTime = true;
+
+        lastNumFrames = numFrames;
     }
 
     //==============================================================================
@@ -1060,6 +1088,11 @@ struct iOSAudioIODevice::Pimpl      : public AudioPlayHead,
     float* outputChannels[3];
     bool monoInputChannelNumber, monoOutputChannelNumber;
 
+    bool firstHostTime;
+    Float64 lastSampleTime;
+    unsigned int lastNumFrames;
+    int xrun;
+
     JUCE_DECLARE_NON_COPYABLE (Pimpl)
 };
 
@@ -1105,6 +1138,7 @@ BigInteger iOSAudioIODevice::getActiveInputChannels() const         { return pim
 
 int iOSAudioIODevice::getOutputLatencyInSamples()                   { return roundToInt (pimpl->sampleRate * [AVAudioSession sharedInstance].outputLatency); }
 int iOSAudioIODevice::getInputLatencyInSamples()                    { return roundToInt (pimpl->sampleRate * [AVAudioSession sharedInstance].inputLatency); }
+int iOSAudioIODevice::getXRunCount() const noexcept                 { return pimpl->xrun; }
 
 void iOSAudioIODevice::setMidiMessageCollector (MidiMessageCollector* collector) { pimpl->messageCollector = collector; }
 AudioPlayHead* iOSAudioIODevice::getAudioPlayHead() const           { return pimpl; }
@@ -1168,3 +1202,5 @@ void AudioSessionHolder::handleRouteChange (const char* reason)
 }
 
 #undef JUCE_NSERROR_CHECK
+
+} // namespace juce

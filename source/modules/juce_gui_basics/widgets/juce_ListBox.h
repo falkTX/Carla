@@ -24,8 +24,8 @@
   ==============================================================================
 */
 
-#pragma once
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -379,11 +379,11 @@ public:
     /** Scrolls if necessary to make sure that a particular row is visible. */
     void scrollToEnsureRowIsOnscreen (int row);
 
-    /** Returns a pointer to the vertical scrollbar. */
-    ScrollBar* getVerticalScrollBar() const noexcept;
+    /** Returns a reference to the vertical scrollbar. */
+    ScrollBar& getVerticalScrollBar() const noexcept;
 
-    /** Returns a pointer to the horizontal scrollbar. */
-    ScrollBar* getHorizontalScrollBar() const noexcept;
+    /** Returns a reference to the horizontal scrollbar. */
+    ScrollBar& getHorizontalScrollBar() const noexcept;
 
     /** Finds the row index that contains a given x,y position.
         The position is relative to the ListBox's top-left.
@@ -598,3 +598,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ListBox)
 };
+
+} // namespace juce

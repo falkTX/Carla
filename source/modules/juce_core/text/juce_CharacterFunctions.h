@@ -20,8 +20,8 @@
   ==============================================================================
 */
 
-#pragma once
-
+namespace juce
+{
 
 //==============================================================================
 #if JUCE_WINDOWS && ! DOXYGEN
@@ -59,6 +59,19 @@
  */
  #define T(stringLiteral)   JUCE_T(stringLiteral)
 #endif
+
+//==============================================================================
+/** GNU libstdc++ does not have std::make_unsigned */
+namespace internal
+{
+    template <typename Type> struct make_unsigned               { typedef Type type; };
+    template <> struct make_unsigned<signed char>               { typedef unsigned char      type; };
+    template <> struct make_unsigned<char>                      { typedef unsigned char      type; };
+    template <> struct make_unsigned<short>                     { typedef unsigned short     type; };
+    template <> struct make_unsigned<int>                       { typedef unsigned int       type; };
+    template <> struct make_unsigned<long>                      { typedef unsigned long      type; };
+    template <> struct make_unsigned<long long>                 { typedef unsigned long long type; };
+}
 
 //==============================================================================
 /**
@@ -168,7 +181,7 @@ public:
                      || ((numSigFigs == 0 && (! decimalPointFound)) && digit == 0))
                     continue;
 
-                *currentCharacter++ = '0' + (char) digit;
+                *currentCharacter++ = (char) ('0' + (char) digit);
                 numSigFigs++;
             }
             else if ((! decimalPointFound) && *text == '.')
@@ -206,7 +219,7 @@ public:
 
                 if (digit != 0 || exponentMagnitude != 0)
                 {
-                    *currentCharacter++ = '0' + (char) digit;
+                    *currentCharacter++ = (char) ('0' + (char) digit);
                     exponentMagnitude = (exponentMagnitude * 10) + digit;
                 }
             }
@@ -218,17 +231,22 @@ public:
                 *currentCharacter++ = '0';
         }
 
-      #if JUCE_WINDOWS
-        static _locale_t locale = _create_locale (LC_ALL, "C");
-        return _strtod_l (&buffer[0], nullptr, locale);
-      #else
-        static locale_t locale = newlocale (LC_ALL_MASK, "C", nullptr);
-       #if JUCE_ANDROID
-        return (double) strtold_l (&buffer[0], nullptr, locale);
+       #if JUCE_PROJUCER_LIVE_BUILD
+        // This will change with locale!
+        return strtod (&buffer[0], nullptr);
        #else
-        return strtod_l (&buffer[0], nullptr, locale);
+        double result = 0;
+        const size_t stringSize = (size_t) (currentCharacter - &buffer[0]) + 1;
+
+        if (stringSize > 1)
+        {
+            std::istringstream is (std::string (&buffer[0], stringSize));
+            is.imbue (std::locale ("C"));
+            is >> result;
+        }
+
+        return result;
        #endif
-      #endif
     }
 
     /** Parses a character string, to read a floating-point value. */
@@ -243,7 +261,7 @@ public:
     template <typename IntType, typename CharPointerType>
     static IntType getIntValue (const CharPointerType text) noexcept
     {
-        typedef typename std::make_unsigned<IntType>::type UIntType;
+        typedef typename internal::make_unsigned<IntType>::type UIntType;
 
         UIntType v = 0;
         auto s = text.findEndOfWhitespace();
@@ -618,3 +636,5 @@ public:
 private:
     static double mulexp10 (double value, int exponent) noexcept;
 };
+
+} // namespace juce

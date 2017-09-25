@@ -20,7 +20,9 @@
   ==============================================================================
 */
 
-//==============================================================================
+namespace juce
+{
+
 #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD) \
  METHOD (constructor, "<init>", "()V") \
  METHOD (toString, "toString", "()Ljava/lang/String;") \
@@ -132,8 +134,8 @@ public:
                                                                  javaString (httpRequest).get()));
         }
 
-        if (stream != 0)
-            stream.callBooleanMethod (HTTPStream.connect);
+        if (stream != 0 && ! stream.callBooleanMethod (HTTPStream.connect))
+            stream.clear();
 
         jint* const statusCodeElements = env->GetIntArrayElements (statusCodeArray, 0);
         statusCode = statusCodeElements[0];
@@ -298,3 +300,5 @@ void IPAddress::findAllAddresses (Array<IPAddress>& result, bool /*includeIPv6*/
         ::close (sock);
     }
 }
+
+} // namespace juce

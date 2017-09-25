@@ -24,8 +24,8 @@
   ==============================================================================
 */
 
-#pragma once
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -144,6 +144,8 @@ public:
         */
         int runModal();
        #endif
+
+        JUCE_DECLARE_NON_COPYABLE (LaunchOptions)
     };
 
     //==============================================================================
@@ -260,3 +262,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DialogWindow)
 };
+
+} // namespace juce

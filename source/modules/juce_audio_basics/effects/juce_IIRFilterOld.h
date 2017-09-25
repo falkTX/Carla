@@ -26,6 +26,9 @@
 #define __JUCE_IIRFILTER_OLD_JUCEHEADER__
 
 
+namespace juce
+{
+
 //==============================================================================
 /**
     An IIR filter that can perform low, high, or band-pass filtering on an
@@ -144,5 +147,7 @@ protected:
     JUCE_LEAK_DETECTOR (IIRFilterOld)
 };
 
+
+} // namespace juce
 
 #endif   // __JUCE_IIRFILTER_OLD_JUCEHEADER__

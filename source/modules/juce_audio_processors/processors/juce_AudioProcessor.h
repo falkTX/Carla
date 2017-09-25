@@ -24,7 +24,8 @@
   ==============================================================================
 */
 
-#pragma once
+namespace juce
+{
 
 struct PluginBusUtilities;
 
@@ -1022,13 +1023,22 @@ public:
     virtual String getParameterText (int parameterIndex, int maximumStringLength);
 
     /** Returns the number of discrete steps that this parameter can represent.
+
         The default return value if you don't implement this method is
         AudioProcessor::getDefaultNumParameterSteps().
+
         If your parameter is boolean, then you may want to make this return 2.
+
+        If you want the host to display stepped automation values, rather than a
+        continuous interpolation between successive values, you should ensure that
+        isParameterDiscrete returns true.
+
         The value that is returned may or may not be used, depending on the host.
 
         NOTE! This method will eventually be deprecated! It's recommended that you use
         AudioProcessorParameter::getNumSteps() instead.
+
+        @see isParameterDiscrete
     */
     virtual int getParameterNumSteps (int parameterIndex);
 
@@ -1036,9 +1046,25 @@ public:
 
         NOTE! This method will eventually be deprecated! It's recommended that you use
         AudioProcessorParameter::getNumSteps() instead.
+
         @see getParameterNumSteps
     */
     static int getDefaultNumParameterSteps() noexcept;
+
+    /** Returns true if the parameter should take discrete, rather than continuous
+        values.
+
+        If the parameter is boolean, this should return true (with getParameterNumSteps
+        returning 2).
+
+        The value that is returned may or may not be used, depending on the host.
+
+        NOTE! This method will eventually be deprecated! It's recommended that you use
+        AudioProcessorParameter::isDiscrete() instead.
+
+        @see getParameterNumSteps
+    */
+    virtual bool isParameterDiscrete (int parameterIndex) const;
 
     /** Returns the default value for the parameter.
         By default, this just returns 0.
@@ -1120,8 +1146,8 @@ public:
         By default, this returns the "generic" category.
 
         NOTE! This method will eventually be deprecated! It's recommended that you use
-        AudioProcessorParameter::isMetaParameter() instead.
-     */
+        AudioProcessorParameter::getCategory() instead.
+    */
     virtual AudioProcessorParameter::Category getParameterCategory (int parameterIndex) const;
 
     /** Sends a signal to the host to tell it that the user is about to start changing this
@@ -1611,3 +1637,5 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessor)
 };
+
+} // namespace juce

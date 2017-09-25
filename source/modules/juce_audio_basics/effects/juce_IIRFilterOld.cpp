@@ -28,6 +28,9 @@
  #define JUCE_SNAP_TO_ZERO(n)
 #endif
 
+namespace juce
+{
+
 //==============================================================================
 IIRFilterOld::IIRFilterOld()
     : active (false), v1 (0), v2 (0)
@@ -237,3 +240,5 @@ void IIRFilterOld::setCoefficients (double c1, double c2, double c3,
 }
 
 #undef JUCE_SNAP_TO_ZERO
+
+} // namespace juce

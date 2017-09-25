@@ -26,15 +26,12 @@
 
 #if JUCE_PLUGINHOST_VST3 && (JUCE_MAC || JUCE_WINDOWS)
 
-} // namespace juce
-
 #include <map>
 #include "juce_VST3Headers.h"
+#include "juce_VST3Common.h"
 
 namespace juce
 {
-
-#include "juce_VST3Common.h"
 
 using namespace Steinberg;
 
@@ -207,6 +204,7 @@ static void toProcessContext (Vst::ProcessContext& context, AudioPlayHead* playH
 
         switch (position.frameRate)
         {
+            case AudioPlayHead::fps23976:    fr.framesPerSecond = 24; fr.flags = FrameRate::kPullDownRate; break;
             case AudioPlayHead::fps24:       fr.framesPerSecond = 24; fr.flags = 0; break;
             case AudioPlayHead::fps25:       fr.framesPerSecond = 25; fr.flags = 0; break;
             case AudioPlayHead::fps2997:     fr.framesPerSecond = 30; fr.flags = FrameRate::kPullDownRate; break;
@@ -2186,14 +2184,16 @@ struct VST3PluginInstance : public AudioPluginInstance
 
     bool isInputChannelStereoPair (int channelIndex) const override
     {
-        return isPositiveAndBelow (channelIndex, getTotalNumInputChannels())
-                 && getBusInfo (true, true).channelCount == 2;
+        int busIdx;
+        return getOffsetInBusBufferForAbsoluteChannelIndex (true, channelIndex, busIdx) >= 0
+                 && getBusInfo (true, true, busIdx).channelCount == 2;
     }
 
     bool isOutputChannelStereoPair (int channelIndex) const override
     {
-        return isPositiveAndBelow (channelIndex, getTotalNumOutputChannels())
-                 && getBusInfo (false, true).channelCount == 2;
+        int busIdx;
+        return getOffsetInBusBufferForAbsoluteChannelIndex (false, channelIndex, busIdx) >= 0
+                 && getBusInfo (false, true, busIdx).channelCount == 2;
     }
 
     bool acceptsMidi() const override    { return getBusInfo (true,  false).channelCount > 0; }
@@ -2247,17 +2247,6 @@ struct VST3PluginInstance : public AudioPluginInstance
         return toString (getParameterInfoForIndex (parameterIndex).title);
     }
 
-    float getParameter (int parameterIndex) override
-    {
-        if (editController != nullptr)
-        {
-            auto id = getParameterInfoForIndex (parameterIndex).id;
-            return (float) editController->getParamNormalized (id);
-        }
-
-        return 0.0f;
-    }
-
     const String getParameterText (int parameterIndex) override
     {
         if (editController != nullptr)
@@ -2271,6 +2260,41 @@ struct VST3PluginInstance : public AudioPluginInstance
         }
 
         return {};
+    }
+
+    int getParameterNumSteps (int parameterIndex) override
+    {
+        if (editController != nullptr)
+        {
+            const auto numSteps = getParameterInfoForIndex (parameterIndex).stepCount;
+
+            if (numSteps > 0)
+                return numSteps;
+        }
+
+        return AudioProcessor::getDefaultNumParameterSteps();
+    }
+
+    bool isParameterDiscrete (int parameterIndex) const override
+    {
+        if (editController != nullptr)
+        {
+            const auto numSteps = getParameterInfoForIndex (parameterIndex).stepCount;
+            return numSteps > 0;
+        }
+
+        return false;
+    }
+
+    float getParameter (int parameterIndex) override
+    {
+        if (editController != nullptr)
+        {
+            auto id = getParameterInfoForIndex (parameterIndex).id;
+            return (float) editController->getParamNormalized (id);
+        }
+
+        return 0.0f;
     }
 
     void setParameter (int parameterIndex, float newValue) override
@@ -2954,4 +2978,6 @@ FileSearchPath VST3PluginFormat::getDefaultLocationsToSearch()
    #endif
 }
 
-#endif //JUCE_PLUGINHOST_VST3
+} // namespace juce
+
+#endif // JUCE_PLUGINHOST_VST3

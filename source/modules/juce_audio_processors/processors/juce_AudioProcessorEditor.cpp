@@ -24,6 +24,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 AudioProcessorEditor::AudioProcessorEditor (AudioProcessor& p) noexcept  : processor (p)
 {
     initialise();
@@ -182,3 +185,5 @@ void AudioProcessorEditor::setScaleFactor (float newScale)
     setTransform (AffineTransform::scale (newScale));
     editorResized (true);
 }
+
+} // namespace juce

@@ -29,7 +29,7 @@
 */
 #define JUCE_MAJOR_VERSION      5
 #define JUCE_MINOR_VERSION      1
-#define JUCE_BUILDNUMBER        1
+#define JUCE_BUILDNUMBER        2
 
 /** Current Juce version number.
 
@@ -112,6 +112,11 @@
 // build
 #if JUCE_PROJUCER_LIVE_BUILD || ! defined (JUCE_STDLIB_HAS_STD_FUNCTION_SUPPORT)
  #include "../misc/juce_StdFunctionCompat.h"
+#endif
+
+// The live build fails to compile std::stringstream
+#if ! JUCE_PROJUCER_LIVE_BUILD
+ #include <sstream>
 #endif
 
 // Include std::atomic if it's supported by the compiler

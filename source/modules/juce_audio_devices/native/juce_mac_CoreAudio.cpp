@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 #if JUCE_COREAUDIO_LOGGING_ENABLED
  #define JUCE_COREAUDIOLOG(a) { String camsg ("CoreAudio: "); camsg << a; Logger::writeToLog (camsg); }
 #else
@@ -228,7 +231,7 @@ public:
 
                 for (int i = 0; i < numStreams; ++i)
                 {
-                    const ::AudioBuffer& b = bufList->mBuffers[i];
+                    auto& b = bufList->mBuffers[i];
 
                     for (unsigned int j = 0; j < b.mNumberChannels; ++j)
                     {
@@ -578,6 +581,8 @@ public:
 
         stop (false);
 
+        updateDetailsFromDevice();
+
         activeInputChans = inputChannels;
         activeInputChans.setRange (inChanNames.size(),
                                    activeInputChans.getHighestBit() + 1 - inChanNames.size(),
@@ -733,7 +738,7 @@ public:
                 }
             }
 
-            callback->audioDeviceIOCallback (const_cast<const float**> (tempInputBuffers.getData()),
+            callback->audioDeviceIOCallback (const_cast<const float**> (tempInputBuffers.get()),
                                              numInputChans,
                                              tempOutputBuffers,
                                              numOutputChans,
@@ -791,6 +796,7 @@ public:
     int inputLatency  = 0;
     int outputLatency = 0;
     int bitDepth = 32;
+    int xruns = 0;
     BigInteger activeInputChans, activeOutputChans;
     StringArray inChanNames, outChanNames;
     Array<double> sampleRates;
@@ -832,6 +838,9 @@ private:
 
         switch (pa->mSelector)
         {
+            case kAudioDeviceProcessorOverload:
+                intern->xruns++;
+                break;
             case kAudioDevicePropertyBufferSize:
             case kAudioDevicePropertyBufferFrameSize:
             case kAudioDevicePropertyNominalSampleRate:
@@ -957,6 +966,7 @@ public:
     double getCurrentSampleRate() override              { return internal->getSampleRate(); }
     int getCurrentBitDepth() override                   { return internal->bitDepth; }
     int getCurrentBufferSizeSamples() override          { return internal->getBufferSize(); }
+    int getXRunCount() const noexcept override          { return internal->xruns; }
 
     int getDefaultBufferSize() override
     {
@@ -977,6 +987,7 @@ public:
     {
         isOpen_ = true;
 
+        internal->xruns = 0;
         if (bufferSizeSamples <= 0)
             bufferSizeSamples = getDefaultBufferSize();
 
@@ -2058,3 +2069,5 @@ AudioIODeviceType* AudioIODeviceType::createAudioIODeviceType_CoreAudio()
 }
 
 #undef JUCE_COREAUDIOLOG
+
+} // namespace juce

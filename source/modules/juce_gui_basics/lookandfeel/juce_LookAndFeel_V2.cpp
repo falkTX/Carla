@@ -24,6 +24,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 namespace LookAndFeelHelpers
 {
     static Colour createBaseColour (Colour buttonColour,
@@ -1491,7 +1494,7 @@ class LookAndFeel_V2::SliderLabelComp  : public Label
 public:
     SliderLabelComp() : Label ({}, {}) {}
 
-    void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) {}
+    void mouseWheelMove (const MouseEvent&, const MouseWheelDetails&) override {}
 };
 
 Label* LookAndFeel_V2::createSliderTextBox (Slider& slider)
@@ -3018,3 +3021,5 @@ void LookAndFeel_V2::drawGlassLozenge (Graphics& g,
     g.setColour (colour.darker().withMultipliedAlpha (1.5f));
     g.strokePath (outline, PathStrokeType (outlineThickness));
 }
+
+} // namespace juce

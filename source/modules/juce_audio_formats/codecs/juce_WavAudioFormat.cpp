@@ -24,6 +24,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 static const char* const wavFormatName = "WAV file";
 
 //==============================================================================
@@ -892,7 +895,7 @@ namespace WavFileHelpers
 
             return xml.getMemoryBlock();
         }
-    };
+    }
 
     //==============================================================================
     struct ExtensibleWavSubFormat
@@ -1867,3 +1870,5 @@ private:
 static const WaveAudioFormatTests waveAudioFormatTests;
 
 #endif
+
+} // namespace juce

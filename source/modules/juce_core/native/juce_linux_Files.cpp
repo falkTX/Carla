@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 enum
 {
     U_ISOFS_SUPER_MAGIC = 0x9660,   // linux/iso_fs.h
@@ -234,3 +237,5 @@ void File::revealToUser() const
     else if (getParentDirectory().exists())
         getParentDirectory().startAsProcess();
 }
+
+} // namespace juce

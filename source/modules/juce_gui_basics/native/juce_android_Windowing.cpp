@@ -24,15 +24,13 @@
   ==============================================================================
 */
 
-} // (juce namespace)
-
 extern juce::JUCEApplicationBase* juce_CreateApplication(); // (from START_JUCE_APPLICATION)
 
 namespace juce
 {
 
 //==============================================================================
-#if JUCE_MODULE_AVAILABLE_juce_product_unlocking
+#if JUCE_IN_APP_PURCHASES && JUCE_MODULE_AVAILABLE_juce_product_unlocking
  extern void juce_inAppPurchaseCompleted (void*);
 #endif
 
@@ -92,7 +90,7 @@ JUCE_JNI_CALLBACK (JUCE_ANDROID_ACTIVITY_CLASSNAME, appActivityResult, void, (JN
 {
     setEnv (env);
 
-   #if JUCE_MODULE_AVAILABLE_juce_product_unlocking
+   #if JUCE_IN_APP_PURCHASES && JUCE_MODULE_AVAILABLE_juce_product_unlocking
     if (requestCode == 1001)
         juce_inAppPurchaseCompleted (intentData);
    #else
@@ -527,6 +525,10 @@ public:
             buffer.clear();
             sizeAllocated = sizeNeeded;
             buffer = GlobalRef (env->NewIntArray (sizeNeeded));
+        }
+        else if (sizeNeeded == 0)
+        {
+            return;
         }
 
         if (jint* dest = env->GetIntArrayElements ((jintArray) buffer.get(), 0))
@@ -1023,6 +1025,25 @@ const int KeyPress::F13Key          = extendedKeyModifier + 23;
 const int KeyPress::F14Key          = extendedKeyModifier + 24;
 const int KeyPress::F15Key          = extendedKeyModifier + 25;
 const int KeyPress::F16Key          = extendedKeyModifier + 26;
+const int KeyPress::F17Key          = extendedKeyModifier + 50;
+const int KeyPress::F18Key          = extendedKeyModifier + 51;
+const int KeyPress::F19Key          = extendedKeyModifier + 52;
+const int KeyPress::F20Key          = extendedKeyModifier + 53;
+const int KeyPress::F21Key          = extendedKeyModifier + 54;
+const int KeyPress::F22Key          = extendedKeyModifier + 55;
+const int KeyPress::F23Key          = extendedKeyModifier + 56;
+const int KeyPress::F24Key          = extendedKeyModifier + 57;
+const int KeyPress::F25Key          = extendedKeyModifier + 58;
+const int KeyPress::F26Key          = extendedKeyModifier + 59;
+const int KeyPress::F27Key          = extendedKeyModifier + 60;
+const int KeyPress::F28Key          = extendedKeyModifier + 61;
+const int KeyPress::F29Key          = extendedKeyModifier + 62;
+const int KeyPress::F30Key          = extendedKeyModifier + 63;
+const int KeyPress::F31Key          = extendedKeyModifier + 64;
+const int KeyPress::F32Key          = extendedKeyModifier + 65;
+const int KeyPress::F33Key          = extendedKeyModifier + 66;
+const int KeyPress::F34Key          = extendedKeyModifier + 67;
+const int KeyPress::F35Key          = extendedKeyModifier + 68;
 const int KeyPress::numberPad0      = extendedKeyModifier + 27;
 const int KeyPress::numberPad1      = extendedKeyModifier + 28;
 const int KeyPress::numberPad2      = extendedKeyModifier + 29;
@@ -1045,3 +1066,5 @@ const int KeyPress::playKey         = extendedKeyModifier + 45;
 const int KeyPress::stopKey         = extendedKeyModifier + 46;
 const int KeyPress::fastForwardKey  = extendedKeyModifier + 47;
 const int KeyPress::rewindKey       = extendedKeyModifier + 48;
+
+} // namespace juce

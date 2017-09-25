@@ -24,8 +24,8 @@
   ==============================================================================
 */
 
-#pragma once
-
+namespace juce
+{
 
 //==============================================================================
 /**
@@ -910,6 +910,8 @@ public:
     void mouseMove (const MouseEvent&) override;
     /** @internal */
     void mouseExit (const MouseEvent&) override;
+    /** @internal */
+    void mouseEnter (const MouseEvent&) override;
 
 private:
     //==============================================================================
@@ -940,3 +942,5 @@ private:
 
 /** This typedef is just for compatibility with old code - newer code should use the Slider::Listener class directly. */
 typedef Slider::Listener SliderListener;
+
+} // namespace juce

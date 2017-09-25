@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+namespace juce
+{
+
 #ifndef INTERNET_FLAG_NEED_FILE
  #define INTERNET_FLAG_NEED_FILE 0x00000010
 #endif
@@ -500,6 +503,17 @@ namespace MACAddressHelpers
             }
         }
     }
+
+    static void split (const sockaddr_in6* sa_in6, int off, uint8* split)
+    {
+       #if JUCE_MINGW
+        split[0] = sa_in6->sin6_addr._S6_un._S6_u8[off + 1];
+        split[1] = sa_in6->sin6_addr._S6_un._S6_u8[off];
+       #else
+        split[0] = sa_in6->sin6_addr.u.Byte[off + 1];
+        split[1] = sa_in6->sin6_addr.u.Byte[off];
+       #endif
+    }
 }
 
 void MACAddress::findAllAddresses (Array<MACAddress>& result)
@@ -538,9 +552,7 @@ void IPAddress::findAllAddresses (Array<IPAddress>& result, bool includeIPv6)
 
                     for (int i = 0; i < 8; ++i)
                     {
-                        temp.split[0] = sa_in6->sin6_addr.u.Byte[i * 2 + 1];
-                        temp.split[1] = sa_in6->sin6_addr.u.Byte[i * 2];
-
+                        MACAddressHelpers::split (sa_in6, i * 2, temp.split);
                         arr[i] = temp.combined;
                     }
 
@@ -567,9 +579,7 @@ void IPAddress::findAllAddresses (Array<IPAddress>& result, bool includeIPv6)
 
                     for (int i = 0; i < 8; ++i)
                     {
-                        temp.split[0] = sa_in6->sin6_addr.u.Byte[i * 2 + 1];
-                        temp.split[1] = sa_in6->sin6_addr.u.Byte[i * 2];
-
+                        MACAddressHelpers::split (sa_in6, i * 2, temp.split);
                         arr[i] = temp.combined;
                     }
 
@@ -596,9 +606,7 @@ void IPAddress::findAllAddresses (Array<IPAddress>& result, bool includeIPv6)
 
                     for (int i = 0; i < 8; ++i)
                     {
-                        temp.split[0] = sa_in6->sin6_addr.u.Byte[i * 2 + 1];
-                        temp.split[1] = sa_in6->sin6_addr.u.Byte[i * 2];
-
+                        MACAddressHelpers::split (sa_in6, i * 2, temp.split);
                         arr[i] = temp.combined;
                     }
 
@@ -655,3 +663,5 @@ URL::DownloadTask* URL::downloadToFile (const File& targetLocation, String extra
 {
     return URL::DownloadTask::createFallbackDownloader (*this, targetLocation, extraHeaders, listener, shouldUsePost);
 }
+
+} // namespace juce
