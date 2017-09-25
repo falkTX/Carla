@@ -153,6 +153,8 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
     CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
 
+    double ticktmp;
+
     timeInfo.usecs = 0;
 
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL)
@@ -194,30 +196,32 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
         }
 
         timeInfo.bbt.bar  = (int32_t)(std::floor(abs_beat / timeInfo.bbt.beatsPerBar) + 0.5);
-        timeInfo.bbt.beat = abs_beat - (timeInfo.bbt.bar * timeInfo.bbt.beatsPerBar) + 1;
+        timeInfo.bbt.beat = (int32_t)(abs_beat - (timeInfo.bbt.bar * timeInfo.bbt.beatsPerBar) + 1.5);
         timeInfo.bbt.barStartTick = timeInfo.bbt.bar * beatsPerBar * kTicksPerBeat;
-        timeInfo.bbt.bar++;
+        ++timeInfo.bbt.bar;
 
-        tick = abs_tick - timeInfo.bbt.barStartTick;
+        //ticktmp = abs_tick - timeInfo.bbt.barStartTick;
+        ticktmp = abs_tick - (abs_beat * timeInfo.bbt.barStartTick);
     }
     else
     {
-        tick += newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60);
+        ticktmp = tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60));
 
-        while (tick >= kTicksPerBeat)
+        while (ticktmp >= kTicksPerBeat)
         {
-            tick -= kTicksPerBeat;
+            ticktmp -= kTicksPerBeat;
 
             if (++timeInfo.bbt.beat > beatsPerBar)
             {
                 timeInfo.bbt.beat = 1;
-                ++timeInfo.bbt.bar;
                 timeInfo.bbt.barStartTick += beatsPerBar * kTicksPerBeat;
+                ++timeInfo.bbt.bar;
             }
         }
     }
 
-    timeInfo.bbt.tick = (int32_t)(tick + 0.5);
+    timeInfo.bbt.tick = (int32_t)(ticktmp + 0.5);
+    tick = ticktmp;
 
     if (transportMode == ENGINE_TRANSPORT_MODE_INTERNAL && timeInfo.playing)
         nextFrame += newFrames;
@@ -227,6 +231,8 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
 {
     CARLA_SAFE_ASSERT_RETURN(carla_isNotZero(sampleRate),);
     CARLA_SAFE_ASSERT_RETURN(newFrames > 0,);
+
+    double ticktmp;
 
     if (needsReset)
     {
@@ -264,30 +270,32 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
         }
 
         pos->bar  = (int32_t)(std::floor(abs_beat / pos->beats_per_bar) + 0.5);
-        pos->beat = abs_beat - (pos->bar * pos->beats_per_bar) + 1;
+        pos->beat = (int32_t)(abs_beat - (pos->bar * pos->beats_per_bar) + 1.5);
         pos->bar_start_tick = pos->bar * pos->beats_per_bar * kTicksPerBeat;
-        pos->bar++;
+        ++pos->bar;
 
-        tick = abs_tick - pos->bar_start_tick;
+        //ticktmp = abs_tick - pos->bar_start_tick;
+        ticktmp = abs_tick - (abs_beat * pos->ticks_per_beat);
     }
     else
     {
-        tick += newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60);
+        ticktmp = tick + (newFrames * kTicksPerBeat * beatsPerMinute / (sampleRate * 60.0));
 
-        while (tick >= kTicksPerBeat)
+        while (ticktmp >= kTicksPerBeat)
         {
-            tick -= kTicksPerBeat;
+            ticktmp -= kTicksPerBeat;
 
             if (++pos->beat > beatsPerBar)
             {
                 pos->beat = 1;
-                ++pos->bar;
                 pos->bar_start_tick += beatsPerBar * kTicksPerBeat;
+                ++pos->bar;
             }
         }
     }
 
-    pos->tick = (int32_t)(tick + 0.5);
+    pos->tick = (int32_t)(ticktmp + 0.5);
+    tick = ticktmp;
 }
 
 void EngineInternalTime::preProcess(const uint32_t numFrames)

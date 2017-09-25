@@ -611,7 +611,7 @@
                    </font>
                   </property>
                   <property name="text">
-                   <string>000|00|000</string>
+                   <string>000|00|0000</string>
                   </property>
                  </widget>
                 </item>
