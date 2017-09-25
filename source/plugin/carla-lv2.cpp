@@ -27,9 +27,7 @@
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "juce_gui_basics/juce_gui_basics.h"
 #else
-namespace juce {
-# include "juce_events/messages/juce_Initialisation.h"
-} // namespace juce
+# include "juce_events/juce_events.h"
 #endif
 
 using juce::FloatVectorOperations;

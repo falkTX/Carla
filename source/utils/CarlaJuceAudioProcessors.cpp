@@ -24,12 +24,8 @@
 #undef KeyPress
 #include "juce_audio_processors/juce_audio_processors.h"
 
-namespace juce {
-
 #include "juce_audio_processors/processors/juce_AudioProcessor.cpp"
 #include "juce_audio_processors/processors/juce_AudioProcessorGraph.cpp"
 #include "juce_audio_processors/utilities/juce_AudioProcessorParameters.cpp"
-
-} // namespace juce
 
 #endif // ! CARLA_OS_MAC || CARLA_OS_WIN
