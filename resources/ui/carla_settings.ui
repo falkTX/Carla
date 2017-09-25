@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>607</width>
+    <width>612</width>
     <height>465</height>
    </rect>
   </property>
@@ -86,6 +86,11 @@
          <string>paths</string>
         </property>
        </row>
+       <row>
+        <property name="text">
+         <string>experimental</string>
+        </property>
+       </row>
        <column>
         <property name="text">
          <string>Widget</string>
@@ -161,6 +166,24 @@
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/48x48/folder.png</normaloff>:/48x48/folder.png</iconset>
+        </property>
+        <property name="flags">
+         <set>ItemIsSelectable|ItemIsEnabled</set>
+        </property>
+       </item>
+       <item row="4" column="0">
+        <property name="text">
+         <string>Experimental</string>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/48x48/warning.png</normaloff>:/48x48/warning.png</iconset>
         </property>
         <property name="flags">
          <set>ItemIsSelectable|ItemIsEnabled</set>
@@ -289,7 +312,7 @@
                <enum>Qt::Horizontal</enum>
               </property>
               <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
+               <enum>QSizePolicy::Preferred</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
@@ -396,15 +419,15 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="group_main_advanced">
+          <widget class="QGroupBox" name="group_main_experimental">
            <property name="title">
-            <string>Advanced</string>
+            <string>Experimental</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_10">
             <item>
-             <widget class="QCheckBox" name="ch_main_load_lib_local">
+             <widget class="QCheckBox" name="ch_main_experimental">
               <property name="text">
-               <string>Load Carla backend in local namespace (RECOMMENDED)</string>
+               <string>Enable experimental features</string>
               </property>
              </widget>
             </item>
@@ -627,17 +650,7 @@
             <item>
              <widget class="QCheckBox" name="cb_canvas_eyecandy">
               <property name="text">
-               <string>Fancy Eye-candy</string>
-              </property>
-              <property name="tristate">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="cb_canvas_use_opengl">
-              <property name="text">
-               <string>Use OpenGL for rendering (EXPERIMENTAL, needs restart)</string>
+               <string>Basic eye-candy (group shadows)</string>
               </property>
              </widget>
             </item>
@@ -657,16 +670,6 @@
               </property>
               <property name="tristate">
                <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="cb_canvas_render_hq_aa">
-              <property name="enabled">
-               <bool>false</bool>
-              </property>
-              <property name="text">
-               <string>High Quality Antiliasing (OpenGL only)</string>
               </property>
              </widget>
             </item>
@@ -960,36 +963,6 @@
              <widget class="QCheckBox" name="ch_engine_uis_always_on_top">
               <property name="text">
                <string>Make UIs always-on-top</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item>
-          <widget class="QGroupBox" name="groupBox_2">
-           <property name="title">
-            <string>Advanced</string>
-           </property>
-           <layout class="QVBoxLayout" name="verticalLayout_17">
-            <item>
-             <widget class="QCheckBox" name="ch_engine_force_stereo">
-              <property name="toolTip">
-               <string>Force mono plugins as stereo by running 2 instances at the same time.
-This mode is not available for VST plugins.</string>
-              </property>
-              <property name="text">
-               <string>Force mono plugins as stereo (EXPERIMENTAL)</string>
-              </property>
-             </widget>
-            </item>
-            <item>
-             <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
-              <property name="toolTip">
-               <string>Whenever possible, run the plugins in bridge mode.</string>
-              </property>
-              <property name="text">
-               <string>Run plugins in bridge mode when possible (EXPERIMENTAL)</string>
               </property>
              </widget>
             </item>
@@ -1407,6 +1380,221 @@ This mode is not available for VST plugins.</string>
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="page_experimental">
+        <layout class="QVBoxLayout" name="verticalLayout_21">
+         <property name="margin">
+          <number>2</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_15">
+           <item>
+            <widget class="QLabel" name="label_11">
+             <property name="text">
+              <string>&lt;b&gt;Experimental&lt;/b&gt;</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_22">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_icon_engine_2">
+             <property name="text">
+              <string notr="true"/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../resources.qrc">:/48x48/warning.png</pixmap>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignHCenter|Qt::AlignTop</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_12">
+           <item>
+            <spacer name="horizontalSpacer_18">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_16">
+             <property name="maximumSize">
+              <size>
+               <width>22</width>
+               <height>22</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../resources.qrc">:/16x16/dialog-warning.png</pixmap>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>Experimental options! Likely to be unstable!</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_19">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_advanced_main">
+           <property name="title">
+            <string>Main</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_17">
+            <item>
+             <widget class="QCheckBox" name="cb_advanced_plugin_bridges">
+              <property name="text">
+               <string>Enable plugin bridges</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="ch_advanced_load_lib_global">
+              <property name="text">
+               <string>Load Carla backend in global namespace (NOT RECOMMENDED)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_advanced_canvas">
+           <property name="title">
+            <string>Canvas</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_16">
+            <item>
+             <widget class="QCheckBox" name="cb_canvas_fancy_eyecandy">
+              <property name="text">
+               <string>Fancy eye-candy (fade-in/out groups, glow connections)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cb_canvas_use_opengl">
+              <property name="text">
+               <string>Use OpenGL for rendering (needs restart)</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="cb_canvas_render_hq_aa">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>High Quality Antiliasing (OpenGL only)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_avanced_engine">
+           <property name="title">
+            <string>Engine</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_20">
+            <item>
+             <widget class="QCheckBox" name="ch_engine_force_stereo">
+              <property name="toolTip">
+               <string>Force mono plugins as stereo by running 2 instances at the same time.
+This mode is not available for VST plugins.</string>
+              </property>
+              <property name="text">
+               <string>Force mono plugins as stereo</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="ch_engine_prefer_plugin_bridges">
+              <property name="toolTip">
+               <string>Whenever possible, run the plugins in bridge mode.</string>
+              </property>
+              <property name="text">
+               <string>Run plugins in bridge mode when possible</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>70</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_25">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>5</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="page"/>
       </widget>
      </item>
@@ -1481,22 +1669,6 @@ This mode is not available for VST plugins.</string>
    </hints>
   </connection>
   <connection>
-   <sender>cb_canvas_use_opengl</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>cb_canvas_render_hq_aa</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>227</x>
-     <y>34</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>227</x>
-     <y>43</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>ch_main_theme_pro</sender>
    <signal>toggled(bool)</signal>
    <receiver>label_main_theme_color</receiver>
@@ -1541,6 +1713,22 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>323</x>
      <y>244</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_canvas_use_opengl</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cb_canvas_render_hq_aa</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>402</x>
+     <y>220</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>243</y>
     </hint>
    </hints>
   </connection>

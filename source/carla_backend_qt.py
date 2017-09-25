@@ -91,9 +91,9 @@ class CarlaHostQtNull(CarlaHostNull, CarlaHostSignals):
 # Carla Host object using a DLL
 
 class CarlaHostQtDLL(CarlaHostDLL, CarlaHostSignals):
-    def __init__(self, libName, localLoad):
+    def __init__(self, libName, loadGlobal):
         CarlaHostSignals.__init__(self)
-        CarlaHostDLL.__init__(self, libName, localLoad)
+        CarlaHostDLL.__init__(self, libName, loadGlobal)
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object for plugins (using pipes)

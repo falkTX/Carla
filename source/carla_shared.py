@@ -194,14 +194,15 @@ CARLA_KEY_MAIN_REFRESH_INTERVAL = "Main/RefreshInterval" # int
 CARLA_KEY_MAIN_USE_CUSTOM_SKINS = "Main/UseCustomSkins"  # bool
 CARLA_KEY_MAIN_MANAGE_UIS       = "Main/ManageUIs"       # bool
 CARLA_KEY_MAIN_SHOW_LOGS        = "Main/ShowLogs"        # bool
-CARLA_KEY_MAIN_LOAD_LIB_LOCAL   = "Main/LoadLibsLocal"   # bool
+CARLA_KEY_MAIN_EXPERIMENTAL     = "Main/Experimental"    # bool
 
 CARLA_KEY_CANVAS_THEME             = "Canvas/Theme"           # str
 CARLA_KEY_CANVAS_SIZE              = "Canvas/Size"            # str "NxN"
 CARLA_KEY_CANVAS_USE_BEZIER_LINES  = "Canvas/UseBezierLines"  # bool
 CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS  = "Canvas/AutoHideGroups"  # bool
 CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS = "Canvas/AutoSelectItems" # bool
-CARLA_KEY_CANVAS_EYE_CANDY         = "Canvas/EyeCandy"        # enum
+CARLA_KEY_CANVAS_EYE_CANDY         = "Canvas/EyeCandy2"       # bool
+CARLA_KEY_CANVAS_FANCY_EYE_CANDY   = "Canvas/FancyEyeCandy"   # bool
 CARLA_KEY_CANVAS_USE_OPENGL        = "Canvas/UseOpenGL"       # bool
 CARLA_KEY_CANVAS_ANTIALIASING      = "Canvas/Antialiasing"    # enum
 CARLA_KEY_CANVAS_HQ_ANTIALIASING   = "Canvas/HQAntialiasing"  # bool
@@ -226,6 +227,9 @@ CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
+CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES  = "Main/PluginBridges" # bool
+CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL = "Main/LoadLibGlobal" # bool
+
 # if pro theme is on and color is black
 CARLA_KEY_CUSTOM_PAINTING = "UseCustomPainting" # bool
 
@@ -240,7 +244,7 @@ CARLA_DEFAULT_MAIN_REFRESH_INTERVAL = 20
 CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS = True
 CARLA_DEFAULT_MAIN_MANAGE_UIS       = True
 CARLA_DEFAULT_MAIN_SHOW_LOGS        = bool(not WINDOWS)
-CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL   = True
+CARLA_DEFAULT_MAIN_EXPERIMENTAL     = False
 
 # Canvas
 CARLA_DEFAULT_CANVAS_THEME             = "Modern Dark"
@@ -250,7 +254,8 @@ CARLA_DEFAULT_CANVAS_SIZE_HEIGHT       = 2400
 CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES  = True
 CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS  = True
 CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS = False
-CARLA_DEFAULT_CANVAS_EYE_CANDY         = CANVAS_EYECANDY_SMALL
+CARLA_DEFAULT_CANVAS_EYE_CANDY         = True
+CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY   = False
 CARLA_DEFAULT_CANVAS_USE_OPENGL        = False
 CARLA_DEFAULT_CANVAS_ANTIALIASING      = CANVAS_ANTIALIASING_SMALL
 CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING   = False
@@ -280,6 +285,9 @@ if LINUX:
 else:
     CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_PATCHBAY
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
+
+CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES  = False
+CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)

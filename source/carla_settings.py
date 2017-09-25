@@ -189,11 +189,12 @@ class DriverSettingsW(QDialog):
 
 class CarlaSettingsW(QDialog):
     # Tab indexes
-    TAB_INDEX_MAIN   = 0
-    TAB_INDEX_CANVAS = 1
-    TAB_INDEX_ENGINE = 2
-    TAB_INDEX_PATHS  = 3
-    TAB_INDEX_NONE   = 4
+    TAB_INDEX_MAIN         = 0
+    TAB_INDEX_CANVAS       = 1
+    TAB_INDEX_ENGINE       = 2
+    TAB_INDEX_PATHS        = 3
+    TAB_INDEX_EXPERIMENTAL = 4
+    TAB_INDEX_NONE         = 5
 
     # Path indexes
     PATH_INDEX_LADSPA = 0
@@ -226,7 +227,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Set-up GUI
 
-        self.ui.lw_page.setFixedWidth(48 + 6 + 6 + QFontMetrics(self.ui.lw_page.font()).width("88888888"))
+        self.ui.lw_page.setFixedWidth(48 + 6*3 + QFontMetrics(self.ui.lw_page.font()).width("  Experimental  "))
 
         for i in range(host.get_engine_driver_count()):
             self.ui.cb_engine_audio_driver.addItem(host.get_engine_driver_name(i))
@@ -273,7 +274,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
         if host.isControl or host.isPlugin:
-            self.ui.group_main_advanced.hide()
+            self.ui.ch_advanced_load_lib_global.hide()
 
         # FIXME, pipes on win32 not working
         if WINDOWS:
@@ -312,6 +313,10 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_gig.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sf2.currentRowChanged.connect(self.slot_pluginPathRowChanged)
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
+
+        self.ui.ch_main_experimental.toggled.connect(self.slot_enableExperimental)
+        self.ui.cb_canvas_eyecandy.toggled.connect(self.slot_canvasEyeCandyToggled)
+        self.ui.cb_canvas_fancy_eyecandy.toggled.connect(self.slot_canvasFancyEyeCandyToggled)
 
         # ----------------------------------------------------------------------------------------------------
         # Post-connect setup
@@ -353,7 +358,8 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_bezier_lines.setChecked(settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES, CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES, type=bool))
         self.ui.cb_canvas_hide_groups.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS, CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS, type=bool))
         self.ui.cb_canvas_auto_select.setChecked(settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool))
-        self.ui.cb_canvas_eyecandy.setCheckState(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, type=int))
+        self.ui.cb_canvas_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_EYE_CANDY, CARLA_DEFAULT_CANVAS_EYE_CANDY, type=bool))
+        self.ui.cb_canvas_fancy_eyecandy.setChecked(settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY, CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY, type=bool))
         self.ui.cb_canvas_use_opengl.setChecked(settings.value(CARLA_KEY_CANVAS_USE_OPENGL, CARLA_DEFAULT_CANVAS_USE_OPENGL, type=bool) and self.ui.cb_canvas_use_opengl.isEnabled())
         self.ui.cb_canvas_render_aa.setCheckState(settings.value(CARLA_KEY_CANVAS_ANTIALIASING, CARLA_DEFAULT_CANVAS_ANTIALIASING, type=int))
         self.ui.cb_canvas_render_hq_aa.setChecked(settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING, CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING, type=bool) and self.ui.cb_canvas_render_hq_aa.isEnabled())
@@ -365,7 +371,11 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        self.ui.ch_main_load_lib_local.setChecked(settings.value(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL, type=bool))
+        experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, type=bool)
+        self.ui.ch_main_experimental.setChecked(experimental)
+
+        if not experimental:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -459,6 +469,17 @@ class CarlaSettingsW(QDialog):
             if not sfz: continue
             self.ui.lw_sfz.addItem(sfz)
 
+        # ----------------------------------------------------------------------------------------------------
+        # Experimental
+
+        self.ui.cb_advanced_plugin_bridges.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,
+                                                                     CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
+                                                                     type=bool))
+
+        self.ui.ch_advanced_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                      CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                      type=bool))
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
@@ -490,7 +511,8 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  self.ui.cb_canvas_bezier_lines.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  self.ui.cb_canvas_hide_groups.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, self.ui.cb_canvas_auto_select.isChecked())
-        settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         self.ui.cb_canvas_eyecandy.checkState()) # 0, 1, 2 match their enum variants
+        settings.setValue(CARLA_KEY_CANVAS_EYE_CANDY,         self.ui.cb_canvas_eyecandy.isChecked())
+        settings.setValue(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   self.ui.cb_canvas_fancy_eyecandy.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_USE_OPENGL,        self.ui.cb_canvas_use_opengl.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   self.ui.cb_canvas_render_hq_aa.isChecked())
         settings.setValue(CARLA_KEY_CANVAS_ANTIALIASING,      self.ui.cb_canvas_render_aa.checkState()) # 0, 1, 2 match their enum variants
@@ -502,7 +524,7 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        settings.setValue(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, self.ui.ch_main_load_lib_local.isChecked())
+        settings.setValue(CARLA_KEY_MAIN_EXPERIMENTAL, self.ui.ch_main_experimental.isChecked())
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -597,6 +619,12 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_SF2,    sf2s)
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
+        # ----------------------------------------------------------------------------------------------------
+        # Experimental
+
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.ui.cb_advanced_plugin_bridges.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_advanced_load_lib_global.isChecked())
+
     # --------------------------------------------------------------------------------------------------------
 
     @pyqtSlot()
@@ -612,7 +640,6 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
             self.ui.ch_main_manage_uis.setChecked(CARLA_DEFAULT_MAIN_MANAGE_UIS)
             self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
-            self.ui.ch_main_load_lib_local.setChecked(CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas
@@ -623,10 +650,8 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_canvas_bezier_lines.setChecked(CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES)
             self.ui.cb_canvas_hide_groups.setChecked(CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS)
             self.ui.cb_canvas_auto_select.setChecked(CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS)
-            self.ui.cb_canvas_eyecandy.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_EYE_CANDY
-            self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
+            self.ui.cb_canvas_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_EYE_CANDY)
             self.ui.cb_canvas_render_aa.setCheckState(Qt.PartiallyChecked) # CARLA_DEFAULT_CANVAS_ANTIALIASING
-            self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -647,8 +672,6 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
             self.ui.sb_engine_ui_bridges_timeout.setValue(CARLA_DEFAULT_UI_BRIDGES_TIMEOUT)
-            self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
-            self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -727,6 +750,40 @@ class CarlaSettingsW(QDialog):
                 for path in paths:
                     if not path: continue
                     self.ui.lw_sfz.addItem(path)
+
+        # ----------------------------------------------------------------------------------------------------
+        # Paths
+
+        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_EXPERIMENTAL:
+            # Forever experimental
+            self.ui.cb_advanced_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
+            self.ui.ch_advanced_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
+
+            # Temporary, until stable
+            self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)
+            self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
+            self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
+            self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
+            self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
+
+    # --------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(bool)
+    def slot_enableExperimental(self, toggled):
+        if toggled:
+            self.ui.lw_page.showRow(self.TAB_INDEX_EXPERIMENTAL)
+        else:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+
+    @pyqtSlot(bool)
+    def slot_canvasEyeCandyToggled(self, toggled):
+        if not toggled:
+            self.ui.cb_canvas_fancy_eyecandy.setChecked(False)
+
+    @pyqtSlot(bool)
+    def slot_canvasFancyEyeCandyToggled(self, toggled):
+        if toggled:
+            self.ui.cb_canvas_eyecandy.setChecked(True)
 
     # --------------------------------------------------------------------------------------------------------
 

@@ -1094,7 +1094,13 @@ class HostWindow(QMainWindow):
         pOptions.auto_select_items = self.fSavedSettings[CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS]
         pOptions.use_bezier_lines  = self.fSavedSettings[CARLA_KEY_CANVAS_USE_BEZIER_LINES]
         pOptions.antialiasing      = self.fSavedSettings[CARLA_KEY_CANVAS_ANTIALIASING]
-        pOptions.eyecandy          = self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]
+
+        if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY]:
+            pOptions.eyecandy      = patchcanvas.EYECANDY_FULL
+        elif self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY]:
+            pOptions.eyecandy      = patchcanvas.EYECANDY_SMALL
+        else:
+            pOptions.eyecandy      = patchcanvas.EYECANDY_NONE
 
         pFeatures = patchcanvas.features_t()
         pFeatures.group_info   = False
@@ -1420,12 +1426,14 @@ class HostWindow(QMainWindow):
             CARLA_KEY_MAIN_PROJECT_FOLDER:      settings.value(CARLA_KEY_MAIN_PROJECT_FOLDER,      CARLA_DEFAULT_MAIN_PROJECT_FOLDER,      type=str),
             CARLA_KEY_MAIN_REFRESH_INTERVAL:    settings.value(CARLA_KEY_MAIN_REFRESH_INTERVAL,    CARLA_DEFAULT_MAIN_REFRESH_INTERVAL,    type=int),
             CARLA_KEY_MAIN_USE_CUSTOM_SKINS:    settings.value(CARLA_KEY_MAIN_USE_CUSTOM_SKINS,    CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS,    type=bool),
+            CARLA_KEY_MAIN_EXPERIMENTAL:        settings.value(CARLA_KEY_MAIN_EXPERIMENTAL,        CARLA_DEFAULT_MAIN_EXPERIMENTAL,        type=bool),
             CARLA_KEY_CANVAS_THEME:             settings.value(CARLA_KEY_CANVAS_THEME,             CARLA_DEFAULT_CANVAS_THEME,             type=str),
             CARLA_KEY_CANVAS_SIZE:              settings.value(CARLA_KEY_CANVAS_SIZE,              CARLA_DEFAULT_CANVAS_SIZE,              type=str),
             CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS:  settings.value(CARLA_KEY_CANVAS_AUTO_HIDE_GROUPS,  CARLA_DEFAULT_CANVAS_AUTO_HIDE_GROUPS,  type=bool),
             CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS: settings.value(CARLA_KEY_CANVAS_AUTO_SELECT_ITEMS, CARLA_DEFAULT_CANVAS_AUTO_SELECT_ITEMS, type=bool),
             CARLA_KEY_CANVAS_USE_BEZIER_LINES:  settings.value(CARLA_KEY_CANVAS_USE_BEZIER_LINES,  CARLA_DEFAULT_CANVAS_USE_BEZIER_LINES,  type=bool),
-            CARLA_KEY_CANVAS_EYE_CANDY:         settings.value(CARLA_KEY_CANVAS_EYE_CANDY,         CARLA_DEFAULT_CANVAS_EYE_CANDY,         type=int),
+            CARLA_KEY_CANVAS_EYE_CANDY:         settings.value(CARLA_KEY_CANVAS_EYE_CANDY,         CARLA_DEFAULT_CANVAS_EYE_CANDY,         type=bool),
+            CARLA_KEY_CANVAS_FANCY_EYE_CANDY:   settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,   type=bool),
             CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
             CARLA_KEY_CANVAS_HQ_ANTIALIASING :  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
@@ -1433,7 +1441,7 @@ class HostWindow(QMainWindow):
                                                 settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
         }
 
-        self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_EYE_CANDY] == patchcanvas.EYECANDY_FULL else 0
+        self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
         setEngineSettings(self.host)
         self.restartTimersIfNeeded()
@@ -2381,9 +2389,9 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     settings = QSettings("falkTX", "Carla2")
 
     try:
-        loadLocal = settings.value(CARLA_KEY_MAIN_LOAD_LIB_LOCAL, CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL, type=bool)
+        loadGlobal = settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL, type=bool)
     except:
-        loadLocal = CARLA_DEFAULT_MAIN_LOAD_LIB_LOCAL
+        loadGlobal = CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL
 
     # --------------------------------------------------------------------------------------------------------
     # Fail if binary dir is not found
@@ -2418,10 +2426,10 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     if failError:
         # no try
-        host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadLocal)
+        host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadGlobal)
     else:
         try:
-            host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadLocal)
+            host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadGlobal)
         except:
             host = CarlaHostQtNull()
 
