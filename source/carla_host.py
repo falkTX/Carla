@@ -272,9 +272,25 @@ class HostWindow(QMainWindow):
         # ----------------------------------------------------------------------------------------------------
         # Set up GUI (transport)
 
-        self.ui.l_transport_bbt.setMinimumWidth(QFontMetrics(self.ui.l_transport_bbt.font()).width("000|00|0000") + 3)
-        self.ui.l_transport_frame.setMinimumWidth(QFontMetrics(self.ui.l_transport_frame.font()).width("000'000'000") + 3)
-        self.ui.l_transport_time.setMinimumWidth(QFontMetrics(self.ui.l_transport_time.font()).width("00:00:00") + 3)
+        fontMetrics   = QFontMetrics(self.ui.l_transport_bbt.font())
+        minValueWidth = fontMetrics.width("000|00|0000")
+        minLabelWidth = fontMetrics.width(self.ui.label_transport_frame.text())
+
+        labelTimeWidth = fontMetrics.width(self.ui.label_transport_time.text())
+        labelBBTWidth  = fontMetrics.width(self.ui.label_transport_bbt.text())
+
+        if minLabelWidth < labelTimeWidth:
+            minLabelWidth = labelTimeWidth
+        if minLabelWidth < labelBBTWidth:
+            minLabelWidth = labelBBTWidth
+
+        self.ui.label_transport_frame.setMinimumWidth(minLabelWidth + 3)
+        self.ui.label_transport_time.setMinimumWidth(minLabelWidth + 3)
+        self.ui.label_transport_bbt.setMinimumWidth(minLabelWidth + 3)
+
+        self.ui.l_transport_bbt.setMinimumWidth(minValueWidth + 3)
+        self.ui.l_transport_frame.setMinimumWidth(minValueWidth + 3)
+        self.ui.l_transport_time.setMinimumWidth(minValueWidth + 3)
 
         if host.isPlugin:
             self.ui.b_transport_play.setEnabled(False)
