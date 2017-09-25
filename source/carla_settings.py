@@ -371,10 +371,9 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, type=bool)
-        self.ui.ch_main_experimental.setChecked(experimental)
+        self.ui.ch_main_experimental.setChecked(self.host.experimental)
 
-        if not experimental:
+        if not self.host.experimental:
             self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
 
         # ----------------------------------------------------------------------------------------------------
@@ -524,7 +523,9 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        settings.setValue(CARLA_KEY_MAIN_EXPERIMENTAL, self.ui.ch_main_experimental.isChecked())
+        self.host.experimental = self.ui.ch_main_experimental.isChecked()
+
+        settings.setValue(CARLA_KEY_MAIN_EXPERIMENTAL, self.host.experimental)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine

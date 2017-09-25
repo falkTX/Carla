@@ -2479,6 +2479,11 @@ def loadHostSettings(host):
 
     # bool values
     try:
+        host.experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, type=bool)
+    except:
+        host.experimental = CARLA_DEFAULT_MAIN_EXPERIMENTAL
+
+    try:
         host.manageUIs = settings.value(CARLA_KEY_MAIN_MANAGE_UIS, CARLA_DEFAULT_MAIN_MANAGE_UIS, type=bool)
     except:
         host.manageUIs = CARLA_DEFAULT_MAIN_MANAGE_UIS

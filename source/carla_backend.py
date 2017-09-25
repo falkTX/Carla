@@ -1231,6 +1231,7 @@ class CarlaHostMeta(object):
         self.audioDriverForced = None
 
         # settings
+        self.experimental        = False
         self.forceStereo         = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False

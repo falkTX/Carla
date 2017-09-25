@@ -1284,6 +1284,21 @@ class PluginDatabaseW(QDialog):
         self.loadSettings()
 
         # ----------------------------------------------------------------------------------------------------
+        # Disable bridges (experimental for now)
+
+        if not host.experimental:
+            self.ui.ch_native.setChecked(True)
+            self.ui.ch_native.setEnabled(False)
+            self.ui.ch_native.setVisible(False)
+            self.ui.ch_bridged.setChecked(False)
+            self.ui.ch_bridged.setEnabled(False)
+            self.ui.ch_bridged.setVisible(False)
+            self.ui.ch_bridged_wine.setChecked(False)
+            self.ui.ch_bridged_wine.setEnabled(False)
+            self.ui.ch_bridged_wine.setVisible(False)
+            self.ui.l_arch.setVisible(False)
+
+        # ----------------------------------------------------------------------------------------------------
         # Set-up connections
 
         self.finished.connect(self.slot_saveSettings)
