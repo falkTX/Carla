@@ -2484,9 +2484,9 @@ def loadHostSettings(host):
         host.experimental = CARLA_DEFAULT_MAIN_EXPERIMENTAL
 
     try:
-        host.manageUIs = settings.value(CARLA_KEY_MAIN_MANAGE_UIS, CARLA_DEFAULT_MAIN_MANAGE_UIS, type=bool)
+        host.manageUIs = settings.value(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS, type=bool)
     except:
-        host.manageUIs = CARLA_DEFAULT_MAIN_MANAGE_UIS
+        host.manageUIs = CARLA_DEFAULT_MANAGE_UIS
 
     try:
         host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)

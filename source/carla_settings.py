@@ -239,13 +239,13 @@ class CarlaSettingsW(QDialog):
             self.ui.group_main_theme.setEnabled(False)
             self.ui.group_main_theme.setVisible(False)
 
-        if MACOS or WINDOWS:
-            self.ui.ch_main_manage_uis.setEnabled(False)
-            self.ui.ch_main_manage_uis.setVisible(False)
-
         if WINDOWS or host.isControl:
             self.ui.ch_main_show_logs.setEnabled(False)
             self.ui.ch_main_show_logs.setVisible(False)
+
+        if MACOS or WINDOWS:
+            self.ui.ch_engine_manage_uis.setEnabled(False)
+            self.ui.ch_engine_manage_uis.setVisible(False)
 
         if host.isControl:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
@@ -340,7 +340,6 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        self.ui.ch_main_manage_uis.setChecked(self.host.manageUIs)
         self.ui.ch_main_show_logs.setChecked(self.host.showLogs)
         self.ui.ch_engine_uis_always_on_top.setChecked(self.host.uisAlwaysOnTop)
 
@@ -410,6 +409,7 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_engine_process_mode_other.setCurrentIndex(0)
 
         self.ui.sb_engine_max_params.setValue(self.host.maxParameters)
+        self.ui.ch_engine_manage_uis.setChecked(self.host.manageUIs)
         self.ui.ch_engine_prefer_ui_bridges.setChecked(self.host.preferUIBridges)
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
         self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
@@ -488,7 +488,6 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        self.host.manageUIs      = self.ui.ch_main_manage_uis.isChecked()
         self.host.showLogs       = self.ui.ch_main_show_logs.isChecked()
         self.host.uisAlwaysOnTop = self.ui.ch_engine_uis_always_on_top.isChecked()
 
@@ -498,7 +497,6 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
         settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.ch_main_use_custom_skins.isChecked())
 
-        settings.setValue(CARLA_KEY_MAIN_MANAGE_UIS,          self.host.manageUIs)
         settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,           self.host.showLogs)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.host.uisAlwaysOnTop)
 
@@ -548,6 +546,7 @@ class CarlaSettingsW(QDialog):
         self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
+        self.host.manageUIs           = self.ui.ch_engine_manage_uis.isChecked()
 
         if self.ui.ch_engine_force_stereo.isEnabled():
             self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
@@ -565,6 +564,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
         settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
         settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
+        settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            self.host.manageUIs)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -639,7 +639,6 @@ class CarlaSettingsW(QDialog):
             self.ui.cb_main_theme_color.setCurrentIndex(self.ui.cb_main_theme_color.findText(CARLA_DEFAULT_MAIN_PRO_THEME_COLOR))
             self.ui.sb_main_refresh_interval.setValue(CARLA_DEFAULT_MAIN_REFRESH_INTERVAL)
             self.ui.ch_main_use_custom_skins.setChecked(CARLA_DEFAULT_MAIN_USE_CUSTOM_SKINS)
-            self.ui.ch_main_manage_uis.setChecked(CARLA_DEFAULT_MAIN_MANAGE_UIS)
             self.ui.ch_main_show_logs.setChecked(CARLA_DEFAULT_MAIN_SHOW_LOGS)
 
         # ----------------------------------------------------------------------------------------------------
@@ -673,6 +672,7 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_engine_uis_always_on_top.setChecked(CARLA_DEFAULT_UIS_ALWAYS_ON_TOP)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(CARLA_DEFAULT_PREFER_UI_BRIDGES)
             self.ui.sb_engine_ui_bridges_timeout.setValue(CARLA_DEFAULT_UI_BRIDGES_TIMEOUT)
+            self.ui.ch_engine_manage_uis.setChecked(CARLA_DEFAULT_MANAGE_UIS)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
