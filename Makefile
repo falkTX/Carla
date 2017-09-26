@@ -150,7 +150,7 @@ bridges-ui: libs
 discovery: libs
 	@$(MAKE) -C source/discovery
 
-interposer:
+interposer: libs
 	@$(MAKE) -C source/interposer
 
 plugin: backend bridges-plugin bridges-ui discovery
