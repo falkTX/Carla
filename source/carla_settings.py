@@ -485,6 +485,11 @@ class CarlaSettingsW(QDialog):
     def slot_saveSettings(self):
         settings = QSettings()
 
+        self.host.experimental = self.ui.ch_main_experimental.isChecked()
+
+        if not self.host.experimental:
+            self.resetExperimentalSettings()
+
         # ----------------------------------------------------------------------------------------------------
         # Main
 
@@ -520,8 +525,6 @@ class CarlaSettingsW(QDialog):
 
         # ----------------------------------------------------------------------------------------------------
         # Main
-
-        self.host.experimental = self.ui.ch_main_experimental.isChecked()
 
         settings.setValue(CARLA_KEY_MAIN_EXPERIMENTAL, self.host.experimental)
 
@@ -753,19 +756,22 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_sfz.addItem(path)
 
         # ----------------------------------------------------------------------------------------------------
-        # Paths
+        # Experimental
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_EXPERIMENTAL:
-            # Forever experimental
-            self.ui.cb_advanced_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
-            self.ui.ch_advanced_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
+            self.resetExperimentalSettings()
 
-            # Temporary, until stable
-            self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)
-            self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
-            self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
-            self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
-            self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
+    def resetExperimentalSettings(self):
+        # Forever experimental
+        self.ui.cb_advanced_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
+        self.ui.ch_advanced_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
+
+        # Temporary, until stable
+        self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)
+        self.ui.cb_canvas_use_opengl.setChecked(CARLA_DEFAULT_CANVAS_USE_OPENGL and self.ui.cb_canvas_use_opengl.isEnabled())
+        self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
+        self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
+        self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
 
     # --------------------------------------------------------------------------------------------------------
 

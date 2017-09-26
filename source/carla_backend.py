@@ -1230,17 +1230,19 @@ class CarlaHostMeta(object):
         self.processModeForced = False
         self.audioDriverForced = None
 
+
         # settings
         self.experimental        = False
+        self.manageUIs           = False
+        self.maxParameters       = 0
         self.forceStereo         = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False
         self.preventBadBehaviour = False
-        self.manageUIs           = False
+        self.showPluginBridges   = False
         self.showLogs            = False
-        self.uisAlwaysOnTop      = False
-        self.maxParameters       = 0
         self.uiBridgesTimeout    = 0
+        self.uisAlwaysOnTop      = False
 
         # settings
         self.pathBinaries  = ""

@@ -2493,7 +2493,6 @@ def loadHostSettings(host):
 
     settings = QSettings("falkTX", "Carla2")
 
-    # bool values
     try:
         host.experimental = settings.value(CARLA_KEY_MAIN_EXPERIMENTAL, CARLA_DEFAULT_MAIN_EXPERIMENTAL, type=bool)
     except:
@@ -2505,14 +2504,9 @@ def loadHostSettings(host):
         host.manageUIs = CARLA_DEFAULT_MANAGE_UIS
 
     try:
-        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
+        host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
     except:
-        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
-
-    try:
-        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
-    except:
-        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
+        host.maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
 
     try:
         host.forceStereo = settings.value(CARLA_KEY_ENGINE_FORCE_STEREO, CARLA_DEFAULT_FORCE_STEREO, type=bool)
@@ -2529,16 +2523,30 @@ def loadHostSettings(host):
     except:
         host.preferUIBridges = CARLA_DEFAULT_PREFER_UI_BRIDGES
 
-    # int values
     try:
-        host.maxParameters = settings.value(CARLA_KEY_ENGINE_MAX_PARAMETERS, CARLA_DEFAULT_MAX_PARAMETERS, type=int)
+        host.preventBadBehaviour = settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, type=bool)
     except:
-        host.maxParameters = CARLA_DEFAULT_MAX_PARAMETERS
+        host.preventBadBehaviour = CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR
+
+    try:
+        host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, type=bool)
+    except:
+        host.showPluginBridges = CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES
+
+    try:
+        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
+    except:
+        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
 
     try:
         host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
     except:
         host.uiBridgesTimeout = CARLA_DEFAULT_UI_BRIDGES_TIMEOUT
+
+    try:
+        host.uisAlwaysOnTop = settings.value(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, CARLA_DEFAULT_UIS_ALWAYS_ON_TOP, type=bool)
+    except:
+        host.uisAlwaysOnTop = CARLA_DEFAULT_UIS_ALWAYS_ON_TOP
 
     if host.isPlugin:
         return

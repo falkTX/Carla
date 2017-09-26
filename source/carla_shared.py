@@ -227,8 +227,9 @@ CARLA_KEY_PATHS_GIG    = "Paths/GIG"
 CARLA_KEY_PATHS_SF2    = "Paths/SF2"
 CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
-CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES  = "Main/PluginBridges" # bool
-CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL = "Main/LoadLibGlobal" # bool
+CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES        = "Experimental/PluginBridges"       # bool
+CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = "Experimental/PreventBadBehaviour" # bool
+CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL       = "Experimental/LoadLibGlobal"       # bool
 
 # if pro theme is on and color is black
 CARLA_KEY_CUSTOM_PAINTING = "UseCustomPainting" # bool
@@ -286,8 +287,9 @@ else:
     CARLA_DEFAULT_PROCESS_MODE   = ENGINE_PROCESS_MODE_PATCHBAY
     CARLA_DEFAULT_TRANSPORT_MODE = ENGINE_TRANSPORT_MODE_INTERNAL
 
-CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES  = False
-CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL = False
+CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES        = False
+CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = False
+CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL       = False
 
 # ------------------------------------------------------------------------------------------------------------
 # Default Plugin Folders (get)
