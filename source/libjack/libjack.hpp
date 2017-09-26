@@ -145,6 +145,10 @@ struct JackClientState {
     }
 };
 
+// TODO JackServerState, with only bufsize, srate and tranport
+// TODO add JackServerState ptr to JackClientState
+// TODO each client gets its own JackClientState struct
+
 class CarlaJackClient : public juce::Thread
 {
 public:

@@ -24,7 +24,13 @@ CARLA_BACKEND_USE_NAMESPACE
 
 //extern void (*jack_error_callback)(const char *msg) JACK_OPTIONAL_WEAK_EXPORT;
 
-//void jack_set_error_function (void (*func)(const char *)) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+void jack_set_error_function(void (*func)(const char *))
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    (void)func;
+}
 
 //extern void (*jack_info_callback)(const char *msg) JACK_OPTIONAL_WEAK_EXPORT;
 

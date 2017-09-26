@@ -67,34 +67,99 @@ int jack_set_process_callback(jack_client_t* client, JackProcessCallback callbac
 //                                  JackFreewheelCallback freewheel_callback,
 //                                  void *arg) JACK_OPTIONAL_WEAK_EXPORT;
 
-// int jack_set_buffer_size_callback (jack_client_t *client,
-//                                    JackBufferSizeCallback bufsize_callback,
-//                                    void *arg) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback /*callback*/, void* /*arg*/)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
 
-// int jack_set_sample_rate_callback (jack_client_t *client,
-//                                    JackSampleRateCallback srate_callback,
-//                                    void *arg) JACK_OPTIONAL_WEAK_EXPORT;
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
-// int jack_set_client_registration_callback (jack_client_t *client,
-//                                             JackClientRegistrationCallback
-//                                             registration_callback, void *arg) JACK_OPTIONAL_WEAK_EXPORT;
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+
+    // TODO
+
+    return 0;
+}
+
+CARLA_EXPORT
+int jack_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback /*callback*/, void* /*arg*/)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+
+    // TODO
+
+    return 0;
+}
+
+CARLA_EXPORT
+int jack_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback, void*)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
 
 
-// int jack_set_port_registration_callback (jack_client_t *client,
-//                                           JackPortRegistrationCallback
-//                                           registration_callback, void *arg) JACK_OPTIONAL_WEAK_EXPORT;
+    return 0;
+}
 
-// int jack_set_port_connect_callback (jack_client_t *client,
-//                                     JackPortConnectCallback
-//                                     connect_callback, void *arg) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback, void*)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+
+    return 0;
+}
+
+CARLA_EXPORT
+int jack_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback, void*)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+
+    return 0;
+}
 
 // int jack_set_port_rename_callback (jack_client_t *client,
 //                                    JackPortRenameCallback
 //                                    rename_callback, void *arg) JACK_OPTIONAL_WEAK_EXPORT;
 
-// int jack_set_graph_order_callback (jack_client_t *client,
-//                                    JackGraphOrderCallback graph_callback,
-//                                    void *) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback, void*)
+{
+    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+
+    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const JackClientState& jstate(jclient->fState);
+    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+
+    return 0;
+}
 
 CARLA_EXPORT
 int jack_set_xrun_callback(jack_client_t*, JackXRunCallback, void*)

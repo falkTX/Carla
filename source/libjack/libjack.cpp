@@ -665,139 +665,13 @@ CARLA_BACKEND_END_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CARLA_BACKEND_USE_NAMESPACE
+#include "jackbridge/JackBridge2.cpp"
+#include "CarlaBridgeUtils.cpp"
 
 // --------------------------------------------------------------------------------------------------------------------
+// TODO
 
-CARLA_EXPORT
-void jack_set_error_function(void (*func)(const char *))
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    (void)func;
-}
-
-CARLA_EXPORT
-int jack_set_sync_callback(jack_client_t* client, JackSyncCallback /*callback*/, void* /*arg*/)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    // TODO
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_timebase_callback(jack_client_t* client, int, JackTimebaseCallback, void*)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    // TODO
-
-    return EBUSY;
-}
-
-CARLA_EXPORT
-int jack_set_buffer_size_callback(jack_client_t* client, JackBufferSizeCallback /*callback*/, void* /*arg*/)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    // TODO
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_sample_rate_callback(jack_client_t* client, JackSampleRateCallback /*callback*/, void* /*arg*/)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    // TODO
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_client_registration_callback(jack_client_t* client, JackClientRegistrationCallback, void*)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_port_registration_callback(jack_client_t* client, JackPortRegistrationCallback, void*)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_port_connect_callback(jack_client_t* client, JackPortConnectCallback, void*)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_set_graph_order_callback(jack_client_t* client, JackGraphOrderCallback, void*)
-{
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    return 0;
-}
+CARLA_BACKEND_USE_NAMESPACE
 
 CARLA_EXPORT
 int jack_client_real_time_priority(jack_client_t*)
@@ -806,10 +680,5 @@ int jack_client_real_time_priority(jack_client_t*)
 
     return -1;
 }
-
-// --------------------------------------------------------------------------------------------------------------------
-
-#include "jackbridge/JackBridge2.cpp"
-#include "CarlaBridgeUtils.cpp"
 
 // --------------------------------------------------------------------------------------------------------------------
