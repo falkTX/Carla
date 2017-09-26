@@ -21,7 +21,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils -DBUILD_BRIDGE
+BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 LINK_FLAGS      += $(MODULEDIR)/juce_core.a
 LINK_FLAGS      += $(JUCE_CORE_LIBS)
 

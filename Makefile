@@ -387,6 +387,8 @@ clean:
 	$(MAKE) clean -C source/bridges-plugin
 	$(MAKE) clean -C source/bridges-ui
 	$(MAKE) clean -C source/discovery
+	$(MAKE) clean -C source/interposer
+	$(MAKE) clean -C source/libjack
 	$(MAKE) clean -C source/modules
 	$(MAKE) clean -C source/native-plugins
 	$(MAKE) clean -C source/plugin
@@ -419,7 +421,7 @@ stoat:
 install:
 	# Create directories
 	install -d $(DESTDIR)$(BINDIR)
-	install -d $(DESTDIR)$(LIBDIR)/carla
+	install -d $(DESTDIR)$(LIBDIR)/carla/jack
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 	install -d $(DESTDIR)$(DATADIR)/carla
@@ -475,6 +477,13 @@ endif
 		bin/*bridge-* \
 		bin/carla-discovery-* \
 		$(DESTDIR)$(LIBDIR)/carla
+
+ifeq ($(LINUX),true)
+	# Install libjack
+	install -m 755 \
+		bin/jack/libjack.so.0 \
+		$(DESTDIR)$(LIBDIR)/carla/jack
+endif
 
 	# Install pkg-config files
 	install -m 644 \

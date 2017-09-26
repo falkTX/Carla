@@ -18,6 +18,9 @@
 // need to include this first
 #include "CarlaDefines.h"
 
+// now define as bridge
+#define BUILD_BRIDGE 1
+
 // now include a bunch of stuff
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBridgeUtils.hpp"
@@ -46,9 +49,6 @@
 // small check to not hurt myself
 #ifdef JACKBRIDGE_DIRECT
 # error "Cannot create custom jack server while linking to libjack directly"
-#endif
-#ifndef BUILD_BRIDGE
-# error "BUILD_BRIDGE not enabled, why?"
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
