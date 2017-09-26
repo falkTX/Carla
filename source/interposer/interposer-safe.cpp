@@ -1,6 +1,6 @@
 /*
- * Carla Interposer for audio-unsafe functions
- * Copyright (C) 2014-2015 Filipe Coelho <falktx@falktx.com>
+ * Carla Interposer for unsafe backend functions
+ * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
