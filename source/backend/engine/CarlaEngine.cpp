@@ -426,12 +426,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     {
         if (ptype == PLUGIN_LV2 && label != nullptr)
         {
-            if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Analyzer") == 0)
+            if (std::strncmp(label, "http://calf.sourceforge.net/plugins/", 36) == 0 ||
+                std::strcmp(label, "http://factorial.hu/plugins/lv2/ir") == 0 ||
+                std::strstr(label, "v1.sourceforge.net/lv2") != nullptr)
+            {
                 preferBridges = true;
-            if (std::strcmp(label, "http://calf.sourceforge.net/plugins/Fluidsynth") == 0)
-                preferBridges = true;
-            if (std::strcmp(label, "http://factorial.hu/plugins/lv2/ir") == 0)
-                preferBridges = true;
+            }
         }
 #if 0
         else if (ptype == PLUGIN_VST2)
