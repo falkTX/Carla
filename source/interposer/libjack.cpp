@@ -156,17 +156,10 @@ class CarlaJackClient : public Thread
 public:
     JackClientState fState;
 
-    CarlaJackClient(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
+    CarlaJackClient()
         : Thread("CarlaJackClient"),
           fState(),
-          fShmAudioPool(),
-          fShmRtClientControl(),
-          fShmNonRtClientControl(),
-          fShmNonRtServerControl(),
-          fBaseNameAudioPool(audioPoolBaseName),
-          fBaseNameRtClientControl(rtClientBaseName),
-          fBaseNameNonRtClientControl(nonRtClientBaseName),
-          fBaseNameNonRtServerControl(nonRtServerBaseName),
+          fIsValid(false),
           fIsOffline(false),
           fFirstIdle(true),
           fLastPingTime(-1),
@@ -174,118 +167,27 @@ public:
           fAudioOuts(0)
     {
         carla_debug("CarlaJackClient::CarlaJackClient(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+
+        const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
+        CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
+
+        std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
+        std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
+        std::memcpy(fBaseNameNonRtClientControl, shmIds+6*2, 6);
+        std::memcpy(fBaseNameNonRtServerControl, shmIds+6*3, 6);
+
+        fBaseNameAudioPool[6]          = '\0';
+        fBaseNameRtClientControl[6]    = '\0';
+        fBaseNameNonRtClientControl[6] = '\0';
+        fBaseNameNonRtServerControl[6] = '\0';
+
+        startThread(10);
     }
 
     ~CarlaJackClient() noexcept override
     {
         carla_debug("CarlaJackClient::~CarlaJackClient()");
 
-        clear();
-    }
-
-    bool init(const char* const clientName)
-    {
-        carla_debug("CarlaJackClient::init(\"%s\")", clientName);
-
-        if (! fShmAudioPool.attachClient(fBaseNameAudioPool))
-        {
-            carla_stderr("Failed to attach to audio pool shared memory");
-            return false;
-        }
-
-        if (! fShmRtClientControl.attachClient(fBaseNameRtClientControl))
-        {
-            clear();
-            carla_stderr("Failed to attach to rt client control shared memory");
-            return false;
-        }
-
-        if (! fShmRtClientControl.mapData())
-        {
-            clear();
-            carla_stderr("Failed to map rt client control shared memory");
-            return false;
-        }
-
-        if (! fShmNonRtClientControl.attachClient(fBaseNameNonRtClientControl))
-        {
-            clear();
-            carla_stderr("Failed to attach to non-rt client control shared memory");
-            return false;
-        }
-
-        if (! fShmNonRtClientControl.mapData())
-        {
-            clear();
-            carla_stderr("Failed to map non-rt control client shared memory");
-            return false;
-        }
-
-        if (! fShmNonRtServerControl.attachClient(fBaseNameNonRtServerControl))
-        {
-            clear();
-            carla_stderr("Failed to attach to non-rt server control shared memory");
-            return false;
-        }
-
-        if (! fShmNonRtServerControl.mapData())
-        {
-            clear();
-            carla_stderr("Failed to map non-rt control server shared memory");
-            return false;
-        }
-
-        PluginBridgeNonRtClientOpcode opcode;
-
-        opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientNull, opcode);
-
-        const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
-
-        const uint32_t shmNonRtClientDataSize = fShmNonRtClientControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(shmNonRtClientDataSize == sizeof(BridgeNonRtClientData), shmNonRtClientDataSize, sizeof(BridgeNonRtClientData));
-
-        const uint32_t shmNonRtServerDataSize = fShmNonRtClientControl.readUInt();
-        CARLA_SAFE_ASSERT_INT2(shmNonRtServerDataSize == sizeof(BridgeNonRtServerData), shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
-
-        if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
-        {
-            carla_stderr2("CarlaJackClient: data size mismatch");
-            return false;
-        }
-
-        opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
-        fState.bufferSize = fShmNonRtClientControl.readUInt();
-
-        opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
-        fState.sampleRate = fShmNonRtClientControl.readDouble();
-
-        if (fState.bufferSize == 0 || carla_isZero(fState.sampleRate))
-        {
-            carla_stderr2("CarlaJackClient: invalid empty state");
-            return false;
-        }
-
-        fState.name = strdup(clientName);
-
-        // tell backend we're live
-        {
-            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-
-            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
-            fShmNonRtServerControl.commitWrite();
-        }
-
-        startThread(10);
-
-        return true;
-    }
-
-    bool close()
-    {
         carla_debug("CarlaEnginePlugin::close()");
         fLastPingTime = -1;
 
@@ -306,8 +208,16 @@ public:
 
         fState.audioIns.clear();
         fState.audioOuts.clear();
+    }
 
-        return true;
+    bool initIfNeeded(const char* const clientName)
+    {
+        carla_debug("CarlaJackClient::initIfNeeded(\"%s\")", clientName);
+
+        if (fState.name == nullptr)
+            fState.name = strdup(clientName);
+
+        return fIsValid;
     }
 
     void clear() noexcept
@@ -316,6 +226,11 @@ public:
         fShmRtClientControl.clear();
         fShmNonRtClientControl.clear();
         fShmNonRtServerControl.clear();
+    }
+
+    bool isValid() const noexcept
+    {
+        return fIsValid;
     }
 
     void activate()
@@ -607,6 +522,98 @@ protected:
     {
         carla_stderr("CarlaJackClient run START");
 
+        if (! fShmAudioPool.attachClient(fBaseNameAudioPool))
+        {
+            carla_stderr("Failed to attach to audio pool shared memory");
+            return;
+        }
+
+        if (! fShmRtClientControl.attachClient(fBaseNameRtClientControl))
+        {
+            clear();
+            carla_stderr("Failed to attach to rt client control shared memory");
+            return;
+        }
+
+        if (! fShmRtClientControl.mapData())
+        {
+            clear();
+            carla_stderr("Failed to map rt client control shared memory");
+            return;
+        }
+
+        if (! fShmNonRtClientControl.attachClient(fBaseNameNonRtClientControl))
+        {
+            clear();
+            carla_stderr("Failed to attach to non-rt client control shared memory");
+            return;
+        }
+
+        if (! fShmNonRtClientControl.mapData())
+        {
+            clear();
+            carla_stderr("Failed to map non-rt control client shared memory");
+            return;
+        }
+
+        if (! fShmNonRtServerControl.attachClient(fBaseNameNonRtServerControl))
+        {
+            clear();
+            carla_stderr("Failed to attach to non-rt server control shared memory");
+            return;
+        }
+
+        if (! fShmNonRtServerControl.mapData())
+        {
+            clear();
+            carla_stderr("Failed to map non-rt control server shared memory");
+            return;
+        }
+
+        PluginBridgeNonRtClientOpcode opcode;
+
+        opcode = fShmNonRtClientControl.readOpcode();
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientNull, opcode);
+
+        const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
+
+        const uint32_t shmNonRtClientDataSize = fShmNonRtClientControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(shmNonRtClientDataSize == sizeof(BridgeNonRtClientData), shmNonRtClientDataSize, sizeof(BridgeNonRtClientData));
+
+        const uint32_t shmNonRtServerDataSize = fShmNonRtClientControl.readUInt();
+        CARLA_SAFE_ASSERT_INT2(shmNonRtServerDataSize == sizeof(BridgeNonRtServerData), shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
+
+        if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
+        {
+            carla_stderr2("CarlaJackClient: data size mismatch");
+            return;
+        }
+
+        opcode = fShmNonRtClientControl.readOpcode();
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
+        fState.bufferSize = fShmNonRtClientControl.readUInt();
+
+        opcode = fShmNonRtClientControl.readOpcode();
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
+        fState.sampleRate = fShmNonRtClientControl.readDouble();
+
+        if (fState.bufferSize == 0 || carla_isZero(fState.sampleRate))
+        {
+            carla_stderr2("CarlaJackClient: invalid empty state");
+            return;
+        }
+
+        // tell backend we're live
+        {
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPong);
+            fShmNonRtServerControl.commitWrite();
+        }
+
+        fIsValid = true;
+
 #ifdef __SSE2_MATH__
         // Set FTZ and DAZ flags
         _mm_setcsr(_mm_getcsr() | 0x8040);
@@ -791,11 +798,12 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
-    CarlaString fBaseNameAudioPool;
-    CarlaString fBaseNameRtClientControl;
-    CarlaString fBaseNameNonRtClientControl;
-    CarlaString fBaseNameNonRtServerControl;
+    char fBaseNameAudioPool[6+1];
+    char fBaseNameRtClientControl[6+1];
+    char fBaseNameNonRtClientControl[6+1];
+    char fBaseNameNonRtServerControl[6+1];
 
+    bool fIsValid;
     bool fIsOffline;
     bool fFirstIdle;
     int64_t fLastPingTime;
@@ -814,57 +822,23 @@ CARLA_BACKEND_END_NAMESPACE
 
 CARLA_BACKEND_USE_NAMESPACE
 
-static CarlaJackClient* gClient         = nullptr;
-static int              gClientRefCount = 0;
+static CarlaJackClient gClient;
+static int             gClientRefCount = 0;
 
 CARLA_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t /*options*/, jack_status_t* status, ...)
 {
     carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
 
-    if (gClient != nullptr)
-    {
-        ++gClientRefCount;
-        return (jack_client_t*)gClient;
-    }
-
-    const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
-
-    if (shmIds == nullptr || std::strlen(shmIds) != 6*4)
-    {
-        if (status != nullptr)
-            *status = JackFailure;
-        return nullptr;
-    }
-
-    char audioPoolBaseName[6+1];
-    char rtClientBaseName[6+1];
-    char nonRtClientBaseName[6+1];
-    char nonRtServerBaseName[6+1];
-
-    std::memcpy(audioPoolBaseName,   shmIds+6*0, 6);
-    std::memcpy(rtClientBaseName,    shmIds+6*1, 6);
-    std::memcpy(nonRtClientBaseName, shmIds+6*2, 6);
-    std::memcpy(nonRtServerBaseName, shmIds+6*3, 6);
-
-    audioPoolBaseName[6]   = '\0';
-    rtClientBaseName[6]    = '\0';
-    nonRtClientBaseName[6] = '\0';
-    nonRtServerBaseName[6] = '\0';
-
-    CarlaJackClient* const client = new CarlaJackClient(audioPoolBaseName, rtClientBaseName,
-                                                        nonRtClientBaseName, nonRtServerBaseName);
-
-    if (! client->init(client_name))
+    if (! gClient.initIfNeeded(client_name))
     {
         if (status != nullptr)
             *status = JackServerError;
         return nullptr;
     }
 
-    gClient = client;
     ++gClientRefCount;
-    return (jack_client_t*)client;
+    return (jack_client_t*)&gClient;
 }
 
 CARLA_EXPORT
@@ -886,21 +860,7 @@ int jack_client_close(jack_client_t* client)
     if (jstate.activated)
         jclient->deactivate();
 
-    if (--gClientRefCount == 0)
-    {
-#if 0
-        static bool ignoreFirstClientClose = true;
-        if (ignoreFirstClientClose)
-        {
-            ignoreFirstClientClose = false;
-            return 0;
-        }
-#endif
-        jclient->close();
-        delete jclient;
-        gClient = nullptr;
-    }
-
+    --gClientRefCount;
     return 0;
 }
 
