@@ -446,6 +446,9 @@ struct CarlaPipeCommon::PrivateData {
     // read functions must only be called in context of idlePipe()
     bool isReading;
 
+    // print error only once
+    bool lastMessageFailed;
+
     // common write lock
     CarlaMutex writeLock;
 
@@ -462,6 +465,7 @@ struct CarlaPipeCommon::PrivateData {
           pipeRecv(INVALID_PIPE_VALUE),
           pipeSend(INVALID_PIPE_VALUE),
           isReading(false),
+          lastMessageFailed(false),
           writeLock(),
           tmpBuf(),
           tmpStr()
@@ -1040,10 +1044,20 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
 
     if (ret == static_cast<ssize_t>(size))
+    {
+        if (pData->lastMessageFailed)
+            pData->lastMessageFailed = false;
         return true;
+    }
 
-    fprintf(stderr, "CarlaPipeCommon::_writeMsgBuffer(..., " P_SIZE ") - failed with " P_SSIZE ". Message was:\n%s",
-                    size, ret, msg);
+    if (! pData->lastMessageFailed)
+    {
+        pData->lastMessageFailed = true;
+        fprintf(stderr,
+                "CarlaPipeCommon::_writeMsgBuffer(..., " P_SIZE ") - failed with " P_SSIZE ", message was:\n%s",
+                size, ret, msg);
+    }
+
     return false;
 }
 
