@@ -1205,6 +1205,8 @@ public:
                 close (pipeHandles[1]); // close the write handle
             }
         }
+
+        ignoreUnused (streamFlags);
     }
 
     ~ActiveProcess()

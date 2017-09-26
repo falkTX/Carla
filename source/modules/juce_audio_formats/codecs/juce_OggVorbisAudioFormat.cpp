@@ -47,6 +47,9 @@ namespace OggVorbisNamespace
  #elif JUCE_GCC
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wshadow"
+  #if (__GNUC__ >= 6)
+   #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+  #endif
  #endif
 
  #include "oggvorbis/vorbisenc.h"
