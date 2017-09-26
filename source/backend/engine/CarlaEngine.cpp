@@ -528,31 +528,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         {
             plugin = CarlaPlugin::newBridge(initializer, btype, ptype, bridgeBinary);
         }
-# ifdef CARLA_OS_LINUX
-        // fallback to dssi-vst if possible
-        else if (btype == BINARY_WIN32 && File("/usr/lib/dssi/dssi-vst.so").existsAsFile())
-        {
-            const String jfilename = String(CharPointer_UTF8(filename));
-            File file(jfilename);
-
-            CarlaString label2(file.getFileName().toRawUTF8());
-            label2.replace(' ', '*');
-
-            CarlaPlugin::Initializer init2 = {
-                this,
-                id,
-                "/usr/lib/dssi/dssi-vst.so",
-                name,
-                label2,
-                uniqueId,
-                options
-            };
-
-            ScopedEnvVar sev("VST_PATH", file.getParentDirectory().getFullPathName().toRawUTF8());
-
-            plugin = CarlaPlugin::newDSSI(init2);
-        }
-# endif
         else
         {
             setLastError("This Carla build cannot handle this binary");
