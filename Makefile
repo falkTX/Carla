@@ -112,13 +112,13 @@ $(MODULEDIR)/jackbridge.%.a: .FORCE
 $(MODULEDIR)/native-plugins.a: .FORCE
 	@$(MAKE) -C source/native-plugins
 
-$(MODULEDIR)/theme.a: .FORCE
+$(MODULEDIR)/theme.a: theme .FORCE
 	@$(MAKE) -C source/theme
 
-$(MODULEDIR)/theme.qt4.a: .FORCE
+$(MODULEDIR)/theme.qt4.a: theme .FORCE
 	@$(MAKE) -C source/theme qt4
 
-$(MODULEDIR)/theme.qt5.a: .FORCE
+$(MODULEDIR)/theme.qt5.a: theme .FORCE
 	@$(MAKE) -C source/theme qt5
 
 $(MODULEDIR)/%.posix32.a: .FORCE
