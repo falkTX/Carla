@@ -955,7 +955,7 @@
             <item row="1" column="0" colspan="3">
              <widget class="QCheckBox" name="ch_engine_uis_always_on_top">
               <property name="text">
-               <string>Make UIs always-on-top</string>
+               <string>Make plugin UIs always-on-top</string>
               </property>
              </widget>
             </item>
@@ -1482,20 +1482,20 @@
           </layout>
          </item>
          <item>
-          <widget class="QGroupBox" name="group_advanced_main">
+          <widget class="QGroupBox" name="group_experimental_main">
            <property name="title">
             <string>Main</string>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_17">
             <item>
-             <widget class="QCheckBox" name="cb_advanced_plugin_bridges">
+             <widget class="QCheckBox" name="cb_exp_plugin_bridges">
               <property name="text">
                <string>Enable plugin bridges</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QCheckBox" name="ch_advanced_load_lib_global">
+             <widget class="QCheckBox" name="ch_exp_load_lib_global">
               <property name="text">
                <string>Load Carla backend in global namespace (NOT RECOMMENDED)</string>
               </property>
@@ -1505,7 +1505,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="group_advanced_canvas">
+          <widget class="QGroupBox" name="group_experimental_canvas">
            <property name="title">
             <string>Canvas</string>
            </property>
@@ -1538,7 +1538,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QGroupBox" name="group_avanced_engine">
+          <widget class="QGroupBox" name="group_experimental_engine">
            <property name="title">
             <string>Engine</string>
            </property>
@@ -1551,6 +1551,13 @@ This mode is not available for VST plugins.</string>
               </property>
               <property name="text">
                <string>Force mono plugins as stereo</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="ch_exp_prevent_bad_behaviour">
+              <property name="text">
+               <string>Prevent plugins from doing bad stuff (needs restart)</string>
               </property>
              </widget>
             </item>

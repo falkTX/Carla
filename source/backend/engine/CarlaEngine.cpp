@@ -1587,7 +1587,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
 #ifdef CARLA_OS_LINUX
         if (value != 0)
         {
-            CarlaString interposerPath(CarlaString(pData->options.binaryDir) + CARLA_OS_SEP_STR "libcarla_interposer.so");
+            CarlaString interposerPath(CarlaString(pData->options.binaryDir) + "/libcarla_interposer-safe.so");
             ::setenv("LD_PRELOAD", interposerPath.buffer(), 1);
         }
         else

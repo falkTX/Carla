@@ -274,7 +274,7 @@ class CarlaSettingsW(QDialog):
                 self.ui.ch_engine_force_stereo.setEnabled(False)
 
         if host.isControl or host.isPlugin:
-            self.ui.ch_advanced_load_lib_global.hide()
+            self.ui.ch_exp_load_lib_global.hide()
 
         # FIXME, pipes on win32 not working
         if WINDOWS:
@@ -471,13 +471,17 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
-        self.ui.cb_advanced_plugin_bridges.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,
-                                                                     CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
-                                                                     type=bool))
+        self.ui.cb_exp_plugin_bridges.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,
+                                                                CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
+                                                                type=bool))
 
-        self.ui.ch_advanced_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
-                                                                      CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
-                                                                      type=bool))
+        self.ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
+                                                                 type=bool))
+
+        self.ui.ch_exp_prevent_bad_behaviour.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+                                                                       CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR,
+                                                                       type=bool))
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -493,17 +497,11 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        self.host.showLogs       = self.ui.ch_main_show_logs.isChecked()
-        self.host.uisAlwaysOnTop = self.ui.ch_engine_uis_always_on_top.isChecked()
-
         settings.setValue(CARLA_KEY_MAIN_PROJECT_FOLDER,   self.ui.le_main_proj_folder.text())
         settings.setValue(CARLA_KEY_MAIN_USE_PRO_THEME,    self.ui.ch_main_theme_pro.isChecked())
         settings.setValue(CARLA_KEY_MAIN_PRO_THEME_COLOR,  self.ui.cb_main_theme_color.currentText())
         settings.setValue(CARLA_KEY_MAIN_REFRESH_INTERVAL, self.ui.sb_main_refresh_interval.value())
         settings.setValue(CARLA_KEY_MAIN_USE_CUSTOM_SKINS, self.ui.ch_main_use_custom_skins.isChecked())
-
-        settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,           self.host.showLogs)
-        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP, self.host.uisAlwaysOnTop)
 
         # ----------------------------------------------------------------------------------------------------
         # Canvas
@@ -545,29 +543,33 @@ class CarlaSettingsW(QDialog):
             settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
+        self.host.maxParameters       = self.ui.sb_engine_max_params.value()
+        self.host.manageUIs           = self.ui.ch_engine_manage_uis.isChecked()
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
         self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
-        self.host.maxParameters       = self.ui.sb_engine_max_params.value()
+        self.host.showLogs            = self.ui.ch_main_show_logs.isChecked()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
-        self.host.manageUIs           = self.ui.ch_engine_manage_uis.isChecked()
+        self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
 
         if self.ui.ch_engine_force_stereo.isEnabled():
             self.host.set_engine_option(ENGINE_OPTION_FORCE_STEREO,      self.host.forceStereo,         "")
 
+        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
         self.host.set_engine_option(ENGINE_OPTION_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges, "")
         self.host.set_engine_option(ENGINE_OPTION_PREFER_UI_BRIDGES,     self.host.preferUIBridges,     "")
-        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
-        self.host.set_engine_option(ENGINE_OPTION_MAX_PARAMETERS,        self.host.maxParameters,       "")
         self.host.set_engine_option(ENGINE_OPTION_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout,    "")
+        self.host.set_engine_option(ENGINE_OPTION_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop,      "")
 
         if self.ui.ch_engine_force_stereo.isEnabled():
             settings.setValue(CARLA_KEY_ENGINE_FORCE_STEREO,      self.host.forceStereo)
 
+        settings.setValue(CARLA_KEY_MAIN_SHOW_LOGS,               self.host.showLogs)
+        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
+        settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            self.host.manageUIs)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_PLUGIN_BRIDGES, self.host.preferPluginBridges)
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
-        settings.setValue(CARLA_KEY_ENGINE_MAX_PARAMETERS,        self.host.maxParameters)
         settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
-        settings.setValue(CARLA_KEY_ENGINE_MANAGE_UIS,            self.host.manageUIs)
+        settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -626,8 +628,9 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.ui.cb_advanced_plugin_bridges.isChecked())
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_advanced_load_lib_global.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.ui.cb_exp_plugin_bridges.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
 
     # --------------------------------------------------------------------------------------------------------
 
@@ -763,8 +766,9 @@ class CarlaSettingsW(QDialog):
 
     def resetExperimentalSettings(self):
         # Forever experimental
-        self.ui.cb_advanced_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
-        self.ui.ch_advanced_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
+        self.ui.cb_exp_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
+        self.ui.ch_exp_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
+        self.ui.ch_exp_prevent_bad_behaviour.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR)
 
         # Temporary, until stable
         self.ui.cb_canvas_fancy_eyecandy.setChecked(CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY)

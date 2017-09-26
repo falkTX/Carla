@@ -26,6 +26,7 @@
 #include "CarlaBridgeUtils.hpp"
 #include "CarlaEngineUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaPipeUtils.hpp"
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
@@ -156,10 +157,8 @@ protected:
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
 #ifdef CARLA_OS_LINUX
-            const char* const oldPreload(std::getenv("LD_PRELOAD"));
-
-            if (oldPreload != nullptr)
-                ::unsetenv("LD_PRELOAD");
+            const ScopedEnvVar sev1("LD_LIBRARY_PATH", nullptr);
+            const ScopedEnvVar sev2("LD_PRELOAD", nullptr);
 #endif
 
             carla_setenv("ENGINE_OPTION_FORCE_STEREO",          bool2str(options.forceStereo));
@@ -235,11 +234,6 @@ protected:
                          fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
 
             started = fProcess->start(arguments);
-
-#ifdef CARLA_OS_LINUX
-            if (oldPreload != nullptr)
-                ::setenv("LD_PRELOAD", oldPreload, 1);
-#endif
         }
 
         if (! started)

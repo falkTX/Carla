@@ -1233,9 +1233,9 @@ class CarlaHostMeta(object):
 
         # settings
         self.experimental        = False
+        self.forceStereo         = False
         self.manageUIs           = False
         self.maxParameters       = 0
-        self.forceStereo         = False
         self.preferPluginBridges = False
         self.preferUIBridges     = False
         self.preventBadBehaviour = False

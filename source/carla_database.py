@@ -1044,9 +1044,9 @@ class PluginRefreshW(QDialog):
         self.loadSettings()
 
         # ----------------------------------------------------------------------------------------------------
-        # Disable bridges (experimental for now)
+        # Hide bridges if disabled
 
-        if not host.experimental:
+        if not host.showPluginBridges:
             self.ui.ch_native.setChecked(True)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_native.setVisible(False)

@@ -22,13 +22,15 @@
 #include <sched.h>
 #include <spawn.h>
 
+#define PREVENTED_FUNC_MSG carla_stderr2("Carla prevented a plugin from calling '%s', bad plugin!", __FUNCTION__)
+
 // -----------------------------------------------------------------------
 // Our custom functions
 
 CARLA_EXPORT
 pid_t fork()
 {
-    carla_stdout("------------------------------- fork called");
+    PREVENTED_FUNC_MSG;
     errno = ENOSYS;
     return -1;
 }
@@ -36,7 +38,7 @@ pid_t fork()
 CARLA_EXPORT
 int clone(int (*)(void*), void*, int, void*, ...)
 {
-    carla_stdout("------------------------------- clone called");
+    PREVENTED_FUNC_MSG;
     errno = ENOSYS;
     return -1;
 }
@@ -44,15 +46,37 @@ int clone(int (*)(void*), void*, int, void*, ...)
 CARLA_EXPORT
 int posix_spawn(pid_t*, const char*, const posix_spawn_file_actions_t*, const posix_spawnattr_t*, char* const[], char* const[])
 {
-    carla_stdout("------------------------------- posix_spawn called");
+    PREVENTED_FUNC_MSG;
     return ENOSYS;
 }
 
 CARLA_EXPORT
 int posix_spawnp(pid_t*, const char*, const posix_spawn_file_actions_t*, const posix_spawnattr_t*, char* const[], char* const[])
 {
-    carla_stdout("------------------------------- posix_spawnp called");
+    PREVENTED_FUNC_MSG;
     return ENOSYS;
+}
+
+// -----------------------------------------------------------------------
+
+CARLA_EXPORT
+void gtk_init(int*, char***)
+{
+    PREVENTED_FUNC_MSG;
+}
+
+CARLA_EXPORT
+int gtk_init_check(int*, char***)
+{
+    PREVENTED_FUNC_MSG;
+    return 0;
+}
+
+CARLA_EXPORT
+int gtk_init_with_args(int*, char***, const char*, void*, const char*, void**)
+{
+    PREVENTED_FUNC_MSG;
+    return 0;
 }
 
 // -----------------------------------------------------------------------
