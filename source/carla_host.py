@@ -365,13 +365,6 @@ class HostWindow(QMainWindow):
             self.ui.menu_Help.menuAction().setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
-        # Set up GUI (secrets when running local)
-
-        if CWD not in ("/Shared/Personal/FOSS/GIT/falkTX/Carla/source",
-                       "/home/falktx/Personal/GIT-mine/falkTX/Carla/source"):
-            self.ui.menu_Secrets.menuAction().setVisible(False)
-
-        # ----------------------------------------------------------------------------------------------------
         # Load Settings
 
         self.loadSettings(True)
@@ -405,6 +398,8 @@ class HostWindow(QMainWindow):
         self.ui.act_plugin_add2.triggered.connect(self.slot_pluginAdd)
         self.ui.act_plugin_remove_all.triggered.connect(self.slot_pluginRemoveAll)
 
+        self.ui.act_add_jack.triggered.connect(self.slot_jackAppAdd)
+
         self.ui.act_plugins_enable.triggered.connect(self.slot_pluginsEnable)
         self.ui.act_plugins_disable.triggered.connect(self.slot_pluginsDisable)
         self.ui.act_plugins_volume100.triggered.connect(self.slot_pluginsVolume100)
@@ -436,12 +431,6 @@ class HostWindow(QMainWindow):
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
         self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
-
-        self.ui.act_secret_1.triggered.connect(self.slot_runSecret1)
-        self.ui.act_secret_2.triggered.connect(self.slot_runSecret2)
-        self.ui.act_secret_3.triggered.connect(self.slot_runSecret3)
-        self.ui.act_secret_4.triggered.connect(self.slot_runSecret4)
-        self.ui.act_secret_5.triggered.connect(self.slot_runSecret5)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
         self.ui.b_disk_add.clicked.connect(self.slot_diskFolderAdd)
@@ -858,6 +847,18 @@ class HostWindow(QMainWindow):
 
         return (btype, ptype, filename, label, uniqueId, extraPtr)
 
+    def showAddJackAppDialog(self):
+        dialog = JackApplicationW(self.fParentOrSelf, self.host)
+
+        if not dialog.exec_():
+            return
+
+        if not self.host.is_engine_running():
+            QMessageBox.warning(self, self.tr("Warning"), self.tr("Cannot add new plugins while engine is stopped"))
+            return
+
+        return dialog.getCommandAndFlags()
+
     @pyqtSlot()
     def showPluginActionsMenu(self):
         menu = QMenu(self)
@@ -953,6 +954,19 @@ class HostWindow(QMainWindow):
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
         self.fCurrentlyRemovingAllPlugins = False
+
+    @pyqtSlot()
+    def slot_jackAppAdd(self):
+        data = self.showAddJackAppDialog()
+
+        if data is None:
+            return
+
+        filename, label = data
+
+        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, None, label, 0, None, 0x0):
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
+                                   self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins (macros)
@@ -1452,10 +1466,13 @@ class HostWindow(QMainWindow):
             CARLA_KEY_CANVAS_FANCY_EYE_CANDY:   settings.value(CARLA_KEY_CANVAS_FANCY_EYE_CANDY,   CARLA_DEFAULT_CANVAS_FANCY_EYE_CANDY,   type=bool),
             CARLA_KEY_CANVAS_USE_OPENGL:        settings.value(CARLA_KEY_CANVAS_USE_OPENGL,        CARLA_DEFAULT_CANVAS_USE_OPENGL,        type=bool),
             CARLA_KEY_CANVAS_ANTIALIASING:      settings.value(CARLA_KEY_CANVAS_ANTIALIASING,      CARLA_DEFAULT_CANVAS_ANTIALIASING,      type=int),
-            CARLA_KEY_CANVAS_HQ_ANTIALIASING :  settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
+            CARLA_KEY_CANVAS_HQ_ANTIALIASING:   settings.value(CARLA_KEY_CANVAS_HQ_ANTIALIASING,   CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING,   type=bool),
             CARLA_KEY_CUSTOM_PAINTING:         (settings.value(CARLA_KEY_MAIN_USE_PRO_THEME,    True,   type=bool) and
-                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black")
+                                                settings.value(CARLA_KEY_MAIN_PRO_THEME_COLOR, "Black", type=str).lower() == "black"),
         }
+
+        self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+                                                       CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 
@@ -1533,43 +1550,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutQt(self):
         QApplication.instance().aboutQt()
-
-    # --------------------------------------------------------------------------------------------------------
-    # Secret (menu actions)
-
-    @pyqtSlot()
-    def slot_runSecret1(self):
-        print("secret 1")
-        fname = "/usr/bin/audacious -p"
-        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
-
-    @pyqtSlot()
-    def slot_runSecret2(self):
-        print("secret 2")
-        fname  = "/usr/bin/pulseaudio"
-        fname += " --high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play+rec.pa -n"
-        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
-
-    @pyqtSlot()
-    def slot_runSecret3(self):
-        print("secret 3")
-        fname = "/usr/bin/lmms"
-        self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0)
-
-    @pyqtSlot()
-    def slot_runSecret4(self):
-        print("secret 4")
-        ret = QInputDialog.getText(self, "Command", "command to run")
-        if ret[1] and len(ret[0]) > 1:
-            fname = ret[0]
-            if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", "", 0, None, 0):
-                CustomMessageBox(self, QMessageBox.Critical,
-                                 self.tr("Error"), self.tr("Failed to load plugin"),
-                                 self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
-
-    @pyqtSlot()
-    def slot_runSecret5(self):
-        print("secret 5")
 
     # --------------------------------------------------------------------------------------------------------
     # Disk (menu actions)

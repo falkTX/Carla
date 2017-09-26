@@ -475,6 +475,11 @@ class CarlaSettingsW(QDialog):
                                                                 CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
                                                                 type=bool))
 
+        self.ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
+                                                           CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
+                                                           type=bool))
+
+
         self.ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
                                                                  CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
                                                                  type=bool))
@@ -629,6 +634,7 @@ class CarlaSettingsW(QDialog):
         # Experimental
 
         settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.ui.cb_exp_plugin_bridges.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS,       self.ui.ch_exp_jack_apps.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
 
@@ -767,6 +773,7 @@ class CarlaSettingsW(QDialog):
     def resetExperimentalSettings(self):
         # Forever experimental
         self.ui.cb_exp_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
+        self.ui.ch_exp_jack_apps.setChecked(CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS)
         self.ui.ch_exp_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
         self.ui.ch_exp_prevent_bad_behaviour.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR)
 

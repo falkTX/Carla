@@ -37,6 +37,7 @@ else:
 # ----------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
+import ui_carla_add_jack
 import ui_carla_database
 import ui_carla_refresh
 
@@ -1872,6 +1873,30 @@ class PluginDatabaseW(QDialog):
                                           internalCount, ladspaCount, dssiCount, lv2Count, vstCount, vst3Count, kitCount)))
 
         self._checkFilters()
+
+    # --------------------------------------------------------------------------------------------------------
+
+    def done(self, r):
+        QDialog.done(self, r)
+        self.close()
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Jack Application Dialog
+
+class JackApplicationW(QDialog):
+    def __init__(self, parent, host):
+        QDialog.__init__(self, parent)
+        self.host = host
+        self.ui = ui_carla_add_jack.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        if False:
+            # kdevelop likes this :)
+            host = CarlaHostNull()
+            self.host = host
+
+    def getCommandAndFlags(self):
+        return (self.ui.le_command.text(), self.ui.le_flags.text())
 
     # --------------------------------------------------------------------------------------------------------
 

@@ -291,6 +291,7 @@ RES = \
 	bin/resources/resources_rc.py \
 	bin/resources/ui_carla_about.py \
 	bin/resources/ui_carla_about_juce.py \
+	bin/resources/ui_carla_add_jack.py \
 	bin/resources/ui_carla_database.py \
 	bin/resources/ui_carla_edit.py \
 	bin/resources/ui_carla_host.py \
@@ -335,6 +336,7 @@ ifeq ($(HAVE_PYQT),true)
 UIs = \
 	source/ui_carla_about.py \
 	source/ui_carla_about_juce.py \
+	source/ui_carla_add_jack.py \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
 	source/ui_carla_host.py \
@@ -657,6 +659,7 @@ endif
 	$(LINK) $(DATADIR)/carla/resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) $(DATADIR)/carla/ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
