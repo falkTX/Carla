@@ -21,7 +21,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
+BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils -DBUILD_BRIDGE
 LINK_FLAGS      += $(MODULEDIR)/juce_core.a
 LINK_FLAGS      += $(JUCE_CORE_LIBS)
 
@@ -31,13 +31,27 @@ OBJS    =
 TARGETS =
 
 ifeq ($(LINUX),true)
-OBJS    = $(OBJDIR)/libjack.cpp.o
-TARGETS = $(BINDIR)/jack/libjack.so.0
+OBJS    = \
+	$(OBJDIR)/libjack.cpp.o \
+	$(OBJDIR)/libjack_base.cpp.o \
+	$(OBJDIR)/libjack_callbacks.cpp.o \
+	$(OBJDIR)/libjack_client.cpp.o \
+	$(OBJDIR)/libjack_error.cpp.o \
+	$(OBJDIR)/libjack_latency.cpp.o \
+	$(OBJDIR)/libjack_non-callback.cpp.o \
+	$(OBJDIR)/libjack_metadata.cpp.o \
+	$(OBJDIR)/libjack_midi.cpp.o \
+	$(OBJDIR)/libjack_ports.cpp.o \
+	$(OBJDIR)/libjack_port-searching.cpp.o \
+	$(OBJDIR)/libjack_server-control.cpp.o \
+	$(OBJDIR)/libjack_time.cpp.o \
+	$(OBJDIR)/libjack_transport.cpp.o
+TARGET = $(BINDIR)/jack/libjack.so.0
 endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-all: $(TARGETS)
+all: $(TARGET)
 
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -49,14 +63,14 @@ debug:
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-$(BINDIR)/jack/libjack.so.0: $(OBJDIR)/libjack.cpp.o
+$(TARGET): $(OBJS)
 	-@mkdir -p $(BINDIR)/jack
 	@echo "Linking libjack.so.0"
-	@$(CXX) $< $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
+	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/libjack.cpp.o: libjack.cpp
+$(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
