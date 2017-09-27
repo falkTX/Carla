@@ -15,7 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// need to include this first
 #include "libjack.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE
@@ -66,8 +65,15 @@ int jack_set_process_callback(jack_client_t* client, JackProcessCallback callbac
 }
 
 CARLA_EXPORT
-int jack_set_freewheel_callback(jack_client_t*, JackFreewheelCallback, void*)
+int jack_set_freewheel_callback(jack_client_t* client, JackFreewheelCallback callback, void* arg)
 {
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    const CarlaMutexLocker cms(jclient->mutex);
+
+    jclient->freewheelCb = callback;
+    jclient->freewheelCbPtr = arg;
     return 0;
 }
 

@@ -551,88 +551,88 @@ void CarlaJackAppClient::run()
 
                 if (cmtl.wasLocked())
                 {
-                    // tranport for all clients
-                    const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
-
-                    fServer.playing        = bridgeTimeInfo.playing;
-                    fServer.position.frame = bridgeTimeInfo.frame;
-                    fServer.position.usecs = bridgeTimeInfo.usecs;
-
-                    if (bridgeTimeInfo.valid & 0x1 /* kValidBBT */)
-                    {
-                        fServer.position.valid = JackPositionBBT;
-
-                        fServer.position.bar  = bridgeTimeInfo.bar;
-                        fServer.position.beat = bridgeTimeInfo.beat;
-                        fServer.position.tick = bridgeTimeInfo.tick;
-
-                        fServer.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
-                        fServer.position.beat_type     = bridgeTimeInfo.beatType;
-
-                        fServer.position.ticks_per_beat   = bridgeTimeInfo.ticksPerBeat;
-                        fServer.position.beats_per_minute = bridgeTimeInfo.beatsPerMinute;
-                        fServer.position.bar_start_tick   = bridgeTimeInfo.barStartTick;
-                    }
-                    else
-                    {
-                        fServer.position.valid = static_cast<jack_position_bits_t>(0);
-                    }
-
                     float* fdata = fShmAudioPool.data;
 
-                    if (JackClientState* const jclient = fClients.getFirst(nullptr))
-                    //for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                    if (! fClients.isEmpty())
                     {
-                        //JackClientState* const jclient(it.getValue(nullptr));
-                        //CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+                        // tranport for all clients
+                        const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
-                        const CarlaMutexTryLocker cmtl2(jclient->mutex);
+                        fServer.playing        = bridgeTimeInfo.playing;
+                        fServer.position.frame = bridgeTimeInfo.frame;
+                        fServer.position.usecs = bridgeTimeInfo.usecs;
 
-                        if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
+                        if (bridgeTimeInfo.valid & 0x1 /* kValidBBT */)
                         {
-                            if (fAudioIns > 0)
-                                fdata += fServer.bufferSize*fAudioIns;
+                            fServer.position.valid = JackPositionBBT;
 
-                            if (fAudioOuts > 0)
-                                carla_zeroFloats(fdata, fServer.bufferSize*fAudioOuts);
+                            fServer.position.bar  = bridgeTimeInfo.bar;
+                            fServer.position.beat = bridgeTimeInfo.beat;
+                            fServer.position.tick = bridgeTimeInfo.tick;
 
-                            if (jclient->deactivated)
-                            {
-                                fShmRtClientControl.data->procFlags = 1;
-                            }
+                            fServer.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
+                            fServer.position.beat_type     = bridgeTimeInfo.beatType;
+
+                            fServer.position.ticks_per_beat   = bridgeTimeInfo.ticksPerBeat;
+                            fServer.position.beats_per_minute = bridgeTimeInfo.beatsPerMinute;
+                            fServer.position.bar_start_tick   = bridgeTimeInfo.barStartTick;
                         }
                         else
                         {
-                            uint32_t i;
+                            fServer.position.valid = static_cast<jack_position_bits_t>(0);
+                        }
 
-                            i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                        for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                        {
+                            JackClientState* const jclient(it.getValue(nullptr));
+                            CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                            const CarlaMutexTryLocker cmtl2(jclient->mutex);
+
+                            if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                             {
-                                CARLA_SAFE_ASSERT_BREAK(i++ < fAudioIns);
-                                if (JackPortState* const jport = it.getValue(nullptr))
-                                    jport->buffer = fdata;
-                                fdata += fServer.bufferSize;
-                            }
-                            for (; i++ < fAudioIns;)
-                                fdata += fServer.bufferSize;
+                                if (fAudioIns > 0)
+                                    fdata += fServer.bufferSize*fAudioIns;
 
-                            i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                                if (fAudioOuts > 0)
+                                    carla_zeroFloats(fdata, fServer.bufferSize*fAudioOuts);
+
+                                if (jclient->deactivated)
+                                {
+                                    fShmRtClientControl.data->procFlags = 1;
+                                }
+                            }
+                            else
                             {
-                                CARLA_SAFE_ASSERT_BREAK(i++ < fAudioOuts);
-                                if (JackPortState* const jport = it.getValue(nullptr))
-                                    jport->buffer = fdata;
-                                fdata += fServer.bufferSize;
-                            }
-                            for (; i++ < fAudioOuts;)
-                            {
-                            //carla_stderr("clearing buffer %i", i);
+                                uint32_t i;
 
-                                carla_zeroFloats(fdata, fServer.bufferSize);
-                                fdata += fServer.bufferSize;
-                            }
+                                i = 0;
+                                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                                {
+                                    CARLA_SAFE_ASSERT_BREAK(i++ < fAudioIns);
+                                    if (JackPortState* const jport = it.getValue(nullptr))
+                                        jport->buffer = fdata;
+                                    fdata += fServer.bufferSize;
+                                }
+                                for (; i++ < fAudioIns;)
+                                    fdata += fServer.bufferSize;
 
-                            jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
+                                i = 0;
+                                for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                                {
+                                    CARLA_SAFE_ASSERT_BREAK(i++ < fAudioOuts);
+                                    if (JackPortState* const jport = it.getValue(nullptr))
+                                        jport->buffer = fdata;
+                                    fdata += fServer.bufferSize;
+                                }
+                                for (; i++ < fAudioOuts;)
+                                {
+                                    carla_zeroFloats(fdata, fServer.bufferSize);
+                                    fdata += fServer.bufferSize;
+                                }
+
+                                jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
+                            }
                         }
                     }
                     else
@@ -679,7 +679,11 @@ void CarlaJackAppClient::run()
         {
             const CarlaMutexLocker cms(fRealtimeThreadMutex);
 
-            if (JackClientState* const jclient = fClients.getLast(nullptr))
+            if (fClients.isEmpty())
+            {
+                activated = false;
+            }
+            else if (JackClientState* const jclient = fClients.getLast(nullptr))
             {
                 const CarlaMutexLocker cms(jclient->mutex);
                 activated = jclient->activated;

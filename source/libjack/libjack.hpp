@@ -120,6 +120,9 @@ struct JackClientState {
     JackProcessCallback processCb;
     void* processCbPtr;
 
+    JackFreewheelCallback freewheelCb;
+    void* freewheelCbPtr;
+
     JackBufferSizeCallback bufferSizeCb;
     void* bufferSizeCbPtr;
 
@@ -144,6 +147,8 @@ struct JackClientState {
           infoShutdownCbPtr(nullptr),
           processCb(nullptr),
           processCbPtr(nullptr),
+          freewheelCb(nullptr),
+          freewheelCbPtr(nullptr),
           bufferSizeCb(nullptr),
           bufferSizeCbPtr(nullptr),
           sampleRateCb(nullptr),

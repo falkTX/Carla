@@ -98,7 +98,7 @@ jack_port_t* jack_port_by_name(jack_client_t* /*client*/, const char* name)
         {
             name += 8;
 
-            const int index = std::atoi(name);
+            const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0 && index < 2, nullptr);
 
             return (jack_port_t*)&capturePorts[index];
@@ -107,7 +107,7 @@ jack_port_t* jack_port_by_name(jack_client_t* /*client*/, const char* name)
         {
             name += 9;
 
-            const int index = std::atoi(name);
+            const int index = std::atoi(name)-1;
             CARLA_SAFE_ASSERT_RETURN(index >= 0, nullptr);
 
             return (jack_port_t*)&playbackPorts[index];

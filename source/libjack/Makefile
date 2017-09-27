@@ -21,6 +21,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 
+BUILD_C_FLAGS   += -I$(CWD) -I$(CWD)/includes
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 LINK_FLAGS      += $(MODULEDIR)/juce_core.a
 LINK_FLAGS      += $(JUCE_CORE_LIBS)
@@ -44,8 +45,10 @@ OBJS    = \
 	$(OBJDIR)/libjack_ports.cpp.o \
 	$(OBJDIR)/libjack_port-searching.cpp.o \
 	$(OBJDIR)/libjack_server-control.cpp.o \
+	$(OBJDIR)/libjack_stats.cpp.o \
 	$(OBJDIR)/libjack_time.cpp.o \
-	$(OBJDIR)/libjack_transport.cpp.o
+	$(OBJDIR)/libjack_transport.cpp.o \
+	$(OBJDIR)/ringbuffer.c.o
 TARGET = $(BINDIR)/jack/libjack.so.0
 endif
 
@@ -69,6 +72,11 @@ $(TARGET): $(OBJS)
 	@$(CXX) $^ $(SHARED) $(LINK_FLAGS) $(LIBJACK_LIBS) -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
+
+$(OBJDIR)/%.c.o: %.c
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CC) $< $(BUILD_C_FLAGS) -c -o $@
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)

@@ -175,10 +175,17 @@ int jack_port_connected(const jack_port_t*)
 
 // --------------------------------------------------------------------------------------------------------------------
 
-// const char ** jack_port_get_connections (const jack_port_t *port) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+const char** jack_port_get_connections (const jack_port_t*)
+{
+    return nullptr;
+}
 
-// const char ** jack_port_get_all_connections (const jack_client_t *client,
-//                                              const jack_port_t *port) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+const char** jack_port_get_all_connections(const jack_client_t*, const jack_port_t*)
+{
+    return nullptr;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 

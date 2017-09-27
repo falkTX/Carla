@@ -24,16 +24,24 @@ def signalHandler(sig, frame):
 
 # --------------------------------------------------------------------------------------------------------
 
-binaryDir = "/home/falktx/Personal/FOSS/GIT/falkTX/Carla/bin"
-host = CarlaHostDLL("/home/falktx/FOSS/GIT-mine/falkTX/Carla/bin/libcarla_standalone2.so", True)
+binaryDir = "/home/falktx/Personal/GIT-mine/falkTX/Carla/bin"
+host = CarlaHostDLL("/home/falktx/Personal/GIT-mine/falkTX/Carla/bin/libcarla_standalone2.so", True)
 host.set_engine_option(ENGINE_OPTION_PATH_BINARIES, 0, binaryDir)
+host.set_engine_option(ENGINE_OPTION_PROCESS_MODE, 2, "")
+host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, 0, "")
 
-if not host.engine_init("JACK", "Carla-Plugin-JACK"):
+if not host.engine_init("PulseAudio", "Carla-Plugin-JACK"):
     print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
     exit(1)
 
 fname = "/usr/bin/pulseaudio"
 label = "--high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play.pa -n"
+
+fname = "/usr/bin/patchage"
+label = ""
+
+fname = "/usr/bin/carla"
+label = ""
 
 if not host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, fname, "", label, 0, None, 0):
     print("Failed to load plugin, possible reasons:\n%s" % host.get_last_error())
