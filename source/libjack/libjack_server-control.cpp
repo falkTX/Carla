@@ -25,49 +25,34 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 int jack_set_freewheel(jack_client_t*, int)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
     return 1;
 }
 
 CARLA_EXPORT
-int jack_set_buffer_size(jack_client_t*, jack_nframes_t)
+int jack_set_buffer_size(jack_client_t* client, jack_nframes_t bufferSize)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    return 1;
+    return (jclient->server.bufferSize == bufferSize) ? 0 : 1;
 }
 
 CARLA_EXPORT
 jack_nframes_t jack_get_sample_rate(jack_client_t* client)
 {
-    carla_debug("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    const JackClientState& jstate(jclient->fState);
-
-    return jstate.sampleRate;
+    return jclient->server.sampleRate;
 }
 
 CARLA_EXPORT
 jack_nframes_t jack_get_buffer_size(jack_client_t* client)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    const JackClientState& jstate(jclient->fState);
-
-    return jstate.bufferSize;
-}
-
-CARLA_EXPORT
-int jack_engine_takeover_timebase(jack_client_t*)
-{
-    return ENOSYS;
+    return jclient->server.bufferSize;
 }
 
 CARLA_EXPORT

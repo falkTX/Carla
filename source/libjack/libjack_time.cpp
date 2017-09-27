@@ -27,15 +27,10 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 jack_nframes_t jack_frame_time(const jack_client_t* client)
 {
-    carla_debug("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(jstate.activated, 0);
-
-    return jstate.position.usecs;
+    return jclient->server.position.usecs;
 }
 
 // jack_nframes_t jack_last_frame_time (const jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;

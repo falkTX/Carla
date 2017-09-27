@@ -27,49 +27,32 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
 {
     carla_stdout("CarlaJackClient :: %s | %s %s %lu", __FUNCTION__, port_name, port_type, flags);
 
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
-
-    JackClientState& jstate(jclient->fState);
 
     CARLA_SAFE_ASSERT_RETURN(port_name != nullptr && port_name[0] != '\0', nullptr);
     CARLA_SAFE_ASSERT_RETURN(port_type != nullptr && port_type[0] != '\0', nullptr);
 
     if (std::strcmp(port_type, JACK_DEFAULT_AUDIO_TYPE) == 0)
     {
-        uint32_t index;
-
-        /**/ if (flags & JackPortIsInput)
+        if (flags & JackPortIsInput)
         {
-            if (jstate.prematurelyActivated)
-            {
-                CARLA_SAFE_ASSERT_RETURN(jstate.fakeIns > 0, nullptr);
-                jstate.fakeIns -= 1;
-                index = jstate.audioIns.count() - jstate.fakeIns - 1;
-            }
-            else
-            {
-                index = jstate.audioIns.count();
-                jstate.audioIns.append(new JackPortState(jstate.name, port_name, index, flags, false));
-            }
+            JackPortState* const port = new JackPortState(jclient->name, port_name, jclient->audioIns.count(), flags, false);
 
-            return (jack_port_t*)jstate.audioIns.getAt(index, nullptr);
+            const CarlaMutexLocker cms(jclient->mutex);
+
+            jclient->audioIns.append(port);
+            return (jack_port_t*)port;
         }
-        else if (flags & JackPortIsOutput)
-        {
-            if (jstate.prematurelyActivated)
-            {
-                CARLA_SAFE_ASSERT_RETURN(jstate.fakeOuts > 0, nullptr);
-                jstate.fakeOuts -= 1;
-                index = jstate.audioOuts.count() - jstate.fakeOuts - 1;
-            }
-            else
-            {
-                index = jstate.audioOuts.count();
-                jstate.audioOuts.append(new JackPortState(jstate.name, port_name, index, flags, false));
-            }
 
-            return (jack_port_t*)jstate.audioOuts.getAt(index, nullptr);
+        if (flags & JackPortIsOutput)
+        {
+            JackPortState* const port = new JackPortState(jclient->name, port_name, jclient->audioOuts.count(), flags, false);
+
+            const CarlaMutexLocker cms(jclient->mutex);
+
+            jclient->audioOuts.append(port);
+            return (jack_port_t*)port;
         }
 
         carla_stderr2("Invalid port flags '%x'", flags);
@@ -83,44 +66,29 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
 CARLA_EXPORT
 int jack_port_unregister(jack_client_t* client, jack_port_t* port)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 1);
     CARLA_SAFE_ASSERT_RETURN(! jport->isSystem, 1);
 
-    JackClientState& jstate(jclient->fState);
-    //CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+    const CarlaMutexLocker cms(jclient->mutex);
+
+    if (jport->flags & JackPortIsInput)
+    {
+        CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), 1);
+        return 0;
+    }
 
     if (jport->flags & JackPortIsOutput)
     {
-        if (jstate.prematurelyActivated)
-        {
-            CARLA_SAFE_ASSERT_RETURN(jstate.fakeIns < 2, 1);
-            jstate.fakeIns += 1;
-        }
-        else
-        {
-            CARLA_SAFE_ASSERT_RETURN(jstate.audioIns.removeOne(jport), 1);
-        }
-    }
-    else
-    {
-        if (jstate.prematurelyActivated)
-        {
-            CARLA_SAFE_ASSERT_RETURN(jstate.fakeOuts < 2, 1);
-            jstate.fakeOuts += 1;
-        }
-        else
-        {
-            CARLA_SAFE_ASSERT_RETURN(jstate.audioOuts.removeOne(jport), 1);
-        }
+        CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), 1);
+        return 0;
     }
 
-    return 0;
+    carla_stderr2("Invalid port type on unregister");
+    return 1;
 }
 
 CARLA_EXPORT

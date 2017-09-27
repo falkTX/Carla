@@ -42,9 +42,7 @@ const char* jack_get_version_string(void)
 CARLA_EXPORT
 int jack_is_realtime(jack_client_t*)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    return 0;
+    return 1;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -52,8 +50,6 @@ int jack_is_realtime(jack_client_t*)
 CARLA_EXPORT
 void jack_free(void* ptr)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
     free(ptr);
 }
 

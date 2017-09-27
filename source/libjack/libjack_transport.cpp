@@ -22,21 +22,24 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
+CARLA_EXPORT
+int jack_engine_takeover_timebase(jack_client_t*)
+{
+    return ENOSYS;
+}
+
 // int  jack_release_timebase (jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;
 
 CARLA_EXPORT
-int jack_set_sync_callback(jack_client_t* client, JackSyncCallback /*callback*/, void* /*arg*/)
+int jack_set_sync_callback(jack_client_t* client, JackSyncCallback callback, void* arg)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
+    JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
+    const CarlaMutexLocker cms(jclient->mutex);
 
-    // TODO
-
+    jclient->syncCb = callback;
+    jclient->syncCbPtr = arg;
     return 0;
 }
 
@@ -44,47 +47,45 @@ int jack_set_sync_callback(jack_client_t* client, JackSyncCallback /*callback*/,
 //                             jack_time_t timeout) JACK_OPTIONAL_WEAK_EXPORT;
 
 CARLA_EXPORT
-int jack_set_timebase_callback(jack_client_t* client, int, JackTimebaseCallback, void*)
+int jack_set_timebase_callback(jack_client_t*, int, JackTimebaseCallback, void*)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(! jstate.activated, 1);
-
-    // TODO
-
+    // FIXME?
     return EBUSY;
 }
 
 CARLA_EXPORT
 int jack_transport_locate(jack_client_t*, jack_nframes_t)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
+    // FIXME?
     return 1;
 }
 
 CARLA_EXPORT
 jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_position_t* pos)
 {
-    carla_debug("CarlaJackClient :: %s", __FUNCTION__);
+    if (const JackClientState* const jclient = (JackClientState*)client)
+    {
+        const JackServerState& jserver(jclient->server);
 
-    CarlaJackClient* const jclient = (CarlaJackClient*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, JackTransportStopped);
+        if (pos != nullptr)
+            std::memcpy(pos, &jserver.position, sizeof(jack_position_t));
 
-    const JackClientState& jstate(jclient->fState);
-    CARLA_SAFE_ASSERT_RETURN(jstate.activated, JackTransportStopped);
+        return jserver.playing ? JackTransportRolling : JackTransportStopped;
+    }
 
     if (pos != nullptr)
-        std::memcpy(pos, &jstate.position, sizeof(jack_position_t));
+        std::memset(pos, 0, sizeof(jack_position_t));
 
-    return jstate.playing ? JackTransportRolling : JackTransportStopped;
+    return JackTransportStopped;
 }
 
-// jack_nframes_t jack_get_current_transport_frame (const jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;
+jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
+{
+    if (const JackClientState* const jclient = (JackClientState*)client)
+        return jclient->server.position.frame;
+
+    return 0;
+}
 
 CARLA_EXPORT
 int jack_transport_reposition(jack_client_t*, const jack_position_t*)

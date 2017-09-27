@@ -55,6 +55,10 @@ CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
+class CarlaJackAppClient;
+struct JackClientState;
+struct JackServerState;
+
 struct JackPortState {
     char* name;
     char* fullname;
@@ -94,10 +98,85 @@ struct JackPortState {
 };
 
 struct JackClientState {
+    const JackServerState& server;
+    CarlaMutex mutex;
+
     bool activated;
-    bool prematurelyActivated;
+    bool deactivated; // activated once, then deactivated
 
     char* name;
+
+    LinkedList<JackPortState*> audioIns;
+    LinkedList<JackPortState*> audioOuts;
+    LinkedList<JackPortState> midiIns;
+    LinkedList<JackPortState> midiOuts;
+
+    JackShutdownCallback shutdownCb;
+    void* shutdownCbPtr;
+
+    JackInfoShutdownCallback infoShutdownCb;
+    void* infoShutdownCbPtr;
+
+    JackProcessCallback processCb;
+    void* processCbPtr;
+
+    JackBufferSizeCallback bufferSizeCb;
+    void* bufferSizeCbPtr;
+
+    JackSampleRateCallback sampleRateCb;
+    void* sampleRateCbPtr;
+
+    JackSyncCallback syncCb;
+    void* syncCbPtr;
+
+    JackClientState(const JackServerState& s, const char* const n)
+        : server(s),
+          activated(false),
+          deactivated(false),
+          name(strdup(n)),
+          audioIns(),
+          audioOuts(),
+          midiIns(),
+          midiOuts(),
+          shutdownCb(nullptr),
+          shutdownCbPtr(nullptr),
+          infoShutdownCb(nullptr),
+          infoShutdownCbPtr(nullptr),
+          processCb(nullptr),
+          processCbPtr(nullptr),
+          bufferSizeCb(nullptr),
+          bufferSizeCbPtr(nullptr),
+          sampleRateCb(nullptr),
+          sampleRateCbPtr(nullptr),
+          syncCb(nullptr),
+          syncCbPtr(nullptr) {}
+
+    ~JackClientState()
+    {
+        const CarlaMutexLocker cms(mutex);
+
+        for (LinkedList<JackPortState*>::Itenerator it = audioIns.begin2(); it.valid(); it.next())
+        {
+            if (JackPortState* const jport = it.getValue(nullptr))
+                delete jport;
+        }
+
+        for (LinkedList<JackPortState*>::Itenerator it = audioOuts.begin2(); it.valid(); it.next())
+        {
+            if (JackPortState* const jport = it.getValue(nullptr))
+                delete jport;
+        }
+
+        free(name);
+        name = nullptr;
+
+        audioIns.clear();
+        audioOuts.clear();
+    }
+};
+
+struct JackServerState {
+    CarlaJackAppClient* jackAppPtr;
 
     uint32_t bufferSize;
     double   sampleRate;
@@ -105,93 +184,14 @@ struct JackClientState {
     bool playing;
     jack_position_t position;
 
-    LinkedList<JackPortState*> audioIns;
-    LinkedList<JackPortState*> audioOuts;
-    uint32_t fakeIns, fakeOuts;
-
-    LinkedList<JackPortState> midiIns;
-    LinkedList<JackPortState> midiOuts;
-
-    JackProcessCallback process;
-    void* processPtr;
-
-    JackShutdownCallback shutdown;
-    void* shutdownPtr;
-
-    JackClientState()
-        : activated(false),
-          prematurelyActivated(false),
-          name(nullptr),
+    JackServerState()
+        : jackAppPtr(nullptr),
           bufferSize(0),
           sampleRate(0.0),
-          playing(false),
-          audioIns(),
-          audioOuts(),
-          fakeIns(0),
-          fakeOuts(0),
-          midiIns(),
-          midiOuts(),
-          process(nullptr),
-          processPtr(nullptr),
-          shutdown(nullptr),
-          shutdownPtr(nullptr)
+          playing(false)
     {
         carla_zeroStruct(position);
     }
-
-    ~JackClientState()
-    {
-        free(name);
-    }
-};
-
-// TODO JackServerState, with only bufsize, srate and tranport
-// TODO add JackServerState ptr to JackClientState
-// TODO each client gets its own JackClientState struct
-
-class CarlaJackClient : public juce::Thread
-{
-public:
-    JackClientState fState;
-
-    CarlaJackClient();
-    ~CarlaJackClient() noexcept override;
-
-    bool initIfNeeded(const char* const clientName);
-    void clear() noexcept;
-    bool isValid() const noexcept;
-
-    void activate();
-    void deactivate();
-    void handleNonRtData();
-
-    // -------------------------------------------------------------------
-
-protected:
-    void run() override;
-
-private:
-    BridgeAudioPool          fShmAudioPool;
-    BridgeRtClientControl    fShmRtClientControl;
-    BridgeNonRtClientControl fShmNonRtClientControl;
-    BridgeNonRtServerControl fShmNonRtServerControl;
-
-    char fBaseNameAudioPool[6+1];
-    char fBaseNameRtClientControl[6+1];
-    char fBaseNameNonRtClientControl[6+1];
-    char fBaseNameNonRtServerControl[6+1];
-
-    bool fIsValid;
-    bool fIsOffline;
-    bool fFirstIdle;
-    int64_t fLastPingTime;
-
-    uint32_t fAudioIns;
-    uint32_t fAudioOuts;
-
-    CarlaMutex fRealtimeThreadMutex;
-
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaJackClient)
 };
 
 CARLA_BACKEND_END_NAMESPACE

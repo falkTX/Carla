@@ -28,71 +28,119 @@ CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-CarlaJackClient::CarlaJackClient()
-    : Thread("CarlaJackClient"),
-      fState(),
-      fIsValid(false),
-      fIsOffline(false),
-      fFirstIdle(true),
-      fLastPingTime(-1),
-      fAudioIns(0),
-      fAudioOuts(0)
+class CarlaJackAppClient : public juce::Thread
 {
-    carla_debug("CarlaJackClient::CarlaJackClient(\"%s\", \"%s\", \"%s\", \"%s\")", audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+public:
+    JackServerState fServer;
+    LinkedList<JackClientState*> fClients;
 
-    const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
-    CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
-
-    std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
-    std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
-    std::memcpy(fBaseNameNonRtClientControl, shmIds+6*2, 6);
-    std::memcpy(fBaseNameNonRtServerControl, shmIds+6*3, 6);
-
-    fBaseNameAudioPool[6]          = '\0';
-    fBaseNameRtClientControl[6]    = '\0';
-    fBaseNameNonRtClientControl[6] = '\0';
-    fBaseNameNonRtServerControl[6] = '\0';
-
-    startThread(10);
-}
-
-CarlaJackClient::~CarlaJackClient() noexcept
-{
-    carla_debug("CarlaJackClient::~CarlaJackClient()");
-
-    carla_debug("CarlaEnginePlugin::close()");
-    fLastPingTime = -1;
-
-    stopThread(5000);
-    clear();
-
-    for (LinkedList<JackPortState*>::Itenerator it = fState.audioIns.begin2(); it.valid(); it.next())
+    CarlaJackAppClient()
+        : Thread("CarlaJackAppClient"),
+          fServer(),
+          fIsValid(false),
+          fIsOffline(false),
+          fLastPingTime(-1),
+          fAudioIns(0),
+          fAudioOuts(0)
     {
-        if (JackPortState* const jport = it.getValue(nullptr))
-            delete jport;
+        carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
+
+        const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
+        CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
+
+        std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
+        std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
+        std::memcpy(fBaseNameNonRtClientControl, shmIds+6*2, 6);
+        std::memcpy(fBaseNameNonRtServerControl, shmIds+6*3, 6);
+
+        fBaseNameAudioPool[6]          = '\0';
+        fBaseNameRtClientControl[6]    = '\0';
+        fBaseNameNonRtClientControl[6] = '\0';
+        fBaseNameNonRtServerControl[6] = '\0';
+
+        startThread(10);
     }
 
-    for (LinkedList<JackPortState*>::Itenerator it = fState.audioOuts.begin2(); it.valid(); it.next())
+    ~CarlaJackAppClient() noexcept override
     {
-        if (JackPortState* const jport = it.getValue(nullptr))
-            delete jport;
+        carla_debug("CarlaJackAppClient::~CarlaJackAppClient()");
+
+        carla_debug("CarlaEnginePlugin::close()");
+        fLastPingTime = -1;
+
+        stopThread(5000);
+        clear();
+
+        const CarlaMutexLocker cms(fRealtimeThreadMutex);
+
+        for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+        {
+            JackClientState* const jclient(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+            delete jclient;
+        }
+
+        fClients.clear();
     }
 
-    fState.audioIns.clear();
-    fState.audioOuts.clear();
-}
+    void clear() noexcept;
+    bool isValid() const noexcept;
 
-bool CarlaJackClient::initIfNeeded(const char* const clientName)
-{
-    carla_debug("CarlaJackClient::initIfNeeded(\"%s\")", clientName);
+    void activate();
+    void handleNonRtData();
 
-    if (fState.name == nullptr)
-        fState.name = strdup(clientName);
+    JackClientState* addClient(const char* const name)
+    {
+        JackClientState* const jclient(new JackClientState(fServer, name));
 
-    return fIsValid;
-}
+        const CarlaMutexLocker cms(fRealtimeThreadMutex);
+        fClients.append(jclient);
+        return jclient;
+    }
 
-void CarlaJackClient::clear() noexcept
+    bool removeClient(JackClientState* const jclient)
+    {
+        {
+            const CarlaMutexLocker cms(fRealtimeThreadMutex);
+            CARLA_SAFE_ASSERT_RETURN(fClients.removeOne(jclient), false);
+        }
+
+        delete jclient;
+        return true;
+    }
+
+    // -------------------------------------------------------------------
+
+protected:
+    void run() override;
+
+private:
+    BridgeAudioPool          fShmAudioPool;
+    BridgeRtClientControl    fShmRtClientControl;
+    BridgeNonRtClientControl fShmNonRtClientControl;
+    BridgeNonRtServerControl fShmNonRtServerControl;
+
+    char fBaseNameAudioPool[6+1];
+    char fBaseNameRtClientControl[6+1];
+    char fBaseNameNonRtClientControl[6+1];
+    char fBaseNameNonRtServerControl[6+1];
+
+    bool fIsValid;
+    bool fIsOffline;
+    int64_t fLastPingTime;
+
+    uint32_t fAudioIns;
+    uint32_t fAudioOuts;
+
+    CarlaMutex fRealtimeThreadMutex;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaJackAppClient)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+void CarlaJackAppClient::clear() noexcept
 {
     fShmAudioPool.clear();
     fShmRtClientControl.clear();
@@ -100,35 +148,18 @@ void CarlaJackClient::clear() noexcept
     fShmNonRtServerControl.clear();
 }
 
-bool CarlaJackClient::isValid() const noexcept
+bool CarlaJackAppClient::isValid() const noexcept
 {
     return fIsValid;
 }
 
-void CarlaJackClient::activate()
+void CarlaJackAppClient::activate()
 {
     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-    const bool wasFirstIdle(fFirstIdle);
 
-    if (wasFirstIdle)
     {
-        fFirstIdle = false;
         fLastPingTime = Time::currentTimeMillis();
         CARLA_SAFE_ASSERT(fLastPingTime > 0);
-
-        if (fState.audioIns.count() == 0 && fState.audioOuts.count() == 0)
-        {
-            carla_stderr("Create 2 ins, 2 outs prematurely for the client");
-            fState.audioIns.append(new JackPortState(fState.name, "in_1", 0, JackPortIsOutput, false));
-            fState.audioIns.append(new JackPortState(fState.name, "in_2", 1, JackPortIsOutput, false));
-            fState.fakeIns = 2;
-
-            fState.audioOuts.append(new JackPortState(fState.name, "out_1", 0, JackPortIsInput, false));
-            fState.audioOuts.append(new JackPortState(fState.name, "out_2", 1, JackPortIsInput, false));
-            fState.fakeOuts = 2;
-
-            fState.prematurelyActivated = true;
-        }
 
         char bufStr[STR_MAX+1];
         uint32_t bufStrSize;
@@ -151,7 +182,7 @@ void CarlaJackClient::activate()
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPluginInfo2);
 
             carla_zeroChars(bufStr, STR_MAX);
-            std::strncpy(bufStr, fState.name, 64);
+            std::strncpy(bufStr, "Jack App", 64);
             bufStrSize = carla_fixedValue(1U, 64U, static_cast<uint32_t>(std::strlen(bufStr)));
             fShmNonRtServerControl.writeUInt(bufStrSize);
             fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
@@ -173,8 +204,8 @@ void CarlaJackClient::activate()
 
         // kPluginBridgeNonRtServerAudioCount
         {
-            const uint32_t aIns  = fState.audioIns.count();
-            const uint32_t aOuts = fState.audioOuts.count();
+            const uint32_t aIns  = 2; //fClient.audioIns.count();
+            const uint32_t aOuts = 2; //fClient.audioOuts.count();
 
             // uint/ins, uint/outs
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerAudioCount);
@@ -182,42 +213,47 @@ void CarlaJackClient::activate()
             fShmNonRtServerControl.writeUInt(aOuts);
             fShmNonRtServerControl.commitWrite();
 
+
             // kPluginBridgeNonRtServerPortName
             for (uint32_t i=0; i<aIns; ++i)
             {
-                const JackPortState* const jport(fState.audioIns.getAt(i, nullptr));
-                CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                //const JackPortState* const jport(fClient.audioIns.getAt(i, nullptr));
+                //CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                const char* const portName(jport->name);
-                CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+                //const char* const portName(jport->name);
+                //CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+
+                std::snprintf(bufStr, 64, "in_%i", i+1);
 
                 // byte/type, uint/index, uint/size, str[] (name)
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPortName);
                 fShmNonRtServerControl.writeByte(kPluginBridgePortAudioInput);
                 fShmNonRtServerControl.writeUInt(i);
 
-                bufStrSize = static_cast<uint32_t>(std::strlen(portName));
+                bufStrSize = static_cast<uint32_t>(std::strlen(bufStr));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
-                fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
             }
 
             // kPluginBridgeNonRtServerPortName
             for (uint32_t i=0; i<aOuts; ++i)
             {
-                const JackPortState* const jport(fState.audioOuts.getAt(i, nullptr));
-                CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
+                //const JackPortState* const jport(fClient.audioOuts.getAt(i, nullptr));
+                //CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                const char* const portName(jport->name);
-                CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+                //const char* const portName(jport->name);
+                //CARLA_SAFE_ASSERT_CONTINUE(portName != nullptr && portName[0] != '\0');
+
+                std::snprintf(bufStr, 64, "out_%i", i+1);
 
                 // byte/type, uint/index, uint/size, str[] (name)
                 fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerPortName);
                 fShmNonRtServerControl.writeByte(kPluginBridgePortAudioOutput);
                 fShmNonRtServerControl.writeUInt(i);
 
-                bufStrSize = static_cast<uint32_t>(std::strlen(portName));
+                bufStrSize = static_cast<uint32_t>(std::strlen(bufStr));
                 fShmNonRtServerControl.writeUInt(bufStrSize);
-                fShmNonRtServerControl.writeCustomData(portName, bufStrSize);
+                fShmNonRtServerControl.writeCustomData(bufStr, bufStrSize);
             }
         }
 
@@ -225,8 +261,8 @@ void CarlaJackClient::activate()
 
         // kPluginBridgeNonRtServerMidiCount
         {
-            const uint32_t mIns  = fState.midiIns.count();
-            const uint32_t mOuts = fState.midiOuts.count();
+            const uint32_t mIns  = 0; // fClient.midiIns.count();
+            const uint32_t mOuts = 0; // fClient.midiOuts.count();
 
             // uint/ins, uint/outs
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerMidiCount);
@@ -243,43 +279,15 @@ void CarlaJackClient::activate()
         fShmNonRtServerControl.waitIfDataIsReachingLimit();
 
         // must be static
-        fAudioIns = fState.audioIns.count();
-        fAudioOuts = fState.audioOuts.count();
+        fAudioIns = 2; //fClient.audioIns.count();
+        fAudioOuts = 2; //fClient.audioOuts.count();
 
         carla_stdout("Carla Jack Client Ready!");
         fLastPingTime = Time::currentTimeMillis();
     }
-
-    fState.activated = true;
 }
 
-void CarlaJackClient::deactivate()
-{
-    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-
-    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
-    fShmNonRtServerControl.commitWrite();
-
-    fState.activated = false;
-    fState.prematurelyActivated = false;
-
-    for (LinkedList<JackPortState*>::Itenerator it = fState.audioIns.begin2(); it.valid(); it.next())
-    {
-        if (JackPortState* const jport = it.getValue(nullptr))
-            delete jport;
-    }
-
-    for (LinkedList<JackPortState*>::Itenerator it = fState.audioOuts.begin2(); it.valid(); it.next())
-    {
-        if (JackPortState* const jport = it.getValue(nullptr))
-            delete jport;
-    }
-
-    fState.audioIns.clear();
-    fState.audioOuts.clear();
-}
-
-void CarlaJackClient::handleNonRtData()
+void CarlaJackAppClient::handleNonRtData()
 {
     for (; fShmNonRtClientControl.isDataAvailableForReading();)
     {
@@ -295,7 +303,7 @@ void CarlaJackClient::handleNonRtData()
                     continue;
                 ++shownNull;
             }
-            carla_stdout("CarlaJackClient::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
+            carla_stdout("CarlaJackAppClient::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
         }
 // #endif
 
@@ -387,9 +395,9 @@ void CarlaJackClient::handleNonRtData()
     }
 }
 
-void CarlaJackClient::run()
+void CarlaJackAppClient::run()
 {
-    carla_stderr("CarlaJackClient run START");
+    carla_stderr("CarlaJackAppClient run START");
 
     if (! fShmAudioPool.attachClient(fBaseNameAudioPool))
     {
@@ -455,21 +463,21 @@ void CarlaJackClient::run()
 
     if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
     {
-        carla_stderr2("CarlaJackClient: data size mismatch");
+        carla_stderr2("CarlaJackAppClient: data size mismatch");
         return;
     }
 
     opcode = fShmNonRtClientControl.readOpcode();
     CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
-    fState.bufferSize = fShmNonRtClientControl.readUInt();
+    fServer.bufferSize = fShmNonRtClientControl.readUInt();
 
     opcode = fShmNonRtClientControl.readOpcode();
     CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
-    fState.sampleRate = fShmNonRtClientControl.readDouble();
+    fServer.sampleRate = fShmNonRtClientControl.readDouble();
 
-    if (fState.bufferSize == 0 || carla_isZero(fState.sampleRate))
+    if (fServer.bufferSize == 0 || carla_isZero(fServer.sampleRate))
     {
-        carla_stderr2("CarlaJackClient: invalid empty state");
+        carla_stderr2("CarlaJackAppClient: invalid empty state");
         return;
     }
 
@@ -482,6 +490,8 @@ void CarlaJackClient::run()
     }
 
     fIsValid = true;
+
+    activate();
 
 #ifdef __SSE2_MATH__
     // Set FTZ and DAZ flags
@@ -505,7 +515,7 @@ void CarlaJackClient::run()
 //#ifdef DEBUG
             if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent)
             {
-                carla_stdout("CarlaJackClientRtThread::run() - got opcode: %s", PluginBridgeRtClientOpcode2str(opcode));
+                carla_stdout("CarlaJackAppClientRtThread::run() - got opcode: %s", PluginBridgeRtClientOpcode2str(opcode));
             }
 //#endif
 
@@ -541,73 +551,102 @@ void CarlaJackClient::run()
 
                 if (cmtl.wasLocked())
                 {
+                    // tranport for all clients
+                    const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
+
+                    fServer.playing        = bridgeTimeInfo.playing;
+                    fServer.position.frame = bridgeTimeInfo.frame;
+                    fServer.position.usecs = bridgeTimeInfo.usecs;
+
+                    if (bridgeTimeInfo.valid & 0x1 /* kValidBBT */)
+                    {
+                        fServer.position.valid = JackPositionBBT;
+
+                        fServer.position.bar  = bridgeTimeInfo.bar;
+                        fServer.position.beat = bridgeTimeInfo.beat;
+                        fServer.position.tick = bridgeTimeInfo.tick;
+
+                        fServer.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
+                        fServer.position.beat_type     = bridgeTimeInfo.beatType;
+
+                        fServer.position.ticks_per_beat   = bridgeTimeInfo.ticksPerBeat;
+                        fServer.position.beats_per_minute = bridgeTimeInfo.beatsPerMinute;
+                        fServer.position.bar_start_tick   = bridgeTimeInfo.barStartTick;
+                    }
+                    else
+                    {
+                        fServer.position.valid = static_cast<jack_position_bits_t>(0);
+                    }
+
                     float* fdata = fShmAudioPool.data;
 
-                    if (fState.process == nullptr || ! fState.activated)
+                    if (JackClientState* const jclient = fClients.getFirst(nullptr))
+                    //for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
                     {
-                        for (uint32_t i=0; i<fAudioIns; ++i)
-                            fdata += fState.bufferSize*fAudioIns;
+                        //JackClientState* const jclient(it.getValue(nullptr));
+                        //CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                        if (fAudioOuts > 0)
-                            carla_zeroFloats(fdata, fState.bufferSize*fAudioOuts);
+                        const CarlaMutexTryLocker cmtl2(jclient->mutex);
 
-                        if (! fState.activated)
+                        if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                         {
-                            fShmRtClientControl.data->procFlags = 1;
+                            if (fAudioIns > 0)
+                                fdata += fServer.bufferSize*fAudioIns;
+
+                            if (fAudioOuts > 0)
+                                carla_zeroFloats(fdata, fServer.bufferSize*fAudioOuts);
+
+                            if (jclient->deactivated)
+                            {
+                                fShmRtClientControl.data->procFlags = 1;
+                            }
+                        }
+                        else
+                        {
+                            uint32_t i;
+
+                            i = 0;
+                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                            {
+                                CARLA_SAFE_ASSERT_BREAK(i++ < fAudioIns);
+                                if (JackPortState* const jport = it.getValue(nullptr))
+                                    jport->buffer = fdata;
+                                fdata += fServer.bufferSize;
+                            }
+                            for (; i++ < fAudioIns;)
+                                fdata += fServer.bufferSize;
+
+                            i = 0;
+                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                            {
+                                CARLA_SAFE_ASSERT_BREAK(i++ < fAudioOuts);
+                                if (JackPortState* const jport = it.getValue(nullptr))
+                                    jport->buffer = fdata;
+                                fdata += fServer.bufferSize;
+                            }
+                            for (; i++ < fAudioOuts;)
+                            {
+                            //carla_stderr("clearing buffer %i", i);
+
+                                carla_zeroFloats(fdata, fServer.bufferSize);
+                                fdata += fServer.bufferSize;
+                            }
+
+                            jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
                         }
                     }
                     else
                     {
-                        const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
+                        if (fAudioIns > 0)
+                            fdata += fServer.bufferSize*fAudioIns;
 
-                        uint32_t i = 0;
-                        for (LinkedList<JackPortState*>::Itenerator it = fState.audioIns.begin2(); it.valid(); it.next())
-                        {
-                            CARLA_SAFE_ASSERT_BREAK(i++ < fAudioIns);
-                            if (JackPortState* const jport = it.getValue(nullptr))
-                                jport->buffer = fdata;
-                            fdata += fState.bufferSize;
-                        }
-
-                        i=0;
-                        for (LinkedList<JackPortState*>::Itenerator it = fState.audioOuts.begin2(); it.valid(); it.next())
-                        {
-                            CARLA_SAFE_ASSERT_BREAK(i++ < fAudioOuts);
-                            if (JackPortState* const jport = it.getValue(nullptr))
-                                jport->buffer = fdata;
-                            fdata += fState.bufferSize;
-                        }
-
-                        fState.playing        = bridgeTimeInfo.playing;
-                        fState.position.frame = bridgeTimeInfo.frame;
-                        fState.position.usecs = bridgeTimeInfo.usecs;
-
-                        if (bridgeTimeInfo.valid & 0x1 /* kValidBBT */)
-                        {
-                            fState.position.valid = JackPositionBBT;
-
-                            fState.position.bar  = bridgeTimeInfo.bar;
-                            fState.position.beat = bridgeTimeInfo.beat;
-                            fState.position.tick = bridgeTimeInfo.tick;
-
-                            fState.position.beats_per_bar = bridgeTimeInfo.beatsPerBar;
-                            fState.position.beat_type     = bridgeTimeInfo.beatType;
-
-                            fState.position.ticks_per_beat   = bridgeTimeInfo.ticksPerBeat;
-                            fState.position.beats_per_minute = bridgeTimeInfo.beatsPerMinute;
-                            fState.position.bar_start_tick   = bridgeTimeInfo.barStartTick;
-                        }
-                        else
-                        {
-                            fState.position.valid = static_cast<jack_position_bits_t>(0);
-                        }
-
-                        fState.process(fState.bufferSize, fState.processPtr);
+                        if (fAudioOuts > 0)
+                            carla_zeroFloats(fdata, fServer.bufferSize*fAudioOuts);
                     }
                 }
                 else
                 {
-                    carla_stderr2("CarlaJackClient: fRealtimeThreadMutex tryLock failed");
+                    carla_stderr2("CarlaJackAppClient: fRealtimeThreadMutex tryLock failed");
                 }
 
                 carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
@@ -626,7 +665,7 @@ void CarlaJackClient::run()
 
     if (quitReceived)
     {
-        carla_stderr("CarlaJackClient run END - quit by carla");
+        carla_stderr("CarlaJackAppClient run END - quit by carla");
 
         ::kill(::getpid(), SIGTERM);
     }
@@ -638,27 +677,97 @@ void CarlaJackClient::run()
         bool activated;
 
         {
-            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-            activated = fState.activated;
+            const CarlaMutexLocker cms(fRealtimeThreadMutex);
 
-            if (activated)
+            if (JackClientState* const jclient = fClients.getLast(nullptr))
             {
-                carla_stderr("CarlaJackClient run END - quit error");
-
-                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
-                fShmNonRtServerControl.writeUInt(messageSize);
-                fShmNonRtServerControl.writeCustomData(message, messageSize);
-                fShmNonRtServerControl.commitWrite();
+                const CarlaMutexLocker cms(jclient->mutex);
+                activated = jclient->activated;
             }
             else
             {
-                carla_stderr("CarlaJackClient run END - quit itself");
+                activated = true;
             }
         }
 
-        if (activated && fState.shutdown != nullptr)
-            fState.shutdown(fState.shutdownPtr);
+        if (activated)
+        {
+            carla_stderr("CarlaJackAppClient run END - quit error");
+
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
+            fShmNonRtServerControl.writeUInt(messageSize);
+            fShmNonRtServerControl.writeCustomData(message, messageSize);
+            fShmNonRtServerControl.commitWrite();
+        }
+        else
+        {
+            carla_stderr("CarlaJackAppClient run END - quit itself");
+
+            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
+            fShmNonRtServerControl.commitWrite();
+        }
+
+        /*
+        if (activated)
+        {
+            // TODO infoShutdown
+            if (fClient.shutdownCb != nullptr)
+                fClient.shutdownCb(fClient.shutdownCbPtr);
+        }
+        */
     }
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+static CarlaJackAppClient gClient;
+
+CARLA_EXPORT
+jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
+{
+    if (status != nullptr)
+        *status = JackNameNotUnique;
+
+    if (options & JackUseExactName)
+        return nullptr;
+
+    if (JackClientState* const client = gClient.addClient(client_name))
+        return (jack_client_t*)client;
+
+    if (status != nullptr)
+        *status = JackServerError;
+
+    return nullptr;
+}
+
+CARLA_EXPORT
+jack_client_t* jack_client_new(const char* client_name)
+{
+    return jack_client_open(client_name, JackNullOption, nullptr);
+}
+
+CARLA_EXPORT
+int jack_client_close(jack_client_t* client)
+{
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    gClient.removeClient(jclient);
+    return 0;
+}
+
+CARLA_EXPORT
+pthread_t jack_client_thread_id(jack_client_t* client)
+{
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
+
+    CarlaJackAppClient* const jackAppPtr = jclient->server.jackAppPtr;
+    CARLA_SAFE_ASSERT_RETURN(jackAppPtr != nullptr, 0);
+
+    return (pthread_t)jackAppPtr->getThreadId();
 }
 
 CARLA_BACKEND_END_NAMESPACE
@@ -676,7 +785,7 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 int jack_client_real_time_priority(jack_client_t*)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+    carla_stdout("CarlaJackAppClient :: %s", __FUNCTION__);
 
     return -1;
 }
