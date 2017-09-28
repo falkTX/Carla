@@ -1884,6 +1884,13 @@ class PluginDatabaseW(QDialog):
 # Jack Application Dialog
 
 class JackApplicationW(QDialog):
+    # TODO complete this
+    FLAG_SESSION_MGR_JACK   = 0x01
+    FLAG_SESSION_MGR_LADISH = 0x02
+    FLAG_SESSION_MGR_LASH   = 0x04
+    FLAG_SESSION_MGR_NSM    = 0x08
+    FLAG_CONTROL_WINDOW     = 0x10
+
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
         self.host = host
@@ -1898,15 +1905,25 @@ class JackApplicationW(QDialog):
     def getCommandAndFlags(self):
         name    = self.ui.le_name.text()
         command = self.ui.le_command.text()
+        flags   = 0x0
         if not name:
             name = command.split(" ",1)[0]
+
+        # TODO finalize flag definitions
+        sessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
+        if sessionMgrIndex == 1:
+            flags |= self.FLAG_SESSION_MGR_LADISH
+        elif sessionMgrIndex == 2:
+            flags |= self.FLAG_SESSION_MGR_NSM
+        if self.ui.cb_manage_window.isChecked():
+            flags |= self.FLAG_CONTROL_WINDOW
+
         baseIntVal = ord('0')
-        labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
-                                       chr(baseIntVal+self.ui.sb_audio_outs.value()),
-                                       chr(baseIntVal+self.ui.sb_cv_ins.value()),
-                                       chr(baseIntVal+self.ui.sb_cv_outs.value()),
-                                       chr(baseIntVal+self.ui.sb_midi_ins.value()),
-                                       chr(baseIntVal+self.ui.sb_midi_outs.value()))
+        labelSetup = "%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
+                                     chr(baseIntVal+self.ui.sb_audio_outs.value()),
+                                     chr(baseIntVal+self.ui.sb_midi_ins.value()),
+                                     chr(baseIntVal+self.ui.sb_midi_outs.value()),
+                                     chr(baseIntVal+flags))
         return (command, name, labelSetup)
 
     # --------------------------------------------------------------------------------------------------------

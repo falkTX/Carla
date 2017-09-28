@@ -46,12 +46,13 @@ public:
         const char* const shmIds(std::getenv("CARLA_SHM_IDS"));
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
 
-        const char* const numPortsStr(std::getenv("CARLA_NUM_PORTS"));
-        CARLA_SAFE_ASSERT_RETURN(numPortsStr != nullptr && std::strlen(numPortsStr) == 3*2,);
+        const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 5,);
 
-        for (int i=6; --i >= 0;) {
-            CARLA_SAFE_ASSERT_RETURN(numPortsStr[i] >= '0' && numPortsStr[i] < '0'+64,);
+        for (int i=4; --i >= 0;) {
+            CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] <= '0'+64,);
         }
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup[4] >= '0' && libjackSetup[4] < '0'+0x4f,);
 
         std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
         std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
@@ -63,12 +64,10 @@ public:
         fBaseNameNonRtClientControl[6] = '\0';
         fBaseNameNonRtServerControl[6] = '\0';
 
-        fNumPorts.audioIns  = numPortsStr[0] - '0';
-        fNumPorts.audioOuts = numPortsStr[1] - '0';
-        fNumPorts.cvIns     = numPortsStr[2] - '0';
-        fNumPorts.cvOuts    = numPortsStr[3] - '0';
-        fNumPorts.midiIns   = numPortsStr[4] - '0';
-        fNumPorts.midiOuts  = numPortsStr[5] - '0';
+        fNumPorts.audioIns  = libjackSetup[0] - '0';
+        fNumPorts.audioOuts = libjackSetup[1] - '0';
+        fNumPorts.midiIns   = libjackSetup[2] - '0';
+        fNumPorts.midiOuts  = libjackSetup[3] - '0';
 
         startThread(10);
     }
@@ -143,16 +142,12 @@ private:
     struct NumPorts {
         uint32_t audioIns;
         uint32_t audioOuts;
-        uint32_t cvIns;
-        uint32_t cvOuts;
         uint32_t midiIns;
         uint32_t midiOuts;
 
         NumPorts()
             : audioIns(0),
               audioOuts(0),
-              cvIns(0),
-              cvOuts(0),
               midiIns(0),
               midiOuts(0) {}
     } fNumPorts;

@@ -126,7 +126,7 @@ protected:
 
             carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
-            carla_setenv("CARLA_NUM_PORTS", fNumPorts.buffer());
+            carla_setenv("CARLA_LIBJACK_SETUP", fNumPorts.buffer());
 
             started = fProcess->start(arguments);
         }
@@ -413,8 +413,6 @@ public:
         // cleanup of previous data
         pData->audioIn.clear();
         pData->audioOut.clear();
-        pData->cvIn.clear();
-        pData->cvOut.clear();
         pData->event.clear();
 
         bool needsCtrlIn, needsCtrlOut;
@@ -429,16 +427,6 @@ public:
         {
             pData->audioOut.createNew(fInfo.aOuts);
             needsCtrlIn = true;
-        }
-
-        if (fInfo.cvIns > 0)
-        {
-            pData->cvIn.createNew(fInfo.cvIns);
-        }
-
-        if (fInfo.cvOuts > 0)
-        {
-            pData->cvOut.createNew(fInfo.cvOuts);
         }
 
         if (fInfo.mIns > 0)
@@ -503,10 +491,6 @@ public:
             pData->audioOut.ports[j].port   = (CarlaEngineAudioPort*)pData->client->addPort(kEnginePortTypeAudio, portName, false, j);
             pData->audioOut.ports[j].rindex = j;
         }
-
-        // TODO - MIDI
-
-        // TODO - CV
 
         if (needsCtrlIn)
         {
@@ -605,7 +589,7 @@ public:
         } CARLA_SAFE_EXCEPTION("deactivate - waitForClient");
     }
 
-    void process(const float** const audioIn, float** const audioOut, const float** const cvIn, float** const cvOut, const uint32_t frames) override
+    void process(const float** const audioIn, float** const audioOut, const float**, float**, const uint32_t frames) override
     {
         // --------------------------------------------------------------------------------------------------------
         // Check if active
@@ -615,8 +599,6 @@ public:
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
             return;
         }
 
@@ -835,7 +817,7 @@ public:
 
         } // End of Event Input
 
-        if (! processSingle(audioIn, audioOut, cvIn, cvOut, frames))
+        if (! processSingle(audioIn, audioOut, frames))
             return;
 
         // --------------------------------------------------------------------------------------------------------
@@ -877,8 +859,7 @@ public:
         } // End of Control and MIDI Output
     }
 
-    bool processSingle(const float** const audioIn, float** const audioOut,
-                       const float** const cvIn, float** const cvOut, const uint32_t frames)
+    bool processSingle(const float** const audioIn, float** const audioOut, const uint32_t frames)
     {
         CARLA_SAFE_ASSERT_RETURN(! fTimedError, false);
         CARLA_SAFE_ASSERT_RETURN(frames > 0, false);
@@ -890,14 +871,6 @@ public:
         if (pData->audioOut.count > 0)
         {
             CARLA_SAFE_ASSERT_RETURN(audioOut != nullptr, false);
-        }
-        if (pData->cvIn.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvIn != nullptr, false);
-        }
-        if (pData->cvOut.count > 0)
-        {
-            CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
         const int iframes(static_cast<int>(frames));
@@ -913,8 +886,6 @@ public:
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
                 FloatVectorOperations::clear(audioOut[i], iframes);
-            for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], iframes);
             return false;
         }
 
@@ -1230,27 +1201,23 @@ public:
         // ---------------------------------------------------------------
         // check setup
 
-        if (std::strlen(label) != 6)
+        if (std::strlen(label) != 5)
         {
             pData->engine->setLastError("invalid application setup received");
             return false;
         }
 
-        for (int i=6; --i >= 0;) {
-            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] < '0'+64, false);
+        for (int i=4; --i >= 0;) {
+            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] <= '0'+64, false);
         }
+        CARLA_SAFE_ASSERT_RETURN(label[4] >= '0' && label[4] < '0'+0x4f, false);
 
         fInfo.aIns   = label[0] - '0';
         fInfo.aOuts  = label[1] - '0';
-        fInfo.cvIns  = label[2] - '0';
-        fInfo.cvOuts = label[3] - '0';
-        fInfo.mIns   = label[4] - '0';
-        fInfo.mOuts  = label[5] - '0';
+        fInfo.mIns   = carla_minPositive(label[4] - '0', 1);
+        fInfo.mOuts  = carla_minPositive(label[5] - '0', 1);
 
         fInfo.setupLabel = label;
-
-        // TODO
-        fInfo.cvIns = fInfo.cvOuts = fInfo.mIns = fInfo.mOuts = 0;
 
         // ---------------------------------------------------------------
         // set info
@@ -1351,7 +1318,6 @@ private:
 
     struct Info {
         uint32_t aIns, aOuts;
-        uint32_t cvIns, cvOuts;
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
@@ -1361,8 +1327,6 @@ private:
         Info()
             : aIns(0),
               aOuts(0),
-              cvIns(0),
-              cvOuts(0),
               mIns(0),
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
@@ -1375,7 +1339,7 @@ private:
 
     void resizeAudioPool(const uint32_t bufferSize)
     {
-        fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, fInfo.cvIns+fInfo.cvOuts);
+        fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, 0);
 
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
         fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.dataSize));
