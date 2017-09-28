@@ -301,7 +301,7 @@ bool CarlaStateSave::fillFromXmlElement(const XmlElement* const xmlElement)
                     type = xmlSafeStringCharDup(text, false);
                 else if (tag.equalsIgnoreCase("name"))
                     name = xmlSafeStringCharDup(text, false);
-                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("identifier") || tag.equalsIgnoreCase("uri"))
+                else if (tag.equalsIgnoreCase("label") || tag.equalsIgnoreCase("identifier") || tag.equalsIgnoreCase("uri") || tag.equalsIgnoreCase("setup"))
                     label = xmlSafeStringCharDup(text, false);
                 else if (tag.equalsIgnoreCase("binary") || tag.equalsIgnoreCase("bundle") || tag.equalsIgnoreCase("filename"))
                     binary = xmlSafeStringCharDup(text, false);
@@ -539,6 +539,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             break;
         case PLUGIN_JACK:
             infoXml << "   <Filename>"   << xmlSafeString(binary, true) << "</Filename>\n";
+            infoXml << "   <Setup>"      << xmlSafeString(label, true)  << "</Setup>\n";
             break;
         }
 

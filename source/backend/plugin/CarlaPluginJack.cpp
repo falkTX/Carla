@@ -62,14 +62,17 @@ public:
           kEngine(engine),
           kPlugin(plugin),
           fShmIds(),
+          fNumPorts(),
           fProcess() {}
 
-    void setData(const char* const shmIds) noexcept
+    void setData(const char* const shmIds, const char* const numPorts) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(numPorts != nullptr && numPorts[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
-        fShmIds = shmIds;
+        fShmIds   = shmIds;
+        fNumPorts = numPorts;
     }
 
     uintptr_t getProcessID() const noexcept
@@ -122,7 +125,8 @@ protected:
             const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
 
             carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
-            carla_setenv("CARLA_SHM_IDS", fShmIds.toRawUTF8());
+            carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
+            carla_setenv("CARLA_NUM_PORTS", fNumPorts.buffer());
 
             started = fProcess->start(arguments);
         }
@@ -177,7 +181,8 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    String fShmIds;
+    CarlaString fShmIds;
+    CarlaString fNumPorts;
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -197,7 +202,7 @@ public:
           fTimedError(false),
           fProcCanceled(false),
           fProcWaitTime(0),
-          fLastPongTime(-1),
+          fLastPingTime(-1),
           fBridgeThread(engine, this),
           fShmAudioPool(),
           fShmRtClientControl(),
@@ -293,7 +298,7 @@ public:
 
     void getLabel(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.label, STR_MAX);
+        std::strncpy(strBuf, fInfo.setupLabel, STR_MAX);
     }
 
     void getMaker(char* const strBuf) const noexcept override
@@ -308,7 +313,8 @@ public:
 
     void getRealName(char* const strBuf) const noexcept override
     {
-        std::strncpy(strBuf, fInfo.name, STR_MAX);
+        // FIXME
+        std::strncpy(strBuf, "Carla's libjack", STR_MAX);
     }
 
     // -------------------------------------------------------------------
@@ -369,6 +375,14 @@ public:
             try {
                 handleNonRtData();
             } CARLA_SAFE_EXCEPTION("handleNonRtData");
+
+            if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000)
+            {
+                carla_stderr("Did not receive ping message from server for 30 secs, closing...");
+                // TODO
+                //threadShouldExit();
+                //callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
+            }
         }
         else if (fInitiated)
         {
@@ -447,17 +461,15 @@ public:
                 portName += ":";
             }
 
-            if (fInfo.aInNames != nullptr && fInfo.aInNames[j] != nullptr)
+            if (fInfo.aIns > 1)
             {
-                portName += fInfo.aInNames[j];
-            }
-            else if (fInfo.aIns > 1)
-            {
-                portName += "input_";
+                portName += "audio_in_";
                 portName += CarlaString(j+1);
             }
             else
-                portName += "input";
+            {
+                portName += "audio_in";
+            }
 
             portName.truncate(portNameSize);
 
@@ -476,17 +488,15 @@ public:
                 portName += ":";
             }
 
-            if (fInfo.aOutNames != nullptr && fInfo.aOutNames[j] != nullptr)
+            if (fInfo.aOuts > 1)
             {
-                portName += fInfo.aOutNames[j];
-            }
-            else if (fInfo.aOuts > 1)
-            {
-                portName += "output_";
+                portName += "audio_out_";
                 portName += CarlaString(j+1);
             }
             else
-                portName += "output";
+            {
+                portName += "audio_out";
+            }
 
             portName.truncate(portNameSize);
 
@@ -1097,237 +1107,34 @@ public:
                 carla_debug("CarlaPluginJack::handleNonRtData() - got opcode: %s", PluginBridgeNonRtServerOpcode2str(opcode));
             }
 //#endif
-            if (opcode != kPluginBridgeNonRtServerNull && fLastPongTime > 0)
-                fLastPongTime = Time::currentTimeMillis();
+            if (opcode != kPluginBridgeNonRtServerNull && fLastPingTime > 0)
+                fLastPingTime = Time::currentTimeMillis();
 
             switch (opcode)
             {
             case kPluginBridgeNonRtServerNull:
             case kPluginBridgeNonRtServerPong:
-                break;
-
             case kPluginBridgeNonRtServerPluginInfo1:
-                // uint/category, uint/hints, uint/optionsAvailable, uint/optionsEnabled, long/uniqueId
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readLong();
-                break;
-
-            case kPluginBridgeNonRtServerPluginInfo2: {
-                // uint/size, str[] (realName), uint/size, str[] (label), uint/size, str[] (maker), uint/size, str[] (copyright)
-
-                // realName
-                const uint32_t realNameSize(fShmNonRtServerControl.readUInt());
-                char realName[realNameSize+1];
-                carla_zeroChars(realName, realNameSize+1);
-                fShmNonRtServerControl.readCustomData(realName, realNameSize);
-
-                // label
-                const uint32_t labelSize(fShmNonRtServerControl.readUInt());
-                char label[labelSize+1];
-                carla_zeroChars(label, labelSize+1);
-                fShmNonRtServerControl.readCustomData(label, labelSize);
-
-                // maker
-                const uint32_t makerSize(fShmNonRtServerControl.readUInt());
-                char maker[makerSize+1];
-                carla_zeroChars(maker, makerSize+1);
-                fShmNonRtServerControl.readCustomData(maker, makerSize);
-
-                // copyright
-                const uint32_t copyrightSize(fShmNonRtServerControl.readUInt());
-                char copyright[copyrightSize+1];
-                carla_zeroChars(copyright, copyrightSize+1);
-                fShmNonRtServerControl.readCustomData(copyright, copyrightSize);
-
-                fInfo.name  = realName;
-                fInfo.label = label;
-
-                if (pData->name == nullptr)
-                    pData->name = pData->engine->getUniquePluginName(realName);
-            }   break;
-
+            case kPluginBridgeNonRtServerPluginInfo2:
             case kPluginBridgeNonRtServerAudioCount:
-                // uint/ins, uint/outs
-                fInfo.aIns  = fShmNonRtServerControl.readUInt();
-                fInfo.aOuts = fShmNonRtServerControl.readUInt();
-
-                CARLA_SAFE_ASSERT(fInfo.aInNames  == nullptr);
-                CARLA_SAFE_ASSERT(fInfo.aOutNames == nullptr);
-
-                if (fInfo.aIns > 0)
-                {
-                    fInfo.aInNames = new const char*[fInfo.aIns];
-                    carla_zeroPointers(fInfo.aInNames, fInfo.aIns);
-                }
-
-                if (fInfo.aOuts > 0)
-                {
-                    fInfo.aOutNames = new const char*[fInfo.aOuts];
-                    carla_zeroPointers(fInfo.aOutNames, fInfo.aOuts);
-                }
-                break;
-
             case kPluginBridgeNonRtServerMidiCount:
-                // uint/ins, uint/outs
-                fInfo.mIns  = fShmNonRtServerControl.readUInt();
-                fInfo.mOuts = fShmNonRtServerControl.readUInt();
-                break;
-
             case kPluginBridgeNonRtServerCvCount:
-                // uint/ins, uint/outs
-                fInfo.cvIns  = fShmNonRtServerControl.readUInt();
-                fInfo.cvOuts = fShmNonRtServerControl.readUInt();
-                break;
-
             case kPluginBridgeNonRtServerParameterCount:
-                // uint/count
-                fShmNonRtServerControl.readUInt();
-                break;
-
             case kPluginBridgeNonRtServerProgramCount:
-                // uint/count
-                fShmNonRtServerControl.readUInt();
-                break;
-
             case kPluginBridgeNonRtServerMidiProgramCount:
-                // uint/count
-                fShmNonRtServerControl.readUInt();
-                break;
-
-            case kPluginBridgeNonRtServerPortName: {
-                // byte/type, uint/index, uint/size, str[] (name)
-                const uint8_t  portType = fShmNonRtServerControl.readByte();
-                const uint32_t index    = fShmNonRtServerControl.readUInt();
-
-                // name
-                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
-                char* const name = new char[nameSize+1];
-                carla_zeroChars(name, nameSize+1);
-                fShmNonRtServerControl.readCustomData(name, nameSize);
-
-                CARLA_SAFE_ASSERT_BREAK(portType > kPluginBridgePortNull && portType < kPluginBridgePortTypeCount);
-
-                switch (portType)
-                {
-                case kPluginBridgePortAudioInput:
-                    CARLA_SAFE_ASSERT_BREAK(index < fInfo.aIns);
-                    fInfo.aInNames[index] = name;
-                    break;
-                case kPluginBridgePortAudioOutput:
-                    CARLA_SAFE_ASSERT_BREAK(index < fInfo.aOuts);
-                    fInfo.aOutNames[index] = name;
-                    break;
-                }
-
-            }   break;
-
+            case kPluginBridgeNonRtServerPortName:
             case kPluginBridgeNonRtServerParameterData1:
-                // uint/index, int/rindex, uint/type, uint/hints, int/cc
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readShort();
-                break;
-
             case kPluginBridgeNonRtServerParameterData2:
-                // uint/index, uint/size, str[] (name), uint/size, str[] (unit)
-                fShmNonRtServerControl.readUInt();
-                if (const uint32_t size = fShmNonRtServerControl.readUInt())
-                {
-                    char name[size];
-                    fShmNonRtServerControl.readCustomData(name, size);
-                }
-                if (const uint32_t size = fShmNonRtServerControl.readUInt())
-                {
-                    char symbol[size];
-                    fShmNonRtServerControl.readCustomData(symbol, size);
-                }
-                if (const uint32_t size = fShmNonRtServerControl.readUInt())
-                {
-                    char unit[size];
-                    fShmNonRtServerControl.readCustomData(unit, size);
-                }
-                break;
-
             case kPluginBridgeNonRtServerParameterRanges:
-                // uint/index, float/def, float/min, float/max, float/step, float/stepSmall, float/stepLarge
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readFloat();
-                fShmNonRtServerControl.readFloat();
-                fShmNonRtServerControl.readFloat();
-                fShmNonRtServerControl.readFloat();
-                fShmNonRtServerControl.readFloat();
-                fShmNonRtServerControl.readFloat();
-                break;
-
             case kPluginBridgeNonRtServerParameterValue:
-                // uint/index, float/value
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readFloat();
-                break;
-
             case kPluginBridgeNonRtServerParameterValue2:
-                // uint/index, float/value
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readFloat();
-                break;
-
             case kPluginBridgeNonRtServerDefaultValue:
-                // uint/index, float/value
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readFloat();
-                break;
-
             case kPluginBridgeNonRtServerCurrentProgram:
-                // int/index
-                fShmNonRtServerControl.readInt();
+            case kPluginBridgeNonRtServerCurrentMidiProgram:
+            case kPluginBridgeNonRtServerProgramName:
+            case kPluginBridgeNonRtServerMidiProgramData:
+            case kPluginBridgeNonRtServerSetCustomData:
                 break;
-
-            case kPluginBridgeNonRtServerCurrentMidiProgram: {
-                // int/index
-                fShmNonRtServerControl.readInt();
-            }   break;
-
-            case kPluginBridgeNonRtServerProgramName: {
-                // uint/index, uint/size, str[] (name)
-                fShmNonRtServerControl.readUInt();
-                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
-                char name[nameSize];
-                fShmNonRtServerControl.readCustomData(name, nameSize);
-            }   break;
-
-            case kPluginBridgeNonRtServerMidiProgramData: {
-                // uint/index, uint/bank, uint/program, uint/size, str[] (name)
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                fShmNonRtServerControl.readUInt();
-                const uint32_t nameSize(fShmNonRtServerControl.readUInt());
-                char name[nameSize];
-                fShmNonRtServerControl.readCustomData(name, nameSize);
-            }   break;
-
-            case kPluginBridgeNonRtServerSetCustomData: {
-                // uint/size, str[], uint/size, str[], uint/size, str[]
-
-                // type
-                const uint32_t typeSize(fShmNonRtServerControl.readUInt());
-                char type[typeSize];
-                fShmNonRtServerControl.readCustomData(type, typeSize);
-
-                // key
-                const uint32_t keySize(fShmNonRtServerControl.readUInt());
-                char key[keySize];
-                fShmNonRtServerControl.readCustomData(key, keySize);
-
-                // value
-                const uint32_t valueSize(fShmNonRtServerControl.readUInt());
-                char value[valueSize];
-                fShmNonRtServerControl.readCustomData(value, valueSize);
-            }   break;
 
             case kPluginBridgeNonRtServerSetChunkDataFile: {
                 // uint/size, str[] (filename)
@@ -1337,8 +1144,6 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerSetLatency:
-                // uint
-                fShmNonRtServerControl.readUInt();
                 break;
 
             case kPluginBridgeNonRtServerReady:
@@ -1397,7 +1202,7 @@ public:
 
     // -------------------------------------------------------------------
 
-    bool init(const char* const filename, const char* const name)
+    bool init(const char* const filename, const char* const name, const char* const label)
     {
         CARLA_SAFE_ASSERT_RETURN(pData->engine != nullptr, false);
 
@@ -1410,16 +1215,52 @@ public:
             return false;
         }
 
+        if (filename == nullptr || filename[0] == '\0')
+        {
+            pData->engine->setLastError("null filename");
+            return false;
+        }
+
+        if (label == nullptr || label[0] == '\0')
+        {
+            pData->engine->setLastError("null label");
+            return false;
+        }
+
+        // ---------------------------------------------------------------
+        // check setup
+
+        if (std::strlen(label) != 6)
+        {
+            pData->engine->setLastError("invalid application setup received");
+            return false;
+        }
+
+        for (int i=6; --i >= 0;) {
+            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] < '0'+64, false);
+        }
+
+        fInfo.aIns   = label[0] - '0';
+        fInfo.aOuts  = label[1] - '0';
+        fInfo.cvIns  = label[2] - '0';
+        fInfo.cvOuts = label[3] - '0';
+        fInfo.mIns   = label[4] - '0';
+        fInfo.mOuts  = label[5] - '0';
+
+        fInfo.setupLabel = label;
+
+        // TODO
+        fInfo.cvIns = fInfo.cvOuts = fInfo.mIns = fInfo.mOuts = 0;
+
         // ---------------------------------------------------------------
         // set info
 
+        pData->filename = carla_strdup(filename);
+
         if (name != nullptr && name[0] != '\0')
             pData->name = pData->engine->getUniquePluginName(name);
-
-        if (filename != nullptr && filename[0] != '\0')
-            pData->filename = carla_strdup(filename);
         else
-            pData->filename = carla_strdup("");
+            pData->name = pData->engine->getUniquePluginName("Jack Application");
 
         std::srand(static_cast<uint>(std::time(nullptr)));
 
@@ -1457,8 +1298,8 @@ public:
         }
 
         // ---------------------------------------------------------------
-
         // init bridge thread
+
         {
             char shmIdsStr[6*4+1];
             carla_zeroChars(shmIdsStr, 6*4+1);
@@ -1468,7 +1309,7 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(shmIdsStr);
+            fBridgeThread.setData(shmIdsStr, label);
         }
 
         if (! restartBridgeThread())
@@ -1499,7 +1340,7 @@ private:
     bool fProcCanceled;
     uint fProcWaitTime;
 
-    int64_t fLastPongTime;
+    int64_t fLastPingTime;
 
     CarlaPluginJackThread fBridgeThread;
 
@@ -1514,10 +1355,7 @@ private:
         uint32_t mIns, mOuts;
         PluginCategory category;
         uint optionsAvailable;
-        CarlaString name;
-        CarlaString label;
-        const char** aInNames;
-        const char** aOutNames;
+        CarlaString setupLabel;
         std::vector<uint8_t> chunk;
 
         Info()
@@ -1529,10 +1367,7 @@ private:
               mOuts(0),
               category(PLUGIN_CATEGORY_NONE),
               optionsAvailable(0),
-              name(),
-              label(),
-              aInNames(nullptr),
-              aOutNames(nullptr),
+              setupLabel(),
               chunk() {}
 
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
@@ -1566,13 +1401,6 @@ private:
         fInitiated  = false;
         fInitError  = false;
         fTimedError = false;
-
-        // cleanup of previous data
-        delete[] fInfo.aInNames;
-        fInfo.aInNames = nullptr;
-
-        delete[] fInfo.aOutNames;
-        fInfo.aOutNames = nullptr;
 
         // reset memory
         fProcCanceled = false;
@@ -1613,8 +1441,8 @@ private:
 
         fBridgeThread.startThread();
 
-        fLastPongTime = Time::currentTimeMillis();
-        CARLA_SAFE_ASSERT(fLastPongTime > 0);
+        fLastPingTime = Time::currentTimeMillis();
+        CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
         static bool sFirstInit = true;
 
@@ -1626,7 +1454,7 @@ private:
 
         const bool needsEngineIdle = pData->engine->getType() != kEngineTypePlugin;
 
-        for (; Time::currentTimeMillis() < fLastPongTime + timeoutEnd && fBridgeThread.isThreadRunning();)
+        for (; Time::currentTimeMillis() < fLastPingTime + timeoutEnd && fBridgeThread.isThreadRunning();)
         {
             pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
 
@@ -1643,7 +1471,7 @@ private:
             carla_msleep(20);
         }
 
-        fLastPongTime = -1;
+        fLastPingTime = -1;
 
         if (fInitError || ! fInitiated)
         {
@@ -1677,7 +1505,7 @@ CarlaPlugin* CarlaPlugin::newJackApp(const Initializer& init)
 #ifdef CARLA_OS_LINUX
     CarlaPluginJack* const plugin(new CarlaPluginJack(init.engine, init.id));
 
-    if (! plugin->init(init.filename, init.name))
+    if (! plugin->init(init.filename, init.name, init.label))
     {
         delete plugin;
         return nullptr;

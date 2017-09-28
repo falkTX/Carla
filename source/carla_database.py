@@ -1896,7 +1896,18 @@ class JackApplicationW(QDialog):
             self.host = host
 
     def getCommandAndFlags(self):
-        return (self.ui.le_command.text(), self.ui.le_flags.text())
+        name    = self.ui.le_name.text()
+        command = self.ui.le_command.text()
+        if not name:
+            name = command.split(" ",1)[0]
+        baseIntVal = ord('0')
+        labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
+                                       chr(baseIntVal+self.ui.sb_audio_outs.value()),
+                                       chr(baseIntVal+self.ui.sb_cv_ins.value()),
+                                       chr(baseIntVal+self.ui.sb_cv_outs.value()),
+                                       chr(baseIntVal+self.ui.sb_midi_ins.value()),
+                                       chr(baseIntVal+self.ui.sb_midi_outs.value()))
+        return (command, name, labelSetup)
 
     # --------------------------------------------------------------------------------------------------------
 

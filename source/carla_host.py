@@ -962,9 +962,14 @@ class HostWindow(QMainWindow):
         if data is None:
             return
 
-        filename, label = data
+        filename, name, label = data
 
-        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, None, label, 0, None, 0x0):
+        if not filename:
+            CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Cannot add jack application"),
+                                   self.tr("command is empty"), QMessageBox.Ok, QMessageBox.Ok)
+            return
+
+        if not self.host.add_plugin(BINARY_NATIVE, PLUGIN_JACK, filename, name, label, 0, None, 0x0):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"), self.tr("Failed to load plugin"),
                                    self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 
