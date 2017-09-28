@@ -19,6 +19,7 @@
 #include "libjack.hpp"
 
 using juce::File;
+using juce::FloatVectorOperations;
 using juce::MemoryBlock;
 using juce::String;
 using juce::Time;
@@ -37,6 +38,7 @@ public:
     CarlaJackAppClient()
         : Thread("CarlaJackAppClient"),
           fServer(),
+          fAudioPoolCopy(nullptr),
           fIsValid(false),
           fIsOffline(false),
           fLastPingTime(-1)
@@ -130,6 +132,8 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
+    float* fAudioPoolCopy;
+
     char fBaseNameAudioPool[6+1];
     char fBaseNameRtClientControl[6+1];
     char fBaseNameNonRtClientControl[6+1];
@@ -161,6 +165,12 @@ private:
 
 void CarlaJackAppClient::clear() noexcept
 {
+    if (fAudioPoolCopy != nullptr)
+    {
+        delete[] fAudioPoolCopy;
+        fAudioPoolCopy = nullptr;
+    }
+
     fShmAudioPool.clear();
     fShmRtClientControl.clear();
     fShmNonRtClientControl.clear();
@@ -420,9 +430,15 @@ void CarlaJackAppClient::run()
                     jackbridge_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data);
                     fShmAudioPool.data = nullptr;
                 }
+                if (fAudioPoolCopy != nullptr)
+                {
+                    delete[] fAudioPoolCopy;
+                    fAudioPoolCopy = nullptr;
+                }
                 const uint64_t poolSize(fShmRtClientControl.readULong());
                 CARLA_SAFE_ASSERT_BREAK(poolSize > 0);
                 fShmAudioPool.data = (float*)jackbridge_shm_map(fShmAudioPool.shm, static_cast<size_t>(poolSize));
+                fAudioPoolCopy = new float[poolSize];
                 break;
             }
 
@@ -441,11 +457,17 @@ void CarlaJackAppClient::run()
 
                 if (cmtl.wasLocked())
                 {
-                    float* fdata = fShmAudioPool.data;
+                    // location to start of audio outputs (shm buffer)
+                    float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fNumPorts.audioIns);
 
+                    // silence outputs first
+                    if (fNumPorts.audioOuts > 0)
+                        FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
+
+                    // see if there's any clients
                     if (! fClients.isEmpty())
                     {
-                        // tranport for all clients
+                        // save tranport for all clients
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
                         fServer.playing        = bridgeTimeInfo.playing;
@@ -472,21 +494,19 @@ void CarlaJackAppClient::run()
                             fServer.position.valid = static_cast<jack_position_bits_t>(0);
                         }
 
+                        // now go through each client
                         for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
                         {
                             JackClientState* const jclient(it.getValue(nullptr));
                             CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
+                            int numClientOutputsProcessed = 0;
+
                             const CarlaMutexTryLocker cmtl2(jclient->mutex);
 
+                            // check if we can process
                             if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                             {
-                                if (fNumPorts.audioIns > 0)
-                                    fdata += fServer.bufferSize*fNumPorts.audioIns;
-
-                                if (fNumPorts.audioOuts > 0)
-                                    carla_zeroFloats(fdata, fServer.bufferSize*fNumPorts.audioOuts);
-
                                 if (jclient->deactivated)
                                 {
                                     fShmRtClientControl.data->procFlags = 1;
@@ -495,43 +515,64 @@ void CarlaJackAppClient::run()
                             else
                             {
                                 uint32_t i;
+                                // direct access to shm buffer, used only for inputs
+                                float* fdataReal = fShmAudioPool.data;
+                                // safe temp location for output, mixed down to shm buffer later on
+                                float* fdataCopy = fAudioPoolCopy;
 
+                                // set inputs
                                 i = 0;
                                 for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
                                 {
                                     CARLA_SAFE_ASSERT_BREAK(i++ < fNumPorts.audioIns);
                                     if (JackPortState* const jport = it.getValue(nullptr))
-                                        jport->buffer = fdata;
-                                    fdata += fServer.bufferSize;
+                                        jport->buffer = fdataReal;
+                                    fdataReal += fServer.bufferSize;
+                                    fdataCopy += fServer.bufferSize;
                                 }
+                                // FIXME one single "if"
                                 for (; i++ < fNumPorts.audioIns;)
-                                    fdata += fServer.bufferSize;
+                                {
+                                    fdataReal += fServer.bufferSize;
+                                    fdataCopy += fServer.bufferSize;
+                                }
 
+                                // location to start of audio outputs
+                                float* const fdataCopyOuts = fdataCopy;
+
+                                // set ouputs
                                 i = 0;
                                 for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
                                 {
                                     CARLA_SAFE_ASSERT_BREAK(i++ < fNumPorts.audioOuts);
                                     if (JackPortState* const jport = it.getValue(nullptr))
-                                        jport->buffer = fdata;
-                                    fdata += fServer.bufferSize;
+                                        jport->buffer = fdataCopy;
+                                    fdataCopy += fServer.bufferSize;
                                 }
+                                // FIXME one single "if"
                                 for (; i++ < fNumPorts.audioOuts;)
                                 {
-                                    carla_zeroFloats(fdata, fServer.bufferSize);
-                                    fdata += fServer.bufferSize;
+                                    FloatVectorOperations::clear(fdataCopy, fServer.bufferSize);
+                                    fdataCopy += fServer.bufferSize;
                                 }
 
                                 jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
+
+                                if (fNumPorts.audioOuts > 0)
+                                {
+                                    ++numClientOutputsProcessed;
+                                    FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
+                                                               fServer.bufferSize*fNumPorts.audioOuts);
+                                }
+                            }
+
+                            if (numClientOutputsProcessed > 1)
+                            {
+                                FloatVectorOperations::multiply(fdataRealOuts,
+                                                                1.0f/static_cast<float>(numClientOutputsProcessed),
+                                                                fServer.bufferSize*fNumPorts.audioOuts);
                             }
                         }
-                    }
-                    else
-                    {
-                        if (fNumPorts.audioIns > 0)
-                            fdata += fServer.bufferSize*fNumPorts.audioIns;
-
-                        if (fNumPorts.audioOuts > 0)
-                            carla_zeroFloats(fdata, fServer.bufferSize*fNumPorts.audioOuts);
                     }
                 }
                 else

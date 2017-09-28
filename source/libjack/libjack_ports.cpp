@@ -77,13 +77,13 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
 
     if (jport->flags & JackPortIsInput)
     {
-        CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), 1);
+        CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), 1);
         return 0;
     }
 
     if (jport->flags & JackPortIsOutput)
     {
-        CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), 1);
+        CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), 1);
         return 0;
     }
 

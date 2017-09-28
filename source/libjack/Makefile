@@ -24,6 +24,8 @@ endif
 BUILD_C_FLAGS   += -I$(CWD) -I$(CWD)/includes
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 LINK_FLAGS      += $(MODULEDIR)/juce_core.a
+LINK_FLAGS      += $(MODULEDIR)/juce_audio_basics.a
+LINK_FLAGS      += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS      += $(JUCE_CORE_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
