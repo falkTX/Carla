@@ -668,12 +668,6 @@ static CarlaJackAppClient gClient;
 CARLA_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
-    if (status != nullptr)
-        *status = JackNameNotUnique;
-
-    if (options & JackUseExactName)
-        return nullptr;
-
     if (JackClientState* const client = gClient.addClient(client_name))
         return (jack_client_t*)client;
 

@@ -34,8 +34,8 @@ if not host.engine_init("PulseAudio", "Carla-Plugin-JACK"):
     print("Engine failed to initialize, possible reasons:\n%s" % host.get_last_error())
     exit(1)
 
-fname = "/usr/bin/pulseaudio"
-label = "--high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play.pa -n"
+fname = "pulseaudio --high-priority --realtime --exit-idle-time=-1 --file=/usr/share/cadence/pulse2jack/play.pa -n"
+label = ""
 
 fname = "/usr/bin/patchage"
 label = ""
