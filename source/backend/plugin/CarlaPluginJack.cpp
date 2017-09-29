@@ -119,14 +119,22 @@ protected:
             CarlaString libjackdir(options.binaryDir);
             libjackdir += "/jack";
 
+            CarlaString ldpreload;
+
+            if (options.frontendWinId != 0)
+            {
+                ldpreload = (CarlaString(options.binaryDir)
+                          + "/libcarla_interposer-x11.so");
+            }
+
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
-            const ScopedEnvVar sev1("LD_PRELOAD", nullptr);
             const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
+            const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 
             carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
-            carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
             carla_setenv("CARLA_LIBJACK_SETUP", fNumPorts.buffer());
+            carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
             started = fProcess->start(arguments);
         }

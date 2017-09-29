@@ -162,7 +162,7 @@ public:
             {
                 std::snprintf(winIdStr, STR_MAX, P_UINTPTR, winId);
                 ldPreloadValue = (CarlaString(kEngine->getOptions().binaryDir)
-                               + CARLA_OS_SEP_STR "libcarla_interposer-x11.so");
+                               + "/libcarla_interposer-x11.so");
             }
             else
             {

@@ -63,6 +63,15 @@ int XMapWindow(Display* display, Window w)
         if (++sMapWindowCounter != 1)
             break;
 
+        static bool libjackopen = false;
+
+        if (! libjackopen && std::getenv("CARLA_LIBJACK_SETUP") != nullptr)
+        {
+            libjackopen = true;
+            dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL);
+            carla_stdout("------------------------------- libjack opened");
+        }
+
         if (const char* const winIdStr = std::getenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID"))
         {
             CARLA_SAFE_ASSERT_BREAK(winIdStr[0] != '\0');
