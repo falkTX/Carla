@@ -15,8 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// need to include this first
 #include "libjack.hpp"
+#include <sys/prctl.h>
 
 using juce::File;
 using juce::FloatVectorOperations;
@@ -50,6 +50,12 @@ public:
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
         CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 5,);
+
+        // make sure we don't get loaded again
+        carla_unsetenv("CARLA_SHM_IDS");
+
+        // kill ourselves if main carla dies
+        ::prctl(PR_SET_PDEATHSIG, SIGKILL);
 
         for (int i=4; --i >= 0;) {
             CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] <= '0'+64,);

@@ -20,6 +20,11 @@
 
 #include "CarlaBase64Utils.hpp"
 
+#ifdef CARLA_OS_LINUX
+# include <signal.h>
+# include <sys/prctl.h>
+#endif
+
 // needed for atom-util
 #ifndef nullptr
 # undef NULL
@@ -332,6 +337,12 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
 void CarlaBridgeUI::exec(const bool showUI)
 {
     CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr,);
+
+#ifdef CARLA_OS_LINUX
+    // kill ourselves if main carla dies
+    ::prctl(PR_SET_PDEATHSIG, SIGKILL);
+    // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
+#endif
 
     fToolkit->exec(showUI);
 }

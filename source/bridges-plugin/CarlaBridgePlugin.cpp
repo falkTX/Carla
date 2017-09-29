@@ -25,6 +25,10 @@
 # include <signal.h>
 #endif
 
+#ifdef CARLA_OS_LINUX
+# include <sys/prctl.h>
+#endif
+
 #ifdef HAVE_X11
 # include <X11/Xlib.h>
 #endif
@@ -382,6 +386,12 @@ int main(int argc, char* argv[])
         rtClientBaseName[6]    = '\0';
         nonRtClientBaseName[6] = '\0';
         nonRtServerBaseName[6] = '\0';
+
+#ifdef CARLA_OS_LINUX
+        // terminate ourselves if main carla dies
+        ::prctl(PR_SET_PDEATHSIG, SIGTERM);
+        // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
+#endif
     }
     else
     {

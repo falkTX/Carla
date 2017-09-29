@@ -42,6 +42,9 @@
 # include <cerrno>
 # include <signal.h>
 # include <sys/wait.h>
+# ifdef CARLA_OS_LINUX
+#  include <sys/prctl.h>
+# endif
 #endif
 
 #ifndef F_SETPIPE_SZ
@@ -1490,6 +1493,14 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
     try { ::close(pipeRecvClient); } CARLA_SAFE_EXCEPTION("close(pipeRecvClient)");
     try { ::close(pipeSendClient); } CARLA_SAFE_EXCEPTION("close(pipeSendClient)");
     pipeRecvClient = pipeSendClient = INVALID_PIPE_VALUE;
+
+    //----------------------------------------------------------------
+    // kill ourselves if parent dies
+
+# ifdef CARLA_OS_LINUX
+    ::prctl(PR_SET_PDEATHSIG, SIGKILL);
+    // TODO, osx version too, see https://stackoverflow.com/questions/284325/how-to-make-child-process-die-after-parent-exits
+# endif
 #endif
 
     //----------------------------------------------------------------
