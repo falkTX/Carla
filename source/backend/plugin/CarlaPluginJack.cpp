@@ -277,7 +277,7 @@ public:
 
     PluginCategory getCategory() const noexcept override
     {
-        return fInfo.category;
+        return PLUGIN_CATEGORY_NONE;
     }
 
     // -------------------------------------------------------------------
@@ -1291,6 +1291,14 @@ public:
             return false;
 
         // ---------------------------------------------------------------
+        // setup hints and options
+
+        // FIXME dryWet broken
+        pData->hints   = PLUGIN_IS_BRIDGE | /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_NEEDS_FIXED_BUFFERS;
+        pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
+        //fInfo.optionsAvailable = optionAv;
+
+        // ---------------------------------------------------------------
         // register client
 
         if (pData->name == nullptr)
@@ -1327,7 +1335,6 @@ private:
     struct Info {
         uint32_t aIns, aOuts;
         uint32_t mIns, mOuts;
-        PluginCategory category;
         uint optionsAvailable;
         CarlaString setupLabel;
         std::vector<uint8_t> chunk;
@@ -1337,7 +1344,6 @@ private:
               aOuts(0),
               mIns(0),
               mOuts(0),
-              category(PLUGIN_CATEGORY_NONE),
               optionsAvailable(0),
               setupLabel(),
               chunk() {}
