@@ -18,12 +18,8 @@
 #include "libjack.hpp"
 #include <sys/prctl.h>
 
-using juce::File;
 using juce::FloatVectorOperations;
-using juce::MemoryBlock;
-using juce::String;
 using juce::Time;
-using juce::Thread;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -37,7 +33,7 @@ public:
 
     CarlaJackAppClient()
         : Thread("CarlaJackAppClient"),
-          fServer(),
+          fServer(this),
           fAudioPoolCopy(nullptr),
           fIsValid(false),
           fIsOffline(false),
@@ -292,6 +288,18 @@ void CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientQuit:
             signalThreadShouldExit();
             break;
+        }
+
+        if (opcode != kPluginBridgeNonRtClientPing)
+        {
+            static int shownNull = 0;
+            if (opcode == kPluginBridgeNonRtClientNull)
+            {
+                if (shownNull > 5)
+                    continue;
+                ++shownNull;
+            }
+            carla_stdout("CarlaJackAppClient::handleNonRtData() - opcode %s handled", PluginBridgeNonRtClientOpcode2str(opcode));
         }
     }
 }
@@ -595,6 +603,13 @@ void CarlaJackAppClient::run()
                 signalThreadShouldExit();
                 break;
             }
+
+//#ifdef DEBUG
+            if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent)
+            {
+                carla_stdout("CarlaJackAppClientRtThread::run() - opcode %s done", PluginBridgeRtClientOpcode2str(opcode));
+            }
+//#endif
         }
     }
 
@@ -668,6 +683,8 @@ static CarlaJackAppClient gClient;
 CARLA_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
+    carla_stdout("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
+
     if (JackClientState* const client = gClient.addClient(client_name))
         return (jack_client_t*)client;
 
@@ -686,6 +703,8 @@ jack_client_t* jack_client_new(const char* client_name)
 CARLA_EXPORT
 int jack_client_close(jack_client_t* client)
 {
+    carla_stdout("%s(%p)", __FUNCTION__, client);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
@@ -696,11 +715,13 @@ int jack_client_close(jack_client_t* client)
 CARLA_EXPORT
 pthread_t jack_client_thread_id(jack_client_t* client)
 {
+    carla_stdout("%s(%p)", __FUNCTION__, client);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
     CarlaJackAppClient* const jackAppPtr = jclient->server.jackAppPtr;
-    CARLA_SAFE_ASSERT_RETURN(jackAppPtr != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(jackAppPtr != nullptr && jackAppPtr == &gClient, 0);
 
     return (pthread_t)jackAppPtr->getThreadId();
 }
@@ -718,11 +739,21 @@ CARLA_BACKEND_END_NAMESPACE
 CARLA_BACKEND_USE_NAMESPACE
 
 CARLA_EXPORT
-int jack_client_real_time_priority(jack_client_t*)
+int jack_client_real_time_priority(jack_client_t* client)
 {
-    carla_stdout("CarlaJackAppClient :: %s", __FUNCTION__);
+    carla_stdout("%s(%p)", __FUNCTION__, client);
 
     return -1;
+}
+
+typedef void (*JackSessionCallback)(jack_session_event_t*, void*);
+
+CARLA_EXPORT
+int jack_set_session_callback(jack_client_t* client, JackSessionCallback callback, void* arg)
+{
+    carla_stdout("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
+
+    return 0;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

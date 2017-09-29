@@ -15,7 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// need to include this first
 #include "libjack.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE
@@ -23,16 +22,28 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-int jack_engine_takeover_timebase(jack_client_t*)
+int jack_engine_takeover_timebase(jack_client_t* client)
 {
+    carla_stdout("%s(%p)", __FUNCTION__, client);
+
     return ENOSYS;
 }
 
-// int  jack_release_timebase (jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;
+// --------------------------------------------------------------------------------------------------------------------
+
+CARLA_EXPORT
+int jack_release_timebase(jack_client_t* client)
+{
+    carla_stdout("%s(%p)", __FUNCTION__, client);
+
+    return 0;
+}
 
 CARLA_EXPORT
 int jack_set_sync_callback(jack_client_t* client, JackSyncCallback callback, void* arg)
 {
+    carla_stdout("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
+
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
@@ -43,21 +54,28 @@ int jack_set_sync_callback(jack_client_t* client, JackSyncCallback callback, voi
     return 0;
 }
 
-// int  jack_set_sync_timeout (jack_client_t *client,
-//                             jack_time_t timeout) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_set_sync_timeout(jack_client_t* client, jack_time_t timeout)
+{
+    carla_stdout("%s(%p, " P_UINT64 ")", __FUNCTION__, client, timeout);
+
+    return 0;
+}
 
 CARLA_EXPORT
-int jack_set_timebase_callback(jack_client_t*, int, JackTimebaseCallback, void*)
+int jack_set_timebase_callback(jack_client_t* client, int conditional, JackTimebaseCallback callback, void* arg)
 {
-    // FIXME?
+    carla_stdout("%s(%p, %i, %p, %p)", __FUNCTION__, client, conditional, callback, arg);
+
     return EBUSY;
 }
 
 CARLA_EXPORT
-int jack_transport_locate(jack_client_t*, jack_nframes_t)
+int jack_transport_locate(jack_client_t* client, jack_nframes_t frame)
 {
-    // FIXME?
-    return 1;
+    carla_stdout("%s(%p, %u)", __FUNCTION__, client, frame);
+
+    return ENOSYS;
 }
 
 CARLA_EXPORT
@@ -79,6 +97,7 @@ jack_transport_state_t jack_transport_query(const jack_client_t* client, jack_po
     return JackTransportStopped;
 }
 
+CARLA_EXPORT
 jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
 {
     if (const JackClientState* const jclient = (JackClientState*)client)
@@ -88,31 +107,37 @@ jack_nframes_t jack_get_current_transport_frame(const jack_client_t* client)
 }
 
 CARLA_EXPORT
-int jack_transport_reposition(jack_client_t*, const jack_position_t*)
+int jack_transport_reposition(jack_client_t* client, const jack_position_t* pos)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+    carla_stdout("%s(%p, %p)", __FUNCTION__, client, pos);
 
-    return EINVAL;
+    return ENOSYS;
 }
 
 CARLA_EXPORT
-void jack_transport_start(jack_client_t*)
+void jack_transport_start(jack_client_t* client)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
+    carla_stdout("%s(%p)", __FUNCTION__, client);
 }
 
 CARLA_EXPORT
-void jack_transport_stop (jack_client_t*)
+void jack_transport_stop(jack_client_t* client)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
+    carla_stdout("%s(%p)", __FUNCTION__, client);
 }
 
-// void jack_get_transport_info (jack_client_t *client,
-//                               jack_transport_info_t *tinfo) JACK_OPTIONAL_WEAK_EXPORT;
+// --------------------------------------------------------------------------------------------------------------------
 
-// void jack_set_transport_info (jack_client_t *client,
-//                               jack_transport_info_t *tinfo) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+void jack_get_transport_info(jack_client_t* client, void* tinfo)
+{
+    carla_stdout("%s(%p, %p)", __FUNCTION__, client, tinfo);
+}
+
+CARLA_EXPORT
+void jack_set_transport_info(jack_client_t* client, void* tinfo)
+{
+    carla_stdout("%s(%p, %p)", __FUNCTION__, client, tinfo);
+}
 
 // --------------------------------------------------------------------------------------------------------------------

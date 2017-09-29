@@ -25,39 +25,47 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 jack_nframes_t jack_midi_get_event_count(void*)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
     return 0;
 }
 
 CARLA_EXPORT
 int jack_midi_event_get(jack_midi_event_t*, void*, uint32_t)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
-
     return ENODATA;
 }
 
-// void
-// jack_midi_clear_buffer(void *port_buffer) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+void jack_midi_clear_buffer(void*)
+{
+}
 
-// void
-// jack_midi_reset_buffer(void *port_buffer) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+void jack_midi_reset_buffer(void*)
+{
+}
 
-// size_t
-// jack_midi_max_event_size(void* port_buffer) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+size_t jack_midi_max_event_size(void*)
+{
+    return 0;
+}
 
-// jack_midi_data_t*
-// jack_midi_event_reserve(void *port_buffer,
-//                         jack_nframes_t  time,
-//                         size_t data_size) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+jack_midi_data_t* jack_midi_event_reserve(void*, jack_nframes_t, size_t)
+{
+    return nullptr;
+}
 
-// int
-// jack_midi_event_write(void *port_buffer,
-//                       jack_nframes_t time,
-//                       const jack_midi_data_t *data,
-//                       size_t data_size) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_midi_event_write(void*, jack_nframes_t, const jack_midi_data_t*, size_t)
+{
+    return ENOBUFS;
+}
 
-// uint32_t jack_midi_get_lost_event_count(void *port_buffer) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+uint32_t jack_midi_get_lost_event_count(void*)
+{
+    return 0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------

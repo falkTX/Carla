@@ -65,6 +65,7 @@ struct JackPortState {
     void* buffer;
     uint index;
     uint flags;
+    bool isMidi;
     bool isSystem;
 
     JackPortState()
@@ -73,14 +74,16 @@ struct JackPortState {
           buffer(nullptr),
           index(0),
           flags(0),
+          isMidi(false),
           isSystem(false) {}
 
-    JackPortState(const char* const cn, const char* const pn, const uint i, const uint f, const bool sys)
+    JackPortState(const char* const cn, const char* const pn, const uint i, const uint f, const bool midi, const bool sys)
         : name(strdup(pn)),
           fullname(nullptr),
           buffer(nullptr),
           index(i),
           flags(f),
+          isMidi(midi),
           isSystem(sys)
     {
         char strBuf[STR_MAX+1];
@@ -108,8 +111,8 @@ struct JackClientState {
 
     LinkedList<JackPortState*> audioIns;
     LinkedList<JackPortState*> audioOuts;
-    LinkedList<JackPortState> midiIns;
-    LinkedList<JackPortState> midiOuts;
+    LinkedList<JackPortState*> midiIns;
+    LinkedList<JackPortState*> midiOuts;
 
     JackShutdownCallback shutdownCb;
     void* shutdownCbPtr;
@@ -172,6 +175,18 @@ struct JackClientState {
                 delete jport;
         }
 
+        for (LinkedList<JackPortState*>::Itenerator it = midiIns.begin2(); it.valid(); it.next())
+        {
+            if (JackPortState* const jport = it.getValue(nullptr))
+                delete jport;
+        }
+
+        for (LinkedList<JackPortState*>::Itenerator it = midiOuts.begin2(); it.valid(); it.next())
+        {
+            if (JackPortState* const jport = it.getValue(nullptr))
+                delete jport;
+        }
+
         free(name);
         name = nullptr;
 
@@ -189,8 +204,8 @@ struct JackServerState {
     bool playing;
     jack_position_t position;
 
-    JackServerState()
-        : jackAppPtr(nullptr),
+    JackServerState(CarlaJackAppClient* const app)
+        : jackAppPtr(app),
           bufferSize(0),
           sampleRate(0.0),
           playing(false)

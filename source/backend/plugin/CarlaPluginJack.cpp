@@ -121,11 +121,13 @@ protected:
 
             CarlaString ldpreload;
 
+            /*
             if (options.frontendWinId != 0)
             {
                 ldpreload = (CarlaString(options.binaryDir)
                           + "/libcarla_interposer-x11.so");
             }
+            */
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 

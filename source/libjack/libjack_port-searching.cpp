@@ -23,9 +23,12 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-const char** jack_get_ports(jack_client_t*, const char* a, const char* b, unsigned long flags)
+const char** jack_get_ports(jack_client_t* client, const char* a, const char* b, unsigned long flags)
 {
-    carla_stdout("CarlaJackClient :: %s | %s %s %li", __FUNCTION__, a, b, flags);
+    carla_stdout("%s(%p, %s, %s, 0x%lx)", __FUNCTION__, client, a, b, flags);
+
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
 
     static const char* capture_1  = "system:capture_1";
     static const char* capture_2  = "system:capture_2";
@@ -71,23 +74,20 @@ const char** jack_get_ports(jack_client_t*, const char* a, const char* b, unsign
 }
 
 CARLA_EXPORT
-jack_port_t* jack_port_by_name(jack_client_t* /*client*/, const char* name)
+jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
 {
-    carla_stdout("CarlaJackClient :: %s | %s", __FUNCTION__, name);
+    carla_stdout("%s(%p, %s)", __FUNCTION__, client, name);
 
-//     CarlaJackClient* const jclient = (CarlaJackClient*)client;
-//     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
-
-//     const JackClientState& jstate(jclient->fState);
-    //CARLA_SAFE_ASSERT_RETURN(jstate.activated, 0);
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
     static const JackPortState capturePorts[] = {
-        JackPortState("system", "capture_1", 0, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, true),
-        JackPortState("system", "capture_2", 1, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, true),
+        JackPortState("system", "capture_1", 0, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, false, true),
+        JackPortState("system", "capture_2", 1, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, false, true),
     };
     static const JackPortState playbackPorts[] = {
-        JackPortState("system", "playback_1", 3, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, true),
-        JackPortState("system", "playback_2", 4, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, true),
+        JackPortState("system", "playback_1", 3, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, false, true),
+        JackPortState("system", "playback_2", 4, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, false, true),
     };
 
     if (std::strncmp(name, "system:", 7) == 0)
@@ -124,9 +124,9 @@ jack_port_t* jack_port_by_name(jack_client_t* /*client*/, const char* name)
 }
 
 CARLA_EXPORT
-jack_port_t* jack_port_by_id(jack_client_t*, jack_port_id_t)
+jack_port_t* jack_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 {
-    carla_stdout("CarlaJackClient :: %s", __FUNCTION__);
+    carla_stderr2("%s(%p, %u)", __FUNCTION__, client, port_id);
 
     return nullptr;
 }
