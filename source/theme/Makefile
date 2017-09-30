@@ -185,7 +185,7 @@ $(OBJDIR)/resources.qt5.cpp: $(CWD)/../resources/resources-theme.qrc
 $(OBJDIR)/%.qt4.cpp.o: $(OBJDIR)/%.qt4.cpp $(OBJDIR)/moc_CarlaStyle.qt4.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $*.cpp (Qt4)"
-	@$(CXX) $< $(QT4_CXX_FLAGS) -c -o $@
+	@$(CXX) $< $(QT4_CXX_FLAGS) -Wno-unused-variable -c -o $@
 
 $(OBJDIR)/%.qt5.cpp.o: $(OBJDIR)/%.qt5.cpp $(OBJDIR)/moc_CarlaStyle.qt5.cpp
 	-@mkdir -p $(OBJDIR)
