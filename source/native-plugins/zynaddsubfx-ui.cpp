@@ -45,6 +45,16 @@ extern "C" {
 #include "zynaddsubfx/rtosc/rtosc.c"
 }
 
+// ignore some compiler warnings
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Winconsistent-missing-override"
+# pragma clang diagnostic ignored "-Wunused-private-field"
+#elif defined(__GNUC__) && (__GNUC__ >= 7)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 // rtosc c++ includes
 #include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
 #include "zynaddsubfx/rtosc/cpp/miditable.cpp"
@@ -57,11 +67,6 @@ extern "C" {
 #undef off_t
 #undef static
 #include "zynaddsubfx/rtosc/cpp/undo-history.cpp"
-
-#if defined(__GNUC__) && (__GNUC__ >= 7)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#endif
 
 // zynaddsubfx ui includes
 #include "zynaddsubfx/UI/NioUI.cpp"
@@ -109,7 +114,9 @@ extern "C" {
 #include "zynaddsubfx/UI/VirKeyboard.cpp"
 #include "zynaddsubfx/UI/guimain.cpp"
 
-#if defined(__GNUC__) && (__GNUC__ >= 7)
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ >= 7)
 # pragma GCC diagnostic pop
 #endif
 

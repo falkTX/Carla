@@ -509,8 +509,10 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 void CarlaEngine::ProtectedData::close()
 {
     CARLA_SAFE_ASSERT(name.isNotEmpty());
+#ifndef BUILD_BRIDGE
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
+#endif
     CARLA_SAFE_ASSERT(nextAction.opcode == kEnginePostActionNull);
 
     aboutToClose = true;
@@ -642,8 +644,7 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 // PendingRtEventsRunner
 
 PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const uint32_t frames) noexcept
-    : pData(engine->pData),
-      numFrames(frames)
+    : pData(engine->pData)
 {
     pData->time.preProcess(frames);
 }

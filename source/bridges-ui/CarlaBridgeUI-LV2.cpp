@@ -36,9 +36,6 @@ CARLA_BRIDGE_START_NAMESPACE
 
 static double gSampleRate = 44100.0;
 
-// Maximum default buffer size
-const unsigned int MAX_DEFAULT_BUFFER_SIZE = 8192; // 0x2000
-
 // LV2 URI Map Ids
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
 const uint32_t CARLA_URI_MAP_ID_ATOM_BLANK             =  1;
@@ -565,7 +562,7 @@ public:
         fDescriptor->port_event(fHandle, portIndex, lv2_atom_total_size(atom), CARLA_URI_MAP_ID_ATOM_TRANSFER_EVENT, atom);
     }
 
-    void dspURIDReceived(const LV2_URID urid, const char* const uri)
+    void dspURIDReceived(const LV2_URID urid, const char* const uri) override
     {
         CARLA_SAFE_ASSERT_RETURN(urid == fCustomURIDs.size(),);
         CARLA_SAFE_ASSERT_RETURN(uri != nullptr && uri[0] != '\0',);

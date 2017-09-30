@@ -33,7 +33,14 @@
 
 class CarlaStyleAnimation : public QAbstractAnimation
 {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Winconsistent-missing-override"
+#endif
     Q_OBJECT
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+# pragma clang diagnostic pop
+#endif
 
 public:
     CarlaStyleAnimation(QObject* target)
@@ -122,7 +129,14 @@ private:
 
 class CarlaProgressStyleAnimation : public CarlaStyleAnimation
 {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Winconsistent-missing-override"
+#endif
     Q_OBJECT
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+# pragma clang diagnostic pop
+#endif
 
 public:
     CarlaProgressStyleAnimation(int speed, QObject* target)

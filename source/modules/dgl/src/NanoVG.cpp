@@ -972,8 +972,17 @@ END_NAMESPACE_DGL
 
 #undef final
 
+#if defined(__GNUC__) && (__GNUC__ >= 5)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wno-misleading-indentation"
+#endif
+
 extern "C" {
 #include "nanovg/nanovg.c"
 }
+
+#if defined(__GNUC__) && (__GNUC__ >= 5)
+# pragma GCC diagnostic pop
+#endif
 
 // -----------------------------------------------------------------------

@@ -58,7 +58,7 @@ public:
           fLatencyCallback(cb) {}
 
 protected:
-    void setLatency(const uint32_t samples) noexcept
+    void setLatency(const uint32_t samples) noexcept override
     {
         if (getLatency() == samples)
             return;
@@ -1286,7 +1286,7 @@ protected:
         return nullptr;
     }
 
-    void latencyChanged(const uint32_t samples) noexcept
+    void latencyChanged(const uint32_t samples) noexcept override
     {
         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 

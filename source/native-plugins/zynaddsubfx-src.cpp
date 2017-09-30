@@ -44,6 +44,13 @@ extern "C" {
 #include "zynaddsubfx/rtosc/rtosc.c"
 }
 
+// ignore some compiler warnings
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Winconsistent-missing-override"
+# pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+
 // rtosc includes
 #include "zynaddsubfx/rtosc/cpp/automations.cpp"
 #include "zynaddsubfx/rtosc/cpp/midimapper.cpp"
@@ -529,6 +536,10 @@ extern "C" {
 #define rChangeCb
 
 #include "zynaddsubfx/globals.cpp"
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#endif
 
 // Dummy variables and functions for linking purposes
 namespace zyncarla {

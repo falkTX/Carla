@@ -58,7 +58,6 @@
 
 using juce::CharPointer_UTF8;
 using juce::File;
-using juce::String;
 using juce::StringArray;
 
 CARLA_BACKEND_USE_NAMESPACE
@@ -991,7 +990,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, it));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.addIfNotAlreadyThere(String(uri));
+            URIs.addIfNotAlreadyThere(juce::String(uri));
     }
 
     if (URIs.size() == 0)
@@ -1561,7 +1560,7 @@ static void do_juce_check(const char* const filename_, const char* const stype, 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
-    const String jfilename = String(CharPointer_UTF8(filename));
+    const juce::String jfilename = juce::String(CharPointer_UTF8(filename));
     const File file(jfilename);
 
     if (! file.existsAsFile())
@@ -1651,7 +1650,7 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
 {
 #ifdef HAVE_LINUXSAMPLER
-    const String jfilename = String(CharPointer_UTF8(filename));
+    const juce::String jfilename = juce::String(CharPointer_UTF8(filename));
     const File file(jfilename);
 
     if (! file.existsAsFile())

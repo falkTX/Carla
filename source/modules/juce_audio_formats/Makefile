@@ -11,7 +11,7 @@ include ../Makefile.mk
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += $(JUCE_AUDIO_FORMATS_FLAGS) -I..
-BUILD_CXX_FLAGS += -Wno-misleading-indentation -DHAVE_LROUND
+# BUILD_CXX_FLAGS += -Wno-misleading-indentation -DHAVE_LROUND
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

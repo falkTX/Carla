@@ -519,12 +519,12 @@ public:
         XSetTransientForHint(fDisplay, fWindow, static_cast<Window>(winId));
     }
 
-    void* getPtr() const noexcept
+    void* getPtr() const noexcept override
     {
         return (void*)fWindow;
     }
 
-    void* getDisplay() const noexcept
+    void* getDisplay() const noexcept override
     {
         return fDisplay;
     }

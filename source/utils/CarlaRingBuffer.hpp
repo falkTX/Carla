@@ -140,10 +140,7 @@ public:
         return true;
     }
 
-    bool isDataAvailableForReading() const noexcept
-    {
-        return (fBuffer != nullptr && fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
-    }
+    bool isDataAvailableForReading() const noexcept;
 
     bool isEmpty() const noexcept
     {
@@ -424,6 +421,18 @@ private:
     CARLA_PREVENT_VIRTUAL_HEAP_ALLOCATION
     CARLA_DECLARE_NON_COPY_CLASS(CarlaRingBufferControl)
 };
+
+template <class BufferStruct>
+inline bool CarlaRingBufferControl<BufferStruct>::isDataAvailableForReading() const noexcept
+{
+	return (fBuffer != nullptr && fBuffer->head != fBuffer->tail);
+}
+
+template <>
+inline bool CarlaRingBufferControl<HeapBuffer>::isDataAvailableForReading() const noexcept
+{
+	return (fBuffer != nullptr && fBuffer->buf != nullptr && fBuffer->head != fBuffer->tail);
+}
 
 // -----------------------------------------------------------------------
 // CarlaRingBuffer using heap space

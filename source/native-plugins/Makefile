@@ -31,7 +31,7 @@ endif # EXPERIMENTAL_PLUGINS
 
 ifeq ($(HAVE_ZYN_DEPS),true)
 ZYN_CXX_FLAGS  = $(BUILD_CXX_FLAGS) -Izynaddsubfx -Izynaddsubfx/rtosc
-ZYN_CXX_FLAGS += -Wno-misleading-indentation -Wno-shift-negative-value -fpermissive
+# ZYN_CXX_FLAGS += -Wno-misleading-indentation -Wno-shift-negative-value
 ZYN_CXX_FLAGS += $(shell pkg-config --cflags fftw3 mxml zlib)
 ZYN_LD_FLAGS   = $(LINK_FLAGS)
 ZYN_LD_FLAGS  += $(shell pkg-config --libs liblo)
