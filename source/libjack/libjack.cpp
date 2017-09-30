@@ -35,6 +35,7 @@ public:
         : Thread("CarlaJackAppClient"),
           fServer(this),
           fAudioPoolCopy(nullptr),
+          fAudioTmpBuf(nullptr),
           fIsValid(false),
           fIsOffline(false),
           fLastPingTime(-1)
@@ -95,6 +96,18 @@ public:
             delete jclient;
         }
 
+        if (fAudioPoolCopy != nullptr)
+        {
+            delete[] fAudioPoolCopy;
+            fAudioPoolCopy = nullptr;
+        }
+
+        if (fAudioTmpBuf != nullptr)
+        {
+            delete[] fAudioTmpBuf;
+            fAudioTmpBuf = nullptr;
+        }
+
         fClients.clear();
     }
 
@@ -135,6 +148,7 @@ private:
     BridgeNonRtServerControl fShmNonRtServerControl;
 
     float* fAudioPoolCopy;
+    float* fAudioTmpBuf;
 
     char fBaseNameAudioPool[6+1];
     char fBaseNameRtClientControl[6+1];
@@ -230,21 +244,57 @@ void CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientSetBufferSize:
-            fShmNonRtClientControl.readUInt();
-            //bufferSizeChanged();
+            if (const uint32_t newBufferSize = fShmNonRtClientControl.readUInt())
+            {
+                if (fServer.bufferSize != newBufferSize)
+                {
+                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                    fServer.bufferSize = newBufferSize;
+
+                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                    {
+                        JackClientState* const jclient(it.getValue(nullptr));
+                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                        jclient->bufferSizeCb(fServer.bufferSize, jclient->bufferSizeCbPtr);
+                    }
+
+                    delete[] fAudioTmpBuf;
+                    fAudioTmpBuf = new float[fServer.bufferSize];
+                    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+                }
+            }
             break;
 
         case kPluginBridgeNonRtClientSetSampleRate:
-            fShmNonRtClientControl.readDouble();
-            //sampleRateChanged();
+            if (const double newSampleRate = fShmNonRtClientControl.readDouble())
+            {
+                if (fServer.sampleRate != newSampleRate)
+                {
+                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                    fServer.sampleRate = newSampleRate;
+
+                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                    {
+                        JackClientState* const jclient(it.getValue(nullptr));
+                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                        jclient->sampleRateCb(fServer.sampleRate, jclient->sampleRateCbPtr);
+                    }
+                }
+            }
             break;
 
         case kPluginBridgeNonRtClientSetOffline:
+            // TODO inform changes
             fIsOffline = true;
             //offlineModeChanged(true);
             break;
 
         case kPluginBridgeNonRtClientSetOnline:
+            // TODO inform changes
             fIsOffline = false;
             //offlineModeChanged(false);
             break;
@@ -390,6 +440,9 @@ void CarlaJackAppClient::run()
         return;
     }
 
+    fAudioTmpBuf = new float[fServer.bufferSize];
+    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+
     // tell backend we're live
     {
         const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -508,6 +561,9 @@ void CarlaJackAppClient::run()
                             fServer.position.valid = static_cast<jack_position_bits_t>(0);
                         }
 
+                        // clear audio buffer for unused ports
+                        FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+
                         // now go through each client
                         for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
                         {
@@ -538,11 +594,19 @@ void CarlaJackAppClient::run()
                                 i = 0;
                                 for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
                                 {
-                                    CARLA_SAFE_ASSERT_BREAK(i++ < fNumPorts.audioIns);
                                     if (JackPortState* const jport = it.getValue(nullptr))
-                                        jport->buffer = fdataReal;
-                                    fdataReal += fServer.bufferSize;
-                                    fdataCopy += fServer.bufferSize;
+                                    {
+                                        if (i++ < fNumPorts.audioIns)
+                                        {
+                                            jport->buffer = fdataReal;
+                                            fdataReal += fServer.bufferSize;
+                                            fdataCopy += fServer.bufferSize;
+                                        }
+                                        else
+                                        {
+                                            jport->buffer = fAudioTmpBuf;
+                                        }
+                                    }
                                 }
                                 // FIXME one single "if"
                                 for (; i++ < fNumPorts.audioIns;)
@@ -558,10 +622,18 @@ void CarlaJackAppClient::run()
                                 i = 0;
                                 for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
                                 {
-                                    CARLA_SAFE_ASSERT_BREAK(i++ < fNumPorts.audioOuts);
                                     if (JackPortState* const jport = it.getValue(nullptr))
-                                        jport->buffer = fdataCopy;
-                                    fdataCopy += fServer.bufferSize;
+                                    {
+                                        if (i++ < fNumPorts.audioOuts)
+                                        {
+                                            jport->buffer = fdataCopy;
+                                            fdataCopy += fServer.bufferSize;
+                                        }
+                                        else
+                                        {
+                                            jport->buffer = fAudioTmpBuf;
+                                        }
+                                    }
                                 }
                                 // FIXME one single "if"
                                 for (; i++ < fNumPorts.audioOuts;)
