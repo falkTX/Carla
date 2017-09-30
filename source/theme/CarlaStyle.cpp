@@ -36,6 +36,8 @@
 # include <QtWidgets/QSpinBox>
 # include <QtWidgets/QSplitter>
 # include <QtWidgets/QWizard>
+# define QStyleOptionFrameV3 QStyleOptionFrame
+# define QStyleOptionProgressBarV2 QStyleOptionProgressBar
 #else
 # include <QtGui/QApplication>
 # include <QtGui/QComboBox>

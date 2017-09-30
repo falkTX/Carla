@@ -149,6 +149,10 @@ int jack_uuid_parse(const char*, jack_uuid_t*)
 CARLA_EXPORT
 void jack_uuid_unparse(jack_uuid_t, char buf[JACK_UUID_STRING_SIZE])
 {
+    return;
+
+    // unused
+    (void)buf;
 }
 
 CARLA_EXPORT

@@ -67,16 +67,16 @@ size_t jack_ringbuffer_write_space(const jack_ringbuffer_t *rb);
 CARLA_EXPORT jack_ringbuffer_t *
 jack_ringbuffer_create (size_t sz)
 {
-	int power_of_two;
+	unsigned int power_of_two;
 	jack_ringbuffer_t *rb;
 
 	if ((rb = (jack_ringbuffer_t *) malloc (sizeof (jack_ringbuffer_t))) == NULL) {
 		return NULL;
 	}
 
-	for (power_of_two = 1; 1 << power_of_two < sz; power_of_two++);
+	for (power_of_two = 1U; 1U << power_of_two < sz; power_of_two++);
 
-	rb->size = 1 << power_of_two;
+	rb->size = 1U << power_of_two;
 	rb->size_mask = rb->size;
 	rb->size_mask -= 1;
 	rb->write_ptr = 0;
