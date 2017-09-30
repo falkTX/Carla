@@ -136,14 +136,14 @@ File File::getSpecialLocation (const SpecialLocationType type)
         case invokedExecutableFile:
             if (juce_argv != nullptr && juce_argc > 0)
                 return File (CharPointer_UTF8 (juce_argv[0]));
-            // deliberate fall-through...
+            // fall-through
 
         case currentExecutableFile:
         case currentApplicationFile:
            #if ! JUCE_STANDALONE_APPLICATION
             return juce_getExecutableFile();
            #endif
-            // deliberate fall-through if this is not a shared-library
+            // fall-through
 
         case hostApplicationPath:
         {

@@ -25,6 +25,11 @@
 
 #include "pugl/pugl.h"
 
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 #if defined(DISTRHO_OS_WINDOWS)
 # include "pugl/pugl_win.cpp"
 #elif defined(DISTRHO_OS_MAC)
@@ -37,6 +42,10 @@ extern "C" {
 }
 #else
 # error Unsupported platform
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic pop
 #endif
 
 #include "ApplicationPrivateData.hpp"

@@ -92,7 +92,7 @@ private:
             {
                 case Z_STREAM_END:
                     finished = true;
-                    // Deliberate fall-through..
+                    // fall-through..
                 case Z_OK:
                 {
                     data += dataSize - stream.avail_in;

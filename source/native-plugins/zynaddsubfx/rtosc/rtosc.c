@@ -232,8 +232,7 @@ static size_t vsosc_null(const char        *address,
     return pos;
 }
 
-static const rtosc_cmp_options* default_cmp_options
- = &((rtosc_cmp_options) { 0.0 });
+static const rtosc_cmp_options default_cmp_options({ 0.0 });
 
 int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
                       size_t lsize, size_t rsize,
@@ -242,7 +241,7 @@ int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
 #define mfabs(val) (((val) >= 0) ? (val) : -(val))
 
     if(!opt)
-        opt = default_cmp_options;
+        opt = &default_cmp_options;
     if(lsize != rsize)
         return 0;
 
@@ -319,7 +318,7 @@ int rtosc_arg_vals_cmp(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
 #define mfabs(val) (((val) >= 0) ? (val) : -(val))
 
     if(!opt)
-        opt = default_cmp_options;
+        opt = &default_cmp_options;
 
     size_t rval = 0;
     size_t min = lsize > rsize ? rsize : lsize;

@@ -141,7 +141,7 @@ public:
             {
             case Z_STREAM_END:
                 finished = true;
-                // deliberate fall-through
+                // fall-through
             case Z_OK:
                 data += dataSize - stream.avail_in;
                 dataSize = (z_uInt) stream.avail_in;
