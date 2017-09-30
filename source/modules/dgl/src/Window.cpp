@@ -25,7 +25,7 @@
 
 #include "pugl/pugl.h"
 
-#if defined(__GNUC__) && (__GNUC__ >= 6)
+#if defined(__GNUC__) && (__GNUC__ >= 7)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif

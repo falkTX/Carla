@@ -117,7 +117,7 @@ namespace FlacNamespace
   #pragma clang diagnostic ignored "-Wconversion"
   #pragma clang diagnostic ignored "-Wshadow"
   #pragma clang diagnostic ignored "-Wdeprecated-register"
- #elif JUCE_GCC && (__GNUC__ >= 6)
+ #elif JUCE_GCC && (__GNUC__ >= 7)
   #pragma GCC diagnostic push
   #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
  #endif
@@ -160,7 +160,7 @@ namespace FlacNamespace
 
  #if JUCE_CLANG
   #pragma clang diagnostic pop
- #elif JUCE_GCC && (__GNUC__ >= 6)
+ #elif JUCE_GCC && (__GNUC__ >= 7)
   #pragma GCC diagnostic pop
  #endif
 }

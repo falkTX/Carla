@@ -39,7 +39,7 @@ namespace zlibNamespace
    #if __has_warning("-Wcomma")
     #pragma clang diagnostic ignored "-Wcomma"
    #endif
-  #elif JUCE_GCC && (__GNUC__ >= 6)
+  #elif JUCE_GCC && (__GNUC__ >= 7)
    #pragma GCC diagnostic push
    #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
   #endif
@@ -77,7 +77,7 @@ namespace zlibNamespace
 
   #if JUCE_CLANG
    #pragma clang diagnostic pop
-  #elif JUCE_GCC && (__GNUC__ >= 6)
+  #elif JUCE_GCC && (__GNUC__ >= 7)
    #pragma GCC diagnostic pop
   #endif
  #else
