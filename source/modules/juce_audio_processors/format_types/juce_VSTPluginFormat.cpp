@@ -56,9 +56,6 @@ using namespace Vst2;
  #ifndef WM_APPCOMMAND
   #define WM_APPCOMMAND 0x0319
  #endif
-
- extern "C" void _fpreset();
- extern "C" void _clearfp();
 #elif ! JUCE_WINDOWS
  static void _fpreset() {}
  static void _clearfp() {}
