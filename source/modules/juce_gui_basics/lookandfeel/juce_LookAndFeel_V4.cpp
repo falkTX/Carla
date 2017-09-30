@@ -200,6 +200,8 @@ void LookAndFeel_V4::positionDocumentWindowButtons (DocumentWindow&,
                                                     Button* closeButton,
                                                     bool positionTitleBarButtonsOnLeft)
 {
+    titleBarH = jmin (titleBarH, titleBarH - titleBarY);
+
     const int buttonW = (int) (titleBarH * 1.2);
 
     int x = positionTitleBarButtonsOnLeft ? titleBarX

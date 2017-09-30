@@ -37,7 +37,6 @@ ResizableWindow::ResizableWindow (const String& name, Colour bkgnd, bool shouldA
     : TopLevelWindow (name, shouldAddToDesktop)
 {
     setBackgroundColour (bkgnd);
-
     initialise (shouldAddToDesktop);
 }
 
@@ -147,7 +146,7 @@ void ResizableWindow::setContentComponentSize (int width, int height)
 {
     jassert (width > 0 && height > 0); // not a great idea to give it a zero size..
 
-    const BorderSize<int> border (getContentComponentBorder());
+    auto border = getContentComponentBorder();
 
     setSize (width + border.getLeftAndRight(),
              height + border.getTopAndBottom());
@@ -156,7 +155,7 @@ void ResizableWindow::setContentComponentSize (int width, int height)
 BorderSize<int> ResizableWindow::getBorderThickness()
 {
     if (isUsingNativeTitleBar() || isKioskMode())
-        return BorderSize<int>();
+        return {};
 
     return BorderSize<int> ((resizableBorder != nullptr && ! isFullScreen()) ? 4 : 1);
 }
@@ -174,7 +173,6 @@ void ResizableWindow::moved()
 void ResizableWindow::visibilityChanged()
 {
     TopLevelWindow::visibilityChanged();
-
     updateLastPosIfShowing();
 }
 
@@ -235,9 +233,9 @@ void ResizableWindow::childBoundsChanged (Component* child)
 //==============================================================================
 void ResizableWindow::activeWindowStatusChanged()
 {
-    const BorderSize<int> border (getContentComponentBorder());
+    auto border = getContentComponentBorder();
+    auto area = getLocalBounds();
 
-    Rectangle<int> area (getLocalBounds());
     repaint (area.removeFromTop (border.getTop()));
     repaint (area.removeFromLeft (border.getLeft()));
     repaint (area.removeFromRight (border.getRight()));
@@ -287,10 +285,10 @@ bool ResizableWindow::isResizable() const noexcept
         || resizableBorder != nullptr;
 }
 
-void ResizableWindow::setResizeLimits (const int newMinimumWidth,
-                                       const int newMinimumHeight,
-                                       const int newMaximumWidth,
-                                       const int newMaximumHeight) noexcept
+void ResizableWindow::setResizeLimits (int newMinimumWidth,
+                                       int newMinimumHeight,
+                                       int newMaximumWidth,
+                                       int newMaximumHeight) noexcept
 {
     // if you've set up a custom constrainer then these settings won't have any effect..
     jassert (constrainer == &defaultConstrainer || constrainer == nullptr);
@@ -315,8 +313,8 @@ void ResizableWindow::setConstrainer (ComponentBoundsConstrainer* newConstrainer
     {
         constrainer = newConstrainer;
 
-        const bool useBottomRightCornerResizer = resizableCorner != nullptr;
-        const bool shouldBeResizable = useBottomRightCornerResizer || resizableBorder != nullptr;
+        bool useBottomRightCornerResizer = resizableCorner != nullptr;
+        bool shouldBeResizable = useBottomRightCornerResizer || resizableBorder != nullptr;
 
         resizableCorner = nullptr;
         resizableBorder = nullptr;
@@ -337,7 +335,7 @@ void ResizableWindow::setBoundsConstrained (const Rectangle<int>& newBounds)
 //==============================================================================
 void ResizableWindow::paint (Graphics& g)
 {
-    LookAndFeel& lf = getLookAndFeel();
+    auto& lf = getLookAndFeel();
 
     lf.fillResizableWindowBackground (g, getWidth(), getHeight(),
                                       getBorderThickness(), *this);
@@ -380,13 +378,12 @@ Colour ResizableWindow::getBackgroundColour() const noexcept
 
 void ResizableWindow::setBackgroundColour (Colour newColour)
 {
-    Colour backgroundColour (newColour);
+    auto backgroundColour = newColour;
 
     if (! Desktop::canUseSemiTransparentWindows())
         backgroundColour = newColour.withAlpha (1.0f);
 
     setColour (backgroundColourId, backgroundColour);
-
     setOpaque (backgroundColour.isOpaque());
     repaint();
 }
@@ -396,7 +393,7 @@ bool ResizableWindow::isFullScreen() const
 {
     if (isOnDesktop())
     {
-        ComponentPeer* const peer = getPeer();
+        auto* peer = getPeer();
         return peer != nullptr && peer->isFullScreen();
     }
 
@@ -412,10 +409,10 @@ void ResizableWindow::setFullScreen (const bool shouldBeFullScreen)
 
         if (isOnDesktop())
         {
-            if (ComponentPeer* const peer = getPeer())
+            if (auto* peer = getPeer())
             {
                 // keep a copy of this intact in case the real one gets messed-up while we're un-maximising
-                const Rectangle<int> lastPos (lastNonFullScreenPos);
+                auto lastPos = lastNonFullScreenPos;
 
                 peer->setFullScreen (shouldBeFullScreen);
 
@@ -441,7 +438,7 @@ void ResizableWindow::setFullScreen (const bool shouldBeFullScreen)
 
 bool ResizableWindow::isMinimised() const
 {
-    if (ComponentPeer* const peer = getPeer())
+    if (auto* peer = getPeer())
         return peer->isMinimised();
 
     return false;
@@ -451,7 +448,7 @@ void ResizableWindow::setMinimised (const bool shouldMinimise)
 {
     if (shouldMinimise != isMinimised())
     {
-        if (ComponentPeer* const peer = getPeer())
+        if (auto* peer = getPeer())
         {
             updateLastPosIfShowing();
             peer->setMinimised (shouldMinimise);
@@ -466,7 +463,7 @@ void ResizableWindow::setMinimised (const bool shouldMinimise)
 bool ResizableWindow::isKioskMode() const
 {
     if (isOnDesktop())
-        if (ComponentPeer* peer = getPeer())
+        if (auto* peer = getPeer())
             return peer->isKioskMode();
 
     return Desktop::getInstance().getKioskModeComponent() == this;
@@ -490,7 +487,7 @@ void ResizableWindow::updateLastPosIfNotFullScreen()
 void ResizableWindow::updatePeerConstrainer()
 {
     if (isOnDesktop())
-        if (ComponentPeer* const peer = getPeer())
+        if (auto* peer = getPeer())
             peer->setConstrainer (constrainer);
 }
 
@@ -528,19 +525,20 @@ bool ResizableWindow::restoreWindowStateFromString (const String& s)
     if (newPos.isEmpty())
         return false;
 
-    ComponentPeer* const peer = isOnDesktop() ? getPeer() : nullptr;
+    auto* peer = isOnDesktop() ? getPeer() : nullptr;
+
     if (peer != nullptr)
         peer->getFrameSize().addTo (newPos);
 
     {
-        Desktop& desktop = Desktop::getInstance();
-        RectangleList<int> allMonitors (desktop.getDisplays().getRectangleList (true));
+        auto& desktop = Desktop::getInstance();
+        auto allMonitors = desktop.getDisplays().getRectangleList (true);
         allMonitors.clipTo (newPos);
-        const Rectangle<int> onScreenArea (allMonitors.getBounds());
+        auto onScreenArea = allMonitors.getBounds();
 
         if (onScreenArea.getWidth() * onScreenArea.getHeight() < 32 * 32)
         {
-            const Rectangle<int> screen (desktop.getDisplays().getDisplayContaining (newPos.getCentre()).userArea);
+            auto screen = desktop.getDisplays().getDisplayContaining (newPos.getCentre()).userArea;
 
             newPos.setSize (jmin (newPos.getWidth(),  screen.getWidth()),
                             jmin (newPos.getHeight(), screen.getHeight()));

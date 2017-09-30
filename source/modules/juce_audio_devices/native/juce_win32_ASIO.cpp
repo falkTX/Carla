@@ -1444,16 +1444,7 @@ struct ASIOAudioIODevice::ASIOCallbackFunctions <sizeof(currentASIODev) / sizeof
 class ASIOAudioIODeviceType  : public AudioIODeviceType
 {
 public:
-    ASIOAudioIODeviceType()
-        : AudioIODeviceType ("ASIO"),
-          hasScanned (false)
-    {
-    }
-
-    ~ASIOAudioIODeviceType()
-    {
-        masterReference.clear();
-    }
+    ASIOAudioIODeviceType() : AudioIODeviceType ("ASIO") {}
 
     //==============================================================================
     void scanForDevices()
@@ -1549,13 +1540,13 @@ public:
         callDeviceChangeListeners();
     }
 
-    WeakReference<ASIOAudioIODeviceType>::Master masterReference;
+    JUCE_DECLARE_WEAK_REFERENCEABLE (ASIOAudioIODeviceType)
 
 private:
     StringArray deviceNames;
     Array<CLSID> classIds;
 
-    bool hasScanned;
+    bool hasScanned = false;
 
     //==============================================================================
     static bool checkClassIsOk (const String& classId)
