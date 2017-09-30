@@ -232,7 +232,7 @@ static size_t vsosc_null(const char        *address,
     return pos;
 }
 
-static const rtosc_cmp_options default_cmp_options({ 0.0 });
+static const rtosc_cmp_options default_cmp_options = { 0.0 };
 
 int rtosc_arg_vals_eq(rtosc_arg_val_t* lhs, rtosc_arg_val_t* rhs,
                       size_t lsize, size_t rsize,
