@@ -2,16 +2,17 @@
 
 set -e
 
-JUCE_MODULES_DIR="/Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO-Ports/libs/juce/source/modules/"
-CARLA_MODULES_DIR="/Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules/"
+JUCE_MODULES_DIR="/Shared/Personal/FOSS/GIT/DISTRHO/DISTRHO-Ports/libs/juce/source/modules"
+CARLA_MODULES_DIR="/Shared/Personal/FOSS/GIT/falkTX/Carla/source/modules"
 
 MODULES=("juce_audio_basics juce_audio_devices juce_audio_formats juce_audio_processors juce_core juce_data_structures juce_events juce_graphics juce_gui_basics juce_gui_extra")
 
 for M in $MODULES; do
-  echo $M;
-  #rm -rf $CARLA_MODULES_DIR/$M/*
+  echo $CARLA_MODULES_DIR/$M;
+  rm -f $CARLA_MODULES_DIR/$M/juce_*
+  rm -rf $CARLA_MODULES_DIR/$M/{a..z}*
   cp -r -v $JUCE_MODULES_DIR/$M/* $CARLA_MODULES_DIR/$M/
+  rm $CARLA_MODULES_DIR/$M/juce_*.mm
 done
 
 find $CARLA_MODULES_DIR -name juce_module_info -delete
-rm source/modules/juce_*/juce_*.mm
