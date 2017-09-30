@@ -21,6 +21,16 @@
 #define SOURCE_DIR "/usr/share/zynaddsubfx/examples"
 #undef override
 
+// ignore some compiler warnings
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wshift-negative-value"
+#elif defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Winconsistent-missing-override"
+# pragma clang diagnostic ignored "-Wunused-private-field"
+#endif
+
 // base c-style headers
 #include "zynaddsubfx/tlsf/tlsf.h"
 #include "zynaddsubfx/rtosc/rtosc.h"
@@ -43,13 +53,6 @@ extern "C" {
 #include "zynaddsubfx/rtosc/dispatch.c"
 #include "zynaddsubfx/rtosc/rtosc.c"
 }
-
-// ignore some compiler warnings
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Winconsistent-missing-override"
-# pragma clang diagnostic ignored "-Wunused-private-field"
-#endif
 
 // rtosc includes
 #include "zynaddsubfx/rtosc/cpp/automations.cpp"
@@ -537,7 +540,9 @@ extern "C" {
 
 #include "zynaddsubfx/globals.cpp"
 
-#if defined(__clang__)
+#if defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic pop
+#elif defined(__clang__)
 # pragma clang diagnostic pop
 #endif
 

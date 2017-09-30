@@ -50,9 +50,12 @@ extern "C" {
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Winconsistent-missing-override"
 # pragma clang diagnostic ignored "-Wunused-private-field"
-#elif defined(__GNUC__) && (__GNUC__ >= 7)
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
 # pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+# pragma GCC diagnostic ignored "-Wmisleading-indentation"
+# if (__GNUC__ >= 7)
+#  pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+# endif
 #endif
 
 // rtosc c++ includes
@@ -116,7 +119,7 @@ extern "C" {
 
 #if defined(__clang__)
 # pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ >= 7)
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
 # pragma GCC diagnostic pop
 #endif
 

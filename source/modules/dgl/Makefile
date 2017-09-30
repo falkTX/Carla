@@ -15,9 +15,6 @@ BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
 # needed by sofd right now, fix later
 BUILD_CXX_FLAGS += -Wno-type-limits -fpermissive
 
-# needed by stb_image
-BUILD_CXX_FLAGS += -Wno-shift-negative-value
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 OBJS = \

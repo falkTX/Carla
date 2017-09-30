@@ -974,7 +974,8 @@ END_NAMESPACE_DGL
 
 #if defined(__GNUC__) && (__GNUC__ >= 6)
 # pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wno-misleading-indentation"
+# pragma GCC diagnostic ignored "-Wmisleading-indentation"
+# pragma GCC diagnostic ignored "-Wshift-negative-value"
 #endif
 
 extern "C" {
