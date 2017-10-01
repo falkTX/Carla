@@ -18,6 +18,8 @@
 #include "libjack.hpp"
 #include <sys/prctl.h>
 
+#include "CarlaThread.hpp"
+
 using juce::FloatVectorOperations;
 using juce::Time;
 
@@ -25,19 +27,71 @@ CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJackAppClient : public juce::Thread
+class CarlaJackRealtimeThread : public CarlaThread
+{
+public:
+    struct Callback {
+        Callback() {}
+        virtual ~Callback() {};
+        virtual void runRealtimeThread() = 0;
+    };
+
+    CarlaJackRealtimeThread(Callback* const callback)
+        : CarlaThread("CarlaJackRealtimeThread"),
+          fCallback(callback) {}
+
+protected:
+    void run() override
+    {
+        fCallback->runRealtimeThread();
+    }
+
+private:
+    Callback* const fCallback;
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+class CarlaJackNonRealtimeThread : public CarlaThread
+{
+public:
+    struct Callback {
+        Callback() {}
+        virtual ~Callback() {};
+        virtual void runNonRealtimeThread() = 0;
+    };
+
+    CarlaJackNonRealtimeThread(Callback* const callback)
+        : CarlaThread("CarlaJackNonRealtimeThread"),
+          fCallback(callback) {}
+
+protected:
+    void run() override
+    {
+        fCallback->runNonRealtimeThread();
+    }
+
+private:
+    Callback* const fCallback;
+};
+
+// --------------------------------------------------------------------------------------------------------------------
+
+class CarlaJackAppClient : public CarlaJackRealtimeThread::Callback,
+                           public CarlaJackNonRealtimeThread::Callback
 {
 public:
     JackServerState fServer;
     LinkedList<JackClientState*> fClients;
 
     CarlaJackAppClient()
-        : Thread("CarlaJackAppClient"),
-          fServer(this),
+        : fServer(this),
           fAudioPoolCopy(nullptr),
           fAudioTmpBuf(nullptr),
           fIsOffline(false),
-          fLastPingTime(-1)
+          fLastPingTime(-1),
+          fRealtimeThread(this),
+          fNonRealtimeThread(this)
     {
         carla_debug("CarlaJackAppClient::CarlaJackAppClient()");
 
@@ -73,7 +127,7 @@ public:
         fNumPorts.midiIns   = libjackSetup[2] - '0';
         fNumPorts.midiOuts  = libjackSetup[3] - '0';
 
-        startThread(10);
+        fNonRealtimeThread.startThread();
     }
 
     ~CarlaJackAppClient() noexcept override
@@ -82,7 +136,7 @@ public:
 
         fLastPingTime = -1;
 
-        stopThread(5000);
+        fNonRealtimeThread.stopThread(5000);
 
         const CarlaMutexLocker cms(fRealtimeThreadMutex);
 
@@ -117,17 +171,23 @@ public:
         return true;
     }
 
+    pthread_t getRealtimeThreadId() const noexcept
+    {
+        return fRealtimeThread.getThreadId();
+    }
+
     // -------------------------------------------------------------------
 
 protected:
-    void run() override;
+    void runRealtimeThread() override;
+    void runNonRealtimeThread() override;
 
 private:
     bool initSharedMemmory();
     void clearSharedMemory() noexcept;
 
     bool handleRtData();
-    void handleNonRtData();
+    bool handleNonRtData();
 
     BridgeAudioPool          fShmAudioPool;
     BridgeRtClientControl    fShmRtClientControl;
@@ -157,6 +217,9 @@ private:
               midiIns(0),
               midiOuts(0) {}
     } fNumPorts;
+
+    CarlaJackRealtimeThread    fRealtimeThread;
+    CarlaJackNonRealtimeThread fNonRealtimeThread;
 
     CarlaMutex fRealtimeThreadMutex;
 
@@ -268,6 +331,8 @@ bool CarlaJackAppClient::initSharedMemmory()
 
 void CarlaJackAppClient::clearSharedMemory() noexcept
 {
+    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
     if (fAudioPoolCopy != nullptr)
     {
         delete[] fAudioPoolCopy;
@@ -293,6 +358,8 @@ bool CarlaJackAppClient::handleRtData()
     if (! helper.ok)
         return false;
 
+    bool ret = false;
+
     for (; fShmRtClientControl.isDataAvailableForReading();)
     {
         const PluginBridgeRtClientOpcode opcode(fShmRtClientControl.readOpcode());
@@ -309,6 +376,8 @@ bool CarlaJackAppClient::handleRtData()
             break;
 
         case kPluginBridgeRtClientSetAudioPool: {
+            const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
             if (fShmAudioPool.data != nullptr)
             {
                 jackbridge_shm_unmap(fShmAudioPool.shm, fShmAudioPool.data);
@@ -335,12 +404,12 @@ bool CarlaJackAppClient::handleRtData()
             break;
 
         case kPluginBridgeRtClientProcess: {
-            CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
-
             const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex);
 
             if (cmtl.wasLocked())
             {
+                CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
+
                 // location to start of audio outputs (shm buffer)
                 float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fNumPorts.audioIns);
 
@@ -477,18 +546,19 @@ bool CarlaJackAppClient::handleRtData()
                         }
                     }
                 }
+
+                carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
             }
             else
             {
                 carla_stderr2("CarlaJackAppClient: fRealtimeThreadMutex tryLock failed");
             }
-
-            carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
             break;
         }
 
         case kPluginBridgeRtClientQuit:
-            return true;
+            ret = true;
+            break;
         }
 
     //#ifdef DEBUG
@@ -499,11 +569,13 @@ bool CarlaJackAppClient::handleRtData()
     //#endif
     }
 
-    return false;
+    return ret;
 }
 
-void CarlaJackAppClient::handleNonRtData()
+bool CarlaJackAppClient::handleNonRtData()
 {
+    bool ret = false;
+
     for (; fShmNonRtClientControl.isDataAvailableForReading();)
     {
         const PluginBridgeNonRtClientOpcode opcode(fShmNonRtClientControl.readOpcode());
@@ -640,7 +712,7 @@ void CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientQuit:
-            signalThreadShouldExit();
+            ret = true;
             break;
         }
 
@@ -656,15 +728,13 @@ void CarlaJackAppClient::handleNonRtData()
             carla_stdout("CarlaJackAppClient::handleNonRtData() - opcode %s handled", PluginBridgeNonRtClientOpcode2str(opcode));
         }
     }
+
+    return ret;
 }
 
-void CarlaJackAppClient::run()
+void CarlaJackAppClient::runRealtimeThread()
 {
-    carla_stderr("CarlaJackAppClient run START");
-    initSharedMemmory();
-
-    fLastPingTime = Time::currentTimeMillis();
-    carla_stdout("Carla Jack Client Ready!");
+    carla_stderr("CarlaJackAppClient runRealtimeThread START");
 
 #ifdef __SSE2_MATH__
     // Set FTZ and DAZ flags
@@ -673,11 +743,39 @@ void CarlaJackAppClient::run()
 
     bool quitReceived = false;
 
-    for (; ! threadShouldExit();)
+    for (; ! fRealtimeThread.shouldThreadExit();)
     {
-        handleNonRtData();
-
         if (handleRtData())
+        {
+            quitReceived = true;
+            break;
+        }
+    }
+
+    fNonRealtimeThread.signalThreadShouldExit();
+
+    carla_stderr("CarlaJackAppClient runRealtimeThread FINISHED");
+}
+
+void CarlaJackAppClient::runNonRealtimeThread()
+{
+    carla_stderr("CarlaJackAppClient runNonRealtimeThread START");
+
+    if (! initSharedMemmory())
+        return;
+
+    fRealtimeThread.startThread();
+
+    fLastPingTime = Time::currentTimeMillis();
+    carla_stdout("Carla Jack Client Ready!");
+
+    bool quitReceived = false;
+
+    for (; ! fNonRealtimeThread.shouldThreadExit();)
+    {
+        carla_msleep(50);
+
+        if (handleNonRtData())
         {
             quitReceived = true;
             break;
@@ -688,7 +786,7 @@ void CarlaJackAppClient::run()
 
     if (quitReceived)
     {
-        carla_stderr("CarlaJackAppClient run END - quit by carla");
+        carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit by carla");
 
         ::kill(::getpid(), SIGTERM);
     }
@@ -719,7 +817,7 @@ void CarlaJackAppClient::run()
 
         if (activated)
         {
-            carla_stderr("CarlaJackAppClient run END - quit error");
+            carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit error");
 
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
@@ -729,7 +827,7 @@ void CarlaJackAppClient::run()
         }
         else
         {
-            carla_stderr("CarlaJackAppClient run END - quit itself");
+            carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit itself");
 
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
@@ -746,7 +844,12 @@ void CarlaJackAppClient::run()
         */
     }
 
+    fRealtimeThread.signalThreadShouldExit();
     clearSharedMemory();
+
+    fRealtimeThread.stopThread(5000);
+
+    carla_stderr("CarlaJackAppClient run FINISHED");
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -796,7 +899,7 @@ pthread_t jack_client_thread_id(jack_client_t* client)
     CarlaJackAppClient* const jackAppPtr = jclient->server.jackAppPtr;
     CARLA_SAFE_ASSERT_RETURN(jackAppPtr != nullptr && jackAppPtr == &gClient, 0);
 
-    return (pthread_t)jackAppPtr->getThreadId();
+    return jackAppPtr->getRealtimeThreadId();
 }
 
 CARLA_BACKEND_END_NAMESPACE

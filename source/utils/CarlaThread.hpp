@@ -190,6 +190,14 @@ public:
     }
 
     /*
+     * Returns the Id/handle of the thread.
+     */
+    pthread_t getThreadId() const noexcept
+    {
+        return fHandle;
+    }
+
+    /*
      * Changes the name of the caller thread.
      */
     static void setCurrentThreadName(const char* const name) noexcept
