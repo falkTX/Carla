@@ -431,7 +431,7 @@ class PluginEditParentMeta():
 
 class PluginEdit(QDialog):
     # settings
-    kParamsPerPage = 8
+    kParamsPerPage = 17
 
     # signals
     SIGTERM = pyqtSignal()
@@ -720,7 +720,10 @@ class PluginEdit(QDialog):
 
     @pyqtSlot()
     def slot_fixNameWordWrap(self):
+        if self.ui.tabWidget.count() > 0:
+            self.ui.tabWidget.setCurrentIndex(1)
         self.adjustSize()
+        self.ui.tabWidget.setCurrentIndex(0)
         self.setMinimumSize(self.width(), self.height())
 
     #------------------------------------------------------------------
@@ -874,7 +877,7 @@ class PluginEdit(QDialog):
             #parameter['name'] = parameter['name'][:30] + (parameter['name'][30:] and "...")
 
             # -----------------------------------------------------------------
-            # Get width values, in packs of 10
+            # Get width values, in packs of 20
 
             if parameter['type'] == PARAMETER_INPUT:
                 paramInputWidthTMP = QFontMetrics(self.font()).width(parameter['name'])
@@ -905,10 +908,10 @@ class PluginEdit(QDialog):
         # for i in range(parameterCount)
         else:
             # Final page width values
-            if 0 < len(paramInputList) < 10:
+            if 0 < len(paramInputList) < self.kParamsPerPage:
                 paramInputListFull.append((paramInputList, paramInputWidth))
 
-            if 0 < len(paramOutputList) < 10:
+            if 0 < len(paramOutputList) < self.kParamsPerPage:
                 paramOutputListFull.append((paramOutputList, paramOutputWidth))
 
         # Create parameter tabs + widgets
@@ -1491,6 +1494,7 @@ class PluginEdit(QDialog):
             tabIndex         = self.ui.tabWidget.count()
             tabPageContainer = QWidget(self.ui.tabWidget)
             tabPageLayout    = QVBoxLayout(tabPageContainer)
+            tabPageLayout.setSpacing(1)
             tabPageContainer.setLayout(tabPageLayout)
 
             for paramInfo in paramList:

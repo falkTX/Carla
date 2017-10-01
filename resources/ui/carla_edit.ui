@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>509</width>
-    <height>443</height>
+    <width>758</width>
+    <height>435</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -440,12 +440,12 @@
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+            <enum>QSizePolicy::Expanding</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>10</width>
-             <height>20</height>
+             <width>1</width>
+             <height>1</height>
             </size>
            </property>
           </spacer>
@@ -471,47 +471,19 @@ Plugin Name
             <enum>Qt::Horizontal</enum>
            </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+            <enum>QSizePolicy::Expanding</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>10</width>
-             <height>20</height>
+             <width>1</width>
+             <height>1</height>
             </size>
            </property>
           </spacer>
          </item>
          <item>
           <layout class="QGridLayout" name="gridLayout">
-           <item row="1" column="0">
-            <widget class="QPushButton" name="b_save_state">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>Save State</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../resources.qrc">
-               <normaloff>:/16x16/document-save.png</normaloff>:/16x16/document-save.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="1">
-            <widget class="QPushButton" name="b_load_state">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>Load State</string>
-             </property>
-             <property name="icon">
-              <iconset resource="../resources.qrc">
-               <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="2">
+           <item row="0" column="1" colspan="2">
             <widget class="QStackedWidget" name="sw_programs">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -527,6 +499,22 @@ Plugin Name
              </property>
              <widget class="QWidget" name="sww_programs">
               <layout class="QHBoxLayout" name="horizontalLayout_3">
+               <property name="margin">
+                <number>2</number>
+               </property>
+               <item>
+                <spacer name="horizontalSpacer_8">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
                <item>
                 <widget class="QLabel" name="label_programs">
                  <property name="sizePolicy">
@@ -554,6 +542,25 @@ Plugin Name
              </widget>
              <widget class="QWidget" name="sww_midiPrograms">
               <layout class="QHBoxLayout" name="horizontalLayout_4">
+               <property name="margin">
+                <number>2</number>
+               </property>
+               <item>
+                <spacer name="horizontalSpacer_7">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeType">
+                  <enum>QSizePolicy::Expanding</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>1</width>
+                   <height>1</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
                <item>
                 <widget class="QLabel" name="label_midi_programs">
                  <property name="sizePolicy">
@@ -580,6 +587,50 @@ Plugin Name
               </layout>
              </widget>
             </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QPushButton" name="b_save_state">
+             <property name="focusPolicy">
+              <enum>Qt::NoFocus</enum>
+             </property>
+             <property name="text">
+              <string>Save State</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../resources.qrc">
+               <normaloff>:/16x16/document-save.png</normaloff>:/16x16/document-save.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QPushButton" name="b_load_state">
+             <property name="focusPolicy">
+              <enum>Qt::NoFocus</enum>
+             </property>
+             <property name="text">
+              <string>Load State</string>
+             </property>
+             <property name="icon">
+              <iconset resource="../resources.qrc">
+               <normaloff>:/16x16/document-open.png</normaloff>:/16x16/document-open.png</iconset>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <spacer name="horizontalSpacer_9">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeType">
+              <enum>QSizePolicy::Expanding</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>1</width>
+               <height>1</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </item>
@@ -637,22 +688,6 @@ Plugin Name
             </item>
             <item row="1" column="1">
              <widget class="QLineEdit" name="le_name">
-              <property name="inputMask">
-               <string notr="true"/>
-              </property>
-              <property name="text">
-               <string notr="true"/>
-              </property>
-              <property name="frame">
-               <bool>false</bool>
-              </property>
-              <property name="readOnly">
-               <bool>true</bool>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1">
-             <widget class="QLineEdit" name="le_label">
               <property name="inputMask">
                <string notr="true"/>
               </property>
@@ -755,6 +790,22 @@ Plugin Name
               </property>
              </widget>
             </item>
+            <item row="2" column="1">
+             <widget class="QLineEdit" name="le_label">
+              <property name="inputMask">
+               <string notr="true"/>
+              </property>
+              <property name="text">
+               <string notr="true"/>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -765,10 +816,13 @@ Plugin Name
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::MinimumExpanding</enum>
+         </property>
          <property name="sizeHint" stdset="0">
           <size>
-           <width>20</width>
-           <height>40</height>
+           <width>1</width>
+           <height>1</height>
           </size>
          </property>
         </spacer>
