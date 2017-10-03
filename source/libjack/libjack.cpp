@@ -300,11 +300,8 @@ bool CarlaJackAppClient::initSharedMemmory()
     }
 
     opcode = fShmNonRtClientControl.readOpcode();
-    CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
+    CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientInitialSetup, opcode);
     fServer.bufferSize = fShmNonRtClientControl.readUInt();
-
-    opcode = fShmNonRtClientControl.readOpcode();
-    CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
     fServer.sampleRate = fShmNonRtClientControl.readDouble();
 
     if (fServer.bufferSize == 0 || carla_isZero(fServer.sampleRate))
@@ -396,6 +393,56 @@ bool CarlaJackAppClient::handleRtData()
             break;
         }
 
+        case kPluginBridgeRtClientSetBufferSize:
+            if (const uint32_t newBufferSize = fShmRtClientControl.readUInt())
+            {
+                if (fServer.bufferSize != newBufferSize)
+                {
+                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                    fServer.bufferSize = newBufferSize;
+
+                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                    {
+                        JackClientState* const jclient(it.getValue(nullptr));
+                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                        jclient->bufferSizeCb(fServer.bufferSize, jclient->bufferSizeCbPtr);
+                    }
+
+                    delete[] fAudioTmpBuf;
+                    fAudioTmpBuf = new float[fServer.bufferSize];
+                    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+                }
+            }
+            break;
+
+        case kPluginBridgeRtClientSetSampleRate:
+            if (const double newSampleRate = fShmRtClientControl.readDouble())
+            {
+                if (fServer.sampleRate != newSampleRate)
+                {
+                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                    fServer.sampleRate = newSampleRate;
+
+                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
+                    {
+                        JackClientState* const jclient(it.getValue(nullptr));
+                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
+
+                        jclient->sampleRateCb(fServer.sampleRate, jclient->sampleRateCbPtr);
+                    }
+                }
+            }
+            break;
+
+        case kPluginBridgeRtClientSetOnline:
+            // TODO inform changes
+            fIsOffline = fShmRtClientControl.readBool();
+            //offlineModeChanged(fIsOffline);
+            break;
+
         case kPluginBridgeRtClientControlEventParameter:
         case kPluginBridgeRtClientControlEventMidiBank:
         case kPluginBridgeRtClientControlEventMidiProgram:
@@ -405,6 +452,7 @@ bool CarlaJackAppClient::handleRtData()
             break;
 
         case kPluginBridgeRtClientProcess: {
+            // FIXME - lock if offline
             const CarlaMutexTryLocker cmtl(fRealtimeThreadMutex);
 
             if (cmtl.wasLocked())
@@ -451,6 +499,7 @@ bool CarlaJackAppClient::handleRtData()
                         JackClientState* const jclient(it.getValue(nullptr));
                         CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
+                        // FIXME - lock if offline
                         const CarlaMutexTryLocker cmtl2(jclient->mutex);
 
                         // check if we can process
@@ -636,60 +685,10 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientDeactivate:
             break;
 
-        case kPluginBridgeNonRtClientSetBufferSize:
-            if (const uint32_t newBufferSize = fShmNonRtClientControl.readUInt())
-            {
-                if (fServer.bufferSize != newBufferSize)
-                {
-                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
-
-                    fServer.bufferSize = newBufferSize;
-
-                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
-                    {
-                        JackClientState* const jclient(it.getValue(nullptr));
-                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
-
-                        jclient->bufferSizeCb(fServer.bufferSize, jclient->bufferSizeCbPtr);
-                    }
-
-                    delete[] fAudioTmpBuf;
-                    fAudioTmpBuf = new float[fServer.bufferSize];
-                    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
-                }
-            }
-            break;
-
-        case kPluginBridgeNonRtClientSetSampleRate:
-            if (const double newSampleRate = fShmNonRtClientControl.readDouble())
-            {
-                if (fServer.sampleRate != newSampleRate)
-                {
-                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
-
-                    fServer.sampleRate = newSampleRate;
-
-                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
-                    {
-                        JackClientState* const jclient(it.getValue(nullptr));
-                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
-
-                        jclient->sampleRateCb(fServer.sampleRate, jclient->sampleRateCbPtr);
-                    }
-                }
-            }
-            break;
-
-        case kPluginBridgeNonRtClientSetOffline:
-            // TODO inform changes
-            fIsOffline = true;
-            //offlineModeChanged(true);
-            break;
-
-        case kPluginBridgeNonRtClientSetOnline:
-            // TODO inform changes
-            fIsOffline = false;
-            //offlineModeChanged(false);
+        case kPluginBridgeNonRtClientInitialSetup:
+            // should never happen!!
+            fShmNonRtServerControl.readUInt();
+            fShmNonRtServerControl.readDouble();
             break;
 
         case kPluginBridgeNonRtClientSetParameterValue:

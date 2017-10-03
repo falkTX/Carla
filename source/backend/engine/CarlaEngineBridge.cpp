@@ -181,12 +181,15 @@ public:
         CARLA_SAFE_ASSERT_INT2(shmNonRtServerDataSize == sizeof(BridgeNonRtServerData), shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
 
         opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetBufferSize, opcode);
+        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientInitialSetup, opcode);
         pData->bufferSize = fShmNonRtClientControl.readUInt();
-
-        opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientSetSampleRate, opcode);
         pData->sampleRate = fShmNonRtClientControl.readDouble();
+
+        if (pData->bufferSize == 0 || carla_isZero(pData->sampleRate))
+        {
+            carla_stderr2("CarlaEngineBridge: invalid empty state");
+            return false;
+        }
 
         pData->initTime(nullptr);
 
@@ -208,7 +211,7 @@ public:
 
     bool close() override
     {
-        carla_debug("CarlaEnginePlugin::close()");
+        carla_debug("CarlaEngineBridge::close()");
         fLastPingTime = -1;
 
         CarlaEngine::close();
@@ -678,28 +681,10 @@ public:
                     plugin->setActive(false, false, false);
                 break;
 
-            case kPluginBridgeNonRtClientSetBufferSize: {
-                const uint32_t bufferSize(fShmNonRtClientControl.readUInt());
-                pData->bufferSize = bufferSize;
-                bufferSizeChanged(bufferSize);
-                break;
-            }
-
-            case kPluginBridgeNonRtClientSetSampleRate: {
-                const double sampleRate(fShmNonRtClientControl.readDouble());
-                pData->sampleRate = sampleRate;
-                sampleRateChanged(sampleRate);
-                break;
-            }
-
-            case kPluginBridgeNonRtClientSetOffline:
-                fIsOffline = true;
-                offlineModeChanged(true);
-                break;
-
-            case kPluginBridgeNonRtClientSetOnline:
-                fIsOffline = false;
-                offlineModeChanged(false);
+            case kPluginBridgeNonRtClientInitialSetup:
+                // should never happen!!
+                fShmNonRtServerControl.readUInt();
+                fShmNonRtServerControl.readDouble();
                 break;
 
             case kPluginBridgeNonRtClientSetParameterValue: {
@@ -1002,6 +987,25 @@ protected:
                     break;
                 }
 
+                case kPluginBridgeRtClientSetBufferSize: {
+                    const uint32_t bufferSize(fShmRtClientControl.readUInt());
+                    pData->bufferSize = bufferSize;
+                    bufferSizeChanged(bufferSize);
+                    break;
+                }
+
+                case kPluginBridgeRtClientSetSampleRate: {
+                    const double sampleRate(fShmRtClientControl.readDouble());
+                    pData->sampleRate = sampleRate;
+                    sampleRateChanged(sampleRate);
+                    break;
+                }
+
+                case kPluginBridgeRtClientSetOnline:
+                    fIsOffline = fShmRtClientControl.readBool();
+                    offlineModeChanged(fIsOffline);
+                    break;
+
                 case kPluginBridgeRtClientControlEventParameter: {
                     const uint32_t time(fShmRtClientControl.readUInt());
                     const uint8_t  channel(fShmRtClientControl.readByte());
@@ -1128,7 +1132,7 @@ protected:
                 case kPluginBridgeRtClientProcess: {
                     CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
-                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(false))
+                    if (plugin != nullptr && plugin->isEnabled() && plugin->tryLock(fIsOffline))
                     {
                         const BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 

@@ -43,6 +43,12 @@ const char* PluginBridgeRtClientOpcode2str(const PluginBridgeRtClientOpcode opco
         return "kPluginBridgeRtClientNull";
     case kPluginBridgeRtClientSetAudioPool:
         return "kPluginBridgeRtClientSetAudioPool";
+    case kPluginBridgeRtClientSetBufferSize:
+        return "kPluginBridgeRtClientSetBufferSize";
+    case kPluginBridgeRtClientSetSampleRate:
+        return "kPluginBridgeRtClientSetSampleRate";
+    case kPluginBridgeRtClientSetOnline:
+        return "kPluginBridgeRtClientSetOnline";
     case kPluginBridgeRtClientControlEventParameter:
         return "kPluginBridgeRtClientControlEventParameter";
     case kPluginBridgeRtClientControlEventMidiBank:
@@ -80,14 +86,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientActivate";
     case kPluginBridgeNonRtClientDeactivate:
         return "kPluginBridgeNonRtClientDeactivate";
-    case kPluginBridgeNonRtClientSetBufferSize:
-        return "kPluginBridgeNonRtClientSetBufferSize";
-    case kPluginBridgeNonRtClientSetSampleRate:
-        return "kPluginBridgeNonRtClientSetSampleRate";
-    case kPluginBridgeNonRtClientSetOffline:
-        return "kPluginBridgeNonRtClientSetOffline";
-    case kPluginBridgeNonRtClientSetOnline:
-        return "kPluginBridgeNonRtClientSetOnline";
+    case kPluginBridgeNonRtClientInitialSetup:
+        return "kPluginBridgeNonRtClientInitialSetup";
     case kPluginBridgeNonRtClientSetParameterValue:
         return "kPluginBridgeNonRtClientSetParameterValue";
     case kPluginBridgeNonRtClientSetParameterMidiChannel:

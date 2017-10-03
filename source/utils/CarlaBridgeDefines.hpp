@@ -26,6 +26,9 @@
 enum PluginBridgeRtClientOpcode {
     kPluginBridgeRtClientNull = 0,
     kPluginBridgeRtClientSetAudioPool,            // ulong/ptr
+    kPluginBridgeRtClientSetBufferSize,           // uint
+    kPluginBridgeRtClientSetSampleRate,           // double
+    kPluginBridgeRtClientSetOnline,               // bool
     kPluginBridgeRtClientControlEventParameter,   // uint/frame, byte/chan, ushort, float
     kPluginBridgeRtClientControlEventMidiBank,    // uint/frame, byte/chan, ushort
     kPluginBridgeRtClientControlEventMidiProgram, // uint/frame, byte/chan, ushort
@@ -43,10 +46,7 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientPingOnOff,               // bool
     kPluginBridgeNonRtClientActivate,
     kPluginBridgeNonRtClientDeactivate,
-    kPluginBridgeNonRtClientSetBufferSize,           // uint
-    kPluginBridgeNonRtClientSetSampleRate,           // double
-    kPluginBridgeNonRtClientSetOffline,
-    kPluginBridgeNonRtClientSetOnline,
+    kPluginBridgeNonRtClientInitialSetup,            // uint, double
     kPluginBridgeNonRtClientSetParameterValue,       // uint, float
     kPluginBridgeNonRtClientSetParameterMidiChannel, // uint, byte
     kPluginBridgeNonRtClientSetParameterMidiCC,      // uint, short

@@ -1034,10 +1034,9 @@ public:
         resizeAudioPool(newBufferSize);
 
         {
-            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetBufferSize);
-            fShmNonRtClientControl.writeUInt(newBufferSize);
-            fShmNonRtClientControl.commitWrite();
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetBufferSize);
+            fShmRtClientControl.writeUInt(newBufferSize);
+            fShmRtClientControl.commitWrite();
         }
 
         //fProcWaitTime = newBufferSize*1000/pData->engine->getSampleRate();
@@ -1049,10 +1048,9 @@ public:
     void sampleRateChanged(const double newSampleRate) override
     {
         {
-            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
-            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetSampleRate);
-            fShmNonRtClientControl.writeDouble(newSampleRate);
-            fShmNonRtClientControl.commitWrite();
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetSampleRate);
+            fShmRtClientControl.writeDouble(newSampleRate);
+            fShmRtClientControl.commitWrite();
         }
 
         //fProcWaitTime = pData->engine->getBufferSize()*1000/newSampleRate;
@@ -1064,9 +1062,9 @@ public:
     void offlineModeChanged(const bool isOffline) override
     {
         {
-            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
-            fShmNonRtClientControl.writeOpcode(isOffline ? kPluginBridgeNonRtClientSetOffline : kPluginBridgeNonRtClientSetOnline);
-            fShmNonRtClientControl.commitWrite();
+            fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetOnline);
+            fShmRtClientControl.writeBool(isOffline);
+            fShmRtClientControl.commitWrite();
         }
 
         waitForClient("offline", 1000);
@@ -1398,10 +1396,8 @@ private:
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));
 
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetBufferSize);
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientInitialSetup);
         fShmNonRtClientControl.writeUInt(pData->engine->getBufferSize());
-
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientSetSampleRate);
         fShmNonRtClientControl.writeDouble(pData->engine->getSampleRate());
 
         fShmNonRtClientControl.commitWrite();
