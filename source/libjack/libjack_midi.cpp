@@ -15,7 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// need to include this first
 #include "libjack.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE
@@ -23,43 +22,90 @@ CARLA_BACKEND_USE_NAMESPACE
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-jack_nframes_t jack_midi_get_event_count(void*)
+jack_nframes_t jack_midi_get_event_count(void* buf)
 {
+    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, 0);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf->isInput, 0);
+
+    return jmidibuf->count;
+}
+
+CARLA_EXPORT
+int jack_midi_event_get(jack_midi_event_t* ev, void* buf, uint32_t index)
+{
+    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf->isInput, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(index < jmidibuf->count, ENODATA);
+
+    std::memcpy(ev, &jmidibuf->events[index], sizeof(jack_midi_event_t));
     return 0;
 }
 
 CARLA_EXPORT
-int jack_midi_event_get(jack_midi_event_t*, void*, uint32_t)
+void jack_midi_clear_buffer(void* buf)
 {
-    return ENODATA;
+    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput,);
+
+    jmidibuf->count = 0;
+    jmidibuf->bufferPoolPos = 0;
+    std::memset(jmidibuf->bufferPool, 0, JackMidiPortBuffer::kBufferPoolSize);
 }
 
 CARLA_EXPORT
-void jack_midi_clear_buffer(void*)
+void jack_midi_reset_buffer(void* buf)
 {
-}
-
-CARLA_EXPORT
-void jack_midi_reset_buffer(void*)
-{
+    jack_midi_clear_buffer(buf);
 }
 
 CARLA_EXPORT
 size_t jack_midi_max_event_size(void*)
 {
+    return JackMidiPortBuffer::kMaxEventSize;
+}
+
+CARLA_EXPORT
+jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_t size)
+{
+    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
+
+    if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
+        return nullptr;
+    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBuffer::kBufferPoolSize)
+        return nullptr;
+
+    jack_midi_data_t* const jmdata = jmidibuf->bufferPool + jmidibuf->bufferPoolPos;
+    jmidibuf->bufferPoolPos += size;
+
+    jmidibuf->events[jmidibuf->count++] = { frame, size, jmdata };
+    std::memset(jmdata, 0, size);
+    return jmdata;
+}
+
+CARLA_EXPORT
+int jack_midi_event_write(void* buf, jack_nframes_t frame, const jack_midi_data_t* data, size_t size)
+{
+    JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
+    CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, EFAULT);
+
+    if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
+        return ENOBUFS;
+    if (jmidibuf->bufferPoolPos + size >= JackMidiPortBuffer::kBufferPoolSize)
+        return ENOBUFS;
+
+    jack_midi_data_t* const jmdata = jmidibuf->bufferPool + jmidibuf->bufferPoolPos;
+    jmidibuf->bufferPoolPos += size;
+
+    jmidibuf->events[jmidibuf->count++] = { frame, size, jmdata };
+    std::memcpy(jmdata, data, size);
     return 0;
-}
-
-CARLA_EXPORT
-jack_midi_data_t* jack_midi_event_reserve(void*, jack_nframes_t, size_t)
-{
-    return nullptr;
-}
-
-CARLA_EXPORT
-int jack_midi_event_write(void*, jack_nframes_t, const jack_midi_data_t*, size_t)
-{
-    return ENOBUFS;
 }
 
 CARLA_EXPORT

@@ -59,6 +59,32 @@ class CarlaJackAppClient;
 struct JackClientState;
 struct JackServerState;
 
+struct JackMidiPortBuffer {
+    static const size_t kMaxEventSize   = 128;
+    static const size_t kMaxEventCount  = 512;
+    static const size_t kBufferPoolSize = kMaxEventCount*8;
+
+    uint16_t count;
+    bool isInput;
+    jack_midi_event_t* events;
+
+    size_t bufferPoolPos;
+    jack_midi_data_t* bufferPool;
+
+    JackMidiPortBuffer(const bool input)
+        : count(0),
+          isInput(input),
+          events(new jack_midi_event_t[kMaxEventCount]),
+          bufferPoolPos(0),
+          bufferPool(new jack_midi_data_t[kBufferPoolSize]) {}
+
+    ~JackMidiPortBuffer()
+    {
+        delete[] events;
+        delete[] bufferPool;
+    }
+};
+
 struct JackPortState {
     char* name;
     char* fullname;

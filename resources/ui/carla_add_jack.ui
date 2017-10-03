@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>414</width>
+    <width>418</width>
     <height>306</height>
    </rect>
   </property>
@@ -314,9 +314,6 @@
       </item>
       <item row="0" column="6">
        <widget class="QLabel" name="label_7">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="text">
          <string>MIDI inputs:</string>
         </property>
@@ -327,9 +324,6 @@
       </item>
       <item row="0" column="7">
        <widget class="QSpinBox" name="sb_midi_ins">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="maximum">
          <number>1</number>
         </property>

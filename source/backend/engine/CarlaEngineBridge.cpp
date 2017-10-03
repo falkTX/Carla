@@ -1094,6 +1094,7 @@ protected:
                     const uint8_t  size(fShmRtClientControl.readByte());
                     CARLA_SAFE_ASSERT_BREAK(size > 0);
 
+                    // FIXME variable-size stack
                     uint8_t data[size];
 
                     for (uint8_t i=0; i<size; ++i)
