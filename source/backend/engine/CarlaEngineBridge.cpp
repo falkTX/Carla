@@ -201,7 +201,7 @@ public:
             fShmNonRtServerControl.commitWrite();
         }
 
-        startThread(10);
+        startThread(Thread::realtimeAudioPriority);
 
         return true;
     }
@@ -1185,7 +1185,7 @@ protected:
                     std::size_t curMidiDataPos = 0;
 
                     if (pData->events.in[0].type != kEngineEventTypeNull)
-                        carla_zeroStructs(pData->events.in,  kMaxEngineEventInternalCount);
+                        carla_zeroStructs(pData->events.in, kMaxEngineEventInternalCount);
 
                     if (pData->events.out[0].type != kEngineEventTypeNull)
                     {

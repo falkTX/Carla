@@ -21,13 +21,14 @@
 #include "CarlaThread.hpp"
 
 using juce::FloatVectorOperations;
+using juce::Thread;
 using juce::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJackRealtimeThread : public CarlaThread
+class CarlaJackRealtimeThread : public Thread
 {
 public:
     struct Callback {
@@ -37,7 +38,7 @@ public:
     };
 
     CarlaJackRealtimeThread(Callback* const callback)
-        : CarlaThread("CarlaJackRealtimeThread"),
+        : Thread("CarlaJackRealtimeThread"),
           fCallback(callback) {}
 
 protected:
@@ -52,7 +53,7 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJackNonRealtimeThread : public CarlaThread
+class CarlaJackNonRealtimeThread : public Thread
 {
 public:
     struct Callback {
@@ -62,7 +63,7 @@ public:
     };
 
     CarlaJackNonRealtimeThread(Callback* const callback)
-        : CarlaThread("CarlaJackNonRealtimeThread"),
+        : Thread("CarlaJackNonRealtimeThread"),
           fCallback(callback) {}
 
 protected:
@@ -173,7 +174,7 @@ public:
 
     pthread_t getRealtimeThreadId() const noexcept
     {
-        return fRealtimeThread.getThreadId();
+        return (pthread_t)fRealtimeThread.getThreadId();
     }
 
     // -------------------------------------------------------------------
@@ -413,11 +414,6 @@ bool CarlaJackAppClient::handleRtData()
                 // location to start of audio outputs (shm buffer)
                 float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fNumPorts.audioIns);
 
-                // silence outputs first
-                if (fNumPorts.audioOuts > 0)
-                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
-
-                // see if there's any clients
                 if (! fClients.isEmpty())
                 {
                     // save tranport for all clients
@@ -447,8 +443,7 @@ bool CarlaJackAppClient::handleRtData()
                         fServer.position.valid = static_cast<jack_position_bits_t>(0);
                     }
 
-                    // clear audio buffer for unused ports
-                    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+                    int numClientOutputsProcessed = 0;
 
                     // now go through each client
                     for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
@@ -456,17 +451,16 @@ bool CarlaJackAppClient::handleRtData()
                         JackClientState* const jclient(it.getValue(nullptr));
                         CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                        int numClientOutputsProcessed = 0;
-
                         const CarlaMutexTryLocker cmtl2(jclient->mutex);
 
                         // check if we can process
                         if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                         {
+                            if (fNumPorts.audioOuts > 0)
+                                FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
+
                             if (jclient->deactivated)
-                            {
                                 fShmRtClientControl.data->procFlags = 1;
-                            }
                         }
                         else
                         {
@@ -475,6 +469,8 @@ bool CarlaJackAppClient::handleRtData()
                             float* fdataReal = fShmAudioPool.data;
                             // safe temp location for output, mixed down to shm buffer later on
                             float* fdataCopy = fAudioPoolCopy;
+                            // wherever we're using fAudioTmpBuf
+                            bool needsTmpBufClear = false;
 
                             // set inputs
                             i = 0;
@@ -491,6 +487,7 @@ bool CarlaJackAppClient::handleRtData()
                                     else
                                     {
                                         jport->buffer = fAudioTmpBuf;
+                                        needsTmpBufClear = true;
                                     }
                                 }
                             }
@@ -518,6 +515,7 @@ bool CarlaJackAppClient::handleRtData()
                                     else
                                     {
                                         jport->buffer = fAudioTmpBuf;
+                                        needsTmpBufClear = true;
                                     }
                                 }
                             }
@@ -528,26 +526,45 @@ bool CarlaJackAppClient::handleRtData()
                                 fdataCopy += fServer.bufferSize;
                             }
 
+                            if (needsTmpBufClear)
+                                FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+
                             jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
 
                             if (fNumPorts.audioOuts > 0)
                             {
-                                ++numClientOutputsProcessed;
-                                FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
-                                                            fServer.bufferSize*fNumPorts.audioOuts);
+                                if (++numClientOutputsProcessed == 1)
+                                {
+                                    // first client, we can copy stuff over
+                                    FloatVectorOperations::copy(fdataRealOuts, fdataCopyOuts,
+                                                                fServer.bufferSize*fNumPorts.audioOuts);
+                                }
+                                else
+                                {
+                                    // subsequent clients, add data (then divide by number of clients later on)
+                                    FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
+                                                               fServer.bufferSize*fNumPorts.audioOuts);
+                                }
                             }
                         }
+                    }
 
-                        if (numClientOutputsProcessed > 1)
-                        {
-                            FloatVectorOperations::multiply(fdataRealOuts,
-                                                            1.0f/static_cast<float>(numClientOutputsProcessed),
-                                                            fServer.bufferSize*fNumPorts.audioOuts);
-                        }
+                    if (numClientOutputsProcessed > 1)
+                    {
+                        // more than 1 client active, need to divide buffers
+                        FloatVectorOperations::multiply(fdataRealOuts,
+                                                        1.0f/static_cast<float>(numClientOutputsProcessed),
+                                                        fServer.bufferSize*fNumPorts.audioOuts);
                     }
                 }
+                // fClients.isEmpty()
+                else if (fNumPorts.audioOuts > 0)
+                {
+                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
+                }
 
-                carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
+                if (fNumPorts.midiOuts > 0)
+                    carla_zeroBytes(fShmRtClientControl.data->midiOut, kBridgeRtClientDataMidiOutSize);
             }
             else
             {
@@ -743,7 +760,7 @@ void CarlaJackAppClient::runRealtimeThread()
 
     bool quitReceived = false;
 
-    for (; ! fRealtimeThread.shouldThreadExit();)
+    for (; ! fRealtimeThread.threadShouldExit();)
     {
         if (handleRtData())
         {
@@ -764,20 +781,31 @@ void CarlaJackAppClient::runNonRealtimeThread()
     if (! initSharedMemmory())
         return;
 
-    fRealtimeThread.startThread();
+    fRealtimeThread.startThread(Thread::realtimeAudioPriority);
 
     fLastPingTime = Time::currentTimeMillis();
     carla_stdout("Carla Jack Client Ready!");
 
-    bool quitReceived = false;
+    bool quitReceived = false,
+         timedOut = false;
 
-    for (; ! fNonRealtimeThread.shouldThreadExit();)
+    for (; ! fNonRealtimeThread.threadShouldExit();)
     {
         carla_msleep(50);
 
-        if (handleNonRtData())
+        try {
+            quitReceived = handleNonRtData();
+        } CARLA_SAFE_EXCEPTION("handleNonRtData");
+
+        if (quitReceived)
+            break;
+
+        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000)
         {
-            quitReceived = true;
+            carla_stderr("Did not receive ping message from server for 30 secs, closing...");
+
+            timedOut = true;
+            fRealtimeThread.signalThreadShouldExit();
             break;
         }
     }
@@ -787,6 +815,13 @@ void CarlaJackAppClient::runNonRealtimeThread()
     if (quitReceived)
     {
         carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit by carla");
+
+        ::kill(::getpid(), SIGTERM);
+    }
+    else if (timedOut)
+    {
+        // TODO send shutdown?
+        carla_stderr("CarlaJackAppClient runNonRealtimeThread END - timedOut");
 
         ::kill(::getpid(), SIGTERM);
     }
