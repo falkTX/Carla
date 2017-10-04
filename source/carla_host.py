@@ -1600,6 +1600,9 @@ class HostWindow(QMainWindow):
     def slot_fileTreeDoubleClicked(self, modelIndex):
         filename = self.fDirModel.filePath(modelIndex)
 
+        if not self.ui.listWidget.isDragUrlValid(filename):
+            return
+
         if not self.host.load_file(filename):
             CustomMessageBox(self, QMessageBox.Critical, self.tr("Error"),
                              self.tr("Failed to load file"),

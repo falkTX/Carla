@@ -1154,6 +1154,22 @@ bool CarlaEngine::loadFile(const char* const filename)
     }
 
     // -------------------------------------------------------------------
+    // Direct plugin binaries
+
+#ifdef CARLA_OS_MAC
+    if (extension == "vst")
+        return addPlugin(PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr);
+#else
+    if (extension == "dll" || extension == "so")
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr, 0x0);
+#endif
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+    if (extension == "vst3")
+        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr, 0x0);
+#endif
+
+    // -------------------------------------------------------------------
 
     setLastError("Unknown file extension");
     return false;

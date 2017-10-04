@@ -196,12 +196,14 @@ class RackListWidget(QListWidget):
 
         exts = gCarla.utils.get_supported_file_extensions().split(";")
 
-        #exts.append(".dll")
+        if WINDOWS and not MACOS:
+            # FIXME not for disabled bridges
+            exts.append(".dll")
 
-        #if MACOS:
-            #exts.append(".dylib")
-        #if not WINDOWS:
-            #exts.append(".so")
+        if MACOS or WINDOWS:
+            exts.append(".vst3")
+        else:
+            exts.append(".so")
 
         self.fSupportedExtensions = tuple(i.replace("*","").lower() for i in exts)
         self.fLastSelectedItem    = None
@@ -238,16 +240,14 @@ class RackListWidget(QListWidget):
         self.clearSelection()
         self.clearFocus()
 
-    def isDragUrlValid(self, url):
-        filename = url.toLocalFile()
-
-        #if os.path.isdir(filename):
+    def isDragUrlValid(self, filename):
+        if os.path.isdir(filename):
             #if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 #return True
-            #if MACOS and filename.lower().endswith((".vst", ".vst3")):
-                #return True
+            if MACOS and filename.lower().endswith((".vst", ".vst3")):
+                return True
 
-        if os.path.isfile(filename):
+        elif os.path.isfile(filename):
             if filename.lower().endswith(self.fSupportedExtensions):
                 return True
 
@@ -259,7 +259,7 @@ class RackListWidget(QListWidget):
         urls = event.mimeData().urls()
 
         for url in urls:
-            if self.isDragUrlValid(url):
+            if self.isDragUrlValid(url.toLocalFile()):
                 self.fWasLastDragValid = True
                 event.acceptProposedAction()
                 return
