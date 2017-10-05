@@ -1276,7 +1276,7 @@ public:
 
     //==============================================================================
     /** LV2 specific calls, saving/restore as string. */
-    virtual String getStateInformationString () { return String::empty; }
+    virtual String getStateInformationString () { return String(); }
     virtual void setStateInformationString (const String&) {}
 
     //==============================================================================

@@ -24,6 +24,22 @@ endif
 BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
 BUILD_CXX_FLAGS += $(NATIVE_PLUGINS_FLAGS)
 
+ifeq ($(HAVE_LIBLO),true)
+BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
+endif
+
+ifeq ($(HAVE_FLUIDSYNTH),true)
+BUILD_CXX_FLAGS += $(FLUIDSYNTH_FLAGS)
+endif
+
+ifeq ($(HAVE_LINUXSAMPLER),true)
+BUILD_CXX_FLAGS += $(LINUXSAMPLER_FLAGS)
+endif
+
+ifeq ($(HAVE_X11),true)
+BUILD_CXX_FLAGS += $(X11_FLAGS)
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 # Libs
 

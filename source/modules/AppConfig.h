@@ -296,6 +296,13 @@
 */
 #define JUCE_CATCH_UNHANDLED_EXCEPTIONS 0
 
+/** Config: JUCE_ALLOW_STATIC_NULL_VARIABLES
+    If disabled, this will turn off dangerous static globals like String::empty, var::null, etc
+    which can cause nasty order-of-initialisation problems if they are referenced during static
+    constructor code.
+*/
+#define JUCE_ALLOW_STATIC_NULL_VARIABLES 0
+
 // --------------------------------------------------------------------------------------------------------------------
 // juce_data_structures
 
