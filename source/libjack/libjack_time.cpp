@@ -15,7 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// need to include this first
 #include "libjack.hpp"
 
 CARLA_BACKEND_USE_NAMESPACE
