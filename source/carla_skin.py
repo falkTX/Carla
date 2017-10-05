@@ -1040,6 +1040,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fIdleTimerId != 0:
             actRemove.setVisible(False)
 
+        menu.addSeparator()
+
+        actExportLV2 = menu.addAction(self.tr("Export LV2..."))
+
         # -------------------------------------------------------------
         # exec
 
@@ -1109,6 +1113,21 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
 
         elif actSel == actRemove:
             if not self.host.remove_plugin(self.fPluginId):
+                CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
+                                       self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
+
+        # -------------------------------------------------------------
+        # Export LV2
+
+        elif actSel == actExportLV2:
+            ret = QFileDialog.getSaveFileName(self, self.tr("Export Plugin as LV2"), "", "", QFileDialog.ShowDirsOnly|QFileDialog.HideNameFilterDetails)
+
+            if config_UseQt5:
+                ret = ret[0]
+            if not ret:
+                return
+
+            if not self.host.export_plugin_lv2(self.fPluginId, ret):
                 CustomMessageBox(self, QMessageBox.Warning, self.tr("Error"), self.tr("Operation failed"),
                                        self.host.get_last_error(), QMessageBox.Ok, QMessageBox.Ok)
 

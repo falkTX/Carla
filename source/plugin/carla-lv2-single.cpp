@@ -38,8 +38,11 @@ public:
           fIsOffline(false)
     {
         // xxxxx
+        CarlaString binaryDir(bundlePath);
+        binaryDir += CARLA_OS_SEP_STR "bin" CARLA_OS_SEP_STR;
+
         CarlaString resourceDir(bundlePath);
-        resourceDir += CARLA_OS_SEP_STR "resources" CARLA_OS_SEP_STR;
+        resourceDir += CARLA_OS_SEP_STR "res" CARLA_OS_SEP_STR;
 
         pData->bufferSize = bufferSize;
         pData->sampleRate = sampleRate;
@@ -57,12 +60,15 @@ public:
         if (pData->options.binaryDir != nullptr)
             delete[] pData->options.binaryDir;
 
+        pData->options.binaryDir   = binaryDir.dup();
         pData->options.resourceDir = resourceDir.dup();
-        pData->options.binaryDir   = carla_strdup(carla_get_library_folder());
 
         setCallback(_engine_callback, this);
 
-        if (! addPlugin(BINARY_NATIVE, PLUGIN_VST2, "/usr/lib/vst/3BandEQ-vst.so", nullptr, nullptr, 0, nullptr, 0x0))
+        using juce::File;
+        const File pluginFile(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("xml"));
+
+        if (! loadProject(pluginFile.getFullPathName().toRawUTF8()))
         {
             carla_stderr2("Failed to init plugin, possible reasons: %s", getLastError());
             return;
@@ -462,7 +468,13 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
         return nullptr;
     }
 
-    return new CarlaEngineLV2Single(bufferSize, sampleRate, bundlePath, uridMap);
+    CarlaEngineLV2Single* const instance(new CarlaEngineLV2Single(bufferSize, sampleRate, bundlePath, uridMap));
+
+    if (instance->hasPlugin())
+        return (LV2_Handle)instance;
+
+    delete instance;
+    return nullptr;
 }
 
 #define instancePtr ((CarlaEngineLV2Single*)instance)

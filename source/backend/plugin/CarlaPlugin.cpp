@@ -30,6 +30,7 @@
 using juce::CharPointer_UTF8;
 using juce::File;
 using juce::MemoryOutputStream;
+using juce::Result;
 using juce::ScopedPointer;
 using juce::String;
 using juce::XmlDocument;
@@ -922,9 +923,200 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
     carla_debug("CarlaPlugin::exportAsLV2(\"%s\")", lv2path);
 
-    // TODO
+    CarlaString bundlepath(lv2path);
 
-    return false;
+    if (! bundlepath.endsWith(".lv2"))
+        bundlepath += ".lv2";
+
+    const File bundlefolder(bundlepath.buffer());
+
+    if (bundlefolder.existsAsFile())
+    {
+        pData->engine->setLastError("Requested filename already exists as file, use a folder instead");
+        return false;
+    }
+
+    if (! bundlefolder.exists())
+    {
+        const Result res(bundlefolder.createDirectory());
+
+        if (res.failed())
+        {
+            pData->engine->setLastError(res.getErrorMessage().toRawUTF8());
+            return false;
+        }
+    }
+
+    CarlaString symbol(pData->name);
+    symbol.toBasic();
+
+    char strBufName[STR_MAX+1];
+    char strBufSymbol[STR_MAX+1];
+    strBufName[STR_MAX] = strBufSymbol[STR_MAX] = '\0';
+
+    {
+        const CarlaString pluginFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".xml");
+
+        if (! saveStateToFile(pluginFilename))
+            return false;
+    }
+
+    {
+        MemoryOutputStream manifestStream;
+
+        manifestStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
+        manifestStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
+        manifestStream << "\n";
+        manifestStream << "<" << symbol.buffer() << ".ttl>\n";
+        manifestStream << "    a lv2:Plugin ;\n";
+        manifestStream << "    lv2:binary <" << symbol.buffer() << ".so> ;\n";
+        manifestStream << "    rdfs:seeAlso <" << symbol.buffer() << ".ttl> .\n";
+
+        const CarlaString manifestFilename(bundlepath + CARLA_OS_SEP_STR "manifest.ttl");
+        const File manifestFile(manifestFilename.buffer());
+
+        if (! manifestFile.replaceWithData(manifestStream.getData(), manifestStream.getDataSize()))
+        {
+            pData->engine->setLastError("Failed to write manifest.ttl file");
+            return false;
+        }
+    }
+
+    {
+        MemoryOutputStream mainStream;
+
+        mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
+        mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
+        mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
+        mainStream << "\n";
+        mainStream << "<>\n";
+        mainStream << "    a lv2:Plugin ;\n";
+        mainStream << "\n";
+        mainStream << "    lv2:requiredFeature <http://lv2plug.in/ns/ext/buf-size#boundedBlockLength> ,\n";
+        mainStream << "                        <http://lv2plug.in/ns/ext/options#options> ,\n";
+        mainStream << "                        <http://lv2plug.in/ns/ext/urid#map> ;\n";
+        mainStream << "\n";
+
+        int portIndex = 0;
+
+        for (uint32_t i=0; i<pData->audioIn.count; ++i)
+        {
+            const String portIndexNum(portIndex++);
+            const String portIndexLabel(portIndex);
+
+            mainStream << "    lv2:port [\n";
+            mainStream << "        a lv2:InputPort, lv2:AudioPort ;\n";
+            mainStream << "        lv2:index " << portIndexNum << " ;\n";
+            mainStream << "        lv2:symbol \"lv2_audio_in_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:name \"Audio Input " << portIndexLabel << "\" ;\n";
+            mainStream << "    ] ;\n";
+        }
+
+        for (uint32_t i=0; i<pData->audioOut.count; ++i)
+        {
+            const String portIndexNum(portIndex++);
+            const String portIndexLabel(portIndex);
+
+            mainStream << "    lv2:port [\n";
+            mainStream << "        a lv2:OutputPort, lv2:AudioPort ;\n";
+            mainStream << "        lv2:index " << portIndexNum << " ;\n";
+            mainStream << "        lv2:symbol \"lv2_audio_out_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:name \"Audio Output " << portIndexLabel << "\" ;\n";
+            mainStream << "    ] ;\n";
+        }
+
+        mainStream << "    lv2:port [\n";
+        mainStream << "        a lv2:InputPort, lv2:ControlPort ;\n";
+        mainStream << "        lv2:index " << String(portIndex++) << " ;\n";
+        mainStream << "        lv2:name \"freewheel\" ;\n";
+        mainStream << "        lv2:symbol \"freewheel\" ;\n";
+        mainStream << "        lv2:default 0 ;\n";
+        mainStream << "        lv2:minimum 0 ;\n";
+        mainStream << "        lv2:maximum 1 ;\n";
+        mainStream << "        lv2:portProperty lv2:toggled , lv2:integer;\n";
+        // TODO designation, hidegui
+        mainStream << "    ] ;\n";
+
+        for (uint32_t i=0; i<pData->param.count; ++i)
+        {
+            const ParameterData&   paramData(pData->param.data[i]);
+            const ParameterRanges& paramRanges(pData->param.ranges[i]);
+
+            const String portIndexNum(portIndex++);
+            const String portIndexLabel(portIndex);
+
+            mainStream << "    lv2:port [\n";
+
+            if (paramData.type == PARAMETER_INPUT)
+                mainStream << "        a lv2:InputPort, lv2:ControlPort ;\n";
+            else
+                mainStream << "        a lv2:OutputPort, lv2:ControlPort ;\n";
+
+            if (paramData.hints & PARAMETER_IS_BOOLEAN)
+                mainStream << "        lv2:portProperty lv2:toggled ;\n";
+
+            if (paramData.hints & PARAMETER_IS_INTEGER)
+                mainStream << "        lv2:portProperty lv2:integer ;\n";
+
+            // TODO logarithmic, enabled (not on gui), automable, samplerate, scalepoints
+
+            strBufName[0] = strBufSymbol[0] = '\0';
+            getParameterName(i, strBufName);
+            getParameterSymbol(i, strBufSymbol);
+
+            if (strBufSymbol[0] == '\0')
+            {
+                CarlaString s(strBufName);
+                s.toBasic();
+                std::memcpy(strBufSymbol, s.buffer(), s.length()+1);
+            }
+
+            mainStream << "        lv2:index " << portIndexNum << " ;\n";
+            mainStream << "        lv2:symbol \"" << strBufSymbol << "\" ;\n";
+            mainStream << "        lv2:name \"\"\"" << strBufName << "\"\"\" ;\n";
+            mainStream << "        lv2:default " << String(paramRanges.def) << " ;\n";
+            mainStream << "        lv2:minimum " << String(paramRanges.min) << " ;\n";
+            mainStream << "        lv2:maximum " << String(paramRanges.max) << " ;\n";
+
+            // TODO midiCC, midiChannel
+
+            mainStream << "    ] ;\n";
+        }
+
+        mainStream << "    rdfs:comment \"Plugin generated using Carla LV2 export.\" ;\n";
+        mainStream << "    doap:name \"\"\"" << getName() << "\"\"\" .\n";
+        mainStream << "\n";
+
+        const CarlaString mainFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".ttl");
+        const File mainFile(mainFilename.buffer());
+
+        if (! mainFile.replaceWithData(mainStream.getData(), mainStream.getDataSize()))
+        {
+            pData->engine->setLastError("Failed to write main plugin ttl file");
+            return false;
+        }
+    }
+
+    const CarlaString binaryFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".so");
+
+    const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-lv2-single.so"));
+    const File binaryFileTarget(binaryFilename.buffer());
+
+    if (! binaryFileSource.createSymbolicLink(binaryFileTarget, true))
+    {
+        pData->engine->setLastError("Failed to create symbolik link of plugin binary");
+        return false;
+    }
+
+    const EngineOptions& opts(pData->engine->getOptions());
+
+    const CarlaString binFolderTarget(bundlepath + CARLA_OS_SEP_STR + "bin");
+    const CarlaString resFolderTarget(bundlepath + CARLA_OS_SEP_STR + "res");
+
+    File(opts.binaryDir).createSymbolicLink(File(binFolderTarget.buffer()), true);
+    File(opts.resourceDir).createSymbolicLink(File(resFolderTarget.buffer()), true);
+
+    return true;
 }
 
 // -------------------------------------------------------------------

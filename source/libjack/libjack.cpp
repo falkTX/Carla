@@ -853,6 +853,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
         if (quitReceived)
             break;
 
+        /*
         if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
@@ -861,6 +862,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
             fRealtimeThread.signalThreadShouldExit();
             break;
         }
+        */
     }
 
     //callback(ENGINE_CALLBACK_ENGINE_STOPPED, 0, 0, 0, 0.0f, nullptr);
