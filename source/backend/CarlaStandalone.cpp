@@ -940,6 +940,25 @@ bool carla_save_plugin_state(uint pluginId, const char* filename)
     return false;
 }
 
+bool carla_export_plugin_lv2(uint pluginId, const char* lv2path)
+{
+    CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
+    carla_debug("carla_export_plugin_lv2(%i, \"%s\")", pluginId, lv2path);
+
+    if (gStandalone.engine == nullptr)
+    {
+        carla_stderr2("Engine is not running");
+        gStandalone.lastError = "Engine is not running";
+        return false;
+    }
+
+    if (CarlaPlugin* const plugin = gStandalone.engine->getPlugin(pluginId))
+        return plugin->exportAsLV2(lv2path);
+
+    carla_stderr2("carla_export_plugin_lv2(%i, \"%s\") - could not find plugin", pluginId, lv2path);
+    return false;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 const CarlaPluginInfo* carla_get_plugin_info(uint pluginId)

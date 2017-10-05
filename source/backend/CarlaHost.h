@@ -535,6 +535,13 @@ CARLA_EXPORT bool carla_load_plugin_state(uint pluginId, const char* filename);
 CARLA_EXPORT bool carla_save_plugin_state(uint pluginId, const char* filename);
 
 /*!
+ * Export plugin as LV2.
+ * @param pluginId Plugin
+ * @param lv2path Path to lv2 plugin folder
+ */
+CARLA_EXPORT bool carla_export_plugin_lv2(uint pluginId, const char* lv2path);
+
+/*!
  * Get information from a plugin.
  * @param pluginId Plugin
  */

@@ -917,6 +917,16 @@ bool CarlaPlugin::loadStateFromFile(const char* const filename)
     return false;
 }
 
+bool CarlaPlugin::exportAsLV2(const char* const lv2path)
+{
+    CARLA_SAFE_ASSERT_RETURN(lv2path != nullptr && lv2path[0] != '\0', false);
+    carla_debug("CarlaPlugin::exportAsLV2(\"%s\")", lv2path);
+
+    // TODO
+
+    return false;
+}
+
 // -------------------------------------------------------------------
 // Set data (internal stuff)
 

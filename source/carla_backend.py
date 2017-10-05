@@ -1474,6 +1474,12 @@ class CarlaHostMeta(object):
     def save_plugin_state(self, pluginId, filename):
         raise NotImplementedError
 
+    # Export plugin as LV2.
+    # @param pluginId Plugin
+    # @param lv2path Path to lv2 plugin folder
+    def export_plugin_lv2(self, pluginId, lv2path):
+        raise NotImplementedError
+
     # Get information from a plugin.
     # @param pluginId Plugin
     @abstractmethod
@@ -1959,6 +1965,9 @@ class CarlaHostNull(CarlaHostMeta):
     def save_plugin_state(self, pluginId, filename):
         return False
 
+    def export_plugin_lv2(self, pluginId, lv2path):
+        return False
+
     def get_plugin_info(self, pluginId):
         return PyCarlaPluginInfo
 
@@ -2235,6 +2244,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_save_plugin_state.argtypes = [c_uint, c_char_p]
         self.lib.carla_save_plugin_state.restype = c_bool
 
+        self.lib.carla_export_plugin_lv2.argtypes = [c_uint, c_char_p]
+        self.lib.carla_export_plugin_lv2.restype = c_bool
+
         self.lib.carla_get_plugin_info.argtypes = [c_uint]
         self.lib.carla_get_plugin_info.restype = POINTER(CarlaPluginInfo)
 
@@ -2505,6 +2517,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def save_plugin_state(self, pluginId, filename):
         return bool(self.lib.carla_save_plugin_state(pluginId, filename.encode("utf-8")))
+
+    def export_plugin_lv2(self, pluginId, lv2path):
+        return bool(self.lib.carla_export_plugin_lv2(pluginId, lv2path.encode("utf-8")))
 
     def get_plugin_info(self, pluginId):
         return structToDict(self.lib.carla_get_plugin_info(pluginId).contents)
@@ -2838,6 +2853,10 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def save_plugin_state(self, pluginId, filename):
         return self.sendMsgAndSetError(["save_plugin_state", pluginId, filename])
+
+    def export_plugin_lv2(self, pluginId, lv2path):
+        self.fLastError = "Operation unavailable in plugin version"
+        return False
 
     def get_plugin_info(self, pluginId):
         return self.fPluginsInfo[pluginId].pluginInfo

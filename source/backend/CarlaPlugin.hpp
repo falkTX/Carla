@@ -416,6 +416,11 @@ public:
      */
     bool loadStateFromFile(const char* const filename);
 
+    /*!
+     * Export this plugin as LV2.
+     */
+    bool exportAsLV2(const char* const lv2path);
+
     // -------------------------------------------------------------------
     // Set data (internal stuff)
 
