@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -966,11 +966,20 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
         manifestStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         manifestStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
+        manifestStream << "@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .\n";
         manifestStream << "\n";
         manifestStream << "<" << symbol.buffer() << ".ttl>\n";
         manifestStream << "    a lv2:Plugin ;\n";
         manifestStream << "    lv2:binary <" << symbol.buffer() << ".so> ;\n";
         manifestStream << "    rdfs:seeAlso <" << symbol.buffer() << ".ttl> .\n";
+        manifestStream << "\n";
+        manifestStream << "<ext-ui>\n";
+        manifestStream << "    a <http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget> ;\n";
+        manifestStream << "    ui:binary <" << symbol.buffer() << ".so> ;\n";
+        manifestStream << "    lv2:extensionData <http://lv2plug.in/ns/extensions/ui#idleInterface> ,\n";
+        manifestStream << "                      <http://lv2plug.in/ns/extensions/ui#showInterface> ;\n";
+        manifestStream << "    lv2:requiredFeature <http://lv2plug.in/ns/ext/instance-access> .\n";
+        manifestStream << "\n";
 
         const CarlaString manifestFilename(bundlepath + CARLA_OS_SEP_STR "manifest.ttl");
         const File manifestFile(manifestFilename.buffer());
@@ -988,6 +997,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
         mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
+        mainStream << "@prefix ui:   <http://lv2plug.in/ns/extensions/ui#> .\n";
         mainStream << "\n";
         mainStream << "<>\n";
         mainStream << "    a lv2:Plugin ;\n";
@@ -996,6 +1006,12 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         mainStream << "                        <http://lv2plug.in/ns/ext/options#options> ,\n";
         mainStream << "                        <http://lv2plug.in/ns/ext/urid#map> ;\n";
         mainStream << "\n";
+
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
+        {
+            mainStream << "    ui:ui <ext-ui> ;\n";
+            mainStream << "\n";
+        }
 
         int portIndex = 0;
 
@@ -1033,8 +1049,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         mainStream << "        lv2:default 0 ;\n";
         mainStream << "        lv2:minimum 0 ;\n";
         mainStream << "        lv2:maximum 1 ;\n";
-        mainStream << "        lv2:portProperty lv2:toggled , lv2:integer;\n";
-        // TODO designation, hidegui
+        mainStream << "        lv2:designation lv2:freeWheeling ;\n";
+        mainStream << "        lv2:portProperty lv2:toggled , lv2:integer ;\n";
+        mainStream << "        lv2:portProperty <http://lv2plug.in/ns/ext/port-props#notOnGUI> ;\n";
         mainStream << "    ] ;\n";
 
         for (uint32_t i=0; i<pData->param.count; ++i)
@@ -1069,6 +1086,15 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
                 CarlaString s(strBufName);
                 s.toBasic();
                 std::memcpy(strBufSymbol, s.buffer(), s.length()+1);
+
+                // FIXME - must be unique
+                if (strBufSymbol[0] >= '0' && strBufSymbol[0] <= '9')
+                {
+                    const size_t len(std::strlen(strBufSymbol));
+                    std::memmove(strBufSymbol+1, strBufSymbol, len);
+                    strBufSymbol[0]   = '_';
+                    strBufSymbol[len+1] = '\0';
+                }
             }
 
             mainStream << "        lv2:index " << portIndexNum << " ;\n";

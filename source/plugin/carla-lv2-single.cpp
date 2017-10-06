@@ -25,11 +25,24 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
+#include "juce_audio_basics/juce_audio_basics.h"
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "juce_gui_basics/juce_gui_basics.h"
+#else
+# include "juce_events/juce_events.h"
+#endif
+
+using juce::FloatVectorOperations;
+using juce::ScopedJuceInitialiser_GUI;
+using juce::SharedResourcePointer;
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaEngineLV2Single : public CarlaEngine
+class CarlaEngineLV2Single : public CarlaEngine,
+                             public LV2_External_UI_Widget
 {
 public:
     CarlaEngineLV2Single(const uint32_t bufferSize, const double sampleRate, const char* const bundlePath, const LV2_URID_Map* uridMap)
@@ -37,6 +50,10 @@ public:
           fIsRunning(false),
           fIsOffline(false)
     {
+        run  = extui_run;
+        show = extui_show;
+        hide = extui_hide;
+
         // xxxxx
         CarlaString binaryDir(bundlePath);
         binaryDir += CARLA_OS_SEP_STR "bin" CARLA_OS_SEP_STR;
@@ -158,6 +175,110 @@ public:
         fPorts.updateOutputs();
     }
 
+    // -----------------------------------------------------------------------------------------------------------------
+
+    void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
+                           LV2UI_Widget* widget, const LV2_Feature* const* features)
+    {
+        fUI.writeFunction = writeFunction;
+        fUI.controller = controller;
+
+        const LV2_URID_Map* uridMap = nullptr;
+
+        // -------------------------------------------------------------------------------------------------------------
+        // see if the host supports external-ui, get uridMap
+
+        for (int i=0; features[i] != nullptr; ++i)
+        {
+            if (std::strcmp(features[i]->URI, LV2_EXTERNAL_UI__Host) == 0 ||
+                std::strcmp(features[i]->URI, LV2_EXTERNAL_UI_DEPRECATED_URI) == 0)
+            {
+                fUI.host = (const LV2_External_UI_Host*)features[i]->data;
+            }
+            else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
+            {
+                uridMap = (const LV2_URID_Map*)features[i]->data;
+            }
+        }
+
+        if (fUI.host != nullptr)
+        {
+            fUI.name = fUI.host->plugin_human_id;
+            *widget  = (LV2_External_UI_Widget*)this;
+            return;
+        }
+
+        // -------------------------------------------------------------------------------------------------------------
+        // no external-ui support, use showInterface
+
+        for (int i=0; features[i] != nullptr; ++i)
+        {
+            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+            {
+                const LV2_Options_Option* const options((const LV2_Options_Option*)features[i]->data);
+
+                for (int j=0; options[j].key != 0; ++j)
+                {
+                    if (options[j].key == uridMap->map(uridMap->handle, LV2_UI__windowTitle))
+                    {
+                        fUI.name = (const char*)options[j].value;
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        if (fUI.name.isEmpty())
+            fUI.name = fPlugin->getName();
+
+        *widget = nullptr;
+    }
+
+    void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
+    {
+        if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
+            return;
+        if (portIndex >= fPorts.indexOffset || ! fUI.visible)
+            return;
+
+        const float value(*(const float*)buffer);
+        fPlugin->uiParameterChange(portIndex-fPorts.indexOffset, value);
+    }
+
+    void lv2ui_cleanup()
+    {
+        if (fUI.visible)
+            handleUiHide();
+
+        fUI.writeFunction = nullptr;
+        fUI.controller = nullptr;
+        fUI.host = nullptr;
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+    int lv2ui_idle() const
+    {
+        if (! fUI.visible)
+            return 1;
+
+        handleUiRun();
+        return 0;
+    }
+
+    int lv2ui_show()
+    {
+        handleUiShow();
+        return 0;
+    }
+
+    int lv2ui_hide()
+    {
+        handleUiHide();
+        return 0;
+    }
+
 protected:
     // -----------------------------------------------------------------------------------------------------------------
     // CarlaEngine virtual calls
@@ -208,17 +329,47 @@ protected:
         return "LV2 Plugin";
     }
 
-    void callback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr) noexcept override
-    {
-        CarlaEngine::callback(action, pluginId, value1, value2, value3, valueStr);
-
-        //if (action == ENGINE_CALLBACK_IDLE && ! pData->aboutToClose)
-        //    pHost->dispatcher(pHost->handle, NATIVE_HOST_OPCODE_HOST_IDLE, 0, 0, nullptr, 0.0f);
-    }
-
     void engineCallback(const EngineCallbackOpcode action, const uint pluginId, const int value1, const int value2, const float value3, const char* const valueStr)
     {
-        carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+        switch (action)
+        {
+        case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.visible)
+                fUI.writeFunction(fUI.controller, value1+fPorts.indexOffset, sizeof(float), 0, &value3);
+            break;
+
+        case ENGINE_CALLBACK_UI_STATE_CHANGED:
+            fUI.visible = value1 == 1;
+            if (fUI.host != nullptr)
+                fUI.host->ui_closed(fUI.controller);
+            break;
+
+        case ENGINE_CALLBACK_IDLE:
+            break;
+
+        default:
+            carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+            break;
+        }
+    }
+
+    // -----------------------------------------------------------------------------------------------------------------
+
+    void handleUiRun() const
+    {
+        fPlugin->uiIdle();
+    }
+
+    void handleUiShow()
+    {
+        fPlugin->showCustomUI(true);
+        fUI.visible = true;
+    }
+
+    void handleUiHide()
+    {
+        fUI.visible = false;
+        fPlugin->showCustomUI(false);
     }
 
     // -----------------------------------------------------------------------------------------------------------------
@@ -240,6 +391,7 @@ private:
         float*   paramsLast;
         float**  paramsPtr;
         bool*    paramsOut;
+        uint32_t indexOffset;
         const CarlaPlugin* plugin;
 
         Ports()
@@ -252,6 +404,7 @@ private:
               paramsLast(nullptr),
               paramsPtr(nullptr),
               paramsOut(nullptr),
+              indexOffset(1),
               plugin(nullptr) {}
 
         ~Ports()
@@ -320,6 +473,8 @@ private:
                     paramsOut [i] = plugin->isParameterOutput(i);
                 }
             }
+
+            indexOffset = numAudioIns + numAudioOuts + 1;
         }
 
         void connectPort(const uint32_t port, void* const dataLocation) noexcept
@@ -378,7 +533,41 @@ private:
 
     } fPorts;
 
+    struct UI {
+        LV2UI_Write_Function writeFunction;
+        LV2UI_Controller controller;
+        const LV2_External_UI_Host* host;
+        CarlaString name;
+        bool visible;
+
+        UI()
+          : writeFunction(nullptr),
+            controller(nullptr),
+            host(nullptr),
+            visible(false) {}
+
+    } fUI;
+
+    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceInitialiser;
+
+    // -------------------------------------------------------------------
+
     #define handlePtr ((CarlaEngineLV2Single*)handle)
+
+    static void extui_run(LV2_External_UI_Widget* handle)
+    {
+        handlePtr->handleUiRun();
+    }
+
+    static void extui_show(LV2_External_UI_Widget* handle)
+    {
+        handlePtr->handleUiShow();
+    }
+
+    static void extui_hide(LV2_External_UI_Widget* handle)
+    {
+        handlePtr->handleUiHide();
+    }
 
     static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -392,10 +581,10 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-// ---------------------------------------------------------------------------------------------------------------------
-// LV2 plugin descriptor functions
-
 CARLA_BACKEND_USE_NAMESPACE
+
+// ---------------------------------------------------------------------------------------------------------------------
+// LV2 DSP functions
 
 static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sampleRate, const char* bundlePath, const LV2_Feature* const* features)
 {
@@ -517,6 +706,85 @@ static const void* lv2_extension_data(const char* uri)
 #undef instancePtr
 
 // ---------------------------------------------------------------------------------------------------------------------
+// LV2 UI functions
+
+static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*,
+                                      LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
+                                      LV2UI_Widget* widget, const LV2_Feature* const* features)
+{
+    carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
+
+    CarlaEngineLV2Single* engine = nullptr;
+
+    for (int i=0; features[i] != nullptr; ++i)
+    {
+        if (std::strcmp(features[i]->URI, LV2_INSTANCE_ACCESS_URI) == 0)
+        {
+            engine = (CarlaEngineLV2Single*)features[i]->data;
+            break;
+        }
+    }
+
+    if (engine == nullptr)
+    {
+        carla_stderr("Host doesn't support instance-access, cannot show UI");
+        return nullptr;
+    }
+
+    engine->lv2ui_instantiate(writeFunction, controller, widget, features);
+
+    return (LV2UI_Handle)engine;
+}
+
+#define uiPtr ((CarlaEngineLV2Single*)ui)
+
+static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
+{
+    carla_debug("lv2ui_port_event(%p, %i, %i, %i, %p)", ui, portIndex, bufferSize, format, buffer);
+    uiPtr->lv2ui_port_event(portIndex, bufferSize, format, buffer);
+}
+
+static void lv2ui_cleanup(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_cleanup(%p)", ui);
+    uiPtr->lv2ui_cleanup();
+}
+
+static int lv2ui_idle(LV2UI_Handle ui)
+{
+    return uiPtr->lv2ui_idle();
+}
+
+static int lv2ui_show(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_show(%p)", ui);
+    return uiPtr->lv2ui_show();
+}
+
+static int lv2ui_hide(LV2UI_Handle ui)
+{
+    carla_debug("lv2ui_hide(%p)", ui);
+    return uiPtr->lv2ui_hide();
+}
+
+static const void* lv2ui_extension_data(const char* uri)
+{
+    carla_stdout("lv2ui_extension_data(\"%s\")", uri);
+
+    static const LV2UI_Idle_Interface uiidle = { lv2ui_idle };
+    static const LV2UI_Show_Interface uishow = { lv2ui_show, lv2ui_hide };
+
+    if (std::strcmp(uri, LV2_UI__idleInterface) == 0)
+        return &uiidle;
+    if (std::strcmp(uri, LV2_UI__showInterface) == 0)
+        return &uishow;
+
+    return nullptr;
+}
+
+#undef uiPtr
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Startup code
 
 CARLA_EXPORT
@@ -555,7 +823,24 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 {
     carla_stdout("lv2ui_descriptor(%i)", index);
 
-    return nullptr;
+    static CarlaString ret;
+
+    if (ret.isEmpty())
+    {
+        using namespace juce;
+        const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
+        ret = String("file://" + file.getFullPathName()).toRawUTF8();
+    }
+
+    static const LV2UI_Descriptor lv2UiExtDesc = {
+    /* URI            */ ret.buffer(),
+    /* instantiate    */ lv2ui_instantiate,
+    /* cleanup        */ lv2ui_cleanup,
+    /* port_event     */ lv2ui_port_event,
+    /* extension_data */ lv2ui_extension_data
+    };
+
+    return (index == 0) ? &lv2UiExtDesc : nullptr;
 }
 
 // ---------------------------------------------------------------------------------------------------------------------

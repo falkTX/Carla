@@ -883,7 +883,7 @@ public:
         if (fUI.host != nullptr)
         {
             fHost.uiName = carla_strdup(fUI.host->plugin_human_id);
-            *widget = this;
+            *widget = (LV2_External_UI_Widget_Compat*)this;
             return;
         }
 
@@ -1460,28 +1460,24 @@ private:
 
     // -------------------------------------------------------------------
 
-    #define handlePtr ((NativePlugin*)self)
+    #define handlePtr ((NativePlugin*)handle)
 
-    static void extui_run(LV2_External_UI_Widget_Compat* self)
+    static void extui_run(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiRun();
     }
 
-    static void extui_show(LV2_External_UI_Widget_Compat* self)
+    static void extui_show(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiShow();
     }
 
-    static void extui_hide(LV2_External_UI_Widget_Compat* self)
+    static void extui_hide(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiHide();
     }
 
-    #undef handlePtr
-
     // -------------------------------------------------------------------
-
-    #define handlePtr ((NativePlugin*)handle)
 
     static uint32_t host_get_buffer_size(NativeHostHandle handle)
     {

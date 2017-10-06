@@ -220,7 +220,7 @@ public:
           fShmNonRtServerControl(),
           fInfo()
     {
-        carla_debug("CarlaPluginJack::CarlaPluginJack(%p, %i, %s, %s)", engine, id, BinaryType2Str(btype), PluginType2Str(ptype));
+        carla_debug("CarlaPluginJack::CarlaPluginJack(%p, %i)", engine, id);
 
         pData->hints |= PLUGIN_IS_BRIDGE;
     }

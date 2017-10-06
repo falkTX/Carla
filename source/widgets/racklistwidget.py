@@ -196,7 +196,7 @@ class RackListWidget(QListWidget):
 
         exts = gCarla.utils.get_supported_file_extensions().split(";")
 
-        if WINDOWS and not MACOS:
+        if WINDOWS or (LINUX and not MACOS):
             # FIXME not for disabled bridges
             exts.append(".dll")
 
