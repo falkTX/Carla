@@ -621,7 +621,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     CARLA_SAFE_ASSERT_RETURN(numWindows != 0, true);
 
     Window* windows = (Window*)data;
-    Window  lastGoodWindow = 0;
+    Window  lastGoodWindowPID = 0, lastGoodWindowNameSimple = 0, lastGoodWindowNameUTF8 = 0;
 
     for (ulong i = 0; i < numWindows; i++)
     {
@@ -646,12 +646,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
                 CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
 
                 if (*(ulong*)pidData == static_cast<ulong>(pid))
-                {
-                    CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0, true);
-                    lastGoodWindow = window;
-                    carla_stdout("Match found using pid");
-                    break;
-                }
+                    lastGoodWindowPID = window;
             }
         }
 
@@ -675,9 +670,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
             if (std::strstr((const char*)nameData, uiTitle) != nullptr)
             {
-                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
-                lastGoodWindow = window;
-                carla_stdout("Match found using UTF-8 name");
+                lastGoodWindowNameUTF8 = window;
+
+                if (lastGoodWindowPID == window)
+                    break;
             }
         }
 
@@ -696,29 +692,74 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
             if (std::strstr(wmName, uiTitle) != nullptr)
             {
-                CARLA_SAFE_ASSERT_RETURN(lastGoodWindow == window || lastGoodWindow == 0,  true);
-                lastGoodWindow = window;
-                carla_stdout("Match found using simple name");
+                lastGoodWindowNameSimple = window;
+
+                if (lastGoodWindowPID == window)
+                    break;
             }
         }
     }
 
-    if (lastGoodWindow == 0)
+    if (lastGoodWindowPID == 0 && lastGoodWindowNameSimple == 0 && lastGoodWindowNameUTF8 == 0)
         return false;
+
+    Window windowToMap;
+
+    if (lastGoodWindowPID != 0)
+    {
+        if (lastGoodWindowPID == lastGoodWindowNameSimple && lastGoodWindowPID == lastGoodWindowNameUTF8)
+        {
+            carla_stdout("Match found using pid, simple and UTF-8 name all at once, nice!");
+            windowToMap = lastGoodWindowPID;
+        }
+        else if (lastGoodWindowPID == lastGoodWindowNameUTF8)
+        {
+            carla_stdout("Match found using pid and UTF-8 name");
+            windowToMap = lastGoodWindowPID;
+        }
+        else if (lastGoodWindowPID == lastGoodWindowNameSimple)
+        {
+            carla_stdout("Match found using pid and simple name");
+            windowToMap = lastGoodWindowPID;
+        }
+        else
+        {
+            carla_stdout("Match found using pid");
+            windowToMap = lastGoodWindowPID;
+        }
+    }
+    else if (lastGoodWindowNameUTF8 != 0)
+    {
+        if (lastGoodWindowNameUTF8 == lastGoodWindowNameSimple)
+        {
+            carla_stdout("Match found using simple and UTF-8 name");
+            windowToMap = lastGoodWindowNameUTF8;
+        }
+        else
+        {
+            carla_stdout("Match found using simple and UTF-8 name");
+            windowToMap = lastGoodWindowNameUTF8;
+        }
+    }
+    else
+    {
+        carla_stdout("Match found using simple name");
+        windowToMap = lastGoodWindowNameSimple;
+    }
 
     const Atom _nwt    = XInternAtom(sd.display ,"_NET_WM_STATE", False);
     const Atom _nws[2] = {
         XInternAtom(sd.display, "_NET_WM_STATE_SKIP_TASKBAR", False),
         XInternAtom(sd.display, "_NET_WM_STATE_SKIP_PAGER", False)
     };
-    XChangeProperty(sd.display, lastGoodWindow, _nwt, XA_ATOM, 32, PropModeAppend, (const uchar*)_nws, 2);
+    XChangeProperty(sd.display, windowToMap, _nwt, XA_ATOM, 32, PropModeAppend, (const uchar*)_nws, 2);
 
     const Atom _nwi = XInternAtom(sd.display, "_NET_WM_ICON", False);
-    XChangeProperty(sd.display, lastGoodWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
+    XChangeProperty(sd.display, windowToMap, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
     const Window hostWinId((Window)winId);
 
-    XSetTransientForHint(sd.display, lastGoodWindow, hostWinId);
+    XSetTransientForHint(sd.display, windowToMap, hostWinId);
 
     if (centerUI && false /* moving the window after being shown isn't pretty... */)
     {
@@ -727,15 +768,15 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         Window retWindow;
 
         if (XGetGeometry(sd.display, hostWinId,      &retWindow, &hostX,   &hostY,   &hostWidth,   &hostHeight,   &border, &depth) != 0 &&
-            XGetGeometry(sd.display, lastGoodWindow, &retWindow, &pluginX, &pluginY, &pluginWidth, &pluginHeight, &border, &depth) != 0)
+            XGetGeometry(sd.display, windowToMap, &retWindow, &pluginX, &pluginY, &pluginWidth, &pluginHeight, &border, &depth) != 0)
         {
             if (XTranslateCoordinates(sd.display, hostWinId,      rootWindow, hostX,   hostY,   &hostX,   &hostY,   &retWindow) == True &&
-                XTranslateCoordinates(sd.display, lastGoodWindow, rootWindow, pluginX, pluginY, &pluginX, &pluginY, &retWindow) == True)
+                XTranslateCoordinates(sd.display, windowToMap, rootWindow, pluginX, pluginY, &pluginX, &pluginY, &retWindow) == True)
             {
                 const int newX = hostX + int(hostWidth/2  - pluginWidth/2);
                 const int newY = hostY + int(hostHeight/2 - pluginHeight/2);
 
-                XMoveWindow(sd.display, lastGoodWindow, newX, newY);
+                XMoveWindow(sd.display, windowToMap, newX, newY);
             }
         }
     }
@@ -744,8 +785,8 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     XRaiseWindow(sd.display, hostWinId);
     XSetInputFocus(sd.display, hostWinId, RevertToPointerRoot, CurrentTime);
 
-    XRaiseWindow(sd.display, lastGoodWindow);
-    XSetInputFocus(sd.display, lastGoodWindow, RevertToPointerRoot, CurrentTime);
+    XRaiseWindow(sd.display, windowToMap);
+    XSetInputFocus(sd.display, windowToMap, RevertToPointerRoot, CurrentTime);
 
     XFlush(sd.display);
     return true;

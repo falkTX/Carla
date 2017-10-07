@@ -120,13 +120,9 @@ protected:
             libjackdir += "/jack";
 
             CarlaString ldpreload;
-
 #ifdef HAVE_X11
-            if (options.frontendWinId != 0)
-            {
-                ldpreload = (CarlaString(options.binaryDir)
-                          + "/libcarla_interposer-jack-x11.so");
-            }
+            ldpreload = (CarlaString(options.binaryDir)
+                      + "/libcarla_interposer-jack-x11.so");
 #endif
 
             const ScopedEngineEnvironmentLocker _seel(kEngine);

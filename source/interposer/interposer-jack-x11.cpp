@@ -40,43 +40,69 @@ typedef int (*XMapWindowFunc)(Display*, Window);
 typedef int (*XUnmapWindowFunc)(Display*, Window);
 
 // -----------------------------------------------------------------------
-// Global counter so we only map the first (hopefully main) window
+// Current mapped window
 
-static int sMapWindowCounter = 0;
+static Window sCurrentlyMappedWindow = 0;
 
 // -----------------------------------------------------------------------
 // Calling the real functions
 
-static int real_XMapWindow(Display* display, Window w)
+static int real_XMapWindow(Display* display, Window window)
 {
     static const XMapWindowFunc func = (XMapWindowFunc)::dlsym(RTLD_NEXT, "XMapWindow");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
-    return func(display, w);
+    return func(display, window);
 }
 
-static int real_XUnmapWindow(Display* display, Window w)
+static int real_XUnmapWindow(Display* display, Window window)
 {
     static const XUnmapWindowFunc func = (XUnmapWindowFunc)::dlsym(RTLD_NEXT, "XUnmapWindow");
     CARLA_SAFE_ASSERT_RETURN(func != nullptr, 0);
 
-    return func(display, w);
+    return func(display, window);
 }
 
 // -----------------------------------------------------------------------
 // Our custom functions
 
 CARLA_EXPORT
-int XMapWindow(Display* display, Window w)
+int XMapWindow(Display* display, Window window)
 {
-    carla_stdout("------------------------------- XMapWindow called");
+    static const ScopedLibOpen slo;
 
     for (;;)
     {
-        if (++sMapWindowCounter != 1)
+        if (sCurrentlyMappedWindow != 0)
             break;
 
-        static const ScopedLibOpen slo;
+        Atom atom;
+        int atomFormat;
+        unsigned char* atomPtrs;
+        unsigned long numItems, ignored;
+
+        const Atom wmWindowType = XInternAtom(display, "_NET_WM_WINDOW_TYPE", True);
+
+        if (XGetWindowProperty(display, window, wmWindowType, 0, ~0L, False, AnyPropertyType,
+                               &atom, &atomFormat, &numItems, &ignored, &atomPtrs) == Success)
+        {
+            const Atom* const atomValues = (const Atom*)atomPtrs;
+
+            for (ulong i=0; i<numItems; ++i)
+            {
+                const char* const atomValue(XGetAtomName(display, atomValues[i]));
+                CARLA_SAFE_ASSERT_CONTINUE(atomValue != nullptr && atomValue[0] != '\0');
+
+                if (std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_NORMAL") == 0)
+                {
+                    sCurrentlyMappedWindow = window;
+                    break;
+                }
+            }
+        }
+
+        if (sCurrentlyMappedWindow == 0)
+            break;
 
         if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
         {
@@ -86,7 +112,7 @@ int XMapWindow(Display* display, Window w)
             CARLA_SAFE_ASSERT_BREAK(winIdLL > 0);
 
             const Window winId(static_cast<Window>(winIdLL));
-            XSetTransientForHint(display, w, static_cast<Window>(winId));
+            XSetTransientForHint(display, window, static_cast<Window>(winId));
 
             carla_stdout("Transient hint correctly applied before mapping window");
         }
@@ -94,17 +120,16 @@ int XMapWindow(Display* display, Window w)
         break;
     }
 
-    return real_XMapWindow(display, w);
+    return real_XMapWindow(display, window);
 }
 
 CARLA_EXPORT
-int XUnmapWindow(Display* display, Window w)
+int XUnmapWindow(Display* display, Window window)
 {
-    carla_stdout("------------------------------- XUnmapWindow called");
+    if (sCurrentlyMappedWindow == window)
+        sCurrentlyMappedWindow = 0;
 
-    --sMapWindowCounter;
-
-    return real_XUnmapWindow(display, w);
+    return real_XUnmapWindow(display, window);
 }
 
 // -----------------------------------------------------------------------
