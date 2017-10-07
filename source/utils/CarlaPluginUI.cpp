@@ -641,7 +641,6 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
             if (pidData != nullptr)
             {
                 const ScopedFreeData sfd2(pidData);
-
                 CARLA_SAFE_ASSERT_CONTINUE(status == Success);
                 CARLA_SAFE_ASSERT_CONTINUE(pidSize != 0);
 
@@ -661,20 +660,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         if (nameData != nullptr)
         {
             const ScopedFreeData sfd2(nameData);
-
             CARLA_SAFE_ASSERT_CONTINUE(status == Success);
 
-            if (nameSize == 0)
-                // nameless window
-                continue;
-
-            if (std::strstr((const char*)nameData, uiTitle) != nullptr)
-            {
+            if (nameSize != 0 && std::strstr((const char*)nameData, uiTitle) != nullptr)
                 lastGoodWindowNameUTF8 = window;
-
-                if (lastGoodWindowPID == window)
-                    break;
-            }
         }
 
         // ------------------------------------------------
@@ -687,16 +676,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         if (wmName != nullptr)
         {
             const ScopedFreeData sfd2(wmName);
-
             CARLA_SAFE_ASSERT_CONTINUE(status != 0);
 
             if (std::strstr(wmName, uiTitle) != nullptr)
-            {
                 lastGoodWindowNameSimple = window;
-
-                if (lastGoodWindowPID == window)
-                    break;
-            }
         }
     }
 
