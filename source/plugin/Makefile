@@ -101,7 +101,7 @@ LINK_FLAGS += $(LIBLO_LIBS)
 endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
-LINK_FLAGS += -lmagic
+LINK_FLAGS += $(MAGIC_LIBS)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)

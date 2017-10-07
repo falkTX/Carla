@@ -1,6 +1,6 @@
 /*
  * Carla binary utils
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,17 +21,15 @@
 #include "CarlaBackend.h"
 #include "CarlaUtils.hpp"
 
-#ifndef BUILD_BRIDGE
-# if defined(CARLA_OS_WIN)
-#  include "juce_core/juce_core.h"
-# elif defined(HAVE_LIBMAGIC)
-#  include <magic.h>
-# endif
+#if defined(CARLA_OS_WIN)
+# include "juce_core/juce_core.h"
+#elif defined(HAVE_LIBMAGIC)
+# include <magic.h>
 #endif
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if defined(HAVE_LIBMAGIC) && ! defined(BUILD_BRIDGE)
+#ifdef HAVE_LIBMAGIC
 // -----------------------------------------------------------------------
 
 class CarlaMagic
@@ -76,8 +74,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     if (filename == nullptr || filename[0] == '\0')
         return BINARY_NATIVE;
 
-#ifndef BUILD_BRIDGE
-# if defined(CARLA_OS_WIN)
+#if defined(CARLA_OS_WIN)
     using juce::File;
     using juce::FileInputStream;
     using juce::ScopedPointer;
@@ -122,7 +119,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     default:
         return BINARY_NATIVE;
     }
-# elif defined(HAVE_LIBMAGIC)
+#elif defined(HAVE_LIBMAGIC)
     static const CarlaMagic magic;
 
     const char* const output(magic.getFileDescription(filename));
@@ -136,7 +133,6 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
 
     if (std::strstr(output, "ELF") != nullptr)
         return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr) ? BINARY_POSIX64 : BINARY_POSIX32;
-# endif
 #endif
 
     return BINARY_NATIVE;

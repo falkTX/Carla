@@ -204,6 +204,7 @@ struct BridgeAudioPool {
     std::size_t dataSize;
     CarlaString filename;
     char shm[64];
+    bool isServer;
 
     BridgeAudioPool() noexcept;
     ~BridgeAudioPool() noexcept;
@@ -212,9 +213,7 @@ struct BridgeAudioPool {
     bool attachClient(const char* const fname) noexcept;
     void clear() noexcept;
 
-#ifndef BUILD_BRIDGE
     void resize(const uint32_t bufferSize, const uint32_t audioPortCount, const uint32_t cvPortCount) noexcept;
-#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
@@ -226,6 +225,7 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     CarlaString filename;
     bool needsSemDestroy; // client only
     char shm[64];
+    bool isServer;
 
     BridgeRtClientControl() noexcept;
     ~BridgeRtClientControl() noexcept override;
@@ -237,11 +237,10 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
     bool mapData() noexcept;
     void unmapData() noexcept;
 
-#ifndef BUILD_BRIDGE
     // non-bridge, server
     bool waitForClient(const uint msecs) noexcept;
     void writeOpcode(const PluginBridgeRtClientOpcode opcode) noexcept;
-#else
+
     // bridge, client
     PluginBridgeRtClientOpcode readOpcode() noexcept;
 
@@ -255,7 +254,6 @@ struct BridgeRtClientControl : public CarlaRingBufferControl<SmallStackBuffer> {
 
         CARLA_DECLARE_NON_COPY_STRUCT(WaitHelper)
     };
-#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeRtClientControl)
 };
@@ -267,6 +265,7 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
     CarlaString filename;
     CarlaMutex mutex;
     char shm[64];
+    bool isServer;
 
     BridgeNonRtClientControl() noexcept;
     ~BridgeNonRtClientControl() noexcept override;
@@ -278,14 +277,12 @@ struct BridgeNonRtClientControl : public CarlaRingBufferControl<BigStackBuffer> 
     bool mapData() noexcept;
     void unmapData() noexcept;
 
-#ifndef BUILD_BRIDGE
     // non-bridge, server
     void waitIfDataIsReachingLimit() noexcept;
     void writeOpcode(const PluginBridgeNonRtClientOpcode opcode) noexcept;
-#else
+
     // bridge, client
     PluginBridgeNonRtClientOpcode readOpcode() noexcept;
-#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtClientControl)
 };
@@ -297,6 +294,7 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
     CarlaString filename;
     CarlaMutex mutex;
     char shm[64];
+    bool isServer;
 
     BridgeNonRtServerControl() noexcept;
     ~BridgeNonRtServerControl() noexcept override;
@@ -308,14 +306,12 @@ struct BridgeNonRtServerControl : public CarlaRingBufferControl<HugeStackBuffer>
     bool mapData() noexcept;
     void unmapData() noexcept;
 
-#ifndef BUILD_BRIDGE
     // non-bridge, server
     PluginBridgeNonRtServerOpcode readOpcode() noexcept;
-#else
+
     // bridge, client
     void waitIfDataIsReachingLimit() noexcept;
     void writeOpcode(const PluginBridgeNonRtServerOpcode opcode) noexcept;
-#endif
 
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeNonRtServerControl)
 };

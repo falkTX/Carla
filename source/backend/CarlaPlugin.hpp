@@ -635,6 +635,7 @@ public:
     // -------------------------------------------------------------------
     // Plugin processing
 
+protected:
     /*!
      * Plugin activate call.
      */
@@ -645,6 +646,7 @@ public:
      */
     virtual void deactivate() noexcept;
 
+public:
     /*!
      * Plugin process call.
      */

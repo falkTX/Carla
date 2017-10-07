@@ -119,7 +119,13 @@ LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
 endif
 endif
 
+ifeq ($(HAVE_LIBLO),true)
 LINK_FLAGS += $(LIBLO_LIBS)
+endif
+
+ifeq ($(HAVE_LIBMAGIC),true)
+LINK_FLAGS += $(MAGIC_LIBS)
+endif
 
 ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
@@ -169,6 +175,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
 	$(OBJDIR)/CarlaEngineBridge.cpp.o \
 	$(OBJDIR)/CarlaPlugin.cpp.o \
+	$(OBJDIR)/CarlaPluginBridge.cpp.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.o \
 	$(OBJDIR)/CarlaPluginNative.cpp.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.o \
@@ -198,6 +205,7 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaEngineJack.cpp.arch.o \
 	$(OBJDIR)/CarlaEngineBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \
+	$(OBJDIR)/CarlaPluginBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
@@ -248,7 +256,7 @@ $(BINDIR)/$(MODULENAME)-native$(APP_EXT): $(OBJS_native) $(LIBS_native)
 $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT): $(OBJS_lv2) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2$(LIB_EXT)"
-	@$(CXX) $(OBJS_lv2) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+	@$(CXX) $(OBJS_lv2) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(SHARED) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)

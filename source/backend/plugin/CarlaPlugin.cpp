@@ -970,12 +970,12 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         manifestStream << "\n";
         manifestStream << "<" << symbol.buffer() << ".ttl>\n";
         manifestStream << "    a lv2:Plugin ;\n";
-        manifestStream << "    lv2:binary <" << symbol.buffer() << ".so> ;\n";
+        manifestStream << "    lv2:binary <" << symbol.buffer() << CARLA_LIB_EXT "> ;\n";
         manifestStream << "    rdfs:seeAlso <" << symbol.buffer() << ".ttl> .\n";
         manifestStream << "\n";
         manifestStream << "<ext-ui>\n";
         manifestStream << "    a <http://kxstudio.sf.net/ns/lv2ext/external-ui#Widget> ;\n";
-        manifestStream << "    ui:binary <" << symbol.buffer() << ".so> ;\n";
+        manifestStream << "    ui:binary <" << symbol.buffer() << CARLA_LIB_EXT "> ;\n";
         manifestStream << "    lv2:extensionData <http://lv2plug.in/ns/extensions/ui#idleInterface> ,\n";
         manifestStream << "                      <http://lv2plug.in/ns/extensions/ui#showInterface> ;\n";
         manifestStream << "    lv2:requiredFeature <http://lv2plug.in/ns/ext/instance-access> .\n";
@@ -1123,9 +1123,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         }
     }
 
-    const CarlaString binaryFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".so");
+    const CarlaString binaryFilename(bundlepath + CARLA_OS_SEP_STR + symbol + CARLA_LIB_EXT);
 
-    const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-bridge-lv2.so"));
+    const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-bridge-lv2" CARLA_LIB_EXT));
     const File binaryFileTarget(binaryFilename.buffer());
 
     if (! binaryFileSource.createSymbolicLink(binaryFileTarget, true))

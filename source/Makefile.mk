@@ -358,6 +358,10 @@ X11_FLAGS = $(shell pkg-config --cflags x11)
 X11_LIBS  = $(shell pkg-config --libs x11)
 endif
 
+ifeq ($(HAVE_LIBMAGIC),true)
+MAGIC_LIBS += -lmagic
+endif
+
 # --------------------------------------------------------------
 # Set libs stuff (part 2)
 
@@ -475,6 +479,8 @@ endif
 ifeq ($(WIN32),true)
 LIB_EXT = .dll
 endif
+
+BASE_FLAGS += -DCARLA_LIB_EXT=\"$(LIB_EXT)\"
 
 # --------------------------------------------------------------
 # Set static libs start & end

@@ -15,10 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef BUILD_BRIDGE
-# error This file should be used under bridge mode
-#endif
-
 #include "CarlaPluginInternal.hpp"
 
 #include "CarlaBackendUtils.hpp"
@@ -2382,4 +2378,8 @@ CARLA_BACKEND_END_NAMESPACE
 
 // -------------------------------------------------------------------------------------------------------------------
 
-#include "CarlaBridgeUtils.cpp"
+#ifndef BUILD_BRIDGE
+# include "CarlaBridgeUtils.cpp"
+#endif
+
+// -------------------------------------------------------------------------------------------------------------------

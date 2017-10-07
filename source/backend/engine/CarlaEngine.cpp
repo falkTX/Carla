@@ -382,19 +382,17 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     };
 
     CarlaPlugin* plugin = nullptr;
-
-#ifndef BUILD_BRIDGE
     CarlaString bridgeBinary(pData->options.binaryDir);
 
     if (bridgeBinary.isNotEmpty())
     {
         if (btype == BINARY_NATIVE)
         {
-# ifdef CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native.exe";
-# else
+#else
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-native";
-# endif
+#endif
         }
         else
         {
@@ -425,7 +423,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
     // Prefer bridges for some specific plugins
     bool preferBridges = pData->options.preferPluginBridges;
 
-# ifdef CARLA_OS_LINUX
+#ifndef BUILD_BRIDGE
     if (! preferBridges)
     {
         if (ptype == PLUGIN_LV2 && label != nullptr)
@@ -437,7 +435,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
             }
         }
-#if 0
+# if 0
         else if (ptype == PLUGIN_VST2)
         {
             /*
@@ -507,7 +505,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             else if (uniqueId == 1397573722 && std::strstr(filename, "/ZebraHZ.") != nullptr)
                 preferBridges = true;
         }
-#endif
+# endif
         // FIXME: linuxsampler inside carla-rack/patchbay plugin has some issues (only last kit makes noise)
         else if (getType() == kEngineTypePlugin && (ptype == PLUGIN_GIG || ptype == PLUGIN_SFZ))
         {
@@ -524,7 +522,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
                 preferBridges = true;
         }
     }
-# endif
+#endif // ! BUILD_BRIDGE
 
     if (ptype != PLUGIN_INTERNAL && (btype != BINARY_NATIVE || (preferBridges && bridgeBinary.isNotEmpty())))
     {
@@ -539,7 +537,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         }
     }
     else
-#endif // ! BUILD_BRIDGE
     {
         bool use16Outs;
         setLastError("Invalid or unsupported plugin type");
@@ -623,6 +620,8 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         case PLUGIN_JACK:
 #ifndef BUILD_BRIDGE
             plugin = CarlaPlugin::newJackApp(initializer);
+#else
+            setLastError("Do not use jack applications as bridges, too much experimental stuff together!");
 #endif
             break;
         }
@@ -633,6 +632,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
     plugin->reload();
 
+#ifndef BUILD_BRIDGE
     bool canRun = true;
 
     /**/ if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
@@ -668,11 +668,13 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
         return false;
     }
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+# ifdef HAVE_LIBLO
     plugin->registerToOscClient();
+# endif
 #endif
 
     EnginePluginData& pluginData(pData->plugins[id]);
+    carla_stdout("stored plugin ptr %p", plugin);
     pluginData.plugin      = plugin;
     pluginData.insPeak[0]  = 0.0f;
     pluginData.insPeak[1]  = 0.0f;
@@ -2196,7 +2198,11 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             if (addPlugin(getBinaryTypeFromFile(stateSave.binary), ptype, stateSave.binary,
                           stateSave.name, stateSave.label, stateSave.uniqueId, extraStuff, stateSave.options))
             {
+#ifndef BUILD_BRIDGE
                 const uint pluginId = pData->curPluginCount;
+#else
+                const uint pluginId = 0;
+#endif
 
                 if (CarlaPlugin* const plugin = pData->plugins[pluginId].plugin)
                 {
@@ -2205,11 +2211,10 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     if (pData->aboutToClose)
                         return true;
 
-#ifndef BUILD_BRIDGE
                     // deactivate bridge client-side ping check, since some plugins block during load
                     if ((plugin->getHints() & PLUGIN_IS_BRIDGE) != 0 && ! isPreset)
                         plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "false", false);
-#endif
+
                     plugin->loadStateSave(stateSave);
 
                     /* NOTE: The following code is the same as the end of addPlugin().
@@ -2218,10 +2223,11 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                      */
 #ifdef BUILD_BRIDGE
                     plugin->setActive(true, true, false);
-#endif
-                    plugin->setEnabled(true);
-
+#else
                     ++pData->curPluginCount;
+#endif
+
+                    plugin->setEnabled(true);
                     callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
 
 #ifndef BUILD_BRIDGE

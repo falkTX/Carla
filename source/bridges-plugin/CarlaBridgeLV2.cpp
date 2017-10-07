@@ -15,7 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-// #define BUILD_BRIDGE
+#ifndef BUILD_BRIDGE
+# error This file should not be compiled if not building bridge
+#endif
 
 #include "engine/CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
@@ -47,12 +49,15 @@ class CarlaEngineLV2Single : public CarlaEngine,
 public:
     CarlaEngineLV2Single(const uint32_t bufferSize, const double sampleRate, const char* const bundlePath, const LV2_URID_Map* uridMap)
         : fPlugin(nullptr),
-          fIsRunning(false),
+          fIsActive(false),
           fIsOffline(false)
     {
         run  = extui_run;
         show = extui_show;
         hide = extui_hide;
+
+        CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
+        CARLA_SAFE_ASSERT_RETURN(pData->plugins[0].plugin == nullptr,);
 
         // xxxxx
         CarlaString binaryDir(bundlePath);
@@ -102,6 +107,9 @@ public:
 
     ~CarlaEngineLV2Single()
     {
+        if (fPlugin != nullptr && fIsActive)
+            fPlugin->setActive(false, false, false);
+
         close();
     }
 
@@ -120,18 +128,18 @@ public:
 
     void lv2_activate()
     {
-        CARLA_SAFE_ASSERT_RETURN(! fIsRunning,);
+        CARLA_SAFE_ASSERT_RETURN(! fIsActive,);
 
-        fPlugin->activate();
-        fIsRunning = true;
+        fPlugin->setActive(true, false, false);
+        fIsActive = true;
     }
 
     void lv2_deactivate()
     {
-        CARLA_SAFE_ASSERT_RETURN(fIsRunning,);
+        CARLA_SAFE_ASSERT_RETURN(fIsActive,);
 
-        fIsRunning = false;
-        fPlugin->deactivate();
+        fIsActive = false;
+        fPlugin->setActive(false, false, false);
     }
 
     void lv2_run(const uint32_t frames)
@@ -297,16 +305,9 @@ protected:
         return true;
     }
 
-    bool close() override
-    {
-        fIsRunning = false;
-        CarlaEngine::close();
-        return true;
-    }
-
     bool isRunning() const noexcept override
     {
-        return fIsRunning;
+        return fIsActive;
     }
 
     bool isOffline() const noexcept override
@@ -376,9 +377,9 @@ protected:
 
 private:
     CarlaPlugin* fPlugin;
-    bool fIsRunning;
 
     // Lv2 host data
+    bool fIsActive;
     bool fIsOffline;
 
     struct Ports {
