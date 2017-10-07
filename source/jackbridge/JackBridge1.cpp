@@ -649,9 +649,17 @@ struct WineBridge {
         inst.creator_arg    = arg;
         inst.creator_handle = ::CreateEventW(nullptr, false, false, nullptr);
 
-        ::CreateThread(NULL, 0, thread_creator_helper, arg, 0, 0);
-        ::WaitForSingleObject(inst.creator_handle, INFINITE);
+        HANDLE handle = ::CreateThread(nullptr, 0, thread_creator_helper, arg, CREATE_SUSPENDED, nullptr);
 
+        if (handle == INVALID_HANDLE_VALUE)
+            return 1;
+
+        // TODO read attrs and decide this
+        SetThreadPriority(handle, THREAD_PRIORITY_TIME_CRITICAL);
+
+        ResumeThread(handle);
+
+        ::WaitForSingleObject(inst.creator_handle, INFINITE);
         *thread_id = inst.creator_pthread;
         return 0;
     }

@@ -1426,7 +1426,7 @@ private:
 
     static pointer_sized_int getHostName (char* name)
     {
-        String hostName ("Juce VST Host");
+        String hostName ("Carla Plugin Host");
 
         if (auto* app = JUCEApplicationBase::getInstance())
             hostName = app->getApplicationName();
