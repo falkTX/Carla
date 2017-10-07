@@ -20,6 +20,19 @@
 #include <dlfcn.h>
 #include <X11/Xlib.h>
 
+struct ScopedLibOpen {
+    void* handle;
+
+    ScopedLibOpen()
+        : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)) {}
+
+    ~ScopedLibOpen()
+    {
+        if (handle != nullptr)
+            dlclose(handle);
+    }
+};
+
 // -----------------------------------------------------------------------
 // Function typedefs
 
@@ -63,7 +76,9 @@ int XMapWindow(Display* display, Window w)
         if (++sMapWindowCounter != 1)
             break;
 
-        if (const char* const winIdStr = std::getenv("CARLA_ENGINE_OPTION_FRONTEND_WIN_ID"))
+        static const ScopedLibOpen slo;
+
+        if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
         {
             CARLA_SAFE_ASSERT_BREAK(winIdStr[0] != '\0');
 
