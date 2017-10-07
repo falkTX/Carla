@@ -674,7 +674,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 #endif
 
     EnginePluginData& pluginData(pData->plugins[id]);
-    carla_stdout("stored plugin ptr %p", plugin);
     pluginData.plugin      = plugin;
     pluginData.insPeak[0]  = 0.0f;
     pluginData.insPeak[1]  = 0.0f;

@@ -1208,37 +1208,43 @@ protected:
                                 event.ctrl.convertToMidiData(event.channel, size, data);
                                 CARLA_SAFE_ASSERT_CONTINUE(size > 0 && size <= 3);
 
-                                if (curMidiDataPos + 1U /* size*/ + 4U /* time */ + size >= kBridgeRtClientDataMidiOutSize)
+                                if (curMidiDataPos + 6U /* time, port and size */ + size >= kBridgeRtClientDataMidiOutSize)
                                     break;
-
-                                // set size
-                                *midiData++ = size;
 
                                 // set time
                                 *(uint32_t*)midiData = event.time;
                                 midiData = midiData + 4;
 
+                                // set port
+                                *midiData++ = 0;
+
+                                // set size
+                                *midiData++ = size;
+
                                 // set data
                                 for (uint8_t j=0; j<size; ++j)
                                     *midiData++ = data[j];
 
-                                curMidiDataPos += 1U /* size*/ + 4U /* time */ + size;
+                                curMidiDataPos += 6U /* time, port and size */ + size;
                             }
                             else if (event.type == kEngineEventTypeMidi)
                             {
                                 const EngineMidiEvent& _midiEvent(event.midi);
 
-                                if (curMidiDataPos + 1 /* size*/ + 4 /* time */ + _midiEvent.size >= kBridgeRtClientDataMidiOutSize)
+                                if (curMidiDataPos + 6U /* time, port and size */ + _midiEvent.size >= kBridgeRtClientDataMidiOutSize)
                                     break;
 
                                 const uint8_t* const _midiData(_midiEvent.dataExt != nullptr ? _midiEvent.dataExt : _midiEvent.data);
 
-                                // set size
-                                *midiData++ = _midiEvent.size;
-
                                 // set time
                                 *(uint32_t*)midiData = event.time;
                                 midiData += 4;
+
+                                // set port
+                                *midiData++ = _midiEvent.port;
+
+                                // set size
+                                *midiData++ = _midiEvent.size;
 
                                 // set data
                                 *midiData++ = uint8_t(_midiData[0] | (event.channel & MIDI_CHANNEL_BIT));
@@ -1246,7 +1252,7 @@ protected:
                                 for (uint8_t j=1; j<_midiEvent.size; ++j)
                                     *midiData++ = _midiData[j];
 
-                                curMidiDataPos += 1U /* size*/ + 4U /* time */ + _midiEvent.size;
+                                curMidiDataPos += 6U /* time, port and size */ + _midiEvent.size;
                             }
                         }
 

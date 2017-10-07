@@ -711,21 +711,24 @@ bool CarlaJackAppClient::handleRtData()
                         {
                             jack_midi_event_t& jmevent(midiPortBuf.events[j]);
 
-                            if (curMidiDataPos + 1U /* size*/ + 4U /* time */ + jmevent.size >= kBridgeRtClientDataMidiOutSize)
+                            if (curMidiDataPos + 6U /* time, port and size */ + jmevent.size >= kBridgeRtClientDataMidiOutSize)
                                 break;
-
-                            // set size
-                            *midiData++ = static_cast<uint8_t>(jmevent.size);
 
                             // set time
                             *(uint32_t*)midiData = jmevent.time;
                             midiData += 4;
 
+                            // set port
+                            *midiData++ = i;
+
+                            // set size
+                            *midiData++ = static_cast<uint8_t>(jmevent.size);
+
                             // set data
                             std::memcpy(midiData, jmevent.buffer, jmevent.size);
                             midiData += jmevent.size;
 
-                            curMidiDataPos += 1U /* size*/ + 4U /* time */ + jmevent.size;
+                            curMidiDataPos += 6U /* time, port and size */ + jmevent.size;
                         }
                     }
                 }
@@ -1087,7 +1090,10 @@ int jack_client_real_time_priority(jack_client_t* client)
 {
     carla_stdout("%s(%p)", __FUNCTION__, client);
 
-    return -1;
+    // code as used by juce
+    const int minPriority = sched_get_priority_min(SCHED_RR);
+    const int maxPriority = sched_get_priority_max(SCHED_RR);
+    return ((maxPriority - minPriority) * 9) / 10 + minPriority;
 }
 
 typedef void (*JackSessionCallback)(jack_session_event_t*, void*);

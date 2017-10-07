@@ -1239,25 +1239,22 @@ public:
                 }
             }
 
-            uint8_t size;
             uint32_t time;
+            uint8_t port, size;
             const uint8_t* midiData(fShmRtClientControl.data->midiOut);
 
             for (std::size_t read=0; read<kBridgeRtClientDataMidiOutSize;)
             {
-                size = *midiData;
+                // get time
+                time = *(const uint32_t*)midiData;
+                midiData += 4;
+
+                // get port and size
+                port = *midiData++;
+                size = *midiData++;
 
                 if (size == 0)
                     break;
-
-                // advance 8 bits (1 byte)
-                midiData = midiData + 1;
-
-                // get time as 32bit
-                time = *(const uint32_t*)midiData;
-
-                // advance 32 bits (4 bytes)
-                midiData = midiData + 4;
 
                 // store midi data advancing as needed
                 uint8_t data[size];
@@ -1267,7 +1264,7 @@ public:
 
                 pData->event.portOut->writeMidiEvent(time, size, data);
 
-                read += 1U /* size*/ + 4U /* time */ + size;
+                read += 6U /* time, port and size */ + size;
             }
 
         } // End of Control and MIDI Output
