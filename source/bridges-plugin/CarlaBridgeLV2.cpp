@@ -113,7 +113,7 @@ public:
         close();
     }
 
-    bool hasPlugin()
+    bool hasPlugin() noexcept
     {
         return fPlugin != nullptr;
     }
@@ -121,12 +121,12 @@ public:
     // -----------------------------------------------------------------------------------------------------------------
     // LV2 functions
 
-    void lv2_connect_port(const uint32_t port, void* const dataLocation)
+    void lv2_connect_port(const uint32_t port, void* const dataLocation) noexcept
     {
         fPorts.connectPort(port, dataLocation);
     }
 
-    void lv2_activate()
+    void lv2_activate() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(! fIsActive,);
 
@@ -134,7 +134,7 @@ public:
         fIsActive = true;
     }
 
-    void lv2_deactivate()
+    void lv2_deactivate() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(fIsActive,);
 
@@ -358,7 +358,9 @@ protected:
 
     void handleUiRun() const
     {
-        fPlugin->uiIdle();
+        try {
+            fPlugin->uiIdle();
+        } CARLA_SAFE_EXCEPTION("fPlugin->uiIdle()")
     }
 
     void handleUiShow()

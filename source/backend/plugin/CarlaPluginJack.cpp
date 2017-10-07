@@ -1222,8 +1222,8 @@ public:
 
         fInfo.aIns   = label[0] - '0';
         fInfo.aOuts  = label[1] - '0';
-        fInfo.mIns   = carla_minPositive(label[4] - '0', 1);
-        fInfo.mOuts  = carla_minPositive(label[5] - '0', 1);
+        fInfo.mIns   = carla_minPositive(label[2] - '0', 1);
+        fInfo.mOuts  = carla_minPositive(label[3] - '0', 1);
 
         fInfo.setupLabel = label;
 

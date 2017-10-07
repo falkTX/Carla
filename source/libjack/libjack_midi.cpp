@@ -37,7 +37,9 @@ int jack_midi_event_get(jack_midi_event_t* ev, void* buf, uint32_t index)
     JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
     CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
     CARLA_SAFE_ASSERT_RETURN(jmidibuf->isInput, EFAULT);
-    CARLA_SAFE_ASSERT_RETURN(index < jmidibuf->count, ENODATA);
+
+    if (index >= jmidibuf->count)
+        return ENODATA;
 
     std::memcpy(ev, &jmidibuf->events[index], sizeof(jack_midi_event_t));
     return 0;
@@ -73,7 +75,7 @@ jack_midi_data_t* jack_midi_event_reserve(void* buf, jack_nframes_t frame, size_
     JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
     CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, nullptr);
     CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, nullptr);
-    CARLA_SAFE_ASSERT_RETURN(size > 0, nullptr);
+    CARLA_SAFE_ASSERT_RETURN(size > 0 && size < JackMidiPortBuffer::kMaxEventSize, nullptr);
 
     if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
         return nullptr;
@@ -94,6 +96,7 @@ int jack_midi_event_write(void* buf, jack_nframes_t frame, const jack_midi_data_
     JackMidiPortBuffer* const jmidibuf((JackMidiPortBuffer*)buf);
     CARLA_SAFE_ASSERT_RETURN(jmidibuf != nullptr, EFAULT);
     CARLA_SAFE_ASSERT_RETURN(! jmidibuf->isInput, EFAULT);
+    CARLA_SAFE_ASSERT_RETURN(size > 0 && size < JackMidiPortBuffer::kMaxEventSize, ENOBUFS);
 
     if (jmidibuf->count >= JackMidiPortBuffer::kMaxEventCount)
         return ENOBUFS;

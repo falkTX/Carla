@@ -60,9 +60,9 @@ struct JackClientState;
 struct JackServerState;
 
 struct JackMidiPortBuffer {
-    static const size_t kMaxEventSize   = 128;
-    static const size_t kMaxEventCount  = 512;
-    static const size_t kBufferPoolSize = kMaxEventCount*8;
+    static const uint8_t kMaxEventSize   = 128;
+    static const size_t  kMaxEventCount  = 512;
+    static const size_t  kBufferPoolSize = kMaxEventCount*8;
 
     uint16_t count;
     bool isInput;
@@ -71,12 +71,20 @@ struct JackMidiPortBuffer {
     size_t bufferPoolPos;
     jack_midi_data_t* bufferPool;
 
-    JackMidiPortBuffer(const bool input)
+    JackMidiPortBuffer()
         : count(0),
-          isInput(input),
+          isInput(true),
           events(new jack_midi_event_t[kMaxEventCount]),
           bufferPoolPos(0),
           bufferPool(new jack_midi_data_t[kBufferPoolSize]) {}
+
+    // for unused ports
+    JackMidiPortBuffer(const bool input, const char*)
+        : count(0),
+          isInput(input),
+          events(nullptr),
+          bufferPoolPos(0),
+          bufferPool(nullptr) {}
 
     ~JackMidiPortBuffer()
     {

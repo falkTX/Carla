@@ -351,9 +351,6 @@
       </item>
       <item row="1" column="6">
        <widget class="QLabel" name="label_8">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="text">
          <string>MIDI outputs:</string>
         </property>
@@ -364,9 +361,6 @@
       </item>
       <item row="1" column="7">
        <widget class="QSpinBox" name="sb_midi_outs">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="maximum">
          <number>1</number>
         </property>

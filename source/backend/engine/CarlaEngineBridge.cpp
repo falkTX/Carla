@@ -1238,7 +1238,7 @@ protected:
 
                                 // set time
                                 *(uint32_t*)midiData = event.time;
-                                midiData = midiData + 4;
+                                midiData += 4;
 
                                 // set data
                                 *midiData++ = uint8_t(_midiData[0] | (event.channel & MIDI_CHANNEL_BIT));
