@@ -8,7 +8,7 @@ CWD=..
 MODULENAME=carla-bridge
 include $(CWD)/Makefile.mk
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
 
@@ -20,7 +20,7 @@ OBJDIR    := $(CWD)/../build/bridges-plugin/Release
 MODULEDIR := $(CWD)/../build/modules/Release
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
@@ -33,7 +33,7 @@ endif
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 LIBS_native   = $(MODULEDIR)/jackbridge.a
 LIBS_posix32  = $(MODULEDIR)/jackbridge.posix32.a
@@ -129,7 +129,7 @@ ifeq ($(UNIX),true)
 LINK_FLAGS += -ldl -lpthread
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
 NATIVE_LINK_FLAGS   =
@@ -154,7 +154,7 @@ ifeq ($(HAVE_DGL),true)
 LIBS_native        += $(MODULEDIR)/dgl.a
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 OBJS_native = \
 	$(OBJDIR)/CarlaBridgePlugin.cpp.o \
@@ -181,6 +181,9 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
+
+OBJS_lv2 = $(OBJS_native) \
+	$(OBJDIR)/CarlaBridgeLV2.cpp.o
 
 OBJS_arch = \
 	$(OBJDIR)/CarlaBridgePlugin.cpp.arch.o \
@@ -210,11 +213,11 @@ OBJS_posix64 = $(OBJS_arch:%.arch.o=%.posix64.o)
 OBJS_win32   = $(OBJS_arch:%.arch.o=%.win32.o)
 OBJS_win64   = $(OBJS_arch:%.arch.o=%.win64.o)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 all: native
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 clean:
 	rm -f $(OBJDIR)/*.o
@@ -226,21 +229,26 @@ clean:
 debug:
 	$(MAKE) DEBUG=true
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-native:  $(BINDIR)/$(MODULENAME)-native$(APP_EXT)
+native:  $(BINDIR)/$(MODULENAME)-native$(APP_EXT) $(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT)
 posix32: $(BINDIR)/$(MODULENAME)-posix32
 posix64: $(BINDIR)/$(MODULENAME)-posix64
 win32:   $(BINDIR)/$(MODULENAME)-win32.exe
 win64:   $(BINDIR)/$(MODULENAME)-win64.exe
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # linking
 
 $(BINDIR)/$(MODULENAME)-native$(APP_EXT): $(OBJS_native) $(LIBS_native)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-native$(APP_EXT)"
 	@$(CXX) $(OBJS_native) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
+
+$(BINDIR)/$(MODULENAME)-lv2$(LIB_EXT): $(OBJS_lv2) $(LIBS_native)
+	-@mkdir -p $(BINDIR)
+	@echo "Linking $(MODULENAME)-lv2$(LIB_EXT)"
+	@$(CXX) $(OBJS_lv2) $(LIBS_START) $(LIBS_native) $(LIBS_END) $(LINK_FLAGS) $(NATIVE_LINK_FLAGS) -o $@
 
 $(BINDIR)/$(MODULENAME)-posix32: $(OBJS_posix32) $(LIBS_posix32)
 	-@mkdir -p $(BINDIR)
@@ -262,8 +270,13 @@ $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 	@echo "Linking $(MODULENAME)-win64.exe"
 	@$(CXX) $(OBJS_win64) $(LIBS_START) $(LIBS_win64) $(LIBS_END) $(LINK_FLAGS) $(64BIT_FLAGS) -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # native
+
+$(OBJDIR)/CarlaBridgeLV2.cpp.o: CarlaBridgeLV2.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	-@mkdir -p $(OBJDIR)
@@ -285,7 +298,7 @@ $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # posix32
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix32.o: CarlaBridgePlugin.cpp
@@ -308,7 +321,7 @@ $(OBJDIR)/CarlaStandalone.cpp.posix32.o: $(CWD)/backend/CarlaStandalone.cpp
 	@echo "Compiling CarlaStandalone.cpp (posix32 bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # posix64
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.posix64.o: CarlaBridgePlugin.cpp
@@ -331,7 +344,7 @@ $(OBJDIR)/CarlaStandalone.cpp.posix64.o: $(CWD)/backend/CarlaStandalone.cpp
 	@echo "Compiling CarlaStandalone.cpp (posix64 bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # win32
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.win32.o: CarlaBridgePlugin.cpp
@@ -354,7 +367,7 @@ $(OBJDIR)/CarlaStandalone.cpp.win32.o: $(CWD)/backend/CarlaStandalone.cpp
 	@echo "Compiling CarlaStandalone.cpp (win32 bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(32BIT_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # win64
 
 $(OBJDIR)/CarlaBridgePlugin.cpp.win64.o: CarlaBridgePlugin.cpp
@@ -377,12 +390,12 @@ $(OBJDIR)/CarlaStandalone.cpp.win64.o: $(CWD)/backend/CarlaStandalone.cpp
 	@echo "Compiling CarlaStandalone.cpp (win64 bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(64BIT_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
--include $(OBJS_native:%.o=%.d)
+-include $(OBJS_lv2:%.o=%.d)
 -include $(OBJS_posix32:%.o=%.d)
 -include $(OBJS_posix64:%.o=%.d)
 -include $(OBJS_win32:%.o=%.d)
 -include $(OBJS_win64:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------

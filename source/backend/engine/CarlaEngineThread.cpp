@@ -40,23 +40,21 @@ CarlaEngineThread::~CarlaEngineThread() noexcept
 
 void CarlaEngineThread::run() noexcept
 {
-    // FIXME carla-lv2-single using build-bridge!
     CARLA_SAFE_ASSERT_RETURN(kEngine != nullptr,);
+#ifndef BUILD_BRIDGE
+    CARLA_SAFE_ASSERT(kEngine->isRunning());
+#endif
+    carla_debug("CarlaEngineThread::run()");
 
 #ifdef HAVE_LIBLO
     const bool isPlugin(kEngine->getType() == kEngineTypePlugin);
 #endif
     float value;
 
-#ifndef BUILD_BRIDGE
-    CARLA_SAFE_ASSERT(kEngine->isRunning() || isPlugin);
-#endif
-    carla_debug("CarlaEngineThread::run()");
-
 #ifdef BUILD_BRIDGE
-    for (; /*kEngine->isRunning() &&*/ ! shouldThreadExit();)
+    for (; ! shouldThreadExit();)
 #else
-    for (; (kEngine->isRunning() || isPlugin) && ! shouldThreadExit();)
+    for (; kEngine->isRunning() && ! shouldThreadExit();)
 #endif
     {
 #if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)

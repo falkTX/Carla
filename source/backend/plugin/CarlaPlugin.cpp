@@ -1125,7 +1125,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
 
     const CarlaString binaryFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".so");
 
-    const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-lv2-single.so"));
+    const File binaryFileSource(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("carla-bridge-lv2.so"));
     const File binaryFileTarget(binaryFilename.buffer());
 
     if (! binaryFileSource.createSymbolicLink(binaryFileTarget, true))

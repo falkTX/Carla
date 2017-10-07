@@ -119,7 +119,6 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 TARGETS = \
-	$(BINDIR)/carla-lv2-single$(LIB_EXT) \
 	$(BINDIR)/carla.lv2/carla$(LIB_EXT) \
 	$(BINDIR)/carla.lv2/manifest.ttl
 
@@ -146,17 +145,11 @@ clean:
 	rm -f $(OBJDIR)/*.o $(TARGETS)
 	rm -f $(BINDIR)/carla.lv2/*.*
 	rm -f $(BINDIR)/carla-lv2-export$(APP_EXT)
-	rm -f $(BINDIR)/carla-lv2-single$(LIB_EXT)
 
 debug:
 	$(MAKE) DEBUG=true
 
 # ----------------------------------------------------------------------------------------------------------------------------
-
-$(BINDIR)/carla-lv2-single$(LIB_EXT): $(OBJDIR)/carla-lv2-single.cpp.o $(LIBS)
-	-@mkdir -p $(BINDIR)
-	@echo "Linking carla-lv2-single$(LIB_EXT)"
-	@$(CXX) $< $(LIBS_START) $(LIBS) $(LIBS_END) $(SHARED) $(LINK_FLAGS) -o $@
 
 $(BINDIR)/carla.lv2/carla$(LIB_EXT): $(OBJDIR)/carla-lv2.cpp.o $(LIBS)
 	-@mkdir -p $(BINDIR)/carla.lv2
@@ -191,11 +184,6 @@ $(BINDIR)/CarlaPatchbayFX$(LIB_EXT): $(OBJDIR)/carla-vst.cpp.patchbay-fx.o $(LIB
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/carla-lv2.cpp.o: carla-lv2.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
-
-$(OBJDIR)/carla-lv2-single.cpp.o: carla-lv2-single.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
