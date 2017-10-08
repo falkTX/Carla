@@ -112,9 +112,9 @@ protected:
         {
             const EngineOptions& options(kEngine->getOptions());
 
-            char strBuf[STR_MAX+1];
-            std::snprintf(strBuf, STR_MAX, P_UINTPTR, options.frontendWinId);
-            strBuf[STR_MAX] = '\0';
+            char winIdStr[STR_MAX+1];
+            std::snprintf(winIdStr, STR_MAX, P_UINTPTR, options.frontendWinId);
+            winIdStr[STR_MAX] = '\0';
 
             CarlaString libjackdir(options.binaryDir);
             libjackdir += "/jack";
@@ -131,7 +131,7 @@ protected:
             const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 
             if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
-                carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
+                carla_setenv("CARLA_FRONTEND_WIN_ID", winIdStr);
             else
                 carla_unsetenv("CARLA_FRONTEND_WIN_ID");
 

@@ -22,11 +22,11 @@
 
 struct ScopedLibOpen {
     void* handle;
-    Window winId;
+    long long winId;
 
     ScopedLibOpen()
         : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)),
-          winId(0)
+          winId(-1)
     {
         if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
         {
@@ -35,7 +35,7 @@ struct ScopedLibOpen {
             const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
             CARLA_SAFE_ASSERT_RETURN(winIdLL > 0,);
 
-            winId = static_cast<Window>(winIdLL);
+            winId = winIdLL;
         }
     }
 
@@ -91,7 +91,7 @@ int XMapWindow(Display* display, Window window)
 
     for (;;)
     {
-        if (slo.winId == 0)
+        if (slo.winId < 0)
             break;
 
         Atom atom;
@@ -181,7 +181,8 @@ int XMapWindow(Display* display, Window window)
         gCurrentlyMappedWindow  = window;
         gCurrentWindowMapped    = true;
 
-        XSetTransientForHint(display, window, slo.winId);
+        if (slo.winId > 0)
+            XSetTransientForHint(display, window, static_cast<Window>(slo.winId));
 
         if (gCurrentWindowVisible)
         {
