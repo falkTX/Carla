@@ -29,10 +29,10 @@ from subprocess import Popen, PIPE
 
 if config_UseQt5:
     from PyQt5.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-    from PyQt5.QtWidgets import QDialog, QTableWidgetItem
+    from PyQt5.QtWidgets import QDialog, QDialogButtonBox, QTableWidgetItem
 else:
     from PyQt4.QtCore import pyqtSignal, pyqtSlot, Qt, QThread, QSettings
-    from PyQt4.QtGui import QDialog, QTableWidgetItem
+    from PyQt4.QtGui import QDialog, QDialogButtonBox, QTableWidgetItem
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
@@ -1899,8 +1899,20 @@ class JackApplicationW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
+            self.host = host = CarlaHostNull()
+
+        # --------------------------------------------------------------------------------------------------------------
+        # Load settings
+
+        self.loadSettings()
+
+        # --------------------------------------------------------------------------------------------------------------
+        # Set-up connections
+
+        self.finished.connect(self.slot_saveSettings)
+        self.ui.le_command.textChanged.connect(self.slot_commandChanged)
+
+    # ------------------------------------------------------------------------------------------------------------------
 
     def getCommandAndFlags(self):
         name    = self.ui.le_name.text()
@@ -1926,13 +1938,44 @@ class JackApplicationW(QDialog):
                                      chr(baseIntVal+flags))
         return (command, name, labelSetup)
 
-    # --------------------------------------------------------------------------------------------------------
+    def loadSettings(self):
+        settings = QSettings("falkTX", "CarlaAddJackApp")
+
+        command = settings.value("Command", "", type=str)
+        self.ui.le_command.setText(command)
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(len(command) > 0)
+
+        self.ui.le_name.setText(settings.value("Name", "", type=str))
+        self.ui.sb_audio_ins.setValue(settings.value("NumAudioIns", 2, type=int))
+        self.ui.sb_audio_outs.setValue(settings.value("NumAudioOuts", 2, type=int))
+        self.ui.sb_midi_ins.setValue(settings.value("NumMidiIns", 0, type=int))
+        self.ui.sb_midi_outs.setValue(settings.value("NumMidiOuts", 0, type=int))
+        self.ui.cb_manage_window.setChecked(settings.value("ManageWindow", True, type=bool))
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    @pyqtSlot(str)
+    def slot_commandChanged(self, text):
+        self.ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(len(text) > 0)
+
+    @pyqtSlot()
+    def slot_saveSettings(self):
+        settings = QSettings("falkTX", "CarlaAddJackApp")
+        settings.setValue("Command", self.ui.le_command.text())
+        settings.setValue("Name", self.ui.le_name.text())
+        settings.setValue("NumAudioIns", self.ui.sb_audio_ins.value())
+        settings.setValue("NumAudioOuts", self.ui.sb_audio_outs.value())
+        settings.setValue("NumMidiIns", self.ui.sb_midi_ins.value())
+        settings.setValue("NumMidiOuts", self.ui.sb_midi_outs.value())
+        settings.setValue("ManageWindow", self.ui.cb_manage_window.isChecked())
+
+    # ------------------------------------------------------------------------------------------------------------------
 
     def done(self, r):
         QDialog.done(self, r)
         self.close()
 
-# ------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # Main
 
 if __name__ == '__main__':
