@@ -24,18 +24,21 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 float jack_get_max_delayed_usecs(jack_client_t*)
 {
+    // TODO
     return 0.0f;
 }
 
 CARLA_EXPORT
 float jack_get_xrun_delayed_usecs(jack_client_t*)
 {
+    // TODO
     return 0.0f;
 }
 
 CARLA_EXPORT
 void jack_reset_max_delayed_usecs(jack_client_t*)
 {
+    // TODO
 }
 
 // --------------------------------------------------------------------------------------------------------------------

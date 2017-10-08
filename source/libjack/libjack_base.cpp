@@ -27,7 +27,7 @@ void jack_get_version(int* major_ptr, int* minor_ptr, int* micro_ptr, int* proto
     *major_ptr = 1;
     *minor_ptr = 9;
     *micro_ptr = 12;
-    *proto_ptr = 1;
+    *proto_ptr = 9; // FIXME
 }
 
 CARLA_EXPORT
@@ -42,9 +42,11 @@ const char* jack_get_version_string(void)
 CARLA_EXPORT
 int jack_is_realtime(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
-
+    carla_debug("%s(%p)", __FUNCTION__, client);
     return 1;
+
+    // unused
+    (void)client;
 }
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -52,8 +54,7 @@ int jack_is_realtime(jack_client_t* client)
 CARLA_EXPORT
 void jack_free(void* ptr)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, ptr);
-
+    carla_debug("%s(%p)", __FUNCTION__, ptr);
     free(ptr);
 }
 

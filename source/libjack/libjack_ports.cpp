@@ -25,7 +25,7 @@ CARLA_EXPORT
 jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, const char* port_type,
                                 unsigned long flags, unsigned long buffer_size)
 {
-    carla_stdout("%s(%p, %s, %s, 0x%lx, %lu)", __FUNCTION__, client, port_name, port_type, flags, buffer_size);
+    carla_debug("%s(%p, %s, %s, 0x%lx, %lu)", __FUNCTION__, client, port_name, port_type, flags, buffer_size);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
@@ -61,7 +61,7 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             return (jack_port_t*)port;
         }
 
-        carla_stderr2("Invalid port flags '%x'", flags);
+        carla_stderr2("jack_port_register: invalid port flags '%x'", flags);
         return nullptr;
     }
 
@@ -91,18 +91,21 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             return (jack_port_t*)port;
         }
 
-        carla_stderr2("Invalid port flags '%x'", flags);
+        carla_stderr2("jack_port_register: invalid port flags '%x'", flags);
         return nullptr;
     }
 
-    carla_stderr2("Invalid port type '%s'", port_type);
+    carla_stderr2("jack_port_register: invalid port type '%s'", port_type);
     return nullptr;
+
+    // unused
+    (void)buffer_size;
 }
 
 CARLA_EXPORT
 int jack_port_unregister(jack_client_t* client, jack_port_t* port)
 {
-    carla_stdout("%s(%p, %p)", __FUNCTION__, client, port);
+    carla_debug("%s(%p, %p)", __FUNCTION__, client, port);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
@@ -142,7 +145,7 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
         }
     }
 
-    carla_stderr2("Invalid port on unregister");
+    carla_stderr2("jack_port_register: invalid port '%s'", jport->name);
     return 1;
 }
 
@@ -160,15 +163,14 @@ void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t)
 CARLA_EXPORT
 jack_uuid_t jack_port_uuid(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
-
+    carla_stderr2("%s(%p)", __FUNCTION__, port);
     return 0;
 }
 
 CARLA_EXPORT
 const char* jack_port_name(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
@@ -179,7 +181,7 @@ const char* jack_port_name(const jack_port_t* port)
 CARLA_EXPORT
 const char* jack_port_short_name(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
@@ -190,7 +192,7 @@ const char* jack_port_short_name(const jack_port_t* port)
 CARLA_EXPORT
 int jack_port_flags(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
@@ -201,7 +203,7 @@ int jack_port_flags(const jack_port_t* port)
 CARLA_EXPORT
 const char* jack_port_type(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, nullptr);
@@ -215,7 +217,7 @@ const char* jack_port_type(const jack_port_t* port)
 CARLA_EXPORT
 uint32_t jack_port_type_id(const jack_port_t* port)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
 
     JackPortState* const jport = (JackPortState*)port;
     CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
@@ -247,7 +249,6 @@ CARLA_EXPORT
 int jack_port_connected_to(const jack_port_t* port, const char* port_name)
 {
     carla_stderr2("%s(%p, %s)", __FUNCTION__, port, port_name);
-
     return 1;
 }
 
@@ -257,7 +258,6 @@ CARLA_EXPORT
 const char** jack_port_get_connections (const jack_port_t* port)
 {
     carla_stderr2("%s(%p)", __FUNCTION__, port);
-
     return nullptr;
 }
 
@@ -265,7 +265,6 @@ CARLA_EXPORT
 const char** jack_port_get_all_connections(const jack_client_t* client, const jack_port_t* port)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, port);
-
     return nullptr;
 }
 
@@ -339,7 +338,6 @@ CARLA_EXPORT
 int jack_connect(jack_client_t* client, const char* a, const char* b)
 {
     carla_stderr2("%s(%p, %s. %s)", __FUNCTION__, client, a, b);
-
     return 0;
 }
 
@@ -347,7 +345,6 @@ CARLA_EXPORT
 int jack_disconnect(jack_client_t* client, const char* a, const char* b)
 {
     carla_stderr2("%s(%p, %s. %s)", __FUNCTION__, client, a, b);
-
     return 0;
 }
 
@@ -355,7 +352,6 @@ CARLA_EXPORT
 int jack_port_disconnect(jack_client_t* client, jack_port_t* port)
 {
     carla_stderr2("%s(%p, %p)", __FUNCTION__, client, port);
-
     return 0;
 }
 

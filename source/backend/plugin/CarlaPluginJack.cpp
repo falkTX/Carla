@@ -161,10 +161,6 @@ protected:
                 carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
                 fProcess->kill();
             }
-            else
-            {
-                carla_stdout("CarlaPluginJackThread::run() - application auto-closed successfully");
-            }
         }
         else
         {
@@ -177,10 +173,6 @@ protected:
                                         "Saving now will lose its current settings.\n"
                                         "Please remove this plugin, and not rely on it from this point.");
                 kEngine->callback(CarlaBackend::ENGINE_CALLBACK_ERROR, kPlugin->getId(), 0, 0, 0.0f, errorString);
-            }
-            else
-            {
-                carla_stderr("CarlaPluginJackThread::run() - application closed itself");
             }
         }
 

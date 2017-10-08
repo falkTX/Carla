@@ -25,7 +25,7 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 const char** jack_get_ports(jack_client_t* client, const char* a, const char* b, unsigned long flags)
 {
-    carla_stdout("%s(%p, %s, %s, 0x%lx)", __FUNCTION__, client, a, b, flags);
+    carla_stdout("%s(%p, %s, %s, 0x%lx) WIP", __FUNCTION__, client, a, b, flags);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
@@ -76,7 +76,7 @@ const char** jack_get_ports(jack_client_t* client, const char* a, const char* b,
 CARLA_EXPORT
 jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
 {
-    carla_stdout("%s(%p, %s)", __FUNCTION__, client, name);
+    carla_stdout("%s(%p, %s) WIP", __FUNCTION__, client, name);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
@@ -117,12 +117,12 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
         }
         else
         {
-            carla_stderr2("Invalid port short name: '%s'", name);
+            carla_stderr2("jack_port_by_name: invalid port short name '%s'", name);
             return nullptr;
         }
     }
 
-    carla_stderr2("Invalid port name: '%s'", name);
+    carla_stderr2("jack_port_by_name: invalid port name '%s'", name);
     return nullptr;
 }
 
@@ -130,7 +130,6 @@ CARLA_EXPORT
 jack_port_t* jack_port_by_id(jack_client_t* client, jack_port_id_t port_id)
 {
     carla_stderr2("%s(%p, %u)", __FUNCTION__, client, port_id);
-
     return nullptr;
 }
 

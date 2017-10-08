@@ -130,7 +130,7 @@ void CarlaEngineThread::run() noexcept
         carla_msleep(25);
     }
 
-    carla_stdout("CarlaEngineThread closed");
+    carla_debug("CarlaEngineThread closed");
 }
 
 // -----------------------------------------------------------------------

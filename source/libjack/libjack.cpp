@@ -399,12 +399,11 @@ bool CarlaJackAppClient::handleRtData()
     for (; fShmRtClientControl.isDataAvailableForReading();)
     {
         const PluginBridgeRtClientOpcode opcode(fShmRtClientControl.readOpcode());
-    //#ifdef DEBUG
-        if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent)
-        {
-            carla_stdout("CarlaJackAppClientRtThread::run() - got opcode: %s", PluginBridgeRtClientOpcode2str(opcode));
+#ifdef DEBUG
+        if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent) {
+            carla_debug("CarlaJackAppClientRtThread::run() - got opcode: %s", PluginBridgeRtClientOpcode2str(opcode));
         }
-    //#endif
+#endif
 
         switch (opcode)
         {
@@ -762,12 +761,11 @@ bool CarlaJackAppClient::handleRtData()
             break;
         }
 
-    //#ifdef DEBUG
-        if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent)
-        {
-            carla_stdout("CarlaJackAppClientRtThread::run() - opcode %s done", PluginBridgeRtClientOpcode2str(opcode));
+#ifdef DEBUG
+        if (opcode != kPluginBridgeRtClientProcess && opcode != kPluginBridgeRtClientMidiEvent) {
+            carla_debug("CarlaJackAppClientRtThread::run() - opcode %s done", PluginBridgeRtClientOpcode2str(opcode));
         }
-    //#endif
+#endif
     }
 
     return ret;
@@ -780,20 +778,11 @@ bool CarlaJackAppClient::handleNonRtData()
     for (; fShmNonRtClientControl.isDataAvailableForReading();)
     {
         const PluginBridgeNonRtClientOpcode opcode(fShmNonRtClientControl.readOpcode());
-
-// #ifdef DEBUG
-        if (opcode != kPluginBridgeNonRtClientPing)
-        {
-            static int shownNull = 0;
-            if (opcode == kPluginBridgeNonRtClientNull)
-            {
-                if (shownNull > 5)
-                    continue;
-                ++shownNull;
-            }
-            carla_stdout("CarlaJackAppClient::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
+#ifdef DEBUG
+        if (opcode != kPluginBridgeNonRtClientPing) {
+            carla_debug("CarlaJackAppClient::handleNonRtData() - got opcode: %s", PluginBridgeNonRtClientOpcode2str(opcode));
         }
-// #endif
+#endif
 
         if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
             fLastPingTime = Time::currentTimeMillis();
@@ -873,17 +862,11 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
         }
 
-        if (opcode != kPluginBridgeNonRtClientPing)
-        {
-            static int shownNull = 0;
-            if (opcode == kPluginBridgeNonRtClientNull)
-            {
-                if (shownNull > 5)
-                    continue;
-                ++shownNull;
-            }
-            carla_stdout("CarlaJackAppClient::handleNonRtData() - opcode %s handled", PluginBridgeNonRtClientOpcode2str(opcode));
+#ifdef DEBUG
+        if (opcode != kPluginBridgeNonRtClientPing) {
+            carla_debug("CarlaJackAppClient::handleNonRtData() - opcode %s handled", PluginBridgeNonRtClientOpcode2str(opcode));
         }
+#endif
     }
 
     return ret;
@@ -891,7 +874,7 @@ bool CarlaJackAppClient::handleNonRtData()
 
 void CarlaJackAppClient::runRealtimeThread()
 {
-    carla_stderr("CarlaJackAppClient runRealtimeThread START");
+    carla_debug("CarlaJackAppClient runRealtimeThread START");
 
 #ifdef __SSE2_MATH__
     // Set FTZ and DAZ flags
@@ -911,15 +894,13 @@ void CarlaJackAppClient::runRealtimeThread()
 
     fNonRealtimeThread.signalThreadShouldExit();
 
-    carla_stderr("CarlaJackAppClient runRealtimeThread FINISHED");
+    carla_debug("CarlaJackAppClient runRealtimeThread FINISHED");
 }
 
 void CarlaJackAppClient::runNonRealtimeThread()
 {
-    carla_stderr("CarlaJackAppClient runNonRealtimeThread START");
-
-    if (! initSharedMemmory())
-        return;
+    carla_debug("CarlaJackAppClient runNonRealtimeThread START");
+    CARLA_SAFE_ASSERT_RETURN(initSharedMemmory(),);
 
     if (fServer.numMidiIns > 0)
     {
@@ -972,22 +953,16 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     if (quitReceived)
     {
-        carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit by carla");
-
         ::kill(::getpid(), SIGTERM);
     }
     else if (timedOut)
     {
         // TODO send shutdown?
-        carla_stderr("CarlaJackAppClient runNonRealtimeThread END - timedOut");
-
+        carla_stderr("CarlaJackAppClient error: runNonRealtimeThread ended with time out");
         ::kill(::getpid(), SIGTERM);
     }
     else
     {
-        const char* const message("Plugin bridge error, process thread has stopped");
-        const std::size_t messageSize(std::strlen(message));
-
         bool activated;
 
         {
@@ -1010,7 +985,10 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
         if (activated)
         {
-            carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit error");
+            carla_stderr("CarlaJackAppClient error: runNonRealtimeThread ended while client is activated");
+
+            const char* const message("Plugin bridge error, process thread has stopped");
+            const std::size_t messageSize(std::strlen(message));
 
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
             fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
@@ -1018,23 +996,6 @@ void CarlaJackAppClient::runNonRealtimeThread()
             fShmNonRtServerControl.writeCustomData(message, messageSize);
             fShmNonRtServerControl.commitWrite();
         }
-        else
-        {
-            carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit itself");
-
-            //const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-            //fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
-            //fShmNonRtServerControl.commitWrite();
-        }
-
-        /*
-        if (activated)
-        {
-            // TODO infoShutdown
-            if (fClient.shutdownCb != nullptr)
-                fClient.shutdownCb(fClient.shutdownCbPtr);
-        }
-        */
     }
 
     if (fRealtimeThread.isThreadRunning())
@@ -1051,7 +1012,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
 
     fRealtimeThread.stopThread(5000);
 
-    carla_stderr("CarlaJackAppClient runNonRealtimeThread FINISHED");
+    carla_debug("CarlaJackAppClient runNonRealtimeThread FINISHED");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1068,7 +1029,7 @@ static int carla_interposed_callback(int cb_action, void* ptr)
 CARLA_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)
 {
-    carla_stdout("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
+    carla_debug("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
 
     if (JackClientState* const client = gClient.addClient(client_name))
         return (jack_client_t*)client;
@@ -1077,6 +1038,9 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t options,
         *status = JackServerError;
 
     return nullptr;
+
+    // unused
+    (void)options;
 }
 
 CARLA_EXPORT
@@ -1088,7 +1052,7 @@ jack_client_t* jack_client_new(const char* client_name)
 CARLA_EXPORT
 int jack_client_close(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
@@ -1100,7 +1064,7 @@ int jack_client_close(jack_client_t* client)
 CARLA_EXPORT
 pthread_t jack_client_thread_id(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
@@ -1126,12 +1090,15 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 int jack_client_real_time_priority(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     // code as used by juce
     const int minPriority = sched_get_priority_min(SCHED_RR);
     const int maxPriority = sched_get_priority_max(SCHED_RR);
     return ((maxPriority - minPriority) * 9) / 10 + minPriority;
+
+    // unused
+    (void)client;
 }
 
 typedef void (*JackSessionCallback)(jack_session_event_t*, void*);
@@ -1139,8 +1106,7 @@ typedef void (*JackSessionCallback)(jack_session_event_t*, void*);
 CARLA_EXPORT
 int jack_set_session_callback(jack_client_t* client, JackSessionCallback callback, void* arg)
 {
-    carla_stdout("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
-
+    carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
     return 0;
 }
 

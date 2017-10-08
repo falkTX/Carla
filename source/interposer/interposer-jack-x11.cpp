@@ -220,7 +220,7 @@ int XUnmapWindow(Display* display, Window window)
 CARLA_EXPORT
 int jack_carla_interposed_action(int action, void* ptr)
 {
-    carla_stdout("jack_carla_interposed_action(%i, %p)", action, ptr);
+    carla_debug("jack_carla_interposed_action(%i, %p)", action, ptr);
 
     switch (action)
     {

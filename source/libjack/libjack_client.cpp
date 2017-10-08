@@ -30,7 +30,7 @@ int jack_client_name_size(void)
 CARLA_EXPORT
 char* jack_get_client_name(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, nullptr);
@@ -39,14 +39,16 @@ char* jack_get_client_name(jack_client_t* client)
 }
 
 CARLA_EXPORT
-char* jack_get_uuid_for_client_name(jack_client_t*, const char*)
+char* jack_get_uuid_for_client_name(jack_client_t* client, const char* name)
 {
+    carla_stderr2("%s(%p, %s)", __FUNCTION__, client, name);
     return nullptr;
 }
 
 CARLA_EXPORT
-char* jack_get_client_name_by_uuid(jack_client_t*, const char*)
+char* jack_get_client_name_by_uuid(jack_client_t* client, const char* uuid)
 {
+    carla_stderr2("%s(%p, %s)", __FUNCTION__, client, uuid);
     return nullptr;
 }
 
@@ -55,7 +57,7 @@ char* jack_get_client_name_by_uuid(jack_client_t*, const char*)
 CARLA_EXPORT
 int jack_internal_client_new(const char*, const char*, const char*)
 {
-    return 1;
+    return ENOSYS;
 }
 
 CARLA_EXPORT
@@ -68,7 +70,7 @@ void jack_internal_client_close(const char*)
 CARLA_EXPORT
 int jack_activate(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
@@ -83,7 +85,7 @@ int jack_activate(jack_client_t* client)
 CARLA_EXPORT
 int jack_deactivate(jack_client_t* client)
 {
-    carla_stdout("%s(%p)", __FUNCTION__, client);
+    carla_debug("%s(%p)", __FUNCTION__, client);
 
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);

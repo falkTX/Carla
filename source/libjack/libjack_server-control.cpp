@@ -25,7 +25,7 @@ CARLA_BACKEND_USE_NAMESPACE
 CARLA_EXPORT
 int jack_set_freewheel(jack_client_t*, int)
 {
-    return 1;
+    return ENOSYS;
 }
 
 CARLA_EXPORT
@@ -58,6 +58,7 @@ jack_nframes_t jack_get_buffer_size(jack_client_t* client)
 CARLA_EXPORT
 float jack_cpu_load(jack_client_t*)
 {
+    // TODO
     return 0.0f;
 }
 
