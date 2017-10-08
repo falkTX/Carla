@@ -130,7 +130,11 @@ protected:
             const ScopedEnvVar sev2("LD_LIBRARY_PATH", libjackdir.buffer());
             const ScopedEnvVar sev1("LD_PRELOAD", ldpreload.isNotEmpty() ? ldpreload.buffer() : nullptr);
 
-            carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
+            if (kPlugin->getHints() & PLUGIN_HAS_CUSTOM_UI)
+                carla_setenv("CARLA_FRONTEND_WIN_ID", strBuf);
+            else
+                carla_unsetenv("CARLA_FRONTEND_WIN_ID");
+
             carla_setenv("CARLA_LIBJACK_SETUP", fNumPorts.buffer());
             carla_setenv("CARLA_SHM_IDS", fShmIds.buffer());
 
@@ -154,12 +158,12 @@ protected:
 
             if (fProcess->isRunning())
             {
-                carla_stdout("CarlaPluginJackThread::run() - bridge refused to close, force kill now");
+                carla_stdout("CarlaPluginJackThread::run() - application refused to close, force kill now");
                 fProcess->kill();
             }
             else
             {
-                carla_stdout("CarlaPluginJackThread::run() - bridge auto-closed successfully");
+                carla_stdout("CarlaPluginJackThread::run() - application auto-closed successfully");
             }
         }
         else
@@ -167,7 +171,7 @@ protected:
             // forced quit, may have crashed
             if (fProcess->getExitCode() != 0 /*|| fProcess->exitStatus() == QProcess::CrashExit*/)
             {
-                carla_stderr("CarlaPluginJackThread::run() - bridge crashed");
+                carla_stderr("CarlaPluginJackThread::run() - application crashed");
 
                 CarlaString errorString("Plugin '" + CarlaString(kPlugin->getName()) + "' has crashed!\n"
                                         "Saving now will lose its current settings.\n"
@@ -176,7 +180,7 @@ protected:
             }
             else
             {
-                carla_stderr("CarlaPluginJackThread::run() - bridge closed itself");
+                carla_stderr("CarlaPluginJackThread::run() - application closed itself");
             }
         }
 
@@ -364,6 +368,18 @@ public:
     // -------------------------------------------------------------------
     // Set ui stuff
 
+    void showCustomUI(const bool yesNo) override
+    {
+        if (yesNo && ! fBridgeThread.isThreadRunning()) {
+            CARLA_SAFE_ASSERT_RETURN(restartBridgeThread(),);
+        }
+
+        const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+        fShmNonRtClientControl.writeOpcode(yesNo ? kPluginBridgeNonRtClientShowUI : kPluginBridgeNonRtClientHideUI);
+        fShmNonRtClientControl.commitWrite();
+    }
+
     void idle() override
     {
         if (fBridgeThread.isThreadRunning())
@@ -395,9 +411,12 @@ public:
             fTimedOut   = true;
             fTimedError = true;
             fInitiated  = false;
-            carla_stderr2("Plugin bridge has been stopped or crashed");
-            pData->engine->callback(ENGINE_CALLBACK_PLUGIN_UNAVAILABLE, pData->id, 0, 0, 0.0f,
-                                    "Plugin bridge has been stopped or crashed");
+            handleProcessStopped();
+        }
+        else if (fProcCanceled)
+        {
+            handleProcessStopped();
+            fProcCanceled = false;
         }
 
         CarlaPlugin::idle();
@@ -941,7 +960,6 @@ public:
 
         if (fShmRtClientControl.data->procFlags)
         {
-            carla_stdout("PROC Flags active, disabling plugin");
             fInitiated    = false;
             fProcCanceled = true;
         }
@@ -1126,17 +1144,11 @@ public:
                 break;
 
             case kPluginBridgeNonRtServerUiClosed:
-                carla_stdout("bridge closed cleanly?");
-                pData->active = false;
-
-#ifdef HAVE_LIBLO
-                if (pData->engine->isOscControlRegistered())
-                    pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
-#endif
-
-                pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
-
-                fBridgeThread.stopThread(1000);
+                carla_stdout("got kPluginBridgeNonRtServerUiClosed, bridge closed cleanly?");
+                pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+                //fBridgeThread.signalThreadShouldExit();
+                //handleProcessStopped();
+                //fBridgeThread.stopThread(5000);
                 break;
 
             case kPluginBridgeNonRtServerError: {
@@ -1220,6 +1232,8 @@ public:
 
         fInfo.setupLabel = label;
 
+        const int setupHints = label[4] - '0';
+
         // ---------------------------------------------------------------
         // set info
 
@@ -1266,6 +1280,17 @@ public:
         }
 
         // ---------------------------------------------------------------
+        // setup hints and options
+
+        // FIXME dryWet broken
+        pData->hints   = PLUGIN_IS_BRIDGE | /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_NEEDS_FIXED_BUFFERS;
+        pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
+        //fInfo.optionsAvailable = optionAv;
+
+        if (setupHints & 0x10)
+            pData->hints |= PLUGIN_HAS_CUSTOM_UI;
+
+        // ---------------------------------------------------------------
         // init bridge thread
 
         {
@@ -1282,14 +1307,6 @@ public:
 
         if (! restartBridgeThread())
             return false;
-
-        // ---------------------------------------------------------------
-        // setup hints and options
-
-        // FIXME dryWet broken
-        pData->hints   = PLUGIN_IS_BRIDGE | /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_NEEDS_FIXED_BUFFERS;
-        pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
-        //fInfo.optionsAvailable = optionAv;
 
         // ---------------------------------------------------------------
         // register client
@@ -1343,6 +1360,24 @@ private:
 
         CARLA_DECLARE_NON_COPY_STRUCT(Info)
     } fInfo;
+
+    void handleProcessStopped() noexcept
+    {
+        const bool wasActive = pData->active;
+        pData->active = false;
+
+        if (wasActive)
+        {
+#ifdef HAVE_LIBLO
+            if (pData->engine->isOscControlRegistered())
+                pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
+#endif
+            pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
+        }
+
+        if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
+            pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, 0, 0, 0.0f, nullptr);
+    }
 
     void resizeAudioPool(const uint32_t bufferSize)
     {

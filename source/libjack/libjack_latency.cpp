@@ -45,13 +45,59 @@ void jack_port_get_latency_range(jack_port_t*, jack_latency_callback_mode_t, jac
 //int jack_recompute_total_latencies (jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;
 
 CARLA_EXPORT
-jack_nframes_t jack_port_get_latency(jack_port_t*)
+jack_nframes_t jack_port_get_latency(jack_port_t* port)
 {
+    JackPortState* const jport = (JackPortState*)port;
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
+
+    if (jport->isMidi || ! jport->isSystem)
+        return 0;
+
+    // TODO
+    const uint32_t bufferSize = 128;
+    const uint32_t latencyMultiplier = 3;
+
+    if (jport->flags & JackPortIsInput)
+        return bufferSize*latencyMultiplier;
+    if (jport->flags & JackPortIsOutput)
+        return bufferSize;
+
     return 0;
 }
 
-//jack_nframes_t jack_port_get_total_latency (jack_client_t *client,
-//                                            jack_port_t *port) JACK_OPTIONAL_WEAK_DEPRECATED_EXPORT;
+CARLA_EXPORT
+jack_nframes_t jack_port_get_total_latency(jack_client_t* client, jack_port_t* port)
+{
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    JackPortState* const jport = (JackPortState*)port;
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
+
+    if (jport->isMidi)
+        return 0;
+
+    // TODO
+    const uint32_t bufferSize = jclient->server.bufferSize;
+    const uint32_t latencyMultiplier = 3;
+
+    if (jport->isSystem)
+    {
+        if (jport->flags & JackPortIsInput)
+            return bufferSize*latencyMultiplier;
+        if (jport->flags & JackPortIsOutput)
+            return bufferSize;
+    }
+    else
+    {
+        if (jport->flags & JackPortIsInput)
+            return bufferSize;
+        if (jport->flags & JackPortIsOutput)
+            return bufferSize*latencyMultiplier;
+    }
+
+    return 0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 

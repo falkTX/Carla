@@ -81,13 +81,16 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
 
+    const JackServerState& jserver(jclient->server);
+    const int commonFlags = JackPortIsPhysical|JackPortIsTerminal;
+
     static const JackPortState capturePorts[] = {
-        JackPortState("system", "capture_1", 0, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, false, true),
-        JackPortState("system", "capture_2", 1, JackPortIsOutput|JackPortIsPhysical|JackPortIsTerminal, false, true),
+        JackPortState("system", "capture_1", 0, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 0),
+        JackPortState("system", "capture_2", 1, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 1),
     };
     static const JackPortState playbackPorts[] = {
-        JackPortState("system", "playback_1", 3, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, false, true),
-        JackPortState("system", "playback_2", 4, JackPortIsInput|JackPortIsPhysical|JackPortIsTerminal, false, true),
+        JackPortState("system", "playback_1", 3, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 0),
+        JackPortState("system", "playback_2", 4, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 1),
     };
 
     if (std::strncmp(name, "system:", 7) == 0)

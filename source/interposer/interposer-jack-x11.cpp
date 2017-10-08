@@ -22,9 +22,22 @@
 
 struct ScopedLibOpen {
     void* handle;
+    Window winId;
 
     ScopedLibOpen()
-        : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)) {}
+        : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)),
+          winId(0)
+    {
+        if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
+        {
+            CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0',);
+
+            const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
+            CARLA_SAFE_ASSERT_RETURN(winIdLL > 0,);
+
+            winId = static_cast<Window>(winIdLL);
+        }
+    }
 
     ~ScopedLibOpen()
     {
@@ -33,18 +46,23 @@ struct ScopedLibOpen {
     }
 };
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 // Function typedefs
 
 typedef int (*XMapWindowFunc)(Display*, Window);
 typedef int (*XUnmapWindowFunc)(Display*, Window);
+typedef int (*CarlaInterposedCallback)(int, void*);
 
-// -----------------------------------------------------------------------
-// Current mapped window
+// ---------------------------------------------------------------------------------------------------------------------
+// Current state
 
-static Window sCurrentlyMappedWindow = 0;
+static Display* gCurrentlyMappedDisplay = nullptr;
+static Window gCurrentlyMappedWindow = 0;
+static CarlaInterposedCallback gInterposedCallback = nullptr;
+static bool gCurrentWindowMapped = false;
+static bool gCurrentWindowVisible = false;
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 // Calling the real functions
 
 static int real_XMapWindow(Display* display, Window window)
@@ -63,7 +81,7 @@ static int real_XUnmapWindow(Display* display, Window window)
     return func(display, window);
 }
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 // Our custom functions
 
 CARLA_EXPORT
@@ -73,7 +91,7 @@ int XMapWindow(Display* display, Window window)
 
     for (;;)
     {
-        if (sCurrentlyMappedWindow != 0)
+        if (slo.winId == 0)
             break;
 
         Atom atom;
@@ -84,40 +102,96 @@ int XMapWindow(Display* display, Window window)
         const Atom wmWindowType = XInternAtom(display, "_NET_WM_WINDOW_TYPE", True);
 
         if (XGetWindowProperty(display, window, wmWindowType, 0, ~0L, False, AnyPropertyType,
-                               &atom, &atomFormat, &numItems, &ignored, &atomPtrs) == Success)
+                               &atom, &atomFormat, &numItems, &ignored, &atomPtrs) != Success)
+            break;
+
+        const Atom* const atomValues = (const Atom*)atomPtrs;
+        bool isMainWindow = (numItems == 0);
+
+        for (ulong i=0; i<numItems; ++i)
         {
-            const Atom* const atomValues = (const Atom*)atomPtrs;
+            const char* const atomValue(XGetAtomName(display, atomValues[i]));
+            CARLA_SAFE_ASSERT_CONTINUE(atomValue != nullptr && atomValue[0] != '\0');
 
-            for (ulong i=0; i<numItems; ++i)
+            if (std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_COMBO"        ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_DIALOG"       ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_DND"          ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_DOCK"         ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_DROPDOWN_MENU") == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_MENU"         ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_NOTIFICATION" ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_POPUP_MENU"   ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_SPLASH"       ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_TOOLBAR"      ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_TOOLTIP"      ) == 0 ||
+                std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_UTILITY"      ) == 0)
             {
-                const char* const atomValue(XGetAtomName(display, atomValues[i]));
-                CARLA_SAFE_ASSERT_CONTINUE(atomValue != nullptr && atomValue[0] != '\0');
+                isMainWindow = false;
+                break;
+            }
 
-                if (std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_NORMAL") == 0)
-                {
-                    sCurrentlyMappedWindow = window;
-                    break;
-                }
+            if (std::strcmp(atomValue, "_NET_WM_WINDOW_TYPE_NORMAL") == 0)
+            {
+                // window is good, use it if no other types are set
+                isMainWindow = true;
+            }
+            else
+            {
+                carla_stdout("=======================================> %s", atomValue);
             }
         }
 
-        if (sCurrentlyMappedWindow == 0)
-            break;
-
-        if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
+        if (! isMainWindow)
         {
-            CARLA_SAFE_ASSERT_BREAK(winIdStr[0] != '\0');
-
-            const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
-            CARLA_SAFE_ASSERT_BREAK(winIdLL > 0);
-
-            const Window winId(static_cast<Window>(winIdLL));
-            XSetTransientForHint(display, window, static_cast<Window>(winId));
-
-            carla_stdout("Transient hint correctly applied before mapping window");
+            // this has always bothered me...
+            if (gCurrentlyMappedWindow != 0 && gCurrentWindowMapped && gCurrentWindowVisible)
+                XSetTransientForHint(display, window, gCurrentlyMappedWindow);
+            break;
         }
 
-        break;
+        Window transientWindow = 0;
+        if (XGetTransientForHint(display, window, &transientWindow) == Success && transientWindow != 0)
+        {
+            carla_stdout("Window has transient set already, ignoring it");
+            break;
+        }
+
+        // got a new window, we may need to forget last one
+        if (gCurrentlyMappedDisplay != nullptr && gCurrentlyMappedWindow != 0)
+        {
+            // igonre requests against the current mapped window
+            if (gCurrentlyMappedWindow == window)
+                return 0;
+
+            // we already have a mapped window, with carla visible button on, should be a dialog of sorts..
+            if (gCurrentWindowMapped && gCurrentWindowVisible)
+            {
+                XSetTransientForHint(display, window, gCurrentlyMappedWindow);
+                break;
+            }
+            // ignore empty windows created after the main one
+            if (numItems == 0)
+                break;
+
+            carla_stdout("NOTICE: XMapWindow now showing previous window");
+            real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+        }
+
+        gCurrentlyMappedDisplay = display;
+        gCurrentlyMappedWindow  = window;
+        gCurrentWindowMapped    = true;
+
+        XSetTransientForHint(display, window, slo.winId);
+
+        if (gCurrentWindowVisible)
+        {
+            carla_stdout("JACK application window found, showing it now");
+            break;
+        }
+
+        gCurrentWindowMapped = false;
+        carla_stdout("JACK application window found and captured");
+        return 0;
     }
 
     return real_XMapWindow(display, window);
@@ -126,10 +200,56 @@ int XMapWindow(Display* display, Window window)
 CARLA_EXPORT
 int XUnmapWindow(Display* display, Window window)
 {
-    if (sCurrentlyMappedWindow == window)
-        sCurrentlyMappedWindow = 0;
+    if (gCurrentlyMappedWindow == window)
+    {
+        gCurrentlyMappedDisplay = nullptr;
+        gCurrentlyMappedWindow  = 0;
+        gCurrentWindowMapped    = false;
+        gCurrentWindowVisible   = false;
+
+        if (gInterposedCallback != nullptr)
+            gInterposedCallback(1, nullptr);
+    }
 
     return real_XUnmapWindow(display, window);
 }
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+
+CARLA_EXPORT
+int jack_carla_interposed_action(int action, void* ptr)
+{
+    carla_stdout("jack_carla_interposed_action(%i, %p)", action, ptr);
+
+    switch (action)
+    {
+    case 1: // set callback
+        gInterposedCallback = (CarlaInterposedCallback)ptr;
+        break;
+
+    case 2: // show gui
+        gCurrentWindowVisible = true;
+        if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+            break;
+        gCurrentWindowMapped = true;
+        return real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+
+    case 3: // hide gui
+        gCurrentWindowVisible = false;
+        if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+            break;
+        gCurrentWindowMapped = false;
+        return real_XUnmapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+
+    case 4: // close everything
+        gCurrentWindowMapped  = false;
+        gCurrentWindowVisible = false;
+        gCurrentlyMappedDisplay = nullptr;
+        gCurrentlyMappedWindow  = 0;
+        return 0;
+    }
+
+    return -1;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------

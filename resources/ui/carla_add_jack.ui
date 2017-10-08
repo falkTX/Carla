@@ -159,11 +159,11 @@
       </item>
       <item row="3" column="1" colspan="3">
        <widget class="QCheckBox" name="cb_manage_window">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
         <property name="text">
          <string>Take control of main applicaton window</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

@@ -24,6 +24,15 @@ using juce::FloatVectorOperations;
 using juce::Thread;
 using juce::Time;
 
+typedef int (*CarlaInterposedCallback)(int, void*);
+
+CARLA_EXPORT
+int jack_carla_interposed_action(int, void*)
+{
+    carla_stderr2("Non-export jack_carla_interposed_action called, this should not happen!!");
+    return 0;
+}
+
 CARLA_BACKEND_START_NAMESPACE
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -76,6 +85,8 @@ private:
     Callback* const fCallback;
 };
 
+static int carla_interposed_callback(int, void*);
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 class CarlaJackAppClient : public CarlaJackRealtimeThread::Callback,
@@ -90,7 +101,7 @@ public:
           fAudioPoolCopy(nullptr),
           fAudioTmpBuf(nullptr),
           fDummyMidiInBuffer(true, "ignored"),
-          fDummyMidiOutBuffer(true, "ignored"),
+          fDummyMidiOutBuffer(false, "ignored"),
           fMidiInBuffers(nullptr),
           fMidiOutBuffers(nullptr),
           fIsOffline(false),
@@ -127,10 +138,12 @@ public:
         fBaseNameNonRtClientControl[6] = '\0';
         fBaseNameNonRtServerControl[6] = '\0';
 
-        fNumPorts.audioIns  = libjackSetup[0] - '0';
-        fNumPorts.audioOuts = libjackSetup[1] - '0';
-        fNumPorts.midiIns   = libjackSetup[2] - '0';
-        fNumPorts.midiOuts  = libjackSetup[3] - '0';
+        fServer.numAudioIns  = libjackSetup[0] - '0';
+        fServer.numAudioOuts = libjackSetup[1] - '0';
+        fServer.numMidiIns   = libjackSetup[2] - '0';
+        fServer.numMidiOuts  = libjackSetup[3] - '0';
+
+        jack_carla_interposed_action(1, (void*)carla_interposed_callback);
 
         fNonRealtimeThread.startThread();
     }
@@ -181,6 +194,23 @@ public:
         return (pthread_t)fRealtimeThread.getThreadId();
     }
 
+    int handleInterposerCallback(const int cb_action, void* const ptr)
+    {
+        carla_stdout("handleInterposerCallback(%o, %p)", cb_action, ptr);
+
+        switch (cb_action)
+        {
+        case 1: {
+            const CarlaMutexLocker cml(fShmNonRtServerControl.mutex);
+            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
+            fShmNonRtServerControl.commitWrite();
+            break;
+        }
+        }
+
+        return 0;
+    }
+
     // -------------------------------------------------------------------
 
 protected:
@@ -214,19 +244,6 @@ private:
 
     bool fIsOffline;
     int64_t fLastPingTime;
-
-    struct NumPorts {
-        uint8_t audioIns;
-        uint8_t audioOuts;
-        uint8_t midiIns;
-        uint8_t midiOuts;
-
-        NumPorts()
-            : audioIns(0),
-              audioOuts(0),
-              midiIns(0),
-              midiOuts(0) {}
-    } fNumPorts;
 
     CarlaJackRealtimeThread    fRealtimeThread;
     CarlaJackNonRealtimeThread fNonRealtimeThread;
@@ -477,7 +494,7 @@ bool CarlaJackAppClient::handleRtData()
             const uint8_t  size(fShmRtClientControl.readByte());
             CARLA_SAFE_ASSERT_BREAK(size > 0);
 
-            if (port >= fNumPorts.midiIns || size > JackMidiPortBuffer::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
+            if (port >= fServer.numMidiIns || size > JackMidiPortBuffer::kMaxEventSize || ! fRealtimeThreadMutex.tryLock())
             {
                 for (uint8_t i=0; i<size; ++i)
                     fShmRtClientControl.readByte();
@@ -513,7 +530,7 @@ bool CarlaJackAppClient::handleRtData()
                 CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
                 // location to start of audio outputs (shm buffer)
-                float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fNumPorts.audioIns);
+                float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fServer.numAudioIns);
 
                 if (! fClients.isEmpty())
                 {
@@ -558,8 +575,8 @@ bool CarlaJackAppClient::handleRtData()
                         // check if we can process
                         if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                         {
-                            if (fNumPorts.audioOuts > 0)
-                                FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
+                            if (fServer.numAudioOuts > 0)
+                                FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
 
                             if (jclient->deactivated)
                                 fShmRtClientControl.data->procFlags = 1;
@@ -581,7 +598,7 @@ bool CarlaJackAppClient::handleRtData()
                                 JackPortState* const jport = it.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                                if (i++ < fNumPorts.audioIns)
+                                if (i++ < fServer.numAudioIns)
                                 {
                                     jport->buffer = fdataReal;
                                     fdataReal += fServer.bufferSize;
@@ -594,7 +611,7 @@ bool CarlaJackAppClient::handleRtData()
                                 }
                             }
                             // FIXME one single "if"
-                            for (; i++ < fNumPorts.audioIns;)
+                            for (; i++ < fServer.numAudioIns;)
                             {
                                 fdataReal += fServer.bufferSize;
                                 fdataCopy += fServer.bufferSize;
@@ -610,7 +627,7 @@ bool CarlaJackAppClient::handleRtData()
                                 JackPortState* const jport = it.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                                if (i++ < fNumPorts.audioOuts)
+                                if (i++ < fServer.numAudioOuts)
                                 {
                                     jport->buffer = fdataCopy;
                                     fdataCopy += fServer.bufferSize;
@@ -622,7 +639,7 @@ bool CarlaJackAppClient::handleRtData()
                                 }
                             }
                             // FIXME one single "if"
-                            for (; i++ < fNumPorts.audioOuts;)
+                            for (; i++ < fServer.numAudioOuts;)
                             {
                                 FloatVectorOperations::clear(fdataCopy, fServer.bufferSize);
                                 fdataCopy += fServer.bufferSize;
@@ -635,7 +652,7 @@ bool CarlaJackAppClient::handleRtData()
                                 JackPortState* const jport = it.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                                if (i++ < fNumPorts.midiIns)
+                                if (i++ < fServer.numMidiIns)
                                     jport->buffer = &fMidiInBuffers[i-1];
                                 else
                                     jport->buffer = &fDummyMidiInBuffer;
@@ -648,7 +665,7 @@ bool CarlaJackAppClient::handleRtData()
                                 JackPortState* const jport = it.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
-                                if (i++ < fNumPorts.midiOuts)
+                                if (i++ < fServer.numMidiOuts)
                                     jport->buffer = &fMidiOutBuffers[i-1];
                                 else
                                     jport->buffer = &fDummyMidiOutBuffer;
@@ -659,19 +676,19 @@ bool CarlaJackAppClient::handleRtData()
 
                             jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
 
-                            if (fNumPorts.audioOuts > 0)
+                            if (fServer.numAudioOuts > 0)
                             {
                                 if (++numClientOutputsProcessed == 1)
                                 {
                                     // first client, we can copy stuff over
                                     FloatVectorOperations::copy(fdataRealOuts, fdataCopyOuts,
-                                                                fServer.bufferSize*fNumPorts.audioOuts);
+                                                                fServer.bufferSize*fServer.numAudioOuts);
                                 }
                                 else
                                 {
                                     // subsequent clients, add data (then divide by number of clients later on)
                                     FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
-                                                               fServer.bufferSize*fNumPorts.audioOuts);
+                                                               fServer.bufferSize*fServer.numAudioOuts);
                                 }
                             }
                         }
@@ -682,28 +699,28 @@ bool CarlaJackAppClient::handleRtData()
                         // more than 1 client active, need to divide buffers
                         FloatVectorOperations::multiply(fdataRealOuts,
                                                         1.0f/static_cast<float>(numClientOutputsProcessed),
-                                                        fServer.bufferSize*fNumPorts.audioOuts);
+                                                        fServer.bufferSize*fServer.numAudioOuts);
                     }
                 }
                 // fClients.isEmpty()
-                else if (fNumPorts.audioOuts > 0)
+                else if (fServer.numAudioOuts > 0)
                 {
-                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fNumPorts.audioOuts);
+                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
                 }
 
-                for (uint8_t i=0; i<fNumPorts.midiIns; ++i)
+                for (uint8_t i=0; i<fServer.numMidiIns; ++i)
                 {
                     fMidiInBuffers[i].count = 0;
                     fMidiInBuffers[i].bufferPoolPos = 0;
                 }
 
-                if (fNumPorts.midiOuts > 0)
+                if (fServer.numMidiOuts > 0)
                 {
                     uint8_t* midiData(fShmRtClientControl.data->midiOut);
                     carla_zeroBytes(midiData, kBridgeRtClientDataMidiOutSize);
                     std::size_t curMidiDataPos = 0;
 
-                    for (uint8_t i=0; i<fNumPorts.midiOuts; ++i)
+                    for (uint8_t i=0; i<fServer.numMidiOuts; ++i)
                     {
                         JackMidiPortBuffer& midiPortBuf(fMidiOutBuffers[i]);
 
@@ -837,7 +854,13 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientShowUI:
+            jack_carla_interposed_action(2, nullptr);
+            break;
+
         case kPluginBridgeNonRtClientHideUI:
+            jack_carla_interposed_action(3, nullptr);
+            break;
+
         case kPluginBridgeNonRtClientUiParameterChange:
         case kPluginBridgeNonRtClientUiProgramChange:
         case kPluginBridgeNonRtClientUiMidiProgramChange:
@@ -898,19 +921,19 @@ void CarlaJackAppClient::runNonRealtimeThread()
     if (! initSharedMemmory())
         return;
 
-    if (fNumPorts.midiIns > 0)
+    if (fServer.numMidiIns > 0)
     {
-        fMidiInBuffers = new JackMidiPortBuffer[fNumPorts.midiIns];
+        fMidiInBuffers = new JackMidiPortBuffer[fServer.numMidiIns];
 
-        for (uint8_t i=0; i<fNumPorts.midiIns; ++i)
+        for (uint8_t i=0; i<fServer.numMidiIns; ++i)
             fMidiInBuffers[i].isInput = true;
     }
 
-    if (fNumPorts.midiOuts > 0)
+    if (fServer.numMidiOuts > 0)
     {
-        fMidiOutBuffers = new JackMidiPortBuffer[fNumPorts.midiOuts];
+        fMidiOutBuffers = new JackMidiPortBuffer[fServer.numMidiOuts];
 
-        for (uint8_t i=0; i<fNumPorts.midiOuts; ++i)
+        for (uint8_t i=0; i<fServer.numMidiOuts; ++i)
             fMidiOutBuffers[i].isInput = false;
     }
 
@@ -999,9 +1022,9 @@ void CarlaJackAppClient::runNonRealtimeThread()
         {
             carla_stderr("CarlaJackAppClient runNonRealtimeThread END - quit itself");
 
-            const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
-            fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
-            fShmNonRtServerControl.commitWrite();
+            //const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+            //fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
+            //fShmNonRtServerControl.commitWrite();
         }
 
         /*
@@ -1014,18 +1037,33 @@ void CarlaJackAppClient::runNonRealtimeThread()
         */
     }
 
-    fRealtimeThread.signalThreadShouldExit();
+    if (fRealtimeThread.isThreadRunning())
+    {
+        fRealtimeThread.signalThreadShouldExit();
+
+        const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+        if (fShmRtClientControl.data != nullptr)
+            fShmRtClientControl.data->procFlags = 1;
+    }
 
     clearSharedMemory();
 
     fRealtimeThread.stopThread(5000);
 
-    carla_stderr("CarlaJackAppClient run FINISHED");
+    carla_stderr("CarlaJackAppClient runNonRealtimeThread FINISHED");
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
 
 static CarlaJackAppClient gClient;
+
+static int carla_interposed_callback(int cb_action, void* ptr)
+{
+    return gClient.handleInterposerCallback(cb_action, ptr);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
 jack_client_t* jack_client_open(const char* client_name, jack_options_t options, jack_status_t* status, ...)

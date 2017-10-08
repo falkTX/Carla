@@ -83,7 +83,7 @@ struct JackMidiPortBuffer {
         : count(0),
           isInput(input),
           events(nullptr),
-          bufferPoolPos(0),
+          bufferPoolPos(kBufferPoolSize),
           bufferPool(nullptr) {}
 
     ~JackMidiPortBuffer()
@@ -99,8 +99,10 @@ struct JackPortState {
     void* buffer;
     uint index;
     uint flags;
-    bool isMidi;
-    bool isSystem;
+    bool isMidi : 1;
+    bool isSystem : 1;
+    bool isConnected : 1;
+    bool unused : 1;
 
     JackPortState()
         : name(nullptr),
@@ -109,16 +111,19 @@ struct JackPortState {
           index(0),
           flags(0),
           isMidi(false),
-          isSystem(false) {}
+          isSystem(false),
+          isConnected(false) {}
 
-    JackPortState(const char* const cn, const char* const pn, const uint i, const uint f, const bool midi, const bool sys)
+    JackPortState(const char* const cn, const char* const pn, const uint i, const uint f,
+                  const bool midi, const bool sys, const bool con)
         : name(strdup(pn)),
           fullname(nullptr),
           buffer(nullptr),
           index(i),
           flags(f),
           isMidi(midi),
-          isSystem(sys)
+          isSystem(sys),
+          isConnected(con)
     {
         char strBuf[STR_MAX+1];
         snprintf(strBuf, STR_MAX, "%s:%s", cn, pn);
@@ -235,6 +240,11 @@ struct JackServerState {
     uint32_t bufferSize;
     double   sampleRate;
 
+    uint8_t numAudioIns;
+    uint8_t numAudioOuts;
+    uint8_t numMidiIns;
+    uint8_t numMidiOuts;
+
     bool playing;
     jack_position_t position;
 
@@ -242,6 +252,10 @@ struct JackServerState {
         : jackAppPtr(app),
           bufferSize(0),
           sampleRate(0.0),
+          numAudioIns(0),
+          numAudioOuts(0),
+          numMidiIns(0),
+          numMidiOuts(0),
           playing(false)
     {
         carla_zeroStruct(position);
