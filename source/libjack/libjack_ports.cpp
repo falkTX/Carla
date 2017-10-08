@@ -323,14 +323,33 @@ int jack_port_get_aliases(const jack_port_t*, char* aliases[2])
 
 // --------------------------------------------------------------------------------------------------------------------
 
-//int jack_port_request_monitor (jack_port_t *port, int onoff) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_port_request_monitor(jack_port_t* port, int onoff)
+{
+    carla_stderr2("%s(%p, %i)", __FUNCTION__, port, onoff);
+    return ENOSYS;
+}
 
-//int jack_port_request_monitor_by_name (jack_client_t *client,
-//                                       const char *port_name, int onoff) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_port_request_monitor_by_name(jack_client_t* client, const char* port_name, int onoff)
+{
+    carla_stderr2("%s(%p, %s, %i)", __FUNCTION__, client, port_name, onoff);
+    return ENOSYS;
+}
 
-//int jack_port_ensure_monitor (jack_port_t *port, int onoff) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_port_ensure_monitor(jack_port_t* port, int onoff)
+{
+    carla_stderr2("%s(%p, %i)", __FUNCTION__, port, onoff);
+    return ENOSYS;
+}
 
-//int jack_port_monitoring_input (jack_port_t *port) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_port_monitoring_input(jack_port_t* port)
+{
+    carla_stderr2("%s(%p)", __FUNCTION__, port);
+    return 0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -363,8 +382,25 @@ int jack_port_name_size(void)
     return STR_MAX;
 }
 
-// int jack_port_type_size(void) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_port_type_size(void)
+{
+    return STR_MAX;
+}
 
-//size_t jack_port_type_get_buffer_size (jack_client_t *client, const char *port_type) JACK_WEAK_EXPORT;
+CARLA_EXPORT
+size_t jack_port_type_get_buffer_size(jack_client_t* client, const char* port_type)
+{
+    carla_debug("%s(%p, %s)", __FUNCTION__, client, port_type);
+    CARLA_SAFE_ASSERT_RETURN(port_type != nullptr && port_type[0] != '\0', 0);
+
+    if (std::strcmp(port_type, JACK_DEFAULT_MIDI_TYPE) == 0)
+        return JackMidiPortBuffer::kMaxEventSize;
+
+    return 0;
+
+    // unused
+    (void)client;
+}
 
 // --------------------------------------------------------------------------------------------------------------------

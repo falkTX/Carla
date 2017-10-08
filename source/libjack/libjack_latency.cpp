@@ -22,9 +22,11 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-// int jack_set_latency_callback (jack_client_t *client,
-//                                JackLatencyCallback latency_callback,
-//                                void *) JACK_WEAK_EXPORT;
+int jack_set_latency_callback(jack_client_t* client, JackLatencyCallback callback, void* arg)
+{
+    carla_stderr2("%s(%p, %p, %p)", __FUNCTION__, client, callback, arg);
+    return 0;
+}
 
 // --------------------------------------------------------------------------------------------------------------------
 

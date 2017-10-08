@@ -1101,6 +1101,13 @@ int jack_client_real_time_priority(jack_client_t* client)
     (void)client;
 }
 
+int jack_client_create_thread(jack_client_t* client, pthread_t* thread, int priority,
+                               int realtime, void *(*start_routine)(void*), void* arg)
+{
+    carla_stderr2("%s(%p, %p, %i, %i, %p, %p)", __FUNCTION__, client, thread, priority, realtime, start_routine, arg);
+    return ENOSYS;
+}
+
 typedef void (*JackSessionCallback)(jack_session_event_t*, void*);
 
 CARLA_EXPORT

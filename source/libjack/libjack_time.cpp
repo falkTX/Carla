@@ -21,7 +21,15 @@ CARLA_BACKEND_USE_NAMESPACE
 
 // --------------------------------------------------------------------------------------------------------------------
 
-//jack_nframes_t jack_frames_since_cycle_start (const jack_client_t *) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+jack_nframes_t jack_frames_since_cycle_start(const jack_client_t* client)
+{
+    const JackClientState* const jclient = (const JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 0);
+
+    // TODO
+    return 0;
+}
 
 CARLA_EXPORT
 jack_nframes_t jack_frame_time(const jack_client_t* client)
