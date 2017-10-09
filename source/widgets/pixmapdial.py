@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Pixmap Dial, a custom Qt4 widget
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Pixmap Dial, a custom Qt widget
+# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -58,18 +58,27 @@ class PixmapDial(QDial):
     HOVER_MIN = 0
     HOVER_MAX = 9
 
+    MODE_DEFAULT = 0
+    MODE_LINEAR = 1
+
     # signals
     realValueChanged = pyqtSignal(float)
 
     def __init__(self, parent, index=0):
         QDial.__init__(self, parent)
 
+        self.fDialMode = self.MODE_LINEAR
+
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
         self.fRealValue = 0.0
 
         self.fIsHovered = False
+        self.fIsPressed = False
         self.fHoverStep = self.HOVER_MIN
+
+        self.fLastDragPos = None
+        self.fLastDragValue = 0.0
 
         self.fIndex     = index
         self.fPixmap    = QPixmap(":/bitmaps/dial_01d.png")
@@ -232,9 +241,24 @@ class PixmapDial(QDial):
         if self.fRealValue == value:
             return
 
-        self.fRealValue = value
-        normValue = float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum)
-        QDial.setValue(self, int(normValue * 10000))
+        if value <= self.fMinimum:
+            qtValue = 0
+            self.fRealValue = self.fMinimum
+
+        elif value >= self.fMaximum:
+            qtValue = 10000
+            self.fRealValue = self.fMaximum
+
+        else:
+            qtValue = int(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * 10000)
+            self.fRealValue = value
+
+        # Block change signal, we'll handle it ourselves
+        self.blockSignals(True)
+        QDial.setValue(self, qtValue)
+        self.blockSignals(False)
+
+        self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
@@ -269,6 +293,36 @@ class PixmapDial(QDial):
         if self.fHoverStep == self.HOVER_MAX:
             self.fHoverStep = self.HOVER_MAX - 1
         QDial.leaveEvent(self, event)
+
+    def mousePressEvent(self, event):
+        if self.fDialMode == self.MODE_DEFAULT:
+            return QDial.mousePressEvent(self, event)
+
+        if event.button() == Qt.LeftButton:
+            self.fIsPressed = True
+            self.fLastDragPos = event.pos()
+            self.fLastDragValue = self.fRealValue
+
+    def mouseMoveEvent(self, event):
+        if self.fDialMode == self.MODE_DEFAULT:
+            return QDial.mouseMoveEvent(self, event)
+
+        if not self.fIsPressed:
+            return
+
+        range = (self.fMaximum - self.fMinimum) / 4.0
+        pos   = event.pos()
+        dx    = range * float(pos.x() - self.fLastDragPos.x()) / self.width()
+        dy    = range * float(pos.y() - self.fLastDragPos.y()) / self.height()
+
+        self.setValue(self.fLastDragValue + dx - dy)
+
+    def mouseReleaseEvent(self, event):
+        if self.fDialMode == self.MODE_DEFAULT:
+            return QDial.mouseReleaseEvent(self, event)
+
+        if self.fIsPressed:
+            self.fIsPressed = False
 
     def paintEvent(self, event):
         painter = QPainter(self)
