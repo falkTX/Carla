@@ -1002,7 +1002,7 @@ else
 endif
 ifeq ($(HAVE_DGL),true)
 	@echo "DISTRHO Plugins:$(ANS_YES)(with UI)"
-ifneq ($(HAVE_PROJECTM),true)
+ifeq ($(HAVE_PROJECTM),true)
 	@echo "DISTRHO ProM:   $(ANS_YES)"
 else
 	@echo "DISTRHO ProM:   $(ANS_NO) (missing libprojectM)"
