@@ -414,6 +414,7 @@ class CarlaSettingsW(QDialog):
         self.ui.sb_engine_ui_bridges_timeout.setValue(self.host.uiBridgesTimeout)
         self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(self.host.preferPluginBridges)
+        self.ui.ch_exp_export_lv2.setChecked(self.host.exportLV2)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -479,6 +480,9 @@ class CarlaSettingsW(QDialog):
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
                                                            type=bool))
 
+        self.ui.ch_exp_export_lv2.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,
+                                                            CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT,
+                                                            type=bool))
 
         self.ui.ch_exp_load_lib_global.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL,
                                                                  CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL,
@@ -547,6 +551,7 @@ class CarlaSettingsW(QDialog):
 
             settings.setValue(CARLA_KEY_ENGINE_PROCESS_MODE, self.host.nextProcessMode)
 
+        self.host.exportLV2           = self.ui.ch_exp_export_lv2.isChecked()
         self.host.forceStereo         = self.ui.ch_engine_force_stereo.isChecked()
         self.host.maxParameters       = self.ui.sb_engine_max_params.value()
         self.host.manageUIs           = self.ui.ch_engine_manage_uis.isChecked()
@@ -575,6 +580,7 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_ENGINE_PREFER_UI_BRIDGES,     self.host.preferUIBridges)
         settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,      self.host.exportLV2)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -774,6 +780,7 @@ class CarlaSettingsW(QDialog):
         # Forever experimental
         self.ui.cb_exp_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
         self.ui.ch_exp_jack_apps.setChecked(CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS)
+        self.ui.ch_exp_export_lv2.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT)
         self.ui.ch_exp_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
         self.ui.ch_exp_prevent_bad_behaviour.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR)
 

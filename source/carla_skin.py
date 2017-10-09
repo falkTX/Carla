@@ -1040,9 +1040,12 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         if self.fIdleTimerId != 0:
             actRemove.setVisible(False)
 
-        menu.addSeparator()
+        if self.host.exportLV2:
+            menu.addSeparator()
+            actExportLV2 = menu.addAction(self.tr("Export LV2..."))
 
-        actExportLV2 = menu.addAction(self.tr("Export LV2..."))
+        else:
+            actExportLV2 = None
 
         # -------------------------------------------------------------
         # exec

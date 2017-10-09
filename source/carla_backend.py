@@ -1233,6 +1233,7 @@ class CarlaHostMeta(object):
 
         # settings
         self.experimental        = False
+        self.exportLV2           = False
         self.forceStereo         = False
         self.manageUIs           = False
         self.maxParameters       = 0

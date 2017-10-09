@@ -1502,6 +1502,13 @@
              </widget>
             </item>
             <item>
+             <widget class="QCheckBox" name="ch_exp_export_lv2">
+              <property name="text">
+               <string>Export single plugins to LV2</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QCheckBox" name="ch_exp_load_lib_global">
               <property name="text">
                <string>Load Carla backend in global namespace (NOT RECOMMENDED)</string>

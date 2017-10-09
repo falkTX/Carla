@@ -229,6 +229,7 @@ CARLA_KEY_PATHS_SFZ    = "Paths/SFZ"
 
 CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES        = "Experimental/PluginBridges"       # bool
 CARLA_KEY_EXPERIMENTAL_JACK_APPS             = "Experimental/JackApplications"    # bool
+CARLA_KEY_EXPERIMENTAL_EXPORT_LV2            = "Experimental/ExportLV2"           # bool
 CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = "Experimental/PreventBadBehaviour" # bool
 CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL       = "Experimental/LoadLibGlobal"       # bool
 
@@ -290,6 +291,7 @@ else:
 
 CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES        = False
 CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS             = False
+CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT            = False
 CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR = False
 CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL       = False
 

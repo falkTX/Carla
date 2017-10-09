@@ -2487,6 +2487,11 @@ def loadHostSettings(host):
         host.experimental = CARLA_DEFAULT_MAIN_EXPERIMENTAL
 
     try:
+        host.exportLV2 = settings.value(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2, CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT, type=bool)
+    except:
+        host.exportLV2 = CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT
+
+    try:
         host.manageUIs = settings.value(CARLA_KEY_ENGINE_MANAGE_UIS, CARLA_DEFAULT_MANAGE_UIS, type=bool)
     except:
         host.manageUIs = CARLA_DEFAULT_MANAGE_UIS
