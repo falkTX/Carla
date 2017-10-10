@@ -61,25 +61,28 @@ struct PluginListManager {
         {
             const NativePluginDescriptor* const desc(carla_getNativePluginDescriptor(i));
 
-            // Open/Save not possible in plugins
-            if (desc->hints & NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE)
-                continue;
-
-            // skip some plugins
-            if (std::strcmp(desc->label, "bypass"       ) == 0 ||
-                std::strcmp(desc->label, "3bandeq"      ) == 0 ||
-                std::strcmp(desc->label, "3bandsplitter") == 0 ||
-                std::strcmp(desc->label, "kars"         ) == 0 ||
-                std::strcmp(desc->label, "nekobi"       ) == 0 ||
-                std::strcmp(desc->label, "pingpongpan"  ) == 0 ||
-                std::strcmp(desc->label, "prom"         ) == 0 ||
-                std::strstr(desc->label, "juice"        ) != nullptr ||
-                std::strstr(desc->label, "Zam"          ) != nullptr)
+            if (std::strcmp(desc->label, "lfo"            ) == 0 ||
+                std::strcmp(desc->label, "midichanfilter" ) == 0 ||
+                std::strcmp(desc->label, "midigain"       ) == 0 ||
+                std::strcmp(desc->label, "midijoin"       ) == 0 ||
+                std::strcmp(desc->label, "midisplit"      ) == 0 ||
+                std::strcmp(desc->label, "midithrough"    ) == 0 ||
+                std::strcmp(desc->label, "miditranspose"  ) == 0 ||
+                std::strcmp(desc->label, "midipattern"    ) == 0 ||
+                std::strcmp(desc->label, "carlarack"      ) == 0 ||
+                std::strcmp(desc->label, "carlapatchbay"  ) == 0 ||
+                std::strcmp(desc->label, "carlapatchbay3s") == 0 ||
+                std::strcmp(desc->label, "carlapatchbay16") == 0 ||
+                std::strcmp(desc->label, "carlapatchbay32") == 0 ||
+                std::strcmp(desc->label, "bigmeter"       ) == 0 ||
+                std::strcmp(desc->label, "notes"          ) == 0 ||
+                std::strcmp(desc->label, "at1"            ) == 0 ||
+                std::strcmp(desc->label, "bls1"           ) == 0 ||
+                std::strcmp(desc->label, "rev1-ambisonic" ) == 0 ||
+                std::strcmp(desc->label, "rev1-stereo"    ) == 0)
             {
-                continue;
+                descs.append(desc);
             }
-
-            descs.append(desc);
         }
     }
 
