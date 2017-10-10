@@ -2364,8 +2364,10 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             break;
         }
     }
+
 #endif
 
+    callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0.0f, nullptr);
     return true;
 }
 

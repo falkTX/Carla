@@ -932,34 +932,39 @@ typedef enum {
     ENGINE_CALLBACK_SAMPLE_RATE_CHANGED = 34,
 
     /*!
+     * Project has finished loading.
+     */
+    ENGINE_CALLBACK_PROJECT_LOAD_FINISHED = 35,
+
+    /*!
      * NSM callback.
      * (Work in progress, values are not defined yet)
      */
-    ENGINE_CALLBACK_NSM = 35,
+    ENGINE_CALLBACK_NSM = 36,
 
     /*!
      * Idle frontend.
      * This is used by the engine during long operations that might block the frontend,
      * giving it the possibility to idle while the operation is still in place.
      */
-    ENGINE_CALLBACK_IDLE = 36,
+    ENGINE_CALLBACK_IDLE = 37,
 
     /*!
      * Show a message as information.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_INFO = 37,
+    ENGINE_CALLBACK_INFO = 38,
 
     /*!
      * Show a message as an error.
      * @a valueStr The message
      */
-    ENGINE_CALLBACK_ERROR = 38,
+    ENGINE_CALLBACK_ERROR = 39,
 
     /*!
      * The engine has crashed or malfunctioned and will no longer work.
      */
-    ENGINE_CALLBACK_QUIT = 39
+    ENGINE_CALLBACK_QUIT = 40
 
 } EngineCallbackOpcode;
 
