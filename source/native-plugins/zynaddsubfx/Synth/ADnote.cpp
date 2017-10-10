@@ -77,9 +77,8 @@ ADnote::ADnote(ADnoteParameters *pars_, SynthParams &spars,
     else
         NoteGlobalPar.Punch.Enabled = 0;
 
-    for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice) {
+    for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
         setupVoice(nvoice);
-    }
 
     max_unison = 1;
     for(int nvoice = 0; nvoice < NUM_VOICES; ++nvoice)
@@ -414,7 +413,7 @@ void ADnote::setupVoiceDetune(int nvoice)
                 pars.VoicePar[nvoice].PFMDetune);
 }
 
-void ADnote::setupVoiceMod(int nvoice)
+void ADnote::setupVoiceMod(int nvoice, bool first_run)
 {
     auto &param = pars.VoicePar[nvoice];
     auto &voice = NoteVoicePar[nvoice];
@@ -442,6 +441,42 @@ void ADnote::setupVoiceMod(int nvoice)
         }
 
     voice.FMFreqFixed  = param.PFMFixedFreq;
+
+    //Triggers when a user enables modulation on a running voice
+    if(!first_run && voice.FMEnabled != NONE && voice.FMSmp == NULL && voice.FMVoice < 0) {
+        param.FMSmp->newrandseed(prng());
+        voice.FMSmp = memory.valloc<float>(synth.oscilsize + OSCIL_SMP_EXTRA_SAMPLES);
+        memset(voice.FMSmp, 0, sizeof(float)*(synth.oscilsize + OSCIL_SMP_EXTRA_SAMPLES));
+        int vc = nvoice;
+        if(param.PextFMoscil != -1)
+            vc = param.PextFMoscil;
+
+        float tmp = 1.0f;
+        if((pars.VoicePar[vc].FMSmp->Padaptiveharmonics != 0)
+                || (voice.FMEnabled == MORPH)
+                || (voice.FMEnabled == RING_MOD))
+            tmp = getFMvoicebasefreq(nvoice);
+
+        if(!pars.GlobalPar.Hrandgrouping)
+            pars.VoicePar[vc].FMSmp->newrandseed(prng());
+
+        for(int k = 0; k < unison_size[nvoice]; ++k)
+            oscposhiFM[nvoice][k] = (oscposhi[nvoice][k]
+                    + pars.VoicePar[vc].FMSmp->get(
+                        voice.FMSmp, tmp))
+                % synth.oscilsize;
+
+        for(int i = 0; i < OSCIL_SMP_EXTRA_SAMPLES; ++i)
+            voice.FMSmp[synth.oscilsize + i] = voice.FMSmp[i];
+        int oscposhiFM_add =
+            (int)((param.PFMoscilphase
+                        - 64.0f) / 128.0f * synth.oscilsize
+                    + synth.oscilsize * 4);
+        for(int k = 0; k < unison_size[nvoice]; ++k) {
+            oscposhiFM[nvoice][k] += oscposhiFM_add;
+            oscposhiFM[nvoice][k] %= synth.oscilsize;
+        }
+    }
 
 
     //Compute the Voice's modulator volume (incl. damping)
@@ -1574,7 +1609,7 @@ int ADnote::noteout(float *outl, float *outr)
            || (NoteVoicePar[nvoice].DelayTicks > 0))
             continue;
         setupVoiceDetune(nvoice);
-        setupVoiceMod(nvoice);
+        setupVoiceMod(nvoice, false);
     }
 
     computecurrentparameters();

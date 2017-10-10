@@ -56,7 +56,7 @@ class ADnote:public SynthNote
         void setupVoice(int nvoice);
         int  setupVoiceUnison(int nvoice);
         void setupVoiceDetune(int nvoice);
-        void setupVoiceMod(int nvoice);
+        void setupVoiceMod(int nvoice, bool first_run = true);
 
         /**Changes the frequency of an oscillator.
          * @param nvoice voice to run computations on
