@@ -1,5 +1,5 @@
 /*
- * Carla Interposer for X11 Window Mapping
+ * Carla Interposer for JACK Applications X11 control
  * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -28,6 +28,8 @@ struct ScopedLibOpen {
         : handle(dlopen("libjack.so.0", RTLD_NOW|RTLD_LOCAL)),
           winId(-1)
     {
+        CARLA_SAFE_ASSERT_RETURN(handle != nullptr,);
+
         if (const char* const winIdStr = std::getenv("CARLA_FRONTEND_WIN_ID"))
         {
             CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0',);
