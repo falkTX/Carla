@@ -228,19 +228,21 @@ int jack_carla_interposed_action(int action, void* ptr)
     {
     case 1: // set callback
         gInterposedCallback = (CarlaInterposedCallback)ptr;
-        break;
+        return 1;
 
     case 2: // show gui
         gCurrentWindowVisible = true;
         if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
-            break;
+            return 0;
+
         gCurrentWindowMapped = true;
         return real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
 
     case 3: // hide gui
         gCurrentWindowVisible = false;
         if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
-            break;
+            return 0;
+
         gCurrentWindowMapped = false;
         return real_XUnmapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
 

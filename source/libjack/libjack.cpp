@@ -30,7 +30,7 @@ CARLA_EXPORT
 int jack_carla_interposed_action(int, void*)
 {
     carla_stderr2("Non-export jack_carla_interposed_action called, this should not happen!!");
-    return 0;
+    return 1337;
 }
 
 CARLA_BACKEND_START_NAMESPACE
@@ -843,7 +843,22 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientShowUI:
-            jack_carla_interposed_action(2, nullptr);
+            if (jack_carla_interposed_action(2, nullptr) == 1337)
+            {
+                // failed, LD_PRELOAD did not work?
+                const char* const message("Cannot show UI, LD_PRELOAD not working?");
+                const std::size_t messageSize(std::strlen(message));
+
+                const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerUiClosed);
+                fShmNonRtServerControl.commitWrite();
+
+                fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerError);
+                fShmNonRtServerControl.writeUInt(messageSize);
+                fShmNonRtServerControl.writeCustomData(message, messageSize);
+                fShmNonRtServerControl.commitWrite();
+            }
             break;
 
         case kPluginBridgeNonRtClientHideUI:
