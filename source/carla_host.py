@@ -466,6 +466,7 @@ class HostWindow(QMainWindow):
         host.EngineStartedCallback.connect(self.slot_handleEngineStartedCallback)
         host.EngineStoppedCallback.connect(self.slot_handleEngineStoppedCallback)
         host.SampleRateChangedCallback.connect(self.slot_handleSampleRateChangedCallback)
+        host.ProjectLoadFinishedCallback.connect(self.slot_handleProjectLoadFinishedCallback)
 
         host.PluginAddedCallback.connect(self.slot_handlePluginAddedCallback)
         host.PluginRemovedCallback.connect(self.slot_handlePluginRemovedCallback)
@@ -557,6 +558,9 @@ class HostWindow(QMainWindow):
     # --------------------------------------------------------------------------------------------------------
     # Files
 
+    def makeExtraFilename(self):
+        return self.fProjectFilename.rsplit(".",1)[0]+".json"
+
     def loadProjectNow(self):
         if not self.fProjectFilename:
             return qCritical("ERROR: loading project without filename set")
@@ -565,11 +569,9 @@ class HostWindow(QMainWindow):
 
         self.projectLoadingStarted()
         self.fIsProjectLoading = True
-
         self.host.load_project(self.fProjectFilename)
 
-        self.fIsProjectLoading = False
-        self.projectLoadingFinished()
+        # Project finished loading is sent by engine
 
     def loadProjectLater(self, filename):
         self.fProjectFilename = QFileInfo(filename).absoluteFilePath()
@@ -582,6 +584,11 @@ class HostWindow(QMainWindow):
 
         self.host.save_project(self.fProjectFilename)
 
+        with open(self.makeExtraFilename(), 'w') as fh:
+            json.dump({
+                'canvas': patchcanvas.saveGroupPositions(),
+            }, fh)
+
     def projectLoadingStarted(self):
         self.ui.rack.setEnabled(False)
         self.ui.graphicsView.setEnabled(False)
@@ -590,6 +597,18 @@ class HostWindow(QMainWindow):
         self.ui.rack.setEnabled(True)
         self.ui.graphicsView.setEnabled(True)
         QTimer.singleShot(1000, self.slot_canvasRefresh)
+
+        extrafile = self.makeExtraFilename()
+        if not os.path.exists(extrafile):
+            return
+
+        try:
+            with open(extrafile, "r") as fh:
+                canvasdata = json.load(fh)['canvas']
+        except:
+            return
+
+        patchcanvas.restoreGroupPositions(canvasdata)
 
     # --------------------------------------------------------------------------------------------------------
     # Files (menu actions)
@@ -802,6 +821,11 @@ class HostWindow(QMainWindow):
     def slot_handleSampleRateChangedCallback(self, newSampleRate):
         self.fSampleRate = newSampleRate
         self.refreshTransport(True)
+
+    @pyqtSlot()
+    def slot_handleProjectLoadFinishedCallback(self):
+        self.fIsProjectLoading = False
+        self.projectLoadingFinished()
 
     # --------------------------------------------------------------------------------------------------------
     # Plugins
@@ -2346,6 +2370,8 @@ def engineCallback(host, action, pluginId, value1, value2, value3, valueStr):
         host.BufferSizeChangedCallback.emit(value1)
     elif action == ENGINE_CALLBACK_SAMPLE_RATE_CHANGED:
         host.SampleRateChangedCallback.emit(value3)
+    elif action == ENGINE_CALLBACK_PROJECT_LOAD_FINISHED:
+        host.ProjectLoadFinishedCallback.emit()
     elif action == ENGINE_CALLBACK_NSM:
         host.NSMCallback.emit(value1, value2, valueStr)
     elif action == ENGINE_CALLBACK_IDLE:

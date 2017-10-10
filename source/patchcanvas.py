@@ -756,6 +756,52 @@ def getGroupPos(group_id, port_mode=PORT_MODE_OUTPUT):
     qCritical("PatchCanvas::getGroupPos(%i, %s) - unable to find group" % (group_id, port_mode2str(port_mode)))
     return QPointF(0, 0)
 
+def saveGroupPositions():
+    if canvas.debug:
+        print("PatchCanvas::getGroupPositions()")
+
+    ret = []
+
+    for group in canvas.group_list:
+        if group.split:
+            pos1 = group.widgets[0].pos()
+            pos2 = group.widgets[1].pos()
+        else:
+            pos1 = group.widgets[0].pos()
+            pos2 = QPointF(0, 0)
+
+        ret.append({
+            "name" : group.group_name,
+            "pos1x": pos1.x(),
+            "pos1y": pos1.y(),
+            "pos2x": pos2.x(),
+            "pos2y": pos2.y(),
+            "split": group.split,
+        })
+
+    return ret
+
+def restoreGroupPositions(dataList):
+    if canvas.debug:
+        print("PatchCanvas::restoreGroupPositions(...)")
+
+    map = {}
+
+    for group in canvas.group_list:
+        map[group.group_name] = group
+
+    for data in dataList:
+        name  = data['name']
+        group = map.get(name, None)
+
+        if group is None:
+            continue
+
+        group.widgets[0].setPos(data['pos1x'], data['pos1y'])
+
+        if group.split and group.widgets[1]:
+            group.widgets[1].setPos(data['pos2x'], data['pos2y'])
+
 def setGroupPos(group_id, group_pos_x, group_pos_y):
     setGroupPosFull(group_id, group_pos_x, group_pos_y, group_pos_x, group_pos_y)
 
