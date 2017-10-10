@@ -16,3 +16,4 @@ for M in $MODULES; do
 done
 
 find $CARLA_MODULES_DIR -name juce_module_info -delete
+sed -i "s|Juce VST Host|Carla Plugin Host|" $CARLA_MODULES_DIR/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
