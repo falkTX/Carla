@@ -618,11 +618,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             break;
 
         case PLUGIN_JACK:
-#ifndef BUILD_BRIDGE
             plugin = CarlaPlugin::newJackApp(initializer);
-#else
-            setLastError("Do not use jack applications as bridges, too much experimental stuff together!");
-#endif
             break;
         }
     }

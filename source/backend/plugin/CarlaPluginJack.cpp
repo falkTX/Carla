@@ -15,10 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifdef BUILD_BRIDGE
-# error This file should not be used under bridge mode
-#endif
-
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
@@ -667,8 +663,9 @@ public:
             // ----------------------------------------------------------------------------------------------------
             // Event Input (System)
 
+#ifndef BUILD_BRIDGE
             bool allNotesOffSent = false;
-
+#endif
             for (uint32_t i=0, numEvents=pData->event.portIn->getEventCount(); i < numEvents; ++i)
             {
                 const EngineEvent& event(pData->event.portIn->getEvent(i));
@@ -688,6 +685,7 @@ public:
                         break;
 
                     case kEngineControlEventTypeParameter:
+#ifndef BUILD_BRIDGE
                         // Control backend stuff
                         if (event.channel == pData->ctrlChannel)
                         {
@@ -734,6 +732,7 @@ public:
                                 pData->postponeRtEvent(kPluginPostRtEventParameterChange, PARAMETER_BALANCE_RIGHT, 0, right);
                             }
                         }
+#endif
                         break;
 
                     case kEngineControlEventTypeMidiBank:
@@ -771,11 +770,13 @@ public:
                     case kEngineControlEventTypeAllNotesOff:
                         if (pData->options & PLUGIN_OPTION_SEND_ALL_SOUND_OFF)
                         {
+#ifndef BUILD_BRIDGE
                             if (event.channel == pData->ctrlChannel && ! allNotesOffSent)
                             {
                                 allNotesOffSent = true;
                                 sendMidiAllNotesOffToCallback();
                             }
+#endif
 
                             fShmRtClientControl.writeOpcode(kPluginBridgeRtClientControlEventAllNotesOff);
                             fShmRtClientControl.writeUInt(event.time);
@@ -959,6 +960,7 @@ public:
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
             FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), iframes);
 
+#ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
         // Post-processing (dry/wet, volume and balance)
 
@@ -1025,7 +1027,7 @@ public:
             }
 
         } // End of Post-processing
-
+#endif
         // --------------------------------------------------------------------------------------------------------
 
         pData->singleMutex.unlock();
@@ -1275,8 +1277,10 @@ public:
         // setup hints and options
 
         // FIXME dryWet broken
-        pData->hints   = PLUGIN_IS_BRIDGE | /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE | PLUGIN_NEEDS_FIXED_BUFFERS;
-        pData->options = PLUGIN_OPTION_FIXED_BUFFERS;
+        pData->hints   = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
+#ifndef BUILD_BRIDGE
+        pData->options|= /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE;
+#endif
         //fInfo.optionsAvailable = optionAv;
 
         if (setupHints & 0x10)
@@ -1360,11 +1364,11 @@ private:
 
         if (wasActive)
         {
-#ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
             if (pData->engine->isOscControlRegistered())
                 pData->engine->oscSend_control_set_parameter_value(pData->id, PARAMETER_ACTIVE, 0.0f);
-#endif
             pData->engine->callback(ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED, pData->id, PARAMETER_ACTIVE, 0, 0.0f, nullptr);
+#endif
         }
 
         if (pData->hints & PLUGIN_HAS_CUSTOM_UI)
