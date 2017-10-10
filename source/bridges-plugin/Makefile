@@ -208,6 +208,7 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPlugin.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginBridge.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginInternal.cpp.arch.o \
+	$(OBJDIR)/CarlaPluginJack.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLADSPA.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.arch.o \
