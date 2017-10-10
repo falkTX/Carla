@@ -1047,7 +1047,12 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t options,
     carla_debug("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
 
     if (JackClientState* const client = gClient.addClient(client_name))
+    {
+        if (status != nullptr)
+            *status = static_cast<JackStatus>(0x0);
+
         return (jack_client_t*)client;
+    }
 
     if (status != nullptr)
         *status = JackServerError;
