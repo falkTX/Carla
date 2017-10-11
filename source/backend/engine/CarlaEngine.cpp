@@ -1351,6 +1351,13 @@ void CarlaEngine::transportPause() noexcept
     pData->time.setNeedsReset();
 }
 
+void CarlaEngine::transportBPM(const double bpm) noexcept
+{
+    try {
+        pData->time.setBPM(bpm);
+    } CARLA_SAFE_EXCEPTION("CarlaEngine::transportBPM");
+}
+
 void CarlaEngine::transportRelocate(const uint64_t frame) noexcept
 {
     pData->time.relocate(frame);

@@ -816,6 +816,7 @@ public:
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
 #else
+          fTimebaseMaster(false),
           fUsedGroups(),
           fUsedPorts(),
           fUsedConnections(),
@@ -951,8 +952,9 @@ public:
         jackbridge_set_freewheel_callback(fClient, carla_jack_freewheel_callback, this);
         jackbridge_set_latency_callback(fClient, carla_jack_latency_callback, this);
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
-        jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
+
+        fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);
@@ -1373,7 +1375,7 @@ public:
             {
                 // old timebase master no longer active, make ourselves master again
                 pData->time.setNeedsReset();
-                jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+                fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
             }
 
             try {
@@ -1391,6 +1393,31 @@ public:
         {
             try {
                 jackbridge_transport_stop(fClient);
+            } catch(...) {}
+        }
+    }
+
+    void transportBPM(const double bpm) noexcept override
+    {
+        CarlaEngine::transportBPM(bpm);
+
+        if (fClient == nullptr || fTimebaseMaster)
+            return;
+
+        jack_position_t jpos;
+
+        // invalidate
+        jpos.unique_1 = 1;
+        jpos.unique_2 = 2;
+        jackbridge_transport_query(fClient, &jpos);
+
+        if (jpos.unique_1 == jpos.unique_2 && (jpos.valid & JackPositionBBT) != 0)
+        {
+            carla_stdout("NOTE: Changing BPM without being JACK timebase master");
+            jpos.beats_per_minute = bpm;
+
+            try {
+                jackbridge_transport_reposition(fClient, &jpos);
             } catch(...) {}
         }
     }
@@ -1984,6 +2011,7 @@ private:
 
     jack_port_t* fRackPorts[kRackPortCount];
 
+    bool fTimebaseMaster;
     PatchbayGroupList      fUsedGroups;
     PatchbayPortList       fUsedPorts;
     PatchbayConnectionList fUsedConnections;

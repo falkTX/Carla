@@ -1382,6 +1382,11 @@ class CarlaHostMeta(object):
     def transport_pause(self):
         raise NotImplementedError
 
+    # Pause the engine transport.
+    @abstractmethod
+    def transport_bpm(self, bpm):
+        raise NotImplementedError
+
     # Relocate the engine transport to a specific frame.
     @abstractmethod
     def transport_relocate(self, frame):
@@ -1927,6 +1932,9 @@ class CarlaHostNull(CarlaHostMeta):
     def transport_pause(self):
         return
 
+    def transport_bpm(self, bpm):
+        return
+
     def transport_relocate(self, frame):
         return
 
@@ -2206,6 +2214,9 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_transport_pause.argtypes = None
         self.lib.carla_transport_pause.restype = None
 
+        self.lib.carla_transport_bpm.argtypes = [c_double]
+        self.lib.carla_transport_bpm.restype = None
+
         self.lib.carla_transport_relocate.argtypes = [c_uint64]
         self.lib.carla_transport_relocate.restype = None
 
@@ -2476,6 +2487,9 @@ class CarlaHostDLL(CarlaHostMeta):
 
     def transport_pause(self):
         self.lib.carla_transport_pause()
+
+    def transport_bpm(self, bpm):
+        self.lib.carla_transport_bpm(bpm)
 
     def transport_relocate(self, frame):
         self.lib.carla_transport_relocate(frame)
@@ -2811,6 +2825,9 @@ class CarlaHostPlugin(CarlaHostMeta):
 
     def transport_pause(self):
         self.sendMsg(["transport_pause"])
+
+    def transport_bpm(self, bpm):
+        self.sendMsg(["transport_bpm", bpm])
 
     def transport_relocate(self, frame):
         self.sendMsg(["transport_relocate"])

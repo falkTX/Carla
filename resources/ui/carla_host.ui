@@ -627,9 +627,6 @@
              <layout class="QVBoxLayout" name="verticalLayout_5">
               <item>
                <widget class="QDoubleSpinBox" name="dsb_transport_bpm">
-                <property name="enabled">
-                 <bool>false</bool>
-                </property>
                 <property name="suffix">
                  <string> BPM</string>
                 </property>

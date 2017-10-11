@@ -121,6 +121,7 @@ public:
     void updateAudioValues(const uint32_t bufferSize, const double sampleRate);
 
     void enableLink(const bool enable);
+    void setBPM(const double bpm);
     void setNeedsReset() noexcept;
     void relocate(const uint64_t frame) noexcept;
 

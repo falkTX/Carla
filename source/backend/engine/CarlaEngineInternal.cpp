@@ -136,6 +136,16 @@ void EngineInternalTime::enableLink(const bool enable)
     needsReset = true;
 }
 
+void EngineInternalTime::setBPM(const double bpm)
+{
+    beatsPerMinute = bpm;
+
+#if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
+    if (hylia.instance != nullptr)
+        hylia_set_beats_per_minute(hylia.instance, bpm);
+#endif
+}
+
 void EngineInternalTime::setNeedsReset() noexcept
 {
     needsReset = true;
@@ -163,10 +173,8 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
     if (needsReset)
     {
         timeInfo.valid = EngineTimeInfo::kValidBBT;
-        timeInfo.bbt.beatsPerBar = beatsPerBar;
         timeInfo.bbt.beatType = 4.0f;
         timeInfo.bbt.ticksPerBeat = kTicksPerBeat;
-        timeInfo.bbt.beatsPerMinute = beatsPerMinute;
 
         double abs_beat, abs_tick;
 
@@ -195,8 +203,8 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
             needsReset = false;
         }
 
-        timeInfo.bbt.bar  = (int32_t)(std::floor(abs_beat / timeInfo.bbt.beatsPerBar) + 0.5);
-        timeInfo.bbt.beat = (int32_t)(abs_beat - (timeInfo.bbt.bar * timeInfo.bbt.beatsPerBar) + 1.5);
+        timeInfo.bbt.bar  = (int32_t)(std::floor(abs_beat / beatsPerBar) + 0.5);
+        timeInfo.bbt.beat = (int32_t)(abs_beat - (timeInfo.bbt.bar * beatsPerBar) + 1.5);
         timeInfo.bbt.barStartTick = timeInfo.bbt.bar * beatsPerBar * kTicksPerBeat;
         ++timeInfo.bbt.bar;
 
@@ -220,6 +228,8 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
         }
     }
 
+    timeInfo.bbt.beatsPerBar = beatsPerBar;
+    timeInfo.bbt.beatsPerMinute = beatsPerMinute;
     timeInfo.bbt.tick = (int32_t)(ticktmp + 0.5);
     tick = ticktmp;
 
@@ -237,10 +247,8 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
     if (needsReset)
     {
         pos->valid = JackPositionBBT;
-        pos->beats_per_bar = beatsPerBar;
         pos->beat_type = 4.0f;
         pos->ticks_per_beat = kTicksPerBeat;
-        pos->beats_per_minute = beatsPerMinute;
 
         double abs_beat, abs_tick;
 
@@ -269,9 +277,9 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
             needsReset = false;
         }
 
-        pos->bar  = (int32_t)(std::floor(abs_beat / pos->beats_per_bar) + 0.5);
-        pos->beat = (int32_t)(abs_beat - (pos->bar * pos->beats_per_bar) + 1.5);
-        pos->bar_start_tick = pos->bar * pos->beats_per_bar * kTicksPerBeat;
+        pos->bar  = (int32_t)(std::floor(abs_beat / beatsPerBar) + 0.5);
+        pos->beat = (int32_t)(abs_beat - (pos->bar * beatsPerBar) + 1.5);
+        pos->bar_start_tick = pos->bar * beatsPerBar * kTicksPerBeat;
         ++pos->bar;
 
         //ticktmp = abs_tick - pos->bar_start_tick;
@@ -294,6 +302,8 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
         }
     }
 
+    pos->beats_per_bar = beatsPerBar;
+    pos->beats_per_minute = beatsPerMinute;
     pos->tick = (int32_t)(ticktmp + 0.5);
     tick = ticktmp;
 }

@@ -434,6 +434,11 @@ CARLA_EXPORT void carla_transport_play();
 CARLA_EXPORT void carla_transport_pause();
 
 /*!
+ * Set the engine transport bpm.
+ */
+CARLA_EXPORT void carla_transport_bpm(double bpm);
+
+/*!
  * Relocate the engine transport to a specific frame.
  */
 CARLA_EXPORT void carla_transport_relocate(uint64_t frame);

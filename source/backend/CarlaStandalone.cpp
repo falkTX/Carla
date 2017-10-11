@@ -743,6 +743,14 @@ void carla_transport_pause()
     gStandalone.engine->transportPause();
 }
 
+void carla_transport_bpm(double bpm)
+{
+    CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(),);
+    carla_debug("carla_transport_bpm(%f)", bpm);
+
+    gStandalone.engine->transportBPM(bpm);
+}
+
 void carla_transport_relocate(uint64_t frame)
 {
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(),);

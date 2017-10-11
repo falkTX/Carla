@@ -989,6 +989,11 @@ public:
     virtual void transportPause() noexcept;
 
     /*!
+     * Set the engine transport bpm to @a bpm.
+     */
+    virtual void transportBPM(const double bpm) noexcept;
+
+    /*!
      * Relocate the engine transport to @a frames.
      */
     virtual void transportRelocate(const uint64_t frame) noexcept;

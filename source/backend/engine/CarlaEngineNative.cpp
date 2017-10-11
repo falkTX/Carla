@@ -236,6 +236,14 @@ protected:
         {
             fEngine->transportPause();
         }
+        else if (std::strcmp(msg, "transport_bpm") == 0)
+        {
+            double bpm;
+
+            CARLA_SAFE_ASSERT_RETURN(readNextLineAsDouble(bpm), true);
+
+            fEngine->transportBPM(bpm);
+        }
         else if (std::strcmp(msg, "transport_relocate") == 0)
         {
             uint64_t frame;

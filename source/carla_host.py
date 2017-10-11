@@ -292,7 +292,7 @@ class HostWindow(QMainWindow):
         self.ui.l_transport_frame.setMinimumWidth(minValueWidth + 3)
         self.ui.l_transport_time.setMinimumWidth(minValueWidth + 3)
 
-        if host.isPlugin:
+        if host.isControl or host.isPlugin:
             self.ui.b_transport_play.setEnabled(False)
             self.ui.b_transport_stop.setEnabled(False)
             self.ui.b_transport_backwards.setEnabled(False)
@@ -441,6 +441,7 @@ class HostWindow(QMainWindow):
         self.ui.b_transport_stop.clicked.connect(self.slot_transportStop)
         self.ui.b_transport_backwards.clicked.connect(self.slot_transportBackwards)
         self.ui.b_transport_forwards.clicked.connect(self.slot_transportForwards)
+        self.ui.dsb_transport_bpm.valueChanged.connect(self.slot_transportBpmChanged)
         self.ui.cb_transport_jack.clicked.connect(self.slot_transportJackEnabled)
         self.ui.cb_transport_link.clicked.connect(self.slot_transportLinkEnabled)
 
@@ -1683,7 +1684,9 @@ class HostWindow(QMainWindow):
             self.fLastTransportBPM = bpm
 
             if bpm > 0.0:
+                self.ui.dsb_transport_bpm.blockSignals(True)
                 self.ui.dsb_transport_bpm.setValue(bpm)
+                self.ui.dsb_transport_bpm.blockSignals(False)
                 self.ui.dsb_transport_bpm.setStyleSheet("")
             else:
                 self.ui.dsb_transport_bpm.setStyleSheet("QDoubleSpinBox { color: palette(mid); }")
@@ -1724,6 +1727,10 @@ class HostWindow(QMainWindow):
             newFrame = 0
 
         self.host.transport_relocate(newFrame)
+
+    @pyqtSlot(float)
+    def slot_transportBpmChanged(self, newValue):
+        self.host.transport_bpm(newValue)
 
     @pyqtSlot()
     def slot_transportForwards(self):
