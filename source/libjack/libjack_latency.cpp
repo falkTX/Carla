@@ -44,7 +44,12 @@ void jack_port_get_latency_range(jack_port_t*, jack_latency_callback_mode_t, jac
 
 // --------------------------------------------------------------------------------------------------------------------
 
-//int jack_recompute_total_latencies (jack_client_t *client) JACK_OPTIONAL_WEAK_EXPORT;
+CARLA_EXPORT
+int jack_recompute_total_latencies(jack_client_t* client)
+{
+    carla_stderr2("%s(%p)", __FUNCTION__, client);
+    return 0;
+}
 
 CARLA_EXPORT
 jack_nframes_t jack_port_get_latency(jack_port_t* port)

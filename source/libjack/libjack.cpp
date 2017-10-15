@@ -719,6 +719,16 @@ bool CarlaJackAppClient::handleRtData()
                                     FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
                                                                fServer.bufferSize*fServer.numAudioOuts);
                                 }
+
+                                if (jclient->audioOuts.count() == 1 && fServer.numAudioOuts > 1)
+                                {
+                                    for (uint8_t i=1; i<fServer.numAudioOuts; ++i)
+                                    {
+                                        FloatVectorOperations::copy(fdataRealOuts+(fServer.bufferSize*i),
+                                                                    fdataCopyOuts,
+                                                                    fServer.bufferSize);
+                                    }
+                                }
                             }
                         }
                     }
