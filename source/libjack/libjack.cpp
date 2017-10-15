@@ -558,8 +558,14 @@ bool CarlaJackAppClient::handleRtData()
             {
                 CARLA_SAFE_ASSERT_BREAK(fShmAudioPool.data != nullptr);
 
+                // mixdown is default, do buffer addition (for multiple clients) if requested
+                const bool doBufferAddition = fSetupHints & 0x10;
+
                 // location to start of audio outputs (shm buffer)
                 float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fServer.numAudioIns);
+
+                if (doBufferAddition && fServer.numAudioOuts > 0)
+                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
 
                 if (! fClients.isEmpty())
                 {
@@ -629,7 +635,11 @@ bool CarlaJackAppClient::handleRtData()
 
                                 if (i++ < fServer.numAudioIns)
                                 {
-                                    jport->buffer = fdataReal;
+                                    if (numClientOutputsProcessed == 0 || ! doBufferAddition)
+                                        jport->buffer = fdataReal;
+                                    else
+                                        jport->buffer = fdataRealOuts + (i*fServer.bufferSize);
+
                                     fdataReal += fServer.bufferSize;
                                     fdataCopy += fServer.bufferSize;
                                 }
@@ -639,11 +649,11 @@ bool CarlaJackAppClient::handleRtData()
                                     needsTmpBufClear = true;
                                 }
                             }
-                            // FIXME one single "if"
-                            for (; i++ < fServer.numAudioIns;)
+                            if (i < fServer.numAudioIns)
                             {
-                                fdataReal += fServer.bufferSize;
-                                fdataCopy += fServer.bufferSize;
+                                const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioIns - i);
+                                fdataReal += remainingBufferSize;
+                                fdataCopy += remainingBufferSize;
                             }
 
                             // location to start of audio outputs
@@ -667,11 +677,11 @@ bool CarlaJackAppClient::handleRtData()
                                     needsTmpBufClear = true;
                                 }
                             }
-                            // FIXME one single "if"
-                            for (; i++ < fServer.numAudioOuts;)
+                            if (i < fServer.numAudioOuts)
                             {
-                                FloatVectorOperations::clear(fdataCopy, fServer.bufferSize);
-                                fdataCopy += fServer.bufferSize;
+                                const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioOuts - i);
+                                FloatVectorOperations::clear(fdataCopy, remainingBufferSize);
+                                fdataCopy += remainingBufferSize;
                             }
 
                             // set midi inputs
@@ -718,6 +728,14 @@ bool CarlaJackAppClient::handleRtData()
                                     // subsequent clients, add data (then divide by number of clients later on)
                                     FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
                                                                fServer.bufferSize*fServer.numAudioOuts);
+
+                                    if (doBufferAddition)
+                                    {
+                                        // for more than 1 client addition, we need to divide buffers now
+                                        FloatVectorOperations::multiply(fdataRealOuts,
+                                                                        1.0f/static_cast<float>(numClientOutputsProcessed),
+                                                                        fServer.bufferSize*fServer.numAudioOuts);
+                                    }
                                 }
 
                                 if (jclient->audioOuts.count() == 1 && fServer.numAudioOuts > 1)
@@ -733,7 +751,7 @@ bool CarlaJackAppClient::handleRtData()
                         }
                     }
 
-                    if (numClientOutputsProcessed > 1)
+                    if (numClientOutputsProcessed > 1 && ! doBufferAddition)
                     {
                         // more than 1 client active, need to divide buffers
                         FloatVectorOperations::multiply(fdataRealOuts,

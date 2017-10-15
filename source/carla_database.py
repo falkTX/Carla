@@ -1890,8 +1890,9 @@ class JackApplicationW(QDialog):
     SESSION_MGR_LASH   = 3
     SESSION_MGR_NSM    = 4
 
-    FLAG_CONTROL_WINDOW       = 0x1
-    FLAG_CAPTURE_FIRST_WINDOW = 0x2
+    FLAG_CONTROL_WINDOW        = 0x01
+    FLAG_CAPTURE_FIRST_WINDOW  = 0x02
+    FLAG_BUFFERS_ADDITION_MODE = 0x10
 
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
@@ -1935,6 +1936,8 @@ class JackApplicationW(QDialog):
             flags |= self.FLAG_CONTROL_WINDOW
         if self.ui.cb_capture_first_window.isChecked():
             flags |= self.FLAG_CAPTURE_FIRST_WINDOW
+        if self.ui.cb_buffers_addition_mode.isChecked():
+            flags |= self.FLAG_BUFFERS_ADDITION_MODE
 
         baseIntVal = ord('0')
         labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),

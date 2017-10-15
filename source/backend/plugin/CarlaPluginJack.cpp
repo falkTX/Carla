@@ -1279,9 +1279,9 @@ public:
         // setup hints and options
 
         // FIXME dryWet broken
-        pData->hints   = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
+        pData->hints  = PLUGIN_IS_BRIDGE | PLUGIN_OPTION_FIXED_BUFFERS;
 #ifndef BUILD_BRIDGE
-        pData->options|= /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE;
+        pData->hints |= /*PLUGIN_CAN_DRYWET |*/ PLUGIN_CAN_VOLUME | PLUGIN_CAN_BALANCE;
 #endif
         //fInfo.optionsAvailable = optionAv;
 
