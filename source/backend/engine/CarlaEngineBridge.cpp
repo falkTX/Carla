@@ -1186,7 +1186,7 @@ protected:
                     }
 
                     uint8_t* midiData(fShmRtClientControl.data->midiOut);
-                    carla_zeroBytes(midiData, kBridgeRtClientDataMidiOutSize);
+                    carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
                     std::size_t curMidiDataPos = 0;
 
                     if (pData->events.in[0].type != kEngineEventTypeNull)
@@ -1208,7 +1208,7 @@ protected:
                                 event.ctrl.convertToMidiData(event.channel, size, data);
                                 CARLA_SAFE_ASSERT_CONTINUE(size > 0 && size <= 3);
 
-                                if (curMidiDataPos + 6U /* time, port and size */ + size >= kBridgeRtClientDataMidiOutSize)
+                                if (curMidiDataPos + kBridgeBaseMidiOutHeaderSize + size >= kBridgeRtClientDataMidiOutSize)
                                     break;
 
                                 // set time
@@ -1225,13 +1225,13 @@ protected:
                                 for (uint8_t j=0; j<size; ++j)
                                     *midiData++ = data[j];
 
-                                curMidiDataPos += 6U /* time, port and size */ + size;
+                                curMidiDataPos += kBridgeBaseMidiOutHeaderSize + size;
                             }
                             else if (event.type == kEngineEventTypeMidi)
                             {
                                 const EngineMidiEvent& _midiEvent(event.midi);
 
-                                if (curMidiDataPos + 6U /* time, port and size */ + _midiEvent.size >= kBridgeRtClientDataMidiOutSize)
+                                if (curMidiDataPos + kBridgeBaseMidiOutHeaderSize + _midiEvent.size >= kBridgeRtClientDataMidiOutSize)
                                     break;
 
                                 const uint8_t* const _midiData(_midiEvent.dataExt != nullptr ? _midiEvent.dataExt : _midiEvent.data);
@@ -1252,7 +1252,7 @@ protected:
                                 for (uint8_t j=1; j<_midiEvent.size; ++j)
                                     *midiData++ = _midiData[j];
 
-                                curMidiDataPos += 6U /* time, port and size */ + _midiEvent.size;
+                                curMidiDataPos += kBridgeBaseMidiOutHeaderSize + _midiEvent.size;
                             }
                         }
 

@@ -139,6 +139,7 @@ struct BridgeTimeInfo {
 // -------------------------------------------------------------------------------------------------------------------
 
 static const std::size_t kBridgeRtClientDataMidiOutSize = 511*4;
+static const std::size_t kBridgeBaseMidiOutHeaderSize   = 6U /* time, port and size */;
 
 // Server => Client RT
 struct BridgeRtClientData {

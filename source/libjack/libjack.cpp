@@ -746,7 +746,7 @@ bool CarlaJackAppClient::handleRtData()
                 if (fServer.numMidiOuts > 0)
                 {
                     uint8_t* midiData(fShmRtClientControl.data->midiOut);
-                    carla_zeroBytes(midiData, kBridgeRtClientDataMidiOutSize);
+                    carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
                     std::size_t curMidiDataPos = 0;
 
                     for (uint8_t i=0; i<fServer.numMidiOuts; ++i)
@@ -757,7 +757,7 @@ bool CarlaJackAppClient::handleRtData()
                         {
                             jack_midi_event_t& jmevent(midiPortBuf.events[j]);
 
-                            if (curMidiDataPos + 6U /* time, port and size */ + jmevent.size >= kBridgeRtClientDataMidiOutSize)
+                            if (curMidiDataPos + kBridgeBaseMidiOutHeaderSize + jmevent.size >= kBridgeRtClientDataMidiOutSize)
                                 break;
 
                             // set time
@@ -774,7 +774,7 @@ bool CarlaJackAppClient::handleRtData()
                             std::memcpy(midiData, jmevent.buffer, jmevent.size);
                             midiData += jmevent.size;
 
-                            curMidiDataPos += 6U /* time, port and size */ + jmevent.size;
+                            curMidiDataPos += kBridgeBaseMidiOutHeaderSize + jmevent.size;
                         }
                     }
                 }
