@@ -1208,7 +1208,7 @@ public:
         // ---------------------------------------------------------------
         // check setup
 
-        if (std::strlen(label) != 5)
+        if (std::strlen(label) != 6)
         {
             pData->engine->setLastError("invalid application setup received");
             return false;
@@ -1217,7 +1217,9 @@ public:
         for (int i=4; --i >= 0;) {
             CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] <= '0'+64, false);
         }
-        CARLA_SAFE_ASSERT_RETURN(label[4] >= '0' && label[4] < '0'+0x4f, false);
+        for (int i=6; --i >= 4;) {
+            CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] < '0'+0x4f, false);
+        }
 
         fInfo.aIns   = label[0] - '0';
         fInfo.aOuts  = label[1] - '0';
@@ -1226,7 +1228,7 @@ public:
 
         fInfo.setupLabel = label;
 
-        const int setupHints = label[4] - '0';
+        const int setupHints = label[5] - '0';
 
         // ---------------------------------------------------------------
         // set info
@@ -1283,7 +1285,7 @@ public:
 #endif
         //fInfo.optionsAvailable = optionAv;
 
-        if (setupHints & 0x10)
+        if (setupHints & 0x1)
             pData->hints |= PLUGIN_HAS_CUSTOM_UI;
 
         // ---------------------------------------------------------------

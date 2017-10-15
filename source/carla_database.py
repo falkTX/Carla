@@ -1884,12 +1884,14 @@ class PluginDatabaseW(QDialog):
 # Jack Application Dialog
 
 class JackApplicationW(QDialog):
-    # TODO complete this
-    FLAG_SESSION_MGR_JACK   = 0x01
-    FLAG_SESSION_MGR_LADISH = 0x02
-    FLAG_SESSION_MGR_LASH   = 0x04
-    FLAG_SESSION_MGR_NSM    = 0x08
-    FLAG_CONTROL_WINDOW     = 0x10
+    SESSION_MGR_NONE   = 0
+    SESSION_MGR_JACK   = 1
+    SESSION_MGR_LADISH = 2
+    SESSION_MGR_LASH   = 3
+    SESSION_MGR_NSM    = 4
+
+    FLAG_CONTROL_WINDOW       = 0x1
+    FLAG_CAPTURE_FIRST_WINDOW = 0x2
 
     def __init__(self, parent, host):
         QDialog.__init__(self, parent)
@@ -1917,25 +1919,30 @@ class JackApplicationW(QDialog):
     def getCommandAndFlags(self):
         name    = self.ui.le_name.text()
         command = self.ui.le_command.text()
+        smgr    = self.SESSION_MGR_NONE
         flags   = 0x0
         if not name:
             name = command.split(" ",1)[0]
 
         # TODO finalize flag definitions
-        sessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
-        if sessionMgrIndex == 1:
-            flags |= self.FLAG_SESSION_MGR_LADISH
-        elif sessionMgrIndex == 2:
-            flags |= self.FLAG_SESSION_MGR_NSM
+        #uiSessionMgrIndex = self.ui.cb_session_mgr.currentIndex()
+        #if uiSessionMgrIndex == 1:
+            #smgr = self.SESSION_MGR_LADISH
+        #elif uiSessionMgrIndex == 2:
+            #smgr = self.SESSION_MGR_NSM
+
         if self.ui.cb_manage_window.isChecked():
             flags |= self.FLAG_CONTROL_WINDOW
+        if self.ui.cb_capture_first_window.isChecked():
+            flags |= self.FLAG_CAPTURE_FIRST_WINDOW
 
         baseIntVal = ord('0')
-        labelSetup = "%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
-                                     chr(baseIntVal+self.ui.sb_audio_outs.value()),
-                                     chr(baseIntVal+self.ui.sb_midi_ins.value()),
-                                     chr(baseIntVal+self.ui.sb_midi_outs.value()),
-                                     chr(baseIntVal+flags))
+        labelSetup = "%s%s%s%s%s%s" % (chr(baseIntVal+self.ui.sb_audio_ins.value()),
+                                       chr(baseIntVal+self.ui.sb_audio_outs.value()),
+                                       chr(baseIntVal+self.ui.sb_midi_ins.value()),
+                                       chr(baseIntVal+self.ui.sb_midi_outs.value()),
+                                       chr(baseIntVal+smgr),
+                                       chr(baseIntVal+flags))
         return (command, name, labelSetup)
 
     def loadSettings(self):

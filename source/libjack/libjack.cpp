@@ -27,7 +27,7 @@ using juce::Time;
 typedef int (*CarlaInterposedCallback)(int, void*);
 
 CARLA_EXPORT
-int jack_carla_interposed_action(int, void*)
+int jack_carla_interposed_action(int, int, void*)
 {
     carla_stderr2("Non-export jack_carla_interposed_action called, this should not happen!!");
     return 1337;
@@ -115,7 +115,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && std::strlen(shmIds) == 6*4,);
 
         const char* const libjackSetup(std::getenv("CARLA_LIBJACK_SETUP"));
-        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 5,);
+        CARLA_SAFE_ASSERT_RETURN(libjackSetup != nullptr && std::strlen(libjackSetup) == 6,);
 
         // make sure we don't get loaded again
         carla_unsetenv("CARLA_SHM_IDS");
@@ -126,7 +126,9 @@ public:
         for (int i=4; --i >= 0;) {
             CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] <= '0'+64,);
         }
-        CARLA_SAFE_ASSERT_RETURN(libjackSetup[4] >= '0' && libjackSetup[4] < '0'+0x4f,);
+        for (int i=6; --i >= 4;) {
+            CARLA_SAFE_ASSERT_RETURN(libjackSetup[i] >= '0' && libjackSetup[i] < '0'+0x4f,);
+        }
 
         std::memcpy(fBaseNameAudioPool,          shmIds+6*0, 6);
         std::memcpy(fBaseNameRtClientControl,    shmIds+6*1, 6);
@@ -143,7 +145,8 @@ public:
         fServer.numMidiIns   = libjackSetup[2] - '0';
         fServer.numMidiOuts  = libjackSetup[3] - '0';
 
-        jack_carla_interposed_action(1, (void*)carla_interposed_callback);
+        jack_carla_interposed_action(1, libjackSetup[5] - '0', (void*)carla_interposed_callback);
+        jack_carla_interposed_action(2, libjackSetup[4] - '0', nullptr);
 
         fNonRealtimeThread.startThread();
     }
@@ -843,7 +846,7 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientShowUI:
-            if (jack_carla_interposed_action(2, nullptr) == 1337)
+            if (jack_carla_interposed_action(3, 1, nullptr) == 1337)
             {
                 // failed, LD_PRELOAD did not work?
                 const char* const message("Cannot show UI, LD_PRELOAD not working?");
@@ -862,7 +865,7 @@ bool CarlaJackAppClient::handleNonRtData()
             break;
 
         case kPluginBridgeNonRtClientHideUI:
-            jack_carla_interposed_action(3, nullptr);
+            jack_carla_interposed_action(3, 0, nullptr);
             break;
 
         case kPluginBridgeNonRtClientUiParameterChange:

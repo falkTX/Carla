@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>418</width>
-    <height>278</height>
+    <width>416</width>
+    <height>344</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,7 +24,7 @@
    <item>
     <widget class="QGroupBox" name="group_command">
      <property name="title">
-      <string>Command</string>
+      <string>Application</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0">
@@ -39,19 +39,6 @@
       </item>
       <item row="1" column="1" colspan="3">
        <widget class="QLineEdit" name="le_command"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Session Manager:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
       </item>
       <item row="2" column="3">
        <spacer name="horizontalSpacer_3">
@@ -82,35 +69,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1" colspan="3">
-       <widget class="QCheckBox" name="cb_manage_window">
-        <property name="text">
-         <string>Take control of main applicaton window</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1" colspan="2">
-       <widget class="QComboBox" name="cb_session_mgr">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <item>
-         <property name="text">
-          <string>None / Manual</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>LADISH (SIGUSR1)</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>Non Session Manager (OSC)</string>
-         </property>
-        </item>
-       </widget>
-      </item>
       <item row="3" column="0">
        <spacer name="horizontalSpacer_4">
         <property name="orientation">
@@ -136,102 +94,7 @@
       <string>Setup</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="0">
-       <spacer name="horizontalSpacer_6">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="8">
-       <spacer name="horizontalSpacer_16">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="1" column="3">
-       <spacer name="horizontalSpacer_8">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="0">
-       <spacer name="horizontalSpacer_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="5">
-       <spacer name="horizontalSpacer_13">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Audio inputs:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QSpinBox" name="sb_audio_ins">
-        <property name="maximum">
-         <number>64</number>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="4" rowspan="2">
-       <widget class="Line" name="line">
-        <property name="lineWidth">
-         <number>0</number>
-        </property>
-        <property name="midLineWidth">
-         <number>1</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Vertical</enum>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="6">
+      <item row="2" column="6">
        <widget class="QLabel" name="label_7">
         <property name="text">
          <string>MIDI inputs:</string>
@@ -241,31 +104,21 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="7">
+      <item row="2" column="7">
        <widget class="QSpinBox" name="sb_midi_ins">
         <property name="maximum">
          <number>1</number>
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Audio outputs:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
+      <item row="3" column="2">
        <widget class="QSpinBox" name="sb_audio_outs">
         <property name="maximum">
          <number>64</number>
         </property>
        </widget>
       </item>
-      <item row="1" column="6">
+      <item row="3" column="6">
        <widget class="QLabel" name="label_8">
         <property name="text">
          <string>MIDI outputs:</string>
@@ -275,27 +128,14 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="7">
+      <item row="3" column="7">
        <widget class="QSpinBox" name="sb_midi_outs">
         <property name="maximum">
          <number>1</number>
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <spacer name="horizontalSpacer_7">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>1</width>
-          <height>1</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item row="0" column="8">
+      <item row="2" column="8">
        <spacer name="horizontalSpacer_15">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -308,7 +148,131 @@
         </property>
        </spacer>
       </item>
-      <item row="1" column="5">
+      <item row="3" column="8">
+       <spacer name="horizontalSpacer_16">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>1</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="3">
+       <spacer name="horizontalSpacer_8">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>1</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="0">
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="5">
+       <spacer name="horizontalSpacer_13">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>1</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Audio inputs:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <spacer name="horizontalSpacer_7">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>1</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="2" column="2">
+       <widget class="QSpinBox" name="sb_audio_ins">
+        <property name="maximum">
+         <number>64</number>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="4" rowspan="2">
+       <widget class="Line" name="line">
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <property name="midLineWidth">
+         <number>1</number>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <spacer name="horizontalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>Audio outputs:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="5">
        <spacer name="horizontalSpacer_14">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -320,6 +284,96 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item row="1" column="1" colspan="7">
+       <widget class="QCheckBox" name="cb_manage_window">
+        <property name="text">
+         <string>Take control of main applicaton window</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="6" colspan="3">
+       <widget class="QComboBox" name="cb_session_mgr">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <item>
+         <property name="text">
+          <string>None / Manual</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>LADISH (SIGUSR1)</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Non Session Manager (OSC)</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item row="0" column="1" colspan="3">
+       <widget class="QLabel" name="label_6">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Session Manager:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Workarounds</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Fixed</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="2">
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>135</width>
+          <height>1</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="cb_capture_first_window">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Capture only the first X11 Window</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

@@ -61,6 +61,8 @@ typedef int (*CarlaInterposedCallback)(int, void*);
 static Display* gCurrentlyMappedDisplay = nullptr;
 static Window gCurrentlyMappedWindow = 0;
 static CarlaInterposedCallback gInterposedCallback = nullptr;
+static int gInterposedSessionManager = 0;
+static int gInterposedHints = 0;
 static bool gCurrentWindowMapped = false;
 static bool gCurrentWindowVisible = false;
 
@@ -161,7 +163,7 @@ int XMapWindow(Display* display, Window window)
         // got a new window, we may need to forget last one
         if (gCurrentlyMappedDisplay != nullptr && gCurrentlyMappedWindow != 0)
         {
-            // igonre requests against the current mapped window
+            // ignore requests against the current mapped window
             if (gCurrentlyMappedWindow == window)
                 return 0;
 
@@ -171,6 +173,7 @@ int XMapWindow(Display* display, Window window)
                 XSetTransientForHint(display, window, gCurrentlyMappedWindow);
                 break;
             }
+
             // ignore empty windows created after the main one
             if (numItems == 0)
                 break;
@@ -220,31 +223,45 @@ int XUnmapWindow(Display* display, Window window)
 // ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-int jack_carla_interposed_action(int action, void* ptr)
+int jack_carla_interposed_action(int action, int value, void* ptr)
 {
-    carla_debug("jack_carla_interposed_action(%i, %p)", action, ptr);
+    carla_debug("jack_carla_interposed_action(%i, %i, %p)", action, value, ptr);
 
     switch (action)
     {
-    case 1: // set callback
+    case 1:
+        // set hints and callback
+        gInterposedHints = value;
         gInterposedCallback = (CarlaInterposedCallback)ptr;
         return 1;
 
-    case 2: // show gui
-        gCurrentWindowVisible = true;
-        if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
-            return 0;
+    case 2:
+        // session manager
+        gInterposedSessionManager = value;
+        return 1;
 
-        gCurrentWindowMapped = true;
-        return real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+    case 3:
+        // show gui
+        if (value != 0)
+        {
+            gCurrentWindowVisible = true;
+            if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+                return 0;
 
-    case 3: // hide gui
-        gCurrentWindowVisible = false;
-        if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
-            return 0;
+            gCurrentWindowMapped = true;
+            return real_XMapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+        }
+        // hide gui
+        else
+        {
+            gCurrentWindowVisible = false;
+            if (gCurrentlyMappedDisplay == nullptr || gCurrentlyMappedWindow == 0)
+                return 0;
 
-        gCurrentWindowMapped = false;
-        return real_XUnmapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+            gCurrentWindowMapped = false;
+            return real_XUnmapWindow(gCurrentlyMappedDisplay, gCurrentlyMappedWindow);
+        }
+        break;
 
     case 4: // close everything
         gCurrentWindowMapped  = false;
