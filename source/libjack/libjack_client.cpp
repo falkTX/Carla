@@ -68,38 +68,6 @@ void jack_internal_client_close(const char*)
 // --------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
-int jack_activate(jack_client_t* client)
-{
-    carla_debug("%s(%p)", __FUNCTION__, client);
-
-    JackClientState* const jclient = (JackClientState*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const CarlaMutexLocker cms(jclient->mutex);
-
-    jclient->activated = true;
-    jclient->deactivated = false;
-    return 0;
-}
-
-CARLA_EXPORT
-int jack_deactivate(jack_client_t* client)
-{
-    carla_debug("%s(%p)", __FUNCTION__, client);
-
-    JackClientState* const jclient = (JackClientState*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
-
-    const CarlaMutexLocker cms(jclient->mutex);
-
-    jclient->activated = false;
-    jclient->deactivated = true;
-    return 0;
-}
-
-// --------------------------------------------------------------------------------------------------------------------
-
-CARLA_EXPORT
 int jack_get_client_pid(const char*)
 {
     return 0;

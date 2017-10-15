@@ -106,6 +106,8 @@ public:
           fMidiOutBuffers(nullptr),
           fIsOffline(false),
           fLastPingTime(-1),
+          fSessionManager(0),
+          fSetupHints(0),
           fRealtimeThread(this),
           fNonRealtimeThread(this)
     {
@@ -145,8 +147,11 @@ public:
         fServer.numMidiIns   = libjackSetup[2] - '0';
         fServer.numMidiOuts  = libjackSetup[3] - '0';
 
-        jack_carla_interposed_action(1, libjackSetup[5] - '0', (void*)carla_interposed_callback);
-        jack_carla_interposed_action(2, libjackSetup[4] - '0', nullptr);
+        fSessionManager = libjackSetup[4] - '0';
+        fSetupHints     = libjackSetup[5] - '0';
+
+        jack_carla_interposed_action(1, fSetupHints, (void*)carla_interposed_callback);
+        jack_carla_interposed_action(2, fSessionManager, nullptr);
 
         fNonRealtimeThread.startThread();
     }
@@ -172,23 +177,42 @@ public:
         fClients.clear();
     }
 
-    JackClientState* addClient(const char* const name)
+    JackClientState* createClient(const char* const name)
     {
-        JackClientState* const jclient(new JackClientState(fServer, name));
-
-        const CarlaMutexLocker cms(fRealtimeThreadMutex);
-        fClients.append(jclient);
-        return jclient;
+        return new JackClientState(fServer, name);
     }
 
-    bool removeClient(JackClientState* const jclient)
+    void destroyClient(JackClientState* const jclient)
     {
         {
             const CarlaMutexLocker cms(fRealtimeThreadMutex);
-            CARLA_SAFE_ASSERT_RETURN(fClients.removeOne(jclient), false);
+            fClients.removeOne(jclient);
         }
 
         delete jclient;
+    }
+
+    bool activateClient(JackClientState* const jclient)
+    {
+        const CarlaMutexLocker cms(fRealtimeThreadMutex);
+
+        if (! fClients.append(jclient))
+            return false;
+
+        jclient->activated = true;
+        jclient->deactivated = false;
+        return true;
+    }
+
+    bool deactivateClient(JackClientState* const jclient)
+    {
+        const CarlaMutexLocker cms(fRealtimeThreadMutex);
+
+        if (! fClients.removeOne(jclient))
+            return false;
+
+        jclient->activated = false;
+        jclient->deactivated = true;
         return true;
     }
 
@@ -247,6 +271,9 @@ private:
 
     bool fIsOffline;
     int64_t fLastPingTime;
+
+    int fSessionManager;
+    int fSetupHints;
 
     CarlaJackRealtimeThread    fRealtimeThread;
     CarlaJackNonRealtimeThread fNonRealtimeThread;
@@ -1049,7 +1076,7 @@ jack_client_t* jack_client_open(const char* client_name, jack_options_t options,
 {
     carla_debug("%s(%s, 0x%x, %p)", __FUNCTION__, client_name, options, status);
 
-    if (JackClientState* const client = gClient.addClient(client_name))
+    if (JackClientState* const client = gClient.createClient(client_name))
     {
         if (status != nullptr)
             *status = static_cast<JackStatus>(0x0);
@@ -1080,9 +1107,33 @@ int jack_client_close(jack_client_t* client)
     JackClientState* const jclient = (JackClientState*)client;
     CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
 
-    gClient.removeClient(jclient);
+    gClient.destroyClient(jclient);
     return 0;
 }
+
+CARLA_EXPORT
+int jack_activate(jack_client_t* client)
+{
+    carla_debug("%s(%p)", __FUNCTION__, client);
+
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    return gClient.activateClient(jclient) ? 0 : 1;
+}
+
+CARLA_EXPORT
+int jack_deactivate(jack_client_t* client)
+{
+    carla_debug("%s(%p)", __FUNCTION__, client);
+
+    JackClientState* const jclient = (JackClientState*)client;
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+
+    return gClient.deactivateClient(jclient) ? 0 : 1;
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_EXPORT
 pthread_t jack_client_thread_id(jack_client_t* client)
