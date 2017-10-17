@@ -40,6 +40,10 @@ ifeq ($(HAVE_X11),true)
 BUILD_CXX_FLAGS += $(X11_FLAGS)
 endif
 
+ifeq ($(CARLA_ZYN_COMPAT),true)
+BUILD_CXX_FLAGS += -DCARLA_ZYN_LV2_EXPORTED
+endif
+
 # ----------------------------------------------------------------------------------------------------------------------------
 # Libs
 
