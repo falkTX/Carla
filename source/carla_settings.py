@@ -193,8 +193,9 @@ class CarlaSettingsW(QDialog):
     TAB_INDEX_CANVAS       = 1
     TAB_INDEX_ENGINE       = 2
     TAB_INDEX_PATHS        = 3
-    TAB_INDEX_EXPERIMENTAL = 4
-    TAB_INDEX_NONE         = 5
+    TAB_INDEX_WINE         = 4
+    TAB_INDEX_EXPERIMENTAL = 5
+    TAB_INDEX_NONE         = 6
 
     # Path indexes
     PATH_INDEX_LADSPA = 0
@@ -275,6 +276,11 @@ class CarlaSettingsW(QDialog):
 
         if host.isControl or host.isPlugin:
             self.ui.ch_exp_load_lib_global.hide()
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+
+        if not LINUX:
+            self.ui.ch_exp_wine_bridges.setVisible(False)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         # FIXME, pipes on win32 not working
         if WINDOWS:
@@ -315,6 +321,7 @@ class CarlaSettingsW(QDialog):
         self.ui.lw_sfz.currentRowChanged.connect(self.slot_pluginPathRowChanged)
 
         self.ui.ch_main_experimental.toggled.connect(self.slot_enableExperimental)
+        self.ui.ch_exp_wine_bridges.toggled.connect(self.slot_enableWineBridges)
         self.ui.cb_canvas_eyecandy.toggled.connect(self.slot_canvasEyeCandyToggled)
         self.ui.cb_canvas_fancy_eyecandy.toggled.connect(self.slot_canvasFancyEyeCandyToggled)
 
@@ -374,6 +381,10 @@ class CarlaSettingsW(QDialog):
 
         if not self.host.experimental:
             self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+
+        elif not self.host.showWineBridges:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
@@ -415,6 +426,8 @@ class CarlaSettingsW(QDialog):
         self.ui.ch_engine_force_stereo.setChecked(self.host.forceStereo or not self.ui.ch_engine_force_stereo.isEnabled())
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(self.host.preferPluginBridges)
         self.ui.ch_exp_export_lv2.setChecked(self.host.exportLV2)
+        self.ui.cb_exp_plugin_bridges.setChecked(self.host.showPluginBridges)
+        self.ui.ch_exp_wine_bridges.setChecked(self.host.showWineBridges)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -470,11 +483,34 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_sfz.addItem(sfz)
 
         # ----------------------------------------------------------------------------------------------------
-        # Experimental
+        # Wine
 
-        self.ui.cb_exp_plugin_bridges.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,
-                                                                CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES,
-                                                                type=bool))
+        self.ui.le_wine_exec.setText(settings.value(CARLA_KEY_WINE_EXECUTABLE,
+                                                    CARLA_DEFAULT_WINE_EXECUTABLE,
+                                                    type=str))
+
+        self.ui.cb_wine_prefix_detect.setChecked(settings.value(CARLA_KEY_WINE_AUTO_PREFIX,
+                                                                CARLA_DEFAULT_WINE_AUTO_PREFIX,
+                                                                 type=bool))
+
+        self.ui.le_wine_prefix_fallback.setText(settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX,
+                                                               CARLA_DEFAULT_WINE_FALLBACK_PREFIX,
+                                                               type=str))
+
+        self.ui.group_wine_realtime.setChecked(settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED,
+                                                              CARLA_DEFAULT_WINE_RT_PRIO_ENABLED,
+                                                              type=bool))
+
+        self.ui.sb_wine_base_prio.setValue(settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,
+                                                          CARLA_DEFAULT_WINE_BASE_RT_PRIO,
+                                                          type=int))
+
+        self.ui.sb_wine_server_prio.setValue(settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO,
+                                                            CARLA_DEFAULT_WINE_SERVER_RT_PRIO,
+                                                            type=int))
+
+        # ----------------------------------------------------------------------------------------------------
+        # Experimental
 
         self.ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
@@ -558,6 +594,8 @@ class CarlaSettingsW(QDialog):
         self.host.preferPluginBridges = self.ui.ch_engine_prefer_plugin_bridges.isChecked()
         self.host.preferUIBridges     = self.ui.ch_engine_prefer_ui_bridges.isChecked()
         self.host.showLogs            = self.ui.ch_main_show_logs.isChecked()
+        self.host.showPluginBridges   = self.ui.cb_exp_plugin_bridges.isChecked()
+        self.host.showWineBridges     = self.ui.ch_exp_wine_bridges.isChecked()
         self.host.uiBridgesTimeout    = self.ui.sb_engine_ui_bridges_timeout.value()
         self.host.uisAlwaysOnTop      = self.ui.ch_engine_uis_always_on_top.isChecked()
 
@@ -581,6 +619,8 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT,    self.host.uiBridgesTimeout)
         settings.setValue(CARLA_KEY_ENGINE_UIS_ALWAYS_ON_TOP,     self.host.uisAlwaysOnTop)
         settings.setValue(CARLA_KEY_EXPERIMENTAL_EXPORT_LV2,      self.host.exportLV2)
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.host.showPluginBridges)
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES,    self.host.showWineBridges)
 
         # ----------------------------------------------------------------------------------------------------
         # Paths
@@ -637,9 +677,22 @@ class CarlaSettingsW(QDialog):
         settings.setValue(CARLA_KEY_PATHS_SFZ,    sfzs)
 
         # ----------------------------------------------------------------------------------------------------
+        # Wine
+
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS,       self.ui.ch_exp_jack_apps.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
+
+        settings.setValue(CARLA_KEY_WINE_EXECUTABLE, self.ui.le_wine_exec.text())
+        settings.setValue(CARLA_KEY_WINE_AUTO_PREFIX, self.ui.cb_wine_prefix_detect.isChecked())
+        settings.setValue(CARLA_KEY_WINE_FALLBACK_PREFIX, self.ui.le_wine_prefix_fallback.text())
+        settings.setValue(CARLA_KEY_WINE_RT_PRIO_ENABLED, self.ui.group_wine_realtime.isChecked())
+        settings.setValue(CARLA_KEY_WINE_BASE_RT_PRIO, self.ui.sb_wine_base_prio.value())
+        settings.setValue(CARLA_KEY_WINE_SERVER_RT_PRIO, self.ui.sb_wine_server_prio.value())
+
+        # ----------------------------------------------------------------------------------------------------
         # Experimental
 
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES,  self.ui.cb_exp_plugin_bridges.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS,       self.ui.ch_exp_jack_apps.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
@@ -771,6 +824,17 @@ class CarlaSettingsW(QDialog):
                     self.ui.lw_sfz.addItem(path)
 
         # ----------------------------------------------------------------------------------------------------
+        # Wine
+
+        elif self.ui.lw_page.currentRow() == self.TAB_INDEX_WINE:
+            self.ui.le_wine_exec.setText(CARLA_DEFAULT_WINE_EXECUTABLE)
+            self.ui.cb_wine_prefix_detect.setChecked(CARLA_DEFAULT_WINE_AUTO_PREFIX)
+            self.ui.le_wine_prefix_fallback.setText(CARLA_DEFAULT_WINE_FALLBACK_PREFIX)
+            self.ui.group_wine_realtime.setChecked(CARLA_DEFAULT_WINE_RT_PRIO_ENABLED)
+            self.ui.sb_wine_base_prio.setValue(CARLA_DEFAULT_WINE_BASE_RT_PRIO)
+            self.ui.sb_wine_server_prio.setValue(CARLA_DEFAULT_WINE_SERVER_RT_PRIO)
+
+        # ----------------------------------------------------------------------------------------------------
         # Experimental
 
         elif self.ui.lw_page.currentRow() == self.TAB_INDEX_EXPERIMENTAL:
@@ -779,6 +843,7 @@ class CarlaSettingsW(QDialog):
     def resetExperimentalSettings(self):
         # Forever experimental
         self.ui.cb_exp_plugin_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES)
+        self.ui.ch_exp_wine_bridges.setChecked(CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES)
         self.ui.ch_exp_jack_apps.setChecked(CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS)
         self.ui.ch_exp_export_lv2.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LV2_EXPORT)
         self.ui.ch_exp_load_lib_global.setChecked(CARLA_DEFAULT_EXPERIMENTAL_LOAD_LIB_GLOBAL)
@@ -797,8 +862,18 @@ class CarlaSettingsW(QDialog):
     def slot_enableExperimental(self, toggled):
         if toggled:
             self.ui.lw_page.showRow(self.TAB_INDEX_EXPERIMENTAL)
+            if self.ui.ch_exp_wine_bridges.isChecked():
+                self.ui.lw_page.showRow(self.TAB_INDEX_WINE)
         else:
             self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+
+    @pyqtSlot(bool)
+    def slot_enableWineBridges(self, toggled):
+        if toggled:
+            self.ui.lw_page.showRow(self.TAB_INDEX_WINE)
+        else:
+            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
     @pyqtSlot(bool)
     def slot_canvasEyeCandyToggled(self, toggled):

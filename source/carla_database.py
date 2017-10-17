@@ -1073,6 +1073,18 @@ class PluginRefreshW(QDialog):
             self.ui.label_win64.hide()
             self.ui.sep_format.hide()
 
+        elif not host.showWineBridges:
+            self.ui.ch_win32.setChecked(False)
+            self.ui.ch_win32.setEnabled(False)
+            self.ui.ch_win32.setVisible(False)
+            self.ui.ch_win64.setChecked(False)
+            self.ui.ch_win64.setEnabled(False)
+            self.ui.ch_win64.setVisible(False)
+            self.ui.ico_win32.hide()
+            self.ui.ico_win64.hide()
+            self.ui.label_win32.hide()
+            self.ui.label_win64.hide()
+
         # ----------------------------------------------------------------------------------------------------
         # Resize to minimum size, as it's very likely UI stuff was hidden
 
@@ -1319,9 +1331,9 @@ class PluginDatabaseW(QDialog):
         self.loadSettings()
 
         # ----------------------------------------------------------------------------------------------------
-        # Disable bridges (experimental for now)
+        # Disable bridges if not enabled in settings
 
-        if not host.experimental:
+        if not host.showPluginBridges:
             self.ui.ch_native.setChecked(True)
             self.ui.ch_native.setEnabled(False)
             self.ui.ch_native.setVisible(False)
@@ -1332,6 +1344,11 @@ class PluginDatabaseW(QDialog):
             self.ui.ch_bridged_wine.setEnabled(False)
             self.ui.ch_bridged_wine.setVisible(False)
             self.ui.l_arch.setVisible(False)
+
+        elif not host.showWineBridges:
+            self.ui.ch_bridged_wine.setChecked(False)
+            self.ui.ch_bridged_wine.setEnabled(False)
+            self.ui.ch_bridged_wine.setVisible(False)
 
         # ----------------------------------------------------------------------------------------------------
         # Set-up connections

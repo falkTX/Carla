@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>612</width>
-    <height>465</height>
+    <height>484</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -84,6 +84,11 @@
        <row>
         <property name="text">
          <string>paths</string>
+        </property>
+       </row>
+       <row>
+        <property name="text">
+         <string>wine</string>
         </property>
        </row>
        <row>
@@ -172,6 +177,24 @@
         </property>
        </item>
        <item row="4" column="0">
+        <property name="text">
+         <string>Wine</string>
+        </property>
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/48x48/wine.png</normaloff>:/48x48/wine.png</iconset>
+        </property>
+        <property name="flags">
+         <set>ItemIsSelectable|ItemIsEnabled</set>
+        </property>
+       </item>
+       <item row="5" column="0">
         <property name="text">
          <string>Experimental</string>
         </property>
@@ -1380,6 +1403,290 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="page_wine">
+        <layout class="QVBoxLayout" name="verticalLayout_25">
+         <property name="margin">
+          <number>2</number>
+         </property>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <item>
+            <widget class="QLabel" name="label_29">
+             <property name="text">
+              <string>&lt;b&gt;Wine&lt;/b&gt;</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_26">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_icon_engine_4">
+             <property name="text">
+              <string notr="true"/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../resources.qrc">:/48x48/wine.png</pixmap>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignHCenter|Qt::AlignTop</set>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_wine_exec">
+           <property name="title">
+            <string>Executable</string>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_18">
+            <item>
+             <widget class="QLabel" name="label_8">
+              <property name="text">
+               <string>Path to 'wine' binary:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="le_wine_exec"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_wine_prefix">
+           <property name="title">
+            <string>Prefix</string>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_6">
+            <item row="0" column="0" colspan="2">
+             <widget class="QCheckBox" name="cb_wine_prefix_detect">
+              <property name="text">
+               <string>Auto-detect Wine prefix based on plugin filename</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string>Fallback:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLineEdit" name="le_wine_prefix_fallback"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="group_wine_realtime">
+           <property name="title">
+            <string>Realtime Priority</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
+            <item row="1" column="3">
+             <spacer name="horizontalSpacer_28">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="3">
+             <spacer name="horizontalSpacer_27">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="0" column="2">
+             <widget class="QSpinBox" name="sb_wine_base_prio">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>89</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Base priority:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <widget class="QLabel" name="label_3">
+              <property name="text">
+               <string>WineServer priority:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="2">
+             <widget class="QSpinBox" name="sb_wine_server_prio">
+              <property name="minimum">
+               <number>1</number>
+              </property>
+              <property name="maximum">
+               <number>99</number>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <spacer name="horizontalSpacer_29">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+            <item row="1" column="0">
+             <spacer name="horizontalSpacer_30">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>40</width>
+                <height>20</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_14">
+           <item>
+            <spacer name="horizontalSpacer_24">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_26">
+             <property name="maximumSize">
+              <size>
+               <width>22</width>
+               <height>22</height>
+              </size>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../resources.qrc">:/16x16/dialog-information.png</pixmap>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_27">
+             <property name="text">
+              <string>These options are not available for Carla as plugin</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_25">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <spacer name="verticalSpacer_5">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>115</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_28">
+           <property name="maximumSize">
+            <size>
+             <width>16777215</width>
+             <height>5</height>
+            </size>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
        <widget class="QWidget" name="page_experimental">
         <layout class="QVBoxLayout" name="verticalLayout_21">
          <property name="margin">
@@ -1491,6 +1798,16 @@
              <widget class="QCheckBox" name="cb_exp_plugin_bridges">
               <property name="text">
                <string>Enable plugin bridges</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="ch_exp_wine_bridges">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Enable Wine bridges</string>
               </property>
              </widget>
             </item>
@@ -1750,6 +2067,22 @@ This mode is not available for VST plugins.</string>
     <hint type="destinationlabel">
      <x>402</x>
      <y>243</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cb_exp_plugin_bridges</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>ch_exp_wine_bridges</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>402</x>
+     <y>122</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>402</x>
+     <y>145</y>
     </hint>
    </hints>
   </connection>

@@ -1091,9 +1091,39 @@ typedef enum {
     ENGINE_OPTION_FRONTEND_WIN_ID = 17,
 
     /*!
+     * Set path to wine executable.
+     */
+    ENGINE_OPTION_WINE_EXECUTABLE = 18,
+
+    /*!
+     * Enable automatic wineprefix detection.
+     */
+    ENGINE_OPTION_WINE_AUTO_PREFIX = 19,
+
+    /*!
+     * Fallback wineprefix to use if automatic detection fails or is diabled, and WINEPREFIX is not set.
+     */
+    ENGINE_OPTION_WINE_FALLBACK_PREFIX = 20,
+
+    /*!
+     * Enable realtie priority for Wine application and server threads.
+     */
+    ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 21,
+
+    /*!
+     * Base realtime priority for Wine threads.
+     */
+    ENGINE_OPTION_WINE_BASE_RT_PRIO = 22,
+
+    /*!
+     * Wine server realtime priority.
+     */
+    ENGINE_OPTION_WINE_SERVER_RT_PRIO = 23,
+
+    /*!
      * Capture console output into debug callbacks.
      */
-    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 18
+    ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT = 24
 
 } EngineOption;
 

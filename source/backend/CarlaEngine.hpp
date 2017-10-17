@@ -254,6 +254,25 @@ struct CARLA_API EngineOptions {
     bool preventBadBehaviour;
     uintptr_t frontendWinId;
 
+    struct Wine {
+        const char* exec;
+
+        bool autoPrefix;
+        const char* fallbackPrefix;
+
+        bool rtPrio;
+        int baseRtPrio;
+        int serverRtPrio;
+
+        Wine()
+            : exec(nullptr),
+              autoPrefix(true),
+              fallbackPrefix(nullptr),
+              rtPrio(true),
+              baseRtPrio(15),
+              serverRtPrio(10) {}
+    } wine;
+
 #ifndef DOXYGEN
     EngineOptions() noexcept;
     ~EngineOptions() noexcept;

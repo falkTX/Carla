@@ -2555,14 +2555,19 @@ def loadHostSettings(host):
         host.preventBadBehaviour = CARLA_DEFAULT_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR
 
     try:
+        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
+    except:
+        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
+
+    try:
         host.showPluginBridges = settings.value(CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES, type=bool)
     except:
         host.showPluginBridges = CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES
 
     try:
-        host.showLogs = settings.value(CARLA_KEY_MAIN_SHOW_LOGS, CARLA_DEFAULT_MAIN_SHOW_LOGS, type=bool)
+        host.showWineBridges = settings.value(CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES, CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES, type=bool)
     except:
-        host.showLogs = CARLA_DEFAULT_MAIN_SHOW_LOGS
+        host.showWineBridges = CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES
 
     try:
         host.uiBridgesTimeout = settings.value(CARLA_KEY_ENGINE_UI_BRIDGES_TIMEOUT, CARLA_DEFAULT_UI_BRIDGES_TIMEOUT, type=int)
