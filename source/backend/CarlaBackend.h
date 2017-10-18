@@ -1101,12 +1101,12 @@ typedef enum {
     ENGINE_OPTION_WINE_AUTO_PREFIX = 19,
 
     /*!
-     * Fallback wineprefix to use if automatic detection fails or is diabled, and WINEPREFIX is not set.
+     * Fallback wineprefix to use if automatic detection fails or is disabled, and WINEPREFIX is not set.
      */
     ENGINE_OPTION_WINE_FALLBACK_PREFIX = 20,
 
     /*!
-     * Enable realtie priority for Wine application and server threads.
+     * Enable realtime priority for Wine application and server threads.
      */
     ENGINE_OPTION_WINE_RT_PRIO_ENABLED = 21,
 

@@ -1478,6 +1478,9 @@
            <layout class="QGridLayout" name="gridLayout_6">
             <item row="0" column="0" colspan="2">
              <widget class="QCheckBox" name="cb_wine_prefix_detect">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
                <string>Auto-detect Wine prefix based on plugin filename</string>
               </property>
@@ -1495,6 +1498,16 @@
             </item>
             <item row="1" column="1">
              <widget class="QLineEdit" name="le_wine_prefix_fallback"/>
+            </item>
+            <item row="2" column="0" colspan="2">
+             <widget class="QLabel" name="label_30">
+              <property name="text">
+               <string>Note: WINEPREFIX env var is prefered over this fallback</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
             </item>
            </layout>
           </widget>
@@ -1667,7 +1680,7 @@
            <property name="sizeHint" stdset="0">
             <size>
              <width>20</width>
-             <height>115</height>
+             <height>96</height>
             </size>
            </property>
           </spacer>

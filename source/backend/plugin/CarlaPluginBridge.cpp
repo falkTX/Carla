@@ -111,6 +111,11 @@ protected:
             carla_stderr("CarlaPluginBridgeThread::run() - already running");
         }
 
+        char strBuf[STR_MAX+1];
+        strBuf[STR_MAX] = '\0';
+
+        const EngineOptions& options(kEngine->getOptions());
+
         String name(kPlugin->getName());
         String filename(kPlugin->getFilename());
 
@@ -125,7 +130,47 @@ protected:
 #ifndef CARLA_OS_WIN
         // start with "wine" if needed
         if (fBinary.endsWithIgnoreCase(".exe"))
-            arguments.add("wine");
+        {
+            if (options.wine.executable != nullptr && options.wine.executable[0] != '\0')
+                arguments.add(options.wine.executable);
+            else
+                arguments.add("wine");
+
+#if 0
+            if (options.wine.autoPrefix)
+            {
+                // TODO
+            }
+            else
+#endif
+            if (std::getenv("WINEPREFIX") == nullptr &&
+                options.wine.fallbackPrefix != nullptr &&
+                options.wine.fallbackPrefix[0] != '\0')
+            {
+                carla_setenv("WINEPREFIX", options.wine.fallbackPrefix);
+            }
+
+            if (options.wine.rtPrio)
+            {
+                carla_setenv("STAGING_SHARED_MEMORY", "1");
+
+                std::snprintf(strBuf, STR_MAX, "%i", options.wine.baseRtPrio);
+                carla_setenv("STAGING_RT_PRIORITY_BASE", strBuf);
+                carla_setenv("WINE_RT", strBuf);
+
+                std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
+                carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
+                carla_setenv("WINE_SVR_RT", strBuf);
+            }
+            else
+            {
+                carla_unsetenv("STAGING_SHARED_MEMORY");
+                carla_unsetenv("STAGING_RT_PRIORITY_BASE");
+                carla_unsetenv("STAGING_RT_PRIORITY_SERVER");
+                carla_unsetenv("WINE_RT");
+                carla_unsetenv("WINE_SVR_RT");
+            }
+        }
 #endif
 
         // binary
@@ -146,10 +191,6 @@ protected:
         bool started;
 
         {
-            char strBuf[STR_MAX+1];
-            strBuf[STR_MAX] = '\0';
-
-            const EngineOptions& options(kEngine->getOptions());
             const ScopedEngineEnvironmentLocker _seel(kEngine);
 
 #ifdef CARLA_OS_LINUX

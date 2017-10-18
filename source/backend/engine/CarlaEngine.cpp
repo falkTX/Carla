@@ -1587,9 +1587,12 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.resourceDir = carla_strdup_safe(valueStr);
         break;
 
-    case ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR:
+    case ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR: {
         CARLA_SAFE_ASSERT_RETURN(pData->options.binaryDir != nullptr && pData->options.binaryDir[0] != '\0',);
+
 #ifdef CARLA_OS_LINUX
+        const ScopedEngineEnvironmentLocker _seel(this);
+
         if (value != 0)
         {
             CarlaString interposerPath(CarlaString(pData->options.binaryDir) + "/libcarla_interposer-safe.so");
@@ -1600,7 +1603,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             ::unsetenv("LD_PRELOAD");
         }
 #endif
-        break;
+    }   break;
 
     case ENGINE_OPTION_FRONTEND_WIN_ID: {
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
@@ -1608,6 +1611,44 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         CARLA_SAFE_ASSERT_RETURN(winId >= 0,);
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
+
+    case ENGINE_OPTION_WINE_EXECUTABLE:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+
+        if (pData->options.wine.executable != nullptr)
+            delete[] pData->options.wine.executable;
+
+        pData->options.wine.executable = carla_strdup_safe(valueStr);
+        break;
+
+    case ENGINE_OPTION_WINE_AUTO_PREFIX:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        pData->options.wine.autoPrefix = (value != 0);
+        break;
+
+    case ENGINE_OPTION_WINE_FALLBACK_PREFIX:
+        CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
+
+        if (pData->options.wine.fallbackPrefix != nullptr)
+            delete[] pData->options.wine.fallbackPrefix;
+
+        pData->options.wine.fallbackPrefix = carla_strdup_safe(valueStr);
+        break;
+
+    case ENGINE_OPTION_WINE_RT_PRIO_ENABLED:
+        CARLA_SAFE_ASSERT_RETURN(value == 0 || value == 1,);
+        pData->options.wine.rtPrio = (value != 0);
+        break;
+
+    case ENGINE_OPTION_WINE_BASE_RT_PRIO:
+        CARLA_SAFE_ASSERT_RETURN(value >= 1 && value <= 89,);
+        pData->options.wine.baseRtPrio = value;
+        break;
+
+    case ENGINE_OPTION_WINE_SERVER_RT_PRIO:
+        CARLA_SAFE_ASSERT_RETURN(value >= 1 && value <= 99,);
+        pData->options.wine.serverRtPrio = value;
+        break;
 
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         break;

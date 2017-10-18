@@ -2459,8 +2459,6 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
     # --------------------------------------------------------------------------------------------------------
     # Init host
 
-
-
     if failError:
         # no try
         host = HostClass() if HostClass is not None else CarlaHostQtDLL(libname, loadGlobal)
@@ -2725,6 +2723,23 @@ def setEngineSettings(host):
     if audioDriver != "JACK" and host.transportMode == ENGINE_TRANSPORT_MODE_JACK:
         host.transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
         host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, ENGINE_TRANSPORT_MODE_INTERNAL, "")
+
+    # --------------------------------------------------------------------------------------------------------
+    # wine settings
+
+    optWineExecutable = settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str)
+    optWineAutoPrefix = settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool)
+    optWineFallbackPrefix = settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
+    optWineRtPrioEnabled = settings.value(CARLA_KEY_WINE_RT_PRIO_ENABLED, CARLA_DEFAULT_WINE_RT_PRIO_ENABLED, type=bool)
+    optWineBaseRtPrio = settings.value(CARLA_KEY_WINE_BASE_RT_PRIO,   CARLA_DEFAULT_WINE_BASE_RT_PRIO, type=int)
+    optWineServerRtPrio = settings.value(CARLA_KEY_WINE_SERVER_RT_PRIO, CARLA_DEFAULT_WINE_SERVER_RT_PRIO, type=int)
+
+    host.set_engine_option(ENGINE_OPTION_WINE_EXECUTABLE, 0, optWineExecutable)
+    host.set_engine_option(ENGINE_OPTION_WINE_AUTO_PREFIX, 1 if optWineAutoPrefix else 0, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_FALLBACK_PREFIX, 0, os.path.expanduser(optWineFallbackPrefix))
+    host.set_engine_option(ENGINE_OPTION_WINE_RT_PRIO_ENABLED, 1 if optWineRtPrioEnabled else 0, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_BASE_RT_PRIO, optWineBaseRtPrio, "")
+    host.set_engine_option(ENGINE_OPTION_WINE_SERVER_RT_PRIO, optWineServerRtPrio, "")
 
     # --------------------------------------------------------------------------------------------------------
     # return selected driver name

@@ -287,6 +287,29 @@ EngineOptions::~EngineOptions() noexcept
     }
 }
 
+EngineOptions::Wine::Wine() noexcept
+    : executable(nullptr),
+      autoPrefix(true),
+      fallbackPrefix(nullptr),
+      rtPrio(true),
+      baseRtPrio(15),
+      serverRtPrio(10) {}
+
+EngineOptions::Wine::~Wine() noexcept
+{
+    if (executable != nullptr)
+    {
+        delete[] executable;
+        executable = nullptr;
+    }
+
+    if (fallbackPrefix != nullptr)
+    {
+        delete[] fallbackPrefix;
+        fallbackPrefix = nullptr;
+    }
+}
+
 // -----------------------------------------------------------------------
 // EngineTimeInfoBBT
 
