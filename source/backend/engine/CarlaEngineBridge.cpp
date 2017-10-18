@@ -1256,6 +1256,10 @@ protected:
                             }
                         }
 
+                        if (curMidiDataPos != 0 &&
+                            curMidiDataPos + kBridgeBaseMidiOutHeaderSize < kBridgeRtClientDataMidiOutSize)
+                            carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
+
                         carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
                     }
 

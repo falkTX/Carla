@@ -1284,7 +1284,7 @@ public:
             uint8_t port, size;
             const uint8_t* midiData(fShmRtClientControl.data->midiOut);
 
-            for (std::size_t read=0; read<kBridgeRtClientDataMidiOutSize;)
+            for (std::size_t read=0; read<kBridgeRtClientDataMidiOutSize-kBridgeBaseMidiOutHeaderSize;)
             {
                 // get time
                 time = *(const uint32_t*)midiData;
@@ -1305,7 +1305,7 @@ public:
 
                 pData->event.portOut->writeMidiEvent(time, size, data);
 
-                read += 6U /* time, port and size */ + size;
+                read += kBridgeBaseMidiOutHeaderSize + size;
             }
 
         } // End of Control and MIDI Output

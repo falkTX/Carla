@@ -805,6 +805,11 @@ bool CarlaJackAppClient::handleRtData()
                             curMidiDataPos += kBridgeBaseMidiOutHeaderSize + jmevent.size;
                         }
                     }
+
+                    if (curMidiDataPos != 0 &&
+                        curMidiDataPos + kBridgeBaseMidiOutHeaderSize < kBridgeRtClientDataMidiOutSize)
+                        carla_zeroBytes(midiData, kBridgeBaseMidiOutHeaderSize);
+
                 }
             }
             else
