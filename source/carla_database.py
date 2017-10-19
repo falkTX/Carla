@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -162,7 +162,18 @@ PyPluginInfo = {
 global gDiscoveryProcess
 gDiscoveryProcess = None
 
-def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
+def findWinePrefix(filename, recursionLimit = 10):
+    if recursionLimit == 0 or len(filename) < 5 or "/" not in filename:
+        return ""
+
+    path = filename[:filename.rfind("/")]
+
+    if os.path.isdir(path + "/dosdevices"):
+        return path
+
+    return findWinePrefix(path, recursionLimit-1)
+
+def runCarlaDiscovery(itype, stype, filename, tool, wineSettings=None):
     if not os.path.exists(tool):
         qWarning("runCarlaDiscovery() - tool '%s' does not exist" % tool)
         return
@@ -173,9 +184,26 @@ def runCarlaDiscovery(itype, stype, filename, tool, isWine=False):
         command.append("env")
         command.append("LANG=C")
         command.append("LD_PRELOAD=")
-        if isWine:
+        if wineSettings is not None:
             command.append("WINEDEBUG=-all")
-            command.append("wine")
+
+            if wineSettings['autoPrefix']:
+                winePrefix = findWinePrefix(filename)
+            else:
+                winePrefix = ""
+
+            if not winePrefix:
+                envWinePrefix = os.getenv("WINEPREFIX")
+
+                if envWinePrefix:
+                    winePrefix = envWinePrefix
+                elif wineSettings['fallbackPrefix']:
+                    winePrefix = os.path.expanduser(wineSettings['fallbackPrefix'])
+                else:
+                    winePrefix = os.path.expanduser("~/.wine")
+
+            command.append("WINEPREFIX=" + winePrefix)
+            command.append(wineSettings['executable'] if wineSettings['executable'] else "wine")
 
     command.append(tool)
     command.append(stype)
@@ -314,32 +342,32 @@ def checkPluginCached(desc, ptype):
 
     return plugins
 
-def checkPluginLADSPA(filename, tool, isWine=False):
-    return runCarlaDiscovery(PLUGIN_LADSPA, "LADSPA", filename, tool, isWine)
+def checkPluginLADSPA(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_LADSPA, "LADSPA", filename, tool, wineSettings)
 
-def checkPluginDSSI(filename, tool, isWine=False):
-    return runCarlaDiscovery(PLUGIN_DSSI, "DSSI", filename, tool, isWine)
+def checkPluginDSSI(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_DSSI, "DSSI", filename, tool, wineSettings)
 
-def checkPluginLV2(filename, tool, isWine=False):
-    return runCarlaDiscovery(PLUGIN_LV2, "LV2", filename, tool, isWine)
+def checkPluginLV2(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_LV2, "LV2", filename, tool, wineSettings)
 
-def checkPluginVST2(filename, tool, isWine=False):
-    return runCarlaDiscovery(PLUGIN_VST2, "VST2", filename, tool, isWine)
+def checkPluginVST2(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_VST2, "VST2", filename, tool, wineSettings)
 
-def checkPluginVST3(filename, tool, isWine=False):
-    return runCarlaDiscovery(PLUGIN_VST3, "VST3", filename, tool, isWine)
+def checkPluginVST3(filename, tool, wineSettings=None):
+    return runCarlaDiscovery(PLUGIN_VST3, "VST3", filename, tool, wineSettings)
 
 def checkPluginAU(tool):
-    return runCarlaDiscovery(PLUGIN_AU, "AU", ":all", tool)
+    return runCarlaDiscovery(None, PLUGIN_AU, "AU", ":all", tool)
 
 def checkFileGIG(filename, tool):
-    return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)
+    return runCarlaDiscovery(None, PLUGIN_GIG, "GIG", filename, tool)
 
 def checkFileSF2(filename, tool):
-    return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
+    return runCarlaDiscovery(None, PLUGIN_SF2, "SF2", filename, tool)
 
 def checkFileSFZ(filename, tool):
-    return runCarlaDiscovery(PLUGIN_SFZ, "SFZ", filename, tool)
+    return runCarlaDiscovery(None, PLUGIN_SFZ, "SFZ", filename, tool)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
@@ -371,8 +399,18 @@ class SearchPluginsThread(QThread):
 
         if WINDOWS:
             toolNative = "carla-discovery-win64.exe" if kIs64bit else "carla-discovery-win32.exe"
+            self.fWineSettings = None
+
         else:
             toolNative = "carla-discovery-native"
+
+            settings = QSettings("falkTX", "Carla2")
+            self.fWineSettings = {
+                'executable'    : settings.value(CARLA_KEY_WINE_EXECUTABLE, CARLA_DEFAULT_WINE_EXECUTABLE, type=str),
+                'autoPrefix'    : settings.value(CARLA_KEY_WINE_AUTO_PREFIX, CARLA_DEFAULT_WINE_AUTO_PREFIX, type=bool),
+                'fallbackPrefix': settings.value(CARLA_KEY_WINE_FALLBACK_PREFIX, CARLA_DEFAULT_WINE_FALLBACK_PREFIX, type=str)
+            }
+            del settings
 
         self.fToolNative = os.path.join(pathBinaries, toolNative)
 
@@ -713,7 +751,7 @@ class SearchPluginsThread(QThread):
             percent = ( float(i) / len(ladspaBinaries) ) * self.fCurPercentValue
             self._pluginLook((self.fLastCheckValue + percent) * 0.9, ladspa)
 
-            plugins = checkPluginLADSPA(ladspa, tool, isWine)
+            plugins = checkPluginLADSPA(ladspa, tool, self.fWineSettings if isWine else None)
             if plugins:
                 self.fLadspaPlugins.append(plugins)
 
@@ -746,7 +784,7 @@ class SearchPluginsThread(QThread):
             percent = ( float(i) / len(dssiBinaries) ) * self.fCurPercentValue
             self._pluginLook(self.fLastCheckValue + percent, dssi)
 
-            plugins = checkPluginDSSI(dssi, tool, isWine)
+            plugins = checkPluginDSSI(dssi, tool, self.fWineSettings if isWine else None)
             if plugins:
                 self.fDssiPlugins.append(plugins)
 
@@ -785,7 +823,7 @@ class SearchPluginsThread(QThread):
             percent = ( float(i) / len(vst2Binaries) ) * self.fCurPercentValue
             self._pluginLook(self.fLastCheckValue + percent, vst2)
 
-            plugins = checkPluginVST2(vst2, tool, isWine)
+            plugins = checkPluginVST2(vst2, tool, self.fWineSettings if isWine else None)
             if plugins:
                 self.fVstPlugins.append(plugins)
 
@@ -824,7 +862,7 @@ class SearchPluginsThread(QThread):
             percent = ( float(i) / len(vst3Binaries) ) * self.fCurPercentValue
             self._pluginLook(self.fLastCheckValue + percent, vst3)
 
-            plugins = checkPluginVST3(vst3, tool, isWine)
+            plugins = checkPluginVST3(vst3, tool, self.fWineSettings if isWine else None)
             if plugins:
                 self.fVst3Plugins.append(plugins)
 
@@ -928,8 +966,7 @@ class PluginRefreshW(QDialog):
 
         if False:
             # kdevelop likes this :)
-            host = CarlaHostNull()
-            self.host = host
+            self.host = host = CarlaHostNull()
 
         # --------------------------------------------------------------------------------------------------------------
         # Internal stuff

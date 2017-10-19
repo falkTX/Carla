@@ -30,7 +30,7 @@
 
 #include <ctime>
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 using juce::ChildProcess;
 using juce::File;
@@ -41,12 +41,27 @@ using juce::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 // Fallback data
 
 static const ExternalMidiNote kExternalMidiNoteFallback = { -1, 0, 0 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+
+static String findWinePrefix(const String filename, const int recursionLimit = 10)
+{
+    if (recursionLimit == 0 || filename.length() < 5 || ! filename.contains("/"))
+        return "";
+
+    const String path(filename.upToLastOccurrenceOf("/", false, false));
+
+    if (File(path + "/dosdevices").isDirectory())
+        return path;
+
+    return findWinePrefix(path, recursionLimit-1);
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 struct BridgeParamInfo {
     float value;
@@ -63,7 +78,7 @@ struct BridgeParamInfo {
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeParamInfo)
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginBridgeThread : public CarlaThread
 {
@@ -77,12 +92,16 @@ public:
           fShmIds(),
           fProcess() {}
 
-    void setData(const char* const binary, const char* const label, const char* const shmIds) noexcept
+    void setData(const char* const winePrefix,
+                 const char* const binary,
+                 const char* const label,
+                 const char* const shmIds) noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(binary != nullptr && binary[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
+        fWinePrefix = winePrefix;
         fBinary = binary;
         fShmIds = shmIds;
 
@@ -135,41 +154,6 @@ protected:
                 arguments.add(options.wine.executable);
             else
                 arguments.add("wine");
-
-#if 0
-            if (options.wine.autoPrefix)
-            {
-                // TODO
-            }
-            else
-#endif
-            if (std::getenv("WINEPREFIX") == nullptr &&
-                options.wine.fallbackPrefix != nullptr &&
-                options.wine.fallbackPrefix[0] != '\0')
-            {
-                carla_setenv("WINEPREFIX", options.wine.fallbackPrefix);
-            }
-
-            if (options.wine.rtPrio)
-            {
-                carla_setenv("STAGING_SHARED_MEMORY", "1");
-
-                std::snprintf(strBuf, STR_MAX, "%i", options.wine.baseRtPrio);
-                carla_setenv("STAGING_RT_PRIORITY_BASE", strBuf);
-                carla_setenv("WINE_RT", strBuf);
-
-                std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
-                carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
-                carla_setenv("WINE_SVR_RT", strBuf);
-            }
-            else
-            {
-                carla_unsetenv("STAGING_SHARED_MEMORY");
-                carla_unsetenv("STAGING_RT_PRIORITY_BASE");
-                carla_unsetenv("STAGING_RT_PRIORITY_SERVER");
-                carla_unsetenv("WINE_RT");
-                carla_unsetenv("WINE_SVR_RT");
-            }
         }
 #endif
 
@@ -265,7 +249,37 @@ protected:
             carla_setenv("ENGINE_OPTION_FRONTEND_WIN_ID", strBuf);
 
             carla_setenv("ENGINE_BRIDGE_SHM_IDS", fShmIds.toRawUTF8());
-            carla_setenv("WINEDEBUG", "-all");
+
+#ifndef CARLA_OS_WIN
+            if (fWinePrefix.isNotEmpty())
+            {
+                carla_setenv("WINEDEBUG", "-all");
+                carla_setenv("WINEPREFIX", fWinePrefix.toRawUTF8());
+
+                if (options.wine.rtPrio)
+                {
+                    carla_setenv("STAGING_SHARED_MEMORY", "1");
+
+                    std::snprintf(strBuf, STR_MAX, "%i", options.wine.baseRtPrio);
+                    carla_setenv("STAGING_RT_PRIORITY_BASE", strBuf);
+                    carla_setenv("WINE_RT", strBuf);
+
+                    std::snprintf(strBuf, STR_MAX, "%i", options.wine.serverRtPrio);
+                    carla_setenv("STAGING_RT_PRIORITY_SERVER", strBuf);
+                    carla_setenv("WINE_SVR_RT", strBuf);
+                }
+                else
+                {
+                    carla_unsetenv("STAGING_SHARED_MEMORY");
+                    carla_unsetenv("STAGING_RT_PRIORITY_BASE");
+                    carla_unsetenv("STAGING_RT_PRIORITY_SERVER");
+                    carla_unsetenv("WINE_RT");
+                    carla_unsetenv("WINE_SVR_RT");
+                }
+
+                carla_stdout("Using WINEPREFIX '%s'", fWinePrefix.toRawUTF8());
+            }
+#endif
 
             carla_stdout("starting plugin bridge, command is:\n%s \"%s\" \"%s\" \"%s\" " P_INT64,
                          fBinary.toRawUTF8(), getPluginTypeAsString(kPlugin->getType()), filename.toRawUTF8(), fLabel.toRawUTF8(), kPlugin->getUniqueId());
@@ -319,6 +333,7 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
+    String fWinePrefix;
     String fBinary;
     String fLabel;
     String fShmIds;
@@ -328,7 +343,7 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPluginBridgeThread)
 };
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginBridge : public CarlaPlugin
 {
@@ -2027,25 +2042,17 @@ public:
                 fShmNonRtServerControl.readCustomData(chunkFilePath, chunkFilePathSize);
 
                 String realChunkFilePath(chunkFilePath);
-                carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
 
 #ifndef CARLA_OS_WIN
                 // Using Wine, fix temp dir
                 if (fBinaryType == BINARY_WIN32 || fBinaryType == BINARY_WIN64)
                 {
-                    // Get WINEPREFIX
-                    String wineDir;
-                    if (const char* const WINEPREFIX = getenv("WINEPREFIX"))
-                        wineDir = String(WINEPREFIX);
-                    else
-                        wineDir = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
-
                     const StringArray driveLetterSplit(StringArray::fromTokens(realChunkFilePath, ":/", ""));
+                    carla_stdout("chunk save path BEFORE => %s", realChunkFilePath.toRawUTF8());
 
-                    realChunkFilePath  = wineDir;
+                    realChunkFilePath  = fWinePrefix;
                     realChunkFilePath += "/drive_";
                     realChunkFilePath += driveLetterSplit[0].toLowerCase();
-                    realChunkFilePath += "/";
                     realChunkFilePath += driveLetterSplit[1];
 
                     realChunkFilePath  = realChunkFilePath.replace("\\", "/");
@@ -2054,12 +2061,10 @@ public:
 #endif
 
                 File chunkFile(realChunkFilePath);
+                CARLA_SAFE_ASSERT_BREAK(chunkFile.existsAsFile());
 
-                if (chunkFile.existsAsFile())
-                {
-                    fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
-                    chunkFile.deleteFile();
-                }
+                fInfo.chunk = carla_getChunkFromBase64String(chunkFile.loadFileAsString().toRawUTF8());
+                chunkFile.deleteFile();
             }   break;
 
             case kPluginBridgeNonRtServerSetLatency:
@@ -2193,8 +2198,8 @@ public:
         }
 
         // ---------------------------------------------------------------
-
         // initial values
+
         fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientNull);
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
@@ -2210,7 +2215,32 @@ public:
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
         fShmRtClientControl.commitWrite();
 
+        // ---------------------------------------------------------------
+        // set wine prefix
+
+        if (fBridgeBinary.contains(".exe", true))
+        {
+            const EngineOptions& options(pData->engine->getOptions());
+
+            if (options.wine.autoPrefix)
+                fWinePrefix = findWinePrefix(pData->filename);
+
+            if (fWinePrefix.isEmpty())
+            {
+                const char* const envWinePrefix(std::getenv("WINEPREFIX"));
+
+                if (envWinePrefix != nullptr && envWinePrefix[0] != '\0')
+                    fWinePrefix = envWinePrefix;
+                else if (options.wine.fallbackPrefix != nullptr && options.wine.fallbackPrefix[0] != '\0')
+                    fWinePrefix = options.wine.fallbackPrefix;
+                else
+                    fWinePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
+            }
+        }
+
+        // ---------------------------------------------------------------
         // init bridge thread
+
         {
             char shmIdsStr[6*4+1];
             carla_zeroChars(shmIdsStr, 6*4+1);
@@ -2220,9 +2250,12 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(bridgeBinary, label, shmIdsStr);
+            fBridgeThread.setData(fWinePrefix.toRawUTF8(), bridgeBinary, label, shmIdsStr);
             fBridgeThread.startThread();
         }
+
+        // ---------------------------------------------------------------
+        // wait for bridge to start
 
         fInitiated = false;
         fLastPongTime = Time::currentTimeMillis();
@@ -2314,6 +2347,8 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
+    String fWinePrefix;
+
     struct Info {
         uint32_t aIns, aOuts;
         uint32_t cvIns, cvOuts;
@@ -2381,7 +2416,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -2414,10 +2449,10 @@ CarlaPlugin* CarlaPlugin::newBridge(const Initializer& init, BinaryType btype, P
 
 CARLA_BACKEND_END_NAMESPACE
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
 # include "CarlaBridgeUtils.cpp"
 #endif
 
-// -------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
