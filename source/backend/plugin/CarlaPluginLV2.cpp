@@ -3386,6 +3386,7 @@ public:
 
         for (uint32_t i=0; i < fEventsOut.count; ++i)
         {
+            uint32_t lastFrame = 0;
             Lv2EventData& evData(fEventsOut.data[i]);
 
             if (evData.type & CARLA_EVENT_DATA_ATOM)
@@ -3410,7 +3411,12 @@ public:
                         {
                             CARLA_SAFE_ASSERT_CONTINUE(ev->time.frames >= 0);
                             CARLA_SAFE_ASSERT_CONTINUE(ev->body.size < 0xFF);
-                            evData.port->writeMidiEvent(static_cast<uint32_t>(ev->time.frames), static_cast<uint8_t>(ev->body.size), data);
+
+                            uint32_t currentFrame = static_cast<uint32_t>(ev->time.frames);
+                            if (currentFrame < lastFrame)
+                                currentFrame = lastFrame;
+
+                            evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->body.size), data);
                         }
                     }
                     else //if (ev->body.type == CARLA_URI_MAP_ID_ATOM_BLANK)
@@ -3438,10 +3444,14 @@ public:
                     if (ev == nullptr || data == nullptr)
                         break;
 
+                    uint32_t currentFrame = ev->frames;
+                    if (currentFrame < lastFrame)
+                        currentFrame = lastFrame;
+
                     if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
                     {
                         CARLA_SAFE_ASSERT_CONTINUE(ev->size < 0xFF);
-                        evData.port->writeMidiEvent(ev->frames, static_cast<uint8_t>(ev->size), data);
+                        evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->size), data);
                     }
 
                     lv2_event_increment(&iter);
