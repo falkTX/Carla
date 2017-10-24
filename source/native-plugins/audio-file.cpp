@@ -17,22 +17,12 @@
 
 #include "CarlaNative.hpp"
 
+#if 0
+
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-#include "AppConfig.h"
-#include "juce_audio_formats/juce_audio_formats.h"
-
 using namespace juce;
-
-// -----------------------------------------------------------------------
-
-static AudioFormatManager& getAudioFormatManagerInstance()
-{
-    static AudioFormatManager afm;
-    afm.registerBasicFormats();
-    return afm;
-}
 
 // -----------------------------------------------------------------------
 
@@ -302,13 +292,15 @@ static const NativePluginDescriptor audiofileDesc = {
 
 // -----------------------------------------------------------------------
 
+#endif
+
 CARLA_EXPORT
 void carla_register_native_plugin_audiofile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_audiofile()
 {
-    carla_register_native_plugin(&audiofileDesc);
+    //carla_register_native_plugin(&audiofileDesc);
 }
 
 // -----------------------------------------------------------------------

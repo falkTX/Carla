@@ -56,8 +56,7 @@ SOURCES = \
     backend/plugin/CarlaPluginLinuxSampler.cpp \
     backend/plugin/CarlaPluginLV2.cpp \
     backend/plugin/CarlaPluginNative.cpp \
-    backend/plugin/CarlaPluginVST2.cpp \
-    backend/plugin/CarlaPluginVST3.cpp
+    backend/plugin/CarlaPluginVST2.cpp
 
 HEADERS = \
 # C API

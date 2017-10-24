@@ -144,12 +144,6 @@ def structToDict(struct):
 # Maximum default number of loadable plugins.
 MAX_DEFAULT_PLUGINS = 99
 
-# Maximum number of loadable plugins in rack mode.
-MAX_RACK_PLUGINS = 16
-
-# Maximum number of loadable plugins in patchbay mode.
-MAX_PATCHBAY_PLUGINS = 255
-
 # Maximum default number of parameters allowed.
 # @see ENGINE_OPTION_MAX_PARAMETERS
 MAX_DEFAULT_PARAMETERS = 200
@@ -387,24 +381,17 @@ PLUGIN_LV2 = 4
 # VST2 plugin.
 PLUGIN_VST2 = 5
 
-# VST3 plugin.
-PLUGIN_VST3 = 6
-
-# AU plugin.
-# @note MacOS only
-PLUGIN_AU = 7
-
 # GIG file.
-PLUGIN_GIG = 8
+PLUGIN_GIG = 6
 
 # SF2 file (SoundFont).
-PLUGIN_SF2 = 9
+PLUGIN_SF2 = 7
 
 # SFZ file.
-PLUGIN_SFZ = 10
+PLUGIN_SFZ = 8
 
 # JACK application.
-PLUGIN_JACK = 11
+PLUGIN_JACK = 9
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Category
@@ -717,7 +704,7 @@ ENGINE_CALLBACK_QUIT = 40
 ENGINE_OPTION_DEBUG = 0
 
 # Set the engine processing mode.
-# Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_PATCHBAY for all other OSes.
+# Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
 # @see EngineProcessMode
 ENGINE_OPTION_PROCESS_MODE = 1
 
@@ -828,11 +815,8 @@ ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS = 1
 # Processes plugins in order of Id, with forced stereo always on.
 ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2
 
-# Single client, 'patchbay' mode.
-ENGINE_PROCESS_MODE_PATCHBAY = 3
-
 # Special mode, used in plugin-bridges only.
-ENGINE_PROCESS_MODE_BRIDGE = 4
+ENGINE_PROCESS_MODE_BRIDGE = 3
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Transport Mode
@@ -1245,9 +1229,9 @@ class CarlaHostMeta(object):
         self.nsmOK     = False
 
         # settings
-        self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
+        self.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
-        self.nextProcessMode   = ENGINE_PROCESS_MODE_PATCHBAY
+        self.nextProcessMode   = self.processMode
         self.processModeForced = False
         self.audioDriverForced = None
 
@@ -1388,7 +1372,7 @@ class CarlaHostMeta(object):
     # @param external Wherever to show external/hardware ports instead of internal ones.
     #                 Only valid in patchbay engine mode, other modes will ignore this.
     @abstractmethod
-    def patchbay_refresh(self, external):
+    def patchbay_refresh(self):
         raise NotImplementedError
 
     # Start playback of the engine transport.
@@ -1942,7 +1926,7 @@ class CarlaHostNull(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return False
 
-    def patchbay_refresh(self, external):
+    def patchbay_refresh(self):
         return False
 
     def transport_play(self):
@@ -2224,7 +2208,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
-        self.lib.carla_patchbay_refresh.argtypes = [c_bool]
+        self.lib.carla_patchbay_refresh.argtypes = None
         self.lib.carla_patchbay_refresh.restype = c_bool
 
         self.lib.carla_transport_play.argtypes = None
@@ -2498,8 +2482,8 @@ class CarlaHostDLL(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return bool(self.lib.carla_patchbay_disconnect(connectionId))
 
-    def patchbay_refresh(self, external):
-        return bool(self.lib.carla_patchbay_refresh(external))
+    def patchbay_refresh(self):
+        return bool(self.lib.carla_patchbay_refresh())
 
     def transport_play(self):
         self.lib.carla_transport_play()
@@ -2835,8 +2819,7 @@ class CarlaHostPlugin(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return self.sendMsgAndSetError(["patchbay_disconnect", connectionId])
 
-    def patchbay_refresh(self, external):
-        # don't send external param, never used in plugins
+    def patchbay_refresh(self):
         return self.sendMsgAndSetError(["patchbay_refresh"])
 
     def transport_play(self):

@@ -25,15 +25,8 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
-#ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
-# include "juce_audio_formats/juce_audio_formats.h"
-# ifdef HAVE_X11
-#  include <X11/Xlib.h>
-# endif
-#endif
-
-#ifdef CARLA_OS_MAC
-# include "juce_audio_processors/juce_audio_processors.h"
+#if defined(HAVE_X11) && ! defined(CARLA_UTILS_CACHED_PLUGINS_ONLY)
+# include <X11/Xlib.h>
 #endif
 
 #include "../native-plugins/_data.cpp"
@@ -41,10 +34,6 @@
 namespace CB = CarlaBackend;
 
 static const char* const gNullCharPtr = "";
-
-#ifdef CARLA_OS_MAC
-static juce::StringArray gCachedAuPluginResults;
-#endif
 
 // -------------------------------------------------------------------------------------------------------------------
 
@@ -66,7 +55,7 @@ _CarlaCachedPluginInfo::_CarlaCachedPluginInfo() noexcept
 
 uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
 {
-    CARLA_SAFE_ASSERT_RETURN(ptype == CB::PLUGIN_INTERNAL || ptype == CB::PLUGIN_LV2 || ptype == CB::PLUGIN_AU, 0);
+    CARLA_SAFE_ASSERT_RETURN(ptype == CB::PLUGIN_INTERNAL || ptype == CB::PLUGIN_LV2, 0);
     carla_debug("carla_get_cached_plugin_count(%i:%s)", ptype, CB::PluginType2Str(ptype));
 
     switch (ptype)
@@ -81,24 +70,6 @@ uint carla_get_cached_plugin_count(CB::PluginType ptype, const char* pluginPath)
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
         lv2World.initIfNeeded(pluginPath);
         return lv2World.getPluginCount();
-    }
-
-    case CB::PLUGIN_AU: {
-#ifdef CARLA_OS_MAC
-        static bool initiated = false;
-
-        if (! initiated)
-        {
-            using namespace juce;
-            initiated = true;
-            AudioUnitPluginFormat auFormat;
-            gCachedAuPluginResults = auFormat.searchPathsForPlugins(juce::FileSearchPath(), false, false);
-        }
-
-        return static_cast<uint>(gCachedAuPluginResults.size());
-#else
-        return 0;
-#endif
     }
 
     default:
@@ -431,56 +402,6 @@ const CarlaCachedPluginInfo* carla_get_cached_plugin_info(CB::PluginType ptype, 
         return &info;
     }
 
-    case CB::PLUGIN_AU: {
-#ifdef CARLA_OS_MAC
-        const int indexi(static_cast<int>(index));
-        CARLA_SAFE_ASSERT_BREAK(indexi < gCachedAuPluginResults.size());
-
-        using namespace juce;
-
-        String pluginId(gCachedAuPluginResults[indexi]);
-        OwnedArray<PluginDescription> results;
-
-        AudioUnitPluginFormat auFormat;
-        auFormat.findAllTypesForFile(results, pluginId);
-        CARLA_SAFE_ASSERT_BREAK(results.size() > 0);
-        CARLA_SAFE_ASSERT(results.size() == 1);
-
-        PluginDescription* const desc(results[0]);
-        CARLA_SAFE_ASSERT_BREAK(desc != nullptr);
-
-        info.category = CB::getPluginCategoryFromName(desc->category.toRawUTF8());
-        info.hints    = 0x0;
-
-        if (desc->isInstrument)
-            info.hints |= CB::PLUGIN_IS_SYNTH;
-        if (true)
-            info.hints |= CB::PLUGIN_HAS_CUSTOM_UI;
-
-        info.audioIns  = static_cast<uint32_t>(desc->numInputChannels);
-        info.audioOuts = static_cast<uint32_t>(desc->numOutputChannels);
-        info.midiIns   = desc->isInstrument ? 1 : 0;
-        info.midiOuts  = 0;
-        info.parameterIns  = 0;
-        info.parameterOuts = 0;
-
-        static CarlaString sname, slabel, smaker;
-
-        sname  = desc->name.toRawUTF8();
-        slabel = desc->fileOrIdentifier.toRawUTF8();
-        smaker = desc->manufacturerName.toRawUTF8();
-
-        info.name      = sname;
-        info.label     = slabel;
-        info.maker     = smaker;
-        info.copyright = gNullCharPtr;
-
-        return &info;
-#else
-        break;
-#endif
-    }
-
     default:
         break;
     }
@@ -515,34 +436,18 @@ const char* carla_get_complete_license_text()
         "<p>This current Carla build is using the following features and 3rd-party code:</p>"
         "<ul>"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
-# define LS_NOTE_NO "2"
-#else
-# define LS_NOTE_NO "1"
-#endif
-
         // Plugin formats
         "<li>LADSPA plugin support</li>"
         "<li>DSSI plugin support</li>"
         "<li>LV2 plugin support</li>"
-#ifdef VESTIGE_HEADER
         "<li>VST2 plugin support using VeSTige header by Javier Serrano Polo</li>"
-#else
-        "<li>VST2 plugin support using official VST SDK 2.4 [1]</li>"
-#endif
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        "<li>VST3 plugin support using official VST SDK 3.6 [1]</li>"
-#endif
-#ifdef CARLA_OS_MAC
-        "<li>AU plugin support</li>"
-#endif
 
         // Sample kit libraries
 #ifdef HAVE_FLUIDSYNTH
         "<li>FluidSynth library for SF2 support</li>"
 #endif
 #ifdef HAVE_LINUXSAMPLER
-        "<li>LinuxSampler library for GIG and SFZ support [" LS_NOTE_NO "]</li>"
+        "<li>LinuxSampler library for GIG and SFZ support [1]</li>"
 #endif
 
         // misc libs
@@ -550,9 +455,7 @@ const char* carla_get_complete_license_text()
         "<li>liblo library for OSC support</li>"
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
         "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
-#endif
 
         // Internal plugins
 #ifdef HAVE_EXPERIMENTAL_PLUGINS
@@ -569,36 +472,15 @@ const char* carla_get_complete_license_text()
         "</ul>"
 
         "<p>"
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN) || ! defined(VESTIGE_HEADER)
-        // Required by VST SDK
-        "&nbsp;[1] Trademark of Steinberg Media Technologies GmbH.<br/>"
-#endif
 #ifdef HAVE_LINUXSAMPLER
         // LinuxSampler GPL exception
-        "&nbsp;[" LS_NOTE_NO "] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
+        "&nbsp;[1] Using LinuxSampler code in commercial hardware or software products is not allowed without prior written authorization by the authors."
 #endif
         "</p>"
         ;
     }
 
     return retText;
-}
-
-const char* carla_get_juce_version()
-{
-    carla_debug("carla_get_juce_version()");
-
-    static CarlaString retVersion;
-
-    if (retVersion.isEmpty())
-    {
-        if (const char* const version = juce::SystemStats::getJUCEVersion().toRawUTF8())
-            retVersion = version+6;
-        else
-            retVersion = "4.0";
-    }
-
-    return retVersion;
 }
 
 const char* carla_get_supported_file_extensions()
@@ -628,6 +510,7 @@ const char* carla_get_supported_file_extensions()
 #endif
         ;
 
+#if 0
         // Audio files
         {
             using namespace juce;
@@ -647,6 +530,7 @@ const char* carla_get_supported_file_extensions()
 
             retText += juceFormats.toRawUTF8();
         }
+#endif
     }
 
     return retText;

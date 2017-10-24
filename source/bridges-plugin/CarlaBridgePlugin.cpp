@@ -38,22 +38,12 @@
 #include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_gui_basics/juce_gui_basics.h"
-using juce::JUCEApplication;
-using juce::JUCEApplicationBase;
-using juce::Timer;
-#else
-# include "juce_events/juce_events.h"
-#endif
-
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;
 using CarlaBackend::EngineCallbackOpcode2Str;
 
 using juce::CharPointer_UTF8;
 using juce::File;
-using juce::ScopedJuceInitialiser_GUI;
 using juce::String;
 
 // -------------------------------------------------------------------------
@@ -126,52 +116,6 @@ static void gIdle()
 
 // -------------------------------------------------------------------------
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-class CarlaJuceApp : public JUCEApplication,
-                     private Timer
-{
-public:
-    CarlaJuceApp()  {}
-    ~CarlaJuceApp() {}
-
-    void initialise(const String&) override
-    {
-        startTimer(8);
-    }
-
-    void shutdown() override
-    {
-        gCloseNow = true;
-        stopTimer();
-    }
-
-    const String getApplicationName() override
-    {
-        return "CarlaPlugin";
-    }
-
-    const String getApplicationVersion() override
-    {
-        return CARLA_VERSION_STRING;
-    }
-
-    void timerCallback() override
-    {
-        gIdle();
-
-        if (gCloseNow)
-        {
-            quit();
-            gCloseNow = false;
-        }
-    }
-};
-
-static JUCEApplicationBase* juce_CreateApplication() { return new CarlaJuceApp(); }
-#endif
-
-// -------------------------------------------------------------------------
-
 class CarlaBridgePlugin
 {
 public:
@@ -181,7 +125,8 @@ public:
           fUsingBridge(false)
     {
         CARLA_ASSERT(clientName != nullptr && clientName[0] != '\0');
-        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)", bool2str(useBridge), clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
+        carla_debug("CarlaBridgePlugin::CarlaBridgePlugin(%s, \"%s\", %s, %s, %s, %s)",
+                    bool2str(useBridge), clientName, audioPoolBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
 
         carla_set_engine_callback(callback, this);
 
@@ -228,16 +173,11 @@ public:
 
         gIsInitiated = true;
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-        JUCEApplicationBase::createInstance = &juce_CreateApplication;
-        JUCEApplicationBase::main(JUCE_MAIN_FUNCTION_ARGS);
-#else
         for (; ! gCloseNow;)
         {
             gIdle();
             carla_msleep(8);
         }
-#endif
 
         carla_set_engine_about_to_close();
         carla_remove_plugin(0);
@@ -274,8 +214,6 @@ protected:
 private:
     const CarlaEngine* fEngine;
     bool               fUsingBridge;
-
-    const ScopedJuceInitialiser_GUI kJuceInitialiser;
 
     static void callback(void* ptr, EngineCallbackOpcode action, unsigned int pluginId, int value1, int value2, float value3, const char* valueStr)
     {

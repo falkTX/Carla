@@ -166,6 +166,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 },
 
 
+#if 0
 // -----------------------------------------------------------------------
 // Audio file
 
@@ -186,6 +187,7 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
+#endif
 
 // -----------------------------------------------------------------------
 // MIDI file and sequencer

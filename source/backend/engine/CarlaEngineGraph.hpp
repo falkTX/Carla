@@ -24,16 +24,7 @@
 #include "CarlaStringList.hpp"
 
 #include "AppConfig.h"
-#include "juce_audio_processors/juce_audio_processors.h"
-
-#if 1
-typedef juce::AudioProcessorGraph CarlaAudioProcessorGraph;
-#else
-typedef juce::AudioProcessorGraphMultiThreaded CarlaAudioProcessorGraph;
-#endif
-
-using juce::AudioSampleBuffer;
-using juce::MidiBuffer;
+#include "juce_audio_basics/juce_audio_basics.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -148,6 +139,12 @@ struct RackGraph {
     CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
 };
 
+#if 0
+typedef juce::AudioProcessorGraph CarlaAudioProcessorGraph;
+
+using juce::AudioSampleBuffer;
+using juce::MidiBuffer;
+
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
@@ -189,6 +186,7 @@ struct PatchbayGraph {
     CarlaEngine* const kEngine;
     CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)
 };
+#endif
 
 // -----------------------------------------------------------------------
 

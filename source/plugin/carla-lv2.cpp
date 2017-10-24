@@ -22,18 +22,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
 
-#include "juce_audio_basics/juce_audio_basics.h"
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_gui_basics/juce_gui_basics.h"
-#else
-# include "juce_events/juce_events.h"
-#endif
-
-using juce::FloatVectorOperations;
-using juce::ScopedJuceInitialiser_GUI;
-using juce::SharedResourcePointer;
-
 // -----------------------------------------------------------------------
 // -Weffc++ compat ext widget
 
@@ -88,8 +76,7 @@ public:
           fLastPositionData(),
           fURIs(),
           fUI(),
-          fPorts(),
-          sJuceInitialiser()
+          fPorts()
     {
         run  = extui_run;
         show = extui_show;
@@ -1455,8 +1442,6 @@ private:
 
         CARLA_DECLARE_NON_COPY_STRUCT(Ports);
     } fPorts;
-
-    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceInitialiser;
 
     // -------------------------------------------------------------------
 

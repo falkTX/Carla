@@ -22,15 +22,8 @@ OBJS = \
 
 OBJSa = $(OBJS) \
 	$(OBJDIR)/CarlaEngineJack.cpp.o \
-	$(OBJDIR)/CarlaEngineNative.cpp.o
-
-ifeq ($(MACOS_OR_WIN32),true)
-OBJSa += \
-	$(OBJDIR)/CarlaEngineJuce.cpp.o
-else
-OBJSa += \
+	$(OBJDIR)/CarlaEngineNative.cpp.o \
 	$(OBJDIR)/CarlaEngineRtAudio.cpp.o
-endif
 
 OBJSp = $(OBJS) \
 	$(OBJDIR)/CarlaEngineNative.cpp.exp.o

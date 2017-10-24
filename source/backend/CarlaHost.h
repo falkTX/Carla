@@ -418,10 +418,8 @@ CARLA_EXPORT bool carla_patchbay_disconnect(uint connectionId);
 
 /*!
  * Force the engine to resend all patchbay clients, ports and connections again.
- * @param external Wherever to show external/hardware ports instead of internal ones.
- *                 Only valid in patchbay engine mode, other modes will ignore this.
  */
-CARLA_EXPORT bool carla_patchbay_refresh(bool external);
+CARLA_EXPORT bool carla_patchbay_refresh();
 
 /*!
  * Start playback of the engine transport.

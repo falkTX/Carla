@@ -56,9 +56,7 @@ ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/juce_audio_basics.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_formats.a
 ALL_LIBS += $(MODULEDIR)/juce_core.a
-ALL_LIBS += $(MODULEDIR)/juce_events.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
@@ -70,19 +68,8 @@ ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
 endif
 
-ifeq ($(MACOS_OR_WIN32),true)
-ALL_LIBS += $(MODULEDIR)/juce_audio_devices.a
-ALL_LIBS += $(MODULEDIR)/juce_audio_processors.a
-ALL_LIBS += $(MODULEDIR)/juce_data_structures.a
-ALL_LIBS += $(MODULEDIR)/juce_graphics.a
-ALL_LIBS += $(MODULEDIR)/juce_gui_basics.a
-ifeq ($(MACOS),true)
-ALL_LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
-else
 ALL_LIBS += $(MODULEDIR)/rtaudio.a
 ALL_LIBS += $(MODULEDIR)/rtmidi.a
-endif
 
 ifeq ($(HAVE_QT4),true)
 ALL_LIBS += $(MODULEDIR)/theme.qt4.a
@@ -165,17 +152,8 @@ theme: libs
 LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_audio_basics.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_events.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
-
-ifeq ($(MACOS),true)
-LIBS_POSIX32 += $(MODULEDIR)/juce_audio_processors.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_data_structures.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_graphics.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_gui_extra.posix32.a
-endif
 
 posix32: $(LIBS_POSIX32)
 	$(MAKE) -C source/bridges-plugin posix32
@@ -187,17 +165,8 @@ posix32: $(LIBS_POSIX32)
 LIBS_POSIX64  = $(MODULEDIR)/jackbridge.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_audio_basics.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_events.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
-
-ifeq ($(MACOS),true)
-LIBS_POSIX64 += $(MODULEDIR)/juce_audio_processors.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_data_structures.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_graphics.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_gui_extra.posix64.a
-endif
 
 posix64: $(LIBS_POSIX64)
 	$(MAKE) -C source/bridges-plugin posix64
@@ -212,12 +181,7 @@ else
 LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
 endif
 LIBS_WIN32 += $(MODULEDIR)/juce_audio_basics.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_audio_processors.win32.a
 LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_data_structures.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_events.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_graphics.win32.a
-LIBS_WIN32 += $(MODULEDIR)/juce_gui_basics.win32.a
 LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 
@@ -234,12 +198,7 @@ else
 LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
 endif
 LIBS_WIN64 += $(MODULEDIR)/juce_audio_basics.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_audio_processors.win64.a
 LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_data_structures.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_events.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_graphics.win64.a
-LIBS_WIN64 += $(MODULEDIR)/juce_gui_basics.win64.a
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 
@@ -290,7 +249,6 @@ RES = \
 	bin/resources/racklistwidget.py \
 	bin/resources/resources_rc.py \
 	bin/resources/ui_carla_about.py \
-	bin/resources/ui_carla_about_juce.py \
 	bin/resources/ui_carla_add_jack.py \
 	bin/resources/ui_carla_database.py \
 	bin/resources/ui_carla_edit.py \
@@ -335,7 +293,6 @@ endif
 ifeq ($(HAVE_PYQT),true)
 UIs = \
 	source/ui_carla_about.py \
-	source/ui_carla_about_juce.py \
 	source/ui_carla_add_jack.py \
 	source/ui_carla_database.py \
 	source/ui_carla_edit.py \
@@ -667,7 +624,6 @@ endif
 	$(LINK) $(DATADIR)/carla/racklistwidget.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_about_juce.py      $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources

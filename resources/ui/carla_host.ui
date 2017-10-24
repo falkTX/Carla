@@ -202,7 +202,7 @@
      <x>0</x>
      <y>0</y>
      <width>1058</width>
-     <height>20</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -266,9 +266,6 @@
      <addaction name="act_canvas_zoom_out"/>
      <addaction name="act_canvas_zoom_100"/>
     </widget>
-    <addaction name="act_canvas_show_internal"/>
-    <addaction name="act_canvas_show_external"/>
-    <addaction name="separator"/>
     <addaction name="act_canvas_arrange"/>
     <addaction name="act_canvas_refresh"/>
     <addaction name="menu_Canvas_Zoom"/>
@@ -291,7 +288,6 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="act_help_about"/>
-    <addaction name="act_help_about_juce"/>
     <addaction name="act_help_about_qt"/>
    </widget>
    <addaction name="menu_File"/>

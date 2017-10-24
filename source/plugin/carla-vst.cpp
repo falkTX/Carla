@@ -31,14 +31,7 @@
 #include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_gui_basics/juce_gui_basics.h"
-#else
-# include "juce_events/juce_events.h"
-#endif
-
-#ifdef VESTIGE_HEADER
-# include "vestige/aeffectx.h"
+#include "vestige/aeffectx.h"
 #define effFlagsProgramChunks (1 << 5)
 #define effGetParamLabel 6
 #define effGetChunk 23
@@ -50,12 +43,6 @@
 struct ERect {
     int16_t top, left, bottom, right;
 };
-#else
-# include "vst2/aeffectx.h"
-#endif
-
-using juce::ScopedJuceInitialiser_GUI;
-using juce::SharedResourcePointer;
 
 static uint32_t d_lastBufferSize = 0;
 static double   d_lastSampleRate = 0.0;
@@ -83,8 +70,7 @@ public:
           fVstRect(),
           fHostType(kHostTypeNull),
           fMidiOutEvents(),
-          fStateChunk(nullptr),
-          sJuceInitialiser()
+          fStateChunk(nullptr)
     {
         fHost.handle      = this;
         fHost.uiName      = carla_strdup("CarlaVST");
@@ -640,8 +626,6 @@ private:
 
     char* fStateChunk;
 
-    SharedResourcePointer<ScopedJuceInitialiser_GUI> sJuceInitialiser;
-
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
@@ -714,17 +698,10 @@ struct VstObject {
     NativePlugin* plugin;
 };
 
-#ifdef VESTIGE_HEADER
-# define validObject  effect != nullptr && effect->ptr3 != nullptr
-# define validPlugin  effect != nullptr && effect->ptr3 != nullptr && ((VstObject*)effect->ptr3)->plugin != nullptr
-# define vstObjectPtr (VstObject*)effect->ptr3
-#else
-# define validObject  effect != nullptr && effect->object != nullptr
-# define validPlugin  effect != nullptr && effect->object != nullptr && ((VstObject*)effect->object)->plugin != nullptr
-# define vstObjectPtr (VstObject*)effect->object
-#endif
-
-#define pluginPtr     (vstObjectPtr)->plugin
+#define validObject  effect != nullptr && effect->ptr3 != nullptr
+#define validPlugin  effect != nullptr && effect->ptr3 != nullptr && ((VstObject*)effect->ptr3)->plugin != nullptr
+#define vstObjectPtr (VstObject*)effect->ptr3
+#define pluginPtr    (vstObjectPtr)->plugin
 
 static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t index, intptr_t value, void* ptr, float opt)
 {
@@ -798,11 +775,7 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             /* This code invalidates the object created in VSTPluginMain
              * Probably not safe against all hosts */
             obj->audioMaster = nullptr;
-# ifdef VESTIGE_HEADER
             effect->ptr3 = nullptr;
-# else
-            vstObjectPtr = nullptr;
-# endif
             delete obj;
 #endif
 
@@ -939,12 +912,8 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     // vst fields
     effect->magic = kEffectMagic;
-#ifdef VESTIGE_HEADER
     int32_t* const version = (int32_t*)&effect->unknown1;
     *version = CARLA_VERSION_HEX;
-#else
-    effect->version = CARLA_VERSION_HEX;
-#endif
 
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
@@ -995,11 +964,8 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
     VstObject* const obj(new VstObject());
     obj->audioMaster = audioMaster;
     obj->plugin      = nullptr;
-#ifdef VESTIGE_HEADER
-    effect->ptr3   = obj;
-#else
-    effect->object = obj;
-#endif
+
+    effect->ptr3 = obj;
 
     return effect;
 }

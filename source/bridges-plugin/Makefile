@@ -26,10 +26,6 @@ BUILD_CXX_FLAGS += -DBUILD_BRIDGE -I. -I$(CWD) -I$(CWD)/backend -I$(CWD)/include
 BUILD_CXX_FLAGS += -I$(CWD)/backend/engine -I$(CWD)/backend/plugin
 BUILD_CXX_FLAGS += $(LIBLO_FLAGS)
 
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_CXX_FLAGS += -DVESTIGE_HEADER
-endif
-
 32BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 64BIT_FLAGS += -DBUILD_BRIDGE_ALTERNATIVE_ARCH
 
@@ -61,13 +57,6 @@ LIBS_win32   += $(MODULEDIR)/juce_core.win32.a
 LIBS_win64   += $(MODULEDIR)/juce_core.win64.a
 LINK_FLAGS   += $(JUCE_CORE_LIBS)
 
-LIBS_native  += $(MODULEDIR)/juce_events.a
-LIBS_posix32 += $(MODULEDIR)/juce_events.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_events.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_events.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_events.win64.a
-LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
-
 LIBS_native  += $(MODULEDIR)/lilv.a
 LIBS_posix32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_posix64 += $(MODULEDIR)/lilv.posix64.a
@@ -81,43 +70,6 @@ LIBS_posix64 += $(MODULEDIR)/rtmempool.posix64.a
 LIBS_win32   += $(MODULEDIR)/rtmempool.win32.a
 LIBS_win64   += $(MODULEDIR)/rtmempool.win64.a
 LINK_FLAGS   += $(RTMEMPOOL_LIBS)
-
-ifeq ($(MACOS_OR_WIN32),true)
-LIBS_native  += $(MODULEDIR)/juce_audio_processors.a
-LIBS_posix32 += $(MODULEDIR)/juce_audio_processors.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_audio_processors.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_audio_processors.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_audio_processors.win64.a
-LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
-
-LIBS_native  += $(MODULEDIR)/juce_data_structures.a
-LIBS_posix32 += $(MODULEDIR)/juce_data_structures.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_data_structures.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_data_structures.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_data_structures.win64.a
-LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
-
-LIBS_native  += $(MODULEDIR)/juce_graphics.a
-LIBS_posix32 += $(MODULEDIR)/juce_graphics.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_graphics.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_graphics.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_graphics.win64.a
-LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
-
-LIBS_native  += $(MODULEDIR)/juce_gui_basics.a
-LIBS_posix32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
-LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-
-ifeq ($(MACOS),true)
-LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
-LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
-LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif
-endif
 
 ifeq ($(HAVE_LIBLO),true)
 LINK_FLAGS += $(LIBLO_LIBS)
@@ -150,9 +102,6 @@ NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 endif
 
-LIBS_native        += $(MODULEDIR)/juce_audio_formats.a
-NATIVE_LINK_FLAGS  += $(JUCE_AUDIO_FORMATS_LIBS)
-
 LIBS_native        += $(MODULEDIR)/native-plugins.a
 NATIVE_LINK_FLAGS  += $(NATIVE_PLUGINS_LIBS)
 
@@ -183,9 +132,6 @@ OBJS_native = \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
-	$(OBJDIR)/CarlaPluginVST3.cpp.o \
-	$(OBJDIR)/CarlaPluginAU.cpp.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
 	$(OBJDIR)/CarlaStandalone.cpp.o
@@ -213,9 +159,6 @@ OBJS_arch = \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.arch.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginVST3.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginAU.cpp.arch.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.arch.o \
 	$(OBJDIR)/CarlaStandalone.cpp.arch.o
 
 OBJS_posix32 = $(OBJS_arch:%.arch.o=%.posix32.o)

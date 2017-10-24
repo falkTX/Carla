@@ -471,16 +471,9 @@ class CarlaEmbedW(QEmbedWidget):
         self.addShortcutActions(self.gui.ui.menu_Settings.actions())
         self.addShortcutActions(self.gui.ui.menu_Help.actions())
 
-        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
-            self.addShortcutActions(self.gui.ui.menu_Canvas.actions())
-            self.addShortcutActions(self.gui.ui.menu_Canvas_Zoom.actions())
-
         self.addWidget(self.gui.ui.menubar)
         self.addLine()
         self.addWidget(self.gui.ui.toolBar)
-
-        if self.host.processMode == ENGINE_PROCESS_MODE_PATCHBAY:
-            self.addLine()
 
         self.addWidget(self.gui.centralWidget())
         self.finalSetup(self.gui, winId)
@@ -571,7 +564,7 @@ if __name__ == '__main__':
     # Init host backend
 
     host = initHost("Carla-Plugin", None, False, True, True, PluginHost)
-    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY if sys.argv[0].lower().endswith("/carla-plugin-patchbay") else ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+    host.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
     host.processModeForced = True
     host.nextProcessMode   = host.processMode
     loadHostSettings(host)

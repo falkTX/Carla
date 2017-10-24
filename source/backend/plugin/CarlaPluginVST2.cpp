@@ -853,13 +853,9 @@ public:
         }
 
         // check initial latency
-#ifdef VESTIGE_HEADER
         char* const empty3Ptr = &fEffect->empty3[0];
         int32_t initialDelay = *(int32_t*)empty3Ptr;
         const uint32_t latency = (initialDelay > 0) ? static_cast<uint32_t>(initialDelay) : 0;
-#else
-        const uint32_t latency = (fEffect->initialDelay > 0) ? static_cast<uint32_t>(fEffect->initialDelay) : 0;
-#endif
 
         if (latency != 0)
         {
@@ -2122,11 +2118,7 @@ public:
             return false;
         }
 
-#ifdef VESTIGE_HEADER
         fEffect->ptr1 = this;
-#else
-        fEffect->resvd1 = (intptr_t)this;
-#endif
 
         dispatcher(effOpen, 0, 0, nullptr, 0.0f);
 
@@ -2360,21 +2352,12 @@ private:
 
         if (effect != nullptr)
         {
-#ifdef VESTIGE_HEADER
             if (effect->ptr1 != nullptr)
             {
                 self = (CarlaPluginVST2*)effect->ptr1;
                 if (self->fUnique1 != self->fUnique2)
                     self = nullptr;
             }
-#else
-            if (effect->resvd1 != 0)
-            {
-                self = (CarlaPluginVST2*)effect->resvd1;
-                if (self->fUnique1 != self->fUnique2)
-                    self = nullptr;
-            }
-#endif
 
             if (self != nullptr)
             {
@@ -2389,11 +2372,7 @@ private:
             }
             else if (sLastCarlaPluginVST2 != nullptr)
             {
-#ifdef VESTIGE_HEADER
                 effect->ptr1 = sLastCarlaPluginVST2;
-#else
-                effect->resvd1 = (intptr_t)sLastCarlaPluginVST2;
-#endif
                 self = sLastCarlaPluginVST2;
             }
         }

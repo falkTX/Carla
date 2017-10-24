@@ -89,30 +89,17 @@ CarlaEngineEventPort::CarlaEngineEventPort(const CarlaEngineClient& client, cons
       kProcessMode(client.getEngine().getProccessMode())
 {
     carla_debug("CarlaEngineEventPort::CarlaEngineEventPort(%s)", bool2str(isInputPort));
-
-    if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        fBuffer = new EngineEvent[kMaxEngineEventInternalCount];
 }
 
 CarlaEngineEventPort::~CarlaEngineEventPort() noexcept
 {
     carla_debug("CarlaEngineEventPort::~CarlaEngineEventPort()");
-
-    if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        CARLA_SAFE_ASSERT_RETURN(fBuffer != nullptr,);
-
-        delete[] fBuffer;
-        fBuffer = nullptr;
-    }
 }
 
 void CarlaEngineEventPort::initBuffer() noexcept
 {
     if (kProcessMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || kProcessMode == ENGINE_PROCESS_MODE_BRIDGE)
         fBuffer = kClient.getEngine().getInternalEventBuffer(kIsInput);
-    else if (kProcessMode == ENGINE_PROCESS_MODE_PATCHBAY && ! kIsInput)
-        carla_zeroStructs(fBuffer, kMaxEngineEventInternalCount);
 }
 
 uint32_t CarlaEngineEventPort::getEventCount() const noexcept

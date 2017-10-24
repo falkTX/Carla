@@ -32,13 +32,7 @@
 #endif
 
 #include "AppConfig.h"
-#include "juce_audio_formats/juce_audio_formats.h"
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_gui_basics/juce_gui_basics.h"
-#else
-# include "juce_events/juce_events.h"
-#endif
+#include "juce_core/juce_core.h"
 
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
@@ -186,9 +180,6 @@ static void carla_engine_init_common()
     if (const char* const pathVST2 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST2"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST2, pathVST2);
 
-    if (const char* const pathVST3 = std::getenv("ENGINE_OPTION_PLUGIN_PATH_VST3"))
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_VST3, pathVST3);
-
     if (const char* const pathGIG = std::getenv("ENGINE_OPTION_PLUGIN_PATH_GIG"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH, CB::PLUGIN_GIG, pathGIG);
 
@@ -240,9 +231,6 @@ static void carla_engine_init_common()
 
     if (gStandalone.engineOptions.pathVST2 != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST2, gStandalone.engineOptions.pathVST2);
-
-    if (gStandalone.engineOptions.pathVST3 != nullptr)
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_VST3, gStandalone.engineOptions.pathVST3);
 
     if (gStandalone.engineOptions.pathGIG != nullptr)
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PLUGIN_PATH,       CB::PLUGIN_GIG, gStandalone.engineOptions.pathGIG);
@@ -323,8 +311,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
 #else
     gStandalone.engine->setOption(CB::ENGINE_OPTION_PROCESS_MODE,          static_cast<int>(gStandalone.engineOptions.processMode),   nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_TRANSPORT_MODE,        static_cast<int>(gStandalone.engineOptions.transportMode), gStandalone.engineOptions.transportExtra);
-
-    juce::initialiseJuce_GUI();
 #endif
 
     carla_engine_init_common();
@@ -343,9 +329,6 @@ bool carla_engine_init(const char* driverName, const char* clientName)
         gStandalone.lastError = gStandalone.engine->getLastError();
         delete gStandalone.engine;
         gStandalone.engine = nullptr;
-#ifndef BUILD_BRIDGE
-        juce::shutdownJuce_GUI();
-#endif
         return false;
     }
 }
@@ -427,7 +410,6 @@ bool carla_engine_close()
     gStandalone.engine = nullptr;
 
 #ifndef BUILD_BRIDGE
-    juce::shutdownJuce_GUI();
     gStandalone.logThread.stop();
 #endif
 
@@ -439,15 +421,6 @@ void carla_engine_idle()
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr,);
 
     gStandalone.engine->idle();
-
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-    using juce::MessageManager;
-
-    const MessageManager* const msgMgr(MessageManager::getInstanceWithoutCreating());
-    CARLA_SAFE_ASSERT_RETURN(msgMgr != nullptr,);
-
-    for (; msgMgr->dispatchNextMessageOnSystemQueue(true);) {}
-#endif
 }
 
 bool carla_is_engine_running()
@@ -580,11 +553,6 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
             if (gStandalone.engineOptions.pathVST2 != nullptr)
                 delete[] gStandalone.engineOptions.pathVST2;
             gStandalone.engineOptions.pathVST2 = carla_strdup_safe(valueStr);
-            break;
-        case CB::PLUGIN_VST3:
-            if (gStandalone.engineOptions.pathVST3 != nullptr)
-                delete[] gStandalone.engineOptions.pathVST3;
-            gStandalone.engineOptions.pathVST3 = carla_strdup_safe(valueStr);
             break;
         case CB::PLUGIN_GIG:
             if (gStandalone.engineOptions.pathGIG != nullptr)
@@ -761,12 +729,12 @@ bool carla_patchbay_disconnect(uint connectionId)
     return false;
 }
 
-bool carla_patchbay_refresh(bool external)
+bool carla_patchbay_refresh()
 {
-    carla_debug("carla_patchbay_refresh(%s)", bool2str(external));
+    carla_debug("carla_patchbay_refresh()");
 
     if (gStandalone.engine != nullptr)
-        return gStandalone.engine->patchbayRefresh(external);
+        return gStandalone.engine->patchbayRefresh();
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";
@@ -2040,6 +2008,5 @@ const char* carla_get_host_osc_url_udp()
 #include "CarlaPatchbayUtils.cpp"
 #include "CarlaPipeUtils.cpp"
 #include "CarlaStateUtils.cpp"
-#include "CarlaJuceAudioProcessors.cpp"
 
 // -------------------------------------------------------------------------------------------------------------------

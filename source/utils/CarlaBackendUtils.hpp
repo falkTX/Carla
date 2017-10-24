@@ -96,10 +96,6 @@ const char* PluginType2Str(const PluginType type) noexcept
         return "PLUGIN_LV2";
     case PLUGIN_VST2:
         return "PLUGIN_VST2";
-    case PLUGIN_VST3:
-        return "PLUGIN_VST3";
-    case PLUGIN_AU:
-        return "PLUGIN_AU";
     case PLUGIN_GIG:
         return "PLUGIN_GIG";
     case PLUGIN_SF2:
@@ -362,8 +358,6 @@ const char* EngineProcessMode2Str(const EngineProcessMode mode) noexcept
         return "ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS";
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         return "ENGINE_PROCESS_MODE_CONTINUOUS_RACK";
-    case ENGINE_PROCESS_MODE_PATCHBAY:
-        return "ENGINE_PROCESS_MODE_PATCHBAY";
     case ENGINE_PROCESS_MODE_BRIDGE:
         return "ENGINE_PROCESS_MODE_BRIDGE";
     }
@@ -484,10 +478,6 @@ const char* getPluginTypeAsString(const PluginType type) noexcept
         return "LV2";
     case PLUGIN_VST2:
         return "VST2";
-    case PLUGIN_VST3:
-        return "VST3";
-    case PLUGIN_AU:
-        return "AU";;
     case PLUGIN_GIG:
         return "GIG";
     case PLUGIN_SF2:
@@ -527,10 +517,6 @@ PluginType getPluginTypeFromString(const char* const ctype) noexcept
         return PLUGIN_LV2;
     if (stype == "vst2" || stype == "vst")
         return PLUGIN_VST2;
-    if (stype == "vst3")
-        return PLUGIN_VST3;
-    if (stype == "au" || stype == "audiounit")
-        return PLUGIN_AU;
     if (stype == "gig")
         return PLUGIN_GIG;
     if (stype == "sf2")

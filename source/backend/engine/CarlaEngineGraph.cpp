@@ -32,17 +32,18 @@
 #endif
 
 using juce::AudioBuffer;
-using juce::AudioPluginInstance;
-using juce::AudioProcessor;
-using juce::AudioProcessorEditor;
 using juce::FloatVectorOperations;
 using juce::MemoryBlock;
-using juce::MessageManagerLock;
-using juce::PluginDescription;
 using juce::String;
 using juce::StringArray;
 using juce::jmin;
 using juce::jmax;
+
+#if 0
+using juce::AudioPluginInstance;
+using juce::AudioProcessor;
+using juce::AudioProcessorEditor;
+#endif
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1005,6 +1006,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
     }
 }
 
+#if 0
 // -----------------------------------------------------------------------
 // Patchbay Graph stuff
 
@@ -1943,6 +1945,7 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         midiBuffer.clear();
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // InternalGraph
@@ -1973,7 +1976,9 @@ void EngineInternalGraph::create(const uint32_t inputs, const uint32_t outputs)
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay == nullptr,);
+#if 0
         fPatchbay = new PatchbayGraph(kEngine, inputs, outputs);
+#endif
     }
 
     fIsReady = true;
@@ -1996,11 +2001,13 @@ void EngineInternalGraph::destroy() noexcept
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
+#if 0
+# if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
         const MessageManagerLock mml;
-#endif
+# endif
         delete fPatchbay;
         fPatchbay = nullptr;
+#endif
     }
 
     fIsReady = false;
@@ -2018,7 +2025,9 @@ void EngineInternalGraph::setBufferSize(const uint32_t bufferSize)
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
         fPatchbay->setBufferSize(bufferSize);
+#endif
     }
 }
 
@@ -2033,7 +2042,9 @@ void EngineInternalGraph::setSampleRate(const double sampleRate)
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
         fPatchbay->setSampleRate(sampleRate);
+#endif
     }
 }
 
@@ -2049,7 +2060,9 @@ void EngineInternalGraph::setOffline(const bool offline)
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
         fPatchbay->setOffline(offline);
+#endif
     }
 }
 
@@ -2082,7 +2095,9 @@ void EngineInternalGraph::process(CarlaEngine::ProtectedData* const data, const 
     else
     {
         CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
         fPatchbay->process(data, inBuf, outBuf, static_cast<int>(frames));
+#endif
     }
 }
 
@@ -2100,46 +2115,60 @@ void EngineInternalGraph::processRack(CarlaEngine::ProtectedData* const data, co
 void EngineInternalGraph::addPlugin(CarlaPlugin* const plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->addPlugin(plugin);
+#endif
 }
 
 void EngineInternalGraph::replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->replacePlugin(oldPlugin, newPlugin);
+#endif
 }
 
 void EngineInternalGraph::renamePlugin(CarlaPlugin* const plugin, const char* const newName)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->renamePlugin(plugin, newName);
+#endif
 }
 
 void EngineInternalGraph::removePlugin(CarlaPlugin* const plugin)
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->removePlugin(plugin);
+#endif
 }
 
 void EngineInternalGraph::removeAllPlugins()
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->removeAllPlugins();
+#endif
 }
 
 bool EngineInternalGraph::isUsingExternal() const noexcept
 {
-    if (fIsRack)
+//     if (fIsRack)
         return true;
 
+#if 0
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr, false);
     return fPatchbay->usingExternal;
+#endif
 }
 
 void EngineInternalGraph::setUsingExternal(const bool usingExternal) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fPatchbay != nullptr,);
+#if 0
     fPatchbay->usingExternal = usingExternal;
+#endif
 }
 
 // -----------------------------------------------------------------------
@@ -2147,7 +2176,7 @@ void EngineInternalGraph::setUsingExternal(const bool usingExternal) noexcept
 
 bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uint groupB, const uint portB)
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, false);
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
     carla_debug("CarlaEngine::patchbayConnect(%u, %u, %u, %u)", groupA, portA, groupB, portB);
 
@@ -2163,7 +2192,9 @@ bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uin
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
+#if 0
         return graph->connect(graph->usingExternal, groupA, portA, groupB, portB, true);
+#endif
     }
 
     return false;
@@ -2171,7 +2202,7 @@ bool CarlaEngine::patchbayConnect(const uint groupA, const uint portA, const uin
 
 bool CarlaEngine::patchbayDisconnect(const uint connectionId)
 {
-    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK || pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY, false);
+    CARLA_SAFE_ASSERT_RETURN(pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK, false);
     CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
     carla_debug("CarlaEngine::patchbayDisconnect(%u)", connectionId);
 
@@ -2187,31 +2218,21 @@ bool CarlaEngine::patchbayDisconnect(const uint connectionId)
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
+#if 0
         return graph->disconnect(connectionId);
+#endif
     }
 
     return false;
 }
 
-bool CarlaEngine::patchbayRefresh(const bool external)
+bool CarlaEngine::patchbayRefresh()
 {
-    // subclasses should handle this
-    CARLA_SAFE_ASSERT_RETURN(! external, false);
-
     if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
     {
         // This is implemented in engine subclasses
         setLastError("Unsupported operation");
         return false;
-    }
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
-        CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
-
-        graph->refresh("");
-        return true;
     }
 
     setLastError("Unsupported operation");
@@ -2238,7 +2259,9 @@ const char* const* CarlaEngine::getPatchbayConnections(const bool external) cons
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, nullptr);
 
+#if 0
         return graph->getConnections(external);
+#endif
     }
 
     return nullptr;
@@ -2272,12 +2295,14 @@ void CarlaEngine::restorePatchbayConnection(const bool external, const char* con
         PatchbayGraph* const graph = pData->graph.getPatchbayGraph();
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr,);
 
+#if 0
         if (! graph->getGroupAndPortIdFromFullName(external, sourcePort, groupA, portA))
             return;
         if (! graph->getGroupAndPortIdFromFullName(external, targetPort, groupB, portB))
             return;
 
         graph->connect(external, groupA, portA, groupB, portB, sendCallback);
+#endif
     }
 }
 

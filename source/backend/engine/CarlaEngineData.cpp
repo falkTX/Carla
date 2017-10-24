@@ -187,7 +187,7 @@ EngineOptions::EngineOptions() noexcept
     : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
       transportMode(ENGINE_TRANSPORT_MODE_JACK),
 #else
-    : processMode(ENGINE_PROCESS_MODE_PATCHBAY),
+    : processMode(ENGINE_PROCESS_MODE_CONTINUOUS_RACK),
       transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
 #endif
       transportExtra(nullptr),
@@ -209,7 +209,6 @@ EngineOptions::EngineOptions() noexcept
       pathDSSI(nullptr),
       pathLV2(nullptr),
       pathVST2(nullptr),
-      pathVST3(nullptr),
       pathGIG(nullptr),
       pathSF2(nullptr),
       pathSFZ(nullptr),
@@ -248,12 +247,6 @@ EngineOptions::~EngineOptions() noexcept
     {
         delete[] pathVST2;
         pathVST2 = nullptr;
-    }
-
-    if (pathVST3 != nullptr)
-    {
-        delete[] pathVST3;
-        pathVST3 = nullptr;
     }
 
     if (pathGIG != nullptr)

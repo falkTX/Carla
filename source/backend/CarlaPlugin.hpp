@@ -900,10 +900,7 @@ public:
     static CarlaPlugin* newDSSI(const Initializer& init);
     static CarlaPlugin* newLV2(const Initializer& init);
     static CarlaPlugin* newVST2(const Initializer& init);
-    static CarlaPlugin* newVST3(const Initializer& init);
-    static CarlaPlugin* newAU(const Initializer& init);
 
-    static CarlaPlugin* newJuce(const Initializer& init, const char* const format);
     static CarlaPlugin* newFluidSynth(const Initializer& init, const bool use16Outs);
     static CarlaPlugin* newLinuxSampler(const Initializer& init, const char* const format, const bool use16Outs);
 

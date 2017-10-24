@@ -18,9 +18,6 @@ OBJS = \
 	$(OBJDIR)/CarlaPluginDSSI.cpp.o \
 	$(OBJDIR)/CarlaPluginLV2.cpp.o \
 	$(OBJDIR)/CarlaPluginVST2.cpp.o \
-	$(OBJDIR)/CarlaPluginVST3.cpp.o \
-	$(OBJDIR)/CarlaPluginAU.cpp.o \
-	$(OBJDIR)/CarlaPluginJuce.cpp.o \
 	$(OBJDIR)/CarlaPluginFluidSynth.cpp.o \
 	$(OBJDIR)/CarlaPluginLinuxSampler.cpp.o \
 	$(OBJDIR)/CarlaPluginJack.cpp.o

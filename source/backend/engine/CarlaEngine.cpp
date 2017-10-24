@@ -595,14 +595,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             plugin = CarlaPlugin::newVST2(initializer);
             break;
 
-        case PLUGIN_VST3:
-            plugin = CarlaPlugin::newVST3(initializer);
-            break;
-
-        case PLUGIN_AU:
-            plugin = CarlaPlugin::newAU(initializer);
-            break;
-
         case PLUGIN_GIG:
             use16Outs = (extra != nullptr && std::strcmp((const char*)extra, "true") == 0);
             plugin = CarlaPlugin::newFileGIG(initializer, use16Outs);
@@ -644,19 +636,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             canRun = false;
         }
     }
-    else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        /**/ if (plugin->getMidiInCount() > 1 || plugin->getMidiOutCount() > 1)
-        {
-            setLastError("Carla's patchbay mode cannot work with plugins that have multiple MIDI ports, sorry!");
-            canRun = false;
-        }
-        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
-        {
-            setLastError("CV ports in patchbay mode is still TODO");
-            canRun = false;
-        }
-    }
 
     if (! canRun)
     {
@@ -683,9 +662,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         const ScopedThreadStopper sts(this);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.replacePlugin(oldPlugin, plugin);
-
         const bool  wasActive = oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f;
         const float oldDryWet = oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
         const float oldVolume = oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
@@ -711,11 +687,6 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
-
-#ifndef BUILD_BRIDGE
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-            pData->graph.addPlugin(plugin);
-#endif
     }
 
     return true;
@@ -745,9 +716,6 @@ bool CarlaEngine::removePlugin(const uint id)
     const ScopedThreadStopper sts(this);
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removePlugin(plugin);
-
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(this, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
@@ -792,17 +760,12 @@ bool CarlaEngine::removeAllPlugins()
 
     const uint curPluginCount(pData->curPluginCount);
 
-#ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.removeAllPlugins();
-
-# ifdef HAVE_LIBLO
+#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
     if (isOscControlRegistered())
     {
         for (uint i=0; i < curPluginCount; ++i)
             oscSend_control_remove_plugin(curPluginCount-i-1);
     }
-# endif
 #endif
 
     const bool lockWait(isRunning());
@@ -850,9 +813,6 @@ const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
     CARLA_SAFE_ASSERT_RETURN_ERRN(uniqueName != nullptr, "Unable to get new unique plugin name");
 
     plugin->setName(uniqueName);
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.renamePlugin(plugin, uniqueName);
 
     delete[] uniqueName;
     return plugin->getName();
@@ -938,9 +898,6 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
     const ScopedThreadStopper sts(this);
-
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-        pData->graph.replacePlugin(pluginA, pluginB);
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
@@ -1159,11 +1116,6 @@ bool CarlaEngine::loadFile(const char* const filename)
 #else
     if (extension == "dll" || extension == "so")
         return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST2, filename, nullptr, nullptr, 0, nullptr, 0x0);
-#endif
-
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    if (extension == "vst3")
-        return addPlugin(getBinaryTypeFromFile(filename), PLUGIN_VST3, filename, nullptr, nullptr, 0, nullptr, 0x0);
 #endif
 
     // -------------------------------------------------------------------
@@ -1531,14 +1483,6 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
             else
                 pData->options.pathVST2 = nullptr;
             break;
-        case PLUGIN_VST3:
-            if (pData->options.pathVST3 != nullptr)
-                delete[] pData->options.pathVST3;
-            if (valueStr != nullptr)
-                pData->options.pathVST3 = carla_strdup_safe(valueStr);
-            else
-                pData->options.pathVST3 = nullptr;
-            break;
         case PLUGIN_GIG:
             if (pData->options.pathGIG != nullptr)
                 delete[] pData->options.pathGIG;
@@ -1698,11 +1642,8 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         pData->graph.setBufferSize(newBufferSize);
-    }
 #endif
 
     pData->time.updateAudioValues(newBufferSize, pData->sampleRate);
@@ -1723,11 +1664,8 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         pData->graph.setSampleRate(newSampleRate);
-    }
 #endif
 
     pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
@@ -1748,11 +1686,8 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
     carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
-        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
         pData->graph.setOffline(isOfflineNow);
-    }
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1821,7 +1756,6 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
         outSettings << "  <DSSI_PATH>"   << xmlSafeString(options.pathDSSI,   true) << "</DSSI_PATH>\n";
         outSettings << "  <LV2_PATH>"    << xmlSafeString(options.pathLV2,    true) << "</LV2_PATH>\n";
         outSettings << "  <VST2_PATH>"   << xmlSafeString(options.pathVST2,   true) << "</VST2_PATH>\n";
-        outSettings << "  <VST3_PATH>"   << xmlSafeString(options.pathVST3,   true) << "</VST3_PATH>\n";
         outSettings << "  <GIG_PATH>"    << xmlSafeString(options.pathGIG,    true) << "</GIG_PATH>\n";
         outSettings << "  <SF2_PATH>"    << xmlSafeString(options.pathSF2,    true) << "</SF2_PATH>\n";
         outSettings << "  <SFZ_PATH>"    << xmlSafeString(options.pathSFZ,    true) << "</SFZ_PATH>\n";
@@ -1864,34 +1798,6 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
 
         if (plugin != nullptr && plugin->isEnabled() && (plugin->getHints() & PLUGIN_IS_BRIDGE) != 0)
             plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
-    }
-
-    // save internal connections
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        if (const char* const* const patchbayConns = getPatchbayConnections(false))
-        {
-            MemoryOutputStream outPatchbay(2048);
-
-            outPatchbay << "\n <Patchbay>\n";
-
-            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
-            {
-                const char* const connSource(patchbayConns[i]);
-                const char* const connTarget(patchbayConns[i+1]);
-
-                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
-                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
-
-                outPatchbay << "  <Connection>\n";
-                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
-                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
-                outPatchbay << "  </Connection>\n";
-            }
-
-            outPatchbay << " </Patchbay>\n";
-            outStream << outPatchbay;
-        }
     }
 
     // if we're running inside some session-manager (and using JACK), let them handle the connections
@@ -1961,7 +1867,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
 
     int searchFlags = File::findFiles|File::ignoreHiddenFiles;
 #ifdef CARLA_OS_MAC
-    if (filename.endsWithIgnoreCase(".vst") || filename.endsWithIgnoreCase(".vst3"))
+    if (filename.endsWithIgnoreCase(".vst"))
         searchFlags |= File::findDirectories;
 #endif
 
@@ -2108,12 +2014,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     value    = PLUGIN_VST2;
                     valueStr = text.toRawUTF8();
                 }
-                else if (tag.equalsIgnoreCase("VST3_PATH"))
-                {
-                    option   = ENGINE_OPTION_PLUGIN_PATH;
-                    value    = PLUGIN_VST3;
-                    valueStr = text.toRawUTF8();
-                }
                 else if (tag.equalsIgnoreCase("GIG_PATH"))
                 {
                     option   = ENGINE_OPTION_PLUGIN_PATH;
@@ -2177,7 +2077,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
             case PLUGIN_LADSPA:
             case PLUGIN_DSSI:
             case PLUGIN_VST2:
-            case PLUGIN_VST3:
             case PLUGIN_SFZ:
                 if (stateSave.binary != nullptr && stateSave.binary[0] != '\0' &&
                     ! (File::isAbsolutePath(stateSave.binary) && File(stateSave.binary).exists()))
@@ -2189,7 +2088,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                     case PLUGIN_LADSPA: searchPath = pData->options.pathLADSPA; break;
                     case PLUGIN_DSSI:   searchPath = pData->options.pathDSSI;   break;
                     case PLUGIN_VST2:   searchPath = pData->options.pathVST2;   break;
-                    case PLUGIN_VST3:   searchPath = pData->options.pathVST3;   break;
                     case PLUGIN_GIG:    searchPath = pData->options.pathGIG;    break;
                     case PLUGIN_SF2:    searchPath = pData->options.pathSF2;    break;
                     case PLUGIN_SFZ:    searchPath = pData->options.pathSFZ;    break;
@@ -2210,7 +2108,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                             case PLUGIN_LADSPA: searchPath = std::getenv("LADSPA_PATH"); break;
                             case PLUGIN_DSSI:   searchPath = std::getenv("DSSI_PATH");   break;
                             case PLUGIN_VST2:   searchPath = std::getenv("VST_PATH");    break;
-                            case PLUGIN_VST3:   searchPath = std::getenv("VST3_PATH");   break;
                             case PLUGIN_GIG:    searchPath = std::getenv("GIG_PATH");    break;
                             case PLUGIN_SF2:    searchPath = std::getenv("SF2_PATH");    break;
                             case PLUGIN_SFZ:    searchPath = std::getenv("SFZ_PATH");    break;
@@ -2272,11 +2169,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
                     plugin->setEnabled(true);
                     callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
-
-#ifndef BUILD_BRIDGE
-                    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-                        pData->graph.addPlugin(plugin);
-#endif
                 }
                 else
                 {
@@ -2307,53 +2199,6 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
 
     if (pData->aboutToClose)
         return true;
-
-    // handle connections (internal)
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
-    {
-        const bool isUsingExternal(pData->graph.isUsingExternal());
-
-        for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
-        {
-            const String& tagName(elem->getTagName());
-
-            if (! tagName.equalsIgnoreCase("patchbay"))
-                continue;
-
-            CarlaString sourcePort, targetPort;
-
-            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
-            {
-                const String& patchTag(patchElem->getTagName());
-
-                sourcePort.clear();
-                targetPort.clear();
-
-                if (! patchTag.equalsIgnoreCase("connection"))
-                    continue;
-
-                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
-                {
-                    const String& tag(connElem->getTagName());
-                    const String  text(connElem->getAllSubText().trim());
-
-                    /**/ if (tag.equalsIgnoreCase("source"))
-                        sourcePort = xmlSafeString(text, false).toRawUTF8();
-                    else if (tag.equalsIgnoreCase("target"))
-                        targetPort = xmlSafeString(text, false).toRawUTF8();
-                }
-
-                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
-            }
-            break;
-        }
-
-        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
-
-        if (pData->aboutToClose)
-            return true;
-    }
 
     // if we're running inside some session-manager (and using JACK), let them handle the external connections
     bool loadExternalConnections;

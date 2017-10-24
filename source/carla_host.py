@@ -158,10 +158,7 @@ class HostWindow(QMainWindow):
         # Internal stuff (patchbay)
 
         self.fExportImage = QImage()
-
         self.fPeaksCleared = True
-
-        self.fExternalPatchbay = False
         self.fSelectedPlugins  = []
 
         self.fCanvasWidth  = 0
@@ -219,11 +216,6 @@ class HostWindow(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
-        self.ui.act_canvas_show_internal.setChecked(False)
-        self.ui.act_canvas_show_internal.setVisible(False)
-        self.ui.act_canvas_show_external.setChecked(False)
-        self.ui.act_canvas_show_external.setVisible(False)
-
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
@@ -231,8 +223,6 @@ class HostWindow(QMainWindow):
         self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
 
         if not withCanvas:
-            self.ui.act_canvas_show_internal.setVisible(False)
-            self.ui.act_canvas_show_external.setVisible(False)
             self.ui.act_canvas_arrange.setVisible(False)
             self.ui.act_canvas_refresh.setVisible(False)
             self.ui.act_canvas_save_image.setVisible(False)
@@ -411,8 +401,6 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
-        self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
-        self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
         self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
         self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
         self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
@@ -429,7 +417,6 @@ class HostWindow(QMainWindow):
         self.ui.act_settings_configure.triggered.connect(self.slot_configureCarla)
 
         self.ui.act_help_about.triggered.connect(self.slot_aboutCarla)
-        self.ui.act_help_about_juce.triggered.connect(self.slot_aboutJuce)
         self.ui.act_help_about_qt.triggered.connect(self.slot_aboutQt)
 
         self.ui.cb_disk.currentIndexChanged.connect(self.slot_diskFolderChanged)
@@ -510,10 +497,6 @@ class HostWindow(QMainWindow):
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin:
             self.startTimers()
-
-        # Start in patchbay tab if using forced patchbay mode
-        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
-            self.ui.tabWidget.setCurrentIndex(1)
 
         # Load initial project file if set
         if not (self.host.isControl or self.host.isPlugin):
@@ -761,23 +744,6 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
-
-        self.ui.act_canvas_show_internal.blockSignals(True)
-        self.ui.act_canvas_show_external.blockSignals(True)
-
-        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not (self.host.isControl or self.host.isPlugin):
-            self.ui.act_canvas_show_internal.setChecked(True)
-            self.ui.act_canvas_show_internal.setVisible(True)
-            self.ui.act_canvas_show_external.setChecked(False)
-            self.ui.act_canvas_show_external.setVisible(True)
-        else:
-            self.ui.act_canvas_show_internal.setChecked(False)
-            self.ui.act_canvas_show_internal.setVisible(False)
-            self.ui.act_canvas_show_external.setChecked(False)
-            self.ui.act_canvas_show_external.setVisible(False)
-
-        self.ui.act_canvas_show_internal.blockSignals(False)
-        self.ui.act_canvas_show_external.blockSignals(False)
 
         if not (self.host.isControl or self.host.isPlugin):
             canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
@@ -1201,28 +1167,6 @@ class HostWindow(QMainWindow):
     # Canvas (menu actions)
 
     @pyqtSlot()
-    def slot_canvasShowInternal(self):
-        self.fExternalPatchbay = False
-        self.ui.act_canvas_show_internal.blockSignals(True)
-        self.ui.act_canvas_show_external.blockSignals(True)
-        self.ui.act_canvas_show_internal.setChecked(True)
-        self.ui.act_canvas_show_external.setChecked(False)
-        self.ui.act_canvas_show_internal.blockSignals(False)
-        self.ui.act_canvas_show_external.blockSignals(False)
-        self.slot_canvasRefresh()
-
-    @pyqtSlot()
-    def slot_canvasShowExternal(self):
-        self.fExternalPatchbay = True
-        self.ui.act_canvas_show_internal.blockSignals(True)
-        self.ui.act_canvas_show_external.blockSignals(True)
-        self.ui.act_canvas_show_internal.setChecked(False)
-        self.ui.act_canvas_show_external.setChecked(True)
-        self.ui.act_canvas_show_internal.blockSignals(False)
-        self.ui.act_canvas_show_external.blockSignals(False)
-        self.slot_canvasRefresh()
-
-    @pyqtSlot()
     def slot_canvasArrange(self):
         patchcanvas.arrange()
 
@@ -1234,7 +1178,7 @@ class HostWindow(QMainWindow):
             return
 
         if self.host.is_engine_running():
-            self.host.patchbay_refresh(self.fExternalPatchbay)
+            self.host.patchbay_refresh()
 
         self.updateMiniCanvasLater()
 
@@ -1558,7 +1502,7 @@ class HostWindow(QMainWindow):
         if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
             pass
         elif self.host.is_engine_running():
-            self.host.patchbay_refresh(self.fExternalPatchbay)
+            self.host.patchbay_refresh()
 
         for pitem in self.fPluginList:
             if pitem is None:
@@ -1572,10 +1516,6 @@ class HostWindow(QMainWindow):
     @pyqtSlot()
     def slot_aboutCarla(self):
         CarlaAboutW(self.fParentOrSelf, self.host).exec_()
-
-    @pyqtSlot()
-    def slot_aboutJuce(self):
-        JuceAboutW(self.fParentOrSelf).exec_()
 
     @pyqtSlot()
     def slot_aboutQt(self):
@@ -2659,7 +2599,6 @@ def setEngineSettings(host):
     DSSI_PATH   = toList(settings.value(CARLA_KEY_PATHS_DSSI,   CARLA_DEFAULT_DSSI_PATH))
     LV2_PATH    = toList(settings.value(CARLA_KEY_PATHS_LV2,    CARLA_DEFAULT_LV2_PATH))
     VST2_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST2,   CARLA_DEFAULT_VST2_PATH))
-    VST3_PATH   = toList(settings.value(CARLA_KEY_PATHS_VST3,   CARLA_DEFAULT_VST3_PATH))
     GIG_PATH    = toList(settings.value(CARLA_KEY_PATHS_GIG,    CARLA_DEFAULT_GIG_PATH))
     SF2_PATH    = toList(settings.value(CARLA_KEY_PATHS_SF2,    CARLA_DEFAULT_SF2_PATH))
     SFZ_PATH    = toList(settings.value(CARLA_KEY_PATHS_SFZ,    CARLA_DEFAULT_SFZ_PATH))
@@ -2668,7 +2607,6 @@ def setEngineSettings(host):
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_DSSI,   splitter.join(DSSI_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_LV2,    splitter.join(LV2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST2,   splitter.join(VST2_PATH))
-    host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_VST3,   splitter.join(VST3_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_GIG,    splitter.join(GIG_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SF2,    splitter.join(SF2_PATH))
     host.set_engine_option(ENGINE_OPTION_PLUGIN_PATH, PLUGIN_SFZ,    splitter.join(SFZ_PATH))

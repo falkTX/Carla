@@ -42,10 +42,6 @@ def getPluginTypeAsString(ptype):
         return "LV2"
     if ptype == PLUGIN_VST2:
         return "VST2"
-    if ptype == PLUGIN_VST3:
-        return "VST3"
-    if ptype == PLUGIN_AU:
-        return "AU"
     if ptype == PLUGIN_GIG:
         return "GIG"
     if ptype == PLUGIN_SF2:
@@ -76,10 +72,6 @@ def getPluginTypeFromString(stype):
         return PLUGIN_LV2
     if stype in ("vst2", "vst"):
         return PLUGIN_VST2
-    if stype == "vst3":
-        return PLUGIN_VST3
-    if stype in ("au", "audiounit"):
-        return PLUGIN_AU
     if stype == "gig":
         return PLUGIN_GIG
     if stype == "sf2":
@@ -171,9 +163,6 @@ class CarlaUtils(object):
 
         self.lib.carla_get_complete_license_text.argtypes = None
         self.lib.carla_get_complete_license_text.restype = c_char_p
-
-        self.lib.carla_get_juce_version.argtypes = None
-        self.lib.carla_get_juce_version.restype = c_char_p
 
         self.lib.carla_get_supported_file_extensions.argtypes = None
         self.lib.carla_get_supported_file_extensions.restype = c_char_p
@@ -269,10 +258,6 @@ class CarlaUtils(object):
     # Returned string is in basic html format.
     def get_complete_license_text(self):
         return charPtrToString(self.lib.carla_get_complete_license_text())
-
-    # Get the juce version used in the current Carla build.
-    def get_juce_version(self):
-        return charPtrToString(self.lib.carla_get_juce_version())
 
     # Get all the supported file extensions in carla_load_file().
     # Returned string uses this syntax:

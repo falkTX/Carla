@@ -51,9 +51,7 @@ LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
 LIBS += $(MODULEDIR)/juce_audio_basics.a
-LIBS += $(MODULEDIR)/juce_audio_formats.a
 LIBS += $(MODULEDIR)/juce_core.a
-LIBS += $(MODULEDIR)/juce_events.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
@@ -66,39 +64,15 @@ ifeq ($(HAVE_HYLIA),true)
 LIBS += $(MODULEDIR)/hylia.a
 endif
 
-ifeq ($(MACOS_OR_WIN32),true)
-LIBS += $(MODULEDIR)/juce_audio_processors.a
-LIBS += $(MODULEDIR)/juce_data_structures.a
-LIBS += $(MODULEDIR)/juce_graphics.a
-LIBS += $(MODULEDIR)/juce_gui_basics.a
-endif
-
-ifeq ($(MACOS),true)
-LIBS += $(MODULEDIR)/juce_gui_extra.a
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 # Link flags
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS += $(JUCE_AUDIO_FORMATS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
-
-ifeq ($(MACOS_OR_WIN32),true)
-LINK_FLAGS += $(JUCE_AUDIO_PROCESSORS_LIBS)
-LINK_FLAGS += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS += $(JUCE_EVENTS_LIBS)
-LINK_FLAGS += $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS += $(JUCE_GUI_BASICS_LIBS)
-endif
-
-ifeq ($(MACOS),true)
-LINK_FLAGS += $(JUCE_GUI_EXTRA_LIBS)
-endif
 
 ifeq ($(HAVE_LIBLO),true)
 LINK_FLAGS += $(LIBLO_LIBS)

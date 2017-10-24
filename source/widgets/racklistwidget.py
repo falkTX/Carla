@@ -200,9 +200,7 @@ class RackListWidget(QListWidget):
             # FIXME not for disabled bridges
             exts.append(".dll")
 
-        if MACOS or WINDOWS:
-            exts.append(".vst3")
-        else:
+        if not (MACOS or WINDOWS):
             exts.append(".so")
 
         self.fSupportedExtensions = tuple(i.replace("*","").lower() for i in exts)
@@ -244,7 +242,7 @@ class RackListWidget(QListWidget):
         if os.path.isdir(filename):
             #if os.path.exists(os.path.join(filename, "manifest.ttl")):
                 #return True
-            if MACOS and filename.lower().endswith((".vst", ".vst3")):
+            if MACOS and filename.lower().endswith(".vst"):
                 return True
 
         elif os.path.isfile(filename):

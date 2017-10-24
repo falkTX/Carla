@@ -56,24 +56,19 @@ enum EngineType {
     kEngineTypeJack = 1,
 
     /*!
-     * Juce engine type, used to provide Native Audio and MIDI support.
-     */
-    kEngineTypeJuce = 2,
-
-    /*!
      * RtAudio engine type, used to provide Native Audio and MIDI support.
      */
-    kEngineTypeRtAudio = 3,
+    kEngineTypeRtAudio = 2,
 
     /*!
      * Plugin engine type, used to export the engine as a plugin.
      */
-    kEngineTypePlugin = 4,
+    kEngineTypePlugin = 3,
 
     /*!
      * Bridge engine type, used in BridgePlugin class.
      */
-    kEngineTypeBridge = 5
+    kEngineTypeBridge = 4
 };
 
 /*!
@@ -243,7 +238,6 @@ struct CARLA_API EngineOptions {
     const char* pathDSSI;
     const char* pathLV2;
     const char* pathVST2;
-    const char* pathVST3;
     const char* pathGIG;
     const char* pathSF2;
     const char* pathSFZ;
@@ -986,7 +980,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual bool patchbayRefresh(const bool external);
+    virtual bool patchbayRefresh();
 #endif
 
     // -------------------------------------------------------------------
@@ -1189,21 +1183,12 @@ public:
     // Bridge
     static CarlaEngine*       newBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName);
 #else
-# if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    // Juce
-    static CarlaEngine*       newJuce(const AudioApi api);
-    static uint               getJuceApiCount();
-    static const char*        getJuceApiName(const uint index);
-    static const char* const* getJuceApiDeviceNames(const uint index);
-    static const EngineDriverDeviceInfo* getJuceDeviceInfo(const uint index, const char* const deviceName);
-# else
     // RtAudio
     static CarlaEngine*       newRtAudio(const AudioApi api);
     static uint               getRtAudioApiCount();
     static const char*        getRtAudioApiName(const uint index);
     static const char* const* getRtAudioApiDeviceNames(const uint index);
     static const EngineDriverDeviceInfo* getRtAudioDeviceInfo(const uint index, const char* const deviceName);
-# endif
 #endif
 
 #ifndef BUILD_BRIDGE

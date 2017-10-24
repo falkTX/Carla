@@ -23,11 +23,6 @@
 
 #include "AppConfig.h"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# define USE_JUCE_PROCESSORS
-# include "juce_audio_processors/juce_audio_processors.h"
-#endif
-
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
 # undef HAVE_LINUXSAMPLER
@@ -1439,124 +1434,6 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
 }
 #endif // ! CARLA_OS_MAC
 
-#ifdef USE_JUCE_PROCESSORS
-static void do_juce_check(const char* const filename_, const char* const stype, const bool doInit)
-{
-    CARLA_SAFE_ASSERT_RETURN(stype != nullptr && stype[0] != 0,) // FIXME
-    carla_debug("do_juce_check(%s, %s, %s)", filename_, stype, bool2str(doInit));
-
-    using namespace juce;
-    juce::String filename;
-
-#ifdef CARLA_OS_WIN
-    // Fix for wine usage
-    if (juce_isRunningInWine() && filename_[0] == '/')
-    {
-        filename = filename_;
-        filename.replace("/", "\\");
-        filename = "Z:" + filename;
-    }
-    else
-#endif
-    filename = File(filename_).getFullPathName();
-
-    juce::ScopedPointer<AudioPluginFormat> pluginFormat;
-
-    /* */ if (std::strcmp(stype, "VST2") == 0)
-    {
-#if JUCE_PLUGINHOST_VST
-        pluginFormat = new VSTPluginFormat();
-#else
-        DISCOVERY_OUT("error", "VST support not available");
-#endif
-    }
-    else if (std::strcmp(stype, "VST3") == 0)
-    {
-#if JUCE_PLUGINHOST_VST3
-        pluginFormat = new VST3PluginFormat();
-#else
-        DISCOVERY_OUT("error", "VST3 support not available");
-#endif
-    }
-    else if (std::strcmp(stype, "AU") == 0)
-    {
-#if JUCE_PLUGINHOST_AU
-        pluginFormat = new AudioUnitPluginFormat();
-#else
-        DISCOVERY_OUT("error", "AU support not available");
-#endif
-    }
-
-    if (pluginFormat == nullptr)
-    {
-        DISCOVERY_OUT("error", stype << " support not available");
-        return;
-    }
-
-#ifdef CARLA_OS_WIN
-    CARLA_SAFE_ASSERT_RETURN(File(filename).existsAsFile(),);
-#endif
-    CARLA_SAFE_ASSERT_RETURN(pluginFormat->fileMightContainThisPluginType(filename),);
-
-    OwnedArray<PluginDescription> results;
-    pluginFormat->findAllTypesForFile(results, filename);
-
-    if (results.size() == 0)
-    {
-        DISCOVERY_OUT("error", "No plugins found");
-        return;
-    }
-
-    for (PluginDescription **it = results.begin(), **end = results.end(); it != end; ++it)
-    {
-        PluginDescription* const desc(*it);
-
-        uint hints = 0x0;
-        int audioIns = desc->numInputChannels;
-        int audioOuts = desc->numOutputChannels;
-        int midiIns = 0;
-        int midiOuts = 0;
-        int parameters = 0;
-
-        if (desc->isInstrument)
-            hints |= PLUGIN_IS_SYNTH;
-
-        if (doInit)
-        {
-            if (AudioPluginInstance* const instance = pluginFormat->createInstanceFromDescription(*desc, kSampleRate, kBufferSize))
-            {
-                instance->refreshParameterList();
-
-                parameters = instance->getNumParameters();
-
-                if (instance->hasEditor())
-                    hints |= PLUGIN_HAS_CUSTOM_UI;
-                if (instance->acceptsMidi())
-                    midiIns = 1;
-                if (instance->producesMidi())
-                    midiOuts = 1;
-
-                delete instance;
-            }
-        }
-
-        DISCOVERY_OUT("init", "-----------");
-        DISCOVERY_OUT("build", BINARY_NATIVE);
-        DISCOVERY_OUT("hints", hints);
-        DISCOVERY_OUT("name", desc->descriptiveName);
-        DISCOVERY_OUT("label", desc->name);
-        DISCOVERY_OUT("maker", desc->manufacturerName);
-        DISCOVERY_OUT("uniqueId", desc->uid);
-        DISCOVERY_OUT("audio.ins", audioIns);
-        DISCOVERY_OUT("audio.outs", audioOuts);
-        DISCOVERY_OUT("midi.ins", midiIns);
-        DISCOVERY_OUT("midi.outs", midiOuts);
-        DISCOVERY_OUT("parameters.ins", parameters);
-        DISCOVERY_OUT("end", "------------");
-    }
-}
-#endif
-
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
@@ -1772,25 +1649,7 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST2:
-#ifdef CARLA_OS_MAC
-        do_juce_check(filename, "VST2", doInit);
-#else
         do_vst_check(handle, doInit);
-#endif
-        break;
-    case PLUGIN_VST3:
-#ifdef USE_JUCE_PROCESSORS
-        do_juce_check(filename, "VST3", doInit);
-#else
-        DISCOVERY_OUT("error", "VST3 support not available");
-#endif
-        break;
-    case PLUGIN_AU:
-#ifdef USE_JUCE_PROCESSORS
-        do_juce_check(filename, "AU", doInit);
-#else
-        DISCOVERY_OUT("error", "AU support not available");
-#endif
         break;
     case PLUGIN_GIG:
         do_linuxsampler_check(filename, "gig", doInit);

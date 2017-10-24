@@ -29,11 +29,6 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
-BUILD_CXX_FLAGS += -I$(CWD)/includes/vst2 -I$(CWD)/includes/vst3
-
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BUILD_CXX_FLAGS += -DVESTIGE_HEADER
-endif
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
@@ -77,53 +72,6 @@ LIBS_posix64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_win32   += $(MODULEDIR)/lilv.win32.a
 LIBS_win64   += $(MODULEDIR)/lilv.win64.a
 LINK_FLAGS   += $(LILV_LIBS)
-
-ifeq ($(MACOS_OR_WIN32),true)
-LIBS_native  += $(MODULEDIR)/juce_audio_basics.a
-LIBS_posix32 += $(MODULEDIR)/juce_audio_basics.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_audio_basics.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_audio_basics.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_audio_basics.win64.a
-LIBS_native  += $(MODULEDIR)/juce_audio_processors.a
-LIBS_posix32 += $(MODULEDIR)/juce_audio_processors.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_audio_processors.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_audio_processors.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_audio_processors.win64.a
-LIBS_native  += $(MODULEDIR)/juce_data_structures.a
-LIBS_posix32 += $(MODULEDIR)/juce_data_structures.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_data_structures.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_data_structures.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_data_structures.win64.a
-LIBS_native  += $(MODULEDIR)/juce_events.a
-LIBS_posix32 += $(MODULEDIR)/juce_events.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_events.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_events.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_events.win64.a
-LIBS_native  += $(MODULEDIR)/juce_graphics.a
-LIBS_posix32 += $(MODULEDIR)/juce_graphics.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_graphics.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_graphics.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_graphics.win64.a
-LIBS_native  += $(MODULEDIR)/juce_gui_basics.a
-LIBS_posix32 += $(MODULEDIR)/juce_gui_basics.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_gui_basics.posix64.a
-LIBS_win32   += $(MODULEDIR)/juce_gui_basics.win32.a
-LIBS_win64   += $(MODULEDIR)/juce_gui_basics.win64.a
-ifeq ($(MACOS),true)
-LIBS_native  += $(MODULEDIR)/juce_gui_extra.a
-LIBS_posix32 += $(MODULEDIR)/juce_gui_extra.posix32.a
-LIBS_posix64 += $(MODULEDIR)/juce_gui_extra.posix64.a
-endif
-LINK_FLAGS   += $(JUCE_AUDIO_BASICS_LIBS)
-LINK_FLAGS   += $(JUCE_AUDIO_PROCESSORS_LIBS)
-LINK_FLAGS   += $(JUCE_DATA_STRUCTURES_LIBS)
-LINK_FLAGS   += $(JUCE_EVENTS_LIBS)
-LINK_FLAGS   += $(JUCE_GRAPHICS_LIBS)
-LINK_FLAGS   += $(JUCE_GUI_BASICS_LIBS)
-ifeq ($(MACOS),true)
-LINK_FLAGS   += $(JUCE_GUI_EXTRA_LIBS)
-endif
-endif
 
 ifeq ($(UNIX),true)
 LINK_FLAGS += -ldl

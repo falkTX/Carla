@@ -37,7 +37,6 @@ else:
 # Imports (Custom)
 
 import ui_carla_about
-import ui_carla_about_juce
 import ui_carla_edit
 import ui_carla_parameter
 
@@ -150,25 +149,8 @@ class CarlaAboutW(QDialog):
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/midimap</li>"
                                       "<li>http://ll-plugins.nongnu.org/lv2/ext/miditype</li>"
                                       "</ul>"))
-        if MACOS or WINDOWS:
-            self.ui.l_vst2.setText(self.tr("Using Juce host"))
-            self.ui.l_vst3.setText(self.tr("Using Juce host"))
 
-            if MACOS:
-                self.ui.l_au.setText(self.tr("Using Juce host"))
-            else:
-                self.ui.line_vst3.hide()
-                self.ui.l_au.hide()
-                self.ui.lid_au.hide()
-
-        else:
-            self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
-            self.ui.line_vst2.hide()
-            self.ui.l_vst3.hide()
-            self.ui.lid_vst3.hide()
-            self.ui.line_vst3.hide()
-            self.ui.l_au.hide()
-            self.ui.lid_au.hide()
+        self.ui.l_vst2.setText(self.tr("About 85% complete (missing vst bank/presets and some minor stuff)"))
 
         # 2nd tab is usually longer than the 1st
         # adjust appropriately
@@ -176,27 +158,6 @@ class CarlaAboutW(QDialog):
         self.adjustSize()
 
         self.ui.tabWidget.setCurrentIndex(0)
-        self.setFixedSize(self.size())
-
-        if WINDOWS:
-            self.setWindowFlags(self.windowFlags()|Qt.MSWindowsFixedSizeDialogHint)
-
-    def done(self, r):
-        QDialog.done(self, r)
-        self.close()
-
-# ------------------------------------------------------------------------------------------------------------
-# JUCE About dialog
-
-class JuceAboutW(QDialog):
-    def __init__(self, parent):
-        QDialog.__init__(self, parent)
-        self.ui = ui_carla_about_juce.Ui_JuceAboutW()
-        self.ui.setupUi(self)
-
-        self.ui.l_text2.setText(self.tr("This program uses JUCE version %s." % gCarla.utils.get_juce_version()))
-
-        self.adjustSize()
         self.setFixedSize(self.size())
 
         if WINDOWS:

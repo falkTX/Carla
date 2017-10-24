@@ -464,13 +464,6 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
 
     switch (options.processMode)
     {
-    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-        maxPluginNumber = MAX_RACK_PLUGINS;
-        options.forceStereo = true;
-        break;
-    case ENGINE_PROCESS_MODE_PATCHBAY:
-        maxPluginNumber = MAX_PATCHBAY_PLUGINS;
-        break;
     case ENGINE_PROCESS_MODE_BRIDGE:
         maxPluginNumber = 1;
         break;
@@ -482,7 +475,6 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     switch (options.processMode)
     {
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
-    case ENGINE_PROCESS_MODE_PATCHBAY:
     case ENGINE_PROCESS_MODE_BRIDGE:
         events.in  = new EngineEvent[kMaxEngineEventInternalCount];
         events.out = new EngineEvent[kMaxEngineEventInternalCount];

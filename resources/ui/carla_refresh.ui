@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>556</width>
-    <height>311</height>
+    <width>567</width>
+    <height>326</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -68,20 +68,6 @@
            <widget class="QCheckBox" name="ch_vst">
             <property name="text">
              <string>VST</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="ch_vst3">
-            <property name="text">
-             <string>VST3</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="ch_au">
-            <property name="text">
-             <string>AU</string>
             </property>
            </widget>
           </item>

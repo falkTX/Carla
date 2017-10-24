@@ -34,7 +34,6 @@
 #define VST_2_4_EXTENSIONS 1
 #define VST_FORCE_DEPRECATED 0
 
-#ifdef VESTIGE_HEADER
 #include "vestige/aeffectx.h"
 #define audioMasterGetOutputSpeakerArrangement audioMasterGetSpeakerArrangement
 #define effFlagsProgramChunks (1 << 5)
@@ -110,18 +109,6 @@
 struct ERect {
     int16_t top, left, bottom, right;
 };
-#else
-#ifdef CARLA_OS_MAC
-# undef __ppc__
-# define __ppc__ 0
-#else
-# undef TARGET_API_MAC_CARBON
-# define TARGET_API_MAC_CARBON 0
-#endif
-#undef VST_64BIT_PLATFORM
-#define VST_64BIT_PLATFORM (defined(_WIN64) || defined(__LP64__) || defined (_LP64))
-#include "vst2/pluginterfaces/vst2.x/aeffectx.h"
-#endif
 
 // -----------------------------------------------------------------------
 // Plugin callback

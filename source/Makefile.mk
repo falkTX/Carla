@@ -7,9 +7,6 @@
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
-# Use the free vestige header instead of the official VST SDK
-CARLA_VESTIGE_HEADER = true
-
 # Enable experimental plugins, don't complain if the build fails when using this!
 EXPERIMENTAL_PLUGINS = false
 
@@ -57,7 +54,6 @@ endif
 # Force some features on MacOS and Windows
 
 ifeq ($(MACOS_OR_WIN32),true)
-CARLA_VESTIGE_HEADER = false
 EXPERIMENTAL_PLUGINS = false
 endif
 
@@ -323,10 +319,6 @@ ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
 endif
 
-ifeq ($(CARLA_VESTIGE_HEADER),true)
-BASE_FLAGS += -DVESTIGE_HEADER
-endif
-
 # --------------------------------------------------------------
 # Set libs stuff (part 1)
 
@@ -402,30 +394,24 @@ endif
 endif
 
 ifeq ($(MACOS),true)
-DGL_LIBS                   = -framework OpenGL -framework Cocoa
-HYLIA_FLAGS                = -DLINK_PLATFORM_MACOSX=1
-JACKBRIDGE_LIBS            = -ldl -lpthread
-JUCE_AUDIO_BASICS_LIBS     = -framework Accelerate
-JUCE_AUDIO_DEVICES_LIBS    = -framework AppKit -framework AudioToolbox -framework CoreAudio -framework CoreMIDI
-JUCE_AUDIO_FORMATS_LIBS    = -framework AudioToolbox -framework CoreFoundation
-JUCE_AUDIO_PROCESSORS_LIBS = -framework AudioToolbox -framework AudioUnit -framework CoreAudio -framework CoreAudioKit -framework Cocoa -framework Carbon
-JUCE_CORE_LIBS             = -framework AppKit
-JUCE_EVENTS_LIBS           = -framework AppKit
-JUCE_GRAPHICS_LIBS         = -framework Cocoa -framework QuartzCore
-JUCE_GUI_BASICS_LIBS       = -framework Cocoa
-JUCE_GUI_EXTRA_LIBS        = -framework Cocoa -framework IOKit
-LILV_LIBS                  = -ldl -lm
+DGL_LIBS               = -framework OpenGL -framework Cocoa
+HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
+JACKBRIDGE_LIBS        = -ldl -lpthread
+JUCE_AUDIO_BASICS_LIBS = -framework Accelerate
+JUCE_CORE_LIBS         = -framework AppKit
+LILV_LIBS              = -ldl -lm
+RTAUDIO_FLAGS         += -D__MACOSX_CORE__
+RTMIDI_FLAGS          += -D__MACOSX_CORE__
 endif
 
 ifeq ($(WIN32),true)
-DGL_LIBS                   = -lopengl32 -lgdi32
-HYLIA_FLAGS                = -DLINK_PLATFORM_WINDOWS=1
-JACKBRIDGE_LIBS            = -lpthread
-JUCE_AUDIO_DEVICES_LIBS    = -lwinmm -lole32
-JUCE_CORE_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-JUCE_GRAPHICS_LIBS         = -lgdi32
-JUCE_GUI_BASICS_LIBS       = -lgdi32 -limm32 -lcomdlg32 -lole32
-LILV_LIBS                  = -lm
+DGL_LIBS               = -lopengl32 -lgdi32
+HYLIA_FLAGS            = -DLINK_PLATFORM_WINDOWS=1
+JACKBRIDGE_LIBS        = -lpthread
+JUCE_CORE_LIBS         = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+LILV_LIBS              = -lm
+RTAUDIO_FLAGS         += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
+RTMIDI_FLAGS          += -D__WINDOWS_MM__
 endif
 
 # --------------------------------------------------------------

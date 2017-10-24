@@ -51,7 +51,7 @@ if __name__ == '__main__':
     # Init host backend
 
     host = initHost(initName, libPrefix, True, False, True, CarlaHostOSC)
-    host.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
+    host.processMode       = ENGINE_PROCESS_MODE_BRIDGE
     host.processModeForced = True
     loadHostSettings(host)
 
