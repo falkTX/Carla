@@ -1633,11 +1633,6 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 {
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
-#ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
-        pData->graph.setSampleRate(newSampleRate);
-#endif
-
     pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1771,28 +1766,28 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
     }
 
     // if we're running inside some session-manager (and using JACK), let them handle the connections
-    bool saveExternalConnections;
+    bool saveConnections;
 
     /**/ if (isPlugin)
-        saveExternalConnections = false;
+        saveConnections = false;
     else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
-        saveExternalConnections = true;
+        saveConnections = true;
     else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        saveExternalConnections = false;
+        saveConnections = false;
     else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        saveExternalConnections = false;
+        saveConnections = false;
     else if (std::getenv("NSM_URL") != nullptr)
-        saveExternalConnections = false;
+        saveConnections = false;
     else
-        saveExternalConnections = true;
+        saveConnections = true;
 
-    if (saveExternalConnections)
+    if (saveConnections)
     {
-        if (const char* const* const patchbayConns = getPatchbayConnections(true))
+        if (const char* const* const patchbayConns = getPatchbayConnections())
         {
             MemoryOutputStream outPatchbay(2048);
 
-            outPatchbay << "\n <ExternalPatchbay>\n";
+            outPatchbay << "\n <Patchbay>\n";
 
             for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
             {
@@ -1808,7 +1803,7 @@ void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
                 outPatchbay << "  </Connection>\n";
             }
 
-            outPatchbay << " </ExternalPatchbay>\n";
+            outPatchbay << " </Patchbay>\n";
             outStream << outPatchbay;
         }
     }
@@ -2170,32 +2165,30 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
     if (pData->aboutToClose)
         return true;
 
-    // if we're running inside some session-manager (and using JACK), let them handle the external connections
-    bool loadExternalConnections;
+    // if we're running inside some session-manager (and using JACK), let them handle the connections
+    bool loadConnections;
 
     /**/ if (isPlugin)
-        loadExternalConnections = false;
+        loadConnections = false;
     else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
-        loadExternalConnections = true;
+        loadConnections = true;
     else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        loadExternalConnections = false;
+        loadConnections = false;
     else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        loadExternalConnections = false;
+        loadConnections = false;
     else if (std::getenv("NSM_URL") != nullptr)
-        loadExternalConnections = false;
+        loadConnections = false;
     else
-        loadExternalConnections = true;
+        loadConnections = true;
 
-    // handle connections (external)
-    if (loadExternalConnections)
+    // handle connections
+    if (loadConnections)
     {
-        const bool isUsingExternal(pData->graph.isUsingExternal());
-
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
             const String& tagName(elem->getTagName());
 
-            if (! tagName.equalsIgnoreCase("externalpatchbay"))
+            if (! tagName.equalsIgnoreCase("patchbay") || ! tagName.equalsIgnoreCase("externalpatchbay"))
                 continue;
 
             CarlaString sourcePort, targetPort;
@@ -2222,7 +2215,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(true, sourcePort, targetPort, isUsingExternal);
+                    restorePatchbayConnection(sourcePort, targetPort);
             }
             break;
         }

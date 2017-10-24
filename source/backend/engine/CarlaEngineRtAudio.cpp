@@ -402,8 +402,11 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool refreshExternalGraphPorts(RackGraph* const graph, const bool sendCallback)
+    bool patchbayRefresh() override
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
+
+        RackGraph* const graph(pData->graph.getGraph());
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
         char strBuf[STR_MAX+1];
@@ -470,8 +473,7 @@ public:
         // ---------------------------------------------------------------
         // now refresh
 
-        if (sendCallback)
-            graph->refresh(fDeviceName.buffer());
+        graph->refresh(fDeviceName.buffer());
 
         // ---------------------------------------------------------------
         // add midi connections
@@ -493,8 +495,7 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            if (sendCallback)
-                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
         }
 
         fMidiOutMutex.lock();
@@ -516,20 +517,12 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            if (sendCallback)
-                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
         }
 
         fMidiOutMutex.unlock();
 
         return true;
-    }
-
-    bool patchbayRefresh() override
-    {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
-
-        return refreshExternalGraphPorts(pData->graph.getRackGraph(), true);
     }
 
     // -------------------------------------------------------------------

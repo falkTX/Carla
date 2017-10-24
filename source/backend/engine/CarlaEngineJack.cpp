@@ -1408,10 +1408,10 @@ public:
     // -------------------------------------------------------------------
     // Patchbay stuff
 
-    const char* const* getPatchbayConnections(const bool external) const override
+    const char* const* getPatchbayConnections() const override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
-        carla_debug("CarlaEngineJack::getPatchbayConnections(%s)", bool2str(external));
+        carla_debug("CarlaEngineJack::getPatchbayConnections()");
 
         CarlaStringList connList;
 
@@ -1447,7 +1447,7 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget, const bool sendCallback) override
+    void restorePatchbayConnection(const char* const connSource, const char* const connTarget) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);

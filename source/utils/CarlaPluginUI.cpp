@@ -25,7 +25,13 @@
 # include <X11/Xutil.h>
 #endif
 
-// -----------------------------------------------------
+#ifdef CARLA_OS_WIN
+# include <ctime>
+// # include <cstdio>
+// # include <cstdlib>
+#endif
+
+// ---------------------------------------------------------------------------------------------------------------------
 // X11
 
 #ifdef HAVE_X11
@@ -314,6 +320,233 @@ private:
 };
 #endif // HAVE_X11
 
+// ---------------------------------------------------------------------------------------------------------------------
+// Windows
+
+#ifdef CARLA_OS_WIN
+
+#define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
+
+static HINSTANCE hInstance = NULL;
+
+static LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+class WindowsPluginUI : public CarlaPluginUI
+{
+public:
+    WindowsPluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+        : CarlaPluginUI(cb, isResizable),
+          fWindow(0),
+          fIsVisible(false),
+          fFirstShow(true)
+     {
+        // FIXME
+        static int wc_count = 0;
+        char classNameBuf[256];
+        std::srand((std::time(NULL)));
+        _snprintf(classNameBuf, sizeof(classNameBuf), "CaWin_%d-%d", std::rand(), ++wc_count);
+        classNameBuf[sizeof(classNameBuf)-1] = '\0';
+
+        carla_zeroStruct(fWindowClass);
+        fWindowClass.style         = CS_OWNDC;
+        fWindowClass.lpfnWndProc   = wndProc;
+        fWindowClass.hInstance     = hInstance;
+        fWindowClass.hIcon         = LoadIcon(hInstance, IDI_APPLICATION);
+        fWindowClass.hCursor       = LoadCursor(hInstance, IDC_ARROW);
+        fWindowClass.lpszClassName = strdup(classNameBuf);
+
+        if (!RegisterClass(&fWindowClass)) {
+            free((void*)fWindowClass.lpszClassName);
+            return;
+        }
+
+        int winFlags = WS_POPUPWINDOW | WS_CAPTION;
+        if (isResizable)
+            winFlags |= WS_SIZEBOX;
+
+        fWindow = CreateWindowEx(WS_EX_TOPMOST,
+                                 classNameBuf, "Carla Plugin UI", winFlags,
+                                 CW_USEDEFAULT, CW_USEDEFAULT, 100, 100,
+                                 NULL, NULL, hInstance, NULL);
+
+        if (! fWindow) {
+            UnregisterClass(fWindowClass.lpszClassName, NULL);
+            free((void*)fWindowClass.lpszClassName);
+            return;
+        }
+
+        SetWindowLongPtr(fWindow, GWLP_USERDATA, (LONG_PTR)this);
+     }
+
+    ~WindowsPluginUI() override
+    {
+        CARLA_SAFE_ASSERT(! fIsVisible);
+
+        if (fWindow != 0)
+        {
+            if (fIsVisible)
+                ShowWindow(fWindow, SW_HIDE);
+
+            DestroyWindow(fWindow);
+            fWindow = 0;
+        }
+
+        // FIXME
+        UnregisterClass(fWindowClass.lpszClassName, NULL);
+        free((void*)fWindowClass.lpszClassName);
+    }
+
+    void show() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        ShowWindow(fWindow, fFirstShow ? SW_SHOWNORMAL : SW_RESTORE);
+        fIsVisible = true;
+        fFirstShow = false;
+        UpdateWindow(fWindow);
+    }
+
+    void hide() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        ShowWindow(fWindow, SW_HIDE);
+        fIsVisible = false;
+        UpdateWindow(fWindow);
+    }
+
+    void idle() override
+    {
+        if (fIsIdling || fWindow == 0)
+            return;
+
+        MSG msg;
+        fIsIdling = true;
+
+        while (::PeekMessage(&msg, fWindow, 0, 0, PM_REMOVE))
+        {
+            switch (msg.message)
+            {
+            case WM_QUIT:
+            case PUGL_LOCAL_CLOSE_MSG:
+                fIsVisible = false;
+                CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
+                fCallback->handlePluginUIClosed();
+                break;
+            }
+
+            DispatchMessage(&msg);
+        }
+
+        fIsIdling = false;
+    }
+
+    LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam)
+    {
+        return DefWindowProc(fWindow, message, wParam, lParam);
+    }
+
+    LRESULT checkAndHandleMessage(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+    {
+        if (fWindow == hwnd)
+        {
+            switch (message)
+            {
+            case WM_QUIT:
+            case PUGL_LOCAL_CLOSE_MSG:
+                    fIsVisible = false;
+                    CARLA_SAFE_ASSERT_BREAK(fCallback != nullptr);
+                    fCallback->handlePluginUIClosed();
+                    break;
+            }
+        }
+
+        return DefWindowProc(hwnd, message, wParam, lParam);
+    }
+
+    void focus() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        SetForegroundWindow(fWindow);
+        SetActiveWindow(fWindow);
+        SetFocus(fWindow);
+    }
+
+    void setSize(const uint width, const uint height, const bool forceUpdate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        const int winFlags = WS_POPUPWINDOW | WS_CAPTION | (fIsResizable ? WS_SIZEBOX : 0x0);
+        RECT wr = { 0, 0, static_cast<long>(width), static_cast<long>(height) };
+        AdjustWindowRectEx(&wr, winFlags, FALSE, WS_EX_TOPMOST);
+
+        SetWindowPos(fWindow, 0, 0, 0, wr.right-wr.left, wr.bottom-wr.top,
+                     SWP_NOACTIVATE|SWP_NOMOVE|SWP_NOOWNERZORDER|SWP_NOZORDER);
+
+        if (forceUpdate)
+            UpdateWindow(fWindow);
+    }
+
+    void setTitle(const char* const title) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        SetWindowTextA(fWindow, title);
+    }
+
+    void setTransientWinId(const uintptr_t winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        // TODO
+    }
+
+    void* getPtr() const noexcept override
+    {
+        return (void*)fWindow;
+    }
+
+    void* getDisplay() const noexcept
+    {
+        return nullptr;
+    }
+
+private:
+    HWND     fWindow;
+    WNDCLASS fWindowClass;
+
+    bool fIsVisible;
+    bool fFirstShow;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(WindowsPluginUI)
+};
+
+LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    WindowsPluginUI* ui = (WindowsPluginUI*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+
+    switch (message)
+    {
+    case WM_CREATE:
+        PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
+        return 0;
+
+    case WM_CLOSE:
+        PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
+        return 0;
+
+    case WM_DESTROY:
+        return 0;
+
+    default:
+        if (ui != nullptr)
+            return ui->checkAndHandleMessage(hwnd, message, wParam, lParam);
+        return DefWindowProc(hwnd, message, wParam, lParam);
+    }
+}
+#endif // CARLA_OS_WIN
+
 // -----------------------------------------------------
 
 bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI)
@@ -535,16 +768,16 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bool /*isResizable*/)
+CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bool isResizable)
 {
     return nullptr;
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId, bool /*isResizable*/)
+CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId, bool isResizable)
 {
-    return nullptr;
+    return new WindowsPluginUI(cb, parentId, isResizable);
 }
 #endif
 

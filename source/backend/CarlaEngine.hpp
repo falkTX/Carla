@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1148,8 +1148,8 @@ protected:
      * Virtual functions for handling patchbay state.
      * Do not free returned data.
      */
-    virtual const char* const* getPatchbayConnections(const bool external) const;
-    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort, const bool sendCallback);
+    virtual const char* const* getPatchbayConnections() const;
+    virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);
 #endif
 
     // -------------------------------------------------------------------
