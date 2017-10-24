@@ -165,26 +165,29 @@ endif
 
 ifeq ($(MACOS_OR_WIN32),true)
 HAVE_DGL        = true
-HAVE_HYLIA      = true
 else
+HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
-ifeq ($(LINUX),true)
-HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
-HAVE_HYLIA      = true
-HAVE_NTK        = $(shell pkg-config --exists ntk ntk_images && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
+
+ifeq ($(MACOS),true)
+HAVE_HYLIA      = true
 endif
 
-HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+ifeq ($(LINUX),true)
+HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+HAVE_HYLIA      = true
+endif
 
-HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
+HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
+HAVE_NTK          = $(shell pkg-config --exists ntk ntk_images && echo true)
 HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
 
 # --------------------------------------------------------------
@@ -357,7 +360,7 @@ endif
 # --------------------------------------------------------------
 # Set libs stuff (part 2)
 
-RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__UNIX_JACK__
+RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY
 
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
@@ -370,6 +373,7 @@ endif
 
 ifeq ($(UNIX),true)
 HYLIA_FLAGS          +=
+RTAUDIO_FLAGS        += -D__UNIX_JACK__
 endif
 
 ifeq ($(LINUX),true)
@@ -411,6 +415,7 @@ JACKBRIDGE_LIBS        = -lpthread
 JUCE_CORE_LIBS         = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 LILV_LIBS              = -lm
 RTAUDIO_FLAGS         += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
+RTAUDIO_LIBS          += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS          += -D__WINDOWS_MM__
 endif
 

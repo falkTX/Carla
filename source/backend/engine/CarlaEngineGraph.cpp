@@ -22,15 +22,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-// FIXME: update to new Juce API
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 using juce::AudioBuffer;
 using juce::FloatVectorOperations;
 using juce::MemoryBlock;
@@ -38,12 +29,6 @@ using juce::String;
 using juce::StringArray;
 using juce::jmin;
 using juce::jmax;
-
-#if 0
-using juce::AudioPluginInstance;
-using juce::AudioProcessor;
-using juce::AudioProcessorEditor;
-#endif
 
 CARLA_BACKEND_START_NAMESPACE
 

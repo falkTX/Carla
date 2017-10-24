@@ -132,18 +132,6 @@ LIBS = \
 	$(MODULEDIR)/juce_core.a \
 	$(MODULEDIR)/lilv.a
 
-LIBS_JUCE = \
-	$(LIBS) \
-	$(MODULEDIR)/juce_data_structures.a \
-	$(MODULEDIR)/juce_events.a \
-	$(MODULEDIR)/juce_graphics.a \
-	$(MODULEDIR)/juce_gui_basics.a
-
-ifeq ($(MACOS),true)
-LIBS_JUCE += \
-	$(MODULEDIR)/juce_gui_extra.a
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common objects
 
@@ -280,10 +268,10 @@ OBJS_COCOA = \
 	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-cocoa.o \
 	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-cocoa.o
 
-$(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS_JUCE)
+$(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-cocoa"
-	@$(CXX) $(OBJS_COCOA) $(LIBS_START) $(LIBS_JUCE) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
+	@$(CXX) $(OBJS_COCOA) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_COCOA_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-cocoa.o: %.cpp
 	-@mkdir -p $(OBJDIR)
@@ -300,10 +288,10 @@ OBJS_WINDOWS = \
 	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-windows.o \
 	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-windows.o
 
-$(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS_JUCE)
+$(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS)
 	-@mkdir -p $(BINDIR)
 	@echo "Linking $(MODULENAME)-lv2-windows.exe"
-	@$(CXX) $(OBJS_WINDOWS) $(LIBS_START) $(LIBS_JUCE) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
+	@$(CXX) $(OBJS_WINDOWS) $(LIBS_START) $(LIBS) $(LIBS_END) $(LINK_WINDOWS_FLAGS) -o $@
 
 $(OBJDIR)/%.cpp-windows.o: %.cpp
 	-@mkdir -p $(OBJDIR)

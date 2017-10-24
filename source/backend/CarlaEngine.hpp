@@ -1159,18 +1159,19 @@ public:
      * Native audio APIs.
      */
     enum AudioApi {
-        AUDIO_API_NULL  = 0,
+        AUDIO_API_NULL,
         // common
-        AUDIO_API_JACK  = 1,
+        AUDIO_API_JACK,
+        AUDIO_API_OSS,
         // linux
-        AUDIO_API_ALSA  = 2,
-        AUDIO_API_OSS   = 3,
-        AUDIO_API_PULSE = 4,
+        AUDIO_API_ALSA,
+        AUDIO_API_PULSEAUDIO,
         // macos
-        AUDIO_API_CORE  = 5,
+        AUDIO_API_COREAUDIO,
         // windows
-        AUDIO_API_ASIO  = 6,
-        AUDIO_API_DS    = 7
+        AUDIO_API_ASIO,
+        AUDIO_API_DIRECTSOUND,
+        AUDIO_API_WASAPI
     };
 
     // -------------------------------------------------------------------

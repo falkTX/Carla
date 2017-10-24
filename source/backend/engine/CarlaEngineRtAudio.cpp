@@ -24,14 +24,9 @@
 #include "RtLinkedList.hpp"
 
 #include "jackbridge/JackBridge.hpp"
-#include "juce_audio_basics/juce_audio_basics.h"
 
 #include "rtaudio/RtAudio.h"
 #include "rtmidi/RtMidi.h"
-
-using juce::jmax;
-using juce::AudioSampleBuffer;
-using juce::FloatVectorOperations;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -59,14 +54,6 @@ static void initRtAudioAPIsIfNeeded()
 
     for (const RtAudio::Api& api : apis)
     {
-        if (api == RtAudio::MACOSX_CORE)
-            continue;
-        if (api == RtAudio::WINDOWS_ASIO)
-            continue;
-        if (api == RtAudio::WINDOWS_DS)
-            continue;
-        if (api == RtAudio::WINDOWS_WASAPI)
-            continue;
         if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
             continue;
 
@@ -164,8 +151,8 @@ public:
           fAudioOutCount(0),
           fLastEventTime(0),
           fDeviceName(),
-          fAudioIntBufIn(),
-          fAudioIntBufOut(),
+          fAudioIntBufIn(nullptr),
+          fAudioIntBufOut(nullptr),
           fMidiIns(),
           fMidiInEvents(),
           fMidiOuts(),
@@ -288,8 +275,11 @@ public:
         fAudioOutCount = oParams.nChannels;
         fLastEventTime = 0;
 
-        fAudioIntBufIn.setSize(static_cast<int>(fAudioInCount), static_cast<int>(bufferFrames));
-        fAudioIntBufOut.setSize(static_cast<int>(fAudioOutCount), static_cast<int>(bufferFrames));
+        if (fAudioInCount > 0)
+            fAudioIntBufIn = new float[fAudioInCount*bufferFrames];
+
+        if (fAudioOutCount > 0)
+            fAudioIntBufOut = new float[fAudioOutCount*bufferFrames];
 
         pData->graph.create(fAudioInCount, fAudioOutCount);
 
@@ -370,6 +360,18 @@ public:
         fLastEventTime = 0;
         fDeviceName.clear();
 
+        if (fAudioIntBufIn != nullptr)
+        {
+            delete[] fAudioIntBufIn;
+            fAudioIntBufIn = nullptr;
+        }
+
+        if (fAudioIntBufOut != nullptr)
+        {
+            delete[] fAudioIntBufOut;
+            fAudioIntBufOut = nullptr;
+        }
+
         // close stream
         if (fAudio.isStreamOpen())
             fAudio.closeStream();
@@ -400,8 +402,7 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    template<class Graph>
-    bool refreshExternalGraphPorts(Graph* const graph, const bool sendCallback)
+    bool refreshExternalGraphPorts(RackGraph* const graph, const bool sendCallback)
     {
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
@@ -528,7 +529,7 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
 
-        return refreshExternalGraphPorts<RackGraph>(pData->graph.getRackGraph(), true);
+        return refreshExternalGraphPorts(pData->graph.getRackGraph(), true);
     }
 
     // -------------------------------------------------------------------
@@ -554,13 +555,13 @@ protected:
         {
             float* inBuf2[fAudioInCount];
 
-            for (int i=0, count=static_cast<int>(fAudioInCount); i<count; ++i)
+            for (uint i=0, count=fAudioInCount; i<count; ++i)
             {
-                inBuf [i] = fAudioIntBufIn.getReadPointer(i);
-                inBuf2[i] = fAudioIntBufIn.getWritePointer(i);
+                inBuf [i] = fAudioIntBufIn + (nframes*i);
+                inBuf2[i] = fAudioIntBufIn + (nframes*i);
             }
-            for (int i=0, count=static_cast<int>(fAudioOutCount); i<count; ++i)
-                outBuf[i] = fAudioIntBufOut.getWritePointer(i);
+            for (uint i=0, count=fAudioOutCount; i<count; ++i)
+                outBuf[i] = fAudioIntBufOut + (nframes*i);
 
             // init input
             for (uint i=0; i<nframes; ++i)
@@ -568,7 +569,7 @@ protected:
                     inBuf2[j][i] = insPtr[i*fAudioInCount+j];
 
             // clear output
-            fAudioIntBufOut.clear();
+            carla_zeroFloats(fAudioIntBufOut, fAudioOutCount*nframes);
         }
         else
         {
@@ -578,7 +579,7 @@ protected:
                 outBuf[i] = outsPtr+(nframes*i);
 
             // clear output
-            FloatVectorOperations::clear(outsPtr, static_cast<int>(nframes*fAudioOutCount));
+            carla_zeroFloats(outsPtr, nframes*fAudioOutCount);
         }
 
         // initialize events
@@ -909,8 +910,8 @@ private:
     CarlaString fDeviceName;
 
     // temp buffer for interleaved audio
-    AudioSampleBuffer fAudioIntBufIn;
-    AudioSampleBuffer fAudioIntBufOut;
+    float* fAudioIntBufIn;
+    float* fAudioIntBufOut;
 
     struct MidiInPort {
         RtMidiIn* port;
@@ -1008,23 +1009,26 @@ CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
     case AUDIO_API_JACK:
         rtApi = RtAudio::UNIX_JACK;
         break;
-    case AUDIO_API_ALSA:
-        rtApi = RtAudio::LINUX_ALSA;
-        break;
     case AUDIO_API_OSS:
         rtApi = RtAudio::LINUX_OSS;
         break;
-    case AUDIO_API_PULSE:
+    case AUDIO_API_ALSA:
+        rtApi = RtAudio::LINUX_ALSA;
+        break;
+    case AUDIO_API_PULSEAUDIO:
         rtApi = RtAudio::LINUX_PULSE;
         break;
-    case AUDIO_API_CORE:
+    case AUDIO_API_COREAUDIO:
         rtApi = RtAudio::MACOSX_CORE;
         break;
     case AUDIO_API_ASIO:
         rtApi = RtAudio::WINDOWS_ASIO;
         break;
-    case AUDIO_API_DS:
+    case AUDIO_API_DIRECTSOUND:
         rtApi = RtAudio::WINDOWS_DS;
+        break;
+    case AUDIO_API_WASAPI:
+        rtApi = RtAudio::WINDOWS_WASAPI;
         break;
     }
 

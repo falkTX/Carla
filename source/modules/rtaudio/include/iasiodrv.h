@@ -1,3 +1,4 @@
+#pragma once
 #include "asiosys.h"
 #include "asio.h"
 

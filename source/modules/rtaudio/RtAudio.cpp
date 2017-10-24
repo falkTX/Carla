@@ -2630,10 +2630,10 @@ bool RtApiJack :: callbackEvent( unsigned long nframes )
 // on information found in
 // http://www.cs.wustl.edu/~schmidt/win32-cv-1.html.
 
-#include "asiosys.h"
-#include "asio.h"
-#include "iasiothiscallresolver.h"
-#include "asiodrivers.h"
+#include "asio.cpp"
+#include "asiodrivers.cpp"
+#include "asiolist.cpp"
+#include "iasiothiscallresolver.cpp"
 #include <cmath>
 
 static AsioDrivers drivers;
@@ -3600,7 +3600,7 @@ static const char* getAsioErrorString( ASIOError result )
 #include <audioclient.h>
 #include <avrt.h>
 #include <mmdeviceapi.h>
-#include <functiondiscoverykeys_devpkey.h>
+#include <FunctionDiscoveryKeys_devpkey.h>
 
 //=============================================================================
 

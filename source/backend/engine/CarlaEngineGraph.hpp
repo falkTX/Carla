@@ -23,9 +23,6 @@
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
 
-#include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -138,55 +135,6 @@ struct RackGraph {
     CarlaEngine* const kEngine;
     CARLA_DECLARE_NON_COPY_CLASS(RackGraph)
 };
-
-#if 0
-typedef juce::AudioProcessorGraph CarlaAudioProcessorGraph;
-
-using juce::AudioSampleBuffer;
-using juce::MidiBuffer;
-
-// -----------------------------------------------------------------------
-// PatchbayGraph
-
-struct PatchbayGraph {
-    PatchbayConnectionList connections;
-    CarlaAudioProcessorGraph graph;
-    AudioSampleBuffer audioBuffer;
-    MidiBuffer midiBuffer;
-    const uint32_t inputs;
-    const uint32_t outputs;
-    mutable CharStringListPtr retCon;
-    bool usingExternal;
-
-    ExternalGraph extGraph;
-
-    PatchbayGraph(CarlaEngine* const engine, const uint32_t inputs, const uint32_t outputs);
-    ~PatchbayGraph();
-
-    void setBufferSize(const uint32_t bufferSize);
-    void setSampleRate(const double sampleRate);
-    void setOffline(const bool offline);
-
-    void addPlugin(CarlaPlugin* const plugin);
-    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
-    void renamePlugin(CarlaPlugin* const plugin, const char* const newName);
-    void removePlugin(CarlaPlugin* const plugin);
-    void removeAllPlugins();
-
-    bool connect(const bool external, const uint groupA, const uint portA, const uint groupB, const uint portB, const bool sendCallback);
-    bool disconnect(const uint connectionId);
-    void disconnectInternalGroup(const uint groupId) noexcept;
-    void refresh(const char* const deviceName);
-
-    const char* const* getConnections(const bool external) const;
-    bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;
-
-    void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
-
-    CarlaEngine* const kEngine;
-    CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)
-};
-#endif
 
 // -----------------------------------------------------------------------
 

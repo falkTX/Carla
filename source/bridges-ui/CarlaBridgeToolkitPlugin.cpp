@@ -20,13 +20,6 @@
 
 #include "CarlaPluginUI.hpp"
 
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-# include "AppConfig.h"
-# include "juce_events/juce_events.h"
-using juce::MessageManager;
-using juce::ScopedJuceInitialiser_GUI;
-#endif
-
 CARLA_BRIDGE_START_NAMESPACE
 
 // -------------------------------------------------------------------------
@@ -39,9 +32,6 @@ public:
         : CarlaBridgeToolkit(u),
           fUI(nullptr),
           fIdling(false)
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-        , kJuceInit()
-#endif
     {
         carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", u);
     }
@@ -60,9 +50,9 @@ public:
         const CarlaBridgeUI::Options& options(ui->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        fUI = CarlaPluginUI::newCocoa(this, 0, options.isResizable);
+        fUI = nullptr;
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
-        fUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
+        fUI = nullptr;
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
         fUI = CarlaPluginUI::newX11(this, 0, options.isResizable);
 #endif
@@ -99,15 +89,8 @@ public:
                 ui->idlePipe();
 
             ui->idleUI();
-
             fUI->idle();
-
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-            if (MessageManager* const msgMgr = MessageManager::getInstance())
-                msgMgr->runDispatchLoopUntil(20);
-#else
             carla_msleep(20);
-#endif
         }
     }
 
@@ -202,10 +185,6 @@ private:
     CarlaPluginUI* fUI;
     bool fIdling;
 
-#if defined(CARLA_OS_WIN) || defined(CARLA_OS_MAC)
-    const ScopedJuceInitialiser_GUI kJuceInit;
-#endif
-
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitPlugin)
 };
 
@@ -220,7 +199,6 @@ CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
 
 CARLA_BRIDGE_END_NAMESPACE
 
-#define CARLA_PLUGIN_UI_WITHOUT_JUCE_PROCESSORS
 #include "CarlaPluginUI.cpp"
 
 // -------------------------------------------------------------------------
