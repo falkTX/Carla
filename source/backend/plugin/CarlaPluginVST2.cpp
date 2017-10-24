@@ -18,12 +18,6 @@
 #include "CarlaPluginInternal.hpp"
 #include "CarlaEngine.hpp"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# define USE_JUCE_FOR_VST
-#endif
-
-#ifndef USE_JUCE_FOR_VST
-
 #include "CarlaVstUtils.hpp"
 
 #include "CarlaMathUtils.hpp"
@@ -422,19 +416,12 @@ public:
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#if defined(CARLA_OS_LINUX)
-# ifdef HAVE_X11
-                fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
-# else
-                msg = "UI is only for systems with X11";
-                (void)frontendWinId; // unused
-# endif
-#elif defined(CARLA_OS_MAC)
-# ifdef __LP64__
-                fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId);
-# endif
+#if defined(CARLA_OS_MAC) && defined(__LP64__)
+                fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
-                fUI.window = CarlaPluginUI::newWindows(this, frontendWinId);
+                fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);
+#elif defined(HAVE_X11)
+                fUI.window = CarlaPluginUI::newX11(this, frontendWinId, false);
 #else
                 msg = "Unknown UI type";
 #endif
@@ -2388,8 +2375,6 @@ CarlaPluginVST2* CarlaPluginVST2::sLastCarlaPluginVST2 = nullptr;
 
 CARLA_BACKEND_END_NAMESPACE
 
-#endif // ! USE_JUCE_FOR_VST
-
 // -------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -2398,9 +2383,6 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
 {
     carla_debug("CarlaPlugin::newVST2({%p, \"%s\", \"%s\", " P_INT64 "})", init.engine, init.filename, init.name, init.uniqueId);
 
-#ifdef USE_JUCE_FOR_VST
-    return newJuce(init, "VST");
-#else
     CarlaPluginVST2* const plugin(new CarlaPluginVST2(init.engine, init.id));
 
     if (! plugin->init(init.filename, init.name, init.uniqueId, init.options))
@@ -2410,7 +2392,6 @@ CarlaPlugin* CarlaPlugin::newVST2(const Initializer& init)
     }
 
     return plugin;
-#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------
