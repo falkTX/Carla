@@ -453,7 +453,7 @@ public:
                     CARLA_SAFE_ASSERT_INT2(width > 1 && height > 1, width, height);
 
                     if (width > 1 && height > 1)
-                        fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), false);
+                        fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
                 }
 
                 fUI.window->show();

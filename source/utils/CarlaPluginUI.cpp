@@ -327,8 +327,6 @@ private:
 
 #define PUGL_LOCAL_CLOSE_MSG (WM_USER + 50)
 
-static HINSTANCE hInstance = NULL;
-
 static LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 class WindowsPluginUI : public CarlaPluginUI
@@ -346,6 +344,8 @@ public:
         std::srand((std::time(NULL)));
         _snprintf(classNameBuf, sizeof(classNameBuf), "CaWin_%d-%d", std::rand(), ++wc_count);
         classNameBuf[sizeof(classNameBuf)-1] = '\0';
+
+        const HINSTANCE hInstance = GetModuleHandleA(nullptr);
 
         carla_zeroStruct(fWindowClass);
         fWindowClass.style         = CS_OWNDC;
@@ -366,7 +366,7 @@ public:
 
         fWindow = CreateWindowEx(WS_EX_TOPMOST,
                                  classNameBuf, "Carla Plugin UI", winFlags,
-                                 CW_USEDEFAULT, CW_USEDEFAULT, 100, 100,
+                                 CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
                                  NULL, NULL, hInstance, NULL);
 
         if (! fWindow) {
@@ -435,15 +435,10 @@ public:
                 break;
             }
 
-            DispatchMessage(&msg);
+            DispatchMessageA(&msg);
         }
 
         fIsIdling = false;
-    }
-
-    LRESULT handleMessage(UINT message, WPARAM wParam, LPARAM lParam)
-    {
-        return DefWindowProc(fWindow, message, wParam, lParam);
     }
 
     LRESULT checkAndHandleMessage(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -461,7 +456,7 @@ public:
             }
         }
 
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        return DefWindowProcA(hwnd, message, wParam, lParam);
     }
 
     void focus() override
@@ -524,25 +519,25 @@ private:
 
 LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    WindowsPluginUI* ui = (WindowsPluginUI*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-
     switch (message)
     {
-    case WM_CREATE:
-        PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
-        return 0;
-
     case WM_CLOSE:
         PostMessage(hwnd, PUGL_LOCAL_CLOSE_MSG, wParam, lParam);
         return 0;
 
-    case WM_DESTROY:
+#if 0
+    case WM_CREATE:
+        PostMessage(hwnd, WM_SHOWWINDOW, TRUE, 0);
         return 0;
 
+    case WM_DESTROY:
+        return 0;
+#endif
+
     default:
-        if (ui != nullptr)
+        if (WindowsPluginUI* const ui = (WindowsPluginUI*)GetWindowLongPtr(hwnd, GWLP_USERDATA))
             return ui->checkAndHandleMessage(hwnd, message, wParam, lParam);
-        return DefWindowProc(hwnd, message, wParam, lParam);
+        return DefWindowProcA(hwnd, message, wParam, lParam);
     }
 }
 #endif // CARLA_OS_WIN
