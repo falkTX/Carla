@@ -21,6 +21,7 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
+#include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
 #include <string>

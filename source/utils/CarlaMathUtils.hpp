@@ -200,6 +200,36 @@ void carla_zeroFloats(float floats[], const std::size_t count) noexcept
     std::memset(floats, 0, count*sizeof(float));
 }
 
+/*
+ * Find the highest absolute and normalized value within a float array.
+ */
+static inline
+float carla_findMaxNormalizedFloat(float floats[], const std::size_t count)
+{
+    CARLA_SAFE_ASSERT_RETURN(floats != nullptr, 0.0f);
+    CARLA_SAFE_ASSERT_RETURN(count > 0, 0.0f);
+
+    static const float kEmptyFloats[8192] = { 0.0f };
+
+    if (count <= 8192 && std::memcmp(floats, kEmptyFloats, count) == 0)
+        return 0.0f;
+
+    float tmp, maxf2 = std::abs(floats[0]);
+
+    for (std::size_t i=1; i<count; ++i)
+    {
+        tmp = std::abs(floats[i]);
+
+        if (maxf2 > tmp)
+            maxf2 = tmp;
+    }
+
+    if (maxf2 > 1.0f)
+        maxf2 = 1.0f;
+
+    return maxf2;
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 // Missing functions in old OSX versions.
 

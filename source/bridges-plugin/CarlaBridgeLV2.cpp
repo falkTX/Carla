@@ -27,9 +27,8 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
-#include "juce_audio_basics/juce_audio_basics.h"
-
-using juce::FloatVectorOperations;
+#include "AppConfig.h"
+#include "juce_core/juce_core.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 

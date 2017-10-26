@@ -22,17 +22,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
-
-using juce::AudioBuffer;
-using juce::FloatVectorOperations;
-using juce::MemoryBlock;
-using juce::String;
-using juce::StringArray;
-using juce::jmin;
-using juce::jmax;
-
 CARLA_BACKEND_START_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -799,7 +788,6 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
     uint32_t oldAudioOutCount = 0;
     uint32_t oldMidiOutCount  = 0;
     bool processed = false;
-    juce::Range<float> range;
 
     // process plugins
     for (uint i=0; i < data->curPluginCount; ++i)
@@ -866,11 +854,8 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (oldAudioInCount > 0)
             {
-                range = FloatVectorOperations::findMinAndMax(inBuf0, frames);
-                pluginData.insPeak[0] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
-
-                range = FloatVectorOperations::findMinAndMax(inBuf1, frames);
-                pluginData.insPeak[1] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.insPeak[0] = carla_findMaxNormalizedFloat(inBuf0, frames);
+                pluginData.insPeak[1] = carla_findMaxNormalizedFloat(inBuf1, frames);
             }
             else
             {
@@ -880,11 +865,8 @@ void RackGraph::process(CarlaEngine::ProtectedData* const data, const float* inB
 
             if (oldAudioOutCount > 0)
             {
-                range = FloatVectorOperations::findMinAndMax(outBuf[0], frames);
-                pluginData.outsPeak[0] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
-
-                range = FloatVectorOperations::findMinAndMax(outBuf[1], frames);
-                pluginData.outsPeak[1] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+                pluginData.outsPeak[0] = carla_findMaxNormalizedFloat(outBuf[0], frames);
+                pluginData.outsPeak[1] = carla_findMaxNormalizedFloat(outBuf[1], frames);
             }
             else
             {

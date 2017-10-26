@@ -35,13 +35,10 @@
 #include "CarlaNative.hpp"
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
 using juce::File;
-using juce::FloatVectorOperations;
 using juce::MemoryOutputStream;
-using juce::ScopedPointer;
-using juce::SharedResourcePointer;
 using juce::String;
 using juce::XmlDocument;
 using juce::XmlElement;
@@ -1348,10 +1345,10 @@ protected:
         if (pData->curPluginCount == 0)
         {
             if (outBuffer[0] != inBuffer[0])
-                FloatVectorOperations::copy(outBuffer[0], inBuffer[0], static_cast<int>(frames));
+                carla_copyFloats(outBuffer[0], inBuffer[0], frames);
 
             if (outBuffer[1] != inBuffer[1])
-                FloatVectorOperations::copy(outBuffer[1], inBuffer[1], static_cast<int>(frames));
+                carla_copyFloats(outBuffer[1], inBuffer[1], frames);
 
             for (uint32_t i=0; i < midiEventCount; ++i)
             {

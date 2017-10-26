@@ -1,6 +1,6 @@
 /*
  * Carla VST Plugin
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,8 +23,6 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
-#include "juce_core/juce_core.h"
-
 #include <pthread.h>
 
 #undef VST_FORCE_DEPRECATED
@@ -32,8 +30,6 @@
 
 #undef kEffectMagic
 #define kEffectMagic (CCONST( 'V', 's', 't', 'P' ))
-
-using juce::File;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1891,7 +1887,9 @@ protected:
                     ret = kVstProcessLevelRealtime;
             }
             else
+            {
                 ret = kVstProcessLevelUser;
+            }
             break;
 
         case audioMasterGetAutomationState:

@@ -21,8 +21,6 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include "AppConfig.h"
-
 #ifdef BUILD_BRIDGE
 # undef HAVE_FLUIDSYNTH
 # undef HAVE_LINUXSAMPLER
@@ -47,6 +45,7 @@
 
 #include <iostream>
 
+#include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
