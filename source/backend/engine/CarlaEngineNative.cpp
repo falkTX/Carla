@@ -34,6 +34,7 @@
 #include "CarlaHost.h"
 #include "CarlaNative.hpp"
 
+#include "AppConfig.h"
 #include "juce_audio_basics/juce_audio_basics.h"
 
 using juce::File;

@@ -31,6 +31,9 @@
 # include <xmmintrin.h>
 #endif
 
+#include "AppConfig.h"
+#include "juce_core/juce_core.h"
+
 // must be last
 #include "jackbridge/JackBridge.hpp"
 

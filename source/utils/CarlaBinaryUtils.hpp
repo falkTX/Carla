@@ -22,6 +22,7 @@
 #include "CarlaUtils.hpp"
 
 #if defined(CARLA_OS_WIN)
+# include "AppConfig.h"
 # include "juce_core/juce_core.h"
 #elif defined(HAVE_LIBMAGIC)
 # include <magic.h>
@@ -129,10 +130,14 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
 
     if (std::strstr(output, "MS Windows") != nullptr)
         if (std::strstr(output, "PE32 executable") != nullptr || std::strstr(output, "PE32+ executable") != nullptr)
-            return (std::strstr(output, "x86-64") != nullptr) ? BINARY_WIN64 : BINARY_WIN32;
+            return (std::strstr(output, "x86-64") != nullptr)
+                   ? BINARY_WIN64
+                   : BINARY_WIN32;
 
     if (std::strstr(output, "ELF") != nullptr)
-        return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr) ? BINARY_POSIX64 : BINARY_POSIX32;
+        return (std::strstr(output, "x86-64") != nullptr || std::strstr(output, "aarch64") != nullptr)
+               ? BINARY_POSIX64
+               : BINARY_POSIX32;
 #endif
 
     return BINARY_NATIVE;

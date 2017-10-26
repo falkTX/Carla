@@ -22,6 +22,9 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "AppConfig.h"
+#include "juce_audio_basics/juce_audio_basics.h"
+
 using juce::AudioBuffer;
 using juce::FloatVectorOperations;
 using juce::MemoryBlock;

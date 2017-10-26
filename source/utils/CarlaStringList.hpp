@@ -1,6 +1,6 @@
 /*
  * Carla String List
- * Copyright (C) 2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -257,6 +257,27 @@ public:
         CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
 
         return data->value;
+    }
+
+    // -------------------------------------------------------------------
+
+    bool contains(const char* const string) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, false);
+
+        if (fCount == 0)
+            return false;
+
+        for (Itenerator it = begin2(); it.valid(); it.next())
+        {
+            const char* const stringComp(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
+
+            if (std::strcmp(string, stringComp) == 0)
+                return true;
+        }
+
+        return false;
     }
 
     // -------------------------------------------------------------------

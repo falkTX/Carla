@@ -26,7 +26,6 @@
 #include "CarlaStringList.hpp"
 
 #include "jackey.h"
-#include "juce_audio_basics/juce_audio_basics.h"
 
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
@@ -36,10 +35,6 @@
 #include "jackbridge/JackBridge.hpp"
 
 #define URI_CANVAS_ICON "http://kxstudio.sf.net/ns/canvas/icon"
-
-using juce::FloatVectorOperations;
-using juce::String;
-using juce::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -137,7 +132,7 @@ public:
         }
 
         if (! kIsInput)
-            FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
+            carla_zeroFloats(fBuffer, static_cast<int>(bufferSize));
     }
 
     void invalidate() noexcept
@@ -229,7 +224,7 @@ public:
         }
 
         if (! kIsInput)
-            FloatVectorOperations::clear(fBuffer, static_cast<int>(bufferSize));
+            carla_zeroFloats(fBuffer, static_cast<int>(bufferSize));
     }
 
     void invalidate() noexcept
@@ -1560,10 +1555,10 @@ protected:
             if (pData->aboutToClose)
             {
                 if (float* const audioOut1 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut1], nframes))
-                    FloatVectorOperations::clear(audioOut1, static_cast<int>(nframes));
+                    carla_zeroFloats(audioOut1, nframes);
 
                 if (float* const audioOut2 = (float*)jackbridge_port_get_buffer(fRackPorts[kRackPortAudioOut2], nframes))
-                    FloatVectorOperations::clear(audioOut2, static_cast<int>(nframes));
+                    carla_zeroFloats(audioOut2, nframes);
             }
             else if (pData->curPluginCount == 0)
             {
@@ -1579,8 +1574,8 @@ protected:
                 CARLA_SAFE_ASSERT_RETURN(audioOut2 != nullptr,);
 
                 // pass-through
-                FloatVectorOperations::copy(audioOut1, audioIn1, static_cast<int>(nframes));
-                FloatVectorOperations::copy(audioOut2, audioIn2, static_cast<int>(nframes));
+                carla_copyFloats(audioOut1, audioIn1, nframes);
+                carla_copyFloats(audioOut2, audioIn2, nframes);
 
                 // TODO pass-through MIDI as well
                 if (void* const eventOut = jackbridge_port_get_buffer(fRackPorts[kRackPortEventOut], nframes))
@@ -2024,11 +2019,11 @@ private:
     {
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
-        StringArray parsedGroups;
+        CarlaStringList parsedGroups;
 
         // add our client first
         {
-            parsedGroups.add(String(ourName));
+            parsedGroups.append(ourName);
 
             GroupNameToId groupNameToId;
             groupNameToId.setData(++fUsedGroups.lastId, ourName);
@@ -2061,9 +2056,7 @@ private:
 
                 CARLA_SAFE_ASSERT_CONTINUE(found);
 
-                String jGroupName(groupName.buffer());
-
-                if (parsedGroups.contains(jGroupName))
+                if (parsedGroups.contains(groupName))
                 {
                     groupId = fUsedGroups.getGroupId(groupName);
                     CARLA_SAFE_ASSERT_CONTINUE(groupId > 0);
@@ -2071,7 +2064,7 @@ private:
                 else
                 {
                     groupId = ++fUsedGroups.lastId;
-                    parsedGroups.add(jGroupName);
+                    parsedGroups.append(groupName);
 
                     int pluginId = -1;
                     PatchbayIcon icon = (jackPortFlags & JackPortIsPhysical) ? PATCHBAY_ICON_HARDWARE : PATCHBAY_ICON_APPLICATION;
