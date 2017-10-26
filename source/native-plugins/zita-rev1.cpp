@@ -17,16 +17,11 @@
 
 #include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
-
-#include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include "zita-rev1/jclient.cc"
 #include "zita-rev1/pareq.cc"
 #include "zita-rev1/reverb.cc"
-
-using juce::FloatVectorOperations;
-using juce::ScopedPointer;
 
 using namespace REV1;
 
@@ -260,10 +255,10 @@ public:
     {
         if (! fJackClient.active)
         {
-            const int iframes(static_cast<int>(frames));
+            const int iframes(frames);
 
             for (uint32_t i=0; i<kNumInputs; ++i)
-                FloatVectorOperations::clear(outBuffer[i], iframes);
+                carla_zeroFloats(outBuffer[i], iframes);
 
             return;
         }

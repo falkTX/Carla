@@ -20,7 +20,6 @@
 
 #include "CarlaThread.hpp"
 
-using juce::FloatVectorOperations;
 using juce::Thread;
 using juce::Time;
 
@@ -367,7 +366,7 @@ bool CarlaJackAppClient::initSharedMemmory()
     }
 
     fAudioTmpBuf = new float[fServer.bufferSize];
-    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+    carla_zeroFloats(fAudioTmpBuf, fServer.bufferSize);
 
     // tell backend we're live
     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -479,7 +478,7 @@ bool CarlaJackAppClient::handleRtData()
 
                     delete[] fAudioTmpBuf;
                     fAudioTmpBuf = new float[fServer.bufferSize];
-                    FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+                    carla_zeroFloats(fAudioTmpBuf, fServer.bufferSize);
                 }
             }
             break;
@@ -565,7 +564,7 @@ bool CarlaJackAppClient::handleRtData()
                 float* const fdataRealOuts = fShmAudioPool.data+(fServer.bufferSize*fServer.numAudioIns);
 
                 if (doBufferAddition && fServer.numAudioOuts > 0)
-                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
+                    carla_zeroFloats(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
 
                 if (! fClients.isEmpty())
                 {
@@ -611,7 +610,7 @@ bool CarlaJackAppClient::handleRtData()
                         if (cmtl2.wasNotLocked() || jclient->processCb == nullptr || ! jclient->activated)
                         {
                             if (fServer.numAudioOuts > 0)
-                                FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
+                                carla_zeroFloats(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
 
                             if (jclient->deactivated)
                                 fShmRtClientControl.data->procFlags = 1;
@@ -680,7 +679,7 @@ bool CarlaJackAppClient::handleRtData()
                             if (i < fServer.numAudioOuts)
                             {
                                 const std::size_t remainingBufferSize = fServer.bufferSize * (fServer.numAudioOuts - i);
-                                FloatVectorOperations::clear(fdataCopy, remainingBufferSize);
+                                carla_zeroFloats(fdataCopy, remainingBufferSize);
                                 fdataCopy += remainingBufferSize;
                             }
 
@@ -711,7 +710,7 @@ bool CarlaJackAppClient::handleRtData()
                             }
 
                             if (needsTmpBufClear)
-                                FloatVectorOperations::clear(fAudioTmpBuf, fServer.bufferSize);
+                                carla_zeroFloats(fAudioTmpBuf, fServer.bufferSize);
 
                             jclient->processCb(fServer.bufferSize, jclient->processCbPtr);
 
@@ -720,21 +719,21 @@ bool CarlaJackAppClient::handleRtData()
                                 if (++numClientOutputsProcessed == 1)
                                 {
                                     // first client, we can copy stuff over
-                                    FloatVectorOperations::copy(fdataRealOuts, fdataCopyOuts,
-                                                                fServer.bufferSize*fServer.numAudioOuts);
+                                    carla_copyFloats(fdataRealOuts, fdataCopyOuts,
+                                                     fServer.bufferSize*fServer.numAudioOuts);
                                 }
                                 else
                                 {
                                     // subsequent clients, add data (then divide by number of clients later on)
-                                    FloatVectorOperations::add(fdataRealOuts, fdataCopyOuts,
-                                                               fServer.bufferSize*fServer.numAudioOuts);
+                                    carla_add(fdataRealOuts, fdataCopyOuts,
+                                              fServer.bufferSize*fServer.numAudioOuts);
 
                                     if (doBufferAddition)
                                     {
                                         // for more than 1 client addition, we need to divide buffers now
-                                        FloatVectorOperations::multiply(fdataRealOuts,
-                                                                        1.0f/static_cast<float>(numClientOutputsProcessed),
-                                                                        fServer.bufferSize*fServer.numAudioOuts);
+                                        carla_multiply(fdataRealOuts,
+                                                       1.0f/static_cast<float>(numClientOutputsProcessed),
+                                                       fServer.bufferSize*fServer.numAudioOuts);
                                     }
                                 }
 
@@ -742,9 +741,9 @@ bool CarlaJackAppClient::handleRtData()
                                 {
                                     for (uint8_t i=1; i<fServer.numAudioOuts; ++i)
                                     {
-                                        FloatVectorOperations::copy(fdataRealOuts+(fServer.bufferSize*i),
-                                                                    fdataCopyOuts,
-                                                                    fServer.bufferSize);
+                                        carla_copyFloats(fdataRealOuts+(fServer.bufferSize*i),
+                                                         fdataCopyOuts,
+                                                         fServer.bufferSize);
                                     }
                                 }
                             }
@@ -754,15 +753,15 @@ bool CarlaJackAppClient::handleRtData()
                     if (numClientOutputsProcessed > 1 && ! doBufferAddition)
                     {
                         // more than 1 client active, need to divide buffers
-                        FloatVectorOperations::multiply(fdataRealOuts,
-                                                        1.0f/static_cast<float>(numClientOutputsProcessed),
-                                                        fServer.bufferSize*fServer.numAudioOuts);
+                        carla_multiply(fdataRealOuts,
+                                       1.0f/static_cast<float>(numClientOutputsProcessed),
+                                       fServer.bufferSize*fServer.numAudioOuts);
                     }
                 }
                 // fClients.isEmpty()
                 else if (fServer.numAudioOuts > 0)
                 {
-                    FloatVectorOperations::clear(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
+                    carla_zeroFloats(fdataRealOuts, fServer.bufferSize*fServer.numAudioOuts);
                 }
 
                 for (uint8_t i=0; i<fServer.numMidiIns; ++i)

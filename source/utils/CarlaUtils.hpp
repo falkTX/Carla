@@ -411,6 +411,22 @@ void carla_add(T dest[], const T src[], const std::size_t count) noexcept
 }
 
 /*
+ * Add array values to another array, with a multiplication factor.
+ */
+template<typename T>
+static inline
+void carla_addWithMultiply(T dest[], const T src[], const T& multiplier, const std::size_t count) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dest != src,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+    for (std::size_t i=0; i<count; ++i)
+        *dest++ += *src++ * multiplier;
+}
+
+/*
  * Copy array values to another array.
  */
 template<typename T>
@@ -423,6 +439,22 @@ void carla_copy(T dest[], const T src[], const std::size_t count) noexcept
     CARLA_SAFE_ASSERT_RETURN(count > 0,);
 
     std::memcpy(dest, src, count*sizeof(T));
+}
+
+/*
+ * Copy array values to another array, with a multiplication factor.
+ */
+template<typename T>
+static inline
+void carla_copyWithMultiply(T dest[], const T src[], const T& multiplier, const std::size_t count) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(dest != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(src != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(dest != src,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+    for (std::size_t i=0; i<count; ++i)
+        *dest++ = *src++ * multiplier;
 }
 
 /*
@@ -443,6 +475,27 @@ void carla_fill(T data[], const T& value, const std::size_t count) noexcept
     {
         for (std::size_t i=0; i<count; ++i)
             *data++ = value;
+    }
+}
+
+/*
+ * Multiply an array with a fixed value.
+ */
+template<typename T>
+static inline
+void carla_multiply(T data[], const T& multiplier, const std::size_t count) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+    if (multiplier == 0)
+    {
+        std::memset(data, 0, count*sizeof(T));
+    }
+    else
+    {
+        for (std::size_t i=0; i<count; ++i)
+            *data++ *= multiplier;
     }
 }
 

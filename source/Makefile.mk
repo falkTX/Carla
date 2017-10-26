@@ -401,7 +401,6 @@ ifeq ($(MACOS),true)
 DGL_LIBS               = -framework OpenGL -framework Cocoa
 HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS        = -ldl -lpthread
-JUCE_AUDIO_BASICS_LIBS = -framework Accelerate
 JUCE_CORE_LIBS         = -framework AppKit
 LILV_LIBS              = -ldl -lm
 RTAUDIO_FLAGS         += -D__MACOSX_CORE__

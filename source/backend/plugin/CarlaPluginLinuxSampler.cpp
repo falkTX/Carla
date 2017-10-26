@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Carla LinuxSampler Plugin
  * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
@@ -799,7 +799,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
 
             fParamBuffers[LinuxSamplerDiskStreamCount] = 0.0f;
             fParamBuffers[LinuxSamplerVoiceCount]      = 0.0f;
@@ -1128,7 +1128,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i], static_cast<int>(frames));
+                        carla_copyFloats(oldBufLeft, outBuffer[i], frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

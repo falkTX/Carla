@@ -17,17 +17,12 @@
 
 #include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
-
-#include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include "zita-bls1/hp3filt.cc"
 #include "zita-bls1/jclient.cc"
 #include "zita-bls1/lfshelf2.cc"
 #include "zita-bls1/shuffler.cc"
-
-using juce::FloatVectorOperations;
-using juce::ScopedPointer;
 
 using namespace BLS1;
 
@@ -196,10 +191,10 @@ public:
     {
         if (! fJackClient.active)
         {
-            const int iframes(static_cast<int>(frames));
+            const int iframes(frames);
 
             for (uint32_t i=0; i<kNumInputs; ++i)
-                FloatVectorOperations::clear(outBuffer[i], iframes);
+                carla_zeroFloats(outBuffer[i], iframes);
 
             return;
         }

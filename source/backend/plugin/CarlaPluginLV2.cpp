@@ -1736,7 +1736,7 @@ public:
         {
             pData->param.createNew(params, true);
             fParamBuffers = new float[params];
-            FloatVectorOperations::clear(fParamBuffers, static_cast<int>(params));
+            carla_zeroFloats(fParamBuffers, params);
         }
 
         if (const uint32_t count = static_cast<uint32_t>(evIns.count()))
@@ -2655,9 +2655,9 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
+                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -3574,25 +3574,23 @@ public:
             return false;
         }
 
-        const int iframes(static_cast<int>(frames));
-
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, iframes);
+            carla_copyFloats(fAudioInBuffers[i], audioIn[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::clear(fAudioOutBuffers[i], iframes);
+            carla_zeroFloats(fAudioOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Set CV buffers
 
         for (uint32_t i=0; i < pData->cvIn.count; ++i)
-            FloatVectorOperations::copy(fCvInBuffers[i], cvIn[i]+timeOffset, iframes);
+            carla_copyFloats(fCvInBuffers[i], cvIn[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            FloatVectorOperations::clear(fCvOutBuffers[i], iframes);
+            carla_zeroFloats(fCvOutBuffers[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -3662,7 +3660,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], iframes);
+                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -3703,7 +3701,7 @@ public:
             if (latframes <= frames)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::copy(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+                    carla_copyFloats(pData->latency.buffers[i], audioIn[i]+(frames-latframes), latframes);
             }
             else
             {

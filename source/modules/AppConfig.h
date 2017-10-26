@@ -28,7 +28,6 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 // always enabled
-#define JUCE_MODULE_AVAILABLE_juce_audio_basics          1
 #define JUCE_MODULE_AVAILABLE_juce_core                  1
 
 // always disabled
@@ -39,6 +38,7 @@
 #define JUCE_MODULE_AVAILABLE_juce_video                 0
 
 // also disabled
+#define JUCE_MODULE_AVAILABLE_juce_audio_basics          0
 #define JUCE_MODULE_AVAILABLE_juce_audio_devices         0
 #define JUCE_MODULE_AVAILABLE_juce_audio_formats         0
 #define JUCE_MODULE_AVAILABLE_juce_audio_processors      0
@@ -62,160 +62,6 @@
 # define JUCE_MODAL_LOOPS_PERMITTED 0
 # define JUCE_AUDIOPROCESSOR_NO_GUI 1
 #endif
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_audio_basics
-
-// nothing here
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_audio_devices
-
-//=============================================================================
-/** Config: JUCE_ASIO
-    Enables ASIO audio devices (MS Windows only).
-    Turning this on means that you'll need to have the Steinberg ASIO SDK installed
-    on your Windows build machine.
-
-    See the comments in the ASIOAudioIODevice class's header file for more
-    info about this.
-*/
-#ifdef APPCONFIG_OS_WIN
- #define JUCE_ASIO 1
-#else
- #define JUCE_ASIO 0
-#endif
-
-/** Config: JUCE_WASAPI
-    Enables WASAPI audio devices (Windows Vista and above).
-*/
-#define JUCE_WASAPI 0
-
-/** Config: JUCE_DIRECTSOUND
-    Enables DirectSound audio (MS Windows only).
-*/
-#ifdef APPCONFIG_OS_WIN
- #define JUCE_DIRECTSOUND 1
-#else
- #define JUCE_DIRECTSOUND 0
-#endif
-
-/** Config: JUCE_ALSA
-    Enables ALSA audio devices (Linux only).
-*/
-#if 0 //APPCONFIG_OS_LINUX
- #define JUCE_ALSA 1
- #define JUCE_ALSA_MIDI_INPUT_NAME  "Carla"
- #define JUCE_ALSA_MIDI_OUTPUT_NAME "Carla"
- #define JUCE_ALSA_MIDI_INPUT_PORT_NAME  "Midi In"
- #define JUCE_ALSA_MIDI_OUTPUT_PORT_NAME "Midi Out"
-#else
- #define JUCE_ALSA 0
-#endif
-
-/** Config: JUCE_JACK
-    Enables JACK audio devices (Linux only).
-*/
-#if 0 //APPCONFIG_OS_LINUX
- #define JUCE_JACK 1
- #define JUCE_JACK_CLIENT_NAME "Carla"
-#else
- #define JUCE_JACK 0
-#endif
-
-//=============================================================================
-/** Config: JUCE_USE_CDREADER
-    Enables the AudioCDReader class (on supported platforms).
-*/
-#define JUCE_USE_CDREADER 0
-
-/** Config: JUCE_USE_CDBURNER
-    Enables the AudioCDBurner class (on supported platforms).
-*/
-#define JUCE_USE_CDBURNER 0
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_audio_formats
-
-//=============================================================================
-/** Config: JUCE_USE_FLAC
-    Enables the FLAC audio codec classes (available on all platforms).
-    If your app doesn't need to read FLAC files, you might want to disable this to
-    reduce the size of your codebase and build time.
-*/
-#define JUCE_USE_FLAC 1
-
-/** Config: JUCE_USE_OGGVORBIS
-    Enables the Ogg-Vorbis audio codec classes (available on all platforms).
-    If your app doesn't need to read Ogg-Vorbis files, you might want to disable this to
-    reduce the size of your codebase and build time.
-*/
-#define JUCE_USE_OGGVORBIS 1
-
-/** Config: JUCE_USE_MP3AUDIOFORMAT
-    Enables the software-based MP3AudioFormat class.
-    IMPORTANT DISCLAIMER: By choosing to enable the JUCE_USE_MP3AUDIOFORMAT flag and to compile
-    this MP3 code into your software, you do so AT YOUR OWN RISK! By doing so, you are agreeing
-    that Raw Material Software is in no way responsible for any patent, copyright, or other
-    legal issues that you may suffer as a result.
-
-    The code in juce_MP3AudioFormat.cpp is NOT guaranteed to be free from infringements of 3rd-party
-    intellectual property. If you wish to use it, please seek your own independent advice about the
-    legality of doing so. If you are not willing to accept full responsibility for the consequences
-    of using this code, then do not enable this setting.
-*/
-#define JUCE_USE_MP3AUDIOFORMAT 0
-
-/** Config: JUCE_USE_LAME_AUDIO_FORMAT
-    Enables the LameEncoderAudioFormat class.
-*/
-#define JUCE_USE_LAME_AUDIO_FORMAT 1
-
-/** Config: JUCE_USE_WINDOWS_MEDIA_FORMAT
-    Enables the Windows Media SDK codecs.
-*/
-#define JUCE_USE_WINDOWS_MEDIA_FORMAT 0
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_audio_processors
-
-//=============================================================================
-/** Config: JUCE_PLUGINHOST_VST
-    Enables the VST audio plugin hosting classes. This requires the Steinberg VST SDK to be
-    installed on your machine.
-
-    @see VSTPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_AU
-*/
-#ifndef VESTIGE_HEADER
-# define JUCE_PLUGINHOST_VST 1
-#else
-# define JUCE_PLUGINHOST_VST 0
-#endif
-
-/** Config: JUCE_PLUGINHOST_VST3
-    Enables the VST3 audio plugin hosting classes. This requires the Steinberg VST3 SDK to be
-    installed on your machine.
-
-    @see VSTPluginFormat, VST3PluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST, JUCE_PLUGINHOST_AU
-*/
-#if defined(APPCONFIG_OS_MAC) || defined(APPCONFIG_OS_WIN)
-# define JUCE_PLUGINHOST_VST3 1
-#else
-# define JUCE_PLUGINHOST_VST3 0
-#endif
-
-/** Config: JUCE_PLUGINHOST_AU
-    Enables the AudioUnit plugin hosting classes. This is Mac-only, of course.
-
-    @see AudioUnitPluginFormat, AudioPluginFormat, AudioPluginFormatManager, JUCE_PLUGINHOST_VST
-*/
-#ifdef APPCONFIG_OS_MAC
-# define JUCE_PLUGINHOST_AU 1
-#else
-# define JUCE_PLUGINHOST_AU 0
-#endif
-
-#define JUCE_PLUGINHOST_LADSPA 0
 
 // --------------------------------------------------------------------------------------------------------------------
 // juce_core
@@ -292,104 +138,6 @@
     constructor code.
 */
 #define JUCE_ALLOW_STATIC_NULL_VARIABLES 0
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_data_structures
-
-// nothing here
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_events
-
-// nothing here
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_graphics
-
-//=============================================================================
-/** Config: JUCE_USE_COREIMAGE_LOADER
-
-    On OSX, enabling this flag means that the CoreImage codecs will be used to load
-    PNG/JPEG/GIF files. It is enabled by default, but you may want to disable it if
-    you'd rather use libpng, libjpeg, etc.
-*/
-#define JUCE_USE_COREIMAGE_LOADER 1
-
-/** Config: JUCE_USE_DIRECTWRITE
-
-    Enabling this flag means that DirectWrite will be used when available for font
-    management and layout.
-*/
-#define JUCE_USE_DIRECTWRITE 0
-
-#define JUCE_INCLUDE_PNGLIB_CODE 1
-
-#define JUCE_INCLUDE_JPEGLIB_CODE 1
-
-#ifdef APPCONFIG_OS_MAC
-# define USE_COREGRAPHICS_RENDERING 1
-#else
-# define USE_COREGRAPHICS_RENDERING 0
-#endif
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_gui_basics
-
-//=============================================================================
-/** Config: JUCE_ENABLE_REPAINT_DEBUGGING
-    If this option is turned on, each area of the screen that gets repainted will
-    flash in a random colour, so that you can see exactly which bits of your
-    components are being drawn.
-*/
-#define JUCE_ENABLE_REPAINT_DEBUGGING 0
-
-/** JUCE_USE_XRANDR: Enables Xrandr multi-monitor support (Linux only).
-    Unless you specifically want to disable this, it's best to leave this option turned on.
-    Note that your users do not need to have Xrandr installed for your JUCE app to run, as
-    the availability of Xrandr is queried during runtime.
-*/
-#define JUCE_USE_XRANDR 0
-
-/** JUCE_USE_XINERAMA: Enables Xinerama multi-monitor support (Linux only).
-    Unless you specifically want to disable this, it's best to leave this option turned on.
-    This will be used as a fallback if JUCE_USE_XRANDR not set or libxrandr cannot be found.
-    Note that your users do not need to have Xrandr installed for your JUCE app to run, as
-    the availability of Xinerama is queried during runtime.
-*/
-#define JUCE_USE_XINERAMA 0
-
-/** Config: JUCE_USE_XSHM
-    Enables X shared memory for faster rendering on Linux. This is best left turned on
-    unless you have a good reason to disable it.
-*/
-#define JUCE_USE_XSHM 1
-
-/** Config: JUCE_USE_XRENDER
-    Enables XRender to allow semi-transparent windowing on Linux.
-*/
-#define JUCE_USE_XRENDER 0
-
-/** Config: JUCE_USE_XCURSOR
-    Uses XCursor to allow ARGB cursor on Linux. This is best left turned on unless you have
-    a good reason to disable it.
-*/
-#define JUCE_USE_XCURSOR 1
-
-// --------------------------------------------------------------------------------------------------------------------
-// juce_gui_extra
-
-//=============================================================================
-/** Config: JUCE_WEB_BROWSER
-    This lets you disable the WebBrowserComponent class (Mac and Windows).
-    If you're not using any embedded web-pages, turning this off may reduce your code size.
-*/
-#define JUCE_WEB_BROWSER 0
-
-/** Config: JUCE_ENABLE_LIVE_CONSTANT_EDITOR
-    This lets you turn on the JUCE_ENABLE_LIVE_CONSTANT_EDITOR support. See the documentation
-    for that macro for more details.
-*/
-#define JUCE_ENABLE_LIVE_CONSTANT_EDITOR 0
 
 // --------------------------------------------------------------------------------------------------------------------
 

@@ -76,15 +76,7 @@ INCLUDEPATH = \
 LIBS = \
 # Pre-Compiled modules
     ../build/modules/Debug/jackbridge.a \
-    ../build/modules/Debug/juce_audio_basics.a \
-    ../build/modules/Debug/juce_audio_devices.a \
-    ../build/modules/Debug/juce_audio_formats.a \
-    ../build/modules/Debug/juce_audio_processors.a \
     ../build/modules/Debug/juce_core.a \
-    ../build/modules/Debug/juce_data_structures.a \
-    ../build/modules/Debug/juce_events.a \
-    ../build/modules/Debug/juce_graphics.a \
-    ../build/modules/Debug/juce_gui_basics.a \
     ../build/modules/Debug/lilv.a \
     ../build/modules/Debug/native-plugins.a \
     ../build/modules/Debug/rtmempool.a

@@ -17,16 +17,15 @@
 
 #include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
-
-#include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include "zita-at1/jclient.cc"
 #include "zita-at1/retuner.cc"
 
+#include "AppConfig.h"
+#include "juce_core/juce_core.h"
+
 using juce::roundToIntAccurate;
-using juce::FloatVectorOperations;
-using juce::ScopedPointer;
 
 using namespace AT1;
 
@@ -236,7 +235,7 @@ public:
     {
         if (! fJackClient.active)
         {
-            FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
+            carla_zeroFloats(outBuffer[0], frames);
             return;
         }
 

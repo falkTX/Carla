@@ -28,10 +28,9 @@
 #include "Misc/Allocator.h"
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
 using juce::roundToIntAccurate;
-using juce::FloatVectorOperations;
 using juce::SharedResourcePointer;
 
 using namespace zyncarla;
@@ -56,12 +55,10 @@ protected:
           efxoutl(nullptr),
           efxoutr(nullptr)
     {
-        const int ibufferSize(static_cast<int>(fBufferSize));
-
         efxoutl = new float[fBufferSize];
         efxoutr = new float[fBufferSize];
-        FloatVectorOperations::clear(efxoutl, ibufferSize);
-        FloatVectorOperations::clear(efxoutr, ibufferSize);
+        carla_zeroFloats(efxoutl, fBufferSize);
+        carla_zeroFloats(efxoutr, fBufferSize);
 
         std::memset(fParamsChanged, 0, sizeof(bool)*fParamCount);
 
@@ -136,17 +133,15 @@ protected:
 
     void process(float** const inBuffer, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) final
     {
-        const int iframes(static_cast<int>(frames));
-
         if (outBuffer[0] != inBuffer[0])
-            FloatVectorOperations::copyWithMultiply(outBuffer[0], inBuffer[0], 0.5f, iframes);
+            carla_copyWithMultiply(outBuffer[0], inBuffer[0], 0.5f, frames);
         else
-            FloatVectorOperations::multiply(outBuffer[0], 0.5f, iframes);
+            carla_multiply(outBuffer[0], 0.5f, frames);
 
         if (outBuffer[1] != inBuffer[1])
-            FloatVectorOperations::copyWithMultiply(outBuffer[1], inBuffer[1], 0.5f, iframes);
+            carla_copyWithMultiply(outBuffer[1], inBuffer[1], 0.5f, frames);
         else
-            FloatVectorOperations::multiply(outBuffer[1], 0.5f, iframes);
+            carla_multiply(outBuffer[1], 0.5f, frames);
 
         const int32_t nextProgram = fNextProgram;
         fNextProgram = -1;
@@ -176,8 +171,8 @@ protected:
 
         fEffect->out(Stereo<float*>(inBuffer[0], inBuffer[1]));
 
-        FloatVectorOperations::addWithMultiply(outBuffer[0], efxoutl, 0.5f, iframes);
-        FloatVectorOperations::addWithMultiply(outBuffer[1], efxoutr, 0.5f, iframes);
+        carla_addWithMultiply(outBuffer[0], efxoutl, 0.5f, frames);
+        carla_addWithMultiply(outBuffer[1], efxoutr, 0.5f, frames);
     }
 
     // -------------------------------------------------------------------
@@ -189,14 +184,13 @@ protected:
             return;
 
         fBufferSize = bufferSize;
-        const int ibufferSize(static_cast<int>(fBufferSize));
 
         delete[] efxoutl;
         delete[] efxoutr;
         efxoutl = new float[bufferSize];
         efxoutr = new float[bufferSize];
-        FloatVectorOperations::clear(efxoutl, ibufferSize);
-        FloatVectorOperations::clear(efxoutr, ibufferSize);
+        carla_zeroFloats(efxoutl, bufferSize);
+        carla_zeroFloats(efxoutr, bufferSize);
 
         doReinit(false);
     }

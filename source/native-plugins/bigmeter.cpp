@@ -21,11 +21,9 @@
 #include "CarlaNativeExtUI.hpp"
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
 using juce::roundToIntAccurate;
-using juce::FloatVectorOperations;
-using juce::Range;
 
 // -----------------------------------------------------------------------
 
@@ -159,13 +157,8 @@ protected:
 
     void process(float** inputs, float**, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
-        Range<float> range;
-
-        range     = FloatVectorOperations::findMinAndMax(inputs[0], static_cast<int>(frames));
-        fOutLeft  = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
-
-        range     = FloatVectorOperations::findMinAndMax(inputs[1], static_cast<int>(frames));
-        fOutRight = carla_maxLimited(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
+        fOutLeft  = carla_findMaxNormalizedFloat(inputs[0], frames);
+        fOutRight = carla_findMaxNormalizedFloat(inputs[1], frames);
     }
 
 private:

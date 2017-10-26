@@ -50,7 +50,6 @@ endif
 LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
-LIBS += $(MODULEDIR)/juce_audio_basics.a
 LIBS += $(MODULEDIR)/juce_core.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
@@ -68,7 +67,6 @@ endif
 # Link flags
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
-LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)

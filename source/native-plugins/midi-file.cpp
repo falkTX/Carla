@@ -19,8 +19,9 @@
 #include "midi-base.hpp"
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
+#if 0
 // -----------------------------------------------------------------------
 
 class MidiFilePlugin : public NativePluginClass,
@@ -238,13 +239,15 @@ static const NativePluginDescriptor midifileDesc = {
 
 // -----------------------------------------------------------------------
 
+#endif
+
 CARLA_EXPORT
 void carla_register_native_plugin_midifile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_midifile()
 {
-    carla_register_native_plugin(&midifileDesc);
+    //carla_register_native_plugin(&midifileDesc);
 }
 
 // -----------------------------------------------------------------------

@@ -883,8 +883,6 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 {
     CARLA_SAFE_ASSERT_RETURN(audioBuffers.outBuf[1] != nullptr,);
 
-    const int iframes(static_cast<int>(frames));
-
     const CarlaRecursiveMutexLocker _cml(audioBuffers.mutex);
 
     if (inBuf != nullptr && inputs > 0)
@@ -910,7 +908,7 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
         }
 
         if (noConnections)
-            carla_zeroFloats(audioBuffers.inBuf[0], iframes);
+            carla_zeroFloats(audioBuffers.inBuf[0], frames);
 
         noConnections = true;
 

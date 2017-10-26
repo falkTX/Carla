@@ -26,7 +26,6 @@ STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
 STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
 
 STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
-STANDALONE_LIBS += $(MODULEDIR)/juce_audio_basics.a
 STANDALONE_LIBS += $(MODULEDIR)/juce_core.a
 STANDALONE_LIBS += $(MODULEDIR)/lilv.a
 STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
@@ -43,14 +42,12 @@ endif
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 
-UTILS_LIBS  = $(MODULEDIR)/juce_audio_basics.a
 UTILS_LIBS += $(MODULEDIR)/juce_core.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
 STANDALONE_LINK_FLAGS  = $(JACKBRIDGE_LIBS)
-STANDALONE_LINK_FLAGS += $(JUCE_AUDIO_BASICS_LIBS)
 STANDALONE_LINK_FLAGS += $(JUCE_CORE_LIBS)
 STANDALONE_LINK_FLAGS += $(LILV_LIBS)
 STANDALONE_LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
@@ -79,7 +76,6 @@ ifeq ($(HAVE_X11),true)
 STANDALONE_LINK_FLAGS += $(X11_LIBS)
 endif
 
-UTILS_LINK_FLAGS  = $(JUCE_AUDIO_BASICS_LIBS)
 UTILS_LINK_FLAGS += $(JUCE_CORE_LIBS)
 UTILS_LINK_FLAGS += $(LILV_LIBS)
 

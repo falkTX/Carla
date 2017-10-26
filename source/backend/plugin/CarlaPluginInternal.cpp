@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Carla Plugin
  * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
  *
@@ -461,18 +461,18 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
                 if (oldFrames > frames)
                 {
                     const uint32_t diff = oldFrames - frames;
-                    FloatVectorOperations::copy(buffers[i], oldBuffers[i] + diff, static_cast<int>(frames));
+                    carla_copyFloats(buffers[i], oldBuffers[i] + diff, frames);
                 }
                 else
                 {
                     const uint32_t diff = frames - oldFrames;
-                    FloatVectorOperations::clear(buffers[i], static_cast<int>(diff));
-                    FloatVectorOperations::copy(buffers[i] + diff, oldBuffers[i], static_cast<int>(oldFrames));
+                    carla_zeroFloats(buffers[i], diff);
+                    carla_copyFloats(buffers[i] + diff, oldBuffers[i], static_cast<int>(oldFrames));
                 }
             }
             else
             {
-                FloatVectorOperations::clear(buffers[i], static_cast<int>(frames));
+                carla_zeroFloats(buffers[i], frames);
             }
         }
     }

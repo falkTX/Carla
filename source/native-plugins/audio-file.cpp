@@ -127,7 +127,6 @@ protected:
     void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
-        const int iframes(static_cast<int>(frames));
 
         float* const out1(outBuffer[0]);
         float* const out2(outBuffer[1]);
@@ -135,8 +134,8 @@ protected:
         if (fLength == 0 || ! fDoProcess)
         {
             //carla_stderr("P: no process");
-            FloatVectorOperations::clear(out1, iframes);
-            FloatVectorOperations::clear(out2, iframes);
+            carla_zeroFloats(out1, iframes);
+            carla_zeroFloats(out2, iframes);
             return;
         }
 
@@ -146,8 +145,8 @@ protected:
         if (! timePos->playing)
         {
             //carla_stderr("P: not playing");
-            FloatVectorOperations::clear(out1, iframes);
-            FloatVectorOperations::clear(out2, iframes);
+            carla_zeroFloats(out1, iframes);
+            carla_zeroFloats(out2, iframes);
 
             const CarlaMutexLocker cml(fReaderMutex);
 
@@ -167,8 +166,8 @@ protected:
 
         fReader->read(&fReaderBuffer, 0, iframes, nextReadPos, true, true);
 
-        FloatVectorOperations::copy(out1, fReaderBuffer.getReadPointer(0), iframes);
-        FloatVectorOperations::copy(out2, fReaderBuffer.getReadPointer(1), iframes);
+        carla_copyFloats(out1, fReaderBuffer.getReadPointer(0), frames);
+        carla_copyFloats(out2, fReaderBuffer.getReadPointer(1), frames);
     }
 
     // -------------------------------------------------------------------

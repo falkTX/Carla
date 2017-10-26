@@ -1035,9 +1035,9 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
+                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -1344,8 +1344,6 @@ public:
             CARLA_SAFE_ASSERT_RETURN(cvOut != nullptr, false);
         }
 
-        const int iframes(static_cast<int>(frames));
-
         // --------------------------------------------------------------------------------------------------------
         // Try lock, silence otherwise
 
@@ -1356,9 +1354,9 @@ public:
         else if (! pData->singleMutex.tryLock())
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], iframes);
+                carla_zeroFloats(audioOut[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], iframes);
+                carla_zeroFloats(cvOut[i], frames);
             return false;
         }
 
@@ -1366,7 +1364,7 @@ public:
         // Reset audio buffers
 
         for (uint32_t i=0; i < fInfo.aIns; ++i)
-            FloatVectorOperations::copy(fShmAudioPool.data + (i * frames), audioIn[i], iframes);
+            carla_copyFloats(fShmAudioPool.data + (i * frames), audioIn[i], frames);
 
         // --------------------------------------------------------------------------------------------------------
         // TimeInfo
@@ -1410,7 +1408,7 @@ public:
         }
 
         for (uint32_t i=0; i < fInfo.aOuts; ++i)
-            FloatVectorOperations::copy(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), iframes);
+            carla_copyFloats(audioOut[i], fShmAudioPool.data + ((i + fInfo.aIns) * frames), frames);
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1453,7 +1451,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, audioOut[i], iframes);
+                        carla_copyFloats(oldBufLeft, audioOut[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1494,7 +1492,7 @@ public:
             if (latframes <= frames)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::copy(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+                    carla_copyFloats(pData->latency.buffers[i], audioIn[i]+(frames-latframes), latframes);
             }
             else
             {

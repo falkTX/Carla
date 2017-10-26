@@ -9,7 +9,6 @@
 all:
 
 clean:
-	$(MAKE) clean -C juce_audio_basics
 	$(MAKE) clean -C juce_core
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtaudio

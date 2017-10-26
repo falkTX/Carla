@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Carla Native Plugin
  * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
  *
@@ -1327,9 +1327,9 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             for (uint32_t i=0; i < pData->cvOut.count; ++i)
-                FloatVectorOperations::clear(cvOut[i], static_cast<int>(frames));
+                carla_zeroFloats(cvOut[i], frames);
             return;
         }
 
@@ -1860,20 +1860,20 @@ public:
         // Set audio buffers
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, static_cast<int>(frames));
+            carla_copyFloats(fAudioInBuffers[i], audioIn[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
-            FloatVectorOperations::clear(fAudioOutBuffers[i], static_cast<int>(frames));
+            carla_zeroFloats(fAudioOutBuffers[i], frames);
 
 #if 0
         // --------------------------------------------------------------------------------------------------------
         // Set CV buffers
 
         for (uint32_t i=0; i < pData->cvIn.count; ++i)
-            FloatVectorOperations::copy(fCvInBuffers[i], cvIn[i]+timeOffset, static_cast<int>(frames));
+            carla_copyFloats(fCvInBuffers[i], cvIn[i]+timeOffset, frames);
 
         for (uint32_t i=0; i < pData->cvOut.count; ++i)
-            FloatVectorOperations::clear(fCvOutBuffers[i], static_cast<int>(frames));
+            carla_zeroFloats(fCvOutBuffers[i], frames);
 #endif
 
         // --------------------------------------------------------------------------------------------------------
@@ -1932,7 +1932,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], static_cast<int>(frames));
+                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

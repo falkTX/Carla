@@ -58,7 +58,7 @@ public:
     {
         carla_debug("CarlaPluginFluidSynth::CarlaPluginFluidSynth(%p, %i, %s)", engine, id,  bool2str(use16Outs));
 
-        FloatVectorOperations::clear(fParamBuffers, FluidSynthParametersMax);
+        carla_zeroFloats(fParamBuffers, FluidSynthParametersMax);
         carla_fill<int32_t>(fCurMidiProgs, 0, MAX_MIDI_CHANNELS);
 
         // create settings
@@ -1013,7 +1013,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             return;
         }
 
@@ -1405,13 +1405,13 @@ public:
         if (kUse16Outs)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(fAudio16Buffers[i], static_cast<int>(frames));
+                carla_zeroFloats(fAudio16Buffers[i], frames);
 
             // FIXME use '32' or '16' instead of outs
-            fluid_synth_process(fSynth, static_cast<int>(frames), 0, nullptr, static_cast<int>(pData->audioOut.count), fAudio16Buffers);
+            fluid_synth_process(fSynth, frames, 0, nullptr, static_cast<int>(pData->audioOut.count), fAudio16Buffers);
         }
         else
-            fluid_synth_write_float(fSynth, static_cast<int>(frames), outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
+            fluid_synth_write_float(fSynth, frames, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------
@@ -1430,7 +1430,7 @@ public:
                 if (doBalance)
                 {
                     if (i % 2 == 0)
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, static_cast<int>(frames));
+                        carla_copyFloats(oldBufLeft, outBuffer[i]+timeOffset, frames);
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
                     float balRangeR = (pData->postProc.balanceRight + 1.0f)/2.0f;

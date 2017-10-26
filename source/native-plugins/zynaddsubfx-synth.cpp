@@ -21,6 +21,7 @@
 #include "LinkedList.hpp"
 
 #include "CarlaMathUtils.hpp"
+#include "distrho/extra/ScopedPointer.hpp"
 
 #include "Misc/Master.h"
 #include "Misc/MiddleWare.h"
@@ -32,11 +33,9 @@
 #include <string>
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
 using juce::roundToIntAccurate;
-using juce::FloatVectorOperations;
-using juce::ScopedPointer;
 
 using namespace zyncarla;
 
@@ -650,8 +649,8 @@ protected:
         {
             if (! isOffline())
             {
-                FloatVectorOperations::clear(outBuffer[0], static_cast<int>(frames));
-                FloatVectorOperations::clear(outBuffer[1], static_cast<int>(frames));
+                carla_zeroFloats(outBuffer[0], frames);
+                carla_zeroFloats(outBuffer[1], frames);
                 return;
             }
 

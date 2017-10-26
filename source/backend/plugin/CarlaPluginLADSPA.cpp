@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Carla Plugin, LADSPA implementation
  * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
@@ -494,7 +494,7 @@ public:
             pData->param.createNew(params, true);
 
             fParamBuffers = new float[params];
-            FloatVectorOperations::clear(fParamBuffers, static_cast<int>(params));
+            carla_zeroFloats(fParamBuffers, params);
         }
 
         const uint portNameSize(pData->engine->getMaxPortNameSize());
@@ -902,7 +902,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             return;
         }
 
@@ -1129,8 +1129,6 @@ public:
             return false;
         }
 
-        const int iframes(static_cast<int>(frames));
-
         // --------------------------------------------------------------------------------------------------------
         // Set audio buffers
 
@@ -1140,11 +1138,11 @@ public:
         if (! customMonoOut)
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(fAudioOutBuffers[i], iframes);
+                carla_zeroFloats(fAudioOutBuffers[i], frames);
         }
 
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
-            FloatVectorOperations::copy(fAudioInBuffers[i], audioIn[i]+timeOffset, iframes);
+            carla_copyFloats(fAudioInBuffers[i], audioIn[i]+timeOffset, frames);
 
         // --------------------------------------------------------------------------------------------------------
         // Run plugin
@@ -1159,7 +1157,7 @@ public:
             // Mixdown for forced stereo
 
             if (customMonoOut)
-                FloatVectorOperations::clear(fAudioOutBuffers[instn], iframes);
+                carla_zeroFloats(fAudioOutBuffers[instn], frames);
 
             // ----------------------------------------------------------------------------------------------------
             // Run it
@@ -1172,15 +1170,15 @@ public:
             // Mixdown for forced stereo
 
             if (customMonoOut)
-                FloatVectorOperations::multiply(fAudioOutBuffers[instn], 0.5f, iframes);
+                carla_multiply(fAudioOutBuffers[instn], 0.5f, frames);
             else if (customStereoOut)
-                FloatVectorOperations::copy(fExtraStereoBuffer[instn], fAudioOutBuffers[instn], iframes);
+                carla_copyFloats(fExtraStereoBuffer[instn], fAudioOutBuffers[instn], frames);
         }
 
         if (customStereoOut)
         {
-            FloatVectorOperations::copy(fAudioOutBuffers[0], fExtraStereoBuffer[0], iframes);
-            FloatVectorOperations::copy(fAudioOutBuffers[1], fExtraStereoBuffer[1], iframes);
+            carla_copyFloats(fAudioOutBuffers[0], fExtraStereoBuffer[0], frames);
+            carla_copyFloats(fAudioOutBuffers[1], fExtraStereoBuffer[1], frames);
         }
 
 #ifndef BUILD_BRIDGE
@@ -1223,7 +1221,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, fAudioOutBuffers[i], iframes);
+                        carla_copyFloats(oldBufLeft, fAudioOutBuffers[i], frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;
@@ -1265,7 +1263,7 @@ public:
             if (latframes <= frames)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    FloatVectorOperations::copy(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+                    carla_copyFloats(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
             }
             else
             {
@@ -1303,15 +1301,13 @@ public:
         CARLA_ASSERT_INT(newBufferSize > 0, newBufferSize);
         carla_debug("CarlaPluginLADSPA::bufferSizeChanged(%i) - start", newBufferSize);
 
-        const int iBufferSize(static_cast<int>(newBufferSize));
-
         for (uint32_t i=0; i < pData->audioIn.count; ++i)
         {
             if (fAudioInBuffers[i] != nullptr)
                 delete[] fAudioInBuffers[i];
 
             fAudioInBuffers[i] = new float[newBufferSize];
-            FloatVectorOperations::clear(fAudioInBuffers[i], iBufferSize);
+            carla_zeroFloats(fAudioInBuffers[i], newBufferSize);
         }
 
         for (uint32_t i=0; i < pData->audioOut.count; ++i)
@@ -1320,7 +1316,7 @@ public:
                 delete[] fAudioOutBuffers[i];
 
             fAudioOutBuffers[i] = new float[newBufferSize];
-            FloatVectorOperations::clear(fAudioOutBuffers[i], iBufferSize);
+            carla_zeroFloats(fAudioOutBuffers[i], newBufferSize);
         }
 
         if (fExtraStereoBuffer[0] != nullptr)
@@ -1339,8 +1335,8 @@ public:
         {
             fExtraStereoBuffer[0] = new float[newBufferSize];
             fExtraStereoBuffer[1] = new float[newBufferSize];
-            FloatVectorOperations::clear(fExtraStereoBuffer[0], iBufferSize);
-            FloatVectorOperations::clear(fExtraStereoBuffer[1], iBufferSize);
+            carla_zeroFloats(fExtraStereoBuffer[0], newBufferSize);
+            carla_zeroFloats(fExtraStereoBuffer[1], newBufferSize);
         }
 
         reconnectAudioPorts();

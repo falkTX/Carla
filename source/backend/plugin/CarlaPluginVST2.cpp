@@ -993,7 +993,7 @@ public:
         {
             // disable any output sound
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(audioOut[i], static_cast<int>(frames));
+                carla_zeroFloats(audioOut[i], frames);
             return;
         }
 
@@ -1489,7 +1489,7 @@ public:
         else
         {
             for (uint32_t i=0; i < pData->audioOut.count; ++i)
-                FloatVectorOperations::clear(vstOutBuffer[i], static_cast<int>(frames));
+                carla_zeroFloats(vstOutBuffer[i], frames);
 
 #if ! VST_FORCE_DEPRECATED
             fEffect->process(fEffect, (pData->audioIn.count > 0) ? vstInBuffer : nullptr, (pData->audioOut.count > 0) ? vstOutBuffer : nullptr, static_cast<int32_t>(frames));
@@ -1532,7 +1532,7 @@ public:
                     if (isPair)
                     {
                         CARLA_ASSERT(i+1 < pData->audioOut.count);
-                        FloatVectorOperations::copy(oldBufLeft, outBuffer[i]+timeOffset, static_cast<int>(frames));
+                        carla_copyFloats(oldBufLeft, outBuffer[i]+timeOffset, frames);
                     }
 
                     float balRangeL = (pData->postProc.balanceLeft  + 1.0f)/2.0f;

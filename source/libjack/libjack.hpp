@@ -29,7 +29,7 @@
 #include "LinkedList.hpp"
 
 #include "AppConfig.h"
-#include "juce_audio_basics/juce_audio_basics.h"
+#include "juce_core/juce_core.h"
 
 #if 0
 #include <jack/jack.h>
