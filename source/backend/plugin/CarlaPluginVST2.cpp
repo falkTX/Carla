@@ -1419,7 +1419,8 @@ public:
                 midiData[1] = static_cast<uint8_t>(vstMidiEvent.midiData[1]);
                 midiData[2] = static_cast<uint8_t>(vstMidiEvent.midiData[2]);
 
-                pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), 3, midiData);
+                if (! pData->event.portOut->writeMidiEvent(static_cast<uint32_t>(vstMidiEvent.deltaFrames), 3, midiData))
+                    break;
             }
 
         } // End of MIDI Output
@@ -1734,7 +1735,7 @@ protected:
             CARLA_SAFE_ASSERT_RETURN(fIsProcessing, 0);
             CARLA_SAFE_ASSERT_RETURN(pData->event.portOut != nullptr, 0);
 
-            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+            if (fMidiEventCount >= kPluginMaxMidiEvents*2-1)
                 return 0;
 
             if (const VstEvents* const vstEvents = (const VstEvents*)ptr)

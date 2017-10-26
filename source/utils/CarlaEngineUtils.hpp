@@ -26,7 +26,7 @@ CARLA_BACKEND_START_NAMESPACE
 // -----------------------------------------------------------------------
 // Maximum internal pre-allocated events
 
-const ushort kMaxEngineEventInternalCount = 512;
+const ushort kMaxEngineEventInternalCount = 2048;
 
 // -----------------------------------------------------------------------
 

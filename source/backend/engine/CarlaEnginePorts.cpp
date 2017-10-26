@@ -238,7 +238,7 @@ bool CarlaEngineEventPort::writeMidiEvent(const uint32_t time, const uint8_t cha
 
         if (status == MIDI_STATUS_PROGRAM_CHANGE)
         {
-            CARLA_SAFE_ASSERT_RETURN(size == 2, true);
+            CARLA_SAFE_ASSERT_RETURN(size >= 2, true);
 
             event.type       = kEngineEventTypeControl;
             event.ctrl.type  = kEngineControlEventTypeMidiBank;
