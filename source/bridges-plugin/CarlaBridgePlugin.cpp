@@ -19,6 +19,7 @@
 #include "CarlaHost.h"
 
 #include "CarlaBackendUtils.hpp"
+#include "CarlaMainLoop.hpp"
 #include "CarlaMIDI.h"
 
 #ifdef CARLA_OS_UNIX
@@ -41,6 +42,7 @@
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;
 using CarlaBackend::EngineCallbackOpcode2Str;
+using CarlaBackend::runMainLoopOnce;
 
 using juce::CharPointer_UTF8;
 using juce::File;
@@ -173,10 +175,10 @@ public:
 
         gIsInitiated = true;
 
-        for (; ! gCloseNow;)
+        for (; runMainLoopOnce() && ! gCloseNow;)
         {
             gIdle();
-            carla_msleep(8);
+            carla_msleep(1);
         }
 
         carla_set_engine_about_to_close();
