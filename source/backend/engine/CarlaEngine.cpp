@@ -2188,7 +2188,7 @@ bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
         {
             const String& tagName(elem->getTagName());
 
-            if (! tagName.equalsIgnoreCase("patchbay") || ! tagName.equalsIgnoreCase("externalpatchbay"))
+            if (! tagName.equalsIgnoreCase("patchbay") && ! tagName.equalsIgnoreCase("externalpatchbay"))
                 continue;
 
             CarlaString sourcePort, targetPort;
