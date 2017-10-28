@@ -902,6 +902,8 @@ public:
         {
             if (newCount > 0)
                 setProgram(0, false, false, false);
+            else
+                dispatcher(effSetProgram, 0, 0, nullptr, 0.0f);
         }
         else
         {
@@ -959,6 +961,15 @@ public:
     void activate() noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
+
+        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+
+        dispatcher(effSetBlockSizeAndSampleRate, 0,
+                   static_cast<int32_t>(pData->engine->getBufferSize()), nullptr,
+                   static_cast<float>(pData->engine->getSampleRate()));
+
+        dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
+        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
 
         try {
             dispatcher(effMainsChanged, 0, 1, nullptr, 0.0f);
@@ -1059,9 +1070,12 @@ public:
 
         if (timeInfo.valid & EngineTimeInfo::kValidBBT)
         {
-            double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
-            double ppqBeat = double(timeInfo.bbt.beat - 1);
-            double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
+            CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);
+
+            const double ppqBar  = double(timeInfo.bbt.bar - 1) * timeInfo.bbt.beatsPerBar;
+            const double ppqBeat = double(timeInfo.bbt.beat - 1);
+            const double ppqTick = double(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat;
 
             // PPQ Pos
             fTimeInfo.ppqPos = ppqBar + ppqBeat + ppqTick;
@@ -2106,6 +2120,17 @@ public:
 
         fEffect->ptr1 = this;
 
+        dispatcher(effIdentify, 0, 0, 0, 0);
+
+        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+
+        dispatcher(effSetBlockSizeAndSampleRate, 0,
+                   static_cast<int32_t>(pData->engine->getBufferSize()), nullptr,
+                   static_cast<float>(pData->engine->getSampleRate()));
+
+        dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
+        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
+
         dispatcher(effOpen, 0, 0, nullptr, 0.0f);
 
         // ---------------------------------------------------------------
@@ -2145,17 +2170,15 @@ public:
         // ---------------------------------------------------------------
         // initialize plugin (part 2)
 
-#if ! VST_FORCE_DEPRECATED
-        dispatcher(effSetBlockSizeAndSampleRate, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, static_cast<float>(pData->engine->getSampleRate()));
-#endif
-        dispatcher(effSetSampleRate, 0, 0, nullptr, static_cast<float>(pData->engine->getSampleRate()));
-        dispatcher(effSetBlockSize, 0, static_cast<int32_t>(pData->engine->getBufferSize()), nullptr, 0.0f);
-        dispatcher(effSetProcessPrecision, 0, kVstProcessPrecision32, nullptr, 0.0f);
+        for (int i = fEffect->numInputs;  --i >= 0;) dispatcher(effConnectInput,  i, 1, 0, 0);
+        for (int i = fEffect->numOutputs; --i >= 0;) dispatcher(effConnectOutput, i, 1, 0, 0);
 
         if (dispatcher(effGetVstVersion, 0, 0, nullptr, 0.0f) < kVstVersion)
             pData->hints |= PLUGIN_USES_OLD_VSTSDK;
 
-        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>("hasCockosExtensions"), 0.0f)) == 0xbeef0000)
+        static const char kHasCockosExtensions[] = "hasCockosExtensions";
+
+        if (static_cast<uintptr_t>(dispatcher(effCanDo, 0, 0, const_cast<char*>(kHasCockosExtensions), 0.0f)) == 0xbeef0000)
             pData->hints |= PLUGIN_HAS_COCKOS_EXTENSIONS;
 
         // ---------------------------------------------------------------

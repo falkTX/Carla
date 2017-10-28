@@ -1673,7 +1673,9 @@ public:
                 const uint32_t optionEn = fShmNonRtServerControl.readUInt();
                 const  int64_t uniqueId = fShmNonRtServerControl.readLong();
 
-                CARLA_SAFE_ASSERT_INT2(fUniqueId == uniqueId, fUniqueId, uniqueId);
+                if (fUniqueId != 0) {
+                    CARLA_SAFE_ASSERT_INT2(fUniqueId == uniqueId, fUniqueId, uniqueId);
+                }
 
                 pData->hints   = hints | PLUGIN_IS_BRIDGE;
                 pData->options = optionEn;
