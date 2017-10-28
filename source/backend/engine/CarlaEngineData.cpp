@@ -215,7 +215,8 @@ EngineOptions::EngineOptions() noexcept
       binaryDir(nullptr),
       resourceDir(nullptr),
       preventBadBehaviour(false),
-      frontendWinId(0) {}
+      frontendWinId(0),
+      wine() {}
 
 EngineOptions::~EngineOptions() noexcept
 {

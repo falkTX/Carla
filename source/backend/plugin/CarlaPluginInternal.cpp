@@ -467,7 +467,7 @@ void CarlaPlugin::ProtectedData::Latency::recreateBuffers(const uint32_t newChan
                 {
                     const uint32_t diff = frames - oldFrames;
                     carla_zeroFloats(buffers[i], diff);
-                    carla_copyFloats(buffers[i] + diff, oldBuffers[i], static_cast<int>(oldFrames));
+                    carla_copyFloats(buffers[i] + diff, oldBuffers[i], oldFrames);
                 }
             }
             else

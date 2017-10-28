@@ -260,6 +260,7 @@ struct CARLA_API EngineOptions {
 
         Wine() noexcept;
         ~Wine() noexcept;
+        CARLA_DECLARE_NON_COPY_STRUCT(Wine)
     } wine;
 
 #ifndef DOXYGEN

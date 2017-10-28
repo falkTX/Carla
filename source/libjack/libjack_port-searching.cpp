@@ -85,12 +85,12 @@ jack_port_t* jack_port_by_name(jack_client_t* client, const char* name)
     const int commonFlags = JackPortIsPhysical|JackPortIsTerminal;
 
     static const JackPortState capturePorts[] = {
-        JackPortState("system", "capture_1", 0, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 0),
-        JackPortState("system", "capture_2", 1, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 1),
+        { "system", "capture_1", 0, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 0 },
+        { "system", "capture_2", 1, JackPortIsOutput|commonFlags, false, true, jserver.numAudioIns > 1 },
     };
     static const JackPortState playbackPorts[] = {
-        JackPortState("system", "playback_1", 3, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 0),
-        JackPortState("system", "playback_2", 4, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 1),
+        { "system", "playback_1", 3, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 0 },
+        { "system", "playback_2", 4, JackPortIsInput|commonFlags, false, true, jserver.numAudioOuts > 1 },
     };
 
     if (std::strncmp(name, "system:", 7) == 0)

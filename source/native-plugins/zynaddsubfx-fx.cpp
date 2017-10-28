@@ -18,6 +18,19 @@
 #include "CarlaNative.hpp"
 #include "CarlaMathUtils.hpp"
 
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+#include "Misc/Allocator.h"
 #include "Effects/Alienwah.h"
 #include "Effects/Chorus.h"
 #include "Effects/Distorsion.h"
@@ -25,13 +38,17 @@
 #include "Effects/Echo.h"
 #include "Effects/Phaser.h"
 #include "Effects/Reverb.h"
-#include "Misc/Allocator.h"
+
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 #include "AppConfig.h"
 #include "juce_core/juce_core.h"
 
 using juce::roundToIntAccurate;
-using juce::SharedResourcePointer;
 
 using namespace zyncarla;
 
@@ -53,7 +70,8 @@ protected:
           fFilterParams(nullptr),
           fEffect(nullptr),
           efxoutl(nullptr),
-          efxoutr(nullptr)
+          efxoutr(nullptr),
+          fAllocator()
     {
         efxoutl = new float[fBufferSize];
         efxoutr = new float[fBufferSize];
@@ -120,7 +138,7 @@ protected:
 
     void setMidiProgram(const uint8_t, const uint32_t, const uint32_t program) final
     {
-        fNextProgram = program;
+        fNextProgram = static_cast<int32_t>(program);
     }
 
     // -------------------------------------------------------------------
@@ -197,7 +215,7 @@ protected:
 
     void sampleRateChanged(const double sampleRate) final
     {
-        if (fSampleRate == sampleRate)
+        if (carla_isEqual(fSampleRate, sampleRate))
             return;
 
         fSampleRate = sampleRate;
@@ -217,7 +235,7 @@ protected:
             delete fEffect;
         }
 
-        EffectParams pars(fAllocator.getObject(), false, efxoutl, efxoutr, 0,
+        EffectParams pars(fAllocator, false, efxoutl, efxoutr, 0,
                           static_cast<uint>(fSampleRate), static_cast<int>(fBufferSize), &fFilterParams);
 
         fEffect = new ZynFX(pars);
@@ -257,8 +275,7 @@ protected:
     float*  efxoutl;
     float*  efxoutr;
 
-    // FIXME - is this thread-safe?
-    SharedResourcePointer<AllocatorClass> fAllocator;
+    AllocatorClass fAllocator;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(FxAbstractPlugin)
 };

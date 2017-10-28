@@ -132,7 +132,7 @@ public:
         }
 
         if (! kIsInput)
-            carla_zeroFloats(fBuffer, static_cast<int>(bufferSize));
+            carla_zeroFloats(fBuffer, bufferSize);
     }
 
     void invalidate() noexcept
@@ -224,7 +224,7 @@ public:
         }
 
         if (! kIsInput)
-            carla_zeroFloats(fBuffer, static_cast<int>(bufferSize));
+            carla_zeroFloats(fBuffer, bufferSize);
     }
 
     void invalidate() noexcept

@@ -59,7 +59,7 @@ void EngineInternalEvents::clear() noexcept
 // -----------------------------------------------------------------------
 // InternalTime
 
-static const float kTicksPerBeat = 1920.0f;
+static const double kTicksPerBeat = 1920.0;
 
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
 static uint32_t calculate_link_latency(const double bufferSize, const double sampleRate) noexcept
@@ -81,6 +81,9 @@ EngineInternalTime::EngineInternalTime(EngineTimeInfo& ti, const EngineTransport
       tick(0.0),
       needsReset(false),
       nextFrame(0),
+#ifndef BUILD_BRIDGE
+      hylia(),
+#endif
       timeInfo(ti),
       transportMode(tm) {}
 
@@ -197,7 +200,7 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
         else
 #endif
         {
-            const double min = timeInfo.frame / (sampleRate * 60.0);
+            const double min = static_cast<double>(timeInfo.frame) / (sampleRate * 60.0);
             abs_tick = min * beatsPerMinute * kTicksPerBeat;
             abs_beat = abs_tick / kTicksPerBeat;
             needsReset = false;
@@ -228,7 +231,7 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
         }
     }
 
-    timeInfo.bbt.beatsPerBar = beatsPerBar;
+    timeInfo.bbt.beatsPerBar = static_cast<float>(beatsPerBar);
     timeInfo.bbt.beatsPerMinute = beatsPerMinute;
     timeInfo.bbt.tick = (int32_t)(ticktmp + 0.5);
     tick = ticktmp;
@@ -302,7 +305,7 @@ void EngineInternalTime::fillJackTimeInfo(jack_position_t* const pos, const uint
         }
     }
 
-    pos->beats_per_bar = beatsPerBar;
+    pos->beats_per_bar = static_cast<float>(beatsPerBar);
     pos->beats_per_minute = beatsPerMinute;
     pos->tick = (int32_t)(ticktmp + 0.5);
     tick = ticktmp;
@@ -318,12 +321,12 @@ void EngineInternalTime::preProcess(const uint32_t numFrames)
         const double new_bpb = hylia.timeInfo.beatsPerBar;
         const double new_bpm = hylia.timeInfo.beatsPerMinute;
 
-        if (new_bpb >= 1.0 && beatsPerBar != new_bpb)
+        if (new_bpb >= 1.0 && carla_isNotEqual(beatsPerBar, new_bpb))
         {
             beatsPerBar = new_bpb;
             needsReset = true;
         }
-        if (new_bpm > 0.0 && beatsPerMinute != new_bpm)
+        if (new_bpm > 0.0 && carla_isNotEqual(beatsPerMinute, new_bpm))
         {
             beatsPerMinute = new_bpm;
             needsReset = true;
@@ -341,13 +344,14 @@ void EngineInternalTime::preProcess(const uint32_t numFrames)
 #ifndef BUILD_BRIDGE
 EngineInternalTime::Hylia::Hylia()
     : enabled(false),
-# ifdef HAVE_HYLIA
-      instance(hylia_create())
-# else
-      instance(nullptr)
-# endif
+      instance(nullptr),
+      timeInfo()
 {
     carla_zeroStruct(timeInfo);
+
+# ifdef HAVE_HYLIA
+    instance = hylia_create();
+# endif
 }
 
 EngineInternalTime::Hylia::~Hylia()

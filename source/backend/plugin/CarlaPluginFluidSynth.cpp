@@ -1408,10 +1408,16 @@ public:
                 carla_zeroFloats(fAudio16Buffers[i], frames);
 
             // FIXME use '32' or '16' instead of outs
-            fluid_synth_process(fSynth, frames, 0, nullptr, static_cast<int>(pData->audioOut.count), fAudio16Buffers);
+            fluid_synth_process(fSynth, static_cast<int>(frames),
+                                0, nullptr,
+                                static_cast<int>(pData->audioOut.count), fAudio16Buffers);
         }
         else
-            fluid_synth_write_float(fSynth, frames, outBuffer[0] + timeOffset, 0, 1, outBuffer[1] + timeOffset, 0, 1);
+        {
+            fluid_synth_write_float(fSynth, static_cast<int>(frames),
+                                    outBuffer[0] + timeOffset, 0, 1,
+                                    outBuffer[1] + timeOffset, 0, 1);
+        }
 
 #ifndef BUILD_BRIDGE
         // --------------------------------------------------------------------------------------------------------

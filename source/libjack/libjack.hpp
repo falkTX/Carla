@@ -91,6 +91,8 @@ struct JackMidiPortBuffer {
         delete[] events;
         delete[] bufferPool;
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackMidiPortBuffer)
 };
 
 struct JackPortState {
@@ -112,7 +114,8 @@ struct JackPortState {
           flags(0),
           isMidi(false),
           isSystem(false),
-          isConnected(false) {}
+          isConnected(false),
+          unused(false) {}
 
     JackPortState(const char* const cn, const char* const pn, const uint i, const uint f,
                   const bool midi, const bool sys, const bool con)
@@ -123,7 +126,8 @@ struct JackPortState {
           flags(f),
           isMidi(midi),
           isSystem(sys),
-          isConnected(con)
+          isConnected(con),
+          unused(false)
     {
         char strBuf[STR_MAX+1];
         snprintf(strBuf, STR_MAX, "%s:%s", cn, pn);
@@ -137,6 +141,8 @@ struct JackPortState {
         free(name);
         free(fullname);
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackPortState)
 };
 
 struct JackClientState {
@@ -176,6 +182,7 @@ struct JackClientState {
 
     JackClientState(const JackServerState& s, const char* const n)
         : server(s),
+          mutex(),
           activated(false),
           deactivated(false),
           name(strdup(n)),
@@ -232,6 +239,8 @@ struct JackClientState {
         audioIns.clear();
         audioOuts.clear();
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackClientState)
 };
 
 struct JackServerState {
@@ -256,10 +265,13 @@ struct JackServerState {
           numAudioOuts(0),
           numMidiIns(0),
           numMidiOuts(0),
-          playing(false)
+          playing(false),
+          position()
     {
         carla_zeroStruct(position);
     }
+
+    CARLA_DECLARE_NON_COPY_STRUCT(JackServerState)
 };
 
 CARLA_BACKEND_END_NAMESPACE

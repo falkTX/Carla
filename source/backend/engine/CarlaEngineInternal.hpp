@@ -122,8 +122,10 @@ private:
         bool enabled;
         hylia_t* instance;
         hylia_time_info_t timeInfo;
+
         Hylia();
         ~Hylia();
+        CARLA_DECLARE_NON_COPY_STRUCT(Hylia)
     } hylia;
 #endif
 

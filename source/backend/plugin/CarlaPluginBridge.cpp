@@ -90,6 +90,7 @@ public:
           fBinary(),
           fLabel(),
           fShmIds(),
+          fWinePrefix(),
           fProcess() {}
 
     void setData(const char* const winePrefix,
@@ -328,10 +329,10 @@ private:
     CarlaEngine* const kEngine;
     CarlaPlugin* const kPlugin;
 
-    String fWinePrefix;
     String fBinary;
     String fLabel;
     String fShmIds;
+    String fWinePrefix;
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -360,6 +361,7 @@ public:
           fShmRtClientControl(),
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
+          fWinePrefix(),
           fInfo(),
           fUniqueId(0),
           fLatency(0),
@@ -1317,6 +1319,9 @@ public:
 
                 read += kBridgeBaseMidiOutHeaderSize + size;
             }
+
+            // TODO
+            (void)port;
 
         } // End of Control and MIDI Output
     }

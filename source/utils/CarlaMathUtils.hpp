@@ -230,6 +230,26 @@ float carla_findMaxNormalizedFloat(float floats[], const std::size_t count)
     return maxf2;
 }
 
+/*
+ * Multiply an array with a fixed value, float-specific version.
+ */
+static inline
+void carla_multiply(float data[], const float& multiplier, const std::size_t count) noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
+    CARLA_SAFE_ASSERT_RETURN(count > 0,);
+
+    if (carla_isZero(multiplier))
+    {
+        std::memset(data, 0, count*sizeof(float));
+    }
+    else
+    {
+        for (std::size_t i=0; i<count; ++i)
+            *data++ *= multiplier;
+    }
+}
+
 // --------------------------------------------------------------------------------------------------------------------
 // Missing functions in old OSX versions.
 

@@ -57,6 +57,8 @@ protected:
 
 private:
     Callback* const fCallback;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaJackRealtimeThread)
 };
 
 // --------------------------------------------------------------------------------------------------------------------
@@ -82,6 +84,8 @@ protected:
 
 private:
     Callback* const fCallback;
+
+    CARLA_DECLARE_NON_COPY_CLASS(CarlaJackNonRealtimeThread)
 };
 
 static int carla_interposed_callback(int, void*);
@@ -97,6 +101,11 @@ public:
 
     CarlaJackAppClient()
         : fServer(this),
+          fClients(),
+          fShmAudioPool(),
+          fShmRtClientControl(),
+          fShmNonRtClientControl(),
+          fShmNonRtServerControl(),
           fAudioPoolCopy(nullptr),
           fAudioTmpBuf(nullptr),
           fDummyMidiInBuffer(true, "ignored"),
@@ -141,10 +150,10 @@ public:
         fBaseNameNonRtClientControl[6] = '\0';
         fBaseNameNonRtServerControl[6] = '\0';
 
-        fServer.numAudioIns  = libjackSetup[0] - '0';
-        fServer.numAudioOuts = libjackSetup[1] - '0';
-        fServer.numMidiIns   = libjackSetup[2] - '0';
-        fServer.numMidiOuts  = libjackSetup[3] - '0';
+        fServer.numAudioIns  = static_cast<uint8_t>(libjackSetup[0] - '0');
+        fServer.numAudioOuts = static_cast<uint8_t>(libjackSetup[1] - '0');
+        fServer.numMidiIns   = static_cast<uint8_t>(libjackSetup[2] - '0');
+        fServer.numMidiOuts  = static_cast<uint8_t>(libjackSetup[3] - '0');
 
         fSessionManager = libjackSetup[4] - '0';
         fSetupHints     = libjackSetup[5] - '0';
@@ -483,25 +492,24 @@ bool CarlaJackAppClient::handleRtData()
             }
             break;
 
-        case kPluginBridgeRtClientSetSampleRate:
-            if (const double newSampleRate = fShmRtClientControl.readDouble())
+        case kPluginBridgeRtClientSetSampleRate: {
+            const double newSampleRate = fShmRtClientControl.readDouble();
+
+            if (carla_isNotZero(newSampleRate) && carla_isNotEqual(fServer.sampleRate, newSampleRate))
             {
-                if (fServer.sampleRate != newSampleRate)
+                const CarlaMutexLocker cml(fRealtimeThreadMutex);
+
+                fServer.sampleRate = newSampleRate;
+
+                for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
                 {
-                    const CarlaMutexLocker cml(fRealtimeThreadMutex);
+                    JackClientState* const jclient(it.getValue(nullptr));
+                    CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
 
-                    fServer.sampleRate = newSampleRate;
-
-                    for (LinkedList<JackClientState*>::Itenerator it = fClients.begin2(); it.valid(); it.next())
-                    {
-                        JackClientState* const jclient(it.getValue(nullptr));
-                        CARLA_SAFE_ASSERT_CONTINUE(jclient != nullptr);
-
-                        jclient->sampleRateCb(fServer.sampleRate, jclient->sampleRateCbPtr);
-                    }
+                    jclient->sampleRateCb(static_cast<uint32_t>(fServer.sampleRate), jclient->sampleRateCbPtr);
                 }
             }
-            break;
+        }   break;
 
         case kPluginBridgeRtClientSetOnline:
             // TODO inform changes
@@ -627,9 +635,9 @@ bool CarlaJackAppClient::handleRtData()
 
                             // set audio inputs
                             i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioIns.begin2(); it.valid(); it.next())
+                            for (LinkedList<JackPortState*>::Itenerator it2 = jclient->audioIns.begin2(); it2.valid(); it2.next())
                             {
-                                JackPortState* const jport = it.getValue(nullptr);
+                                JackPortState* const jport = it2.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
                                 if (i++ < fServer.numAudioIns)
@@ -660,9 +668,9 @@ bool CarlaJackAppClient::handleRtData()
 
                             // set audio ouputs
                             i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->audioOuts.begin2(); it.valid(); it.next())
+                            for (LinkedList<JackPortState*>::Itenerator it2 = jclient->audioOuts.begin2(); it2.valid(); it2.next())
                             {
-                                JackPortState* const jport = it.getValue(nullptr);
+                                JackPortState* const jport = it2.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
                                 if (i++ < fServer.numAudioOuts)
@@ -685,9 +693,9 @@ bool CarlaJackAppClient::handleRtData()
 
                             // set midi inputs
                             i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->midiIns.begin2(); it.valid(); it.next())
+                            for (LinkedList<JackPortState*>::Itenerator it2 = jclient->midiIns.begin2(); it2.valid(); it2.next())
                             {
-                                JackPortState* const jport = it.getValue(nullptr);
+                                JackPortState* const jport = it2.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
                                 if (i++ < fServer.numMidiIns)
@@ -698,9 +706,9 @@ bool CarlaJackAppClient::handleRtData()
 
                             // set midi outputs
                             i = 0;
-                            for (LinkedList<JackPortState*>::Itenerator it = jclient->midiOuts.begin2(); it.valid(); it.next())
+                            for (LinkedList<JackPortState*>::Itenerator it2 = jclient->midiOuts.begin2(); it2.valid(); it2.next())
                             {
-                                JackPortState* const jport = it.getValue(nullptr);
+                                JackPortState* const jport = it2.getValue(nullptr);
                                 CARLA_SAFE_ASSERT_CONTINUE(jport != nullptr);
 
                                 if (i++ < fServer.numMidiOuts)
@@ -739,9 +747,9 @@ bool CarlaJackAppClient::handleRtData()
 
                                 if (jclient->audioOuts.count() == 1 && fServer.numAudioOuts > 1)
                                 {
-                                    for (uint8_t i=1; i<fServer.numAudioOuts; ++i)
+                                    for (uint8_t j=1; j<fServer.numAudioOuts; ++j)
                                     {
-                                        carla_copyFloats(fdataRealOuts+(fServer.bufferSize*i),
+                                        carla_copyFloats(fdataRealOuts+(fServer.bufferSize*j),
                                                          fdataCopyOuts,
                                                          fServer.bufferSize);
                                     }
@@ -1051,7 +1059,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
             }
             else if (JackClientState* const jclient = fClients.getLast(nullptr))
             {
-                const CarlaMutexLocker cms(jclient->mutex);
+                const CarlaMutexLocker cms2(jclient->mutex);
                 activated = jclient->activated;
             }
             else

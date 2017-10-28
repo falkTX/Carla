@@ -23,14 +23,32 @@
 #include "CarlaMathUtils.hpp"
 #include "distrho/extra/ScopedPointer.hpp"
 
+#include <ctime>
+#include <set>
+#include <string>
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+// # pragma GCC diagnostic ignored "-Wsign-conversion"
+# pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 #include "Misc/Master.h"
 #include "Misc/MiddleWare.h"
 #include "Misc/Part.h"
 #include "Misc/Util.h"
 
-#include <ctime>
-#include <set>
-#include <string>
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 
 #include "AppConfig.h"
 #include "juce_core/juce_core.h"
@@ -83,7 +101,7 @@ public:
         // refresh banks
         master.bank.rescanforbanks();
 
-        for (std::size_t i=0, size=master.bank.banks.size(); i<size; ++i)
+        for (std::uint32_t i=0, size=static_cast<uint32_t>(master.bank.banks.size()); i<size; ++i)
         {
             const std::string dir(master.bank.banks[i].dir);
 
@@ -99,7 +117,7 @@ public:
                 if (instrument.name.empty() || instrument.name[0] == ' ')
                     continue;
 
-                programs.push_back(new ProgramInfo(i+1, ninstrument, instrument.name.c_str(), instrument.filename.c_str()));
+                programs.push_back(new ProgramInfo(i+1U, ninstrument, instrument.name.c_str(), instrument.filename.c_str()));
             }
         }
 
@@ -293,6 +311,7 @@ public:
           fMiddleWare(nullptr),
           fMaster(nullptr),
           fSynth(),
+          fConfig(),
           fDefaultState(nullptr),
           fMutex(),
           fMiddleWareThread(new MiddleWareThread())
@@ -986,29 +1005,34 @@ private:
             ++msgtmp;
         }
 
-        const int partn = std::atoi(partnstr);
+        const int ipartn = std::atoi(partnstr);
+        CARLA_SAFE_ASSERT_RETURN(ipartn >= 0,);
+
+        const uint partn = static_cast<uint>(ipartn);
         ++msgtmp;
 
         /**/ if (std::strcmp(msgtmp, "Penabled") == 0)
         {
-            const int index = kParamPart01Enabled+partn;
-            const bool enbl = rtosc_argument(msg,0).T;
+            const uint index  = kParamPart01Enabled+partn;
+            const bool enable = rtosc_argument(msg,0).T;
 
-            fParameters[index] = enbl ? 1.0f : 0.0f;
-            uiParameterChanged(kParamPart01Enabled+partn, enbl ? 1.0f : 0.0f);
+            fParameters[index] = enable ? 1.0f : 0.0f;
+            uiParameterChanged(kParamPart01Enabled+partn, enable ? 1.0f : 0.0f);
         }
         else if (std::strcmp(msgtmp, "Pvolume") == 0)
         {
-            const int index = kParamPart01Volume+partn;
-            const int value = rtosc_argument(msg,0).i;
+            const uint index  = kParamPart01Volume+partn;
+            const int  ivalue = rtosc_argument(msg,0).i;
+            const float value = static_cast<float>(ivalue);
 
             fParameters[index] = value;
             uiParameterChanged(kParamPart01Volume+partn, value);
         }
         else if (std::strcmp(msgtmp, "Ppanning") == 0)
         {
-            const int index = kParamPart01Panning+partn;
-            const int value = rtosc_argument(msg,0).i;
+            const uint index  = kParamPart01Panning+partn;
+            const int  ivalue = rtosc_argument(msg,0).i;
+            const float value = static_cast<float>(ivalue);
 
             fParameters[index] = value;
             uiParameterChanged(kParamPart01Panning+partn, value);

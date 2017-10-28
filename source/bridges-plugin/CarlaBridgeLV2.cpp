@@ -31,17 +31,48 @@
 #include "juce_core/juce_core.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
+// -Weffc++ compat ext widget
+
+extern "C" {
+
+typedef struct _LV2_External_UI_Widget_Compat {
+  void (*run )(struct _LV2_External_UI_Widget_Compat*);
+  void (*show)(struct _LV2_External_UI_Widget_Compat*);
+  void (*hide)(struct _LV2_External_UI_Widget_Compat*);
+
+  _LV2_External_UI_Widget_Compat() noexcept
+      : run(nullptr), show(nullptr), hide(nullptr) {}
+
+} LV2_External_UI_Widget_Compat;
+
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+#endif
 class CarlaEngineLV2Single : public CarlaEngine,
-                             public LV2_External_UI_Widget
+                             public LV2_External_UI_Widget_Compat
 {
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
 public:
     CarlaEngineLV2Single(const uint32_t bufferSize, const double sampleRate, const char* const bundlePath, const LV2_URID_Map* uridMap)
         : fPlugin(nullptr),
           fIsActive(false),
-          fIsOffline(false)
+          fIsOffline(false),
+          fPorts(),
+          fUI()
     {
         run  = extui_run;
         show = extui_show;
@@ -326,8 +357,11 @@ protected:
         switch (action)
         {
         case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
+            CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
             if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.visible)
-                fUI.writeFunction(fUI.controller, value1+fPorts.indexOffset, sizeof(float), 0, &value3);
+                fUI.writeFunction(fUI.controller,
+                                  static_cast<uint32_t>(value1)+fPorts.indexOffset,
+                                  sizeof(float), 0, &value3);
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
@@ -524,7 +558,6 @@ private:
         }
 
         CARLA_DECLARE_NON_COPY_STRUCT(Ports);
-
     } fPorts;
 
     struct UI {
@@ -538,25 +571,26 @@ private:
           : writeFunction(nullptr),
             controller(nullptr),
             host(nullptr),
+            name(),
             visible(false) {}
-
+        CARLA_DECLARE_NON_COPY_STRUCT(UI)
     } fUI;
 
     // -------------------------------------------------------------------
 
     #define handlePtr ((CarlaEngineLV2Single*)handle)
 
-    static void extui_run(LV2_External_UI_Widget* handle)
+    static void extui_run(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiRun();
     }
 
-    static void extui_show(LV2_External_UI_Widget* handle)
+    static void extui_show(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiShow();
     }
 
-    static void extui_hide(LV2_External_UI_Widget* handle)
+    static void extui_hide(LV2_External_UI_Widget_Compat* handle)
     {
         handlePtr->handleUiHide();
     }

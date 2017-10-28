@@ -452,7 +452,7 @@ public:
         CarlaString portName;
 
         // Audio Ins
-        for (uint32_t j=0; j < fInfo.aIns; ++j)
+        for (uint8_t j=0; j < fInfo.aIns; ++j)
         {
             portName.clear();
 
@@ -479,7 +479,7 @@ public:
         }
 
         // Audio Outs
-        for (uint32_t j=0; j < fInfo.aOuts; ++j)
+        for (uint8_t j=0; j < fInfo.aOuts; ++j)
         {
             portName.clear();
 
@@ -871,6 +871,9 @@ public:
                 read += kBridgeBaseMidiOutHeaderSize + size;
             }
 
+            // TODO
+            (void)port;
+
         } // End of Control and MIDI Output
     }
 
@@ -1219,10 +1222,10 @@ public:
             CARLA_SAFE_ASSERT_RETURN(label[i] >= '0' && label[i] < '0'+0x4f, false);
         }
 
-        fInfo.aIns   = label[0] - '0';
-        fInfo.aOuts  = label[1] - '0';
-        fInfo.mIns   = carla_minPositive(label[2] - '0', 1);
-        fInfo.mOuts  = carla_minPositive(label[3] - '0', 1);
+        fInfo.aIns   = static_cast<uint8_t>(label[0] - '0');
+        fInfo.aOuts  = static_cast<uint8_t>(label[1] - '0');
+        fInfo.mIns   = static_cast<uint8_t>(carla_minPositive(label[2] - '0', 1));
+        fInfo.mOuts  = static_cast<uint8_t>(carla_minPositive(label[3] - '0', 1));
 
         fInfo.setupLabel = label;
 
@@ -1339,8 +1342,8 @@ private:
     BridgeNonRtServerControl fShmNonRtServerControl;
 
     struct Info {
-        uint32_t aIns, aOuts;
-        uint32_t mIns, mOuts;
+        uint8_t aIns, aOuts;
+        uint8_t mIns, mOuts;
         uint optionsAvailable;
         CarlaString setupLabel;
         std::vector<uint8_t> chunk;
@@ -1377,7 +1380,7 @@ private:
 
     void resizeAudioPool(const uint32_t bufferSize)
     {
-        fShmAudioPool.resize(bufferSize, fInfo.aIns+fInfo.aOuts, 0);
+        fShmAudioPool.resize(bufferSize, static_cast<uint32_t>(fInfo.aIns+fInfo.aOuts), 0);
 
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientSetAudioPool);
         fShmRtClientControl.writeULong(static_cast<uint64_t>(fShmAudioPool.dataSize));

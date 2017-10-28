@@ -25,6 +25,7 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
+static inline
 bool runMainLoopOnce()
 {
 #if defined(CARLA_OS_WIN)

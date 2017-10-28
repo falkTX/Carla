@@ -975,10 +975,8 @@ void RackGraph::processHelper(CarlaEngine::ProtectedData* const data, const floa
 
 EngineInternalGraph::EngineInternalGraph(CarlaEngine* const engine) noexcept
     : fIsReady(false),
-      kEngine(engine)
-{
-    fRack = nullptr;
-}
+      fRack(nullptr),
+      kEngine(engine) {}
 
 EngineInternalGraph::~EngineInternalGraph() noexcept
 {

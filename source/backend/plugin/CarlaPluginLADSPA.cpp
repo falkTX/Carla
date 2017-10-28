@@ -1263,7 +1263,7 @@ public:
             if (latframes <= frames)
             {
                 for (uint32_t i=0; i < pData->audioIn.count; ++i)
-                    carla_copyFloats(pData->latency.buffers[i], audioIn[i]+(frames-latframes), static_cast<int>(latframes));
+                    carla_copyFloats(pData->latency.buffers[i], audioIn[i]+(frames-latframes), latframes);
             }
             else
             {
