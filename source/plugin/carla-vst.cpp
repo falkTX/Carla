@@ -15,10 +15,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef CARLA_PLUGIN_PATCHBAY
-# error CARLA_PLUGIN_PATCHBAY undefined
-#endif
-
 #ifndef CARLA_PLUGIN_SYNTH
 # error CARLA_PLUGIN_SYNTH undefined
 #endif
@@ -178,6 +174,8 @@ public:
         switch (opcode)
         {
         case effSetSampleRate:
+            CARLA_SAFE_ASSERT_RETURN(opt > 0.0f, 0);
+
             if (carla_isEqual(fSampleRate, static_cast<double>(opt)))
                 return 0;
 
@@ -188,6 +186,8 @@ public:
             break;
 
         case effSetBlockSize:
+            CARLA_SAFE_ASSERT_RETURN(value > 0, 0);
+
             if (fBufferSize == static_cast<uint32_t>(value))
                 return 0;
 
@@ -728,25 +728,15 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
             if (d_lastSampleRate <= 0.0)
                 d_lastSampleRate = 44100.0;
 
-            const NativePluginDescriptor* pluginDesc  = nullptr;
-#if CARLA_PLUGIN_PATCHBAY
-# ifdef CARLA_PLUGIN_16CH
-            const char* const pluginLabel = "carlapatchbay16";
-# else
-            const char* const pluginLabel = "carlapatchbay";
-# endif
-#else
-            const char* const pluginLabel = "carlarack";
-#endif
-
             PluginListManager& plm(PluginListManager::getInstance());
+            const NativePluginDescriptor* pluginDesc = nullptr;
 
             for (LinkedList<const NativePluginDescriptor*>::Itenerator it = plm.descs.begin2(); it.valid(); it.next())
             {
                 const NativePluginDescriptor* const& tmpDesc(it.getValue(nullptr));
                 CARLA_SAFE_ASSERT_CONTINUE(tmpDesc != nullptr);
 
-                if (std::strcmp(tmpDesc->label, pluginLabel) == 0)
+                if (std::strcmp(tmpDesc->label, "carlarack") == 0)
                 {
                     pluginDesc = tmpDesc;
                     break;
@@ -794,22 +784,10 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetEffectName:
         if (char* const cptr = (char*)ptr)
         {
-#if CARLA_PLUGIN_PATCHBAY
-# if CARLA_PLUGIN_SYNTH
-#  ifdef CARLA_PLUGIN_16CH
-            std::strncpy(cptr, "Carla-Patchbay16", 32);
-#  else
-            std::strncpy(cptr, "Carla-Patchbay", 32);
-#  endif
-# else
-            std::strncpy(cptr, "Carla-PatchbayFX", 32);
-# endif
+#if CARLA_PLUGIN_SYNTH
+            std::strncpy(cptr, "CarlaRack", 32);
 #else
-# if CARLA_PLUGIN_SYNTH
-            std::strncpy(cptr, "Carla-Rack", 32);
-# else
-            std::strncpy(cptr, "Carla-RackFX", 32);
-# endif
+            std::strncpy(cptr, "CarlaRackFX", 32);
 #endif
             return 1;
         }
@@ -826,22 +804,10 @@ static intptr_t vst_dispatcherCallback(AEffect* effect, int32_t opcode, int32_t 
     case effGetProductString:
         if (char* const cptr = (char*)ptr)
         {
-#if CARLA_PLUGIN_PATCHBAY
-# if CARLA_PLUGIN_SYNTH
-#  ifdef CARLA_PLUGIN_16CH
-            std::strncpy(cptr, "CarlaPatchbay16", 32);
-#  else
-            std::strncpy(cptr, "CarlaPatchbay", 32);
-#  endif
-# else
-            std::strncpy(cptr, "CarlaPatchbayFX", 32);
-# endif
-#else
-# if CARLA_PLUGIN_SYNTH
+#if CARLA_PLUGIN_SYNTH
             std::strncpy(cptr, "CarlaRack", 32);
-# else
+#else
             std::strncpy(cptr, "CarlaRackFX", 32);
-# endif
 #endif
             return 1;
         }
@@ -917,33 +883,16 @@ const AEffect* VSTPluginMain(audioMasterCallback audioMaster)
 
     static const int32_t uniqueId = CCONST('C', 'r', 'l', 'a');
 #if CARLA_PLUGIN_SYNTH
-# if CARLA_PLUGIN_PATCHBAY
-#  ifdef CARLA_PLUGIN_16CH
-    effect->uniqueID = uniqueId+5;
-#  else
-    effect->uniqueID = uniqueId+4;
-#  endif
-# else
     effect->uniqueID = uniqueId+3;
-# endif
 #else
-# if CARLA_PLUGIN_PATCHBAY
-    effect->uniqueID = uniqueId+2;
-# else
     effect->uniqueID = uniqueId+1;
-# endif
 #endif
 
     // plugin fields
     effect->numParams   = 0;
     effect->numPrograms = 0;
-#ifdef CARLA_PLUGIN_16CH
-    effect->numInputs   = 16;
-    effect->numOutputs  = 16;
-#else
     effect->numInputs   = 2;
     effect->numOutputs  = 2;
-#endif
 
     // plugin flags
     effect->flags |= effFlagsCanReplacing;
