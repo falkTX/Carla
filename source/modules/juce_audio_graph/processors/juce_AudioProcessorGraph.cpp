@@ -26,38 +26,6 @@
 
 const int AudioProcessorGraph::midiChannelIndex = 0x1000;
 
-#if 0
-//==============================================================================
-template <typename FloatType, typename Impl> struct FloatDoubleUtil {};
-template <typename Tag, typename Type> struct FloatDoubleType {};
-
-template <typename Tag>
-struct FloatAndDoubleComposition
-{
-    typedef typename FloatDoubleType<Tag, float>::Type  FloatType;
-    typedef typename FloatDoubleType<Tag, double>::Type DoubleType;
-
-    template <typename FloatingType>
-    inline typename FloatDoubleType<Tag, FloatingType>::Type& get() noexcept
-    {
-        return FloatDoubleUtil<FloatingType, FloatAndDoubleComposition<Tag> >::get (*this);
-    }
-
-    FloatType floatVersion;
-    DoubleType doubleVersion;
-};
-
-template <typename Impl> struct FloatDoubleUtil<float,  Impl> { static inline typename Impl::FloatType&  get (Impl& i) noexcept { return i.floatVersion; } };
-template <typename Impl> struct FloatDoubleUtil<double, Impl> { static inline typename Impl::DoubleType& get (Impl& i) noexcept { return i.doubleVersion; } };
-
-struct FloatPlaceholder;
-
-template <typename FloatingType> struct FloatDoubleType<HeapBlock<FloatPlaceholder>,    FloatingType>  { typedef HeapBlock<FloatingType> Type; };
-template <typename FloatingType> struct FloatDoubleType<HeapBlock<FloatPlaceholder*>,   FloatingType>  { typedef HeapBlock<FloatingType*> Type; };
-template <typename FloatingType> struct FloatDoubleType<AudioBuffer<FloatPlaceholder>,  FloatingType>  { typedef AudioBuffer<FloatingType> Type; };
-template <typename FloatingType> struct FloatDoubleType<AudioBuffer<FloatPlaceholder>*, FloatingType>  { typedef AudioBuffer<FloatingType>* Type; };
-#endif
-
 //==============================================================================
 namespace GraphRenderingOps
 {
@@ -219,7 +187,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (DelayChannelOp)
 };
 
-#if 0
 //==============================================================================
 struct ProcessBufferOp   : public AudioGraphRenderingOp<ProcessBufferOp>
 {
@@ -241,7 +208,7 @@ struct ProcessBufferOp   : public AudioGraphRenderingOp<ProcessBufferOp>
 
     void perform (AudioSampleBuffer& sharedBufferChans, const OwnedArray<MidiBuffer>& sharedMidiBuffers, const int numSamples)
     {
-        HeapBlock<float*>& channels = audioChannels();
+        HeapBlock<float*>& channels = audioChannels;
 
         for (int i = totalChans; --i >= 0;)
             channels[i] = sharedBufferChans.getWritePointer (audioChannelsToUse.getUnchecked (i), 0);
@@ -270,14 +237,13 @@ struct ProcessBufferOp   : public AudioGraphRenderingOp<ProcessBufferOp>
 
 private:
     Array<int> audioChannelsToUse;
-    FloatAndDoubleComposition<HeapBlock<FloatPlaceholder*> > audioChannels;
+    HeapBlock<float*> audioChannels;
     AudioSampleBuffer tempBuffer;
     const int totalChans;
     const int midiBufferToUse;
 
     JUCE_DECLARE_NON_COPYABLE (ProcessBufferOp)
 };
-#endif
 
 //==============================================================================
 /** Used to calculate the correct sequence of rendering ops needed, based on
@@ -303,9 +269,7 @@ struct RenderingOpSequenceCalculator
             markAnyUnusedBuffersAsFree (i);
         }
 
-#if 0
         graph.setLatencySamples (totalLatency);
-#endif
     }
 
     int getNumBuffersNeeded() const noexcept         { return nodeIds.size(); }
@@ -363,15 +327,10 @@ private:
                                     Array<void*>& renderingOps,
                                     const int ourRenderingIndex)
     {
-#if 0
         AudioProcessor& processor = *node.getProcessor();
         const int numIns  = processor.getTotalNumInputChannels();
         const int numOuts = processor.getTotalNumOutputChannels();
         const int totalChans = jmax (numIns, numOuts);
-#else
-        const int numIns  = 0;
-        const int numOuts = 0;
-#endif
 
         Array<int> audioChannelsToUse;
         int midiBufferToUse = -1;
@@ -566,10 +525,8 @@ private:
             // No midi inputs..
             midiBufferToUse = getFreeBuffer (true); // need to pick a buffer even if the processor doesn't use midi
 
-#if 0
             if (processor.acceptsMidi() || processor.producesMidi())
                 renderingOps.add (new ClearMidiBufferOp (midiBufferToUse));
-#endif
         }
         else if (midiSourceNodes.size() == 1)
         {
@@ -648,7 +605,6 @@ private:
             }
         }
 
-#if 0
         if (processor.producesMidi())
             markBufferAsContaining (midiBufferToUse, node.nodeId,
                                     AudioProcessorGraph::midiChannelIndex);
@@ -660,7 +616,6 @@ private:
 
         renderingOps.add (new ProcessBufferOp (&node, audioChannelsToUse,
                                                totalChans, midiBufferToUse));
-#endif
     }
 
     //==============================================================================
@@ -754,13 +709,11 @@ private:
             }
             else
             {
-#if 0
                 for (int i = 0; i < node->getProcessor()->getTotalNumInputChannels(); ++i)
                     if (i != inputChannelOfIndexToIgnore
                          && graph.getConnectionBetween (nodeId, outputChanIndex,
                                                         node->nodeId, i) != nullptr)
                         return true;
-#endif
             }
 
             inputChannelOfIndexToIgnore = -1;
@@ -810,9 +763,7 @@ public:
                 entries.insert (index, entry);
             }
 
-#if 0
             entry->srcNodes.add (c->sourceNodeId);
-#endif
         }
     }
 
@@ -829,9 +780,7 @@ private:
         explicit Entry (const uint32 destNodeId_) noexcept : destNodeId (destNodeId_) {}
 
         const uint32 destNodeId;
-#if 0
         SortedSet<uint32> srcNodes;
-#endif
 
         JUCE_DECLARE_NON_COPYABLE (Entry)
     };
@@ -846,7 +795,6 @@ private:
 
         if (const Entry* const entry = findEntry (possibleDestinationId, index))
         {
-#if 0
             const SortedSet<uint32>& srcNodes = entry->srcNodes;
 
             if (srcNodes.contains (possibleInputId))
@@ -858,10 +806,6 @@ private:
                     if (isAnInputToRecursive (possibleInputId, srcNodes.getUnchecked(i), recursionCheck))
                         return true;
             }
-#else
-            (void)possibleInputId;
-            (void)recursionCheck;
-#endif
         }
 
         return false;
@@ -1010,7 +954,7 @@ struct AudioProcessorGraph::AudioProcessorGraphBufferHelpers
 //==============================================================================
 AudioProcessorGraph::AudioProcessorGraph()
     : lastNodeId (0), audioBuffers (new AudioProcessorGraphBufferHelpers),
-      currentMidiInputBuffer (nullptr), isPrepared (false)
+      currentMidiInputBuffer (nullptr), isPrepared (false), needsReorder (false)
 {
 }
 
@@ -1028,16 +972,11 @@ const String AudioProcessorGraph::getName() const
 //==============================================================================
 void AudioProcessorGraph::clear()
 {
-#if 0
     nodes.clear();
-#endif
     connections.clear();
-#if 0
-    triggerAsyncUpdate();
-#endif
+    needsReorder = true;
 }
 
-#if 0
 AudioProcessorGraph::Node* AudioProcessorGraph::getNodeForId (const uint32 nodeId) const
 {
     for (int i = nodes.size(); --i >= 0;)
@@ -1084,7 +1023,7 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
     nodes.add (n);
 
     if (isPrepared)
-        triggerAsyncUpdate();
+        needsReorder = true;
 
     n->setParentGraph (this);
     return n;
@@ -1101,7 +1040,7 @@ bool AudioProcessorGraph::removeNode (const uint32 nodeId)
             nodes.remove (i);
 
             if (isPrepared)
-                triggerAsyncUpdate();
+                needsReorder = true;
 
             return true;
         }
@@ -1118,7 +1057,6 @@ bool AudioProcessorGraph::removeNode (Node* node)
     jassertfalse;
     return false;
 }
-#endif
 
 //==============================================================================
 const AudioProcessorGraph::Connection* AudioProcessorGraph::getConnectionBetween (const uint32 sourceNodeId,
@@ -1148,7 +1086,6 @@ bool AudioProcessorGraph::isConnected (const uint32 possibleSourceNodeId,
     return false;
 }
 
-#if 0
 bool AudioProcessorGraph::canConnect (const uint32 sourceNodeId,
                                       const int sourceChannelIndex,
                                       const uint32 destNodeId,
@@ -1177,7 +1114,6 @@ bool AudioProcessorGraph::canConnect (const uint32 sourceNodeId,
     return getConnectionBetween (sourceNodeId, sourceChannelIndex,
                                  destNodeId, destChannelIndex) == nullptr;
 }
-#endif
 
 bool AudioProcessorGraph::addConnection (const uint32 sourceNodeId,
                                          const int sourceChannelIndex,
@@ -1191,10 +1127,8 @@ bool AudioProcessorGraph::addConnection (const uint32 sourceNodeId,
     connections.addSorted (sorter, new Connection (sourceNodeId, sourceChannelIndex,
                                                    destNodeId, destChannelIndex));
 
-#if 0
     if (isPrepared)
-        triggerAsyncUpdate();
-#endif
+        needsReorder = true;
 
     return true;
 }
@@ -1203,10 +1137,8 @@ void AudioProcessorGraph::removeConnection (const int index)
 {
     connections.remove (index);
 
-#if 0
     if (isPrepared)
-        triggerAsyncUpdate();
-#endif
+        needsReorder = true;
 }
 
 bool AudioProcessorGraph::removeConnection (const uint32 sourceNodeId, const int sourceChannelIndex,
@@ -1249,7 +1181,6 @@ bool AudioProcessorGraph::disconnectNode (const uint32 nodeId)
     return doneAnything;
 }
 
-#if 0
 bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
 {
     jassert (c != nullptr);
@@ -1264,7 +1195,6 @@ bool AudioProcessorGraph::isConnectionLegal (const Connection* const c) const
         && (c->destChannelIndex   != midiChannelIndex ? isPositiveAndBelow (c->destChannelIndex, dest->processor->getTotalNumInputChannels())
                                                       : dest->processor->acceptsMidi());
 }
-#endif
 
 bool AudioProcessorGraph::removeIllegalConnections()
 {
@@ -1301,7 +1231,6 @@ void AudioProcessorGraph::clearRenderingSequence()
     deleteRenderOpArray (oldOps);
 }
 
-#if 0
 bool AudioProcessorGraph::isAnInputTo (const uint32 possibleInputId,
                                        const uint32 possibleDestinationId,
                                        const int recursionCheck) const
@@ -1321,7 +1250,6 @@ bool AudioProcessorGraph::isAnInputTo (const uint32 possibleInputId,
 
     return false;
 }
-#endif
 
 void AudioProcessorGraph::buildRenderingSequence()
 {
@@ -1330,21 +1258,18 @@ void AudioProcessorGraph::buildRenderingSequence()
     int numMidiBuffersNeeded = 1;
 
     {
-#if 0
-        MessageManagerLock mml;
-#endif
+        const CarlaRecursiveMutexLocker cml (reorderMutex);
 
         Array<Node*> orderedNodes;
 
         {
             const GraphRenderingOps::ConnectionLookupTable table (connections);
 
-#if 0
             for (int i = 0; i < nodes.size(); ++i)
             {
                 Node* const node = nodes.getUnchecked(i);
 
-                node->prepare (getSampleRate(), getBlockSize(), this, getProcessingPrecision());
+                node->prepare (getSampleRate(), getBlockSize(), this);
 
                 int j = 0;
                 for (; j < orderedNodes.size(); ++j)
@@ -1353,7 +1278,6 @@ void AudioProcessorGraph::buildRenderingSequence()
 
                 orderedNodes.insert (j, node);
             }
-#endif
         }
 
         GraphRenderingOps::RenderingOpSequenceCalculator calculator (*this, orderedNodes, newRenderingOps);
@@ -1381,13 +1305,6 @@ void AudioProcessorGraph::buildRenderingSequence()
     deleteRenderOpArray (newRenderingOps);
 }
 
-#if 0
-void AudioProcessorGraph::handleAsyncUpdate()
-{
-    buildRenderingSequence();
-}
-#endif
-
 //==============================================================================
 void AudioProcessorGraph::prepareToPlay (double /*sampleRate*/, int estimatedSamplesPerBlock)
 {
@@ -1406,10 +1323,8 @@ void AudioProcessorGraph::releaseResources()
 {
     isPrepared = false;
 
-#if 0
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->unprepare();
-#endif
 
     audioBuffers->release();
     midiBuffers.clear();
@@ -1422,10 +1337,8 @@ void AudioProcessorGraph::reset()
 {
     const CarlaRecursiveMutexLocker cml (getCallbackLock());
 
-#if 0
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->getProcessor()->reset();
-#endif
 }
 
 void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
@@ -1434,10 +1347,8 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
 
     AudioProcessor::setNonRealtime (isProcessingNonRealtime);
 
-#if 0
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->getProcessor()->setNonRealtime (isProcessingNonRealtime);
-#endif
 }
 
 void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
@@ -1446,10 +1357,8 @@ void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
 
     AudioProcessor::setPlayHead (audioPlayHead);
 
-#if 0
     for (int i = 0; i < nodes.size(); ++i)
         nodes.getUnchecked(i)->getProcessor()->setPlayHead (audioPlayHead);
-#endif
 }
 
 void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
@@ -1488,6 +1397,15 @@ bool AudioProcessorGraph::producesMidi() const                      { return tru
 void AudioProcessorGraph::processBlock (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     processAudio (buffer, midiMessages);
+}
+
+void AudioProcessorGraph::reorderNowIfNeeded()
+{
+    if (needsReorder)
+    {
+        needsReorder = false;
+        buildRenderingSequence();
+    }
 }
 
 //==============================================================================

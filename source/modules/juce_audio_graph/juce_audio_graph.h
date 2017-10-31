@@ -106,7 +106,7 @@
 #define NEEDS_TRANS(x) (x)
 
 //==============================================================================
-namespace juce
+namespace juce2
 {
 
 class File;
@@ -127,12 +127,15 @@ class StringRef;
 
 #include "memory/juce_HeapBlock.h"
 #include "memory/juce_MemoryBlock.h"
+#include "memory/juce_ReferenceCountedObject.h"
 #include "text/juce_NewLine.h"
 
 #include "containers/juce_ElementComparator.h"
 #include "containers/juce_ArrayAllocationBase.h"
 #include "containers/juce_Array.h"
 #include "containers/juce_OwnedArray.h"
+#include "containers/juce_ReferenceCountedArray.h"
+#include "containers/juce_SortedSet.h"
 // #include "containers/juce_Variant.h"
 // #include "containers/juce_NamedValueSet.h"
 

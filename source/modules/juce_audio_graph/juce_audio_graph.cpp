@@ -33,7 +33,7 @@
 // #include <wctype.h>
 
 //==============================================================================
-namespace juce
+namespace juce2
 {
 
 #include "memory/juce_MemoryBlock.cpp"

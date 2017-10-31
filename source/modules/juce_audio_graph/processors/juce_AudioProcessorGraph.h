@@ -59,7 +59,7 @@ public:
 
         To create a node, call AudioProcessorGraph::addNode().
     */
-    class JUCE_API  Node   /*: public ReferenceCountedObject*/
+    class JUCE_API  Node   : public ReferenceCountedObject
     {
     public:
         //==============================================================================
@@ -79,11 +79,11 @@ public:
             is displaying the nodes on-screen.
         */
         NamedValueSet properties;
+#endif
 
         //==============================================================================
         /** A convenient typedef for referring to a pointer to a node object. */
         typedef ReferenceCountedObjectPtr<Node> Ptr;
-#endif
 
     private:
         //==============================================================================
@@ -153,7 +153,6 @@ public:
     */
     void clear();
 
-#if 0
     /** Returns the number of nodes in the graph. */
     int getNumNodes() const noexcept                                { return nodes.size(); }
 
@@ -193,7 +192,6 @@ public:
         This will also delete any connections that are attached to this node.
      */
     bool removeNode (Node* node);
-#endif
 
     //==============================================================================
     /** Returns the number of connections in the graph. */
@@ -354,14 +352,14 @@ public:
     bool acceptsMidi() const override;
     bool producesMidi() const override;
 
+    void reorderNowIfNeeded();
+
 private:
     //==============================================================================
     void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
 
     //==============================================================================
-#if 0
     ReferenceCountedArray<Node> nodes;
-#endif
     OwnedArray<Connection> connections;
     uint32 lastNodeId;
     OwnedArray<MidiBuffer> midiBuffers;
@@ -374,7 +372,8 @@ private:
     MidiBuffer* currentMidiInputBuffer;
     MidiBuffer currentMidiOutputBuffer;
 
-    bool isPrepared;
+    bool isPrepared, needsReorder;
+    CarlaRecursiveMutex reorderMutex;
 
     void clearRenderingSequence();
     void buildRenderingSequence();
