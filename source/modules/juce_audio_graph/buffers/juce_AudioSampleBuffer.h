@@ -569,7 +569,7 @@ public:
         {
             float* const d = channels [channel] + startSample;
 
-            if (gain == 0.0f)
+            if (carla_isZero (gain))
                 carla_zeroFloats (d, numSamples);
             else
                 carla_multiply (d, gain, numSamples);

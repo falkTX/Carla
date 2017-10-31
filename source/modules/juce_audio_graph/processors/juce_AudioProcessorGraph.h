@@ -71,7 +71,6 @@ public:
         /** The actual processor object that this node represents. */
         AudioProcessor* getProcessor() const noexcept           { return processor; }
 
-#if 0
         /** A set of user-definable properties that are associated with this node.
 
             This can be used to attach values to the node for whatever purpose seems
@@ -79,7 +78,6 @@ public:
             is displaying the nodes on-screen.
         */
         NamedValueSet properties;
-#endif
 
         //==============================================================================
         /** A convenient typedef for referring to a pointer to a node object. */

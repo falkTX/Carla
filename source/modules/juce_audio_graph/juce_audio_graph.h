@@ -109,11 +109,18 @@
 namespace juce2
 {
 
+class DynamicObject;
 class File;
+class FileInputStream;
+class FileOutputStream;
+class InputSource;
+class InputStream;
 class MidiMessage;
 class MemoryBlock;
 class OutputStream;
+class Result;
 class StringRef;
+class XmlElement;
 
 #include "memory/juce_Memory.h"
 #include "maths/juce_MathsFunctions.h"
@@ -123,25 +130,39 @@ class StringRef;
 #include "text/juce_CharPointer_UTF8.h"
 
 #include "text/juce_String.h"
-#include "text/juce_StringRef.h"
 
 #include "memory/juce_HeapBlock.h"
-#include "memory/juce_MemoryBlock.h"
-#include "memory/juce_ReferenceCountedObject.h"
-#include "text/juce_NewLine.h"
-
 #include "containers/juce_ElementComparator.h"
 #include "containers/juce_ArrayAllocationBase.h"
 #include "containers/juce_Array.h"
+#include "text/juce_StringArray.h"
+
+#include "text/juce_StringRef.h"
+
+#include "memory/juce_MemoryBlock.h"
+#include "memory/juce_ReferenceCountedObject.h"
+#include "text/juce_Identifier.h"
+#include "text/juce_NewLine.h"
+
+#include "containers/juce_LinkedListPointer.h"
 #include "containers/juce_OwnedArray.h"
 #include "containers/juce_ReferenceCountedArray.h"
 #include "containers/juce_SortedSet.h"
-// #include "containers/juce_Variant.h"
-// #include "containers/juce_NamedValueSet.h"
+#include "containers/juce_Variant.h"
+#include "containers/juce_NamedValueSet.h"
 
+#include "streams/juce_InputSource.h"
 #include "streams/juce_InputStream.h"
 #include "streams/juce_OutputStream.h"
 #include "streams/juce_MemoryOutputStream.h"
+
+#include "misc/juce_Result.h"
+
+#include "text/juce_StringPool.h"
+
+#include "files/juce_File.h"
+#include "streams/juce_FileInputStream.h"
+#include "streams/juce_FileInputSource.h"
 
 #include "buffers/juce_AudioSampleBuffer.h"
 #include "midi/juce_MidiBuffer.h"
@@ -149,21 +170,11 @@ class StringRef;
 
 class AudioProcessor;
 #include "processors/juce_AudioPlayHead.h"
-// #include "processors/juce_AudioProcessorListener.h"
-// #include "processors/juce_AudioProcessorParameter.h"
 #include "processors/juce_AudioProcessor.h"
-// #include "processors/juce_PluginDescription.h"
-// #include "processors/juce_AudioPluginInstance.h"
 #include "processors/juce_AudioProcessorGraph.h"
-// #include "format/juce_AudioPluginFormat.h"
-// #include "format/juce_AudioPluginFormatManager.h"
-// #include "scanning/juce_KnownPluginList.h"
-// #include "utilities/juce_AudioProcessorValueTreeState.h"
-// #include "utilities/juce_AudioProcessorParameterWithID.h"
-// #include "utilities/juce_AudioParameterFloat.h"
-// #include "utilities/juce_AudioParameterInt.h"
-// #include "utilities/juce_AudioParameterBool.h"
-// #include "utilities/juce_AudioParameterChoice.h"
+
+#include "xml/juce_XmlElement.h"
+#include "xml/juce_XmlDocument.h"
 
 }
 

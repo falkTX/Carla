@@ -199,3 +199,6 @@ data/macos/*.*/
 data/macos/Carla/
 
 data/windows/python/
+
+source/modules/juce_audio_graph/test
+source/modules/juce_audio_graph/test.d
