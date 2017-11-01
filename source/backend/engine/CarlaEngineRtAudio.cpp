@@ -183,7 +183,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(clientName != nullptr && clientName[0] != '\0', false);
         carla_debug("CarlaEngineRtAudio::init(\"%s\")", clientName);
 
-        if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_CONTINUOUS_RACK && pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
         {
             setLastError("Invalid process mode");
             return false;
@@ -293,7 +293,10 @@ public:
             return false;
         }
 
-        patchbayRefresh();
+        patchbayRefresh(false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), false);
 
         callback(ENGINE_CALLBACK_ENGINE_STARTED, 0, pData->options.processMode, pData->options.transportMode, 0.0f, getCurrentDriverName());
         return true;
@@ -402,11 +405,9 @@ public:
     // -------------------------------------------------------------------
     // Patchbay
 
-    bool patchbayRefresh() override
+    template<class Graph>
+    bool refreshExternalGraphPorts(Graph* const graph, const bool sendCallback)
     {
-        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
-
-        RackGraph* const graph(pData->graph.getGraph());
         CARLA_SAFE_ASSERT_RETURN(graph != nullptr, false);
 
         char strBuf[STR_MAX+1];
@@ -473,7 +474,8 @@ public:
         // ---------------------------------------------------------------
         // now refresh
 
-        graph->refresh(fDeviceName.buffer());
+        if (sendCallback)
+            graph->refresh(fDeviceName.buffer());
 
         // ---------------------------------------------------------------
         // add midi connections
@@ -495,7 +497,8 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            if (sendCallback)
+                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
         }
 
         fMidiOutMutex.lock();
@@ -517,12 +520,28 @@ public:
 
             extGraph.connections.list.append(connectionToId);
 
-            callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
+            if (sendCallback)
+                callback(ENGINE_CALLBACK_PATCHBAY_CONNECTION_ADDED, connectionToId.id, 0, 0, 0.0f, strBuf);
         }
 
         fMidiOutMutex.unlock();
 
         return true;
+    }
+
+    bool patchbayRefresh(const bool external) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(pData->graph.isReady(), false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            return refreshExternalGraphPorts<RackGraph>(pData->graph.getRackGraph(), true);
+
+        pData->graph.setUsingExternal(external);
+
+        if (external)
+            return refreshExternalGraphPorts<PatchbayGraph>(pData->graph.getPatchbayGraph(), true);
+
+        return CarlaEngine::patchbayRefresh(false);
     }
 
     // -------------------------------------------------------------------

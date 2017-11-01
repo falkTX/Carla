@@ -158,7 +158,7 @@ protected:
         else if (std::strcmp(msg, "patchbay_refresh") == 0)
         {
             try {
-                ok = fEngine->patchbayRefresh();
+                ok = fEngine->patchbayRefresh(false);
             } CARLA_SAFE_EXCEPTION("patchbayRefresh");
         }
         else if (std::strcmp(msg, "transport_play") == 0)
@@ -586,9 +586,10 @@ private:
 class CarlaEngineNative : public CarlaEngine
 {
 public:
-    CarlaEngineNative(const NativeHostDescriptor* const host, const uint32_t inChan = 2, uint32_t outChan = 0)
+    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const uint32_t inChan = 2, uint32_t outChan = 0)
         : CarlaEngine(),
           pHost(host),
+          kIsPatchbay(isPatchbay),
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
@@ -606,15 +607,29 @@ public:
         if (outChan == 0)
             outChan = inChan;
 
-        CARLA_SAFE_ASSERT(inChan == 2);
-        CARLA_SAFE_ASSERT(outChan == 2);
-        pData->options.processMode         = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
-        pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
-        pData->options.forceStereo         = true;
-        pData->options.preferPluginBridges = false;
-        pData->options.preferUiBridges     = false;
-        init("Carla-Rack");
-        pData->graph.create(0, 0); // FIXME?
+        // set-up engine
+        if (kIsPatchbay)
+        {
+            pData->options.processMode         = ENGINE_PROCESS_MODE_PATCHBAY;
+            pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
+            pData->options.forceStereo         = false;
+            pData->options.preferPluginBridges = false;
+            pData->options.preferUiBridges     = false;
+            init("Carla-Patchbay");
+            pData->graph.create(inChan, outChan);
+        }
+        else
+        {
+            CARLA_SAFE_ASSERT(inChan == 2);
+            CARLA_SAFE_ASSERT(outChan == 2);
+            pData->options.processMode         = ENGINE_PROCESS_MODE_CONTINUOUS_RACK;
+            pData->options.transportMode       = ENGINE_TRANSPORT_MODE_PLUGIN;
+            pData->options.forceStereo         = true;
+            pData->options.preferPluginBridges = false;
+            pData->options.preferUiBridges     = false;
+            init("Carla-Rack");
+            pData->graph.create(0, 0); // FIXME?
+        }
 
         if (pData->options.resourceDir != nullptr)
             delete[] pData->options.resourceDir;
@@ -1341,7 +1356,7 @@ protected:
         // ---------------------------------------------------------------
         // Do nothing if no plugins and rack mode
 
-        if (pData->curPluginCount == 0)
+        if (pData->curPluginCount == 0 && ! kIsPatchbay)
         {
             if (outBuffer[0] != inBuffer[0])
                 carla_copyFloats(outBuffer[0], inBuffer[0], frames);
@@ -1382,6 +1397,14 @@ protected:
             }
         }
 
+        if (kIsPatchbay)
+        {
+            // -----------------------------------------------------------
+            // process
+
+            pData->graph.process(pData, inBuffer, outBuffer, frames);
+        }
+        else
         {
             // -----------------------------------------------------------
             // create audio buffers
@@ -1456,7 +1479,10 @@ protected:
 
             CarlaString path(pHost->resourceDir);
 
-            path += CARLA_OS_SEP_STR "carla-plugin";
+            if (kIsPatchbay)
+                path += CARLA_OS_SEP_STR "carla-plugin-patchbay";
+            else
+                path += CARLA_OS_SEP_STR "carla-plugin";
 #ifdef CARLA_OS_WIN
             path += ".exe";
 #endif
@@ -1485,6 +1511,9 @@ protected:
                     uiServerCallback(ENGINE_CALLBACK_PLUGIN_ADDED, i, 0, 0, 0.0f, plugin->getName());
                 }
             }
+
+            if (kIsPatchbay)
+                patchbayRefresh(false);
 
             if (fWaitForReadyMsg)
             {
@@ -1653,6 +1682,26 @@ public:
         return new CarlaEngineNative(host, false);
     }
 
+    static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true);
+    }
+
+    static NativePluginHandle _instantiatePatchbay3s(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, 3, 2);
+    }
+
+    static NativePluginHandle _instantiatePatchbay16(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, 16);
+    }
+
+    static NativePluginHandle _instantiatePatchbay32(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, true, 32);
+    }
+
     static void _cleanup(NativePluginHandle handle)
     {
         delete handlePtr;
@@ -1776,6 +1825,7 @@ public:
 private:
     const NativeHostDescriptor* const pHost;
 
+    const bool kIsPatchbay; // rack if false
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
@@ -1843,6 +1893,174 @@ static const NativePluginDescriptor carlaRackDesc = {
     CarlaEngineNative::_dispatcher
 };
 
+static const NativePluginDescriptor carlaPatchbayDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay",
+    /* label     */ "carlapatchbay",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
+static const NativePluginDescriptor carlaPatchbay3sDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 3,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay (sidechain)",
+    /* label     */ "carlapatchbay3s",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay3s,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
+static const NativePluginDescriptor carlaPatchbay16Desc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 16,
+    /* audioOuts */ 16,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay (16chan)",
+    /* label     */ "carlapatchbay16",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay16,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
+static const NativePluginDescriptor carlaPatchbay32Desc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 32,
+    /* audioOuts */ 32,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 1,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Patchbay (32chan)",
+    /* label     */ "carlapatchbay32",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiatePatchbay32,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
 CARLA_BACKEND_END_NAMESPACE
 
 // -----------------------------------------------------------------------
@@ -1854,6 +2072,10 @@ void carla_register_native_plugin_carla()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     carla_register_native_plugin(&carlaRackDesc);
+    carla_register_native_plugin(&carlaPatchbayDesc);
+    carla_register_native_plugin(&carlaPatchbay3sDesc);
+    carla_register_native_plugin(&carlaPatchbay16Desc);
+    carla_register_native_plugin(&carlaPatchbay32Desc);
 }
 
 // -----------------------------------------------------------------------
@@ -1864,6 +2086,14 @@ const NativePluginDescriptor* carla_get_native_rack_plugin()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     return &carlaRackDesc;
+}
+
+CARLA_EXPORT
+const NativePluginDescriptor* carla_get_native_patchbay_plugin();
+const NativePluginDescriptor* carla_get_native_patchbay_plugin()
+{
+    CARLA_BACKEND_USE_NAMESPACE;
+    return &carlaPatchbayDesc;
 }
 
 // -----------------------------------------------------------------------

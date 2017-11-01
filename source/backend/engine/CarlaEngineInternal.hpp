@@ -71,19 +71,37 @@ public:
     void destroy() noexcept;
 
     void setBufferSize(const uint32_t bufferSize);
+    void setSampleRate(const double sampleRate);
     void setOffline(const bool offline);
 
     bool isReady() const noexcept;
-    RackGraph* getGraph() const noexcept;
+
+    RackGraph*     getRackGraph() const noexcept;
+    PatchbayGraph* getPatchbayGraph() const noexcept;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const uint32_t frames);
 
     // special direct process with connections already handled, used in JACK and Plugin
     void processRack(CarlaEngine::ProtectedData* const data, const float* inBuf[2], float* outBuf[2], const uint32_t frames);
 
+    // used for internal patchbay mode
+    void addPlugin(CarlaPlugin* const plugin);
+    void replacePlugin(CarlaPlugin* const oldPlugin, CarlaPlugin* const newPlugin);
+    void renamePlugin(CarlaPlugin* const plugin, const char* const newName);
+    void removePlugin(CarlaPlugin* const plugin);
+    void removeAllPlugins();
+
+    bool isUsingExternal() const noexcept;
+    void setUsingExternal(const bool usingExternal) noexcept;
+
 private:
+    bool fIsRack;
     bool fIsReady;
-    RackGraph* fRack;
+
+    union {
+        RackGraph*     fRack;
+        PatchbayGraph* fPatchbay;
+    };
 
     CarlaEngine* const kEngine;
 

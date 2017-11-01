@@ -246,9 +246,6 @@ public:
     */
     void setLatencySamples (int newLatency);
 
-    /** Returns the length of the filter's tail, in seconds. */
-    virtual double getTailLengthSeconds() const = 0;
-
     /** Returns true if the processor wants midi messages. */
     virtual bool acceptsMidi() const = 0;
 
@@ -260,6 +257,9 @@ public:
 
     /** Returns true if this is a midi effect plug-in and does no audio processing. */
     virtual bool isMidiEffect() const                           { return false; }
+
+    virtual const String getInputChannelName  (int) const { return String(); }
+    virtual const String getOutputChannelName (int) const { return String(); }
 
     //==============================================================================
     /** This returns a critical section that will automatically be locked while the host

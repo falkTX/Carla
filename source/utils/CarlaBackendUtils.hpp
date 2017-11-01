@@ -358,6 +358,8 @@ const char* EngineProcessMode2Str(const EngineProcessMode mode) noexcept
         return "ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS";
     case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         return "ENGINE_PROCESS_MODE_CONTINUOUS_RACK";
+    case ENGINE_PROCESS_MODE_PATCHBAY:
+        return "ENGINE_PROCESS_MODE_PATCHBAY";
     case ENGINE_PROCESS_MODE_BRIDGE:
         return "ENGINE_PROCESS_MODE_BRIDGE";
     }

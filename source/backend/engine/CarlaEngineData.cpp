@@ -187,7 +187,7 @@ EngineOptions::EngineOptions() noexcept
     : processMode(ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS),
       transportMode(ENGINE_TRANSPORT_MODE_JACK),
 #else
-    : processMode(ENGINE_PROCESS_MODE_CONTINUOUS_RACK),
+    : processMode(ENGINE_PROCESS_MODE_PATCHBAY),
       transportMode(ENGINE_TRANSPORT_MODE_INTERNAL),
 #endif
       transportExtra(nullptr),

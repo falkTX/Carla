@@ -101,8 +101,8 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 #include "text/juce_CharacterFunctions.cpp"
 #include "text/juce_String.cpp"
 
-//#include "containers/juce_NamedValueSet.cpp"
-//#include "containers/juce_Variant.cpp"
+#include "containers/juce_NamedValueSet.cpp"
+#include "containers/juce_Variant.cpp"
 
 #include "files/juce_DirectoryIterator.cpp"
 #include "files/juce_File.cpp"
@@ -115,7 +115,7 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 #include "misc/juce_Result.cpp"
 
 #include "processors/juce_AudioProcessor.cpp"
-//#include "processors/juce_AudioProcessorGraph.cpp"
+#include "processors/juce_AudioProcessorGraph.cpp"
 
 #include "streams/juce_FileInputSource.cpp"
 #include "streams/juce_FileInputStream.cpp"

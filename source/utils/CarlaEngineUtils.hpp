@@ -20,6 +20,9 @@
 
 #include "CarlaEngine.hpp"
 #include "CarlaUtils.hpp"
+#include "CarlaMIDI.h"
+
+#include "water/water.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -108,6 +111,94 @@ const char* EngineControlEventType2Str(const EngineControlEventType type) noexce
 
     carla_stderr("CarlaBackend::EngineControlEventType2Str(%i) - invalid type", type);
     return nullptr;
+}
+
+// -----------------------------------------------------------------------
+
+static inline
+void fillEngineEventsFromWaterMidiBuffer(EngineEvent engineEvents[kMaxEngineEventInternalCount], const water::MidiBuffer& midiBuffer)
+{
+    const uint8_t* midiData;
+    int numBytes, sampleNumber;
+    ushort engineEventIndex = 0;
+
+    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+    {
+        const EngineEvent& engineEvent(engineEvents[i]);
+
+        if (engineEvent.type != kEngineEventTypeNull)
+            continue;
+
+        engineEventIndex = i;
+        break;
+    }
+
+    for (water::MidiBuffer::Iterator midiBufferIterator(midiBuffer); midiBufferIterator.getNextEvent(midiData, numBytes, sampleNumber) && engineEventIndex < kMaxEngineEventInternalCount;)
+    {
+        CARLA_SAFE_ASSERT_CONTINUE(numBytes > 0);
+        CARLA_SAFE_ASSERT_CONTINUE(sampleNumber >= 0);
+        CARLA_SAFE_ASSERT_CONTINUE(numBytes < 0xFF /* uint8_t max */);
+
+        EngineEvent& engineEvent(engineEvents[engineEventIndex++]);
+
+        engineEvent.time = static_cast<uint32_t>(sampleNumber);
+        engineEvent.fillFromMidiData(static_cast<uint8_t>(numBytes), midiData, 0);
+    }
+}
+
+// -----------------------------------------------------------------------
+
+static inline
+void fillWaterMidiBufferFromEngineEvents(water::MidiBuffer& midiBuffer, const EngineEvent engineEvents[kMaxEngineEventInternalCount])
+{
+    uint8_t        size     = 0;
+    uint8_t        mdata[3] = { 0, 0, 0 };
+    const uint8_t* mdataPtr = mdata;
+    uint8_t        mdataTmp[EngineMidiEvent::kDataSize];
+
+    for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+    {
+        const EngineEvent& engineEvent(engineEvents[i]);
+
+        if (engineEvent.type == kEngineEventTypeNull)
+        {
+            break;
+        }
+        else if (engineEvent.type == kEngineEventTypeControl)
+        {
+            const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+
+            ctrlEvent.convertToMidiData(engineEvent.channel, size, mdata);
+            mdataPtr = mdata;
+        }
+        else if (engineEvent.type == kEngineEventTypeMidi)
+        {
+            const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+            size = midiEvent.size;
+
+            if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+            {
+                mdataPtr = midiEvent.dataExt;
+            }
+            else
+            {
+                // copy
+                carla_copy<uint8_t>(mdataTmp, midiEvent.data, size);
+                // add channel
+                mdataTmp[0] = static_cast<uint8_t>(mdataTmp[0] | (engineEvent.channel & MIDI_CHANNEL_BIT));
+                // done
+                mdataPtr = mdataTmp;
+            }
+        }
+        else
+        {
+            continue;
+        }
+
+        if (size > 0)
+            midiBuffer.addEvent(mdataPtr, static_cast<int>(size), static_cast<int>(engineEvent.time));
+    }
 }
 
 // -------------------------------------------------------------------

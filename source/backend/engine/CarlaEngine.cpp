@@ -604,6 +604,19 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             canRun = false;
         }
     }
+    else if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        /**/ if (plugin->getMidiInCount() > 1 || plugin->getMidiOutCount() > 1)
+        {
+            setLastError("Carla's patchbay mode cannot work with plugins that have multiple MIDI ports, sorry!");
+            canRun = false;
+        }
+        else if (plugin->getCVInCount() > 0 || plugin->getCVInCount() > 0)
+        {
+            setLastError("CV ports in patchbay mode is still TODO");
+            canRun = false;
+        }
+    }
 
     if (! canRun)
     {
@@ -630,6 +643,9 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         const ScopedThreadStopper sts(this);
 
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.replacePlugin(oldPlugin, plugin);
+
         const bool  wasActive = oldPlugin->getInternalParameterValue(PARAMETER_ACTIVE) >= 0.5f;
         const float oldDryWet = oldPlugin->getInternalParameterValue(PARAMETER_DRYWET);
         const float oldVolume = oldPlugin->getInternalParameterValue(PARAMETER_VOLUME);
@@ -655,6 +671,11 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
 
         ++pData->curPluginCount;
         callback(ENGINE_CALLBACK_PLUGIN_ADDED, id, 0, 0, 0.0f, plugin->getName());
+
+#ifndef BUILD_BRIDGE
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+            pData->graph.addPlugin(plugin);
+#endif
     }
 
     return true;
@@ -684,6 +705,9 @@ bool CarlaEngine::removePlugin(const uint id)
     const ScopedThreadStopper sts(this);
 
 #ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removePlugin(plugin);
+
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(this, kEnginePostActionRemovePlugin, id, 0, lockWait);
 
@@ -728,12 +752,17 @@ bool CarlaEngine::removeAllPlugins()
 
     const uint curPluginCount(pData->curPluginCount);
 
-#if defined(HAVE_LIBLO) && ! defined(BUILD_BRIDGE)
+#ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.removeAllPlugins();
+
+# ifdef HAVE_LIBLO
     if (isOscControlRegistered())
     {
         for (uint i=0; i < curPluginCount; ++i)
             oscSend_control_remove_plugin(curPluginCount-i-1);
     }
+# endif
 #endif
 
     const bool lockWait(isRunning());
@@ -781,6 +810,9 @@ const char* CarlaEngine::renamePlugin(const uint id, const char* const newName)
     CARLA_SAFE_ASSERT_RETURN_ERRN(uniqueName != nullptr, "Unable to get new unique plugin name");
 
     plugin->setName(uniqueName);
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.renamePlugin(plugin, uniqueName);
 
     delete[] uniqueName;
     return plugin->getName();
@@ -866,6 +898,9 @@ bool CarlaEngine::switchPlugins(const uint idA, const uint idB) noexcept
     CARLA_SAFE_ASSERT_RETURN_ERR(pluginB->getId() == idB, "Invalid engine internal data");
 
     const ScopedThreadStopper sts(this);
+
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        pData->graph.replacePlugin(pluginA, pluginB);
 
     const bool lockWait(isRunning() /*&& pData->options.processMode != ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS*/);
     const ScopedActionLock sal(this, kEnginePostActionSwitchPlugins, idA, idB, lockWait);
@@ -1610,8 +1645,11 @@ void CarlaEngine::bufferSizeChanged(const uint32_t newBufferSize)
     carla_debug("CarlaEngine::bufferSizeChanged(%i)", newBufferSize);
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
         pData->graph.setBufferSize(newBufferSize);
+    }
 #endif
 
     pData->time.updateAudioValues(newBufferSize, pData->sampleRate);
@@ -1631,6 +1669,14 @@ void CarlaEngine::sampleRateChanged(const double newSampleRate)
 {
     carla_debug("CarlaEngine::sampleRateChanged(%g)", newSampleRate);
 
+#ifndef BUILD_BRIDGE
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
+        pData->graph.setSampleRate(newSampleRate);
+    }
+#endif
+
     pData->time.updateAudioValues(pData->bufferSize, newSampleRate);
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1649,8 +1695,11 @@ void CarlaEngine::offlineModeChanged(const bool isOfflineNow)
     carla_debug("CarlaEngine::offlineModeChanged(%s)", bool2str(isOfflineNow));
 
 #ifndef BUILD_BRIDGE
-    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+        pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+    {
         pData->graph.setOffline(isOfflineNow);
+    }
 #endif
 
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1763,25 +1812,10 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
             plugin->setCustomData(CUSTOM_DATA_TYPE_STRING, "__CarlaPingOnOff__", "true", false);
     }
 
-    // if we're running inside some session-manager (and using JACK), let them handle the connections
-    bool saveConnections;
-
-    /**/ if (isPlugin)
-        saveConnections = false;
-    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
-        saveConnections = true;
-    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        saveConnections = false;
-    else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        saveConnections = false;
-    else if (std::getenv("NSM_URL") != nullptr)
-        saveConnections = false;
-    else
-        saveConnections = true;
-
-    if (saveConnections)
+    // save internal connections
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
-        if (const char* const* const patchbayConns = getPatchbayConnections())
+        if (const char* const* const patchbayConns = getPatchbayConnections(false))
         {
             MemoryOutputStream outPatchbay(2048);
 
@@ -1802,6 +1836,49 @@ void CarlaEngine::saveProjectInternal(water::MemoryOutputStream& outStream) cons
             }
 
             outPatchbay << " </Patchbay>\n";
+            outStream << outPatchbay;
+        }
+    }
+
+    // if we're running inside some session-manager (and using JACK), let them handle the connections
+    bool saveExternalConnections;
+
+    /**/ if (isPlugin)
+        saveExternalConnections = false;
+    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+        saveExternalConnections = true;
+    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+        saveExternalConnections = false;
+    else if (std::getenv("LADISH_APP_NAME") != nullptr)
+        saveExternalConnections = false;
+    else if (std::getenv("NSM_URL") != nullptr)
+        saveExternalConnections = false;
+    else
+        saveExternalConnections = true;
+
+    if (saveExternalConnections)
+    {
+        if (const char* const* const patchbayConns = getPatchbayConnections(true))
+        {
+            MemoryOutputStream outPatchbay(2048);
+
+            outPatchbay << "\n <ExternalPatchbay>\n";
+
+            for (int i=0; patchbayConns[i] != nullptr && patchbayConns[i+1] != nullptr; ++i, ++i )
+            {
+                const char* const connSource(patchbayConns[i]);
+                const char* const connTarget(patchbayConns[i+1]);
+
+                CARLA_SAFE_ASSERT_CONTINUE(connSource != nullptr && connSource[0] != '\0');
+                CARLA_SAFE_ASSERT_CONTINUE(connTarget != nullptr && connTarget[0] != '\0');
+
+                outPatchbay << "  <Connection>\n";
+                outPatchbay << "   <Source>" << xmlSafeString(connSource, true) << "</Source>\n";
+                outPatchbay << "   <Target>" << xmlSafeString(connTarget, true) << "</Target>\n";
+                outPatchbay << "  </Connection>\n";
+            }
+
+            outPatchbay << " </ExternalPatchbay>\n";
             outStream << outPatchbay;
         }
     }
@@ -2132,6 +2209,11 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
                     plugin->setEnabled(true);
                     callback(ENGINE_CALLBACK_PLUGIN_ADDED, pluginId, 0, 0, 0.0f, plugin->getName());
+
+#ifndef BUILD_BRIDGE
+                    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                        pData->graph.addPlugin(plugin);
+#endif
                 }
                 else
                 {
@@ -2163,30 +2245,16 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     if (pData->aboutToClose)
         return true;
 
-    // if we're running inside some session-manager (and using JACK), let them handle the connections
-    bool loadConnections;
-
-    /**/ if (isPlugin)
-        loadConnections = false;
-    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
-        loadConnections = true;
-    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
-        loadConnections = false;
-    else if (std::getenv("LADISH_APP_NAME") != nullptr)
-        loadConnections = false;
-    else if (std::getenv("NSM_URL") != nullptr)
-        loadConnections = false;
-    else
-        loadConnections = true;
-
-    // handle connections
-    if (loadConnections)
+    // handle connections (internal)
+    if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
     {
+        const bool isUsingExternal(pData->graph.isUsingExternal());
+
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
             const String& tagName(elem->getTagName());
 
-            if (! tagName.equalsIgnoreCase("patchbay") && ! tagName.equalsIgnoreCase("externalpatchbay"))
+            if (! tagName.equalsIgnoreCase("patchbay"))
                 continue;
 
             CarlaString sourcePort, targetPort;
@@ -2213,7 +2281,70 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
                 }
 
                 if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
-                    restorePatchbayConnection(sourcePort, targetPort);
+                    restorePatchbayConnection(false, sourcePort, targetPort, !isUsingExternal);
+            }
+            break;
+        }
+
+        callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+        if (pData->aboutToClose)
+            return true;
+    }
+
+    // if we're running inside some session-manager (and using JACK), let them handle the external connections
+    bool loadExternalConnections;
+
+    /**/ if (isPlugin)
+        loadExternalConnections = false;
+    else if (std::strcmp(getCurrentDriverName(), "JACK") != 0)
+        loadExternalConnections = true;
+    else if (std::getenv("CARLA_DONT_MANAGE_CONNECTIONS") != nullptr)
+        loadExternalConnections = false;
+    else if (std::getenv("LADISH_APP_NAME") != nullptr)
+        loadExternalConnections = false;
+    else if (std::getenv("NSM_URL") != nullptr)
+        loadExternalConnections = false;
+    else
+        loadExternalConnections = true;
+
+    // handle connections
+    if (loadExternalConnections)
+    {
+        const bool isUsingExternal(pData->graph.isUsingExternal());
+
+        for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
+        {
+            const String& tagName(elem->getTagName());
+
+            if (! tagName.equalsIgnoreCase("externalpatchbay"))
+                continue;
+
+            CarlaString sourcePort, targetPort;
+
+            for (XmlElement* patchElem = elem->getFirstChildElement(); patchElem != nullptr; patchElem = patchElem->getNextElement())
+            {
+                const String& patchTag(patchElem->getTagName());
+
+                sourcePort.clear();
+                targetPort.clear();
+
+                if (! patchTag.equalsIgnoreCase("connection"))
+                    continue;
+
+                for (XmlElement* connElem = patchElem->getFirstChildElement(); connElem != nullptr; connElem = connElem->getNextElement())
+                {
+                    const String& tag(connElem->getTagName());
+                    const String  text(connElem->getAllSubText().trim());
+
+                    /**/ if (tag.equalsIgnoreCase("source"))
+                        sourcePort = xmlSafeString(text, false).toRawUTF8();
+                    else if (tag.equalsIgnoreCase("target"))
+                        targetPort = xmlSafeString(text, false).toRawUTF8();
+                }
+
+                if (sourcePort.isNotEmpty() && targetPort.isNotEmpty())
+                    restorePatchbayConnection(true, sourcePort, targetPort, isUsingExternal);
             }
             break;
         }

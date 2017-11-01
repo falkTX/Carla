@@ -806,6 +806,7 @@ public:
           CarlaThread("CarlaEngineJackCallbacks"),
 #endif
           fClient(nullptr),
+          fExternalPatchbay(true),
           fFreewheel(false),
 #ifdef BUILD_BRIDGE
           fIsRunning(false)
@@ -882,7 +883,8 @@ public:
         CARLA_SAFE_ASSERT_RETURN(jackbridge_is_ok(), false);
         carla_debug("CarlaEngineJack::init(\"%s\")", clientName);
 
-        fFreewheel = false;
+        fFreewheel        = false;
+        fExternalPatchbay = true;
 
         CarlaString truncatedClientName(clientName);
         truncatedClientName.truncate(getMaxClientNameSize());
@@ -949,14 +951,16 @@ public:
 
         fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
 
-        initJackPatchbay(jackClientName);
+        if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
+            initJackPatchbay(jackClientName);
 
         jackbridge_set_client_registration_callback(fClient, carla_jack_client_registration_callback, this);
         jackbridge_set_port_registration_callback(fClient, carla_jack_port_registration_callback, this);
         jackbridge_set_port_connect_callback(fClient, carla_jack_port_connect_callback, this);
         jackbridge_set_port_rename_callback(fClient, carla_jack_port_rename_callback, this);
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             fRackPorts[kRackPortAudioIn1]  = jackbridge_port_register(fClient, "audio-in1",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
             fRackPorts[kRackPortAudioIn2]  = jackbridge_port_register(fClient, "audio-in2",  JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
@@ -965,8 +969,16 @@ public:
             fRackPorts[kRackPortEventIn]   = jackbridge_port_register(fClient, "events-in",  JACK_DEFAULT_MIDI_TYPE,  JackPortIsInput, 0);
             fRackPorts[kRackPortEventOut]  = jackbridge_port_register(fClient, "events-out", JACK_DEFAULT_MIDI_TYPE,  JackPortIsOutput, 0);
 
-            // FIXME
-            pData->graph.create(0, 0);
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                // FIXME?
+                pData->graph.create(0, 0);
+            }
+            else
+            {
+                pData->graph.create(2, 2);
+                patchbayRefresh(false);
+            }
         }
 
         if (jackbridge_activate(fClient))
@@ -976,8 +988,11 @@ public:
             return true;
         }
 
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
             pData->graph.destroy();
+        }
 
         pData->close();
         jackbridge_client_close(fClient);
@@ -1016,7 +1031,8 @@ public:
         fPostPonedEvents.clear();
 
         // clear rack/patchbay stuff
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             if (deactivated)
             {
@@ -1108,8 +1124,11 @@ public:
 #ifndef BUILD_BRIDGE
     const char* renamePlugin(const uint id, const char* const newName) override
     {
-        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+            pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
             return CarlaEngine::renamePlugin(id, newName);
+        }
 
         CARLA_SAFE_ASSERT_RETURN(pData->plugins != nullptr, nullptr);
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount != 0, nullptr);
@@ -1257,6 +1276,9 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
 
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
+            return CarlaEngine::patchbayConnect(groupA, portA, groupB, portB);
+
         const char* const fullPortNameA = fUsedPorts.getFullPortName(groupA, portA);
         CARLA_SAFE_ASSERT_RETURN(fullPortNameA != nullptr && fullPortNameA[0] != '\0', false);
 
@@ -1275,6 +1297,9 @@ public:
     bool patchbayDisconnect(const uint connectionId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! fExternalPatchbay)
+            return CarlaEngine::patchbayDisconnect(connectionId);
 
         ConnectionToId connectionToId = { 0, 0, 0, 0, 0 };
 
@@ -1312,9 +1337,18 @@ public:
         return true;
     }
 
-    bool patchbayRefresh() override
+    bool patchbayRefresh(const bool external) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, false);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+        {
+            fExternalPatchbay = external;
+            pData->graph.setUsingExternal(external);
+
+            if (! external)
+                return CarlaEngine::patchbayRefresh(false);
+        }
 
         fUsedGroups.clear();
         fUsedPorts.clear();
@@ -1403,10 +1437,13 @@ public:
     // -------------------------------------------------------------------
     // Patchbay stuff
 
-    const char* const* getPatchbayConnections() const override
+    const char* const* getPatchbayConnections(const bool external) const override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr, nullptr);
-        carla_debug("CarlaEngineJack::getPatchbayConnections()");
+        carla_debug("CarlaEngineJack::getPatchbayConnections(%s)", bool2str(external));
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::getPatchbayConnections(external);
 
         CarlaStringList connList;
 
@@ -1442,12 +1479,15 @@ public:
         return fRetConns;
     }
 
-    void restorePatchbayConnection(const char* const connSource, const char* const connTarget) override
+    void restorePatchbayConnection(const bool external, const char* const connSource, const char* const connTarget, const bool sendCallback) override
     {
         CARLA_SAFE_ASSERT_RETURN(fClient != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(connSource != nullptr && connSource[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(connTarget != nullptr && connTarget[0] != '\0',);
         carla_debug("CarlaEngineJack::restorePatchbayConnection(\"%s\", \"%s\")", connSource, connTarget);
+
+        if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY && ! external)
+            return CarlaEngine::restorePatchbayConnection(external, connSource, connTarget, sendCallback);
 
         if (const jack_port_t* const port = jackbridge_port_by_name(fClient, connSource))
         {
@@ -1599,7 +1639,8 @@ protected:
                 }
             }
         }
-        else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+        else if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK ||
+                 pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
         {
             CARLA_SAFE_ASSERT_RETURN(pData->events.in  != nullptr,);
             CARLA_SAFE_ASSERT_RETURN(pData->events.out != nullptr,);
@@ -1719,6 +1760,9 @@ protected:
     {
         CARLA_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         // do nothing on client registration, wait for first port
         if (reg) return;
 
@@ -1736,6 +1780,9 @@ protected:
 
     void handleJackPortRegistrationCallback(const jack_port_id_t port, const bool reg)
     {
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         const jack_port_t* const jackPort(jackbridge_port_by_id(fClient, port));
         CARLA_SAFE_ASSERT_RETURN(jackPort != nullptr,);
 
@@ -1788,6 +1835,9 @@ protected:
 
     void handleJackPortConnectCallback(const jack_port_id_t a, const jack_port_id_t b, const bool connect)
     {
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         const jack_port_t* const jackPortA(jackbridge_port_by_id(fClient, a));
         CARLA_SAFE_ASSERT_RETURN(jackPortA != nullptr,);
 
@@ -1850,6 +1900,9 @@ protected:
 
     void handleJackPortRenameCallback(const jack_port_id_t port, const char* const oldFullName, const char* const newFullName)
     {
+        // ignore this if on internal patchbay mode
+        if (! fExternalPatchbay) return;
+
         CARLA_SAFE_ASSERT_RETURN(oldFullName != nullptr && oldFullName[0] != '\0',);
         CARLA_SAFE_ASSERT_RETURN(newFullName != nullptr && newFullName[0] != '\0',);
 
@@ -1937,6 +1990,7 @@ protected:
 
 private:
     jack_client_t* fClient;
+    bool fExternalPatchbay;
     bool fFreewheel;
 
     // -------------------------------------------------------------------
@@ -2017,6 +2071,7 @@ private:
 
     void initJackPatchbay(const char* const ourName)
     {
+        CARLA_SAFE_ASSERT_RETURN(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY || fExternalPatchbay,);
         CARLA_SAFE_ASSERT_RETURN(ourName != nullptr && ourName[0] != '\0',);
 
         CarlaStringList parsedGroups;

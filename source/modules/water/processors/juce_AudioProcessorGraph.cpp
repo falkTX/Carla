@@ -1390,7 +1390,6 @@ void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& m
     midiMessages.addEvents (currentMidiOutputBuffer, 0, buffer.getNumSamples(), 0);
 }
 
-double AudioProcessorGraph::getTailLengthSeconds() const            { return 0; }
 bool AudioProcessorGraph::acceptsMidi() const                       { return true; }
 bool AudioProcessorGraph::producesMidi() const                      { return true; }
 
@@ -1514,11 +1513,6 @@ void AudioProcessorGraph::AudioGraphIOProcessor::processBlock (AudioSampleBuffer
                                                                MidiBuffer& midiMessages)
 {
     processAudio (buffer, midiMessages);
-}
-
-double AudioProcessorGraph::AudioGraphIOProcessor::getTailLengthSeconds() const
-{
-    return 0;
 }
 
 bool AudioProcessorGraph::AudioGraphIOProcessor::acceptsMidi() const

@@ -319,7 +319,6 @@ public:
         void releaseResources() override;
         void processBlock (AudioSampleBuffer&, MidiBuffer&) override;
 
-        double getTailLengthSeconds() const override;
         bool acceptsMidi() const override;
         bool producesMidi() const override;
 
@@ -346,7 +345,6 @@ public:
     void setNonRealtime (bool) noexcept override;
     void setPlayHead (AudioPlayHead*) override;
 
-    double getTailLengthSeconds() const override;
     bool acceptsMidi() const override;
     bool producesMidi() const override;
 
