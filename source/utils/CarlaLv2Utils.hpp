@@ -82,7 +82,7 @@
 #ifdef USE_QT
 # include <QtCore/QStringList>
 #else
-# include "juce_audio_graph/juce_audio_graph.h"
+# include "water/water.h"
 #endif
 
 // used for scalepoint sorting
@@ -658,7 +658,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         rdfDescriptor->UniqueID = uniqueId;
                 }
 #else
-                const juce2::String replaceURI(replaceNode.as_uri());
+                const water::String replaceURI(replaceNode.as_uri());
 
                 if (replaceURI.startsWith("urn:"))
                 {
@@ -1198,13 +1198,13 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             rdfDescriptor->PresetCount = static_cast<uint32_t>(presetListURIs.count());
 #else
-            juce2::StringArray presetListURIs;
+            water::StringArray presetListURIs;
 
             LILV_FOREACH(nodes, it, presetNodes)
             {
                 Lilv::Node presetNode(presetNodes.get(it));
 
-                juce2::String presetURI(presetNode.as_uri());
+                water::String presetURI(presetNode.as_uri());
 
                 if (presetURI.trim().isNotEmpty())
                     presetListURIs.addIfNotAlreadyThere(presetURI);
@@ -1245,7 +1245,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 #ifdef USE_QT
                     const int index(presetListURIs.indexOf(QString(presetURI)));
 #else
-                    const int index(presetListURIs.indexOf(juce2::String(presetURI)));
+                    const int index(presetListURIs.indexOf(water::String(presetURI)));
 #endif
                     CARLA_SAFE_ASSERT_CONTINUE(index >= 0 && index < static_cast<int>(rdfDescriptor->PresetCount));
 

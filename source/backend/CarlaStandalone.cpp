@@ -28,7 +28,7 @@
 #include "CarlaBase64Utils.hpp"
 
 #ifdef BUILD_BRIDGE
-# include "juce_audio_graph/juce_audio_graph.h"
+# include "water/water.h"
 #else
 # include "CarlaLogThread.hpp"
 #endif
@@ -144,7 +144,7 @@ static void carla_engine_init_common()
     gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
 #ifdef BUILD_BRIDGE
-    using juce2::File;
+    using water::File;
     File juceBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
     /*

@@ -20,9 +20,9 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNativeExtUI.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
-using juce2::roundToIntAccurate;
+using water::roundToIntAccurate;
 
 // -----------------------------------------------------------------------
 

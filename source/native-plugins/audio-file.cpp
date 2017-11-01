@@ -22,7 +22,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-using namespace juce2;
+using namespace water;
 
 // -----------------------------------------------------------------------
 

@@ -29,7 +29,7 @@
 #include "CarlaOscUtils.hpp"
 #include "CarlaString.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 namespace CB = CarlaBackend;
 
@@ -267,7 +267,7 @@ protected:
         }
         else
         {
-            using namespace juce2;
+            using namespace water;
 
             if (carla_is_engine_running())
                 carla_engine_close();

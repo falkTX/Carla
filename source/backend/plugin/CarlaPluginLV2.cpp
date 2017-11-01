@@ -37,12 +37,12 @@ extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 #include <string>
 #include <vector>
 
-using juce2::File;
+using water::File;
 
 #define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 

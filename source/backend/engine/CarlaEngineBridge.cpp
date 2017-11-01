@@ -31,15 +31,15 @@
 # include <xmmintrin.h>
 #endif
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 // must be last
 #include "jackbridge/JackBridge.hpp"
 
-using juce2::File;
-using juce2::MemoryBlock;
-using juce2::String;
-using juce2::Time;
+using water::File;
+using water::MemoryBlock;
+using water::String;
+using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 

@@ -22,7 +22,7 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 #include <fluidsynth.h>
 
@@ -32,8 +32,8 @@
 
 #define FLUID_DEFAULT_POLYPHONY 64
 
-using juce2::String;
-using juce2::StringArray;
+using water::String;
+using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 

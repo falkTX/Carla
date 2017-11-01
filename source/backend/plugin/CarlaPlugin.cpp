@@ -25,15 +25,15 @@
 
 #include <ctime>
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
-using juce2::CharPointer_UTF8;
-using juce2::File;
-using juce2::MemoryOutputStream;
-using juce2::Result;
-using juce2::String;
-using juce2::XmlDocument;
-using juce2::XmlElement;
+using water::CharPointer_UTF8;
+using water::File;
+using water::MemoryOutputStream;
+using water::Result;
+using water::String;
+using water::XmlDocument;
+using water::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 

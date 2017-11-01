@@ -21,14 +21,14 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 #include <string>
 #include <vector>
 
 #define URI_CARLA_ATOM_WORKER "http://kxstudio.sf.net/ns/carla/atomWorker"
 
-using juce2::File;
+using water::File;
 
 CARLA_BRIDGE_START_NAMESPACE
 

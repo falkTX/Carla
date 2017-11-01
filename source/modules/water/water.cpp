@@ -16,7 +16,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "juce_audio_graph.h"
+#include "water.h"
 
 #include <locale>
 #include <ctime>
@@ -45,7 +45,7 @@
 // #include <wctype.h>
 
 //==============================================================================
-namespace juce2
+namespace water
 {
 
 #ifdef CARLA_OS_WIN

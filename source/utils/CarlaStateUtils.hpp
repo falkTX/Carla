@@ -21,7 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -93,16 +93,16 @@ struct CarlaStateSave {
     ~CarlaStateSave() noexcept;
     void clear() noexcept;
 
-    bool fillFromXmlElement(const juce2::XmlElement* const xmlElement);
-    void dumpToMemoryStream(juce2::MemoryOutputStream& stream) const;
+    bool fillFromXmlElement(const water::XmlElement* const xmlElement);
+    void dumpToMemoryStream(water::MemoryOutputStream& stream) const;
 
     CARLA_DECLARE_NON_COPY_STRUCT(CarlaStateSave)
 };
 
 static inline
-juce2::String xmlSafeString(const char* const cstring, const bool toXml)
+water::String xmlSafeString(const char* const cstring, const bool toXml)
 {
-    juce2::String newString = juce2::String(juce2::CharPointer_UTF8(cstring));
+    water::String newString = water::String(water::CharPointer_UTF8(cstring));
 
     if (toXml)
         return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");
@@ -111,9 +111,9 @@ juce2::String xmlSafeString(const char* const cstring, const bool toXml)
 }
 
 static inline
-juce2::String xmlSafeString(const juce2::String& string, const bool toXml)
+water::String xmlSafeString(const water::String& string, const bool toXml)
 {
-    juce2::String newString(string);
+    water::String newString(string);
 
     if (toXml)
         return newString.replace("&","&amp;").replace("<","&lt;").replace(">","&gt;").replace("'","&apos;").replace("\"","&quot;");

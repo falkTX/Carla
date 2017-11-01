@@ -1,11 +1,11 @@
 #!/usr/bin/make -f
-# Makefile for juce_audio_graph #
+# Makefile for water #
 # ----------------------------- #
 # Created by falkTX
 #
 
 CWD=../..
-MODULENAME=juce_audio_graph
+MODULENAME=water
 include ../Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------

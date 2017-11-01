@@ -45,13 +45,13 @@
 
 #include <iostream>
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 #define DISCOVERY_OUT(x, y) std::cout << "\ncarla-discovery::" << x << "::" << y << std::endl;
 
-using juce2::CharPointer_UTF8;
-using juce2::File;
-using juce2::StringArray;
+using water::CharPointer_UTF8;
+using water::File;
+using water::StringArray;
 
 CARLA_BACKEND_USE_NAMESPACE
 
@@ -983,7 +983,7 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
         Lilv::Plugin lilvPlugin(lilv_plugins_get(lilvPlugins, it));
 
         if (const char* const uri = lilvPlugin.get_uri().as_string())
-            URIs.addIfNotAlreadyThere(juce2::String(uri));
+            URIs.addIfNotAlreadyThere(water::String(uri));
     }
 
     if (URIs.size() == 0)
@@ -1435,7 +1435,7 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {
 #ifdef HAVE_FLUIDSYNTH
-    const juce2::String jfilename = juce2::String(CharPointer_UTF8(filename));
+    const water::String jfilename = water::String(CharPointer_UTF8(filename));
     const File file(jfilename);
 
     if (! file.existsAsFile())
@@ -1525,7 +1525,7 @@ static void do_fluidsynth_check(const char* const filename, const bool doInit)
 static void do_linuxsampler_check(const char* const filename, const char* const stype, const bool doInit)
 {
 #ifdef HAVE_LINUXSAMPLER
-    const juce2::String jfilename = juce2::String(CharPointer_UTF8(filename));
+    const water::String jfilename = water::String(CharPointer_UTF8(filename));
     const File file(jfilename);
 
     if (! file.existsAsFile())

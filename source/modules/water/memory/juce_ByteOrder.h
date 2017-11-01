@@ -178,7 +178,7 @@ inline uint64 ByteOrder::swap (uint64 value) noexcept
    #endif
 }
 
-#if JUCE_LITTLE_ENDIAN
+#ifdef __LITTLE_ENDIAN__
  inline uint16 ByteOrder::swapIfBigEndian (const uint16 v) noexcept                                  { return v; }
  inline uint32 ByteOrder::swapIfBigEndian (const uint32 v) noexcept                                  { return v; }
  inline uint64 ByteOrder::swapIfBigEndian (const uint64 v) noexcept                                  { return v; }

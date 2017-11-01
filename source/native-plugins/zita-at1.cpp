@@ -21,9 +21,9 @@
 #include "zita-at1/jclient.cc"
 #include "zita-at1/retuner.cc"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
-using juce2::roundToIntAccurate;
+using water::roundToIntAccurate;
 
 using namespace AT1;
 

@@ -513,7 +513,7 @@ const char* carla_get_supported_file_extensions()
 #if 0
         // Audio files
         {
-            using namespace juce2;
+            using namespace water;
 
             AudioFormatManager afm;
             afm.registerBasicFormats();
@@ -693,7 +693,7 @@ const char* carla_get_library_filename()
 
     if (ret.isEmpty())
     {
-        using juce2::File;
+        using water::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
     }
 
@@ -708,7 +708,7 @@ const char* carla_get_library_folder()
 
     if (ret.isEmpty())
     {
-        using juce2::File;
+        using water::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
     }
 

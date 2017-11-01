@@ -36,7 +36,7 @@
 #include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "juce_audio_graph/juce_audio_graph.h"
+# include "water/water.h"
 #else
 # include <cerrno>
 # include <signal.h>
@@ -98,7 +98,7 @@ static inline
 uint32_t getMillisecondCounter() noexcept
 {
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    return juce2::Time::getMillisecondCounter();
+    return water::Time::getMillisecondCounter();
 #else
     uint32_t now;
     timespec t;
@@ -131,7 +131,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
 {
     CARLA_SAFE_ASSERT_RETURN(processInfo != nullptr, false);
 
-    using juce2::String;
+    using water::String;
 
     String command;
 

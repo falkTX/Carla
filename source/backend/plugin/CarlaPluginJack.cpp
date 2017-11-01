@@ -34,11 +34,11 @@
 
 // -------------------------------------------------------------------------------------------------------------------
 
-using juce2::ChildProcess;
-using juce2::File;
-using juce2::String;
-using juce2::StringArray;
-using juce2::Time;
+using water::ChildProcess;
+using water::File;
+using water::String;
+using water::StringArray;
+using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 

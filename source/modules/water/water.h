@@ -16,8 +16,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#ifndef JUCE_AUDIO_GRAPH_H_INCLUDED
-#define JUCE_AUDIO_GRAPH_H_INCLUDED
+#ifndef WATER_H_INCLUDED
+#define WATER_H_INCLUDED
 
 #include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
@@ -39,12 +39,6 @@
   #define JUCE_64BIT 1
 #else
   #define JUCE_32BIT 1
-#endif
-
-#ifdef __LITTLE_ENDIAN__
-  #define JUCE_LITTLE_ENDIAN 1
-#else
-  #define JUCE_BIG_ENDIAN 1
 #endif
 
 #define JUCE_ALIGN(bytes)   __attribute__ ((aligned (bytes)))
@@ -106,7 +100,7 @@
 #define NEEDS_TRANS(x) (x)
 
 //==============================================================================
-namespace juce2
+namespace water
 {
 
 class DynamicObject;
@@ -191,4 +185,4 @@ class AudioProcessor;
 
 }
 
-#endif   // JUCE_AUDIO_PROCESSORS_H_INCLUDED
+#endif // WATER_H_INCLUDED

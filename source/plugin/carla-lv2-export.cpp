@@ -18,7 +18,7 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"
@@ -44,9 +44,9 @@
 # define PLUGIN_EXT ".so"
 #endif
 
-using juce2::String;
-using juce2::StringArray;
-using juce2::juce_wchar;
+using water::String;
+using water::StringArray;
+using water::juce_wchar;
 
 // -----------------------------------------------------------------------
 // Converts a parameter name to an LV2 compatible symbol

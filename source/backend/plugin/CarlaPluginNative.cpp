@@ -21,11 +21,11 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
-using juce2::jmax;
-using juce2::String;
-using juce2::StringArray;
+using water::jmax;
+using water::String;
+using water::StringArray;
 
 CARLA_EXTERN_C
 std::size_t carla_getNativePluginCount() noexcept;

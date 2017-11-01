@@ -50,10 +50,10 @@ endif
 LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
-LIBS += $(MODULEDIR)/juce_audio_graph.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
+LIBS += $(MODULEDIR)/water.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a
@@ -67,10 +67,10 @@ endif
 # Link flags
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
-LINK_FLAGS += $(JUCE_CORE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
 LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
+LINK_FLAGS += $(WATER_LIBS)
 
 ifeq ($(HAVE_LIBLO),true)
 LINK_FLAGS += $(LIBLO_LIBS)

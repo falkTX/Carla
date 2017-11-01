@@ -30,15 +30,15 @@
 
 #include <ctime>
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-using juce2::ChildProcess;
-using juce2::File;
-using juce2::String;
-using juce2::StringArray;
-using juce2::Time;
+using water::ChildProcess;
+using water::File;
+using water::String;
+using water::StringArray;
+using water::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -172,7 +172,7 @@ protected:
         arguments.add(fLabel);
 
         // uniqueId
-        arguments.add(String(static_cast<juce2::int64>(kPlugin->getUniqueId())));
+        arguments.add(String(static_cast<water::int64>(kPlugin->getUniqueId())));
 
         bool started;
 

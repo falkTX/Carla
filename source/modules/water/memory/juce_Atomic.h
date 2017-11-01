@@ -142,16 +142,15 @@ public:
     static void memoryBarrier() noexcept;
 
     //==============================================================================
-   #if JUCE_64BIT
-    JUCE_ALIGN (8)
-   #else
-    JUCE_ALIGN (4)
-   #endif
-
     /** The raw value that this class operates on.
         This is exposed publicly in case you need to manipulate it directly
         for performance reasons.
     */
+   #if JUCE_64BIT
+    __attribute__ ((aligned (8)))
+   #else
+    __attribute__ ((aligned (4)))
+   #endif
     volatile Type value;
 
 private:

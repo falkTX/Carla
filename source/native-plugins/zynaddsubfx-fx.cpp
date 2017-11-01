@@ -45,9 +45,9 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
-using juce2::roundToIntAccurate;
+using water::roundToIntAccurate;
 
 using namespace zyncarla;
 

@@ -23,7 +23,7 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
-LINK_FLAGS       += $(JUCE_CORE_LIBS)
+LINK_FLAGS       += $(WATER_LIBS)
 
 ifneq ($(HAIKU),true)
 LINK_FLAGS       += -lpthread
@@ -129,8 +129,8 @@ ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
 # Common libs
 
 LIBS = \
-	$(MODULEDIR)/juce_audio_graph.a \
-	$(MODULEDIR)/lilv.a
+	$(MODULEDIR)/lilv.a \
+	$(MODULEDIR)/water.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common objects

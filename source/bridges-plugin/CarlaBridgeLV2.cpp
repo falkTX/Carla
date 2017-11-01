@@ -27,7 +27,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 // -Weffc++ compat ext widget
@@ -108,7 +108,7 @@ public:
 
         setCallback(_engine_callback, this);
 
-        using juce2::File;
+        using water::File;
         const File pluginFile(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("xml"));
 
         if (! loadProject(pluginFile.getFullPathName().toRawUTF8()))
@@ -824,7 +824,7 @@ const LV2_Descriptor* lv2_descriptor(uint32_t index)
 
     if (ret.isEmpty())
     {
-        using namespace juce2;
+        using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).withFileExtension("ttl"));
         ret = String("file://" + file.getFullPathName()).toRawUTF8();
     }
@@ -852,7 +852,7 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
 
     if (ret.isEmpty())
     {
-        using namespace juce2;
+        using namespace water;
         const File file(File::getSpecialLocation(File::currentExecutableFile).getSiblingFile("ext-ui"));
         ret = String("file://" + file.getFullPathName()).toRawUTF8();
     }

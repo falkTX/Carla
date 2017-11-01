@@ -18,7 +18,7 @@
 #include "CarlaHost.h"
 #include "CarlaString.hpp"
 
-#include "juce_audio_graph/juce_audio_graph.h"
+#include "water/water.h"
 
 namespace CB = CarlaBackend;
 
@@ -106,7 +106,7 @@ const char* carla_get_library_filename()
 
     if (ret.isEmpty())
     {
-        using namespace juce2;
+        using namespace water;
         ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
     }
 
@@ -121,7 +121,7 @@ const char* carla_get_library_folder()
 
     if (ret.isEmpty())
     {
-        using namespace juce2;
+        using namespace water;
         ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
     }
 

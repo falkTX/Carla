@@ -379,8 +379,8 @@ endif
 ifeq ($(LINUX),true)
 HYLIA_FLAGS           = -DLINK_PLATFORM_LINUX=1
 JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
-JUCE_CORE_LIBS        = -ldl -lpthread -lrt
 LILV_LIBS             = -ldl -lm -lrt
+WATER_LIBS            = -ldl -lpthread -lrt
 ifeq ($(HAVE_DGL),true)
 DGL_FLAGS             = $(shell pkg-config --cflags gl x11)
 DGL_LIBS              = $(shell pkg-config --libs gl x11)
@@ -401,21 +401,21 @@ ifeq ($(MACOS),true)
 DGL_LIBS               = -framework OpenGL -framework Cocoa
 HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS        = -ldl -lpthread
-JUCE_CORE_LIBS         = -framework AppKit
 LILV_LIBS              = -ldl -lm
 RTAUDIO_FLAGS         += -D__MACOSX_CORE__
 RTMIDI_FLAGS          += -D__MACOSX_CORE__
+WATER_LIBS             = -framework AppKit
 endif
 
 ifeq ($(WIN32),true)
 DGL_LIBS               = -lopengl32 -lgdi32
 HYLIA_FLAGS            = -DLINK_PLATFORM_WINDOWS=1
 JACKBRIDGE_LIBS        = -lpthread
-JUCE_CORE_LIBS         = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 LILV_LIBS              = -lm
 RTAUDIO_FLAGS         += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
 RTAUDIO_LIBS          += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS          += -D__WINDOWS_MM__
+WATER_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
 endif
 
 # --------------------------------------------------------------
