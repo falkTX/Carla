@@ -439,10 +439,6 @@ var::var() noexcept : type (&VariantType_Void::instance) {}
 var::var (const VariantType& t) noexcept  : type (&t) {}
 var::~var() noexcept  { type->cleanUp (value); }
 
-#if JUCE_ALLOW_STATIC_NULL_VARIABLES
-const var var::null;
-#endif
-
 //==============================================================================
 var::var (const var& valueToCopy)  : type (valueToCopy.type)
 {

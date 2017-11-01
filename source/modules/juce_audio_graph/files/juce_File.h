@@ -96,15 +96,6 @@ public:
    #endif
 
     //==============================================================================
-   #if JUCE_ALLOW_STATIC_NULL_VARIABLES
-    /** This static constant is used for referring to an 'invalid' file.
-        Bear in mind that you should avoid this kind of static variable, and always prefer
-        to use File() or {} if you need a default-constructed File object.
-    */
-    static const File nonexistent;
-   #endif
-
-    //==============================================================================
     /** Checks whether the file actually exists.
 
         @returns    true if the file exists, either as a file or a directory.
