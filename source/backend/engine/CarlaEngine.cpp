@@ -2254,6 +2254,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         {
             const String& tagName(elem->getTagName());
 
+            // only load internal patchbay connections
             if (! tagName.equalsIgnoreCase("patchbay"))
                 continue;
 
@@ -2317,8 +2318,17 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
         {
             const String& tagName(elem->getTagName());
 
-            if (! tagName.equalsIgnoreCase("externalpatchbay"))
+            // check if we want to load patchbay-mode connections into an external (multi-client) graph
+            if (tagName.equalsIgnoreCase("patchbay"))
+            {
+                if (pData->options.processMode == ENGINE_PROCESS_MODE_PATCHBAY)
+                    continue;
+            }
+            // or load external patchbay connections
+            else if (! tagName.equalsIgnoreCase("externalpatchbay"))
+            {
                 continue;
+            }
 
             CarlaString sourcePort, targetPort;
 
