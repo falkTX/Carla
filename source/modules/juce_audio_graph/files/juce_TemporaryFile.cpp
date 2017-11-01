@@ -91,7 +91,7 @@ bool TemporaryFile::overwriteTargetFileWithTemporary() const
             if (temporaryFile.replaceFileIn (targetFile))
                 return true;
 
-            Thread::sleep (100);
+            carla_msleep (100);
         }
     }
     else
@@ -112,7 +112,7 @@ bool TemporaryFile::deleteTemporaryFile() const
         if (temporaryFile.deleteFile())
             return true;
 
-        Thread::sleep (50);
+        carla_msleep (50);
     }
 
     return false;

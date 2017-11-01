@@ -25,16 +25,15 @@
 
 #include <ctime>
 
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
-using juce::CharPointer_UTF8;
-using juce::File;
-using juce::MemoryOutputStream;
-using juce::Result;
-using juce::ScopedPointer;
-using juce::String;
-using juce::XmlDocument;
-using juce::XmlElement;
+using juce2::CharPointer_UTF8;
+using juce2::File;
+using juce2::MemoryOutputStream;
+using juce2::Result;
+using juce2::String;
+using juce2::XmlDocument;
+using juce2::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 

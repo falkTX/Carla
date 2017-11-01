@@ -19,9 +19,9 @@
 #ifndef JUCE_AUDIO_GRAPH_H_INCLUDED
 #define JUCE_AUDIO_GRAPH_H_INCLUDED
 
+#include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 #include "CarlaMutex.hpp"
-#include "distrho/extra/ScopedPointer.hpp"
 
 #include <algorithm>
 
@@ -144,6 +144,10 @@ class XmlElement;
 #include "text/juce_Identifier.h"
 #include "text/juce_NewLine.h"
 
+#include "threads/juce_ScopedLock.h"
+#include "threads/juce_SpinLock.h"
+#include "memory/juce_SharedResourcePointer.h"
+
 #include "containers/juce_LinkedListPointer.h"
 #include "containers/juce_OwnedArray.h"
 #include "containers/juce_ReferenceCountedArray.h"
@@ -156,13 +160,19 @@ class XmlElement;
 #include "streams/juce_OutputStream.h"
 #include "streams/juce_MemoryOutputStream.h"
 
+#include "maths/juce_Random.h"
 #include "misc/juce_Result.h"
 
 #include "text/juce_StringPool.h"
 
+#include "time/juce_Time.h"
+
 #include "files/juce_File.h"
+#include "files/juce_DirectoryIterator.h"
+#include "files/juce_TemporaryFile.h"
 #include "streams/juce_FileInputStream.h"
 #include "streams/juce_FileInputSource.h"
+#include "streams/juce_FileOutputStream.h"
 
 #include "buffers/juce_AudioSampleBuffer.h"
 #include "midi/juce_MidiBuffer.h"
@@ -172,6 +182,9 @@ class AudioProcessor;
 #include "processors/juce_AudioPlayHead.h"
 #include "processors/juce_AudioProcessor.h"
 #include "processors/juce_AudioProcessorGraph.h"
+
+#include "threads/juce_ChildProcess.h"
+#include "threads/juce_Process.h"
 
 #include "xml/juce_XmlElement.h"
 #include "xml/juce_XmlDocument.h"

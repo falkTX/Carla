@@ -23,9 +23,9 @@
 
 #include <string>
 
-using juce::MemoryOutputStream;
-using juce::String;
-using juce::XmlElement;
+using juce2::MemoryOutputStream;
+using juce2::String;
+using juce2::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -509,7 +509,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
         case PLUGIN_LADSPA:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
             infoXml << "   <Label>"    << xmlSafeString(label, true)  << "</Label>\n";
-            infoXml << "   <UniqueID>" << juce::int64(uniqueId)       << "</UniqueID>\n";
+            infoXml << "   <UniqueID>" << juce2::int64(uniqueId)       << "</UniqueID>\n";
             break;
         case PLUGIN_DSSI:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
@@ -520,7 +520,7 @@ void CarlaStateSave::dumpToMemoryStream(MemoryOutputStream& content) const
             break;
         case PLUGIN_VST2:
             infoXml << "   <Binary>"   << xmlSafeString(binary, true) << "</Binary>\n";
-            infoXml << "   <UniqueID>" << juce::int64(uniqueId)       << "</UniqueID>\n";
+            infoXml << "   <UniqueID>" << juce2::int64(uniqueId)       << "</UniqueID>\n";
             break;
         case PLUGIN_GIG:
         case PLUGIN_SF2:

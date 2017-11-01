@@ -729,6 +729,11 @@ String& String::operator+= (const char ch)
     return operator+= (asString);
 }
 
+String& String::operator+= (const juce_wchar ch)
+{
+    return operator+= (charToString(ch));
+}
+
 namespace StringHelpers
 {
     template <typename T>
@@ -753,6 +758,10 @@ JUCE_API String JUCE_CALLTYPE operator+ (const char s1, const String& s2)       
 JUCE_API String JUCE_CALLTYPE operator+ (String s1, const String& s2)               { return s1 += s2; }
 JUCE_API String JUCE_CALLTYPE operator+ (String s1, const char* const s2)           { return s1 += s2; }
 JUCE_API String JUCE_CALLTYPE operator+ (String s1, const char s2)                  { return s1 += s2; }
+
+JUCE_API String JUCE_CALLTYPE operator+ (const juce_wchar s1, const String& s2)     { return String::charToString (s1) + s2; }
+JUCE_API String JUCE_CALLTYPE operator+ (String s1, const juce_wchar s2)            { return s1 += s2; }
+JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const juce_wchar s2)         { return s1 += s2; }
 
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const char s2)               { return s1 += s2; }
 JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const char* const s2)        { return s1 += s2; }
@@ -1721,6 +1730,43 @@ bool String::containsNonWhitespaceChars() const noexcept
             return true;
 
     return false;
+}
+
+//=====================================================================================================================
+static String getStringFromWindows1252Codepage (const char* data, size_t num)
+{
+    HeapBlock<char> unicode (num + 1);
+
+    for (size_t i = 0; i < num; ++i)
+        unicode[i] = CharacterFunctions::getUnicodeCharFromWindows1252Codepage ((uint8) data[i]);
+
+    unicode[num] = 0;
+    return CharPointer_UTF8 (unicode);
+}
+
+String String::createStringFromData (const void* const unknownData, int size)
+{
+    const uint8* const data = static_cast<const uint8*> (unknownData);
+
+    if (size <= 0 || data == nullptr)
+        return String();
+
+    if (size == 1)
+        return charToString ((juce_wchar) data[0]);
+
+    const char* start = (const char*) data;
+
+    if (size >= 3 && CharPointer_UTF8::isByteOrderMark (data))
+    {
+        start += 3;
+        size -= 3;
+    }
+
+    if (CharPointer_UTF8::isValidString (start, size))
+        return String (CharPointer_UTF8 (start),
+                       CharPointer_UTF8 (start + size));
+
+    return getStringFromWindows1252Codepage (start, (size_t) size);
 }
 
 // Note! The format parameter here MUST NOT be a reference, otherwise MS's va_start macro fails to work (but still compiles).

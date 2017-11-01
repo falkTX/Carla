@@ -31,17 +31,15 @@
 # include <xmmintrin.h>
 #endif
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 // must be last
 #include "jackbridge/JackBridge.hpp"
 
-using juce::File;
-using juce::MemoryBlock;
-using juce::String;
-using juce::Time;
-using juce::Thread;
+using juce2::File;
+using juce2::MemoryBlock;
+using juce2::String;
+using juce2::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -79,13 +77,13 @@ private:
 // -------------------------------------------------------------------
 
 class CarlaEngineBridge : public CarlaEngine,
-                          private Thread,
+                          private CarlaThread,
                           private LatencyChangedCallback
 {
 public:
     CarlaEngineBridge(const char* const audioPoolBaseName, const char* const rtClientBaseName, const char* const nonRtClientBaseName, const char* const nonRtServerBaseName)
         : CarlaEngine(),
-          Thread("CarlaEngineBridge"),
+          CarlaThread("CarlaEngineBridge"),
           fShmAudioPool(),
           fShmRtClientControl(),
           fShmNonRtClientControl(),
@@ -207,7 +205,8 @@ public:
             fShmNonRtServerControl.commitWrite();
         }
 
-        startThread(Thread::realtimeAudioPriority);
+        // TODO
+        startThread(/*Thread::realtimeAudioPriority*/);
 
         return true;
     }
@@ -564,7 +563,7 @@ public:
         if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000 && ! wasFirstIdle)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
-            threadShouldExit();
+            signalThreadShouldExit();
             callback(ENGINE_CALLBACK_QUIT, 0, 0, 0, 0.0f, nullptr);
         }
     }
@@ -955,7 +954,7 @@ protected:
 
         bool quitReceived = false;
 
-        for (; ! threadShouldExit();)
+        for (; ! shouldThreadExit();)
         {
             const BridgeRtClientControl::WaitHelper helper(fShmRtClientControl);
 

@@ -31,7 +31,7 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 // -----------------------------------------------------------------------
 
@@ -198,9 +198,9 @@ public:
 
 // -----------------------------------------------------------------------
 
-using juce::File;
-using juce::SharedResourcePointer;
-using juce::StringArray;
+using juce2::File;
+using juce2::SharedResourcePointer;
+using juce2::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -461,7 +461,7 @@ public:
             if (programList.size() == MAX_MIDI_CHANNELS)
             {
                 uint8_t channel = 0;
-                for (juce::String *it=programList.begin(), *end=programList.end(); it != end; ++it)
+                for (juce2::String *it=programList.begin(), *end=programList.end(); it != end; ++it)
                 {
                     const int index(it->getIntValue());
 

@@ -24,8 +24,7 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 #include "vestige/aeffectx.h"
 #define effFlagsProgramChunks (1 << 5)
@@ -73,8 +72,8 @@ public:
         fHost.uiParentId  = 0;
 
         // find resource dir
-        using juce::File;
-        using juce::String;
+        using juce2::File;
+        using juce2::String;
 
         File curExe = File::getSpecialLocation(File::currentExecutableFile).getLinkedTarget();
         File resDir = curExe.getSiblingFile("carla-resources");

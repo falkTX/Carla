@@ -28,9 +28,6 @@
 #include "CarlaMutex.hpp"
 #include "LinkedList.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
-
 #if 0
 #include <jack/jack.h>
 #include <jack/midiport.h>

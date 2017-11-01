@@ -476,11 +476,8 @@ public:
     /** Parses this string as a 64-bit integer. */
     int64 getIntValue64() const noexcept
     {
-       #if JUCE_LINUX || JUCE_ANDROID || JUCE_MINGW
         return atoll (data);
-       #elif JUCE_WINDOWS
-        return _atoi64 (data);
-       #else
+       #if 0
         return CharacterFunctions::getIntValue <int64, CharPointer_UTF8> (*this);
        #endif
     }

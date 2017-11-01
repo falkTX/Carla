@@ -47,6 +47,7 @@ InputStream* FileInputSource::createInputStreamFor (const String& relatedItemPat
     return file.getSiblingFile (relatedItemPath).createInputStream();
 }
 
+#if 0
 int64 FileInputSource::hashCode() const
 {
     int64 h = file.hashCode();
@@ -56,3 +57,4 @@ int64 FileInputSource::hashCode() const
 
     return h;
 }
+#endif

@@ -34,12 +34,11 @@
 
 // -------------------------------------------------------------------------------------------------------------------
 
-using juce::ChildProcess;
-using juce::File;
-using juce::ScopedPointer;
-using juce::String;
-using juce::StringArray;
-using juce::Time;
+using juce2::ChildProcess;
+using juce2::File;
+using juce2::String;
+using juce2::StringArray;
+using juce2::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 

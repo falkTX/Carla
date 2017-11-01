@@ -108,7 +108,7 @@ String StringPool::getPooledString (const char* const newString)
     if (newString == nullptr || *newString == 0)
         return String();
 
-    const ScopedLock sl (lock);
+    const CarlaRecursiveMutexLocker sl (lock);
     garbageCollectIfNeeded();
     return addPooledString (strings, CharPointer_UTF8 (newString));
 }
@@ -118,7 +118,7 @@ String StringPool::getPooledString (String::CharPointerType start, String::CharP
     if (start.isEmpty() || start == end)
         return String();
 
-    const ScopedLock sl (lock);
+    const CarlaRecursiveMutexLocker sl (lock);
     garbageCollectIfNeeded();
     return addPooledString (strings, StartEndString (start, end));
 }
@@ -128,7 +128,7 @@ String StringPool::getPooledString (StringRef newString)
     if (newString.isEmpty())
         return String();
 
-    const ScopedLock sl (lock);
+    const CarlaRecursiveMutexLocker sl (lock);
     garbageCollectIfNeeded();
     return addPooledString (strings, newString.text);
 }
@@ -138,7 +138,7 @@ String StringPool::getPooledString (const String& newString)
     if (newString.isEmpty())
         return String();
 
-    const ScopedLock sl (lock);
+    const CarlaRecursiveMutexLocker sl (lock);
     garbageCollectIfNeeded();
     return addPooledString (strings, newString);
 }
@@ -152,7 +152,7 @@ void StringPool::garbageCollectIfNeeded()
 
 void StringPool::garbageCollect()
 {
-    const ScopedLock sl (lock);
+    const CarlaRecursiveMutexLocker sl (lock);
 
     for (int i = strings.size(); --i >= 0;)
         if (strings.getReference(i).getReferenceCount() == 1)

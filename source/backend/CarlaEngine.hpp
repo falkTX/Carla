@@ -24,7 +24,7 @@
 struct CarlaOscData;
 #endif
 
-namespace juce {
+namespace juce2 {
 class MemoryOutputStream;
 class XmlDocument;
 }
@@ -1134,12 +1134,12 @@ protected:
     /*!
      * Common save project function for main engine and plugin.
      */
-    void saveProjectInternal(juce::MemoryOutputStream& outStrm) const;
+    void saveProjectInternal(juce2::MemoryOutputStream& outStrm) const;
 
     /*!
      * Common load project function for main engine and plugin.
      */
-    bool loadProjectInternal(juce::XmlDocument& xmlDoc);
+    bool loadProjectInternal(juce2::XmlDocument& xmlDoc);
 
 #ifndef BUILD_BRIDGE
     // -------------------------------------------------------------------

@@ -50,7 +50,7 @@ endif
 LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
-LIBS += $(MODULEDIR)/juce_core.a
+LIBS += $(MODULEDIR)/juce_audio_graph.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a

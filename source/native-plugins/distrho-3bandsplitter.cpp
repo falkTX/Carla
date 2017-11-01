@@ -23,6 +23,8 @@
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
 
+#include "CarlaJuceUtils.hpp"
+
 // Plugin Code
 #include "distrho-3bandsplitter/DistrhoArtwork3BandSplitter.cpp"
 #include "distrho-3bandsplitter/DistrhoPlugin3BandSplitter.cpp"

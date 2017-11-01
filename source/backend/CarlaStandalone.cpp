@@ -27,12 +27,11 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaBase64Utils.hpp"
 
-#ifndef BUILD_BRIDGE
+#ifdef BUILD_BRIDGE
+# include "juce_audio_graph/juce_audio_graph.h"
+#else
 # include "CarlaLogThread.hpp"
 #endif
-
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
 
 namespace CB = CarlaBackend;
 using CB::EngineOptions;
@@ -145,7 +144,7 @@ static void carla_engine_init_common()
     gStandalone.engine->setFileCallback(gStandalone.fileCallback, gStandalone.fileCallbackPtr);
 
 #ifdef BUILD_BRIDGE
-    using juce::File;
+    using juce2::File;
     File juceBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
     /*

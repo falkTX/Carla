@@ -129,7 +129,7 @@ ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
 # Common libs
 
 LIBS = \
-	$(MODULEDIR)/juce_core.a \
+	$(MODULEDIR)/juce_audio_graph.a \
 	$(MODULEDIR)/lilv.a
 
 # ----------------------------------------------------------------------------------------------------------------------------

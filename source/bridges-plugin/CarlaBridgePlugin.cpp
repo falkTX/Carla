@@ -36,17 +36,16 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;
 using CarlaBackend::EngineCallbackOpcode2Str;
 using CarlaBackend::runMainLoopOnce;
 
-using juce::CharPointer_UTF8;
-using juce::File;
-using juce::String;
+using juce2::CharPointer_UTF8;
+using juce2::File;
+using juce2::String;
 
 // -------------------------------------------------------------------------
 

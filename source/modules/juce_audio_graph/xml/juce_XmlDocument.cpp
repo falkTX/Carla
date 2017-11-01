@@ -124,29 +124,17 @@ XmlElement* XmlDocument::getDocumentElement (const bool onlyReadOuterDocumentEle
             MemoryOutputStream data;
             data.writeFromInputStream (*in, onlyReadOuterDocumentElement ? 8192 : -1);
 
-           #if JUCE_STRING_UTF_TYPE == 8
             if (data.getDataSize() > 2)
             {
                 data.writeByte (0);
                 const char* text = static_cast<const char*> (data.getData());
 
-                if (CharPointer_UTF16::isByteOrderMarkBigEndian (text)
-                      || CharPointer_UTF16::isByteOrderMarkLittleEndian (text))
-                {
-                    originalText = data.toString();
-                }
-                else
-                {
-                    if (CharPointer_UTF8::isByteOrderMark (text))
-                        text += 3;
+                if (CharPointer_UTF8::isByteOrderMark (text))
+                    text += 3;
 
-                    // parse the input buffer directly to avoid copying it all to a string..
-                    return parseDocumentElement (String::CharPointerType (text), onlyReadOuterDocumentElement);
-                }
+                // parse the input buffer directly to avoid copying it all to a string..
+                return parseDocumentElement (String::CharPointerType (text), onlyReadOuterDocumentElement);
             }
-           #else
-            originalText = data.toString();
-           #endif
         }
     }
 
@@ -734,9 +722,7 @@ void XmlDocument::readEntity (String& result)
             return;
         }
 
-#if 0 // FIXME
         result << (juce_wchar) charCode;
-#endif
     }
     else
     {

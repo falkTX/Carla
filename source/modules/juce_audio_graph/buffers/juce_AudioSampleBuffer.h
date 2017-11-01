@@ -31,8 +31,6 @@
 #ifndef JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 #define JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 
-#include "CarlaMathUtils.hpp"
-
 //==============================================================================
 /**
     A multi-channel buffer of floating point audio samples.

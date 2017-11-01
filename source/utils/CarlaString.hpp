@@ -18,8 +18,8 @@
 #ifndef CARLA_STRING_HPP_INCLUDED
 #define CARLA_STRING_HPP_INCLUDED
 
-#include "CarlaJuceUtils.hpp"
 #include "CarlaMathUtils.hpp"
+#include "CarlaJuceUtils.hpp"
 
 #include <algorithm>
 

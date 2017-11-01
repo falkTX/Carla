@@ -59,11 +59,11 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-LIBS_native   = $(MODULEDIR)/juce_core.a
-LIBS_posix32  = $(MODULEDIR)/juce_core.posix32.a
-LIBS_posix64  = $(MODULEDIR)/juce_core.posix64.a
-LIBS_win32    = $(MODULEDIR)/juce_core.win32.a
-LIBS_win64    = $(MODULEDIR)/juce_core.win64.a
+LIBS_native   = $(MODULEDIR)/juce_audio_graph.a
+LIBS_posix32  = $(MODULEDIR)/juce_audio_graph.posix32.a
+LIBS_posix64  = $(MODULEDIR)/juce_audio_graph.posix64.a
+LIBS_win32    = $(MODULEDIR)/juce_audio_graph.win32.a
+LIBS_win64    = $(MODULEDIR)/juce_audio_graph.win64.a
 LINK_FLAGS   += $(JUCE_CORE_LIBS)
 
 LIBS_native  += $(MODULEDIR)/lilv.a

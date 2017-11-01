@@ -16,12 +16,12 @@
  */
 
 #include "libjack.hpp"
-#include <sys/prctl.h>
 
 #include "CarlaThread.hpp"
 
-using juce::Thread;
-using juce::Time;
+#include <signal.h>
+#include <sys/prctl.h>
+#include <sys/time.h>
 
 typedef int (*CarlaInterposedCallback)(int, void*);
 
@@ -34,9 +34,16 @@ int jack_carla_interposed_action(int, int, void*)
 
 CARLA_BACKEND_START_NAMESPACE
 
+static int64_t getCurrentTimeMilliseconds() noexcept
+{
+    struct timeval tv;
+    gettimeofday (&tv, nullptr);
+    return ((int64_t) tv.tv_sec) * 1000 + tv.tv_usec / 1000;
+}
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-class CarlaJackRealtimeThread : public Thread
+class CarlaJackRealtimeThread : public CarlaThread
 {
 public:
     struct Callback {
@@ -46,7 +53,7 @@ public:
     };
 
     CarlaJackRealtimeThread(Callback* const callback)
-        : Thread("CarlaJackRealtimeThread"),
+        : CarlaThread("CarlaJackRealtimeThread"),
           fCallback(callback) {}
 
 protected:
@@ -63,7 +70,7 @@ private:
 
 // --------------------------------------------------------------------------------------------------------------------
 
-class CarlaJackNonRealtimeThread : public Thread
+class CarlaJackNonRealtimeThread : public CarlaThread
 {
 public:
     struct Callback {
@@ -73,7 +80,7 @@ public:
     };
 
     CarlaJackNonRealtimeThread(Callback* const callback)
-        : Thread("CarlaJackNonRealtimeThread"),
+        : CarlaThread("CarlaJackNonRealtimeThread"),
           fCallback(callback) {}
 
 protected:
@@ -380,7 +387,7 @@ bool CarlaJackAppClient::initSharedMemmory()
     // tell backend we're live
     const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
 
-    fLastPingTime = Time::currentTimeMillis();
+    fLastPingTime = getCurrentTimeMilliseconds();
     CARLA_SAFE_ASSERT(fLastPingTime > 0);
 
     // ready!
@@ -855,7 +862,7 @@ bool CarlaJackAppClient::handleNonRtData()
 #endif
 
         if (opcode != kPluginBridgeNonRtClientNull && opcode != kPluginBridgeNonRtClientPingOnOff && fLastPingTime > 0)
-            fLastPingTime = Time::currentTimeMillis();
+            fLastPingTime = getCurrentTimeMilliseconds();
 
         switch (opcode)
         {
@@ -872,7 +879,7 @@ bool CarlaJackAppClient::handleNonRtData()
         case kPluginBridgeNonRtClientPingOnOff: {
             const uint32_t onOff(fShmNonRtClientControl.readBool());
 
-            fLastPingTime = onOff ? Time::currentTimeMillis() : -1;
+            fLastPingTime = onOff ? getCurrentTimeMilliseconds() : -1;
         }   break;
 
         case kPluginBridgeNonRtClientActivate:
@@ -968,7 +975,7 @@ void CarlaJackAppClient::runRealtimeThread()
 
     bool quitReceived = false;
 
-    for (; ! fRealtimeThread.threadShouldExit();)
+    for (; ! fRealtimeThread.shouldThreadExit();)
     {
         if (handleRtData())
         {
@@ -1003,15 +1010,16 @@ void CarlaJackAppClient::runNonRealtimeThread()
             fMidiOutBuffers[i].isInput = false;
     }
 
-    fRealtimeThread.startThread(Thread::realtimeAudioPriority);
+    // TODO
+    fRealtimeThread.startThread(/*Thread::realtimeAudioPriority*/);
 
-    fLastPingTime = Time::currentTimeMillis();
+    fLastPingTime = getCurrentTimeMilliseconds();
     carla_stdout("Carla Jack Client Ready!");
 
     bool quitReceived = false,
          timedOut = false;
 
-    for (; ! fNonRealtimeThread.threadShouldExit();)
+    for (; ! fNonRealtimeThread.shouldThreadExit();)
     {
         carla_msleep(50);
 
@@ -1023,7 +1031,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
             break;
 
         /*
-        if (fLastPingTime > 0 && Time::currentTimeMillis() > fLastPingTime + 30000)
+        if (fLastPingTime > 0 && getCurrentTimeMilliseconds() > fLastPingTime + 30000)
         {
             carla_stderr("Did not receive ping message from server for 30 secs, closing...");
 

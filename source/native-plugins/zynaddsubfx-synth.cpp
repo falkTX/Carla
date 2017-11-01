@@ -21,7 +21,6 @@
 #include "LinkedList.hpp"
 
 #include "CarlaMathUtils.hpp"
-#include "distrho/extra/ScopedPointer.hpp"
 
 #include <ctime>
 #include <set>
@@ -50,10 +49,9 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
-using juce::roundToIntAccurate;
+using juce2::roundToIntAccurate;
 
 using namespace zyncarla;
 

@@ -18,8 +18,7 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 #if 0
 // -----------------------------------------------------------------------
@@ -143,7 +142,7 @@ private:
     {
         fMidiOut.clear();
 
-        using namespace juce;
+        using namespace juce2;
 
         const String jfilename = String(CharPointer_UTF8(filename));
         File file(jfilename);

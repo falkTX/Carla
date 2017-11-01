@@ -55,7 +55,7 @@ ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
-ALL_LIBS += $(MODULEDIR)/juce_core.a
+ALL_LIBS += $(MODULEDIR)/juce_audio_graph.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 
@@ -149,7 +149,7 @@ theme: libs
 # Binaries (posix32)
 
 LIBS_POSIX32  = $(MODULEDIR)/jackbridge.posix32.a
-LIBS_POSIX32 += $(MODULEDIR)/juce_core.posix32.a
+LIBS_POSIX32 += $(MODULEDIR)/juce_audio_graph.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_POSIX32 += $(MODULEDIR)/rtmempool.posix32.a
 
@@ -161,7 +161,7 @@ posix32: $(LIBS_POSIX32)
 # Binaries (posix64)
 
 LIBS_POSIX64  = $(MODULEDIR)/jackbridge.posix64.a
-LIBS_POSIX64 += $(MODULEDIR)/juce_core.posix64.a
+LIBS_POSIX64 += $(MODULEDIR)/juce_audio_graph.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/lilv.posix64.a
 LIBS_POSIX64 += $(MODULEDIR)/rtmempool.posix64.a
 
@@ -177,7 +177,7 @@ LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32.a
 else
 LIBS_WIN32  = $(MODULEDIR)/jackbridge.win32e.a
 endif
-LIBS_WIN32 += $(MODULEDIR)/juce_core.win32.a
+LIBS_WIN32 += $(MODULEDIR)/juce_audio_graph.win32.a
 LIBS_WIN32 += $(MODULEDIR)/lilv.win32.a
 LIBS_WIN32 += $(MODULEDIR)/rtmempool.win32.a
 
@@ -193,7 +193,7 @@ LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64.a
 else
 LIBS_WIN64  = $(MODULEDIR)/jackbridge.win64e.a
 endif
-LIBS_WIN64 += $(MODULEDIR)/juce_core.win64.a
+LIBS_WIN64 += $(MODULEDIR)/juce_audio_graph.win64.a
 LIBS_WIN64 += $(MODULEDIR)/lilv.win64.a
 LIBS_WIN64 += $(MODULEDIR)/rtmempool.win64.a
 

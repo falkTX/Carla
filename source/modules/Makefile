@@ -9,7 +9,7 @@
 all:
 
 clean:
-	$(MAKE) clean -C juce_core
+	$(MAKE) clean -C juce_audio_graph
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool

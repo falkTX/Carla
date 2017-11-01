@@ -742,41 +742,6 @@ public:
         /** The user's home folder. This is the same as using File ("~"). */
         userHomeDirectory,
 
-        /** The user's default documents folder. On Windows, this might be the user's
-            "My Documents" folder. On the Mac it'll be their "Documents" folder. Linux
-            doesn't tend to have one of these, so it might just return their home folder.
-        */
-        userDocumentsDirectory,
-
-        /** The folder that contains the user's desktop objects. */
-        userDesktopDirectory,
-
-        /** The most likely place where a user might store their music files. */
-        userMusicDirectory,
-
-        /** The most likely place where a user might store their movie files. */
-        userMoviesDirectory,
-
-        /** The most likely place where a user might store their picture files. */
-        userPicturesDirectory,
-
-        /** The folder in which applications store their persistent user-specific settings.
-            On Windows, this might be "\Documents and Settings\username\Application Data".
-            On the Mac, it might be "~/Library". If you're going to store your settings in here,
-            always create your own sub-folder to put them in, to avoid making a mess.
-        */
-        userApplicationDataDirectory,
-
-        /** An equivalent of the userApplicationDataDirectory folder that is shared by all users
-            of the computer, rather than just the current user.
-
-            On the Mac it'll be "/Library", on Windows, it could be something like
-            "\Documents and Settings\All Users\Application Data".
-
-            Depending on the setup, this folder may be read-only.
-        */
-        commonApplicationDataDirectory,
-
         /** A place to put documents which are shared by all users of the machine.
             On Windows this may be somewhere like "C:\Users\Public\Documents", on OSX it
             will be something like "/Users/Shared". Other OSes may have no such concept
@@ -812,17 +777,10 @@ public:
         */
         currentApplicationFile,
 
-        /** Returns the file that was invoked to launch this executable.
-            This may differ from currentExecutableFile if the app was started from e.g. a link - this
-            will return the name of the link that was used, whereas currentExecutableFile will return
-            the actual location of the target executable.
-        */
-        invokedExecutableFile,
-
         /** In a plugin, this will return the path of the host executable. */
         hostApplicationPath,
 
-       #if JUCE_WINDOWS
+       #ifdef CARLA_OS_WIN
         /** On a Windows machine, returns the location of the Windows/System32 folder. */
         windowsSystemDirectory,
        #endif
@@ -925,7 +883,7 @@ public:
     */
     File getLinkedTarget() const;
 
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     /** Windows ONLY - Creates a win32 .LNK shortcut file that links to this file. */
     bool createShortcut (const String& description, const File& linkFileToCreate) const;
 

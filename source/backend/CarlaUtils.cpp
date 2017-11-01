@@ -513,7 +513,7 @@ const char* carla_get_supported_file_extensions()
 #if 0
         // Audio files
         {
-            using namespace juce;
+            using namespace juce2;
 
             AudioFormatManager afm;
             afm.registerBasicFormats();
@@ -553,7 +553,6 @@ void carla_set_process_name(const char* name)
     carla_debug("carla_set_process_name(\"%s\")", name);
 
     CarlaThread::setCurrentThreadName(name);
-    juce::Thread::setCurrentThreadName(name);
 }
 
 // -------------------------------------------------------------------------------------------------------------------
@@ -694,7 +693,7 @@ const char* carla_get_library_filename()
 
     if (ret.isEmpty())
     {
-        using juce::File;
+        using juce2::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile)).getFullPathName().toRawUTF8();
     }
 
@@ -709,7 +708,7 @@ const char* carla_get_library_folder()
 
     if (ret.isEmpty())
     {
-        using juce::File;
+        using juce2::File;
         ret = File(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory()).getFullPathName().toRawUTF8();
     }
 

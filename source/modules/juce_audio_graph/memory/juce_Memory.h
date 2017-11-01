@@ -110,7 +110,7 @@ inline void writeUnaligned (void* dstPtr, Type value) noexcept
 #if (JUCE_COMPILER_SUPPORTS_ARC && defined (__OBJC__)) || DOXYGEN
  #define JUCE_AUTORELEASEPOOL  @autoreleasepool
 #else
- #define JUCE_AUTORELEASEPOOL  const juce::ScopedAutoReleasePool JUCE_JOIN_MACRO (autoReleasePool_, __LINE__);
+ #define JUCE_AUTORELEASEPOOL  const juce2::ScopedAutoReleasePool JUCE_JOIN_MACRO (autoReleasePool_, __LINE__);
 #endif
 
 #else

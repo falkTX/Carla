@@ -64,16 +64,6 @@ StringArray::StringArray (const char* const* initialStrings, int numberOfStrings
     strings.addArray (initialStrings, numberOfStrings);
 }
 
-StringArray::StringArray (const wchar_t* const* initialStrings)
-{
-    strings.addNullTerminatedArray (initialStrings);
-}
-
-StringArray::StringArray (const wchar_t* const* initialStrings, int numberOfStrings)
-{
-    strings.addArray (initialStrings, numberOfStrings);
-}
-
 StringArray& StringArray::operator= (const StringArray& other)
 {
     strings = other.strings;

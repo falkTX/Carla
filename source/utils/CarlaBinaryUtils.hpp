@@ -22,8 +22,8 @@
 #include "CarlaUtils.hpp"
 
 #if defined(CARLA_OS_WIN)
-# include "AppConfig.h"
-# include "juce_core/juce_core.h"
+# include "CarlaJuceUtils.hpp"
+# include "juce_audio_graph/juce_audio_graph.h"
 #elif defined(HAVE_LIBMAGIC)
 # include <magic.h>
 #endif
@@ -76,9 +76,8 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
         return BINARY_NATIVE;
 
 #if defined(CARLA_OS_WIN)
-    using juce::File;
-    using juce::FileInputStream;
-    using juce::ScopedPointer;
+    using juce2::File;
+    using juce2::FileInputStream;
 
     ScopedPointer<FileInputStream> stream(File(filename).createInputStream());
     CARLA_SAFE_ASSERT_RETURN(stream != nullptr || stream->failedToOpen(), BINARY_NATIVE);

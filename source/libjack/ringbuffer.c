@@ -20,6 +20,8 @@
   This is safe for the case of one read thread and one write thread.
 */
 
+#define USE_MLOCK
+
 #include <stdlib.h>
 #include <string.h>
 #ifdef USE_MLOCK

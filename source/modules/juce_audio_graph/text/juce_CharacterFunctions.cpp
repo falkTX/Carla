@@ -42,7 +42,7 @@ juce_wchar CharacterFunctions::toLowerCase (const juce_wchar character) noexcept
 
 bool CharacterFunctions::isUpperCase (const juce_wchar character) noexcept
 {
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     return iswupper ((wint_t) character) != 0;
    #else
     return toLowerCase (character) != character;
@@ -51,7 +51,7 @@ bool CharacterFunctions::isUpperCase (const juce_wchar character) noexcept
 
 bool CharacterFunctions::isLowerCase (const juce_wchar character) noexcept
 {
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     return iswlower ((wint_t) character) != 0;
    #else
     return toUpperCase (character) != character;

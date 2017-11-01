@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugin
- * Copyright (C) 2012-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,11 +21,11 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
-using juce::jmax;
-using juce::String;
-using juce::StringArray;
+using juce2::jmax;
+using juce2::String;
+using juce2::StringArray;
 
 CARLA_EXTERN_C
 std::size_t carla_getNativePluginCount() noexcept;

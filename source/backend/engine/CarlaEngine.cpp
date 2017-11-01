@@ -35,18 +35,16 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
-using juce::Array;
-using juce::CharPointer_UTF8;
-using juce::File;
-using juce::MemoryOutputStream;
-using juce::ScopedPointer;
-using juce::String;
-using juce::StringArray;
-using juce::XmlDocument;
-using juce::XmlElement;
+using juce2::Array;
+using juce2::CharPointer_UTF8;
+using juce2::File;
+using juce2::MemoryOutputStream;
+using juce2::String;
+using juce2::StringArray;
+using juce2::XmlDocument;
+using juce2::XmlElement;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -1674,7 +1672,7 @@ void CarlaEngine::setPluginPeaks(const uint pluginId, float const inPeaks[2], fl
     pluginData.outsPeak[1] = outPeaks[1];
 }
 
-void CarlaEngine::saveProjectInternal(juce::MemoryOutputStream& outStream) const
+void CarlaEngine::saveProjectInternal(juce2::MemoryOutputStream& outStream) const
 {
     // send initial prepareForSave first, giving time for bridges to act
     for (uint i=0; i < pData->curPluginCount; ++i)
@@ -1876,7 +1874,7 @@ static String findBinaryInCustomPath(const char* const searchPath, const char* c
     return String();
 }
 
-bool CarlaEngine::loadProjectInternal(juce::XmlDocument& xmlDoc)
+bool CarlaEngine::loadProjectInternal(juce2::XmlDocument& xmlDoc)
 {
     ScopedPointer<XmlElement> xmlElement(xmlDoc.getDocumentElement(true));
     CARLA_SAFE_ASSERT_RETURN_ERR(xmlElement != nullptr, "Failed to parse project file");

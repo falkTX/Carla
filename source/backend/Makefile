@@ -26,7 +26,7 @@ STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
 STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
 
 STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
-STANDALONE_LIBS += $(MODULEDIR)/juce_core.a
+STANDALONE_LIBS += $(MODULEDIR)/juce_audio_graph.a
 STANDALONE_LIBS += $(MODULEDIR)/lilv.a
 STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
@@ -42,7 +42,7 @@ endif
 STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 
-UTILS_LIBS += $(MODULEDIR)/juce_core.a
+UTILS_LIBS += $(MODULEDIR)/juce_audio_graph.a
 UTILS_LIBS += $(MODULEDIR)/lilv.a
 
 # ----------------------------------------------------------------------------------------------------------------------------

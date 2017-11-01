@@ -30,14 +30,15 @@
 
 #include <ctime>
 
+#include "juce_audio_graph/juce_audio_graph.h"
+
 // ---------------------------------------------------------------------------------------------------------------------
 
-using juce::ChildProcess;
-using juce::File;
-using juce::ScopedPointer;
-using juce::String;
-using juce::StringArray;
-using juce::Time;
+using juce2::ChildProcess;
+using juce2::File;
+using juce2::String;
+using juce2::StringArray;
+using juce2::Time;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -171,7 +172,7 @@ protected:
         arguments.add(fLabel);
 
         // uniqueId
-        arguments.add(String(static_cast<juce::int64>(kPlugin->getUniqueId())));
+        arguments.add(String(static_cast<juce2::int64>(kPlugin->getUniqueId())));
 
         bool started;
 

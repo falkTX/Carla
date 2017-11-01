@@ -115,18 +115,7 @@ public:
     /** Destructor. */
     ~String() noexcept;
 
-    /** This is the character encoding type used internally to store the string.
-
-        By setting the value of JUCE_STRING_UTF_TYPE to 8, 16, or 32, you can change the
-        internal storage format of the String class. UTF-8 uses the least space (if your strings
-        contain few extended characters), but call operator[] involves iterating the string to find
-        the required index. UTF-32 provides instant random access to its characters, but uses 4 bytes
-        per character to store them. UTF-16 uses more space than UTF-8 and is also slow to index,
-        but is the native wchar_t format used in Windows.
-
-        It doesn't matter too much which format you pick, because the toUTF8(), toUTF16() and
-        toUTF32() methods let you access the string's content in any of the other formats.
-    */
+    /** This is the character encoding type used internally to store the string. */
     typedef CharPointer_UTF8 CharPointerType;
 
     //==============================================================================
@@ -168,6 +157,8 @@ public:
     String& operator+= (uint64 numberToAppend);
     /** Appends a character at the end of this string. */
     String& operator+= (char characterToAppend);
+    /** Appends a character at the end of this string. */
+    String& operator+= (juce_wchar characterToAppend);
 
     /** Appends a string to the end of this one.
 
@@ -807,6 +798,16 @@ public:
     */
     String paddedRight (juce_wchar padCharacter, int minimumLength) const;
 
+    /** Creates a string from data in an unknown format.
+
+        This looks at some binary data and tries to guess whether it's Unicode
+        or 8-bit characters, then returns a string that represents it correctly.
+
+        Should be able to handle Unicode endianness correctly, by looking at
+        the first two bytes.
+    */
+    static String createStringFromData (const void* data, int size);
+
     /** Creates a String from a printf-style parameter list.
 
         I don't like this method. I don't use it myself, and I recommend avoiding it and
@@ -1103,6 +1104,8 @@ private:
 JUCE_API String JUCE_CALLTYPE operator+ (const char* string1,     const String& string2);
 /** Concatenates two strings. */
 JUCE_API String JUCE_CALLTYPE operator+ (char string1,            const String& string2);
+/** Concatenates two strings. */
+JUCE_API String JUCE_CALLTYPE operator+ (juce_wchar string1,      const String& string2);
 
 /** Concatenates two strings. */
 JUCE_API String JUCE_CALLTYPE operator+ (String string1, const String& string2);
@@ -1110,10 +1113,14 @@ JUCE_API String JUCE_CALLTYPE operator+ (String string1, const String& string2);
 JUCE_API String JUCE_CALLTYPE operator+ (String string1, const char* string2);
 /** Concatenates two strings. */
 JUCE_API String JUCE_CALLTYPE operator+ (String string1, char characterToAppend);
+/** Concatenates two strings. */
+JUCE_API String JUCE_CALLTYPE operator+ (String string1, juce_wchar characterToAppend);
 
 //==============================================================================
 /** Appends a character at the end of a string. */
 JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, char characterToAppend);
+/** Appends a character at the end of a string. */
+JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, juce_wchar characterToAppend);
 
 /** Appends a string to the end of the first one. */
 JUCE_API String& JUCE_CALLTYPE operator<< (String& string1, const char* string2);

@@ -27,10 +27,9 @@
 # include "CarlaThread.hpp"
 #endif
 
-using juce::ChildProcess;
-using juce::ScopedPointer;
-using juce::String;
-using juce::StringArray;
+using juce2::ChildProcess;
+using juce2::String;
+using juce2::StringArray;
 
 #define CARLA_PLUGIN_DSSI_OSC_CHECK_OSC_TYPES(/* argc, types, */ argcToCompare, typesToCompare)                                 \
     /* check argument count */                                                                                                  \

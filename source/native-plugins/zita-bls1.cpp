@@ -17,7 +17,6 @@
 
 #include "CarlaNativeExtUI.hpp"
 #include "CarlaJuceUtils.hpp"
-#include "distrho/extra/ScopedPointer.hpp"
 
 #include "zita-bls1/hp3filt.cc"
 #include "zita-bls1/jclient.cc"

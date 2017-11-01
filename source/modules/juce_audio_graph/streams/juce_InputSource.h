@@ -66,10 +66,11 @@ public:
     */
     virtual InputStream* createInputStreamFor (const String& relatedItemPath) = 0;
 
+#if 0
     /** Returns a hash code that uniquely represents this item.
     */
     virtual int64 hashCode() const = 0;
-
+#endif
 
 private:
     //==============================================================================

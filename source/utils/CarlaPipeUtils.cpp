@@ -36,8 +36,7 @@
 #include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "AppConfig.h"
-# include "juce_core/juce_core.h"
+# include "juce_audio_graph/juce_audio_graph.h"
 #else
 # include <cerrno>
 # include <signal.h>
@@ -99,7 +98,7 @@ static inline
 uint32_t getMillisecondCounter() noexcept
 {
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    return juce::Time::getMillisecondCounter();
+    return juce2::Time::getMillisecondCounter();
 #else
     uint32_t now;
     timespec t;
@@ -132,7 +131,7 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
 {
     CARLA_SAFE_ASSERT_RETURN(processInfo != nullptr, false);
 
-    using juce::String;
+    using juce2::String;
 
     String command;
 
@@ -140,23 +139,25 @@ bool startProcess(const char* const argv[], PROCESS_INFORMATION* const processIn
     {
         String arg(argv[i]);
 
+#if 0 // FIXME
         // If there are spaces, surround it with quotes. If there are quotes,
         // replace them with \" so that CommandLineToArgv will correctly parse them.
         if (arg.containsAnyOf("\" "))
             arg = arg.replace("\"", "\\\"").quoted();
+#endif
 
         command << arg << ' ';
     }
 
     command = command.trim();
 
-    STARTUPINFOW startupInfo;
+    STARTUPINFO startupInfo;
     carla_zeroStruct(startupInfo);
-    startupInfo.cb = sizeof(STARTUPINFOW);
+    startupInfo.cb = sizeof(startupInfo);
 
-    return CreateProcessW(nullptr, const_cast<LPWSTR>(command.toWideCharPointer()),
-                          nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
-                          nullptr, nullptr, &startupInfo, processInfo) != FALSE;
+    return CreateProcess(nullptr, const_cast<LPSTR>(command.toRawUTF8()),
+                         nullptr, nullptr, FALSE, CREATE_NO_WINDOW | CREATE_UNICODE_ENVIRONMENT,
+                         nullptr, nullptr, &startupInfo, processInfo) != FALSE;
 }
 
 static inline

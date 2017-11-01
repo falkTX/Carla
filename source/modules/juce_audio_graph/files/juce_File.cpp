@@ -79,7 +79,7 @@ static String removeEllipsis (const String& path)
 {
     // This will quickly find both /../ and /./ at the expense of a minor
     // false-positive performance hit when path elements end in a dot.
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     if (path.contains (".\\"))
    #else
     if (path.contains ("./"))
@@ -118,7 +118,7 @@ String File::parseAbsolutePath (const String& p)
     if (p.isEmpty())
         return String();
 
-#if JUCE_WINDOWS
+#ifdef CARLA_OS_WIN
     // Windows..
     String path (removeEllipsis (p.replaceCharacter ('/', '\\')));
 
@@ -243,28 +243,6 @@ bool File::operator<  (const File& other) const     { return compareFilenames (f
 bool File::operator>  (const File& other) const     { return compareFilenames (fullPath, other.fullPath) >  0; }
 
 //==============================================================================
-bool File::setReadOnly (const bool shouldBeReadOnly,
-                        const bool applyRecursively) const
-{
-    bool worked = true;
-
-    if (applyRecursively && isDirectory())
-    {
-        Array <File> subFiles;
-        findChildFiles (subFiles, File::findFilesAndDirectories, false);
-
-        for (int i = subFiles.size(); --i >= 0;)
-            worked = subFiles.getReference(i).setReadOnly (shouldBeReadOnly, true) && worked;
-    }
-
-    return setFileReadOnlyInternal (shouldBeReadOnly) && worked;
-}
-
-bool File::setExecutePermission (bool shouldBeExecutable) const
-{
-    return setFileExecutableInternal (shouldBeExecutable);
-}
-
 bool File::deleteRecursively() const
 {
     bool worked = true;
@@ -406,7 +384,7 @@ bool File::isAbsolutePath (StringRef path)
     const juce_wchar firstChar = *(path.text);
 
     return firstChar == separator
-           #if JUCE_WINDOWS
+           #ifdef CARLA_OS_WIN
             || (firstChar != 0 && path.text[1] == ':');
            #else
             || firstChar == '~';
@@ -420,7 +398,7 @@ File File::getChildFile (StringRef relativePath) const
     if (isAbsolutePath (r))
         return File (String (r));
 
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     if (r.indexOf ((juce_wchar) '/') >= 0)
         return getChildFile (String (r).replaceCharacter ('/', '\\'));
    #endif
@@ -527,15 +505,6 @@ Result File::createDirectory() const
 
     return r;
 }
-
-//==============================================================================
-Time File::getLastModificationTime() const           { int64 m, a, c; getFileTimesInternal (m, a, c); return Time (m); }
-Time File::getLastAccessTime() const                 { int64 m, a, c; getFileTimesInternal (m, a, c); return Time (a); }
-Time File::getCreationTime() const                   { int64 m, a, c; getFileTimesInternal (m, a, c); return Time (c); }
-
-bool File::setLastModificationTime (Time t) const    { return setFileTimesInternal (t.toMilliseconds(), 0, 0); }
-bool File::setLastAccessTime (Time t) const          { return setFileTimesInternal (0, t.toMilliseconds(), 0); }
-bool File::setCreationTime (Time t) const            { return setFileTimesInternal (0, 0, t.toMilliseconds()); }
 
 //==============================================================================
 bool File::loadFileAsData (MemoryBlock& destBlock) const
@@ -712,12 +681,6 @@ File File::withFileExtension (StringRef newExtension) const
         filePart << '.';
 
     return getSiblingFile (filePart + newExtension);
-}
-
-//==============================================================================
-bool File::startAsProcess (const String& parameters) const
-{
-    return exists() && Process::openDocument (fullPath, parameters);
 }
 
 //==============================================================================
@@ -930,7 +893,7 @@ String File::getRelativePathFrom (const File& dir)  const
     if (numUpDirectoriesNeeded == 0)
         return thisPathAfterCommon;
 
-   #if JUCE_WINDOWS
+   #ifdef CARLA_OS_WIN
     String s (String::repeatedString ("..\\", numUpDirectoriesNeeded));
    #else
     String s (String::repeatedString ("../",  numUpDirectoriesNeeded));
@@ -978,8 +941,8 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
 
     return true;
    #elif JUCE_MSVC
-    return CreateSymbolicLink (linkFileToCreate.getFullPathName().toWideCharPointer(),
-                               fullPath.toWideCharPointer(),
+    return CreateSymbolicLink (linkFileToCreate.getFullPathName().toUTF8(),
+                               fullPath.toUTF8(),
                                isDirectory() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) != FALSE;
    #else
     jassertfalse; // symbolic links not supported on this platform!
@@ -987,7 +950,8 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
    #endif
 }
 
-//==============================================================================
+#if 0
+//=====================================================================================================================
 MemoryMappedFile::MemoryMappedFile (const File& file, MemoryMappedFile::AccessMode mode, bool exclusive)
     : address (nullptr), range (0, file.getSize()), fileHandle (0)
 {
@@ -999,212 +963,741 @@ MemoryMappedFile::MemoryMappedFile (const File& file, const Range<int64>& fileRa
 {
     openInternal (file, mode, exclusive);
 }
+#endif
 
+//=====================================================================================================================
+#ifdef CARLA_OS_WIN
+namespace WindowsFileHelpers
+{
+    DWORD getAtts (const String& path)
+    {
+        return GetFileAttributes (path.toUTF8());
+    }
 
-//==============================================================================
-#if JUCE_UNIT_TESTS
+    int64 fileTimeToTime (const FILETIME* const ft)
+    {
+        static_jassert (sizeof (ULARGE_INTEGER) == sizeof (FILETIME)); // tell me if this fails!
 
-class FileTests  : public UnitTest
+        return (int64) ((reinterpret_cast<const ULARGE_INTEGER*> (ft)->QuadPart - 116444736000000000LL) / 10000);
+    }
+
+    File getSpecialFolderPath (int type)
+    {
+        CHAR path [MAX_PATH + 256];
+
+        if (SHGetSpecialFolderPath (0, path, type, FALSE))
+            return File (String (path));
+
+        return File();
+    }
+
+    File getModuleFileName (HINSTANCE moduleHandle)
+    {
+        CHAR dest [MAX_PATH + 256];
+        dest[0] = 0;
+        GetModuleFileName (moduleHandle, dest, (DWORD) numElementsInArray (dest));
+        return File (String (dest));
+    }
+}
+
+const juce_wchar File::separator = '\\';
+const String File::separatorString ("\\");
+
+bool File::isDirectory() const
+{
+    const DWORD attr = WindowsFileHelpers::getAtts (fullPath);
+    return (attr & FILE_ATTRIBUTE_DIRECTORY) != 0 && attr != INVALID_FILE_ATTRIBUTES;
+}
+
+bool File::exists() const
+{
+    return fullPath.isNotEmpty()
+            && WindowsFileHelpers::getAtts (fullPath) != INVALID_FILE_ATTRIBUTES;
+}
+
+bool File::existsAsFile() const
+{
+    return fullPath.isNotEmpty()
+            && (WindowsFileHelpers::getAtts (fullPath) & FILE_ATTRIBUTE_DIRECTORY) == 0;
+}
+
+bool File::hasWriteAccess() const
+{
+    if (fullPath.isEmpty())
+        return true;
+
+    const DWORD attr = WindowsFileHelpers::getAtts (fullPath);
+
+    // NB: According to MS, the FILE_ATTRIBUTE_READONLY attribute doesn't work for
+    // folders, and can be incorrectly set for some special folders, so we'll just say
+    // that folders are always writable.
+    return attr == INVALID_FILE_ATTRIBUTES
+            || (attr & FILE_ATTRIBUTE_DIRECTORY) != 0
+            || (attr & FILE_ATTRIBUTE_READONLY) == 0;
+}
+
+int64 File::getSize() const
+{
+    WIN32_FILE_ATTRIBUTE_DATA attributes;
+
+    if (GetFileAttributesEx (fullPath.toUTF8(), GetFileExInfoStandard, &attributes))
+        return (((int64) attributes.nFileSizeHigh) << 32) | attributes.nFileSizeLow;
+
+    return 0;
+}
+
+bool File::deleteFile() const
+{
+    if (! exists())
+        return true;
+
+    return isDirectory() ? RemoveDirectory (fullPath.toUTF8()) != 0
+                         : DeleteFile (fullPath.toUTF8()) != 0;
+}
+
+bool File::copyInternal (const File& dest) const
+{
+    return CopyFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8(), false) != 0;
+}
+
+bool File::moveInternal (const File& dest) const
+{
+    return MoveFile (fullPath.toUTF8(), dest.getFullPathName().toUTF8()) != 0;
+}
+
+bool File::replaceInternal (const File& dest) const
+{
+    void* lpExclude = 0;
+    void* lpReserved = 0;
+
+    return ReplaceFile (dest.getFullPathName().toUTF8(), fullPath.toUTF8(),
+                        0, REPLACEFILE_IGNORE_MERGE_ERRORS, lpExclude, lpReserved) != 0;
+}
+
+Result File::createDirectoryInternal (const String& fileName) const
+{
+    return CreateDirectory (fileName.toUTF8(), 0) ? Result::ok()
+                                                  : getResultForLastError();
+}
+
+File File::getCurrentWorkingDirectory()
+{
+    CHAR dest [MAX_PATH + 256];
+    dest[0] = 0;
+    GetCurrentDirectory ((DWORD) numElementsInArray (dest), dest);
+    return File (String (dest));
+}
+
+bool File::isSymbolicLink() const
+{
+    return (GetFileAttributes (fullPath.toUTF8()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+}
+
+File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
+{
+    int csidlType = 0;
+
+    switch (type)
+    {
+        case userHomeDirectory:                 csidlType = CSIDL_PROFILE; break;
+
+        case tempDirectory:
+        {
+            CHAR dest [2048];
+            dest[0] = 0;
+            GetTempPath ((DWORD) numElementsInArray (dest), dest);
+            return File (String (dest));
+        }
+
+        case windowsSystemDirectory:
+        {
+            CHAR dest [2048];
+            dest[0] = 0;
+            GetSystemDirectory (dest, (UINT) numElementsInArray (dest));
+            return File (String (dest));
+        }
+
+        case currentExecutableFile:
+        case currentApplicationFile:
+            return WindowsFileHelpers::getModuleFileName ((HINSTANCE) Process::getCurrentModuleInstanceHandle());
+
+        case hostApplicationPath:
+            return WindowsFileHelpers::getModuleFileName (0);
+
+        default:
+            jassertfalse; // unknown type?
+            return File();
+    }
+
+    return WindowsFileHelpers::getSpecialFolderPath (csidlType);
+}
+
+//=====================================================================================================================
+class DirectoryIterator::NativeIterator::Pimpl
 {
 public:
-    FileTests() : UnitTest ("Files") {}
-
-    void runTest() override
+    Pimpl (const File& directory, const String& wildCard)
+        : directoryWithWildCard (directory.getFullPathName().isNotEmpty() ? File::addTrailingSeparator (directory.getFullPathName()) + wildCard : String()),
+          handle (INVALID_HANDLE_VALUE)
     {
-        beginTest ("Reading");
-
-        const File home (File::getSpecialLocation (File::userHomeDirectory));
-        const File temp (File::getSpecialLocation (File::tempDirectory));
-
-        expect (! File().exists());
-        expect (! File().existsAsFile());
-        expect (! File().isDirectory());
-       #if ! JUCE_WINDOWS
-        expect (File("/").isDirectory());
-       #endif
-        expect (home.isDirectory());
-        expect (home.exists());
-        expect (! home.existsAsFile());
-        expect (File::getSpecialLocation (File::userDocumentsDirectory).isDirectory());
-        expect (File::getSpecialLocation (File::userApplicationDataDirectory).isDirectory());
-        expect (File::getSpecialLocation (File::currentExecutableFile).exists());
-        expect (File::getSpecialLocation (File::currentApplicationFile).exists());
-        expect (File::getSpecialLocation (File::invokedExecutableFile).exists());
-        expect (home.getVolumeTotalSize() > 1024 * 1024);
-        expect (home.getBytesFreeOnVolume() > 0);
-        expect (! home.isHidden());
-        expect (home.isOnHardDisk());
-        expect (! home.isOnCDRomDrive());
-        expect (File::getCurrentWorkingDirectory().exists());
-        expect (home.setAsCurrentWorkingDirectory());
-        expect (File::getCurrentWorkingDirectory() == home);
-
-        {
-            Array<File> roots;
-            File::findFileSystemRoots (roots);
-            expect (roots.size() > 0);
-
-            int numRootsExisting = 0;
-            for (int i = 0; i < roots.size(); ++i)
-                if (roots[i].exists())
-                    ++numRootsExisting;
-
-            // (on windows, some of the drives may not contain media, so as long as at least one is ok..)
-            expect (numRootsExisting > 0);
-        }
-
-        beginTest ("Writing");
-
-        File demoFolder (temp.getChildFile ("Juce UnitTests Temp Folder.folder"));
-        expect (demoFolder.deleteRecursively());
-        expect (demoFolder.createDirectory());
-        expect (demoFolder.isDirectory());
-        expect (demoFolder.getParentDirectory() == temp);
-        expect (temp.isDirectory());
-
-        {
-            Array<File> files;
-            temp.findChildFiles (files, File::findFilesAndDirectories, false, "*");
-            expect (files.contains (demoFolder));
-        }
-
-        {
-            Array<File> files;
-            temp.findChildFiles (files, File::findDirectories, true, "*.folder");
-            expect (files.contains (demoFolder));
-        }
-
-        File tempFile (demoFolder.getNonexistentChildFile ("test", ".txt", false));
-
-        expect (tempFile.getFileExtension() == ".txt");
-        expect (tempFile.hasFileExtension (".txt"));
-        expect (tempFile.hasFileExtension ("txt"));
-        expect (tempFile.withFileExtension ("xyz").hasFileExtension (".xyz"));
-        expect (tempFile.withFileExtension ("xyz").hasFileExtension ("abc;xyz;foo"));
-        expect (tempFile.withFileExtension ("xyz").hasFileExtension ("xyz;foo"));
-        expect (! tempFile.withFileExtension ("h").hasFileExtension ("bar;foo;xx"));
-        expect (tempFile.getSiblingFile ("foo").isAChildOf (temp));
-        expect (tempFile.hasWriteAccess());
-
-        expect (home.getChildFile (".") == home);
-        expect (home.getChildFile ("..") == home.getParentDirectory());
-        expect (home.getChildFile (".xyz").getFileName() == ".xyz");
-        expect (home.getChildFile ("..xyz").getFileName() == "..xyz");
-        expect (home.getChildFile ("...xyz").getFileName() == "...xyz");
-        expect (home.getChildFile ("./xyz") == home.getChildFile ("xyz"));
-        expect (home.getChildFile ("././xyz") == home.getChildFile ("xyz"));
-        expect (home.getChildFile ("../xyz") == home.getParentDirectory().getChildFile ("xyz"));
-        expect (home.getChildFile (".././xyz") == home.getParentDirectory().getChildFile ("xyz"));
-        expect (home.getChildFile (".././xyz/./abc") == home.getParentDirectory().getChildFile ("xyz/abc"));
-        expect (home.getChildFile ("./../xyz") == home.getParentDirectory().getChildFile ("xyz"));
-        expect (home.getChildFile ("a1/a2/a3/./../../a4") == home.getChildFile ("a1/a4"));
-
-        {
-            FileOutputStream fo (tempFile);
-            fo.write ("0123456789", 10);
-        }
-
-        expect (tempFile.exists());
-        expect (tempFile.getSize() == 10);
-        expect (std::abs ((int) (tempFile.getLastModificationTime().toMilliseconds() - Time::getCurrentTime().toMilliseconds())) < 3000);
-        expectEquals (tempFile.loadFileAsString(), String ("0123456789"));
-        expect (! demoFolder.containsSubDirectories());
-
-        expectEquals (tempFile.getRelativePathFrom (demoFolder.getParentDirectory()), demoFolder.getFileName() + File::separatorString + tempFile.getFileName());
-        expectEquals (demoFolder.getParentDirectory().getRelativePathFrom (tempFile), ".." + File::separatorString + ".." + File::separatorString + demoFolder.getParentDirectory().getFileName());
-
-        expect (demoFolder.getNumberOfChildFiles (File::findFiles) == 1);
-        expect (demoFolder.getNumberOfChildFiles (File::findFilesAndDirectories) == 1);
-        expect (demoFolder.getNumberOfChildFiles (File::findDirectories) == 0);
-        demoFolder.getNonexistentChildFile ("tempFolder", "", false).createDirectory();
-        expect (demoFolder.getNumberOfChildFiles (File::findDirectories) == 1);
-        expect (demoFolder.getNumberOfChildFiles (File::findFilesAndDirectories) == 2);
-        expect (demoFolder.containsSubDirectories());
-
-        expect (tempFile.hasWriteAccess());
-        tempFile.setReadOnly (true);
-        expect (! tempFile.hasWriteAccess());
-        tempFile.setReadOnly (false);
-        expect (tempFile.hasWriteAccess());
-
-        Time t (Time::getCurrentTime());
-        tempFile.setLastModificationTime (t);
-        Time t2 = tempFile.getLastModificationTime();
-        expect (std::abs ((int) (t2.toMilliseconds() - t.toMilliseconds())) <= 1000);
-
-        {
-            MemoryBlock mb;
-            tempFile.loadFileAsData (mb);
-            expect (mb.getSize() == 10);
-            expect (mb[0] == '0');
-        }
-
-        {
-            expect (tempFile.getSize() == 10);
-            FileOutputStream fo (tempFile);
-            expect (fo.openedOk());
-
-            expect (fo.setPosition  (7));
-            expect (fo.truncate().wasOk());
-            expect (tempFile.getSize() == 7);
-            fo.write ("789", 3);
-            fo.flush();
-            expect (tempFile.getSize() == 10);
-        }
-
-        beginTest ("Memory-mapped files");
-
-        {
-            MemoryMappedFile mmf (tempFile, MemoryMappedFile::readOnly);
-            expect (mmf.getSize() == 10);
-            expect (mmf.getData() != nullptr);
-            expect (memcmp (mmf.getData(), "0123456789", 10) == 0);
-        }
-
-        {
-            const File tempFile2 (tempFile.getNonexistentSibling (false));
-            expect (tempFile2.create());
-            expect (tempFile2.appendData ("xxxxxxxxxx", 10));
-
-            {
-                MemoryMappedFile mmf (tempFile2, MemoryMappedFile::readWrite);
-                expect (mmf.getSize() == 10);
-                expect (mmf.getData() != nullptr);
-                memcpy (mmf.getData(), "abcdefghij", 10);
-            }
-
-            {
-                MemoryMappedFile mmf (tempFile2, MemoryMappedFile::readWrite);
-                expect (mmf.getSize() == 10);
-                expect (mmf.getData() != nullptr);
-                expect (memcmp (mmf.getData(), "abcdefghij", 10) == 0);
-            }
-
-            expect (tempFile2.deleteFile());
-        }
-
-        beginTest ("More writing");
-
-        expect (tempFile.appendData ("abcdefghij", 10));
-        expect (tempFile.getSize() == 20);
-        expect (tempFile.replaceWithData ("abcdefghij", 10));
-        expect (tempFile.getSize() == 10);
-
-        File tempFile2 (tempFile.getNonexistentSibling (false));
-        expect (tempFile.copyFileTo (tempFile2));
-        expect (tempFile2.exists());
-        expect (tempFile2.hasIdenticalContentTo (tempFile));
-        expect (tempFile.deleteFile());
-        expect (! tempFile.exists());
-        expect (tempFile2.moveFileTo (tempFile));
-        expect (tempFile.exists());
-        expect (! tempFile2.exists());
-
-        expect (demoFolder.deleteRecursively());
-        expect (! demoFolder.exists());
     }
+
+    ~Pimpl()
+    {
+        if (handle != INVALID_HANDLE_VALUE)
+            FindClose (handle);
+    }
+
+    bool next (String& filenameFound,
+               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    {
+        using namespace WindowsFileHelpers;
+        WIN32_FIND_DATA findData;
+
+        if (handle == INVALID_HANDLE_VALUE)
+        {
+            handle = FindFirstFile (directoryWithWildCard.toUTF8(), &findData);
+
+            if (handle == INVALID_HANDLE_VALUE)
+                return false;
+        }
+        else
+        {
+            if (FindNextFile (handle, &findData) == 0)
+                return false;
+        }
+
+        filenameFound = findData.cFileName;
+
+        if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
+        if (isHidden != nullptr)      *isHidden     = ((findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0);
+        if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
+        if (fileSize != nullptr)      *fileSize     = findData.nFileSizeLow + (((int64) findData.nFileSizeHigh) << 32);
+        if (modTime != nullptr)       *modTime      = Time (fileTimeToTime (&findData.ftLastWriteTime));
+        if (creationTime != nullptr)  *creationTime = Time (fileTimeToTime (&findData.ftCreationTime));
+
+        return true;
+    }
+
+private:
+    const String directoryWithWildCard;
+    HANDLE handle;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
 };
+#else
+//=====================================================================================================================
+namespace
+{
+   #if CARLA_OS_MAC
+    typedef struct stat   juce_statStruct;
+    #define JUCE_STAT     stat
+   #else
+    typedef struct stat64 juce_statStruct;
+    #define JUCE_STAT     stat64
+   #endif
 
-static FileTests fileUnitTests;
+    bool juce_stat (const String& fileName, juce_statStruct& info)
+    {
+        return fileName.isNotEmpty()
+                 && JUCE_STAT (fileName.toUTF8(), &info) == 0;
+    }
 
+   #if CARLA_OS_MAC
+    static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
+   #else
+    static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_ctime; }
+   #endif
+
+    void updateStatInfoForFile (const String& path, bool* const isDir, int64* const fileSize,
+                                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    {
+        if (isDir != nullptr || fileSize != nullptr || modTime != nullptr || creationTime != nullptr)
+        {
+            juce_statStruct info;
+            const bool statOk = juce_stat (path, info);
+
+            if (isDir != nullptr)         *isDir        = statOk && ((info.st_mode & S_IFDIR) != 0);
+            if (fileSize != nullptr)      *fileSize     = statOk ? (int64) info.st_size : 0;
+            if (modTime != nullptr)       *modTime      = Time (statOk ? (int64) info.st_mtime  * 1000 : 0);
+            if (creationTime != nullptr)  *creationTime = Time (statOk ? getCreationTime (info) * 1000 : 0);
+        }
+
+        if (isReadOnly != nullptr)
+            *isReadOnly = access (path.toUTF8(), W_OK) != 0;
+    }
+
+    Result getResultForReturnValue (int value)
+    {
+        return value == -1 ? getResultForErrno() : Result::ok();
+    }
+}
+
+const juce_wchar File::separator = '/';
+const String File::separatorString ("/");
+
+bool File::isDirectory() const
+{
+    juce_statStruct info;
+
+    return fullPath.isNotEmpty()
+             && (juce_stat (fullPath, info) && ((info.st_mode & S_IFDIR) != 0));
+}
+
+bool File::exists() const
+{
+    return fullPath.isNotEmpty()
+             && access (fullPath.toUTF8(), F_OK) == 0;
+}
+
+bool File::existsAsFile() const
+{
+    return exists() && ! isDirectory();
+}
+
+bool File::hasWriteAccess() const
+{
+    if (exists())
+        return access (fullPath.toUTF8(), W_OK) == 0;
+
+    if ((! isDirectory()) && fullPath.containsChar (separator))
+        return getParentDirectory().hasWriteAccess();
+
+    return false;
+}
+
+int64 File::getSize() const
+{
+    juce_statStruct info;
+    return juce_stat (fullPath, info) ? info.st_size : 0;
+}
+
+bool File::deleteFile() const
+{
+    if (! exists() && ! isSymbolicLink())
+        return true;
+
+    if (isDirectory())
+        return rmdir (fullPath.toUTF8()) == 0;
+
+    return remove (fullPath.toUTF8()) == 0;
+}
+
+bool File::moveInternal (const File& dest) const
+{
+    if (rename (fullPath.toUTF8(), dest.getFullPathName().toUTF8()) == 0)
+        return true;
+
+    if (hasWriteAccess() && copyInternal (dest))
+    {
+        if (deleteFile())
+            return true;
+
+        dest.deleteFile();
+    }
+
+    return false;
+}
+
+bool File::replaceInternal (const File& dest) const
+{
+    return moveInternal (dest);
+}
+
+Result File::createDirectoryInternal (const String& fileName) const
+{
+    return getResultForReturnValue (mkdir (fileName.toUTF8(), 0777));
+}
+
+File File::getCurrentWorkingDirectory()
+{
+    HeapBlock<char> heapBuffer;
+
+    char localBuffer [1024];
+    char* cwd = getcwd (localBuffer, sizeof (localBuffer) - 1);
+    size_t bufferSize = 4096;
+
+    while (cwd == nullptr && errno == ERANGE)
+    {
+        heapBuffer.malloc (bufferSize);
+        cwd = getcwd (heapBuffer, bufferSize - 1);
+        bufferSize += 1024;
+    }
+
+    return File (CharPointer_UTF8 (cwd));
+}
+
+File juce_getExecutableFile();
+File juce_getExecutableFile()
+{
+    struct DLAddrReader
+    {
+        static String getFilename()
+        {
+            Dl_info exeInfo;
+            void* localSymbol = (void*) juce_getExecutableFile;
+            dladdr (localSymbol, &exeInfo);
+            const CharPointer_UTF8 filename (exeInfo.dli_fname);
+
+            // if the filename is absolute simply return it
+            if (File::isAbsolutePath (filename))
+                return filename;
+
+            // if the filename is relative construct from CWD
+            if (filename[0] == '.')
+                return File::getCurrentWorkingDirectory().getChildFile (filename).getFullPathName();
+
+            // filename is abstract, look up in PATH
+            if (const char* const envpath = ::getenv ("PATH"))
+            {
+                StringArray paths (StringArray::fromTokens (envpath, ":", ""));
+
+                for (int i=paths.size(); --i>=0;)
+                {
+                    const File filepath (File (paths[i]).getChildFile (filename));
+
+                    if (filepath.existsAsFile())
+                        return filepath.getFullPathName();
+                }
+            }
+
+            // if we reach this, we failed to find ourselves...
+            jassertfalse;
+            return filename;
+        }
+    };
+
+    static String filename (DLAddrReader::getFilename());
+    return filename;
+}
+
+#ifdef CARLA_OS_MAC
+static NSString* getFileLink (const String& path)
+{
+    return [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath: juceStringToNS (path) error: nil];
+}
+
+bool File::isSymbolicLink() const
+{
+    return getFileLink (fullPath) != nil;
+}
+
+File File::getLinkedTarget() const
+{
+    if (NSString* dest = getFileLink (fullPath))
+        return getSiblingFile (nsStringToJuce (dest));
+
+    return *this;
+}
+
+bool File::copyInternal (const File& dest) const
+{
+    JUCE_AUTORELEASEPOOL
+    {
+        NSFileManager* fm = [NSFileManager defaultManager];
+
+        return [fm fileExistsAtPath: juceStringToNS (fullPath)]
+               #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
+                && [fm copyItemAtPath: juceStringToNS (fullPath)
+                               toPath: juceStringToNS (dest.getFullPathName())
+                                error: nil];
+               #else
+                && [fm copyPath: juceStringToNS (fullPath)
+                         toPath: juceStringToNS (dest.getFullPathName())
+                        handler: nil];
+               #endif
+    }
+}
+
+File File::getSpecialLocation (const SpecialLocationType type)
+{
+    JUCE_AUTORELEASEPOOL
+    {
+        String resultPath;
+
+        switch (type)
+        {
+            case userHomeDirectory:                 resultPath = nsStringToJuce (NSHomeDirectory()); break;
+            case userDocumentsDirectory:            resultPath = "~/Documents"; break;
+            case userDesktopDirectory:              resultPath = "~/Desktop"; break;
+
+            case tempDirectory:
+            {
+                File tmp ("~/Library/Caches/" + juce_getExecutableFile().getFileNameWithoutExtension());
+                tmp.createDirectory();
+                return File (tmp.getFullPathName());
+            }
+
+            case userMusicDirectory:                resultPath = "~/Music"; break;
+            case userMoviesDirectory:               resultPath = "~/Movies"; break;
+            case userPicturesDirectory:             resultPath = "~/Pictures"; break;
+            case userApplicationDataDirectory:      resultPath = "~/Library"; break;
+            case commonApplicationDataDirectory:    resultPath = "/Library"; break;
+            case commonDocumentsDirectory:          resultPath = "/Users/Shared"; break;
+            case globalApplicationsDirectory:       resultPath = "/Applications"; break;
+
+            case invokedExecutableFile:
+                if (juce_argv != nullptr && juce_argc > 0)
+                    return File::getCurrentWorkingDirectory().getChildFile (CharPointer_UTF8 (juce_argv[0]));
+                // deliberate fall-through...
+
+            case currentExecutableFile:
+                return juce_getExecutableFile();
+
+            case currentApplicationFile:
+            {
+                const File exe (juce_getExecutableFile());
+                const File parent (exe.getParentDirectory());
+
+                return parent.getFullPathName().endsWithIgnoreCase ("Contents/MacOS")
+                        ? parent.getParentDirectory().getParentDirectory()
+                        : exe;
+            }
+
+            case hostApplicationPath:
+            {
+                unsigned int size = 8192;
+                HeapBlock<char> buffer;
+                buffer.calloc (size + 8);
+
+                _NSGetExecutablePath (buffer.getData(), &size);
+                return File (String::fromUTF8 (buffer, (int) size));
+            }
+
+            default:
+                jassertfalse; // unknown type?
+                break;
+        }
+
+        if (resultPath.isNotEmpty())
+            return File (resultPath.convertToPrecomposedUnicode());
+    }
+
+    return File();
+}
+//==============================================================================
+class DirectoryIterator::NativeIterator::Pimpl
+{
+public:
+    Pimpl (const File& directory, const String& wildCard_)
+        : parentDir (File::addTrailingSeparator (directory.getFullPathName())),
+          wildCard (wildCard_),
+          enumerator (nil)
+    {
+        JUCE_AUTORELEASEPOOL
+        {
+            enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: juceStringToNS (directory.getFullPathName())] retain];
+        }
+    }
+
+    ~Pimpl()
+    {
+        [enumerator release];
+    }
+
+    bool next (String& filenameFound,
+               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    {
+        JUCE_AUTORELEASEPOOL
+        {
+            const char* wildcardUTF8 = nullptr;
+
+            for (;;)
+            {
+                NSString* file;
+                if (enumerator == nil || (file = [enumerator nextObject]) == nil)
+                    return false;
+
+                [enumerator skipDescendents];
+                filenameFound = nsStringToJuce (file).convertToPrecomposedUnicode();
+
+                if (wildcardUTF8 == nullptr)
+                    wildcardUTF8 = wildCard.toUTF8();
+
+                if (fnmatch (wildcardUTF8, filenameFound.toUTF8(), FNM_CASEFOLD) != 0)
+                    continue;
+
+                const String fullPath (parentDir + filenameFound);
+                updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
+
+                if (isHidden != nullptr)
+                    *isHidden = MacFileHelpers::isHiddenFile (fullPath);
+
+                return true;
+            }
+        }
+    }
+
+private:
+    String parentDir, wildCard;
+    NSDirectoryEnumerator* enumerator;
+
+    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+};
+#else
+static String getLinkedFile (const String& file)
+{
+    HeapBlock<char> buffer (8194);
+    const int numBytes = (int) readlink (file.toRawUTF8(), buffer, 8192);
+    return String::fromUTF8 (buffer, jmax (0, numBytes));
+}
+
+bool File::isSymbolicLink() const
+{
+    return getLinkedFile (getFullPathName()).isNotEmpty();
+}
+
+File File::getLinkedTarget() const
+{
+    String f (getLinkedFile (getFullPathName()));
+
+    if (f.isNotEmpty())
+        return getSiblingFile (f);
+
+    return *this;
+}
+
+bool File::copyInternal (const File& dest) const
+{
+    FileInputStream in (*this);
+
+    if (dest.deleteFile())
+    {
+        {
+            FileOutputStream out (dest);
+
+            if (out.failedToOpen())
+                return false;
+
+            if (out.writeFromInputStream (in, -1) == getSize())
+                return true;
+        }
+
+        dest.deleteFile();
+    }
+
+    return false;
+}
+
+File File::getSpecialLocation (const SpecialLocationType type)
+{
+    switch (type)
+    {
+        case userHomeDirectory:
+        {
+            if (const char* homeDir = getenv ("HOME"))
+                return File (CharPointer_UTF8 (homeDir));
+
+            if (struct passwd* const pw = getpwuid (getuid()))
+                return File (CharPointer_UTF8 (pw->pw_dir));
+
+            return File();
+        }
+
+        case tempDirectory:
+        {
+            File tmp ("/var/tmp");
+
+            if (! tmp.isDirectory())
+            {
+                tmp = "/tmp";
+
+                if (! tmp.isDirectory())
+                    tmp = File::getCurrentWorkingDirectory();
+            }
+
+            return tmp;
+        }
+
+        case currentExecutableFile:
+        case currentApplicationFile:
+            return juce_getExecutableFile();
+
+        case hostApplicationPath:
+        {
+            const File f ("/proc/self/exe");
+            return f.isSymbolicLink() ? f.getLinkedTarget() : juce_getExecutableFile();
+        }
+
+        default:
+            jassertfalse; // unknown type?
+            break;
+    }
+
+    return File();
+}
+//==============================================================================
+class DirectoryIterator::NativeIterator::Pimpl
+{
+public:
+    Pimpl (const File& directory, const String& wc)
+        : parentDir (File::addTrailingSeparator (directory.getFullPathName())),
+          wildCard (wc), dir (opendir (directory.getFullPathName().toUTF8()))
+    {
+    }
+
+    ~Pimpl()
+    {
+        if (dir != nullptr)
+            closedir (dir);
+    }
+
+    bool next (String& filenameFound,
+               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
+    {
+        if (dir != nullptr)
+        {
+            const char* wildcardUTF8 = nullptr;
+
+            for (;;)
+            {
+                struct dirent* const de = readdir (dir);
+
+                if (de == nullptr)
+                    break;
+
+                if (wildcardUTF8 == nullptr)
+                    wildcardUTF8 = wildCard.toUTF8();
+
+                if (fnmatch (wildcardUTF8, de->d_name, FNM_CASEFOLD) == 0)
+                {
+                    filenameFound = CharPointer_UTF8 (de->d_name);
+
+                    updateStatInfoForFile (parentDir + filenameFound, isDir, fileSize, modTime, creationTime, isReadOnly);
+
+                    if (isHidden != nullptr)
+                        *isHidden = filenameFound.startsWithChar ('.');
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+private:
+    String parentDir, wildCard;
+    DIR* dir;
+
+    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+};
 #endif
+#endif
+
+DirectoryIterator::NativeIterator::NativeIterator (const File& directory, const String& wildCardStr)
+    : pimpl (new DirectoryIterator::NativeIterator::Pimpl (directory, wildCardStr))
+{
+}
+
+DirectoryIterator::NativeIterator::~NativeIterator() {}
+
+bool DirectoryIterator::NativeIterator::next (String& filenameFound,
+                                              bool* isDir, bool* isHidden, int64* fileSize,
+                                              Time* modTime, Time* creationTime, bool* isReadOnly)
+{
+    return pimpl->next (filenameFound, isDir, isHidden, fileSize, modTime, creationTime, isReadOnly);
+}

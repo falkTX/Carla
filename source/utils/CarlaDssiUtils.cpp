@@ -17,8 +17,7 @@
 
 #include "CarlaDssiUtils.hpp"
 
-#include "AppConfig.h"
-#include "juce_core/juce_core.h"
+#include "juce_audio_graph/juce_audio_graph.h"
 
 // --------------------------------------------------------------------------------------------------------------------
 
@@ -29,7 +28,7 @@ const char* find_dssi_ui(const char* const filename, const char* const label) no
     carla_debug("find_dssi_ui(\"%s\", \"%s\")", filename, label);
 
     try {
-        using namespace juce;
+        using namespace juce2;
 
         String guiFilename;
         String pluginDir(String(filename).upToLastOccurrenceOf(".", false, false));
