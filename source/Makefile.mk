@@ -341,6 +341,9 @@ ifeq ($(LINUX),true)
 LINUXSAMPLER_LIBS  = -Wl,-rpath=$(shell pkg-config --variable=libdir gig):$(shell pkg-config --variable=libdir linuxsampler)
 endif
 LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
+ifeq ($(WIN32),true)
+LINUXSAMPLER_LIBS += -lws2_32
+endif
 endif
 
 ifeq ($(HAVE_PROJECTM),true)
