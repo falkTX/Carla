@@ -87,8 +87,15 @@ CarlaPlugin::CarlaPlugin(CarlaEngine* const engine, const uint id)
     {
     case ENGINE_PROCESS_MODE_SINGLE_CLIENT:
     case ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS:
-    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
         CARLA_SAFE_ASSERT(id < MAX_DEFAULT_PLUGINS);
+        break;
+
+    case ENGINE_PROCESS_MODE_CONTINUOUS_RACK:
+        CARLA_SAFE_ASSERT(id < MAX_RACK_PLUGINS);
+        break;
+
+    case ENGINE_PROCESS_MODE_PATCHBAY:
+        CARLA_SAFE_ASSERT(id < MAX_PATCHBAY_PLUGINS);
         break;
 
     case ENGINE_PROCESS_MODE_BRIDGE:

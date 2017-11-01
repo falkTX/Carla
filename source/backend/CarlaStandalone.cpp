@@ -728,12 +728,12 @@ bool carla_patchbay_disconnect(uint connectionId)
     return false;
 }
 
-bool carla_patchbay_refresh()
+bool carla_patchbay_refresh(bool external)
 {
-    carla_debug("carla_patchbay_refresh()");
+    carla_debug("carla_patchbay_refresh(%s)", bool2str(external));
 
     if (gStandalone.engine != nullptr)
-        return gStandalone.engine->patchbayRefresh();
+        return gStandalone.engine->patchbayRefresh(external);
 
     carla_stderr2("Engine is not running");
     gStandalone.lastError = "Engine is not running";

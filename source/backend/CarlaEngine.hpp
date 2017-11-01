@@ -981,7 +981,7 @@ public:
     /*!
      * Force the engine to resend all patchbay clients, ports and connections again.
      */
-    virtual bool patchbayRefresh();
+    virtual bool patchbayRefresh(const bool external);
 #endif
 
     // -------------------------------------------------------------------
@@ -1149,8 +1149,8 @@ protected:
      * Virtual functions for handling patchbay state.
      * Do not free returned data.
      */
-    virtual const char* const* getPatchbayConnections() const;
-    virtual void restorePatchbayConnection(const char* const sourcePort, const char* const targetPort);
+    virtual const char* const* getPatchbayConnections(const bool external) const;
+    virtual void restorePatchbayConnection(const bool external, const char* const sourcePort, const char* const targetPort);
 #endif
 
     // -------------------------------------------------------------------

@@ -144,6 +144,12 @@ def structToDict(struct):
 # Maximum default number of loadable plugins.
 MAX_DEFAULT_PLUGINS = 99
 
+# Maximum number of loadable plugins in rack mode.
+MAX_RACK_PLUGINS = 16
+
+# Maximum number of loadable plugins in patchbay mode.
+MAX_PATCHBAY_PLUGINS = 255
+
 # Maximum default number of parameters allowed.
 # @see ENGINE_OPTION_MAX_PARAMETERS
 MAX_DEFAULT_PARAMETERS = 200
@@ -815,8 +821,11 @@ ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS = 1
 # Processes plugins in order of Id, with forced stereo always on.
 ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2
 
+# Single client, 'patchbay' mode.
+ENGINE_PROCESS_MODE_PATCHBAY = 3
+
 # Special mode, used in plugin-bridges only.
-ENGINE_PROCESS_MODE_BRIDGE = 3
+ENGINE_PROCESS_MODE_BRIDGE = 4
 
 # ------------------------------------------------------------------------------------------------------------
 # Engine Transport Mode
@@ -1229,7 +1238,7 @@ class CarlaHostMeta(object):
         self.nsmOK     = False
 
         # settings
-        self.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
+        self.processMode       = ENGINE_PROCESS_MODE_PATCHBAY
         self.transportMode     = ENGINE_TRANSPORT_MODE_INTERNAL
         self.nextProcessMode   = self.processMode
         self.processModeForced = False
@@ -1372,7 +1381,7 @@ class CarlaHostMeta(object):
     # @param external Wherever to show external/hardware ports instead of internal ones.
     #                 Only valid in patchbay engine mode, other modes will ignore this.
     @abstractmethod
-    def patchbay_refresh(self):
+    def patchbay_refresh(self, external):
         raise NotImplementedError
 
     # Start playback of the engine transport.
@@ -1926,7 +1935,7 @@ class CarlaHostNull(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return False
 
-    def patchbay_refresh(self):
+    def patchbay_refresh(self, external):
         return False
 
     def transport_play(self):
@@ -2208,7 +2217,7 @@ class CarlaHostDLL(CarlaHostMeta):
         self.lib.carla_patchbay_disconnect.argtypes = [c_uint]
         self.lib.carla_patchbay_disconnect.restype = c_bool
 
-        self.lib.carla_patchbay_refresh.argtypes = None
+        self.lib.carla_patchbay_refresh.argtypes = [c_bool]
         self.lib.carla_patchbay_refresh.restype = c_bool
 
         self.lib.carla_transport_play.argtypes = None
@@ -2482,8 +2491,8 @@ class CarlaHostDLL(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return bool(self.lib.carla_patchbay_disconnect(connectionId))
 
-    def patchbay_refresh(self):
-        return bool(self.lib.carla_patchbay_refresh())
+    def patchbay_refresh(self, external):
+        return bool(self.lib.carla_patchbay_refresh(external))
 
     def transport_play(self):
         self.lib.carla_transport_play()
@@ -2819,7 +2828,8 @@ class CarlaHostPlugin(CarlaHostMeta):
     def patchbay_disconnect(self, connectionId):
         return self.sendMsgAndSetError(["patchbay_disconnect", connectionId])
 
-    def patchbay_refresh(self):
+    def patchbay_refresh(self, external):
+        # don't send external param, never used in plugins
         return self.sendMsgAndSetError(["patchbay_refresh"])
 
     def transport_play(self):

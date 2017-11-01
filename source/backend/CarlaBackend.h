@@ -55,6 +55,16 @@ CARLA_BACKEND_START_NAMESPACE
 static const uint MAX_DEFAULT_PLUGINS = 99;
 
 /*!
+ * Maximum number of loadable plugins in rack mode.
+ */
+static const uint MAX_RACK_PLUGINS = 16;
+
+/*!
+ * Maximum number of loadable plugins in patchbay mode.
+ */
+static const uint MAX_PATCHBAY_PLUGINS = 255;
+
+/*!
  * Maximum default number of parameters allowed.
  * @see ENGINE_OPTION_MAX_PARAMETERS
  */
@@ -962,7 +972,7 @@ typedef enum {
 
     /*!
      * Set the engine processing mode.
-     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_CONTINUOUS_RACK for all other OSes.
+     * Default is ENGINE_PROCESS_MODE_MULTIPLE_CLIENTS on Linux and ENGINE_PROCESS_MODE_PATCHBAY for all other OSes.
      * @see EngineProcessMode
      */
     ENGINE_OPTION_PROCESS_MODE = 1,
@@ -1132,9 +1142,14 @@ typedef enum {
     ENGINE_PROCESS_MODE_CONTINUOUS_RACK = 2,
 
     /*!
+     * Single client, 'patchbay' mode.
+     */
+    ENGINE_PROCESS_MODE_PATCHBAY = 3,
+
+    /*!
      * Special mode, used in plugin-bridges only.
      */
-    ENGINE_PROCESS_MODE_BRIDGE = 3
+    ENGINE_PROCESS_MODE_BRIDGE = 4
 
 } EngineProcessMode;
 

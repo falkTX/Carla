@@ -158,7 +158,10 @@ class HostWindow(QMainWindow):
         # Internal stuff (patchbay)
 
         self.fExportImage = QImage()
+
         self.fPeaksCleared = True
+
+        self.fExternalPatchbay = False
         self.fSelectedPlugins  = []
 
         self.fCanvasWidth  = 0
@@ -216,6 +219,11 @@ class HostWindow(QMainWindow):
         self.ui.act_engine_stop.setEnabled(False)
         self.ui.act_plugin_remove_all.setEnabled(False)
 
+        self.ui.act_canvas_show_internal.setChecked(False)
+        self.ui.act_canvas_show_internal.setVisible(False)
+        self.ui.act_canvas_show_external.setChecked(False)
+        self.ui.act_canvas_show_external.setVisible(False)
+
         self.ui.menu_PluginMacros.setEnabled(False)
         self.ui.menu_Canvas.setEnabled(False)
 
@@ -223,6 +231,8 @@ class HostWindow(QMainWindow):
         self.ui.dockWidget.setTitleBarWidget(self.ui.dockWidgetTitleBar)
 
         if not withCanvas:
+            self.ui.act_canvas_show_internal.setVisible(False)
+            self.ui.act_canvas_show_external.setVisible(False)
             self.ui.act_canvas_arrange.setVisible(False)
             self.ui.act_canvas_refresh.setVisible(False)
             self.ui.act_canvas_save_image.setVisible(False)
@@ -349,7 +359,6 @@ class HostWindow(QMainWindow):
             self.ui.act_file_quit.setMenuRole(QAction.QuitRole)
             self.ui.act_settings_configure.setMenuRole(QAction.PreferencesRole)
             self.ui.act_help_about.setMenuRole(QAction.AboutRole)
-            self.ui.act_help_about_juce.setMenuRole(QAction.ApplicationSpecificRole)
             self.ui.act_help_about_qt.setMenuRole(QAction.AboutQtRole)
             self.ui.menu_Settings.setTitle("Panels")
             self.ui.menu_Help.menuAction().setVisible(False)
@@ -401,6 +410,8 @@ class HostWindow(QMainWindow):
         self.ui.act_plugins_expand.triggered.connect(self.slot_pluginsExpand)
         self.ui.act_plugins_panic.triggered.connect(self.slot_pluginsDisable)
 
+        self.ui.act_canvas_show_internal.triggered.connect(self.slot_canvasShowInternal)
+        self.ui.act_canvas_show_external.triggered.connect(self.slot_canvasShowExternal)
         self.ui.act_canvas_arrange.triggered.connect(self.slot_canvasArrange)
         self.ui.act_canvas_refresh.triggered.connect(self.slot_canvasRefresh)
         self.ui.act_canvas_zoom_fit.triggered.connect(self.slot_canvasZoomFit)
@@ -497,6 +508,10 @@ class HostWindow(QMainWindow):
         # Plugin needs to have timers always running so it receives messages
         if self.host.isPlugin:
             self.startTimers()
+
+        # Start in patchbay tab if using forced patchbay mode
+        if host.processModeForced and host.processMode == ENGINE_PROCESS_MODE_PATCHBAY and not host.isControl:
+            self.ui.tabWidget.setCurrentIndex(1)
 
         # Load initial project file if set
         if not (self.host.isControl or self.host.isPlugin):
@@ -744,6 +759,23 @@ class HostWindow(QMainWindow):
 
         self.ui.menu_PluginMacros.setEnabled(True)
         self.ui.menu_Canvas.setEnabled(True)
+
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+
+        if processMode == ENGINE_PROCESS_MODE_PATCHBAY and not (self.host.isControl or self.host.isPlugin):
+            self.ui.act_canvas_show_internal.setChecked(True)
+            self.ui.act_canvas_show_internal.setVisible(True)
+            self.ui.act_canvas_show_external.setChecked(False)
+            self.ui.act_canvas_show_external.setVisible(True)
+        else:
+            self.ui.act_canvas_show_internal.setChecked(False)
+            self.ui.act_canvas_show_internal.setVisible(False)
+            self.ui.act_canvas_show_external.setChecked(False)
+            self.ui.act_canvas_show_external.setVisible(False)
+
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
 
         if not (self.host.isControl or self.host.isPlugin):
             canSave = (self.fProjectFilename and os.path.exists(self.fProjectFilename)) or not self.fSessionManagerName
@@ -1167,6 +1199,28 @@ class HostWindow(QMainWindow):
     # Canvas (menu actions)
 
     @pyqtSlot()
+    def slot_canvasShowInternal(self):
+        self.fExternalPatchbay = False
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+        self.ui.act_canvas_show_internal.setChecked(True)
+        self.ui.act_canvas_show_external.setChecked(False)
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
+    def slot_canvasShowExternal(self):
+        self.fExternalPatchbay = True
+        self.ui.act_canvas_show_internal.blockSignals(True)
+        self.ui.act_canvas_show_external.blockSignals(True)
+        self.ui.act_canvas_show_internal.setChecked(False)
+        self.ui.act_canvas_show_external.setChecked(True)
+        self.ui.act_canvas_show_internal.blockSignals(False)
+        self.ui.act_canvas_show_external.blockSignals(False)
+        self.slot_canvasRefresh()
+
+    @pyqtSlot()
     def slot_canvasArrange(self):
         patchcanvas.arrange()
 
@@ -1178,7 +1232,7 @@ class HostWindow(QMainWindow):
             return
 
         if self.host.is_engine_running():
-            self.host.patchbay_refresh()
+            self.host.patchbay_refresh(self.fExternalPatchbay)
 
         self.updateMiniCanvasLater()
 
@@ -1502,7 +1556,7 @@ class HostWindow(QMainWindow):
         if self.host.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK and self.host.isPlugin:
             pass
         elif self.host.is_engine_running():
-            self.host.patchbay_refresh()
+            self.host.patchbay_refresh(self.fExternalPatchbay)
 
         for pitem in self.fPluginList:
             if pitem is None:
