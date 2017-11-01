@@ -22,6 +22,7 @@
 #include "CarlaMutex.hpp"
 #include "CarlaPatchbayUtils.hpp"
 #include "CarlaStringList.hpp"
+#include "CarlaThread.hpp"
 
 #include "water/water.h"
 
@@ -145,7 +146,8 @@ struct RackGraph {
 // -----------------------------------------------------------------------
 // PatchbayGraph
 
-struct PatchbayGraph {
+class PatchbayGraph : private CarlaThread {
+public:
     PatchbayConnectionList connections;
     AudioProcessorGraph graph;
     AudioSampleBuffer audioBuffer;
@@ -179,6 +181,9 @@ struct PatchbayGraph {
     bool getGroupAndPortIdFromFullName(const bool external, const char* const fullPortName, uint& groupId, uint& portId) const;
 
     void process(CarlaEngine::ProtectedData* const data, const float* const* const inBuf, float* const* const outBuf, const int frames);
+
+private:
+    void run() override;
 
     CarlaEngine* const kEngine;
     CARLA_DECLARE_NON_COPY_CLASS(PatchbayGraph)

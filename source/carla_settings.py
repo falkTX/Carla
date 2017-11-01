@@ -202,9 +202,9 @@ class CarlaSettingsW(QDialog):
     PATH_INDEX_DSSI   = 1
     PATH_INDEX_LV2    = 2
     PATH_INDEX_VST2   = 3
-    PATH_INDEX_GIG    = 5
-    PATH_INDEX_SF2    = 6
-    PATH_INDEX_SFZ    = 7
+    PATH_INDEX_GIG    = 4
+    PATH_INDEX_SF2    = 5
+    PATH_INDEX_SFZ    = 6
 
     # Single and Multiple client mode is only for JACK,
     # but we still want to match QComboBox index to backend defines,

@@ -266,6 +266,9 @@
      <addaction name="act_canvas_zoom_out"/>
      <addaction name="act_canvas_zoom_100"/>
     </widget>
+    <addaction name="act_canvas_show_internal"/>
+    <addaction name="act_canvas_show_external"/>
+    <addaction name="separator"/>
     <addaction name="act_canvas_arrange"/>
     <addaction name="act_canvas_refresh"/>
     <addaction name="menu_Canvas_Zoom"/>

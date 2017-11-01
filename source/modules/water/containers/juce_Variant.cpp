@@ -64,7 +64,6 @@ public:
     virtual void cleanUp (ValueUnion&) const noexcept {}
     virtual void createCopy (ValueUnion& dest, const ValueUnion& source) const      { dest = source; }
     virtual bool equals (const ValueUnion& data, const ValueUnion& otherData, const VariantType& otherType) const noexcept = 0;
-    virtual void writeToStream (const ValueUnion& data, OutputStream& output) const = 0;
 };
 
 //==============================================================================
@@ -76,7 +75,6 @@ public:
 
     bool isVoid() const noexcept override   { return true; }
     bool equals (const ValueUnion&, const ValueUnion&, const VariantType& otherType) const noexcept override { return otherType.isVoid() || otherType.isUndefined(); }
-    void writeToStream (const ValueUnion&, OutputStream& output) const override   { output.writeCompressedInt (0); }
 };
 
 //==============================================================================
@@ -89,12 +87,6 @@ public:
     bool isUndefined() const noexcept override           { return true; }
     String toString (const ValueUnion&) const override   { return "undefined"; }
     bool equals (const ValueUnion&, const ValueUnion&, const VariantType& otherType) const noexcept override { return otherType.isVoid() || otherType.isUndefined(); }
-
-    void writeToStream (const ValueUnion&, OutputStream& output) const override
-    {
-        output.writeCompressedInt (1);
-        output.writeByte (varMarker_Undefined);
-    }
 };
 
 //==============================================================================
@@ -117,13 +109,6 @@ public:
             return otherType.equals (otherData, data, *this);
 
         return otherType.toInt (otherData) == data.intValue;
-    }
-
-    void writeToStream (const ValueUnion& data, OutputStream& output) const override
-    {
-        output.writeCompressedInt (5);
-        output.writeByte (varMarker_Int);
-        output.writeInt (data.intValue);
     }
 };
 
@@ -148,13 +133,6 @@ public:
 
         return otherType.toInt64 (otherData) == data.int64Value;
     }
-
-    void writeToStream (const ValueUnion& data, OutputStream& output) const override
-    {
-        output.writeCompressedInt (9);
-        output.writeByte (varMarker_Int64);
-        output.writeInt64 (data.int64Value);
-    }
 };
 
 //==============================================================================
@@ -175,13 +153,6 @@ public:
     {
         return std::abs (otherType.toDouble (otherData) - data.doubleValue) < std::numeric_limits<double>::epsilon();
     }
-
-    void writeToStream (const ValueUnion& data, OutputStream& output) const override
-    {
-        output.writeCompressedInt (9);
-        output.writeByte (varMarker_Double);
-        output.writeDouble (data.doubleValue);
-    }
 };
 
 //==============================================================================
@@ -201,12 +172,6 @@ public:
     bool equals (const ValueUnion& data, const ValueUnion& otherData, const VariantType& otherType) const noexcept override
     {
         return otherType.toBool (otherData) == data.boolValue;
-    }
-
-    void writeToStream (const ValueUnion& data, OutputStream& output) const override
-    {
-        output.writeCompressedInt (1);
-        output.writeByte (data.boolValue ? (char) varMarker_BoolTrue : (char) varMarker_BoolFalse);
     }
 };
 
@@ -232,17 +197,6 @@ public:
     bool equals (const ValueUnion& data, const ValueUnion& otherData, const VariantType& otherType) const noexcept override
     {
         return otherType.toString (otherData) == *getString (data);
-    }
-
-    void writeToStream (const ValueUnion& data, OutputStream& output) const override
-    {
-        const String* const s = getString (data);
-        const size_t len = s->getNumBytesAsUTF8() + 1;
-        HeapBlock<char> temp (len);
-        s->copyToUTF8 (temp, len);
-        output.writeCompressedInt ((int) (len + 1));
-        output.writeByte (varMarker_String);
-        output.write (temp, len);
     }
 
 private:

@@ -25,6 +25,7 @@
 #include "CarlaMIDI.h"
 
 using water::jmax;
+using water::jmin;
 using water::AudioProcessor;
 using water::MidiBuffer;
 using water::String;
@@ -1152,14 +1153,7 @@ public:
 
     void processBlock(AudioSampleBuffer& audio, MidiBuffer& midi) override
     {
-        if (fPlugin == nullptr || ! fPlugin->isEnabled())
-        {
-            audio.clear();
-            midi.clear();
-            return;
-        }
-
-        if (! fPlugin->tryLock(kEngine->isOffline()))
+        if (fPlugin == nullptr || ! fPlugin->isEnabled() || ! fPlugin->tryLock(kEngine->isOffline()))
         {
             audio.clear();
             midi.clear();
@@ -1181,7 +1175,7 @@ public:
 
         // TODO - CV support
 
-        const int numSamples(audio.getNumSamples());
+        const uint32_t numSamples(static_cast<uint32_t>(audio.getNumSamples()));
 
         if (const int numChan = audio.getNumChannels())
         {
@@ -1193,33 +1187,22 @@ public:
             for (int i=0; i<numChan; ++i)
                 audioBuffers[i] = audio.getWritePointer(i);
 
-#if 0
             float inPeaks[2] = { 0.0f };
             float outPeaks[2] = { 0.0f };
-            juce::Range<float> range;
 
-            for (int i=static_cast<int>(jmin(fPlugin->getAudioInCount(), 2U)); --i>=0;)
-            {
-                range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
-                inPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
-            }
-#endif
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioInCount(), 2U); i<count; ++i)
+                inPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
-            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, static_cast<uint32_t>(numSamples));
+            fPlugin->process(const_cast<const float**>(audioBuffers), audioBuffers, nullptr, nullptr, numSamples);
 
-#if 0
-            for (int i=static_cast<int>(jmin(fPlugin->getAudioOutCount(), 2U)); --i>=0;)
-            {
-                range = FloatVectorOperations::findMinAndMax(audioBuffers[i], numSamples);
-                outPeaks[i] = carla_maxLimited<float>(std::abs(range.getStart()), std::abs(range.getEnd()), 1.0f);
-            }
+            for (uint32_t i=0, count=jmin(fPlugin->getAudioOutCount(), 2U); i<count; ++i)
+                outPeaks[i] = carla_findMaxNormalizedFloat(audioBuffers[i], numSamples);
 
             kEngine->setPluginPeaks(fPlugin->getId(), inPeaks, outPeaks);
-#endif
         }
         else
         {
-            fPlugin->process(nullptr, nullptr, nullptr, nullptr, static_cast<uint32_t>(numSamples));
+            fPlugin->process(nullptr, nullptr, nullptr, nullptr, numSamples);
         }
 
         midi.clear();
@@ -1302,7 +1285,8 @@ private:
 };
 
 PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, const uint32_t outs)
-    : connections(),
+    : CarlaThread("PatchbayReorderThread"),
+      connections(),
       graph(),
       audioBuffer(),
       midiBuffer(),
@@ -1390,10 +1374,14 @@ PatchbayGraph::PatchbayGraph(CarlaEngine* const engine, const uint32_t ins, cons
         node->properties.set("isMIDI", true);
         node->properties.set("isOSC", false);
     }
+
+    startThread();
 }
 
 PatchbayGraph::~PatchbayGraph()
 {
+    stopThread(-1);
+
     connections.clear();
     extGraph.clear();
 
@@ -1849,6 +1837,15 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
         carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
         fillEngineEventsFromWaterMidiBuffer(data->events.out, midiBuffer);
         midiBuffer.clear();
+    }
+}
+
+void PatchbayGraph::run()
+{
+    while (! shouldThreadExit())
+    {
+        carla_msleep(100);
+        graph.reorderNowIfNeeded();
     }
 }
 
