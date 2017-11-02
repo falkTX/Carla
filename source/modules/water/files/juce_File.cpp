@@ -211,7 +211,7 @@ String File::addTrailingSeparator (const String& path)
 }
 
 //==============================================================================
-#if JUCE_LINUX
+#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
  #define NAMES_ARE_CASE_SENSITIVE 1
 #endif
 
@@ -371,8 +371,10 @@ bool File::isAChildOf (const File& potentialParent) const
     return getParentDirectory().isAChildOf (potentialParent);
 }
 
+#if 0
 int   File::hashCode() const    { return fullPath.hashCode(); }
 int64 File::hashCode64() const  { return fullPath.hashCode64(); }
+#endif
 
 //==============================================================================
 bool File::isAbsolutePath (StringRef path)
@@ -927,7 +929,7 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
             linkFileToCreate.deleteFile();
     }
 
-   #if JUCE_MAC || JUCE_LINUX
+   #ifndef CARLA_OS_WIN
     // one common reason for getting an error here is that the file already exists
     if (symlink (fullPath.toRawUTF8(), linkFileToCreate.getFullPathName().toRawUTF8()) == -1)
     {

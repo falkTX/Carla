@@ -987,6 +987,9 @@ void CarlaJackAppClient::runRealtimeThread()
     fNonRealtimeThread.signalThreadShouldExit();
 
     carla_debug("CarlaJackAppClient runRealtimeThread FINISHED");
+
+    // TODO
+    return; (void)quitReceived;
 }
 
 void CarlaJackAppClient::runNonRealtimeThread()
