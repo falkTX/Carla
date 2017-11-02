@@ -24,6 +24,7 @@
 #include "CarlaMutex.hpp"
 
 #include <algorithm>
+#include <string>
 
 //==============================================================================
 
@@ -43,7 +44,17 @@
 
 #define JUCE_ALIGN(bytes)   __attribute__ ((aligned (bytes)))
 
-#if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+// FIXME
+#ifdef __clang__
+ #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
+ #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
+ #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
+ #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
+ #define JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES 1
+ #define JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL 1
+ #define JUCE_DELETED_FUNCTION = delete
+ #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
+#elif (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
  #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
  #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1

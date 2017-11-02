@@ -36,6 +36,8 @@
 #include <jack/metadata.h>
 #endif
 
+#include <cerrno>
+
 #ifdef __SSE2_MATH__
 # include <xmmintrin.h>
 #endif

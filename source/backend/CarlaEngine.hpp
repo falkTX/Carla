@@ -1103,7 +1103,7 @@ protected:
     friend class ScopedActionLock;
     friend class ScopedEngineEnvironmentLocker;
     friend class ScopedThreadStopper;
-    friend struct PatchbayGraph;
+    friend class PatchbayGraph;
     friend struct RackGraph;
 
     // -------------------------------------------------------------------

@@ -59,7 +59,7 @@ struct EngineInternalEvents {
 // InternalGraph
 
 struct RackGraph;
-struct PatchbayGraph;
+class PatchbayGraph;
 
 class EngineInternalGraph
 {
