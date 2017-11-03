@@ -346,13 +346,13 @@ def checkPluginVST2(filename, tool, wineSettings=None):
     return runCarlaDiscovery(PLUGIN_VST2, "VST2", filename, tool, wineSettings)
 
 def checkFileGIG(filename, tool):
-    return runCarlaDiscovery(None, PLUGIN_GIG, "GIG", filename, tool)
+    return runCarlaDiscovery(PLUGIN_GIG, "GIG", filename, tool)
 
 def checkFileSF2(filename, tool):
-    return runCarlaDiscovery(None, PLUGIN_SF2, "SF2", filename, tool)
+    return runCarlaDiscovery(PLUGIN_SF2, "SF2", filename, tool)
 
 def checkFileSFZ(filename, tool):
-    return runCarlaDiscovery(None, PLUGIN_SFZ, "SFZ", filename, tool)
+    return runCarlaDiscovery(PLUGIN_SFZ, "SFZ", filename, tool)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Separate Thread for Plugin Search
