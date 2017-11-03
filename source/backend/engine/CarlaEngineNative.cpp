@@ -586,10 +586,12 @@ private:
 class CarlaEngineNative : public CarlaEngine
 {
 public:
-    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const uint32_t inChan = 2, uint32_t outChan = 0)
+    CarlaEngineNative(const NativeHostDescriptor* const host, const bool isPatchbay, const bool withMidiOut,
+                      const uint32_t inChan = 2, uint32_t outChan = 2)
         : CarlaEngine(),
           pHost(host),
           kIsPatchbay(isPatchbay),
+          kHasMidiOut(withMidiOut),
           fIsActive(false),
           fIsRunning(false),
           fUiServer(this),
@@ -1423,6 +1425,7 @@ protected:
 
         carla_zeroStructs(pData->events.in, kMaxEngineEventInternalCount);
 
+        if (kHasMidiOut)
         {
             NativeMidiEvent midiEvent;
 
@@ -1679,27 +1682,32 @@ public:
 
     static NativePluginHandle _instantiateRack(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, false);
+        return new CarlaEngineNative(host, false, true);
+    }
+
+    static NativePluginHandle _instantiateRackNoMidiOut(const NativeHostDescriptor* host)
+    {
+        return new CarlaEngineNative(host, false, false);
     }
 
     static NativePluginHandle _instantiatePatchbay(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true);
+        return new CarlaEngineNative(host, true, true);
     }
 
     static NativePluginHandle _instantiatePatchbay3s(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, 3, 2);
+        return new CarlaEngineNative(host, true, true, 3, 2);
     }
 
     static NativePluginHandle _instantiatePatchbay16(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, 16);
+        return new CarlaEngineNative(host, true, true, 16);
     }
 
     static NativePluginHandle _instantiatePatchbay32(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, 32);
+        return new CarlaEngineNative(host, true, true, 32);
     }
 
     static void _cleanup(NativePluginHandle handle)
@@ -1826,6 +1834,7 @@ private:
     const NativeHostDescriptor* const pHost;
 
     const bool kIsPatchbay; // rack if false
+    const bool kHasMidiOut;
     bool fIsActive, fIsRunning;
     CarlaEngineNativeUI fUiServer;
 
@@ -1871,6 +1880,48 @@ static const NativePluginDescriptor carlaRackDesc = {
     /* maker     */ "falkTX",
     /* copyright */ "GNU GPL v2+",
     CarlaEngineNative::_instantiateRack,
+    CarlaEngineNative::_cleanup,
+    CarlaEngineNative::_get_parameter_count,
+    CarlaEngineNative::_get_parameter_info,
+    CarlaEngineNative::_get_parameter_value,
+    CarlaEngineNative::_get_midi_program_count,
+    CarlaEngineNative::_get_midi_program_info,
+    CarlaEngineNative::_set_parameter_value,
+    CarlaEngineNative::_set_midi_program,
+    /* _set_custom_data        */ nullptr,
+    CarlaEngineNative::_ui_show,
+    CarlaEngineNative::_ui_idle,
+    /* _ui_set_parameter_value */ nullptr,
+    /* _ui_set_midi_program    */ nullptr,
+    /* _ui_set_custom_data     */ nullptr,
+    CarlaEngineNative::_activate,
+    CarlaEngineNative::_deactivate,
+    CarlaEngineNative::_process,
+    CarlaEngineNative::_get_state,
+    CarlaEngineNative::_set_state,
+    CarlaEngineNative::_dispatcher
+};
+
+static const NativePluginDescriptor carlaRackNoMidiOutDesc = {
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Rack (no midi out)",
+    /* label     */ "carlarack-nomidiout",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    CarlaEngineNative::_instantiateRackNoMidiOut,
     CarlaEngineNative::_cleanup,
     CarlaEngineNative::_get_parameter_count,
     CarlaEngineNative::_get_parameter_info,
@@ -2072,6 +2123,7 @@ void carla_register_native_plugin_carla()
 {
     CARLA_BACKEND_USE_NAMESPACE;
     carla_register_native_plugin(&carlaRackDesc);
+    carla_register_native_plugin(&carlaRackNoMidiOutDesc);
     carla_register_native_plugin(&carlaPatchbayDesc);
     carla_register_native_plugin(&carlaPatchbay3sDesc);
     carla_register_native_plugin(&carlaPatchbay16Desc);

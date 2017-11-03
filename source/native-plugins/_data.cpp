@@ -271,6 +271,27 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* audioIns  */ 2,
     /* audioOuts */ 2,
     /* midiIns   */ 1,
+    /* midiOuts  */ 0,
+    /* paramIns  */ 0,
+    /* paramOuts */ 0,
+    /* name      */ "Carla-Rack (no midi out)",
+    /* label     */ "carlarack-nomidiout",
+    /* maker     */ "falkTX",
+    /* copyright */ "GNU GPL v2+",
+    DESCFUNCS
+},
+{
+    /* category  */ NATIVE_PLUGIN_CATEGORY_OTHER,
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_SYNTH
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  //|NATIVE_PLUGIN_NEEDS_FIXED_BUFFERS
+                                                  |NATIVE_PLUGIN_NEEDS_UI_MAIN_THREAD
+                                                  |NATIVE_PLUGIN_USES_STATE
+                                                  |NATIVE_PLUGIN_USES_TIME),
+    /* supports  */ static_cast<NativePluginSupports>(NATIVE_PLUGIN_SUPPORTS_EVERYTHING),
+    /* audioIns  */ 2,
+    /* audioOuts */ 2,
+    /* midiIns   */ 1,
     /* midiOuts  */ 1,
     /* paramIns  */ 0,
     /* paramOuts */ 0,
