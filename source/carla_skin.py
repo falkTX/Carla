@@ -1123,7 +1123,7 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
         # Export LV2
 
         elif actSel == actExportLV2:
-            ret = QFileDialog.getSaveFileName(self, self.tr("Export Plugin as LV2"), "", "", QFileDialog.ShowDirsOnly|QFileDialog.HideNameFilterDetails)
+            ret = QFileDialog.getSaveFileName(self, self.tr("Export Plugin as LV2"), "", "", "", QFileDialog.ShowDirsOnly|QFileDialog.HideNameFilterDetails)
 
             if config_UseQt5:
                 ret = ret[0]

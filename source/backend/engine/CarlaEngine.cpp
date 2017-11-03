@@ -483,10 +483,12 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             // loading a project, revert first status if set
             else if (pData->firstLinuxSamplerInstance)
                 pData->firstLinuxSamplerInstance = false;
+#if 0
 
             // now check if bridge is needed
             if (! pData->firstLinuxSamplerInstance)
                 preferBridges = true;
+#endif
         }
     }
 #endif // ! BUILD_BRIDGE

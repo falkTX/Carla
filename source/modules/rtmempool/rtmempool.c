@@ -209,7 +209,7 @@ void rtsafe_memory_pool_destroy(RtMemPool_Handle handle)
     // caller should deallocate all chunks prior releasing pool itself
     if (poolPtr->usedCount != 0)
     {
-        assert(0);
+        fprintf(stderr, "warning: rtsafe_memory_pool_destroy called with nodes still active\n");
     }
 
     while (poolPtr->unusedCount != 0)

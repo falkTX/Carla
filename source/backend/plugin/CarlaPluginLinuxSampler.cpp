@@ -224,7 +224,7 @@ public:
           fRealName(nullptr),
           sSampler(),
           fAudioOutputDevice(engine, this, kUses16Outs),
-          fMidiInputDevice(sSampler),
+          fMidiInputDevice(&sSampler),
           fMidiInputPort(nullptr),
           fInstrumentIds(),
           fInstrumentInfo()
@@ -232,8 +232,8 @@ public:
         carla_debug("CarlaPluginLinuxSampler::CarlaPluginLinuxSampler(%p, %i, %s, %s)", engine, id, bool2str(isGIG), bool2str(use16Outs));
 
         // TODO - option for this
-        sSampler->SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
-        sSampler->SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
+        sSampler.SetGlobalMaxStreams(LinuxSampler::kMaxStreams);
+        sSampler.SetGlobalMaxVoices(LinuxSampler::kMaxVoices);
 
         carla_zeroStructs(fCurProgs,        MAX_MIDI_CHANNELS);
         carla_zeroStructs(fSamplerChannels, MAX_MIDI_CHANNELS);
@@ -274,7 +274,7 @@ public:
                     fEngineChannels[i] = nullptr;
                 }
 
-                sSampler->RemoveSamplerChannel(fSamplerChannels[i]);
+                sSampler.RemoveSamplerChannel(fSamplerChannels[i]);
                 fSamplerChannels[i] = nullptr;
             }
         }
@@ -1225,7 +1225,7 @@ public:
 
         for (uint i=0; i<kMaxChannels; ++i)
         {
-            LinuxSampler::SamplerChannel* const samplerChannel(sSampler->AddSamplerChannel());
+            LinuxSampler::SamplerChannel* const samplerChannel(sSampler.AddSamplerChannel());
             CARLA_SAFE_ASSERT_CONTINUE(samplerChannel != nullptr);
 
             samplerChannel->SetEngineType(kIsGIG ? "GIG" : "SFZ");
@@ -1386,7 +1386,7 @@ private:
     uint32_t fCurProgs[MAX_MIDI_CHANNELS];
     float    fParamBuffers[LinuxSamplerParametersMax];
 
-    SharedResourcePointer<LinuxSampler::Sampler> sSampler;
+    LinuxSampler::Sampler sSampler;
 
     LinuxSampler::AudioOutputDevicePlugin fAudioOutputDevice;
     LinuxSampler::MidiInputDevicePlugin   fMidiInputDevice;
