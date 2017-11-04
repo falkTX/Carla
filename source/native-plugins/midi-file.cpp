@@ -20,7 +20,6 @@
 
 #include "water/water.h"
 
-#if 0
 // -----------------------------------------------------------------------
 
 class MidiFilePlugin : public NativePluginClass,
@@ -238,15 +237,13 @@ static const NativePluginDescriptor midifileDesc = {
 
 // -----------------------------------------------------------------------
 
-#endif
-
 CARLA_EXPORT
 void carla_register_native_plugin_midifile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_midifile()
 {
-    //carla_register_native_plugin(&midifileDesc);
+    carla_register_native_plugin(&midifileDesc);
 }
 
 // -----------------------------------------------------------------------
