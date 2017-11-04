@@ -61,6 +61,12 @@ except:
     hasGL = False
 
 # ------------------------------------------------------------------------------------------------------------
+# Safe exception hook, needed for PyQt5
+
+def sys_excepthook(type, value, tback):
+    return sys.__excepthook__(type, value, tback)
+
+# ------------------------------------------------------------------------------------------------------------
 # Session Management support
 
 CARLA_CLIENT_NAME = os.getenv("CARLA_CLIENT_NAME")
@@ -2491,6 +2497,9 @@ def initHost(initName, libPrefix, isControl, isPlugin, failError, HostClass = No
 
     sys.stdout = CarlaPrint(False)
     sys.stderr = CarlaPrint(True)
+
+    if config_UseQt5:
+        sys.excepthook = sys_excepthook
 
     # --------------------------------------------------------------------------------------------------------
     # Done
