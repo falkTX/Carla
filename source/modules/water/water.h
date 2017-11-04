@@ -182,6 +182,8 @@ class XmlElement;
 #include "buffers/juce_AudioSampleBuffer.h"
 #include "midi/juce_MidiBuffer.h"
 #include "midi/juce_MidiMessage.h"
+#include "midi/juce_MidiMessageSequence.h"
+#include "midi/juce_MidiFile.h"
 
 class AudioProcessor;
 #include "processors/juce_AudioPlayHead.h"

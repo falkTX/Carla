@@ -110,6 +110,8 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 
 #include "midi/juce_MidiBuffer.cpp"
 #include "midi/juce_MidiMessage.cpp"
+#include "midi/juce_MidiMessageSequence.cpp"
+#include "midi/juce_MidiFile.cpp"
 
 #include "maths/juce_Random.cpp"
 #include "misc/juce_Result.cpp"
