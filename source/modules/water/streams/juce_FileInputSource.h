@@ -31,6 +31,7 @@
 #ifndef JUCE_FILEINPUTSOURCE_H_INCLUDED
 #define JUCE_FILEINPUTSOURCE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -38,7 +39,7 @@
 
     @see InputSource
 */
-class JUCE_API  FileInputSource     : public InputSource
+class FileInputSource     : public InputSource
 {
 public:
     //==============================================================================
@@ -64,5 +65,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileInputSource)
 };
 
+}
 
 #endif   // JUCE_FILEINPUTSOURCE_H_INCLUDED

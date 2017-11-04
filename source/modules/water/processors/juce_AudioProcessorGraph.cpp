@@ -22,7 +22,7 @@
   ==============================================================================
 */
 
-#include "juce_AudioProcessorGraph.h"
+namespace water {
 
 const int AudioProcessorGraph::midiChannelIndex = 0x1000;
 
@@ -1539,4 +1539,6 @@ void AudioProcessorGraph::AudioGraphIOProcessor::setParentGraph (AudioProcessorG
                               getSampleRate(),
                               getBlockSize());
     }
+}
+
 }

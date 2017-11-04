@@ -34,6 +34,8 @@
 /** This macro will be set to 1 if the compiler's native wchar_t is an 8-bit type. */
 #define JUCE_NATIVE_WCHAR_IS_UTF8 1
 
+namespace water {
+
 /** A platform-independent 32-bit unicode character type. */
 typedef uint32 juce_wchar;
 
@@ -46,7 +48,7 @@ typedef uint32 juce_wchar;
 
     @see String, CharPointer_UTF8, CharPointer_UTF16, CharPointer_UTF32
 */
-class JUCE_API  CharacterFunctions
+class CharacterFunctions
 {
 public:
     //==============================================================================
@@ -616,5 +618,6 @@ private:
     static double mulexp10 (const double value, int exponent) noexcept;
 };
 
+}
 
 #endif   // JUCE_CHARACTERFUNCTIONS_H_INCLUDED

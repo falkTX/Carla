@@ -31,6 +31,7 @@
 #ifndef JUCE_ATOMIC_H_INCLUDED
 #define JUCE_ATOMIC_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -243,6 +244,8 @@ template <typename Type>
 inline void Atomic<Type>::memoryBarrier() noexcept
 {
     __sync_synchronize();
+}
+
 }
 
 #endif   // JUCE_ATOMIC_H_INCLUDED

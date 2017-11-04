@@ -31,6 +31,7 @@
 #ifndef JUCE_OUTPUTSTREAM_H_INCLUDED
 #define JUCE_OUTPUTSTREAM_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -41,7 +42,7 @@
 
     @see InputStream, MemoryOutputStream, FileOutputStream
 */
-class JUCE_API  OutputStream
+class OutputStream
 {
 protected:
     //==============================================================================
@@ -243,28 +244,28 @@ private:
 
 //==============================================================================
 /** Writes a number to a stream as 8-bit characters in the default system encoding. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, int number);
+OutputStream& operator<< (OutputStream& stream, int number);
 
 /** Writes a number to a stream as 8-bit characters in the default system encoding. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, int64 number);
+OutputStream& operator<< (OutputStream& stream, int64 number);
 
 /** Writes a number to a stream as 8-bit characters in the default system encoding. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, double number);
+OutputStream& operator<< (OutputStream& stream, double number);
 
 /** Writes a character to a stream. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, char character);
+OutputStream& operator<< (OutputStream& stream, char character);
 
 /** Writes a null-terminated text string to a stream. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const char* text);
+OutputStream& operator<< (OutputStream& stream, const char* text);
 
 /** Writes a block of data from a MemoryBlock to a stream. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const MemoryBlock& data);
+OutputStream& operator<< (OutputStream& stream, const MemoryBlock& data);
 
 /** Writes the contents of a file to a stream. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const File& fileToRead);
+OutputStream& operator<< (OutputStream& stream, const File& fileToRead);
 
 /** Writes the complete contents of an input stream to an output stream. */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, InputStream& streamToRead);
+OutputStream& operator<< (OutputStream& stream, InputStream& streamToRead);
 
 /** Writes a new-line to a stream.
     You can use the predefined symbol 'newLine' to invoke this, e.g.
@@ -273,7 +274,8 @@ JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, InputStre
     @endcode
     @see OutputStream::setNewLineString
 */
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const NewLine&);
+OutputStream& operator<< (OutputStream& stream, const NewLine&);
 
+}
 
 #endif   // JUCE_OUTPUTSTREAM_H_INCLUDED

@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 XmlDocument::XmlDocument (const String& documentText)
     : originalText (documentText),
       input (nullptr),
@@ -878,4 +880,6 @@ String XmlDocument::getParameterEntity (const String& entity)
     }
 
     return entity;
+}
+
 }

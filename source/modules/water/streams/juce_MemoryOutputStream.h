@@ -31,6 +31,7 @@
 #ifndef JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
 #define JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -39,7 +40,7 @@
     The data that was written into the stream can then be accessed later as
     a contiguous block of memory.
 */
-class JUCE_API  MemoryOutputStream  : public OutputStream
+class MemoryOutputStream  : public OutputStream
 {
 public:
     //==============================================================================
@@ -135,7 +136,8 @@ private:
 };
 
 /** Copies all the data that has been written to a MemoryOutputStream into another stream. */
-OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const MemoryOutputStream& streamToRead);
+OutputStream& operator<< (OutputStream& stream, const MemoryOutputStream& streamToRead);
 
+}
 
 #endif   // JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED

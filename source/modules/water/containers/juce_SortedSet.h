@@ -31,6 +31,8 @@
 #ifndef JUCE_SORTEDSET_H_INCLUDED
 #define JUCE_SORTEDSET_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /**
     Holds a set of unique primitive objects, such as ints or doubles.
@@ -462,8 +464,6 @@ private:
     Array<ElementType> data;
 };
 
-#if JUCE_MSVC
- #pragma warning (pop)
-#endif
+}
 
 #endif   // JUCE_SORTEDSET_H_INCLUDED

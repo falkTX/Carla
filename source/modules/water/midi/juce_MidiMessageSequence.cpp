@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 MidiMessageSequence::MidiMessageSequence()
 {
 }
@@ -339,4 +341,6 @@ MidiMessageSequence::MidiEventHolder::MidiEventHolder (const MidiMessage& mm)
 
 MidiMessageSequence::MidiEventHolder::~MidiEventHolder()
 {
+}
+
 }

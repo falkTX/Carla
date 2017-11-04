@@ -31,6 +31,7 @@
 #ifndef JUCE_IDENTIFIER_H_INCLUDED
 #define JUCE_IDENTIFIER_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -42,7 +43,7 @@
 
     @see NamedValueSet, ValueTree
 */
-class JUCE_API  Identifier
+class Identifier
 {
 public:
     /** Creates a null identifier. */
@@ -138,5 +139,6 @@ private:
     String name;
 };
 
+}
 
 #endif   // JUCE_IDENTIFIER_H_INCLUDED

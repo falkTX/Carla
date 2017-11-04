@@ -31,7 +31,7 @@
 #ifndef JUCE_ELEMENTCOMPARATOR_H_INCLUDED
 #define JUCE_ELEMENTCOMPARATOR_H_INCLUDED
 
-#ifndef DOXYGEN
+namespace water {
 
 /** This is an internal helper class which converts a juce ElementComparator style
     class (using a "compareElements" method) into a class that's compatible with
@@ -49,9 +49,6 @@ private:
     ElementComparator& comparator;
     SortFunctionConverter& operator= (const SortFunctionConverter&) JUCE_DELETED_FUNCTION;
 };
-
-#endif
-
 
 //==============================================================================
 /**
@@ -193,5 +190,6 @@ public:
     }
 };
 
+}
 
 #endif   // JUCE_ELEMENTCOMPARATOR_H_INCLUDED

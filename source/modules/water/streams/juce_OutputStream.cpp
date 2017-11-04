@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 #if JUCE_DEBUG
 
 struct DanglingStreamChecker
@@ -285,36 +287,36 @@ static void writeIntToStream (OutputStream& stream, IntegerType number)
     stream.write (start, (size_t) (end - start - 1));
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const int number)
+OutputStream& operator<< (OutputStream& stream, const int number)
 {
     writeIntToStream (stream, number);
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const int64 number)
+OutputStream& operator<< (OutputStream& stream, const int64 number)
 {
     writeIntToStream (stream, number);
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const double number)
+OutputStream& operator<< (OutputStream& stream, const double number)
 {
     return stream << String (number);
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const char character)
+OutputStream& operator<< (OutputStream& stream, const char character)
 {
     stream.writeByte (character);
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const char* const text)
+OutputStream& operator<< (OutputStream& stream, const char* const text)
 {
     stream.write (text, strlen (text));
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const MemoryBlock& data)
+OutputStream& operator<< (OutputStream& stream, const MemoryBlock& data)
 {
     if (data.getSize() > 0)
         stream.write (data.getData(), data.getSize());
@@ -322,7 +324,7 @@ JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const Mem
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const File& fileToRead)
+OutputStream& operator<< (OutputStream& stream, const File& fileToRead)
 {
     FileInputStream in (fileToRead);
 
@@ -332,13 +334,15 @@ JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const Fil
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, InputStream& streamToRead)
+OutputStream& operator<< (OutputStream& stream, InputStream& streamToRead)
 {
     stream.writeFromInputStream (streamToRead, -1);
     return stream;
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const NewLine&)
+OutputStream& operator<< (OutputStream& stream, const NewLine&)
 {
     return stream << stream.getNewLineString();
+}
+
 }

@@ -31,6 +31,8 @@
 #ifndef JUCE_CHARPOINTER_UTF8_H_INCLUDED
 #define JUCE_CHARPOINTER_UTF8_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /**
     Wraps a pointer to a null-terminated UTF-8 character string, and provides
@@ -565,5 +567,7 @@ public:
 private:
     CharType* data;
 };
+
+}
 
 #endif   // JUCE_CHARPOINTER_UTF8_H_INCLUDED

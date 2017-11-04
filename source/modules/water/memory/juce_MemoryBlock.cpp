@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 MemoryBlock::MemoryBlock() noexcept
     : size (0)
 {
@@ -415,4 +417,6 @@ bool MemoryBlock::fromBase64Encoding (StringRef s)
             pos += 6;
         }
     }
+}
+
 }

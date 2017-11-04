@@ -25,7 +25,7 @@
 #ifndef JUCE_AUDIOPROCESSORGRAPH_H_INCLUDED
 #define JUCE_AUDIOPROCESSORGRAPH_H_INCLUDED
 
-#include "juce_AudioProcessor.h"
+namespace water {
 
 //==============================================================================
 /**
@@ -41,7 +41,7 @@
     To play back a graph through an audio device, you might want to use an
     AudioProcessorPlayer object.
 */
-class JUCE_API  AudioProcessorGraph   : public AudioProcessor
+class AudioProcessorGraph   : public AudioProcessor
                                       /*  private AsyncUpdater*/
 {
 public:
@@ -59,7 +59,7 @@ public:
 
         To create a node, call AudioProcessorGraph::addNode().
     */
-    class JUCE_API  Node   : public ReferenceCountedObject
+    class Node   : public ReferenceCountedObject
     {
     public:
         //==============================================================================
@@ -104,7 +104,7 @@ public:
 
         To create a connection, use AudioProcessorGraph::addConnection().
     */
-    struct JUCE_API  Connection
+    struct Connection
     {
     public:
         //==============================================================================
@@ -273,7 +273,7 @@ public:
 
         @see AudioProcessorGraph
     */
-    class JUCE_API  AudioGraphIOProcessor     : public AudioProcessor
+    class AudioGraphIOProcessor     : public AudioProcessor
     {
     public:
         /** Specifies the mode in which this processor will operate.
@@ -378,5 +378,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessorGraph)
 };
 
+}
 
 #endif   // JUCE_AUDIOPROCESSORGRAPH_H_INCLUDED

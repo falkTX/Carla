@@ -31,6 +31,7 @@
 #ifndef JUCE_TEMPORARYFILE_H_INCLUDED
 #define JUCE_TEMPORARYFILE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -70,7 +71,7 @@
 
     @see File, FileOutputStream
 */
-class JUCE_API  TemporaryFile
+class TemporaryFile
 {
 public:
     //==============================================================================
@@ -167,5 +168,7 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TemporaryFile)
 };
+
+}
 
 #endif   // JUCE_TEMPORARYFILE_H_INCLUDED

@@ -31,6 +31,7 @@
 #ifndef JUCE_ARRAY_H_INCLUDED
 #define JUCE_ARRAY_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -1151,5 +1152,6 @@ private:
     }
 };
 
+}
 
 #endif   // JUCE_ARRAY_H_INCLUDED

@@ -31,6 +31,7 @@
 #ifndef JUCE_INPUTSOURCE_H_INCLUDED
 #define JUCE_INPUTSOURCE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -41,7 +42,7 @@
 
     @see FileInputSource
 */
-class JUCE_API  InputSource
+class InputSource
 {
 public:
     //==============================================================================
@@ -77,5 +78,6 @@ private:
     JUCE_LEAK_DETECTOR (InputSource)
 };
 
+}
 
 #endif   // JUCE_INPUTSOURCE_H_INCLUDED

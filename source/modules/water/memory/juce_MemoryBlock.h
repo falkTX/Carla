@@ -31,13 +31,14 @@
 #ifndef JUCE_MEMORYBLOCK_H_INCLUDED
 #define JUCE_MEMORYBLOCK_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
     A class to hold a resizable block of raw data.
 
 */
-class JUCE_API  MemoryBlock
+class MemoryBlock
 {
 public:
     //==============================================================================
@@ -259,5 +260,6 @@ private:
     JUCE_LEAK_DETECTOR (MemoryBlock)
 };
 
+}
 
 #endif   // JUCE_MEMORYBLOCK_H_INCLUDED

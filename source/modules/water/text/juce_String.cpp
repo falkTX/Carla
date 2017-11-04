@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 NewLine newLine;
 
 //==============================================================================
@@ -535,18 +537,18 @@ int64 String::hashCode64() const noexcept   { return HashGenerator<int64>  ::cal
 size_t String::hash() const noexcept        { return HashGenerator<size_t> ::calculate (text); }
 
 //==============================================================================
-JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const String& s2) noexcept            { return s1.compare (s2) == 0; }
-JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) != 0; }
-JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const char* s2) noexcept              { return s1.compare (s2) == 0; }
-JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const char* s2) noexcept              { return s1.compare (s2) != 0; }
-JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) == 0; }
-JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) != 0; }
-JUCE_API bool JUCE_CALLTYPE operator== (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) == 0; }
-JUCE_API bool JUCE_CALLTYPE operator!= (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) != 0; }
-JUCE_API bool JUCE_CALLTYPE operator>  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) > 0; }
-JUCE_API bool JUCE_CALLTYPE operator<  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) < 0; }
-JUCE_API bool JUCE_CALLTYPE operator>= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) >= 0; }
-JUCE_API bool JUCE_CALLTYPE operator<= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) <= 0; }
+bool operator== (const String& s1, const String& s2) noexcept            { return s1.compare (s2) == 0; }
+bool operator!= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) != 0; }
+bool operator== (const String& s1, const char* s2) noexcept              { return s1.compare (s2) == 0; }
+bool operator!= (const String& s1, const char* s2) noexcept              { return s1.compare (s2) != 0; }
+bool operator== (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) == 0; }
+bool operator!= (const String& s1, StringRef s2) noexcept                { return s1.getCharPointer().compare (s2.text) != 0; }
+bool operator== (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) == 0; }
+bool operator!= (const String& s1, const CharPointer_UTF8 s2) noexcept   { return s1.getCharPointer().compare (s2) != 0; }
+bool operator>  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) > 0; }
+bool operator<  (const String& s1, const String& s2) noexcept            { return s1.compare (s2) < 0; }
+bool operator>= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) >= 0; }
+bool operator<= (const String& s1, const String& s2) noexcept            { return s1.compare (s2) <= 0; }
 
 bool String::equalsIgnoreCase (const char* const t) const noexcept
 {
@@ -753,37 +755,37 @@ String& String::operator+= (const int64 number)        { return StringHelpers::o
 String& String::operator+= (const uint64 number)       { return StringHelpers::operationAddAssign<uint64>       (*this, number); }
 
 //==============================================================================
-JUCE_API String JUCE_CALLTYPE operator+ (const char* const s1, const String& s2)    { String s (s1); return s += s2; }
-JUCE_API String JUCE_CALLTYPE operator+ (const char s1, const String& s2)           { return String::charToString ((juce_wchar) (uint8) s1) + s2; }
-JUCE_API String JUCE_CALLTYPE operator+ (String s1, const String& s2)               { return s1 += s2; }
-JUCE_API String JUCE_CALLTYPE operator+ (String s1, const char* const s2)           { return s1 += s2; }
-JUCE_API String JUCE_CALLTYPE operator+ (String s1, const char s2)                  { return s1 += s2; }
+String operator+ (const char* const s1, const String& s2)    { String s (s1); return s += s2; }
+String operator+ (const char s1, const String& s2)           { return String::charToString ((juce_wchar) (uint8) s1) + s2; }
+String operator+ (String s1, const String& s2)               { return s1 += s2; }
+String operator+ (String s1, const char* const s2)           { return s1 += s2; }
+String operator+ (String s1, const char s2)                  { return s1 += s2; }
 
-JUCE_API String JUCE_CALLTYPE operator+ (const juce_wchar s1, const String& s2)     { return String::charToString (s1) + s2; }
-JUCE_API String JUCE_CALLTYPE operator+ (String s1, const juce_wchar s2)            { return s1 += s2; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const juce_wchar s2)         { return s1 += s2; }
+String operator+ (const juce_wchar s1, const String& s2)     { return String::charToString (s1) + s2; }
+String operator+ (String s1, const juce_wchar s2)            { return s1 += s2; }
+String& operator<< (String& s1, const juce_wchar s2)         { return s1 += s2; }
 
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const char s2)               { return s1 += s2; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const char* const s2)        { return s1 += s2; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const String& s2)            { return s1 += s2; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, StringRef s2)                { return s1 += s2; }
+String& operator<< (String& s1, const char s2)               { return s1 += s2; }
+String& operator<< (String& s1, const char* const s2)        { return s1 += s2; }
+String& operator<< (String& s1, const String& s2)            { return s1 += s2; }
+String& operator<< (String& s1, StringRef s2)                { return s1 += s2; }
 
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const int number)            { return s1 += number; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const short number)          { return s1 += (int) number; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const unsigned short number) { return s1 += (uint64) number; }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const long number)           { return s1 += String (number); }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const unsigned long number)  { return s1 += String (number); }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const int64 number)          { return s1 += String (number); }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const uint64 number)         { return s1 += String (number); }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const float number)          { return s1 += String (number); }
-JUCE_API String& JUCE_CALLTYPE operator<< (String& s1, const double number)         { return s1 += String (number); }
+String& operator<< (String& s1, const int number)            { return s1 += number; }
+String& operator<< (String& s1, const short number)          { return s1 += (int) number; }
+String& operator<< (String& s1, const unsigned short number) { return s1 += (uint64) number; }
+String& operator<< (String& s1, const long number)           { return s1 += String (number); }
+String& operator<< (String& s1, const unsigned long number)  { return s1 += String (number); }
+String& operator<< (String& s1, const int64 number)          { return s1 += String (number); }
+String& operator<< (String& s1, const uint64 number)         { return s1 += String (number); }
+String& operator<< (String& s1, const float number)          { return s1 += String (number); }
+String& operator<< (String& s1, const double number)         { return s1 += String (number); }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const String& text)
+OutputStream& operator<< (OutputStream& stream, const String& text)
 {
     return operator<< (stream, StringRef (text));
 }
 
-JUCE_API OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, StringRef text)
+OutputStream& operator<< (OutputStream& stream, StringRef text)
 {
     const size_t numBytes = CharPointer_UTF8::getBytesRequiredFor (text.text);
 
@@ -1977,10 +1979,6 @@ String String::fromUTF8 (const char* const buffer, int bufferSizeBytes)
     return String();
 }
 
-#if JUCE_MSVC
- #pragma warning (pop)
-#endif
-
 //==============================================================================
 StringRef::StringRef() noexcept  : text ((const String::CharPointerType::CharType*) "\0\0\0")
 {
@@ -2014,5 +2012,6 @@ StringRef::StringRef (String::CharPointerType stringLiteral) noexcept  : text (s
 
 StringRef::StringRef (const String& string) noexcept  : text (string.getCharPointer()) {}
 
+}
 
 //==============================================================================

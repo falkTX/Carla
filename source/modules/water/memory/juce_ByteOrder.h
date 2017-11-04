@@ -31,12 +31,13 @@
 #ifndef JUCE_BYTEORDER_H_INCLUDED
 #define JUCE_BYTEORDER_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** Contains static methods for converting the byte order between different
     endiannesses.
 */
-class JUCE_API  ByteOrder
+class ByteOrder
 {
 public:
     //==============================================================================
@@ -142,10 +143,6 @@ private:
 
 
 //==============================================================================
-#if JUCE_MSVC && ! defined (__INTEL_COMPILER)
- #pragma intrinsic (_byteswap_ulong)
-#endif
-
 inline uint16 ByteOrder::swap (uint16 n) noexcept
 {
     return static_cast<uint16> ((n << 8) | (n >> 8));
@@ -153,15 +150,11 @@ inline uint16 ByteOrder::swap (uint16 n) noexcept
 
 inline uint32 ByteOrder::swap (uint32 n) noexcept
 {
-   #if JUCE_MAC || JUCE_IOS
+   #if JUCE_MAC
     return OSSwapInt32 (n);
-   #elif (JUCE_GCC  || JUCE_CLANG) && JUCE_INTEL && ! JUCE_NO_INLINE_ASM
+   #elif JUCE_INTEL && ! JUCE_NO_INLINE_ASM
     asm("bswap %%eax" : "=a"(n) : "a"(n));
     return n;
-   #elif JUCE_MSVC
-    return _byteswap_ulong (n);
-   #elif JUCE_ANDROID
-    return bswap_32 (n);
    #else
     return (n << 24) | (n >> 24) | ((n & 0xff00) << 8) | ((n & 0xff0000) >> 8);
    #endif
@@ -169,10 +162,8 @@ inline uint32 ByteOrder::swap (uint32 n) noexcept
 
 inline uint64 ByteOrder::swap (uint64 value) noexcept
 {
-   #if JUCE_MAC || JUCE_IOS
+   #if JUCE_MAC
     return OSSwapInt64 (value);
-   #elif JUCE_MSVC
-    return _byteswap_uint64 (value);
    #else
     return (((uint64) swap ((uint32) value)) << 32) | swap ((uint32) (value >> 32));
    #endif
@@ -194,7 +185,7 @@ inline uint64 ByteOrder::swap (uint64 value) noexcept
  inline int16 ByteOrder::swapIfLittleEndian (const int16 v) noexcept                                 { return static_cast<int16> (swap (static_cast<uint16> (v))); }
  inline int32 ByteOrder::swapIfLittleEndian (const int32 v) noexcept                                 { return static_cast<int32> (swap (static_cast<uint32> (v))); }
  inline int64 ByteOrder::swapIfLittleEndian (const int64 v) noexcept                                 { return static_cast<int64> (swap (static_cast<uint64> (v))); }
-inline float ByteOrder::swapIfLittleEndian (const float v) noexcept                                  { union { uint32 asUInt; float asFloat;  } n; n.asFloat = v; n.asUInt = ByteOrder::swap (n.asUInt); return n.asFloat; }
+ inline float ByteOrder::swapIfLittleEndian (const float v) noexcept                                 { union { uint32 asUInt; float asFloat;  } n; n.asFloat = v; n.asUInt = ByteOrder::swap (n.asUInt); return n.asFloat; }
  inline double ByteOrder::swapIfLittleEndian (const double v) noexcept                               { union { uint64 asUInt; double asFloat; } n; n.asFloat = v; n.asUInt = ByteOrder::swap (n.asUInt); return n.asFloat; }
 
  inline uint32 ByteOrder::littleEndianInt (const void* const bytes) noexcept                         { return *static_cast<const uint32*> (bytes); }
@@ -237,5 +228,6 @@ inline int  ByteOrder::bigEndian24Bit (const void* const bytes) noexcept        
 inline void ByteOrder::littleEndian24BitToChars (const int value, void* const destBytes) noexcept    { static_cast<uint8*> (destBytes)[0] = (uint8) value;         static_cast<uint8*> (destBytes)[1] = (uint8) (value >> 8); static_cast<uint8*> (destBytes)[2] = (uint8) (value >> 16); }
 inline void ByteOrder::bigEndian24BitToChars (const int value, void* const destBytes) noexcept       { static_cast<uint8*> (destBytes)[0] = (uint8) (value >> 16); static_cast<uint8*> (destBytes)[1] = (uint8) (value >> 8); static_cast<uint8*> (destBytes)[2] = (uint8) value; }
 
+}
 
 #endif   // JUCE_BYTEORDER_H_INCLUDED

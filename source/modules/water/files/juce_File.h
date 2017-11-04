@@ -31,6 +31,7 @@
 #ifndef JUCE_FILE_H_INCLUDED
 #define JUCE_FILE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -44,7 +45,7 @@
 
     @see FileInputStream, FileOutputStream
 */
-class JUCE_API  File
+class File
 {
 public:
     //==============================================================================
@@ -788,7 +789,7 @@ public:
 
         @see SpecialLocationType
     */
-    static File JUCE_CALLTYPE getSpecialLocation (const SpecialLocationType type);
+    static File  getSpecialLocation (const SpecialLocationType type);
 
     //==============================================================================
     /** Returns a temporary file in the system's temp directory.
@@ -883,17 +884,12 @@ public:
    #endif
 
     //==============================================================================
-   #if JUCE_MAC || JUCE_IOS || DOXYGEN
+   #if JUCE_MAC
     /** OSX ONLY - Finds the OSType of a file from the its resources. */
     OSType getMacOSType() const;
 
     /** OSX ONLY - Returns true if this file is actually a bundle. */
     bool isBundle() const;
-   #endif
-
-   #if JUCE_MAC || DOXYGEN
-    /** OSX ONLY - Adds this file to the OSX dock */
-    void addToDock() const;
    #endif
 
     //==============================================================================
@@ -932,5 +928,7 @@ private:
     bool setFileReadOnlyInternal (bool) const;
     bool setFileExecutableInternal (bool) const;
 };
+
+}
 
 #endif   // JUCE_FILE_H_INCLUDED

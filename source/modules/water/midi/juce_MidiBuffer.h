@@ -31,6 +31,7 @@
 #ifndef JUCE_MIDIBUFFER_H_INCLUDED
 #define JUCE_MIDIBUFFER_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -46,7 +47,7 @@
 
     @see MidiMessage
 */
-class JUCE_API  MidiBuffer
+class MidiBuffer
 {
 public:
     //==============================================================================
@@ -174,7 +175,7 @@ public:
 
         @see MidiBuffer
     */
-    class JUCE_API  Iterator
+    class Iterator
     {
     public:
         //==============================================================================
@@ -237,5 +238,6 @@ private:
     JUCE_LEAK_DETECTOR (MidiBuffer)
 };
 
+}
 
 #endif   // JUCE_MIDIBUFFER_H_INCLUDED

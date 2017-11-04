@@ -31,6 +31,7 @@
 #ifndef JUCE_SPINLOCK_H_INCLUDED
 #define JUCE_SPINLOCK_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -45,7 +46,7 @@
 
     @see CriticalSection
 */
-class JUCE_API  SpinLock
+class SpinLock
 {
 public:
     inline SpinLock() noexcept {}
@@ -106,5 +107,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (SpinLock)
 };
 
+}
 
 #endif   // JUCE_SPINLOCK_H_INCLUDED

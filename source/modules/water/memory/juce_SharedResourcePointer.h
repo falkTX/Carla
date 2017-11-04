@@ -31,6 +31,7 @@
 #ifndef JUCE_SHAREDRESOURCEPOINTER_H_INCLUDED
 #define JUCE_SHAREDRESOURCEPOINTER_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -164,5 +165,6 @@ private:
     JUCE_LEAK_DETECTOR (SharedResourcePointer)
 };
 
+}
 
 #endif   // JUCE_SHAREDRESOURCEPOINTER_H_INCLUDED

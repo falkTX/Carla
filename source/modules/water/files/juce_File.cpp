@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 File::File (const String& fullPathName)
     : fullPath (parseAbsolutePath (fullPathName))
 {
@@ -1091,7 +1093,7 @@ bool File::isSymbolicLink() const
     return (GetFileAttributes (fullPath.toUTF8()) & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
 }
 
-File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
+File File::getSpecialLocation (const SpecialLocationType type)
 {
     int csidlType = 0;
 
@@ -1698,4 +1700,6 @@ bool DirectoryIterator::NativeIterator::next (String& filenameFound,
                                               Time* modTime, Time* creationTime, bool* isReadOnly)
 {
     return pimpl->next (filenameFound, isDir, isHidden, fileSize, modTime, creationTime, isReadOnly);
+}
+
 }

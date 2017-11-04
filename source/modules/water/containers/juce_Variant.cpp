@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 enum VariantStreamMarkers
 {
     varMarker_Int       = 1,
@@ -321,4 +323,6 @@ bool operator!= (const var& v1, const char* const v2)       { return v1.toString
 var var::clone() const noexcept
 {
     return type->clone (*this);
+}
+
 }

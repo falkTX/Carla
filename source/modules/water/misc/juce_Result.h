@@ -31,6 +31,7 @@
 #ifndef JUCE_RESULT_H_INCLUDED
 #define JUCE_RESULT_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -60,7 +61,7 @@
     }
     @endcode
 */
-class JUCE_API  Result
+class Result
 {
 public:
     //==============================================================================
@@ -123,5 +124,6 @@ private:
     operator void*() const;
 };
 
+}
 
 #endif   // JUCE_RESULT_H_INCLUDED

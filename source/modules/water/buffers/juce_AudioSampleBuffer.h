@@ -31,6 +31,8 @@
 #ifndef JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 #define JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /**
     A multi-channel buffer of floating point audio samples.
@@ -1094,5 +1096,6 @@ private:
     JUCE_LEAK_DETECTOR (AudioSampleBuffer)
 };
 
+}
 
 #endif   // JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED

@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 //==============================================================================
 
 juce_wchar CharacterFunctions::toUpperCase (const juce_wchar character) noexcept
@@ -168,4 +170,6 @@ juce_wchar CharacterFunctions::getUnicodeCharFromWindows1252Codepage (const uint
                                      0x02DC, 0x2122, 0x0161, 0x203A, 0x0153, 0x0007, 0x017E, 0x0178 };
 
     return (juce_wchar) lookup[c - 0x80];
+}
+
 }

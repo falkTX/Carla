@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 namespace MidiBufferHelpers
 {
     inline int getEventTime (const void* const d) noexcept
@@ -232,4 +234,6 @@ bool MidiBuffer::Iterator::getNextEvent (MidiMessage& result, int& samplePositio
     data += sizeof (int32) + sizeof (uint16) + (size_t) itemSize;
 
     return true;
+}
+
 }

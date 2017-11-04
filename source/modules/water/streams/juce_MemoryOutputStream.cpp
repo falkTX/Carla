@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 MemoryOutputStream::MemoryOutputStream (const size_t initialSize)
   : blockToUse (&internalBlock), externalData (nullptr),
     position (0), size (0), availableSize (0)
@@ -205,7 +207,7 @@ String MemoryOutputStream::toString() const
     return String::createStringFromData (getData(), (int) getDataSize());
 }
 
-OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const MemoryOutputStream& streamToRead)
+OutputStream&  operator<< (OutputStream& stream, const MemoryOutputStream& streamToRead)
 {
     const size_t dataSize = streamToRead.getDataSize();
 
@@ -213,4 +215,6 @@ OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const MemoryOutput
         stream.write (streamToRead.getData(), dataSize);
 
     return stream;
+}
+
 }

@@ -31,6 +31,7 @@
 #ifndef JUCE_STRINGARRAY_H_INCLUDED
 #define JUCE_STRINGARRAY_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -38,7 +39,7 @@
 
     @see String, StringPairArray
 */
-class JUCE_API  StringArray
+class StringArray
 {
 public:
     //==============================================================================
@@ -424,5 +425,6 @@ private:
     JUCE_LEAK_DETECTOR (StringArray)
 };
 
+}
 
 #endif   // JUCE_STRINGARRAY_H_INCLUDED

@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 //==============================================================================
 NamedValueSet::NamedValueSet() noexcept
 {
@@ -206,4 +208,6 @@ var* NamedValueSet::getVarPointerAt (int index) const noexcept
         return &(values.getReference (index).value);
 
     return nullptr;
+}
+
 }

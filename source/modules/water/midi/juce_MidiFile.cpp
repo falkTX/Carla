@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 namespace MidiFileHelpers
 {
     static void writeVariableLengthInt (OutputStream& out, unsigned int v)
@@ -450,4 +452,6 @@ bool MidiFile::writeTrack (OutputStream& mainOut, const int trackNum)
     mainOut << out;
 
     return true;
+}
+
 }

@@ -25,7 +25,7 @@
 #ifndef JUCE_AUDIOPROCESSOR_H_INCLUDED
 #define JUCE_AUDIOPROCESSOR_H_INCLUDED
 
-// #include "juce_AudioPlayHead.h"
+namespace water {
 
 //==============================================================================
 /**
@@ -41,7 +41,7 @@
     you should implement a global function called createPluginFilter() which creates
     and returns a new instance of your subclass.
 */
-class JUCE_API  AudioProcessor
+class AudioProcessor
 {
 protected:
     //==============================================================================
@@ -377,5 +377,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessor)
 };
 
+}
 
 #endif   // JUCE_AUDIOPROCESSOR_H_INCLUDED

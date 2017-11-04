@@ -22,7 +22,7 @@
   ==============================================================================
 */
 
-// #include "juce_AudioProcessor.h"
+namespace water {
 
 AudioProcessor::AudioProcessor()
 {
@@ -121,4 +121,6 @@ void AudioPlayHead::CurrentPositionInfo::resetToDefault()
     timeSigNumerator = 4;
     timeSigDenominator = 4;
     bpm = 120;
+}
+
 }

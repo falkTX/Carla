@@ -31,6 +31,7 @@
 #ifndef JUCE_INPUTSTREAM_H_INCLUDED
 #define JUCE_INPUTSTREAM_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** The base class for streams that read data.
@@ -40,7 +41,7 @@
 
     @see OutputStream, MemoryInputStream, BufferedInputStream, FileInputStream
 */
-class JUCE_API  InputStream
+class InputStream
 {
 public:
     /** Destructor. */
@@ -264,5 +265,7 @@ protected:
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InputStream)
 };
+
+}
 
 #endif   // JUCE_INPUTSTREAM_H_INCLUDED

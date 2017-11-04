@@ -31,6 +31,7 @@
 #ifndef JUCE_XMLDOCUMENT_H_INCLUDED
 #define JUCE_XMLDOCUMENT_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -68,7 +69,7 @@
 
     @see XmlElement
 */
-class JUCE_API  XmlDocument
+class XmlDocument
 {
 public:
     //==============================================================================
@@ -179,5 +180,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XmlDocument)
 };
 
+}
 
 #endif   // JUCE_XMLDOCUMENT_H_INCLUDED

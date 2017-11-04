@@ -31,6 +31,7 @@
 #ifndef JUCE_XMLELEMENT_H_INCLUDED
 #define JUCE_XMLELEMENT_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** A handy macro to make it easy to iterate all the child elements in an XmlElement.
@@ -141,7 +142,7 @@
 
     @see XmlDocument
 */
-class JUCE_API  XmlElement
+class XmlElement
 {
 public:
     //==============================================================================
@@ -771,5 +772,6 @@ private:
     JUCE_LEAK_DETECTOR (XmlElement)
 };
 
+}
 
 #endif   // JUCE_XMLELEMENT_H_INCLUDED

@@ -31,6 +31,7 @@
 #ifndef JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
 #define JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -41,7 +42,7 @@
 
     @see MidiMessage, MidiFile
 */
-class JUCE_API  MidiMessageSequence
+class MidiMessageSequence
 {
 public:
     //==============================================================================
@@ -288,5 +289,6 @@ private:
     JUCE_LEAK_DETECTOR (MidiMessageSequence)
 };
 
+}
 
 #endif   // JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED

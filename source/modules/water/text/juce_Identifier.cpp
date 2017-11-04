@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 Identifier::Identifier() noexcept {}
 Identifier::~Identifier() noexcept {}
 
@@ -76,4 +78,6 @@ bool Identifier::isValidIdentifier (const String& possibleIdentifier) noexcept
 {
     return possibleIdentifier.isNotEmpty()
             && possibleIdentifier.containsOnly ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-:#@$%");
+}
+
 }

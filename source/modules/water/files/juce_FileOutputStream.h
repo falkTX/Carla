@@ -31,6 +31,7 @@
 #ifndef JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 #define JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -38,7 +39,7 @@
 
     @see OutputStream, FileInputStream, File::createOutputStream
 */
-class JUCE_API  FileOutputStream  : public OutputStream
+class FileOutputStream  : public OutputStream
 {
 public:
     //==============================================================================
@@ -118,5 +119,7 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileOutputStream)
 };
+
+}
 
 #endif   // JUCE_FILEOUTPUTSTREAM_H_INCLUDED

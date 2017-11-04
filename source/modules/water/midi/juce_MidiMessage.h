@@ -31,6 +31,7 @@
 #ifndef JUCE_MIDIMESSAGE_H_INCLUDED
 #define JUCE_MIDIMESSAGE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -38,7 +39,7 @@
 
     @see MidiMessageSequence, MidiOutput, MidiInput
 */
-class JUCE_API  MidiMessage
+class MidiMessage
 {
 public:
     //==============================================================================
@@ -936,5 +937,7 @@ private:
     inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
     uint8* allocateSpace (int);
 };
+
+}
 
 #endif   // JUCE_MIDIMESSAGE_H_INCLUDED

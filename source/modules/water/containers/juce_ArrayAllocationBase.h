@@ -31,6 +31,7 @@
 #ifndef JUCE_ARRAYALLOCATIONBASE_H_INCLUDED
 #define JUCE_ARRAYALLOCATIONBASE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -136,5 +137,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (ArrayAllocationBase)
 };
 
+}
 
 #endif   // JUCE_ARRAYALLOCATIONBASE_H_INCLUDED

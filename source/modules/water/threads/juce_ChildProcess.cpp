@@ -30,6 +30,8 @@
 
 #define JUCE_USE_VFORK 1
 
+namespace water {
+
 #ifdef CARLA_OS_WIN
 //=====================================================================================================================
 class ChildProcess::ActiveProcess
@@ -397,3 +399,5 @@ bool ChildProcess::start (const StringArray& args, int streamFlags)
     return activeProcess != nullptr;
 }
 #endif
+
+}

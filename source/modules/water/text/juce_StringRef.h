@@ -31,6 +31,8 @@
 #ifndef JUCE_STRINGREF_H_INCLUDED
 #define JUCE_STRINGREF_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /**
     A simple class for holding temporary references to a string literal or String.
@@ -64,7 +66,7 @@
 
     @see String
 */
-class JUCE_API  StringRef
+class StringRef
 {
 public:
     /** Creates a StringRef from a raw string literal.
@@ -123,14 +125,15 @@ public:
 
 //==============================================================================
 /** Case-sensitive comparison of two strings. */
-JUCE_API bool JUCE_CALLTYPE operator== (const String& string1, StringRef string2) noexcept;
+bool operator== (const String& string1, StringRef string2) noexcept;
 /** Case-sensitive comparison of two strings. */
-JUCE_API bool JUCE_CALLTYPE operator!= (const String& string1, StringRef string2) noexcept;
+bool operator!= (const String& string1, StringRef string2) noexcept;
 
 inline String operator+ (String s1, StringRef s2)           { return s1 += String (s2.text); }
 inline String operator+ (StringRef s1, const String& s2)    { return String (s1.text) + s2; }
 inline String operator+ (const char* s1, StringRef s2)      { return String (s1) + String (s2.text); }
 inline String operator+ (StringRef s1, const char* s2)      { return String (s1.text) + String (s2); }
 
+}
 
 #endif   // JUCE_STRINGREF_H_INCLUDED

@@ -31,6 +31,8 @@
 #ifndef JUCE_MEMORY_H_INCLUDED
 #define JUCE_MEMORY_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /** Fills a block of memory with zeros. */
 inline void zeromem (void* memory, size_t numBytes) noexcept        { memset (memory, 0, numBytes); }
@@ -85,12 +87,12 @@ inline void writeUnaligned (void* dstPtr, Type value) noexcept
 }
 
 //==============================================================================
-#if JUCE_MAC || JUCE_IOS || DOXYGEN
+#if JUCE_MAC
 
  /** A handy C++ wrapper that creates and deletes an NSAutoreleasePool object using RAII.
      You should use the JUCE_AUTORELEASEPOOL macro to create a local auto-release pool on the stack.
  */
- class JUCE_API  ScopedAutoReleasePool
+ class ScopedAutoReleasePool
  {
  public:
      ScopedAutoReleasePool();
@@ -107,7 +109,7 @@ inline void writeUnaligned (void* dstPtr, Type value) noexcept
      Because this may use the \@autoreleasepool syntax, you must follow the macro with
      a set of braces to mark the scope of the pool.
  */
-#if (JUCE_COMPILER_SUPPORTS_ARC && defined (__OBJC__)) || DOXYGEN
+#if (JUCE_COMPILER_SUPPORTS_ARC && defined (__OBJC__))
  #define JUCE_AUTORELEASEPOOL  @autoreleasepool
 #else
  #define JUCE_AUTORELEASEPOOL  const water::ScopedAutoReleasePool JUCE_JOIN_MACRO (autoReleasePool_, __LINE__);
@@ -116,5 +118,7 @@ inline void writeUnaligned (void* dstPtr, Type value) noexcept
 #else
  #define JUCE_AUTORELEASEPOOL
 #endif
+
+}
 
 #endif   // JUCE_MEMORY_H_INCLUDED

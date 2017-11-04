@@ -25,6 +25,7 @@
 #ifndef JUCE_AUDIOPLAYHEAD_H_INCLUDED
 #define JUCE_AUDIOPLAYHEAD_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -36,7 +37,7 @@
 
     @see AudioProcessor::setPlayHead, AudioProcessor::getPlayHead
 */
-class JUCE_API  AudioPlayHead
+class AudioPlayHead
 {
 protected:
     //==============================================================================
@@ -61,7 +62,7 @@ public:
     //==============================================================================
     /** This structure is filled-in by the AudioPlayHead::getCurrentPosition() method.
     */
-    struct JUCE_API  CurrentPositionInfo
+    struct CurrentPositionInfo
     {
         /** The tempo in BPM */
         double bpm;
@@ -140,5 +141,6 @@ public:
     virtual bool getCurrentPosition (CurrentPositionInfo& result) = 0;
 };
 
+}
 
 #endif   // JUCE_AUDIOPLAYHEAD_H_INCLUDED

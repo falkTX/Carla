@@ -31,6 +31,8 @@
 #ifndef JUCE_HEAPBLOCK_H_INCLUDED
 #define JUCE_HEAPBLOCK_H_INCLUDED
 
+namespace water {
+
 #if ! (defined (DOXYGEN) || JUCE_EXCEPTIONS_DISABLED)
 namespace HeapBlockHelper
 {
@@ -310,5 +312,6 @@ private:
    #endif
 };
 
+}
 
 #endif   // JUCE_HEAPBLOCK_H_INCLUDED

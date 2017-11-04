@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 StringArray::StringArray() noexcept
 {
 }
@@ -491,4 +493,6 @@ void StringArray::ensureStorageAllocated (int minNumElements)
 void StringArray::minimiseStorageOverheads()
 {
     strings.minimiseStorageOverheads();
+}
+
 }

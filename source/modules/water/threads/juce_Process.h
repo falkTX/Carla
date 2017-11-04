@@ -31,6 +31,7 @@
 #ifndef JUCE_PROCESS_H_INCLUDED
 #define JUCE_PROCESS_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** Represents the current executable's process.
@@ -40,7 +41,7 @@
 
     @see Thread, JUCEApplicationBase
 */
-class JUCE_API  Process
+class Process
 {
 public:
     //==============================================================================
@@ -57,7 +58,7 @@ public:
         @param priority     the process priority, where
                             0=low, 1=normal, 2=high, 3=realtime
     */
-    static void JUCE_CALLTYPE setPriority (const ProcessPriority priority);
+    static void setPriority (const ProcessPriority priority);
 
     /** Kills the current process immediately.
 
@@ -67,21 +68,21 @@ public:
 
         @see JUCEApplicationBase::quit
     */
-    static void JUCE_CALLTYPE terminate();
+    static void terminate();
 
     //==============================================================================
     /** Returns true if this application process is the one that the user is
         currently using.
     */
-    static bool JUCE_CALLTYPE isForegroundProcess();
+    static bool isForegroundProcess();
 
     /** Attempts to make the current process the active one.
         (This is not possible on some platforms).
     */
-    static void JUCE_CALLTYPE makeForegroundProcess();
+    static void makeForegroundProcess();
 
     /** Hides the application (on an OS that supports this, e.g. OSX) */
-    static void JUCE_CALLTYPE hide();
+    static void hide();
 
     //==============================================================================
     /** Raises the current process's privilege level.
@@ -89,26 +90,26 @@ public:
         Does nothing if this isn't supported by the current OS, or if process
         privilege level is fixed.
     */
-    static void JUCE_CALLTYPE raisePrivilege();
+    static void raisePrivilege();
 
     /** Lowers the current process's privilege level.
 
         Does nothing if this isn't supported by the current OS, or if process
         privilege level is fixed.
     */
-    static void JUCE_CALLTYPE lowerPrivilege();
+    static void lowerPrivilege();
 
     //==============================================================================
     /** Returns true if this process is being hosted by a debugger. */
-    static bool JUCE_CALLTYPE isRunningUnderDebugger() noexcept;
+    static bool isRunningUnderDebugger() noexcept;
 
 
     //==============================================================================
     /** Tries to launch the OS's default reader application for a given file or URL. */
-    static bool JUCE_CALLTYPE openDocument (const String& documentURL, const String& parameters);
+    static bool openDocument (const String& documentURL, const String& parameters);
 
     /** Tries to launch the OS's default email application to let the user create a message. */
-    static bool JUCE_CALLTYPE openEmailWithAttachments (const String& targetEmailAddress,
+    static bool openEmailWithAttachments (const String& targetEmailAddress,
                                                         const String& emailSubject,
                                                         const String& bodyText,
                                                         const StringArray& filesToAttach);
@@ -128,7 +129,7 @@ public:
         to provide the correct module handle in your DllMain() function, because
         the system relies on the correct instance handle when opening windows.
     */
-    static void* JUCE_CALLTYPE getCurrentModuleInstanceHandle() noexcept;
+    static void* getCurrentModuleInstanceHandle() noexcept;
 
     /** WINDOWS ONLY - Sets a new module handle to be used by the library.
 
@@ -137,7 +138,7 @@ public:
 
         @see getCurrentModuleInstanceHandle()
     */
-    static void JUCE_CALLTYPE setCurrentModuleInstanceHandle (void* newHandle) noexcept;
+    static void setCurrentModuleInstanceHandle (void* newHandle) noexcept;
    #endif
 
 private:
@@ -145,5 +146,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (Process)
 };
 
+}
 
 #endif   // JUCE_PROCESS_H_INCLUDED

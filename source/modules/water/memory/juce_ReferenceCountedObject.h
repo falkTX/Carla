@@ -31,6 +31,7 @@
 #ifndef JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED
 #define JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -64,7 +65,7 @@
 
     @see ReferenceCountedObjectPtr, ReferenceCountedArray, SingleThreadedReferenceCountedObject
 */
-class JUCE_API  ReferenceCountedObject
+class ReferenceCountedObject
 {
 public:
     //==============================================================================
@@ -142,7 +143,7 @@ private:
 
     @see ReferenceCountedObject, ReferenceCountedObjectPtr, ReferenceCountedArray
 */
-class JUCE_API  SingleThreadedReferenceCountedObject
+class SingleThreadedReferenceCountedObject
 {
 public:
     //==============================================================================
@@ -419,5 +420,6 @@ bool operator!= (ReferenceCountedObjectClass* object1, const ReferenceCountedObj
     return object1 != object2.get();
 }
 
+}
 
 #endif   // JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED

@@ -31,6 +31,8 @@
 #ifndef JUCE_MATHSFUNCTIONS_H_INCLUDED
 #define JUCE_MATHSFUNCTIONS_H_INCLUDED
 
+namespace water {
+
 //==============================================================================
 /*
     This file sets up some handy mathematical typdefs and functions.
@@ -548,7 +550,8 @@ namespace TypeHelpers
     template <>              struct SmallestFloatType <double>    { typedef double type; };
 }
 
-
 //==============================================================================
+
+}
 
 #endif   // JUCE_MATHSFUNCTIONS_H_INCLUDED

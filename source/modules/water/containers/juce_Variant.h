@@ -31,6 +31,7 @@
 #ifndef JUCE_VARIANT_H_INCLUDED
 #define JUCE_VARIANT_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -45,7 +46,7 @@
 
     @see JSON, DynamicObject
 */
-class JUCE_API  var
+class var
 {
 public:
     //==============================================================================
@@ -151,13 +152,13 @@ private:
 };
 
 /** Compares the values of two var objects, using the var::equals() comparison. */
-JUCE_API bool operator== (const var&, const var&) noexcept;
+bool operator== (const var&, const var&) noexcept;
 /** Compares the values of two var objects, using the var::equals() comparison. */
-JUCE_API bool operator!= (const var&, const var&) noexcept;
-JUCE_API bool operator== (const var&, const String&);
-JUCE_API bool operator!= (const var&, const String&);
-JUCE_API bool operator== (const var&, const char*);
-JUCE_API bool operator!= (const var&, const char*);
+bool operator!= (const var&, const var&) noexcept;
+bool operator== (const var&, const String&);
+bool operator!= (const var&, const String&);
+bool operator== (const var&, const char*);
+bool operator!= (const var&, const char*);
 
 //==============================================================================
 /** This template-overloaded class can be used to convert between var and custom types. */
@@ -176,5 +177,6 @@ struct VariantConverter<String>
     static var toVar (const String& s)             { return s; }
 };
 
+}
 
 #endif   // JUCE_VARIANT_H_INCLUDED

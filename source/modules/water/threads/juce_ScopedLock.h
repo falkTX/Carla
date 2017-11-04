@@ -31,6 +31,7 @@
 #ifndef JUCE_SCOPEDLOCK_H_INCLUDED
 #define JUCE_SCOPEDLOCK_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -235,5 +236,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (GenericScopedTryLock)
 };
 
+}
 
 #endif   // JUCE_SCOPEDLOCK_H_INCLUDED

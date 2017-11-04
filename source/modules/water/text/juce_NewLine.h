@@ -31,6 +31,7 @@
 #ifndef JUCE_NEWLINE_H_INCLUDED
 #define JUCE_NEWLINE_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** This class is used for represent a new-line character sequence.
@@ -43,7 +44,7 @@
     The exact character sequence that will be used for the new-line can be set and
     retrieved with OutputStream::setNewLineString() and OutputStream::getNewLineString().
 */
-class JUCE_API  NewLine
+class NewLine
 {
 public:
     /** Returns the default new-line sequence that the library uses.
@@ -86,5 +87,6 @@ inline String operator+ (const NewLine&, const NewLine&)    { return String (New
 inline String operator+ (String s1, const NewLine&)         { return s1 += NewLine::getDefault(); }
 inline String operator+ (const NewLine&, const char* s2)    { return String (NewLine::getDefault()) + s2; }
 
+}
 
 #endif   // JUCE_NEWLINE_H_INCLUDED

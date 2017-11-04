@@ -31,6 +31,7 @@
 #ifndef JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
 #define JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -852,5 +853,6 @@ private:
     }
 };
 
+}
 
 #endif   // JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED

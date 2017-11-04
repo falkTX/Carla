@@ -31,6 +31,7 @@
 #ifndef JUCE_OWNEDARRAY_H_INCLUDED
 #define JUCE_OWNEDARRAY_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /** An array designed for holding objects.
@@ -837,5 +838,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OwnedArray)
 };
 
+}
 
 #endif   // JUCE_OWNEDARRAY_H_INCLUDED

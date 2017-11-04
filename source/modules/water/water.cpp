@@ -70,7 +70,7 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 
 static void* currentModuleHandle = nullptr;
 
-void* JUCE_CALLTYPE Process::getCurrentModuleInstanceHandle() noexcept
+void* Process::getCurrentModuleInstanceHandle() noexcept
 {
     if (currentModuleHandle == nullptr)
         currentModuleHandle = GetModuleHandleA (nullptr);
@@ -95,6 +95,8 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
     return -1;
 }
 #endif
+
+}
 
 #include "memory/juce_MemoryBlock.cpp"
 
@@ -134,5 +136,3 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 
 #include "xml/juce_XmlElement.cpp"
 #include "xml/juce_XmlDocument.cpp"
-
-}

@@ -28,9 +28,6 @@
 
 //==============================================================================
 
-#define JUCE_API
-#define JUCE_CALLTYPE
-
 #define jassertfalse        carla_safe_assert("jassertfalse triggered", __FILE__, __LINE__);
 #define jassert(expression) CARLA_SAFE_ASSERT(expression)
 
@@ -44,17 +41,23 @@
 
 #define JUCE_ALIGN(bytes)   __attribute__ ((aligned (bytes)))
 
-// FIXME
+#if defined (__arm__) || defined (__arm64__)
+  #define JUCE_ARM 1
+#else
+  #define JUCE_INTEL 1
+#endif
+
+//==============================================================================
+
 #ifdef __clang__
- #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
- #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
- #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
- #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
- #define JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES 1
- #define JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL 1
- #define JUCE_DELETED_FUNCTION = delete
- #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
-#elif (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
+  #define JUCE_CLANG 1
+#elif defined (__GNUC__)
+  #define JUCE_GCC 1
+#else
+  #error unknown compiler
+#endif
+
+#if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
  #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
  #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
@@ -73,6 +76,61 @@
   #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
  #endif
 #endif
+
+//==============================================================================
+// Clang
+
+#if JUCE_CLANG && defined (__has_feature)
+ #if __has_feature (cxx_nullptr)
+  #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
+ #endif
+
+ #if __has_feature (cxx_noexcept)
+  #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
+ #endif
+
+ #if __has_feature (cxx_rvalue_references)
+  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
+ #endif
+
+ #if __has_feature (cxx_deleted_functions)
+  #define JUCE_DELETED_FUNCTION = delete
+ #endif
+
+ #if __has_feature (cxx_lambdas) && (defined (_LIBCPP_VERSION) || ! (JUCE_MAC || JUCE_IOS))
+  #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
+ #endif
+
+ #if __has_feature (cxx_generalized_initializers) && (defined (_LIBCPP_VERSION) || ! (JUCE_MAC || JUCE_IOS))
+  #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
+ #endif
+
+ #if __has_feature (cxx_variadic_templates)
+  #define JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES 1
+ #endif
+
+ #if __has_feature (cxx_static_assert)
+  #define JUCE_COMPILER_SUPPORTS_STATIC_ASSERT 1
+ #endif
+
+ #if __has_feature (cxx_override_control) && (! defined (JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL))
+  #define JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL 1
+ #endif
+
+ #ifndef JUCE_COMPILER_SUPPORTS_ARC
+  #define JUCE_COMPILER_SUPPORTS_ARC 1
+ #endif
+
+ #ifndef JUCE_EXCEPTIONS_DISABLED
+  #if ! __has_feature (cxx_exceptions)
+   #define JUCE_EXCEPTIONS_DISABLED 1
+  #endif
+ #endif
+
+#endif
+
+//==============================================================================
+// Declare some fake versions of nullptr and noexcept, for older compilers:
 
 #ifndef JUCE_DELETED_FUNCTION
  /** This macro can be placed after a method declaration to allow the use of
@@ -111,6 +169,7 @@
 #define NEEDS_TRANS(x) (x)
 
 //==============================================================================
+
 namespace water
 {
 
@@ -126,6 +185,9 @@ class OutputStream;
 class Result;
 class StringRef;
 class XmlElement;
+class AudioProcessor;
+
+}
 
 #include "memory/juce_Memory.h"
 #include "maths/juce_MathsFunctions.h"
@@ -185,7 +247,6 @@ class XmlElement;
 #include "midi/juce_MidiMessageSequence.h"
 #include "midi/juce_MidiFile.h"
 
-class AudioProcessor;
 #include "processors/juce_AudioPlayHead.h"
 #include "processors/juce_AudioProcessor.h"
 #include "processors/juce_AudioProcessorGraph.h"
@@ -195,7 +256,5 @@ class AudioProcessor;
 
 #include "xml/juce_XmlElement.h"
 #include "xml/juce_XmlDocument.h"
-
-}
 
 #endif // WATER_H_INCLUDED

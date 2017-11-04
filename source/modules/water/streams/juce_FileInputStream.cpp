@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+namespace water {
+
 int64 juce_fileSetPosition (void* handle, int64 pos);
 
 
@@ -150,3 +152,5 @@ size_t FileInputStream::readInternal (void* const buffer, const size_t numBytes)
     return (size_t) result;
 }
 #endif
+
+}

@@ -31,6 +31,7 @@
 #ifndef JUCE_LINKEDLISTPOINTER_H_INCLUDED
 #define JUCE_LINKEDLISTPOINTER_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -369,5 +370,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (LinkedListPointer)
 };
 
+}
 
 #endif   // JUCE_LINKEDLISTPOINTER_H_INCLUDED

@@ -31,6 +31,7 @@
 #ifndef JUCE_STRINGPOOL_H_INCLUDED
 #define JUCE_STRINGPOOL_H_INCLUDED
 
+namespace water {
 
 //==============================================================================
 /**
@@ -43,7 +44,7 @@
     compare two pooled strings for equality, as you can simply compare their pointers. It
     also cuts down on storage if you're using many copies of the same string.
 */
-class JUCE_API  StringPool
+class StringPool
 {
 public:
     //==============================================================================
@@ -94,5 +95,6 @@ private:
     JUCE_DECLARE_NON_COPYABLE (StringPool)
 };
 
+}
 
 #endif   // JUCE_STRINGPOOL_H_INCLUDED
