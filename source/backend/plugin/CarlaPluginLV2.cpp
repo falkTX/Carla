@@ -3415,6 +3415,8 @@ public:
                             uint32_t currentFrame = static_cast<uint32_t>(ev->time.frames);
                             if (currentFrame < lastFrame)
                                 currentFrame = lastFrame;
+                            else if (currentFrame >= frames)
+                                currentFrame = frames - 1;
 
                             evData.port->writeMidiEvent(currentFrame, static_cast<uint8_t>(ev->body.size), data);
                         }
@@ -3447,6 +3449,8 @@ public:
                     uint32_t currentFrame = ev->frames;
                     if (currentFrame < lastFrame)
                         currentFrame = lastFrame;
+                    else if (currentFrame >= frames)
+                        currentFrame = frames - 1;
 
                     if (ev->type == CARLA_URI_MAP_ID_MIDI_EVENT)
                     {

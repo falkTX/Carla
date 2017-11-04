@@ -513,7 +513,10 @@ CarlaPlugin::ProtectedData::PostRtEvents::~PostRtEvents() noexcept
 
 void CarlaPlugin::ProtectedData::PostRtEvents::appendRT(const PluginPostRtEvent& e) noexcept
 {
+    // FIXME
+    mutex.lock();
     dataPendingRT.append(e);
+    mutex.unlock();
 }
 
 void CarlaPlugin::ProtectedData::PostRtEvents::trySplice() noexcept
