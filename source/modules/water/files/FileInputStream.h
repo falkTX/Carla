@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_FILEINPUTSTREAM_H_INCLUDED
-#define JUCE_FILEINPUTSTREAM_H_INCLUDED
+#ifndef WATER_FILEINPUTSTREAM_H_INCLUDED
+#define WATER_FILEINPUTSTREAM_H_INCLUDED
 
 #include "File.h"
 #include "../streams/InputStream.h"
@@ -95,4 +95,4 @@ private:
 
 }
 
-#endif   // JUCE_FILEINPUTSTREAM_H_INCLUDED
+#endif // WATER_FILEINPUTSTREAM_H_INCLUDED

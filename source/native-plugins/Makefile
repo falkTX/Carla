@@ -57,7 +57,7 @@ endif # HAVE_NTK
 ifeq ($(LINUX),true)
 ZYN_LD_FLAGS  += -lrt
 else
-ZYN_LD_FLAGS  += $(MODULEDIR)/juce_core.a
+ZYN_LD_FLAGS  += $(MODULEDIR)/water.a
 endif
 else  # HAVE_ZYN_UI_DEPS
 ZYN_CXX_FLAGS += -DNO_UI

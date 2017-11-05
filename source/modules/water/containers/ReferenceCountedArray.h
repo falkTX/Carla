@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
-#define JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
+#ifndef WATER_REFERENCECOUNTEDARRAY_H_INCLUDED
+#define WATER_REFERENCECOUNTEDARRAY_H_INCLUDED
 
 #include "../memory/ReferenceCountedObject.h"
 
@@ -852,4 +852,4 @@ private:
 
 }
 
-#endif   // JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
+#endif // WATER_REFERENCECOUNTEDARRAY_H_INCLUDED

@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_STRINGPOOL_H_INCLUDED
-#define JUCE_STRINGPOOL_H_INCLUDED
+#ifndef WATER_STRINGPOOL_H_INCLUDED
+#define WATER_STRINGPOOL_H_INCLUDED
 
 #include "../containers/Array.h"
 
@@ -96,4 +96,4 @@ private:
 
 }
 
-#endif   // JUCE_STRINGPOOL_H_INCLUDED
+#endif  // WATER_STRINGPOOL_H_INCLUDED

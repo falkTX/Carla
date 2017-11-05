@@ -27,7 +27,7 @@
 
 namespace water {
 
-int64 juce_fileSetPosition (void* handle, int64 pos);
+int64 water_fileSetPosition (void* handle, int64 pos);
 
 //==============================================================================
 FileOutputStream::FileOutputStream (const File& f, const size_t bufferSizeToUse)
@@ -60,7 +60,7 @@ bool FileOutputStream::setPosition (int64 newPosition)
     if (newPosition != currentPosition)
     {
         flushBuffer();
-        currentPosition = juce_fileSetPosition (fileHandle, newPosition);
+        currentPosition = water_fileSetPosition (fileHandle, newPosition);
     }
 
     return newPosition == currentPosition;

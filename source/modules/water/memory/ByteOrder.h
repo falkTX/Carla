@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_BYTEORDER_H_INCLUDED
-#define JUCE_BYTEORDER_H_INCLUDED
+#ifndef WATER_BYTEORDER_H_INCLUDED
+#define WATER_BYTEORDER_H_INCLUDED
 
 #include "../water.h"
 
@@ -133,7 +133,7 @@ public:
     static bool isBigEndian() noexcept;
 
 private:
-    ByteOrder() JUCE_DELETED_FUNCTION;
+    ByteOrder() WATER_DELETED_FUNCTION;
 
     CARLA_DECLARE_NON_COPY_CLASS (ByteOrder)
 };
@@ -147,9 +147,9 @@ inline uint16 ByteOrder::swap (uint16 n) noexcept
 
 inline uint32 ByteOrder::swap (uint32 n) noexcept
 {
-   #if JUCE_MAC
+   #ifdef CARLA_OS_MAC
     return OSSwapInt32 (n);
-   #elif JUCE_INTEL && ! JUCE_NO_INLINE_ASM
+   #elif defined(CARLA_OS_WIN) || ! (defined (__arm__) || defined (__arm64__))
     asm("bswap %%eax" : "=a"(n) : "a"(n));
     return n;
    #else
@@ -159,7 +159,7 @@ inline uint32 ByteOrder::swap (uint32 n) noexcept
 
 inline uint64 ByteOrder::swap (uint64 value) noexcept
 {
-   #if JUCE_MAC
+   #ifdef CARLA_OS_MAC
     return OSSwapInt64 (value);
    #else
     return (((uint64) swap ((uint32) value)) << 32) | swap ((uint32) (value >> 32));
@@ -227,4 +227,4 @@ inline void ByteOrder::bigEndian24BitToChars (const int value, void* const destB
 
 }
 
-#endif   // JUCE_BYTEORDER_H_INCLUDED
+#endif // WATER_BYTEORDER_H_INCLUDED

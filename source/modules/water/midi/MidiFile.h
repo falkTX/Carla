@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MIDIFILE_H_INCLUDED
-#define JUCE_MIDIFILE_H_INCLUDED
+#ifndef WATER_MIDIFILE_H_INCLUDED
+#define WATER_MIDIFILE_H_INCLUDED
 
 #include "MidiMessageSequence.h"
 
@@ -186,4 +186,4 @@ private:
 
 }
 
-#endif   // JUCE_MIDIFILE_H_INCLUDED
+#endif // WATER_MIDIFILE_H_INCLUDED

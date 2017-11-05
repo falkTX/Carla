@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_ARRAY_H_INCLUDED
-#define JUCE_ARRAY_H_INCLUDED
+#ifndef WATER_ARRAY_H_INCLUDED
+#define WATER_ARRAY_H_INCLUDED
 
 #include "../containers/ArrayAllocationBase.h"
 #include "../containers/ElementComparator.h"
@@ -77,7 +77,7 @@ public:
             new (data.elements + i) ElementType (other.data.elements[i]);
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     Array (Array<ElementType>&& other) noexcept
         : data (static_cast<ArrayAllocationBase<ElementType>&&> (other.data)),
           numUsed (other.numUsed)
@@ -131,7 +131,7 @@ public:
         return *this;
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     Array& operator= (Array&& other) noexcept
     {
         deleteAllElements();
@@ -313,7 +313,7 @@ public:
     */
     inline ElementType* end() const noexcept
     {
-       #if JUCE_DEBUG
+       #ifdef DEBUG
         if (data.elements == nullptr || numUsed <= 0) // (to keep static analysers happy)
             return data.elements;
        #endif
@@ -371,7 +371,7 @@ public:
         new (data.elements + numUsed++) ElementType (newElement);
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Appends a new element at the end of the array.
 
         @param newElement       the new object to add to the array
@@ -1130,4 +1130,4 @@ private:
 
 }
 
-#endif   // JUCE_ARRAY_H_INCLUDED
+#endif // WATER_ARRAY_H_INCLUDED

@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_HEAPBLOCK_H_INCLUDED
-#define JUCE_HEAPBLOCK_H_INCLUDED
+#ifndef WATER_HEAPBLOCK_H_INCLUDED
+#define WATER_HEAPBLOCK_H_INCLUDED
 
 #include "Memory.h"
 #include "../maths/MathsFunctions.h"
@@ -99,7 +99,7 @@ public:
         std::free (data);
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     HeapBlock (HeapBlock&& other) noexcept
         : data (other.data)
     {
@@ -263,4 +263,4 @@ private:
 
 }
 
-#endif   // JUCE_HEAPBLOCK_H_INCLUDED
+#endif // WATER_HEAPBLOCK_H_INCLUDED

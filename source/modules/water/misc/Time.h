@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_TIME_H_INCLUDED
-#define JUCE_TIME_H_INCLUDED
+#ifndef WATER_TIME_H_INCLUDED
+#define WATER_TIME_H_INCLUDED
 
 #include "../water.h"
 
@@ -126,4 +126,4 @@ private:
 
 }
 
-#endif   // JUCE_TIME_H_INCLUDED
+#endif // WATER_TIME_H_INCLUDED

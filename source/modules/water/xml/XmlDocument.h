@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_XMLDOCUMENT_H_INCLUDED
-#define JUCE_XMLDOCUMENT_H_INCLUDED
+#ifndef WATER_XMLDOCUMENT_H_INCLUDED
+#define WATER_XMLDOCUMENT_H_INCLUDED
 
 #include "../text/StringArray.h"
 
@@ -165,7 +165,7 @@ private:
     bool parseHeader();
     bool parseDTD();
     void skipNextWhiteSpace();
-    juce_wchar readNextChar() noexcept;
+    water_uchar readNextChar() noexcept;
     XmlElement* readNextElement (bool alsoParseSubElements);
     void readChildElements (XmlElement&);
     void readQuotedString (String&);
@@ -181,4 +181,4 @@ private:
 
 }
 
-#endif   // JUCE_XMLDOCUMENT_H_INCLUDED
+#endif // WATER_XMLDOCUMENT_H_INCLUDED

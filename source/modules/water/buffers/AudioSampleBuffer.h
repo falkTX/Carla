@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
-#define JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
+#ifndef WATER_AUDIOSAMPLEBUFFER_H_INCLUDED
+#define WATER_AUDIOSAMPLEBUFFER_H_INCLUDED
 
 #include "../memory/HeapBlock.h"
 
@@ -65,8 +65,8 @@ public:
        : numChannels (numChannelsToAllocate),
          size (numSamplesToAllocate)
     {
-        jassert (size >= 0);
-        jassert (numChannels >= 0);
+        CARLA_SAFE_ASSERT_RETURN (size >= 0,);
+        CARLA_SAFE_ASSERT_RETURN (numChannels >= 0,);
 
         allocateData();
     }
@@ -93,8 +93,9 @@ public:
           size (numSamples),
           allocatedBytes (0)
     {
-        jassert (dataToReferTo != nullptr);
-        jassert (numChannelsToUse >= 0 && numSamples >= 0);
+        CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN (numChannelsToUse >= 0 && numSamples >= 0,);
+
         allocateChannels (dataToReferTo, 0);
     }
 
@@ -123,8 +124,9 @@ public:
           allocatedBytes (0),
           isClear (false)
     {
-        jassert (dataToReferTo != nullptr);
-        jassert (numChannelsToUse >= 0 && startSample >= 0 && numSamples >= 0);
+        CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN (numChannelsToUse >= 0 && startSample >= 0 && numSamples >= 0,);
+
         allocateChannels (dataToReferTo, startSample);
     }
 
@@ -189,7 +191,7 @@ public:
     */
     ~AudioSampleBuffer() noexcept {}
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Move constructor */
     AudioSampleBuffer (AudioSampleBuffer&& other) noexcept
         : numChannels (other.numChannels),
@@ -1095,4 +1097,4 @@ private:
 
 }
 
-#endif   // JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
+#endif // WATER_AUDIOSAMPLEBUFFER_H_INCLUDED

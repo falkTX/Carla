@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MEMORY_H_INCLUDED
-#define JUCE_MEMORY_H_INCLUDED
+#ifndef WATER_MEMORY_H_INCLUDED
+#define WATER_MEMORY_H_INCLUDED
 
 #include "../water.h"
 
@@ -87,4 +87,4 @@ inline void writeUnaligned (void* dstPtr, Type value) noexcept
 
 }
 
-#endif   // JUCE_MEMORY_H_INCLUDED
+#endif // WATER_MEMORY_H_INCLUDED

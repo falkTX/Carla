@@ -47,7 +47,7 @@
 
 using water::String;
 using water::StringArray;
-using water::juce_wchar;
+using water::water_uchar;
 
 // -----------------------------------------------------------------------
 // Converts a parameter name to an LV2 compatible symbol
@@ -67,7 +67,7 @@ static const String nameToSymbol(const String& name, const uint32_t portIndex)
     {
         for (int i=0; i < trimmedName.length(); ++i)
         {
-            const juce_wchar c = trimmedName[i];
+            const water_uchar c = trimmedName[i];
 
             if (i == 0 && std::isdigit(c))
                 symbol += "_";

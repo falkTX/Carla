@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_OWNEDARRAY_H_INCLUDED
-#define JUCE_OWNEDARRAY_H_INCLUDED
+#ifndef WATER_OWNEDARRAY_H_INCLUDED
+#define WATER_OWNEDARRAY_H_INCLUDED
 
 #include "ArrayAllocationBase.h"
 
@@ -73,7 +73,7 @@ public:
         deleteAllObjects();
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     OwnedArray (OwnedArray&& other) noexcept
         : data (static_cast<ArrayAllocationBase <ObjectClass*>&&> (other.data)),
           numUsed (other.numUsed)
@@ -213,7 +213,7 @@ public:
     */
     inline ObjectClass** end() const noexcept
     {
-       #if JUCE_DEBUG
+       #ifdef DEBUG
         if (data.elements == nullptr || numUsed <= 0) // (to keep static analysers happy)
             return data.elements;
        #endif
@@ -839,4 +839,4 @@ private:
 
 }
 
-#endif   // JUCE_OWNEDARRAY_H_INCLUDED
+#endif // WATER_OWNEDARRAY_H_INCLUDED

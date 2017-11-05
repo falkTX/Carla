@@ -33,8 +33,6 @@
 # include <sys/wait.h>
 #endif
 
-#define JUCE_USE_VFORK 1
-
 namespace water {
 
 #ifdef CARLA_OS_WIN
@@ -172,11 +170,7 @@ public:
 
               argv.add (nullptr);
 
-#if JUCE_USE_VFORK
             const pid_t result = vfork();
-#else
-            const pid_t result = fork();
-#endif
 
             if (result < 0)
             {
@@ -185,23 +179,6 @@ public:
             }
             else if (result == 0)
             {
-#if ! JUCE_USE_VFORK
-                // we're the child process..
-                close (pipeHandles[0]);   // close the read handle
-
-                if ((streamFlags & wantStdOut) != 0)
-                    dup2 (pipeHandles[1], STDOUT_FILENO); // turns the pipe into stdout
-                else
-                    dup2 (open ("/dev/null", O_WRONLY), STDOUT_FILENO);
-
-                if ((streamFlags & wantStdErr) != 0)
-                    dup2 (pipeHandles[1], STDERR_FILENO);
-                else
-                    dup2 (open ("/dev/null", O_WRONLY), STDERR_FILENO);
-
-                close (pipeHandles[1]);
-#endif
-
                 if (execvp (exe.toRawUTF8(), argv.getRawDataPointer()))
                     _exit (-1);
             }

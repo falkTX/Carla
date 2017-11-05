@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_INPUTSOURCE_H_INCLUDED
-#define JUCE_INPUTSOURCE_H_INCLUDED
+#ifndef WATER_INPUTSOURCE_H_INCLUDED
+#define WATER_INPUTSOURCE_H_INCLUDED
 
 #include "../water.h"
 
@@ -73,4 +73,4 @@ public:
 
 }
 
-#endif   // JUCE_INPUTSOURCE_H_INCLUDED
+#endif // WATER_INPUTSOURCE_H_INCLUDED

@@ -77,7 +77,7 @@ File& File::operator= (const File& other)
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 File::File (File&& other) noexcept
     : fullPath (static_cast<String&&> (other.fullPath))
 {
@@ -196,23 +196,14 @@ String File::parseAbsolutePath (const String& p)
     }
     else if (! path.startsWithChar (separator))
     {
-       #if JUCE_DEBUG || JUCE_LOG_ASSERTIONS
-        if (! (path.startsWith ("./") || path.startsWith ("../")))
-        {
-            /*  When you supply a raw string to the File object constructor, it must be an absolute path.
-                If you're trying to parse a string that may be either a relative path or an absolute path,
-                you MUST provide a context against which the partial path can be evaluated - you can do
-                this by simply using File::getChildFile() instead of the File constructor. E.g. saying
-                "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
-                path if that's what was supplied, or would evaluate a partial path relative to the CWD.
-            */
-            jassertfalse;
-
-           #if JUCE_LOG_ASSERTIONS
-            Logger::writeToLog ("Illegal absolute path: " + path);
-           #endif
-        }
-       #endif
+        /*  When you supply a raw string to the File object constructor, it must be an absolute path.
+            If you're trying to parse a string that may be either a relative path or an absolute path,
+            you MUST provide a context against which the partial path can be evaluated - you can do
+            this by simply using File::getChildFile() instead of the File constructor. E.g. saying
+            "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
+            path if that's what was supplied, or would evaluate a partial path relative to the CWD.
+        */
+        CARLA_SAFE_ASSERT_RETURN(path.startsWith ("./") || path.startsWith ("../"), String());
 
         return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
     }
@@ -399,7 +390,7 @@ int64 File::hashCode64() const  { return fullPath.hashCode64(); }
 //==============================================================================
 bool File::isAbsolutePath (StringRef path)
 {
-    const juce_wchar firstChar = *(path.text);
+    const water_uchar firstChar = *(path.text);
 
     return firstChar == separator
            #ifdef CARLA_OS_WIN
@@ -417,7 +408,7 @@ File File::getChildFile (StringRef relativePath) const
         return File (String (r));
 
    #ifdef CARLA_OS_WIN
-    if (r.indexOf ((juce_wchar) '/') >= 0)
+    if (r.indexOf ((water_uchar) '/') >= 0)
         return getChildFile (String (r).replaceCharacter ('/', '\\'));
    #endif
 
@@ -426,11 +417,11 @@ File File::getChildFile (StringRef relativePath) const
     while (*r == '.')
     {
         String::CharPointerType lastPos = r;
-        const juce_wchar secondChar = *++r;
+        const water_uchar secondChar = *++r;
 
         if (secondChar == '.') // remove "../"
         {
-            const juce_wchar thirdChar = *++r;
+            const water_uchar thirdChar = *++r;
 
             if (thirdChar == separator || thirdChar == 0)
             {
@@ -664,7 +655,7 @@ bool File::hasFileExtension (StringRef possibleSuffix) const
     if (possibleSuffix.isEmpty())
         return fullPath.lastIndexOfChar ('.') <= fullPath.lastIndexOfChar (separator);
 
-    const int semicolon = possibleSuffix.text.indexOf ((juce_wchar) ';');
+    const int semicolon = possibleSuffix.text.indexOf ((water_uchar) ';');
 
     if (semicolon >= 0)
         return hasFileExtension (String (possibleSuffix.text).substring (0, semicolon).trimEnd())
@@ -849,7 +840,7 @@ static int countNumberOfSeparators (String::CharPointerType s)
 
     for (;;)
     {
-        const juce_wchar c = s.getAndAdvance();
+        const water_uchar c = s.getAndAdvance();
 
         if (c == 0)
             break;
@@ -881,8 +872,8 @@ String File::getRelativePathFrom (const File& dir)  const
 
         for (int i = 0;;)
         {
-            const juce_wchar c1 = thisPathIter.getAndAdvance();
-            const juce_wchar c2 = dirPathIter.getAndAdvance();
+            const water_uchar c1 = thisPathIter.getAndAdvance();
+            const water_uchar c2 = dirPathIter.getAndAdvance();
 
            #if NAMES_ARE_CASE_SENSITIVE
             if (c1 != c2
@@ -959,7 +950,7 @@ bool File::createSymbolicLink (const File& linkFileToCreate, bool overwriteExist
     }
 
     return true;
-   #elif JUCE_MSVC
+   #elif _MSVC_VER
     return CreateSymbolicLink (linkFileToCreate.getFullPathName().toUTF8(),
                                fullPath.toUTF8(),
                                isDirectory() ? SYMBOLIC_LINK_FLAG_DIRECTORY : 0) != FALSE;
@@ -1019,7 +1010,7 @@ namespace WindowsFileHelpers
     }
 }
 
-const juce_wchar File::separator = '\\';
+const water_uchar File::separator = '\\';
 const String File::separatorString ("\\");
 
 bool File::isDirectory() const
@@ -1210,23 +1201,23 @@ private:
 namespace
 {
    #if CARLA_OS_MAC
-    typedef struct stat   juce_statStruct;
-    #define JUCE_STAT     stat
+    typedef struct stat   water_statStruct;
+    #define WATER_STAT    stat
    #else
-    typedef struct stat64 juce_statStruct;
-    #define JUCE_STAT     stat64
+    typedef struct stat64 water_statStruct;
+    #define WATER_STAT    stat64
    #endif
 
-    bool juce_stat (const String& fileName, juce_statStruct& info)
+    bool water_stat (const String& fileName, water_statStruct& info)
     {
         return fileName.isNotEmpty()
-                 && JUCE_STAT (fileName.toUTF8(), &info) == 0;
+                 && WATER_STAT (fileName.toUTF8(), &info) == 0;
     }
 
    #if CARLA_OS_MAC
-    static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
+    static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
    #else
-    static int64 getCreationTime (const juce_statStruct& s) noexcept     { return (int64) s.st_ctime; }
+    static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_ctime; }
    #endif
 
     void updateStatInfoForFile (const String& path, bool* const isDir, int64* const fileSize,
@@ -1234,8 +1225,8 @@ namespace
     {
         if (isDir != nullptr || fileSize != nullptr || modTime != nullptr || creationTime != nullptr)
         {
-            juce_statStruct info;
-            const bool statOk = juce_stat (path, info);
+            water_statStruct info;
+            const bool statOk = water_stat (path, info);
 
             if (isDir != nullptr)         *isDir        = statOk && ((info.st_mode & S_IFDIR) != 0);
             if (fileSize != nullptr)      *fileSize     = statOk ? (int64) info.st_size : 0;
@@ -1253,15 +1244,15 @@ namespace
     }
 }
 
-const juce_wchar File::separator = '/';
+const water_uchar File::separator = '/';
 const String File::separatorString ("/");
 
 bool File::isDirectory() const
 {
-    juce_statStruct info;
+    water_statStruct info;
 
     return fullPath.isNotEmpty()
-             && (juce_stat (fullPath, info) && ((info.st_mode & S_IFDIR) != 0));
+             && (water_stat (fullPath, info) && ((info.st_mode & S_IFDIR) != 0));
 }
 
 bool File::exists() const
@@ -1288,8 +1279,8 @@ bool File::hasWriteAccess() const
 
 int64 File::getSize() const
 {
-    juce_statStruct info;
-    return juce_stat (fullPath, info) ? info.st_size : 0;
+    water_statStruct info;
+    return water_stat (fullPath, info) ? info.st_size : 0;
 }
 
 bool File::deleteFile() const
@@ -1347,15 +1338,15 @@ File File::getCurrentWorkingDirectory()
     return File (CharPointer_UTF8 (cwd));
 }
 
-File juce_getExecutableFile();
-File juce_getExecutableFile()
+File water_getExecutableFile();
+File water_getExecutableFile()
 {
     struct DLAddrReader
     {
         static String getFilename()
         {
             Dl_info exeInfo;
-            void* localSymbol = (void*) juce_getExecutableFile;
+            void* localSymbol = (void*) water_getExecutableFile;
             dladdr (localSymbol, &exeInfo);
             const CharPointer_UTF8 filename (exeInfo.dli_fname);
 
@@ -1394,7 +1385,7 @@ File juce_getExecutableFile()
 #ifdef CARLA_OS_MAC
 static NSString* getFileLink (const String& path)
 {
-    return [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath: juceStringToNS (path) error: nil];
+    return [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath: waterStringToNS (path) error: nil];
 }
 
 bool File::isSymbolicLink() const
@@ -1405,7 +1396,7 @@ bool File::isSymbolicLink() const
 File File::getLinkedTarget() const
 {
     if (NSString* dest = getFileLink (fullPath))
-        return getSiblingFile (nsStringToJuce (dest));
+        return getSiblingFile (nsStringToWater (dest));
 
     return *this;
 }
@@ -1416,14 +1407,14 @@ bool File::copyInternal (const File& dest) const
     {
         NSFileManager* fm = [NSFileManager defaultManager];
 
-        return [fm fileExistsAtPath: juceStringToNS (fullPath)]
+        return [fm fileExistsAtPath: waterStringToNS (fullPath)]
                #if defined (MAC_OS_X_VERSION_10_6) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_6
-                && [fm copyItemAtPath: juceStringToNS (fullPath)
-                               toPath: juceStringToNS (dest.getFullPathName())
+                && [fm copyItemAtPath: waterStringToNS (fullPath)
+                               toPath: waterStringToNS (dest.getFullPathName())
                                 error: nil];
                #else
-                && [fm copyPath: juceStringToNS (fullPath)
-                         toPath: juceStringToNS (dest.getFullPathName())
+                && [fm copyPath: waterStringToNS (fullPath)
+                         toPath: waterStringToNS (dest.getFullPathName())
                         handler: nil];
                #endif
     }
@@ -1437,13 +1428,13 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         switch (type)
         {
-            case userHomeDirectory:                 resultPath = nsStringToJuce (NSHomeDirectory()); break;
+            case userHomeDirectory:                 resultPath = nsStringToWater (NSHomeDirectory()); break;
             case userDocumentsDirectory:            resultPath = "~/Documents"; break;
             case userDesktopDirectory:              resultPath = "~/Desktop"; break;
 
             case tempDirectory:
             {
-                File tmp ("~/Library/Caches/" + juce_getExecutableFile().getFileNameWithoutExtension());
+                File tmp ("~/Library/Caches/" + water_getExecutableFile().getFileNameWithoutExtension());
                 tmp.createDirectory();
                 return File (tmp.getFullPathName());
             }
@@ -1457,16 +1448,16 @@ File File::getSpecialLocation (const SpecialLocationType type)
             case globalApplicationsDirectory:       resultPath = "/Applications"; break;
 
             case invokedExecutableFile:
-                if (juce_argv != nullptr && juce_argc > 0)
-                    return File::getCurrentWorkingDirectory().getChildFile (CharPointer_UTF8 (juce_argv[0]));
+                if (water_argv != nullptr && water_argc > 0)
+                    return File::getCurrentWorkingDirectory().getChildFile (CharPointer_UTF8 (water_argv[0]));
                 // deliberate fall-through...
 
             case currentExecutableFile:
-                return juce_getExecutableFile();
+                return water_getExecutableFile();
 
             case currentApplicationFile:
             {
-                const File exe (juce_getExecutableFile());
+                const File exe (water_getExecutableFile());
                 const File parent (exe.getParentDirectory());
 
                 return parent.getFullPathName().endsWithIgnoreCase ("Contents/MacOS")
@@ -1506,7 +1497,7 @@ public:
     {
         @autoreleasepool
         {
-            enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: juceStringToNS (directory.getFullPathName())] retain];
+            enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: waterStringToNS (directory.getFullPathName())] retain];
         }
     }
 
@@ -1530,7 +1521,7 @@ public:
                     return false;
 
                 [enumerator skipDescendents];
-                filenameFound = nsStringToJuce (file).convertToPrecomposedUnicode();
+                filenameFound = nsStringToWater (file).convertToPrecomposedUnicode();
 
                 if (wildcardUTF8 == nullptr)
                     wildcardUTF8 = wildCard.toUTF8();
@@ -1634,12 +1625,12 @@ File File::getSpecialLocation (const SpecialLocationType type)
 
         case currentExecutableFile:
         case currentApplicationFile:
-            return juce_getExecutableFile();
+            return water_getExecutableFile();
 
         case hostApplicationPath:
         {
             const File f ("/proc/self/exe");
-            return f.isSymbolicLink() ? f.getLinkedTarget() : juce_getExecutableFile();
+            return f.isSymbolicLink() ? f.getLinkedTarget() : water_getExecutableFile();
         }
 
         default:

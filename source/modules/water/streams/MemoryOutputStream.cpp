@@ -137,7 +137,7 @@ bool MemoryOutputStream::writeRepeatedByte (uint8 byte, size_t howMany)
     return false;
 }
 
-bool MemoryOutputStream::appendUTF8Char (juce_wchar c)
+bool MemoryOutputStream::appendUTF8Char (water_uchar c)
 {
     if (char* dest = prepareToWrite (CharPointer_UTF8::getBytesRequiredFor (c)))
     {

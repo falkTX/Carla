@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_FILEINPUTSOURCE_H_INCLUDED
-#define JUCE_FILEINPUTSOURCE_H_INCLUDED
+#ifndef WATER_FILEINPUTSOURCE_H_INCLUDED
+#define WATER_FILEINPUTSOURCE_H_INCLUDED
 
 #include "InputSource.h"
 #include "../files/File.h"
@@ -65,4 +65,4 @@ private:
 
 }
 
-#endif   // JUCE_FILEINPUTSOURCE_H_INCLUDED
+#endif // WATER_FILEINPUTSOURCE_H_INCLUDED

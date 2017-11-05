@@ -1,5 +1,5 @@
 /*
- * Standalone Juce AudioProcessorGraph
+ * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015 ROLI Ltd.
  * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
  *

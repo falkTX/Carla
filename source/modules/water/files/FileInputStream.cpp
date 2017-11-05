@@ -27,8 +27,7 @@
 
 namespace water {
 
-int64 juce_fileSetPosition (void* handle, int64 pos);
-
+static int64 water_fileSetPosition (void* handle, int64 pos);
 
 //==============================================================================
 FileInputStream::FileInputStream (const File& f)
@@ -79,7 +78,7 @@ bool FileInputStream::setPosition (int64 pos)
     jassert (openedOk());
 
     if (pos != currentPosition)
-        currentPosition = juce_fileSetPosition (fileHandle, pos);
+        currentPosition = water_fileSetPosition (fileHandle, pos);
 
     return currentPosition == pos;
 }

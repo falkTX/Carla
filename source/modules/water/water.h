@@ -1,5 +1,5 @@
 /*
- * Standalone Juce AudioProcessorGraph
+ * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015 ROLI Ltd.
  * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
  *
@@ -28,46 +28,38 @@
 
 #define static_jassert(expression) static_assert(expression, #expression);
 
-#if defined (__arm__) || defined (__arm64__)
-  #define JUCE_ARM 1
-#else
-  #define JUCE_INTEL 1
-#endif
-
 //==============================================================================
 // Compiler support
 
 #if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
- #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
+ #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
 
- #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (JUCE_DELETED_FUNCTION)
-  #define JUCE_DELETED_FUNCTION = delete
+ #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (WATER_DELETED_FUNCTION)
+  #define WATER_DELETED_FUNCTION = delete
  #endif
 #endif
 
 #if __clang__
  #if __has_feature (cxx_rvalue_references)
-  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
+  #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
  #endif
 
  #if __has_feature (cxx_deleted_functions)
-  #define JUCE_DELETED_FUNCTION = delete
+  #define WATER_DELETED_FUNCTION = delete
  #endif
 #endif
 
 //==============================================================================
 // Declare some fake versions of nullptr and noexcept, for older compilers:
 
-#ifndef JUCE_DELETED_FUNCTION
+#ifndef WATER_DELETED_FUNCTION
  /** This macro can be placed after a method declaration to allow the use of
      the C++11 feature "= delete" on all compilers.
      On newer compilers that support it, it does the C++11 "= delete", but on
      older ones it's just an empty definition.
  */
- #define JUCE_DELETED_FUNCTION
+ #define WATER_DELETED_FUNCTION
 #endif
-
-#define NEEDS_TRANS(x) (x)
 
 //==============================================================================
 

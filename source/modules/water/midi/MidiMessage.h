@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MIDIMESSAGE_H_INCLUDED
-#define JUCE_MIDIMESSAGE_H_INCLUDED
+#ifndef WATER_MIDIMESSAGE_H_INCLUDED
+#define WATER_MIDIMESSAGE_H_INCLUDED
 
 #include "../water.h"
 
@@ -113,7 +113,7 @@ public:
     /** Copies this message from another one. */
     MidiMessage& operator= (const MidiMessage& other);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     MidiMessage (MidiMessage&&) noexcept;
     MidiMessage& operator= (MidiMessage&&) noexcept;
    #endif
@@ -128,12 +128,6 @@ public:
         @see getRawData
     */
     int getRawDataSize() const noexcept                 { return size; }
-
-    //==============================================================================
-    /** Returns a human-readable description of the midi message as a string,
-        for example "Note On C#3 Velocity 120 Channel 1".
-    */
-    String getDescription() const;
 
     //==============================================================================
     /** Returns the timestamp associated with this message.
@@ -342,13 +336,13 @@ public:
 
     //==============================================================================
     /** Returns true if the message is a program (patch) change message.
-        @see getProgramChangeNumber, getGMInstrumentName
+        @see getProgramChangeNumber
     */
     bool isProgramChange() const noexcept;
 
     /** Returns the new program number of a program change message.
         If the message isn't a program change, the value returned is undefined.
-        @see isProgramChange, getGMInstrumentName
+        @see isProgramChange
     */
     int getProgramChangeNumber() const noexcept;
 
@@ -356,7 +350,7 @@ public:
 
         @param channel          the midi channel, in the range 1 to 16
         @param programNumber    the midi program number, 0 to 127
-        @see isProgramChange, getGMInstrumentName
+        @see isProgramChange
     */
     static MidiMessage programChange (int channel, int programNumber) noexcept;
 
@@ -887,28 +881,6 @@ public:
     /** Returns true if the given midi note number is a black key. */
     static bool isMidiNoteBlack (int noteNumber) noexcept;
 
-    /** Returns the standard name of a GM instrument, or nullptr if unknown for this index.
-
-        @param midiInstrumentNumber     the program number 0 to 127
-        @see getProgramChangeNumber
-    */
-    static const char* getGMInstrumentName (int midiInstrumentNumber);
-
-    /** Returns the name of a bank of GM instruments, or nullptr if unknown for this bank number.
-        @param midiBankNumber   the bank, 0 to 15
-    */
-    static const char* getGMInstrumentBankName (int midiBankNumber);
-
-    /** Returns the standard name of a channel 10 percussion sound, or nullptr if unknown for this note number.
-        @param midiNoteNumber   the key number, 35 to 81
-    */
-    static const char* getRhythmInstrumentName (int midiNoteNumber);
-
-    /** Returns the name of a controller type number, or nullptr if unknown for this controller number.
-        @see getControllerNumber
-    */
-    static const char* getControllerName (int controllerNumber);
-
     /** Converts a floating-point value between 0 and 1 to a MIDI 7-bit value between 0 and 127. */
     static uint8 floatValueToMidiByte (float valueBetween0and1) noexcept;
 
@@ -918,7 +890,6 @@ public:
 
 private:
     //==============================================================================
-   #ifndef DOXYGEN
     union PackedData
     {
         uint8* allocatedData;
@@ -928,7 +899,6 @@ private:
     PackedData packedData;
     double timeStamp;
     int size;
-   #endif
 
     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
     inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
@@ -937,4 +907,4 @@ private:
 
 }
 
-#endif   // JUCE_MIDIMESSAGE_H_INCLUDED
+#endif // WATER_MIDIMESSAGE_H_INCLUDED

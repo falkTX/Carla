@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_ATOMIC_H_INCLUDED
-#define JUCE_ATOMIC_H_INCLUDED
+#ifndef WATER_ATOMIC_H_INCLUDED
+#define WATER_ATOMIC_H_INCLUDED
 
 #include "../water.h"
 
@@ -245,4 +245,4 @@ inline void Atomic<Type>::memoryBarrier() noexcept
 
 }
 
-#endif   // JUCE_ATOMIC_H_INCLUDED
+#endif // WATER_ATOMIC_H_INCLUDED

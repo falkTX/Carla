@@ -23,14 +23,14 @@
   ==============================================================================
 */
 
-#ifndef JUCE_ELEMENTCOMPARATOR_H_INCLUDED
-#define JUCE_ELEMENTCOMPARATOR_H_INCLUDED
+#ifndef WATER_ELEMENTCOMPARATOR_H_INCLUDED
+#define WATER_ELEMENTCOMPARATOR_H_INCLUDED
 
 #include "../water.h"
 
 namespace water {
 
-/** This is an internal helper class which converts a juce ElementComparator style
+/** This is an internal helper class which converts an ElementComparator style
     class (using a "compareElements" method) into a class that's compatible with
     std::sort (i.e. using an operator() to compare the elements)
 */
@@ -44,7 +44,7 @@ struct SortFunctionConverter
 
 private:
     ElementComparator& comparator;
-    SortFunctionConverter& operator= (const SortFunctionConverter&) JUCE_DELETED_FUNCTION;
+    SortFunctionConverter& operator= (const SortFunctionConverter&) WATER_DELETED_FUNCTION;
 };
 
 //==============================================================================
@@ -189,4 +189,4 @@ public:
 
 }
 
-#endif   // JUCE_ELEMENTCOMPARATOR_H_INCLUDED
+#endif // WATER_ELEMENTCOMPARATOR_H_INCLUDED

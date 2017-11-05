@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_CHILDPROCESS_H_INCLUDED
-#define JUCE_CHILDPROCESS_H_INCLUDED
+#ifndef WATER_CHILDPROCESS_H_INCLUDED
+#define WATER_CHILDPROCESS_H_INCLUDED
 
 #include "../text/StringArray.h"
 
@@ -120,4 +120,4 @@ private:
 
 }
 
-#endif   // JUCE_CHILDPROCESS_H_INCLUDED
+#endif // WATER_CHILDPROCESS_H_INCLUDED

@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_FILEOUTPUTSTREAM_H_INCLUDED
-#define JUCE_FILEOUTPUTSTREAM_H_INCLUDED
+#ifndef WATER_FILEOUTPUTSTREAM_H_INCLUDED
+#define WATER_FILEOUTPUTSTREAM_H_INCLUDED
 
 #include "../files/File.h"
 #include "../memory/HeapBlock.h"
@@ -121,4 +121,4 @@ private:
 
 }
 
-#endif   // JUCE_FILEOUTPUTSTREAM_H_INCLUDED
+#endif // WATER_FILEOUTPUTSTREAM_H_INCLUDED

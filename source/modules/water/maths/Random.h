@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_RANDOM_H_INCLUDED
-#define JUCE_RANDOM_H_INCLUDED
+#ifndef WATER_RANDOM_H_INCLUDED
+#define WATER_RANDOM_H_INCLUDED
 
 #include "../water.h"
 
@@ -123,4 +123,4 @@ private:
 
 }
 
-#endif   // JUCE_RANDOM_H_INCLUDED
+#endif // WATER_RANDOM_H_INCLUDED

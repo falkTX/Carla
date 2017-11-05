@@ -5,26 +5,21 @@
    Copyright (c) 2015 ROLI Ltd.
    Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
 
-   Permission is granted to use this software under the terms of either:
-   a) the GPL v2 (or any later version)
-   b) the Affero GPL v3
+   Permission is granted to use this software under the terms of the GNU
+   General Public License as published by the Free Software Foundation;
+   either version 2 of the License, or any later version.
 
-   Details of these licenses can be found at: www.gnu.org/licenses
+   This program is distributed in the hope that it will be useful, but WITHOUT
+   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+   FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-   JUCE is distributed in the hope that it will be useful, but WITHOUT ANY
-   WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
-   A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
-
-   ------------------------------------------------------------------------------
-
-   To release a closed-source product which uses JUCE, commercial licenses are
-   available: visit www.juce.com for more information.
+   For a full copy of the GNU General Public License see the doc/GPL.txt file.
 
   ==============================================================================
 */
 
-#ifndef JUCE_AUDIOPROCESSOR_H_INCLUDED
-#define JUCE_AUDIOPROCESSOR_H_INCLUDED
+#ifndef WATER_AUDIOPROCESSOR_H_INCLUDED
+#define WATER_AUDIOPROCESSOR_H_INCLUDED
 
 #include "../text/String.h"
 #include "../buffers/AudioSampleBuffer.h"
@@ -391,4 +386,4 @@ private:
 
 }
 
-#endif   // JUCE_AUDIOPROCESSOR_H_INCLUDED
+#endif // WATER_AUDIOPROCESSOR_H_INCLUDED

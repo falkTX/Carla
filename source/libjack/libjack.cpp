@@ -1217,7 +1217,7 @@ int jack_client_real_time_priority(jack_client_t* client)
 {
     carla_debug("%s(%p)", __FUNCTION__, client);
 
-    // code as used by juce
+    // code as used by water
     const int minPriority = sched_get_priority_min(SCHED_RR);
     const int maxPriority = sched_get_priority_max(SCHED_RR);
     return ((maxPriority - minPriority) * 9) / 10 + minPriority;

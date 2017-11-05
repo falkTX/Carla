@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MATHSFUNCTIONS_H_INCLUDED
-#define JUCE_MATHSFUNCTIONS_H_INCLUDED
+#ifndef WATER_MATHSFUNCTIONS_H_INCLUDED
+#define WATER_MATHSFUNCTIONS_H_INCLUDED
 
 #include "../water.h"
 
@@ -254,16 +254,16 @@ int numElementsInArray (Type (&array)[N])
 //==============================================================================
 // Some useful maths functions that aren't always present with all compilers and build settings.
 
-/** Using juce_hypot is easier than dealing with the different types of hypot function
+/** Using water_hypot is easier than dealing with the different types of hypot function
     that are provided by the various platforms and compilers. */
 template <typename Type>
-Type juce_hypot (Type a, Type b) noexcept
+Type water_hypot (Type a, Type b) noexcept
 {
     return static_cast<Type> (hypot (a, b));
 }
 
 template <>
-inline float juce_hypot (float a, float b) noexcept
+inline float water_hypot (float a, float b) noexcept
 {
     return hypotf (a, b);
 }
@@ -304,19 +304,19 @@ inline double radiansToDegrees (double radians) noexcept   { return radians * (1
     platform-independent function for it.
 */
 template <typename NumericType>
-bool juce_isfinite (NumericType) noexcept
+bool water_isfinite (NumericType) noexcept
 {
     return true; // Integer types are always finite
 }
 
 template <>
-inline bool juce_isfinite (float value) noexcept
+inline bool water_isfinite (float value) noexcept
 {
     return std::isfinite (value);
 }
 
 template <>
-inline bool juce_isfinite (double value) noexcept
+inline bool water_isfinite (double value) noexcept
 {
     return std::isfinite (value);
 }
@@ -475,4 +475,4 @@ uint32 readLittleEndianBitsInBuffer (const void* sourceBuffer, uint32 startBit, 
 
 }
 
-#endif   // JUCE_MATHSFUNCTIONS_H_INCLUDED
+#endif // WATER_MATHSFUNCTIONS_H_INCLUDED

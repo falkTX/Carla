@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_FILE_H_INCLUDED
-#define JUCE_FILE_H_INCLUDED
+#ifndef WATER_FILE_H_INCLUDED
+#define WATER_FILE_H_INCLUDED
 
 #include "../containers/Array.h"
 #include "../misc/Result.h"
@@ -89,7 +89,7 @@ public:
     /** Copies from another file object. */
     File& operator= (const File& otherFile);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     File (File&&) noexcept;
     File& operator= (File&&) noexcept;
    #endif
@@ -706,25 +706,6 @@ public:
     bool isOnRemovableDrive() const;
 
     //==============================================================================
-    /** Launches the file as a process.
-
-        - if the file is executable, this will run it.
-
-        - if it's a document of some kind, it will launch the document with its
-        default viewer application.
-
-        - if it's a folder, it will be opened in Explorer, Finder, or equivalent.
-
-        @see revealToUser
-    */
-    bool startAsProcess (const String& parameters = String()) const;
-
-    /** Opens Finder, Explorer, or whatever the OS uses, to show the user this file's location.
-        @see startAsProcess
-    */
-    void revealToUser() const;
-
-    //==============================================================================
     /** A set of types of location that can be passed to the getSpecialLocation() method.
     */
     enum SpecialLocationType
@@ -815,7 +796,7 @@ public:
     /** The system-specific file separator character.
         On Windows, this will be '\', on Mac/Linux, it'll be '/'
     */
-    static const juce_wchar separator;
+    static const water_uchar separator;
 
     /** The system-specific file separator character, as a string.
         On Windows, this will be '\', on Mac/Linux, it'll be '/'
@@ -882,7 +863,7 @@ public:
    #endif
 
     //==============================================================================
-   #if JUCE_MAC
+   #ifdef CARLA_OS_MAC
     /** OSX ONLY - Finds the OSType of a file from the its resources. */
     OSType getMacOSType() const;
 
@@ -929,4 +910,4 @@ private:
 
 }
 
-#endif   // JUCE_FILE_H_INCLUDED
+#endif // WATER_FILE_H_INCLUDED

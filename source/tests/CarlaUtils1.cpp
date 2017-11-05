@@ -520,7 +520,7 @@ static void test_CarlaMathUtils() noexcept
     // math functions (extended)
 
     // carla_addFloat, carla_copyFloat & carla_zeroFloat tests skipped
-    // mostly unused due to juce::FloatVectorOperations
+    // mostly unused due to water::FloatVectorOperations
 }
 #endif
 

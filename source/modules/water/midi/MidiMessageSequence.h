@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
-#define JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
+#ifndef WATER_MIDIMESSAGESEQUENCE_H_INCLUDED
+#define WATER_MIDIMESSAGESEQUENCE_H_INCLUDED
 
 #include "MidiMessage.h"
 #include "../containers/Array.h"
@@ -55,7 +55,7 @@ public:
     /** Replaces this sequence with another one. */
     MidiMessageSequence& operator= (const MidiMessageSequence&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     MidiMessageSequence (MidiMessageSequence&& other) noexcept
         : list (static_cast<OwnedArray<MidiEventHolder>&&> (other.list))
     {}
@@ -288,4 +288,4 @@ private:
 
 }
 
-#endif   // JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
+#endif // WATER_MIDIMESSAGESEQUENCE_H_INCLUDED

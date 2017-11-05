@@ -31,7 +31,7 @@
 
 namespace water {
 
-inline bool isValidXmlNameStartCharacter (const juce_wchar character) noexcept
+inline bool isValidXmlNameStartCharacter (const water_uchar character) noexcept
 {
     return character == ':'
         || character == '_'
@@ -51,7 +51,7 @@ inline bool isValidXmlNameStartCharacter (const juce_wchar character) noexcept
         || (character >= 0x10000 && character <= 0xeffff);
 }
 
-inline bool isValidXmlNameBodyCharacter (const juce_wchar character) noexcept
+inline bool isValidXmlNameBodyCharacter (const water_uchar character) noexcept
 {
     return isValidXmlNameStartCharacter (character)
         || character == '-'
@@ -134,7 +134,7 @@ XmlElement& XmlElement::operator= (const XmlElement& other)
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 XmlElement::XmlElement (XmlElement&& other) noexcept
     : nextListItem      (static_cast<LinkedListPointer<XmlElement>&&> (other.nextListItem)),
       firstChildElement (static_cast<LinkedListPointer<XmlElement>&&> (other.firstChildElement)),
@@ -178,7 +178,7 @@ XmlElement::~XmlElement() noexcept
 namespace XmlOutputFunctions
 {
    #if 0 // (These functions are just used to generate the lookup table used below)
-    bool isLegalXmlCharSlow (const juce_wchar character) noexcept
+    bool isLegalXmlCharSlow (const water_uchar character) noexcept
     {
         if ((character >= 'a' && character <= 'z')
              || (character >= 'A' && character <= 'Z')
@@ -189,7 +189,7 @@ namespace XmlOutputFunctions
 
         do
         {
-            if (((juce_wchar) (uint8) *t) == character)
+            if (((water_uchar) (uint8) *t) == character)
                 return true;
         }
         while (*++t != 0);
@@ -537,7 +537,7 @@ bool XmlElement::getBoolAttribute (StringRef attributeName, const bool defaultRe
 {
     if (const XmlAttributeNode* att = getAttribute (attributeName))
     {
-        const juce_wchar firstChar = *(att->value.getCharPointer().findEndOfWhitespace());
+        const water_uchar firstChar = *(att->value.getCharPointer().findEndOfWhitespace());
 
         return firstChar == '1'
             || firstChar == 't'
@@ -854,7 +854,7 @@ bool XmlElement::isTextElement() const noexcept
     return tagName.isEmpty();
 }
 
-static const String juce_xmltextContentAttributeName ("text");
+static const String water_xmltextContentAttributeName ("text");
 
 const String& XmlElement::getText() const noexcept
 {
@@ -862,15 +862,13 @@ const String& XmlElement::getText() const noexcept
                                 // isn't actually a text element.. If this contains text sub-nodes, you
                                 // probably want to use getAllSubText instead.
 
-    return getStringAttribute (juce_xmltextContentAttributeName);
+    return getStringAttribute (water_xmltextContentAttributeName);
 }
 
 void XmlElement::setText (const String& newText)
 {
-    if (isTextElement())
-        setAttribute (juce_xmltextContentAttributeName, newText);
-    else
-        jassertfalse; // you can only change the text in a text element, not a normal one.
+    CARLA_SAFE_ASSERT_RETURN(isTextElement(),);
+    setAttribute (water_xmltextContentAttributeName, newText);
 }
 
 String XmlElement::getAllSubText() const
@@ -900,7 +898,7 @@ String XmlElement::getChildElementAllSubText (StringRef childTagName, const Stri
 XmlElement* XmlElement::createTextElement (const String& text)
 {
     XmlElement* const e = new XmlElement ((int) 0);
-    e->setAttribute (juce_xmltextContentAttributeName, text);
+    e->setAttribute (water_xmltextContentAttributeName, text);
     return e;
 }
 

@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_SORTEDSET_H_INCLUDED
-#define JUCE_SORTEDSET_H_INCLUDED
+#ifndef WATER_SORTEDSET_H_INCLUDED
+#define WATER_SORTEDSET_H_INCLUDED
 
 #include "../water.h"
 
@@ -463,4 +463,4 @@ private:
 
 }
 
-#endif   // JUCE_SORTEDSET_H_INCLUDED
+#endif // WATER_SORTEDSET_H_INCLUDED

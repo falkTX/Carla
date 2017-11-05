@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_NEWLINE_H_INCLUDED
-#define JUCE_NEWLINE_H_INCLUDED
+#ifndef WATER_NEWLINE_H_INCLUDED
+#define WATER_NEWLINE_H_INCLUDED
 
 #include "../water.h"
 
@@ -86,4 +86,4 @@ inline String operator+ (const NewLine&, const char* s2)    { return String (New
 
 }
 
-#endif   // JUCE_NEWLINE_H_INCLUDED
+#endif // WATER_NEWLINE_H_INCLUDED

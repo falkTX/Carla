@@ -23,17 +23,17 @@
   ==============================================================================
 */
 
-#ifndef JUCE_CHARACTERFUNCTIONS_H_INCLUDED
-#define JUCE_CHARACTERFUNCTIONS_H_INCLUDED
-
-#include <algorithm>
+#ifndef WATER_CHARACTERFUNCTIONS_H_INCLUDED
+#define WATER_CHARACTERFUNCTIONS_H_INCLUDED
 
 #include "../memory/Memory.h"
+
+#include <algorithm>
 
 namespace water {
 
 /** A platform-independent 32-bit unicode character type. */
-typedef uint32 juce_wchar;
+typedef uint32 water_uchar;
 
 //==============================================================================
 /**
@@ -49,34 +49,34 @@ class CharacterFunctions
 public:
     //==============================================================================
     /** Converts a character to upper-case. */
-    static juce_wchar toUpperCase (juce_wchar character) noexcept;
+    static water_uchar toUpperCase (water_uchar character) noexcept;
     /** Converts a character to lower-case. */
-    static juce_wchar toLowerCase (juce_wchar character) noexcept;
+    static water_uchar toLowerCase (water_uchar character) noexcept;
 
     /** Checks whether a unicode character is upper-case. */
-    static bool isUpperCase (juce_wchar character) noexcept;
+    static bool isUpperCase (water_uchar character) noexcept;
     /** Checks whether a unicode character is lower-case. */
-    static bool isLowerCase (juce_wchar character) noexcept;
+    static bool isLowerCase (water_uchar character) noexcept;
 
     /** Checks whether a character is whitespace. */
     static bool isWhitespace (char character) noexcept;
     /** Checks whether a character is whitespace. */
-    static bool isWhitespace (juce_wchar character) noexcept;
+    static bool isWhitespace (water_uchar character) noexcept;
 
     /** Checks whether a character is a digit. */
     static bool isDigit (char character) noexcept;
     /** Checks whether a character is a digit. */
-    static bool isDigit (juce_wchar character) noexcept;
+    static bool isDigit (water_uchar character) noexcept;
 
     /** Checks whether a character is alphabetic. */
     static bool isLetter (char character) noexcept;
     /** Checks whether a character is alphabetic. */
-    static bool isLetter (juce_wchar character) noexcept;
+    static bool isLetter (water_uchar character) noexcept;
 
     /** Checks whether a character is alphabetic or numeric. */
     static bool isLetterOrDigit (char character) noexcept;
     /** Checks whether a character is alphabetic or numeric. */
-    static bool isLetterOrDigit (juce_wchar character) noexcept;
+    static bool isLetterOrDigit (water_uchar character) noexcept;
 
     /** Checks whether a character is a printable character, i.e. alphabetic, numeric,
         a punctuation character or a space.
@@ -86,13 +86,13 @@ public:
     /** Checks whether a character is a printable character, i.e. alphabetic, numeric,
         a punctuation character or a space.
     */
-    static bool isPrintable (juce_wchar character) noexcept;
+    static bool isPrintable (water_uchar character) noexcept;
 
     /** Returns 0 to 16 for '0' to 'F", or -1 for characters that aren't a legal hex digit. */
-    static int getHexDigitValue (juce_wchar digit) noexcept;
+    static int getHexDigitValue (water_uchar digit) noexcept;
 
     /** Converts a byte of Windows 1252 codepage to unicode. */
-    static juce_wchar getUnicodeCharFromWindows1252Codepage (uint8 windows1252Char) noexcept;
+    static water_uchar getUnicodeCharFromWindows1252Codepage (uint8 windows1252Char) noexcept;
 
     //==============================================================================
     /** Parses a character string to read a floating-point number.
@@ -110,7 +110,7 @@ public:
         const int maxSignificantDigits = 15 + 2;
 
         text = text.findEndOfWhitespace();
-        juce_wchar c = *text;
+        water_uchar c = *text;
 
         switch (c)
         {
@@ -250,7 +250,7 @@ public:
 
         for (;;)
         {
-            const juce_wchar c = s.getAndAdvance();
+            const water_uchar c = s.getAndAdvance();
 
             if (c >= '0' && c <= '9')
                 v = v * 10 + (IntType) (c - '0');
@@ -312,7 +312,7 @@ public:
     template <typename DestCharPointerType, typename SrcCharPointerType>
     static void copyAll (DestCharPointerType& dest, SrcCharPointerType src) noexcept
     {
-        while (juce_wchar c = src.getAndAdvance())
+        while (water_uchar c = src.getAndAdvance())
             dest.write (c);
 
         dest.writeNull();
@@ -329,7 +329,7 @@ public:
 
         for (;;)
         {
-            const juce_wchar c = src.getAndAdvance();
+            const water_uchar c = src.getAndAdvance();
             const size_t bytesNeeded = DestCharPointerType::getBytesRequiredFor (c);
 
             maxBytes -= bytesNeeded;
@@ -352,7 +352,7 @@ public:
     {
         while (--maxChars > 0)
         {
-            const juce_wchar c = src.getAndAdvance();
+            const water_uchar c = src.getAndAdvance();
             if (c == 0)
                 break;
 
@@ -363,7 +363,7 @@ public:
     }
 
     /** Compares two characters. */
-    static inline int compare (juce_wchar char1, juce_wchar char2) noexcept
+    static inline int compare (water_uchar char1, water_uchar char2) noexcept
     {
         if (int diff = static_cast<int> (char1) - static_cast<int> (char2))
             return diff < 0 ? -1 : 1;
@@ -377,7 +377,7 @@ public:
     {
         for (;;)
         {
-            const juce_wchar c1 = s1.getAndAdvance();
+            const water_uchar c1 = s1.getAndAdvance();
 
             if (int diff = compare (c1, s2.getAndAdvance()))
                 return diff;
@@ -395,7 +395,7 @@ public:
     {
         while (--maxChars >= 0)
         {
-            const juce_wchar c1 = s1.getAndAdvance();
+            const water_uchar c1 = s1.getAndAdvance();
 
             if (int diff = compare (c1, s2.getAndAdvance()))
                 return diff;
@@ -408,7 +408,7 @@ public:
     }
 
     /** Compares two characters, using a case-independant match. */
-    static inline int compareIgnoreCase (juce_wchar char1, juce_wchar char2) noexcept
+    static inline int compareIgnoreCase (water_uchar char1, water_uchar char2) noexcept
     {
         return char1 != char2 ? compare (toUpperCase (char1), toUpperCase (char2)) : 0;
     }
@@ -419,7 +419,7 @@ public:
     {
         for (;;)
         {
-            const juce_wchar c1 = s1.getAndAdvance();
+            const water_uchar c1 = s1.getAndAdvance();
 
             if (int diff = compareIgnoreCase (c1, s2.getAndAdvance()))
                 return diff;
@@ -437,7 +437,7 @@ public:
     {
         while (--maxChars >= 0)
         {
-            const juce_wchar c1 = s1.getAndAdvance();
+            const water_uchar c1 = s1.getAndAdvance();
 
             if (int diff = compareIgnoreCase (c1, s2.getAndAdvance()))
                 return diff;
@@ -491,11 +491,11 @@ public:
         null terminator.
     */
     template <typename CharPointerType>
-    static CharPointerType find (CharPointerType textToSearch, const juce_wchar charToLookFor) noexcept
+    static CharPointerType find (CharPointerType textToSearch, const water_uchar charToLookFor) noexcept
     {
         for (;; ++textToSearch)
         {
-            const juce_wchar c = *textToSearch;
+            const water_uchar c = *textToSearch;
 
             if (c == charToLookFor || c == 0)
                 break;
@@ -530,7 +530,7 @@ public:
         Returns -1 if the character is not found.
     */
     template <typename Type>
-    static int indexOfChar (Type text, const juce_wchar charToFind) noexcept
+    static int indexOfChar (Type text, const water_uchar charToFind) noexcept
     {
         int i = 0;
 
@@ -550,7 +550,7 @@ public:
         Returns -1 if the character is not found.
     */
     template <typename Type>
-    static int indexOfCharIgnoreCase (Type text, juce_wchar charToFind) noexcept
+    static int indexOfCharIgnoreCase (Type text, water_uchar charToFind) noexcept
     {
         charToFind = CharacterFunctions::toLowerCase (charToFind);
         int i = 0;
@@ -586,11 +586,11 @@ public:
     template <typename Type, typename BreakType>
     static Type findEndOfToken (Type text, const BreakType breakCharacters, const Type quoteCharacters)
     {
-        juce_wchar currentQuoteChar = 0;
+        water_uchar currentQuoteChar = 0;
 
         while (! text.isEmpty())
         {
-            const juce_wchar c = text.getAndAdvance();
+            const water_uchar c = text.getAndAdvance();
 
             if (currentQuoteChar == 0 && breakCharacters.indexOf (c) >= 0)
             {
@@ -616,4 +616,4 @@ private:
 
 }
 
-#endif   // JUCE_CHARACTERFUNCTIONS_H_INCLUDED
+#endif // WATER_CHARACTERFUNCTIONS_H_INCLUDED

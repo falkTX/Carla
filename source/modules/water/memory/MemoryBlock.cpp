@@ -87,7 +87,7 @@ MemoryBlock& MemoryBlock::operator= (const MemoryBlock& other)
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 MemoryBlock::MemoryBlock (MemoryBlock&& other) noexcept
     : data (static_cast<HeapBlock<char>&&> (other.data)),
       size (other.size)
@@ -339,7 +339,7 @@ void MemoryBlock::loadFromHexString (StringRef hex)
 
             for (;;)
             {
-                const juce_wchar c = t.getAndAdvance();
+                const water_uchar c = t.getAndAdvance();
 
                 if (c >= '0' && c <= '9')    { byte |= c - '0';        break; }
                 if (c >= 'a' && c <= 'z')    { byte |= c - ('a' - 10); break; }
@@ -354,65 +354,6 @@ void MemoryBlock::loadFromHexString (StringRef hex)
         }
 
         *dest++ = (char) byte;
-    }
-}
-
-//==============================================================================
-static const char base64EncodingTable[] = ".ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+";
-
-String MemoryBlock::toBase64Encoding() const
-{
-    const size_t numChars = ((size << 3) + 5) / 6;
-
-    String destString ((unsigned int) size); // store the length, followed by a '.', and then the data.
-    const int initialLen = destString.length();
-    destString.preallocateBytes (sizeof (String::CharPointerType::CharType) * (size_t) initialLen + 2 + numChars);
-
-    String::CharPointerType d (destString.getCharPointer());
-    d += initialLen;
-    d.write ('.');
-
-    for (size_t i = 0; i < numChars; ++i)
-        d.write ((juce_wchar) (uint8) base64EncodingTable [getBitRange (i * 6, 6)]);
-
-    d.writeNull();
-    return destString;
-}
-
-static const char base64DecodingTable[] =
-{
-    63, 0, 0, 0, 0, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 0, 0, 0, 0, 0, 0, 0,
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
-    0, 0, 0, 0, 0, 0, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52
-};
-
-bool MemoryBlock::fromBase64Encoding (StringRef s)
-{
-    String::CharPointerType dot (CharacterFunctions::find (s.text, (juce_wchar) '.'));
-
-    if (dot.isEmpty())
-        return false;
-
-    const int numBytesNeeded = String (s.text, dot).getIntValue();
-
-    setSize ((size_t) numBytesNeeded, true);
-
-    String::CharPointerType srcChars (dot + 1);
-    int pos = 0;
-
-    for (;;)
-    {
-        int c = (int) srcChars.getAndAdvance();
-
-        if (c == 0)
-            return true;
-
-        c -= 43;
-        if (isPositiveAndBelow (c, numElementsInArray (base64DecodingTable)))
-        {
-            setBitRange ((size_t) pos, 6, base64DecodingTable [c]);
-            pos += 6;
-        }
     }
 }
 

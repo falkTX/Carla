@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_XMLELEMENT_H_INCLUDED
-#define JUCE_XMLELEMENT_H_INCLUDED
+#ifndef WATER_XMLELEMENT_H_INCLUDED
+#define WATER_XMLELEMENT_H_INCLUDED
 
 #include "../containers/LinkedListPointer.h"
 #include "../memory/HeapBlock.h"
@@ -166,7 +166,7 @@ public:
     /** Creates a (deep) copy of another element. */
     XmlElement& operator= (const XmlElement&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     XmlElement (XmlElement&&) noexcept;
     XmlElement& operator= (XmlElement&&) noexcept;
    #endif
@@ -742,7 +742,7 @@ private:
         String value;
 
     private:
-        XmlAttributeNode& operator= (const XmlAttributeNode&) JUCE_DELETED_FUNCTION;
+        XmlAttributeNode& operator= (const XmlAttributeNode&) WATER_DELETED_FUNCTION;
     };
 
     friend class XmlDocument;
@@ -766,4 +766,4 @@ private:
 
 }
 
-#endif   // JUCE_XMLELEMENT_H_INCLUDED
+#endif // WATER_XMLELEMENT_H_INCLUDED

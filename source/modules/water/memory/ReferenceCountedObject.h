@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED
-#define JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED
+#ifndef WATER_REFERENCECOUNTEDOBJECT_H_INCLUDED
+#define WATER_REFERENCECOUNTEDOBJECT_H_INCLUDED
 
 #include "Atomic.h"
 
@@ -300,7 +300,7 @@ public:
         return *this;
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Takes-over the object from another pointer. */
     ReferenceCountedObjectPtr (ReferenceCountedObjectPtr&& other) noexcept
         : referencedObject (other.referencedObject)
@@ -411,4 +411,4 @@ bool operator!= (ReferenceCountedObjectClass* object1, const ReferenceCountedObj
 
 }
 
-#endif   // JUCE_REFERENCECOUNTEDOBJECT_H_INCLUDED
+#endif // WATER_REFERENCECOUNTEDOBJECT_H_INCLUDED

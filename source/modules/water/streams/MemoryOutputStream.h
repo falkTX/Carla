@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
-#define JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
+#ifndef WATER_MEMORYOUTPUTSTREAM_H_INCLUDED
+#define WATER_MEMORYOUTPUTSTREAM_H_INCLUDED
 
 #include "OutputStream.h"
 #include "../memory/MemoryBlock.h"
@@ -94,7 +94,7 @@ public:
     void preallocate (size_t bytesToPreallocate);
 
     /** Appends the utf-8 bytes for a unicode character */
-    bool appendUTF8Char (juce_wchar character);
+    bool appendUTF8Char (water_uchar character);
 
     /** Returns a String created from the (UTF8) data that has been written to the stream. */
     String toUTF8() const;
@@ -138,4 +138,4 @@ OutputStream& operator<< (OutputStream& stream, const MemoryOutputStream& stream
 
 }
 
-#endif   // JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
+#endif // WATER_MEMORYOUTPUTSTREAM_H_INCLUDED

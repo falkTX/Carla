@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_NAMEDVALUESET_H_INCLUDED
-#define JUCE_NAMEDVALUESET_H_INCLUDED
+#ifndef WATER_NAMEDVALUESET_H_INCLUDED
+#define WATER_NAMEDVALUESET_H_INCLUDED
 
 #include "Array.h"
 #include "Variant.h"
@@ -50,7 +50,7 @@ public:
     /** Replaces this set with a copy of another set. */
     NamedValueSet& operator= (const NamedValueSet&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     NamedValueSet (NamedValueSet&&) noexcept;
     NamedValueSet& operator= (NamedValueSet&&) noexcept;
    #endif
@@ -68,7 +68,7 @@ public:
         NamedValue (const Identifier& n, const var& v)  : name (n), value (v) {}
         NamedValue (const NamedValue& other) : name (other.name), value (other.value) {}
 
-    #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
         NamedValue (NamedValue&& other) noexcept
         : name (static_cast<Identifier&&> (other.name)),
           value (static_cast<var&&> (other.value))
@@ -124,7 +124,7 @@ public:
     */
     bool set (const Identifier& name, const var& newValue);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Changes or adds a named value.
         @returns    true if a value was changed or added; false if the
                     value was already set the value passed-in.
@@ -186,4 +186,4 @@ private:
 
 }
 
-#endif   // JUCE_NAMEDVALUESET_H_INCLUDED
+#endif // WATER_NAMEDVALUESET_H_INCLUDED

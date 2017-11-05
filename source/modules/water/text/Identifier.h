@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_IDENTIFIER_H_INCLUDED
-#define JUCE_IDENTIFIER_H_INCLUDED
+#ifndef WATER_IDENTIFIER_H_INCLUDED
+#define WATER_IDENTIFIER_H_INCLUDED
 
 #include "String.h"
 
@@ -70,7 +70,7 @@ public:
     /** Creates a copy of another identifier. */
     Identifier& operator= (const Identifier& other) noexcept;
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Creates a copy of another identifier. */
     Identifier (Identifier&& other) noexcept;
 
@@ -138,4 +138,4 @@ private:
 
 }
 
-#endif   // JUCE_IDENTIFIER_H_INCLUDED
+#endif // WATER_IDENTIFIER_H_INCLUDED

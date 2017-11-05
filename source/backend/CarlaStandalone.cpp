@@ -145,7 +145,7 @@ static void carla_engine_init_common()
 
 #ifdef BUILD_BRIDGE
     using water::File;
-    File juceBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
+    File waterBinaryDir(File::getSpecialLocation(File::currentExecutableFile).getParentDirectory());
 
     /*
     if (const char* const uisAlwaysOnTop = std::getenv("ENGINE_OPTION_FORCE_STEREO"))
@@ -191,12 +191,12 @@ static void carla_engine_init_common()
     if (const char* const binaryDir = std::getenv("ENGINE_OPTION_PATH_BINARIES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, binaryDir);
     else
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, juceBinaryDir.getFullPathName().toRawUTF8());
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_BINARIES,   0, waterBinaryDir.getFullPathName().toRawUTF8());
 
     if (const char* const resourceDir = std::getenv("ENGINE_OPTION_PATH_RESOURCES"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, resourceDir);
     else
-        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, juceBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
+        gStandalone.engine->setOption(CB::ENGINE_OPTION_PATH_RESOURCES,  0, waterBinaryDir.getChildFile("resources").getFullPathName().toRawUTF8());
 
     if (const char* const preventBadBehaviour = std::getenv("ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR"))
         gStandalone.engine->setOption(CB::ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR, (std::strcmp(preventBadBehaviour, "true") == 0) ? 1 : 0, nullptr);

@@ -23,10 +23,11 @@
   ==============================================================================
 */
 
-#ifndef JUCE_SPINLOCK_H_INCLUDED
-#define JUCE_SPINLOCK_H_INCLUDED
+#ifndef WATER_SPINLOCK_H_INCLUDED
+#define WATER_SPINLOCK_H_INCLUDED
 
-#include "../water.h"
+#include "ScopedLock.h"
+#include "../memory/Atomic.h"
 
 namespace water {
 
@@ -86,7 +87,7 @@ public:
     /** Releases the lock. */
     inline void exit() const noexcept
     {
-        jassert (lock.value == 1); // Agh! Releasing a lock that isn't currently held!
+        CARLA_SAFE_ASSERT_RETURN(lock.value == 1,);
         lock = 0;
     }
 
@@ -106,4 +107,4 @@ private:
 
 }
 
-#endif   // JUCE_SPINLOCK_H_INCLUDED
+#endif // WATER_SPINLOCK_H_INCLUDED

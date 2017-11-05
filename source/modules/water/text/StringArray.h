@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_STRINGARRAY_H_INCLUDED
-#define JUCE_STRINGARRAY_H_INCLUDED
+#ifndef WATER_STRINGARRAY_H_INCLUDED
+#define WATER_STRINGARRAY_H_INCLUDED
 
 #include "String.h"
 #include "../containers/Array.h"
@@ -47,7 +47,7 @@ public:
     /** Creates a copy of another string array */
     StringArray (const StringArray&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     StringArray (StringArray&&) noexcept;
    #endif
 
@@ -80,7 +80,7 @@ public:
     /** Copies the contents of another string array into this one */
     StringArray& operator= (const StringArray&);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     StringArray& operator= (StringArray&&) noexcept;
    #endif
 
@@ -159,7 +159,7 @@ public:
     /** Appends a string at the end of the array. */
     void add (const String& stringToAdd);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Appends a string at the end of the array. */
     void add (String&& stringToAdd);
    #endif
@@ -418,4 +418,4 @@ public:
 
 }
 
-#endif   // JUCE_STRINGARRAY_H_INCLUDED
+#endif // WATER_STRINGARRAY_H_INCLUDED

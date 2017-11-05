@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_TEMPORARYFILE_H_INCLUDED
-#define JUCE_TEMPORARYFILE_H_INCLUDED
+#ifndef WATER_TEMPORARYFILE_H_INCLUDED
+#define WATER_TEMPORARYFILE_H_INCLUDED
 
 #include "TemporaryFile.h"
 #include "File.h"
@@ -169,4 +169,4 @@ private:
 
 }
 
-#endif   // JUCE_TEMPORARYFILE_H_INCLUDED
+#endif // WATER_TEMPORARYFILE_H_INCLUDED

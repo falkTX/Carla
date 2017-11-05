@@ -36,7 +36,7 @@ StringArray::StringArray (const StringArray& other)
 {
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 StringArray::StringArray (StringArray&& other) noexcept
     : strings (static_cast<Array <String>&&> (other.strings))
 {
@@ -69,7 +69,7 @@ StringArray& StringArray::operator= (const StringArray& other)
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 StringArray& StringArray::operator= (StringArray&& other) noexcept
 {
     strings = static_cast<Array<String>&&> (other.strings);
@@ -125,7 +125,7 @@ void StringArray::add (const String& newString)
     strings.add (newString);
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 void StringArray::add (String&& stringToAdd)
 {
     strings.add (static_cast<String&&> (stringToAdd));

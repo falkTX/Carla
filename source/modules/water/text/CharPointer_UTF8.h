@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_CHARPOINTER_UTF8_H_INCLUDED
-#define JUCE_CHARPOINTER_UTF8_H_INCLUDED
+#ifndef WATER_CHARPOINTER_UTF8_H_INCLUDED
+#define WATER_CHARPOINTER_UTF8_H_INCLUDED
 
 #include "CharacterFunctions.h"
 #include "../memory/Atomic.h"
@@ -84,12 +84,12 @@ public:
     inline bool isEmpty() const noexcept                { return *data == 0; }
 
     /** Returns the unicode character that this pointer is pointing to. */
-    juce_wchar operator*() const noexcept
+    water_uchar operator*() const noexcept
     {
         const signed char byte = (signed char) *data;
 
         if (byte >= 0)
-            return (juce_wchar) (uint8) byte;
+            return (water_uchar) (uint8) byte;
 
         uint32 n = (uint32) (uint8) byte;
         uint32 mask = 0x7f;
@@ -116,7 +116,7 @@ public:
             n |= (nextByte & 0x3f);
         }
 
-        return (juce_wchar) n;
+        return (water_uchar) n;
     }
 
     /** Moves this pointer along to the next character in the string. */
@@ -127,7 +127,7 @@ public:
 
         if (n < 0)
         {
-            juce_wchar bit = 0x40;
+            water_uchar bit = 0x40;
 
             while ((n & bit) != 0 && bit > 0x8)
             {
@@ -152,12 +152,12 @@ public:
 
     /** Returns the character that this pointer is currently pointing to, and then
         advances the pointer to point to the next character. */
-    juce_wchar getAndAdvance() noexcept
+    water_uchar getAndAdvance() noexcept
     {
         const signed char byte = (signed char) *data++;
 
         if (byte >= 0)
-            return (juce_wchar) (uint8) byte;
+            return (water_uchar) (uint8) byte;
 
         uint32 n = (uint32) (uint8) byte;
         uint32 mask = 0x7f;
@@ -185,7 +185,7 @@ public:
             n |= (nextByte & 0x3f);
         }
 
-        return (juce_wchar) n;
+        return (water_uchar) n;
     }
 
     /** Moves this pointer along to the next character in the string. */
@@ -218,7 +218,7 @@ public:
     }
 
     /** Returns the character at a given character index from the start of the string. */
-    juce_wchar operator[] (int characterIndex) const noexcept
+    water_uchar operator[] (int characterIndex) const noexcept
     {
         CharPointer_UTF8 p (*this);
         p += characterIndex;
@@ -289,7 +289,7 @@ public:
     /** Returns the number of bytes that would be needed to represent the given
         unicode character in this encoding format.
     */
-    static size_t getBytesRequiredFor (const juce_wchar charToWrite) noexcept
+    static size_t getBytesRequiredFor (const water_uchar charToWrite) noexcept
     {
         size_t num = 1;
         const uint32 c = (uint32) charToWrite;
@@ -317,7 +317,7 @@ public:
     {
         size_t count = 0;
 
-        while (juce_wchar n = text.getAndAdvance())
+        while (water_uchar n = text.getAndAdvance())
             count += getBytesRequiredFor (n);
 
         return count;
@@ -330,7 +330,7 @@ public:
     }
 
     /** Writes a unicode character to this string, and advances this pointer to point to the next position. */
-    void write (const juce_wchar charToWrite) noexcept
+    void write (const water_uchar charToWrite) noexcept
     {
         const uint32 c = (uint32) charToWrite;
 
@@ -442,13 +442,13 @@ public:
     }
 
     /** Returns the character index of a unicode character, or -1 if it isn't found. */
-    int indexOf (const juce_wchar charToFind) const noexcept
+    int indexOf (const water_uchar charToFind) const noexcept
     {
         return CharacterFunctions::indexOfChar (*this, charToFind);
     }
 
     /** Returns the character index of a unicode character, or -1 if it isn't found. */
-    int indexOf (const juce_wchar charToFind, const bool ignoreCase) const noexcept
+    int indexOf (const water_uchar charToFind, const bool ignoreCase) const noexcept
     {
         return ignoreCase ? CharacterFunctions::indexOfCharIgnoreCase (*this, charToFind)
                           : CharacterFunctions::indexOfChar (*this, charToFind);
@@ -468,9 +468,9 @@ public:
     bool isLowerCase() const noexcept       { return CharacterFunctions::isLowerCase (operator*()) != 0; }
 
     /** Returns an upper-case version of the first character of this string. */
-    juce_wchar toUpperCase() const noexcept { return CharacterFunctions::toUpperCase (operator*()); }
+    water_uchar toUpperCase() const noexcept { return CharacterFunctions::toUpperCase (operator*()); }
     /** Returns a lower-case version of the first character of this string. */
-    juce_wchar toLowerCase() const noexcept { return CharacterFunctions::toLowerCase (operator*()); }
+    water_uchar toLowerCase() const noexcept { return CharacterFunctions::toLowerCase (operator*()); }
 
     /** Parses this string as a 32-bit integer. */
     int getIntValue32() const noexcept      { return atoi (data); }
@@ -491,7 +491,7 @@ public:
     CharPointer_UTF8 findEndOfWhitespace() const noexcept   { return CharacterFunctions::findEndOfWhitespace (*this); }
 
     /** Returns true if the given unicode character can be represented in this encoding. */
-    static bool canRepresent (juce_wchar character) noexcept
+    static bool canRepresent (water_uchar character) noexcept
     {
         return ((unsigned int) character) < (unsigned int) 0x10ffff;
     }
@@ -570,4 +570,4 @@ private:
 
 }
 
-#endif   // JUCE_CHARPOINTER_UTF8_H_INCLUDED
+#endif // WATER_CHARPOINTER_UTF8_H_INCLUDED

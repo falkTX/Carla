@@ -520,17 +520,17 @@ const char* carla_get_supported_file_extensions()
             AudioFormatManager afm;
             afm.registerBasicFormats();
 
-            String juceFormats;
+            String waterFormats;
 
             for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
             {
                 const StringArray& exts((*it)->getFileExtensions());
 
                 for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
-                    juceFormats += String(";*" + (*eit)).toRawUTF8();
+                    waterFormats += String(";*" + (*eit)).toRawUTF8();
             }
 
-            retText += juceFormats.toRawUTF8();
+            retText += waterFormats.toRawUTF8();
         }
 #endif
     }

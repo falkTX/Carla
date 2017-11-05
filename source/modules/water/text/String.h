@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_STRING_H_INCLUDED
-#define JUCE_STRING_H_INCLUDED
+#ifndef WATER_STRING_H_INCLUDED
+#define WATER_STRING_H_INCLUDED
 
 #include "CharPointer_UTF8.h"
 #include "../memory/Memory.h"
@@ -33,7 +33,7 @@ namespace water {
 
 //==============================================================================
 /**
-    The JUCE String class!
+    The Water String class!
 
     Using a reference-counted internal representation, these strings are fast
     and efficient, and there are methods to do just about any operation you'll ever
@@ -53,7 +53,7 @@ public:
     /** Creates a copy of another string. */
     String (const String& other) noexcept;
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     String (String&& other) noexcept;
    #endif
 
@@ -109,7 +109,7 @@ public:
 
     //==============================================================================
     /** Creates a string from a single character. */
-    static String charToString (juce_wchar character);
+    static String charToString (water_uchar character);
 
     /** Destructor. */
     ~String() noexcept;
@@ -136,7 +136,7 @@ public:
     /** Replaces this string's contents with another string. */
     String& operator= (const String& other) noexcept;
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     String& operator= (String&& other) noexcept;
    #endif
 
@@ -157,7 +157,7 @@ public:
     /** Appends a character at the end of this string. */
     String& operator+= (char characterToAppend);
     /** Appends a character at the end of this string. */
-    String& operator+= (juce_wchar characterToAppend);
+    String& operator+= (water_uchar characterToAppend);
 
     /** Appends a string to the end of this one.
 
@@ -301,7 +301,7 @@ public:
         If the character is 0, this will always return false.
         Uses a case-sensitive comparison.
     */
-    bool startsWithChar (juce_wchar character) const noexcept;
+    bool startsWithChar (water_uchar character) const noexcept;
 
     /** Tests whether the string begins with another string.
         If the parameter is an empty string, this will always return true.
@@ -319,7 +319,7 @@ public:
         If the character is 0, this will always return false.
         Uses a case-sensitive comparison.
     */
-    bool endsWithChar (juce_wchar character) const noexcept;
+    bool endsWithChar (water_uchar character) const noexcept;
 
     /** Tests whether the string ends with another string.
         If the parameter is an empty string, this will always return true.
@@ -336,7 +336,7 @@ public:
     /** Tests whether the string contains a particular character.
         Uses a case-sensitive comparison.
     */
-    bool containsChar (juce_wchar character) const noexcept;
+    bool containsChar (water_uchar character) const noexcept;
 
     /** Tests whether the string contains another substring.
         Uses a case-insensitive comparison.
@@ -420,7 +420,7 @@ public:
         @returns    the index of the first occurrence of the character in this
                     string, or -1 if it's not found.
     */
-    int indexOfChar (juce_wchar characterToLookFor) const noexcept;
+    int indexOfChar (water_uchar characterToLookFor) const noexcept;
 
     /** Searches for a character inside this string.
         Uses a case-sensitive comparison.
@@ -429,7 +429,7 @@ public:
         @returns            the index of the first occurrence of the character in this
                             string, or -1 if it's not found.
     */
-    int indexOfChar (int startIndex, juce_wchar characterToLookFor) const noexcept;
+    int indexOfChar (int startIndex, water_uchar characterToLookFor) const noexcept;
 
     /** Returns the index of the first character that matches one of the characters
         passed-in to this method.
@@ -483,7 +483,7 @@ public:
         Uses a case-sensitive comparison.
         @returns    the index of the last occurrence of the character in this string, or -1 if it's not found.
     */
-    int lastIndexOfChar (juce_wchar character) const noexcept;
+    int lastIndexOfChar (water_uchar character) const noexcept;
 
     /** Searches for a substring inside this string (working backwards from the end of the string).
         Uses a case-sensitive comparison.
@@ -529,12 +529,12 @@ public:
         then to use that to iterate the string.
         @see getCharPointer
     */
-    juce_wchar operator[] (int index) const noexcept;
+    water_uchar operator[] (int index) const noexcept;
 
     /** Returns the final character of the string.
         If the string is empty this will return 0.
     */
-    juce_wchar getLastCharacter() const noexcept;
+    water_uchar getLastCharacter() const noexcept;
 
     //==============================================================================
     /** Returns a subsection of the string.
@@ -704,8 +704,8 @@ public:
                     bool ignoreCase = false) const;
 
     /** Returns a string with all occurrences of a character replaced with a different one. */
-    String replaceCharacter (juce_wchar characterToReplace,
-                             juce_wchar characterToInsertInstead) const;
+    String replaceCharacter (water_uchar characterToReplace,
+                             water_uchar characterToInsertInstead) const;
 
     /** Replaces a set of characters with another set.
 
@@ -790,12 +790,12 @@ public:
     /** Returns a copy of this string with the specified character repeatedly added to its
         beginning until the total length is at least the minimum length specified.
     */
-    String paddedLeft (juce_wchar padCharacter, int minimumLength) const;
+    String paddedLeft (water_uchar padCharacter, int minimumLength) const;
 
     /** Returns a copy of this string with the specified character repeatedly added to its
         end until the total length is at least the minimum length specified.
     */
-    String paddedRight (juce_wchar padCharacter, int minimumLength) const;
+    String paddedRight (water_uchar padCharacter, int minimumLength) const;
 
     /** Creates a string from data in an unknown format.
 
@@ -1061,7 +1061,7 @@ public:
     void swapWith (String& other) noexcept;
 
     //==============================================================================
-   #if JUCE_MAC
+   #ifdef CARLA_OS_MAC
     /** OSX ONLY - Creates a String from an OSX CFString. */
     static String fromCFString (CFStringRef cfString);
 
@@ -1102,7 +1102,7 @@ String operator+ (const char* string1,     const String& string2);
 /** Concatenates two strings. */
 String operator+ (char string1,            const String& string2);
 /** Concatenates two strings. */
-String operator+ (juce_wchar string1,      const String& string2);
+String operator+ (water_uchar string1,      const String& string2);
 
 /** Concatenates two strings. */
 String operator+ (String string1, const String& string2);
@@ -1111,13 +1111,13 @@ String operator+ (String string1, const char* string2);
 /** Concatenates two strings. */
 String operator+ (String string1, char characterToAppend);
 /** Concatenates two strings. */
-String operator+ (String string1, juce_wchar characterToAppend);
+String operator+ (String string1, water_uchar characterToAppend);
 
 //==============================================================================
 /** Appends a character at the end of a string. */
 String& operator<< (String& string1, char characterToAppend);
 /** Appends a character at the end of a string. */
-String& operator<< (String& string1, juce_wchar characterToAppend);
+String& operator<< (String& string1, water_uchar characterToAppend);
 
 /** Appends a string to the end of the first one. */
 String& operator<< (String& string1, const char* string2);
@@ -1166,7 +1166,7 @@ bool operator>= (const String& string1, const String& string2) noexcept;
 bool operator<= (const String& string1, const String& string2) noexcept;
 
 //==============================================================================
-/** This operator allows you to write a juce String directly to std output streams.
+/** This operator allows you to write a water String directly to std output streams.
     This is handy for writing strings to std::cout, std::cerr, etc.
 */
 template <class traits>
@@ -1185,4 +1185,4 @@ OutputStream& operator<< (OutputStream& stream, StringRef stringToWrite);
 
 #include "StringRef.h"
 
-#endif   // JUCE_STRING_H_INCLUDED
+#endif // WATER_STRING_H_INCLUDED

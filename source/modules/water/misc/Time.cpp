@@ -37,7 +37,7 @@ namespace TimeHelpers
 
 //==============================================================================
 
-static uint32 juce_millisecondsSinceStartup() noexcept
+static uint32 water_millisecondsSinceStartup() noexcept
 {
 #ifdef CARLA_OS_WIN
     return (uint32) timeGetTime();
@@ -90,7 +90,7 @@ int64 Time::currentTimeMillis() noexcept
 
 uint32 Time::getMillisecondCounter() noexcept
 {
-    const uint32 now = juce_millisecondsSinceStartup();
+    const uint32 now = water_millisecondsSinceStartup();
 
     if (now < TimeHelpers::lastMSCounterValue)
     {

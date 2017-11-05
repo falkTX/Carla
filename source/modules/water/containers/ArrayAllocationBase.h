@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_ARRAYALLOCATIONBASE_H_INCLUDED
-#define JUCE_ARRAYALLOCATIONBASE_H_INCLUDED
+#ifndef WATER_ARRAYALLOCATIONBASE_H_INCLUDED
+#define WATER_ARRAYALLOCATIONBASE_H_INCLUDED
 
 #include "../memory/HeapBlock.h"
 
@@ -60,7 +60,7 @@ public:
     {
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     ArrayAllocationBase (ArrayAllocationBase<ElementType>&& other) noexcept
         : elements (static_cast<HeapBlock<ElementType>&&> (other.elements)),
           numAllocated (other.numAllocated)
@@ -138,4 +138,4 @@ private:
 
 }
 
-#endif   // JUCE_ARRAYALLOCATIONBASE_H_INCLUDED
+#endif // WATER_ARRAYALLOCATIONBASE_H_INCLUDED

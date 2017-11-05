@@ -1544,7 +1544,7 @@ bool PatchbayGraph::connect(const bool external, const uint groupA, const uint p
 
     if (! graph.addConnection(groupA, static_cast<int>(adjustedPortA), groupB, static_cast<int>(adjustedPortB)))
     {
-        kEngine->setLastError("Failed from juce");
+        kEngine->setLastError("Failed from water");
         return false;
     }
 
@@ -1806,13 +1806,13 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
     CARLA_SAFE_ASSERT_RETURN(data->events.out != nullptr,);
     CARLA_SAFE_ASSERT_RETURN(frames > 0,);
 
-    // put events in juce buffer
+    // put events in water buffer
     {
         midiBuffer.clear();
         fillWaterMidiBufferFromEngineEvents(midiBuffer, data->events.in);
     }
 
-    // put carla audio in juce buffer
+    // put carla audio in water buffer
     {
         int i=0;
 
@@ -1826,13 +1826,13 @@ void PatchbayGraph::process(CarlaEngine::ProtectedData* const data, const float*
 
     graph.processBlock(audioBuffer, midiBuffer);
 
-    // put juce audio in carla buffer
+    // put water audio in carla buffer
     {
         for (int i=0; i < static_cast<int>(outputs); ++i)
             carla_copyFloats(outBuf[i], audioBuffer.getReadPointer(i), frames);
     }
 
-    // put juce events in carla buffer
+    // put water events in carla buffer
     {
         carla_zeroStructs(data->events.out, kMaxEngineEventInternalCount);
         fillEngineEventsFromWaterMidiBuffer(data->events.out, midiBuffer);

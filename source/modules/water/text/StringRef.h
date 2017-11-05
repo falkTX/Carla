@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_STRINGREF_H_INCLUDED
-#define JUCE_STRINGREF_H_INCLUDED
+#ifndef WATER_STRINGREF_H_INCLUDED
+#define WATER_STRINGREF_H_INCLUDED
 
 #include "String.h"
 
@@ -103,7 +103,7 @@ public:
     int length() const noexcept                                         { return (int) text.length(); }
 
     /** Retrieves a character by index. */
-    juce_wchar operator[] (int index) const noexcept                    { return text[index]; }
+    water_uchar operator[] (int index) const noexcept                    { return text[index]; }
 
     /** Compares this StringRef with a String. */
     bool operator== (const String& s) const noexcept                    { return text.compare (s.getCharPointer()) == 0; }
@@ -133,4 +133,4 @@ inline String operator+ (StringRef s1, const char* s2)      { return String (s1.
 
 }
 
-#endif   // JUCE_STRINGREF_H_INCLUDED
+#endif // WATER_STRINGREF_H_INCLUDED

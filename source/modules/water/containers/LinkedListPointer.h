@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_LINKEDLISTPOINTER_H_INCLUDED
-#define JUCE_LINKEDLISTPOINTER_H_INCLUDED
+#ifndef WATER_LINKEDLISTPOINTER_H_INCLUDED
+#define WATER_LINKEDLISTPOINTER_H_INCLUDED
 
 #include "../water.h"
 
@@ -81,7 +81,7 @@ public:
         return *this;
     }
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     LinkedListPointer (LinkedListPointer&& other) noexcept
         : item (other.item)
     {
@@ -369,4 +369,4 @@ private:
 
 }
 
-#endif   // JUCE_LINKEDLISTPOINTER_H_INCLUDED
+#endif // WATER_LINKEDLISTPOINTER_H_INCLUDED

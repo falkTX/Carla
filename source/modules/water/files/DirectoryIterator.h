@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_DIRECTORYITERATOR_H_INCLUDED
-#define JUCE_DIRECTORYITERATOR_H_INCLUDED
+#ifndef WATER_DIRECTORYITERATOR_H_INCLUDED
+#define WATER_DIRECTORYITERATOR_H_INCLUDED
 
 #include "File.h"
 #include "../text/StringArray.h"
@@ -159,4 +159,4 @@ private:
 
 }
 
-#endif   // JUCE_DIRECTORYITERATOR_H_INCLUDED
+#endif // WATER_DIRECTORYITERATOR_H_INCLUDED

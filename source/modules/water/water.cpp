@@ -1,5 +1,5 @@
 /*
- * Standalone Juce AudioProcessorGraph
+ * Cross-platform C++ library for Carla, based on Juce v4
  * Copyright (C) 2015 ROLI Ltd.
  * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
  *
@@ -34,7 +34,7 @@ static Result getResultForLastError()
     return Result::fail (String (messageBuffer));
 }
 
-static int64 juce_fileSetPosition (void* handle, int64 pos)
+static int64 water_fileSetPosition (void* handle, int64 pos)
 {
     LARGE_INTEGER li;
     li.QuadPart = pos;
@@ -60,7 +60,7 @@ static Result getResultForErrno()
 static int getFD (void* handle) noexcept        { return (int) (pointer_sized_int) handle; }
 static void* fdToVoidPointer (int fd) noexcept  { return (void*) (pointer_sized_int) fd; }
 
-static int64 juce_fileSetPosition (void* handle, int64 pos)
+static int64 water_fileSetPosition (void* handle, int64 pos)
 {
     if (handle != nullptr && lseek (getFD (handle), pos, SEEK_SET) == pos)
         return pos;

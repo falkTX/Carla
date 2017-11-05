@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_OUTPUTSTREAM_H_INCLUDED
-#define JUCE_OUTPUTSTREAM_H_INCLUDED
+#ifndef WATER_OUTPUTSTREAM_H_INCLUDED
+#define WATER_OUTPUTSTREAM_H_INCLUDED
 
 #include "../water.h"
 
@@ -275,4 +275,4 @@ OutputStream& operator<< (OutputStream& stream, const NewLine&);
 
 }
 
-#endif   // JUCE_OUTPUTSTREAM_H_INCLUDED
+#endif // WATER_OUTPUTSTREAM_H_INCLUDED

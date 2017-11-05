@@ -164,7 +164,7 @@ public:
     int toInt (const ValueUnion& data) const noexcept override       { return data.boolValue ? 1 : 0; };
     int64 toInt64 (const ValueUnion& data) const noexcept override   { return data.boolValue ? 1 : 0; };
     double toDouble (const ValueUnion& data) const noexcept override { return data.boolValue ? 1.0 : 0.0; }
-    String toString (const ValueUnion& data) const override          { return String::charToString (data.boolValue ? (juce_wchar) '1' : (juce_wchar) '0'); }
+    String toString (const ValueUnion& data) const override          { return String::charToString (data.boolValue ? (water_uchar) '1' : (water_uchar) '0'); }
     bool toBool (const ValueUnion& data) const noexcept override     { return data.boolValue; }
     bool isBool() const noexcept override                            { return true; }
 
@@ -265,7 +265,7 @@ var& var::operator= (const double v)             { type->cleanUp (value); type =
 var& var::operator= (const char* const v)        { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 var& var::operator= (const String& v)            { type->cleanUp (value); type = &VariantType_String::instance; new (value.stringValue) String (v); return *this; }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 var::var (var&& other) noexcept
     : type (other.type),
       value (other.value)

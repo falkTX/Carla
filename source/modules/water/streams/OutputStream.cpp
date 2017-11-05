@@ -31,43 +31,14 @@
 
 namespace water {
 
-#if JUCE_DEBUG
-
-struct DanglingStreamChecker
-{
-    DanglingStreamChecker() {}
-
-    ~DanglingStreamChecker()
-    {
-        /*
-            It's always a bad idea to leak any object, but if you're leaking output
-            streams, then there's a good chance that you're failing to flush a file
-            to disk properly, which could result in corrupted data and other similar
-            nastiness..
-        */
-        jassert (activeStreams.size() == 0);
-    }
-
-    Array<void*, CriticalSection> activeStreams;
-};
-
-static DanglingStreamChecker danglingStreamChecker;
-#endif
-
 //==============================================================================
 OutputStream::OutputStream()
     : newLineString (NewLine::getDefault())
 {
-   #if JUCE_DEBUG
-    danglingStreamChecker.activeStreams.add (this);
-   #endif
 }
 
 OutputStream::~OutputStream()
 {
-   #if JUCE_DEBUG
-    danglingStreamChecker.activeStreams.removeFirstMatchingValue (this);
-   #endif
 }
 
 //==============================================================================
@@ -195,7 +166,7 @@ bool OutputStream::writeText (const String& text, const bool asUTF16,
 
         for (;;)
         {
-            const juce_wchar c = src.getAndAdvance();
+            const water_uchar c = src.getAndAdvance();
 
             if (c == 0)
                 break;

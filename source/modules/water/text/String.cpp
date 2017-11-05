@@ -53,7 +53,7 @@ static const EmptyString emptyString = { 0x3fffffff, sizeof (String::CharPointer
 class StringHolder
 {
 public:
-    StringHolder() JUCE_DELETED_FUNCTION;
+    StringHolder() WATER_DELETED_FUNCTION;
 
     typedef String::CharPointerType CharPointerType;
     typedef String::CharPointerType::CharType CharType;
@@ -242,7 +242,7 @@ String& String::operator= (const String& other) noexcept
     return *this;
 }
 
-#if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+#if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
 String::String (String&& other) noexcept   : text (other.text)
 {
     other.text = &(emptyString.text);
@@ -288,12 +288,8 @@ String::String (const char* const t)
         you use UTF-8 with escape characters in your source code to represent extended characters,
         because there's no other way to represent these strings in a way that isn't dependent on
         the compiler, source code editor and platform.
-
-        Note that the Projucer has a handy string literal generator utility that will convert
-        any unicode string to a valid C++ string literal, creating ascii escape sequences that will
-        work in any compiler.
     */
-    jassert (t == nullptr || CharPointer_UTF8::isValidString (t, std::numeric_limits<int>::max()));
+    CARLA_SAFE_ASSERT (t == nullptr || CharPointer_UTF8::isValidString (t, std::numeric_limits<int>::max()));
 }
 
 String::String (const char* const t, const size_t maxChars)
@@ -311,12 +307,8 @@ String::String (const char* const t, const size_t maxChars)
         you use UTF-8 with escape characters in your source code to represent extended characters,
         because there's no other way to represent these strings in a way that isn't dependent on
         the compiler, source code editor and platform.
-
-        Note that the Projucer has a handy string literal generator utility that will convert
-        any unicode string to a valid C++ string literal, creating ascii escape sequences that will
-        work in any compiler.
     */
-    jassert (t == nullptr || CharPointer_UTF8::isValidString (t, (int) maxChars));
+    CARLA_SAFE_ASSERT (t == nullptr || CharPointer_UTF8::isValidString (t, (int) maxChars));
 }
 
 String::String (const CharPointer_UTF8  t)   : text (StringHolder::createFromCharPointer (t)) {}
@@ -326,7 +318,7 @@ String::String (const CharPointer_UTF8  start, const CharPointer_UTF8  end)  : t
 String::String (const std::string& s) : text (StringHolder::createFromFixedLength (s.data(), s.size())) {}
 String::String (StringRef s)          : text (StringHolder::createFromCharPointer (s.text)) {}
 
-String String::charToString (const juce_wchar character)
+String String::charToString (const water_uchar character)
 {
     String result (PreallocationBytes (CharPointerType::getBytesRequiredFor (character)));
     CharPointerType t (result.text);
@@ -481,7 +473,7 @@ size_t String::getByteOffsetOfEnd() const noexcept
     return findByteOffsetOfEnd (text);
 }
 
-juce_wchar String::operator[] (int index) const noexcept
+water_uchar String::operator[] (int index) const noexcept
 {
     jassert (index == 0 || (index > 0 && index <= (int) text.lengthUpTo ((size_t) index + 1)));
     return text [index];
@@ -547,10 +539,10 @@ static int stringCompareRight (String::CharPointerType s1, String::CharPointerTy
 {
     for (int bias = 0;;)
     {
-        const juce_wchar c1 = s1.getAndAdvance();
+        const water_uchar c1 = s1.getAndAdvance();
         const bool isDigit1 = CharacterFunctions::isDigit (c1);
 
-        const juce_wchar c2 = s2.getAndAdvance();
+        const water_uchar c2 = s2.getAndAdvance();
         const bool isDigit2 = CharacterFunctions::isDigit (c2);
 
         if (! (isDigit1 || isDigit2))   return bias;
@@ -568,10 +560,10 @@ static int stringCompareLeft (String::CharPointerType s1, String::CharPointerTyp
 {
     for (;;)
     {
-        const juce_wchar c1 = s1.getAndAdvance();
+        const water_uchar c1 = s1.getAndAdvance();
         const bool isDigit1 = CharacterFunctions::isDigit (c1);
 
-        const juce_wchar c2 = s2.getAndAdvance();
+        const water_uchar c2 = s2.getAndAdvance();
         const bool isDigit2 = CharacterFunctions::isDigit (c2);
 
         if (! (isDigit1 || isDigit2))   return 0;
@@ -608,8 +600,8 @@ static int naturalStringCompare (String::CharPointerType s1, String::CharPointer
                 return result;
         }
 
-        juce_wchar c1 = s1.getAndAdvance();
-        juce_wchar c2 = s2.getAndAdvance();
+        water_uchar c1 = s1.getAndAdvance();
+        water_uchar c2 = s2.getAndAdvance();
 
         if (c1 != c2 && ! isCaseSensitive)
         {
@@ -703,7 +695,7 @@ String& String::operator+= (const char ch)
     return operator+= (asString);
 }
 
-String& String::operator+= (const juce_wchar ch)
+String& String::operator+= (const water_uchar ch)
 {
     return operator+= (charToString(ch));
 }
@@ -728,14 +720,14 @@ String& String::operator+= (const uint64 number)       { return StringHelpers::o
 
 //==============================================================================
 String operator+ (const char* const s1, const String& s2)    { String s (s1); return s += s2; }
-String operator+ (const char s1, const String& s2)           { return String::charToString ((juce_wchar) (uint8) s1) + s2; }
+String operator+ (const char s1, const String& s2)           { return String::charToString ((water_uchar) (uint8) s1) + s2; }
 String operator+ (String s1, const String& s2)               { return s1 += s2; }
 String operator+ (String s1, const char* const s2)           { return s1 += s2; }
 String operator+ (String s1, const char s2)                  { return s1 += s2; }
 
-String operator+ (const juce_wchar s1, const String& s2)     { return String::charToString (s1) + s2; }
-String operator+ (String s1, const juce_wchar s2)            { return s1 += s2; }
-String& operator<< (String& s1, const juce_wchar s2)         { return s1 += s2; }
+String operator+ (const water_uchar s1, const String& s2)     { return String::charToString (s1) + s2; }
+String operator+ (String s1, const water_uchar s2)            { return s1 += s2; }
+String& operator<< (String& s1, const water_uchar s2)         { return s1 += s2; }
 
 String& operator<< (String& s1, const char s2)               { return s1 += s2; }
 String& operator<< (String& s1, const char* const s2)        { return s1 += s2; }
@@ -766,12 +758,12 @@ OutputStream& operator<< (OutputStream& stream, StringRef text)
 }
 
 //==============================================================================
-int String::indexOfChar (const juce_wchar character) const noexcept
+int String::indexOfChar (const water_uchar character) const noexcept
 {
     return text.indexOf (character);
 }
 
-int String::indexOfChar (const int startIndex, const juce_wchar character) const noexcept
+int String::indexOfChar (const int startIndex, const water_uchar character) const noexcept
 {
     CharPointerType t (text);
 
@@ -791,7 +783,7 @@ int String::indexOfChar (const int startIndex, const juce_wchar character) const
     return -1;
 }
 
-int String::lastIndexOfChar (const juce_wchar character) const noexcept
+int String::lastIndexOfChar (const water_uchar character) const noexcept
 {
     CharPointerType t (text);
     int last = -1;
@@ -936,7 +928,7 @@ bool String::contains (StringRef other) const noexcept
     return indexOf (other) >= 0;
 }
 
-bool String::containsChar (const juce_wchar character) const noexcept
+bool String::containsChar (const water_uchar character) const noexcept
 {
     return text.indexOf (character) >= 0;
 }
@@ -1008,7 +1000,7 @@ struct WildCardMatcher
     {
         for (;;)
         {
-            const juce_wchar wc = wildcard.getAndAdvance();
+            const water_uchar wc = wildcard.getAndAdvance();
 
             if (wc == '*')
                 return wildcard.isEmpty() || matchesAnywhere (wildcard, test, ignoreCase);
@@ -1021,7 +1013,7 @@ struct WildCardMatcher
         }
     }
 
-    static bool characterMatches (const juce_wchar wc, const juce_wchar tc, const bool ignoreCase) noexcept
+    static bool characterMatches (const water_uchar wc, const water_uchar tc, const bool ignoreCase) noexcept
     {
         return (wc == tc) || (wc == '?' && tc != 0)
                 || (ignoreCase && CharacterFunctions::toLowerCase (wc) == CharacterFunctions::toLowerCase (tc));
@@ -1057,7 +1049,7 @@ String String::repeatedString (StringRef stringToRepeat, int numberOfTimesToRepe
     return result;
 }
 
-String String::paddedLeft (const juce_wchar padCharacter, int minimumLength) const
+String String::paddedLeft (const water_uchar padCharacter, int minimumLength) const
 {
     jassert (padCharacter != 0);
 
@@ -1084,9 +1076,9 @@ String String::paddedLeft (const juce_wchar padCharacter, int minimumLength) con
     return result;
 }
 
-String String::paddedRight (const juce_wchar padCharacter, int minimumLength) const
+String String::paddedRight (const water_uchar padCharacter, int minimumLength) const
 {
-    jassert (padCharacter != 0);
+    CARLA_SAFE_ASSERT_RETURN (padCharacter != 0, *this);
 
     int extraChars = minimumLength;
     CharPointerType end (text);
@@ -1209,7 +1201,7 @@ public:
         dest = result.getCharPointer();
     }
 
-    void write (juce_wchar c)
+    void write (water_uchar c)
     {
         bytesWritten += String::CharPointerType::getBytesRequiredFor (c);
 
@@ -1232,7 +1224,7 @@ private:
     size_t allocatedBytes, bytesWritten;
 };
 
-String String::replaceCharacter (const juce_wchar charToReplace, const juce_wchar charToInsert) const
+String String::replaceCharacter (const water_uchar charToReplace, const water_uchar charToInsert) const
 {
     if (! containsChar (charToReplace))
         return *this;
@@ -1241,7 +1233,7 @@ String String::replaceCharacter (const juce_wchar charToReplace, const juce_wcha
 
     for (;;)
     {
-        juce_wchar c = builder.source.getAndAdvance();
+        water_uchar c = builder.source.getAndAdvance();
 
         if (c == charToReplace)
             c = charToInsert;
@@ -1265,7 +1257,7 @@ String String::replaceCharacters (StringRef charactersToReplace, StringRef chara
 
     for (;;)
     {
-        juce_wchar c = builder.source.getAndAdvance();
+        water_uchar c = builder.source.getAndAdvance();
 
         const int index = charactersToReplace.text.indexOf (c);
         if (index >= 0)
@@ -1291,16 +1283,18 @@ bool String::startsWithIgnoreCase (StringRef other) const noexcept
     return text.compareIgnoreCaseUpTo (other.text, other.length()) == 0;
 }
 
-bool String::startsWithChar (const juce_wchar character) const noexcept
+bool String::startsWithChar (const water_uchar character) const noexcept
 {
-    jassert (character != 0); // strings can't contain a null character!
+    // strings can't contain a null character!
+    CARLA_SAFE_ASSERT_RETURN (character != 0, false);
 
     return *text == character;
 }
 
-bool String::endsWithChar (const juce_wchar character) const noexcept
+bool String::endsWithChar (const water_uchar character) const noexcept
 {
-    jassert (character != 0); // strings can't contain a null character!
+    // strings can't contain a null character!
+    CARLA_SAFE_ASSERT_RETURN (character != 0, false);
 
     if (text.isEmpty())
         return false;
@@ -1350,7 +1344,7 @@ String String::toUpperCase() const
 
     for (;;)
     {
-        const juce_wchar c = builder.source.toUpperCase();
+        const water_uchar c = builder.source.toUpperCase();
         builder.write (c);
 
         if (c == 0)
@@ -1368,7 +1362,7 @@ String String::toLowerCase() const
 
     for (;;)
     {
-        const juce_wchar c = builder.source.toLowerCase();
+        const water_uchar c = builder.source.toLowerCase();
         builder.write (c);
 
         if (c == 0)
@@ -1381,9 +1375,9 @@ String String::toLowerCase() const
 }
 
 //==============================================================================
-juce_wchar String::getLastCharacter() const noexcept
+water_uchar String::getLastCharacter() const noexcept
 {
-    return isEmpty() ? juce_wchar() : text [length() - 1];
+    return isEmpty() ? water_uchar() : text [length() - 1];
 }
 
 String String::substring (int start, const int end) const
@@ -1502,7 +1496,7 @@ String String::upToLastOccurrenceOf (StringRef sub,
 
 bool String::isQuotedString() const
 {
-    const juce_wchar trimmedStart = trimStart()[0];
+    const water_uchar trimmedStart = trimStart()[0];
 
     return trimmedStart == '"'
         || trimmedStart == '\'';
@@ -1515,7 +1509,7 @@ String String::unquoted() const
     if (len == 0)
         return String();
 
-    const juce_wchar lastChar = text [len - 1];
+    const water_uchar lastChar = text [len - 1];
     const int dropAtStart = (*text == '"' || *text == '\'') ? 1 : 0;
     const int dropAtEnd = (lastChar == '"' || lastChar == '\'') ? 1 : 0;
 
@@ -1627,7 +1621,7 @@ String String::retainCharacters (StringRef charactersToRetain) const
 
     for (;;)
     {
-        juce_wchar c = builder.source.getAndAdvance();
+        water_uchar c = builder.source.getAndAdvance();
 
         if (charactersToRetain.text.indexOf (c) >= 0)
             builder.write (c);
@@ -1649,7 +1643,7 @@ String String::removeCharacters (StringRef charactersToRemove) const
 
     for (;;)
     {
-        juce_wchar c = builder.source.getAndAdvance();
+        water_uchar c = builder.source.getAndAdvance();
 
         if (charactersToRemove.text.indexOf (c) < 0)
             builder.write (c);
@@ -1727,7 +1721,7 @@ String String::createStringFromData (const void* const unknownData, int size)
         return String();
 
     if (size == 1)
-        return charToString ((juce_wchar) data[0]);
+        return charToString ((water_uchar) data[0]);
 
     const char* start = (const char*) data;
 
@@ -1847,11 +1841,11 @@ String String::toHexString (const void* const d, const int size, const int group
     for (int i = 0; i < size; ++i)
     {
         const unsigned char nextByte = *data++;
-        dest.write ((juce_wchar) hexDigits [nextByte >> 4]);
-        dest.write ((juce_wchar) hexDigits [nextByte & 0xf]);
+        dest.write ((water_uchar) hexDigits [nextByte >> 4]);
+        dest.write ((water_uchar) hexDigits [nextByte & 0xf]);
 
         if (groupSize > 0 && (i % groupSize) == (groupSize - 1) && i < (size - 1))
-            dest.write ((juce_wchar) ' ');
+            dest.write ((water_uchar) ' ');
     }
 
     dest.writeNull();
@@ -1862,7 +1856,7 @@ int   String::getHexValue32() const noexcept    { return CharacterFunctions::Hex
 int64 String::getHexValue64() const noexcept    { return CharacterFunctions::HexParser<int64>::parse (text); }
 
 //==============================================================================
-static const juce_wchar emptyChar = 0;
+static const water_uchar emptyChar = 0;
 
 template <class CharPointerType_Src, class CharPointerType_Dest>
 struct StringEncodingConverter
@@ -1886,7 +1880,7 @@ struct StringEncodingConverter
         void* const newSpace = addBytesToPointer (text.getAddress(), (int) endOffset);
         const CharPointerType_Dest extraSpace (static_cast<DestChar*> (newSpace));
 
-       #if JUCE_DEBUG // (This just avoids spurious warnings from valgrind about the uninitialised bytes at the end of the buffer..)
+       #ifdef DEBUG // (This just avoids spurious warnings from valgrind about the uninitialised bytes at the end of the buffer..)
         const size_t bytesToClear = (size_t) jmin ((int) extraBytesNeeded, 4);
         zeromem (addBytesToPointer (newSpace, extraBytesNeeded - bytesToClear), bytesToClear);
        #endif

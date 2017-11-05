@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_MIDIBUFFER_H_INCLUDED
-#define JUCE_MIDIBUFFER_H_INCLUDED
+#ifndef WATER_MIDIBUFFER_H_INCLUDED
+#define WATER_MIDIBUFFER_H_INCLUDED
 
 #include "../containers/Array.h"
 
@@ -234,4 +234,4 @@ public:
 
 }
 
-#endif   // JUCE_MIDIBUFFER_H_INCLUDED
+#endif // WATER_MIDIBUFFER_H_INCLUDED

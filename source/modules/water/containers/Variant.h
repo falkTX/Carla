@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-#ifndef JUCE_VARIANT_H_INCLUDED
-#define JUCE_VARIANT_H_INCLUDED
+#ifndef WATER_VARIANT_H_INCLUDED
+#define WATER_VARIANT_H_INCLUDED
 
 #include "../water.h"
 
@@ -69,7 +69,7 @@ public:
     var& operator= (const char* value);
     var& operator= (const String& value);
 
-   #if JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS
+   #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     var (var&&) noexcept;
     var (String&&);
     var& operator= (var&&) noexcept;
@@ -175,4 +175,4 @@ struct VariantConverter<String>
 
 }
 
-#endif   // JUCE_VARIANT_H_INCLUDED
+#endif // WATER_VARIANT_H_INCLUDED
