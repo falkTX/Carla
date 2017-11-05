@@ -29,6 +29,8 @@
 #include "../text/String.h"
 #include "../buffers/AudioSampleBuffer.h"
 
+#include "CarlaMutex.hpp"
+
 namespace water {
 
 //==============================================================================

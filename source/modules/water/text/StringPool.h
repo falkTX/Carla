@@ -28,6 +28,8 @@
 
 #include "../containers/Array.h"
 
+#include "CarlaMutex.hpp"
+
 namespace water {
 
 //==============================================================================

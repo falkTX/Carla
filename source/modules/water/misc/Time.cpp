@@ -25,6 +25,9 @@
 
 #include "Time.h"
 
+#include <ctime>
+#include <sys/time.h>
+
 namespace water {
 
 namespace TimeHelpers

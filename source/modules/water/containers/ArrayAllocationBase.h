@@ -28,6 +28,8 @@
 
 #include "../memory/HeapBlock.h"
 
+#include "CarlaUtils.hpp"
+
 namespace water {
 
 //==============================================================================

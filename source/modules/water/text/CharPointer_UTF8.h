@@ -29,6 +29,8 @@
 #include "CharacterFunctions.h"
 #include "../memory/Atomic.h"
 
+#include "CarlaUtils.hpp"
+
 namespace water {
 
 //==============================================================================

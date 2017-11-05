@@ -26,6 +26,8 @@
 #include "MidiBuffer.h"
 #include "MidiMessage.h"
 
+#include "CarlaUtils.hpp"
+
 namespace water {
 
 namespace MidiBufferHelpers

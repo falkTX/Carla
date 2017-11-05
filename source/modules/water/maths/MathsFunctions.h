@@ -28,6 +28,8 @@
 
 #include "../water.h"
 
+#include "CarlaUtils.hpp"
+
 #include <algorithm>
 
 namespace water {

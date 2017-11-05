@@ -28,6 +28,11 @@
 #include "../misc/Time.h"
 #include "../streams/MemoryOutputStream.h"
 
+#ifndef CARLA_OS_WIN
+# include <signal.h>
+# include <sys/wait.h>
+#endif
+
 #define JUCE_USE_VFORK 1
 
 namespace water {

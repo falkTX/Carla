@@ -25,6 +25,8 @@
 
 #include "CharacterFunctions.h"
 
+#include <locale>
+
 namespace water {
 
 //==============================================================================

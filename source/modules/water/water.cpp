@@ -16,34 +16,6 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "water.h"
-
-#include "CarlaMutex.hpp"
-
-#include <locale>
-#include <ctime>
-#include <cctype>
-#include <cstdarg>
-#include <iostream>
-#include <sys/time.h>
-
-#ifdef CARLA_OS_WIN
- #include <mmsystem.h>
- #include <shlobj.h>
-#else
- #include <dlfcn.h>
- #include <fcntl.h>
- #include <pwd.h>
- #include <signal.h>
- #include <sys/stat.h>
- #include <sys/wait.h>
- #ifdef CARLA_OS_MAC
- #else
-  #include <dirent.h>
-  #include <fnmatch.h>
- #endif
-#endif
-
 #include "misc/Result.h"
 
 //==============================================================================
@@ -79,7 +51,6 @@ void* Process::getCurrentModuleInstanceHandle() noexcept
 
     return currentModuleHandle;
 }
-
 #else
 static Result getResultForErrno()
 {
@@ -91,7 +62,7 @@ static void* fdToVoidPointer (int fd) noexcept  { return (void*) (pointer_sized_
 
 static int64 juce_fileSetPosition (void* handle, int64 pos)
 {
-    if (handle != 0 && lseek (getFD (handle), pos, SEEK_SET) == pos)
+    if (handle != nullptr && lseek (getFD (handle), pos, SEEK_SET) == pos)
         return pos;
 
     return -1;

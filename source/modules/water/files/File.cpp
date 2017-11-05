@@ -34,6 +34,18 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#ifndef CARLA_OS_WIN
+# include <dlfcn.h>
+# include <fcntl.h>
+# include <pwd.h>
+# include <sys/stat.h>
+# ifdef CARLA_OS_MAC
+# else
+#  include <dirent.h>
+#  include <fnmatch.h>
+# endif
+#endif
+
 namespace water {
 
 File::File (const String& fullPathName)

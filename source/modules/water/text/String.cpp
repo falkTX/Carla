@@ -31,6 +31,9 @@
 
 #include "CarlaJuceUtils.hpp"
 
+#include <locale>
+#include <iostream>
+
 namespace water {
 
 NewLine newLine;
