@@ -545,17 +545,7 @@ bool CarlaEngine::addPlugin(const BinaryType btype, const PluginType ptype,
             break;
 
         case PLUGIN_DSSI:
-            // TODO remove this
-            if (CarlaString(filename).contains("dssi-vst", true))
-            {
-                const ScopedEngineEnvironmentLocker _seel(this);
-                const ScopedEnvVar _sev("VST_PATH", pData->options.pathVST2);
-                plugin = CarlaPlugin::newDSSI(initializer);
-            }
-            else
-            {
-                plugin = CarlaPlugin::newDSSI(initializer);
-            }
+            plugin = CarlaPlugin::newDSSI(initializer);
             break;
 
         case PLUGIN_LV2:
