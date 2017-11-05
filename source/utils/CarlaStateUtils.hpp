@@ -21,7 +21,7 @@
 #include "CarlaBackend.h"
 #include "LinkedList.hpp"
 
-#include "water/text/juce_String.h"
+#include "water/text/String.h"
 
 CARLA_BACKEND_START_NAMESPACE
 

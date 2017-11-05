@@ -20,7 +20,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNativeExtUI.hpp"
 
-#include "water/maths/juce_MathsFunctions.h"
+#include "water/maths/MathsFunctions.h"
 
 using water::roundToIntAccurate;
 

@@ -31,8 +31,8 @@
 # include <xmmintrin.h>
 #endif
 
-#include "water/files/juce_File.h"
-#include "water/time/juce_Time.h"
+#include "water/files/File.h"
+#include "water/misc/Time.h"
 
 // must be last
 #include "jackbridge/JackBridge.hpp"

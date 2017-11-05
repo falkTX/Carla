@@ -21,13 +21,6 @@
 
 #include "CarlaDefines.h"
 
-// #include "CarlaMathUtils.hpp"
-// #include "CarlaJuceUtils.hpp"
-// #include "CarlaMutex.hpp"
-
-// #include <algorithm>
-// #include <string>
-
 //==============================================================================
 
 #define jassertfalse        carla_safe_assert("jassertfalse triggered", __FILE__, __LINE__);

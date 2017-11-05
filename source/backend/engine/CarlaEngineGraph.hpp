@@ -24,9 +24,8 @@
 #include "CarlaStringList.hpp"
 #include "CarlaThread.hpp"
 
-#include "water/midi/juce_MidiBuffer.h"
-#include "water/processors/juce_AudioProcessorGraph.h"
-#include "water/text/juce_StringArray.h"
+#include "water/processors/AudioProcessorGraph.h"
+#include "water/text/StringArray.h"
 
 using water::AudioProcessorGraph;
 using water::AudioSampleBuffer;

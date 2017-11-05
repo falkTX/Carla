@@ -18,8 +18,8 @@
 #include "CarlaNative.hpp"
 #include "midi-base.hpp"
 
-#include "water/files/juce_FileInputStream.h"
-#include "water/midi/juce_MidiFile.h"
+#include "water/files/FileInputStream.h"
+#include "water/midi/MidiFile.h"
 
 // -----------------------------------------------------------------------
 

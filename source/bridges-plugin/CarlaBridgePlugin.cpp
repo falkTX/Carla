@@ -40,7 +40,7 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include "water/files/juce_File.h"
+#include "water/files/File.h"
 
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;

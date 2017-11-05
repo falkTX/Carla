@@ -27,7 +27,7 @@
 # include "CarlaThread.hpp"
 #endif
 
-#include "water/threads/juce_ChildProcess.h"
+#include "water/threads/ChildProcess.h"
 
 using water::ChildProcess;
 using water::String;

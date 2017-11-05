@@ -37,7 +37,7 @@ extern "C" {
 #include "rtmempool/rtmempool-lv2.h"
 }
 
-#include "water/files/juce_File.h"
+#include "water/files/File.h"
 
 #include <string>
 #include <vector>

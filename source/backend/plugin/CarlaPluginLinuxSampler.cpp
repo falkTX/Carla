@@ -31,8 +31,8 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#include "water/files/juce_File.h"
-#include "water/text/juce_StringArray.h"
+#include "water/files/File.h"
+#include "water/text/StringArray.h"
 
 // -----------------------------------------------------------------------
 

@@ -32,8 +32,8 @@
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
 
-#include "water/files/juce_File.h"
-#include "water/text/juce_StringArray.h"
+#include "water/files/File.h"
+#include "water/text/StringArray.h"
 
 #include <fstream>
 

@@ -26,7 +26,7 @@
 #define CARLA_NATIVE_PLUGIN_VST
 #include "carla-base.cpp"
 
-#include "water/files/juce_File.h"
+#include "water/files/File.h"
 
 #include "CarlaMathUtils.hpp"
 

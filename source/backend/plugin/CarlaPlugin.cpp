@@ -25,10 +25,10 @@
 
 #include <ctime>
 
-#include "water/files/juce_File.h"
-#include "water/streams/juce_MemoryOutputStream.h"
-#include "water/xml/juce_XmlDocument.h"
-#include "water/xml/juce_XmlElement.h"
+#include "water/files/File.h"
+#include "water/streams/MemoryOutputStream.h"
+#include "water/xml/XmlDocument.h"
+#include "water/xml/XmlElement.h"
 
 using water::CharPointer_UTF8;
 using water::File;

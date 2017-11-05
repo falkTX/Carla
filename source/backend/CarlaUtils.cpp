@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,7 +25,7 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
-#include "water/files/juce_File.h"
+#include "water/files/File.h"
 
 #if defined(HAVE_X11) && ! defined(CARLA_UTILS_CACHED_PLUGINS_ONLY)
 # include <X11/Xlib.h>

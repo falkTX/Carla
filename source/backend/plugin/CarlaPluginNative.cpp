@@ -21,7 +21,7 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaNative.h"
 
-#include "water/text/juce_StringArray.h"
+#include "water/text/StringArray.h"
 
 using water::jmax;
 using water::String;

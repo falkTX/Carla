@@ -82,7 +82,7 @@
 #ifdef USE_QT
 # include <QtCore/QStringList>
 #else
-# include "water/text/juce_StringArray.h"
+# include "water/text/StringArray.h"
 #endif
 
 // used for scalepoint sorting

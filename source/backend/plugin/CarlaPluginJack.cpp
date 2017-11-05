@@ -28,9 +28,9 @@
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
-#include "water/text/juce_StringArray.h"
-#include "water/threads/juce_ChildProcess.h"
-#include "water/time/juce_Time.h"
+#include "water/misc/Time.h"
+#include "water/text/StringArray.h"
+#include "water/threads/ChildProcess.h"
 
 #include "jackbridge/JackBridge.hpp"
 
