@@ -1,8 +1,9 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2015 - ROLI Ltd.
+   This file is part of the Water library.
+   Copyright (c) 2015 ROLI Ltd.
+   Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
 
    Permission is granted to use this software under the terms of either:
    a) the GPL v2 (or any later version)
