@@ -56,6 +56,10 @@
 # define CARLA_OS_UNIX
 #endif
 
+#if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined(CARLA_OS_WIN64)
+# define CARLA_64BIT
+#endif
+
 /* Check for C++11 support */
 #if defined(HAVE_CPP11_SUPPORT)
 # if HAVE_CPP11_SUPPORT
@@ -127,7 +131,7 @@
 
 /* Define BINARY_NATIVE */
 #if defined(CARLA_OS_HAIKU) || defined(CARLA_OS_UNIX)
-# if defined(__LP64__) || defined(_LP64) || defined(__arm64__)
+# ifdef CARLA_OS_64BIT
 #  define BINARY_NATIVE BINARY_POSIX64
 # else
 #  define BINARY_NATIVE BINARY_POSIX32

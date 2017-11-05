@@ -28,14 +28,6 @@
 
 #define static_jassert(expression) static_assert(expression, #expression);
 
-#if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined(__MINGW64__)
-  #define JUCE_64BIT 1
-#else
-  #define JUCE_32BIT 1
-#endif
-
-#define JUCE_ALIGN(bytes)   __attribute__ ((aligned (bytes)))
-
 #if defined (__arm__) || defined (__arm64__)
   #define JUCE_ARM 1
 #else
@@ -44,44 +36,22 @@
 
 //==============================================================================
 
-#ifdef __clang__
-  #define JUCE_CLANG 1
-#elif defined (__GNUC__)
-  #define JUCE_GCC 1
-#else
-  #error unknown compiler
-#endif
-
 #if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
- #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
  #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
  #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
- #define JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES 1
-
- #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL)
-  #define JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL 1
- #endif
 
  #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (JUCE_DELETED_FUNCTION)
   #define JUCE_DELETED_FUNCTION = delete
- #endif
-
- #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 406 && ! defined (JUCE_COMPILER_SUPPORTS_LAMBDAS)
-  #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
  #endif
 #endif
 
 //==============================================================================
 // Clang
 
-#if JUCE_CLANG && defined (__has_feature)
+#if __clang__
  #if __has_feature (cxx_nullptr)
   #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
- #endif
-
- #if __has_feature (cxx_noexcept)
-  #define JUCE_COMPILER_SUPPORTS_NOEXCEPT 1
  #endif
 
  #if __has_feature (cxx_rvalue_references)
@@ -92,24 +62,8 @@
   #define JUCE_DELETED_FUNCTION = delete
  #endif
 
- #if __has_feature (cxx_lambdas) && (defined (_LIBCPP_VERSION) || ! (JUCE_MAC || JUCE_IOS))
-  #define JUCE_COMPILER_SUPPORTS_LAMBDAS 1
- #endif
-
  #if __has_feature (cxx_generalized_initializers) && (defined (_LIBCPP_VERSION) || ! (JUCE_MAC || JUCE_IOS))
   #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
- #endif
-
- #if __has_feature (cxx_variadic_templates)
-  #define JUCE_COMPILER_SUPPORTS_VARIADIC_TEMPLATES 1
- #endif
-
- #if __has_feature (cxx_static_assert)
-  #define JUCE_COMPILER_SUPPORTS_STATIC_ASSERT 1
- #endif
-
- #if __has_feature (cxx_override_control) && (! defined (JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL))
-  #define JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL 1
  #endif
 
  #ifndef JUCE_COMPILER_SUPPORTS_ARC
@@ -134,25 +88,6 @@
      older ones it's just an empty definition.
  */
  #define JUCE_DELETED_FUNCTION
-#endif
-
-#if ! JUCE_COMPILER_SUPPORTS_NOEXCEPT
- #ifdef noexcept
-  #undef noexcept
- #endif
- #define noexcept  throw()
-#endif
-
-#if ! JUCE_COMPILER_SUPPORTS_NULLPTR
- #ifdef nullptr
-  #undef nullptr
- #endif
- #define nullptr (0)
-#endif
-
-#if ! JUCE_COMPILER_SUPPORTS_OVERRIDE_AND_FINAL
- #undef  override
- #define override
 #endif
 
 #define JUCE_DECLARE_NON_COPYABLE(className) CARLA_DECLARE_NON_COPY_CLASS(className)
@@ -206,7 +141,7 @@ typedef long long                   int64;
 /** A platform-independent 64-bit unsigned integer type. */
 typedef unsigned long long          uint64;
 
-#if JUCE_64BIT
+#ifdef CARLA_64BIT
   /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
   typedef int64                     pointer_sized_int;
   /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */

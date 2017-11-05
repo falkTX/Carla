@@ -144,7 +144,7 @@ public:
         This is exposed publicly in case you need to manipulate it directly
         for performance reasons.
     */
-   #if JUCE_64BIT
+   #ifdef CARLA_64BIT
     __attribute__ ((aligned (8)))
    #else
     __attribute__ ((aligned (4)))
