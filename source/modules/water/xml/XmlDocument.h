@@ -176,7 +176,7 @@ private:
     String expandExternalEntity (const String&);
     String getParameterEntity (const String&);
 
-    JUCE_DECLARE_NON_COPYABLE (XmlDocument)
+    CARLA_DECLARE_NON_COPY_CLASS (XmlDocument)
 };
 
 }

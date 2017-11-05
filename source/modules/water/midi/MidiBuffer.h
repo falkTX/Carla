@@ -222,7 +222,7 @@ public:
         const MidiBuffer& buffer;
         const uint8* data;
 
-        JUCE_DECLARE_NON_COPYABLE (Iterator)
+        CARLA_DECLARE_NON_COPY_CLASS (Iterator)
     };
 
     /** The raw data holding this buffer.

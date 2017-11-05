@@ -115,7 +115,7 @@ private:
     class ActiveProcess;
     ScopedPointer<ActiveProcess> activeProcess;
 
-    JUCE_DECLARE_NON_COPYABLE (ChildProcess)
+    CARLA_DECLARE_NON_COPY_CLASS (ChildProcess)
 };
 
 }

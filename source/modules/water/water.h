@@ -35,39 +35,23 @@
 #endif
 
 //==============================================================================
+// Compiler support
 
 #if (__cplusplus >= 201103L || defined (__GXX_EXPERIMENTAL_CXX0X__)) && (__GNUC__ * 100 + __GNUC_MINOR__) >= 405
- #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
  #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
- #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
 
  #if (__GNUC__ * 100 + __GNUC_MINOR__) >= 407 && ! defined (JUCE_DELETED_FUNCTION)
   #define JUCE_DELETED_FUNCTION = delete
  #endif
 #endif
 
-//==============================================================================
-// Clang
-
 #if __clang__
- #if __has_feature (cxx_nullptr)
-  #define JUCE_COMPILER_SUPPORTS_NULLPTR 1
- #endif
-
  #if __has_feature (cxx_rvalue_references)
   #define JUCE_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
  #endif
 
  #if __has_feature (cxx_deleted_functions)
   #define JUCE_DELETED_FUNCTION = delete
- #endif
-
- #if __has_feature (cxx_generalized_initializers) && (defined (_LIBCPP_VERSION) || ! (JUCE_MAC || JUCE_IOS))
-  #define JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS 1
- #endif
-
- #ifndef JUCE_COMPILER_SUPPORTS_ARC
-  #define JUCE_COMPILER_SUPPORTS_ARC 1
  #endif
 
  #ifndef JUCE_EXCEPTIONS_DISABLED
@@ -90,7 +74,6 @@
  #define JUCE_DELETED_FUNCTION
 #endif
 
-#define JUCE_DECLARE_NON_COPYABLE(className) CARLA_DECLARE_NON_COPY_CLASS(className)
 #define JUCE_PREVENT_HEAP_ALLOCATION         CARLA_PREVENT_HEAP_ALLOCATION
 
 #define NEEDS_TRANS(x) (x)

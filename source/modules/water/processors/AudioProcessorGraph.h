@@ -102,7 +102,7 @@ public:
         void prepare (double newSampleRate, int newBlockSize, AudioProcessorGraph*);
         void unprepare();
 
-        JUCE_DECLARE_NON_COPYABLE (Node)
+        CARLA_DECLARE_NON_COPY_CLASS (Node)
     };
 
     //==============================================================================
@@ -334,7 +334,7 @@ public:
         //==============================================================================
         void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
 
-        JUCE_DECLARE_NON_COPYABLE (AudioGraphIOProcessor)
+        CARLA_DECLARE_NON_COPY_CLASS (AudioGraphIOProcessor)
     };
 
     //==============================================================================
@@ -377,7 +377,7 @@ private:
     void buildRenderingSequence();
     bool isAnInputTo (uint32 possibleInputId, uint32 possibleDestinationId, int recursionCheck) const;
 
-    JUCE_DECLARE_NON_COPYABLE (AudioProcessorGraph)
+    CARLA_DECLARE_NON_COPY_CLASS (AudioProcessorGraph)
 };
 
 }

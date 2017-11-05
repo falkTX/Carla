@@ -60,7 +60,7 @@ private:
     const File file;
     bool useFileTimeInHashGeneration;
 
-    JUCE_DECLARE_NON_COPYABLE (FileInputSource)
+    CARLA_DECLARE_NON_COPY_CLASS (FileInputSource)
 };
 
 }

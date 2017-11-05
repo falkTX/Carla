@@ -90,7 +90,7 @@ private:
     void openHandle();
     size_t readInternal (void*, size_t);
 
-    JUCE_DECLARE_NON_COPYABLE (FileInputStream)
+    CARLA_DECLARE_NON_COPY_CLASS (FileInputStream)
 };
 
 }

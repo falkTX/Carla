@@ -135,7 +135,7 @@ public:
 private:
     ByteOrder() JUCE_DELETED_FUNCTION;
 
-    JUCE_DECLARE_NON_COPYABLE (ByteOrder)
+    CARLA_DECLARE_NON_COPY_CLASS (ByteOrder)
 };
 
 

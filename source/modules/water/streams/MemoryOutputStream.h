@@ -130,7 +130,7 @@ private:
     void trimExternalBlockSize();
     char* prepareToWrite (size_t);
 
-    JUCE_DECLARE_NON_COPYABLE (MemoryOutputStream)
+    CARLA_DECLARE_NON_COPY_CLASS (MemoryOutputStream)
 };
 
 /** Copies all the data that has been written to a MemoryOutputStream into another stream. */

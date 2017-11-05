@@ -82,7 +82,7 @@ private:
     //==============================================================================
     const LockType& lock_;
 
-    JUCE_DECLARE_NON_COPYABLE (GenericScopedLock)
+    CARLA_DECLARE_NON_COPY_CLASS (GenericScopedLock)
 };
 
 
@@ -155,7 +155,7 @@ private:
     //==============================================================================
     const LockType& lock_;
 
-    JUCE_DECLARE_NON_COPYABLE (GenericScopedUnlock)
+    CARLA_DECLARE_NON_COPY_CLASS (GenericScopedUnlock)
 };
 
 
@@ -230,7 +230,7 @@ private:
     const LockType& lock_;
     const bool lockWasSuccessful;
 
-    JUCE_DECLARE_NON_COPYABLE (GenericScopedTryLock)
+    CARLA_DECLARE_NON_COPY_CLASS (GenericScopedTryLock)
 };
 
 }

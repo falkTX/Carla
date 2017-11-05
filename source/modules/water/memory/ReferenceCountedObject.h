@@ -125,7 +125,7 @@ private:
     //==============================================================================
     Atomic <int> refCount;
 
-    JUCE_DECLARE_NON_COPYABLE (ReferenceCountedObject)
+    CARLA_DECLARE_NON_COPY_CLASS (ReferenceCountedObject)
 };
 
 
@@ -195,7 +195,7 @@ private:
     //==============================================================================
     int refCount;
 
-    JUCE_DECLARE_NON_COPYABLE (SingleThreadedReferenceCountedObject)
+    CARLA_DECLARE_NON_COPY_CLASS (SingleThreadedReferenceCountedObject)
 };
 
 
@@ -243,14 +243,6 @@ public:
     {
         incIfNotNull (refCountedObject);
     }
-
-   #if JUCE_COMPILER_SUPPORTS_NULLPTR
-    /** Creates a pointer to a null object. */
-    ReferenceCountedObjectPtr (decltype (nullptr)) noexcept
-        : referencedObject (nullptr)
-    {
-    }
-   #endif
 
     /** Copies another pointer.
         This will increment the object's reference-count.

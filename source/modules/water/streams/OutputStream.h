@@ -236,7 +236,7 @@ private:
     //==============================================================================
     String newLineString;
 
-    JUCE_DECLARE_NON_COPYABLE (OutputStream)
+    CARLA_DECLARE_NON_COPY_CLASS (OutputStream)
 };
 
 //==============================================================================

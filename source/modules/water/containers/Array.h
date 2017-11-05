@@ -111,14 +111,6 @@ public:
             new (data.elements + i) ElementType (values[i]);
     }
 
-   #if JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS
-    template <typename TypeToCreateFrom>
-    Array (const std::initializer_list<TypeToCreateFrom>& items)  : numUsed (0)
-    {
-        addArray (items);
-    }
-   #endif
-
     /** Destructor. */
     ~Array()
     {
@@ -586,20 +578,6 @@ public:
             }
         }
     }
-
-   #if JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS
-    template <typename TypeToCreateFrom>
-    void addArray (const std::initializer_list<TypeToCreateFrom>& items)
-    {
-        data.ensureAllocatedSize (numUsed + (int) items.size());
-
-        for (auto& item : items)
-        {
-            new (data.elements + numUsed) ElementType (item);
-            ++numUsed;
-        }
-    }
-   #endif
 
     /** Adds elements from a null-terminated array of pointers to the end of this array.
 

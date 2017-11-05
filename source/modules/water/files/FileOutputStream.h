@@ -116,7 +116,7 @@ private:
     int64 setPositionInternal (int64);
     ssize_t writeInternal (const void*, size_t);
 
-    JUCE_DECLARE_NON_COPYABLE (FileOutputStream)
+    CARLA_DECLARE_NON_COPY_CLASS (FileOutputStream)
 };
 
 }

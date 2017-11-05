@@ -357,14 +357,14 @@ public:
     private:
         LinkedListPointer* endOfList;
 
-        JUCE_DECLARE_NON_COPYABLE (Appender)
+        CARLA_DECLARE_NON_COPY_CLASS (Appender)
     };
 
 private:
     //==============================================================================
     ObjectType* item;
 
-    JUCE_DECLARE_NON_COPYABLE (LinkedListPointer)
+    CARLA_DECLARE_NON_COPY_CLASS (LinkedListPointer)
 };
 
 }

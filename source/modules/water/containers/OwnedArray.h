@@ -834,7 +834,7 @@ private:
             delete data.elements [--numUsed];
     }
 
-    JUCE_DECLARE_NON_COPYABLE (OwnedArray)
+    CARLA_DECLARE_NON_COPY_CLASS (OwnedArray)
 };
 
 }

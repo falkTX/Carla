@@ -140,7 +140,7 @@ private:
     HANDLE readPipe, writePipe;
     PROCESS_INFORMATION processInfo;
 
-    JUCE_DECLARE_NON_COPYABLE (ActiveProcess)
+    CARLA_DECLARE_NON_COPY_CLASS (ActiveProcess)
 };
 #else
 class ChildProcess::ActiveProcess
@@ -281,7 +281,7 @@ private:
     int pipeHandle;
     FILE* readHandle;
 
-    JUCE_DECLARE_NON_COPYABLE (ActiveProcess)
+    CARLA_DECLARE_NON_COPY_CLASS (ActiveProcess)
 };
 #endif
 

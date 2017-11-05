@@ -101,7 +101,7 @@ private:
     //==============================================================================
     mutable Atomic<int> lock;
 
-    JUCE_DECLARE_NON_COPYABLE (SpinLock)
+    CARLA_DECLARE_NON_COPY_CLASS (SpinLock)
 };
 
 }

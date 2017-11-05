@@ -137,7 +137,7 @@ private:
         friend class DirectoryIterator;
         ScopedPointer<Pimpl> pimpl;
 
-        JUCE_DECLARE_NON_COPYABLE (NativeIterator)
+        CARLA_DECLARE_NON_COPY_CLASS (NativeIterator)
     };
 
     StringArray wildCards;
@@ -154,7 +154,7 @@ private:
     static StringArray parseWildcards (const String& pattern);
     static bool fileMatches (const StringArray& wildCards, const String& filename);
 
-    JUCE_DECLARE_NON_COPYABLE (DirectoryIterator)
+    CARLA_DECLARE_NON_COPY_CLASS (DirectoryIterator)
 };
 
 }

@@ -1190,7 +1190,7 @@ private:
     const String directoryWithWildCard;
     HANDLE handle;
 
-    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
 };
 #else
 //=====================================================================================================================
@@ -1399,7 +1399,7 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    JUCE_AUTORELEASEPOOL
+    @autoreleasepool
     {
         NSFileManager* fm = [NSFileManager defaultManager];
 
@@ -1418,7 +1418,7 @@ bool File::copyInternal (const File& dest) const
 
 File File::getSpecialLocation (const SpecialLocationType type)
 {
-    JUCE_AUTORELEASEPOOL
+    @autoreleasepool
     {
         String resultPath;
 
@@ -1491,7 +1491,7 @@ public:
           wildCard (wildCard_),
           enumerator (nil)
     {
-        JUCE_AUTORELEASEPOOL
+        @autoreleasepool
         {
             enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: juceStringToNS (directory.getFullPathName())] retain];
         }
@@ -1506,7 +1506,7 @@ public:
                bool* const isDir, bool* const isHidden, int64* const fileSize,
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
-        JUCE_AUTORELEASEPOOL
+        @autoreleasepool
         {
             const char* wildcardUTF8 = nullptr;
 
@@ -1540,7 +1540,7 @@ private:
     String parentDir, wildCard;
     NSDirectoryEnumerator* enumerator;
 
-    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
 };
 #else
 static String getLinkedFile (const String& file)
@@ -1689,7 +1689,7 @@ private:
     String parentDir, wildCard;
     DIR* dir;
 
-    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+    CARLA_DECLARE_NON_COPY_CLASS (Pimpl)
 };
 #endif
 #endif

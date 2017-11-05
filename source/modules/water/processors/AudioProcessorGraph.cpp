@@ -68,7 +68,7 @@ struct ClearChannelOp  : public AudioGraphRenderingOp<ClearChannelOp>
 
     const int channelNum;
 
-    JUCE_DECLARE_NON_COPYABLE (ClearChannelOp)
+    CARLA_DECLARE_NON_COPY_CLASS (ClearChannelOp)
 };
 
 //==============================================================================
@@ -85,7 +85,7 @@ struct CopyChannelOp  : public AudioGraphRenderingOp<CopyChannelOp>
 
     const int srcChannelNum, dstChannelNum;
 
-    JUCE_DECLARE_NON_COPYABLE (CopyChannelOp)
+    CARLA_DECLARE_NON_COPY_CLASS (CopyChannelOp)
 };
 
 //==============================================================================
@@ -102,7 +102,7 @@ struct AddChannelOp  : public AudioGraphRenderingOp<AddChannelOp>
 
     const int srcChannelNum, dstChannelNum;
 
-    JUCE_DECLARE_NON_COPYABLE (AddChannelOp)
+    CARLA_DECLARE_NON_COPY_CLASS (AddChannelOp)
 };
 
 //==============================================================================
@@ -117,7 +117,7 @@ struct ClearMidiBufferOp  : public AudioGraphRenderingOp<ClearMidiBufferOp>
 
     const int bufferNum;
 
-    JUCE_DECLARE_NON_COPYABLE (ClearMidiBufferOp)
+    CARLA_DECLARE_NON_COPY_CLASS (ClearMidiBufferOp)
 };
 
 //==============================================================================
@@ -134,7 +134,7 @@ struct CopyMidiBufferOp  : public AudioGraphRenderingOp<CopyMidiBufferOp>
 
     const int srcBufferNum, dstBufferNum;
 
-    JUCE_DECLARE_NON_COPYABLE (CopyMidiBufferOp)
+    CARLA_DECLARE_NON_COPY_CLASS (CopyMidiBufferOp)
 };
 
 //==============================================================================
@@ -152,7 +152,7 @@ struct AddMidiBufferOp  : public AudioGraphRenderingOp<AddMidiBufferOp>
 
     const int srcBufferNum, dstBufferNum;
 
-    JUCE_DECLARE_NON_COPYABLE (AddMidiBufferOp)
+    CARLA_DECLARE_NON_COPY_CLASS (AddMidiBufferOp)
 };
 
 //==============================================================================
@@ -186,7 +186,7 @@ private:
     const int channel, bufferSize;
     int readIndex, writeIndex;
 
-    JUCE_DECLARE_NON_COPYABLE (DelayChannelOp)
+    CARLA_DECLARE_NON_COPY_CLASS (DelayChannelOp)
 };
 
 //==============================================================================
@@ -244,7 +244,7 @@ private:
     const int totalChans;
     const int midiBufferToUse;
 
-    JUCE_DECLARE_NON_COPYABLE (ProcessBufferOp)
+    CARLA_DECLARE_NON_COPY_CLASS (ProcessBufferOp)
 };
 
 //==============================================================================
@@ -742,7 +742,7 @@ private:
         }
     }
 
-    JUCE_DECLARE_NON_COPYABLE (RenderingOpSequenceCalculator)
+    CARLA_DECLARE_NON_COPY_CLASS (RenderingOpSequenceCalculator)
 };
 
 //==============================================================================
@@ -784,7 +784,7 @@ private:
         const uint32 destNodeId;
         SortedSet<uint32> srcNodes;
 
-        JUCE_DECLARE_NON_COPYABLE (Entry)
+        CARLA_DECLARE_NON_COPY_CLASS (Entry)
     };
 
     OwnedArray<Entry> entries;
@@ -853,7 +853,7 @@ private:
         return result;
     }
 
-    JUCE_DECLARE_NON_COPYABLE (ConnectionLookupTable)
+    CARLA_DECLARE_NON_COPY_CLASS (ConnectionLookupTable)
 };
 
 //==============================================================================

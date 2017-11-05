@@ -89,7 +89,7 @@ private:
 
     void garbageCollectIfNeeded();
 
-    JUCE_DECLARE_NON_COPYABLE (StringPool)
+    CARLA_DECLARE_NON_COPY_CLASS (StringPool)
 };
 
 }

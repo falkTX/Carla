@@ -384,7 +384,7 @@ private:
 
     void processBypassed (AudioSampleBuffer&, MidiBuffer&);
 
-    JUCE_DECLARE_NON_COPYABLE (AudioProcessor)
+    CARLA_DECLARE_NON_COPY_CLASS (AudioProcessor)
 };
 
 }

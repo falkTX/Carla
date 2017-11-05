@@ -305,7 +305,7 @@ private:
     }
 
    #if ! (defined (JUCE_DLL) || defined (JUCE_DLL_BUILD))
-    JUCE_DECLARE_NON_COPYABLE (HeapBlock)
+    CARLA_DECLARE_NON_COPY_CLASS (HeapBlock)
     JUCE_PREVENT_HEAP_ALLOCATION // Creating a 'new HeapBlock' would be missing the point!
    #endif
 };

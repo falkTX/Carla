@@ -260,7 +260,7 @@ protected:
     InputStream() noexcept {}
 
 private:
-    JUCE_DECLARE_NON_COPYABLE (InputStream)
+    CARLA_DECLARE_NON_COPY_CLASS (InputStream)
 };
 
 }

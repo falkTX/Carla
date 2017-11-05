@@ -131,7 +131,7 @@ public:
     int numAllocated;
 
 private:
-    JUCE_DECLARE_NON_COPYABLE (ArrayAllocationBase)
+    CARLA_DECLARE_NON_COPY_CLASS (ArrayAllocationBase)
 };
 
 }

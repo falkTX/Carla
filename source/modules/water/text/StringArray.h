@@ -74,10 +74,6 @@ public:
     */
     explicit StringArray (const char* const* strings);
 
-   #if JUCE_COMPILER_SUPPORTS_INITIALIZER_LISTS
-    StringArray (const std::initializer_list<const char*>& strings);
-   #endif
-
     /** Destructor. */
     ~StringArray();
 

@@ -164,7 +164,7 @@ private:
     //==============================================================================
     const File temporaryFile, targetFile;
 
-    JUCE_DECLARE_NON_COPYABLE (TemporaryFile)
+    CARLA_DECLARE_NON_COPY_CLASS (TemporaryFile)
 };
 
 }
