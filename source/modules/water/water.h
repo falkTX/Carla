@@ -74,8 +74,6 @@
  #define JUCE_DELETED_FUNCTION
 #endif
 
-#define JUCE_PREVENT_HEAP_ALLOCATION         CARLA_PREVENT_HEAP_ALLOCATION
-
 #define NEEDS_TRANS(x) (x)
 
 //==============================================================================

@@ -31,7 +31,7 @@
 
 namespace water {
 
-#if ! (defined (DOXYGEN) || JUCE_EXCEPTIONS_DISABLED)
+#if ! JUCE_EXCEPTIONS_DISABLED
 namespace HeapBlockHelper
 {
     template <bool shouldThrow>
@@ -219,34 +219,37 @@ public:
         The data that is allocated will be freed when this object is deleted, or when you
         call free() or any of the allocation methods.
     */
-    void malloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool malloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
     {
         std::free (data);
         data = static_cast<ElementType*> (std::malloc (newNumElements * elementSize));
-        throwOnAllocationFailure();
+
+        return data != nullptr;
     }
 
     /** Allocates a specified amount of memory and clears it.
         This does the same job as the malloc() method, but clears the memory that it allocates.
     */
-    void calloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool calloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
     {
         std::free (data);
         data = static_cast<ElementType*> (std::calloc (newNumElements, elementSize));
-        throwOnAllocationFailure();
+
+        return data != nullptr;
     }
 
     /** Allocates a specified amount of memory and optionally clears it.
         This does the same job as either malloc() or calloc(), depending on the
         initialiseToZero parameter.
     */
-    void allocate (const size_t newNumElements, bool initialiseToZero)
+    bool allocate (const size_t newNumElements, bool initialiseToZero)
     {
         std::free (data);
         data = static_cast<ElementType*> (initialiseToZero
                                              ? std::calloc (newNumElements, sizeof (ElementType))
                                              : std::malloc (newNumElements * sizeof (ElementType)));
-        throwOnAllocationFailure();
+
+        return data != nullptr;
     }
 
     /** Re-allocates a specified amount of memory.
@@ -254,11 +257,11 @@ public:
         The semantics of this method are the same as malloc() and calloc(), but it
         uses realloc() to keep as much of the existing data as possible.
     */
-    void realloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool realloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
     {
         data = static_cast<ElementType*> (data == nullptr ? std::malloc (newNumElements * elementSize)
                                                           : std::realloc (data, newNumElements * elementSize));
-        throwOnAllocationFailure();
+        return data != nullptr;
     }
 
     /** Frees any currently-allocated data.
@@ -303,11 +306,6 @@ private:
         HeapBlockHelper::ThrowOnFail<throwOnFailure>::checkPointer (data);
        #endif
     }
-
-   #if ! (defined (JUCE_DLL) || defined (JUCE_DLL_BUILD))
-    CARLA_DECLARE_NON_COPY_CLASS (HeapBlock)
-    JUCE_PREVENT_HEAP_ALLOCATION // Creating a 'new HeapBlock' would be missing the point!
-   #endif
 };
 
 }

@@ -814,9 +814,7 @@ public:
         here because of the popular unrest that was stirred-up when I tried to remove it...
 
         If you're really determined to use it, at least make sure that you never, ever,
-        pass any String objects to it as parameters. And bear in mind that internally, depending
-        on the platform, it may be using wchar_t or char character types, so that even string
-        literals can't be safely used as parameters if you're writing portable code.
+        pass any String objects to it as parameters.
     */
     static String formatted (const String formatString, ... );
 

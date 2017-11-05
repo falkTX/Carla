@@ -30,9 +30,6 @@
 
 #include "../memory/Memory.h"
 
-/** This macro will be set to 1 if the compiler's native wchar_t is an 8-bit type. */
-#define JUCE_NATIVE_WCHAR_IS_UTF8 1
-
 namespace water {
 
 /** A platform-independent 32-bit unicode character type. */
