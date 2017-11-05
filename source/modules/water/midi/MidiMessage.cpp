@@ -648,7 +648,8 @@ bool MidiMessage::isSysEx() const noexcept
 
 MidiMessage MidiMessage::createSysExMessage (const void* sysexData, const int dataSize)
 {
-    HeapBlock<uint8> m ((size_t) dataSize + 2);
+    HeapBlock<uint8> m;
+    CARLA_SAFE_ASSERT_RETURN(m.malloc((size_t) dataSize + 2U), MidiMessage());
 
     m[0] = 0xf0;
     memcpy (m + 1, sysexData, (size_t) dataSize);

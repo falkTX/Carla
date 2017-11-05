@@ -36,10 +36,12 @@ FileOutputStream::FileOutputStream (const File& f, const size_t bufferSizeToUse)
       status (Result::ok()),
       currentPosition (0),
       bufferSize (bufferSizeToUse),
-      bytesInBuffer (0),
-      buffer (jmax (bufferSizeToUse, (size_t) 16))
+      bytesInBuffer (0)
 {
-    openHandle();
+    if (buffer.malloc(jmax (bufferSizeToUse, (size_t) 16)))
+        openHandle();
+    else
+        status = Result::fail ("Allocation failure");
 }
 
 FileOutputStream::~FileOutputStream()

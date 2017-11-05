@@ -226,17 +226,4 @@ String InputStream::readEntireStreamAsString()
     return mo.toString();
 }
 
-//==============================================================================
-void InputStream::skipNextBytes (int64 numBytesToSkip)
-{
-    if (numBytesToSkip > 0)
-    {
-        const int skipBufferSize = (int) jmin (numBytesToSkip, (int64) 16384);
-        HeapBlock<char> temp ((size_t) skipBufferSize);
-
-        while (numBytesToSkip > 0 && ! isExhausted())
-            numBytesToSkip -= read (temp, (int) jmin (numBytesToSkip, (int64) skipBufferSize));
-    }
-}
-
 }

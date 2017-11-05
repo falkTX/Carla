@@ -53,13 +53,6 @@
  #if __has_feature (cxx_deleted_functions)
   #define JUCE_DELETED_FUNCTION = delete
  #endif
-
- #ifndef JUCE_EXCEPTIONS_DISABLED
-  #if ! __has_feature (cxx_exceptions)
-   #define JUCE_EXCEPTIONS_DISABLED 1
-  #endif
- #endif
-
 #endif
 
 //==============================================================================

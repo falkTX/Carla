@@ -1706,7 +1706,8 @@ bool String::containsNonWhitespaceChars() const noexcept
 //=====================================================================================================================
 static String getStringFromWindows1252Codepage (const char* data, size_t num)
 {
-    HeapBlock<char> unicode (num + 1);
+    HeapBlock<char> unicode;
+    CARLA_SAFE_ASSERT_RETURN(unicode.malloc(num + 1), String());
 
     for (size_t i = 0; i < num; ++i)
         unicode[i] = CharacterFunctions::getUnicodeCharFromWindows1252Codepage ((uint8) data[i]);
@@ -1745,12 +1746,17 @@ String String::formatted (const String pf, ... )
 {
     size_t bufferSize = 256;
 
+    HeapBlock<char> temp;
+    CARLA_SAFE_ASSERT_RETURN(temp.malloc(bufferSize), String());
+
     for (;;)
     {
         va_list args;
         va_start (args, pf);
 
-        HeapBlock<char> temp (bufferSize);
+        // FIXME - needed?
+        temp.clear (bufferSize);
+
         const int num = vsnprintf (temp.getData(), bufferSize - 1, pf.toRawUTF8(), args);
 
         va_end (args);

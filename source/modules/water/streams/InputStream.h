@@ -246,15 +246,6 @@ public:
     */
     virtual bool setPosition (int64 newPosition) = 0;
 
-    /** Reads and discards a number of bytes from the stream.
-
-        Some input streams might implement this efficiently, but the base
-        class will just keep reading data until the requisite number of bytes
-        have been done.
-    */
-    virtual void skipNextBytes (int64 numBytesToSkip);
-
-
 protected:
     //==============================================================================
     InputStream() noexcept {}

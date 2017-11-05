@@ -737,9 +737,7 @@ bool File::appendText (const String& text,
                        const bool writeUnicodeHeaderBytes) const
 {
     FileOutputStream out (*this);
-
-    if (out.failedToOpen())
-        return false;
+    CARLA_SAFE_ASSERT_RETURN(out.failedToOpen(), false);
 
     out.writeText (text, asUnicode, writeUnicodeHeaderBytes);
     return true;
@@ -766,7 +764,10 @@ bool File::hasIdenticalContentTo (const File& other) const
         if (in1.openedOk() && in2.openedOk())
         {
             const int bufferSize = 4096;
-            HeapBlock<char> buffer1 (bufferSize), buffer2 (bufferSize);
+            HeapBlock<char> buffer1, buffer2;
+
+            CARLA_SAFE_ASSERT_RETURN(buffer1.malloc (bufferSize), false);
+            CARLA_SAFE_ASSERT_RETURN(buffer2.malloc (bufferSize), false);
 
             for (;;)
             {
@@ -1545,7 +1546,9 @@ private:
 #else
 static String getLinkedFile (const String& file)
 {
-    HeapBlock<char> buffer (8194);
+    HeapBlock<char> buffer;
+    CARLA_SAFE_ASSERT_RETURN(buffer.malloc(8194), String());
+
     const int numBytes = (int) readlink (file.toRawUTF8(), buffer, 8192);
     return String::fromUTF8 (buffer, jmax (0, numBytes));
 }

@@ -31,17 +31,6 @@
 
 namespace water {
 
-#if ! JUCE_EXCEPTIONS_DISABLED
-namespace HeapBlockHelper
-{
-    template <bool shouldThrow>
-    struct ThrowOnFail          { static void checkPointer (void*) {} };
-
-    template<>
-    struct ThrowOnFail<true>    { static void checkPointer (void* data) { if (data == nullptr) throw std::bad_alloc(); } };
-}
-#endif
-
 //==============================================================================
 /**
     Very simple container class to hold a pointer to some data on the heap.
@@ -100,33 +89,6 @@ public:
     */
     HeapBlock() noexcept  : data (nullptr)
     {
-    }
-
-    /** Creates a HeapBlock containing a number of elements.
-
-        The contents of the block are undefined, as it will have been created by a
-        malloc call.
-
-        If you want an array of zero values, you can use the calloc() method or the
-        other constructor that takes an InitialisationState parameter.
-    */
-    explicit HeapBlock (const size_t numElements)
-        : data (static_cast<ElementType*> (std::malloc (numElements * sizeof (ElementType))))
-    {
-        throwOnAllocationFailure();
-    }
-
-    /** Creates a HeapBlock containing a number of elements.
-
-        The initialiseToZero parameter determines whether the new memory should be cleared,
-        or left uninitialised.
-    */
-    HeapBlock (const size_t numElements, const bool initialiseToZero)
-        : data (static_cast<ElementType*> (initialiseToZero
-                                               ? std::calloc (numElements, sizeof (ElementType))
-                                               : std::malloc (numElements * sizeof (ElementType))))
-    {
-        throwOnAllocationFailure();
     }
 
     /** Destructor.
@@ -297,15 +259,6 @@ public:
 private:
     //==============================================================================
     ElementType* data;
-
-    void throwOnAllocationFailure() const
-    {
-       #if JUCE_EXCEPTIONS_DISABLED
-        jassert (data != nullptr); // without exceptions, you'll need to find a better way to handle this failure case.
-       #else
-        HeapBlockHelper::ThrowOnFail<throwOnFailure>::checkPointer (data);
-       #endif
-    }
 };
 
 }
