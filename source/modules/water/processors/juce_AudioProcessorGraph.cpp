@@ -22,6 +22,9 @@
   ==============================================================================
 */
 
+#include "juce_AudioProcessorGraph.h"
+#include "../containers/juce_SortedSet.h"
+
 namespace water {
 
 const int AudioProcessorGraph::midiChannelIndex = 0x1000;
@@ -38,8 +41,6 @@ struct AudioGraphRenderingOpBase
     virtual void perform (AudioSampleBuffer& sharedBufferChans,
                           const OwnedArray<MidiBuffer>& sharedMidiBuffers,
                           const int numSamples) = 0;
-
-    JUCE_LEAK_DETECTOR (AudioGraphRenderingOpBase)
 };
 
 // use CRTP
@@ -740,7 +741,7 @@ private:
         }
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RenderingOpSequenceCalculator)
+    JUCE_DECLARE_NON_COPYABLE (RenderingOpSequenceCalculator)
 };
 
 //==============================================================================
@@ -1017,7 +1018,7 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
             lastNodeId = nodeId;
     }
 
-    newProcessor->setPlayHead (getPlayHead());
+//     newProcessor->setPlayHead (getPlayHead());
 
     Node* const n = new Node (nodeId, newProcessor);
     nodes.add (n);
@@ -1351,15 +1352,15 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
         nodes.getUnchecked(i)->getProcessor()->setNonRealtime (isProcessingNonRealtime);
 }
 
-void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
-{
-    const CarlaRecursiveMutexLocker cml (getCallbackLock());
-
-    AudioProcessor::setPlayHead (audioPlayHead);
-
-    for (int i = 0; i < nodes.size(); ++i)
-        nodes.getUnchecked(i)->getProcessor()->setPlayHead (audioPlayHead);
-}
+// void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
+// {
+//     const CarlaRecursiveMutexLocker cml (getCallbackLock());
+//
+//     AudioProcessor::setPlayHead (audioPlayHead);
+//
+//     for (int i = 0; i < nodes.size(); ++i)
+//         nodes.getUnchecked(i)->getProcessor()->setPlayHead (audioPlayHead);
+// }
 
 void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {

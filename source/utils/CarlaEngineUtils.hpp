@@ -22,7 +22,7 @@
 #include "CarlaUtils.hpp"
 #include "CarlaMIDI.h"
 
-#include "water/water.h"
+#include "water/midi/juce_MidiBuffer.h"
 
 CARLA_BACKEND_START_NAMESPACE
 

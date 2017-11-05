@@ -31,6 +31,8 @@
 #ifndef JUCE_RANDOM_H_INCLUDED
 #define JUCE_RANDOM_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -122,8 +124,6 @@ public:
 private:
     //==============================================================================
     int64 seed;
-
-    JUCE_LEAK_DETECTOR (Random)
 };
 
 }

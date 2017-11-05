@@ -31,6 +31,8 @@
 #ifndef JUCE_TIME_H_INCLUDED
 #define JUCE_TIME_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================

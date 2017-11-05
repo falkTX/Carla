@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_MidiBuffer.h"
+#include "juce_MidiMessage.h"
+
 namespace water {
 
 namespace MidiBufferHelpers

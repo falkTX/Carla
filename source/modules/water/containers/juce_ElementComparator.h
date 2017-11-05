@@ -31,6 +31,8 @@
 #ifndef JUCE_ELEMENTCOMPARATOR_H_INCLUDED
 #define JUCE_ELEMENTCOMPARATOR_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 /** This is an internal helper class which converts a juce ElementComparator style

@@ -25,6 +25,12 @@
 #ifndef JUCE_AUDIOPROCESSORGRAPH_H_INCLUDED
 #define JUCE_AUDIOPROCESSORGRAPH_H_INCLUDED
 
+#include "juce_AudioProcessor.h"
+#include "../containers/juce_NamedValueSet.h"
+#include "../containers/juce_OwnedArray.h"
+#include "../containers/juce_ReferenceCountedArray.h"
+#include "../midi/juce_MidiBuffer.h"
+
 namespace water {
 
 //==============================================================================
@@ -42,7 +48,6 @@ namespace water {
     AudioProcessorPlayer object.
 */
 class AudioProcessorGraph   : public AudioProcessor
-                                      /*  private AsyncUpdater*/
 {
 public:
     //==============================================================================
@@ -96,7 +101,7 @@ public:
         void prepare (double newSampleRate, int newBlockSize, AudioProcessorGraph*);
         void unprepare();
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Node)
+        JUCE_DECLARE_NON_COPYABLE (Node)
     };
 
     //==============================================================================
@@ -139,10 +144,6 @@ public:
             index of an audio input channel in the destination node.
         */
         int destChannelIndex;
-
-    private:
-        //==============================================================================
-        JUCE_LEAK_DETECTOR (Connection)
     };
 
     //==============================================================================
@@ -332,7 +333,7 @@ public:
         //==============================================================================
         void processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages);
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioGraphIOProcessor)
+        JUCE_DECLARE_NON_COPYABLE (AudioGraphIOProcessor)
     };
 
     //==============================================================================
@@ -343,7 +344,7 @@ public:
 
     void reset() override;
     void setNonRealtime (bool) noexcept override;
-    void setPlayHead (AudioPlayHead*) override;
+//     void setPlayHead (AudioPlayHead*) override;
 
     bool acceptsMidi() const override;
     bool producesMidi() const override;
@@ -375,7 +376,7 @@ private:
     void buildRenderingSequence();
     bool isAnInputTo (uint32 possibleInputId, uint32 possibleDestinationId, int recursionCheck) const;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessorGraph)
+    JUCE_DECLARE_NON_COPYABLE (AudioProcessorGraph)
 };
 
 }

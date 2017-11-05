@@ -28,6 +28,10 @@
 #include "CarlaShmUtils.hpp"
 #include "CarlaThread.hpp"
 
+#include "water/text/juce_StringArray.h"
+#include "water/threads/juce_ChildProcess.h"
+#include "water/time/juce_Time.h"
+
 #include "jackbridge/JackBridge.hpp"
 
 #include <ctime>

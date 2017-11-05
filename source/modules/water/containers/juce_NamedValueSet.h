@@ -31,6 +31,10 @@
 #ifndef JUCE_NAMEDVALUESET_H_INCLUDED
 #define JUCE_NAMEDVALUESET_H_INCLUDED
 
+#include "juce_Array.h"
+#include "juce_Variant.h"
+#include "../text/juce_Identifier.h"
+
 namespace water {
 
 //==============================================================================

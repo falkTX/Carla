@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_Variant.h"
+
 namespace water {
 
 enum VariantStreamMarkers

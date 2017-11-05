@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_Identifier.h"
+#include "juce_StringPool.h"
+
 namespace water {
 
 Identifier::Identifier() noexcept {}

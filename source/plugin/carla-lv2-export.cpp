@@ -18,8 +18,6 @@
 #define CARLA_NATIVE_PLUGIN_LV2
 #include "carla-base.cpp"
 
-#include "water/water.h"
-
 #include "lv2/atom.h"
 #include "lv2/buf-size.h"
 #include "lv2/instance-access.h"
@@ -33,6 +31,9 @@
 #include "lv2/urid.h"
 #include "lv2/lv2_external_ui.h"
 #include "lv2/lv2_programs.h"
+
+#include "water/files/juce_File.h"
+#include "water/text/juce_StringArray.h"
 
 #include <fstream>
 

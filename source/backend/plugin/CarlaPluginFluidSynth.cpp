@@ -22,7 +22,7 @@
 
 #include "CarlaMathUtils.hpp"
 
-#include "water/water.h"
+#include "water/text/juce_StringArray.h"
 
 #include <fluidsynth.h>
 

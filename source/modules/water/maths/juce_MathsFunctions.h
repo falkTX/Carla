@@ -31,44 +31,16 @@
 #ifndef JUCE_MATHSFUNCTIONS_H_INCLUDED
 #define JUCE_MATHSFUNCTIONS_H_INCLUDED
 
+#include "../water.h"
+
+#include <algorithm>
+
 namespace water {
 
 //==============================================================================
 /*
     This file sets up some handy mathematical typdefs and functions.
 */
-
-//==============================================================================
-// Definitions for the int8, int16, int32, int64 and pointer_sized_int types.
-
-/** A platform-independent 8-bit signed integer type. */
-typedef signed char                 int8;
-/** A platform-independent 8-bit unsigned integer type. */
-typedef unsigned char               uint8;
-/** A platform-independent 16-bit signed integer type. */
-typedef signed short                int16;
-/** A platform-independent 16-bit unsigned integer type. */
-typedef unsigned short              uint16;
-/** A platform-independent 32-bit signed integer type. */
-typedef signed int                  int32;
-/** A platform-independent 32-bit unsigned integer type. */
-typedef unsigned int                uint32;
-/** A platform-independent 64-bit integer type. */
-typedef long long                   int64;
-/** A platform-independent 64-bit unsigned integer type. */
-typedef unsigned long long          uint64;
-
-#if JUCE_64BIT
-  /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
-  typedef int64                     pointer_sized_int;
-  /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
-  typedef uint64                    pointer_sized_uint;
-#else
-  /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
-  typedef int                       pointer_sized_int;
-  /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
-  typedef unsigned int              pointer_sized_uint;
-#endif
 
 //==============================================================================
 // Some indispensable min/max functions
@@ -369,10 +341,10 @@ int roundToInt (const FloatType value) noexcept
     union { int asInt[2]; double asDouble; } n;
     n.asDouble = ((double) value) + 6755399441055744.0;
 
-   #if JUCE_BIG_ENDIAN
-    return n.asInt [1];
-   #else
+   #ifdef __LITTLE_ENDIAN__
     return n.asInt [0];
+   #else
+    return n.asInt [1];
    #endif
 }
 
@@ -501,54 +473,6 @@ void writeLittleEndianBitsInBuffer (void* targetBuffer, uint32 startBit, uint32 
     @see writeLittleEndianBitsInBuffer
 */
 uint32 readLittleEndianBitsInBuffer (const void* sourceBuffer, uint32 startBit, uint32 numBits) noexcept;
-
-
-//==============================================================================
-/** This namespace contains a few template classes for helping work out class type variations.
-*/
-namespace TypeHelpers
-{
-    /** The ParameterType struct is used to find the best type to use when passing some kind
-        of object as a parameter.
-
-        Of course, this is only likely to be useful in certain esoteric template situations.
-
-        Because "typename TypeHelpers::ParameterType<SomeClass>::type" is a bit of a mouthful, there's
-        a PARAMETER_TYPE(SomeClass) macro that you can use to get the same effect.
-
-        E.g. "myFunction (PARAMETER_TYPE (int), PARAMETER_TYPE (MyObject))"
-        would evaluate to "myfunction (int, const MyObject&)", keeping any primitive types as
-        pass-by-value, but passing objects as a const reference, to avoid copying.
-    */
-    template <typename Type> struct ParameterType                   { typedef const Type& type; };
-    template <typename Type> struct ParameterType <Type&>           { typedef Type& type; };
-    template <typename Type> struct ParameterType <Type*>           { typedef Type* type; };
-    template <>              struct ParameterType <char>            { typedef char type; };
-    template <>              struct ParameterType <unsigned char>   { typedef unsigned char type; };
-    template <>              struct ParameterType <short>           { typedef short type; };
-    template <>              struct ParameterType <unsigned short>  { typedef unsigned short type; };
-    template <>              struct ParameterType <int>             { typedef int type; };
-    template <>              struct ParameterType <unsigned int>    { typedef unsigned int type; };
-    template <>              struct ParameterType <long>            { typedef long type; };
-    template <>              struct ParameterType <unsigned long>   { typedef unsigned long type; };
-    template <>              struct ParameterType <int64>           { typedef int64 type; };
-    template <>              struct ParameterType <uint64>          { typedef uint64 type; };
-    template <>              struct ParameterType <bool>            { typedef bool type; };
-    template <>              struct ParameterType <float>           { typedef float type; };
-    template <>              struct ParameterType <double>          { typedef double type; };
-
-    /** A helpful macro to simplify the use of the ParameterType template.
-        @see ParameterType
-    */
-    #define PARAMETER_TYPE(a)    typename TypeHelpers::ParameterType<a>::type
-
-
-    /** These templates are designed to take a type, and if it's a double, they return a double
-        type; for anything else, they return a float type.
-    */
-    template <typename Type> struct SmallestFloatType             { typedef float  type; };
-    template <>              struct SmallestFloatType <double>    { typedef double type; };
-}
 
 //==============================================================================
 

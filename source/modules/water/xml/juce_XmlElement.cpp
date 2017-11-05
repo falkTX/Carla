@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_XmlElement.h"
+#include "../text/juce_StringPool.h"
+
 namespace water {
 
 inline bool isValidXmlNameStartCharacter (const juce_wchar character) noexcept

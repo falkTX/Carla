@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_FileInputStream.h"
+
 namespace water {
 
 int64 juce_fileSetPosition (void* handle, int64 pos);

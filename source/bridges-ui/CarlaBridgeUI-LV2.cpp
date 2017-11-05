@@ -21,7 +21,7 @@
 #include "CarlaMIDI.h"
 #include "LinkedList.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
 
 #include <string>
 #include <vector>

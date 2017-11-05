@@ -49,7 +49,7 @@
 # pragma GCC diagnostic pop
 #endif
 
-#include "water/water.h"
+#include "water/maths/juce_MathsFunctions.h"
 
 using water::roundToIntAccurate;
 

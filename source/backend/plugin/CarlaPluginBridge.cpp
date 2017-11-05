@@ -30,7 +30,9 @@
 
 #include <ctime>
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
+#include "water/threads/juce_ChildProcess.h"
+#include "water/time/juce_Time.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 

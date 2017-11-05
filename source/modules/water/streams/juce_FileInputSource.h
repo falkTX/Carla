@@ -31,6 +31,8 @@
 #ifndef JUCE_FILEINPUTSOURCE_H_INCLUDED
 #define JUCE_FILEINPUTSOURCE_H_INCLUDED
 
+#include "juce_InputSource.h"
+
 namespace water {
 
 //==============================================================================
@@ -62,7 +64,7 @@ private:
     const File file;
     bool useFileTimeInHashGeneration;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileInputSource)
+    JUCE_DECLARE_NON_COPYABLE (FileInputSource)
 };
 
 }

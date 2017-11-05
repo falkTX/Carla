@@ -28,6 +28,11 @@
   ==============================================================================
 */
 
+#include "juce_OutputStream.h"
+#include "../files/juce_FileInputStream.h"
+#include "../memory/juce_ByteOrder.h"
+#include "../text/juce_NewLine.h"
+
 namespace water {
 
 #if JUCE_DEBUG

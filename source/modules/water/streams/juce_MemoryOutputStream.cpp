@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_MemoryOutputStream.h"
+#include "juce_InputStream.h"
+
 namespace water {
 
 MemoryOutputStream::MemoryOutputStream (const size_t initialSize)

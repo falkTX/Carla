@@ -31,6 +31,9 @@
 #ifndef JUCE_STRINGARRAY_H_INCLUDED
 #define JUCE_STRINGARRAY_H_INCLUDED
 
+#include "juce_String.h"
+#include "../containers/juce_Array.h"
+
 namespace water {
 
 //==============================================================================
@@ -420,9 +423,6 @@ public:
         to array methods that may not already be provided by the StringArray class.
     */
     Array<String> strings;
-
-private:
-    JUCE_LEAK_DETECTOR (StringArray)
 };
 
 }

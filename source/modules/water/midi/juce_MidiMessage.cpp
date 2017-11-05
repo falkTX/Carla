@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_MidiMessage.h"
+
 namespace water {
 
 namespace MidiHelpers

@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_StringPool.h"
+
 namespace water {
 
 static const int minNumberOfStringsForGarbageCollection = 300;

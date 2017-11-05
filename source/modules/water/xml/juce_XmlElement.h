@@ -31,6 +31,9 @@
 #ifndef JUCE_XMLELEMENT_H_INCLUDED
 #define JUCE_XMLELEMENT_H_INCLUDED
 
+#include "../containers/juce_LinkedListPointer.h"
+#include "../text/juce_Identifier.h"
+
 namespace water {
 
 //==============================================================================
@@ -768,8 +771,6 @@ private:
     // for XML tags. Use a UTF-8 encoded literal instead, or if you're really determined to use
     // UTF-16, cast it to a String and use the other constructor.
     XmlElement (const wchar_t*) JUCE_DELETED_FUNCTION;
-
-    JUCE_LEAK_DETECTOR (XmlElement)
 };
 
 }

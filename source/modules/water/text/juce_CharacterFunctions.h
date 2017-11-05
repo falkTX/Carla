@@ -31,6 +31,10 @@
 #ifndef JUCE_CHARACTERFUNCTIONS_H_INCLUDED
 #define JUCE_CHARACTERFUNCTIONS_H_INCLUDED
 
+#include <algorithm>
+
+#include "../memory/juce_Memory.h"
+
 /** This macro will be set to 1 if the compiler's native wchar_t is an 8-bit type. */
 #define JUCE_NATIVE_WCHAR_IS_UTF8 1
 

@@ -31,6 +31,8 @@
 #ifndef JUCE_SHAREDRESOURCEPOINTER_H_INCLUDED
 #define JUCE_SHAREDRESOURCEPOINTER_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -161,8 +163,6 @@ private:
     // There's no need to assign to a SharedResourcePointer because every
     // instance of the class is exactly the same!
     SharedResourcePointer& operator= (const SharedResourcePointer&) JUCE_DELETED_FUNCTION;
-
-    JUCE_LEAK_DETECTOR (SharedResourcePointer)
 };
 
 }

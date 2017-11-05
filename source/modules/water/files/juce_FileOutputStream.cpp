@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_FileOutputStream.h"
+
 namespace water {
 
 int64 juce_fileSetPosition (void* handle, int64 pos);
@@ -136,5 +138,124 @@ bool FileOutputStream::writeRepeatedByte (uint8 byte, size_t numBytes)
 
     return OutputStream::writeRepeatedByte (byte, numBytes);
 }
+
+#ifdef CARLA_OS_WIN
+void FileOutputStream::openHandle()
+{
+    HANDLE h = CreateFile (file.getFullPathName().toUTF8(), GENERIC_WRITE, FILE_SHARE_READ, 0,
+                           OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+
+    if (h != INVALID_HANDLE_VALUE)
+    {
+        LARGE_INTEGER li;
+        li.QuadPart = 0;
+        li.LowPart = SetFilePointer (h, 0, &li.HighPart, FILE_END);
+
+        if (li.LowPart != INVALID_SET_FILE_POINTER)
+        {
+            fileHandle = (void*) h;
+            currentPosition = li.QuadPart;
+            return;
+        }
+    }
+
+    status = getResultForLastError();
+}
+
+void FileOutputStream::closeHandle()
+{
+    CloseHandle ((HANDLE) fileHandle);
+}
+
+ssize_t FileOutputStream::writeInternal (const void* bufferToWrite, size_t numBytes)
+{
+    if (fileHandle != nullptr)
+    {
+        DWORD actualNum = 0;
+        if (! WriteFile ((HANDLE) fileHandle, bufferToWrite, (DWORD) numBytes, &actualNum, 0))
+            status = getResultForLastError();
+
+        return (ssize_t) actualNum;
+    }
+
+    return 0;
+}
+
+void FileOutputStream::flushInternal()
+{
+    if (fileHandle != nullptr)
+        if (! FlushFileBuffers ((HANDLE) fileHandle))
+            status = getResultForLastError();
+}
+#else
+void FileOutputStream::openHandle()
+{
+    if (file.exists())
+    {
+        const int f = open (file.getFullPathName().toUTF8(), O_RDWR, 00644);
+
+        if (f != -1)
+        {
+            currentPosition = lseek (f, 0, SEEK_END);
+
+            if (currentPosition >= 0)
+            {
+                fileHandle = fdToVoidPointer (f);
+            }
+            else
+            {
+                status = getResultForErrno();
+                close (f);
+            }
+        }
+        else
+        {
+            status = getResultForErrno();
+        }
+    }
+    else
+    {
+        const int f = open (file.getFullPathName().toUTF8(), O_RDWR + O_CREAT, 00644);
+
+        if (f != -1)
+            fileHandle = fdToVoidPointer (f);
+        else
+            status = getResultForErrno();
+    }
+}
+
+void FileOutputStream::closeHandle()
+{
+    if (fileHandle != 0)
+    {
+        close (getFD (fileHandle));
+        fileHandle = 0;
+    }
+}
+
+ssize_t FileOutputStream::writeInternal (const void* const data, const size_t numBytes)
+{
+    ssize_t result = 0;
+
+    if (fileHandle != 0)
+    {
+        result = ::write (getFD (fileHandle), data, numBytes);
+
+        if (result == -1)
+            status = getResultForErrno();
+    }
+
+    return result;
+}
+
+void FileOutputStream::flushInternal()
+{
+    if (fileHandle != 0)
+    {
+        if (fsync (getFD (fileHandle)) == -1)
+            status = getResultForErrno();
+    }
+}
+#endif
 
 }

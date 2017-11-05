@@ -28,6 +28,17 @@
   ==============================================================================
 */
 
+#include "juce_File.h"
+#include "juce_DirectoryIterator.h"
+#include "juce_FileInputStream.h"
+#include "juce_FileOutputStream.h"
+#include "juce_TemporaryFile.h"
+#include "../maths/juce_Random.h"
+#include "../text/juce_StringArray.h"
+#include "../time/juce_Time.h"
+
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 File::File (const String& fullPathName)
@@ -1184,7 +1195,7 @@ private:
     const String directoryWithWildCard;
     HANDLE handle;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
+    JUCE_DECLARE_NON_COPYABLE (Pimpl)
 };
 #else
 //=====================================================================================================================

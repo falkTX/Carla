@@ -15,6 +15,10 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#ifndef BUILD_BRIDGE
+# error This file should not be compiled if not building bridge
+#endif
+
 #include "CarlaEngine.hpp"
 #include "CarlaHost.h"
 
@@ -36,7 +40,7 @@
 
 #include "jackbridge/JackBridge.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
 
 using CarlaBackend::CarlaEngine;
 using CarlaBackend::EngineCallbackOpcode;

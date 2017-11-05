@@ -31,6 +31,8 @@
 #ifndef JUCE_INPUTSOURCE_H_INCLUDED
 #define JUCE_INPUTSOURCE_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -72,10 +74,6 @@ public:
     */
     virtual int64 hashCode() const = 0;
 #endif
-
-private:
-    //==============================================================================
-    JUCE_LEAK_DETECTOR (InputSource)
 };
 
 }

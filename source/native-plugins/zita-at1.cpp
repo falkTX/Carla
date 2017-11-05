@@ -21,7 +21,7 @@
 #include "zita-at1/jclient.cc"
 #include "zita-at1/retuner.cc"
 
-#include "water/water.h"
+#include "water/maths/juce_MathsFunctions.h"
 
 using water::roundToIntAccurate;
 

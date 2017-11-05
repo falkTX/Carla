@@ -28,6 +28,11 @@
   ==============================================================================
 */
 
+#include "juce_String.h"
+#include "juce_NewLine.h"
+
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 NewLine newLine;
@@ -332,40 +337,6 @@ String String::charToString (const juce_wchar character)
 //==============================================================================
 namespace NumberToStringConverters
 {
-    enum
-    {
-        charsNeededForInt = 32,
-        charsNeededForDouble = 48
-    };
-
-    template <typename Type>
-    static char* printDigits (char* t, Type v) noexcept
-    {
-        *--t = 0;
-
-        do
-        {
-            *--t = '0' + (char) (v % 10);
-            v /= 10;
-
-        } while (v > 0);
-
-        return t;
-    }
-
-    // pass in a pointer to the END of a buffer..
-    static char* numberToString (char* t, const int64 n) noexcept
-    {
-        if (n >= 0)
-            return printDigits (t, static_cast<uint64> (n));
-
-        // NB: this needs to be careful not to call -std::numeric_limits<int64>::min(),
-        // which has undefined behaviour
-        t = printDigits (t, static_cast<uint64> (-(n + 1)) + 1);
-        *--t = '-';
-        return t;
-    }
-
     static char* numberToString (char* t, uint64 v) noexcept
     {
         return printDigits (t, v);

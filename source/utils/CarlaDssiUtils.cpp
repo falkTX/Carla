@@ -17,7 +17,7 @@
 
 #include "CarlaDssiUtils.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
 
 // --------------------------------------------------------------------------------------------------------------------
 

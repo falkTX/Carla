@@ -31,6 +31,11 @@
 #ifndef JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
 #define JUCE_MIDIMESSAGESEQUENCE_H_INCLUDED
 
+#include "juce_MidiMessage.h"
+#include "../containers/juce_Array.h"
+#include "../containers/juce_OwnedArray.h"
+#include "../text/juce_String.h"
+
 namespace water {
 
 //==============================================================================
@@ -102,7 +107,6 @@ public:
         //==============================================================================
         friend class MidiMessageSequence;
         MidiEventHolder (const MidiMessage&);
-        JUCE_LEAK_DETECTOR (MidiEventHolder)
     };
 
     //==============================================================================
@@ -285,8 +289,6 @@ private:
     //==============================================================================
     friend class MidiFile;
     OwnedArray<MidiEventHolder> list;
-
-    JUCE_LEAK_DETECTOR (MidiMessageSequence)
 };
 
 }

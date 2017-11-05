@@ -31,6 +31,8 @@
 #ifndef JUCE_CHILDPROCESS_H_INCLUDED
 #define JUCE_CHILDPROCESS_H_INCLUDED
 
+#include "../text/juce_StringArray.h"
+
 namespace water {
 
 //==============================================================================
@@ -116,7 +118,7 @@ private:
     class ActiveProcess;
     ScopedPointer<ActiveProcess> activeProcess;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChildProcess)
+    JUCE_DECLARE_NON_COPYABLE (ChildProcess)
 };
 
 }

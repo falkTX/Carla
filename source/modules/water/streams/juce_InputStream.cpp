@@ -28,6 +28,10 @@
   ==============================================================================
 */
 
+#include "juce_InputSource.h"
+#include "../memory/juce_ByteOrder.h"
+#include "../streams/juce_MemoryOutputStream.h"
+
 namespace water {
 
 int64 InputStream::getNumBytesRemaining()

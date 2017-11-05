@@ -34,7 +34,10 @@
 #include "CarlaHost.h"
 #include "CarlaNative.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
+#include "water/streams/juce_MemoryOutputStream.h"
+#include "water/xml/juce_XmlDocument.h"
+#include "water/xml/juce_XmlElement.h"
 
 using water::File;
 using water::MemoryOutputStream;

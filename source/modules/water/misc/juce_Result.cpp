@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_Result.h"
+
 namespace water {
 
 Result::Result() noexcept {}

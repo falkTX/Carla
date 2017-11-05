@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_FileInputSource.h"
+
 namespace water {
 
 FileInputSource::FileInputSource (const File& f, bool useFileTimeInHash)

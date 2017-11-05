@@ -31,6 +31,8 @@
 #ifndef JUCE_MEMORYBLOCK_H_INCLUDED
 #define JUCE_MEMORYBLOCK_H_INCLUDED
 
+#include "juce_HeapBlock.h"
+
 namespace water {
 
 //==============================================================================
@@ -256,8 +258,6 @@ private:
     //==============================================================================
     HeapBlock<char> data;
     size_t size;
-
-    JUCE_LEAK_DETECTOR (MemoryBlock)
 };
 
 }

@@ -31,6 +31,8 @@
 #ifndef JUCE_INPUTSTREAM_H_INCLUDED
 #define JUCE_INPUTSTREAM_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -263,7 +265,7 @@ protected:
     InputStream() noexcept {}
 
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InputStream)
+    JUCE_DECLARE_NON_COPYABLE (InputStream)
 };
 
 }

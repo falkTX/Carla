@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_MidiMessageSequence.h"
+
 namespace water {
 
 MidiMessageSequence::MidiMessageSequence()

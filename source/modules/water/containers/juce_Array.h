@@ -31,6 +31,9 @@
 #ifndef JUCE_ARRAY_H_INCLUDED
 #define JUCE_ARRAY_H_INCLUDED
 
+#include "../containers/juce_ArrayAllocationBase.h"
+#include "../containers/juce_ElementComparator.h"
+
 namespace water {
 
 //==============================================================================

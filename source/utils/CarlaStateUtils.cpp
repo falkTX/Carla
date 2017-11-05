@@ -21,6 +21,9 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaMIDI.h"
 
+#include "water/streams/juce_MemoryOutputStream.h"
+#include "water/xml/juce_XmlElement.h"
+
 #include <string>
 
 using water::MemoryOutputStream;

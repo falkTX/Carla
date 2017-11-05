@@ -31,6 +31,9 @@
 #ifndef JUCE_CHARPOINTER_UTF8_H_INCLUDED
 #define JUCE_CHARPOINTER_UTF8_H_INCLUDED
 
+#include "juce_CharacterFunctions.h"
+#include "../memory/juce_Atomic.h"
+
 namespace water {
 
 //==============================================================================

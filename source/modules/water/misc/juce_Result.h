@@ -31,6 +31,8 @@
 #ifndef JUCE_RESULT_H_INCLUDED
 #define JUCE_RESULT_H_INCLUDED
 
+#include "../text/juce_String.h"
+
 namespace water {
 
 //==============================================================================

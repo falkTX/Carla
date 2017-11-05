@@ -25,6 +25,8 @@
 #include "CarlaThread.hpp"
 #include "LinkedList.hpp"
 
+#include "water/files/juce_File.h"
+
 #if defined(HAVE_X11) && ! defined(CARLA_UTILS_CACHED_PLUGINS_ONLY)
 # include <X11/Xlib.h>
 #endif

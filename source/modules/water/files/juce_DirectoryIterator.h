@@ -31,6 +31,11 @@
 #ifndef JUCE_DIRECTORYITERATOR_H_INCLUDED
 #define JUCE_DIRECTORYITERATOR_H_INCLUDED
 
+#include "juce_File.h"
+#include "../text/juce_StringArray.h"
+
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 //==============================================================================
@@ -137,7 +142,7 @@ private:
         friend class DirectoryIterator;
         ScopedPointer<Pimpl> pimpl;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NativeIterator)
+        JUCE_DECLARE_NON_COPYABLE (NativeIterator)
     };
 
     StringArray wildCards;
@@ -154,7 +159,7 @@ private:
     static StringArray parseWildcards (const String& pattern);
     static bool fileMatches (const StringArray& wildCards, const String& filename);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DirectoryIterator)
+    JUCE_DECLARE_NON_COPYABLE (DirectoryIterator)
 };
 
 }

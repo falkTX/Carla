@@ -22,6 +22,8 @@
   ==============================================================================
 */
 
+#include "juce_AudioProcessor.h"
+
 namespace water {
 
 AudioProcessor::AudioProcessor()
@@ -29,7 +31,7 @@ AudioProcessor::AudioProcessor()
     cachedTotalIns  = 0;
     cachedTotalOuts = 0;
 
-    playHead = nullptr;
+//     playHead = nullptr;
     currentSampleRate = 0;
     blockSize = 0;
     latencySamples = 0;
@@ -43,10 +45,10 @@ AudioProcessor::~AudioProcessor()
 }
 
 //==============================================================================
-void AudioProcessor::setPlayHead (AudioPlayHead* const newPlayHead)
-{
-    playHead = newPlayHead;
-}
+// void AudioProcessor::setPlayHead (AudioPlayHead* const newPlayHead)
+// {
+//     playHead = newPlayHead;
+// }
 
 void AudioProcessor::setPlayConfigDetails (const int newNumIns,
                                            const int newNumOuts,
@@ -92,6 +94,7 @@ void AudioProcessor::processBypassed (AudioSampleBuffer& buffer, MidiBuffer&)
 
 void AudioProcessor::processBlockBypassed (AudioSampleBuffer&  buffer, MidiBuffer& midi)    { processBypassed (buffer, midi); }
 
+#if 0
 //==============================================================================
 bool AudioPlayHead::CurrentPositionInfo::operator== (const CurrentPositionInfo& other) const noexcept
 {
@@ -122,5 +125,7 @@ void AudioPlayHead::CurrentPositionInfo::resetToDefault()
     timeSigDenominator = 4;
     bpm = 120;
 }
+
+#endif
 
 }

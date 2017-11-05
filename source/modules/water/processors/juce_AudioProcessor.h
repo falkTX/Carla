@@ -25,6 +25,9 @@
 #ifndef JUCE_AUDIOPROCESSOR_H_INCLUDED
 #define JUCE_AUDIOPROCESSOR_H_INCLUDED
 
+#include "../text/juce_String.h"
+#include "../buffers/juce_AudioSampleBuffer.h"
+
 namespace water {
 
 //==============================================================================
@@ -163,6 +166,7 @@ public:
     virtual void processBlockBypassed (AudioSampleBuffer& buffer,
                                        MidiBuffer& midiMessages);
 
+#if 0
     //==============================================================================
     /** Returns the current AudioPlayHead object that should be used to find
         out the state and position of the playhead.
@@ -180,6 +184,7 @@ public:
         If the host can't or won't provide any time info, this will return nullptr.
     */
     AudioPlayHead* getPlayHead() const noexcept                 { return playHead; }
+#endif
 
     //==============================================================================
     /** Returns the total number of input channels.
@@ -335,12 +340,14 @@ public:
     */
     virtual void setNonRealtime (bool isNonRealtime) noexcept;
 
+#if 0
     //==============================================================================
     /** Tells the processor to use this playhead object.
         The processor will not take ownership of the object, so the caller must delete it when
         it is no longer being used.
     */
     virtual void setPlayHead (AudioPlayHead* newPlayHead);
+#endif
 
     //==============================================================================
     /** This is called by the processor to specify its details before being played. Use this
@@ -357,9 +364,11 @@ public:
     void setRateAndBufferSizeDetails (double sampleRate, int blockSize) noexcept;
 
 private:
+#if 0
     //==============================================================================
     /** @internal */
     AudioPlayHead* playHead;
+#endif
 
     //==============================================================================
     double currentSampleRate;
@@ -374,7 +383,7 @@ private:
 
     void processBypassed (AudioSampleBuffer&, MidiBuffer&);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioProcessor)
+    JUCE_DECLARE_NON_COPYABLE (AudioProcessor)
 };
 
 }

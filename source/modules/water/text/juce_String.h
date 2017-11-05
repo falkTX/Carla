@@ -31,6 +31,9 @@
 #ifndef JUCE_STRING_H_INCLUDED
 #define JUCE_STRING_H_INCLUDED
 
+#include "juce_CharPointer_UTF8.h"
+#include "../memory/juce_Memory.h"
+
 namespace water {
 
 //==============================================================================
@@ -1186,5 +1189,7 @@ OutputStream& operator<< (OutputStream& stream, const String& stringToWrite);
 OutputStream& operator<< (OutputStream& stream, StringRef stringToWrite);
 
 }
+
+#include "juce_StringRef.h"
 
 #endif   // JUCE_STRING_H_INCLUDED

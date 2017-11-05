@@ -31,6 +31,9 @@
 #ifndef JUCE_HEAPBLOCK_H_INCLUDED
 #define JUCE_HEAPBLOCK_H_INCLUDED
 
+#include "juce_Memory.h"
+#include "../maths/juce_MathsFunctions.h"
+
 namespace water {
 
 #if ! (defined (DOXYGEN) || JUCE_EXCEPTIONS_DISABLED)

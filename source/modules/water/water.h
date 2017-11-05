@@ -19,12 +19,14 @@
 #ifndef WATER_H_INCLUDED
 #define WATER_H_INCLUDED
 
-#include "CarlaMathUtils.hpp"
-#include "CarlaJuceUtils.hpp"
-#include "CarlaMutex.hpp"
+#include "CarlaDefines.h"
 
-#include <algorithm>
-#include <string>
+// #include "CarlaMathUtils.hpp"
+// #include "CarlaJuceUtils.hpp"
+// #include "CarlaMutex.hpp"
+
+// #include <algorithm>
+// #include <string>
 
 //==============================================================================
 
@@ -161,9 +163,6 @@
 #endif
 
 #define JUCE_DECLARE_NON_COPYABLE(className) CARLA_DECLARE_NON_COPY_CLASS(className)
-#define JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(className) \
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(className)
-#define JUCE_LEAK_DETECTOR(className) CARLA_LEAK_DETECTOR(className)
 #define JUCE_PREVENT_HEAP_ALLOCATION         CARLA_PREVENT_HEAP_ALLOCATION
 
 #define NEEDS_TRANS(x) (x)
@@ -173,88 +172,144 @@
 namespace water
 {
 
-class DynamicObject;
+class AudioProcessor;
 class File;
 class FileInputStream;
 class FileOutputStream;
+class Identifier;
 class InputSource;
 class InputStream;
+class MidiBuffer;
 class MidiMessage;
 class MemoryBlock;
+class MemoryOutputStream;
+class NewLine;
 class OutputStream;
 class Result;
+class String;
+class StringArray;
 class StringRef;
+class Time;
 class XmlElement;
-class AudioProcessor;
+class var;
 
+//==============================================================================
+// Definitions for the int8, int16, int32, int64 and pointer_sized_int types.
+
+/** A platform-independent 8-bit signed integer type. */
+typedef signed char                 int8;
+/** A platform-independent 8-bit unsigned integer type. */
+typedef unsigned char               uint8;
+/** A platform-independent 16-bit signed integer type. */
+typedef signed short                int16;
+/** A platform-independent 16-bit unsigned integer type. */
+typedef unsigned short              uint16;
+/** A platform-independent 32-bit signed integer type. */
+typedef signed int                  int32;
+/** A platform-independent 32-bit unsigned integer type. */
+typedef unsigned int                uint32;
+/** A platform-independent 64-bit integer type. */
+typedef long long                   int64;
+/** A platform-independent 64-bit unsigned integer type. */
+typedef unsigned long long          uint64;
+
+#if JUCE_64BIT
+  /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
+  typedef int64                     pointer_sized_int;
+  /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
+  typedef uint64                    pointer_sized_uint;
+#else
+  /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
+  typedef int                       pointer_sized_int;
+  /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
+  typedef unsigned int              pointer_sized_uint;
+#endif
+
+//==============================================================================
+namespace NumberToStringConverters
+{
+    enum
+    {
+        charsNeededForInt = 32,
+        charsNeededForDouble = 48
+    };
+
+    template <typename Type>
+    static char* printDigits (char* t, Type v) noexcept
+    {
+        *--t = 0;
+
+        do
+        {
+            *--t = '0' + (char) (v % 10);
+            v /= 10;
+
+        } while (v > 0);
+
+        return t;
+    }
+
+    // pass in a pointer to the END of a buffer..
+    static char* numberToString (char* t, const int64 n) noexcept
+    {
+        if (n >= 0)
+            return printDigits (t, static_cast<uint64> (n));
+
+        // NB: this needs to be careful not to call -std::numeric_limits<int64>::min(),
+        // which has undefined behaviour
+        t = printDigits (t, static_cast<uint64> (-(n + 1)) + 1);
+        *--t = '-';
+        return t;
+    }
 }
 
-#include "memory/juce_Memory.h"
-#include "maths/juce_MathsFunctions.h"
-#include "memory/juce_ByteOrder.h"
-#include "memory/juce_Atomic.h"
-#include "text/juce_CharacterFunctions.h"
-#include "text/juce_CharPointer_UTF8.h"
+//==============================================================================
+/** This namespace contains a few template classes for helping work out class type variations.
+*/
+namespace TypeHelpers
+{
+    /** The ParameterType struct is used to find the best type to use when passing some kind
+        of object as a parameter.
 
-#include "text/juce_String.h"
+        Of course, this is only likely to be useful in certain esoteric template situations.
 
-#include "memory/juce_HeapBlock.h"
-#include "containers/juce_ElementComparator.h"
-#include "containers/juce_ArrayAllocationBase.h"
-#include "containers/juce_Array.h"
-#include "text/juce_StringArray.h"
+        Because "typename TypeHelpers::ParameterType<SomeClass>::type" is a bit of a mouthful, there's
+        a PARAMETER_TYPE(SomeClass) macro that you can use to get the same effect.
 
-#include "text/juce_StringRef.h"
+        E.g. "myFunction (PARAMETER_TYPE (int), PARAMETER_TYPE (MyObject))"
+        would evaluate to "myfunction (int, const MyObject&)", keeping any primitive types as
+        pass-by-value, but passing objects as a const reference, to avoid copying.
+    */
+    template <typename Type> struct ParameterType                   { typedef const Type& type; };
+    template <typename Type> struct ParameterType <Type&>           { typedef Type& type; };
+    template <typename Type> struct ParameterType <Type*>           { typedef Type* type; };
+    template <>              struct ParameterType <char>            { typedef char type; };
+    template <>              struct ParameterType <unsigned char>   { typedef unsigned char type; };
+    template <>              struct ParameterType <short>           { typedef short type; };
+    template <>              struct ParameterType <unsigned short>  { typedef unsigned short type; };
+    template <>              struct ParameterType <int>             { typedef int type; };
+    template <>              struct ParameterType <unsigned int>    { typedef unsigned int type; };
+    template <>              struct ParameterType <long>            { typedef long type; };
+    template <>              struct ParameterType <unsigned long>   { typedef unsigned long type; };
+    template <>              struct ParameterType <int64>           { typedef int64 type; };
+    template <>              struct ParameterType <uint64>          { typedef uint64 type; };
+    template <>              struct ParameterType <bool>            { typedef bool type; };
+    template <>              struct ParameterType <float>           { typedef float type; };
+    template <>              struct ParameterType <double>          { typedef double type; };
 
-#include "memory/juce_MemoryBlock.h"
-#include "memory/juce_ReferenceCountedObject.h"
-#include "text/juce_Identifier.h"
-#include "text/juce_NewLine.h"
+    /** A helpful macro to simplify the use of the ParameterType template.
+        @see ParameterType
+    */
+    #define PARAMETER_TYPE(a)    typename TypeHelpers::ParameterType<a>::type
 
-#include "threads/juce_ScopedLock.h"
-#include "threads/juce_SpinLock.h"
-#include "memory/juce_SharedResourcePointer.h"
 
-#include "containers/juce_LinkedListPointer.h"
-#include "containers/juce_OwnedArray.h"
-#include "containers/juce_ReferenceCountedArray.h"
-#include "containers/juce_SortedSet.h"
-#include "containers/juce_Variant.h"
-#include "containers/juce_NamedValueSet.h"
+    /** These templates are designed to take a type, and if it's a double, they return a double
+        type; for anything else, they return a float type.
+    */
+    template <typename Type> struct SmallestFloatType             { typedef float  type; };
+    template <>              struct SmallestFloatType <double>    { typedef double type; };
+}
 
-#include "streams/juce_InputSource.h"
-#include "streams/juce_InputStream.h"
-#include "streams/juce_OutputStream.h"
-#include "streams/juce_MemoryOutputStream.h"
-
-#include "maths/juce_Random.h"
-#include "misc/juce_Result.h"
-
-#include "text/juce_StringPool.h"
-
-#include "time/juce_Time.h"
-
-#include "files/juce_File.h"
-#include "files/juce_DirectoryIterator.h"
-#include "files/juce_TemporaryFile.h"
-#include "streams/juce_FileInputStream.h"
-#include "streams/juce_FileInputSource.h"
-#include "streams/juce_FileOutputStream.h"
-
-#include "buffers/juce_AudioSampleBuffer.h"
-#include "midi/juce_MidiBuffer.h"
-#include "midi/juce_MidiMessage.h"
-#include "midi/juce_MidiMessageSequence.h"
-#include "midi/juce_MidiFile.h"
-
-#include "processors/juce_AudioPlayHead.h"
-#include "processors/juce_AudioProcessor.h"
-#include "processors/juce_AudioProcessorGraph.h"
-
-#include "threads/juce_ChildProcess.h"
-#include "threads/juce_Process.h"
-
-#include "xml/juce_XmlElement.h"
-#include "xml/juce_XmlDocument.h"
+}
 
 #endif // WATER_H_INCLUDED

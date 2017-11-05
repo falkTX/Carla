@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_MemoryBlock.h"
+
 namespace water {
 
 MemoryBlock::MemoryBlock() noexcept

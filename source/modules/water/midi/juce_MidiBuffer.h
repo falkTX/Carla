@@ -31,6 +31,8 @@
 #ifndef JUCE_MIDIBUFFER_H_INCLUDED
 #define JUCE_MIDIBUFFER_H_INCLUDED
 
+#include "../containers/juce_Array.h"
+
 namespace water {
 
 //==============================================================================
@@ -233,9 +235,6 @@ public:
         change in future, so don't write code that relies on it!
     */
     Array<uint8> data;
-
-private:
-    JUCE_LEAK_DETECTOR (MidiBuffer)
 };
 
 }

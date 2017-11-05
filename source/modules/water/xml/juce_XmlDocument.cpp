@@ -28,6 +28,11 @@
   ==============================================================================
 */
 
+#include "juce_XmlDocument.h"
+#include "juce_XmlElement.h"
+#include "../containers/juce_LinkedListPointer.h"
+#include "../streams/juce_FileInputSource.h"
+
 namespace water {
 
 XmlDocument::XmlDocument (const String& documentText)

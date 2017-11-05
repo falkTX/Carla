@@ -18,6 +18,8 @@
 
 #include "water.h"
 
+#include "CarlaMutex.hpp"
+
 #include <locale>
 #include <ctime>
 #include <cctype>
@@ -43,6 +45,8 @@
 #endif
 
 // #include <wctype.h>
+
+#include "misc/juce_Result.h"
 
 //==============================================================================
 namespace water
@@ -98,41 +102,43 @@ static int64 juce_fileSetPosition (void* handle, int64 pos)
 
 }
 
-#include "memory/juce_MemoryBlock.cpp"
-
-#include "text/juce_CharacterFunctions.cpp"
-#include "text/juce_String.cpp"
-
 #include "containers/juce_NamedValueSet.cpp"
 #include "containers/juce_Variant.cpp"
 
 #include "files/juce_DirectoryIterator.cpp"
 #include "files/juce_File.cpp"
+#include "files/juce_FileInputStream.cpp"
+#include "files/juce_FileOutputStream.cpp"
 #include "files/juce_TemporaryFile.cpp"
 
+#include "maths/juce_Random.cpp"
+
+#include "memory/juce_MemoryBlock.cpp"
+
 #include "midi/juce_MidiBuffer.cpp"
+#include "midi/juce_MidiFile.cpp"
 #include "midi/juce_MidiMessage.cpp"
 #include "midi/juce_MidiMessageSequence.cpp"
-#include "midi/juce_MidiFile.cpp"
 
-#include "maths/juce_Random.cpp"
 #include "misc/juce_Result.cpp"
 
 #include "processors/juce_AudioProcessor.cpp"
 #include "processors/juce_AudioProcessorGraph.cpp"
 
 #include "streams/juce_FileInputSource.cpp"
-#include "streams/juce_FileInputStream.cpp"
-#include "streams/juce_FileOutputStream.cpp"
 #include "streams/juce_InputStream.cpp"
 #include "streams/juce_MemoryOutputStream.cpp"
 #include "streams/juce_OutputStream.cpp"
 
+#include "text/juce_CharacterFunctions.cpp"
 #include "text/juce_Identifier.cpp"
 #include "text/juce_StringArray.cpp"
 #include "text/juce_StringPool.cpp"
+#include "text/juce_String.cpp"
+
 #include "threads/juce_ChildProcess.cpp"
+
 #include "time/juce_Time.cpp"
 
-#include "xml/juce_XmlElement.cpp"
 #include "xml/juce_XmlDocument.cpp"
+#include "xml/juce_XmlElement.cpp"

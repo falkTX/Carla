@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_DirectoryIterator.h"
+#include "../text/juce_StringArray.h"
+
 namespace water {
 
 DirectoryIterator::DirectoryIterator (const File& directory, bool recursive,

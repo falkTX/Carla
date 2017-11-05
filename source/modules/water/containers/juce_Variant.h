@@ -31,6 +31,8 @@
 #ifndef JUCE_VARIANT_H_INCLUDED
 #define JUCE_VARIANT_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -147,7 +149,6 @@ private:
     const VariantType* type;
     ValueUnion value;
 
-    Array<var>* convertToArray();
     var (const VariantType&) noexcept;
 };
 

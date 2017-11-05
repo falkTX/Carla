@@ -26,9 +26,9 @@
 #define CARLA_NATIVE_PLUGIN_VST
 #include "carla-base.cpp"
 
-#include "CarlaMathUtils.hpp"
+#include "water/files/juce_File.h"
 
-#include "water/water.h"
+#include "CarlaMathUtils.hpp"
 
 #include "vestige/aeffectx.h"
 #define effFlagsProgramChunks (1 << 5)

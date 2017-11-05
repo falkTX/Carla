@@ -31,6 +31,10 @@
 #ifndef JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 #define JUCE_AUDIOSAMPLEBUFFER_H_INCLUDED
 
+#include "../memory/juce_HeapBlock.h"
+
+#include "CarlaMathUtils.hpp"
+
 namespace water {
 
 //==============================================================================
@@ -1092,8 +1096,6 @@ private:
         channels [numChannels] = nullptr;
         isClear = false;
     }
-
-    JUCE_LEAK_DETECTOR (AudioSampleBuffer)
 };
 
 }

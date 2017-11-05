@@ -28,9 +28,17 @@
   ==============================================================================
 */
 
+#include "juce_Time.h"
+
 namespace water {
 
+namespace TimeHelpers
+{
+    static uint32 lastMSCounterValue = 0;
+}
+
 //==============================================================================
+
 static uint32 juce_millisecondsSinceStartup() noexcept
 {
 #ifdef CARLA_OS_WIN
@@ -41,11 +49,6 @@ static uint32 juce_millisecondsSinceStartup() noexcept
 
     return (uint32) (t.tv_sec * 1000 + t.tv_nsec / 1000000);
 #endif
-}
-
-namespace TimeHelpers
-{
-    static uint32 lastMSCounterValue = 0;
 }
 
 //==============================================================================

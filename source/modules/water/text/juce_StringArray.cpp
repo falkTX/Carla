@@ -28,6 +28,8 @@
   ==============================================================================
 */
 
+#include "juce_StringArray.h"
+
 namespace water {
 
 StringArray::StringArray() noexcept

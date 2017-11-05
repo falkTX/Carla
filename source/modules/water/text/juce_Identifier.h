@@ -31,6 +31,8 @@
 #ifndef JUCE_IDENTIFIER_H_INCLUDED
 #define JUCE_IDENTIFIER_H_INCLUDED
 
+#include "juce_String.h"
+
 namespace water {
 
 //==============================================================================

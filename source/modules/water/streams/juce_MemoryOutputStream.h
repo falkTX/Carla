@@ -31,6 +31,9 @@
 #ifndef JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
 #define JUCE_MEMORYOUTPUTSTREAM_H_INCLUDED
 
+#include "juce_OutputStream.h"
+#include "../memory/juce_MemoryBlock.h"
+
 namespace water {
 
 //==============================================================================
@@ -132,7 +135,7 @@ private:
     void trimExternalBlockSize();
     char* prepareToWrite (size_t);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MemoryOutputStream)
+    JUCE_DECLARE_NON_COPYABLE (MemoryOutputStream)
 };
 
 /** Copies all the data that has been written to a MemoryOutputStream into another stream. */

@@ -27,7 +27,7 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaUtils.h"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 // -Weffc++ compat ext widget

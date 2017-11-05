@@ -31,6 +31,8 @@
 #ifndef JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 #define JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 
+#include "../streams/juce_OutputStream.h"
+
 namespace water {
 
 //==============================================================================
@@ -117,7 +119,7 @@ private:
     int64 setPositionInternal (int64);
     ssize_t writeInternal (const void*, size_t);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileOutputStream)
+    JUCE_DECLARE_NON_COPYABLE (FileOutputStream)
 };
 
 }

@@ -31,6 +31,8 @@
 #ifndef JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
 #define JUCE_REFERENCECOUNTEDARRAY_H_INCLUDED
 
+#include "../memory/juce_ReferenceCountedObject.h"
+
 namespace water {
 
 //==============================================================================

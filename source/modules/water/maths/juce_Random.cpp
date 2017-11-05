@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_Random.h"
+#include "../time/juce_Time.h"
+
 namespace water {
 
 Random::Random (const int64 seedValue) noexcept   : seed (seedValue)

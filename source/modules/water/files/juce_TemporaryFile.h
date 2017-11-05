@@ -31,6 +31,8 @@
 #ifndef JUCE_TEMPORARYFILE_H_INCLUDED
 #define JUCE_TEMPORARYFILE_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -166,7 +168,7 @@ private:
     //==============================================================================
     const File temporaryFile, targetFile;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TemporaryFile)
+    JUCE_DECLARE_NON_COPYABLE (TemporaryFile)
 };
 
 }

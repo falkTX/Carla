@@ -31,6 +31,10 @@
 #ifndef JUCE_XMLDOCUMENT_H_INCLUDED
 #define JUCE_XMLDOCUMENT_H_INCLUDED
 
+#include "../text/juce_StringArray.h"
+
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 //==============================================================================
@@ -177,7 +181,7 @@ private:
     String expandExternalEntity (const String&);
     String getParameterEntity (const String&);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XmlDocument)
+    JUCE_DECLARE_NON_COPYABLE (XmlDocument)
 };
 
 }

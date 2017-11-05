@@ -28,6 +28,10 @@
   ==============================================================================
 */
 
+#include "juce_ChildProcess.h"
+#include "../files/juce_File.h"
+#include "../time/juce_Time.h"
+
 #define JUCE_USE_VFORK 1
 
 namespace water {
@@ -140,7 +144,7 @@ private:
     HANDLE readPipe, writePipe;
     PROCESS_INFORMATION processInfo;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess)
+    JUCE_DECLARE_NON_COPYABLE (ActiveProcess)
 };
 #else
 class ChildProcess::ActiveProcess
@@ -281,7 +285,7 @@ private:
     int pipeHandle;
     FILE* readHandle;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess)
+    JUCE_DECLARE_NON_COPYABLE (ActiveProcess)
 };
 #endif
 

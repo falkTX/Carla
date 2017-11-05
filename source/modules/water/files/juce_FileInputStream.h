@@ -28,52 +28,42 @@
   ==============================================================================
 */
 
-#ifndef JUCE_FILEOUTPUTSTREAM_H_INCLUDED
-#define JUCE_FILEOUTPUTSTREAM_H_INCLUDED
+#ifndef JUCE_FILEINPUTSTREAM_H_INCLUDED
+#define JUCE_FILEINPUTSTREAM_H_INCLUDED
+
+#include "juce_File.h"
+#include "../streams/juce_InputStream.h"
 
 namespace water {
 
 //==============================================================================
 /**
-    An output stream that writes into a local file.
+    An input stream that reads from a local file.
 
-    @see OutputStream, FileInputStream, File::createOutputStream
+    @see InputStream, FileOutputStream, File::createInputStream
 */
-class FileOutputStream  : public OutputStream
+class FileInputStream  : public InputStream
 {
 public:
     //==============================================================================
-    /** Creates a FileOutputStream.
+    /** Creates a FileInputStream to read from the given file.
 
-        If the file doesn't exist, it will first be created. If the file can't be
-        created or opened (for example, because the parent directory of the file
-        does not exist), the failedToOpen() method will return true.
-
-        If the file already exists when opened, the stream's write-position will
-        be set to the end of the file. To overwrite an existing file,
-        use File::deleteFile() before opening the stream, or use setPosition(0)
-        after it's opened (although this won't truncate the file).
-
-        Destroying a FileOutputStream object does not force the operating system
-        to write the buffered data to disk immediately. If this is required you
-        should call flush() before triggering the destructor.
-
-        @see TemporaryFile
+        After creating a FileInputStream, you should use openedOk() or failedToOpen()
+        to make sure that it's OK before trying to read from it! If it failed, you
+        can call getStatus() to get more error information.
     */
-    FileOutputStream (const File& fileToWriteTo,
-                      size_t bufferSizeToUse = 16384);
+    explicit FileInputStream (const File& fileToRead);
 
     /** Destructor. */
-    ~FileOutputStream();
+    ~FileInputStream();
 
     //==============================================================================
-    /** Returns the file that this stream is writing to.
-    */
-    const File& getFile() const                         { return file; }
+    /** Returns the file that this stream is reading from. */
+    const File& getFile() const noexcept                { return file; }
 
     /** Returns the status of the file stream.
         The result will be ok if the file opened successfully. If an error occurs while
-        opening or writing to the file, this will contain an error message.
+        opening or reading from the file, this will contain an error message.
     */
     const Result& getStatus() const noexcept            { return status; }
 
@@ -87,39 +77,27 @@ public:
     */
     bool openedOk() const noexcept                      { return status.wasOk(); }
 
-    /** Attempts to truncate the file to the current write position.
-        To truncate a file to a specific size, first use setPosition() to seek to the
-        appropriate location, and then call this method.
-    */
-    Result truncate();
 
     //==============================================================================
-    void flush() override;
+    int64 getTotalLength() override;
+    int read (void*, int) override;
+    bool isExhausted() override;
     int64 getPosition() override;
     bool setPosition (int64) override;
-    bool write (const void*, size_t) override;
-    bool writeRepeatedByte (uint8 byte, size_t numTimesToRepeat) override;
-
 
 private:
     //==============================================================================
-    File file;
+    const File file;
     void* fileHandle;
-    Result status;
     int64 currentPosition;
-    size_t bufferSize, bytesInBuffer;
-    HeapBlock<char> buffer;
+    Result status;
 
     void openHandle();
-    void closeHandle();
-    void flushInternal();
-    bool flushBuffer();
-    int64 setPositionInternal (int64);
-    ssize_t writeInternal (const void*, size_t);
+    size_t readInternal (void*, size_t);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (FileOutputStream)
+    JUCE_DECLARE_NON_COPYABLE (FileInputStream)
 };
 
 }
 
-#endif   // JUCE_FILEOUTPUTSTREAM_H_INCLUDED
+#endif   // JUCE_FILEINPUTSTREAM_H_INCLUDED

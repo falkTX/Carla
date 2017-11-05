@@ -28,6 +28,9 @@
   ==============================================================================
 */
 
+#include "juce_TemporaryFile.h"
+#include "../maths/juce_Random.h"
+
 namespace water {
 
 static File createTempFile (const File& parentDirectory, String name,

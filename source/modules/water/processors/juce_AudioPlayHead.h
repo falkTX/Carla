@@ -25,6 +25,8 @@
 #ifndef JUCE_AUDIOPLAYHEAD_H_INCLUDED
 #define JUCE_AUDIOPLAYHEAD_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================

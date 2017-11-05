@@ -18,7 +18,7 @@
 #include "CarlaHost.h"
 #include "CarlaString.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
 
 namespace CB = CarlaBackend;
 

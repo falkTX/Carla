@@ -31,6 +31,8 @@
 #ifndef JUCE_MIDIFILE_H_INCLUDED
 #define JUCE_MIDIFILE_H_INCLUDED
 
+#include "juce_MidiMessageSequence.h"
+
 namespace water {
 
 //==============================================================================
@@ -185,8 +187,6 @@ private:
 
     void readNextTrack (const uint8*, int size);
     bool writeTrack (OutputStream&, int trackNum);
-
-    JUCE_LEAK_DETECTOR (MidiFile)
 };
 
 }

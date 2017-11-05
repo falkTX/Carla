@@ -31,6 +31,8 @@
 #ifndef JUCE_OUTPUTSTREAM_H_INCLUDED
 #define JUCE_OUTPUTSTREAM_H_INCLUDED
 
+#include "../water.h"
+
 namespace water {
 
 //==============================================================================
@@ -239,7 +241,7 @@ private:
     //==============================================================================
     String newLineString;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OutputStream)
+    JUCE_DECLARE_NON_COPYABLE (OutputStream)
 };
 
 //==============================================================================

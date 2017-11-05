@@ -31,7 +31,8 @@
 #include "CarlaBackendUtils.hpp"
 #include "CarlaMathUtils.hpp"
 
-#include "water/water.h"
+#include "water/files/juce_File.h"
+#include "water/text/juce_StringArray.h"
 
 // -----------------------------------------------------------------------
 
@@ -199,7 +200,6 @@ public:
 // -----------------------------------------------------------------------
 
 using water::File;
-using water::SharedResourcePointer;
 using water::StringArray;
 
 CARLA_BACKEND_START_NAMESPACE
