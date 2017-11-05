@@ -30,6 +30,9 @@
 
 #include "juce_String.h"
 #include "juce_NewLine.h"
+#include "../maths/juce_MathsFunctions.h"
+#include "../memory/juce_HeapBlock.h"
+#include "../streams/juce_OutputStream.h"
 
 #include "CarlaJuceUtils.hpp"
 

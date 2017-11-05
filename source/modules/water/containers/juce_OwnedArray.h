@@ -33,6 +33,8 @@
 
 #include "juce_ArrayAllocationBase.h"
 
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 //==============================================================================

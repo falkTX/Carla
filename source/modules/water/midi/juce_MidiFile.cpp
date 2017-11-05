@@ -30,6 +30,7 @@
 
 #include "juce_MidiFile.h"
 #include "../memory/juce_ByteOrder.h"
+#include "../streams/juce_InputStream.h"
 #include "../streams/juce_MemoryOutputStream.h"
 
 namespace water {

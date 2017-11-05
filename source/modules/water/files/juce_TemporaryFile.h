@@ -31,7 +31,7 @@
 #ifndef JUCE_TEMPORARYFILE_H_INCLUDED
 #define JUCE_TEMPORARYFILE_H_INCLUDED
 
-#include "../water.h"
+#include "juce_File.h"
 
 namespace water {
 

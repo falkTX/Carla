@@ -29,6 +29,7 @@
 */
 
 #include "juce_FileInputSource.h"
+#include "../files/juce_FileInputStream.h"
 
 namespace water {
 

@@ -30,6 +30,7 @@
 
 #include "juce_ChildProcess.h"
 #include "../files/juce_File.h"
+#include "../streams/juce_MemoryOutputStream.h"
 #include "../time/juce_Time.h"
 
 #define JUCE_USE_VFORK 1

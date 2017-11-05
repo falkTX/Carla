@@ -32,6 +32,7 @@
 #define JUCE_XMLELEMENT_H_INCLUDED
 
 #include "../containers/juce_LinkedListPointer.h"
+#include "../memory/juce_HeapBlock.h"
 #include "../text/juce_Identifier.h"
 
 namespace water {

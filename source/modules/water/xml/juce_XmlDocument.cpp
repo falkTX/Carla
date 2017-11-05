@@ -32,6 +32,8 @@
 #include "juce_XmlElement.h"
 #include "../containers/juce_LinkedListPointer.h"
 #include "../streams/juce_FileInputSource.h"
+#include "../streams/juce_InputStream.h"
+#include "../streams/juce_MemoryOutputStream.h"
 
 namespace water {
 

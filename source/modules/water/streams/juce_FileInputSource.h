@@ -32,6 +32,7 @@
 #define JUCE_FILEINPUTSOURCE_H_INCLUDED
 
 #include "juce_InputSource.h"
+#include "../files/juce_File.h"
 
 namespace water {
 

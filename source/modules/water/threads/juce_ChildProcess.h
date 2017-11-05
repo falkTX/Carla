@@ -33,6 +33,8 @@
 
 #include "../text/juce_StringArray.h"
 
+#include "CarlaJuceUtils.hpp"
+
 namespace water {
 
 //==============================================================================

@@ -29,6 +29,9 @@
 */
 
 #include "juce_XmlElement.h"
+#include "../streams/juce_MemoryOutputStream.h"
+#include "../streams/juce_OutputStream.h"
+#include "../text/juce_NewLine.h"
 #include "../text/juce_StringPool.h"
 
 namespace water {

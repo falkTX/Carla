@@ -31,6 +31,8 @@
 #ifndef JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 #define JUCE_FILEOUTPUTSTREAM_H_INCLUDED
 
+#include "../files/juce_File.h"
+#include "../memory/juce_HeapBlock.h"
 #include "../streams/juce_OutputStream.h"
 
 namespace water {

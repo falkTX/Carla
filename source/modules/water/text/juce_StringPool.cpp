@@ -29,6 +29,7 @@
 */
 
 #include "juce_StringPool.h"
+#include "../time/juce_Time.h"
 
 namespace water {
 

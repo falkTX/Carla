@@ -29,6 +29,8 @@
 */
 
 #include "juce_MidiMessage.h"
+#include "../maths/juce_MathsFunctions.h"
+#include "../memory/juce_HeapBlock.h"
 
 namespace water {
 

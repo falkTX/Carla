@@ -29,6 +29,7 @@
 */
 
 #include "juce_InputSource.h"
+#include "juce_InputStream.h"
 #include "../memory/juce_ByteOrder.h"
 #include "../streams/juce_MemoryOutputStream.h"
 

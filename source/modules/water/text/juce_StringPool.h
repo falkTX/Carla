@@ -31,7 +31,7 @@
 #ifndef JUCE_STRINGPOOL_H_INCLUDED
 #define JUCE_STRINGPOOL_H_INCLUDED
 
-#include "../water.h"
+#include "../containers/juce_Array.h"
 
 namespace water {
 
