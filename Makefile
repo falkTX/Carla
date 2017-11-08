@@ -367,7 +367,7 @@ stoat:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-install:
+install_main:
 	# Create directories
 	install -d $(DESTDIR)$(BINDIR)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
@@ -635,42 +635,6 @@ endif
 
 	# --------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	# Install resources (experimental plugins)
-	install -m 644 \
-		bin/resources/at1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/at1
-
-	install -m 644 \
-		bin/resources/bls1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/bls1
-
-	install -m 644 \
-		bin/resources/rev1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/rev1
-
-	install -m 755 \
-		bin/resources/at1-ui \
-		bin/resources/bls1-ui \
-		bin/resources/rev1-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	# Install resources (zynaddsubfx)
-	install -m 644 \
-		bin/resources/zynaddsubfx/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
-
-	install -m 755 \
-		bin/resources/zynaddsubfx-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
-endif
-endif
-
-	# --------------------------------------------------------------------------------------------------------------------
-
 	# Install lv2 plugin
 	install -d $(DESTDIR)$(LIBDIR)/lv2/carla.lv2
 
@@ -733,6 +697,12 @@ ifneq ($(HAVE_PYQT),true)
 	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
 endif
 
+ifneq ($(EXTERNAL_PLUGINS),true)
+install_external_plugins:
+endif
+
+install: install_main install_external_plugins
+
 # ----------------------------------------------------------------------------------------------------------------------------
 
 uninstall:
@@ -779,7 +749,7 @@ else
 FEV="Qt5"
 endif
 
-features_print:
+features_print_main:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
 	@echo "Front-End:   $(ANS_YES)(Using $(FEV))"
@@ -959,7 +929,7 @@ ifneq ($(EXTERNAL_PLUGINS),true)
 features_print_external_plugins:
 endif
 
-features: features_print features_print_external_plugins
+features: features_print_main features_print_external_plugins
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

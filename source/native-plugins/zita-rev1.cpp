@@ -45,7 +45,7 @@ public:
     };
 
     REV1Plugin(const NativeHostDescriptor* const host, const bool isAmbisonic)
-        : NativePluginAndUiClass(host, "rev1-ui"),
+        : NativePluginAndUiClass(host, "zita-rev1-ui"),
           kIsAmbisonic(isAmbisonic),
           kNumInputs(2),
           kNumOutputs(isAmbisonic ? 4 : 2),

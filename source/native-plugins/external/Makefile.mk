@@ -190,6 +190,42 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 
 all:
+
+install_external_plugins:
+ifeq ($(HAVE_ZYN_DEPS),true)
+ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	# Install resources (zynaddsubfx)
+	install -m 644 \
+		bin/resources/zynaddsubfx/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
+
+	install -m 755 \
+		bin/resources/zynaddsubfx-ui \
+		$(DESTDIR)$(DATADIR)/carla/resources
+endif
+endif
+
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	# Install resources (experimental plugins)
+	install -m 644 \
+		bin/resources/at1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/at1
+
+	install -m 644 \
+		bin/resources/bls1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/bls1
+
+	install -m 644 \
+		bin/resources/rev1/*.png \
+		$(DESTDIR)$(DATADIR)/carla/resources/rev1
+
+	install -m 755 \
+		bin/resources/zita-at1-ui \
+		bin/resources/zita-bls1-ui \
+		bin/resources/zita-rev1-ui \
+		$(DESTDIR)$(DATADIR)/carla/resources
+endif
+
 features_print_external_plugins:
 ifeq ($(HAVE_DGL),true)
 	@echo "DPF Plugins:     $(ANS_YES)(with UI)"

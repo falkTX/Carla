@@ -49,7 +49,7 @@ public:
     };
 
     AT1Plugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, "at1-ui"),
+        : NativePluginAndUiClass(host, "zita-at1-ui"),
           fJackClient(),
           jclient(nullptr),
           notemask(0xfff)

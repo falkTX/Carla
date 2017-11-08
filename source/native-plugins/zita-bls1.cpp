@@ -45,7 +45,7 @@ public:
     };
 
     BLS1Plugin(const NativeHostDescriptor* const host)
-        : NativePluginAndUiClass(host, "bls1-ui"),
+        : NativePluginAndUiClass(host, "zita-bls1-ui"),
           fJackClient(),
           jclient(nullptr)
     {
