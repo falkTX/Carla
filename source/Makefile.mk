@@ -7,6 +7,9 @@
 # --------------------------------------------------------------
 # Modify to enable/disable specific features
 
+# Build external plugins
+EXTERNAL_PLUGINS = true
+
 # Enable experimental plugins, don't complain if the build fails when using this!
 EXPERIMENTAL_PLUGINS = false
 
@@ -136,7 +139,6 @@ CFLAGS     += -Wnested-externs -Wmissing-prototypes -Wstrict-prototypes -Wwrite-
 CXXFLAGS   += -Wc++0x-compat -Wc++11-compat -Weffc++ -Wnon-virtual-dtor -Woverloaded-virtual -Wzero-as-null-pointer-constant
 ifeq ($(LINUX),true)
 BASE_FLAGS += -isystem /opt/kxstudio/include
-CXXFLAGS   += -isystem /opt/kxstudio/include/ntk
 CXXFLAGS   += -isystem /usr/include/glib-2.0
 CXXFLAGS   += -isystem /usr/include/glib-2.0/glib
 CXXFLAGS   += -isystem /usr/include/gtk-2.0
@@ -163,10 +165,7 @@ endif
 # --------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifeq ($(MACOS_OR_WIN32),true)
-HAVE_DGL        = true
-else
-HAVE_DGL        = $(shell pkg-config --exists gl x11 && echo true)
+ifneq ($(MACOS_OR_WIN32),true)
 HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
 HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
@@ -187,8 +186,6 @@ endif
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
-HAVE_NTK          = $(shell pkg-config --exists ntk ntk_images && echo true)
-HAVE_PROJECTM     = $(shell pkg-config --exists libprojectM && echo true)
 
 # --------------------------------------------------------------
 # Check for optional libs (special non-pkgconfig unix tests)
@@ -197,16 +194,6 @@ ifeq ($(UNIX),true)
 
 # libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
 HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)
-
-# fltk doesn't have a pkg-config file but has fltk-config instead.
-# Also, don't try looking for it if we already have NTK.
-ifneq ($(HAVE_NTK),true)
-ifeq ($(shell which fltk-config 1>/dev/null 2>/dev/null && echo true),true)
-ifeq ($(shell which fluid 1>/dev/null 2>/dev/null && echo true),true)
-HAVE_FLTK = true
-endif
-endif
-endif
 
 endif
 
@@ -290,10 +277,6 @@ ifeq ($(HAVE_PYQT),true)
 BASE_FLAGS += -DHAVE_PYQT
 endif
 
-ifeq ($(HAVE_DGL),true)
-BASE_FLAGS += -DHAVE_DGL
-endif
-
 ifeq ($(HAVE_FLUIDSYNTH),true)
 BASE_FLAGS += -DHAVE_FLUIDSYNTH
 endif
@@ -312,10 +295,6 @@ endif
 
 ifeq ($(HAVE_LINUXSAMPLER),true)
 BASE_FLAGS += -DHAVE_LINUXSAMPLER
-endif
-
-ifeq ($(HAVE_PROJECTM),true)
-BASE_FLAGS += -DHAVE_PROJECTM
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -344,11 +323,6 @@ LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
 ifeq ($(WIN32),true)
 LINUXSAMPLER_LIBS += -lws2_32
 endif
-endif
-
-ifeq ($(HAVE_PROJECTM),true)
-PROJECTM_FLAGS = $(shell pkg-config --cflags libprojectM)
-PROJECTM_LIBS  = $(shell pkg-config --libs libprojectM)
 endif
 
 ifeq ($(HAVE_X11),true)
@@ -384,10 +358,6 @@ HYLIA_FLAGS           = -DLINK_PLATFORM_LINUX=1
 JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
 LILV_LIBS             = -ldl -lm -lrt
 WATER_LIBS            = -ldl -lpthread -lrt
-ifeq ($(HAVE_DGL),true)
-DGL_FLAGS             = $(shell pkg-config --cflags gl x11)
-DGL_LIBS              = $(shell pkg-config --libs gl x11)
-endif
 ifeq ($(HAVE_ALSA),true)
 RTAUDIO_FLAGS        += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS         += $(shell pkg-config --libs alsa) -lpthread
@@ -401,7 +371,6 @@ endif
 endif
 
 ifeq ($(MACOS),true)
-DGL_LIBS               = -framework OpenGL -framework Cocoa
 HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS        = -ldl -lpthread
 LILV_LIBS              = -ldl -lm
@@ -411,7 +380,6 @@ WATER_LIBS             = -framework AppKit
 endif
 
 ifeq ($(WIN32),true)
-DGL_LIBS               = -lopengl32 -lgdi32
 HYLIA_FLAGS            = -DLINK_PLATFORM_WINDOWS=1
 JACKBRIDGE_LIBS        = -lpthread
 LILV_LIBS              = -lm
@@ -419,38 +387,6 @@ RTAUDIO_FLAGS         += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI_
 RTAUDIO_LIBS          += -ldsound -luuid -lksuser -lwinmm
 RTMIDI_FLAGS          += -D__WINDOWS_MM__
 WATER_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
-endif
-
-# --------------------------------------------------------------
-# Set libs stuff (part 3)
-
-HAVE_ZYN_DEPS    = $(shell pkg-config --exists liblo fftw3 mxml zlib && echo true)
-ifeq ($(HAVE_FLTK),true)
-HAVE_ZYN_UI_DEPS = true
-endif
-ifeq ($(HAVE_NTK),true)
-HAVE_ZYN_UI_DEPS = true
-endif
-
-ifeq ($(HAVE_DGL),true)
-NATIVE_PLUGINS_LIBS  += $(DGL_LIBS)
-ifeq ($(HAVE_PROJECTM),true)
-NATIVE_PLUGINS_LIBS  += $(PROJECTM_LIBS)
-endif
-endif
-
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-BASE_FLAGS           += -DHAVE_EXPERIMENTAL_PLUGINS
-NATIVE_PLUGINS_LIBS  += -lclthreads -lzita-convolver -lzita-resampler
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs fftw3f)
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-BASE_FLAGS           += -DHAVE_ZYN_DEPS
-NATIVE_PLUGINS_LIBS  += $(shell pkg-config --libs liblo fftw3 mxml zlib)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-BASE_FLAGS           += -DHAVE_ZYN_UI_DEPS
-endif
 endif
 
 # --------------------------------------------------------------
@@ -490,6 +426,13 @@ ifeq ($(MACOS),true)
 SHARED = -dynamiclib
 else
 SHARED = -shared
+endif
+
+# --------------------------------------------------------------
+
+ifeq ($(EXTERNAL_PLUGINS),true)
+BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS
+include $(CWD)/native-plugins/external/Makefile.mk
 endif
 
 # --------------------------------------------------------------

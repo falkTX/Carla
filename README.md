@@ -10,7 +10,7 @@ It's open source and licensed under the GNU General Public License, version 2 or
 Features
 ---------
 
-* LADSPA, DSSI, LV2, VST2, VST3 and AU plugin formats
+* LADSPA, DSSI, LV2 and VST plugin formats
 * GIG, SF2 and SFZ sound banks
 * Internal audio and midi file player
 * Automation of plugin parameters via MIDI CC

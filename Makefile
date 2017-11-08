@@ -4,6 +4,7 @@
 # Created by falkTX
 #
 
+CWD=source
 include source/Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
@@ -50,7 +51,7 @@ BIN: backend discovery bridges-plugin bridges-ui interposer libjack plugin theme
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-ALL_LIBS  = $(MODULEDIR)/carla_engine.a
+ALL_LIBS += $(MODULEDIR)/carla_engine.a
 ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
@@ -58,10 +59,6 @@ ALL_LIBS += $(MODULEDIR)/native-plugins.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 ALL_LIBS += $(MODULEDIR)/water.a
-
-ifeq ($(HAVE_DGL),true)
-ALL_LIBS += $(MODULEDIR)/dgl.a
-endif
 
 ifeq ($(HAVE_HYLIA),true)
 ALL_LIBS += $(MODULEDIR)/hylia.a
@@ -782,7 +779,7 @@ else
 FEV="Qt5"
 endif
 
-features:
+features_print:
 	@echo "$(tS)---> Main features $(tE)"
 ifeq ($(HAVE_PYQT),true)
 	@echo "Front-End:   $(ANS_YES)(Using $(FEV))"
@@ -944,37 +941,25 @@ endif
 	@echo ""
 
 	@echo "$(tS)---> Internal plugins: $(tE)"
+	@echo "Basic Plugins:   $(ANS_YES)"
 ifneq ($(WIN32),true)
-	@echo "Carla-Patchbay: $(ANS_YES)"
-	@echo "Carla-Rack:     $(ANS_YES)"
+	@echo "Carla-Patchbay:  $(ANS_YES)"
+	@echo "Carla-Rack:      $(ANS_YES)"
 else
-	@echo "Carla-Patchbay: $(ANS_NO) $(mS)Not available for Windows$(mE)"
-	@echo "Carla-Rack:     $(ANS_NO) $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Patchbay:  $(ANS_NO) $(mS)Not available for Windows$(mE)"
+	@echo "Carla-Rack:      $(ANS_NO) $(mS)Not available for Windows$(mE)"
 endif
-ifeq ($(HAVE_DGL),true)
-	@echo "DISTRHO Plugins:$(ANS_YES)(with UI)"
-ifeq ($(HAVE_PROJECTM),true)
-	@echo "DISTRHO ProM:   $(ANS_YES)"
+ifeq ($(EXTERNAL_PLUGINS),true)
+	@echo "External Plugins:$(ANS_YES)"
 else
-	@echo "DISTRHO ProM:   $(ANS_NO) (missing libprojectM)"
+	@echo "External Plugins:$(ANS_NO)"
 endif
-else
-	@echo "DISTRHO Plugins:$(ANS_YES)(without UI)"
-	@echo "DISTRHO ProM:   $(ANS_NO) (missing OpenGL)"
+
+ifneq ($(EXTERNAL_PLUGINS),true)
+features_print_external_plugins:
 endif
-ifeq ($(HAVE_ZYN_DEPS),true)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-ifeq ($(HAVE_NTK),true)
-	@echo "ZynAddSubFX:    $(ANS_YES)(with NTK UI)"
-else
-	@echo "ZynAddSubFX:    $(ANS_YES)(with FLTK UI)"
-endif
-else
-	@echo "ZynAddSubFX:    $(ANS_YES)(without UI) $(mS)FLTK or NTK missing$(mE)"
-endif
-else
-	@echo "ZynAddSubFX:    $(ANS_NO) $(mS)fftw3, mxml or zlib missing$(mE)"
-endif
+
+features: features_print features_print_external_plugins
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

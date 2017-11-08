@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,7 +23,7 @@
 # undef HAVE_PYQT
 #endif
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 // Simple plugins
 extern void carla_register_native_plugin_bypass(void);
@@ -45,32 +45,16 @@ extern void carla_register_native_plugin_midipattern(void);
 // Carla
 extern void carla_register_native_plugin_carla(void);
 
-// DISTRHO plugins
-extern void carla_register_native_plugin_distrho_3bandeq(void);
-extern void carla_register_native_plugin_distrho_3bandsplitter(void);
-extern void carla_register_native_plugin_distrho_kars(void);
-extern void carla_register_native_plugin_distrho_nekobi(void);
-extern void carla_register_native_plugin_distrho_pingpongpan(void);
-extern void carla_register_native_plugin_distrho_prom(void);
-
-// DISTRHO plugins (Juice)
-extern void carla_register_native_plugin_distrho_vectorjuice(void);
-extern void carla_register_native_plugin_distrho_wobblejuice(void);
-
 // External-UI plugins
 extern void carla_register_native_plugin_bigmeter(void);
 extern void carla_register_native_plugin_notes(void);
 
-// ZynAddSubFX
-extern void carla_register_native_plugin_zynaddsubfx_fx(void);
-extern void carla_register_native_plugin_zynaddsubfx_synth(void);
+#ifdef HAVE_EXTERNAL_PLUGINS
+# define CARLA_EXTERNAL_PLUGINS_INCLUDED_DIRECTLY
+# include "external/_all.c"
+#endif
 
-// Experimental plugins
-extern void carla_register_native_plugin_zita_at1(void);
-extern void carla_register_native_plugin_zita_bls1(void);
-extern void carla_register_native_plugin_zita_rev1(void);
-
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 void carla_register_all_native_plugins(void)
 {
@@ -98,42 +82,14 @@ void carla_register_all_native_plugins(void)
     carla_register_native_plugin_carla();
 #endif
 
-    // DISTRHO Plugins
-    carla_register_native_plugin_distrho_3bandeq();
-    carla_register_native_plugin_distrho_3bandsplitter();
-    carla_register_native_plugin_distrho_kars();
-    carla_register_native_plugin_distrho_nekobi();
-    carla_register_native_plugin_distrho_pingpongpan();
-#ifdef HAVE_DGL
-#ifdef HAVE_PROJECTM
-    carla_register_native_plugin_distrho_prom();
-#endif
-#endif
-
-    // DISTRHO plugins (Juice)
-    carla_register_native_plugin_distrho_vectorjuice();
-    carla_register_native_plugin_distrho_wobblejuice();
-
-#ifdef HAVE_PYQT
     // External-UI plugins
     carla_register_native_plugin_bigmeter();
     carla_register_native_plugin_notes();
-#endif
 
-#ifdef HAVE_ZYN_DEPS
-    // ZynAddSubFX
-    carla_register_native_plugin_zynaddsubfx_fx();
-# ifndef DISABLE_PLUGINS_FOR_WINDOWS_BUILD
-    carla_register_native_plugin_zynaddsubfx_synth();
-# endif
-#endif
-
-#ifdef HAVE_EXPERIMENTAL_PLUGINS
+#ifdef HAVE_EXTERNAL_PLUGINS
     // Experimental plugins
-    carla_register_native_plugin_zita_at1();
-    carla_register_native_plugin_zita_bls1();
-    carla_register_native_plugin_zita_rev1();
+    carla_register_all_native_external_plugins();
 #endif
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
