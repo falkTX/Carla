@@ -166,12 +166,15 @@ endif # HAVE_ZYN_DEPS
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
 ZITA_DSP_FLAGS  = $(shell pkg-config --cflags fftw3f)
 ZITA_DSP_FLAGS += -Wno-unused-parameter
-ZITA_DSP_LIBS   = $(shell pkg-config --libs fftw3f)
+ZITA_DSP_LIBS   = -lzita-convolver -lzita-resampler -lclthreads
+ZITA_DSP_LIBS  += $(shell pkg-config --libs fftw3f)
+ZITA_DSP_LIBS  += -lpthread -lrt
 
 ZITA_UI_FLAGS   = $(shell pkg-config --cflags cairo libpng12 freetype2 x11 xft zlib)
 ZITA_UI_FLAGS  += -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-unused-result
-ZITA_UI_LIBS    = $(shell pkg-config --libs cairo libpng12 freetype2 x11 xft zlib)
-ZITA_UI_LIBS   += -lclxclient -lclthreads -ldl -lpthread -lrt
+ZITA_UI_LIBS    = $(shell pkg-config --libs cairo libpng12 freetype2 zlib)
+ZITA_UI_LIBS   += -lclxclient -lclthreads $(shell pkg-config --libs x11 xft)
+ZITA_UI_LIBS   += -ldl -lpthread -lrt
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
