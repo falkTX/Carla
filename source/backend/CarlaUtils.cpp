@@ -512,26 +512,12 @@ const char* carla_get_supported_file_extensions()
 #endif
         ;
 
-#if 0
         // Audio files
-        {
-            using namespace water;
-
-            AudioFormatManager afm;
-            afm.registerBasicFormats();
-
-            String waterFormats;
-
-            for (AudioFormat **it=afm.begin(), **end=afm.end(); it != end; ++it)
-            {
-                const StringArray& exts((*it)->getFileExtensions());
-
-                for (String *eit=exts.begin(), *eend=exts.end(); eit != eend; ++eit)
-                    waterFormats += String(";*" + (*eit)).toRawUTF8();
-            }
-
-            retText += waterFormats.toRawUTF8();
-        }
+#ifdef HAVE_SNDFILE
+        retText += ";*.aiff;*.flac;*.oga;*.ogg;*.w64;*.wav";
+#endif
+#ifdef HAVE_FFMPEG
+        retText += ";*.3g2;*.3gp;*.aac;*.ac3;*.amr;*.ape;*.mp2;*.mp3;*.mpc;*.wma";
 #endif
     }
 

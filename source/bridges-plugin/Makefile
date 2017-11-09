@@ -43,6 +43,10 @@ LIBS_win64    = $(MODULEDIR)/jackbridge.win64e.a
 endif
 LINK_FLAGS   += $(JACKBRIDGE_LIBS)
 
+LIBS_native  += $(MODULEDIR)/audio_decoder.a
+LINK_FLAGS   += $(FFMPEG_LIBS)
+LINK_FLAGS   += $(SNDFILE_LIBS)
+
 LIBS_native  += $(MODULEDIR)/lilv.a
 LIBS_posix32 += $(MODULEDIR)/lilv.posix32.a
 LIBS_posix64 += $(MODULEDIR)/lilv.posix64.a

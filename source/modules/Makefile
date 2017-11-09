@@ -9,6 +9,8 @@
 all:
 
 clean:
+	$(MAKE) clean -C audio_decoder
+	$(MAKE) clean -C dgl
 	$(MAKE) clean -C lilv
 	$(MAKE) clean -C rtaudio
 	$(MAKE) clean -C rtmempool

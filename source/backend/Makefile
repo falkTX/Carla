@@ -24,8 +24,9 @@ TARGETS = \
 
 STANDALONE_LIBS  = $(MODULEDIR)/carla_engine.a
 STANDALONE_LIBS += $(MODULEDIR)/carla_plugin.a
-
 STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
+
+STANDALONE_LIBS += $(MODULEDIR)/audio_decoder.a
 STANDALONE_LIBS += $(MODULEDIR)/lilv.a
 STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a

@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -12,42 +12,41 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * For a full copy of the GNU General Public License see the doc/GPL.txt file.
+ * For a full copy of the GNU General Public License see the GPL.txt file
  */
 
 #include "CarlaNative.hpp"
-
-#if 0
-
-#include "CarlaMutex.hpp"
 #include "CarlaString.hpp"
 
-using namespace water;
+#include "audio-base.hpp"
 
-// -----------------------------------------------------------------------
+#define PROGRAM_COUNT 16
 
-class AudioFilePlugin : public NativePluginClass
+class AudioFilePlugin : public NativePluginClass,
+                        public AbstractAudioPlayer
 {
 public:
     AudioFilePlugin(const NativeHostDescriptor* const host)
         : NativePluginClass(host),
+          AbstractAudioPlayer(),
           fLoopMode(false),
           fDoProcess(false),
-          fLength(0),
-          //fThread("AudioFilePluginThread"),
-          fReaderBuffer(),
-          fReaderMutex(),
-          fReader(),
-          fReaderSource()
+          fLastFrame(0),
+          fMaxFrame(0),
+          fThread(this, getSampleRate())
     {
-        fReaderBuffer.setSize(2, static_cast<int>(getBufferSize()));
+        fPool.create(getSampleRate());
     }
 
     ~AudioFilePlugin() override
     {
-        //fThread.stopThread(-1);
-        fReader       = nullptr;
-        fReaderSource = nullptr;
+        fPool.destroy();
+        fThread.stopNow();
+    }
+
+    uint32_t getLastFrame() const override
+    {
+        return fLastFrame;
     }
 
 protected:
@@ -56,7 +55,7 @@ protected:
 
     uint32_t getParameterCount() const override
     {
-        return 1;
+        return 0; // TODO - loopMode
     }
 
     const NativeParameter* getParameterInfo(const uint32_t index) const override
@@ -97,77 +96,94 @@ protected:
         if (index != 0)
             return;
 
-        const bool loopMode(value > 0.5f);
+        bool b = (value > 0.5f);
 
-        if (fLoopMode == loopMode)
+        if (b == fLoopMode)
             return;
 
-        fLoopMode = loopMode;
-
-        const CarlaMutexLocker cml(fReaderMutex);
-
-        if (fReaderSource != nullptr)
-            fReaderSource->setLooping(loopMode);
+        fLoopMode = b;
+        fThread.setNeedsRead();
     }
 
     void setCustomData(const char* const key, const char* const value) override
     {
-        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
-        CARLA_SAFE_ASSERT_RETURN(value != nullptr && value[0] != '\0',);
-
         if (std::strcmp(key, "file") != 0)
             return;
 
-        _loadAudioFile(value);
+        loadFilename(value);
     }
 
     // -------------------------------------------------------------------
     // Plugin process calls
 
-    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent* const, const uint32_t) override
+    void process(float**, float** const outBuffer, const uint32_t frames, const NativeMidiEvent*, uint32_t) override
     {
         const NativeTimeInfo* const timePos(getTimeInfo());
 
-        float* const out1(outBuffer[0]);
-        float* const out2(outBuffer[1]);
+        float* out1 = outBuffer[0];
+        float* out2 = outBuffer[1];
 
-        if (fLength == 0 || ! fDoProcess)
+        if (! fDoProcess)
         {
             //carla_stderr("P: no process");
-            carla_zeroFloats(out1, iframes);
-            carla_zeroFloats(out2, iframes);
+            fLastFrame = timePos->frame;
+            carla_zeroFloats(out1, frames);
+            carla_zeroFloats(out2, frames);
             return;
         }
-
-        const int64_t nextReadPos(fLoopMode ? (static_cast<int64_t>(timePos->frame) % fLength) : static_cast<int64_t>(timePos->frame));
 
         // not playing
         if (! timePos->playing)
         {
             //carla_stderr("P: not playing");
-            carla_zeroFloats(out1, iframes);
-            carla_zeroFloats(out2, iframes);
+            fLastFrame = timePos->frame;
 
-            const CarlaMutexLocker cml(fReaderMutex);
+            if (timePos->frame == 0 && fLastFrame > 0)
+                fThread.setNeedsRead();
 
-            if (fReaderSource != nullptr)
-                fReaderSource->setNextReadPosition(nextReadPos);
-
+            carla_zeroFloats(out1, frames);
+            carla_zeroFloats(out2, frames);
             return;
         }
 
-        const CarlaMutexLocker cml(fReaderMutex);
+        fThread.tryPutData(fPool);
 
-        if (fReaderSource != nullptr)
-            fReaderSource->setNextReadPosition(nextReadPos);
+        // out of reach
+        if (timePos->frame + frames < fPool.startFrame || timePos->frame >= fMaxFrame) /*&& ! loopMode)*/
+        {
+            //carla_stderr("P: out of reach");
+            fLastFrame = timePos->frame;
 
-        if (fReader == nullptr)
+            if (timePos->frame + frames < fPool.startFrame)
+                fThread.setNeedsRead();
+
+            carla_zeroFloats(out1, frames);
+            carla_zeroFloats(out2, frames);
             return;
+        }
 
-        fReader->read(&fReaderBuffer, 0, iframes, nextReadPos, true, true);
+        int64_t poolFrame = (int64_t)timePos->frame - fPool.startFrame;
+        int64_t poolSize  = fPool.size;
 
-        carla_copyFloats(out1, fReaderBuffer.getReadPointer(0), frames);
-        carla_copyFloats(out2, fReaderBuffer.getReadPointer(1), frames);
+        for (uint32_t i=0; i < frames; ++i, ++poolFrame)
+        {
+            if (poolFrame >= 0 && poolFrame < poolSize)
+            {
+                out1[i] = fPool.buffer[0][poolFrame];
+                out2[i] = fPool.buffer[1][poolFrame];
+
+                // reset
+                fPool.buffer[0][poolFrame] = 0.0f;
+                fPool.buffer[1][poolFrame] = 0.0f;
+            }
+            else
+            {
+                out1[i] = 0.0f;
+                out2[i] = 0.0f;
+            }
+        }
+
+        fLastFrame = timePos->frame;
     }
 
     // -------------------------------------------------------------------
@@ -184,85 +200,41 @@ protected:
         uiClosed();
     }
 
-    // -------------------------------------------------------------------
-    // Plugin dispatcher calls
-
-    void bufferSizeChanged(const uint32_t bufferSize) override
-    {
-        fReaderBuffer.setSize(2, static_cast<int>(bufferSize));
-    }
-
 private:
     bool fLoopMode;
     bool fDoProcess;
-    int64_t fLength;
 
-    //TimeSliceThread fThread;
+    uint32_t fLastFrame;
+    uint32_t fMaxFrame;
 
-    AudioSampleBuffer fReaderBuffer;
-    CarlaMutex        fReaderMutex;
+    AudioFilePool   fPool;
+    AudioFileThread fThread;
 
-    ScopedPointer<AudioFormatReader>       fReader;
-    ScopedPointer<AudioFormatReaderSource> fReaderSource;
-
-    void _loadAudioFile(const char* const filename)
+    void loadFilename(const char* const filename)
     {
-        carla_stdout("AudioFilePlugin::loadFilename(\"%s\")", filename);
+        CARLA_ASSERT(filename != nullptr);
+        carla_debug("AudioFilePlugin::loadFilename(\"%s\")", filename);
 
-        fDoProcess = false;
-        fLength    = 0;
+        fThread.stopNow();
 
-        //fThread.stopThread(-1);
-
+        if (filename == nullptr || *filename == '\0')
         {
-            fReaderMutex.lock();
-            AudioFormatReader*       const reader(fReader.release());
-            AudioFormatReaderSource* const readerSource(fReaderSource.release());
-            fReaderMutex.unlock();
-
-            delete readerSource;
-            delete reader;
+            fDoProcess = false;
+            fMaxFrame = 0;
+            return;
         }
 
-        const String jfilename = String(CharPointer_UTF8(filename));
-        File file(jfilename);
-
-        if (! file.existsAsFile())
-            return;
-
-        AudioFormatManager& afm(getAudioFormatManagerInstance());
-
-        AudioFormat* const format(afm.findFormatForFileExtension(file.getFileExtension()));
-        CARLA_SAFE_ASSERT_RETURN(format != nullptr,);
-
-        if (MemoryMappedAudioFormatReader* const memReader = format->createMemoryMappedReader(file))
+        if (fThread.loadFilename(filename))
         {
-            memReader->mapEntireFile();
-            fReader = memReader;
-
-            carla_stdout("Using memory mapped read file");
+            fThread.startNow();
+            fMaxFrame = fThread.getMaxFrame();
+            fDoProcess = true;
         }
         else
         {
-            AudioFormatReader* const reader(afm.createReaderFor(file));
-            CARLA_SAFE_ASSERT_RETURN(reader != nullptr,);
-
-            // this code can be used for very large files
-            //fThread.startThread();
-            //BufferingAudioReader* const bufferingReader(new BufferingAudioReader(reader, fThread, getSampleRate()*2));
-            //bufferingReader->setReadTimeout(50);
-
-            AudioFormatReaderSource* const readerSource(new AudioFormatReaderSource(/*bufferingReader*/reader, false));
-            readerSource->setLooping(fLoopMode);
-
-            fReaderSource = readerSource;
-            fReader       = reader;
-
-            carla_stdout("Using regular read file");
+            fDoProcess = false;
+            fMaxFrame = 0;
         }
-
-        fLength    = fReader->lengthInSamples;
-        fDoProcess = true;
     }
 
     PluginClassEND(AudioFilePlugin)
@@ -273,14 +245,16 @@ private:
 
 static const NativePluginDescriptor audiofileDesc = {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
+    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
+                                                  |NATIVE_PLUGIN_HAS_UI
+                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
+                                                  |NATIVE_PLUGIN_USES_TIME),
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
     /* audioIns  */ 0,
     /* audioOuts */ 2,
     /* midiIns   */ 0,
     /* midiOuts  */ 0,
-    /* paramIns  */ 1,
+    /* paramIns  */ 0, // TODO - loopMode
     /* paramOuts */ 0,
     /* name      */ "Audio File",
     /* label     */ "audiofile",
@@ -291,15 +265,13 @@ static const NativePluginDescriptor audiofileDesc = {
 
 // -----------------------------------------------------------------------
 
-#endif
-
 CARLA_EXPORT
 void carla_register_native_plugin_audiofile();
 
 CARLA_EXPORT
 void carla_register_native_plugin_audiofile()
 {
-    //carla_register_native_plugin(&audiofileDesc);
+    carla_register_native_plugin(&audiofileDesc);
 }
 
 // -----------------------------------------------------------------------

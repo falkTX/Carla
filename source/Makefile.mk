@@ -183,9 +183,11 @@ HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_HYLIA      = true
 endif
 
+HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
+HAVE_SNDFILE      = $(shell pkg-config --exists sndfile && echo true)
 
 # --------------------------------------------------------------
 # Check for optional libs (special non-pkgconfig unix tests)
@@ -281,6 +283,10 @@ ifeq ($(HAVE_FLUIDSYNTH),true)
 BASE_FLAGS += -DHAVE_FLUIDSYNTH
 endif
 
+ifeq ($(HAVE_FFMPEG),true)
+BASE_FLAGS += -DHAVE_FFMPEG
+endif
+
 ifeq ($(HAVE_HYLIA),true)
 BASE_FLAGS += -DHAVE_HYLIA
 endif
@@ -297,6 +303,10 @@ ifeq ($(HAVE_LINUXSAMPLER),true)
 BASE_FLAGS += -DHAVE_LINUXSAMPLER
 endif
 
+ifeq ($(HAVE_SNDFILE),true)
+BASE_FLAGS += -DHAVE_SNDFILE
+endif
+
 ifeq ($(HAVE_X11),true)
 BASE_FLAGS += -DHAVE_X11
 endif
@@ -307,6 +317,11 @@ endif
 ifeq ($(HAVE_LIBLO),true)
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
+endif
+
+ifeq ($(HAVE_FFMPEG),true)
+FFMPEG_FLAGS = $(shell pkg-config --cflags libavcodec libavformat libavutil)
+FFMPEG_LIBS  = $(shell pkg-config --libs libavcodec libavformat libavutil)
 endif
 
 ifeq ($(HAVE_FLUIDSYNTH),true)
@@ -323,6 +338,11 @@ LINUXSAMPLER_LIBS += $(shell pkg-config --libs linuxsampler)
 ifeq ($(WIN32),true)
 LINUXSAMPLER_LIBS += -lws2_32
 endif
+endif
+
+ifeq ($(HAVE_SNDFILE),true)
+SNDFILE_FLAGS = $(shell pkg-config --cflags sndfile)
+SNDFILE_LIBS  = $(shell pkg-config --libs sndfile)
 endif
 
 ifeq ($(HAVE_X11),true)

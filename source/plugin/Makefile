@@ -50,6 +50,8 @@ endif
 LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
+
+LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/lilv.a
 LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
@@ -72,25 +74,13 @@ LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
 
-ifeq ($(HAVE_LIBLO),true)
+LINK_FLAGS += $(FFMPEG_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
-endif
-
-ifeq ($(HAVE_LIBMAGIC),true)
 LINK_FLAGS += $(MAGIC_LIBS)
-endif
-
-ifeq ($(HAVE_FLUIDSYNTH),true)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
-endif
-
-ifeq ($(HAVE_LINUXSAMPLER),true)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
-endif
-
-ifeq ($(HAVE_X11),true)
+LINK_FLAGS += $(SNDFILE_LIBS)
 LINK_FLAGS += $(X11_LIBS)
-endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

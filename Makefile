@@ -56,6 +56,7 @@ ALL_LIBS += $(MODULEDIR)/carla_engine_plugin.a
 ALL_LIBS += $(MODULEDIR)/carla_plugin.a
 ALL_LIBS += $(MODULEDIR)/jackbridge.a
 ALL_LIBS += $(MODULEDIR)/native-plugins.a
+ALL_LIBS += $(MODULEDIR)/audio_decoder.a
 ALL_LIBS += $(MODULEDIR)/lilv.a
 ALL_LIBS += $(MODULEDIR)/rtmempool.a
 ALL_LIBS += $(MODULEDIR)/water.a
