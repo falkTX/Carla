@@ -230,6 +230,8 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 endif
 
 features_print_external_plugins:
+	@echo ""
+	@echo "$(tS)---> External plugins: $(tE)"
 ifeq ($(HAVE_DGL),true)
 	@echo "DPF Plugins:     $(ANS_YES)(with UI)"
 ifeq ($(HAVE_PROJECTM),true)
@@ -257,6 +259,11 @@ else
 endif
 else
 	@echo "ZynAddSubFX:     $(ANS_NO) $(mS)liblo, fftw3, mxml or zlib missing$(mE)"
+endif
+ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	@echo "Experimental:     YES"
+else
+	@echo "Experimental:     NO"
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
