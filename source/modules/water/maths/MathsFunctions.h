@@ -31,6 +31,7 @@
 #include "CarlaUtils.hpp"
 
 #include <algorithm>
+#include <cmath>
 
 namespace water {
 

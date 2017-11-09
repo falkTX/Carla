@@ -29,6 +29,8 @@
 #include "CharPointer_UTF8.h"
 #include "../memory/Memory.h"
 
+#include <string>
+
 namespace water {
 
 //==============================================================================
