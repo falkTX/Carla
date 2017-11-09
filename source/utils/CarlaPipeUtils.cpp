@@ -1,6 +1,6 @@
 /*
  * Carla Pipe Utilities
- * Copyright (C) 2013-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -36,7 +36,8 @@
 #include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "water/water.h"
+# include "water/misc/Time.h"
+# include "water/text/String.h"
 #else
 # include <cerrno>
 # include <signal.h>

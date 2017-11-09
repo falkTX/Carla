@@ -34,7 +34,9 @@
 
 #include "CarlaJuceUtils.hpp"
 
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
+# include <shlobj.h>
+#else
 # include <dlfcn.h>
 # include <fcntl.h>
 # include <pwd.h>
@@ -1119,20 +1121,11 @@ File File::getSpecialLocation (const SpecialLocationType type)
             return File (String (dest));
         }
 
-        case windowsSystemDirectory:
-        {
-            CHAR dest [2048];
-            dest[0] = 0;
-            GetSystemDirectory (dest, (UINT) numElementsInArray (dest));
-            return File (String (dest));
-        }
-
         case currentExecutableFile:
-        case currentApplicationFile:
-            return WindowsFileHelpers::getModuleFileName ((HINSTANCE) Process::getCurrentModuleInstanceHandle());
+            return WindowsFileHelpers::getModuleFileName (water_getCurrentModuleInstanceHandle());
 
         case hostApplicationPath:
-            return WindowsFileHelpers::getModuleFileName (0);
+            return WindowsFileHelpers::getModuleFileName (nullptr);
 
         default:
             jassertfalse; // unknown type?
@@ -1429,8 +1422,6 @@ File File::getSpecialLocation (const SpecialLocationType type)
         switch (type)
         {
             case userHomeDirectory:                 resultPath = nsStringToWater (NSHomeDirectory()); break;
-            case userDocumentsDirectory:            resultPath = "~/Documents"; break;
-            case userDesktopDirectory:              resultPath = "~/Desktop"; break;
 
             case tempDirectory:
             {
@@ -1439,31 +1430,8 @@ File File::getSpecialLocation (const SpecialLocationType type)
                 return File (tmp.getFullPathName());
             }
 
-            case userMusicDirectory:                resultPath = "~/Music"; break;
-            case userMoviesDirectory:               resultPath = "~/Movies"; break;
-            case userPicturesDirectory:             resultPath = "~/Pictures"; break;
-            case userApplicationDataDirectory:      resultPath = "~/Library"; break;
-            case commonApplicationDataDirectory:    resultPath = "/Library"; break;
-            case commonDocumentsDirectory:          resultPath = "/Users/Shared"; break;
-            case globalApplicationsDirectory:       resultPath = "/Applications"; break;
-
-            case invokedExecutableFile:
-                if (water_argv != nullptr && water_argc > 0)
-                    return File::getCurrentWorkingDirectory().getChildFile (CharPointer_UTF8 (water_argv[0]));
-                // deliberate fall-through...
-
             case currentExecutableFile:
                 return water_getExecutableFile();
-
-            case currentApplicationFile:
-            {
-                const File exe (water_getExecutableFile());
-                const File parent (exe.getParentDirectory());
-
-                return parent.getFullPathName().endsWithIgnoreCase ("Contents/MacOS")
-                        ? parent.getParentDirectory().getParentDirectory()
-                        : exe;
-            }
 
             case hostApplicationPath:
             {
@@ -1624,7 +1592,6 @@ File File::getSpecialLocation (const SpecialLocationType type)
         }
 
         case currentExecutableFile:
-        case currentApplicationFile:
             return water_getExecutableFile();
 
         case hostApplicationPath:

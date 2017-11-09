@@ -16,6 +16,7 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
+#include "maths/MathsFunctions.h"
 #include "misc/Result.h"
 
 //==============================================================================
@@ -42,9 +43,9 @@ static int64 water_fileSetPosition (void* handle, int64 pos)
     return li.QuadPart;
 }
 
-static void* currentModuleHandle = nullptr;
+static HINSTANCE currentModuleHandle = nullptr;
 
-void* Process::getCurrentModuleInstanceHandle() noexcept
+HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 {
     if (currentModuleHandle == nullptr)
         currentModuleHandle = GetModuleHandleA (nullptr);

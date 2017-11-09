@@ -28,6 +28,10 @@
 #include <ctime>
 #include <sys/time.h>
 
+#ifdef CARLA_OS_WIN
+# include <mmsystem.h>
+#endif
+
 namespace water {
 
 namespace TimeHelpers

@@ -713,13 +713,6 @@ public:
         /** The user's home folder. This is the same as using File ("~"). */
         userHomeDirectory,
 
-        /** A place to put documents which are shared by all users of the machine.
-            On Windows this may be somewhere like "C:\Users\Public\Documents", on OSX it
-            will be something like "/Users/Shared". Other OSes may have no such concept
-            though, so be careful.
-        */
-        commonDocumentsDirectory,
-
         /** The folder that should be used for temporary files.
             Always delete them when you're finished, to keep the user's computer tidy!
         */
@@ -730,37 +723,12 @@ public:
             If running as a plug-in or DLL, this will (where possible) be the DLL rather than the
             host app.
 
-            On the mac this will return the unix binary, not the package folder - see
-            currentApplicationFile for that.
-
-            See also invokedExecutableFile, which is similar, but if the exe was launched from a
-            file link, invokedExecutableFile will return the name of the link.
+            On the mac this will return the unix binary, not the package folder.
         */
         currentExecutableFile,
 
-        /** Returns this application's location.
-
-            If running as a plug-in or DLL, this will (where possible) be the DLL rather than the
-            host app.
-
-            On the mac this will return the package folder (if it's in one), not the unix binary
-            that's inside it - compare with currentExecutableFile.
-        */
-        currentApplicationFile,
-
         /** In a plugin, this will return the path of the host executable. */
-        hostApplicationPath,
-
-       #ifdef CARLA_OS_WIN
-        /** On a Windows machine, returns the location of the Windows/System32 folder. */
-        windowsSystemDirectory,
-       #endif
-
-        /** The directory in which applications normally get installed.
-            So on windows, this would be something like "c:\program files", on the
-            Mac "/Applications", or "/usr" on linux.
-        */
-        globalApplicationsDirectory
+        hostApplicationPath
     };
 
     /** Finds the location of a special type of file or directory, such as a home folder or

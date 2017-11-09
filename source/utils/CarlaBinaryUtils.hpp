@@ -22,8 +22,7 @@
 #include "CarlaUtils.hpp"
 
 #if defined(CARLA_OS_WIN)
-# include "CarlaJuceUtils.hpp"
-# include "water/water.h"
+# include "water/files/FileInputStream.h"
 #elif defined(HAVE_LIBMAGIC)
 # include <magic.h>
 #endif
