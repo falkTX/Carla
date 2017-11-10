@@ -31,9 +31,11 @@
 #include "CarlaLv2Utils.hpp"
 #include "CarlaVstUtils.hpp"
 
+#ifndef BUILD_BRIDGE
 // need to include this before linuxsampler
-#define CARLA_UTILS_CACHED_PLUGINS_ONLY
-#include "CarlaUtils.cpp"
+# define CARLA_UTILS_CACHED_PLUGINS_ONLY
+# include "CarlaUtils.cpp"
+#endif
 
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
@@ -400,6 +402,7 @@ private:
 
 // ------------------------------ Plugin Checks -----------------------------
 
+#ifndef BUILD_BRIDGE
 static void do_cached_check(const PluginType type)
 {
     const char* const plugPath = (type == PLUGIN_LV2) ? std::getenv("LV2_PATH") : nullptr;
@@ -425,6 +428,7 @@ static void do_cached_check(const PluginType type)
         DISCOVERY_OUT("end", "------------");
     }
 }
+#endif
 
 static void do_ladspa_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
@@ -1586,10 +1590,8 @@ int main(int argc, char* argv[])
     {
     case PLUGIN_LADSPA:
     case PLUGIN_DSSI:
-#ifndef CARLA_OS_MAC
     case PLUGIN_VST2:
         openLib = true;
-#endif
     default:
         break;
     }
@@ -1629,11 +1631,13 @@ int main(int argc, char* argv[])
         }
     }
 
+#ifndef BUILD_BRIDGE
     if (std::strcmp(filename, ":all") == 0)
     {
         do_cached_check(type);
         return 0;
     }
+#endif
 
     switch (type)
     {
