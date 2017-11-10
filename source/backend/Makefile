@@ -44,7 +44,7 @@ STANDALONE_LIBS += $(MODULEDIR)/rtaudio.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmidi.a
 
 UTILS_LIBS += $(MODULEDIR)/lilv.a
-UTILS_LIBS += $(MODULEDIR)/water.a
+UTILS_LIBS += $(MODULEDIR)/water.files.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

@@ -130,7 +130,7 @@ ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
 
 LIBS = \
 	$(MODULEDIR)/lilv.a \
-	$(MODULEDIR)/water.a
+	$(MODULEDIR)/water.files.a
 
 # ----------------------------------------------------------------------------------------------------------------------------
 # Common objects

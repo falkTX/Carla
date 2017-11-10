@@ -36,42 +36,8 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 
 }
 
-#include "containers/NamedValueSet.cpp"
-#include "containers/Variant.cpp"
-
-#include "files/DirectoryIterator.cpp"
 #include "files/File.cpp"
-#include "files/FileInputStream.cpp"
-#include "files/FileOutputStream.cpp"
-#include "files/TemporaryFile.cpp"
-
-#include "maths/Random.cpp"
-
-#include "memory/MemoryBlock.cpp"
-
-#include "midi/MidiBuffer.cpp"
-#include "midi/MidiFile.cpp"
-#include "midi/MidiMessage.cpp"
-#include "midi/MidiMessageSequence.cpp"
-
 #include "misc/Result.cpp"
-#include "misc/Time.cpp"
-
-#include "processors/AudioProcessor.cpp"
-#include "processors/AudioProcessorGraph.cpp"
-
-#include "streams/FileInputSource.cpp"
-#include "streams/InputStream.cpp"
-#include "streams/MemoryOutputStream.cpp"
-#include "streams/OutputStream.cpp"
-
 #include "text/CharacterFunctions.cpp"
-#include "text/Identifier.cpp"
 #include "text/StringArray.cpp"
-#include "text/StringPool.cpp"
 #include "text/String.cpp"
-
-#include "threads/ChildProcess.cpp"
-
-#include "xml/XmlDocument.cpp"
-#include "xml/XmlElement.cpp"

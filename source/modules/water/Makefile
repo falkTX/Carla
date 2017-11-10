@@ -16,10 +16,12 @@ BUILD_CXX_FLAGS += -I..
 
 ifeq ($(MACOS),true)
 OBJS         = $(OBJDIR)/$(MODULENAME).mm.o
+OBJS_files   = $(OBJDIR)/$(MODULENAME).mm.files.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).mm.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).mm.posix64.o
 else
 OBJS         = $(OBJDIR)/$(MODULENAME).cpp.o
+OBJS_files   = $(OBJDIR)/$(MODULENAME).cpp.files.o
 OBJS_posix32 = $(OBJDIR)/$(MODULENAME).cpp.posix32.o
 OBJS_posix64 = $(OBJDIR)/$(MODULENAME).cpp.posix64.o
 endif
@@ -28,7 +30,7 @@ OBJS_win64   = $(OBJDIR)/$(MODULENAME).cpp.win64.o
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-all:     $(MODULEDIR)/$(MODULENAME).a
+all:     $(MODULEDIR)/$(MODULENAME).a $(MODULEDIR)/$(MODULENAME).files.a
 posix32: $(MODULEDIR)/$(MODULENAME).posix32.a
 posix64: $(MODULEDIR)/$(MODULENAME).posix64.a
 win32:   $(MODULEDIR)/$(MODULENAME).win32.a
@@ -42,14 +44,17 @@ clean:
 debug:
 	$(MAKE) DEBUG=true
 
-test: main.cpp $(MODULEDIR)/$(MODULENAME).a
-	@$(CXX) $< $(MODULEDIR)/$(MODULENAME).a $(BUILD_CXX_FLAGS) $(LINK_FLAGS) -lpthread -o $@
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(MODULEDIR)/$(MODULENAME).a: $(OBJS)
 	-@mkdir -p $(MODULEDIR)
 	@echo "Creating $(MODULENAME).a"
+	@rm -f $@
+	@$(AR) crs $@ $^
+
+$(MODULEDIR)/$(MODULENAME).files.a: $(OBJS_files)
+	-@mkdir -p $(MODULEDIR)
+	@echo "Creating $(MODULENAME).files.a"
 	@rm -f $@
 	@$(AR) crs $@ $^
 
@@ -84,6 +89,11 @@ $(OBJDIR)/$(MODULENAME).cpp.o: $(MODULENAME).cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
+$(OBJDIR)/$(MODULENAME).cpp.files.o: $(MODULENAME).files.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
+
 $(OBJDIR)/$(MODULENAME).cpp.%32.o: $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $< (32bit)"
@@ -97,6 +107,11 @@ $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 # ----------------------------------------------------------------------------------------------------------------------------
 
 $(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+
+$(OBJDIR)/$(MODULENAME).mm.files.o: $(MODULENAME).files.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
