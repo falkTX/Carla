@@ -127,6 +127,10 @@ ifneq ($(MACOS),true)
 LINK_FLAGS     += -Wl,--no-undefined
 endif
 
+ifeq ($(MACOS_OLD),true)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
+endif
+
 # --------------------------------------------------------------
 # Strict test build
 

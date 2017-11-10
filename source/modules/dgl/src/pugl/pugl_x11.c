@@ -41,9 +41,11 @@
 
 #include "pugl/pugl_internal.h"
 
+#ifndef DGL_FILE_BROWSER_DISABLED
 #define SOFD_HAVE_X11
 #include "../sofd/libsofd.h"
 #include "../sofd/libsofd.c"
+#endif
 
 struct PuglInternalsImpl {
 	Display*   display;

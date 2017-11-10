@@ -10,10 +10,7 @@ include ../Makefile.mk
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += $(DGL_FLAGS) -Isrc
-
-# needed by sofd right now, fix later
-BUILD_CXX_FLAGS += -Wno-type-limits -fpermissive
+BUILD_CXX_FLAGS += $(DGL_FLAGS) -DDGL_FILE_BROWSER_DISABLED -Isrc
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

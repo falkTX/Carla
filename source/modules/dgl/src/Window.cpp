@@ -207,7 +207,9 @@ struct Window::PrivateData {
         puglSetSpecialFunc(fView, onSpecialCallback);
         puglSetReshapeFunc(fView, onReshapeCallback);
         puglSetCloseFunc(fView, onCloseCallback);
+#ifndef DGL_FILE_BROWSER_DISABLED
         puglSetFileSelectedFunc(fView, fileBrowserSelectedCallback);
+#endif
 
         puglCreateWindow(fView, nullptr);
 
@@ -949,10 +951,12 @@ struct Window::PrivateData {
         handlePtr->onPuglClose();
     }
 
+#ifndef DGL_FILE_BROWSER_DISABLED
     static void fileBrowserSelectedCallback(PuglView* view, const char* filename)
     {
         handlePtr->fSelf->fileBrowserSelected(filename);
     }
+#endif
 
     #undef handlePtr
 
@@ -1012,6 +1016,7 @@ void Window::repaint() noexcept
 //     (void)name;
 // }
 
+#ifndef DGL_FILE_BROWSER_DISABLED
 bool Window::openFileBrowser(const FileBrowserOptions& options)
 {
 #ifdef SOFD_HAVE_X11
@@ -1077,6 +1082,7 @@ bool Window::openFileBrowser(const FileBrowserOptions& options)
     return false;
 #endif
 }
+#endif
 
 bool Window::isVisible() const noexcept
 {
@@ -1207,9 +1213,11 @@ void Window::onClose()
 {
 }
 
+#ifndef DGL_FILE_BROWSER_DISABLED
 void Window::fileBrowserSelected(const char*)
 {
 }
+#endif
 
 // -----------------------------------------------------------------------
 

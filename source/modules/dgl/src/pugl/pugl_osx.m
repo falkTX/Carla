@@ -570,4 +570,7 @@ void*
 puglGetContext(PuglView* view)
 {
 	return NULL;
+
+	// unused
+	(void)view;
 }
