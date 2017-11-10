@@ -1,0 +1,8 @@
+This folder contains 'water', a fork of Juce v.4x library code.
+This fork takes out everything that is not needed for Carla, and makes it work on generic POSIX systems.
+
+Using Juce version 4 means we can use its GPL v2+ license.
+Starting from version 5, Juce uses GPLv3.
+
+Do not use this library in your own code!
+There are no plans to make it generic library or any support for its use outside of Carla.
