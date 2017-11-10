@@ -51,11 +51,12 @@ LIBS  = $(MODULEDIR)/carla_engine_plugin.a
 LIBS += $(MODULEDIR)/carla_plugin.a
 LIBS += $(MODULEDIR)/jackbridge.a
 
-LIBS += $(MODULEDIR)/audio_decoder.a
 LIBS += $(MODULEDIR)/lilv.a
-LIBS += $(MODULEDIR)/native-plugins.a
 LIBS += $(MODULEDIR)/rtmempool.a
 LIBS += $(MODULEDIR)/water.a
+
+LIBS += $(MODULEDIR)/audio_decoder.a
+LIBS += $(MODULEDIR)/native-plugins.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a
@@ -74,12 +75,10 @@ LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
 
-LINK_FLAGS += $(FFMPEG_LIBS)
 LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
-LINK_FLAGS += $(SNDFILE_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
