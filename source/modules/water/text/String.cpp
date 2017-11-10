@@ -34,6 +34,13 @@
 #include <locale>
 #include <iostream>
 
+#ifdef CARLA_OS_MAC
+// FIXME
+// # import <CoreData/CoreData.h>
+#endif
+
+// #import <Carbon/UnicodeConverter.h>
+
 namespace water {
 
 NewLine newLine;
@@ -1950,6 +1957,56 @@ String String::fromUTF8 (const char* const buffer, int bufferSizeBytes)
 
     return String();
 }
+
+#ifdef CARLA_OS_MAC
+
+String String::convertToPrecomposedUnicode() const
+{
+#if 0
+    UnicodeMapping map;
+
+    map.unicodeEncoding = CreateTextEncoding (kTextEncodingUnicodeDefault,
+                                              kUnicodeNoSubset,
+                                              kTextEncodingDefaultFormat);
+
+    map.otherEncoding = CreateTextEncoding (kTextEncodingUnicodeDefault,
+                                            kUnicodeCanonicalCompVariant,
+                                            kTextEncodingDefaultFormat);
+
+    map.mappingVersion = kUnicodeUseLatestMapping;
+
+    UnicodeToTextInfo conversionInfo = 0;
+    String result;
+
+    if (CreateUnicodeToTextInfo (&map, &conversionInfo) == noErr)
+    {
+        const size_t bytesNeeded = CharPointer_UTF16::getBytesRequiredFor (getCharPointer());
+
+        HeapBlock<char> tempOut;
+        tempOut.calloc (bytesNeeded + 4);
+
+        ByteCount bytesRead = 0;
+        ByteCount outputBufferSize = 0;
+
+        if (ConvertFromUnicodeToText (conversionInfo,
+                                      bytesNeeded, (ConstUniCharArrayPtr) toUTF16().getAddress(),
+                                      kUnicodeDefaultDirectionMask,
+                                      0, 0, 0, 0,
+                                      bytesNeeded, &bytesRead,
+                                      &outputBufferSize, tempOut) == noErr)
+        {
+            result = String (CharPointer_UTF16 ((CharPointer_UTF16::CharType*) tempOut.getData()));
+        }
+
+        DisposeUnicodeToTextInfo (&conversionInfo);
+    }
+
+    return result;
+#else
+    return *this;
+#endif
+}
+#endif
 
 //==============================================================================
 StringRef::StringRef() noexcept  : text ((const String::CharPointerType::CharType*) "\0\0\0")

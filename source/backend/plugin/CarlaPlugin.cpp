@@ -838,7 +838,11 @@ void CarlaPlugin::loadStateSave(const CarlaStateSave& stateSave)
     if (stateSave.chunk != nullptr && (pData->options & PLUGIN_OPTION_USE_CHUNKS) != 0)
     {
         std::vector<uint8_t> chunk(carla_getChunkFromBase64String(stateSave.chunk));
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         setChunkData(chunk.data(), chunk.size());
+#else
+        setChunkData(&chunk.front(), chunk.size());
+#endif
     }
 
 #ifndef BUILD_BRIDGE

@@ -1865,7 +1865,11 @@ void carla_set_chunk_data(uint pluginId, const char* chunkData)
         if (plugin->getOptionsEnabled() & CB::PLUGIN_OPTION_USE_CHUNKS)
         {
             std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkData));
+#ifdef CARLA_PROPER_CPP11_SUPPORT
             return plugin->setChunkData(chunk.data(), chunk.size());
+#else
+            return plugin->setChunkData(&chunk.front(), chunk.size());
+#endif
         }
 
         carla_stderr2("carla_set_chunk_data(%i, \"%s\") - plugin does not use chunks", pluginId, chunkData);

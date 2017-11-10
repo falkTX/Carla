@@ -28,6 +28,10 @@
 
 #include "../water.h"
 
+#ifdef CARLA_OS_MAC
+# include <libkern/OSByteOrder.h>
+#endif
+
 namespace water {
 
 //==============================================================================

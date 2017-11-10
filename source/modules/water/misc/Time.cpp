@@ -28,7 +28,9 @@
 #include <ctime>
 #include <sys/time.h>
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_MAC)
+# include <mach/mach_time.h>
+#elif defined(CARLA_OS_WIN)
 # include <mmsystem.h>
 #endif
 
@@ -37,13 +39,44 @@ namespace water {
 namespace TimeHelpers
 {
     static uint32 lastMSCounterValue = 0;
+
+   #ifdef CARLA_OS_MAC
+    /*  NB: these are kept outside the HiResCounterInfo struct and initialised to 1 to avoid
+        division-by-zero errors if some other static constructor calls us before this file's
+        static constructors have had a chance to fill them in correctly..
+    */
+    static uint64 hiResCounterNumerator = 0, hiResCounterDenominator = 1;
+
+    struct HiResCounterInfo {
+        HiResCounterInfo()
+        {
+            mach_timebase_info_data_t timebase;
+            (void) mach_timebase_info (&timebase);
+
+            if (timebase.numer % 1000000 == 0)
+            {
+                hiResCounterNumerator   = timebase.numer / 1000000;
+                hiResCounterDenominator = timebase.denom;
+            }
+            else
+            {
+                hiResCounterNumerator   = timebase.numer;
+                hiResCounterDenominator = timebase.denom * (uint64) 1000000;
+            }
+        }
+    };
+
+    static HiResCounterInfo hiResCounterInfo;
+   #endif
 }
 
 //==============================================================================
 
 static uint32 water_millisecondsSinceStartup() noexcept
 {
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_MAC)
+    return (uint32) ((mach_absolute_time() * TimeHelpers::hiResCounterNumerator) / TimeHelpers::hiResCounterDenominator);
+#elif defined(CARLA_OS_WIN)
     return (uint32) timeGetTime();
 #else
     timespec t;

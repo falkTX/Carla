@@ -76,7 +76,6 @@ static void print_lib_error(const char* const filename)
         DISCOVERY_OUT("error", error);
 }
 
-#ifndef CARLA_OS_MAC
 // --------------------------------------------------------------------------
 // VST stuff
 
@@ -266,7 +265,6 @@ static intptr_t VSTCALLBACK vstHostCallback(AEffect* const effect, const int32_t
 
     return ret;
 }
-#endif // ! CARLA_OS_MAC
 
 #ifdef HAVE_LINUXSAMPLER
 // --------------------------------------------------------------------------
@@ -1167,7 +1165,6 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     }
 }
 
-#ifndef CARLA_OS_MAC
 static void do_vst_check(lib_t& libHandle, const bool doInit)
 {
     VST_Function vstFn = lib_symbol<VST_Function>(libHandle, "VSTPluginMain");
@@ -1434,7 +1431,6 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
 
     effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
 }
-#endif // ! CARLA_OS_MAC
 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
 {

@@ -762,5 +762,9 @@ int* carla_x11_get_window_pos(uintptr_t winId)
 
 #include "CarlaPipeUtils.cpp"
 
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "water/misc/Time.cpp"
+#endif
+
 // -------------------------------------------------------------------------------------------------------------------
 #endif //  CARLA_UTILS_CACHED_PLUGINS_ONLY

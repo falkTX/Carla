@@ -100,7 +100,6 @@ public:
                     parameters will be filled-in.
     */
     bool next (bool* isDirectory,
-               bool* isHidden,
                int64* fileSize,
                Time* modTime,
                Time* creationTime,
@@ -128,7 +127,7 @@ private:
         ~NativeIterator();
 
         bool next (String& filenameFound,
-                   bool* isDirectory, bool* isHidden, int64* fileSize,
+                   bool* isDirectory, int64* fileSize,
                    Time* modTime, Time* creationTime, bool* isReadOnly);
 
         class Pimpl;

@@ -62,8 +62,10 @@ public:
     /** Destructor. */
     inline ~Atomic() noexcept
     {
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         // This class can only be used for types which are 32 or 64 bits in size.
         static_jassert (sizeof (Type) == 4 || sizeof (Type) == 8);
+#endif
     }
 
     /** Atomically reads and returns the current value. */

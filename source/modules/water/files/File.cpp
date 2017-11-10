@@ -39,12 +39,16 @@
 #else
 # include <dlfcn.h>
 # include <fcntl.h>
+# include <fnmatch.h>
 # include <pwd.h>
 # include <sys/stat.h>
 # ifdef CARLA_OS_MAC
+#  include <mach-o/dyld.h>
+#  import <Foundation/NSFileManager.h>
+#  import <Foundation/NSPathUtilities.h>
+#  import <Foundation/NSString.h>
 # else
 #  include <dirent.h>
-#  include <fnmatch.h>
 # endif
 #endif
 
@@ -1152,7 +1156,7 @@ public:
     }
 
     bool next (String& filenameFound,
-               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               bool* const isDir, int64* const fileSize,
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
         using namespace WindowsFileHelpers;
@@ -1174,7 +1178,6 @@ public:
         filenameFound = findData.cFileName;
 
         if (isDir != nullptr)         *isDir        = ((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0);
-        if (isHidden != nullptr)      *isHidden     = ((findData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0);
         if (isReadOnly != nullptr)    *isReadOnly   = ((findData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0);
         if (fileSize != nullptr)      *fileSize     = findData.nFileSizeLow + (((int64) findData.nFileSizeHigh) << 32);
         if (modTime != nullptr)       *modTime      = Time (fileTimeToTime (&findData.ftLastWriteTime));
@@ -1193,7 +1196,7 @@ private:
 //=====================================================================================================================
 namespace
 {
-   #if CARLA_OS_MAC
+   #ifdef CARLA_OS_MAC
     typedef struct stat   water_statStruct;
     #define WATER_STAT    stat
    #else
@@ -1207,7 +1210,7 @@ namespace
                  && WATER_STAT (fileName.toUTF8(), &info) == 0;
     }
 
-   #if CARLA_OS_MAC
+   #if 0 //def CARLA_OS_MAC
     static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_birthtime; }
    #else
     static int64 getCreationTime (const water_statStruct& s) noexcept     { return (int64) s.st_ctime; }
@@ -1383,7 +1386,9 @@ static NSString* getFileLink (const String& path)
 
 bool File::isSymbolicLink() const
 {
-    return getFileLink (fullPath) != nil;
+    // FIXME
+    return false;
+    //return getFileLink (fullPath) != nil;
 }
 
 File File::getLinkedTarget() const
@@ -1396,7 +1401,7 @@ File File::getLinkedTarget() const
 
 bool File::copyInternal (const File& dest) const
 {
-    @autoreleasepool
+    //@autoreleasepool
     {
         NSFileManager* fm = [NSFileManager defaultManager];
 
@@ -1415,7 +1420,7 @@ bool File::copyInternal (const File& dest) const
 
 File File::getSpecialLocation (const SpecialLocationType type)
 {
-    @autoreleasepool
+    //@autoreleasepool
     {
         String resultPath;
 
@@ -1463,7 +1468,7 @@ public:
           wildCard (wildCard_),
           enumerator (nil)
     {
-        @autoreleasepool
+        //@autoreleasepool
         {
             enumerator = [[[NSFileManager defaultManager] enumeratorAtPath: waterStringToNS (directory.getFullPathName())] retain];
         }
@@ -1475,10 +1480,10 @@ public:
     }
 
     bool next (String& filenameFound,
-               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               bool* const isDir, int64* const fileSize,
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
-        @autoreleasepool
+        //@autoreleasepool
         {
             const char* wildcardUTF8 = nullptr;
 
@@ -1499,9 +1504,6 @@ public:
 
                 const String fullPath (parentDir + filenameFound);
                 updateStatInfoForFile (fullPath, isDir, fileSize, modTime, creationTime, isReadOnly);
-
-                if (isHidden != nullptr)
-                    *isHidden = MacFileHelpers::isHiddenFile (fullPath);
 
                 return true;
             }
@@ -1624,7 +1626,7 @@ public:
     }
 
     bool next (String& filenameFound,
-               bool* const isDir, bool* const isHidden, int64* const fileSize,
+               bool* const isDir, int64* const fileSize,
                Time* const modTime, Time* const creationTime, bool* const isReadOnly)
     {
         if (dir != nullptr)
@@ -1646,9 +1648,6 @@ public:
                     filenameFound = CharPointer_UTF8 (de->d_name);
 
                     updateStatInfoForFile (parentDir + filenameFound, isDir, fileSize, modTime, creationTime, isReadOnly);
-
-                    if (isHidden != nullptr)
-                        *isHidden = filenameFound.startsWithChar ('.');
 
                     return true;
                 }
@@ -1675,10 +1674,10 @@ DirectoryIterator::NativeIterator::NativeIterator (const File& directory, const 
 DirectoryIterator::NativeIterator::~NativeIterator() {}
 
 bool DirectoryIterator::NativeIterator::next (String& filenameFound,
-                                              bool* isDir, bool* isHidden, int64* fileSize,
+                                              bool* isDir, int64* fileSize,
                                               Time* modTime, Time* creationTime, bool* isReadOnly)
 {
-    return pimpl->next (filenameFound, isDir, isHidden, fileSize, modTime, creationTime, isReadOnly);
+    return pimpl->next (filenameFound, isDir, fileSize, modTime, creationTime, isReadOnly);
 }
 
 }

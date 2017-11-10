@@ -23,6 +23,7 @@
 # define DISTRHO_PLUGIN_HAS_UI 0
 #endif
 
+#include "CarlaMathUtils.hpp"
 #include "CarlaJuceUtils.hpp"
 
 // Plugin Code

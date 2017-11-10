@@ -69,10 +69,10 @@ bool DirectoryIterator::fileMatches (const StringArray& wildCards, const String&
 
 bool DirectoryIterator::next()
 {
-    return next (nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    return next (nullptr, nullptr, nullptr, nullptr, nullptr);
 }
 
-bool DirectoryIterator::next (bool* const isDirResult, bool* const isHiddenResult, int64* const fileSize,
+bool DirectoryIterator::next (bool* const isDirResult, int64* const fileSize,
                               Time* const modTime, Time* const creationTime, bool* const isReadOnly)
 {
     for (;;)
@@ -81,17 +81,16 @@ bool DirectoryIterator::next (bool* const isDirResult, bool* const isHiddenResul
 
         if (subIterator != nullptr)
         {
-            if (subIterator->next (isDirResult, isHiddenResult, fileSize, modTime, creationTime, isReadOnly))
+            if (subIterator->next (isDirResult, fileSize, modTime, creationTime, isReadOnly))
                 return true;
 
             subIterator = nullptr;
         }
 
         String filename;
-        bool isDirectory, isHidden = false, shouldContinue = false;
+        bool isDirectory, shouldContinue = false;
 
         while (fileFinder.next (filename, &isDirectory,
-                                (isHiddenResult != nullptr || (whatToLookFor & File::ignoreHiddenFiles) != 0) ? &isHidden : nullptr,
                                 fileSize, modTime, creationTime, isReadOnly))
         {
             ++index;
@@ -102,7 +101,7 @@ bool DirectoryIterator::next (bool* const isDirResult, bool* const isHiddenResul
 
                 if (isDirectory)
                 {
-                    if (isRecursive && ((whatToLookFor & File::ignoreHiddenFiles) == 0 || ! isHidden))
+                    if (isRecursive)
                         subIterator = new DirectoryIterator (File::createFileWithoutCheckingPath (path + filename),
                                                              true, wildCard, whatToLookFor);
 
@@ -117,13 +116,9 @@ bool DirectoryIterator::next (bool* const isDirResult, bool* const isHiddenResul
                 if (matches && (isRecursive || wildCards.size() > 1))
                     matches = fileMatches (wildCards, filename);
 
-                if (matches && (whatToLookFor & File::ignoreHiddenFiles) != 0)
-                    matches = ! isHidden;
-
                 if (matches)
                 {
                     currentFile = File::createFileWithoutCheckingPath (path + filename);
-                    if (isHiddenResult != nullptr)     *isHiddenResult = isHidden;
                     if (isDirResult != nullptr)        *isDirResult = isDirectory;
 
                     return true;

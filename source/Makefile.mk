@@ -179,7 +179,9 @@ HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
 
 ifeq ($(MACOS),true)
+ifneq ($(MACOS_OLD),true)
 HAVE_HYLIA      = true
+endif
 endif
 
 ifeq ($(LINUX),true)
@@ -399,7 +401,9 @@ HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
 JACKBRIDGE_LIBS        = -ldl -lpthread
 LILV_LIBS              = -ldl -lm
 RTAUDIO_FLAGS         += -D__MACOSX_CORE__
+RTAUDIO_LIBS          += -framework CoreAudio
 RTMIDI_FLAGS          += -D__MACOSX_CORE__
+RTMIDI_LIBS           += -framework CoreMIDI
 WATER_LIBS             = -framework AppKit
 endif
 

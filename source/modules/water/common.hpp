@@ -19,6 +19,13 @@
 #include "maths/MathsFunctions.h"
 #include "misc/Result.h"
 
+#ifdef CARLA_OS_MAC
+# include "text/String.h"
+# import <Foundation/NSString.h>
+#endif
+
+#include <cerrno>
+
 //==============================================================================
 namespace water
 {
@@ -48,7 +55,11 @@ int64 water_fileSetPosition (void* handle, int64 pos)
 static inline
 Result getResultForErrno()
 {
+#ifdef CARLA_PROPER_CPP11_SUPPORT
+    return Result::fail (String (std::strerror (std::errno)));
+#else
     return Result::fail (String (strerror (errno)));
+#endif
 }
 
 static inline
@@ -64,6 +75,20 @@ int64 water_fileSetPosition (void* handle, int64 pos)
         return pos;
 
     return -1;
+}
+#endif
+
+#ifdef CARLA_OS_MAC
+static inline
+String nsStringToWater (NSString* s)
+{
+    return CharPointer_UTF8 ([s UTF8String]);
+}
+
+static inline
+NSString* waterStringToNS (const String& s)
+{
+    return [NSString stringWithUTF8String: s.toUTF8()];
 }
 #endif
 

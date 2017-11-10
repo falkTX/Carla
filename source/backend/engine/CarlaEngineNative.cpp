@@ -487,7 +487,11 @@ protected:
             if (CarlaPlugin* const plugin = fEngine->getPlugin(pluginId))
             {
                 std::vector<uint8_t> chunk(carla_getChunkFromBase64String(cdata));
+#ifdef CARLA_PROPER_CPP11_SUPPORT
                 plugin->setChunkData(chunk.data(), chunk.size());
+#else
+                plugin->setChunkData(&chunk.front(), chunk.size());
+#endif
             }
 
             delete[] cdata;

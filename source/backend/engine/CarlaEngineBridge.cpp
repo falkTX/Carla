@@ -785,7 +785,11 @@ public:
 
                 std::vector<uint8_t> chunk(carla_getChunkFromBase64String(chunkDataBase64.toRawUTF8()));
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
                 plugin->setChunkData(chunk.data(), chunk.size());
+#else
+                plugin->setChunkData(&chunk.front(), chunk.size());
+#endif
                 break;
             }
 

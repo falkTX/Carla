@@ -201,7 +201,11 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         delete[] base64atom;
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
+#else
+        const LV2_Atom* const atom((const LV2_Atom*)&chunk.front());
+#endif
         const uint32_t atomTotalSizeCheck(lv2_atom_total_size(atom));
 
         CARLA_SAFE_ASSERT_RETURN(atomTotalSizeCheck == atomTotalSize, true);
@@ -352,5 +356,9 @@ void CarlaBridgeUI::exec(const bool showUI)
 CARLA_BRIDGE_END_NAMESPACE
 
 #include "CarlaPipeUtils.cpp"
+
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+# include "water/misc/Time.cpp"
+#endif
 
 // ---------------------------------------------------------------------

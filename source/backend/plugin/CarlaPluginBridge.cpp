@@ -474,7 +474,11 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(fInfo.chunk.size() > 0, 0);
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         *dataPtr = fInfo.chunk.data();
+#else
+        *dataPtr = &fInfo.chunk.front();
+#endif
         return fInfo.chunk.size();
     }
 
@@ -770,7 +774,11 @@ public:
 
         // save data internally as well
         fInfo.chunk.resize(dataSize);
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         std::memcpy(fInfo.chunk.data(), data, dataSize);
+#else
+        std::memcpy(&fInfo.chunk.front(), data, dataSize);
+#endif
     }
 
     // -------------------------------------------------------------------

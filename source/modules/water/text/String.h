@@ -1063,7 +1063,7 @@ public:
     void swapWith (String& other) noexcept;
 
     //==============================================================================
-   #ifdef CARLA_OS_MAC
+   #if 0 //def CARLA_OS_MAC
     /** OSX ONLY - Creates a String from an OSX CFString. */
     static String fromCFString (CFStringRef cfString);
 
@@ -1072,7 +1072,9 @@ public:
         finished with it.
     */
     CFStringRef toCFString() const;
+   #endif
 
+   #ifdef CARLA_OS_MAC
     /** OSX ONLY - Returns a copy of this string in which any decomposed unicode characters have
         been converted to their precomposed equivalents. */
     String convertToPrecomposedUnicode() const;

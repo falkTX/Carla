@@ -106,7 +106,7 @@ $(OBJDIR)/$(MODULENAME).cpp.%64.o: $(MODULENAME).cpp
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-$(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).cpp
+$(OBJDIR)/$(MODULENAME).mm.o: $(MODULENAME).mm $(MODULENAME).cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@

@@ -52,8 +52,10 @@ static void initRtAudioAPIsIfNeeded()
     std::vector<RtAudio::Api> apis;
     RtAudio::getCompiledApi(apis);
 
-    for (const RtAudio::Api& api : apis)
+    for (std::vector<RtAudio::Api>::const_iterator it = apis.begin(), end=apis.end(); it != end; ++it)
     {
+        const RtAudio::Api& api(*it);
+
         if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
             continue;
 

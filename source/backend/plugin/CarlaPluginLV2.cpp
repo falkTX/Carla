@@ -1301,7 +1301,7 @@ public:
 
                     // write URI mappings
                     uint32_t u = 0;
-                    for (auto it=fCustomURIDs.begin(), end=fCustomURIDs.end(); it != end; ++it, ++u)
+                    for (std::vector<std::string>::iterator it=fCustomURIDs.begin(), end=fCustomURIDs.end(); it != end; ++it, ++u)
                     {
                         if (u < CARLA_URI_MAP_ID_COUNT)
                             continue;
@@ -4492,7 +4492,11 @@ public:
             fLastStateChunk = std::malloc(chunk.size());
             CARLA_SAFE_ASSERT_RETURN(fLastStateChunk != nullptr, nullptr);
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
             std::memcpy(fLastStateChunk, chunk.data(), chunk.size());
+#else
+            std::memcpy(fLastStateChunk, &chunk.front(), chunk.size());
+#endif
 
             *size = chunk.size();
             return fLastStateChunk;
@@ -6258,7 +6262,11 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         delete[] base64atom;
         CARLA_SAFE_ASSERT_RETURN(chunk.size() >= sizeof(LV2_Atom), true);
 
+#ifdef CARLA_PROPER_CPP11_SUPPORT
         const LV2_Atom* const atom((const LV2_Atom*)chunk.data());
+#else
+        const LV2_Atom* const atom((const LV2_Atom*)&chunk.front());
+#endif
         CARLA_SAFE_ASSERT_RETURN(lv2_atom_total_size(atom) == chunk.size(), true);
 
         try {

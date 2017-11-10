@@ -32,13 +32,16 @@
 #endif
 
 #include <clocale>
-#include <ctime>
 #include <fcntl.h>
 
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
 # include "water/misc/Time.h"
 # include "water/text/String.h"
 #else
+# include <ctime>
+#endif
+
+#ifndef CARLA_OS_WIN
 # include <cerrno>
 # include <signal.h>
 # include <sys/wait.h>
@@ -965,7 +968,7 @@ const char* CarlaPipeCommon::_readline() const noexcept
 
     char    c;
     char*   ptr = pData->tmpBuf;
-    ssize_t ret;
+    ssize_t ret = -1;
 
     pData->tmpStr.clear();
 

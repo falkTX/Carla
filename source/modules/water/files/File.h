@@ -831,7 +831,7 @@ public:
    #endif
 
     //==============================================================================
-   #ifdef CARLA_OS_MAC
+   #if 0 //def CARLA_OS_MAC
     /** OSX ONLY - Finds the OSType of a file from the its resources. */
     OSType getMacOSType() const;
 
