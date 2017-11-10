@@ -39,7 +39,7 @@
  #endif
 #endif
 
-#if __clang__
+#ifdef __clang__
  #if __has_feature (cxx_rvalue_references)
   #define WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS 1
  #endif
@@ -129,7 +129,8 @@ namespace NumberToStringConverters
     };
 
     template <typename Type>
-    static char* printDigits (char* t, Type v) noexcept
+    static inline
+    char* printDigits (char* t, Type v) noexcept
     {
         *--t = 0;
 
@@ -144,7 +145,8 @@ namespace NumberToStringConverters
     }
 
     // pass in a pointer to the END of a buffer..
-    static char* numberToString (char* t, const int64 n) noexcept
+    static inline
+    char* numberToString (char* t, const int64 n) noexcept
     {
         if (n >= 0)
             return printDigits (t, static_cast<uint64> (n));
