@@ -85,19 +85,17 @@ endif
 NATIVE_BUILD_FLAGS  = $(NATIVE_PLUGINS_FLAGS)
 NATIVE_LINK_FLAGS   =
 
-ifeq ($(HAVE_FLUIDSYNTH),true)
 NATIVE_BUILD_FLAGS += $(FLUIDSYNTH_FLAGS)
 NATIVE_LINK_FLAGS  += $(FLUIDSYNTH_LIBS)
-endif
 
-ifeq ($(HAVE_LINUXSAMPLER),true)
 NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
-endif
+
+NATIVE_LINK_FLAGS  += $(FFMPEG_LIBS)
+NATIVE_LINK_FLAGS  += $(SNDFILE_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a
-LIBS_native        += $(MODULEDIR)/native-plugins.a
-NATIVE_LINK_FLAGS  += $(NATIVE_PLUGINS_LIBS)
+LIBS_native        += $(MODULEDIR)/native-plugins.base.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS_native        += $(MODULEDIR)/dgl.a

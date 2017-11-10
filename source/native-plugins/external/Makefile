@@ -9,7 +9,7 @@
 # ---------------------------------------------------------------------------------------------------------------------
 # DPF plugins
 
-OBJS += \
+OBJS_all += \
 	$(OBJDIR)/distrho-3bandeq.cpp.o \
 	$(OBJDIR)/distrho-3bandsplitter.cpp.o \
 	$(OBJDIR)/distrho-kars.cpp.o \
@@ -25,7 +25,7 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # DPF plugins (Juice)
 
-OBJS += \
+OBJS_all += \
 	$(OBJDIR)/distrho-vectorjuice.cpp.o \
 	$(OBJDIR)/distrho-wobblejuice.cpp.o
 
@@ -33,7 +33,7 @@ OBJS += \
 # ZynAddSubFX
 
 ifeq ($(HAVE_ZYN_DEPS),true)
-OBJS += \
+OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-fx.cpp.o \
 	$(OBJDIR)/zynaddsubfx-src.cpp.o \
 	$(OBJDIR)/zynaddsubfx-synth.cpp.o
@@ -83,7 +83,7 @@ endif
 # Experimental plugins
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-OBJS += \
+OBJS_all += \
 	$(OBJDIR)/zita-at1.cpp.o \
 	$(OBJDIR)/zita-bls1.cpp.o \
 	$(OBJDIR)/zita-rev1.cpp.o

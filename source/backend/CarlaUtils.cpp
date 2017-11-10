@@ -31,7 +31,7 @@
 # include <X11/Xlib.h>
 #endif
 
-#include "../native-plugins/_data.cpp"
+#include "../native-plugins/_data.all.cpp"
 
 namespace CB = CarlaBackend;
 

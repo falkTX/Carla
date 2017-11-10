@@ -28,7 +28,7 @@ STANDALONE_LIBS += $(MODULEDIR)/jackbridge.a
 
 STANDALONE_LIBS += $(MODULEDIR)/audio_decoder.a
 STANDALONE_LIBS += $(MODULEDIR)/lilv.a
-STANDALONE_LIBS += $(MODULEDIR)/native-plugins.a
+STANDALONE_LIBS += $(MODULEDIR)/native-plugins.all.a
 STANDALONE_LIBS += $(MODULEDIR)/rtmempool.a
 STANDALONE_LIBS += $(MODULEDIR)/water.a
 

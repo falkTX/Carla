@@ -56,7 +56,7 @@ LIBS += $(MODULEDIR)/rtmempool.a
 LIBS += $(MODULEDIR)/water.a
 
 LIBS += $(MODULEDIR)/audio_decoder.a
-LIBS += $(MODULEDIR)/native-plugins.a
+LIBS += $(MODULEDIR)/native-plugins.all.a
 
 ifeq ($(HAVE_DGL),true)
 LIBS += $(MODULEDIR)/dgl.a
@@ -71,14 +71,14 @@ endif
 
 LINK_FLAGS += $(JACKBRIDGE_LIBS)
 LINK_FLAGS += $(LILV_LIBS)
-LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 LINK_FLAGS += $(RTMEMPOOL_LIBS)
 LINK_FLAGS += $(WATER_LIBS)
+LINK_FLAGS += $(NATIVE_PLUGINS_LIBS)
 
-LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(FLUIDSYNTH_LIBS)
+LINK_FLAGS += $(LIBLO_LIBS)
 LINK_FLAGS += $(LINUXSAMPLER_LIBS)
+LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------

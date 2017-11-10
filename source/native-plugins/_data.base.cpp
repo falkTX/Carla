@@ -37,22 +37,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
 // Simple plugins
 
 {
-    /* category  */ NATIVE_PLUGIN_CATEGORY_NONE,
-    /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
-    /* audioIns  */ 1,
-    /* audioOuts */ 1,
-    /* midiIns   */ 0,
-    /* midiOuts  */ 0,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "Bypass",
-    /* label     */ "bypass",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
-},
-{
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
     /* hints     */ NATIVE_PLUGIN_IS_RTSAFE,
     /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
@@ -165,53 +149,9 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     DESCFUNCS
 },
 
-
-#if 0
 // --------------------------------------------------------------------------------------------------------------------
-// Audio file
+// MIDI sequencer
 
-{
-    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE),
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
-    /* audioIns  */ 0,
-    /* audioOuts */ 2,
-    /* midiIns   */ 0,
-    /* midiOuts  */ 0,
-    /* paramIns  */ 1,
-    /* paramOuts */ 0,
-    /* name      */ "Audio File",
-    /* label     */ "audiofile",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
-},
-#endif
-
-// --------------------------------------------------------------------------------------------------------------------
-// MIDI file and sequencer
-
-{
-    /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
-    /* hints     */ static_cast<NativePluginHints>(NATIVE_PLUGIN_IS_RTSAFE
-                                                  |NATIVE_PLUGIN_HAS_UI
-                                                  |NATIVE_PLUGIN_NEEDS_UI_OPEN_SAVE
-                                                  |NATIVE_PLUGIN_USES_STATE
-                                                  |NATIVE_PLUGIN_USES_TIME),
-    /* supports  */ NATIVE_PLUGIN_SUPPORTS_NOTHING,
-    /* audioIns  */ 0,
-    /* audioOuts */ 0,
-    /* midiIns   */ 0,
-    /* midiOuts  */ 1,
-    /* paramIns  */ 0,
-    /* paramOuts */ 0,
-    /* name      */ "MIDI File",
-    /* label     */ "midifile",
-    /* maker     */ "falkTX",
-    /* copyright */ "GNU GPL v2+",
-    DESCFUNCS
-},
 #ifdef HAVE_PYQT
 {
     /* category  */ NATIVE_PLUGIN_CATEGORY_UTILITY,
@@ -405,11 +345,6 @@ static const NativePluginDescriptor sNativePluginDescriptors[] = {
     /* copyright */ "GNU GPL v2+",
     DESCFUNCS
 },
-#endif
-
-#ifdef HAVE_EXTERNAL_PLUGINS
-# define CARLA_EXTERNAL_PLUGINS_INCLUDED_DIRECTLY
-# include "external/_data.cpp"
 #endif
 
 };
