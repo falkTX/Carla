@@ -107,7 +107,7 @@ typedef long long                   int64;
 /** A platform-independent 64-bit unsigned integer type. */
 typedef unsigned long long          uint64;
 
-#ifdef CARLA_64BIT
+#ifdef CARLA_OS_64BIT
   /** A signed integer type that's guaranteed to be large enough to hold a pointer without truncating it. */
   typedef int64                     pointer_sized_int;
   /** An unsigned integer type that's guaranteed to be large enough to hold a pointer without truncating it. */

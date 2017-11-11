@@ -57,7 +57,7 @@
 #endif
 
 #if defined (__LP64__) || defined (_LP64) || defined (__arm64__) || defined(CARLA_OS_WIN64)
-# define CARLA_64BIT
+# define CARLA_OS_64BIT
 #endif
 
 /* Check for C++11 support */

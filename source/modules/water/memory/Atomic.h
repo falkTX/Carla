@@ -146,7 +146,7 @@ public:
         This is exposed publicly in case you need to manipulate it directly
         for performance reasons.
     */
-   #ifdef CARLA_64BIT
+   #ifdef CARLA_OS_64BIT
     __attribute__ ((aligned (8)))
    #else
     __attribute__ ((aligned (4)))
