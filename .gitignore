@@ -95,9 +95,9 @@ carla-discovery-posix64
 carla-frontend
 carla-lv2-export
 
-at1-ui
-bls1-ui
-rev1-ui
+zita-at1-ui
+zita-bls1-ui
+zita-rev1-ui
 zynaddsubfx-ui
 
 data/stoat-callgraph.png

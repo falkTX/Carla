@@ -985,19 +985,11 @@ AudioProcessorGraph::Node* AudioProcessorGraph::getNodeForId (const uint32 nodeI
 
 AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const newProcessor, uint32 nodeId)
 {
-    if (newProcessor == nullptr || newProcessor == this)
-    {
-        jassertfalse;
-        return nullptr;
-    }
+    CARLA_SAFE_ASSERT_RETURN (newProcessor != nullptr && newProcessor != this, nullptr);
 
     for (int i = nodes.size(); --i >= 0;)
     {
-        if (nodes.getUnchecked(i)->getProcessor() == newProcessor)
-        {
-            jassertfalse; // Cannot add the same object to the graph twice!
-            return nullptr;
-        }
+        CARLA_SAFE_ASSERT_RETURN(nodes.getUnchecked(i)->getProcessor() != newProcessor, nullptr);
     }
 
     if (nodeId == 0)
@@ -1013,8 +1005,6 @@ AudioProcessorGraph::Node* AudioProcessorGraph::addNode (AudioProcessor* const n
         if (nodeId > lastNodeId)
             lastNodeId = nodeId;
     }
-
-//     newProcessor->setPlayHead (getPlayHead());
 
     Node* const n = new Node (nodeId, newProcessor);
     nodes.add (n);
@@ -1048,11 +1038,9 @@ bool AudioProcessorGraph::removeNode (const uint32 nodeId)
 
 bool AudioProcessorGraph::removeNode (Node* node)
 {
-    if (node != nullptr)
-        return removeNode (node->nodeId);
+    CARLA_SAFE_ASSERT_RETURN(node != nullptr, false);
 
-    jassertfalse;
-    return false;
+    return removeNode (node->nodeId);
 }
 
 //==============================================================================
@@ -1348,16 +1336,6 @@ void AudioProcessorGraph::setNonRealtime (bool isProcessingNonRealtime) noexcept
         nodes.getUnchecked(i)->getProcessor()->setNonRealtime (isProcessingNonRealtime);
 }
 
-// void AudioProcessorGraph::setPlayHead (AudioPlayHead* audioPlayHead)
-// {
-//     const CarlaRecursiveMutexLocker cml (getCallbackLock());
-//
-//     AudioProcessor::setPlayHead (audioPlayHead);
-//
-//     for (int i = 0; i < nodes.size(); ++i)
-//         nodes.getUnchecked(i)->getProcessor()->setPlayHead (audioPlayHead);
-// }
-
 void AudioProcessorGraph::processAudio (AudioSampleBuffer& buffer, MidiBuffer& midiMessages)
 {
     AudioSampleBuffer&  renderingBuffers         = audioBuffers->renderingBuffers;
@@ -1428,30 +1406,9 @@ const String AudioProcessorGraph::AudioGraphIOProcessor::getName() const
     return String();
 }
 
-#if 0
-void AudioProcessorGraph::AudioGraphIOProcessor::fillInPluginDescription (PluginDescription& d) const
-{
-    d.name = getName();
-    d.uid = d.name.hashCode();
-    d.category = "I/O devices";
-    d.pluginFormatName = "Internal";
-    d.manufacturerName = "ROLI Ltd.";
-    d.version = "1.0";
-    d.isInstrument = false;
-
-    d.numInputChannels = getTotalNumInputChannels();
-    if (type == audioOutputNode && graph != nullptr)
-        d.numInputChannels = graph->getTotalNumInputChannels();
-
-    d.numOutputChannels = getTotalNumOutputChannels();
-    if (type == audioInputNode && graph != nullptr)
-        d.numOutputChannels = graph->getTotalNumOutputChannels();
-}
-#endif
-
 void AudioProcessorGraph::AudioGraphIOProcessor::prepareToPlay (double, int)
 {
-    jassert (graph != nullptr);
+    CARLA_SAFE_ASSERT (graph != nullptr);
 }
 
 void AudioProcessorGraph::AudioGraphIOProcessor::releaseResources()
