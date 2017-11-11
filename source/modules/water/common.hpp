@@ -56,7 +56,7 @@ static inline
 Result getResultForErrno()
 {
 #ifdef CARLA_PROPER_CPP11_SUPPORT
-    return Result::fail (String (std::strerror (std::errno)));
+    return Result::fail (String (std::strerror (errno)));
 #else
     return Result::fail (String (strerror (errno)));
 #endif
