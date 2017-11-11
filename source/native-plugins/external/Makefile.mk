@@ -197,6 +197,9 @@ all:
 install_external_plugins:
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
+	# Create directories (zynaddsubfx)
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
+
 	# Install resources (zynaddsubfx)
 	install -m 644 \
 		bin/resources/zynaddsubfx/*.png \
@@ -209,6 +212,11 @@ endif
 endif
 
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
+	# Create directories (experimental plugins)
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
+	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
+
 	# Install resources (experimental plugins)
 	install -m 644 \
 		bin/resources/at1/*.png \

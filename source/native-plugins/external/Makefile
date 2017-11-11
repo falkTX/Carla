@@ -39,7 +39,7 @@ OBJS_all += \
 	$(OBJDIR)/zynaddsubfx-synth.cpp.o
 
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
-TARGETS += ../resources/zynaddsubfx-ui$(APP_EXT)
+TARGETS += resources/zynaddsubfx-ui$(APP_EXT)
 
 ZYN_UI_FILES_CPP = \
 	zynaddsubfx/UI/ADnoteUI.cpp \
@@ -89,9 +89,9 @@ OBJS_all += \
 	$(OBJDIR)/zita-rev1.cpp.o
 
 TARGETS += \
-	../resources/zita-at1-ui$(APP_EXT) \
-	../resources/zita-bls1-ui$(APP_EXT) \
-	../resources/zita-rev1-ui$(APP_EXT)
+	resources/zita-at1-ui$(APP_EXT) \
+	resources/zita-bls1-ui$(APP_EXT) \
+	resources/zita-rev1-ui$(APP_EXT)
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ $(OBJDIR)/zynaddsubfx-ui.cpp.o: zynaddsubfx-ui.cpp $(ZYN_UI_FILES_H) $(ZYN_UI_FI
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZYN_UI_FLAGS) -Wno-unused-parameter -Wno-unused-variable -c -o $@
 
-../resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
+resources/zynaddsubfx-ui$(APP_EXT): $(OBJDIR)/zynaddsubfx-ui.cpp.o
 	-@mkdir -p ../resources
 	@echo "Linking zynaddsubfx-ui"
 	@$(CXX) $^ $(LINK_FLAGS) $(ZYN_UI_LIBS) -o $@
@@ -187,7 +187,7 @@ $(OBJDIR)/zita-%.cpp.o: zita-%.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(ZITA_DSP_FLAGS) -c -o $@
 
-../resources/zita-%-ui$(APP_EXT): $(OBJDIR)/zita-%-ui.cpp.o
+resources/zita-%-ui$(APP_EXT): $(OBJDIR)/zita-%-ui.cpp.o
 	-@mkdir -p ../resources
 	@echo "Linking $<"
 	@$(CXX) $^ $(LINK_FLAGS) $(ZITA_UI_LIBS) -o $@

@@ -392,20 +392,6 @@ ifeq ($(HAVE_PYQT),true)
 	install -d $(DESTDIR)$(DATADIR)/mime/packages
 endif
 
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	# Create directories (experimental plugins)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
-endif
-
-ifeq ($(HAVE_ZYN_DEPS),true)
-ifeq ($(HAVE_ZYN_UI_DEPS),true)
-	# Create directories (zynaddsubfx)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/zynaddsubfx
-endif
-endif
-
 	# -------------------------------------------------------------------------------------------------------------
 
 	# Install script files (non-gui)
