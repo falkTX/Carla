@@ -39,7 +39,7 @@
 
 #if defined(CARLA_OS_WIN)
 # define PLUGIN_EXT ".dll"
-#elif defined(JUCE_MAC)
+#elif defined(CARLA_OS_MAC)
 # define PLUGIN_EXT ".dylib"
 #else
 # define PLUGIN_EXT ".so"

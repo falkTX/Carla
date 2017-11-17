@@ -990,7 +990,7 @@ static const uint32_t kMidiOutputPortOffset  = MAX_PATCHBAY_PLUGINS*3+1;
 static const uint kMidiChannelIndex = static_cast<uint>(AudioProcessorGraph::midiChannelIndex);
 
 static inline
-bool adjustPatchbayPortIdForJuce(uint& portId)
+bool adjustPatchbayPortIdForWater(uint& portId)
 {
     CARLA_SAFE_ASSERT_RETURN(portId >= kAudioInputPortOffset, false);
     CARLA_SAFE_ASSERT_RETURN(portId <= kMidiOutputPortOffset, false);
@@ -1537,9 +1537,9 @@ bool PatchbayGraph::connect(const bool external, const uint groupA, const uint p
     uint adjustedPortA = portA;
     uint adjustedPortB = portB;
 
-    if (! adjustPatchbayPortIdForJuce(adjustedPortA))
+    if (! adjustPatchbayPortIdForWater(adjustedPortA))
         return false;
-    if (! adjustPatchbayPortIdForJuce(adjustedPortB))
+    if (! adjustPatchbayPortIdForWater(adjustedPortB))
         return false;
 
     if (! graph.addConnection(groupA, static_cast<int>(adjustedPortA), groupB, static_cast<int>(adjustedPortB)))
@@ -1580,9 +1580,9 @@ bool PatchbayGraph::disconnect(const uint connectionId)
         uint adjustedPortA = connectionToId.portA;
         uint adjustedPortB = connectionToId.portB;
 
-        if (! adjustPatchbayPortIdForJuce(adjustedPortA))
+        if (! adjustPatchbayPortIdForWater(adjustedPortA))
             return false;
-        if (! adjustPatchbayPortIdForJuce(adjustedPortB))
+        if (! adjustPatchbayPortIdForWater(adjustedPortB))
             return false;
 
         if (! graph.removeConnection(connectionToId.groupA, static_cast<int>(adjustedPortA),
@@ -1617,9 +1617,9 @@ void PatchbayGraph::disconnectInternalGroup(const uint groupId) noexcept
         uint adjustedPortA = connectionToId.portA;
         uint adjustedPortB = connectionToId.portB;
 
-        if (! adjustPatchbayPortIdForJuce(adjustedPortA))
+        if (! adjustPatchbayPortIdForWater(adjustedPortA))
             return false;
-        if (! adjustPatchbayPortIdForJuce(adjustedPortB))
+        if (! adjustPatchbayPortIdForWater(adjustedPortB))
             return false;
 
         graph.removeConnection(connectionToId.groupA, static_cast<int>(adjustedPortA),

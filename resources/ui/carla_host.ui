@@ -1042,11 +1042,6 @@
     <string>Show Canvas &amp;Keyboard</string>
    </property>
   </action>
-  <action name="act_help_about_juce">
-   <property name="text">
-    <string>About &amp;JUCE</string>
-   </property>
-  </action>
   <action name="act_canvas_show_internal">
    <property name="checkable">
     <bool>true</bool>
