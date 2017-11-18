@@ -2211,7 +2211,9 @@ public:
         // ---------------------------------------------------------------
         // initial values
 
-        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientNull);
+        fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientVersion);
+        fShmNonRtClientControl.writeUInt(CARLA_PLUGIN_BRIDGE_API_VERSION);
+
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtClientData)));
         fShmNonRtClientControl.writeUInt(static_cast<uint32_t>(sizeof(BridgeNonRtServerData)));

@@ -171,7 +171,10 @@ public:
         PluginBridgeNonRtClientOpcode opcode;
 
         opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientNull, opcode);
+        CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientVersion, false);
+
+        const uint32_t apiVersion = fShmNonRtClientControl.readUInt();
+        CARLA_SAFE_ASSERT_RETURN(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, false);
 
         const uint32_t shmRtClientDataSize = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmRtClientDataSize == sizeof(BridgeRtClientData), shmRtClientDataSize, sizeof(BridgeRtClientData));
@@ -182,8 +185,17 @@ public:
         const uint32_t shmNonRtServerDataSize = fShmNonRtClientControl.readUInt();
         CARLA_SAFE_ASSERT_INT2(shmNonRtServerDataSize == sizeof(BridgeNonRtServerData), shmNonRtServerDataSize, sizeof(BridgeNonRtServerData));
 
+        if (shmRtClientDataSize != sizeof(BridgeRtClientData) ||
+            shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) ||
+            shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
+        {
+            carla_stderr2("CarlaJackAppClient: data size mismatch");
+            return false;
+        }
+
         opcode = fShmNonRtClientControl.readOpcode();
-        CARLA_SAFE_ASSERT_INT(opcode == kPluginBridgeNonRtClientInitialSetup, opcode);
+        CARLA_SAFE_ASSERT_RETURN(opcode == kPluginBridgeNonRtClientInitialSetup, false);
+
         pData->bufferSize = fShmNonRtClientControl.readUInt();
         pData->sampleRate = fShmNonRtClientControl.readDouble();
 
@@ -195,9 +207,6 @@ public:
 
         pData->initTime(nullptr);
 
-        if (shmRtClientDataSize != sizeof(BridgeRtClientData) || shmNonRtClientDataSize != sizeof(BridgeNonRtClientData) || shmNonRtServerDataSize != sizeof(BridgeNonRtServerData))
-            return false;
-
         // tell backend we're live
         {
             const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
@@ -208,7 +217,6 @@ public:
 
         // TODO
         startThread(/*Thread::realtimeAudioPriority*/);
-
         return true;
     }
 
@@ -660,6 +668,11 @@ public:
             {
             case kPluginBridgeNonRtClientNull:
                 break;
+
+            case kPluginBridgeNonRtClientVersion: {
+                const uint apiVersion = fShmNonRtServerControl.readUInt();
+                CARLA_SAFE_ASSERT_UINT2(apiVersion == CARLA_PLUGIN_BRIDGE_API_VERSION, apiVersion, CARLA_PLUGIN_BRIDGE_API_VERSION);
+            }   break;
 
             case kPluginBridgeNonRtClientPing: {
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);

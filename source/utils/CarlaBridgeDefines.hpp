@@ -20,6 +20,8 @@
 
 #include "CarlaRingBuffer.hpp"
 
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 1
+
 // -------------------------------------------------------------------------------------------------------------------
 
 // Server sends these to client during RT
@@ -42,6 +44,7 @@ enum PluginBridgeRtClientOpcode {
 // Server sends these to client during non-RT
 enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientNull = 0,
+    kPluginBridgeNonRtClientVersion,                 // uint
     kPluginBridgeNonRtClientPing,
     kPluginBridgeNonRtClientPingOnOff,               // bool
     kPluginBridgeNonRtClientActivate,

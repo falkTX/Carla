@@ -78,6 +78,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
     {
     case kPluginBridgeNonRtClientNull:
         return "kPluginBridgeNonRtClientNull";
+    case kPluginBridgeNonRtClientVersion:
+        return "kPluginBridgeNonRtClientVersion";
     case kPluginBridgeNonRtClientPing:
         return "kPluginBridgeNonRtClientPing";
     case kPluginBridgeNonRtClientPingOnOff:
