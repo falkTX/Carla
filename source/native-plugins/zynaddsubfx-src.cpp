@@ -22,13 +22,14 @@
 #undef override
 
 // ignore some compiler warnings
-#if defined(__GNUC__) && (__GNUC__ >= 6)
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wshift-negative-value"
-#elif defined(__clang__)
+#if defined(__clang__)
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Winconsistent-missing-override"
 # pragma clang diagnostic ignored "-Wunused-private-field"
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wshift-negative-value"
+# pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #endif
 
 // base c-style headers
@@ -540,10 +541,10 @@ extern "C" {
 
 #include "zynaddsubfx/globals.cpp"
 
-#if defined(__GNUC__) && (__GNUC__ >= 6)
-# pragma GCC diagnostic pop
-#elif defined(__clang__)
+#if defined(__clang__)
 # pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ >= 6)
+# pragma GCC diagnostic pop
 #endif
 
 // Dummy variables and functions for linking purposes

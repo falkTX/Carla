@@ -121,7 +121,6 @@ endif
 # DSP flags
 ZYN_DSP_FLAGS  = $(ZYN_BASE_FLAGS)
 ZYN_DSP_FLAGS += $(shell pkg-config --cflags fftw3 zlib)
-ZYN_DSP_FLAGS += -Wno-misleading-indentation -Wno-shift-negative-value
 ZYN_DSP_LIBS   = $(ZYN_BASE_LIBS)
 ZYN_DSP_LIBS  += $(shell pkg-config --libs fftw3 zlib)
 
