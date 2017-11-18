@@ -113,7 +113,7 @@
 # define P_UINTPTR "%lx"
 # define P_SIZE    "%lu"
 # define P_SSIZE   "%li"
-#elif defined(__WORDSIZE) && __WORDSIZE == 64
+#elif (defined(__WORDSIZE) && __WORDSIZE == 64) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ == 64)
 # define P_INT64   "%li"
 # define P_UINT64  "%lu"
 # define P_INTPTR  "%li"
