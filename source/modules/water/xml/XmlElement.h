@@ -614,44 +614,6 @@ public:
     XmlElement* findParentElementOf (const XmlElement* childToSearchFor) noexcept;
 
     //==============================================================================
-    /** Sorts the child elements using a comparator.
-
-        This will use a comparator object to sort the elements into order. The object
-        passed must have a method of the form:
-        @code
-        int compareElements (const XmlElement* first, const XmlElement* second);
-        @endcode
-
-        ..and this method must return:
-          - a value of < 0 if the first comes before the second
-          - a value of 0 if the two objects are equivalent
-          - a value of > 0 if the second comes before the first
-
-        To improve performance, the compareElements() method can be declared as static or const.
-
-        @param comparator   the comparator to use for comparing elements.
-        @param retainOrderOfEquivalentItems     if this is true, then items which the comparator
-                            says are equivalent will be kept in the order in which they
-                            currently appear in the array. This is slower to perform, but
-                            may be important in some cases. If it's false, a faster algorithm
-                            is used, but equivalent elements may be rearranged.
-    */
-    template <class ElementComparator>
-    void sortChildElements (ElementComparator& comparator,
-                            bool retainOrderOfEquivalentItems = false)
-    {
-        const int num = getNumChildElements();
-
-        if (num > 1)
-        {
-            HeapBlock<XmlElement*> elems ((size_t) num);
-            getChildElementsAsArray (elems);
-            sortArray (comparator, (XmlElement**) elems, 0, num - 1, retainOrderOfEquivalentItems);
-            reorderChildElements (elems, num);
-        }
-    }
-
-    //==============================================================================
     /** Returns true if this element is a section of text.
 
         Elements can either be an XML tag element or a secton of text, so this
