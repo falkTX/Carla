@@ -1,6 +1,6 @@
 /*
  * Carla math utils
- * Copyright (C) 2011-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -218,9 +218,9 @@ float carla_findMaxNormalizedFloat(float floats[], const std::size_t count)
 
     for (std::size_t i=1; i<count; ++i)
     {
-        tmp = std::abs(floats[i]);
+        tmp = std::abs(*floats++);
 
-        if (maxf2 > tmp)
+        if (tmp > maxf2)
             maxf2 = tmp;
     }
 
