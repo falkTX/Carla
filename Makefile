@@ -822,16 +822,6 @@ else # LINUX
 	@echo "VST:     $(ANS_YES)(without UI) $(mZ)Linux, Mac and Windows only$(mE)"
 endif
 endif
-ifeq ($(MACOS_OR_WIN32),true)
-	@echo "VST3:    $(ANS_YES)"
-else
-	@echo "VST3:    $(ANS_NO) $(mZ)Windows and MacOS only$(mE)"
-endif
-ifeq ($(MACOS),true)
-	@echo "AU:      $(ANS_YES)"
-else
-	@echo "AU:      $(ANS_NO) $(mZ)MacOS only$(mE)"
-endif
 	@echo ""
 
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
