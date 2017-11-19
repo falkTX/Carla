@@ -22,7 +22,7 @@
 
 #include <ctime>
 
-#ifndef CARLA_OS_HAIKU
+#ifdef CARLA_OS_LINUX
 # define CARLA_USE_FUTEXES
 #endif
 
