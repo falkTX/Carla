@@ -193,7 +193,7 @@ public:
 
         const uint devCount(fAudio.getDeviceCount());
 
-        if (devCount == 0)
+        if (devCount == 0 && fAudio.getCurrentApi() != RtAudio::RtAudio::RTAUDIO_DUMMY)
         {
             setLastError("No audio devices available for this driver");
             return false;
