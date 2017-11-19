@@ -23,8 +23,8 @@ endif
 
 BUILD_CXX_FLAGS += -I$(CWD) -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 
-INTERPOSER_SAFE_LIBS = -ldl
-INTERPOSER_X11_LIBS  = $(X11_LIBS) -ldl
+INTERPOSER_SAFE_LIBS = $(LIBDL_LIBS)
+INTERPOSER_X11_LIBS  = $(X11_LIBS) $(LIBDL_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
 

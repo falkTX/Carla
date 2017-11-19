@@ -32,22 +32,22 @@ endif
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)
-LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) -ldl
+LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) $(LIBDL_LIBS)
 
 BUILD_GTK3_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK3 $(shell pkg-config --cflags gtk+-3.0)
-LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-3.0) -ldl
+LINK_GTK3_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-3.0) $(LIBDL_LIBS)
 
 BUILD_QT4_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT4 $(shell pkg-config --cflags QtCore QtGui) -I$(OBJDIR) -I$(CWD)/theme -Wno-unused-variable
-LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) -ldl
+LINK_QT4_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs QtCore QtGui) $(LIBDL_LIBS)
 
 BUILD_QT5_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_QT5 $(shell pkg-config --cflags Qt5Core Qt5Gui Qt5Widgets) -I$(OBJDIR) -I$(CWD)/theme
-LINK_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) -ldl
+LINK_QT5_FLAGS      = $(LINK_FLAGS) $(shell pkg-config --libs Qt5Core Qt5Gui Qt5Widgets) $(LIBDL_LIBS)
 
 BUILD_X11_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_X11 $(X11_FLAGS)
-LINK_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) -ldl
+LINK_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) $(LIBDL_LIBS)
 
 BUILD_COCOA_FLAGS   = $(BUILD_CXX_FLAGS) -DBRIDGE_COCOA -ObjC++
-LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore -ldl
+LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore $(LIBDL_LIBS)
 
 BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
 LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows

@@ -64,21 +64,9 @@ LIBS_win32   += $(MODULEDIR)/water.win32.a
 LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
-ifeq ($(HAVE_LIBLO),true)
 LINK_FLAGS += $(LIBLO_LIBS)
-endif
-
-ifeq ($(HAVE_LIBMAGIC),true)
 LINK_FLAGS += $(MAGIC_LIBS)
-endif
-
-ifeq ($(HAVE_X11),true)
 LINK_FLAGS += $(X11_LIBS)
-endif
-
-ifeq ($(UNIX),true)
-LINK_FLAGS += -ldl -lpthread
-endif
 
 # ----------------------------------------------------------------------------------------------------------------------
 

@@ -114,9 +114,7 @@ ZYN_BASE_FLAGS += -DHAVE_ASYNC
 endif
 
 ZYN_BASE_LIBS   = $(shell pkg-config --libs liblo mxml) -lpthread
-ifneq ($(WIN32),true)
-ZYN_BASE_LIBS  += -ldl
-endif
+ZYN_BASE_LIBS  += $(LIBDL_LIBS)
 
 # DSP flags
 ZYN_DSP_FLAGS  = $(ZYN_BASE_FLAGS)
@@ -173,7 +171,7 @@ ZITA_UI_FLAGS   = $(shell pkg-config --cflags cairo libpng12 freetype2 x11 xft z
 ZITA_UI_FLAGS  += -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-unused-result
 ZITA_UI_LIBS    = $(shell pkg-config --libs cairo libpng12 freetype2 zlib)
 ZITA_UI_LIBS   += -lclxclient -lclthreads $(shell pkg-config --libs x11 xft)
-ZITA_UI_LIBS   += -ldl -lpthread -lrt
+ZITA_UI_LIBS   += $(LIBDL_LIBS) -lpthread -lrt
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

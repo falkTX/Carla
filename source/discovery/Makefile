@@ -68,9 +68,7 @@ LIBS_win32   += $(MODULEDIR)/water.win32.a
 LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
-ifeq ($(UNIX),true)
-LINK_FLAGS += -ldl
-endif
+LINK_FLAGS   += $(LIBDL_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 

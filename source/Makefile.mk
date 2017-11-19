@@ -337,6 +337,10 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 1)
 
+ifeq ($(LINUX_OR_MACOS),true)
+LIBDL_LIBS = -ldl
+endif
+
 ifeq ($(HAVE_LIBLO),true)
 LIBLO_FLAGS = $(shell pkg-config --cflags liblo)
 LIBLO_LIBS  = $(shell pkg-config --libs liblo)
@@ -388,50 +392,63 @@ RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
 RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
 endif
 
-ifneq ($(HAIKU),true)
-RTMEMPOOL_LIBS = -lpthread
-endif
-
 ifeq ($(UNIX),true)
 RTAUDIO_FLAGS        += -D__UNIX_JACK__
 endif
 
+ifeq ($(BSD),true)
+JACKBRIDGE_LIBS  = -lpthread -lrt
+LILV_LIBS        = -lm -lrt
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -lpthread -lrt
+endif
+
+ifneq ($(HAIKU),true)
+JACKBRIDGE_LIBS  = -lpthread
+LILV_LIBS        = -lm
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -lpthread
+endif
+
 ifeq ($(LINUX),true)
-HYLIA_FLAGS           = -DLINK_PLATFORM_LINUX=1
-JACKBRIDGE_LIBS       = -ldl -lpthread -lrt
-LILV_LIBS             = -ldl -lm -lrt
-WATER_LIBS            = -ldl -lpthread -lrt
+HYLIA_FLAGS      = -DLINK_PLATFORM_LINUX=1
+JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
+LILV_LIBS        = -ldl -lm -lrt
+RTMEMPOOL_LIBS   = -lpthread -lrt
+WATER_LIBS       = -ldl -lpthread -lrt
 ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS        += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS         += $(shell pkg-config --libs alsa) -lpthread
-RTMIDI_FLAGS         += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS          += $(shell pkg-config --libs alsa)
+RTAUDIO_FLAGS   += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS    += $(shell pkg-config --libs alsa) -lpthread
+RTMIDI_FLAGS    += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS     += $(shell pkg-config --libs alsa)
 endif
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS        += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
-RTAUDIO_LIBS         += $(shell pkg-config --libs libpulse-simple)
+RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_LIBS    += $(shell pkg-config --libs libpulse-simple)
 endif
 endif
 
 ifeq ($(MACOS),true)
-HYLIA_FLAGS            = -DLINK_PLATFORM_MACOSX=1
-JACKBRIDGE_LIBS        = -ldl -lpthread
-LILV_LIBS              = -ldl -lm
-RTAUDIO_FLAGS         += -D__MACOSX_CORE__
-RTAUDIO_LIBS          += -framework CoreAudio
-RTMIDI_FLAGS          += -D__MACOSX_CORE__
-RTMIDI_LIBS           += -framework CoreMIDI
-WATER_LIBS             = -framework AppKit
+HYLIA_FLAGS      = -DLINK_PLATFORM_MACOSX=1
+JACKBRIDGE_LIBS  = -ldl -lpthread
+LILV_LIBS        = -ldl -lm
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -framework AppKit
+RTAUDIO_FLAGS   += -D__MACOSX_CORE__
+RTAUDIO_LIBS    += -framework CoreAudio
+RTMIDI_FLAGS    += -D__MACOSX_CORE__
+RTMIDI_LIBS     += -framework CoreMIDI
 endif
 
 ifeq ($(WIN32),true)
-HYLIA_FLAGS            = -DLINK_PLATFORM_WINDOWS=1
-JACKBRIDGE_LIBS        = -lpthread
-LILV_LIBS              = -lm
-RTAUDIO_FLAGS         += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
-RTAUDIO_LIBS          += -ldsound -luuid -lksuser -lwinmm
-RTMIDI_FLAGS          += -D__WINDOWS_MM__
-WATER_LIBS             = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+HYLIA_FLAGS      = -DLINK_PLATFORM_WINDOWS=1
+JACKBRIDGE_LIBS  = -lpthread
+LILV_LIBS        = -lm
+RTMEMPOOL_LIBS   = -lpthread
+WATER_LIBS       = -luuid -lwsock32 -lwininet -lversion -lole32 -lws2_32 -loleaut32 -limm32 -lcomdlg32 -lshlwapi -lrpcrt4 -lwinmm
+RTAUDIO_FLAGS   += -D__WINDOWS_ASIO__ -D__WINDOWS_DS__ -D__WINDOWS_WASAPI__
+RTAUDIO_LIBS    += -ldsound -luuid -lksuser -lwinmm
+RTMIDI_FLAGS    += -D__WINDOWS_MM__
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
