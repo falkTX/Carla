@@ -1217,12 +1217,10 @@ PyCarlaTransportInfo = {
 # ------------------------------------------------------------------------------------------------------------
 # Set BINARY_NATIVE
 
-if HAIKU or LINUX or MACOS:
-    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
-elif WINDOWS:
+if WINDOWS:
     BINARY_NATIVE = BINARY_WIN64 if kIs64bit else BINARY_WIN32
 else:
-    BINARY_NATIVE = BINARY_OTHER
+    BINARY_NATIVE = BINARY_POSIX64 if kIs64bit else BINARY_POSIX32
 
 # ------------------------------------------------------------------------------------------------------------
 # Carla Host object (Meta)
