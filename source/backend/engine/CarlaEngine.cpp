@@ -174,6 +174,8 @@ CarlaEngine* CarlaEngine::newDriverByName(const char* const driverName)
     // -------------------------------------------------------------------
     // common
 
+    if (std::strcmp(driverName, "Dummy") == 0)
+        return newRtAudio(AUDIO_API_NULL);
     if (std::strncmp(driverName, "JACK ", 5) == 0)
         return newRtAudio(AUDIO_API_JACK);
     if (std::strcmp(driverName, "OSS") == 0)
