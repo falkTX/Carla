@@ -26,11 +26,8 @@
 #include "CarlaMainLoop.hpp"
 #include "CarlaMIDI.h"
 
-#ifdef CARLA_OS_UNIX
-# include <signal.h>
-#endif
-
 #ifdef CARLA_OS_LINUX
+# include <signal.h>
 # include <sys/prctl.h>
 #endif
 
@@ -57,7 +54,16 @@ static bool gIsInitiated = false;
 static volatile bool gCloseNow = false;
 static volatile bool gSaveNow  = false;
 
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_LINUX)
+static void closeSignalHandler(int) noexcept
+{
+    gCloseNow = true;
+}
+static void saveSignalHandler(int) noexcept
+{
+    gSaveNow = true;
+}
+#elif defined(CARLA_OS_WIN)
 static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
 {
     if (dwCtrlType == CTRL_C_EVENT)
@@ -67,22 +73,11 @@ static BOOL WINAPI winSignalHandler(DWORD dwCtrlType) noexcept
     }
     return FALSE;
 }
-#elif defined(CARLA_OS_LINUX)
-static void closeSignalHandler(int) noexcept
-{
-    gCloseNow = true;
-}
-static void saveSignalHandler(int) noexcept
-{
-    gSaveNow = true;
-}
 #endif
 
 static void initSignalHandler()
 {
-#ifdef CARLA_OS_WIN
-    SetConsoleCtrlHandler(winSignalHandler, TRUE);
-#elif defined(CARLA_OS_LINUX)
+#if defined(CARLA_OS_LINUX)
     struct sigaction sig;
     carla_zeroStruct(sig);
 
@@ -96,6 +91,8 @@ static void initSignalHandler()
     sig.sa_flags   = SA_RESTART;
     sigemptyset(&sig.sa_mask);
     sigaction(SIGUSR1, &sig, nullptr);
+#elif defined(CARLA_OS_WIN)
+    SetConsoleCtrlHandler(winSignalHandler, TRUE);
 #endif
 }
 
