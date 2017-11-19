@@ -191,56 +191,64 @@ public:
             return false;
         }
 
-        const uint devCount(fAudio.getDeviceCount());
-        const bool isDummy(fAudio.getCurrentApi() == RtAudio::RtAudio::RTAUDIO_DUMMY);
-
-        if (devCount == 0 && ! isDummy)
-        {
-            setLastError("No audio devices available for this driver");
-            return false;
-        }
-
         RtAudio::StreamParameters iParams, oParams;
         bool deviceSet = false;
 
-        if (pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0')
+        if (fAudio.getCurrentApi() == RtAudio::RtAudio::RTAUDIO_DUMMY)
         {
-            for (uint i=0; i < devCount; ++i)
-            {
-                RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
+            fDeviceName = "Dummy";
+            iParams.nChannels = 2;
+            oParams.nChannels = 2;
+        }
+        else
+        {
+            const uint devCount(fAudio.getDeviceCount());
 
-                if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == pData->options.audioDevice)
+            if (devCount == 0)
+            {
+                setLastError("No audio devices available for this driver");
+                return false;
+            }
+
+            if (pData->options.audioDevice != nullptr && pData->options.audioDevice[0] != '\0')
+            {
+                for (uint i=0; i < devCount; ++i)
                 {
-                    deviceSet   = true;
-                    fDeviceName = devInfo.name.c_str();
-                    iParams.deviceId  = i;
-                    oParams.deviceId  = i;
-                    iParams.nChannels = devInfo.inputChannels;
-                    oParams.nChannels = devInfo.outputChannels;
-                    break;
+                    RtAudio::DeviceInfo devInfo(fAudio.getDeviceInfo(i));
+
+                    if (devInfo.probed && devInfo.outputChannels > 0 && devInfo.name == pData->options.audioDevice)
+                    {
+                        deviceSet   = true;
+                        fDeviceName = devInfo.name.c_str();
+                        iParams.deviceId  = i;
+                        oParams.deviceId  = i;
+                        iParams.nChannels = devInfo.inputChannels;
+                        oParams.nChannels = devInfo.outputChannels;
+                        break;
+                    }
                 }
             }
+
+            if (! deviceSet)
+            {
+                iParams.deviceId  = fAudio.getDefaultInputDevice();
+                oParams.deviceId  = fAudio.getDefaultOutputDevice();
+                iParams.nChannels = fAudio.getDeviceInfo(iParams.deviceId).inputChannels;
+                oParams.nChannels = fAudio.getDeviceInfo(oParams.deviceId).outputChannels;
+
+                carla_stdout("No device set, using %i inputs and %i outputs", iParams.nChannels, oParams.nChannels);
+            }
+
+            if (oParams.nChannels == 0)
+            {
+                setLastError("Current audio setup has no outputs, cannot continue");
+                return false;
+            }
+
+            iParams.nChannels = carla_fixedValue(0U, 128U, iParams.nChannels);
+            oParams.nChannels = carla_fixedValue(0U, 128U, oParams.nChannels);
+            fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::LINUX_PULSE;
         }
-
-        if (! deviceSet)
-        {
-            iParams.deviceId  = fAudio.getDefaultInputDevice();
-            oParams.deviceId  = fAudio.getDefaultOutputDevice();
-            iParams.nChannels = fAudio.getDeviceInfo(iParams.deviceId).inputChannels;
-            oParams.nChannels = fAudio.getDeviceInfo(oParams.deviceId).outputChannels;
-
-            carla_stdout("No device set, using %i inputs and %i outputs", iParams.nChannels, oParams.nChannels);
-        }
-
-        if (oParams.nChannels == 0 && ! isDummy)
-        {
-            setLastError("Current audio setup has no outputs, cannot continue");
-            return false;
-        }
-
-        iParams.nChannels = carla_fixedValue(0U, 128U, iParams.nChannels);
-        oParams.nChannels = carla_fixedValue(0U, 128U, oParams.nChannels);
-        fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::LINUX_PULSE;
 
         RtAudio::StreamOptions rtOptions;
         rtOptions.flags = RTAUDIO_MINIMIZE_LATENCY | RTAUDIO_HOG_DEVICE | RTAUDIO_SCHEDULE_REALTIME;
@@ -256,7 +264,8 @@ public:
         uint bufferFrames = pData->options.audioBufferSize;
 
         try {
-            fAudio.openStream(&oParams, (iParams.nChannels > 0) ? &iParams : nullptr, RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
+            fAudio.openStream(&oParams, (iParams.nChannels > 0) ? &iParams : nullptr, RTAUDIO_FLOAT32,
+                              pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
         }
         catch (const RtAudioError& e) {
             setLastError(e.what());
