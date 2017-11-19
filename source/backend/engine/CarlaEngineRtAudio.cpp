@@ -192,8 +192,9 @@ public:
         }
 
         const uint devCount(fAudio.getDeviceCount());
+        const bool isDummy(fAudio.getCurrentApi() == RtAudio::RtAudio::RTAUDIO_DUMMY);
 
-        if (devCount == 0 && fAudio.getCurrentApi() != RtAudio::RtAudio::RTAUDIO_DUMMY)
+        if (devCount == 0 && ! isDummy)
         {
             setLastError("No audio devices available for this driver");
             return false;
@@ -231,7 +232,7 @@ public:
             carla_stdout("No device set, using %i inputs and %i outputs", iParams.nChannels, oParams.nChannels);
         }
 
-        if (oParams.nChannels == 0)
+        if (oParams.nChannels == 0 && ! isDummy)
         {
             setLastError("Current audio setup has no outputs, cannot continue");
             return false;
