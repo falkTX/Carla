@@ -46,13 +46,15 @@
 # define CARLA_OS_HAIKU
 #elif defined(__linux__) || defined(__linux)
 # define CARLA_OS_LINUX
+#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+# define CARLA_OS_BSD
 #else
 # warning Unsupported platform!
 #endif
 
 #if defined(CARLA_OS_WIN32) || defined(CARLA_OS_WIN64)
 # define CARLA_OS_WIN
-#elif defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
+#elif defined(CARLA_OS_BSD) || defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC)
 # define CARLA_OS_UNIX
 #endif
 
@@ -130,21 +132,18 @@
 #endif
 
 /* Define BINARY_NATIVE */
-#if defined(CARLA_OS_HAIKU) || defined(CARLA_OS_UNIX)
-# ifdef CARLA_OS_64BIT
-#  define BINARY_NATIVE BINARY_POSIX64
-# else
-#  define BINARY_NATIVE BINARY_POSIX32
-# endif
-#elif defined(CARLA_OS_WIN)
+#if defined(CARLA_OS_WIN)
 # ifdef CARLA_OS_WIN64
 #  define BINARY_NATIVE BINARY_WIN64
 # else
 #  define BINARY_NATIVE BINARY_WIN32
 # endif
 #else
-# warning Unknown native binary type
-# define BINARY_NATIVE BINARY_OTHER
+# ifdef CARLA_OS_64BIT
+#  define BINARY_NATIVE BINARY_POSIX64
+# else
+#  define BINARY_NATIVE BINARY_POSIX32
+# endif
 #endif
 
 /* Define CARLA_ASSERT* */
