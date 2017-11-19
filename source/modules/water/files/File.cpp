@@ -1196,12 +1196,12 @@ private:
 //=====================================================================================================================
 namespace
 {
-   #ifdef CARLA_OS_MAC
-    typedef struct stat   water_statStruct;
-    #define WATER_STAT    stat
-   #else
+   #ifdef CARLA_OS_LINUX
     typedef struct stat64 water_statStruct;
     #define WATER_STAT    stat64
+   #else
+    typedef struct stat   water_statStruct;
+    #define WATER_STAT    stat
    #endif
 
     bool water_stat (const String& fileName, water_statStruct& info)
