@@ -132,7 +132,9 @@ discovery: libs
 	@$(MAKE) -C source/discovery
 
 interposer:
+ifeq ($(LINUX),true)
 	@$(MAKE) -C source/interposer
+endif
 
 libjack: libs
 	@$(MAKE) -C source/libjack
