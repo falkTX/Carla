@@ -264,7 +264,7 @@ void RtApi :: openStream( RtAudio::StreamParameters *oParams,
     return;
   }
 
-  if ( oParams == NULL && iParams == NULL ) {
+  if ( oParams == NULL && iParams == NULL && getCurrentApi() != RtAudio::RTAUDIO_DUMMY) {
     errorText_ = "RtApi::openStream: input and output StreamParameters structures are both NULL!";
     error( RtAudioError::INVALID_USE );
     return;

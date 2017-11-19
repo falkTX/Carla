@@ -384,8 +384,8 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
-RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY
-RTMIDI_FLAGS   =
+RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
+RTMIDI_FLAGS   = -D__RTMIDI_DUMMY__
 
 ifeq ($(DEBUG),true)
 RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__

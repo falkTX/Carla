@@ -191,14 +191,19 @@ public:
             return false;
         }
 
-        RtAudio::StreamParameters iParams, oParams;
+        const bool isDummy(fAudio.getCurrentApi() == RtAudio::RtAudio::RTAUDIO_DUMMY);
         bool deviceSet = false;
+        RtAudio::StreamParameters iParams, oParams;
 
-        if (fAudio.getCurrentApi() == RtAudio::RtAudio::RTAUDIO_DUMMY)
+        if (isDummy)
         {
+            if (pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
+            {
+                setLastError("Cannot use dummy driver in Rack mode");
+                return false;
+            }
+
             fDeviceName = "Dummy";
-            iParams.nChannels = 2;
-            oParams.nChannels = 2;
         }
         else
         {
@@ -239,7 +244,7 @@ public:
                 carla_stdout("No device set, using %i inputs and %i outputs", iParams.nChannels, oParams.nChannels);
             }
 
-            if (oParams.nChannels == 0)
+            if (oParams.nChannels == 0 && pData->options.processMode == ENGINE_PROCESS_MODE_CONTINUOUS_RACK)
             {
                 setLastError("Current audio setup has no outputs, cannot continue");
                 return false;
@@ -264,8 +269,10 @@ public:
         uint bufferFrames = pData->options.audioBufferSize;
 
         try {
-            fAudio.openStream(&oParams, (iParams.nChannels > 0) ? &iParams : nullptr, RTAUDIO_FLOAT32,
-                              pData->options.audioSampleRate, &bufferFrames, carla_rtaudio_process_callback, this, &rtOptions);
+            fAudio.openStream(oParams.nChannels > 0 ? &oParams : nullptr,
+                              iParams.nChannels > 0 ? &iParams : nullptr,
+                              RTAUDIO_FLOAT32, pData->options.audioSampleRate, &bufferFrames,
+                              carla_rtaudio_process_callback, this, &rtOptions);
         }
         catch (const RtAudioError& e) {
             setLastError(e.what());
@@ -280,7 +287,7 @@ public:
         }
 
         pData->bufferSize = bufferFrames;
-        pData->sampleRate = fAudio.getStreamSampleRate();
+        pData->sampleRate = isDummy ? 44100.0 : fAudio.getStreamSampleRate();
         pData->initTime(pData->options.transportExtra);
 
         fAudioInCount  = iParams.nChannels;
@@ -316,7 +323,6 @@ public:
 
     bool close() override
     {
-        CARLA_SAFE_ASSERT(fAudioOutCount != 0);
         carla_debug("CarlaEngineRtAudio::close()");
 
         bool hasError = false;
