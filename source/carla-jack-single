@@ -43,6 +43,8 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     # Init host backend
 
+    os.environ["CARLA_NSM_NAME"] = "Carla-Single-Client"
+
     host = initHost(initName, libPrefix, False, False, True)
     host.audioDriverForced = "JACK"
     host.processMode       = ENGINE_PROCESS_MODE_SINGLE_CLIENT

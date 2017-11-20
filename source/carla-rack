@@ -43,6 +43,8 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     # Init host backend
 
+    os.environ["CARLA_NSM_NAME"] = "Carla-Rack"
+
     host = initHost(initName, libPrefix, False, False, True)
     host.processMode       = ENGINE_PROCESS_MODE_CONTINUOUS_RACK
     host.processModeForced = True

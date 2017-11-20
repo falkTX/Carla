@@ -124,8 +124,13 @@ public:
             fServerURL = lo_server_thread_get_url(fServerThread);
         }
 
+        const char* appName = std::getenv("CARLA_NSM_NAME");
+
+        if (appName == nullptr)
+            appName = "Carla";
+
         lo_send_from(nsmAddress, fServer, LO_TT_IMMEDIATE, "/nsm/server/announce", "sssiii",
-                     "Carla", NSM_CLIENT_FEATURES, executableName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
+                     appName, NSM_CLIENT_FEATURES, executableName, NSM_API_VERSION_MAJOR, NSM_API_VERSION_MINOR, pid);
 
         lo_address_free(nsmAddress);
 
@@ -290,8 +295,13 @@ protected:
         // Broadcast ourselves
         if (fHasBroadcast)
         {
+            const char* appName = std::getenv("CARLA_NSM_NAME");
+
+            if (appName == nullptr)
+                appName = "Carla";
+
             lo_send_from(fReplyAddress, fServer, LO_TT_IMMEDIATE, "/nsm/server/broadcast", "sssss",
-                         "/non/hello", fServerURL, "Carla", CARLA_VERSION_STRING, fClientNameId.buffer());
+                         "/non/hello", fServerURL, appName, CARLA_VERSION_STRING, fClientNameId.buffer());
         }
 
         return 0;
