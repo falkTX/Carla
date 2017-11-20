@@ -781,14 +781,17 @@ ifeq ($(HAVE_ALSA),true)
 else
 	@echo "ALSA:       $(ANS_NO) $(mS)Missing ALSA$(mE)"
 endif
+else
+	@echo "ALSA:       $(ANS_NO) $(mZ)Linux only$(mE)"
+endif
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@echo "PulseAudio: $(ANS_YES)"
 else
 	@echo "PulseAudio: $(ANS_NO) $(mS)Missing PulseAudio$(mE)"
 endif
 else
-	@echo "ALSA:       $(ANS_NO) $(mZ)Linux only$(mE)"
-	@echo "PulseAudio: $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "PulseAudio: $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
 endif
 ifeq ($(MACOS),true)
 	@echo "CoreAudio:  $(ANS_YES)"
@@ -812,21 +815,21 @@ endif
 ifeq ($(MACOS_OR_WIN32),true)
 	@echo "VST:     $(ANS_YES)(with UI)"
 else
-ifeq ($(LINUX),true)
+ifeq ($(HAIKU),true)
+	@echo "VST:     $(ANS_YES)(without UI)"
+else
 ifeq ($(HAVE_X11),true)
 	@echo "VST:     $(ANS_YES)(with UI)"
 else
 	@echo "VST:     $(ANS_YES)(without UI) $(mS)Missing X11$(mE)"
 endif
-else # LINUX
-	@echo "VST:     $(ANS_YES)(without UI) $(mZ)Linux, Mac and Windows only$(mE)"
 endif
 endif
 	@echo ""
 
 	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
 	@echo "External:$(ANS_YES)(direct)"
-ifeq ($(LINUX),true)
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GTK2),true)
 	@echo "Gtk2:    $(ANS_YES)(bridge)"
 else
@@ -853,11 +856,11 @@ else
 	@echo "X11:     $(ANS_NO) $(mS)X11 missing$(mE)"
 endif
 else # LINUX
-	@echo "Gtk2:    $(ANS_NO) $(mZ)Linux only$(mE)"
-	@echo "Gtk3:    $(ANS_NO) $(mZ)Linux only$(mE)"
-	@echo "Qt4:     $(ANS_NO) $(mZ)Linux only$(mE)"
-	@echo "Qt5:     $(ANS_NO) $(mZ)Linux only$(mE)"
-	@echo "X11:     $(ANS_NO) $(mZ)Linux only$(mE)"
+	@echo "Gtk2:    $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@echo "Gtk3:    $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@echo "Qt4:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@echo "Qt5:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@echo "X11:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
 endif # LINUX
 ifeq ($(MACOS),true)
 	@echo "Cocoa:   $(ANS_YES)(direct+bridge)"
