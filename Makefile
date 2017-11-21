@@ -713,13 +713,7 @@ uninstall:
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-USE_COLORS=true
-
-ifeq ($(HAIKU),true)
-USE_COLORS=false
-endif
-
-ifeq ($(USE_COLORS),true)
+ifneq ($(MAKE_TERMOUT),)
 ANS_NO=\033[31m NO \033[0m
 ANS_YES=\033[32m YES \033[0m
 mS=\033[33m[
