@@ -269,21 +269,27 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools
 
-PYUIC4 ?= /usr/bin/pyuic4
-PYUIC5 ?= /usr/bin/pyuic5
+PYRCC4 ?= $(shell which pyrcc4)
+PYUIC4 ?= $(shell which pyuic4)
 
-ifneq (,$(wildcard $(PYUIC4)))
+PYRCC5 ?= $(shell which pyrcc5)
+PYUIC5 ?= $(shell which pyuic5)
+
+HAVE_PYQT4=false
+HAVE_PYQT5=false
+
+ifneq ($(PYUIC4),)
+ifneq ($(PYRCC4),)
 HAVE_PYQT=true
 HAVE_PYQT4=true
-else
-HAVE_PYQT4=false
+endif
 endif
 
-ifneq (,$(wildcard $(PYUIC5)))
+ifneq ($(PYUIC5),)
+ifneq ($(PYRCC5),)
 HAVE_PYQT=true
 HAVE_PYQT5=true
-else
-HAVE_PYQT5=false
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
