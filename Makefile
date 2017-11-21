@@ -402,7 +402,7 @@ endif
 		$(DESTDIR)$(BINDIR)
 
 	# Adjust PREFIX value in script files (non-gui)
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
 		$(DESTDIR)$(BINDIR)/carla-single
 
 	# Install backend libs
@@ -429,15 +429,15 @@ endif
 		$(DESTDIR)$(LIBDIR)/pkgconfig
 
 	# Adjust PREFIX, LIBDIR and INCLUDEDIR in pkg-config files
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
-	sed -i 's?X-LIBDIR-X?$(LIBDIR)?' \
+	sed -e 's?X-LIBDIR-X?$(LIBDIR)?' -i \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
-	sed -i 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+	sed -e 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' -i \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
@@ -488,7 +488,7 @@ ifeq ($(HAVE_PYQT),true)
 		$(DESTDIR)$(BINDIR)
 
 	# Adjust PREFIX value in script files (gui)
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
 		$(DESTDIR)$(BINDIR)/carla \
 		$(DESTDIR)$(BINDIR)/carla-database \
 		$(DESTDIR)$(BINDIR)/carla-jack-multi \
@@ -502,7 +502,7 @@ ifeq ($(HAVE_LIBLO),true)
 		data/carla-control \
 		$(DESTDIR)$(BINDIR)
 
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
@@ -512,7 +512,7 @@ endif
 		$(DESTDIR)$(LIBDIR)/carla
 
 	# Adjust PREFIX value in modgui bridge
-	sed -i 's?X-PREFIX-X?$(PREFIX)?' \
+	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
 		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
 
 	# Install python code (gui)
@@ -527,10 +527,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla
 
 	# Adjust LIBDIR and DATADIR value in python code
-	sed -i 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
+	sed -e 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' -i \
 		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
 
-	sed -i 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
+	sed -e 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' -i \
 		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
 
 	# Install resources (gui)
