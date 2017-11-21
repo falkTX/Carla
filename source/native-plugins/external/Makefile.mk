@@ -235,40 +235,40 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 endif
 
 features_print_external_plugins:
-	@echo ""
-	@echo "$(tS)---> External plugins: $(tE)"
+	@printf "\n"
+	@printf "$(tS)---> External plugins: $(tE)\n"
 ifeq ($(HAVE_DGL),true)
-	@echo "DPF Plugins:     $(ANS_YES)(with UI)"
+	@printf "DPF Plugins:  $(ANS_YES) (with UI)\n"
 ifeq ($(HAVE_PROJECTM),true)
-	@echo "DPF ProM:        $(ANS_YES)"
+	@printf "DPF ProM:     $(ANS_YES)\n"
 else
-	@echo "DPF ProM:        $(ANS_NO) (missing libprojectM)"
+	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing libprojectM$(mE)\n"
 endif
 else
-	@echo "DPF Plugins:     $(ANS_YES)(without UI)"
+	@printf "DPF Plugins:  $(ANS_YES) (without UI)\n"
 ifeq ($(HAVE_PROJECTM),true)
-	@echo "DPF ProM:        $(ANS_NO) $(mS)missing OpenGL$(mE)"
+	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL$(mE)\n"
 else
-	@echo "DPF ProM:        $(ANS_NO) $(mS)missing OpenGL and libprojectM$(mE)"
+	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL and libprojectM$(mE)\n"
 endif
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ifeq ($(HAVE_NTK),true)
-	@echo "ZynAddSubFX:     $(ANS_YES)(with NTK UI)"
+	@printf "ZynAddSubFX:  $(ANS_YES) (with NTK UI)\n"
 else
-	@echo "ZynAddSubFX:     $(ANS_YES)(with FLTK UI)"
+	@printf "ZynAddSubFX:  $(ANS_YES) (with FLTK UI)\n"
 endif
 else
-	@echo "ZynAddSubFX:     $(ANS_YES)(without UI) $(mS)FLTK or NTK missing$(mE)"
+	@printf "ZynAddSubFX:  $(ANS_YES) (without UI) $(mS)FLTK or NTK missing$(mE)\n"
 endif
 else
-	@echo "ZynAddSubFX:     $(ANS_NO) $(mS)liblo, fftw3, mxml or zlib missing$(mE)"
+	@printf "ZynAddSubFX:  $(ANS_NO)  $(mS)liblo, fftw3, mxml or zlib missing$(mE)\n"
 endif
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	@echo "Experimental:     YES"
+	@printf "Experimental: YES\n"
 else
-	@echo "Experimental:     NO"
+	@printf "Experimental: NO\n"
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

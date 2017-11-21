@@ -714,16 +714,16 @@ uninstall:
 # ----------------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(MAKE_TERMOUT),)
-ANS_NO=\033[31m NO \033[0m
-ANS_YES=\033[32m YES \033[0m
+ANS_NO=\033[31mNO\033[0m
+ANS_YES=\033[32mYES\033[0m
 mS=\033[33m[
 mZ=\033[30;1m[
 mE=]\033[0m
 tS=\033[36m
 tE=\033[0m
 else
-ANS_NO=" NO "
-ANS_YES=" YES "
+ANS_NO=NO
+ANS_YES=YES
 endif
 
 ifeq ($(DEFAULT_QT),4)
@@ -733,172 +733,172 @@ FEV="Qt5"
 endif
 
 features_print_main:
-	@echo "$(tS)---> Main features $(tE)"
+	@printf "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_PYQT),true)
-	@echo "Front-End:   $(ANS_YES)(Using $(FEV))"
+	@printf "Front-End:    $(ANS_YES) (Using $(FEV))\n"
 ifneq ($(WIN32),true)
-	@echo "LV2 plugin:  $(ANS_YES)"
+	@printf "LV2 plugin:   $(ANS_YES)\n"
 else
-	@echo "LV2 plugin:  $(ANS_NO) $(mZ)Not available for Windows$(mE)"
+	@printf "LV2 plugin:   $(ANS_NO)  $(mZ)Not available for Windows$(mE)\n"
 endif
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-	@echo "VST plugin:  $(ANS_YES)"
+	@printf "VST plugin:   $(ANS_YES)\n"
 else # HAVE_X11
-	@echo "VST plugin:  $(ANS_NO) $(mS)X11 missing$(mE)"
+	@printf "VST plugin:   $(ANS_NO)  $(mS)X11 missing$(mE)\n"
 endif
 else # LINUX
-	@echo "VST plugin:  $(ANS_NO) $(mZ)Linux only$(mE)"
+	@printf "VST plugin:   $(ANS_NO)  $(mZ)Linux only$(mE)\n"
 endif
 else
-	@echo "Front-End:   $(ANS_NO) $(mS)Missing PyQt$(mE)"
-	@echo "LV2 plugin:  $(ANS_NO) $(mS)No front-end$(mE)"
-	@echo "VST plugin:  $(ANS_NO) $(mS)No front-end$(mE)"
+	@printf "Front-End:    $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
+	@printf "LV2 plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
+	@printf "VST plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
 endif
 ifeq ($(HAVE_HYLIA),true)
-	@echo "Link support:$(ANS_YES)"
+	@printf "Link support: $(ANS_YES)\n"
 else
-	@echo "Link support:$(ANS_NO) $(mZ)Linux, MacOS and Windows only$(mE)"
+	@printf "Link support: $(ANS_NO)  $(mZ)Linux, MacOS and Windows only$(mE)\n"
 endif
 ifeq ($(HAVE_LIBLO),true)
-	@echo "OSC support: $(ANS_YES)"
+	@printf "OSC support:  $(ANS_YES)\n"
 else
-	@echo "OSC support: $(ANS_NO) $(mS)Missing liblo$(mE)"
+	@printf "OSC support:  $(ANS_NO)  $(mS)Missing liblo$(mE)\n"
 endif
-	@echo ""
+	@printf "\n"
 
-	@echo "$(tS)---> Engine drivers $(tE)"
-	@echo "JACK:       $(ANS_YES)"
+	@printf "$(tS)---> Engine drivers $(tE)\n"
+	@printf "JACK:        $(ANS_YES)\n"
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_ALSA),true)
-	@echo "ALSA:       $(ANS_YES)"
+	@printf "ALSA:        $(ANS_YES)\n"
 else
-	@echo "ALSA:       $(ANS_NO) $(mS)Missing ALSA$(mE)"
+	@printf "ALSA:        $(ANS_NO)  $(mS)Missing ALSA$(mE)\n"
 endif
 else
-	@echo "ALSA:       $(ANS_NO) $(mZ)Linux only$(mE)"
+	@printf "ALSA:        $(ANS_NO)  $(mZ)Linux only$(mE)\n"
 endif
 ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_PULSEAUDIO),true)
-	@echo "PulseAudio: $(ANS_YES)"
+	@printf "PulseAudio:  $(ANS_YES)\n"
 else
-	@echo "PulseAudio: $(ANS_NO) $(mS)Missing PulseAudio$(mE)"
+	@printf "PulseAudio:  $(ANS_NO)  $(mS)Missing PulseAudio$(mE)\n"
 endif
 else
-	@echo "PulseAudio: $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@printf "PulseAudio:  $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 endif
 ifeq ($(MACOS),true)
-	@echo "CoreAudio:  $(ANS_YES)"
+	@printf "CoreAudio:   $(ANS_YES)\n"
 else
-	@echo "CoreAudio:  $(ANS_NO) $(mZ)MacOS only$(mE)"
+	@printf "CoreAudio:   $(ANS_NO)  $(mZ)MacOS only$(mE)\n"
 endif
 ifeq ($(WIN32),true)
-	@echo "ASIO:       $(ANS_YES)"
-	@echo "DirectSound:$(ANS_YES)"
+	@printf "ASIO:        $(ANS_YES)\n"
+	@printf "DirectSound: $(ANS_YES)\n"
 else
-	@echo "ASIO:       $(ANS_NO) $(mZ)Windows only$(mE)"
-	@echo "DirectSound:$(ANS_NO) $(mZ)Windows only$(mE)"
+	@printf "ASIO:        $(ANS_NO)  $(mZ)Windows only$(mE)\n"
+	@printf "DirectSound: $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 endif
-	@echo ""
+	@printf "\n"
 
-	@echo "$(tS)---> Plugin formats: $(tE)"
-	@echo "Internal:$(ANS_YES)"
-	@echo "LADSPA:  $(ANS_YES)"
-	@echo "DSSI:    $(ANS_YES)"
-	@echo "LV2:     $(ANS_YES)"
+	@printf "$(tS)---> Plugin formats: $(tE)\n"
+	@printf "Internal: $(ANS_YES)\n"
+	@printf "LADSPA:   $(ANS_YES)\n"
+	@printf "DSSI:     $(ANS_YES)\n"
+	@printf "LV2:      $(ANS_YES)\n"
 ifeq ($(MACOS_OR_WIN32),true)
-	@echo "VST:     $(ANS_YES)(with UI)"
+	@printf "VST:      $(ANS_YES) (with UI)\n"
 else
 ifeq ($(HAIKU),true)
-	@echo "VST:     $(ANS_YES)(without UI)"
+	@printf "VST:      $(ANS_YES) (without UI)\n"
 else
 ifeq ($(HAVE_X11),true)
-	@echo "VST:     $(ANS_YES)(with UI)"
+	@printf "VST:      $(ANS_YES) (with UI)\n"
 else
-	@echo "VST:     $(ANS_YES)(without UI) $(mS)Missing X11$(mE)"
+	@printf "VST:      $(ANS_YES) (without UI) $(mS)Missing X11$(mE)\n"
 endif
 endif
 endif
-	@echo ""
+	@printf "\n"
 
-	@echo "$(tS)---> LV2 UI toolkit support: $(tE)"
-	@echo "External:$(ANS_YES)(direct)"
+	@printf "$(tS)---> LV2 UI toolkit support: $(tE)\n"
+	@printf "External: $(ANS_YES) (direct)\n"
 ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GTK2),true)
-	@echo "Gtk2:    $(ANS_YES)(bridge)"
+	@printf "Gtk2:     $(ANS_YES) (bridge)\n"
 else
-	@echo "Gtk2:    $(ANS_NO) $(mS)Gtk2 missing$(mE)"
+	@printf "Gtk2:     $(ANS_NO)  $(mS)Gtk2 missing$(mE)\n"
 endif
 ifeq ($(HAVE_GTK3),true)
-	@echo "Gtk3:    $(ANS_YES)(bridge)"
+	@printf "Gtk3:     $(ANS_YES) (bridge)\n"
 else
-	@echo "Gtk3:    $(ANS_NO) $(mS)Gtk3 missing$(mE)"
+	@printf "Gtk3:     $(ANS_NO)  $(mS)Gtk3 missing$(mE)\n"
 endif
 ifeq ($(HAVE_QT4),true)
-	@echo "Qt4:     $(ANS_YES)(bridge)"
+	@printf "Qt4:      $(ANS_YES) (bridge)\n"
 else
-	@echo "Qt4:     $(ANS_NO) $(mS)Qt4 missing$(mE)"
+	@printf "Qt4:      $(ANS_NO)  $(mS)Qt4 missing$(mE)\n"
 endif
 ifeq ($(HAVE_QT5),true)
-	@echo "Qt5:     $(ANS_YES)(bridge)"
+	@printf "Qt5:      $(ANS_YES) (bridge)\n"
 else
-	@echo "Qt5:     $(ANS_NO) $(mS)Qt5 missing$(mE)"
+	@printf "Qt5:      $(ANS_NO)  $(mS)Qt5 missing$(mE)\n"
 endif
 ifeq ($(HAVE_X11),true)
-	@echo "X11:     $(ANS_YES)(direct+bridge)"
+	@printf "X11:      $(ANS_YES) (direct+bridge)\n"
 else
-	@echo "X11:     $(ANS_NO) $(mS)X11 missing$(mE)"
+	@printf "X11:      $(ANS_NO)  $(mS)X11 missing$(mE)\n"
 endif
 else # LINUX
-	@echo "Gtk2:    $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
-	@echo "Gtk3:    $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
-	@echo "Qt4:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
-	@echo "Qt5:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
-	@echo "X11:     $(ANS_NO) $(mZ)Not available for Windows or MacOS$(mE)"
+	@printf "Gtk2:     $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
+	@printf "Gtk3:     $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
+	@printf "Qt4:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
+	@printf "Qt5:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
+	@printf "X11:      $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
 endif # LINUX
 ifeq ($(MACOS),true)
-	@echo "Cocoa:   $(ANS_YES)(direct+bridge)"
+	@printf "Cocoa:    $(ANS_YES) (direct+bridge)\n"
 else
-	@echo "Cocoa:   $(ANS_NO) $(mZ)MacOS only$(mE)"
+	@printf "Cocoa:    $(ANS_NO)  $(mZ)MacOS only$(mE)\n"
 endif
 ifeq ($(WIN32),true)
-	@echo "Windows: $(ANS_YES)(direct+bridge)"
+	@printf "Windows:  $(ANS_YES) (direct+bridge)\n"
 else
-	@echo "Windows: $(ANS_NO) $(mZ)Windows only$(mE)"
+	@printf "Windows:  $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 endif
-	@echo ""
+	@printf "\n"
 
-	@echo "$(tS)---> File formats: $(tE)"
+	@printf "$(tS)---> File formats: $(tE)\n"
 ifeq ($(HAVE_LINUXSAMPLER),true)
-	@echo "GIG:$(ANS_YES)"
+	@printf "GIG: $(ANS_YES)\n"
 else
-	@echo "GIG:$(ANS_NO)  $(mS)LinuxSampler missing or too old$(mE)"
+	@printf "GIG: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
 endif
 ifeq ($(HAVE_FLUIDSYNTH),true)
-	@echo "SF2:$(ANS_YES)"
+	@printf "SF2: $(ANS_YES)\n"
 else
-	@echo "SF2:$(ANS_NO)  $(mS)FluidSynth missing$(mE)"
+	@printf "SF2: $(ANS_NO)    $(mS)FluidSynth missing$(mE)\n"
 endif
 ifeq ($(HAVE_LINUXSAMPLER),true)
-	@echo "SFZ:$(ANS_YES)"
+	@printf "SFZ: $(ANS_YES)\n"
 else
-	@echo "SFZ:$(ANS_NO)  $(mS)LinuxSampler missing or too old$(mE)"
+	@printf "SFZ: $(ANS_NO)    $(mS)LinuxSampler missing or too old$(mE)\n"
 endif
-	@echo ""
+	@printf "\n"
 
-	@echo "$(tS)---> Internal plugins: $(tE)"
-	@echo "Basic Plugins:   $(ANS_YES)"
+	@printf "$(tS)---> Internal plugins: $(tE)\n"
+	@printf "Basic Plugins:    $(ANS_YES)\n"
 ifneq ($(WIN32),true)
-	@echo "Carla-Patchbay:  $(ANS_YES)"
-	@echo "Carla-Rack:      $(ANS_YES)"
+	@printf "Carla-Patchbay:   $(ANS_YES)\n"
+	@printf "Carla-Rack:       $(ANS_YES)\n"
 else
-	@echo "Carla-Patchbay:  $(ANS_NO) $(mS)Not available for Windows$(mE)"
-	@echo "Carla-Rack:      $(ANS_NO) $(mS)Not available for Windows$(mE)"
+	@printf "Carla-Patchbay:   $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
+	@printf "Carla-Rack:       $(ANS_NO)   $(mS)Not available for Windows$(mE)\n"
 endif
 ifeq ($(EXTERNAL_PLUGINS),true)
-	@echo "External Plugins:$(ANS_YES)"
+	@printf "External Plugins: $(ANS_YES)\n"
 else
-	@echo "External Plugins:$(ANS_NO)"
+	@printf "External Plugins: $(ANS_NO)\n"
 endif
 
 ifneq ($(EXTERNAL_PLUGINS),true)
