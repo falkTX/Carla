@@ -1348,11 +1348,6 @@ public:
 
                     fPipeServer.flushMessages();
                 }
-
-#ifndef BUILD_BRIDGE
-                if (fUI.rdfDescriptor->Type == LV2_UI_MOD)
-                    pData->tryTransient();
-#endif
             }
             else
             {
@@ -4165,9 +4160,6 @@ public:
         case LV2_UI_OLD_EXTERNAL:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-external";
             break;
-        case LV2_UI_MOD:
-            bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-modgui";
-            break;
         default:
             return nullptr;
         }
@@ -5162,8 +5154,8 @@ public:
         // ---------------------------------------------------------------
         // find the most appropriate ui
 
-        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, eMod, iCocoa, iWindows, iX11, iExt, iFinal;
-        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = eMod = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
+        int eQt4, eQt5, eGtk2, eGtk3, eCocoa, eWindows, eX11, eExt, iCocoa, iWindows, iX11, iExt, iFinal;
+        eQt4 = eQt5 = eGtk2 = eGtk3 = eCocoa = eWindows = eX11 = eExt = iCocoa = iWindows = iX11 = iExt = iFinal = -1;
 
 #if defined(BUILD_BRIDGE) || defined(LV2_UIS_ONLY_BRIDGES)
         const bool preferUiBridges(true);
@@ -5216,9 +5208,6 @@ public:
                 if (isUiBridgeable(i))
                     eExt = ii;
                 iExt = ii;
-                break;
-            case LV2_UI_MOD:
-                eMod = ii;
                 break;
             default:
                 break;
@@ -5288,14 +5277,8 @@ public:
 
             if (iFinal < 0)
             {
-                if (eMod < 0)
-                {
-                    carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
-                    return;
-                }
-
-                // use MODGUI as last resort
-                iFinal = eMod;
+                carla_stderr("Failed to find an appropriate LV2 UI for this plugin");
+                return;
             }
         }
 
@@ -5340,7 +5323,7 @@ public:
 
         if (
             (iFinal == eQt4 || iFinal == eQt5 || iFinal == eGtk2 || iFinal == eGtk3 ||
-             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt || iFinal == eMod)
+             iFinal == eCocoa || iFinal == eWindows || iFinal == eX11 || iFinal == eExt)
 #ifdef BUILD_BRIDGE
             && preferUiBridges && ! hasShowInterface
 #endif

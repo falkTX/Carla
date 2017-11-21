@@ -506,15 +506,6 @@ ifeq ($(HAVE_LIBLO),true)
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
-	# Install the real modgui bridge
-	install -m 755 \
-		data/carla-bridge-lv2-modgui \
-		$(DESTDIR)$(LIBDIR)/carla
-
-	# Adjust PREFIX value in modgui bridge
-	sed -e 's?X-PREFIX-X?$(PREFIX)?' -i \
-		$(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
-
 	# Install python code (gui)
 	install -m 644 \
 		source/carla \
@@ -584,7 +575,6 @@ endif
 	$(LINK) $(DATADIR)/carla/carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_modgui.py             $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
 	$(LINK) $(DATADIR)/carla/carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
@@ -676,14 +666,6 @@ ifeq ($(HAVE_PYQT),true)
 	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 endif
 endif
-endif
-
-	# -------------------------------------------------------------------------------------------------------------
-
-ifneq ($(HAVE_PYQT),true)
-	# Remove gui files for non-gui build
-	rm $(DESTDIR)$(LIBDIR)/carla/carla-bridge-lv2-modgui
-	rm $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/carla-bridge-lv2-modgui
 endif
 
 ifneq ($(EXTERNAL_PLUGINS),true)
