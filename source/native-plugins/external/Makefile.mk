@@ -235,40 +235,40 @@ ifeq ($(EXPERIMENTAL_PLUGINS),true)
 endif
 
 features_print_external_plugins:
-	@printf "\n"
-	@printf "$(tS)---> External plugins: $(tE)\n"
+	@printf -- "\n"
+	@printf -- "$(tS)---> External plugins: $(tE)\n"
 ifeq ($(HAVE_DGL),true)
-	@printf "DPF Plugins:  $(ANS_YES) (with UI)\n"
+	@printf -- "DPF Plugins:  $(ANS_YES) (with UI)\n"
 ifeq ($(HAVE_PROJECTM),true)
-	@printf "DPF ProM:     $(ANS_YES)\n"
+	@printf -- "DPF ProM:     $(ANS_YES)\n"
 else
-	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing libprojectM$(mE)\n"
+	@printf -- "DPF ProM:     $(ANS_NO)  $(mS)missing libprojectM$(mE)\n"
 endif
 else
-	@printf "DPF Plugins:  $(ANS_YES) (without UI)\n"
+	@printf -- "DPF Plugins:  $(ANS_YES) (without UI)\n"
 ifeq ($(HAVE_PROJECTM),true)
-	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL$(mE)\n"
+	@printf -- "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL$(mE)\n"
 else
-	@printf "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL and libprojectM$(mE)\n"
+	@printf -- "DPF ProM:     $(ANS_NO)  $(mS)missing OpenGL and libprojectM$(mE)\n"
 endif
 endif
 ifeq ($(HAVE_ZYN_DEPS),true)
 ifeq ($(HAVE_ZYN_UI_DEPS),true)
 ifeq ($(HAVE_NTK),true)
-	@printf "ZynAddSubFX:  $(ANS_YES) (with NTK UI)\n"
+	@printf -- "ZynAddSubFX:  $(ANS_YES) (with NTK UI)\n"
 else
-	@printf "ZynAddSubFX:  $(ANS_YES) (with FLTK UI)\n"
+	@printf -- "ZynAddSubFX:  $(ANS_YES) (with FLTK UI)\n"
 endif
 else
-	@printf "ZynAddSubFX:  $(ANS_YES) (without UI) $(mS)FLTK or NTK missing$(mE)\n"
+	@printf -- "ZynAddSubFX:  $(ANS_YES) (without UI) $(mS)FLTK or NTK missing$(mE)\n"
 endif
 else
-	@printf "ZynAddSubFX:  $(ANS_NO)  $(mS)liblo, fftw3, mxml or zlib missing$(mE)\n"
+	@printf -- "ZynAddSubFX:  $(ANS_NO)  $(mS)liblo, fftw3, mxml or zlib missing$(mE)\n"
 endif
 ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	@printf "Experimental: YES\n"
+	@printf -- "Experimental: YES\n"
 else
-	@printf "Experimental: NO\n"
+	@printf -- "Experimental: NO\n"
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
