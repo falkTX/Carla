@@ -211,8 +211,9 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
         if (__sync_bool_compare_and_swap(&sem.count, 1, 0))
             return true;
 
-        if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) != 0 && errno != EWOULDBLOCK)
-            return false;
+        if (::syscall(__NR_futex, &sem.count, FUTEX_WAIT, 0, &timeout, nullptr, 0) != 0)
+            if (errno != EAGAIN && errno != EINTR)
+                return false;
     }
 # else
     if (::sem_trywait(&sem.sem) == 0)
@@ -221,8 +222,8 @@ bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) 
     timespec now;
     ::clock_gettime(CLOCK_REALTIME, &now);
 
-    timespec delta = { secs, nsecs };
-    timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
+    const timespec delta = { static_cast<time_t>(secs), static_cast<long>(nsecs) };
+    /* */ timespec end   = { now.tv_sec + delta.tv_sec, now.tv_nsec + delta.tv_nsec };
     if (end.tv_nsec >= 1000000000L) {
         ++end.tv_sec;
         end.tv_nsec -= 1000000000L;
