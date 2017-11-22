@@ -10,9 +10,6 @@
 # Build external plugins
 EXTERNAL_PLUGINS = true
 
-# Enable experimental plugins, don't complain if the build fails when using this!
-EXPERIMENTAL_PLUGINS = false
-
 # ---------------------------------------------------------------------------------------------------------------------
 # DO NOT MODIFY PAST THIS POINT!
 
@@ -68,13 +65,6 @@ endif
 
 ifeq ($(MACOS),true)
 UNIX=true
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Force some features on MacOS and Windows
-
-ifeq ($(MACOS_OR_WIN32),true)
-EXPERIMENTAL_PLUGINS = false
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

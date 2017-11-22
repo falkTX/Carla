@@ -80,21 +80,6 @@ endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Experimental plugins
-
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-OBJS_all += \
-	$(OBJDIR)/zita-at1.cpp.o \
-	$(OBJDIR)/zita-bls1.cpp.o \
-	$(OBJDIR)/zita-rev1.cpp.o
-
-TARGETS += \
-	resources/zita-at1-ui$(APP_EXT) \
-	resources/zita-bls1-ui$(APP_EXT) \
-	resources/zita-rev1-ui$(APP_EXT)
-endif
-
-# ---------------------------------------------------------------------------------------------------------------------
 
 zynaddsubfx/UI/%.cpp: zynaddsubfx/UI/%.fl
 	@echo "Generating $@|h"

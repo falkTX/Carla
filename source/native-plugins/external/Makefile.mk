@@ -63,10 +63,6 @@ BASE_FLAGS += -DHAVE_ZYN_UI_DEPS
 endif
 endif
 
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-BASE_FLAGS += -DHAVE_EXPERIMENTAL_PLUGINS
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(HAVE_DGL),true)
@@ -156,24 +152,6 @@ ZYN_DSP_FLAGS += -DNO_UI
 endif # HAVE_ZYN_UI_DEPS
 endif # HAVE_ZYN_DEPS
 
-
-# ---------------------------------------------------------------------------------------------------------------------
-# Flags for Zita Plugins (DSP and UI separated)
-
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-ZITA_DSP_FLAGS  = $(shell pkg-config --cflags fftw3f)
-ZITA_DSP_FLAGS += -Wno-unused-parameter
-ZITA_DSP_LIBS   = -lzita-convolver -lzita-resampler -lclthreads
-ZITA_DSP_LIBS  += $(shell pkg-config --libs fftw3f)
-ZITA_DSP_LIBS  += -lpthread -lrt
-
-ZITA_UI_FLAGS   = $(shell pkg-config --cflags cairo libpng12 freetype2 x11 xft zlib)
-ZITA_UI_FLAGS  += -Wno-ignored-qualifiers -Wno-unused-parameter -Wno-unused-result
-ZITA_UI_LIBS    = $(shell pkg-config --libs cairo libpng12 freetype2 zlib)
-ZITA_UI_LIBS   += -lclxclient -lclthreads $(shell pkg-config --libs x11 xft)
-ZITA_UI_LIBS   += $(LIBDL_LIBS) -lpthread -lrt
-endif
-
 # ---------------------------------------------------------------------------------------------------------------------
 
 NATIVE_PLUGINS_LIBS += $(DGL_LIBS)
@@ -208,32 +186,6 @@ ifeq ($(HAVE_ZYN_UI_DEPS),true)
 endif
 endif
 
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	# Create directories (experimental plugins)
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/at1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/bls1
-	install -d $(DESTDIR)$(DATADIR)/carla/resources/rev1
-
-	# Install resources (experimental plugins)
-	install -m 644 \
-		bin/resources/at1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/at1
-
-	install -m 644 \
-		bin/resources/bls1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/bls1
-
-	install -m 644 \
-		bin/resources/rev1/*.png \
-		$(DESTDIR)$(DATADIR)/carla/resources/rev1
-
-	install -m 755 \
-		bin/resources/zita-at1-ui \
-		bin/resources/zita-bls1-ui \
-		bin/resources/zita-rev1-ui \
-		$(DESTDIR)$(DATADIR)/carla/resources
-endif
-
 features_print_external_plugins:
 	@printf -- "\n"
 	@printf -- "$(tS)---> External plugins: $(tE)\n"
@@ -264,11 +216,6 @@ else
 endif
 else
 	@printf -- "ZynAddSubFX:  $(ANS_NO)  $(mS)liblo, fftw3, mxml or zlib missing$(mE)\n"
-endif
-ifeq ($(EXPERIMENTAL_PLUGINS),true)
-	@printf -- "Experimental: YES\n"
-else
-	@printf -- "Experimental: NO\n"
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
