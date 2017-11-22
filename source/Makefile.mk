@@ -402,6 +402,11 @@ ifeq ($(UNIX),true)
 RTAUDIO_FLAGS        += -D__UNIX_JACK__
 endif
 
+ifeq ($(HAVE_PULSEAUDIO),true)
+RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_LIBS    += $(shell pkg-config --libs libpulse-simple)
+endif
+
 ifeq ($(BSD),true)
 JACKBRIDGE_LIBS  = -lpthread -lrt
 LILV_LIBS        = -lm -lrt
@@ -427,10 +432,6 @@ RTAUDIO_FLAGS   += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTAUDIO_LIBS    += $(shell pkg-config --libs alsa) -lpthread
 RTMIDI_FLAGS    += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
 RTMIDI_LIBS     += $(shell pkg-config --libs alsa)
-endif
-ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
-RTAUDIO_LIBS    += $(shell pkg-config --libs libpulse-simple)
 endif
 endif
 
