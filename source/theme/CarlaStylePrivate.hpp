@@ -27,12 +27,12 @@ class QStyleAnimation;
 
 class CarlaStylePrivate : public QObject
 {
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang_major__) && __clang_major__ >= 4
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Winconsistent-missing-override"
 #endif
     Q_OBJECT
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang__)
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0)) && defined(__clang_major__) && __clang_major__ >= 4
 # pragma clang diagnostic pop
 #endif
 

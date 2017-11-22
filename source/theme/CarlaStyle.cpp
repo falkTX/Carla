@@ -20,10 +20,9 @@
 #include <QtCore/qmath.h>
 #include <QtCore/QStringBuilder>
 
-#include <QtGui/QPainter>
-#include <QtGui/QPixmapCache>
-
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+# include <QtGui/QPainter>
+# include <QtGui/QPixmapCache>
 # include <QtWidgets/qdrawutil.h>
 # include <QtWidgets/QApplication>
 # include <QtWidgets/QComboBox>
@@ -39,6 +38,12 @@
 # define QStyleOptionFrameV3 QStyleOptionFrame
 # define QStyleOptionProgressBarV2 QStyleOptionProgressBar
 #else
+# ifdef __clang__
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-register"
+# endif
+# include <QtGui/QPainter>
+# include <QtGui/QPixmapCache>
 # include <QtGui/QApplication>
 # include <QtGui/QComboBox>
 # include <QtGui/QGroupBox>
@@ -50,6 +55,9 @@
 # include <QtGui/QSpinBox>
 # include <QtGui/QSplitter>
 # include <QtGui/QWizard>
+# ifdef __clang__
+#  pragma clang diagnostic pop
+# endif
 #endif
 
 #include <cstdio>

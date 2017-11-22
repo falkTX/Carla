@@ -17,14 +17,14 @@
 
 #include "hylia.h"
 
-#if defined(__clang__)
+#if defined(__clang_major__) && __clang_major__ >= 4
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wunused-local-typedef"
 #endif
 
 #include "AudioEngine.hpp"
 
-#if defined(__clang__)
+#if defined(__clang_major__) && __clang_major__ >= 4
 # pragma clang diagnostic pop
 #endif
 
