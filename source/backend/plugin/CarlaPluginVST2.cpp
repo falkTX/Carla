@@ -2314,6 +2314,8 @@ private:
             return 1;
         if (std::strcmp(feature, "shellCategory") == 0)
             return 1;
+        if (std::strcmp(feature, "NIMKPIVendorSpecificCallbacks") == 0)
+            return -1;
 
         // unimplemented
         carla_stderr("carla_vst_hostCanDo(\"%s\") - unknown feature", feature);
