@@ -231,6 +231,11 @@ MOC_QT5 ?= $(QT5_LIBDIR)/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/bin/rcc
 UIC_QT5 ?= $(QT5_LIBDIR)/bin/uic
 endif
+ifeq ($(HAIKU),true)
+MOC_QT5 ?= $(QT5_LIBDIR)/../../bin/moc
+RCC_QT5 ?= $(QT5_LIBDIR)/../../bin/rcc
+UIC_QT5 ?= $(QT5_LIBDIR)/../../bin/uic
+endif
 ifeq ($(MACOS),true)
 MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
