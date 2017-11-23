@@ -949,7 +949,8 @@ public:
         jackbridge_set_process_callback(fClient, carla_jack_process_callback, this);
         jackbridge_on_shutdown(fClient, carla_jack_shutdown_callback, this);
 
-        fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+        if (pData->options.transportMode == ENGINE_TRANSPORT_MODE_JACK)
+            fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
 
         if (pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY)
             initJackPatchbay(jackClientName);
@@ -1080,6 +1081,28 @@ public:
     {
         return "JACK";
     }
+
+#ifndef BUILD_BRIDGE
+    void setOption(const EngineOption option, const int value, const char* const valueStr) noexcept override
+    {
+        if (option == ENGINE_OPTION_TRANSPORT_MODE && fClient != nullptr)
+        {
+            CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value <= ENGINE_TRANSPORT_MODE_JACK,);
+
+            if (value == ENGINE_TRANSPORT_MODE_JACK)
+            {
+                fTimebaseMaster = jackbridge_set_timebase_callback(fClient, true, carla_jack_timebase_callback, this);
+            }
+            else
+            {
+                jackbridge_release_timebase(fClient);
+                fTimebaseMaster = false;
+            }
+        }
+
+        CarlaEngine::setOption(option, value, valueStr);
+    }
+#endif
 
     CarlaEngineClient* addClient(CarlaPlugin* const plugin) override
     {

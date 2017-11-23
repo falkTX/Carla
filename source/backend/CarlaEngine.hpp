@@ -1041,7 +1041,7 @@ public:
     /*!
      * Set the engine option @a option to @a value or @a valueStr.
      */
-    void setOption(const EngineOption option, const int value, const char* const valueStr) noexcept;
+    virtual void setOption(const EngineOption option, const int value, const char* const valueStr) noexcept;
 
     // -------------------------------------------------------------------
     // OSC Stuff
