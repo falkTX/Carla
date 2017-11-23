@@ -499,6 +499,15 @@ SHARED = -shared
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
+# Set arguments used for inline 'sed'
+
+ifeq ($(BSD),true)
+SED_ARGS=-i '' -e
+else
+SED_ARGS=-i -e
+endif
+
+# ---------------------------------------------------------------------------------------------------------------------
 
 ifeq ($(EXTERNAL_PLUGINS),true)
 BASE_FLAGS += -DHAVE_EXTERNAL_PLUGINS

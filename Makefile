@@ -402,7 +402,7 @@ endif
 		$(DESTDIR)$(BINDIR)
 
 	# Adjust PREFIX value in script files (non-gui)
-	sed -i -e 's?X-PREFIX-X?$(PREFIX)?' \
+	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(BINDIR)/carla-single
 
 	# Install backend libs
@@ -429,15 +429,15 @@ endif
 		$(DESTDIR)$(LIBDIR)/pkgconfig
 
 	# Adjust PREFIX, LIBDIR and INCLUDEDIR in pkg-config files
-	sed -i -e 's?X-PREFIX-X?$(PREFIX)?' \
+	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
-	sed -i -e 's?X-LIBDIR-X?$(LIBDIR)?' \
+	sed $(SED_ARGS) 's?X-LIBDIR-X?$(LIBDIR)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
-	sed -i -e 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
+	sed $(SED_ARGS) 's?X-INCLUDEDIR-X?$(INCLUDEDIR)?' \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
@@ -488,7 +488,7 @@ ifeq ($(HAVE_PYQT),true)
 		$(DESTDIR)$(BINDIR)
 
 	# Adjust PREFIX value in script files (gui)
-	sed -i -e 's?X-PREFIX-X?$(PREFIX)?' \
+	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(BINDIR)/carla \
 		$(DESTDIR)$(BINDIR)/carla-database \
 		$(DESTDIR)$(BINDIR)/carla-jack-multi \
@@ -502,7 +502,7 @@ ifeq ($(HAVE_LIBLO),true)
 		data/carla-control \
 		$(DESTDIR)$(BINDIR)
 
-	sed -i -e 's?X-PREFIX-X?$(PREFIX)?' \
+	sed $(SED_ARGS) 's?X-PREFIX-X?$(PREFIX)?' \
 		$(DESTDIR)$(BINDIR)/carla-control
 endif
 
@@ -518,10 +518,10 @@ endif
 		$(DESTDIR)$(DATADIR)/carla
 
 	# Adjust LIBDIR and DATADIR value in python code
-	sed -i -e 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
+	sed $(SED_ARGS) 's?X_LIBDIR_X = None?X_LIBDIR_X = "$(LIBDIR)"?' \
 		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
 
-	sed -i -e 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
+	sed $(SED_ARGS) 's?X_DATADIR_X = None?X_DATADIR_X = "$(DATADIR)"?' \
 		$(DESTDIR)$(DATADIR)/carla/carla_shared.py
 
 	# Install resources (gui)
