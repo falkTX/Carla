@@ -41,3 +41,16 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "text/CharacterFunctions.cpp"
 #include "text/StringArray.cpp"
 #include "text/String.cpp"
+
+#ifdef DEBUG
+# include "files/DirectoryIterator.cpp"
+# include "files/FileInputStream.cpp"
+# include "files/FileOutputStream.cpp"
+# include "files/TemporaryFile.cpp"
+# include "maths/Random.cpp"
+# include "memory/MemoryBlock.cpp"
+# include "misc/Time.cpp"
+# include "streams/InputStream.cpp"
+# include "streams/MemoryOutputStream.cpp"
+# include "streams/OutputStream.cpp"
+#endif
