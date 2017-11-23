@@ -2307,7 +2307,8 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
     // handle connections
     if (loadExternalConnections)
     {
-        const bool isUsingExternal(pData->graph.isUsingExternal());
+        const bool isUsingExternal(pData->options.processMode != ENGINE_PROCESS_MODE_PATCHBAY ||
+                                   pData->graph.isUsingExternal());
 
         for (XmlElement* elem = xmlElement->getFirstChildElement(); elem != nullptr; elem = elem->getNextElement())
         {
