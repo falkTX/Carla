@@ -265,11 +265,11 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set PyQt tools
 
-PYRCC4 ?= $(shell which pyrcc4)
-PYUIC4 ?= $(shell which pyuic4)
+PYRCC4 ?= $(shell which pyrcc4 2>/dev/null)
+PYUIC4 ?= $(shell which pyuic4 2>/dev/null)
 
-PYRCC5 ?= $(shell which pyrcc5)
-PYUIC5 ?= $(shell which pyuic5)
+PYRCC5 ?= $(shell which pyrcc5 2>/dev/null)
+PYUIC5 ?= $(shell which pyuic5 2>/dev/null)
 
 HAVE_PYQT4=false
 HAVE_PYQT5=false

@@ -31,7 +31,7 @@
 
 #include "CarlaDefines.h"
 
-#ifdef __cdecl
+#if defined(CARLA_OS_WIN) && defined(__cdecl)
 # define JACKBRIDGE_API __cdecl
 #else
 # define JACKBRIDGE_API
