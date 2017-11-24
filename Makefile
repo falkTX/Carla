@@ -373,7 +373,11 @@ stoat:
 install_main:
 	# Create directories
 	install -d $(DESTDIR)$(BINDIR)
+ifeq ($(LINUX),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
+else
+	install -d $(DESTDIR)$(LIBDIR)/carla
+endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 	install -d $(DESTDIR)$(DATADIR)/carla
