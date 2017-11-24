@@ -442,11 +442,13 @@ endif
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-standalone.pc \
 		$(DESTDIR)$(LIBDIR)/pkgconfig/carla-utils.pc
 
+ifeq ($(LINUX),true)
 	# Install python code (dist-packages)
 	install -m 644 \
 		source/carla_backend.py \
 		source/carla_utils.py \
 		$(DESTDIR)$(LIBDIR)/python3/dist-packages
+endif
 
 	# Install headers
 	install -m 644 \
