@@ -182,10 +182,6 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifeq ($(HURD),true)
-HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-endif
-
 ifeq ($(LINUX),true)
 HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
 HAVE_HYLIA      = true
@@ -437,12 +433,6 @@ JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
 LILV_LIBS        = -ldl -lm -lrt
 RTMEMPOOL_LIBS   = -lpthread -lrt
 WATER_LIBS       = -ldl -lpthread -lrt
-ifeq ($(HAVE_ALSA),true)
-RTAUDIO_FLAGS   += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTAUDIO_LIBS    += $(shell pkg-config --libs alsa) -lpthread
-RTMIDI_FLAGS    += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
-RTMIDI_LIBS     += $(shell pkg-config --libs alsa)
-endif
 endif
 
 ifeq ($(LINUX),true)
