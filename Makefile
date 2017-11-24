@@ -560,48 +560,48 @@ endif
 	install -m 644 resources/scalable/carla-control.svg $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps
 
 	# Install resources (re-use python files)
-	$(LINK) $(DATADIR)/carla/carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_config.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/canvaspreviewframe.py       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/digitalpeakmeter.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/draggablegraphicsview.py    $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ledbutton.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/paramspinbox.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/pianoroll.py                $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/pixmapbutton.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/pixmapdial.py               $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/pixmapkeyboard.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/racklistwidget.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_plugin_calf.py     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_plugin_classic.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_plugin_compact.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_plugin_default.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_plugin_presets.py  $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_refresh.py         $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_settings.py        $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
-	$(LINK) $(DATADIR)/carla/ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_app.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_backend.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_backend_qt.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_config.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_control.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_database.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_host.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_settings.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_skin.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_shared.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_utils.py              $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../carla_widgets.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../canvaspreviewframe.py       $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../digitalpeakmeter.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../draggablegraphicsview.py    $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../externalui.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ledbutton.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../paramspinbox.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../patchcanvas.py              $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../patchcanvas_theme.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../pianoroll.py                $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../pixmapbutton.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../pixmapdial.py               $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../pixmapkeyboard.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../racklistwidget.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../resources_rc.py             $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_about.py           $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_add_jack.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_database.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_edit.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_host.py            $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_parameter.py       $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_plugin_calf.py     $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_plugin_classic.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_plugin_compact.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_plugin_default.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_plugin_presets.py  $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_refresh.py         $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_settings.py        $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_carla_settings_driver.py $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_inputdialog_value.py     $(DESTDIR)$(DATADIR)/carla/resources
+	$(LINK) ../ui_midipattern.py           $(DESTDIR)$(DATADIR)/carla/resources
 endif
 
 	# -------------------------------------------------------------------------------------------------------------
@@ -616,18 +616,24 @@ endif
 
 	# Link binaries for lv2 plugin
 	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
-		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
+		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/libcarla_standalone2.*
 
+ifeq ($(LINUX),true)
+	# Link jack app bridge
+	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
+	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/jack
+endif
+
 	# Link resources for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
-	$(LINK) $(DATADIR)/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
+	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/resources
 
 ifeq ($(HAVE_PYQT),true)
 	# Link styles for lv2 plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
-	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
+	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/lv2/carla.lv2/styles
 endif
 
 	# -------------------------------------------------------------------------------------------------------------
@@ -645,17 +651,21 @@ ifeq ($(HAVE_PYQT),true)
 
 	# Link binaries for vst plugin
 	@for i in `find $(DESTDIR)$(LIBDIR)/carla/ -maxdepth 1 -type f -exec basename {} ';'`; do \
-		$(LINK) $(LIBDIR)/carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/$$i; \
+		$(LINK) ../../carla/$$i $(DESTDIR)$(LIBDIR)/vst/carla.vst/$$i; \
 	done
 	rm -f $(DESTDIR)$(LIBDIR)/vst/carla.vst/libcarla_standalone2.*
 
+	# Link jack app bridge
+	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/jack
+	$(LINK) ../../carla/jack $(DESTDIR)$(LIBDIR)/vst/carla.vst/jack
+
 	# Link resources for vst plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
-	$(LINK) $(DATADIR)/carla/resources $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
+	$(LINK) ../../../share/carla/resources $(DESTDIR)$(LIBDIR)/vst/carla.vst/resources
 
 	# Link styles for vst plugin
 	rm -rf $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
-	$(LINK) $(LIBDIR)/carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
+	$(LINK) ../../carla/styles $(DESTDIR)$(LIBDIR)/vst/carla.vst/styles
 endif
 endif
 endif
