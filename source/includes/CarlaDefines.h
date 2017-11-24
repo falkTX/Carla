@@ -48,6 +48,8 @@
 # define CARLA_OS_LINUX
 #elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
 # define CARLA_OS_BSD
+#elif defined(__GNU__)
+# define CARLA_OS_GNU_HURD
 #else
 # warning Unsupported platform!
 #endif

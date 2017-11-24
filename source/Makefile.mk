@@ -22,9 +22,11 @@ CXX ?= g++
 
 ifneq ($(BSD),true)
 ifneq ($(HAIKU),true)
+ifneq ($(HURD),true)
 ifneq ($(MACOS),true)
 ifneq ($(WIN32),true)
 LINUX=true
+endif
 endif
 endif
 endif
@@ -56,6 +58,10 @@ endif
 # Set UNIX
 
 ifeq ($(BSD),true)
+UNIX=true
+endif
+
+ifeq ($(HURD),true)
 UNIX=true
 endif
 
@@ -176,13 +182,13 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Check for optional libs (required by backend or bridges)
 
-ifneq ($(MACOS_OR_WIN32),true)
-HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
-HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
+ifeq ($(HURD),true)
+HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+endif
+
+ifeq ($(LINUX),true)
+HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
+HAVE_HYLIA      = true
 endif
 
 ifeq ($(MACOS),true)
@@ -191,9 +197,13 @@ HAVE_HYLIA      = true
 endif
 endif
 
-ifeq ($(LINUX),true)
-HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_HYLIA      = true
+ifneq ($(MACOS_OR_WIN32),true)
+HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
+HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
 endif
 
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
@@ -420,6 +430,19 @@ JACKBRIDGE_LIBS  = -lpthread
 LILV_LIBS        = -lm
 RTMEMPOOL_LIBS   = -lpthread
 WATER_LIBS       = -lpthread
+endif
+
+ifeq ($(HURD),true)
+JACKBRIDGE_LIBS  = -ldl -lpthread -lrt
+LILV_LIBS        = -ldl -lm -lrt
+RTMEMPOOL_LIBS   = -lpthread -lrt
+WATER_LIBS       = -ldl -lpthread -lrt
+ifeq ($(HAVE_ALSA),true)
+RTAUDIO_FLAGS   += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTAUDIO_LIBS    += $(shell pkg-config --libs alsa) -lpthread
+RTMIDI_FLAGS    += $(shell pkg-config --cflags alsa) -D__LINUX_ALSA__
+RTMIDI_LIBS     += $(shell pkg-config --libs alsa)
+endif
 endif
 
 ifeq ($(LINUX),true)

@@ -207,7 +207,7 @@ public:
 #ifdef CARLA_OS_LINUX
         prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
-#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012
+#if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012 && !defined(CARLA_OS_GNU_HURD)
         pthread_setname_np(pthread_self(), name);
 #endif
     }
