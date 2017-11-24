@@ -1,8 +1,8 @@
 #!/bin/sh
 
-if [ -f /usr/bin/python3 ]; then
-  PYTHON=/usr/bin/python3
-else
+PYTHON=$(which python3 2>/dev/null)
+
+if [ ! -f ${PYTHON} ]; then
   PYTHON=python
 fi
 
