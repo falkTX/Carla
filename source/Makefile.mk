@@ -18,14 +18,33 @@ CC  ?= gcc
 CXX ?= g++
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Fallback to Linux if no other OS defined
+# Auto-detect OS is not defined
 
 ifneq ($(BSD),true)
 ifneq ($(HAIKU),true)
 ifneq ($(HURD),true)
+ifneq ($(LINUX),true)
 ifneq ($(MACOS),true)
 ifneq ($(WIN32),true)
+
+UNAME := $(shell uname)
+ifeq ($(UNAME),$(filter $(UNAME),FreeBSD GNU/kFreeBSD NetBSD OpenBSD))
+BSD=true
+endif
+ifeq ($(UNAME),$(filter $(UNAME),Haiku))
+HAIKU=true
+endif
+ifeq ($(UNAME),$(filter $(UNAME),GNU))
+HURD=true
+endif
+ifeq ($(UNAME),$(filter $(UNAME),Linux))
 LINUX=true
+endif
+ifeq ($(UNAME),$(filter $(UNAME),Darwin))
+MACOS=true
+endif
+
+endif
 endif
 endif
 endif
