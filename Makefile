@@ -375,11 +375,11 @@ install_main:
 	install -d $(DESTDIR)$(BINDIR)
 ifeq ($(LINUX),true)
 	install -d $(DESTDIR)$(LIBDIR)/carla/jack
+	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 else
 	install -d $(DESTDIR)$(LIBDIR)/carla
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
-	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
 
