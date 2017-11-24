@@ -380,11 +380,8 @@ else
 endif
 	install -d $(DESTDIR)$(LIBDIR)/pkgconfig
 	install -d $(DESTDIR)$(LIBDIR)/python3/dist-packages
-	install -d $(DESTDIR)$(DATADIR)/carla
 	install -d $(DESTDIR)$(DATADIR)/carla/resources
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla
 	install -d $(DESTDIR)$(INCLUDEDIR)/carla/includes
-	install -d $(DESTDIR)$(INCLUDEDIR)/carla/utils
 
 ifeq ($(HAVE_PYQT),true)
 	# Create directories (gui)
@@ -465,17 +462,6 @@ endif
 		source/includes/CarlaDefines.h \
 		source/includes/CarlaMIDI.h \
 		$(DESTDIR)$(INCLUDEDIR)/carla/includes
-
-	install -m 644 \
-		source/utils/CarlaUtils.hpp \
-		source/utils/CarlaJuceUtils.hpp \
-		source/utils/CarlaMathUtils.hpp \
-		source/utils/CarlaPipeUtils.hpp \
-		source/utils/CarlaPipeUtils.cpp \
-		source/utils/CarlaExternalUI.hpp \
-		source/utils/CarlaMutex.hpp \
-		source/utils/CarlaString.hpp \
-		$(DESTDIR)$(INCLUDEDIR)/carla/utils
 
 	# -------------------------------------------------------------------------------------------------------------
 
