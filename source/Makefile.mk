@@ -18,7 +18,7 @@ CC  ?= gcc
 CXX ?= g++
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Auto-detect OS is not defined
+# Auto-detect OS if not defined
 
 ifneq ($(BSD),true)
 ifneq ($(HAIKU),true)
