@@ -116,7 +116,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 #if defined(CARLA_OS_LINUX)
         return RtMidi::LINUX_ALSA;
 #else
-        return RtMidi::UNIX_JACK;
+        return RtMidi::RTMIDI_DUMMY;
 #endif
 
     case RtAudio::UNIX_JACK:
@@ -127,7 +127,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 #elif defined(CARLA_OS_LINUX)
         return RtMidi::LINUX_ALSA;
 #else
-        return RtMidi::UNIX_JACK;
+        return RtMidi::RTMIDI_DUMMY;
 #endif
 
     case RtAudio::MACOSX_CORE:
