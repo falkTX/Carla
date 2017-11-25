@@ -110,8 +110,14 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
 
     case RtAudio::LINUX_ALSA:
     case RtAudio::LINUX_OSS:
-    case RtAudio::LINUX_PULSE:
         return RtMidi::LINUX_ALSA;
+
+    case RtAudio::LINUX_PULSE:
+#if defined(CARLA_OS_LINUX)
+        return RtMidi::LINUX_ALSA;
+#else
+        return RtMidi::UNIX_JACK;
+#endif
 
     case RtAudio::UNIX_JACK:
 #if defined(CARLA_OS_WIN)
