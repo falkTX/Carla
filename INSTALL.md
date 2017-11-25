@@ -1,21 +1,25 @@
-# ---  INSTALL for Carla  ---
+# INSTALL for Carla
 
-To install Carla, simply run as usual: <br/>
-`$ make` <br/>
-`$ [sudo] make install`
+To install Carla, simply run as usual:
+```
+$ make
+$ [sudo] make install
+```
 
-You can run it without installing, by using instead: <br/>
-`$ make` <br/>
-`$ ./source/carla`
+You can run it without installing, by using instead:
+```
+$ make
+$ ./source/carla`
+```
 
-Packagers can make use of the 'PREFIX' and 'DESTDIR' variable during install, like this: <br/>
-`$ make install PREFIX=/usr DESTDIR=./test-dir`
+Packagers can make use of the `PREFIX` and `DESTDIR` variable during install, like this:
+```
+$ make install PREFIX=/usr DESTDIR=./test-dir
+```
 
-<br/>
+## BUILD DEPENDENCIES
 
-===== BUILD DEPENDENCIES =====
---------------------------------
-The required build dependencies are: <i>(devel packages of these)</i>
+The required build dependencies are: *(devel packages of these)*
 
  - PyQt4/5 (python3 version)
 
@@ -55,6 +59,8 @@ Optional but recommended:
  - python3-rdflib (for LADSPA-RDF support)
 
 
-You can use: <br/>
-`$ make features` <br/>
+You can use:
+```
+$ make features
+```
 To find out which dependencies are missing.
