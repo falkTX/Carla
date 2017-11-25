@@ -202,23 +202,26 @@ endif
 # Check for optional libs (required by backend or bridges)
 
 ifeq ($(LINUX),true)
-HAVE_ALSA       = $(shell pkg-config --exists alsa && echo true)
-HAVE_HYLIA      = true
+HAVE_ALSA  = $(shell pkg-config --exists alsa && echo true)
+HAVE_HYLIA = true
 endif
 
 ifeq ($(MACOS),true)
 ifneq ($(MACOS_OLD),true)
-HAVE_HYLIA      = true
+HAVE_HYLIA = true
 endif
 endif
 
 ifneq ($(MACOS_OR_WIN32),true)
-HAVE_GTK2       = $(shell pkg-config --exists gtk+-2.0 && echo true)
-HAVE_GTK3       = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_PULSEAUDIO = $(shell pkg-config --exists libpulse-simple && echo true)
-HAVE_QT4        = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5        = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
-HAVE_X11        = $(shell pkg-config --exists x11 && echo true)
+HAVE_GTK2  = $(shell pkg-config --exists gtk+-2.0 && echo true)
+HAVE_GTK3  = $(shell pkg-config --exists gtk+-3.0 && echo true)
+HAVE_QT4   = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5   = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
+HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
+endif
+
+ifeq ($(UNIX),true)
+HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
 endif
 
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
@@ -416,21 +419,20 @@ endif
 # ---------------------------------------------------------------------------------------------------------------------
 # Set libs stuff (part 2)
 
-RTAUDIO_FLAGS  = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
-RTMIDI_FLAGS   = -D__RTMIDI_DUMMY__
+RTAUDIO_FLAGS    = -DHAVE_GETTIMEOFDAY -D__RTAUDIO_DUMMY__
+RTMIDI_FLAGS     = -D__RTMIDI_DUMMY__
 
 ifeq ($(DEBUG),true)
-RTAUDIO_FLAGS += -D__RTAUDIO_DEBUG__
-RTMIDI_FLAGS  += -D__RTMIDI_DEBUG__
+RTAUDIO_FLAGS   += -D__RTAUDIO_DEBUG__
+RTMIDI_FLAGS    += -D__RTMIDI_DEBUG__
 endif
 
 ifeq ($(UNIX),true)
-RTAUDIO_FLAGS        += -D__UNIX_JACK__
-endif
-
+RTAUDIO_FLAGS   += -D__UNIX_JACK__
 ifeq ($(HAVE_PULSEAUDIO),true)
-RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__LINUX_PULSE__
+RTAUDIO_FLAGS   += $(shell pkg-config --cflags libpulse-simple) -D__UNIX_PULSE__
 RTAUDIO_LIBS    += $(shell pkg-config --libs libpulse-simple)
+endif
 endif
 
 ifeq ($(BSD),true)

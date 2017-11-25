@@ -76,7 +76,7 @@ const unsigned int RtApi::SAMPLE_RATES[] = {
     return s;
   }
 
-#elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
   // pthread API
   #define MUTEX_INITIALIZE(A) pthread_mutex_init(A, NULL)
   #define MUTEX_DESTROY(A)    pthread_mutex_destroy(A)
@@ -110,8 +110,8 @@ void RtAudio :: getCompiledApi( std::vector<RtAudio::Api> &apis )
 #if defined(__LINUX_ALSA__)
   apis.push_back( LINUX_ALSA );
 #endif
-#if defined(__LINUX_PULSE__)
-  apis.push_back( LINUX_PULSE );
+#if defined(__UNIX_PULSE__)
+  apis.push_back( UNIX_PULSE );
 #endif
 #if defined(__LINUX_OSS__)
   apis.push_back( LINUX_OSS );
@@ -147,8 +147,8 @@ void RtAudio :: openRtApi( RtAudio::Api api )
   if ( api == LINUX_ALSA )
     rtapi_ = new RtApiAlsa();
 #endif
-#if defined(__LINUX_PULSE__)
-  if ( api == LINUX_PULSE )
+#if defined(__UNIX_PULSE__)
+  if ( api == UNIX_PULSE )
     rtapi_ = new RtApiPulse();
 #endif
 #if defined(__LINUX_OSS__)
@@ -8017,7 +8017,7 @@ static void *alsaCallbackHandler( void *ptr )
 //******************** End of __LINUX_ALSA__ *********************//
 #endif
 
-#if defined(__LINUX_PULSE__)
+#if defined(__UNIX_PULSE__)
 
 // Code written by Peter Meerwald, pmeerw@pmeerw.net
 // and Tristan Matthews.
@@ -8504,7 +8504,7 @@ bool RtApiPulse::probeDeviceOpen( unsigned int device, StreamMode mode,
   return FAILURE;
 }
 
-//******************** End of __LINUX_PULSE__ *********************//
+//******************** End of __UNIX_PULSE__ *********************//
 #endif
 
 #if defined(__LINUX_OSS__)

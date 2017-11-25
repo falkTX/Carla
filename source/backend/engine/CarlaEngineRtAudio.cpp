@@ -71,10 +71,10 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
         return "Unspecified";
     case RtAudio::LINUX_ALSA:
         return "ALSA";
-    case RtAudio::LINUX_PULSE:
-        return "PulseAudio";
     case RtAudio::LINUX_OSS:
         return "OSS";
+    case RtAudio::UNIX_PULSE:
+        return "PulseAudio";
     case RtAudio::UNIX_JACK:
 #if defined(CARLA_OS_WIN)
         return "JACK with WinMM";
@@ -112,7 +112,7 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
     case RtAudio::LINUX_OSS:
         return RtMidi::LINUX_ALSA;
 
-    case RtAudio::LINUX_PULSE:
+    case RtAudio::UNIX_PULSE:
 #if defined(CARLA_OS_LINUX)
         return RtMidi::LINUX_ALSA;
 #else
@@ -258,7 +258,7 @@ public:
 
             iParams.nChannels = carla_fixedValue(0U, 128U, iParams.nChannels);
             oParams.nChannels = carla_fixedValue(0U, 128U, oParams.nChannels);
-            fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::LINUX_PULSE;
+            fAudioInterleaved = fAudio.getCurrentApi() == RtAudio::UNIX_PULSE;
         }
 
         RtAudio::StreamOptions rtOptions;
@@ -1052,7 +1052,7 @@ CarlaEngine* CarlaEngine::newRtAudio(const AudioApi api)
         rtApi = RtAudio::LINUX_ALSA;
         break;
     case AUDIO_API_PULSEAUDIO:
-        rtApi = RtAudio::LINUX_PULSE;
+        rtApi = RtAudio::UNIX_PULSE;
         break;
     case AUDIO_API_COREAUDIO:
         rtApi = RtAudio::MACOSX_CORE;

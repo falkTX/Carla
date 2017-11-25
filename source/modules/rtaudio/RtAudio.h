@@ -269,8 +269,8 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   enum Api {
     UNSPECIFIED,    /*!< Search for a working compiled API. */
     LINUX_ALSA,     /*!< The Advanced Linux Sound Architecture API. */
-    LINUX_PULSE,    /*!< The Linux PulseAudio API. */
     LINUX_OSS,      /*!< The Linux Open Sound System API. */
+    UNIX_PULSE,     /*!< The PulseAudio API. */
     UNIX_JACK,      /*!< The Jack Low-Latency Audio Server API. */
     MACOSX_CORE,    /*!< Macintosh OS-X Core Audio API. */
     WINDOWS_WASAPI, /*!< The Microsoft WASAPI API. */
@@ -588,7 +588,7 @@ class RTAUDIO_DLL_PUBLIC RtAudio
   typedef uintptr_t ThreadHandle;
   typedef CRITICAL_SECTION StreamMutex;
 
-#elif defined(__LINUX_ALSA__) || defined(__LINUX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
+#elif defined(__LINUX_ALSA__) || defined(__UNIX_PULSE__) || defined(__UNIX_JACK__) || defined(__LINUX_OSS__) || defined(__MACOSX_CORE__)
   // Using pthread library for various flavors of unix.
   #include <pthread.h>
 
@@ -1067,13 +1067,13 @@ public:
 
 #endif
 
-#if defined(__LINUX_PULSE__)
+#if defined(__UNIX_PULSE__)
 
 class RtApiPulse: public RtApi
 {
 public:
   ~RtApiPulse();
-  RtAudio::Api getCurrentApi() const { return RtAudio::LINUX_PULSE; }
+  RtAudio::Api getCurrentApi() const { return RtAudio::UNIX_PULSE; }
   unsigned int getDeviceCount( void );
   RtAudio::DeviceInfo getDeviceInfo( unsigned int device );
   void closeStream( void );
