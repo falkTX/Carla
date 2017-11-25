@@ -56,8 +56,22 @@ static void initRtAudioAPIsIfNeeded()
     {
         const RtAudio::Api& api(*it);
 
-        if (api == RtAudio::UNIX_JACK && ! jackbridge_is_ok())
+        if (api == RtAudio::UNIX_JACK)
+        {
+#if defined(CARLA_OS_LINUX) || defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+            if ( ! jackbridge_is_ok())
+                continue;
+#else
+            /* NOTE
+             * RtMidi doesn't have a native MIDI backend for these OSes,
+             * Using RtAudio JACK funcitonality is only useful when we need to access the native MIDI APIs.
+             * (JACK audio + ALSA MIDI, or JACK audio + CoreMidi, or JACK audio + Windows MIDI)
+             * Because RtMidi has no native MIDI support outside of win/mac/linux, we skip these RtAudio APIs.
+             * Those OSes can use Carla's JACK support directly, which is much better than RtAudio classes.
+             */
             continue;
+#endif
+        }
 
         gRtAudioApis.push_back(api);
     }
@@ -76,12 +90,12 @@ static const char* getRtAudioApiName(const RtAudio::Api api) noexcept
     case RtAudio::UNIX_PULSE:
         return "PulseAudio";
     case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_WIN)
-        return "JACK with WinMM";
+#if defined(CARLA_OS_LINUX)
+        return "JACK with ALSA-MIDI";
 #elif defined(CARLA_OS_MAC)
         return "JACK with CoreMidi";
-#elif defined(CARLA_OS_LINUX)
-        return "JACK with ALSA-MIDI";
+#elif defined(CARLA_OS_WIN)
+        return "JACK with WinMM";
 #else
         return "JACK (RtAudio)";
 #endif
@@ -113,19 +127,13 @@ static RtMidi::Api getMatchedAudioMidiAPI(const RtAudio::Api rtApi) noexcept
         return RtMidi::LINUX_ALSA;
 
     case RtAudio::UNIX_PULSE:
+    case RtAudio::UNIX_JACK:
 #if defined(CARLA_OS_LINUX)
         return RtMidi::LINUX_ALSA;
-#else
-        return RtMidi::RTMIDI_DUMMY;
-#endif
-
-    case RtAudio::UNIX_JACK:
-#if defined(CARLA_OS_WIN)
-        return RtMidi::WINDOWS_MM;
 #elif defined(CARLA_OS_MAC)
         return RtMidi::MACOSX_CORE;
-#elif defined(CARLA_OS_LINUX)
-        return RtMidi::LINUX_ALSA;
+#elif defined(CARLA_OS_WIN)
+        return RtMidi::WINDOWS_MM;
 #else
         return RtMidi::RTMIDI_DUMMY;
 #endif
