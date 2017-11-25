@@ -34,17 +34,17 @@ struct ScopedLibOpen {
         {
             CARLA_SAFE_ASSERT_RETURN(winIdStr[0] != '\0',);
 
-            const long long winIdLL(std::strtoll(winIdStr, nullptr, 16));
-            CARLA_SAFE_ASSERT_RETURN(winIdLL > 0,);
-
-            winId = winIdLL;
+            winId = std::strtoll(winIdStr, nullptr, 16);
         }
     }
 
     ~ScopedLibOpen()
     {
         if (handle != nullptr)
+        {
             dlclose(handle);
+            handle = nullptr;
+        }
     }
 };
 
