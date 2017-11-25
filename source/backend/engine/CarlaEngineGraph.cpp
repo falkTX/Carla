@@ -318,7 +318,7 @@ void ExternalGraph::refresh(const char* const deviceName)
 
     // Main
     {
-        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, kExternalGraphGroupCarla, PATCHBAY_ICON_CARLA, -1, 0.0f, kEngine->getName());
+        kEngine->callback(ENGINE_CALLBACK_PATCHBAY_CLIENT_ADDED, kExternalGraphGroupCarla, PATCHBAY_ICON_CARLA, MAIN_CARLA_PLUGIN_ID, 0.0f, kEngine->getName());
 
         if (isRack)
         {

@@ -154,6 +154,10 @@ MAX_PATCHBAY_PLUGINS = 255
 # @see ENGINE_OPTION_MAX_PARAMETERS
 MAX_DEFAULT_PARAMETERS = 200
 
+# The "plugin Id" for the global Carla instance.
+# Curently only used for audio peaks.
+MAIN_CARLA_PLUGIN_ID = 0xFFFF
+
 # ------------------------------------------------------------------------------------------------------------
 # Engine Driver Device Hints
 # Various engine driver device hints.

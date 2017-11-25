@@ -1330,11 +1330,16 @@ class HostWindow(QMainWindow):
 
         if pluginId < 0:
             return
-        if pluginId >= self.fPluginCount:
+        if pluginId >= self.fPluginCount and pluginId != MAIN_CARLA_PLUGIN_ID:
             print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
             return
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        if pluginId == MAIN_CARLA_PLUGIN_ID:
+            hasCustomUI = False
+        else:
+            hasCustomUI = bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI)
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI)
 
     @pyqtSlot(int)
     def slot_handlePatchbayClientRemovedCallback(self, clientId):
@@ -1366,11 +1371,16 @@ class HostWindow(QMainWindow):
 
         if pluginId < 0:
             return
-        if pluginId >= self.fPluginCount:
+        if pluginId >= self.fPluginCount and pluginId != MAIN_CARLA_PLUGIN_ID:
             print("sorry, can't map this plugin to canvas client", pluginId, self.fPluginCount)
             return
 
-        patchcanvas.setGroupAsPlugin(clientId, pluginId, bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI))
+        if pluginId == MAIN_CARLA_PLUGIN_ID:
+            hasCustomUI = False
+        else:
+            hasCustomUI = bool(self.host.get_plugin_info(pluginId)['hints'] & PLUGIN_HAS_CUSTOM_UI)
+
+        patchcanvas.setGroupAsPlugin(clientId, pluginId, hasCustomUI)
 
     @pyqtSlot(int, int, int, str)
     def slot_handlePatchbayPortAddedCallback(self, clientId, portId, portFlags, portName):

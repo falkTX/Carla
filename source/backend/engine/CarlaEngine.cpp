@@ -1197,6 +1197,14 @@ const EngineTimeInfo& CarlaEngine::getTimeInfo() const noexcept
 
 float CarlaEngine::getInputPeak(const uint pluginId, const bool isLeft) const noexcept
 {
+    if (pluginId == MAIN_CARLA_PLUGIN_ID)
+    {
+        // get peak from first plugin, if available
+        if (pData->curPluginCount > 0)
+            return pData->plugins[0].insPeak[isLeft ? 0 : 1];
+        return 0.0f;
+    }
+
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
     return pData->plugins[pluginId].insPeak[isLeft ? 0 : 1];
@@ -1204,6 +1212,14 @@ float CarlaEngine::getInputPeak(const uint pluginId, const bool isLeft) const no
 
 float CarlaEngine::getOutputPeak(const uint pluginId, const bool isLeft) const noexcept
 {
+    if (pluginId == MAIN_CARLA_PLUGIN_ID)
+    {
+        // get peak from last plugin, if available
+        if (pData->curPluginCount > 0)
+            return pData->plugins[pData->curPluginCount-1].outsPeak[isLeft ? 0 : 1];
+        return 0.0f;
+    }
+
     CARLA_SAFE_ASSERT_RETURN(pluginId < pData->curPluginCount, 0.0f);
 
     return pData->plugins[pluginId].outsPeak[isLeft ? 0 : 1];

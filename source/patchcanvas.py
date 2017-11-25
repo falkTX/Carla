@@ -49,6 +49,9 @@ from patchcanvas_theme import *
 # ------------------------------------------------------------------------------
 # patchcanvas-api.h
 
+# Maximum Id for a plugin, treated as invalid/zero if above this value
+MAX_PLUGIN_ID_ALLOWED = 0x7FF
+
 # Port Mode
 PORT_MODE_NULL   = 0
 PORT_MODE_INPUT  = 1
@@ -1055,7 +1058,7 @@ def handlePluginRemoved(plugin_id):
         print("PatchCanvas::handlePluginRemoved(%i)" % plugin_id)
 
     for group in canvas.group_list:
-        if group.plugin_id < plugin_id:
+        if group.plugin_id < plugin_id or group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
             continue
 
         group.plugin_id -= 1
@@ -1069,6 +1072,9 @@ def handleAllPluginsRemoved():
         print("PatchCanvas::handleAllPluginsRemoved()")
 
     for group in canvas.group_list:
+        if group.plugin_id > MAX_PLUGIN_ID_ALLOWED:
+            continue
+
         group.plugin_id = -1
         group.plugin_ui = False
         group.widgets[0].m_plugin_id = -1
@@ -1306,7 +1312,10 @@ class PatchScene(QGraphicsScene):
                     #break
 
                 if group_item is not None and group_item.m_plugin_id >= 0:
-                    plugin_list.append(group_item.m_plugin_id)
+                    plugin_id = group_item.m_plugin_id
+                    if plugin_id > MAX_PLUGIN_ID_ALLOWED:
+                        plugin_id = 0
+                    plugin_list.append(plugin_id)
 
         self.pluginSelected.emit(plugin_list)
 
@@ -2599,7 +2608,7 @@ class CanvasBox(QGraphicsItem):
         if not (features.group_info and features.group_rename):
             act_x_sep1.setVisible(False)
 
-        if self.m_plugin_id >= 0:
+        if self.m_plugin_id >= 0 and self.m_plugin_id <= MAX_PLUGIN_ID_ALLOWED:
             menu.addSeparator()
             act_p_edit = menu.addAction("Edit")
             act_p_ui   = menu.addAction("Show Custom UI")

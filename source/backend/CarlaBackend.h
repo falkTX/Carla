@@ -70,6 +70,12 @@ static const uint MAX_PATCHBAY_PLUGINS = 255;
  */
 static const uint MAX_DEFAULT_PARAMETERS = 200;
 
+/*!
+ * The "plugin Id" for the global Carla instance.
+ * Curently only used for audio peaks.
+ */
+static const uint MAIN_CARLA_PLUGIN_ID = 0xFFFF;
+
 /* ------------------------------------------------------------------------------------------------------------
  * Engine Driver Device Hints */
 
