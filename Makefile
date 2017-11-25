@@ -765,14 +765,14 @@ endif
 else
 	@printf -- "ALSA:        $(ANS_NO)  $(mZ)Linux only$(mE)\n"
 endif
-ifneq ($(MACOS_OR_WIN32),true)
+ifeq ($(UNIX),true)
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@printf -- "PulseAudio:  $(ANS_YES)\n"
 else
 	@printf -- "PulseAudio:  $(ANS_NO)  $(mS)Missing PulseAudio$(mE)\n"
 endif
 else
-	@printf -- "PulseAudio:  $(ANS_NO)  $(mZ)Not available for Windows or MacOS$(mE)\n"
+	@printf -- "PulseAudio:  $(ANS_NO)  $(mZ)Only available for Unix systems$(mE)\n"
 endif
 ifeq ($(MACOS),true)
 	@printf -- "CoreAudio:   $(ANS_YES)\n"
@@ -782,9 +782,11 @@ endif
 ifeq ($(WIN32),true)
 	@printf -- "ASIO:        $(ANS_YES)\n"
 	@printf -- "DirectSound: $(ANS_YES)\n"
+	@printf -- "WASAPI:      $(ANS_YES)\n"
 else
 	@printf -- "ASIO:        $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 	@printf -- "DirectSound: $(ANS_NO)  $(mZ)Windows only$(mE)\n"
+	@printf -- "WASAPI:      $(ANS_NO)  $(mZ)Windows only$(mE)\n"
 endif
 	@printf -- "\n"
 
