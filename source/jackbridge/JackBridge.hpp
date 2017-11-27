@@ -31,7 +31,7 @@
 
 #include "CarlaDefines.h"
 
-#if defined(CARLA_OS_WIN) && defined(__cdecl)
+#if (defined(__WINE__) || defined(CARLA_OS_WIN)) && defined(__cdecl)
 # define JACKBRIDGE_API __cdecl
 #else
 # define JACKBRIDGE_API
