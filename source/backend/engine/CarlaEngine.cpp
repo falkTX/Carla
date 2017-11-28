@@ -1972,6 +1972,7 @@ bool CarlaEngine::loadProjectInternal(water::XmlDocument& xmlDoc)
 
     if (! (xmlType.equalsIgnoreCase("carla-project") || isPreset))
     {
+        callback(ENGINE_CALLBACK_PROJECT_LOAD_FINISHED, 0, 0, 0, 0.0f, nullptr);
         setLastError("Not a valid Carla project or preset file");
         return false;
     }
