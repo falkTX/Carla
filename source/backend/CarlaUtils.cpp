@@ -27,8 +27,12 @@
 
 #include "water/files/File.h"
 
-#if defined(HAVE_X11) && ! defined(CARLA_UTILS_CACHED_PLUGINS_ONLY)
-# include <X11/Xlib.h>
+#ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
+# include "rtaudio/RtAudio.h"
+# include "rtmidi/RtMidi.h"
+# ifdef HAVE_X11
+#  include <X11/Xlib.h>
+# endif
 #endif
 
 #include "../native-plugins/_data.all.cpp"
@@ -457,7 +461,7 @@ const char* carla_get_complete_license_text()
         "<li>liblo library for OSC support</li>"
         "<li>rtmempool library by Nedko Arnaudov"
         "<li>serd, sord, sratom and lilv libraries for LV2 discovery</li>"
-        "<li>RtAudio and RtMidi libraries for extra Audio and MIDI support</li>"
+        "<li>RtAudio v" RTAUDIO_VERSION " and RtMidi v" RTMIDI_VERSION " for native Audio and MIDI support</li>"
 
         // Internal plugins
 #ifdef HAVE_EXPERIMENTAL_PLUGINS
