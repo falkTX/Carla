@@ -460,6 +460,7 @@ public:
                 delete fUI.window;
                 fUI.window = nullptr;
 
+                carla_stderr2("Plugin refused to open its own UI");
                 return pData->engine->callback(ENGINE_CALLBACK_UI_STATE_CHANGED, pData->id, -1, 0, 0.0f, "Plugin refused to open its own UI");
             }
         }
