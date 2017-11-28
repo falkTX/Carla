@@ -27,21 +27,24 @@ ifneq ($(LINUX),true)
 ifneq ($(MACOS),true)
 ifneq ($(WIN32),true)
 
-UNAME := $(shell uname)
-ifeq ($(UNAME),$(filter $(UNAME),FreeBSD GNU/kFreeBSD NetBSD OpenBSD))
+TARGET_MACHINE := $(shell $(CC) -dumpmachine)
+ifneq (,$(findstring bsd,$(TARGET_MACHINE)))
 BSD=true
 endif
-ifeq ($(UNAME),$(filter $(UNAME),Haiku))
+ifneq (,$(findstring haiku,$(TARGET_MACHINE)))
 HAIKU=true
 endif
-ifeq ($(UNAME),$(filter $(UNAME),GNU))
+ifneq (,$(findstring gnu,$(TARGET_MACHINE)))
 HURD=true
 endif
-ifeq ($(UNAME),$(filter $(UNAME),Linux))
+ifneq (,$(findstring linux,$(TARGET_MACHINE)))
 LINUX=true
 endif
-ifeq ($(UNAME),$(filter $(UNAME),Darwin))
+ifneq (,$(findstring apple,$(TARGET_MACHINE)))
 MACOS=true
+endif
+ifneq (,$(findstring mingw,$(TARGET_MACHINE)))
+WIN32=true
 endif
 
 endif
