@@ -271,8 +271,9 @@ public:
     */
     ObjectClass* add (ObjectClass* newObject) noexcept
     {
-        data.ensureAllocatedSize (numUsed + 1);
-        jassert (data.elements != nullptr);
+        if (! data.ensureAllocatedSize (numUsed + 1))
+            return nullptr;
+
         data.elements [numUsed++] = newObject;
         return newObject;
     }
@@ -303,14 +304,14 @@ public:
         if (indexToInsertAt > numUsed)
             indexToInsertAt = numUsed;
 
-        data.ensureAllocatedSize (numUsed + 1);
-        jassert (data.elements != nullptr);
+        if (! data.ensureAllocatedSize (numUsed + 1))
+            return nullptr;
 
         ObjectClass** const e = data.elements + indexToInsertAt;
         const int numToMove = numUsed - indexToInsertAt;
 
         if (numToMove > 0)
-            memmove (e + 1, e, sizeof (ObjectClass*) * (size_t) numToMove);
+            std::memmove (e + 1, e, sizeof (ObjectClass*) * (size_t) numToMove);
 
         *e = newObject;
         ++numUsed;
@@ -369,8 +370,7 @@ public:
         if (contains (newObject))
             return false;
 
-        add (newObject);
-        return true;
+        return add (newObject) != nullptr;
     }
 
     /** Replaces an object in the array with a different one.
@@ -771,9 +771,9 @@ public:
         removing elements, they may have quite a lot of unused space allocated.
         This method will reduce the amount of allocated storage to a minimum.
     */
-    void minimiseStorageOverheads() noexcept
+    bool minimiseStorageOverheads() noexcept
     {
-        data.shrinkToNoMoreThan (numUsed);
+        return data.shrinkToNoMoreThan (numUsed);
     }
 
     /** Increases the array's internal storage to hold a minimum number of elements.
@@ -782,9 +782,9 @@ public:
         the array won't have to keep dynamically resizing itself as the elements
         are added, and it'll therefore be more efficient.
     */
-    void ensureStorageAllocated (const int minNumElements) noexcept
+    bool ensureStorageAllocated (const int minNumElements) noexcept
     {
-        data.ensureAllocatedSize (minNumElements);
+        return data.ensureAllocatedSize (minNumElements);
     }
 
     //==============================================================================

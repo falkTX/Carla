@@ -70,14 +70,9 @@ namespace water {
     as their less object-oriented counterparts. Despite adding safety, you probably
     won't sacrifice any performance by using this in place of normal pointers.
 
-    The throwOnFailure template parameter can be set to true if you'd like the class
-    to throw a std::bad_alloc exception when an allocation fails. If this is false,
-    then a failed allocation will just leave the heapblock with a null pointer (assuming
-    that the system's malloc() function doesn't throw).
-
     @see Array, OwnedArray, MemoryBlock
 */
-template <class ElementType, bool throwOnFailure = false>
+template <class ElementType>
 class HeapBlock
 {
 public:
@@ -181,7 +176,7 @@ public:
         The data that is allocated will be freed when this object is deleted, or when you
         call free() or any of the allocation methods.
     */
-    bool malloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool malloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType)) noexcept
     {
         std::free (data);
         data = static_cast<ElementType*> (std::malloc (newNumElements * elementSize));
@@ -192,7 +187,7 @@ public:
     /** Allocates a specified amount of memory and clears it.
         This does the same job as the malloc() method, but clears the memory that it allocates.
     */
-    bool calloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool calloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType)) noexcept
     {
         std::free (data);
         data = static_cast<ElementType*> (std::calloc (newNumElements, elementSize));
@@ -204,7 +199,7 @@ public:
         This does the same job as either malloc() or calloc(), depending on the
         initialiseToZero parameter.
     */
-    bool allocate (const size_t newNumElements, bool initialiseToZero)
+    bool allocate (const size_t newNumElements, bool initialiseToZero) noexcept
     {
         std::free (data);
         data = static_cast<ElementType*> (initialiseToZero
@@ -219,7 +214,7 @@ public:
         The semantics of this method are the same as malloc() and calloc(), but it
         uses realloc() to keep as much of the existing data as possible.
     */
-    bool realloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType))
+    bool realloc (const size_t newNumElements, const size_t elementSize = sizeof (ElementType)) noexcept
     {
         data = static_cast<ElementType*> (data == nullptr ? std::malloc (newNumElements * elementSize)
                                                           : std::realloc (data, newNumElements * elementSize));
@@ -238,8 +233,7 @@ public:
     /** Swaps this object's data with the data of another HeapBlock.
         The two objects simply exchange their data pointers.
     */
-    template <bool otherBlockThrows>
-    void swapWith (HeapBlock<ElementType, otherBlockThrows>& other) noexcept
+    void swapWith (HeapBlock<ElementType>& other) noexcept
     {
         std::swap (data, other.data);
     }

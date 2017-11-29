@@ -24,6 +24,7 @@
 */
 
 #include "Time.h"
+#include "../memory/Atomic.h"
 
 #include <ctime>
 #include <sys/time.h>
@@ -38,7 +39,7 @@ namespace water {
 
 namespace TimeHelpers
 {
-    static uint32 lastMSCounterValue = 0;
+    static Atomic<uint32> lastMSCounterValue;
 
    #ifdef CARLA_OS_MAC
     /*  NB: these are kept outside the HiResCounterInfo struct and initialised to 1 to avoid
@@ -129,12 +130,12 @@ uint32 Time::getMillisecondCounter() noexcept
 {
     const uint32 now = water_millisecondsSinceStartup();
 
-    if (now < TimeHelpers::lastMSCounterValue)
+    if (now < TimeHelpers::lastMSCounterValue.get())
     {
         // in multi-threaded apps this might be called concurrently, so
         // make sure that our last counter value only increases and doesn't
         // go backwards..
-        if (now < TimeHelpers::lastMSCounterValue - 1000)
+        if (now < TimeHelpers::lastMSCounterValue.get() - 1000U)
             TimeHelpers::lastMSCounterValue = now;
     }
     else
@@ -147,10 +148,8 @@ uint32 Time::getMillisecondCounter() noexcept
 
 uint32 Time::getApproximateMillisecondCounter() noexcept
 {
-    if (TimeHelpers::lastMSCounterValue == 0)
-        getMillisecondCounter();
-
-    return TimeHelpers::lastMSCounterValue;
+    const uint32 t = TimeHelpers::lastMSCounterValue.get();
+    return t == 0 ? getMillisecondCounter() : t;
 }
 
 }

@@ -198,7 +198,7 @@ public:
           size (other.size),
           allocatedBytes (other.allocatedBytes),
           channels (other.channels),
-          allocatedData (static_cast<HeapBlock<char, true>&&> (other.allocatedData)),
+          allocatedData (static_cast<HeapBlock<char>&&> (other.allocatedData)),
           isClear (other.isClear)
     {
         memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
@@ -214,7 +214,7 @@ public:
         size = other.size;
         allocatedBytes = other.allocatedBytes;
         channels = other.channels;
-        allocatedData = static_cast<HeapBlock<char, true>&&> (other.allocatedData);
+        allocatedData = static_cast<HeapBlock<char>&&> (other.allocatedData);
         isClear = other.isClear;
         memcpy (preallocatedChannelSpace, other.preallocatedChannelSpace, sizeof (preallocatedChannelSpace));
         other.numChannels = 0;
@@ -323,14 +323,14 @@ public:
 
         If the required memory can't be allocated, this will throw a std::bad_alloc exception.
     */
-    void setSize (int newNumChannels,
+    bool setSize (int newNumChannels,
                   int newNumSamples,
                   bool keepExistingContent = false,
                   bool clearExtraSpace = false,
                   bool avoidReallocating = false) noexcept
     {
-        jassert (newNumChannels >= 0);
-        jassert (newNumSamples >= 0);
+        CARLA_SAFE_ASSERT_RETURN (newNumChannels >= 0, false);
+        CARLA_SAFE_ASSERT_RETURN (newNumSamples >= 0, false);
 
         if (newNumSamples != size || newNumChannels != numChannels)
         {
@@ -341,7 +341,7 @@ public:
 
             if (keepExistingContent)
             {
-                HeapBlock<char, true> newData;
+                HeapBlock<char> newData;
                 newData.allocate (newTotalBytes, clearExtraSpace || isClear);
 
                 const size_t numSamplesToCopy = (size_t) jmin (newNumSamples, size);
@@ -375,8 +375,8 @@ public:
                 }
                 else
                 {
+                    CARLA_SAFE_ASSERT_RETURN (allocatedData.allocate (newTotalBytes, clearExtraSpace || isClear), false);
                     allocatedBytes = newTotalBytes;
-                    allocatedData.allocate (newTotalBytes, clearExtraSpace || isClear);
                     channels = reinterpret_cast<float**> (allocatedData.getData());
                 }
 
@@ -392,6 +392,8 @@ public:
             size = newNumSamples;
             numChannels = newNumChannels;
         }
+
+        return true;
     }
 
     /** Makes this buffer point to a pre-allocated set of channel data arrays.
@@ -412,12 +414,12 @@ public:
         @param newNumSamples    the number of samples to use - this must correspond to the
                                 size of the arrays passed in
     */
-    void setDataToReferTo (float** dataToReferTo,
+    bool setDataToReferTo (float** dataToReferTo,
                            const int newNumChannels,
                            const int newNumSamples) noexcept
     {
-        jassert (dataToReferTo != nullptr);
-        jassert (newNumChannels >= 0 && newNumSamples >= 0);
+        CARLA_SAFE_ASSERT_RETURN (dataToReferTo != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN (newNumChannels >= 0 && newNumSamples >= 0, false);
 
         if (allocatedBytes != 0)
         {
@@ -428,8 +430,7 @@ public:
         numChannels = newNumChannels;
         size = newNumSamples;
 
-        allocateChannels (dataToReferTo, 0);
-        jassert (! isClear);
+        return allocateChannels (dataToReferTo, 0);
     }
 
     /** Resizes this buffer to match the given one, and copies all of its content across.
@@ -948,112 +949,22 @@ public:
         }
     }
 
-#if 0
-    /** Returns a Range indicating the lowest and highest sample values in a given section.
-
-        @param channel      the channel to read from
-        @param startSample  the start sample within the channel
-        @param numSamples   the number of samples to check
-    */
-    Range<float> findMinMax (int channel,
-                            int startSample,
-                            int numSamples) const noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
-
-        if (isClear)
-            return Range<float>();
-
-        return FloatVectorOperations::findMinAndMax (channels [channel] + startSample, numSamples);
-    }
-
-
-    /** Finds the highest absolute sample value within a region of a channel. */
-    float getMagnitude (int channel,
-                       int startSample,
-                       int numSamples) const noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
-
-        if (isClear)
-            return 0.0f;
-
-        const Range<float> r (findMinMax (channel, startSample, numSamples));
-
-        return jmax (r.getStart(), -r.getStart(), r.getEnd(), -r.getEnd());
-    }
-
-    /** Finds the highest absolute sample value within a region on all channels. */
-    float getMagnitude (int startSample,
-                       int numSamples) const noexcept
-    {
-        float mag = 0.0f;
-
-        if (! isClear)
-            for (int i = 0; i < numChannels; ++i)
-                mag = jmax (mag, getMagnitude (i, startSample, numSamples));
-
-        return mag;
-    }
-
-    /** Returns the root mean squared level for a region of a channel. */
-    float getRMSLevel (int channel,
-                      int startSample,
-                      int numSamples) const noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
-
-        if (numSamples <= 0 || channel < 0 || channel >= numChannels || isClear)
-            return 0.0f;
-
-        const float* const data = channels [channel] + startSample;
-        double sum = 0.0;
-
-        for (int i = 0; i < numSamples; ++i)
-        {
-            const float sample = data [i];
-            sum += sample * sample;
-        }
-
-        return (float) std::sqrt (sum / numSamples);
-    }
-
-    /** Reverses a part of a channel. */
-    void reverse (int channel, int startSample, int numSamples) const noexcept
-    {
-        jassert (isPositiveAndBelow (channel, numChannels));
-        jassert (startSample >= 0 && startSample + numSamples <= size);
-
-        if (! isClear)
-            std::reverse (channels[channel] + startSample,
-                          channels[channel] + startSample + numSamples);
-    }
-
-    /** Reverses a part of the buffer. */
-    void reverse (int startSample, int numSamples) const noexcept
-    {
-        for (int i = 0; i < numChannels; ++i)
-            reverse (i, startSample, numSamples);
-    }
-#endif
-
 private:
     //==============================================================================
     int numChannels, size;
     size_t allocatedBytes;
     float** channels;
-    HeapBlock<char, true> allocatedData;
+    HeapBlock<char> allocatedData;
     float* preallocatedChannelSpace [32];
     bool isClear;
 
-    void allocateData()
+    bool allocateData()
     {
         const size_t channelListSize = sizeof (float*) * (size_t) (numChannels + 1);
-        allocatedBytes = (size_t) numChannels * (size_t) size * sizeof (float) + channelListSize + 32;
-        allocatedData.malloc (allocatedBytes);
+        const size_t nextAllocatedBytes = (size_t) numChannels * (size_t) size * sizeof (float) + channelListSize + 32;
+        CARLA_SAFE_ASSERT_RETURN (allocatedData.malloc (nextAllocatedBytes), false);
+
+        allocatedBytes = nextAllocatedBytes;
         channels = reinterpret_cast<float**> (allocatedData.getData());
 
         float* chan = (float*) (allocatedData + channelListSize);
@@ -1065,11 +976,12 @@ private:
 
         channels [numChannels] = nullptr;
         isClear = false;
+        return true;
     }
 
-    void allocateChannels (float* const* const dataToReferTo, int offset)
+    bool allocateChannels (float* const* const dataToReferTo, int offset)
     {
-        jassert (offset >= 0);
+        CARLA_SAFE_ASSERT_RETURN (offset >= 0, false);
 
         // (try to avoid doing a malloc here, as that'll blow up things like Pro-Tools)
         if (numChannels < (int) numElementsInArray (preallocatedChannelSpace))
@@ -1078,20 +990,21 @@ private:
         }
         else
         {
-            allocatedData.malloc ((size_t) numChannels + 1, sizeof (float*));
+            CARLA_SAFE_ASSERT_RETURN( allocatedData.malloc ((size_t) numChannels + 1, sizeof (float*)), false);
             channels = reinterpret_cast<float**> (allocatedData.getData());
         }
 
         for (int i = 0; i < numChannels; ++i)
         {
             // you have to pass in the same number of valid pointers as numChannels
-            jassert (dataToReferTo[i] != nullptr);
+            CARLA_SAFE_ASSERT_CONTINUE (dataToReferTo[i] != nullptr);
 
             channels[i] = dataToReferTo[i] + offset;
         }
 
         channels [numChannels] = nullptr;
         isClear = false;
+        return true;
     }
 };
 

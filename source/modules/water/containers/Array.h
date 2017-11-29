@@ -68,10 +68,10 @@ public:
     /** Creates a copy of another array.
         @param other    the array to copy
     */
-    Array (const Array<ElementType>& other)
+    Array (const Array<ElementType>& other) noexcept
     {
+        CARLA_SAFE_ASSERT_RETURN(data.setAllocatedSize (other.numUsed),);
         numUsed = other.numUsed;
-        data.setAllocatedSize (other.numUsed);
 
         for (int i = 0; i < numUsed; ++i)
             new (data.elements + i) ElementType (other.data.elements[i]);
@@ -91,10 +91,12 @@ public:
         @param values   the array to copy from
     */
     template <typename TypeToCreateFrom>
-    explicit Array (const TypeToCreateFrom* values)  : numUsed (0)
+    explicit Array (const TypeToCreateFrom* values) noexcept  : numUsed (0)
     {
         while (*values != TypeToCreateFrom())
-            add (*values++);
+        {
+            CARLA_SAFE_ASSERT_BREAK(add (*values++));
+        }
     }
 
     /** Initalises from a C array of values.
@@ -103,16 +105,16 @@ public:
         @param numValues    the number of values in the array
     */
     template <typename TypeToCreateFrom>
-    Array (const TypeToCreateFrom* values, int numValues)  : numUsed (numValues)
+    Array (const TypeToCreateFrom* values, int numValues) noexcept  : numUsed (numValues)
     {
-        data.setAllocatedSize (numValues);
+        CARLA_SAFE_ASSERT_RETURN(data.setAllocatedSize (numValues),);
 
         for (int i = 0; i < numValues; ++i)
             new (data.elements + i) ElementType (values[i]);
     }
 
     /** Destructor. */
-    ~Array()
+    ~Array() noexcept
     {
         deleteAllElements();
     }
@@ -120,7 +122,7 @@ public:
     /** Copies another array.
         @param other    the array to copy
     */
-    Array& operator= (const Array& other)
+    Array& operator= (const Array& other) noexcept
     {
         if (this != &other)
         {
@@ -180,7 +182,7 @@ public:
 
         @see clearQuick
     */
-    void clear()
+    void clear() noexcept
     {
         deleteAllElements();
         data.setAllocatedSize (0);
@@ -190,7 +192,7 @@ public:
     /** Removes all elements from the array without freeing the array's allocated storage.
         @see clear
     */
-    void clearQuick()
+    void clearQuick() noexcept
     {
         deleteAllElements();
         numUsed = 0;
@@ -365,10 +367,13 @@ public:
         @param newElement       the new object to add to the array
         @see set, insert, addIfNotAlreadyThere, addSorted, addUsingDefaultSort, addArray
     */
-    void add (const ElementType& newElement)
+    bool add (const ElementType& newElement) noexcept
     {
-        data.ensureAllocatedSize (numUsed + 1);
+        if (! data.ensureAllocatedSize (numUsed + 1))
+            return false;
+
         new (data.elements + numUsed++) ElementType (newElement);
+        return true;
     }
 
    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
@@ -377,10 +382,13 @@ public:
         @param newElement       the new object to add to the array
         @see set, insert, addIfNotAlreadyThere, addSorted, addUsingDefaultSort, addArray
     */
-    void add (ElementType&& newElement)
+    bool add (ElementType&& newElement) noexcept
     {
-        data.ensureAllocatedSize (numUsed + 1);
+        if (! data.ensureAllocatedSize (numUsed + 1))
+            return false;
+
         new (data.elements + numUsed++) ElementType (static_cast<ElementType&&> (newElement));
+        return true;
     }
    #endif
 
@@ -396,10 +404,10 @@ public:
         @param newElement         the new object to add to the array
         @see add, addSorted, addUsingDefaultSort, set
     */
-    void insert (int indexToInsertAt, ParameterType newElement)
+    bool insert (int indexToInsertAt, ParameterType newElement) noexcept
     {
-        data.ensureAllocatedSize (numUsed + 1);
-        jassert (data.elements != nullptr);
+        if (! data.ensureAllocatedSize (numUsed + 1))
+            return false;
 
         if (isPositiveAndBelow (indexToInsertAt, numUsed))
         {
@@ -407,7 +415,7 @@ public:
             const int numberToMove = numUsed - indexToInsertAt;
 
             if (numberToMove > 0)
-                memmove (insertPos + 1, insertPos, ((size_t) numberToMove) * sizeof (ElementType));
+                std::memmove (insertPos + 1, insertPos, ((size_t) numberToMove) * sizeof (ElementType));
 
             new (insertPos) ElementType (newElement);
             ++numUsed;
@@ -416,6 +424,8 @@ public:
         {
             new (data.elements + numUsed++) ElementType (newElement);
         }
+
+        return true;
     }
 
     /** Inserts multiple copies of an element into the array at a given position.
@@ -513,8 +523,7 @@ public:
         if (contains (newElement))
             return false;
 
-        add (newElement);
-        return true;
+        return add (newElement);
     }
 
     /** Replaces an element with a new value.
@@ -1035,9 +1044,9 @@ public:
         removing elements, they may have quite a lot of unused space allocated.
         This method will reduce the amount of allocated storage to a minimum.
     */
-    void minimiseStorageOverheads()
+    bool minimiseStorageOverheads() noexcept
     {
-        data.shrinkToNoMoreThan (numUsed);
+        return data.shrinkToNoMoreThan (numUsed);
     }
 
     /** Increases the array's internal storage to hold a minimum number of elements.
@@ -1046,9 +1055,9 @@ public:
         the array won't have to keep dynamically resizing itself as the elements
         are added, and it'll therefore be more efficient.
     */
-    void ensureStorageAllocated (const int minNumElements)
+    bool ensureStorageAllocated (const int minNumElements) noexcept
     {
-        data.ensureAllocatedSize (minNumElements);
+        return data.ensureAllocatedSize (minNumElements);
     }
 
     //==============================================================================

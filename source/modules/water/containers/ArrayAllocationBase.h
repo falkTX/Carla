@@ -39,9 +39,6 @@ namespace water {
     This class isn't really for public use - it's used by the other
     array classes, but might come in handy for some purposes.
 
-    It inherits from a critical section class to allow the arrays to use
-    the "empty base class optimisation" pattern to reduce their footprint.
-
     @see Array, OwnedArray, ReferenceCountedArray
 */
 template <class ElementType>
@@ -83,17 +80,24 @@ public:
 
         @param numElements  the number of elements that are needed
     */
-    void setAllocatedSize (const int numElements)
+    bool setAllocatedSize (const int numElements) noexcept
     {
         if (numAllocated != numElements)
         {
             if (numElements > 0)
-                elements.realloc ((size_t) numElements);
+            {
+                if (! elements.realloc ((size_t) numElements))
+                    return false;
+            }
             else
+            {
                 elements.free();
+            }
 
             numAllocated = numElements;
         }
+
+        return true;
     }
 
     /** Increases the amount of storage allocated if it is less than a given amount.
@@ -104,21 +108,23 @@ public:
 
         @param minNumElements  the minimum number of elements that are needed
     */
-    void ensureAllocatedSize (const int minNumElements)
+    bool ensureAllocatedSize (const int minNumElements) noexcept
     {
         if (minNumElements > numAllocated)
-            setAllocatedSize ((minNumElements + minNumElements / 2 + 8) & ~7);
+            return setAllocatedSize ((minNumElements + minNumElements / 2 + 8) & ~7);
 
-        jassert (numAllocated <= 0 || elements != nullptr);
+        return true;
     }
 
     /** Minimises the amount of storage allocated so that it's no more than
         the given number of elements.
     */
-    void shrinkToNoMoreThan (const int maxNumElements)
+    bool shrinkToNoMoreThan (const int maxNumElements) noexcept
     {
         if (maxNumElements < numAllocated)
-            setAllocatedSize (maxNumElements);
+            return setAllocatedSize (maxNumElements);
+
+        return true;
     }
 
     /** Swap the contents of two objects. */
