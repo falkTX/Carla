@@ -81,8 +81,8 @@ class CarlaAboutW(QDialog):
 
         if host.isControl:
             self.ui.l_extended.hide()
+            self.ui.tabWidget.removeTab(3)
             self.ui.tabWidget.removeTab(2)
-            self.ui.tabWidget.removeTab(1)
 
         self.ui.l_extended.setText(gCarla.utils.get_complete_license_text())
 

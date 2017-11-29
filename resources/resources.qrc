@@ -98,6 +98,7 @@
         <file>bitmaps/dial_08d.png</file>
         <file>bitmaps/dial_09.png</file>
         <file>bitmaps/dial_09d.png</file>
+        <file>bitmaps/dial_09s.png</file>
         <file>bitmaps/dial_10.png</file>
         <file>bitmaps/dial_10d.png</file>
         <file>bitmaps/dial_11.png</file>
@@ -110,6 +111,7 @@
         <file>bitmaps/dial_14d.png</file>
 
         <file>bitmaps/kbd_h_dark.png</file>
+        <file>bitmaps/kbd_h_dark_top.png</file>
         <file>bitmaps/kbd_v_dark.png</file>
 
         <file>bitmaps/led_off.png</file>
