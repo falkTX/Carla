@@ -2079,6 +2079,9 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerSetLatency:
+                // FIXME
+                if (true) break;
+
                 // uint
                 fLatency = fShmNonRtServerControl.readUInt();
 #ifndef BUILD_BRIDGE
