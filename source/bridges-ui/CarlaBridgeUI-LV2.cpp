@@ -34,7 +34,7 @@ CARLA_BRIDGE_START_NAMESPACE
 
 // -----------------------------------------------------
 
-static double gSampleRate = 44100.0;
+static double gInitialSampleRate = 44100.0;
 
 // LV2 URI Map Ids
 const uint32_t CARLA_URI_MAP_ID_NULL                   =  0;
@@ -128,7 +128,7 @@ struct Lv2PluginOptions {
     LV2_Options_Option opts[Count];
 
     Lv2PluginOptions() noexcept
-        : sampleRate(0.0),
+        : sampleRate(gInitialSampleRate),
           transientWinId(0),
           windowTitle(nullptr)
     {
@@ -186,11 +186,6 @@ public:
         CARLA_SAFE_ASSERT(fCustomURIDs.size() == CARLA_URI_MAP_ID_COUNT);
 
         carla_zeroPointers(fFeatures, kFeatureCount+1);
-
-        // ---------------------------------------------------------------
-        // initialize options
-
-        fLv2Options.sampleRate = gSampleRate;
 
         // ---------------------------------------------------------------
         // initialize features (part 1)
@@ -575,8 +570,6 @@ public:
         carla_debug("CarlaLv2Client::uiOptionsChanged(%g, %s, %s, \"%s\", " P_UINTPTR ")", sampleRate, bool2str(useTheme), bool2str(useThemeColors), windowTitle, transientWindowId);
 
         delete[] fLv2Options.windowTitle;
-
-        gSampleRate = sampleRate;
 
         fLv2Options.sampleRate     = sampleRate;
         fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
@@ -1160,7 +1153,7 @@ int main(int argc, const char* argv[])
 
     // try to get sampleRate value
     if (const char* const sampleRateStr = std::getenv("CARLA_SAMPLE_RATE"))
-        gSampleRate = std::atof(sampleRateStr);
+        gInitialSampleRate = std::atof(sampleRateStr);
 
     // Init LV2 client
     CarlaLv2Client client;
