@@ -165,7 +165,7 @@ LINK_FLAGS     += -Wl,--no-undefined
 endif
 
 ifeq ($(MACOS_OLD),true)
-BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS)
+BUILD_CXX_FLAGS = $(BASE_FLAGS) $(CXXFLAGS) -DHAVE_CPP11_SUPPORT=0
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
