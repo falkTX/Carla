@@ -206,44 +206,47 @@ $(BINDIR)/$(MODULENAME)-win64.exe: $(OBJS_win64) $(LIBS_win64)
 # ----------------------------------------------------------------------------------------------------------------------
 # native
 
-$(OBJDIR)/CarlaBridgeLV2.cpp.o: CarlaBridgeLV2.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-
-$(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling $<"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-
-$(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaEng$*.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-
 ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaPluginVST2.cpp.o: $(CWD)/backend/plugin/CarlaPluginVST2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaPluginVST2.cpp (bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
-endif
 
-$(OBJDIR)/CarlaPlug%.cpp.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
-	-@mkdir -p $(OBJDIR)
-	@echo "Compiling CarlaPlug$*.cpp (bridge)"
-	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
-
-ifeq ($(MACOS),true)
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
+
+$(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -ObjC++ -c -o $@
 else
 $(OBJDIR)/CarlaStandalone.cpp.o: $(CWD)/backend/CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaStandalone.cpp (bridge)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 endif
+
+$(OBJDIR)/CarlaBridgeLV2.cpp.o: CarlaBridgeLV2.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaPlug%.cpp.o: $(CWD)/backend/plugin/CarlaPlug%.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaPlug$*.cpp (bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
+
+$(OBJDIR)/CarlaEng%.cpp.o: $(CWD)/backend/engine/CarlaEng%.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEng$*.cpp (bridge)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 
 # ----------------------------------------------------------------------------------------------------------------------
 # posix32

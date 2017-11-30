@@ -1,5 +1,5 @@
 /*
- * Carla DSSI utils
+ * Carla Main-Loop utils
  * Copyright (C) 2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +21,10 @@
 #include "CarlaBackend.h"
 #include "CarlaUtils.hpp"
 
+#ifdef CARLA_OS_MAC
+# import <Cocoa/Cocoa.h>
+#endif
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
@@ -28,7 +32,26 @@ CARLA_BACKEND_START_NAMESPACE
 static inline
 bool runMainLoopOnce()
 {
-#if defined(CARLA_OS_WIN)
+#if defined(CARLA_OS_MAC)
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    NSEvent* event;
+
+    for (;;)
+    {
+        event = [NSApp
+                 nextEventMatchingMask:NSAnyEventMask
+                             untilDate:[NSDate distantPast]
+                                inMode:NSDefaultRunLoopMode
+                               dequeue:YES];
+
+        if (event == nil)
+            break;
+
+        [NSApp sendEvent: event];
+    }
+
+    [pool release];
+#elif defined(CARLA_OS_WIN)
     MSG msg;
     if (! ::PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE))
         return true;
