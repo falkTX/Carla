@@ -78,7 +78,7 @@ DGL_LIBS  = -lopengl32 -lgdi32
 endif
 else
 
-DGL_FLAGS = $(shell pkg-config --cflags gl x11)
+DGL_FLAGS = $(shell pkg-config --cflags gl x11) -DDGL_NAMESPACE=CarlaDGL
 DGL_LIBS  = $(shell pkg-config --libs gl x11)
 endif
 endif
@@ -96,7 +96,7 @@ endif
 DPF_FLAGS  = -I$(CWDE)/modules/distrho
 
 ifeq ($(HAVE_DGL),true)
-DPF_FLAGS += -I$(CWDE)/modules/dgl
+DPF_FLAGS += -I$(CWDE)/modules/dgl -DDGL_NAMESPACE=CarlaDGL
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
