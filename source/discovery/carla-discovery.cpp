@@ -37,6 +37,10 @@
 # include "CarlaUtils.cpp"
 #endif
 
+#ifdef CARLA_OS_MAC
+# import <Foundation/Foundation.h>
+#endif
+
 #ifdef HAVE_FLUIDSYNTH
 # include <fluidsynth.h>
 #endif
@@ -1165,18 +1169,59 @@ static void do_lv2_check(const char* const bundle, const bool doInit)
     }
 }
 
-static void do_vst_check(lib_t& libHandle, const bool doInit)
+static void do_vst_check(lib_t& libHandle, const char* const filename, const bool doInit)
 {
-    VST_Function vstFn = lib_symbol<VST_Function>(libHandle, "VSTPluginMain");
+    VST_Function vstFn = nullptr;
 
-    if (vstFn == nullptr)
+#ifdef CARLA_OS_MAC
+    CFBundleRef bundleRef = nullptr;
+    CFBundleRefNum resFileId;
+
+    if (libHandle == nullptr)
     {
-        vstFn = lib_symbol<VST_Function>(libHandle, "main");
+        const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)strlen(filename), true);
+        CARLA_SAFE_ASSERT_RETURN(urlRef != nullptr,);
+
+        bundleRef = CFBundleCreate(kCFAllocatorDefault, urlRef);
+        CFRelease(urlRef);
+        CARLA_SAFE_ASSERT_RETURN(bundleRef != nullptr,);
+
+        if (! CFBundleLoadExecutable(bundleRef))
+        {
+            CFRelease(bundleRef);
+            DISCOVERY_OUT("error", "Failed to load VST bundle executable");
+            return;
+        }
+
+        vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleRef, CFSTR("main_macho"));
+
+        if (vstFn == nullptr)
+            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(bundleRef, CFSTR("VSTPluginMain"));
 
         if (vstFn == nullptr)
         {
+            CFBundleUnloadExecutable(bundleRef);
+            CFRelease(bundleRef);
             DISCOVERY_OUT("error", "Not a VST plugin");
             return;
+        }
+
+        resFileId = CFBundleOpenBundleResourceMap(bundleRef);
+    }
+    else
+#endif
+    {
+        vstFn = lib_symbol<VST_Function>(libHandle, "VSTPluginMain");
+
+        if (vstFn == nullptr)
+        {
+            vstFn = lib_symbol<VST_Function>(libHandle, "main");
+
+            if (vstFn == nullptr)
+            {
+                DISCOVERY_OUT("error", "Not a VST plugin");
+                return;
+            }
         }
     }
 
@@ -1423,13 +1468,27 @@ static void do_vst_check(lib_t& libHandle, const bool doInit)
 
     uniqueIds.clear();
 
-    if (effect == nullptr)
-        return;
+    if (effect != nullptr)
+    {
+        if (gVstNeedsIdle)
+            effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
 
-    if (gVstNeedsIdle)
-        effect->dispatcher(effect, DECLARE_VST_DEPRECATED(effIdle), 0, 0, nullptr, 0.0f);
+        effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+    }
 
-    effect->dispatcher(effect, effClose, 0, 0, nullptr, 0.0f);
+#ifdef CARLA_OS_MAC
+    if (bundleRef != nullptr)
+    {
+        CFBundleCloseBundleResourceMap(bundleRef, resFileId);
+        CFBundleUnloadExecutable(bundleRef);
+        CFRelease(bundleRef);
+    }
+#else
+    return;
+
+    // unused
+    (void)filename;
+#endif
 }
 
 static void do_fluidsynth_check(const char* const filename, const bool doInit)
@@ -1565,6 +1624,19 @@ int main(int argc, char* argv[])
     CarlaString filenameCheck(filename);
     filenameCheck.toLower();
 
+    bool openLib = false;
+    lib_t handle = nullptr;
+
+    switch (type)
+    {
+    case PLUGIN_LADSPA:
+    case PLUGIN_DSSI:
+    case PLUGIN_VST2:
+        openLib = true;
+    default:
+        break;
+    }
+
     if (type != PLUGIN_GIG && type != PLUGIN_SF2 && type != PLUGIN_SFZ)
     {
         if (filenameCheck.contains("fluidsynth", true))
@@ -1577,19 +1649,10 @@ int main(int argc, char* argv[])
             DISCOVERY_OUT("info", "skipping linuxsampler based plugin");
             return 0;
         }
-    }
-
-    bool openLib = false;
-    lib_t handle = nullptr;
-
-    switch (type)
-    {
-    case PLUGIN_LADSPA:
-    case PLUGIN_DSSI:
-    case PLUGIN_VST2:
-        openLib = true;
-    default:
-        break;
+#ifdef CARLA_OS_MAC
+        if (type == PLUGIN_VST2 && filenameCheck.endsWith(".vst"))
+            openLib = false;
+#endif
     }
 
     if (openLib)
@@ -1609,7 +1672,7 @@ int main(int argc, char* argv[])
     if (doInit && getenv("CARLA_DISCOVERY_NO_PROCESSING_CHECKS") != nullptr)
         doInit = false;
 
-    if (doInit && handle != nullptr)
+    if (doInit && openLib && handle != nullptr)
     {
         // test fast loading & unloading DLL without initializing the plugin(s)
         if (! lib_close(handle))
@@ -1647,7 +1710,7 @@ int main(int argc, char* argv[])
         do_lv2_check(filename, doInit);
         break;
     case PLUGIN_VST2:
-        do_vst_check(handle, doInit);
+        do_vst_check(handle, filename, doInit);
         break;
     case PLUGIN_GIG:
         do_linuxsampler_check(filename, "gig", doInit);

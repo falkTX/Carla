@@ -739,7 +739,7 @@ class SearchPluginsThread(QThread):
 
         for iPATH in VST2_PATH:
             if MACOS and not isWine:
-                binaries = findMacVSTBundles(iPATH, False)
+                binaries = findMacVSTBundles(iPATH)
             else:
                 binaries = findBinaries(iPATH, OS)
             for binary in binaries:
