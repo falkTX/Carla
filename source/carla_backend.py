@@ -836,18 +836,21 @@ ENGINE_PROCESS_MODE_BRIDGE = 4
 # Engine transport mode.
 # @see ENGINE_OPTION_TRANSPORT_MODE
 
+# No transport.
+ENGINE_TRANSPORT_MODE_DISABLED = 0
+
 # Internal transport mode.
-ENGINE_TRANSPORT_MODE_INTERNAL = 0
+ENGINE_TRANSPORT_MODE_INTERNAL = 1
 
 # Transport from JACK.
 # Only available if driver name is "JACK".
-ENGINE_TRANSPORT_MODE_JACK = 1
+ENGINE_TRANSPORT_MODE_JACK = 2
 
 # Transport from host, used when Carla is a plugin.
-ENGINE_TRANSPORT_MODE_PLUGIN = 2
+ENGINE_TRANSPORT_MODE_PLUGIN = 3
 
 # Special mode, used in plugin-bridges only.
-ENGINE_TRANSPORT_MODE_BRIDGE = 3
+ENGINE_TRANSPORT_MODE_BRIDGE = 4
 
 # ------------------------------------------------------------------------------------------------------------
 # File Callback Opcode

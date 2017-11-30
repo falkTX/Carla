@@ -1087,7 +1087,7 @@ public:
     {
         if (option == ENGINE_OPTION_TRANSPORT_MODE && fClient != nullptr)
         {
-            CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value <= ENGINE_TRANSPORT_MODE_JACK,);
+            CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_DISABLED && value <= ENGINE_TRANSPORT_MODE_JACK,);
 
             if (value == ENGINE_TRANSPORT_MODE_JACK)
             {

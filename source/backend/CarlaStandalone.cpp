@@ -466,10 +466,13 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         break;
 
     case CB::ENGINE_OPTION_TRANSPORT_MODE:
-        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_INTERNAL && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(value >= CB::ENGINE_TRANSPORT_MODE_DISABLED && value <= CB::ENGINE_TRANSPORT_MODE_BRIDGE,);
         gStandalone.engineOptions.transportMode = static_cast<CB::EngineTransportMode>(value);
         delete[] gStandalone.engineOptions.transportExtra;
-        gStandalone.engineOptions.transportExtra = (valueStr != nullptr) ? carla_strdup_safe(valueStr) : nullptr;
+        if (value != CB::ENGINE_TRANSPORT_MODE_DISABLED && valueStr != nullptr)
+            gStandalone.engineOptions.transportExtra = carla_strdup_safe(valueStr);
+        else
+            gStandalone.engineOptions.transportExtra = nullptr;
         break;
 
     case CB::ENGINE_OPTION_FORCE_STEREO:

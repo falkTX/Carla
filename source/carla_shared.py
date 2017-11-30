@@ -233,6 +233,7 @@ CARLA_KEY_WINE_RT_PRIO_ENABLED = "Wine/RtPrioEnabled"  # bool
 CARLA_KEY_WINE_BASE_RT_PRIO    = "Wine/BaseRtPrio"     # int
 CARLA_KEY_WINE_SERVER_RT_PRIO  = "Wine/ServerRtPrio"   # int
 
+CARLA_KEY_EXPERIMENTAL_TRANSPORT             = "Experimental/Transport"           # bool
 CARLA_KEY_EXPERIMENTAL_PLUGIN_BRIDGES        = "Experimental/PluginBridges"       # bool
 CARLA_KEY_EXPERIMENTAL_WINE_BRIDGES          = "Experimental/WineBridges"         # bool
 CARLA_KEY_EXPERIMENTAL_JACK_APPS             = "Experimental/JackApplications"    # bool
@@ -305,6 +306,7 @@ CARLA_DEFAULT_WINE_BASE_RT_PRIO    = 15
 CARLA_DEFAULT_WINE_SERVER_RT_PRIO  = 10
 
 # Experimental
+CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT             = False
 CARLA_DEFAULT_EXPERIMENTAL_PLUGIN_BRIDGES        = False
 CARLA_DEFAULT_EXPERIMENTAL_WINE_BRIDGES          = False
 CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS             = False

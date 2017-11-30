@@ -506,6 +506,10 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
+        self.ui.ch_exp_transport.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_TRANSPORT,
+                                                           CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT,
+                                                           type=bool))
+
         self.ui.ch_exp_jack_apps.setChecked(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                            CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS,
                                                            type=bool))
@@ -667,10 +671,6 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Wine
 
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS,       self.ui.ch_exp_jack_apps.isChecked())
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
-
         settings.setValue(CARLA_KEY_WINE_EXECUTABLE, self.ui.le_wine_exec.text())
         settings.setValue(CARLA_KEY_WINE_AUTO_PREFIX, self.ui.cb_wine_prefix_detect.isChecked())
         settings.setValue(CARLA_KEY_WINE_FALLBACK_PREFIX, self.ui.le_wine_prefix_fallback.text())
@@ -681,7 +681,8 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Experimental
 
-        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS,       self.ui.ch_exp_jack_apps.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_TRANSPORT, self.ui.ch_exp_transport.isChecked())
+        settings.setValue(CARLA_KEY_EXPERIMENTAL_JACK_APPS, self.ui.ch_exp_jack_apps.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_LOAD_LIB_GLOBAL, self.ui.ch_exp_load_lib_global.isChecked())
         settings.setValue(CARLA_KEY_EXPERIMENTAL_PREVENT_BAD_BEHAVIOUR, self.ui.ch_exp_prevent_bad_behaviour.isChecked())
 
@@ -834,6 +835,7 @@ class CarlaSettingsW(QDialog):
         self.ui.cb_canvas_render_hq_aa.setChecked(CARLA_DEFAULT_CANVAS_HQ_ANTIALIASING and self.ui.cb_canvas_render_hq_aa.isEnabled())
         self.ui.ch_engine_force_stereo.setChecked(CARLA_DEFAULT_FORCE_STEREO)
         self.ui.ch_engine_prefer_plugin_bridges.setChecked(CARLA_DEFAULT_PREFER_PLUGIN_BRIDGES)
+        self.ui.ch_exp_transport.setChecked(CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT)
 
     # --------------------------------------------------------------------------------------------------------
 

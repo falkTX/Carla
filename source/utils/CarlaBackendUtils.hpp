@@ -373,6 +373,8 @@ const char* EngineTransportMode2Str(const EngineTransportMode mode) noexcept
 {
     switch (mode)
     {
+    case ENGINE_TRANSPORT_MODE_DISABLED:
+        return "ENGINE_TRANSPORT_MODE_DISABLED";
     case ENGINE_TRANSPORT_MODE_INTERNAL:
         return "ENGINE_TRANSPORT_MODE_INTERNAL";
     case ENGINE_TRANSPORT_MODE_JACK:

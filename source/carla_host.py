@@ -789,7 +789,7 @@ class HostWindow(QMainWindow):
             self.ui.act_file_save.setEnabled(canSave)
             self.ui.act_engine_start.setEnabled(False)
             self.ui.act_engine_stop.setEnabled(True)
-            self.ui.w_transport.setEnabled(True)
+            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
 
         if self.host.isPlugin or not self.fSessionManagerName:
             self.ui.act_file_open.setEnabled(True)
@@ -1518,6 +1518,27 @@ class HostWindow(QMainWindow):
 
         self.ui.act_add_jack.setVisible(settings.value(CARLA_KEY_EXPERIMENTAL_JACK_APPS,
                                                        CARLA_DEFAULT_EXPERIMENTAL_JACK_APPS, type=bool))
+
+        if not (self.host.isControl or self.host.isPlugin):
+            if settings.value(CARLA_KEY_EXPERIMENTAL_TRANSPORT, CARLA_DEFAULT_EXPERIMENTAL_TRANSPORT, type=bool):
+                if self.ui.cb_transport_jack.isChecked():
+                    transportMode = ENGINE_TRANSPORT_MODE_JACK
+                else:
+                    transportMode = ENGINE_TRANSPORT_MODE_INTERNAL
+                transportExtra = ":link:" if self.ui.cb_transport_link.isChecked() else ""
+            else:
+                # Stop transport if becoming disabled
+                if self.ui.w_transport.isEnabled() and self.host.is_engine_running():
+                    self.host.transport_pause()
+                    self.host.transport_relocate(0)
+                    self.host.transport_pause()
+
+                transportMode  = ENGINE_TRANSPORT_MODE_DISABLED
+                transportExtra = ""
+
+            self.ui.w_transport.setEnabled(transportMode != ENGINE_TRANSPORT_MODE_DISABLED)
+            self.host.transportMode = transportMode
+            self.host.set_engine_option(ENGINE_OPTION_TRANSPORT_MODE, transportMode, transportExtra)
 
         self.fMiniCanvasUpdateTimeout = 1000 if self.fSavedSettings[CARLA_KEY_CANVAS_FANCY_EYE_CANDY] else 0
 

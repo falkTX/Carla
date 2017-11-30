@@ -1384,11 +1384,14 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         break;
 
     case ENGINE_OPTION_TRANSPORT_MODE:
-        CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_INTERNAL && value <= ENGINE_TRANSPORT_MODE_BRIDGE,);
+        CARLA_SAFE_ASSERT_RETURN(value >= ENGINE_TRANSPORT_MODE_DISABLED && value <= ENGINE_TRANSPORT_MODE_BRIDGE,);
         CARLA_SAFE_ASSERT_RETURN(getType() == kEngineTypeJack || value != ENGINE_TRANSPORT_MODE_JACK,);
         pData->options.transportMode = static_cast<EngineTransportMode>(value);
         delete[] pData->options.transportExtra;
-        pData->options.transportExtra = (valueStr != nullptr) ? carla_strdup_safe(valueStr) : nullptr;
+        if (value >= ENGINE_TRANSPORT_MODE_DISABLED && valueStr != nullptr)
+            pData->options.transportExtra = carla_strdup_safe(valueStr);
+        else
+            pData->options.transportExtra = nullptr;
 
         pData->time.setNeedsReset();
 
