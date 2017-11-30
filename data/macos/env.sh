@@ -6,6 +6,7 @@
 TARGETDIR=$HOME/builds
 
 export MACOS="true"
+export MACOS_OLD="true"
 export CC=clang
 export CXX=clang++
 
@@ -17,5 +18,6 @@ unset CPPFLAGS
 export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
 
-export DEFAULT_QT=5
-export PYUIC5=$TARGETDIR/carla/bin/pyuic5
+#export DEFAULT_QT=5
+#export PYRCC5=$TARGETDIR/carla/bin/pyrcc5
+#export PYUIC5=$TARGETDIR/carla/bin/pyuic5
