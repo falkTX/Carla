@@ -25,6 +25,10 @@
 
 #include <pthread.h>
 
+#ifdef CARLA_OS_MAC
+# import <Foundation/Foundation.h>
+#endif
+
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
@@ -62,6 +66,10 @@ public:
           fProcThread({nullptr, 0}),
 #else
           fProcThread(0),
+#endif
+#ifdef CARLA_OS_MAC
+          fMacBundleRef(nullptr),
+          fMacBundleRefNum(0),
 #endif
           fEvents(),
           fUI(),
@@ -120,6 +128,21 @@ public:
         }
 
         clearBuffers();
+
+#ifdef CARLA_OS_MAC
+    if (fMacBundleRef != nullptr)
+    {
+        CFBundleCloseBundleResourceMap(fMacBundleRef, fMacBundleRefNum);
+
+        if (CFGetRetainCount(fMacBundleRef) == 1)
+            CFBundleUnloadExecutable(fMacBundleRef);
+
+        if (CFGetRetainCount(fMacBundleRef) > 0)
+            CFRelease(fMacBundleRef);
+
+        fMacBundleRef = nullptr;
+    }
+#endif
     }
 
     // -------------------------------------------------------------------
@@ -2072,27 +2095,68 @@ public:
         }
 
         // ---------------------------------------------------------------
-        // open DLL
 
-        if (! pData->libOpen(filename))
+        VST_Function vstFn;
+
+#ifdef CARLA_OS_MAC
+        if (CarlaString(filename).toLower().endsWith(".vst"))
         {
-            pData->engine->setLastError(pData->libError(filename));
-            return false;
-        }
+            // FIXME assert returns, set engine error
+            const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)strlen(filename), true);
+            CARLA_SAFE_ASSERT_RETURN(urlRef != nullptr, false);
 
-        // ---------------------------------------------------------------
-        // get DLL main entry
+            fMacBundleRef = CFBundleCreate(kCFAllocatorDefault, urlRef);
+            CFRelease(urlRef);
+            CARLA_SAFE_ASSERT_RETURN(fMacBundleRef != nullptr, false);
 
-        VST_Function vstFn = pData->libSymbol<VST_Function>("VSTPluginMain");
+            if (! CFBundleLoadExecutable(fMacBundleRef))
+            {
+                CFRelease(fMacBundleRef);
+                pData->engine->setLastError("Failed to load VST bundle executable");
+                return false;
+            }
 
-        if (vstFn == nullptr)
-        {
-            vstFn = pData->libSymbol<VST_Function>("main");
+            vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("main_macho"));
+
+            if (vstFn == nullptr)
+                vstFn = (VST_Function)CFBundleGetFunctionPointerForName(fMacBundleRef, CFSTR("VSTPluginMain"));
 
             if (vstFn == nullptr)
             {
-                pData->engine->setLastError("Could not find the VST main entry in the plugin library");
+                CFBundleUnloadExecutable(fMacBundleRef);
+                CFRelease(fMacBundleRef);
+                pData->engine->setLastError("Not a VST plugin");
                 return false;
+            }
+
+            fMacBundleRefNum = CFBundleOpenBundleResourceMap(fMacBundleRef);
+        }
+        else
+#endif
+        {
+            // -----------------------------------------------------------
+            // open DLL
+
+            if (! pData->libOpen(filename))
+            {
+                pData->engine->setLastError(pData->libError(filename));
+                return false;
+            }
+
+            // -----------------------------------------------------------
+            // get DLL main entry
+
+            vstFn = pData->libSymbol<VST_Function>("VSTPluginMain");
+
+            if (vstFn == nullptr)
+            {
+                vstFn = pData->libSymbol<VST_Function>("main");
+
+                if (vstFn == nullptr)
+                {
+                    pData->engine->setLastError("Could not find the VST main entry in the plugin library");
+                    return false;
+                }
             }
         }
 
@@ -2232,6 +2296,11 @@ private:
     bool      fIsProcessing;
     pthread_t fMainThread;
     pthread_t fProcThread;
+
+#ifdef CARLA_OS_MAC
+    CFBundleRef    fMacBundleRef;
+    CFBundleRefNum fMacBundleRefNum;
+#endif
 
     struct FixedVstEvents {
         int32_t numEvents;

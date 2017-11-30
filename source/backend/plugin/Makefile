@@ -57,6 +57,13 @@ $(OBJDIR)/CarlaPluginLinuxSampler.cpp.o: CarlaPluginLinuxSampler.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(LINUXSAMPLER_FLAGS) -c -o $@
 
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaPluginVST2.cpp.o: CarlaPluginVST2.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+endif
+
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
