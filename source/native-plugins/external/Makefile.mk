@@ -71,16 +71,18 @@ ifeq ($(HAVE_DGL),true)
 
 ifeq ($(MACOS_OR_WIN32),true)
 ifeq ($(MACOS),true)
-DGL_LIBS  = -framework OpenGL -framework Cocoa
+DGL_LIBS   = -framework OpenGL -framework Cocoa
 endif
 ifeq ($(WIN32),true)
-DGL_LIBS  = -lopengl32 -lgdi32
+DGL_LIBS   = -lopengl32 -lgdi32
 endif
 else
 
-DGL_FLAGS = $(shell pkg-config --cflags gl x11) -DDGL_NAMESPACE=CarlaDGL
-DGL_LIBS  = $(shell pkg-config --libs gl x11)
+DGL_FLAGS  = $(shell pkg-config --cflags gl x11)
+DGL_LIBS   = $(shell pkg-config --libs gl x11)
 endif
+
+DGL_FLAGS += -DDGL_NAMESPACE=CarlaDGL
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------

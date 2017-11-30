@@ -39,7 +39,7 @@ export LDFLAGS="-m32"
 export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
 
-make HAVE_QT5=true posix32 $JOBS
+make posix32 $JOBS
 
 ##############################################################################################
 # Build Mac App
