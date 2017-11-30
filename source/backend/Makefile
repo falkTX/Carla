@@ -105,6 +105,13 @@ $(BINDIR)/libcarla_utils$(LIB_EXT): $(OBJS_utils) $(UTILS_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaStandalone.cpp.o: CarlaStandalone.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+endif
+
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"

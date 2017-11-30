@@ -25,10 +25,12 @@
 # include <X11/Xutil.h>
 #endif
 
+#ifdef CARLA_OS_MAC
+# import <Cocoa/Cocoa.h>
+#endif
+
 #ifdef CARLA_OS_WIN
 # include <ctime>
-// # include <cstdio>
-// # include <cstdlib>
 #endif
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -321,6 +323,157 @@ private:
 #endif // HAVE_X11
 
 // ---------------------------------------------------------------------------------------------------------------------
+// MacOS / Cocoa
+
+#ifdef CARLA_OS_MAC
+
+class CocoaPluginUI : public CarlaPluginUI
+{
+public:
+    CocoaPluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+        : CarlaPluginUI(cb, isResizable),
+          fView(nullptr),
+          fWindow(0)
+    {
+        [NSAutoreleasePool new];
+        [NSApplication sharedApplication];
+
+        fView = [NSView new];
+        CARLA_SAFE_ASSERT_RETURN(fView != nullptr,)
+
+        if (isResizable)
+            [fView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
+
+        fWindow = [[NSWindow new]retain];
+
+        if (fWindow == 0)
+        {
+            [fView release];
+            fView = nullptr;
+            return;
+        }
+
+        [fWindow setIsVisible:NO];
+        [fWindow setContentView:fView];
+        [fWindow makeFirstResponder:fView];
+        [fWindow makeKeyAndOrderFront:fWindow];
+
+        [NSApp activateIgnoringOtherApps:YES];
+        [fWindow center];
+
+#if 0
+        uint styleMask = NSClosableWindowMask | NSTitledWindowMask;
+
+        if (isResizable)
+            styleMask |= NSResizableWindowMask;
+
+        fWindow = [NSWindow initWithContentRect:contentRect
+                                      styleMask:flags
+                                        backing:NSBackingStoreBuffered defer:NO];
+
+#endif
+     }
+
+    ~CocoaPluginUI() override
+    {
+        if (fView == nullptr)
+            return;
+
+        [fWindow close];
+        [fView release];
+        [fWindow release];
+    }
+
+    void show() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+
+        [fWindow setIsVisible:YES];
+    }
+
+    void hide() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+
+        [fWindow setIsVisible:NO];
+    }
+
+    void idle() override
+    {
+    }
+
+    void focus() override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+
+        // TODO
+    }
+
+    void setSize(const uint width, const uint height, const bool forceUpdate) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
+
+        [fView setFrame:NSMakeRect(0, 0, width, height)];
+
+        const NSSize size = NSMakeSize(width, height);
+        [fWindow setContentSize:size];
+
+#if 0
+        if (fResizable)
+        {
+            [fWindow setContentMinSize:NSMakeSize(1, 1)];
+            [fWindow setContentMaxSize:NSMakeSize(99999, 99999)];
+            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:NO];
+        }
+        else
+        {
+            [fWindow setContentMinSize:size];
+            [fWindow setContentMaxSize:size];
+            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+        }
+#endif
+    }
+
+    void setTitle(const char* const title) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        NSString* titleString = [[NSString alloc]
+                                  initWithBytes:title
+                                         length:strlen(title)
+                                       encoding:NSUTF8StringEncoding];
+
+        [fWindow setTitle:titleString];
+    }
+
+    void setTransientWinId(const uintptr_t winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+
+        // TODO
+    }
+
+    void* getPtr() const noexcept override
+    {
+        return (void*)fView;
+    }
+
+    void* getDisplay() const noexcept
+    {
+        return (void*)fWindow;
+    }
+
+private:
+    NSView* fView;
+    id      fWindow;
+
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
+};
+
+#endif // CARLA_OS_MAC
+
+// ---------------------------------------------------------------------------------------------------------------------
 // Windows
 
 #ifdef CARLA_OS_WIN
@@ -549,13 +702,7 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
     CARLA_SAFE_ASSERT_RETURN(uiTitle != nullptr && uiTitle[0] != '\0', true);
     CARLA_SAFE_ASSERT_RETURN(winId != 0, true);
 
-#if defined(CARLA_OS_MAC)
-    return true;
-    (void)pid; (void)centerUI;
-#elif defined(CARLA_OS_WIN)
-    return true;
-    (void)pid; (void)centerUI;
-#elif defined(HAVE_X11)
+#if defined(HAVE_X11)
     struct ScopedDisplay {
         Display* display;
         ScopedDisplay() : display(XOpenDisplay(nullptr)) {}
@@ -762,10 +909,17 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 
 // -----------------------------------------------------
 
+#ifdef HAVE_X11
+CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId, bool isResizable)
+{
+    return new X11PluginUI(cb, parentId, isResizable);
+}
+#endif
+
 #ifdef CARLA_OS_MAC
 CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bool isResizable)
 {
-    return nullptr;
+    return new CocoaPluginUI(cb, parentId, isResizable);
 }
 #endif
 
@@ -773,13 +927,6 @@ CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bo
 CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId, bool isResizable)
 {
     return new WindowsPluginUI(cb, parentId, isResizable);
-}
-#endif
-
-#ifdef HAVE_X11
-CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId, bool isResizable)
-{
-    return new X11PluginUI(cb, parentId, isResizable);
 }
 #endif
 

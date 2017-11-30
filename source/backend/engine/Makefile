@@ -65,10 +65,17 @@ $(OBJDIR)/CarlaEngineRtAudio.cpp.o: CarlaEngineRtAudio.cpp
 	@echo "Compiling CarlaEngineRtAudio.cpp"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(RTAUDIO_FLAGS) $(RTMIDI_FLAGS) -c -o $@
 
+ifeq ($(MACOS),true)
+$(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling CarlaEngineNative.cpp (plugin)"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -ObjC++ -c -o $@
+else
 $(OBJDIR)/CarlaEngineNative.cpp.exp.o: CarlaEngineNative.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling CarlaEngineNative.cpp (plugin)"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -DCARLA_PLUGIN_EXPORT -c -o $@
+endif
 
 $(OBJDIR)/%.cpp.o: %.cpp
 	-@mkdir -p $(OBJDIR)
