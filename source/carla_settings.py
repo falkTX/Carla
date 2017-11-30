@@ -279,10 +279,13 @@ class CarlaSettingsW(QDialog):
 
         if not LINUX:
             self.ui.ch_exp_wine_bridges.setVisible(False)
+            self.ui.ch_exp_jack_apps.setVisible(False)
+            self.ui.ch_exp_prevent_bad_behaviour.setVisible(False)
             self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         # FIXME, pipes on win32 not working
         if WINDOWS:
+            self.ui.cb_exp_plugin_bridges.setVisible(False)
             self.ui.ch_engine_prefer_ui_bridges.setChecked(False)
             self.ui.ch_engine_prefer_ui_bridges.setEnabled(False)
             self.ui.ch_engine_prefer_ui_bridges.setVisible(False)

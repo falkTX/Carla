@@ -174,13 +174,13 @@ bool DistrhoUIProM::onKeyboard(const KeyboardEvent& ev)
     {
         switch (ev.key)
         {
-        case DGL::kCharBackspace:
+        case DGL_NAMESPACE::kCharBackspace:
             pmKey = PROJECTM_K_BACKSPACE;
             break;
-        case DGL::kCharEscape:
+        case DGL_NAMESPACE::kCharEscape:
             pmKey = PROJECTM_K_ESCAPE;
             break;
-        case DGL::kCharDelete:
+        case DGL_NAMESPACE::kCharDelete:
             pmKey = PROJECTM_K_DELETE;
             break;
         }
@@ -189,7 +189,7 @@ bool DistrhoUIProM::onKeyboard(const KeyboardEvent& ev)
     if (pmKey == PROJECTM_K_NONE)
         return false;
 
-    if (ev.mod & DGL::kModifierControl)
+    if (ev.mod & DGL_NAMESPACE::kModifierControl)
         pmMod = PROJECTM_KMOD_LCTRL;
 
     fPM->key_handler(ev.press ? PROJECTM_KEYUP : PROJECTM_KEYDOWN, pmKey, pmMod);
@@ -207,84 +207,84 @@ bool DistrhoUIProM::onSpecial(const SpecialEvent& ev)
 
     switch (ev.key)
     {
-    case DGL::kKeyF1:
+    case DGL_NAMESPACE::kKeyF1:
         pmKey = PROJECTM_K_F1;
         break;
-    case DGL::kKeyF2:
+    case DGL_NAMESPACE::kKeyF2:
         pmKey = PROJECTM_K_F2;
         break;
-    case DGL::kKeyF3:
+    case DGL_NAMESPACE::kKeyF3:
         pmKey = PROJECTM_K_F3;
         break;
-    case DGL::kKeyF4:
+    case DGL_NAMESPACE::kKeyF4:
         pmKey = PROJECTM_K_F4;
         break;
-    case DGL::kKeyF5:
+    case DGL_NAMESPACE::kKeyF5:
         pmKey = PROJECTM_K_F5;
         break;
-    case DGL::kKeyF6:
+    case DGL_NAMESPACE::kKeyF6:
         pmKey = PROJECTM_K_F6;
         break;
-    case DGL::kKeyF7:
+    case DGL_NAMESPACE::kKeyF7:
         pmKey = PROJECTM_K_F7;
         break;
-    case DGL::kKeyF8:
+    case DGL_NAMESPACE::kKeyF8:
         pmKey = PROJECTM_K_F8;
         break;
-    case DGL::kKeyF9:
+    case DGL_NAMESPACE::kKeyF9:
         pmKey = PROJECTM_K_F9;
         break;
-    case DGL::kKeyF10:
+    case DGL_NAMESPACE::kKeyF10:
         pmKey = PROJECTM_K_F10;
         break;
-    case DGL::kKeyF11:
+    case DGL_NAMESPACE::kKeyF11:
         pmKey = PROJECTM_K_F11;
         break;
-    case DGL::kKeyF12:
+    case DGL_NAMESPACE::kKeyF12:
         pmKey = PROJECTM_K_F12;
         break;
-    case DGL::kKeyLeft:
+    case DGL_NAMESPACE::kKeyLeft:
         pmKey = PROJECTM_K_LEFT;
         break;
-    case DGL::kKeyUp:
+    case DGL_NAMESPACE::kKeyUp:
         pmKey = PROJECTM_K_UP;
         break;
-    case DGL::kKeyRight:
+    case DGL_NAMESPACE::kKeyRight:
         pmKey = PROJECTM_K_RIGHT;
         break;
-    case DGL::kKeyDown:
+    case DGL_NAMESPACE::kKeyDown:
         pmKey = PROJECTM_K_DOWN;
         break;
-    case DGL::kKeyPageUp:
+    case DGL_NAMESPACE::kKeyPageUp:
         pmKey = PROJECTM_K_PAGEUP;
         break;
-    case DGL::kKeyPageDown:
+    case DGL_NAMESPACE::kKeyPageDown:
         pmKey = PROJECTM_K_PAGEDOWN;
         break;
-    case DGL::kKeyHome:
+    case DGL_NAMESPACE::kKeyHome:
         pmKey = PROJECTM_K_HOME;
         break;
-    case DGL::kKeyEnd:
+    case DGL_NAMESPACE::kKeyEnd:
         pmKey = PROJECTM_K_END;
         break;
-    case DGL::kKeyInsert:
+    case DGL_NAMESPACE::kKeyInsert:
         pmKey = PROJECTM_K_INSERT;
         break;
-    case DGL::kKeyShift:
+    case DGL_NAMESPACE::kKeyShift:
         pmKey = PROJECTM_K_LSHIFT;
         break;
-    case DGL::kKeyControl:
+    case DGL_NAMESPACE::kKeyControl:
         pmKey = PROJECTM_K_LCTRL;
         break;
-    case DGL::kKeyAlt:
-    case DGL::kKeySuper:
+    case DGL_NAMESPACE::kKeyAlt:
+    case DGL_NAMESPACE::kKeySuper:
         break;
     }
 
     if (pmKey == PROJECTM_K_NONE)
         return false;
 
-    if (ev.mod & DGL::kModifierControl)
+    if (ev.mod & DGL_NAMESPACE::kModifierControl)
         pmMod = PROJECTM_KMOD_LCTRL;
 
     fPM->key_handler(ev.press ? PROJECTM_KEYUP : PROJECTM_KEYDOWN, pmKey, pmMod);
