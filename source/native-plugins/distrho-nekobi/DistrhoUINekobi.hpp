@@ -25,10 +25,10 @@
 #include "DistrhoArtworkNekobi.hpp"
 #include "NekoWidget.hpp"
 
-using DGL::ImageAboutWindow;
-using DGL::ImageButton;
-using DGL::ImageKnob;
-using DGL::ImageSlider;
+using DGL_NAMESPACE::ImageAboutWindow;
+using DGL_NAMESPACE::ImageButton;
+using DGL_NAMESPACE::ImageKnob;
+using DGL_NAMESPACE::ImageSlider;
 
 START_NAMESPACE_DISTRHO
 

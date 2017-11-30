@@ -25,7 +25,7 @@
 
 #include <cstdlib> // rand
 
-using DGL::Image;
+using DGL_NAMESPACE::Image;
 
 // -----------------------------------------------------------------------
 

@@ -11,36 +11,35 @@ fi
 TARGETDIR=$HOME/builds
 
 export MACOS="true"
+export MACOS_OLD="true"
 export CC=clang
 export CXX=clang++
-export DEFAULT_QT=5
-export PYUIC5=$TARGETDIR/carla/bin/pyuic5
 
 unset CPPFLAGS
 
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-O2 -m64 -DHAVE_CPP11_SUPPORT=0"
+export CFLAGS="-O2 -m64"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m64"
 
 export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
 
-make HAVE_ZYN_DEPS=false HAVE_HYLIA=false $JOBS
+make HAVE_QT5=true $JOBS
 
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-O2 -m32 -DHAVE_CPP11_SUPPORT=0"
+export CFLAGS="-O2 -m32"
 export CXXFLAGS=$CFLAGS
 export LDFLAGS="-m32"
 
 export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
 
-make HAVE_ZYN_DEPS=false HAVE_HYLIA=false posix32 $JOBS
+make HAVE_QT5=true posix32 $JOBS
 
 ##############################################################################################
 # Build Mac App

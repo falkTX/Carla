@@ -18,7 +18,7 @@
 #include "VectorJuicePlugin.hpp"
 #include "VectorJuiceUI.hpp"
 
-using DGL::Point;
+using DGL_NAMESPACE::Point;
 
 START_NAMESPACE_DISTRHO
 

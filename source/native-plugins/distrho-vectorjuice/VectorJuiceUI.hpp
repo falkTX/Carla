@@ -24,11 +24,11 @@
 
 #include "VectorJuiceArtwork.hpp"
 
-using DGL::Image;
-using DGL::ImageAboutWindow;
-using DGL::ImageButton;
-using DGL::ImageKnob;
-using DGL::ImageSlider;
+using DGL_NAMESPACE::Image;
+using DGL_NAMESPACE::ImageAboutWindow;
+using DGL_NAMESPACE::ImageButton;
+using DGL_NAMESPACE::ImageKnob;
+using DGL_NAMESPACE::ImageSlider;
 
 START_NAMESPACE_DISTRHO
 
@@ -88,7 +88,7 @@ private:
     bool fDragValid;
     int  fLastX;
     int  fLastY;
-    DGL::Rectangle<int> fCanvasArea;
+    DGL_NAMESPACE::Rectangle<int> fCanvasArea;
     float orbitX, orbitY, subOrbitX, subOrbitY;
 };
 

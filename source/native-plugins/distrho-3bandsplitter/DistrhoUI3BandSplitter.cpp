@@ -17,8 +17,6 @@
 #include "DistrhoPlugin3BandSplitter.hpp"
 #include "DistrhoUI3BandSplitter.hpp"
 
-using DGL::Point;
-
 START_NAMESPACE_DISTRHO
 
 namespace Art = DistrhoArtwork3BandSplitter;

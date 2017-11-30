@@ -24,10 +24,10 @@
 
 #include "WobbleJuiceArtwork.hpp"
 
-using DGL::Image;
-using DGL::ImageAboutWindow;
-using DGL::ImageButton;
-using DGL::ImageKnob;
+using DGL_NAMESPACE::Image;
+using DGL_NAMESPACE::ImageAboutWindow;
+using DGL_NAMESPACE::ImageButton;
+using DGL_NAMESPACE::ImageKnob;
 
 START_NAMESPACE_DISTRHO
 
