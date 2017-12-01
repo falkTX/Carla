@@ -24,6 +24,8 @@ from carla_config import *
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Global)
 
+import json
+
 if config_UseQt5:
     from PyQt5.QtCore import qCritical, QFileInfo, QModelIndex, QPointF, QTimer
     from PyQt5.QtGui import QImage, QPalette
