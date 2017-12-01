@@ -33,6 +33,8 @@ else:
     from PyQt4.QtGui import QImage, QPalette
     from PyQt4.QtGui import QAction, QApplication, QInputDialog, QFileSystemModel, QListWidgetItem, QMainWindow
 
+import json
+
 # ------------------------------------------------------------------------------------------------------------
 # Imports (Custom)
 
