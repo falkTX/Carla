@@ -34,12 +34,8 @@
 #include <clocale>
 #include <fcntl.h>
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-# include "water/misc/Time.h"
-# include "water/text/String.h"
-#else
-# include <ctime>
-#endif
+#include "water/misc/Time.h"
+#include "water/text/String.h"
 
 #ifndef CARLA_OS_WIN
 # include <cerrno>
@@ -50,15 +46,13 @@
 # endif
 #endif
 
-#ifndef F_SETPIPE_SZ
-# define F_SETPIPE_SZ 1031
-#endif
-
 #ifdef CARLA_OS_WIN
 # define INVALID_PIPE_VALUE INVALID_HANDLE_VALUE
 #else
 # define INVALID_PIPE_VALUE -1
 #endif
+
+using water::Time;
 
 #ifdef CARLA_OS_WIN
 // -----------------------------------------------------------------------
@@ -90,41 +84,6 @@ ssize_t WriteFileWin32(const HANDLE pipeh, const void* const buf, const std::siz
     return -1;
 }
 #endif // CARLA_OS_WIN
-
-// -----------------------------------------------------------------------
-// getMillisecondCounter
-
-#if ! (defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN))
-static uint32_t lastMSCounterValue = 0;
-#endif
-
-static inline
-uint32_t getMillisecondCounter() noexcept
-{
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
-    return water::Time::getMillisecondCounter();
-#else
-    uint32_t now;
-    timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    now = static_cast<uint32_t>(t.tv_sec * 1000 + t.tv_nsec / 1000000);
-
-    if (now < lastMSCounterValue)
-    {
-        // in multi-threaded apps this might be called concurrently, so
-        // make sure that our last counter value only increases and doesn't
-        // go backwards..
-        if (now < lastMSCounterValue - 1000)
-            lastMSCounterValue = now;
-    }
-    else
-    {
-        lastMSCounterValue = now;
-    }
-
-    return now;
-#endif
-}
 
 // -----------------------------------------------------------------------
 // startProcess
@@ -171,7 +130,7 @@ bool waitForClientConnect(const HANDLE pipe, const uint32_t timeOutMilliseconds)
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     bool connecting = true;
-    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(Time::getMillisecondCounter() + timeOutMilliseconds);
 
     for (; connecting && ::ConnectNamedPipe(pipe, nullptr) == FALSE;)
     {
@@ -185,7 +144,7 @@ bool waitForClientConnect(const HANDLE pipe, const uint32_t timeOutMilliseconds)
 
         case ERROR_IO_PENDING:
         case ERROR_PIPE_LISTENING:
-            if (getMillisecondCounter() < timeoutEnd)
+            if (Time::getMillisecondCounter() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
@@ -243,7 +202,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
 
     char c;
     ssize_t ret;
-    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(Time::getMillisecondCounter() + timeOutMilliseconds);
 
 #ifdef CARLA_OS_WIN
     if (! waitForClientConnect(pipe, timeOutMilliseconds))
@@ -276,7 +235,7 @@ bool waitForClientFirstMessage(const P& pipe, const uint32_t timeOutMilliseconds
             if (errno == EAGAIN)
 #endif
             {
-                if (getMillisecondCounter() < timeoutEnd)
+                if (Time::getMillisecondCounter() < timeoutEnd)
                 {
                     carla_msleep(5);
                     continue;
@@ -311,7 +270,7 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
     CARLA_SAFE_ASSERT_RETURN(processInfo.hProcess != INVALID_HANDLE_VALUE, false);
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
-    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(Time::getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
@@ -322,7 +281,7 @@ bool waitForProcessToStop(const PROCESS_INFORMATION& processInfo, const uint32_t
             return true;
         }
 
-        if (getMillisecondCounter() >= timeoutEnd)
+        if (Time::getMillisecondCounter() >= timeoutEnd)
             break;
 
         carla_msleep(5);
@@ -356,7 +315,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
     CARLA_SAFE_ASSERT_RETURN(timeOutMilliseconds > 0, false);
 
     pid_t ret;
-    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(Time::getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
@@ -386,7 +345,7 @@ bool waitForChildToStop(const pid_t pid, const uint32_t timeOutMilliseconds, boo
                 sendTerminate = false;
                 ::kill(pid, SIGTERM);
             }
-            if (getMillisecondCounter() < timeoutEnd)
+            if (Time::getMillisecondCounter() < timeoutEnd)
             {
                 carla_msleep(5);
                 continue;
@@ -1017,14 +976,14 @@ const char* CarlaPipeCommon::_readline() const noexcept
 
 const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) const noexcept
 {
-    const uint32_t timeoutEnd(getMillisecondCounter() + timeOutMilliseconds);
+    const uint32_t timeoutEnd(Time::getMillisecondCounter() + timeOutMilliseconds);
 
     for (;;)
     {
         if (const char* const msg = _readline())
             return msg;
 
-        if (getMillisecondCounter() >= timeoutEnd)
+        if (Time::getMillisecondCounter() >= timeoutEnd)
             break;
 
         carla_msleep(5);
@@ -1193,6 +1152,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     //----------------------------------------------------------------
     // set size, non-fatal
 
+#ifdef CARLA_OS_LINUX
     try {
         ::fcntl(pipeRecvClient, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
@@ -1200,6 +1160,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
     try {
         ::fcntl(pipeRecvServer, F_SETPIPE_SZ, size);
     } CARLA_SAFE_EXCEPTION("Set pipe size");
+#endif
 
     //----------------------------------------------------------------
     // set non-block

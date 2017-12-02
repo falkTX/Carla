@@ -357,7 +357,7 @@ CARLA_BRIDGE_END_NAMESPACE
 
 #include "CarlaPipeUtils.cpp"
 
-#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+#ifndef DEBUG
 # include "water/misc/Time.cpp"
 #endif
 

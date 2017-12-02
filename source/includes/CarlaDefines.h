@@ -110,7 +110,6 @@
 # define P_SIZE    "%u"
 # define P_SSIZE   "%i"
 #elif defined(CARLA_OS_MAC)
-// FIXME adjust for 32bit bridges
 # define P_INT64   "%lli"
 # define P_UINT64  "%llu"
 # define P_INTPTR  "%li"
