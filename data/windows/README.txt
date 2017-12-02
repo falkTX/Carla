@@ -1,8 +1,27 @@
 # ---  README for Carla - Windows build ---
 
-Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.
-It has some nice features like automation of parameters via MIDI CC and full OSC control.
-Currently supports LADSPA, DSSI, LV2, VST2/3 and AU plugin formats, plus GIG, SF2 and SFZ sounds banks.
+What is Carla?
+---------------
+
+Carla is a fully-featured audio plugin host, with support for many audio drivers and plugin formats.<br>
+It's open source and licensed under the GNU General Public License, version 2 or later.
+
+Features
+---------
+
+* LADSPA, DSSI, LV2 and VST plugin formats
+* GIG, SF2 and SFZ sound banks
+* Internal audio and midi file player
+* Automation of plugin parameters via MIDI CC
+* Full OSC control
+* Rack and Patchbay engine modes, plus Single and Multi-Client if using JACK
+* Native audio drivers (ALSA, DirectSound, CoreAudio) and low-latency (ASIO and JACK)
+
+In experimental phase / work in progress:
+* Export any Carla loadable plugin or sound bank as an LV2 plugin
+* Plugin bridge support (such as running 32bit plugins on a 64bit Carla, or Windows plugins on Linux)
+* Run JACK applications as audio plugins
+* Transport controls, sync with JACK Transport or Ableton Link
 
 For a complete and updated description of Carla, please check:
 http://kxstudio.linuxaudio.org/carla
