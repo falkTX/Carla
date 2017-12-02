@@ -745,7 +745,11 @@ endif
 ifeq ($(HAVE_HYLIA),true)
 	@printf -- "Link support: $(ANS_YES)\n"
 else
+ifeq ($(MACOS_OLD),true)
+	@printf -- "Link support: $(ANS_NO)  $(mZ)MacOS >= 10.10 only$(mE)\n"
+else
 	@printf -- "Link support: $(ANS_NO)  $(mZ)Linux, MacOS and Windows only$(mE)\n"
+endif
 endif
 ifeq ($(HAVE_LIBLO),true)
 	@printf -- "OSC support:  $(ANS_YES)\n"
@@ -766,10 +770,14 @@ else
 	@printf -- "ALSA:        $(ANS_NO)  $(mZ)Linux only$(mE)\n"
 endif
 ifeq ($(UNIX),true)
+ifneq ($(MACOS),true)
 ifeq ($(HAVE_PULSEAUDIO),true)
 	@printf -- "PulseAudio:  $(ANS_YES)\n"
 else
 	@printf -- "PulseAudio:  $(ANS_NO)  $(mS)Missing PulseAudio$(mE)\n"
+endif
+else
+	@printf -- "PulseAudio:  $(ANS_NO)  $(mZ)Not available for MacOS$(mE)\n"
 endif
 else
 	@printf -- "PulseAudio:  $(ANS_NO)  $(mZ)Only available for Unix systems$(mE)\n"

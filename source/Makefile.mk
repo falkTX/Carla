@@ -224,7 +224,9 @@ HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
 endif
 
 ifeq ($(UNIX),true)
+ifneq ($(MACOS),true)
 HAVE_PULSEAUDIO   = $(shell pkg-config --exists libpulse-simple && echo true)
+endif
 endif
 
 HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil && echo true)
