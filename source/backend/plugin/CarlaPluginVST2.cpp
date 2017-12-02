@@ -2099,7 +2099,10 @@ public:
         VST_Function vstFn;
 
 #ifdef CARLA_OS_MAC
-        if (CarlaString(filename).toLower().endsWith(".vst"))
+        CarlaString filenameCheck(filename);
+        filenameCheck.toLower();
+
+        if (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/"))
         {
             // FIXME assert returns, set engine error
             const CFURLRef urlRef = CFURLCreateFromFileSystemRepresentation(0, (const UInt8*)filename, (CFIndex)strlen(filename), true);

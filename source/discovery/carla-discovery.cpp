@@ -1650,7 +1650,7 @@ int main(int argc, char* argv[])
             return 0;
         }
 #ifdef CARLA_OS_MAC
-        if (type == PLUGIN_VST2 && filenameCheck.endsWith(".vst"))
+        if (type == PLUGIN_VST2 && (filenameCheck.endsWith(".vst") || filenameCheck.endsWith(".vst/")))
             openLib = false;
 #endif
     }
