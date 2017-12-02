@@ -167,7 +167,10 @@ bool BridgeRtClientControl::initializeServer() noexcept
     carla_shm_t& shm1  = *(carla_shm_t*)shmptr;
     carla_copyStruct(shm1, shm2);
 
-    // NEW
+    filename = tmpFileBase;
+    isServer = true;
+    needsSemDestroy = true;
+
     if (! mapData())
     {
         jackbridge_shm_close(shm);
@@ -193,11 +196,7 @@ bool BridgeRtClientControl::initializeServer() noexcept
         jackbridge_shm_init(shm);
         return false;
     }
-    // NEW
 
-    filename = tmpFileBase;
-    isServer = true;
-    needsSemDestroy = true;
     return true;
 }
 
@@ -339,6 +338,9 @@ bool BridgeNonRtClientControl::initializeServer() noexcept
     carla_shm_t& shm1  = *(carla_shm_t*)shmptr;
     carla_copyStruct(shm1, shm2);
 
+    filename = tmpFileBase;
+    isServer = true;
+
     if (! mapData())
     {
         jackbridge_shm_close(shm);
@@ -347,9 +349,6 @@ bool BridgeNonRtClientControl::initializeServer() noexcept
     }
 
     CARLA_SAFE_ASSERT(data != nullptr);
-
-    filename = tmpFileBase;
-    isServer = true;
     return true;
 }
 
@@ -479,6 +478,9 @@ bool BridgeNonRtServerControl::initializeServer() noexcept
     carla_shm_t& shm1  = *(carla_shm_t*)shmptr;
     carla_copyStruct(shm1, shm2);
 
+    filename = tmpFileBase;
+    isServer = true;
+
     if (! mapData())
     {
         jackbridge_shm_close(shm);
@@ -487,9 +489,6 @@ bool BridgeNonRtServerControl::initializeServer() noexcept
     }
 
     CARLA_SAFE_ASSERT(data != nullptr);
-
-    filename = tmpFileBase;
-    isServer = true;
     return true;
 }
 

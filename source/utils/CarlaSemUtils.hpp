@@ -67,23 +67,20 @@ bool carla_sem_create2(carla_sem_t& sem) noexcept
 
     return (sem.handle != INVALID_HANDLE_VALUE);
 #elif defined(CARLA_OS_MAC)
-    const mach_port_t task = mach_task_self();
+    const mach_port_t task = ::mach_task_self();
 
     mach_port_t bootport;
     CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(task, &bootport) == KERN_SUCCESS, false);
+    CARLA_SAFE_ASSERT_RETURN(::semaphore_create(task, &sem.sem, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS, false);
 
-    if (::semaphore_create(task, &sem.sem, SYNC_POLICY_FIFO, 0) == KERN_SUCCESS)
-    {
-        static int bootcounter = 0;
-        std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, getpid(), &sem);
-        sem.bootname[31] = '\0';
+    static int bootcounter = 0;
+    std::snprintf(sem.bootname, 31, "crlsm_%i_%i_%p", ++bootcounter, ::getpid(), &sem);
+    sem.bootname[31] = '\0';
 
-        if (bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
-            return true;
+    if (::bootstrap_register(bootport, sem.bootname, sem.sem) == KERN_SUCCESS)
+        return true;
 
-        ::semaphore_destroy(task, sem.sem);
-    }
-
+    ::semaphore_destroy(task, sem.sem);
     return false;
 #elif defined(CARLA_USE_FUTEXES)
     return true;
@@ -150,7 +147,7 @@ bool carla_sem_connect(carla_sem_t& sem) noexcept
     CARLA_SAFE_ASSERT_RETURN(task_get_bootstrap_port(mach_task_self(), &bootport) == KERN_SUCCESS, false);
 
     try {
-        return (bootstrap_look_up(bootport, sem.bootname, &sem.sem2) == KERN_SUCCESS);
+        return (::bootstrap_look_up(bootport, sem.bootname, &sem.sem2) == KERN_SUCCESS);
     } CARLA_SAFE_EXCEPTION_RETURN("carla_sem_connect", false);
 #else
     // nothing to do
