@@ -438,7 +438,7 @@ class SearchPluginsThread(QThread):
         self.fContinueChecking = False
 
     def run(self):
-        settingsDB = QSettings("falkTX", "CarlaPlugins2")
+        settingsDB = QSettings("falkTX", "CarlaPlugins3")
 
         self.fContinueChecking = True
         self.fCurCount = 0
@@ -1520,7 +1520,7 @@ class PluginDatabaseW(QDialog):
     # --------------------------------------------------------------------------------------------------------
 
     def _reAddPlugins(self):
-        settingsDB = QSettings("falkTX", "CarlaPlugins2")
+        settingsDB = QSettings("falkTX", "CarlaPlugins3")
 
         for x in range(self.ui.tableWidget.rowCount()):
             self.ui.tableWidget.removeRow(0)
