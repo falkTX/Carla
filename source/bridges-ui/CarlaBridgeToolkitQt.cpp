@@ -27,12 +27,11 @@
 #else
 # include <QtGui/QApplication>
 # include <QtGui/QMainWindow>
-#endif
-
-#if defined(CARLA_OS_LINUX) && defined(HAVE_X11) && QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-# define USE_CUSTOM_X11_METHODS
-# include <QtGui/QX11Info>
-# include <X11/Xlib.h>
+# ifdef HAVE_X11
+#  define USE_CUSTOM_X11_METHODS
+#  include <QtGui/QX11Info>
+#  include <X11/Xlib.h>
+# endif
 #endif
 
 CARLA_BRIDGE_START_NAMESPACE

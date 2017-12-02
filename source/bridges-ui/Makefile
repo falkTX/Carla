@@ -25,10 +25,6 @@ endif
 BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
 LINK_FLAGS       += $(WATER_LIBS)
 
-ifneq ($(HAIKU),true)
-LINK_FLAGS       += -lpthread
-endif
-
 # ----------------------------------------------------------------------------------------------------------------------------
 
 BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)
@@ -47,26 +43,20 @@ BUILD_X11_FLAGS     = $(BUILD_CXX_FLAGS) -DBRIDGE_X11 $(X11_FLAGS)
 LINK_X11_FLAGS      = $(LINK_FLAGS) $(X11_LIBS) $(LIBDL_LIBS)
 
 BUILD_COCOA_FLAGS   = $(BUILD_CXX_FLAGS) -DBRIDGE_COCOA -ObjC++
-LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa -framework IOKit -framework QuartzCore $(LIBDL_LIBS)
+LINK_COCOA_FLAGS    = $(LINK_FLAGS) -framework Cocoa $(LIBDL_LIBS)
 
 BUILD_WINDOWS_FLAGS = $(BUILD_CXX_FLAGS) -DBRIDGE_HWND
 LINK_WINDOWS_FLAGS  = $(LINK_FLAGS) -static -mwindows
 
-ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
 LINK_GTK2_FLAGS += -lX11
 LINK_GTK3_FLAGS += -lX11
 LINK_QT4_FLAGS  += -lX11
 endif
-endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-ifeq ($(MACOS_OR_WIN32),true)
-HAVE_QT4 = false
-HAVE_QT5 = false
-endif
-
+ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GTK2),true)
 TARGETS += ui_lv2-gtk2
 endif
@@ -85,6 +75,7 @@ endif
 
 ifeq ($(HAVE_X11),true)
 TARGETS += ui_lv2-x11
+endif
 endif
 
 ifeq ($(MACOS),true)

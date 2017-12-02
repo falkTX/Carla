@@ -1,6 +1,6 @@
 /*
  * Carla Bridge Toolkit, Gtk version
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@
 
 #include <gtk/gtk.h>
 
-#if defined(CARLA_OS_LINUX) && defined(HAVE_X11)
+#ifdef HAVE_X11
 # define USE_CUSTOM_X11_METHODS
 # include <gdk/gdkx.h>
 #endif
