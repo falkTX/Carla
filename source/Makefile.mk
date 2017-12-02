@@ -220,8 +220,6 @@ endif
 ifneq ($(MACOS_OR_WIN32),true)
 HAVE_GTK2  = $(shell pkg-config --exists gtk+-2.0 && echo true)
 HAVE_GTK3  = $(shell pkg-config --exists gtk+-3.0 && echo true)
-HAVE_QT4   = $(shell pkg-config --exists QtCore QtGui && echo true)
-HAVE_QT5   = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_X11   = $(shell pkg-config --exists x11 && echo true)
 endif
 
@@ -233,6 +231,8 @@ HAVE_FFMPEG       = $(shell pkg-config --exists libavcodec libavformat libavutil
 HAVE_FLUIDSYNTH   = $(shell pkg-config --exists fluidsynth && echo true)
 HAVE_LIBLO        = $(shell pkg-config --exists liblo && echo true)
 HAVE_LINUXSAMPLER = $(shell pkg-config --atleast-version=1.0.0.svn41 linuxsampler && echo true)
+HAVE_QT4          = $(shell pkg-config --exists QtCore QtGui && echo true)
+HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && echo true)
 HAVE_SNDFILE      = $(shell pkg-config --exists sndfile && echo true)
 
 # ---------------------------------------------------------------------------------------------------------------------
