@@ -193,7 +193,7 @@ EngineOptions::EngineOptions() noexcept
       transportExtra(nullptr),
       forceStereo(false),
       preferPluginBridges(false),
-#ifdef CARLA_OS_WIN
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
       preferUiBridges(false),
 #else
       preferUiBridges(true),
