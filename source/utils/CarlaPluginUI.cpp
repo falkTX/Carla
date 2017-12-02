@@ -327,6 +327,68 @@ private:
 
 #ifdef CARLA_OS_MAC
 
+@interface CarlaPluginWindow : NSWindow
+{
+@public
+    CarlaPluginUI::CloseCallback* callback;
+}
+
+- (id) initWithContentRect:(NSRect)contentRect
+                 styleMask:(unsigned int)aStyle
+                   backing:(NSBackingStoreType)bufferingType
+                     defer:(BOOL)flag;
+- (void) setCloseCallback:(CarlaPluginUI::CloseCallback*)cb;
+- (BOOL) canBecomeKeyWindow;
+- (BOOL) windowShouldClose:(id)sender;
+@end
+
+@implementation CarlaPluginWindow
+
+- (id)initWithContentRect:(NSRect)contentRect
+                styleMask:(unsigned int)aStyle
+                  backing:(NSBackingStoreType)bufferingType
+                    defer:(BOOL)flag
+{
+    callback = nil;
+
+    NSWindow* result = [super initWithContentRect:contentRect
+                                        styleMask:(NSClosableWindowMask |
+                                                   NSTitledWindowMask |
+                                                   NSResizableWindowMask)
+                                          backing:NSBackingStoreBuffered defer:NO];
+
+    [result setAcceptsMouseMovedEvents:YES];
+    [result setContentSize:NSMakeSize(1, 1)];
+    [result setIsVisible:NO];
+
+    return (CarlaPluginWindow*)result;
+
+    // unused
+    (void)aStyle; (void)bufferingType; (void)flag;
+}
+
+- (void)setCloseCallback:(CarlaPluginUI::CloseCallback*)cb
+{
+    callback = cb;
+}
+
+- (BOOL)canBecomeKeyWindow
+{
+    return YES;
+}
+
+- (BOOL)windowShouldClose:(id)sender
+{
+    if (callback)
+        callback->handlePluginUIClosed();
+    return NO;
+
+    // unused
+    (void)sender;
+}
+
+@end
+
 class CocoaPluginUI : public CarlaPluginUI
 {
 public:
@@ -344,7 +406,7 @@ public:
         if (isResizable)
             [fView setAutoresizingMask:NSViewWidthSizable|NSViewHeightSizable];
 
-        fWindow = [[NSWindow new]retain];
+        fWindow = [[CarlaPluginWindow new]retain];
 
         if (fWindow == 0)
         {
@@ -353,25 +415,16 @@ public:
             return;
         }
 
-        [fWindow setIsVisible:NO];
+        if (! isResizable)
+            [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
+
+        [fWindow setCloseCallback:cb];
         [fWindow setContentView:fView];
         [fWindow makeFirstResponder:fView];
         [fWindow makeKeyAndOrderFront:fWindow];
 
         [NSApp activateIgnoringOtherApps:YES];
         [fWindow center];
-
-#if 0
-        uint styleMask = NSClosableWindowMask | NSTitledWindowMask;
-
-        if (isResizable)
-            styleMask |= NSResizableWindowMask;
-
-        fWindow = [NSWindow initWithContentRect:contentRect
-                                      styleMask:flags
-                                        backing:NSBackingStoreBuffered defer:NO];
-
-#endif
      }
 
     ~CocoaPluginUI() override
@@ -386,16 +439,18 @@ public:
 
     void show() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
+        [fView setHidden:NO];
         [fWindow setIsVisible:YES];
     }
 
     void hide() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fWindow setIsVisible:NO];
+        [fView setHidden:YES];
     }
 
     void idle() override
@@ -419,8 +474,7 @@ public:
         const NSSize size = NSMakeSize(width, height);
         [fWindow setContentSize:size];
 
-#if 0
-        if (fResizable)
+        if (fIsResizable)
         {
             [fWindow setContentMinSize:NSMakeSize(1, 1)];
             [fWindow setContentMaxSize:NSMakeSize(99999, 99999)];
@@ -432,7 +486,6 @@ public:
             [fWindow setContentMaxSize:size];
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
         }
-#endif
     }
 
     void setTitle(const char* const title) override
@@ -878,10 +931,10 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
         uint hostWidth, hostHeight, pluginWidth, pluginHeight, border, depth;
         Window retWindow;
 
-        if (XGetGeometry(sd.display, hostWinId,      &retWindow, &hostX,   &hostY,   &hostWidth,   &hostHeight,   &border, &depth) != 0 &&
+        if (XGetGeometry(sd.display, hostWinId,   &retWindow, &hostX,   &hostY,   &hostWidth,   &hostHeight,   &border, &depth) != 0 &&
             XGetGeometry(sd.display, windowToMap, &retWindow, &pluginX, &pluginY, &pluginWidth, &pluginHeight, &border, &depth) != 0)
         {
-            if (XTranslateCoordinates(sd.display, hostWinId,      rootWindow, hostX,   hostY,   &hostX,   &hostY,   &retWindow) == True &&
+            if (XTranslateCoordinates(sd.display, hostWinId,   rootWindow, hostX,   hostY,   &hostX,   &hostY,   &retWindow) == True &&
                 XTranslateCoordinates(sd.display, windowToMap, rootWindow, pluginX, pluginY, &pluginX, &pluginY, &retWindow) == True)
             {
                 const int newX = hostX + int(hostWidth/2  - pluginWidth/2);
