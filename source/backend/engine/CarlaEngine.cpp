@@ -1025,7 +1025,7 @@ bool CarlaEngine::loadFile(const char* const filename)
 
     const String jfilename = String(CharPointer_UTF8(filename));
     File file(jfilename);
-    CARLA_SAFE_ASSERT_RETURN_ERR(file.existsAsFile(), "Requested file does not exist or is not a readable file");
+    CARLA_SAFE_ASSERT_RETURN_ERR(file.exists(), "Requested file does not exist or is not a readable");
 
     CarlaString baseName(file.getFileNameWithoutExtension().toRawUTF8());
     CarlaString extension(file.getFileExtension().replace(".","").toLowerCase().toRawUTF8());
