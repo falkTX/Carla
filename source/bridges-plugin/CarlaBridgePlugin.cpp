@@ -178,7 +178,12 @@ public:
         for (; runMainLoopOnce() && ! gCloseNow;)
         {
             gIdle();
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+            // MacOS and Win32 have event-loops to run, so minimize sleep time
             carla_msleep(1);
+#else
+            carla_msleep(5);
+#endif
         }
 
         carla_set_engine_about_to_close();

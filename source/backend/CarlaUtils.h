@@ -248,6 +248,8 @@ CARLA_EXPORT void carla_x11_move_window(uintptr_t winId, int x, int y);
 
 CARLA_EXPORT int* carla_x11_get_window_pos(uintptr_t winId);
 
+CARLA_EXPORT int carla_cocoa_get_window(void* nsViewPtr);
+
 // -------------------------------------------------------------------------------------------------------------------
 
 /** @} */

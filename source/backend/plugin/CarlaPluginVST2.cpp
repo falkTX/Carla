@@ -49,7 +49,7 @@ static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEven
 // -----------------------------------------------------
 
 class CarlaPluginVST2 : public CarlaPlugin,
-                        private CarlaPluginUI::CloseCallback
+                        private CarlaPluginUI::Callback
 {
 public:
     CarlaPluginVST2(CarlaEngine* const engine, const uint id)
@@ -435,7 +435,7 @@ public:
                 const char* msg = nullptr;
                 const uintptr_t frontendWinId(pData->engine->getOptions().frontendWinId);
 
-#if defined(CARLA_OS_MAC) && defined(__LP64__)
+#if defined(CARLA_OS_MAC) && defined(CARLA_OS_64BIT)
                 fUI.window = CarlaPluginUI::newCocoa(this, frontendWinId, false);
 #elif defined(CARLA_OS_WIN)
                 fUI.window = CarlaPluginUI::newWindows(this, frontendWinId, false);

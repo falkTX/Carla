@@ -496,7 +496,7 @@ private:
 // -------------------------------------------------------------------------------------------------------------------
 
 class CarlaPluginLV2 : public CarlaPlugin,
-                       private CarlaPluginUI::CloseCallback
+                       private CarlaPluginUI::Callback
 {
 public:
     CarlaPluginLV2(CarlaEngine* const engine, const uint id)

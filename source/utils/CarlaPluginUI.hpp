@@ -25,9 +25,9 @@
 class CarlaPluginUI
 {
 public:
-    class CloseCallback {
+    class Callback {
     public:
-        virtual ~CloseCallback() {}
+        virtual ~Callback() {}
         virtual void handlePluginUIClosed() = 0;
         virtual void handlePluginUIResized(const uint width, const uint height) = 0;
     };
@@ -48,21 +48,21 @@ public:
     static bool tryTransientWinIdMatch(const uintptr_t pid, const char* const uiTitle, const uintptr_t winId, const bool centerUI);
 
 #ifdef CARLA_OS_MAC
-    static CarlaPluginUI* newCocoa(CloseCallback*, uintptr_t, bool);
+    static CarlaPluginUI* newCocoa(Callback*, uintptr_t, bool);
 #endif
 #ifdef CARLA_OS_WIN
-    static CarlaPluginUI* newWindows(CloseCallback*, uintptr_t, bool);
+    static CarlaPluginUI* newWindows(Callback*, uintptr_t, bool);
 #endif
 #ifdef HAVE_X11
-    static CarlaPluginUI* newX11(CloseCallback*, uintptr_t, bool);
+    static CarlaPluginUI* newX11(Callback*, uintptr_t, bool);
 #endif
 
 protected:
     bool fIsIdling;
     bool fIsResizable;
-    CloseCallback* fCallback;
+    Callback* fCallback;
 
-    CarlaPluginUI(CloseCallback* const cb, const bool isResizable) noexcept
+    CarlaPluginUI(Callback* const cb, const bool isResizable) noexcept
         : fIsIdling(false),
           fIsResizable(isResizable),
           fCallback(cb) {}

@@ -110,6 +110,11 @@ $(OBJDIR)/CarlaStandalone.cpp.o: CarlaStandalone.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
+
+$(OBJDIR)/CarlaUtils.cpp.o: CarlaUtils.cpp
+	-@mkdir -p $(OBJDIR)
+	@echo "Compiling $<"
+	@$(CXX) $< $(BUILD_CXX_FLAGS) -ObjC++ -c -o $@
 endif
 
 $(OBJDIR)/%.cpp.o: %.cpp

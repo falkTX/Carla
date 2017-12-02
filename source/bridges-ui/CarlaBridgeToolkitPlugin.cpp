@@ -17,15 +17,17 @@
 
 #include "CarlaBridgeUI.hpp"
 #include "CarlaBridgeToolkit.hpp"
-
+#include "CarlaMainLoop.hpp"
 #include "CarlaPluginUI.hpp"
 
 CARLA_BRIDGE_START_NAMESPACE
 
+using CarlaBackend::runMainLoopOnce;
+
 // -------------------------------------------------------------------------
 
 class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
-                                 private CarlaPluginUI::CloseCallback
+                                 private CarlaPluginUI::Callback
 {
 public:
     CarlaBridgeToolkitPlugin(CarlaBridgeUI* const u)
@@ -50,9 +52,9 @@ public:
         const CarlaBridgeUI::Options& options(ui->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
-        fUI = nullptr;
+        fUI = CarlaPluginUI::newCocoa(this, 0, options.isResizable);
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
-        fUI = nullptr;
+        fUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
         fUI = CarlaPluginUI::newX11(this, 0, options.isResizable);
 #endif
@@ -60,8 +62,11 @@ public:
 
         fUI->setTitle(options.windowTitle.buffer());
 
+#ifdef HAVE_X11
+        // Out-of-process reparenting only possible on X11
         if (options.transientWindowId != 0)
             fUI->setTransientWinId(options.transientWindowId);
+#endif
 
         return true;
     }
@@ -83,14 +88,19 @@ public:
 
         fIdling = true;
 
-        for (; fIdling;)
+        for (; runMainLoopOnce() && fIdling;)
         {
             if (ui->isPipeRunning())
                 ui->idlePipe();
 
             ui->idleUI();
             fUI->idle();
+#if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
+            // MacOS and Win32 have event-loops to run, so minimize sleep time
+            carla_msleep(1);
+#else
             carla_msleep(20);
+#endif
         }
     }
 

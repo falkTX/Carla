@@ -243,7 +243,7 @@ class CarlaSettingsW(QDialog):
             self.ui.ch_main_show_logs.setEnabled(False)
             self.ui.ch_main_show_logs.setVisible(False)
 
-        if MACOS or WINDOWS:
+        if WINDOWS:
             self.ui.ch_engine_manage_uis.setEnabled(False)
             self.ui.ch_engine_manage_uis.setVisible(False)
 

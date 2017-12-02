@@ -403,11 +403,7 @@ struct Window::PrivateData {
         SetFocus(hwnd);
 #elif defined(DISTRHO_OS_MAC)
         if (mWindow != nullptr)
-        {
-            // TODO
-            //[NSApp activateIgnoringOtherApps:YES];
-            //[mWindow makeKeyAndOrderFront:mWindow];
-        }
+            [mWindow makeKeyWindow];
 #elif defined(DISTRHO_OS_LINUX)
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
@@ -626,12 +622,17 @@ struct Window::PrivateData {
 
     void setTransientWinId(const uintptr_t winId)
     {
-#if defined(DISTRHO_OS_LINUX)
+        DISTRHO_SAFE_ASSERT_RETURN(winId != 0,);
+
+#if defined(DISTRHO_OS_MAC)
+        NSWindow* window = [NSApp windowWithWindowNumber:winId];
+        DISTRHO_SAFE_ASSERT_RETURN(window != nullptr,);
+
+        [window addChildWindow:mWindow
+                       ordered:NSWindowAbove];
+        [mWindow makeKeyWindow];
+#elif defined(DISTRHO_OS_LINUX)
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
-#else
-        return;
-        // unused
-        (void)winId;
 #endif
     }
 

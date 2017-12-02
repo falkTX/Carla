@@ -27,6 +27,10 @@
 
 #include "water/files/File.h"
 
+#ifdef CARLA_OS_MAC
+# import <Cocoa/Cocoa.h>
+#endif
+
 #ifndef CARLA_UTILS_CACHED_PLUGINS_ONLY
 # include "rtaudio/RtAudio.h"
 # include "rtmidi/RtMidi.h"
@@ -711,7 +715,8 @@ const char* carla_get_library_folder()
 
 void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2)
 {
-    carla_debug("carla_x11_reparent_window()");
+    CARLA_SAFE_ASSERT_RETURN(winId1 != 0,);
+    CARLA_SAFE_ASSERT_RETURN(winId2 != 0,);
 
 #ifdef HAVE_X11
     if (::Display* const disp = XOpenDisplay(nullptr))
@@ -725,6 +730,8 @@ void carla_x11_reparent_window(uintptr_t winId1, uintptr_t winId2)
 
 void carla_x11_move_window(uintptr_t winId, int x, int y)
 {
+    CARLA_SAFE_ASSERT_RETURN(winId != 0,);
+
 #ifdef HAVE_X11
     if (::Display* const disp = XOpenDisplay(nullptr))
     {
@@ -736,12 +743,15 @@ void carla_x11_move_window(uintptr_t winId, int x, int y)
 
 int* carla_x11_get_window_pos(uintptr_t winId)
 {
-    carla_debug("carla_x11_get_window_pos()");
-
     static int pos[2];
 
+    if (winId == 0)
+    {
+        pos[0] = 0;
+        pos[1] = 0;
+    }
 #ifdef HAVE_X11
-    if (::Display* const disp = XOpenDisplay(nullptr))
+    else if (::Display* const disp = XOpenDisplay(nullptr))
     {
         int x, y;
         Window child;
@@ -752,14 +762,26 @@ int* carla_x11_get_window_pos(uintptr_t winId)
         pos[0] = x - xwa.x;
         pos[1] = y - xwa.y;
     }
-    else
 #endif
+    else
     {
         pos[0] = 0;
         pos[1] = 0;
     }
 
     return pos;
+}
+
+int carla_cocoa_get_window(void* nsViewPtr)
+{
+    CARLA_SAFE_ASSERT_RETURN(nsViewPtr != nullptr, 0);
+
+#ifdef CARLA_OS_MAC
+    NSView* nsView = (NSView*)nsViewPtr;
+    return [[nsView window] windowNumber];
+#else
+    return 0;
+#endif
 }
 
 // -------------------------------------------------------------------------------------------------------------------

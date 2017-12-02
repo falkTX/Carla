@@ -53,7 +53,7 @@ static int temporaryErrorHandler(Display*, XErrorEvent*)
 class X11PluginUI : public CarlaPluginUI
 {
 public:
-    X11PluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+    X11PluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fDisplay(nullptr),
           fWindow(0),
@@ -330,16 +330,18 @@ private:
 @interface CarlaPluginWindow : NSWindow
 {
 @public
-    CarlaPluginUI::CloseCallback* callback;
+    CarlaPluginUI::Callback* callback;
+    NSView* view;
 }
 
 - (id) initWithContentRect:(NSRect)contentRect
                  styleMask:(unsigned int)aStyle
                    backing:(NSBackingStoreType)bufferingType
                      defer:(BOOL)flag;
-- (void) setCloseCallback:(CarlaPluginUI::CloseCallback*)cb;
+- (void) setup:(CarlaPluginUI::Callback*)cb view:(NSView*)v;
 - (BOOL) canBecomeKeyWindow;
 - (BOOL) windowShouldClose:(id)sender;
+- (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize;
 @end
 
 @implementation CarlaPluginWindow
@@ -350,6 +352,7 @@ private:
                     defer:(BOOL)flag
 {
     callback = nil;
+    view = nil;
 
     NSWindow* result = [super initWithContentRect:contentRect
                                         styleMask:(NSClosableWindowMask |
@@ -367,9 +370,10 @@ private:
     (void)aStyle; (void)bufferingType; (void)flag;
 }
 
-- (void)setCloseCallback:(CarlaPluginUI::CloseCallback*)cb
+- (void)setup:(CarlaPluginUI::Callback*)cb view:(NSView*)v
 {
     callback = cb;
+    view = v;
 }
 
 - (BOOL)canBecomeKeyWindow
@@ -379,9 +383,21 @@ private:
 
 - (BOOL)windowShouldClose:(id)sender
 {
-    if (callback)
+    if (callback != nil)
         callback->handlePluginUIClosed();
+
     return NO;
+
+    // unused
+    (void)sender;
+}
+
+- (NSSize) windowWillResize:(NSWindow*)sender toSize:(NSSize)frameSize
+{
+    if (callback != nil)
+        callback->handlePluginUIResized(frameSize.width, frameSize.height);
+
+    return frameSize;
 
     // unused
     (void)sender;
@@ -392,10 +408,11 @@ private:
 class CocoaPluginUI : public CarlaPluginUI
 {
 public:
-    CocoaPluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+    CocoaPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fView(nullptr),
-          fWindow(0)
+          fWindow(0),
+          fParentId(parentId)
     {
         [NSAutoreleasePool new];
         [NSApplication sharedApplication];
@@ -418,13 +435,16 @@ public:
         if (! isResizable)
             [[fWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
 
-        [fWindow setCloseCallback:cb];
+        [fWindow setup:cb view:fView];
         [fWindow setContentView:fView];
         [fWindow makeFirstResponder:fView];
         [fWindow makeKeyAndOrderFront:fWindow];
 
         [NSApp activateIgnoringOtherApps:YES];
         [fWindow center];
+
+        if (parentId != 0)
+            setTransientWinId(parentId);
      }
 
     ~CocoaPluginUI() override
@@ -443,6 +463,9 @@ public:
 
         [fView setHidden:NO];
         [fWindow setIsVisible:YES];
+
+        if (fParentId != 0)
+            setTransientWinId(fParentId);
     }
 
     void hide() override
@@ -459,14 +482,14 @@ public:
 
     void focus() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        // TODO
+        [fWindow makeKeyWindow];
     }
 
     void setSize(const uint width, const uint height, const bool forceUpdate) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
         CARLA_SAFE_ASSERT_RETURN(fView != nullptr,);
 
         [fView setFrame:NSMakeRect(0, 0, width, height)];
@@ -504,7 +527,12 @@ public:
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
-        // TODO
+        NSWindow* window = [NSApp windowWithWindowNumber:winId];
+        CARLA_SAFE_ASSERT_RETURN(window != nullptr,);
+
+        [window addChildWindow:fWindow
+                       ordered:NSWindowAbove];
+        [fWindow makeKeyWindow];
     }
 
     void* getPtr() const noexcept override
@@ -520,6 +548,7 @@ public:
 private:
     NSView* fView;
     id      fWindow;
+    uintptr_t fParentId;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CocoaPluginUI)
 };
@@ -538,7 +567,7 @@ static LRESULT CALLBACK wndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM l
 class WindowsPluginUI : public CarlaPluginUI
 {
 public:
-    WindowsPluginUI(CloseCallback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
+    WindowsPluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fWindow(0),
           fIsVisible(false),
@@ -582,6 +611,9 @@ public:
         }
 
         SetWindowLongPtr(fWindow, GWLP_USERDATA, (LONG_PTR)this);
+
+        if (parentId != 0)
+            setTransientWinId(parentId);
      }
 
     ~WindowsPluginUI() override
@@ -963,21 +995,21 @@ bool CarlaPluginUI::tryTransientWinIdMatch(const uintptr_t pid, const char* cons
 // -----------------------------------------------------
 
 #ifdef HAVE_X11
-CarlaPluginUI* CarlaPluginUI::newX11(CloseCallback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newX11(Callback* cb, uintptr_t parentId, bool isResizable)
 {
     return new X11PluginUI(cb, parentId, isResizable);
 }
 #endif
 
 #ifdef CARLA_OS_MAC
-CarlaPluginUI* CarlaPluginUI::newCocoa(CloseCallback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newCocoa(Callback* cb, uintptr_t parentId, bool isResizable)
 {
     return new CocoaPluginUI(cb, parentId, isResizable);
 }
 #endif
 
 #ifdef CARLA_OS_WIN
-CarlaPluginUI* CarlaPluginUI::newWindows(CloseCallback* cb, uintptr_t parentId, bool isResizable)
+CarlaPluginUI* CarlaPluginUI::newWindows(Callback* cb, uintptr_t parentId, bool isResizable)
 {
     return new WindowsPluginUI(cb, parentId, isResizable);
 }
