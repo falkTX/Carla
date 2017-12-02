@@ -125,9 +125,11 @@ void UI::sampleRateChanged(double) {}
 /* ------------------------------------------------------------------------------------------------------------
  * UI Callbacks (optional) */
 
+#ifndef DGL_FILE_BROWSER_DISABLED
 void UI::uiFileBrowserSelected(const char*)
 {
 }
+#endif
 
 void UI::uiReshape(uint width, uint height)
 {

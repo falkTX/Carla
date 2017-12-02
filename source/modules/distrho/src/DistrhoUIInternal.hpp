@@ -186,6 +186,7 @@ protected:
         fIsReady = true;
     }
 
+#ifndef DGL_FILE_BROWSER_DISABLED
     // custom file-browser selected
     void fileBrowserSelected(const char* filename) override
     {
@@ -193,6 +194,7 @@ protected:
 
         fUI->uiFileBrowserSelected(filename);
     }
+#endif
 
 private:
     UI* const fUI;

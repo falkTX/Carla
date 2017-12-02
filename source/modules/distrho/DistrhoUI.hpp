@@ -175,11 +175,13 @@ protected:
     */
     virtual void uiIdle() {}
 
+#ifndef DGL_FILE_BROWSER_DISABLED
    /**
       File browser selected function.
       @see Window::fileBrowserSelected(const char*)
     */
     virtual void uiFileBrowserSelected(const char* filename);
+#endif
 
    /**
       OpenGL window reshape function, called when parent window is resized.
