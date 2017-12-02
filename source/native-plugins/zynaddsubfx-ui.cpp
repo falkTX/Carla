@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2012-2015 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,7 +15,8 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaPipeUtils.cpp"
+#include "CarlaString.hpp"
+#include "CarlaPipeUtils.hpp"
 
 #define PLUGINVERSION
 #define SOURCE_DIR "/usr/share/zynaddsubfx"
@@ -268,5 +269,8 @@ int main(int argc, const char* argv[])
     lo_watch.join();
     return 0;
 }
+
+#include "CarlaPipeUtils.cpp"
+#include "water/misc/Time.cpp"
 
 // --------------------------------------------------------------------------------------------
