@@ -547,14 +547,18 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 paramInfo   = self.host.get_parameter_info(self.fPluginId, i)
                 paramData   = self.host.get_parameter_data(self.fPluginId, i)
                 paramRanges = self.host.get_parameter_ranges(self.fPluginId, i)
+                isInteger   = (paramData['hints'] & PARAMETER_IS_INTEGER) != 0
 
                 if paramData['type'] != PARAMETER_INPUT:
                     continue
                 if paramData['hints'] & PARAMETER_IS_BOOLEAN:
                     continue
-                if (paramData['hints'] & PARAMETER_IS_INTEGER) != 0 and paramRanges['max']-paramRanges['min'] <= 10.0:
-                    continue
                 if (paramData['hints'] & PARAMETER_IS_ENABLED) == 0:
+                    continue
+                if (paramData['hints'] & PARAMETER_USES_SCALEPOINTS) != 0 and not isInteger:
+                    # NOTE: we assume integer scalepoints are continuous
+                    continue
+                if isInteger and paramRanges['max']-paramRanges['min'] <= 3:
                     continue
                 if paramInfo['name'].startswith("unused"):
                     continue
@@ -565,6 +569,10 @@ class AbstractPluginSlot(QFrame, PluginEditParentMeta):
                 widget.setLabel(paramName)
                 widget.setMinimum(paramRanges['min'])
                 widget.setMaximum(paramRanges['max'])
+
+                if isInteger:
+                    widget.setPrecision(paramRanges['max']-paramRanges['min'], True)
+
                 setPixmapDialStyle(widget, i, parameterCount, self.fSkinStyle)
 
                 index += 1

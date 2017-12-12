@@ -72,6 +72,8 @@ class PixmapDial(QDial):
         self.fMinimum   = 0.0
         self.fMaximum   = 1.0
         self.fRealValue = 0.0
+        self.fPrecision = 10000
+        self.fIsInteger = False
 
         self.fIsHovered = False
         self.fIsPressed = False
@@ -120,9 +122,9 @@ class PixmapDial(QDial):
 
         self.updateSizes()
 
-        # Fake internal value, 10'000 precision
+        # Fake internal value, custom precision
         QDial.setMinimum(self, 0)
-        QDial.setMaximum(self, 10000)
+        QDial.setMaximum(self, self.fPrecision)
         QDial.setValue(self, 0)
 
         self.valueChanged.connect(self.slot_valueChanged)
@@ -231,6 +233,11 @@ class PixmapDial(QDial):
         self.updateSizes()
         self.update()
 
+    def setPrecision(self, value, isInteger):
+        self.fPrecision = value
+        self.fIsInteger = isInteger
+        QDial.setMaximum(self, value)
+
     def setMinimum(self, value):
         self.fMinimum = value
 
@@ -246,11 +253,11 @@ class PixmapDial(QDial):
             self.fRealValue = self.fMinimum
 
         elif value >= self.fMaximum:
-            qtValue = 10000
+            qtValue = self.fPrecision
             self.fRealValue = self.fMaximum
 
         else:
-            qtValue = int(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * 10000)
+            qtValue = round(float(value - self.fMinimum) / float(self.fMaximum - self.fMinimum) * self.fPrecision)
             self.fRealValue = value
 
         # Block change signal, we'll handle it ourselves
@@ -263,7 +270,7 @@ class PixmapDial(QDial):
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
-        self.fRealValue = float(value)/10000.0 * (self.fMaximum - self.fMinimum) + self.fMinimum
+        self.fRealValue = float(value)/self.fPrecision * (self.fMaximum - self.fMinimum) + self.fMinimum
         self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot()
@@ -315,8 +322,16 @@ class PixmapDial(QDial):
         pos   = event.pos()
         dx    = range * float(pos.x() - self.fLastDragPos.x()) / self.width()
         dy    = range * float(pos.y() - self.fLastDragPos.y()) / self.height()
+        value = self.fLastDragValue + dx - dy
 
-        self.setValue(self.fLastDragValue + dx - dy, True)
+        if value < self.fMinimum:
+            value = self.fMinimum
+        elif value > self.fMaximum:
+            value = self.fMaximum
+        elif self.fIsInteger:
+            value = float(round(value))
+
+        self.setValue(value, True)
 
     def mouseReleaseEvent(self, event):
         if self.fDialMode == self.MODE_DEFAULT:
