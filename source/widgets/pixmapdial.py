@@ -237,7 +237,7 @@ class PixmapDial(QDial):
     def setMaximum(self, value):
         self.fMaximum = value
 
-    def setValue(self, value):
+    def setValue(self, value, emitSignal=False):
         if self.fRealValue == value:
             return
 
@@ -258,7 +258,8 @@ class PixmapDial(QDial):
         QDial.setValue(self, qtValue)
         self.blockSignals(False)
 
-        self.realValueChanged.emit(self.fRealValue)
+        if emitSignal:
+            self.realValueChanged.emit(self.fRealValue)
 
     @pyqtSlot(int)
     def slot_valueChanged(self, value):
@@ -315,7 +316,7 @@ class PixmapDial(QDial):
         dx    = range * float(pos.x() - self.fLastDragPos.x()) / self.width()
         dy    = range * float(pos.y() - self.fLastDragPos.y()) / self.height()
 
-        self.setValue(self.fLastDragValue + dx - dy)
+        self.setValue(self.fLastDragValue + dx - dy, True)
 
     def mouseReleaseEvent(self, event):
         if self.fDialMode == self.MODE_DEFAULT:
