@@ -756,7 +756,7 @@ bool File::appendText (const String& text,
                        const bool writeUnicodeHeaderBytes) const
 {
     FileOutputStream out (*this);
-    CARLA_SAFE_ASSERT (out.failedToOpen());
+    CARLA_SAFE_ASSERT_RETURN (! out.failedToOpen(), false);
 
     out.writeText (text, asUnicode, writeUnicodeHeaderBytes);
     return true;
