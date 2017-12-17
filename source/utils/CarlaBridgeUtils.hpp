@@ -217,6 +217,8 @@ struct BridgeAudioPool {
 
     void resize(const uint32_t bufferSize, const uint32_t audioPortCount, const uint32_t cvPortCount) noexcept;
 
+    const char* getFilenameSuffix() const noexcept;
+
     CARLA_DECLARE_NON_COPY_STRUCT(BridgeAudioPool)
 };
 

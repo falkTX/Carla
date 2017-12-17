@@ -148,16 +148,26 @@ String File::parseAbsolutePath (const String& p)
     {
         if (path[1] != separator)
         {
-            /*  When you supply a raw string to the File object constructor, it must be an absolute path.
-                If you're trying to parse a string that may be either a relative path or an absolute path,
-                you MUST provide a context against which the partial path can be evaluated - you can do
-                this by simply using File::getChildFile() instead of the File constructor. E.g. saying
-                "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
-                path if that's what was supplied, or would evaluate a partial path relative to the CWD.
-            */
-            jassertfalse;
+            // Check if path is valid under Wine
+            String testpath ("Z:" + path);
 
-            path = File::getCurrentWorkingDirectory().getFullPathName().substring (0, 2) + path;
+            if (File(testpath).exists())
+            {
+                path = testpath;
+            }
+            else
+            {
+                /*  When you supply a raw string to the File object constructor, it must be an absolute path.
+                    If you're trying to parse a string that may be either a relative path or an absolute path,
+                    you MUST provide a context against which the partial path can be evaluated - you can do
+                    this by simply using File::getChildFile() instead of the File constructor. E.g. saying
+                    "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
+                    path if that's what was supplied, or would evaluate a partial path relative to the CWD.
+                */
+                carla_safe_assert(testpath.toRawUTF8(), __FILE__, __LINE__);
+
+                path = File::getCurrentWorkingDirectory().getFullPathName().substring (0, 2) + path;
+            }
         }
     }
     else if (! path.containsChar (':'))
@@ -169,7 +179,7 @@ String File::parseAbsolutePath (const String& p)
             "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
             path if that's what was supplied, or would evaluate a partial path relative to the CWD.
         */
-        jassertfalse;
+        carla_safe_assert(path.toRawUTF8(), __FILE__, __LINE__);
 
         return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
     }
@@ -746,7 +756,7 @@ bool File::appendText (const String& text,
                        const bool writeUnicodeHeaderBytes) const
 {
     FileOutputStream out (*this);
-    CARLA_SAFE_ASSERT_RETURN(out.failedToOpen(), false);
+    CARLA_SAFE_ASSERT (out.failedToOpen());
 
     out.writeText (text, asUnicode, writeUnicodeHeaderBytes);
     return true;

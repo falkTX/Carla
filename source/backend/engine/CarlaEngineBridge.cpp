@@ -871,9 +871,8 @@ public:
 
                         String filePath(File::getSpecialLocation(File::tempDirectory).getFullPathName());
 
-                        filePath += CARLA_OS_SEP_STR;
-                        filePath += ".CarlaChunk_";
-                        filePath += fShmNonRtClientControl.filename.buffer() + 24;
+                        filePath += CARLA_OS_SEP_STR ".CarlaChunk_";
+                        filePath += fShmAudioPool.getFilenameSuffix();
 
                         if (File(filePath).replaceWithText(dataBase64.buffer()))
                         {

@@ -135,6 +135,16 @@ void BridgeAudioPool::resize(const uint32_t bufferSize, const uint32_t audioPort
     std::memset(data, 0, dataSize);
 }
 
+const char* BridgeAudioPool::getFilenameSuffix() const noexcept
+{
+    CARLA_SAFE_ASSERT_RETURN(filename.isNotEmpty(), nullptr);
+
+    const std::size_t prefixLength(std::strlen(PLUGIN_BRIDGE_NAMEPREFIX_AUDIO_POOL));
+    CARLA_SAFE_ASSERT_RETURN(filename.length() > prefixLength, nullptr);
+
+    return filename.buffer() + prefixLength;
+}
+
 // -------------------------------------------------------------------------------------------------------------------
 
 BridgeRtClientControl::BridgeRtClientControl() noexcept

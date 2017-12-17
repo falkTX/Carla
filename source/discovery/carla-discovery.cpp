@@ -140,6 +140,8 @@ static intptr_t vstHostCanDo(const char* const feature)
         return 1;
     if (std::strcmp(feature, "shellCategory") == 0)
         return 1;
+    if (std::strcmp(feature, "NIMKPIVendorSpecificCallbacks") == 0)
+        return -1;
 
     // non-official features found in some plugins:
     // "asyncProcessing"
