@@ -318,7 +318,7 @@ struct CarlaPluginLV2Options {
     int minBufferSize;
     int nominalBufferSize;
     int sequenceSize;
-    double sampleRate;
+    float sampleRate;
     int64_t transientWinId;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
@@ -368,8 +368,8 @@ struct CarlaPluginLV2Options {
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
         optSampleRate.subject = 0;
         optSampleRate.key     = kUridParamSampleRate;
-        optSampleRate.size    = sizeof(double);
-        optSampleRate.type    = kUridAtomDouble;
+        optSampleRate.size    = sizeof(float);
+        optSampleRate.type    = kUridAtomFloat;
         optSampleRate.value   = &sampleRate;
 
         LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
@@ -462,6 +462,11 @@ public:
 #ifdef CARLA_OS_LINUX
         const ScopedEnvVar _sev2("LD_PRELOAD", nullptr);
 #endif
+
+        char sampleRateStr[32];
+        carla_zeroChars(sampleRateStr, 32);
+        std::snprintf(sampleRateStr, 31, "%f", kEngine->getSampleRate());
+        carla_setenv("CARLA_SAMPLE_RATE", sampleRateStr);
 
         return CarlaPipeServer::startPipeServer(fFilename, fPluginURI, fUiURI, size);
     }
@@ -3850,22 +3855,39 @@ public:
         CARLA_ASSERT_INT(newSampleRate > 0.0, newSampleRate);
         carla_debug("CarlaPluginLV2::sampleRateChanged(%g) - start", newSampleRate);
 
-        if (carla_isNotEqual(fLv2Options.sampleRate, newSampleRate))
+        const float sampleRatef = static_cast<float>(newSampleRate);
+
+        if (carla_isNotEqual(fLv2Options.sampleRate, sampleRatef))
         {
-            fLv2Options.sampleRate = newSampleRate;
+            fLv2Options.sampleRate = sampleRatef;
 
             if (fExt.options != nullptr && fExt.options->set != nullptr)
-                fExt.options->set(fHandle, &fLv2Options.opts[CarlaPluginLV2Options::SampleRate]);
+            {
+                LV2_Options_Option options[2];
+                carla_zeroStructs(options, 2);
+
+                LV2_Options_Option& optSampleRate(options[0]);
+                optSampleRate.context = LV2_OPTIONS_INSTANCE;
+                optSampleRate.subject = 0;
+                optSampleRate.key     = kUridParamSampleRate;
+                optSampleRate.size    = sizeof(float);
+                optSampleRate.type    = kUridAtomFloat;
+                optSampleRate.value   = &fLv2Options.sampleRate;
+
+                fExt.options->set(fHandle, options);
+            }
         }
 
         for (uint32_t k=0; k < pData->param.count; ++k)
         {
-            if (pData->param.data[k].type == PARAMETER_INPUT && pData->param.special[k] == PARAMETER_SPECIAL_SAMPLE_RATE)
-            {
-                fParamBuffers[k] = static_cast<float>(newSampleRate);
-                pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
-                break;
-            }
+            if (pData->param.data[k].type != PARAMETER_INPUT)
+                continue;
+            if (pData->param.special[k] != PARAMETER_SPECIAL_SAMPLE_RATE)
+                continue;
+
+            fParamBuffers[k] = sampleRatef;
+            pData->postponeRtEvent(kPluginPostRtEventParameterChange, static_cast<int32_t>(k), 1, fParamBuffers[k]);
+            break;
         }
 
         carla_debug("CarlaPluginLV2::sampleRateChanged(%g) - end", newSampleRate);

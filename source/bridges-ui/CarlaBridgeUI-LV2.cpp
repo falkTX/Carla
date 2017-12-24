@@ -122,7 +122,7 @@ struct Lv2PluginOptions {
         Count
     };
 
-    double sampleRate;
+    float sampleRate;
     int64_t transientWinId;
     const char* windowTitle;
     LV2_Options_Option opts[Count];
@@ -136,8 +136,8 @@ struct Lv2PluginOptions {
         optSampleRate.context = LV2_OPTIONS_INSTANCE;
         optSampleRate.subject = 0;
         optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
-        optSampleRate.size    = sizeof(double);
-        optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_DOUBLE;
+        optSampleRate.size    = sizeof(float);
+        optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_FLOAT;
         optSampleRate.value   = &sampleRate;
 
         LV2_Options_Option& optTransientWinId(opts[TransientWinId]);
@@ -571,7 +571,29 @@ public:
 
         delete[] fLv2Options.windowTitle;
 
-        fLv2Options.sampleRate     = sampleRate;
+        const float sampleRatef = static_cast<float>(sampleRate);
+
+        if (carla_isNotEqual(fLv2Options.sampleRate, sampleRatef))
+        {
+            fLv2Options.sampleRate = sampleRatef;
+
+            if (fExt.options != nullptr && fExt.options->set != nullptr)
+            {
+                LV2_Options_Option options[2];
+                carla_zeroStructs(options, 2);
+
+                LV2_Options_Option& optSampleRate(options[0]);
+                optSampleRate.context = LV2_OPTIONS_INSTANCE;
+                optSampleRate.subject = 0;
+                optSampleRate.key     = CARLA_URI_MAP_ID_PARAM_SAMPLE_RATE;
+                optSampleRate.size    = sizeof(float);
+                optSampleRate.type    = CARLA_URI_MAP_ID_ATOM_FLOAT;
+                optSampleRate.value   = &fLv2Options.sampleRate;
+
+                fExt.options->set(fHandle, options);
+            }
+        }
+
         fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
         fLv2Options.windowTitle    = carla_strdup_safe(windowTitle);
 
