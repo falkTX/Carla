@@ -5771,11 +5771,6 @@ private:
         CARLA_SAFE_ASSERT_RETURN(type != kUridNull, 0);
         CARLA_SAFE_ASSERT_RETURN(fmt != nullptr, 0);
 
-#ifndef DEBUG
-        if (type == kUridLogTrace)
-            return 0;
-#endif
-
         int ret = 0;
 
         switch (type)
@@ -5790,13 +5785,13 @@ private:
             ret = std::vfprintf(stdout, fmt, ap);
             break;
 
-#ifdef DEBUG
         case kUridLogTrace:
+#ifdef DEBUG
             std::fprintf(stdout, "\x1b[30;1m");
             ret = std::vfprintf(stdout, fmt, ap);
             std::fprintf(stdout, "\x1b[0m");
-            break;
 #endif
+            break;
 
         case kUridLogWarning:
             ret = std::vfprintf(stderr, fmt, ap);
@@ -6016,13 +6011,13 @@ private:
         if (std::strcmp(uri, LV2_UI__windowTitle) == 0)
             return kUridWindowTitle;
 
-        // Custom
+        // Custom Carla types
         if (std::strcmp(uri, URI_CARLA_ATOM_WORKER) == 0)
             return kUridCarlaAtomWorker;
         if (std::strcmp(uri, LV2_KXSTUDIO_PROPERTIES__TransientWindowId) == 0)
             return kUridCarlaTransientWindowId;
 
-        // Custom types
+        // Custom plugin types
         return ((CarlaPluginLV2*)handle)->getCustomURID(uri);
     }
 
@@ -6032,113 +6027,116 @@ private:
         CARLA_SAFE_ASSERT_RETURN(urid != kUridNull, nullptr);
         carla_debug("carla_lv2_urid_unmap(%p, %i)", handle, urid);
 
+        switch (urid)
+        {
         // Atom types
-        if (urid == kUridAtomBlank)
+        case kUridAtomBlank:
             return LV2_ATOM__Blank;
-        if (urid == kUridAtomBool)
+        case kUridAtomBool:
             return LV2_ATOM__Bool;
-        if (urid == kUridAtomChunk)
+        case kUridAtomChunk:
             return LV2_ATOM__Chunk;
-        if (urid == kUridAtomDouble)
+        case kUridAtomDouble:
             return LV2_ATOM__Double;
-        if (urid == kUridAtomEvent)
+        case kUridAtomEvent:
             return LV2_ATOM__Event;
-        if (urid == kUridAtomFloat)
+        case kUridAtomFloat:
             return LV2_ATOM__Float;
-        if (urid == kUridAtomInt)
+        case kUridAtomInt:
             return LV2_ATOM__Int;
-        if (urid == kUridAtomLiteral)
+        case kUridAtomLiteral:
             return LV2_ATOM__Literal;
-        if (urid == kUridAtomLong)
+        case kUridAtomLong:
             return LV2_ATOM__Long;
-        if (urid == kUridAtomNumber)
+        case kUridAtomNumber:
             return LV2_ATOM__Number;
-        if (urid == kUridAtomObject)
+        case kUridAtomObject:
             return LV2_ATOM__Object;
-        if (urid == kUridAtomPath)
+        case kUridAtomPath:
             return LV2_ATOM__Path;
-        if (urid == kUridAtomProperty)
+        case kUridAtomProperty:
             return LV2_ATOM__Property;
-        if (urid == kUridAtomResource)
+        case kUridAtomResource:
             return LV2_ATOM__Resource;
-        if (urid == kUridAtomSequence)
+        case kUridAtomSequence:
             return LV2_ATOM__Sequence;
-        if (urid == kUridAtomSound)
+        case kUridAtomSound:
             return LV2_ATOM__Sound;
-        if (urid == kUridAtomString)
+        case kUridAtomString:
             return LV2_ATOM__String;
-        if (urid == kUridAtomTuple)
+        case kUridAtomTuple:
             return LV2_ATOM__Tuple;
-        if (urid == kUridAtomURI)
+        case kUridAtomURI:
             return LV2_ATOM__URI;
-        if (urid == kUridAtomURID)
+        case kUridAtomURID:
             return LV2_ATOM__URID;
-        if (urid == kUridAtomVector)
+        case kUridAtomVector:
             return LV2_ATOM__Vector;
-        if (urid == kUridAtomTransferAtom)
+        case kUridAtomTransferAtom:
             return LV2_ATOM__atomTransfer;
-        if (urid == kUridAtomTransferEvent)
+        case kUridAtomTransferEvent:
             return LV2_ATOM__eventTransfer;
 
         // BufSize types
-        if (urid == kUridBufMaxLength)
+        case kUridBufMaxLength:
             return LV2_BUF_SIZE__maxBlockLength;
-        if (urid == kUridBufMinLength)
+        case kUridBufMinLength:
             return LV2_BUF_SIZE__minBlockLength;
-        if (urid == kUridBufNominalLength)
+        case kUridBufNominalLength:
             return LV2_BUF_SIZE__nominalBlockLength;
-        if (urid == kUridBufSequenceSize)
+        case kUridBufSequenceSize:
             return LV2_BUF_SIZE__sequenceSize;
 
         // Log types
-        if (urid == kUridLogError)
+        case kUridLogError:
             return LV2_LOG__Error;
-        if (urid == kUridLogNote)
+        case kUridLogNote:
             return LV2_LOG__Note;
-        if (urid == kUridLogTrace)
+        case kUridLogTrace:
             return LV2_LOG__Trace;
-        if (urid == kUridLogWarning)
+        case kUridLogWarning:
             return LV2_LOG__Warning;
 
         // Time types
-        if (urid == kUridTimePosition)
+        case kUridTimePosition:
             return LV2_TIME__Position;
-        if (urid == kUridTimeBar)
+        case kUridTimeBar:
             return LV2_TIME__bar;
-        if (urid == kUridTimeBarBeat)
+        case kUridTimeBarBeat:
             return LV2_TIME__barBeat;
-        if (urid == kUridTimeBeat)
+        case kUridTimeBeat:
             return LV2_TIME__beat;
-        if (urid == kUridTimeBeatUnit)
+        case kUridTimeBeatUnit:
             return LV2_TIME__beatUnit;
-        if (urid == kUridTimeBeatsPerBar)
+        case kUridTimeBeatsPerBar:
             return LV2_TIME__beatsPerBar;
-        if (urid == kUridTimeBeatsPerMinute)
+        case kUridTimeBeatsPerMinute:
             return LV2_TIME__beatsPerMinute;
-        if (urid == kUridTimeFrame)
+        case kUridTimeFrame:
             return LV2_TIME__frame;
-        if (urid == kUridTimeFramesPerSecond)
+        case kUridTimeFramesPerSecond:
             return LV2_TIME__framesPerSecond;
-        if (urid == kUridTimeSpeed)
+        case kUridTimeSpeed:
             return LV2_TIME__speed;
-        if (urid == kUridTimeTicksPerBeat)
+        case kUridTimeTicksPerBeat:
             return LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat;
 
         // Others
-        if (urid == kUridMidiEvent)
+        case kUridMidiEvent:
             return LV2_MIDI__MidiEvent;
-        if (urid == kUridParamSampleRate)
+        case kUridParamSampleRate:
             return LV2_PARAMETERS__sampleRate;
-        if (urid == kUridWindowTitle)
+        case kUridWindowTitle:
             return LV2_UI__windowTitle;
 
-        // Custom
-        if (urid == kUridCarlaAtomWorker)
+        // Custom Carla types
+        case kUridCarlaAtomWorker:
             return URI_CARLA_ATOM_WORKER;
-        if (urid == kUridCarlaTransientWindowId)
+        case kUridCarlaTransientWindowId:
             return LV2_KXSTUDIO_PROPERTIES__TransientWindowId;
+        }
 
-        // Custom types
+        // Custom plugin types
         return ((CarlaPluginLV2*)handle)->getCustomURIDString(urid);
     }
 
