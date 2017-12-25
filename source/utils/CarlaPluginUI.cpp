@@ -59,6 +59,7 @@ public:
           fWindow(0),
           fIsVisible(false),
           fFirstShow(true),
+          fSetSizeCalledAtLeastOnce(false),
           fEventProc(nullptr)
      {
         fDisplay = XOpenDisplay(nullptr);
@@ -132,6 +133,14 @@ public:
         {
             if (const Window childWindow = getChildWindow())
             {
+                if (! fSetSizeCalledAtLeastOnce)
+                {
+                    XSizeHints hints;
+                    carla_zeroStruct(hints);
+                    if (XGetNormalHints(fDisplay, childWindow, &hints) && hints.width > 0 && hints.height > 0)
+                        setSize(hints.width, hints.height, false);
+                }
+
                 const Atom _xevp = XInternAtom(fDisplay, "_XEventProc", False);
 
                 gErrorTriggered = false;
@@ -242,6 +251,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
+        fSetSizeCalledAtLeastOnce = true;
         XResizeWindow(fDisplay, fWindow, width, height);
 
         if (! fIsResizable)
@@ -316,6 +326,7 @@ private:
     Window   fWindow;
     bool     fIsVisible;
     bool     fFirstShow;
+    bool     fSetSizeCalledAtLeastOnce;
     EventProcPtr fEventProc;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(X11PluginUI)
