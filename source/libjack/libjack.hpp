@@ -100,6 +100,7 @@ struct JackPortState {
     void* buffer;
     uint index;
     uint flags;
+    jack_uuid_t uuid;
     bool isMidi : 1;
     bool isSystem : 1;
     bool isConnected : 1;
@@ -111,34 +112,39 @@ struct JackPortState {
           buffer(nullptr),
           index(0),
           flags(0),
+          uuid(0),
           isMidi(false),
           isSystem(false),
           isConnected(false),
           unused(false) {}
 
-    JackPortState(const char* const cn, const char* const pn, const uint i, const uint f,
+    JackPortState(const char* const clientName, const char* const portName, const uint i, const uint f,
                   const bool midi, const bool sys, const bool con)
-        : name(strdup(pn)),
+        : name(portName != nullptr ? strdup(portName) : nullptr),
           fullname(nullptr),
           buffer(nullptr),
           index(i),
           flags(f),
+          uuid(0),
           isMidi(midi),
           isSystem(sys),
           isConnected(con),
           unused(false)
     {
-        char strBuf[STR_MAX+1];
-        snprintf(strBuf, STR_MAX, "%s:%s", cn, pn);
-        strBuf[STR_MAX] = '\0';
+        if (clientName != nullptr && portName != nullptr)
+        {
+            char strBuf[STR_MAX+1];
+            snprintf(strBuf, STR_MAX, "%s:%s", clientName, portName);
+            strBuf[STR_MAX] = '\0';
 
-        fullname = strdup(strBuf);
+            fullname = strdup(strBuf);
+        }
     }
 
     ~JackPortState()
     {
-        free(name);
-        free(fullname);
+        std::free(name);
+        std::free(fullname);
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackPortState)
@@ -232,11 +238,13 @@ struct JackClientState {
                 delete jport;
         }
 
-        free(name);
+        std::free(name);
         name = nullptr;
 
         audioIns.clear();
         audioOuts.clear();
+        midiIns.clear();
+        midiOuts.clear();
     }
 
     CARLA_DECLARE_NON_COPY_STRUCT(JackClientState)

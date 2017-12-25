@@ -259,6 +259,26 @@ public:
         return data->value;
     }
 
+    const char* getFirst() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, nullptr);
+
+        const Data* const data(list_entry_const(fQueue.next, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        return data->value;
+    }
+
+    const char* getLast() const noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(fCount > 0, nullptr);
+
+        const Data* const data(list_entry_const(fQueue.prev, Data, siblings));
+        CARLA_SAFE_ASSERT_RETURN(data != nullptr, nullptr);
+
+        return data->value;
+    }
+
     // -------------------------------------------------------------------
 
     bool contains(const char* const string) noexcept
@@ -278,6 +298,25 @@ public:
         }
 
         return false;
+    }
+
+    const char* containsAndReturnString(const char* const string) noexcept
+    {
+        CARLA_SAFE_ASSERT_RETURN(string != nullptr, nullptr);
+
+        if (fCount == 0)
+            return nullptr;
+
+        for (Itenerator it = begin2(); it.valid(); it.next())
+        {
+            const char* const stringComp(it.getValue(nullptr));
+            CARLA_SAFE_ASSERT_CONTINUE(stringComp != nullptr);
+
+            if (std::strcmp(string, stringComp) == 0)
+                return stringComp;
+        }
+
+        return nullptr;
     }
 
     // -------------------------------------------------------------------

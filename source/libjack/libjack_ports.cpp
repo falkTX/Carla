@@ -43,9 +43,11 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
                                                           false, false, index < jserver.numAudioIns);
 
-            const CarlaMutexLocker cms(jclient->mutex);
+            {
+                const CarlaMutexLocker cms(jclient->mutex);
+                jclient->audioIns.append(port);
+            }
 
-            jclient->audioIns.append(port);
             return (jack_port_t*)port;
         }
 
@@ -55,9 +57,11 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
                                                           false, false, index < jserver.numAudioOuts);
 
-            const CarlaMutexLocker cms(jclient->mutex);
+            {
+                const CarlaMutexLocker cms(jclient->mutex);
+                jclient->audioOuts.append(port);
+            }
 
-            jclient->audioOuts.append(port);
             return (jack_port_t*)port;
         }
 
@@ -73,9 +77,11 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
                                                           true, false, index < jserver.numMidiIns);
 
-            const CarlaMutexLocker cms(jclient->mutex);
+            {
+                const CarlaMutexLocker cms(jclient->mutex);
+                jclient->midiIns.append(port);
+            }
 
-            jclient->midiIns.append(port);
             return (jack_port_t*)port;
         }
 
@@ -85,9 +91,11 @@ jack_port_t* jack_port_register(jack_client_t* client, const char* port_name, co
             JackPortState* const port = new JackPortState(jclient->name, port_name, index, flags,
                                                           true, false, index < jserver.numMidiOuts);
 
-            const CarlaMutexLocker cms(jclient->mutex);
+            {
+                const CarlaMutexLocker cms(jclient->mutex);
+                jclient->midiOuts.append(port);
+            }
 
-            jclient->midiOuts.append(port);
             return (jack_port_t*)port;
         }
 
@@ -108,45 +116,47 @@ int jack_port_unregister(jack_client_t* client, jack_port_t* port)
     carla_debug("%s(%p, %p)", __FUNCTION__, client, port);
 
     JackClientState* const jclient = (JackClientState*)client;
-    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, 1);
+    CARLA_SAFE_ASSERT_RETURN(jclient != nullptr, EINVAL);
 
     JackPortState* const jport = (JackPortState*)port;
-    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 1);
-    CARLA_SAFE_ASSERT_RETURN(! jport->isSystem, 1);
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, EINVAL);
+    CARLA_SAFE_ASSERT_RETURN(! jport->isSystem, EINVAL);
 
-    const CarlaMutexLocker cms(jclient->mutex);
-
-    if (jport->isMidi)
     {
-        if (jport->flags & JackPortIsInput)
-        {
-            CARLA_SAFE_ASSERT_RETURN(jclient->midiIns.removeOne(jport), 1);
-            return 0;
-        }
+        const CarlaMutexLocker cms(jclient->mutex);
 
-        if (jport->flags & JackPortIsOutput)
+        if (jport->isMidi)
         {
-            CARLA_SAFE_ASSERT_RETURN(jclient->midiOuts.removeOne(jport), 1);
-            return 0;
-        }
-    }
-    else
-    {
-        if (jport->flags & JackPortIsInput)
-        {
-            CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), 1);
-            return 0;
-        }
+            if (jport->flags & JackPortIsInput)
+            {
+                CARLA_SAFE_ASSERT_RETURN(jclient->midiIns.removeOne(jport), ENOENT);
+                return 0;
+            }
 
-        if (jport->flags & JackPortIsOutput)
+            if (jport->flags & JackPortIsOutput)
+            {
+                CARLA_SAFE_ASSERT_RETURN(jclient->midiOuts.removeOne(jport), ENOENT);
+                return 0;
+            }
+        }
+        else
         {
-            CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), 1);
-            return 0;
+            if (jport->flags & JackPortIsInput)
+            {
+                CARLA_SAFE_ASSERT_RETURN(jclient->audioIns.removeOne(jport), ENOENT);
+                return 0;
+            }
+
+            if (jport->flags & JackPortIsOutput)
+            {
+                CARLA_SAFE_ASSERT_RETURN(jclient->audioOuts.removeOne(jport), ENOENT);
+                return 0;
+            }
         }
     }
 
     carla_stderr2("jack_port_register: invalid port '%s'", jport->name);
-    return 1;
+    return EINVAL;
 }
 
 CARLA_EXPORT
@@ -163,8 +173,12 @@ void* jack_port_get_buffer(jack_port_t* port, jack_nframes_t)
 CARLA_EXPORT
 jack_uuid_t jack_port_uuid(const jack_port_t* port)
 {
-    carla_stderr2("%s(%p)", __FUNCTION__, port);
-    return 0;
+    carla_debug("%s(%p)", __FUNCTION__, port);
+
+    JackPortState* const jport = (JackPortState*)port;
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
+
+    return jport->uuid;
 }
 
 CARLA_EXPORT
@@ -248,7 +262,15 @@ int jack_port_connected(const jack_port_t* port)
 CARLA_EXPORT
 int jack_port_connected_to(const jack_port_t* port, const char* port_name)
 {
-    carla_stderr2("%s(%p, %s)", __FUNCTION__, port, port_name);
+    carla_stderr2("%s(%p, %s) WIP", __FUNCTION__, port, port_name);
+
+    JackPortState* const jport = (JackPortState*)port;
+    CARLA_SAFE_ASSERT_RETURN(jport != nullptr, 0);
+
+    if (! jport->isConnected)
+        return 0;
+
+    // TODO
     return 1;
 }
 
@@ -273,15 +295,21 @@ const char** jack_port_get_all_connections(const jack_client_t* client, const ja
 CARLA_EXPORT
 int jack_port_tie(jack_port_t* src, jack_port_t* dst)
 {
-    carla_stderr2("%s(%p, %p)", __FUNCTION__, src, dst);
+    carla_debug("%s(%p, %p)", __FUNCTION__, src, dst);
     return ENOSYS;
+
+    // unused
+    (void)src; (void)dst;
 }
 
 CARLA_EXPORT
 int jack_port_untie(jack_port_t* port)
 {
-    carla_stderr2("%s(%p)", __FUNCTION__, port);
+    carla_debug("%s(%p)", __FUNCTION__, port);
     return ENOSYS;
+
+    // unused
+    (void)port;
 }
 
 // --------------------------------------------------------------------------------------------------------------------

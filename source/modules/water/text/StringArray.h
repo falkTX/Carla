@@ -157,11 +157,11 @@ public:
 
     //==============================================================================
     /** Appends a string at the end of the array. */
-    void add (const String& stringToAdd);
+    bool add (const String& stringToAdd);
 
    #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
     /** Appends a string at the end of the array. */
-    void add (String&& stringToAdd);
+    bool add (String&& stringToAdd);
    #endif
 
     /** Inserts a string into the array.
@@ -171,7 +171,7 @@ public:
         If the index is less than zero or greater than the size of the array,
         the new string will be added to the end of the array.
     */
-    void insert (int index, const String& stringToAdd);
+    bool insert (int index, const String& stringToAdd);
 
     /** Adds a string to the array as long as it's not already in there.
         The search can optionally be case-insensitive.

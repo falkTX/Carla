@@ -120,21 +120,21 @@ String& StringArray::getReference (const int index) noexcept
     return strings.getReference (index);
 }
 
-void StringArray::add (const String& newString)
+bool StringArray::add (const String& newString)
 {
-    strings.add (newString);
+    return strings.add (newString);
 }
 
 #if WATER_COMPILER_SUPPORTS_MOVE_SEMANTICS
-void StringArray::add (String&& stringToAdd)
+bool StringArray::add (String&& stringToAdd)
 {
-    strings.add (static_cast<String&&> (stringToAdd));
+    return strings.add (static_cast<String&&> (stringToAdd));
 }
 #endif
 
-void StringArray::insert (const int index, const String& newString)
+bool StringArray::insert (const int index, const String& newString)
 {
-    strings.insert (index, newString);
+    return strings.insert (index, newString);
 }
 
 bool StringArray::addIfNotAlreadyThere (const String& newString, const bool ignoreCase)
@@ -142,8 +142,7 @@ bool StringArray::addIfNotAlreadyThere (const String& newString, const bool igno
     if (contains (newString, ignoreCase))
         return false;
 
-    add (newString);
-    return true;
+    return add (newString);
 }
 
 void StringArray::addArray (const StringArray& otherArray, int startIndex, int numElementsToAdd)
