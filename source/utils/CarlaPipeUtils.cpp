@@ -411,8 +411,17 @@ struct CarlaPipeCommon::PrivateData {
     // read functions must only be called in context of idlePipe()
     bool isReading;
 
+    // the client side is closing down, only waiting for response from server
+    bool clientClosingDown;
+
+    // other side of pipe has closed
+    bool pipeClosed;
+
     // print error only once
     bool lastMessageFailed;
+
+    // for debugging
+    bool isServer;
 
     // common write lock
     CarlaMutex writeLock;
@@ -430,7 +439,10 @@ struct CarlaPipeCommon::PrivateData {
           pipeRecv(INVALID_PIPE_VALUE),
           pipeSend(INVALID_PIPE_VALUE),
           isReading(false),
+          clientClosingDown(false),
+          pipeClosed(true),
           lastMessageFailed(false),
+          isServer(false),
           writeLock(),
           tmpBuf(),
           tmpStr()
@@ -466,7 +478,7 @@ CarlaPipeCommon::~CarlaPipeCommon() /*noexcept*/
 
 bool CarlaPipeCommon::isPipeRunning() const noexcept
 {
-    return (pData->pipeRecv != INVALID_PIPE_VALUE && pData->pipeSend != INVALID_PIPE_VALUE);
+    return (pData->pipeRecv != INVALID_PIPE_VALUE && pData->pipeSend != INVALID_PIPE_VALUE && ! pData->pipeClosed);
 }
 
 void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
@@ -488,15 +500,22 @@ void CarlaPipeCommon::idlePipe(const bool onlyOnce) noexcept
 
         pData->isReading = true;
 
-        try {
-            msgReceived(msg);
-        } CARLA_SAFE_EXCEPTION("msgReceived");
+        if (std::strcmp(msg, "__carla-quit__") == 0)
+        {
+            pData->pipeClosed = true;
+        }
+        else if (! pData->clientClosingDown)
+        {
+            try {
+                msgReceived(msg);
+            } CARLA_SAFE_EXCEPTION("msgReceived");
+        }
 
         pData->isReading = false;
 
         delete[] msg;
 
-        if (onlyOnce)
+        if (onlyOnce || pData->pipeRecv == INVALID_PIPE_VALUE)
             break;
     }
 
@@ -1015,12 +1034,18 @@ bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t s
         return true;
     }
 
+#if 0
+    // ignore errors if the other side of the pipe has closed
+    if (pData->pipeClosed)
+        return false;
+#endif
+
     if (! pData->lastMessageFailed)
     {
         pData->lastMessageFailed = true;
         fprintf(stderr,
-                "CarlaPipeCommon::_writeMsgBuffer(..., " P_SIZE ") - failed with " P_SSIZE ", message was:\n%s",
-                size, ret, msg);
+                "CarlaPipeCommon::_writeMsgBuffer(..., " P_SIZE ") - failed with " P_SSIZE " (%s), message was:\n%s",
+                size, ret, bool2str(pData->isServer), msg);
     }
 
     return false;
@@ -1032,6 +1057,7 @@ CarlaPipeServer::CarlaPipeServer() noexcept
     : CarlaPipeCommon()
 {
     carla_debug("CarlaPipeServer::CarlaPipeServer()");
+    pData->isServer = true;
 }
 
 CarlaPipeServer::~CarlaPipeServer() /*noexcept*/
@@ -1269,6 +1295,7 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
 #endif
         pData->pipeRecv = pipeRecvClient;
         pData->pipeSend = pipeSendClient;
+        pData->pipeClosed = false;
         carla_stdout("ALL OK!");
         return true;
     }
@@ -1323,7 +1350,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
         {
-            _writeMsgBuffer("quit\n", 5);
+            _writeMsgBuffer("__carla-quit__\n", 15);
             flushMessages();
         }
 
@@ -1341,7 +1368,7 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
         {
-            _writeMsgBuffer("quit\n", 5);
+            _writeMsgBuffer("__carla-quit__\n", 15);
             flushMessages();
         }
 
@@ -1356,6 +1383,8 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
 void CarlaPipeServer::closePipeServer() noexcept
 {
     carla_debug("CarlaPipeServer::closePipeServer()");
+
+    pData->pipeClosed = true;
 
     const CarlaMutexLocker cml(pData->writeLock);
 
@@ -1472,6 +1501,8 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
 
     pData->pipeRecv = pipeRecvServer;
     pData->pipeSend = pipeSendServer;
+    pData->pipeClosed = false;
+    pData->clientClosingDown = false;
 
     writeMessage("\n", 1);
     flushMessages();
@@ -1482,6 +1513,8 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
 void CarlaPipeClient::closePipeClient() noexcept
 {
     carla_debug("CarlaPipeClient::closePipeClient()");
+
+    pData->pipeClosed = true;
 
     const CarlaMutexLocker cml(pData->writeLock);
 
@@ -1503,6 +1536,25 @@ void CarlaPipeClient::closePipeClient() noexcept
         try { ::close      (pData->pipeSend); } CARLA_SAFE_EXCEPTION("close(pData->pipeSend)");
 #endif
         pData->pipeSend = INVALID_PIPE_VALUE;
+    }
+}
+
+void CarlaPipeClient::writeExitingMessageAndWait() noexcept
+{
+    {
+        const CarlaMutexLocker cml(pData->writeLock);
+        _writeMsgBuffer("exiting\n", 8);
+        flushMessages();
+    }
+
+    // NOTE: no more messages are handled after this point
+    pData->clientClosingDown = true;
+
+    // FIXME: don't sleep forever
+    for (; ! pData->pipeClosed;)
+    {
+        carla_msleep(50);
+        idlePipe(true);
     }
 }
 

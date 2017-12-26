@@ -60,6 +60,7 @@ class ExternalUI(object):
         if self.fPipeClient is None:
             return
 
+        # FIXME
         if not self.fQuitReceived:
             self.send(["exiting"])
 

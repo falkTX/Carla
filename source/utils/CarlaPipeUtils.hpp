@@ -320,6 +320,14 @@ public:
      */
     void closePipeClient() noexcept;
 
+    // -------------------------------------------------------------------
+    // write prepared messages, no lock or flush needed (done internally)
+
+    /*!
+     * Write a single "exiting" message and wait for server to respond.
+     */
+    void writeExitingMessageAndWait() noexcept;
+
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeClient)
 };
 

@@ -136,10 +136,7 @@ public:
         if (fQuitReceived)
             return;
 
-        const CarlaMutexLocker cml(getPipeLock());
-
-        writeMessage("exiting\n");
-        flushMessages();
+        writeExitingMessageAndWait();
     }
 
 protected:

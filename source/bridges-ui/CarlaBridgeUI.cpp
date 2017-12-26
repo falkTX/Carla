@@ -57,17 +57,13 @@ CarlaBridgeUI::~CarlaBridgeUI() /*noexcept*/
 {
     carla_debug("CarlaBridgeUI::~CarlaBridgeUI()");
 
+    if (isPipeRunning() && ! fQuitReceived)
+        writeExitingMessageAndWait();
+
     if (fLib != nullptr)
     {
         lib_close(fLib);
         fLib = nullptr;
-    }
-
-    if (isPipeRunning() && ! fQuitReceived)
-    {
-        const CarlaMutexLocker cml(getPipeLock());
-        writeMessage("exiting\n", 8);
-        flushMessages();
     }
 
     if (fToolkit != nullptr)
@@ -318,11 +314,7 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
         if (! fGotOptions)
         {
             carla_stderr2("CarlaBridgeUI::init() - did not get options on time, quitting...");
-            {
-                const CarlaMutexLocker cml(getPipeLock());
-                writeMessage("exiting\n", 8);
-                flushMessages();
-            }
+            writeExitingMessageAndWait();
             closePipeClient();
             return false;
         }
