@@ -46,10 +46,10 @@ public:
     static CarlaBridgeToolkit* createNew(CarlaBridgeUI* const ui);
 
 protected:
-    CarlaBridgeUI* const ui;
+    CarlaBridgeUI* const fPluginUI;
 
     CarlaBridgeToolkit(CarlaBridgeUI* const u)
-        : ui(u) {}
+        : fPluginUI(u) {}
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };

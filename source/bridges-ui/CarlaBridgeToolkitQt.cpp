@@ -93,14 +93,14 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
-        const CarlaBridgeUI::Options& options(ui->getOptions());
+        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
 
-        QWidget* const widget((QWidget*)ui->getWidget());
+        QWidget* const widget((QWidget*)fPluginUI->getWidget());
 
         fWindow->setCentralWidget(widget);
         fWindow->adjustSize();
@@ -143,7 +143,7 @@ public:
 
     void quit() override
     {
-        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::quit()");
@@ -199,13 +199,13 @@ public:
 
     void setSize(const uint width, const uint height) override
     {
-        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(width > 0,);
         CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
-        if (ui->getOptions().isResizable)
+        if (fPluginUI->getOptions().isResizable)
             fWindow->resize(static_cast<int>(width), static_cast<int>(height));
         else
             fWindow->setFixedSize(static_cast<int>(width), static_cast<int>(height));
@@ -229,12 +229,12 @@ protected:
 
     void handleTimeout()
     {
-        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
 
-        if (ui->isPipeRunning())
-            ui->idlePipe();
+        if (fPluginUI->isPipeRunning())
+            fPluginUI->idlePipe();
 
-        ui->idleUI();
+        fPluginUI->idleUI();
     }
 
 private:

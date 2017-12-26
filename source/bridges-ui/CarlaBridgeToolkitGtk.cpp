@@ -74,16 +74,16 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(ui != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showUI));
 
-        const CarlaBridgeUI::Options& options(ui->getOptions());
+        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
 
         GtkWindow* const gtkWindow(GTK_WINDOW(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gtkWindow != nullptr,);
 
-        GtkWidget* const widget((GtkWidget*)ui->getWidget());
+        GtkWidget* const widget((GtkWidget*)fPluginUI->getWidget());
         gtk_container_add(GTK_CONTAINER(fWindow), widget);
 
         gtk_window_set_resizable(gtkWindow, options.isResizable);
@@ -182,7 +182,7 @@ protected:
     {
         carla_debug("CarlaBridgeToolkitGtk::handleRealize()");
 
-        const CarlaBridgeUI::Options& options(ui->getOptions());
+        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
 
         if (options.transientWindowId != 0)
             setTransient(options.transientWindowId);
@@ -196,10 +196,10 @@ protected:
             gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
         }
 
-        if (ui->isPipeRunning())
-            ui->idlePipe();
+        if (fPluginUI->isPipeRunning())
+            fPluginUI->idlePipe();
 
-        ui->idleUI();
+        fPluginUI->idleUI();
 
         if (gHideShowTesting)
         {
