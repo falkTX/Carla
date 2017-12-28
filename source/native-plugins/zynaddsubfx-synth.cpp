@@ -751,9 +751,7 @@ protected:
         {
             if (isPipeRunning())
             {
-                const CarlaMutexLocker cml(getPipeLock());
-                writeMessage("focus\n", 6);
-                flushMessages();
+                writeFocusMessage();
                 return;
             }
 

@@ -697,6 +697,9 @@ bool CarlaPipeCommon::writeMessage(const char* const msg) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msg != nullptr && msg[0] != '\0', false);
 
+    if (pData->pipeClosed)
+        return false;
+
     const std::size_t size(std::strlen(msg));
     CARLA_SAFE_ASSERT_RETURN(size > 0, false);
     CARLA_SAFE_ASSERT_RETURN(msg[size-1] == '\n', false);
@@ -710,12 +713,18 @@ bool CarlaPipeCommon::writeMessage(const char* const msg, std::size_t size) cons
     CARLA_SAFE_ASSERT_RETURN(size > 0, false);
     CARLA_SAFE_ASSERT_RETURN(msg[size-1] == '\n', false);
 
+    if (pData->pipeClosed)
+        return false;
+
     return _writeMsgBuffer(msg, size);
 }
 
 bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msg != nullptr, false);
+
+    if (pData->pipeClosed)
+        return false;
 
     const std::size_t size(std::strlen(msg));
 
@@ -754,12 +763,9 @@ bool CarlaPipeCommon::writeAndFixMessage(const char* const msg) const noexcept
 
 bool CarlaPipeCommon::flushMessages() const noexcept
 {
-#ifdef CARLA_OS_WIN
-    // TESTING remove later
-    const CarlaMutexTryLocker cmtl(pData->writeLock);
-    CARLA_SAFE_ASSERT_RETURN(cmtl.wasNotLocked(), false);
     CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
 
+#ifdef CARLA_OS_WIN
     try {
         return (::FlushFileBuffers(pData->pipeSend) != FALSE);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaPipeCommon::writeMsgBuffer", false);
@@ -776,8 +782,12 @@ void CarlaPipeCommon::writeErrorMessage(const char* const error) const noexcept
     CARLA_SAFE_ASSERT_RETURN(error != nullptr && error[0] != '\0',);
 
     const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("error\n", 6);
-    writeAndFixMessage(error);
+
+    if (! _writeMsgBuffer("error\n", 6))
+        return;
+    if (! writeAndFixMessage(error))
+        return;
+
     flushMessages();
 }
 
@@ -787,17 +797,21 @@ void CarlaPipeCommon::writeControlMessage(const uint32_t index, const float valu
     tmpBuf[0xff] = '\0';
 
     const CarlaMutexLocker cml(pData->writeLock);
-    const ScopedLocale csl;
 
-    _writeMsgBuffer("control\n", 8);
+    if (! _writeMsgBuffer("control\n", 8))
+        return;
+
+    std::snprintf(tmpBuf, 0xff, "%i\n", index);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
     {
-        std::snprintf(tmpBuf, 0xff, "%i\n", index);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-
+        const ScopedLocale csl;
         std::snprintf(tmpBuf, 0xff, "%f\n", value);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
     }
+
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
     flushMessages();
 }
@@ -809,12 +823,12 @@ void CarlaPipeCommon::writeConfigureMessage(const char* const key, const char* c
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("configure\n", 10);
-
-    {
-        writeAndFixMessage(key);
-        writeAndFixMessage(value);
-    }
+    if (! _writeMsgBuffer("configure\n", 10))
+        return;
+    if (! writeAndFixMessage(key))
+        return;
+    if (! writeAndFixMessage(value))
+        return;
 
     flushMessages();
 }
@@ -826,12 +840,12 @@ void CarlaPipeCommon::writeProgramMessage(const uint32_t index) const noexcept
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("program\n", 8);
+    if (! _writeMsgBuffer("program\n", 8))
+        return;
 
-    {
-        std::snprintf(tmpBuf, 0xff, "%i\n", index);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-    }
+    std::snprintf(tmpBuf, 0xff, "%i\n", index);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
     flushMessages();
 }
@@ -843,15 +857,16 @@ void CarlaPipeCommon::writeMidiProgramMessage(const uint32_t bank, const uint32_
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("midiprogram\n", 12);
+    if (! _writeMsgBuffer("midiprogram\n", 12))
+        return;
 
-    {
-        std::snprintf(tmpBuf, 0xff, "%i\n", bank);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", bank);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        std::snprintf(tmpBuf, 0xff, "%i\n", program);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-    }
+    std::snprintf(tmpBuf, 0xff, "%i\n", program);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
     flushMessages();
 }
@@ -867,21 +882,24 @@ void CarlaPipeCommon::writeMidiNoteMessage(const bool onOff, const uint8_t chann
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("note\n", 5);
+    if (! _writeMsgBuffer("note\n", 5))
+        return;
 
-    {
-        std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(onOff));
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(onOff));
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        std::snprintf(tmpBuf, 0xff, "%i\n", channel);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", channel);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        std::snprintf(tmpBuf, 0xff, "%i\n", note);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", note);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        std::snprintf(tmpBuf, 0xff, "%i\n", velocity);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
-    }
+    std::snprintf(tmpBuf, 0xff, "%i\n", velocity);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
     flushMessages();
 }
@@ -898,17 +916,19 @@ void CarlaPipeCommon::writeLv2AtomMessage(const uint32_t index, const LV2_Atom* 
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("atom\n", 5);
+    if (! _writeMsgBuffer("atom\n", 5))
+        return;
 
-    {
-        std::snprintf(tmpBuf, 0xff, "%i\n", index);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", index);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        std::snprintf(tmpBuf, 0xff, "%i\n", atomTotalSize);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", atomTotalSize);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        writeAndFixMessage(base64atom.buffer());
-    }
+    if (! writeAndFixMessage(base64atom.buffer()))
+        return;
 
     flushMessages();
 }
@@ -923,14 +943,15 @@ void CarlaPipeCommon::writeLv2UridMessage(const uint32_t urid, const char* const
 
     const CarlaMutexLocker cml(pData->writeLock);
 
-    _writeMsgBuffer("urid\n", 5);
+    if (! _writeMsgBuffer("urid\n", 5))
+        return;
 
-    {
-        std::snprintf(tmpBuf, 0xff, "%i\n", urid);
-        _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf));
+    std::snprintf(tmpBuf, 0xff, "%i\n", urid);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
 
-        writeAndFixMessage(uri);
-    }
+    if (! writeAndFixMessage(uri))
+        return;
 
     flushMessages();
 }
@@ -1012,10 +1033,14 @@ const char* CarlaPipeCommon::_readlineblock(const uint32_t timeOutMilliseconds) 
 
 bool CarlaPipeCommon::_writeMsgBuffer(const char* const msg, const std::size_t size) const noexcept
 {
-    // TESTING remove later
-    const CarlaMutexTryLocker cmtl(pData->writeLock);
-    CARLA_SAFE_ASSERT_RETURN(cmtl.wasNotLocked(), false);
-    CARLA_SAFE_ASSERT_RETURN(pData->pipeSend != INVALID_PIPE_VALUE, false);
+    if (pData->pipeClosed)
+        return false;
+
+    if (pData->pipeSend == INVALID_PIPE_VALUE)
+    {
+        carla_stderr2("CarlaPipe write error, isServer:%s, message was:\n%s", bool2str(pData->isServer), msg);
+        return false;
+    }
 
     ssize_t ret;
 
@@ -1350,8 +1375,8 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
         {
-            _writeMsgBuffer("__carla-quit__\n", 15);
-            flushMessages();
+            if (_writeMsgBuffer("__carla-quit__\n", 15))
+                flushMessages();
         }
 
         waitForProcessToStopOrKillIt(pData->processInfo, timeOutMilliseconds);
@@ -1368,8 +1393,8 @@ void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcep
 
         if (pData->pipeSend != INVALID_PIPE_VALUE)
         {
-            _writeMsgBuffer("__carla-quit__\n", 15);
-            flushMessages();
+            if (_writeMsgBuffer("__carla-quit__\n", 15))
+                flushMessages();
         }
 
         waitForChildToStopOrKillIt(pData->pid, timeOutMilliseconds);
@@ -1416,21 +1441,30 @@ void CarlaPipeServer::closePipeServer() noexcept
 void CarlaPipeServer::writeShowMessage() const noexcept
 {
     const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("show\n", 5);
+
+    if (! _writeMsgBuffer("show\n", 5))
+        return;
+
     flushMessages();
 }
 
 void CarlaPipeServer::writeFocusMessage() const noexcept
 {
     const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("focus\n", 6);
+
+    if (! _writeMsgBuffer("focus\n", 6))
+        return;
+
     flushMessages();
 }
 
 void CarlaPipeServer::writeHideMessage() const noexcept
 {
     const CarlaMutexLocker cml(pData->writeLock);
-    _writeMsgBuffer("show\n", 5);
+
+    if (! _writeMsgBuffer("show\n", 5))
+        return;
+
     flushMessages();
 }
 
@@ -1504,8 +1538,8 @@ bool CarlaPipeClient::initPipeClient(const char* argv[]) noexcept
     pData->pipeClosed = false;
     pData->clientClosingDown = false;
 
-    writeMessage("\n", 1);
-    flushMessages();
+    if (writeMessage("\n", 1))
+        flushMessages();
 
     return true;
 }
@@ -1543,8 +1577,9 @@ void CarlaPipeClient::writeExitingMessageAndWait() noexcept
 {
     {
         const CarlaMutexLocker cml(pData->writeLock);
-        _writeMsgBuffer("exiting\n", 8);
-        flushMessages();
+
+        if (_writeMsgBuffer("exiting\n", 8))
+            flushMessages();
     }
 
     // NOTE: no more messages are handled after this point

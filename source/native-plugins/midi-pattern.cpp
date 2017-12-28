@@ -306,14 +306,18 @@ protected:
             const CarlaMutexLocker cml(getPipeLock());
             const ScopedLocale csl;
 
-            writeAndFixMessage("transport");
-            writeMessage(fTimeInfo.playing ? "true\n" : "false\n");
+            if (! writeAndFixMessage("transport"))
+                return;
+            if (! writeMessage(fTimeInfo.playing ? "true\n" : "false\n"))
+                return;
 
             std::sprintf(strBuf, P_UINT64 ":%i:%i:%i\n", fTimeInfo.frame, bar, beat, tick);
-            writeMessage(strBuf);
+            if (! writeMessage(strBuf))
+                return;
 
             std::sprintf(strBuf, "%f:%f:%f\n", beatsPerMinute, beatsPerBar, beatType);
-            writeMessage(strBuf);
+            if (! writeMessage(strBuf))
+                return;
 
             flushMessages();
         }

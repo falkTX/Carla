@@ -60,9 +60,7 @@ protected:
         {
             if (isPipeRunning())
             {
-                const CarlaMutexLocker cml(getPipeLock());
-                writeMessage("focus\n", 6);
-                flushMessages();
+                writeFocusMessage();
                 return;
             }
 
@@ -114,15 +112,16 @@ protected:
         const CarlaMutexLocker cml(getPipeLock());
         const ScopedLocale csl;
 
-        writeMessage("control\n", 8);
+        if (! writeMessage("control\n", 8))
+            return;
 
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", index);
-            writeMessage(tmpBuf);
+        std::snprintf(tmpBuf, 0xff, "%i\n", index);
+        if (! writeMessage(tmpBuf))
+            return;
 
-            std::snprintf(tmpBuf, 0xff, "%f\n", value);
-            writeMessage(tmpBuf);
-        }
+        std::snprintf(tmpBuf, 0xff, "%f\n", value);
+        if (! writeMessage(tmpBuf))
+            return;
 
         flushMessages();
     }
@@ -136,18 +135,20 @@ protected:
 
         const CarlaMutexLocker cml(getPipeLock());
 
-        writeMessage("program\n", 8);
+        if (! writeMessage("program\n", 8))
+            return;
 
-        {
-            std::snprintf(tmpBuf, 0xff, "%i\n", channel);
-            writeMessage(tmpBuf);
+        std::snprintf(tmpBuf, 0xff, "%i\n", channel);
+        if (! writeMessage(tmpBuf))
+            return;
 
-            std::snprintf(tmpBuf, 0xff, "%i\n", bank);
-            writeMessage(tmpBuf);
+        std::snprintf(tmpBuf, 0xff, "%i\n", bank);
+        if (! writeMessage(tmpBuf))
+            return;
 
-            std::snprintf(tmpBuf, 0xff, "%i\n", program);
-            writeMessage(tmpBuf);
-        }
+        std::snprintf(tmpBuf, 0xff, "%i\n", program);
+        if (! writeMessage(tmpBuf))
+            return;
 
         flushMessages();
     }
@@ -159,10 +160,12 @@ protected:
 
         const CarlaMutexLocker cml(getPipeLock());
 
-        writeMessage("configure\n", 10);
-
-        writeAndFixMessage(key);
-        writeAndFixMessage(value);
+        if (! writeMessage("configure\n", 10))
+            return;
+        if (! writeAndFixMessage(key))
+            return;
+        if (! writeAndFixMessage(value))
+            return;
 
         flushMessages();
     }
@@ -173,8 +176,11 @@ protected:
 
         const CarlaMutexLocker cml(getPipeLock());
 
-        writeMessage("uiTitle\n", 8);
-        writeAndFixMessage(uiName);
+        if (! writeMessage("uiTitle\n", 8))
+            return;
+        if (! writeAndFixMessage(uiName))
+            return;
+
         flushMessages();
     }
 

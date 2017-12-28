@@ -477,8 +477,11 @@ public:
 
         const CarlaMutexLocker cml(getPipeLock());
 
-        _writeMsgBuffer("uiTitle\n", 8);
-        writeAndFixMessage(title);
+        if (! _writeMsgBuffer("uiTitle\n", 8))
+            return;
+        if (! writeAndFixMessage(title))
+            return;
+
         flushMessages();
     }
 
@@ -1317,43 +1320,58 @@ public:
                         const std::string& uri(*it);
 
                         std::snprintf(tmpBuf, 0xff, "%u\n", u);
+                        if (! fPipeServer.writeMessage("urid\n", 5))
+                            return;
 
-                        fPipeServer.writeMessage("urid\n", 5);
-                        fPipeServer.writeMessage(tmpBuf);
-                        fPipeServer.writeAndFixMessage(uri.c_str());
+                        if (! fPipeServer.writeMessage(tmpBuf))
+                            return;
+                        if (! fPipeServer.writeAndFixMessage(uri.c_str()))
+                            return;
                     }
 
                     // write UI options
-                    fPipeServer.writeMessage("uiOptions\n", 10);
+                    if (! fPipeServer.writeMessage("uiOptions\n", 10))
+                        return;
 
                     std::snprintf(tmpBuf, 0xff, "%g\n", pData->engine->getSampleRate());
-                    fPipeServer.writeMessage(tmpBuf);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
 
                     std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(true)); // useTheme
-                    fPipeServer.writeMessage(tmpBuf);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
 
                     std::snprintf(tmpBuf, 0xff, "%s\n", bool2str(true)); // useThemeColors
-                    fPipeServer.writeMessage(tmpBuf);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
 
-                    fPipeServer.writeAndFixMessage(fLv2Options.windowTitle != nullptr ? fLv2Options.windowTitle : "");
+                    if (! fPipeServer.writeAndFixMessage(fLv2Options.windowTitle != nullptr
+                                                         ? fLv2Options.windowTitle
+                                                         : ""))
+                        return;
 
                     std::snprintf(tmpBuf, 0xff, P_INTPTR "\n", frontendWinId);
-                    fPipeServer.writeMessage(tmpBuf);
+                    if (! fPipeServer.writeMessage(tmpBuf))
+                        return;
 
                     // write parameter values
                     for (uint32_t i=0; i < pData->param.count; ++i)
                     {
-                        fPipeServer.writeMessage("control\n", 8);
+                        if (! fPipeServer.writeMessage("control\n", 8))
+                            return;
 
                         std::snprintf(tmpBuf, 0xff, "%i\n", pData->param.data[i].rindex);
-                        fPipeServer.writeMessage(tmpBuf);
+                        if (! fPipeServer.writeMessage(tmpBuf))
+                            return;
 
                         std::snprintf(tmpBuf, 0xff, "%f\n", getParameterValue(i));
-                        fPipeServer.writeMessage(tmpBuf);
+                        if (! fPipeServer.writeMessage(tmpBuf))
+                            return;
                     }
 
                     // ready to show
-                    fPipeServer.writeMessage("show\n", 5);
+                    if (! fPipeServer.writeMessage("show\n", 5))
+                        return;
 
                     fPipeServer.flushMessages();
                 }
