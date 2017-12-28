@@ -101,6 +101,14 @@ class CarlaMiniW(ExternalUI, HostWindow):
         self.setWindowTitle(self.fUiName)
         self.ready()
 
+    # Override this as it can be called from several places.
+    # We really need to close all UIs as events are driven by host idle which only available when UI is visible
+    def closeExternalUI(self):
+        for i in reversed(range(self.fPluginCount)):
+            self.host.show_custom_ui(i, False)
+
+        ExternalUI.closeExternalUI(self)
+
     # -------------------------------------------------------------------
     # ExternalUI Callbacks
 
@@ -131,6 +139,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
         if self != gui:
             gui.close()
 
+        # there might be other qt windows open which will block carla-plugin from quitting
         app.quit()
 
     def uiTitleChanged(self, uiTitle):
