@@ -102,7 +102,7 @@ class CarlaMiniW(ExternalUI, HostWindow):
         self.ready()
 
     # Override this as it can be called from several places.
-    # We really need to close all UIs as events are driven by host idle which only available when UI is visible
+    # We really need to close all UIs as events are driven by host idle which is only available when UI is visible
     def closeExternalUI(self):
         for i in reversed(range(self.fPluginCount)):
             self.host.show_custom_ui(i, False)
