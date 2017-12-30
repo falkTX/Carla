@@ -357,6 +357,30 @@ public:
     // -------------------------------------------------------------------
     // Set data (plugin-specific stuff)
 
+    void setCustomData(const char* const type, const char* const key, const char* const value, const bool sendGui) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(type != nullptr && type[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(key != nullptr && key[0] != '\0',);
+        CARLA_SAFE_ASSERT_RETURN(value != nullptr,);
+
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_PROPERTY) == 0)
+            return CarlaPlugin::setCustomData(type, key, value, sendGui);
+
+        if (std::strcmp(type, CUSTOM_DATA_TYPE_STRING) == 0 && std::strcmp(key, "__CarlaPingOnOff__") == 0)
+        {
+#if 0
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPingOnOff);
+            fShmNonRtClientControl.writeBool(std::strcmp(value, "true") == 0);
+            fShmNonRtClientControl.commitWrite();
+#endif
+            return;
+        }
+
+        CarlaPlugin::setCustomData(type, key, value, sendGui);
+    }
+
     // -------------------------------------------------------------------
     // Set ui stuff
 

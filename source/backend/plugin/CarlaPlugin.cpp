@@ -22,6 +22,7 @@
 #include "CarlaBase64Utils.hpp"
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
+#include "CarlaStringList.hpp"
 
 #include <ctime>
 
@@ -956,10 +957,6 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     CarlaString symbol(pData->name);
     symbol.toBasic();
 
-    char strBufName[STR_MAX+1];
-    char strBufSymbol[STR_MAX+1];
-    strBufName[STR_MAX] = strBufSymbol[STR_MAX] = '\0';
-
     {
         const CarlaString pluginFilename(bundlepath + CARLA_OS_SEP_STR + symbol + ".xml");
 
@@ -1000,6 +997,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
     {
         MemoryOutputStream mainStream;
 
+        mainStream << "@prefix atom: <http://lv2plug.in/ns/ext/atom#> .\n";
         mainStream << "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
         mainStream << "@prefix lv2:  <http://lv2plug.in/ns/lv2core#> .\n";
         mainStream << "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
@@ -1027,9 +1025,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         if (midiIns > 0)
         {
             mainStream << "    lv2:port [\n";
-            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
             mainStream << "        lv2:index 0 ;\n";
-            mainStream << "        lv2:symbol \"lv2_events_in\" ;\n";
+            mainStream << "        lv2:symbol \"clv2_events_in\" ;\n";
             mainStream << "        lv2:name \"Events Input\" ;\n";
             mainStream << "        atom:bufferType atom:Sequence ;\n";
             mainStream << "        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ,\n";
@@ -1043,9 +1041,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
                 const String portIndexLabel(portIndex);
 
                 mainStream << "    lv2:port [\n";
-                mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+                mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
                 mainStream << "        lv2:index " << portIndexNum << " ;\n";
-                mainStream << "        lv2:symbol \"lv2_midi_in_" << portIndexLabel << "\" ;\n";
+                mainStream << "        lv2:symbol \"clv2_midi_in_" << portIndexLabel << "\" ;\n";
                 mainStream << "        lv2:name \"MIDI Input " << portIndexLabel << "\" ;\n";
                 mainStream << "    ] ;\n";
             }
@@ -1053,9 +1051,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         else
         {
             mainStream << "    lv2:port [\n";
-            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
             mainStream << "        lv2:index 0 ;\n";
-            mainStream << "        lv2:symbol \"lv2_time_info\" ;\n";
+            mainStream << "        lv2:symbol \"clv2_time_info\" ;\n";
             mainStream << "        lv2:name \"Time Info\" ;\n";
             mainStream << "        atom:bufferType atom:Sequence ;\n";
             mainStream << "        atom:supports <http://lv2plug.in/ns/ext/time#Position> ;\n";
@@ -1069,9 +1067,9 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             const String portIndexLabel(portIndex);
 
             mainStream << "    lv2:port [\n";
-            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        a lv2:InputPort, atom:AtomPort ;\n";
             mainStream << "        lv2:index " << portIndexNum << " ;\n";
-            mainStream << "        lv2:symbol \"lv2_midi_out_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:symbol \"clv2_midi_out_" << portIndexLabel << "\" ;\n";
             mainStream << "        lv2:name \"MIDI Output " << portIndexLabel << "\" ;\n";
             mainStream << "        atom:bufferType atom:Sequence ;\n";
             mainStream << "        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;\n";
@@ -1082,7 +1080,7 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         mainStream << "        a lv2:InputPort, lv2:ControlPort ;\n";
         mainStream << "        lv2:index " << String(portIndex++) << " ;\n";
         mainStream << "        lv2:name \"freewheel\" ;\n";
-        mainStream << "        lv2:symbol \"freewheel\" ;\n";
+        mainStream << "        lv2:symbol \"clv2_freewheel\" ;\n";
         mainStream << "        lv2:default 0 ;\n";
         mainStream << "        lv2:minimum 0 ;\n";
         mainStream << "        lv2:maximum 1 ;\n";
@@ -1094,12 +1092,12 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         for (uint32_t i=0; i<pData->audioIn.count; ++i)
         {
             const String portIndexNum(portIndex++);
-            const String portIndexLabel(portIndex);
+            const String portIndexLabel(i+1);
 
             mainStream << "    lv2:port [\n";
             mainStream << "        a lv2:InputPort, lv2:AudioPort ;\n";
             mainStream << "        lv2:index " << portIndexNum << " ;\n";
-            mainStream << "        lv2:symbol \"lv2_audio_in_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:symbol \"clv2_audio_in_" << portIndexLabel << "\" ;\n";
             mainStream << "        lv2:name \"Audio Input " << portIndexLabel << "\" ;\n";
             mainStream << "    ] ;\n";
         }
@@ -1107,15 +1105,21 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
         for (uint32_t i=0; i<pData->audioOut.count; ++i)
         {
             const String portIndexNum(portIndex++);
-            const String portIndexLabel(portIndex);
+            const String portIndexLabel(i+1);
 
             mainStream << "    lv2:port [\n";
             mainStream << "        a lv2:OutputPort, lv2:AudioPort ;\n";
             mainStream << "        lv2:index " << portIndexNum << " ;\n";
-            mainStream << "        lv2:symbol \"lv2_audio_out_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:symbol \"clv2_audio_out_" << portIndexLabel << "\" ;\n";
             mainStream << "        lv2:name \"Audio Output " << portIndexLabel << "\" ;\n";
             mainStream << "    ] ;\n";
         }
+
+        CarlaStringList uniqueSymbolNames;
+
+        char strBufName[STR_MAX+1];
+        char strBufSymbol[STR_MAX+1];
+        strBufName[STR_MAX] = strBufSymbol[STR_MAX] = '\0';
 
         for (uint32_t i=0; i<pData->param.count; ++i)
         {
@@ -1123,7 +1127,6 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             const ParameterRanges& paramRanges(pData->param.ranges[i]);
 
             const String portIndexNum(portIndex++);
-            const String portIndexLabel(portIndex);
 
             mainStream << "    lv2:port [\n";
 
@@ -1150,7 +1153,6 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
                 s.toBasic();
                 std::memcpy(strBufSymbol, s.buffer(), s.length()+1);
 
-                // FIXME - must be unique
                 if (strBufSymbol[0] >= '0' && strBufSymbol[0] <= '9')
                 {
                     const size_t len(std::strlen(strBufSymbol));
@@ -1158,6 +1160,12 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
                     strBufSymbol[0]   = '_';
                     strBufSymbol[len+1] = '\0';
                 }
+            }
+
+            if (uniqueSymbolNames.contains(strBufSymbol))
+            {
+                std::snprintf(strBufSymbol, STR_MAX, "clv2_param_%d", i+1);
+                strBufSymbol[STR_MAX] = '\0';
             }
 
             mainStream << "        lv2:index " << portIndexNum << " ;\n";
