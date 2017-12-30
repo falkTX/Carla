@@ -1491,11 +1491,13 @@ private:
 
     static void extui_show(LV2_External_UI_Widget_Compat* handle)
     {
+        carla_debug("extui_show(%p)", handle);
         handlePtr->handleUiShow();
     }
 
     static void extui_hide(LV2_External_UI_Widget_Compat* handle)
     {
+        carla_debug("extui_hide(%p)", handle);
         handlePtr->handleUiHide();
     }
 

@@ -246,15 +246,17 @@ public:
 
         lv2_post_run(frames);
         updateParameterOutputs();
+
     }
 
     // ----------------------------------------------------------------------------------------------------------------
 
-    void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
+    bool lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
                            LV2UI_Widget* widget, const LV2_Feature* const* features)
     {
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
+        fUI.host = nullptr;
 
         fUiName.clear();
 
@@ -279,8 +281,8 @@ public:
         if (fUI.host != nullptr)
         {
             fUiName = fUI.host->plugin_human_id;
-            *widget = (LV2_External_UI_Widget*)this;
-            return;
+            *widget = (LV2_External_UI_Widget_Compat*)this;
+            return true;
         }
 
         // ------------------------------------------------------------------------------------------------------------
@@ -308,6 +310,7 @@ public:
             fUiName = fPlugin->getName();
 
         *widget = nullptr;
+        return true;
     }
 
     void lv2ui_port_event(uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer) const
@@ -526,7 +529,7 @@ static void lv2_connect_port(LV2_Handle instance, uint32_t port, void* dataLocat
 
 static void lv2_activate(LV2_Handle instance)
 {
-    carla_stdout("lv2_activate(%p)", instance);
+    carla_debug("lv2_activate(%p)", instance);
     instancePtr->lv2_activate();
 }
 
@@ -537,21 +540,23 @@ static void lv2_run(LV2_Handle instance, uint32_t sampleCount)
 
 static void lv2_deactivate(LV2_Handle instance)
 {
-    carla_stdout("lv2_deactivate(%p)", instance);
+    carla_debug("lv2_deactivate(%p)", instance);
     instancePtr->lv2_deactivate();
 }
 
 static void lv2_cleanup(LV2_Handle instance)
 {
-    carla_stdout("lv2_cleanup(%p)", instance);
+    carla_debug("lv2_cleanup(%p)", instance);
     delete instancePtr;
 }
 
 static const void* lv2_extension_data(const char* uri)
 {
-    carla_stdout("lv2_extension_data(\"%s\")", uri);
-
+    carla_debug("lv2_extension_data(\"%s\")", uri);
     return nullptr;
+
+    // unused
+    (void)uri;
 }
 
 #undef instancePtr
@@ -582,7 +587,8 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
         return nullptr;
     }
 
-    engine->lv2ui_instantiate(writeFunction, controller, widget, features);
+    if (! engine->lv2ui_instantiate(writeFunction, controller, widget, features))
+        return nullptr;
 
     return (LV2UI_Handle)engine;
 }
@@ -620,7 +626,7 @@ static int lv2ui_hide(LV2UI_Handle ui)
 
 static const void* lv2ui_extension_data(const char* uri)
 {
-    carla_stdout("lv2ui_extension_data(\"%s\")", uri);
+    carla_debug("lv2ui_extension_data(\"%s\")", uri);
 
     static const LV2UI_Idle_Interface uiidle = { lv2ui_idle };
     static const LV2UI_Show_Interface uishow = { lv2ui_show, lv2ui_hide };
