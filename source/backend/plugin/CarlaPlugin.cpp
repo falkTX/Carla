@@ -1019,7 +1019,77 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "\n";
         }
 
+        const uint32_t midiIns  = getMidiInCount();
+        const uint32_t midiOuts = getMidiOutCount();
+
         int portIndex = 0;
+
+        if (midiIns > 0)
+        {
+            mainStream << "    lv2:port [\n";
+            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        lv2:index 0 ;\n";
+            mainStream << "        lv2:symbol \"lv2_events_in\" ;\n";
+            mainStream << "        lv2:name \"Events Input\" ;\n";
+            mainStream << "        atom:bufferType atom:Sequence ;\n";
+            mainStream << "        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ,\n";
+            mainStream << "                      <http://lv2plug.in/ns/ext/time#Position> ;\n";
+            mainStream << "    ] ;\n";
+            ++portIndex;
+
+            for (uint32_t i=1; i<midiIns; ++i)
+            {
+                const String portIndexNum(portIndex++);
+                const String portIndexLabel(portIndex);
+
+                mainStream << "    lv2:port [\n";
+                mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+                mainStream << "        lv2:index " << portIndexNum << " ;\n";
+                mainStream << "        lv2:symbol \"lv2_midi_in_" << portIndexLabel << "\" ;\n";
+                mainStream << "        lv2:name \"MIDI Input " << portIndexLabel << "\" ;\n";
+                mainStream << "    ] ;\n";
+            }
+        }
+        else
+        {
+            mainStream << "    lv2:port [\n";
+            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        lv2:index 0 ;\n";
+            mainStream << "        lv2:symbol \"lv2_time_info\" ;\n";
+            mainStream << "        lv2:name \"Time Info\" ;\n";
+            mainStream << "        atom:bufferType atom:Sequence ;\n";
+            mainStream << "        atom:supports <http://lv2plug.in/ns/ext/time#Position> ;\n";
+            mainStream << "    ] ;\n";
+            ++portIndex;
+        }
+
+        for (uint32_t i=0; i<midiOuts; ++i)
+        {
+            const String portIndexNum(portIndex++);
+            const String portIndexLabel(portIndex);
+
+            mainStream << "    lv2:port [\n";
+            mainStream << "        a lv2:InputPort, lv2:AtomPort ;\n";
+            mainStream << "        lv2:index " << portIndexNum << " ;\n";
+            mainStream << "        lv2:symbol \"lv2_midi_out_" << portIndexLabel << "\" ;\n";
+            mainStream << "        lv2:name \"MIDI Output " << portIndexLabel << "\" ;\n";
+            mainStream << "        atom:bufferType atom:Sequence ;\n";
+            mainStream << "        atom:supports <http://lv2plug.in/ns/ext/midi#MidiEvent> ;\n";
+            mainStream << "    ] ;\n";
+        }
+
+        mainStream << "    lv2:port [\n";
+        mainStream << "        a lv2:InputPort, lv2:ControlPort ;\n";
+        mainStream << "        lv2:index " << String(portIndex++) << " ;\n";
+        mainStream << "        lv2:name \"freewheel\" ;\n";
+        mainStream << "        lv2:symbol \"freewheel\" ;\n";
+        mainStream << "        lv2:default 0 ;\n";
+        mainStream << "        lv2:minimum 0 ;\n";
+        mainStream << "        lv2:maximum 1 ;\n";
+        mainStream << "        lv2:designation lv2:freeWheeling ;\n";
+        mainStream << "        lv2:portProperty lv2:toggled , lv2:integer ;\n";
+        mainStream << "        lv2:portProperty <http://lv2plug.in/ns/ext/port-props#notOnGUI> ;\n";
+        mainStream << "    ] ;\n";
 
         for (uint32_t i=0; i<pData->audioIn.count; ++i)
         {
@@ -1046,19 +1116,6 @@ bool CarlaPlugin::exportAsLV2(const char* const lv2path)
             mainStream << "        lv2:name \"Audio Output " << portIndexLabel << "\" ;\n";
             mainStream << "    ] ;\n";
         }
-
-        mainStream << "    lv2:port [\n";
-        mainStream << "        a lv2:InputPort, lv2:ControlPort ;\n";
-        mainStream << "        lv2:index " << String(portIndex++) << " ;\n";
-        mainStream << "        lv2:name \"freewheel\" ;\n";
-        mainStream << "        lv2:symbol \"freewheel\" ;\n";
-        mainStream << "        lv2:default 0 ;\n";
-        mainStream << "        lv2:minimum 0 ;\n";
-        mainStream << "        lv2:maximum 1 ;\n";
-        mainStream << "        lv2:designation lv2:freeWheeling ;\n";
-        mainStream << "        lv2:portProperty lv2:toggled , lv2:integer ;\n";
-        mainStream << "        lv2:portProperty <http://lv2plug.in/ns/ext/port-props#notOnGUI> ;\n";
-        mainStream << "    ] ;\n";
 
         for (uint32_t i=0; i<pData->param.count; ++i)
         {

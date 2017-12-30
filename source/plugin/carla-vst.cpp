@@ -48,7 +48,8 @@ static double   d_lastSampleRate = 0.0;
 
 static const int32_t kVstMidiEventSize = static_cast<int32_t>(sizeof(VstMidiEvent));
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+// Carla Internal Plugin API exposed as VST plugin
 
 class NativePlugin
 {

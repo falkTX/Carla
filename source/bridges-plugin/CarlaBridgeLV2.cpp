@@ -42,8 +42,7 @@ public:
                          const LV2_Feature* const* const features)
         : Lv2PluginBaseClass(sampleRate, features),
           fPlugin(nullptr),
-          fUiName(),
-          fPorts()
+          fUiName()
     {
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
         CARLA_SAFE_ASSERT_RETURN(pData->plugins[0].plugin == nullptr,);
@@ -94,7 +93,20 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fPlugin->isEnabled(),);
 
-        fPorts.init(fPlugin);
+        fPorts.usesTime     = true;
+        fPorts.numAudioIns  = fPlugin->getAudioInCount();
+        fPorts.numAudioOuts = fPlugin->getAudioOutCount();
+        fPorts.numMidiIns   = fPlugin->getMidiInCount();
+        fPorts.numMidiOuts  = fPlugin->getMidiOutCount();
+        fPorts.numParams    = fPlugin->getParameterCount();
+
+        fPorts.init();
+
+        for (uint32_t i=0; i < fPorts.numParams; ++i)
+        {
+            fPorts.paramsLast[i] = fPlugin->getParameterValue(i);
+            fPorts.paramsOut [i] = fPlugin->isParameterOutput(i);
+        }
     }
 
     ~CarlaEngineLV2Single()
@@ -112,11 +124,6 @@ public:
 
     // ----------------------------------------------------------------------------------------------------------------
     // LV2 functions
-
-    void lv2_connect_port(const uint32_t port, void* const dataLocation) noexcept
-    {
-        fPorts.connectPort(port, dataLocation);
-    }
 
     void lv2_activate() noexcept
     {
@@ -138,38 +145,98 @@ public:
 
     void lv2_run(const uint32_t frames)
     {
+        //const PendingRtEventsRunner prt(this, frames);
+
         if (! lv2_pre_run(frames))
-            return;
-
-        fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
-
-        // Check for updated parameters
-        float curValue;
-
-        for (uint32_t i=0; i < fPorts.numParams; ++i)
         {
-            if (fPorts.paramsOut[i])
-                continue;
-
-            CARLA_SAFE_ASSERT_CONTINUE(fPorts.paramsPtr[i] != nullptr)
-
-            curValue = *fPorts.paramsPtr[i];
-
-            if (carla_isEqual(fPorts.paramsLast[i], curValue))
-                continue;
-
-            fPorts.paramsLast[i] = curValue;
-            fPlugin->setParameterValue(i, curValue, false, false, false);
+            updateParameterOutputs();
+            return;
         }
 
-        if (frames == 0)
-           return fPorts.updateOutputs();
+        if (fPorts.numMidiIns > 0)
+        {
+            uint32_t engineEventIndex = 0;
+            carla_zeroStructs(pData->events.in, kMaxEngineEventInternalCount);
+
+            for (uint32_t i=0; i < fPorts.numMidiIns; ++i)
+            {
+                LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], event)
+                {
+                    if (event == nullptr)
+                        continue;
+                    if (event->body.type != fURIs.midiEvent)
+                        continue;
+                    if (event->body.size > 4)
+                        continue;
+                    if (event->time.frames >= frames)
+                        break;
+
+                    const uint8_t* const data((const uint8_t*)(event + 1));
+
+                    EngineEvent& engineEvent(pData->events.in[engineEventIndex++]);
+
+                    engineEvent.time = (uint32_t)event->time.frames;
+                    engineEvent.fillFromMidiData((uint8_t)event->body.size, data, (uint8_t)i);
+
+                    if (engineEventIndex >= kMaxEngineEventInternalCount)
+                        break;
+                }
+            }
+        }
+
+        if (fPorts.numMidiOuts > 0)
+        {
+            carla_zeroStructs(pData->events.out, kMaxEngineEventInternalCount);
+        }
 
         if (fPlugin->tryLock(fIsOffline))
         {
             fPlugin->initBuffers();
             fPlugin->process(fPorts.audioIns, fPorts.audioOuts, nullptr, nullptr, frames);
             fPlugin->unlock();
+
+            if (fPorts.numMidiOuts > 0)
+            {
+                uint8_t        port    = 0;
+                uint8_t        size    = 0;
+                uint8_t        data[3] = { 0, 0, 0 };
+                const uint8_t* dataPtr = data;
+
+                for (ushort i=0; i < kMaxEngineEventInternalCount; ++i)
+                {
+                    const EngineEvent& engineEvent(pData->events.out[i]);
+
+                    switch (engineEvent.type)
+                    {
+                    case kEngineEventTypeNull:
+                        break;
+
+                    case kEngineEventTypeControl: {
+                        const EngineControlEvent& ctrlEvent(engineEvent.ctrl);
+                        ctrlEvent.convertToMidiData(engineEvent.channel, size, data);
+                        dataPtr = data;
+                        break;
+                    }
+
+                    case kEngineEventTypeMidi: {
+                        const EngineMidiEvent& midiEvent(engineEvent.midi);
+
+                        port = midiEvent.port;
+                        size = midiEvent.size;
+
+                        if (size > EngineMidiEvent::kDataSize && midiEvent.dataExt != nullptr)
+                            dataPtr = midiEvent.dataExt;
+                        else
+                            dataPtr = midiEvent.data;
+
+                        break;
+                    }
+                    }
+
+                    if (size > 0 && ! writeMidiEvent(port, engineEvent.time, size, dataPtr))
+                        break;
+                }
+            }
         }
         else
         {
@@ -178,7 +245,7 @@ public:
         }
 
         lv2_post_run(frames);
-        fPorts.updateOutputs();
+        updateParameterOutputs();
     }
 
     // ----------------------------------------------------------------------------------------------------------------
@@ -350,6 +417,11 @@ protected:
 
     // ----------------------------------------------------------------------------------------------------------------
 
+    void handleParameterValueChanged(const uint32_t index, const float value) override
+    {
+        fPlugin->setParameterValue(index, value, false, false, false);
+    }
+
     void handleBufferSizeChanged(const uint32_t bufferSize) override
     {
         CarlaEngine::bufferSizeChanged(bufferSize);
@@ -366,156 +438,50 @@ private:
     CarlaPlugin* fPlugin;
     CarlaString fUiName;
 
-    struct Ports {
-        uint32_t numAudioIns;
-        uint32_t numAudioOuts;
-        uint32_t numParams;
-        const float** audioIns;
-        /* */ float** audioOuts;
-        float*   freewheel;
-        float*   paramsLast;
-        float**  paramsPtr;
-        bool*    paramsOut;
-        uint32_t indexOffset;
-        const CarlaPlugin* plugin;
+    void updateParameterOutputs() noexcept
+    {
+        float value;
 
-        Ports()
-            : numAudioIns(0),
-              numAudioOuts(0),
-              numParams(0),
-              audioIns(nullptr),
-              audioOuts(nullptr),
-              freewheel(nullptr),
-              paramsLast(nullptr),
-              paramsPtr(nullptr),
-              paramsOut(nullptr),
-              indexOffset(1),
-              plugin(nullptr) {}
-
-        ~Ports()
+        for (uint32_t i=0; i < fPorts.numParams; ++i)
         {
-            if (audioIns != nullptr)
-            {
-                delete[] audioIns;
-                audioIns = nullptr;
-            }
+            if (! fPorts.paramsOut[i])
+                continue;
 
-            if (audioOuts != nullptr)
-            {
-                delete[] audioOuts;
-                audioOuts = nullptr;
-            }
+            fPorts.paramsLast[i] = value = fPlugin->getParameterValue(i);
 
-            if (paramsLast != nullptr)
-            {
-                delete[] paramsLast;
-                paramsLast = nullptr;
-            }
-
-            if (paramsPtr != nullptr)
-            {
-                delete[] paramsPtr;
-                paramsPtr = nullptr;
-            }
-
-            if (paramsOut != nullptr)
-            {
-                delete[] paramsOut;
-                paramsOut = nullptr;
-            }
+            if (fPorts.paramsPtr[i] != nullptr)
+                *fPorts.paramsPtr[i] = value;
         }
+    }
 
-        void init(const CarlaPlugin* const pl)
-        {
-            plugin = pl;
+    bool writeMidiEvent(const uint8_t port, const uint32_t time, const uint8_t midiSize, const uint8_t* midiData)
+    {
+        CARLA_SAFE_ASSERT_RETURN(fPorts.numMidiOuts > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(port < fPorts.numMidiOuts, false);
+        CARLA_SAFE_ASSERT_RETURN(midiData != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(midiSize > 0, false);
 
-            if ((numAudioIns = plugin->getAudioInCount()) > 0)
-            {
-                audioIns = new const float*[numAudioIns];
+        LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
+        CARLA_SAFE_ASSERT_RETURN(seq != nullptr, false);
 
-                for (uint32_t i=0; i < numAudioIns; ++i)
-                    audioIns[i] = nullptr;
-            }
+        Ports::MidiOutData& mData(fPorts.midiOutData[port]);
 
-            if ((numAudioOuts = plugin->getAudioOutCount()) > 0)
-            {
-                audioOuts = new float*[numAudioOuts];
+        if (sizeof(LV2_Atom_Event) + midiSize > mData.capacity - mData.offset)
+            return false;
 
-                for (uint32_t i=0; i < numAudioOuts; ++i)
-                    audioOuts[i] = nullptr;
-            }
+        LV2_Atom_Event* const aev = (LV2_Atom_Event*)(LV2_ATOM_CONTENTS(LV2_Atom_Sequence, seq) + mData.offset);
 
-            if ((numParams = plugin->getParameterCount()) > 0)
-            {
-                paramsLast = new float[numParams];
-                paramsPtr  = new float*[numParams];
-                paramsOut  = new bool[numParams];
+        aev->time.frames = time;
+        aev->body.size   = midiSize;
+        aev->body.type   = fURIs.midiEvent;
+        std::memcpy(LV2_ATOM_BODY(&aev->body), midiData, midiSize);
 
-                for (uint32_t i=0; i < numParams; ++i)
-                {
-                    paramsLast[i] = plugin->getParameterValue(i);
-                    paramsPtr [i] = nullptr;
-                    paramsOut [i] = plugin->isParameterOutput(i);
-                }
-            }
+        const uint32_t size = lv2_atom_pad_size(static_cast<uint32_t>(sizeof(LV2_Atom_Event) + midiSize));
+        mData.offset       += size;
+        seq->atom.size     += size;
 
-            indexOffset = numAudioIns + numAudioOuts + 1;
-        }
-
-        void connectPort(const uint32_t port, void* const dataLocation) noexcept
-        {
-            uint32_t index = 0;
-
-            for (uint32_t i=0; i < numAudioIns; ++i)
-            {
-                if (port == index++)
-                {
-                    audioIns[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-
-            for (uint32_t i=0; i < numAudioOuts; ++i)
-            {
-                if (port == index++)
-                {
-                    audioOuts[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-
-            if (port == index++)
-            {
-                freewheel = (float*)dataLocation;
-                return;
-            }
-
-            for (uint32_t i=0; i < numParams; ++i)
-            {
-                if (port == index++)
-                {
-                    paramsPtr[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-        }
-
-        void updateOutputs() noexcept
-        {
-            for (uint32_t i=0; i < numParams; ++i)
-            {
-                if (! paramsOut[i])
-                    continue;
-
-                paramsLast[i] = plugin->getParameterValue(i);
-
-                if (paramsPtr[i] != nullptr)
-                    *paramsPtr[i] = paramsLast[i];
-            }
-        }
-
-        CARLA_DECLARE_NON_COPY_STRUCT(Ports);
-    } fPorts;
+        return true;
+    }
 
     // -------------------------------------------------------------------
 

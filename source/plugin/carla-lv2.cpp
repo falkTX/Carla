@@ -22,8 +22,8 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaString.hpp"
 
-// -----------------------------------------------------------------------
-// LV2 descriptor functions
+// --------------------------------------------------------------------------------------------------------------------
+// Carla Internal Plugin API exposed as LV2 plugin
 
 class NativePlugin : public Lv2PluginBaseClass<NativeTimeInfo>
 {
@@ -41,8 +41,7 @@ public:
 #ifdef CARLA_PROPER_CPP11_SUPPORT
           fProgramDesc({0, 0, nullptr}),
 #endif
-          fMidiEventCount(0),
-          fPorts()
+          fMidiEventCount(0)
     {
         carla_zeroStruct(fHost);
 
@@ -87,6 +86,8 @@ public:
         }
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+
     bool init()
     {
         if (fHost.resourceDir == nullptr)
@@ -103,305 +104,92 @@ public:
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        if (fDescriptor->midiIns > 0)
-            fUI.portOffset += fDescriptor->midiIns;
-        else if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
-            fUI.portOffset += 1;
+        fPorts.usesTime     = fDescriptor->hints & NATIVE_PLUGIN_USES_TIME;
+        fPorts.numAudioIns  = fDescriptor->audioIns;
+        fPorts.numAudioOuts = fDescriptor->audioOuts;
+        fPorts.numMidiIns   = fDescriptor->midiIns;
+        fPorts.numMidiOuts  = fDescriptor->midiOuts;
 
-        fUI.portOffset += fDescriptor->midiOuts;
-        fUI.portOffset += 1; // freewheel
-        fUI.portOffset += fDescriptor->audioIns;
-        fUI.portOffset += fDescriptor->audioOuts;
+        if (fDescriptor->get_parameter_count != nullptr &&
+            fDescriptor->get_parameter_info  != nullptr &&
+            fDescriptor->get_parameter_value != nullptr &&
+            fDescriptor->set_parameter_value != nullptr)
+        {
+            fPorts.numParams = fDescriptor->get_parameter_count(fHandle);
+        }
 
-        fPorts.init(fDescriptor, fHandle);
+        fPorts.init();
+
+        if (fPorts.numParams > 0)
+        {
+            for (uint32_t i=0; i < fPorts.numParams; ++i)
+            {
+                fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
+                fPorts.paramsOut [i] = fDescriptor->get_parameter_info(fHandle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT;
+            }
+        }
+
         return true;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // LV2 functions
-
-    void lv2_connect_port(const uint32_t port, void* const dataLocation)
-    {
-        fPorts.connectPort(fDescriptor, port, dataLocation);
-    }
 
     void lv2_activate()
     {
+        CARLA_SAFE_ASSERT_RETURN(! fIsActive,);
+
+        resetTimeInfo();
+
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
 
-        resetTimeInfo();
+        fIsActive = true;
     }
 
     void lv2_deactivate()
     {
+        CARLA_SAFE_ASSERT_RETURN(fIsActive,);
+
+        fIsActive = false;
+
         if (fDescriptor->deactivate != nullptr)
             fDescriptor->deactivate(fHandle);
     }
 
     void lv2_cleanup()
     {
+        if (fIsActive)
+        {
+            carla_stderr("Warning: Host forgot to call deactivate!");
+            fIsActive = false;
+
+            if (fDescriptor->deactivate != nullptr)
+                fDescriptor->deactivate(fHandle);
+        }
+
         if (fDescriptor->cleanup != nullptr)
             fDescriptor->cleanup(fHandle);
 
         fHandle = nullptr;
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+
     void lv2_run(const uint32_t frames)
     {
         if (! lv2_pre_run(frames))
+        {
+            updateParameterOutputs();
             return;
+        }
 
-        fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
-
-        // cache midi events and time information first
-        if (fDescriptor->midiIns > 0 || (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME) != 0)
+        if (fPorts.numMidiIns > 0)
         {
             fMidiEventCount = 0;
             carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
 
-            if (fDescriptor->hints & NATIVE_PLUGIN_USES_TIME)
-            {
-                LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[0], event)
-                {
-                    if (event == nullptr)
-                        continue;
-                    if (event->body.type != fURIs.atomBlank && event->body.type != fURIs.atomObject)
-                        continue;
-
-                    const LV2_Atom_Object* const obj((const LV2_Atom_Object*)&event->body);
-
-                    if (obj->body.otype != fURIs.timePos)
-                        continue;
-
-                    LV2_Atom* bar     = nullptr;
-                    LV2_Atom* barBeat = nullptr;
-                    LV2_Atom* beatUnit = nullptr;
-                    LV2_Atom* beatsPerBar = nullptr;
-                    LV2_Atom* beatsPerMinute = nullptr;
-                    LV2_Atom* frame = nullptr;
-                    LV2_Atom* speed = nullptr;
-                    LV2_Atom* ticksPerBeat = nullptr;
-
-                    lv2_atom_object_get(obj,
-                                        fURIs.timeBar, &bar,
-                                        fURIs.timeBarBeat, &barBeat,
-                                        fURIs.timeBeatUnit, &beatUnit,
-                                        fURIs.timeBeatsPerBar, &beatsPerBar,
-                                        fURIs.timeBeatsPerMinute, &beatsPerMinute,
-                                        fURIs.timeFrame, &frame,
-                                        fURIs.timeSpeed, &speed,
-                                        fURIs.timeTicksPerBeat, &ticksPerBeat,
-                                        0);
-
-                    // need to handle this first as other values depend on it
-                    if (ticksPerBeat != nullptr)
-                    {
-                        double ticksPerBeatValue = -1.0;
-
-                        /**/ if (ticksPerBeat->type == fURIs.atomDouble)
-                            ticksPerBeatValue = ((LV2_Atom_Double*)ticksPerBeat)->body;
-                        else if (ticksPerBeat->type == fURIs.atomFloat)
-                            ticksPerBeatValue = ((LV2_Atom_Float*)ticksPerBeat)->body;
-                        else if (ticksPerBeat->type == fURIs.atomInt)
-                            ticksPerBeatValue = static_cast<double>(((LV2_Atom_Int*)ticksPerBeat)->body);
-                        else if (ticksPerBeat->type == fURIs.atomLong)
-                            ticksPerBeatValue = static_cast<double>(((LV2_Atom_Long*)ticksPerBeat)->body);
-                        else
-                            carla_stderr("Unknown lv2 ticksPerBeat value type");
-
-                        if (ticksPerBeatValue > 0.0)
-                            fTimeInfo.bbt.ticksPerBeat = fLastPositionData.ticksPerBeat = ticksPerBeatValue;
-                        else
-                            carla_stderr("Invalid lv2 ticksPerBeat value");
-                    }
-
-                    // same
-                    if (speed != nullptr)
-                    {
-                        /**/ if (speed->type == fURIs.atomDouble)
-                            fLastPositionData.speed = ((LV2_Atom_Double*)speed)->body;
-                        else if (speed->type == fURIs.atomFloat)
-                            fLastPositionData.speed = ((LV2_Atom_Float*)speed)->body;
-                        else if (speed->type == fURIs.atomInt)
-                            fLastPositionData.speed = static_cast<double>(((LV2_Atom_Int*)speed)->body);
-                        else if (speed->type == fURIs.atomLong)
-                            fLastPositionData.speed = static_cast<double>(((LV2_Atom_Long*)speed)->body);
-                        else
-                            carla_stderr("Unknown lv2 speed value type");
-
-                        fTimeInfo.playing = carla_isNotZero(fLastPositionData.speed);
-
-                        if (fTimeInfo.playing && fLastPositionData.beatsPerMinute > 0.0f)
-                        {
-                            fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute*
-                                                           std::abs(fLastPositionData.speed);
-                        }
-                    }
-
-                    if (bar != nullptr)
-                    {
-                        int64_t barValue = -1;
-
-                        /**/ if (bar->type == fURIs.atomDouble)
-                            barValue = static_cast<int64_t>(((LV2_Atom_Double*)bar)->body);
-                        else if (bar->type == fURIs.atomFloat)
-                            barValue = static_cast<int64_t>(((LV2_Atom_Float*)bar)->body);
-                        else if (bar->type == fURIs.atomInt)
-                            barValue = ((LV2_Atom_Int*)bar)->body;
-                        else if (bar->type == fURIs.atomLong)
-                            barValue = ((LV2_Atom_Long*)bar)->body;
-                        else
-                            carla_stderr("Unknown lv2 bar value type");
-
-                        if (barValue >= 0 && barValue < INT32_MAX)
-                        {
-                            fLastPositionData.bar   = static_cast<int32_t>(barValue);
-                            fLastPositionData.bar_f = static_cast<float>(barValue);
-                            fTimeInfo.bbt.bar = fLastPositionData.bar + 1;
-                        }
-                        else
-                        {
-                            carla_stderr("Invalid lv2 bar value");
-                        }
-                    }
-
-                    if (barBeat != nullptr)
-                    {
-                        double barBeatValue = -1.0;
-
-                        /**/ if (barBeat->type == fURIs.atomDouble)
-                            barBeatValue = ((LV2_Atom_Double*)barBeat)->body;
-                        else if (barBeat->type == fURIs.atomFloat)
-                            barBeatValue = ((LV2_Atom_Float*)barBeat)->body;
-                        else if (barBeat->type == fURIs.atomInt)
-                            barBeatValue = static_cast<float>(((LV2_Atom_Int*)barBeat)->body);
-                        else if (barBeat->type == fURIs.atomLong)
-                            barBeatValue = static_cast<float>(((LV2_Atom_Long*)barBeat)->body);
-                        else
-                            carla_stderr("Unknown lv2 barBeat value type");
-
-                        if (barBeatValue >= 0.0)
-                        {
-                            fLastPositionData.barBeat = static_cast<float>(barBeatValue);
-
-                            const double rest  = std::fmod(barBeatValue, 1.0);
-                            fTimeInfo.bbt.beat = static_cast<int32_t>(barBeatValue-rest+1.0);
-                            fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
-                        }
-                        else
-                        {
-                            carla_stderr("Invalid lv2 barBeat value");
-                        }
-                    }
-
-                    if (beatUnit != nullptr)
-                    {
-                        int64_t beatUnitValue = -1;
-
-                        /**/ if (beatUnit->type == fURIs.atomDouble)
-                            beatUnitValue = static_cast<int64_t>(((LV2_Atom_Double*)beatUnit)->body);
-                        else if (beatUnit->type == fURIs.atomFloat)
-                            beatUnitValue = static_cast<int64_t>(((LV2_Atom_Float*)beatUnit)->body);
-                        else if (beatUnit->type == fURIs.atomInt)
-                            beatUnitValue = ((LV2_Atom_Int*)beatUnit)->body;
-                        else if (beatUnit->type == fURIs.atomLong)
-                            beatUnitValue = ((LV2_Atom_Long*)beatUnit)->body;
-                        else
-                            carla_stderr("Unknown lv2 beatUnit value type");
-
-                        if (beatUnitValue > 0 && beatUnitValue < UINT32_MAX)
-                        {
-                            fLastPositionData.beatUnit = static_cast<uint32_t>(beatUnitValue);
-                            fTimeInfo.bbt.beatType     = static_cast<float>(beatUnitValue);
-                        }
-                        else
-                        {
-                            carla_stderr("Invalid lv2 beatUnit value");
-                        }
-                    }
-
-                    if (beatsPerBar != nullptr)
-                    {
-                        float beatsPerBarValue = -1.0f;
-
-                        /**/ if (beatsPerBar->type == fURIs.atomDouble)
-                            beatsPerBarValue = static_cast<float>(((LV2_Atom_Double*)beatsPerBar)->body);
-                        else if (beatsPerBar->type == fURIs.atomFloat)
-                            beatsPerBarValue = ((LV2_Atom_Float*)beatsPerBar)->body;
-                        else if (beatsPerBar->type == fURIs.atomInt)
-                            beatsPerBarValue = static_cast<float>(((LV2_Atom_Int*)beatsPerBar)->body);
-                        else if (beatsPerBar->type == fURIs.atomLong)
-                            beatsPerBarValue = static_cast<float>(((LV2_Atom_Long*)beatsPerBar)->body);
-                        else
-                            carla_stderr("Unknown lv2 beatsPerBar value type");
-
-                        if (beatsPerBarValue > 0.0f)
-                            fTimeInfo.bbt.beatsPerBar = fLastPositionData.beatsPerBar = beatsPerBarValue;
-                        else
-                            carla_stderr("Invalid lv2 beatsPerBar value");
-                    }
-
-                    if (beatsPerMinute != nullptr)
-                    {
-                        double beatsPerMinuteValue = -1.0;
-
-                        /**/ if (beatsPerMinute->type == fURIs.atomDouble)
-                            beatsPerMinuteValue = ((LV2_Atom_Double*)beatsPerMinute)->body;
-                        else if (beatsPerMinute->type == fURIs.atomFloat)
-                            beatsPerMinuteValue = ((LV2_Atom_Float*)beatsPerMinute)->body;
-                        else if (beatsPerMinute->type == fURIs.atomInt)
-                            beatsPerMinuteValue = static_cast<double>(((LV2_Atom_Int*)beatsPerMinute)->body);
-                        else if (beatsPerMinute->type == fURIs.atomLong)
-                            beatsPerMinuteValue = static_cast<double>(((LV2_Atom_Long*)beatsPerMinute)->body);
-                        else
-                            carla_stderr("Unknown lv2 beatsPerMinute value type");
-
-                        if (beatsPerMinuteValue >= 12.0 && beatsPerMinuteValue <= 999.0)
-                        {
-                            fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute = beatsPerMinuteValue;
-
-                            if (carla_isNotZero(fLastPositionData.speed))
-                                fTimeInfo.bbt.beatsPerMinute *= std::abs(fLastPositionData.speed);
-                        }
-                        else
-                        {
-                            carla_stderr("Invalid lv2 beatsPerMinute value");
-                        }
-                    }
-
-                    if (frame != nullptr)
-                    {
-                        int64_t frameValue = -1;
-
-                        /**/ if (frame->type == fURIs.atomDouble)
-                            frameValue = static_cast<int64_t>(((LV2_Atom_Double*)frame)->body);
-                        else if (frame->type == fURIs.atomFloat)
-                            frameValue = static_cast<int64_t>(((LV2_Atom_Float*)frame)->body);
-                        else if (frame->type == fURIs.atomInt)
-                            frameValue = ((LV2_Atom_Int*)frame)->body;
-                        else if (frame->type == fURIs.atomLong)
-                            frameValue = ((LV2_Atom_Long*)frame)->body;
-                        else
-                            carla_stderr("Unknown lv2 frame value type");
-
-                        if (frameValue >= 0)
-                            fTimeInfo.frame = fLastPositionData.frame = static_cast<uint64_t>(frameValue);
-                        else
-                            carla_stderr("Invalid lv2 frame value");
-                    }
-
-                    fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*
-                                                 fTimeInfo.bbt.beatsPerBar*
-                                                 (fTimeInfo.bbt.bar-1);
-
-                    fTimeInfo.bbt.valid = (fLastPositionData.beatsPerMinute > 0.0 &&
-                                           fLastPositionData.beatUnit > 0 &&
-                                           fLastPositionData.beatsPerBar > 0.0f);
-                }
-            }
-
-            for (uint32_t i=0; i < fDescriptor->midiIns; ++i)
+            for (uint32_t i=0; i < fPorts.numMidiIns; ++i)
             {
                 LV2_ATOM_SEQUENCE_FOREACH(fPorts.eventsIn[i], event)
                 {
@@ -412,8 +200,6 @@ public:
                     if (event->body.size > 4)
                         continue;
                     if (event->time.frames >= frames)
-                        break;
-                    if (fMidiEventCount >= kMaxMidiEvents)
                         break;
 
                     const uint8_t* const data((const uint8_t*)(event + 1));
@@ -429,50 +215,12 @@ public:
                         nativeEvent.data[j] = data[j];
                     for (; j<4; ++j)
                         nativeEvent.data[j] = 0;
+
+                    if (fMidiEventCount >= kMaxMidiEvents)
+                        break;
                 }
             }
         }
-
-        // init midi out data
-        if (fDescriptor->midiOuts > 0)
-        {
-            for (uint32_t i=0, size=fDescriptor->midiOuts; i<size; ++i)
-            {
-                LV2_Atom_Sequence* const seq(fPorts.midiOuts[i]);
-                CARLA_SAFE_ASSERT_CONTINUE(seq != nullptr);
-
-                Ports::MidiOutData& mData(fPorts.midiOutData[i]);
-                mData.capacity = seq->atom.size;
-                mData.offset   = 0;
-
-                seq->atom.size = sizeof(LV2_Atom_Sequence_Body);
-                seq->atom.type = fURIs.atomSequence;
-                seq->body.unit = 0;
-                seq->body.pad  = 0;
-            }
-        }
-
-        // Check for updated parameters
-        float curValue;
-
-        for (uint32_t i=0; i < fPorts.paramCount; ++i)
-        {
-            if (fPorts.paramsOut[i])
-                continue;
-
-            CARLA_SAFE_ASSERT_CONTINUE(fPorts.paramsPtr[i] != nullptr)
-
-            curValue = *fPorts.paramsPtr[i];
-
-            if (carla_isEqual(fPorts.paramsLast[i], curValue))
-                continue;
-
-            fPorts.paramsLast[i] = curValue;
-            fDescriptor->set_parameter_value(fHandle, i, curValue);
-        }
-
-        if (frames == 0)
-            return updateParameterOutputs();
 
         // FIXME
         fDescriptor->process(fHandle,
@@ -483,7 +231,7 @@ public:
         updateParameterOutputs();
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index)
     {
@@ -517,7 +265,7 @@ public:
 
         fDescriptor->set_midi_program(fHandle, 0, bank, program);
 
-        for (uint32_t i=0; i < fPorts.paramCount; ++i)
+        for (uint32_t i=0; i < fPorts.numParams; ++i)
         {
             fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
 
@@ -526,7 +274,10 @@ public:
         }
     }
 
-    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle, const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
+    // ----------------------------------------------------------------------------------------------------------------
+
+    LV2_State_Status lv2_save(const LV2_State_Store_Function store, const LV2_State_Handle handle,
+                              const uint32_t /*flags*/, const LV2_Feature* const* const /*features*/) const
     {
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->get_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
@@ -541,7 +292,8 @@ public:
         return LV2_STATE_ERR_UNKNOWN;
     }
 
-    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle, uint32_t flags, const LV2_Feature* const* const /*features*/) const
+    LV2_State_Status lv2_restore(const LV2_State_Retrieve_Function retrieve, const LV2_State_Handle handle,
+                                 uint32_t flags, const LV2_Feature* const* const /*features*/) const
     {
         if ((fDescriptor->hints & NATIVE_PLUGIN_USES_STATE) == 0 || fDescriptor->set_state == nullptr)
             return LV2_STATE_ERR_NO_FEATURE;
@@ -564,7 +316,7 @@ public:
         return LV2_STATE_SUCCESS;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
                            LV2UI_Widget* widget, const LV2_Feature* const* features, const bool isEmbed)
@@ -684,16 +436,16 @@ public:
     {
         if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
             return;
-        if (portIndex >= fUI.portOffset || ! fUI.isVisible)
+        if (portIndex >= fPorts.indexOffset || ! fUI.isVisible)
             return;
         if (fDescriptor->ui_set_parameter_value == nullptr)
             return;
 
         const float value(*(const float*)buffer);
-        fDescriptor->ui_set_parameter_value(fHandle, portIndex-fUI.portOffset, value);
+        fDescriptor->ui_set_parameter_value(fHandle, portIndex-fPorts.indexOffset, value);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void lv2ui_select_program(uint32_t bank, uint32_t program) const
     {
@@ -732,6 +484,11 @@ protected:
 
     // ----------------------------------------------------------------------------------------------------------------
 
+    void handleParameterValueChanged(const uint32_t index, const float value) override
+    {
+        fDescriptor->set_parameter_value(fHandle, index, value);
+    }
+
     void handleBufferSizeChanged(const uint32_t bufferSize) override
     {
         if (fDescriptor->dispatcher == nullptr)
@@ -752,12 +509,12 @@ protected:
 
     bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
-        CARLA_SAFE_ASSERT_RETURN(fDescriptor->midiOuts > 0, false);
+        CARLA_SAFE_ASSERT_RETURN(fPorts.numMidiOuts > 0, false);
         CARLA_SAFE_ASSERT_RETURN(event != nullptr, false);
         CARLA_SAFE_ASSERT_RETURN(event->size > 0, false);
 
         const uint8_t port(event->port);
-        CARLA_SAFE_ASSERT_RETURN(port < fDescriptor->midiOuts, false);
+        CARLA_SAFE_ASSERT_RETURN(port < fPorts.numMidiOuts, false);
 
         LV2_Atom_Sequence* const seq(fPorts.midiOuts[port]);
         CARLA_SAFE_ASSERT_RETURN(seq != nullptr, false);
@@ -784,7 +541,7 @@ protected:
     void handleUiParameterChanged(const uint32_t index, const float value) const
     {
         if (fUI.writeFunction != nullptr && fUI.controller != nullptr)
-            fUI.writeFunction(fUI.controller, index+fUI.portOffset, sizeof(float), 0, &value);
+            fUI.writeFunction(fUI.controller, index+fPorts.indexOffset, sizeof(float), 0, &value);
     }
 
     void handleUiCustomDataChanged(const char* const /*key*/, const char* const /*value*/) const
@@ -849,15 +606,17 @@ protected:
 
     void updateParameterOutputs()
     {
-        for (uint32_t i=0; i < fPorts.paramCount; ++i)
+        float value;
+
+        for (uint32_t i=0; i < fPorts.numParams; ++i)
         {
             if (! fPorts.paramsOut[i])
                 continue;
 
-            fPorts.paramsLast[i] = fDescriptor->get_parameter_value(fHandle, i);
+            fPorts.paramsLast[i] = value = fDescriptor->get_parameter_value(fHandle, i);
 
             if (fPorts.paramsPtr[i] != nullptr)
-                *fPorts.paramsPtr[i] = fPorts.paramsLast[i];
+                *fPorts.paramsPtr[i] = value;
         }
     }
 
@@ -872,221 +631,6 @@ private:
 
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
-
-    struct Ports {
-        // need to save current state
-        struct MidiOutData {
-            uint32_t capacity;
-            uint32_t offset;
-
-            MidiOutData()
-                : capacity(0),
-                  offset(0) {}
-        };
-
-        const LV2_Atom_Sequence** eventsIn;
-        /* */ LV2_Atom_Sequence** midiOuts;
-        /* */ MidiOutData*        midiOutData;
-        const float** audioIns;
-        /* */ float** audioOuts;
-        float*   freewheel;
-        uint32_t paramCount;
-        float*   paramsLast;
-        float**  paramsPtr;
-        bool*    paramsOut;
-
-        Ports()
-            : eventsIn(nullptr),
-              midiOuts(nullptr),
-              midiOutData(nullptr),
-              audioIns(nullptr),
-              audioOuts(nullptr),
-              freewheel(nullptr),
-              paramCount(0),
-              paramsLast(nullptr),
-              paramsPtr(nullptr),
-              paramsOut(nullptr) {}
-
-        ~Ports()
-        {
-            if (eventsIn != nullptr)
-            {
-                delete[] eventsIn;
-                eventsIn = nullptr;
-            }
-
-            if (midiOuts != nullptr)
-            {
-                delete[] midiOuts;
-                midiOuts = nullptr;
-            }
-
-            if (midiOutData != nullptr)
-            {
-                delete[] midiOutData;
-                midiOutData = nullptr;
-            }
-
-            if (audioIns != nullptr)
-            {
-                delete[] audioIns;
-                audioIns = nullptr;
-            }
-
-            if (audioOuts != nullptr)
-            {
-                delete[] audioOuts;
-                audioOuts = nullptr;
-            }
-
-            if (paramsLast != nullptr)
-            {
-                delete[] paramsLast;
-                paramsLast = nullptr;
-            }
-
-            if (paramsPtr != nullptr)
-            {
-                delete[] paramsPtr;
-                paramsPtr = nullptr;
-            }
-
-            if (paramsOut != nullptr)
-            {
-                delete[] paramsOut;
-                paramsOut = nullptr;
-            }
-        }
-
-        void init(const NativePluginDescriptor* const desc, NativePluginHandle handle)
-        {
-            CARLA_SAFE_ASSERT_RETURN(desc != nullptr && handle != nullptr,)
-
-            if (desc->midiIns > 0)
-            {
-                eventsIn = new const LV2_Atom_Sequence*[desc->midiIns];
-
-                for (uint32_t i=0; i < desc->midiIns; ++i)
-                    eventsIn[i] = nullptr;
-            }
-            else if (desc->hints & NATIVE_PLUGIN_USES_TIME)
-            {
-                eventsIn = new const LV2_Atom_Sequence*[1];
-                eventsIn[0] = nullptr;
-            }
-
-            if (desc->midiOuts > 0)
-            {
-                midiOuts = new LV2_Atom_Sequence*[desc->midiOuts];
-                midiOutData = new MidiOutData[desc->midiOuts];
-
-                for (uint32_t i=0; i < desc->midiOuts; ++i)
-                    midiOuts[i] = nullptr;
-            }
-
-            if (desc->audioIns > 0)
-            {
-                audioIns = new const float*[desc->audioIns];
-
-                for (uint32_t i=0; i < desc->audioIns; ++i)
-                    audioIns[i] = nullptr;
-            }
-
-            if (desc->audioOuts > 0)
-            {
-                audioOuts = new float*[desc->audioOuts];
-
-                for (uint32_t i=0; i < desc->audioOuts; ++i)
-                    audioOuts[i] = nullptr;
-            }
-
-            if (desc->get_parameter_count != nullptr && desc->get_parameter_info != nullptr && desc->get_parameter_value != nullptr && desc->set_parameter_value != nullptr)
-            {
-                paramCount = desc->get_parameter_count(handle);
-
-                if (paramCount > 0)
-                {
-                    paramsLast = new float[paramCount];
-                    paramsPtr  = new float*[paramCount];
-                    paramsOut  = new bool[paramCount];
-
-                    for (uint32_t i=0; i < paramCount; ++i)
-                    {
-                        paramsLast[i] = desc->get_parameter_value(handle, i);
-                        paramsPtr [i] = nullptr;
-                        paramsOut [i] = (desc->get_parameter_info(handle, i)->hints & NATIVE_PARAMETER_IS_OUTPUT);
-                    }
-                }
-            }
-        }
-
-        void connectPort(const NativePluginDescriptor* const desc, const uint32_t port, void* const dataLocation)
-        {
-            uint32_t index = 0;
-
-            if (desc->midiIns > 0 || (desc->hints & NATIVE_PLUGIN_USES_TIME) != 0)
-            {
-                if (port == index++)
-                {
-                    eventsIn[0] = (LV2_Atom_Sequence*)dataLocation;
-                    return;
-                }
-            }
-
-            for (uint32_t i=1; i < desc->midiIns; ++i)
-            {
-                if (port == index++)
-                {
-                    eventsIn[i] = (LV2_Atom_Sequence*)dataLocation;
-                    return;
-                }
-            }
-
-            for (uint32_t i=0; i < desc->midiOuts; ++i)
-            {
-                if (port == index++)
-                {
-                    midiOuts[i] = (LV2_Atom_Sequence*)dataLocation;
-                    return;
-                }
-            }
-
-            if (port == index++)
-            {
-                freewheel = (float*)dataLocation;
-                return;
-            }
-
-            for (uint32_t i=0; i < desc->audioIns; ++i)
-            {
-                if (port == index++)
-                {
-                    audioIns[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-
-            for (uint32_t i=0; i < desc->audioOuts; ++i)
-            {
-                if (port == index++)
-                {
-                    audioOuts[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-
-            for (uint32_t i=0; i < paramCount; ++i)
-            {
-                if (port == index++)
-                {
-                    paramsPtr[i] = (float*)dataLocation;
-                    return;
-                }
-            }
-        }
-
-        CARLA_DECLARE_NON_COPY_STRUCT(Ports);
-    } fPorts;
 
     // -------------------------------------------------------------------
 
