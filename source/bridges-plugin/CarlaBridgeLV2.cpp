@@ -338,7 +338,7 @@ protected:
 
     bool usesConstantBufferSize() const noexcept override
     {
-        return true;
+        return false;
     }
 
     EngineType getType() const noexcept override
@@ -358,9 +358,11 @@ protected:
         case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
             if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.visible)
+            {
                 fUI.writeFunction(fUI.controller,
                                   static_cast<uint32_t>(value1)+fPorts.indexOffset,
                                   sizeof(float), 0, &value3);
+            }
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
@@ -373,7 +375,8 @@ protected:
             break;
 
         default:
-            carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)", action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
+            carla_stdout("engineCallback(%i:%s, %u, %i, %i, %f, %s)",
+                         action, EngineCallbackOpcode2Str(action), pluginId, value1, value2, value3, valueStr);
             break;
         }
     }
@@ -606,7 +609,7 @@ private:
 
 CARLA_BACKEND_END_NAMESPACE
 
-CARLA_BACKEND_USE_NAMESPACE
+using CarlaBackend::CarlaEngineLV2Single;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // LV2 DSP functions
@@ -651,12 +654,10 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
                 CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                 bufferSize = static_cast<uint32_t>(value);
+                break;
             }
-            else
-            {
-                carla_stderr("Host provides nominalBlockLength but has wrong value type");
-            }
-            break;
+
+            carla_stderr("Host provides nominalBlockLength but has wrong value type");
         }
 
         if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
@@ -667,12 +668,12 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
                 CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                 bufferSize = static_cast<uint32_t>(value);
+                // no break, continue in case host supports nominalBlockLength
             }
             else
             {
                 carla_stderr("Host provides maxBlockLength but has wrong value type");
             }
-            // no break, continue in case host supports nominalBlockLength
         }
     }
 
