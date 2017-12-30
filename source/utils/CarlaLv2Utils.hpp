@@ -18,7 +18,7 @@
 #ifndef CARLA_LV2_UTILS_HPP_INCLUDED
 #define CARLA_LV2_UTILS_HPP_INCLUDED
 
-#include "CarlaUtils.hpp"
+#include "CarlaMathUtils.hpp"
 
 #ifndef nullptr
 # undef NULL
@@ -89,7 +89,7 @@
 #include <map>
 typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Define namespaces and missing prefixes
 
 #define NS_dct  "http://purl.org/dc/terms/"
@@ -109,7 +109,7 @@ typedef std::map<double,const LilvScalePoint*> LilvScalePointMap;
 // TODO: update LV2 headers once again
 #define LV2_CORE__enabled LV2_CORE_PREFIX "enabled" ///< http://lv2plug.in/ns/lv2core#enabled
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Custom Atom types
 
 struct LV2_Atom_MidiEvent {
@@ -123,7 +123,24 @@ uint32_t lv2_atom_total_size(const LV2_Atom_MidiEvent& midiEv)
     return static_cast<uint32_t>(sizeof(LV2_Atom)) + midiEv.atom.size;
 }
 
-// -----------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
+// -Weffc++ compat ext widget
+
+extern "C" {
+
+typedef struct _LV2_External_UI_Widget_Compat {
+  void (*run )(struct _LV2_External_UI_Widget_Compat*);
+  void (*show)(struct _LV2_External_UI_Widget_Compat*);
+  void (*hide)(struct _LV2_External_UI_Widget_Compat*);
+
+  _LV2_External_UI_Widget_Compat() noexcept
+      : run(nullptr), show(nullptr), hide(nullptr) {}
+
+} LV2_External_UI_Widget_Compat;
+
+}
+
+// --------------------------------------------------------------------------------------------------------------------
 // Our LV2 World class
 
 class Lv2WorldClass : public Lilv::World
@@ -258,7 +275,7 @@ public:
     const LilvPlugin** cachedPlugins;
     uint pluginCount;
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     Lv2WorldClass()
         : Lilv::World(),
@@ -498,7 +515,227 @@ public:
     CARLA_DECLARE_NON_COPY_STRUCT(Lv2WorldClass)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
+// Our LV2 Plugin base class
+
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Weffc++"
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Weffc++"
+#endif
+class Lv2PluginBaseClass : public LV2_External_UI_Widget_Compat
+{
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+# pragma GCC diagnostic pop
+#endif
+public:
+    Lv2PluginBaseClass(const double sampleRate, const LV2_Feature* const* const features)
+        : fIsOffline(false),
+          fBufferSize(0),
+          fSampleRate(sampleRate),
+          fUsingNominal(false),
+          fUridMap(nullptr)
+    {
+        run  = extui_run;
+        show = extui_show;
+        hide = extui_hide;
+
+        if (fSampleRate < 1.0)
+        {
+            carla_stderr("Host doesn't provide a valid sample rate");
+            return;
+        }
+
+        const LV2_Options_Option*  options   = nullptr;
+        const LV2_URID_Map*        uridMap   = nullptr;
+        const LV2_URID_Unmap*      uridUnmap = nullptr;
+
+        for (int i=0; features[i] != nullptr; ++i)
+        {
+            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
+                options = (const LV2_Options_Option*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
+                uridMap = (const LV2_URID_Map*)features[i]->data;
+            else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
+                uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
+        }
+
+        if (options == nullptr || uridMap == nullptr)
+        {
+            carla_stderr("Host doesn't provide option or urid-map features");
+            return;
+        }
+
+        for (int i=0; options[i].key != 0; ++i)
+        {
+            if (uridUnmap != nullptr) {
+                carla_debug("Host option %i:\"%s\"", i, uridUnmap->unmap(uridUnmap->handle, options[i].key));
+            }
+
+            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    fBufferSize = static_cast<uint32_t>(value);
+                    fUsingNominal = true;
+                }
+                else
+                {
+                    carla_stderr("Host provides nominalBlockLength but has wrong value type");
+                }
+                break;
+            }
+
+            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
+            {
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    fBufferSize = static_cast<uint32_t>(value);
+                }
+                else
+                {
+                    carla_stderr("Host provides maxBlockLength but has wrong value type");
+                }
+                // no break, continue in case host supports nominalBlockLength
+            }
+        }
+
+        if (fBufferSize == 0)
+        {
+            carla_stderr("Host doesn't provide buffer-size feature");
+            //return;
+            // as testing, continue for now
+            fBufferSize = 1024;
+        }
+
+        fUridMap = uridMap;
+        fURIs.map(uridMap);
+    }
+
+    virtual ~Lv2PluginBaseClass()
+    {
+    }
+
+    bool loadedInProperHost() const noexcept
+    {
+        return fUridMap != nullptr && fBufferSize != 0;
+    }
+
+protected:
+    virtual void handleUiRun() const = 0;
+    virtual void handleUiShow() = 0;
+    virtual void handleUiHide() = 0;
+
+    // LV2 host data
+    bool     fIsOffline;
+    uint32_t fBufferSize;
+    double   fSampleRate;
+    bool     fUsingNominal;
+
+    // LV2 host features
+    const LV2_URID_Map* fUridMap;
+
+    struct URIDs {
+        LV2_URID atomBlank;
+        LV2_URID atomObject;
+        LV2_URID atomDouble;
+        LV2_URID atomFloat;
+        LV2_URID atomInt;
+        LV2_URID atomLong;
+        LV2_URID atomSequence;
+        LV2_URID atomString;
+        LV2_URID midiEvent;
+        LV2_URID timePos;
+        LV2_URID timeBar;
+        LV2_URID timeBarBeat;
+        LV2_URID timeBeatsPerBar;
+        LV2_URID timeBeatsPerMinute;
+        LV2_URID timeBeatUnit;
+        LV2_URID timeFrame;
+        LV2_URID timeSpeed;
+        LV2_URID timeTicksPerBeat;
+
+        URIDs()
+            : atomBlank(0),
+              atomObject(0),
+              atomDouble(0),
+              atomFloat(0),
+              atomInt(0),
+              atomLong(0),
+              atomSequence(0),
+              atomString(0),
+              midiEvent(0),
+              timePos(0),
+              timeBar(0),
+              timeBarBeat(0),
+              timeBeatsPerBar(0),
+              timeBeatsPerMinute(0),
+              timeBeatUnit(0),
+              timeFrame(0),
+              timeSpeed(0),
+              timeTicksPerBeat(0) {}
+
+        void map(const LV2_URID_Map* const uridMap)
+        {
+            atomBlank          = uridMap->map(uridMap->handle, LV2_ATOM__Blank);
+            atomObject         = uridMap->map(uridMap->handle, LV2_ATOM__Object);
+            atomDouble         = uridMap->map(uridMap->handle, LV2_ATOM__Double);
+            atomFloat          = uridMap->map(uridMap->handle, LV2_ATOM__Float);
+            atomInt            = uridMap->map(uridMap->handle, LV2_ATOM__Int);
+            atomLong           = uridMap->map(uridMap->handle, LV2_ATOM__Long);
+            atomSequence       = uridMap->map(uridMap->handle, LV2_ATOM__Sequence);
+            atomString         = uridMap->map(uridMap->handle, LV2_ATOM__String);
+            midiEvent          = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
+            timePos            = uridMap->map(uridMap->handle, LV2_TIME__Position);
+            timeBar            = uridMap->map(uridMap->handle, LV2_TIME__bar);
+            timeBarBeat        = uridMap->map(uridMap->handle, LV2_TIME__barBeat);
+            timeBeatUnit       = uridMap->map(uridMap->handle, LV2_TIME__beatUnit);
+            timeFrame          = uridMap->map(uridMap->handle, LV2_TIME__frame);
+            timeSpeed          = uridMap->map(uridMap->handle, LV2_TIME__speed);
+            timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
+            timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
+            timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
+        }
+    } fURIs;
+
+private:
+    // ----------------------------------------------------------------------------------------------------------------
+
+    #define handlePtr ((Lv2PluginBaseClass*)handle)
+
+    static void extui_run(LV2_External_UI_Widget_Compat* handle)
+    {
+        handlePtr->handleUiRun();
+    }
+
+    static void extui_show(LV2_External_UI_Widget_Compat* handle)
+    {
+        handlePtr->handleUiShow();
+    }
+
+    static void extui_hide(LV2_External_UI_Widget_Compat* handle)
+    {
+        handlePtr->handleUiHide();
+    }
+
+    #undef handlePtr
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    CARLA_DECLARE_NON_COPY_STRUCT(Lv2PluginBaseClass)
+};
+
+// --------------------------------------------------------------------------------------------------------------------
 // Create new RDF object (using lilv)
 
 static inline
@@ -514,7 +751,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     Lilv::Plugin lilvPlugin(cPlugin);
     LV2_RDF_Descriptor* const rdfDescriptor(new LV2_RDF_Descriptor());
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Type
     {
         Lilv::Nodes typeNodes(lilvPlugin.get_value(lv2World.rdf_type));
@@ -600,7 +837,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(typeNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Information
     {
         rdfDescriptor->URI = carla_strdup(uri);
@@ -632,7 +869,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(licenseNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin UniqueID
     {
         Lilv::Nodes replaceNodes(lilvPlugin.get_value(lv2World.dct_replaces));
@@ -673,7 +910,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(replaceNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Ports
 
     if (lilvPlugin.get_num_ports() > 0)
@@ -686,7 +923,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
             Lilv::Port lilvPort(lilvPlugin.get_port_by_index(i));
             LV2_RDF_Port* const rdfPort(&rdfDescriptor->Ports[i]);
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Information
             {
                 if (LilvNode* const nameNode = lilv_port_get_name(lilvPlugin.me, lilvPort.me))
@@ -700,7 +937,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     rdfPort->Symbol = carla_strdup(symbol);
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Mode and Type
             {
                 // Input or Output
@@ -800,7 +1037,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     carla_stderr("lv2_rdf_new(\"%s\") - port '%s' is of unkown data type", uri, rdfPort->Name);
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Properties
             {
                 if (lilvPort.has_property(lv2World.pprop_optional))
@@ -899,7 +1136,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 }
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Designation
             {
                 if (LilvNode* const designationNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.designation.me))
@@ -947,7 +1184,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 }
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port MIDI Map
             {
                 if (LilvNode* const midiMapNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.mm_defaultControl.me))
@@ -982,7 +1219,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 // TODO - also check using new official MIDI API too
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Points
             {
                 if (LilvNode* const defNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.value_default.me))
@@ -1007,7 +1244,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 }
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Unit
             {
                 if (LilvNode* const unitUnitNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.unit_unit.me))
@@ -1105,7 +1342,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 }
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Minimum Size
             {
                 if (LilvNode* const minimumSizeNode = lilv_port_get(lilvPort.parent, lilvPort.me, lv2World.rz_minSize.me))
@@ -1121,7 +1358,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 }
             }
 
-            // -----------------------------------------------------------
+            // --------------------------------------------------------------------------------------------------------
             // Set Port Scale Points
 
             {
@@ -1170,7 +1407,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         }
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Presets
 
     if (loadPresets)
@@ -1266,7 +1503,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(presetNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Features
     {
         Lilv::Nodes lilvFeatureNodes(lilvPlugin.get_supported_features());
@@ -1300,7 +1537,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin Extensions
     {
         Lilv::Nodes lilvExtensionDataNodes(lilvPlugin.get_extension_data());
@@ -1336,7 +1573,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
         lilv_nodes_free(const_cast<LilvNodes*>(lilvExtensionDataNodes.me));
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Set Plugin UIs
     {
         Lilv::UIs lilvUIs(lilvPlugin.get_uis());
@@ -1354,7 +1591,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 Lilv::UI lilvUI(lilvUIs.get(it));
                 LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
 
-                // -------------------------------------------------------
+                // ----------------------------------------------------------------------------------------------------
                 // Set UI Type
 
                 /**/ if (lilvUI.is_a(lv2World.ui_gtk2))
@@ -1380,7 +1617,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                 else
                     carla_stderr("lv2_rdf_new(\"%s\") - UI '%s' is of unknown type", uri, lilvUI.get_uri().as_uri());
 
-                // -------------------------------------------------------
+                // ----------------------------------------------------------------------------------------------------
                 // Set UI Information
                 {
                     if (const char* const uiURI = lilvUI.get_uri().as_uri())
@@ -1393,7 +1630,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                         rdfUI->Bundle = carla_strdup_free(lilv_file_uri_parse(uiBundle, nullptr));
                 }
 
-                // -------------------------------------------------------
+                // ----------------------------------------------------------------------------------------------------
                 // Set UI Features
                 {
                     Lilv::Nodes lilvFeatureNodes(lilvUI.get_supported_features());
@@ -1427,7 +1664,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
                     lilv_nodes_free(const_cast<LilvNodes*>(lilvFeatureNodes.me));
                 }
 
-                // -------------------------------------------------------
+                // ----------------------------------------------------------------------------------------------------
                 // Set UI Extensions
                 {
                     Lilv::Nodes lilvExtensionDataNodes(lilvUI.get_extension_data());
@@ -1471,7 +1708,7 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
     return rdfDescriptor;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Check if we support a plugin port
 
 static inline
@@ -1492,7 +1729,7 @@ bool is_lv2_port_supported(const LV2_Property types) noexcept
     return false;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Check if we support a plugin feature
 
 static inline
@@ -1545,7 +1782,7 @@ bool is_lv2_feature_supported(const LV2_URI uri) noexcept
     return false;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Check if we support a plugin or UI feature
 
 static inline
@@ -1588,6 +1825,6 @@ bool is_lv2_ui_feature_supported(const LV2_URI uri) noexcept
     return false;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 #endif // CARLA_LV2_UTILS_HPP_INCLUDED

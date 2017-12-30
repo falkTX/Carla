@@ -369,14 +369,14 @@ const char* carla_strdup_free(char* const strBuf)
 
 /*
  * Custom 'strdup' function, safe version.
- * Returned value may be null.
+ * Returned value may be null. It must be freed with "delete[] var".
  */
 static inline
 const char* carla_strdup_safe(const char* const strBuf) noexcept
 {
-    CARLA_SAFE_ASSERT(strBuf != nullptr);
+    CARLA_SAFE_ASSERT_RETURN(strBuf != nullptr, nullptr);
 
-    const std::size_t bufferLen = (strBuf != nullptr) ? std::strlen(strBuf) : 0;
+    const std::size_t bufferLen = std::strlen(strBuf);
     char* buffer;
 
     try {

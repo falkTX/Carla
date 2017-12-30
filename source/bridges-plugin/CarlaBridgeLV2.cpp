@@ -30,55 +30,28 @@
 #include "water/files/File.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
-// -Weffc++ compat ext widget
-
-extern "C" {
-
-typedef struct _LV2_External_UI_Widget_Compat {
-  void (*run )(struct _LV2_External_UI_Widget_Compat*);
-  void (*show)(struct _LV2_External_UI_Widget_Compat*);
-  void (*hide)(struct _LV2_External_UI_Widget_Compat*);
-
-  _LV2_External_UI_Widget_Compat() noexcept
-      : run(nullptr), show(nullptr), hide(nullptr) {}
-
-} LV2_External_UI_Widget_Compat;
-
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Weffc++"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Weffc++"
-#endif
 class CarlaEngineLV2Single : public CarlaEngine,
-                             public LV2_External_UI_Widget_Compat
+                             public Lv2PluginBaseClass
 {
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic pop
-#endif
 public:
-    CarlaEngineLV2Single(const uint32_t bufferSize, const double sampleRate, const char* const bundlePath, const LV2_URID_Map* uridMap)
-        : fPlugin(nullptr),
+    CarlaEngineLV2Single(const double sampleRate,
+                         const char* const bundlePath,
+                         const LV2_Feature* const* const features)
+        : Lv2PluginBaseClass(sampleRate, features),
+          fPlugin(nullptr),
           fIsActive(false),
           fIsOffline(false),
           fPorts(),
           fUI()
     {
-        run  = extui_run;
-        show = extui_show;
-        hide = extui_hide;
-
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
         CARLA_SAFE_ASSERT_RETURN(pData->plugins[0].plugin == nullptr,);
+
+        if (! loadedInProperHost())
+            return;
 
         // xxxxx
         CarlaString binaryDir(bundlePath);
@@ -87,7 +60,7 @@ public:
         CarlaString resourceDir(bundlePath);
         resourceDir += CARLA_OS_SEP_STR "res" CARLA_OS_SEP_STR;
 
-        pData->bufferSize = bufferSize;
+        pData->bufferSize = fBufferSize;
         pData->sampleRate = sampleRate;
         pData->initTime(nullptr);
 
@@ -383,20 +356,20 @@ protected:
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    void handleUiRun() const
+    void handleUiRun() const override
     {
         try {
             fPlugin->uiIdle();
         } CARLA_SAFE_EXCEPTION("fPlugin->uiIdle()")
     }
 
-    void handleUiShow()
+    void handleUiShow() override
     {
         fPlugin->showCustomUI(true);
         fUI.visible = true;
     }
 
-    void handleUiHide()
+    void handleUiHide() override
     {
         fUI.visible = false;
         fPlugin->showCustomUI(false);
@@ -582,21 +555,6 @@ private:
 
     #define handlePtr ((CarlaEngineLV2Single*)handle)
 
-    static void extui_run(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiRun();
-    }
-
-    static void extui_show(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiShow();
-    }
-
-    static void extui_hide(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiHide();
-    }
-
     static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
     {
         handlePtr->engineCallback(action, pluginId, value1, value2, value3, valueStr);
@@ -618,72 +576,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 {
     carla_stdout("lv2_instantiate(%p, %g, %s, %p)", lv2Descriptor, sampleRate, bundlePath, features);
 
-    const LV2_Options_Option*  options   = nullptr;
-    const LV2_URID_Map*        uridMap   = nullptr;
-    const LV2_URID_Unmap*      uridUnmap = nullptr;
-
-    for (int i=0; features[i] != nullptr; ++i)
-    {
-        if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
-            options = (const LV2_Options_Option*)features[i]->data;
-        else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
-            uridMap = (const LV2_URID_Map*)features[i]->data;
-        else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
-            uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
-    }
-
-    if (options == nullptr || uridMap == nullptr)
-    {
-        carla_stderr("Host doesn't provide option or urid-map features");
-        return nullptr;
-    }
-
-    uint32_t bufferSize = 0;
-
-    for (int i=0; options[i].key != 0; ++i)
-    {
-        if (uridUnmap != nullptr) {
-            carla_stdout("Host option %i:\"%s\"", i, uridUnmap->unmap(uridUnmap->handle, options[i].key));
-        }
-
-        if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
-        {
-            if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
-            {
-                const int value(*(const int*)options[i].value);
-                CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                bufferSize = static_cast<uint32_t>(value);
-                break;
-            }
-
-            carla_stderr("Host provides nominalBlockLength but has wrong value type");
-        }
-
-        if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
-        {
-            if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
-            {
-                const int value(*(const int*)options[i].value);
-                CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                bufferSize = static_cast<uint32_t>(value);
-                // no break, continue in case host supports nominalBlockLength
-            }
-            else
-            {
-                carla_stderr("Host provides maxBlockLength but has wrong value type");
-            }
-        }
-    }
-
-    if (bufferSize == 0)
-    {
-        carla_stderr("Host doesn't provide bufferSize feature");
-        return nullptr;
-    }
-
-    CarlaEngineLV2Single* const instance(new CarlaEngineLV2Single(bufferSize, sampleRate, bundlePath, uridMap));
+    CarlaEngineLV2Single* const instance(new CarlaEngineLV2Single(sampleRate, bundlePath, features));
 
     if (instance->hasPlugin())
         return (LV2_Handle)instance;

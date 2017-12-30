@@ -1,6 +1,6 @@
 /*
  * Carla Native Plugins
- * Copyright (C) 2013-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2013-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -23,44 +23,19 @@
 #include "CarlaString.hpp"
 
 // -----------------------------------------------------------------------
-// -Weffc++ compat ext widget
-
-extern "C" {
-
-typedef struct _LV2_External_UI_Widget_Compat {
-  void (*run )(struct _LV2_External_UI_Widget_Compat*);
-  void (*show)(struct _LV2_External_UI_Widget_Compat*);
-  void (*hide)(struct _LV2_External_UI_Widget_Compat*);
-
-  _LV2_External_UI_Widget_Compat() noexcept
-      : run(nullptr), show(nullptr), hide(nullptr) {}
-
-} LV2_External_UI_Widget_Compat;
-
-}
-
-// -----------------------------------------------------------------------
 // LV2 descriptor functions
 
-#if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Weffc++"
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Weffc++"
-#endif
-class NativePlugin : public LV2_External_UI_Widget_Compat
+class NativePlugin : public Lv2PluginBaseClass
 {
-#if defined(__clang__)
-# pragma clang diagnostic pop
-#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
-# pragma GCC diagnostic pop
-#endif
 public:
     static const uint32_t kMaxMidiEvents = 512;
 
-    NativePlugin(const NativePluginDescriptor* const desc, const double sampleRate, const char* const bundlePath, const LV2_Feature* const* features)
-        : fHandle(nullptr),
+    NativePlugin(const NativePluginDescriptor* const desc,
+                 const double sampleRate,
+                 const char* const bundlePath,
+                 const LV2_Feature* const* const features)
+        : Lv2PluginBaseClass(sampleRate, features),
+          fHandle(nullptr),
           fHost(),
           fDescriptor(desc),
 #ifdef CARLA_PROPER_CPP11_SUPPORT
@@ -68,25 +43,20 @@ public:
 #endif
           fMidiEventCount(0),
           fTimeInfo(),
-          fIsOffline(false),
-          fBufferSize(0),
-          fSampleRate(sampleRate),
-          fUsingNominal(false),
-          fUridMap(nullptr),
           fLastPositionData(),
-          fURIs(),
           fUI(),
           fPorts()
     {
-        run  = extui_run;
-        show = extui_show;
-        hide = extui_hide;
+        carla_zeroStruct(fHost);
+
+        if (! loadedInProperHost())
+            return;
 
         CarlaString resourceDir(bundlePath);
         resourceDir += CARLA_OS_SEP_STR "resources" CARLA_OS_SEP_STR;
 
         fHost.handle      = this;
-        fHost.resourceDir = resourceDir.dup();
+        fHost.resourceDir = resourceDir.dupSafe();
         fHost.uiName      = nullptr;
         fHost.uiParentId  = 0;
 
@@ -101,74 +71,11 @@ public:
         fHost.ui_open_file           = host_ui_open_file;
         fHost.ui_save_file           = host_ui_save_file;
         fHost.dispatcher             = host_dispatcher;
-
-        const LV2_Options_Option*  options   = nullptr;
-        const LV2_URID_Map*        uridMap   = nullptr;
-        const LV2_URID_Unmap*      uridUnmap = nullptr;
-
-        for (int i=0; features[i] != nullptr; ++i)
-        {
-            if (std::strcmp(features[i]->URI, LV2_OPTIONS__options) == 0)
-                options = (const LV2_Options_Option*)features[i]->data;
-            else if (std::strcmp(features[i]->URI, LV2_URID__map) == 0)
-                uridMap = (const LV2_URID_Map*)features[i]->data;
-            else if (std::strcmp(features[i]->URI, LV2_URID__unmap) == 0)
-                uridUnmap = (const LV2_URID_Unmap*)features[i]->data;
-        }
-
-        if (options == nullptr || uridMap == nullptr)
-        {
-            carla_stderr("Host doesn't provide option or urid-map features");
-            return;
-        }
-
-        for (int i=0; options[i].key != 0; ++i)
-        {
-            if (uridUnmap != nullptr)
-            {
-                carla_debug("Host option %i:\"%s\"", i, uridUnmap->unmap(uridUnmap->handle, options[i].key));
-            }
-
-            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
-            {
-                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
-                {
-                    const int value(*(const int*)options[i].value);
-                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                    fBufferSize = static_cast<uint32_t>(value);
-                    fUsingNominal = true;
-                }
-                else
-                {
-                    carla_stderr("Host provides nominalBlockLength but has wrong value type");
-                }
-                break;
-            }
-
-            if (options[i].key == uridMap->map(uridMap->handle, LV2_BUF_SIZE__maxBlockLength))
-            {
-                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
-                {
-                    const int value(*(const int*)options[i].value);
-                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                    fBufferSize = static_cast<uint32_t>(value);
-                }
-                else
-                {
-                    carla_stderr("Host provides maxBlockLength but has wrong value type");
-                }
-                // no break, continue in case host supports nominalBlockLength
-            }
-        }
-
-        fUridMap = uridMap;
     }
 
     ~NativePlugin()
     {
-        CARLA_ASSERT(fHandle == nullptr);
+        CARLA_SAFE_ASSERT(fHandle == nullptr);
 
         if (fHost.resourceDir != nullptr)
         {
@@ -179,22 +86,13 @@ public:
 
     bool init()
     {
-        if (fUridMap == nullptr)
-        {
-            // host is missing features
+        if (fHost.resourceDir == nullptr)
             return false;
-        }
+
         if (fDescriptor->instantiate == nullptr || fDescriptor->process == nullptr)
         {
             carla_stderr("Plugin is missing something...");
             return false;
-        }
-        if (fBufferSize == 0)
-        {
-            carla_stderr("Host is missing bufferSize feature");
-            //return false;
-            // as testing, continue for now
-            fBufferSize = 1024;
         }
 
         carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
@@ -214,8 +112,6 @@ public:
         fUI.portOffset += fDescriptor->audioOuts;
 
         fPorts.init(fDescriptor, fHandle);
-        fURIs.map(fUridMap);
-
         return true;
     }
 
@@ -968,13 +864,13 @@ public:
     // -------------------------------------------------------------------
 
 protected:
-    void handleUiRun() const
+    void handleUiRun() const override
     {
         if (fDescriptor->ui_idle != nullptr)
             fDescriptor->ui_idle(fHandle);
     }
 
-    void handleUiShow()
+    void handleUiShow() override
     {
         if (fDescriptor->ui_show != nullptr)
             fDescriptor->ui_show(fHandle, true);
@@ -982,7 +878,7 @@ protected:
         fUI.isVisible = true;
     }
 
-    void handleUiHide()
+    void handleUiHide() override
     {
         if (fDescriptor->ui_show != nullptr)
             fDescriptor->ui_show(fHandle, false);
@@ -1116,14 +1012,6 @@ private:
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
     NativeTimeInfo  fTimeInfo;
 
-    // Lv2 host data
-    bool     fIsOffline;
-    uint32_t fBufferSize;
-    double   fSampleRate;
-    bool     fUsingNominal;
-
-    const LV2_URID_Map* fUridMap;
-
     struct Lv2PositionData {
         int32_t  bar;
         float    bar_f;
@@ -1147,69 +1035,6 @@ private:
               ticksPerBeat(-1.0) {}
 
     } fLastPositionData;
-
-    struct URIDs {
-        LV2_URID atomBlank;
-        LV2_URID atomObject;
-        LV2_URID atomDouble;
-        LV2_URID atomFloat;
-        LV2_URID atomInt;
-        LV2_URID atomLong;
-        LV2_URID atomSequence;
-        LV2_URID atomString;
-        LV2_URID midiEvent;
-        LV2_URID timePos;
-        LV2_URID timeBar;
-        LV2_URID timeBarBeat;
-        LV2_URID timeBeatsPerBar;
-        LV2_URID timeBeatsPerMinute;
-        LV2_URID timeBeatUnit;
-        LV2_URID timeFrame;
-        LV2_URID timeSpeed;
-        LV2_URID timeTicksPerBeat;
-
-        URIDs()
-            : atomBlank(0),
-              atomObject(0),
-              atomDouble(0),
-              atomFloat(0),
-              atomInt(0),
-              atomLong(0),
-              atomSequence(0),
-              atomString(0),
-              midiEvent(0),
-              timePos(0),
-              timeBar(0),
-              timeBarBeat(0),
-              timeBeatsPerBar(0),
-              timeBeatsPerMinute(0),
-              timeBeatUnit(0),
-              timeFrame(0),
-              timeSpeed(0),
-              timeTicksPerBeat(0) {}
-
-        void map(const LV2_URID_Map* const uridMap)
-        {
-            atomBlank    = uridMap->map(uridMap->handle, LV2_ATOM__Blank);
-            atomObject   = uridMap->map(uridMap->handle, LV2_ATOM__Object);
-            atomDouble   = uridMap->map(uridMap->handle, LV2_ATOM__Double);
-            atomFloat    = uridMap->map(uridMap->handle, LV2_ATOM__Float);
-            atomInt      = uridMap->map(uridMap->handle, LV2_ATOM__Int);
-            atomLong     = uridMap->map(uridMap->handle, LV2_ATOM__Long);
-            atomSequence = uridMap->map(uridMap->handle, LV2_ATOM__Sequence);
-            atomString   = uridMap->map(uridMap->handle, LV2_ATOM__String);
-            midiEvent    = uridMap->map(uridMap->handle, LV2_MIDI__MidiEvent);
-            timePos      = uridMap->map(uridMap->handle, LV2_TIME__Position);
-            timeBar      = uridMap->map(uridMap->handle, LV2_TIME__bar);
-            timeBarBeat  = uridMap->map(uridMap->handle, LV2_TIME__barBeat);
-            timeBeatUnit = uridMap->map(uridMap->handle, LV2_TIME__beatUnit);
-            timeFrame    = uridMap->map(uridMap->handle, LV2_TIME__frame);
-            timeSpeed    = uridMap->map(uridMap->handle, LV2_TIME__speed);
-            timeBeatsPerBar    = uridMap->map(uridMap->handle, LV2_TIME__beatsPerBar);
-            timeBeatsPerMinute = uridMap->map(uridMap->handle, LV2_TIME__beatsPerMinute);
-            timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
-        }
-    } fURIs;
 
     struct UI {
         const LV2_External_UI_Host* host;
@@ -1446,23 +1271,6 @@ private:
     // -------------------------------------------------------------------
 
     #define handlePtr ((NativePlugin*)handle)
-
-    static void extui_run(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiRun();
-    }
-
-    static void extui_show(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiShow();
-    }
-
-    static void extui_hide(LV2_External_UI_Widget_Compat* handle)
-    {
-        handlePtr->handleUiHide();
-    }
-
-    // -------------------------------------------------------------------
 
     static uint32_t host_get_buffer_size(NativeHostHandle handle)
     {
