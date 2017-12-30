@@ -2824,6 +2824,7 @@ public:
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_FRAME:
                     if (fLastTimeInfo.frame != timeInfo.frame)
                     {
@@ -2831,55 +2832,62 @@ public:
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_FRAMES_PER_SECOND:
                     break;
 
                 // BBT
                 case LV2_PORT_DESIGNATION_TIME_BAR:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
+                    if (timeInfo.bbt.valid && fLastTimeInfo.bbt.bar != timeInfo.bbt.bar)
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.bar - 1);
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_BAR_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
-                                                                              fLastTimeInfo.bbt.beat != timeInfo.bbt.beat))
+                    if (timeInfo.bbt.valid && (fLastTimeInfo.bbt.tick != timeInfo.bbt.tick ||
+                                               fLastTimeInfo.bbt.beat != timeInfo.bbt.beat))
                     {
-                        fParamBuffers[k] = static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0 + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
+                        fParamBuffers[k] = static_cast<float>(static_cast<double>(timeInfo.bbt.beat) - 1.0
+                                         + (static_cast<double>(timeInfo.bbt.tick) / timeInfo.bbt.ticksPerBeat));
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
+                    if (timeInfo.bbt.valid && fLastTimeInfo.bbt.beat != timeInfo.bbt.beat)
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.beat - 1);
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_BEAT_UNIT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatType, timeInfo.bbt.beatType))
+                    if (timeInfo.bbt.valid && carla_isNotEqual(fLastTimeInfo.bbt.beatType, timeInfo.bbt.beatType))
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatType;
                         doPostRt = true;
                     }
                     break;
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_BAR:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerBar, timeInfo.bbt.beatsPerBar))
+                    if (timeInfo.bbt.valid && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerBar, timeInfo.bbt.beatsPerBar))
                     {
                         fParamBuffers[k] = timeInfo.bbt.beatsPerBar;
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_BEATS_PER_MINUTE:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerMinute, timeInfo.bbt.beatsPerMinute))
+                    if (timeInfo.bbt.valid && carla_isNotEqual(fLastTimeInfo.bbt.beatsPerMinute, timeInfo.bbt.beatsPerMinute))
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.beatsPerMinute);
                         doPostRt = true;
                     }
                     break;
+
                 case LV2_PORT_DESIGNATION_TIME_TICKS_PER_BEAT:
-                    if ((timeInfo.valid & EngineTimeInfo::kValidBBT) != 0 && carla_isNotEqual(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat))
+                    if (timeInfo.bbt.valid && carla_isNotEqual(fLastTimeInfo.bbt.ticksPerBeat, timeInfo.bbt.ticksPerBeat))
                     {
                         fParamBuffers[k] = static_cast<float>(timeInfo.bbt.ticksPerBeat);
                         doPostRt = true;
@@ -2908,7 +2916,7 @@ public:
                 lv2_atom_forge_key(&fAtomForge, kUridTimeFrame);
                 lv2_atom_forge_long(&fAtomForge, static_cast<int64_t>(timeInfo.frame));
 
-                if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+                if (timeInfo.bbt.valid)
                 {
                     lv2_atom_forge_key(&fAtomForge, kUridTimeBar);
                     lv2_atom_forge_long(&fAtomForge, timeInfo.bbt.bar - 1);

@@ -274,6 +274,8 @@ struct CARLA_API EngineOptions {
  * Engine BBT Time information.
  */
 struct CARLA_API EngineTimeInfoBBT {
+    bool valid;
+
     int32_t bar;  //!< current bar
     int32_t beat; //!< current beat-within-bar
     int32_t tick; //!< current tick-within-beat
@@ -294,12 +296,9 @@ struct CARLA_API EngineTimeInfoBBT {
  * Engine Time information.
  */
 struct CARLA_API EngineTimeInfo {
-    static const uint kValidBBT = 0x1;
-
     bool playing;
     uint64_t frame;
     uint64_t usecs;
-    uint     valid;
     EngineTimeInfoBBT bbt;
 
     /*!

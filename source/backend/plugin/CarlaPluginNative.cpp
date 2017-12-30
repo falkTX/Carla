@@ -1383,7 +1383,7 @@ public:
         fTimeInfo.frame   = timeInfo.frame;
         fTimeInfo.usecs   = timeInfo.usecs;
 
-        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        if (timeInfo.bbt.valid)
         {
             fTimeInfo.bbt.valid = true;
 
@@ -1399,7 +1399,9 @@ public:
             fTimeInfo.bbt.beatsPerMinute = timeInfo.bbt.beatsPerMinute;
         }
         else
+        {
             fTimeInfo.bbt.valid = false;
+        }
 
         // --------------------------------------------------------------------------------------------------------
         // Event Input and Processing

@@ -525,6 +525,7 @@ public:
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Weffc++"
 #endif
+template<class TimeInfoStruct>
 class Lv2PluginBaseClass : public LV2_External_UI_Widget_Compat
 {
 #if defined(__clang__)
@@ -534,11 +535,16 @@ class Lv2PluginBaseClass : public LV2_External_UI_Widget_Compat
 #endif
 public:
     Lv2PluginBaseClass(const double sampleRate, const LV2_Feature* const* const features)
-        : fIsOffline(false),
+        : fIsActive(false),
+          fIsOffline(false),
+          fUsingNominal(false),
           fBufferSize(0),
           fSampleRate(sampleRate),
-          fUsingNominal(false),
-          fUridMap(nullptr)
+          fUridMap(nullptr),
+          fTimeInfo(),
+          fLastPositionData(),
+          fURIs(),
+          fUI()
     {
         run  = extui_run;
         show = extui_show;
@@ -620,6 +626,9 @@ public:
 
         fUridMap = uridMap;
         fURIs.map(uridMap);
+
+        carla_zeroStruct(fTimeInfo);
+        carla_zeroStruct(fLastPositionData);
     }
 
     virtual ~Lv2PluginBaseClass()
@@ -631,20 +640,245 @@ public:
         return fUridMap != nullptr && fBufferSize != 0;
     }
 
+    // ----------------------------------------------------------------------------------------------------------------
+
+    bool lv2_pre_run(const uint32_t /*frames*/)
+    {
+        return true;
+    }
+
+    void lv2_post_run(const uint32_t frames)
+    {
+        // update timePos for next callback
+
+        if (carla_isZero(fLastPositionData.speed))
+            return;
+
+        if (fLastPositionData.speed > 0.0)
+        {
+            // playing forwards
+            fLastPositionData.frame += frames;
+        }
+        else
+        {
+            // playing backwards
+            if (frames >= fLastPositionData.frame)
+                fLastPositionData.frame = 0;
+            else
+                fLastPositionData.frame -= frames;
+        }
+
+        fTimeInfo.frame = fLastPositionData.frame;
+
+        if (fTimeInfo.bbt.valid)
+        {
+            const double beatsPerMinute = fLastPositionData.beatsPerMinute * fLastPositionData.speed;
+            const double framesPerBeat  = 60.0 * fSampleRate / beatsPerMinute;
+            const double addedBarBeats  = double(frames) / framesPerBeat;
+
+            if (fLastPositionData.barBeat >= 0.0f)
+            {
+                fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+static_cast<float>(addedBarBeats),
+                                                      fLastPositionData.beatsPerBar);
+
+                const double rest  = std::fmod(fLastPositionData.barBeat, 1.0f);
+                fTimeInfo.bbt.beat = static_cast<int32_t>(fLastPositionData.barBeat-rest+1.0);
+                fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
+
+                if (fLastPositionData.bar_f >= 0.0f)
+                {
+                    fLastPositionData.bar_f += std::floor((fLastPositionData.barBeat+static_cast<float>(addedBarBeats))/
+                                                            fLastPositionData.beatsPerBar);
+
+                    if (fLastPositionData.bar_f <= 0.0f)
+                    {
+                        fLastPositionData.bar   = 0;
+                        fLastPositionData.bar_f = 0.0f;
+                    }
+                    else
+                    {
+                        fLastPositionData.bar = static_cast<int32_t>(fLastPositionData.bar_f+0.5f);
+                    }
+
+                    fTimeInfo.bbt.bar = fLastPositionData.bar + 1;
+
+                    fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat *
+                                                 fTimeInfo.bbt.beatsPerBar *
+                                                 (fTimeInfo.bbt.bar-1);
+                }
+            }
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    uint32_t lv2_get_options(LV2_Options_Option* const /*options*/) const
+    {
+        // currently unused
+        return LV2_OPTIONS_SUCCESS;
+    }
+
+    uint32_t lv2_set_options(const LV2_Options_Option* const options)
+    {
+        for (int i=0; options[i].key != 0; ++i)
+        {
+            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
+            {
+                if (options[i].type == fURIs.atomInt)
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    const uint32_t newBufferSize = static_cast<uint32_t>(value);
+
+                    if (fBufferSize != newBufferSize)
+                    {
+                        fBufferSize = newBufferSize;
+                        handleBufferSizeChanged(newBufferSize);
+                    }
+                }
+                else
+                {
+                    carla_stderr("Host changed nominalBlockLength but with wrong value type");
+                }
+            }
+            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength) && ! fUsingNominal)
+            {
+                if (options[i].type == fURIs.atomInt)
+                {
+                    const int value(*(const int*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
+
+                    const uint32_t newBufferSize = static_cast<uint32_t>(value);
+
+                    if (fBufferSize != newBufferSize)
+                    {
+                        fBufferSize = newBufferSize;
+                        handleBufferSizeChanged(newBufferSize);
+                    }
+                }
+                else
+                {
+                    carla_stderr("Host changed maxBlockLength but with wrong value type");
+                }
+            }
+            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_PARAMETERS__sampleRate))
+            {
+                if (options[i].type == fURIs.atomFloat)
+                {
+                    const double value(*(const float*)options[i].value);
+                    CARLA_SAFE_ASSERT_CONTINUE(value > 0.0);
+
+                    if (carla_isNotEqual(fSampleRate, value))
+                    {
+                        fSampleRate = value;
+                        handleSampleRateChanged(value);
+                    }
+                }
+                else
+                {
+                    carla_stderr("Host changed sampleRate but with wrong value type");
+                }
+            }
+        }
+
+        return LV2_OPTIONS_SUCCESS;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+
+    int lv2ui_idle() const
+    {
+        if (! fUI.isVisible)
+            return 1;
+
+        handleUiRun();
+        return 0;
+    }
+
+    int lv2ui_show()
+    {
+        handleUiShow();
+        return 0;
+    }
+
+    int lv2ui_hide()
+    {
+        handleUiHide();
+        return 0;
+    }
+
+    void lv2ui_cleanup()
+    {
+        if (fUI.isVisible)
+            handleUiHide();
+
+        fUI.host = nullptr;
+        fUI.writeFunction = nullptr;
+        fUI.controller = nullptr;
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
+
 protected:
     virtual void handleUiRun() const = 0;
     virtual void handleUiShow() = 0;
     virtual void handleUiHide() = 0;
 
+    virtual void handleBufferSizeChanged(const uint32_t bufferSize) = 0;
+    virtual void handleSampleRateChanged(const double sampleRate) = 0;
+
     // LV2 host data
-    bool     fIsOffline;
+    bool     fIsActive : 1;
+    bool     fIsOffline : 1;
+    bool     fUsingNominal : 1;
     uint32_t fBufferSize;
     double   fSampleRate;
-    bool     fUsingNominal;
 
     // LV2 host features
     const LV2_URID_Map* fUridMap;
 
+    // Time info stuff
+    TimeInfoStruct fTimeInfo;
+
+    struct Lv2PositionData {
+        int32_t  bar;
+        float    bar_f;
+        float    barBeat;
+        uint32_t beatUnit;
+        float    beatsPerBar;
+        double   beatsPerMinute;
+        uint64_t frame;
+        double   speed;
+        double   ticksPerBeat;
+
+        Lv2PositionData()
+            : bar(-1),
+              bar_f(-1.0f),
+              barBeat(-1.0f),
+              beatUnit(0),
+              beatsPerBar(0.0f),
+              beatsPerMinute(-1.0),
+              frame(0),
+              speed(0.0),
+              ticksPerBeat(-1.0) {}
+    } fLastPositionData;
+
+    void resetTimeInfo()
+    {
+        carla_zeroStruct(fLastPositionData);
+        carla_zeroStruct(fTimeInfo);
+
+        // hosts may not send all values, resulting on some invalid data
+        fTimeInfo.bbt.bar   = 1;
+        fTimeInfo.bbt.beat  = 1;
+        fTimeInfo.bbt.beatsPerBar    = 4;
+        fTimeInfo.bbt.beatType       = 4;
+        fTimeInfo.bbt.ticksPerBeat   = fLastPositionData.ticksPerBeat   = 960.0;
+        fTimeInfo.bbt.beatsPerMinute = fLastPositionData.beatsPerMinute = 120.0;
+    }
+
+    // Rest of host<->plugin support
     struct URIDs {
         LV2_URID atomBlank;
         LV2_URID atomObject;
@@ -707,6 +941,23 @@ protected:
             timeTicksPerBeat   = uridMap->map(uridMap->handle, LV2_KXSTUDIO_PROPERTIES__TimePositionTicksPerBeat);
         }
     } fURIs;
+
+    struct UI {
+        const LV2_External_UI_Host* host;
+        LV2UI_Write_Function writeFunction;
+        LV2UI_Controller controller;
+        uint32_t portOffset;
+        bool isEmbed;
+        bool isVisible;
+
+        UI()
+            : host(nullptr),
+              writeFunction(nullptr),
+              controller(nullptr),
+              portOffset(0),
+              isEmbed(false),
+              isVisible(false) {}
+    } fUI;
 
 private:
     // ----------------------------------------------------------------------------------------------------------------

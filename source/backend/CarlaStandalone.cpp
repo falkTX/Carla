@@ -788,14 +788,7 @@ uint64_t carla_get_current_transport_frame()
 const CarlaTransportInfo* carla_get_transport_info()
 {
     static CarlaTransportInfo retInfo;
-
-    // reset
-    retInfo.playing = false;
-    retInfo.frame   = 0;
-    retInfo.bar     = 0;
-    retInfo.beat    = 0;
-    retInfo.tick    = 0;
-    retInfo.bpm     = 0.0;
+    carla_zeroStruct(retInfo);
 
     CARLA_SAFE_ASSERT_RETURN(gStandalone.engine != nullptr && gStandalone.engine->isRunning(), &retInfo);
 
@@ -804,7 +797,7 @@ const CarlaTransportInfo* carla_get_transport_info()
     retInfo.playing = timeInfo.playing;
     retInfo.frame   = timeInfo.frame;
 
-    if (timeInfo.valid & CB::EngineTimeInfo::kValidBBT)
+    if (timeInfo.bbt.valid)
     {
         retInfo.bar  = timeInfo.bbt.bar;
         retInfo.beat = timeInfo.bbt.beat;

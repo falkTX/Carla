@@ -29,12 +29,12 @@
 
 #include "water/files/File.h"
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BACKEND_START_NAMESPACE
 
 class CarlaEngineLV2Single : public CarlaEngine,
-                             public Lv2PluginBaseClass
+                             public Lv2PluginBaseClass<EngineTimeInfo>
 {
 public:
     CarlaEngineLV2Single(const double sampleRate,
@@ -42,10 +42,8 @@ public:
                          const LV2_Feature* const* const features)
         : Lv2PluginBaseClass(sampleRate, features),
           fPlugin(nullptr),
-          fIsActive(false),
-          fIsOffline(false),
-          fPorts(),
-          fUI()
+          fUiName(),
+          fPorts()
     {
         CARLA_SAFE_ASSERT_RETURN(pData->curPluginCount == 0,)
         CARLA_SAFE_ASSERT_RETURN(pData->plugins[0].plugin == nullptr,);
@@ -112,7 +110,7 @@ public:
         return fPlugin != nullptr;
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // LV2 functions
 
     void lv2_connect_port(const uint32_t port, void* const dataLocation) noexcept
@@ -123,6 +121,8 @@ public:
     void lv2_activate() noexcept
     {
         CARLA_SAFE_ASSERT_RETURN(! fIsActive,);
+
+        resetTimeInfo();
 
         fPlugin->setActive(true, false, false);
         fIsActive = true;
@@ -138,6 +138,9 @@ public:
 
     void lv2_run(const uint32_t frames)
     {
+        if (! lv2_pre_run(frames))
+            return;
+
         fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
 
         // Check for updated parameters
@@ -174,10 +177,11 @@ public:
                 carla_zeroFloats(fPorts.audioOuts[i], frames);
         }
 
+        lv2_post_run(frames);
         fPorts.updateOutputs();
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void lv2ui_instantiate(LV2UI_Write_Function writeFunction, LV2UI_Controller controller,
                            LV2UI_Widget* widget, const LV2_Feature* const* features)
@@ -185,9 +189,11 @@ public:
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
 
+        fUiName.clear();
+
         const LV2_URID_Map* uridMap = nullptr;
 
-        // -------------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // see if the host supports external-ui, get uridMap
 
         for (int i=0; features[i] != nullptr; ++i)
@@ -205,12 +211,12 @@ public:
 
         if (fUI.host != nullptr)
         {
-            fUI.name = fUI.host->plugin_human_id;
-            *widget  = (LV2_External_UI_Widget*)this;
+            fUiName = fUI.host->plugin_human_id;
+            *widget = (LV2_External_UI_Widget*)this;
             return;
         }
 
-        // -------------------------------------------------------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // no external-ui support, use showInterface
 
         for (int i=0; features[i] != nullptr; ++i)
@@ -223,7 +229,7 @@ public:
                 {
                     if (options[j].key == uridMap->map(uridMap->handle, LV2_UI__windowTitle))
                     {
-                        fUI.name = (const char*)options[j].value;
+                        fUiName = (const char*)options[j].value;
                         break;
                     }
                 }
@@ -231,8 +237,8 @@ public:
             }
         }
 
-        if (fUI.name.isEmpty())
-            fUI.name = fPlugin->getName();
+        if (fUiName.isEmpty())
+            fUiName = fPlugin->getName();
 
         *widget = nullptr;
     }
@@ -241,48 +247,15 @@ public:
     {
         if (format != 0 || bufferSize != sizeof(float) || buffer == nullptr)
             return;
-        if (portIndex >= fPorts.indexOffset || ! fUI.visible)
+        if (portIndex >= fPorts.indexOffset || ! fUI.isVisible)
             return;
 
         const float value(*(const float*)buffer);
         fPlugin->uiParameterChange(portIndex-fPorts.indexOffset, value);
     }
 
-    void lv2ui_cleanup()
-    {
-        if (fUI.visible)
-            handleUiHide();
-
-        fUI.writeFunction = nullptr;
-        fUI.controller = nullptr;
-        fUI.host = nullptr;
-    }
-
-    // -----------------------------------------------------------------------------------------------------------------
-
-    int lv2ui_idle() const
-    {
-        if (! fUI.visible)
-            return 1;
-
-        handleUiRun();
-        return 0;
-    }
-
-    int lv2ui_show()
-    {
-        handleUiShow();
-        return 0;
-    }
-
-    int lv2ui_hide()
-    {
-        handleUiHide();
-        return 0;
-    }
-
 protected:
-    // -----------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // CarlaEngine virtual calls
 
     bool init(const char* const clientName) override
@@ -330,7 +303,7 @@ protected:
         {
         case ENGINE_CALLBACK_PARAMETER_VALUE_CHANGED:
             CARLA_SAFE_ASSERT_RETURN(value1 >= 0,);
-            if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.visible)
+            if (fUI.writeFunction != nullptr && fUI.controller != nullptr && fUI.isVisible)
             {
                 fUI.writeFunction(fUI.controller,
                                   static_cast<uint32_t>(value1)+fPorts.indexOffset,
@@ -339,7 +312,7 @@ protected:
             break;
 
         case ENGINE_CALLBACK_UI_STATE_CHANGED:
-            fUI.visible = value1 == 1;
+            fUI.isVisible = (value1 == 1);
             if (fUI.host != nullptr)
                 fUI.host->ui_closed(fUI.controller);
             break;
@@ -354,7 +327,7 @@ protected:
         }
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     void handleUiRun() const override
     {
@@ -366,23 +339,32 @@ protected:
     void handleUiShow() override
     {
         fPlugin->showCustomUI(true);
-        fUI.visible = true;
+        fUI.isVisible = true;
     }
 
     void handleUiHide() override
     {
-        fUI.visible = false;
+        fUI.isVisible = false;
         fPlugin->showCustomUI(false);
     }
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
+
+    void handleBufferSizeChanged(const uint32_t bufferSize) override
+    {
+        CarlaEngine::bufferSizeChanged(bufferSize);
+    }
+
+    void handleSampleRateChanged(const double sampleRate) override
+    {
+        CarlaEngine::sampleRateChanged(sampleRate);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
 
 private:
     CarlaPlugin* fPlugin;
-
-    // Lv2 host data
-    bool fIsActive;
-    bool fIsOffline;
+    CarlaString fUiName;
 
     struct Ports {
         uint32_t numAudioIns;
@@ -535,22 +517,6 @@ private:
         CARLA_DECLARE_NON_COPY_STRUCT(Ports);
     } fPorts;
 
-    struct UI {
-        LV2UI_Write_Function writeFunction;
-        LV2UI_Controller controller;
-        const LV2_External_UI_Host* host;
-        CarlaString name;
-        bool visible;
-
-        UI()
-          : writeFunction(nullptr),
-            controller(nullptr),
-            host(nullptr),
-            name(),
-            visible(false) {}
-        CARLA_DECLARE_NON_COPY_STRUCT(UI)
-    } fUI;
-
     // -------------------------------------------------------------------
 
     #define handlePtr ((CarlaEngineLV2Single*)handle)
@@ -569,7 +535,7 @@ CARLA_BACKEND_END_NAMESPACE
 
 using CarlaBackend::CarlaEngineLV2Single;
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // LV2 DSP functions
 
 static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sampleRate, const char* bundlePath, const LV2_Feature* const* features)
@@ -624,7 +590,7 @@ static const void* lv2_extension_data(const char* uri)
 
 #undef instancePtr
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // LV2 UI functions
 
 static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, const char*,
@@ -703,7 +669,7 @@ static const void* lv2ui_extension_data(const char* uri)
 
 #undef uiPtr
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // Startup code
 
 CARLA_EXPORT
@@ -762,4 +728,4 @@ const LV2UI_Descriptor* lv2ui_descriptor(uint32_t index)
     return (index == 0) ? &lv2UiExtDesc : nullptr;
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------

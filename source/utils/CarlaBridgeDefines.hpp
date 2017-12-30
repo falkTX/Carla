@@ -114,6 +114,10 @@ enum PluginBridgePortType {
     kPluginBridgePortTypeCount
 };
 
+enum PluginBridgeTimeInfoFlags {
+    kPluginBridgeTimeInfoValidBBT = 0x1
+};
+
 // -------------------------------------------------------------------------------------------------------------------
 
 struct BridgeSemaphore {
@@ -132,7 +136,7 @@ struct BridgeTimeInfo {
     uint64_t playing;
     uint64_t frame;
     uint64_t usecs;
-    uint32_t valid;
+    uint32_t validFlags;
     // bbt
     int32_t bar, beat, tick;
     float beatsPerBar, beatType;

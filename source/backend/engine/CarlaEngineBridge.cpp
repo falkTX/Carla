@@ -1180,12 +1180,12 @@ protected:
 
                         EngineTimeInfo& timeInfo(pData->timeInfo);
 
-                        timeInfo.playing = bridgeTimeInfo.playing;
-                        timeInfo.frame   = bridgeTimeInfo.frame;
-                        timeInfo.usecs   = bridgeTimeInfo.usecs;
-                        timeInfo.valid   = bridgeTimeInfo.valid;
+                        timeInfo.playing   = bridgeTimeInfo.playing;
+                        timeInfo.frame     = bridgeTimeInfo.frame;
+                        timeInfo.usecs     = bridgeTimeInfo.usecs;
+                        timeInfo.bbt.valid = (bridgeTimeInfo.validFlags & kPluginBridgeTimeInfoValidBBT) != 0;
 
-                        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+                        if (timeInfo.bbt.valid)
                         {
                             timeInfo.bbt.bar  = bridgeTimeInfo.bar;
                             timeInfo.bbt.beat = bridgeTimeInfo.beat;

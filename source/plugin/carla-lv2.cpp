@@ -25,7 +25,7 @@
 // -----------------------------------------------------------------------
 // LV2 descriptor functions
 
-class NativePlugin : public Lv2PluginBaseClass
+class NativePlugin : public Lv2PluginBaseClass<NativeTimeInfo>
 {
 public:
     static const uint32_t kMaxMidiEvents = 512;
@@ -42,9 +42,6 @@ public:
           fProgramDesc({0, 0, nullptr}),
 #endif
           fMidiEventCount(0),
-          fTimeInfo(),
-          fLastPositionData(),
-          fUI(),
           fPorts()
     {
         carla_zeroStruct(fHost);
@@ -82,6 +79,12 @@ public:
             delete[] fHost.resourceDir;
             fHost.resourceDir = nullptr;
         }
+
+        if (fHost.uiName != nullptr)
+        {
+            delete[] fHost.uiName;
+            fHost.uiName = nullptr;
+        }
     }
 
     bool init()
@@ -96,7 +99,6 @@ public:
         }
 
         carla_zeroStructs(fMidiEvents, kMaxMidiEvents);
-        carla_zeroStruct(fTimeInfo);
 
         fHandle = fDescriptor->instantiate(&fHost);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
@@ -128,17 +130,7 @@ public:
         if (fDescriptor->activate != nullptr)
             fDescriptor->activate(fHandle);
 
-        carla_zeroStruct(fTimeInfo);
-
-        // hosts may not send all values, resulting on some invalid data
-        fTimeInfo.bbt.bar   = 1;
-        fTimeInfo.bbt.beat  = 1;
-        fTimeInfo.bbt.tick  = 0;
-        fTimeInfo.bbt.barStartTick = 0;
-        fTimeInfo.bbt.beatsPerBar  = 4;
-        fTimeInfo.bbt.beatType     = 4;
-        fTimeInfo.bbt.ticksPerBeat = 960.0;
-        fTimeInfo.bbt.beatsPerMinute = 120.0;
+        resetTimeInfo();
     }
 
     void lv2_deactivate()
@@ -157,6 +149,9 @@ public:
 
     void lv2_run(const uint32_t frames)
     {
+        if (! lv2_pre_run(frames))
+            return;
+
         fIsOffline = (fPorts.freewheel != nullptr && *fPorts.freewheel >= 0.5f);
 
         // cache midi events and time information first
@@ -484,129 +479,11 @@ public:
                              const_cast<float**>(fPorts.audioIns), fPorts.audioOuts, frames,
                              fMidiEvents, fMidiEventCount);
 
-        // update timePos for next callback
-        if (carla_isNotZero(fLastPositionData.speed))
-        {
-            if (fLastPositionData.speed > 0.0)
-            {
-                // playing forwards
-                fLastPositionData.frame += frames;
-            }
-            else
-            {
-                // playing backwards
-                if (frames >= fLastPositionData.frame)
-                    fLastPositionData.frame = 0;
-                else
-                    fLastPositionData.frame -= frames;
-            }
-
-            fTimeInfo.frame = fLastPositionData.frame;
-
-            if (fTimeInfo.bbt.valid)
-            {
-                const double beatsPerMinute = fLastPositionData.beatsPerMinute * fLastPositionData.speed;
-                const double framesPerBeat  = 60.0 * fSampleRate / beatsPerMinute;
-                const double addedBarBeats  = double(frames) / framesPerBeat;
-
-                if (fLastPositionData.barBeat >= 0.0f)
-                {
-                    fLastPositionData.barBeat = std::fmod(fLastPositionData.barBeat+static_cast<float>(addedBarBeats),
-                                                          fLastPositionData.beatsPerBar);
-
-                    const double rest  = std::fmod(fLastPositionData.barBeat, 1.0f);
-                    fTimeInfo.bbt.beat = static_cast<int32_t>(fLastPositionData.barBeat-rest+1.0);
-                    fTimeInfo.bbt.tick = static_cast<int32_t>(rest*fTimeInfo.bbt.ticksPerBeat+0.5);
-
-                    if (fLastPositionData.bar_f >= 0.0f)
-                    {
-                        fLastPositionData.bar_f += std::floor((fLastPositionData.barBeat+static_cast<float>(addedBarBeats))/
-                                                               fLastPositionData.beatsPerBar);
-
-                        if (fLastPositionData.bar_f <= 0.0f)
-                        {
-                            fLastPositionData.bar   = 0;
-                            fLastPositionData.bar_f = 0.0f;
-                        }
-                        else
-                        {
-                            fLastPositionData.bar = static_cast<int32_t>(fLastPositionData.bar_f+0.5f);
-                        }
-
-                        fTimeInfo.bbt.bar = fLastPositionData.bar + 1;
-
-                        fTimeInfo.bbt.barStartTick = fTimeInfo.bbt.ticksPerBeat*
-                                                     fTimeInfo.bbt.beatsPerBar*
-                                                     (fTimeInfo.bbt.bar-1);
-                    }
-                }
-            }
-        }
-
+        lv2_post_run(frames);
         updateParameterOutputs();
     }
 
     // -------------------------------------------------------------------
-
-    uint32_t lv2_get_options(LV2_Options_Option* const /*options*/) const
-    {
-        // currently unused
-        return LV2_OPTIONS_SUCCESS;
-    }
-
-    uint32_t lv2_set_options(const LV2_Options_Option* const options)
-    {
-        for (int i=0; options[i].key != 0; ++i)
-        {
-            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__nominalBlockLength))
-            {
-                if (options[i].type == fURIs.atomInt)
-                {
-                    const int value(*(const int*)options[i].value);
-                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                    fBufferSize = static_cast<uint32_t>(value);
-
-                    if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
-                }
-                else
-                    carla_stderr("Host changed nominalBlockLength but with wrong value type");
-            }
-            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_BUF_SIZE__maxBlockLength) && ! fUsingNominal)
-            {
-                if (options[i].type == fURIs.atomInt)
-                {
-                    const int value(*(const int*)options[i].value);
-                    CARLA_SAFE_ASSERT_CONTINUE(value > 0);
-
-                    fBufferSize = static_cast<uint32_t>(value);
-
-                    if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, value, nullptr, 0.0f);
-                }
-                else
-                    carla_stderr("Host changed maxBlockLength but with wrong value type");
-            }
-            else if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
-            {
-                if (options[i].type == fURIs.atomDouble)
-                {
-                    const double value(*(const double*)options[i].value);
-                    CARLA_SAFE_ASSERT_CONTINUE(value > 0.0);
-
-                    fSampleRate = value;
-
-                    if (fDescriptor->dispatcher != nullptr)
-                        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)fSampleRate);
-                }
-                else
-                    carla_stderr("Host changed sampleRate but with wrong value type");
-            }
-        }
-
-        return LV2_OPTIONS_SUCCESS;
-    }
 
     const LV2_Program_Descriptor* lv2_get_program(const uint32_t index)
     {
@@ -695,6 +572,12 @@ public:
         fUI.writeFunction = writeFunction;
         fUI.controller = controller;
         fUI.isEmbed = isEmbed;
+
+        if (fHost.uiName != nullptr)
+        {
+            delete[] fHost.uiName;
+            fHost.uiName = nullptr;
+        }
 
 #ifdef CARLA_OS_LINUX
         // ---------------------------------------------------------------
@@ -810,22 +693,6 @@ public:
         fDescriptor->ui_set_parameter_value(fHandle, portIndex-fUI.portOffset, value);
     }
 
-    void lv2ui_cleanup()
-    {
-        if (fUI.isVisible)
-            handleUiHide();
-
-        fUI.host = nullptr;
-        fUI.writeFunction = nullptr;
-        fUI.controller = nullptr;
-
-        if (fHost.uiName != nullptr)
-        {
-            delete[] fHost.uiName;
-            fHost.uiName = nullptr;
-        }
-    }
-
     // -------------------------------------------------------------------
 
     void lv2ui_select_program(uint32_t bank, uint32_t program) const
@@ -838,30 +705,7 @@ public:
         fDescriptor->ui_set_midi_program(fHandle, 0, bank, program);
     }
 
-    // -------------------------------------------------------------------
-
-    int lv2ui_idle() const
-    {
-        if (! fUI.isVisible)
-            return 1;
-
-        handleUiRun();
-        return 0;
-    }
-
-    int lv2ui_show()
-    {
-        handleUiShow();
-        return 0;
-    }
-
-    int lv2ui_hide()
-    {
-        handleUiHide();
-        return 0;
-    }
-
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 protected:
     void handleUiRun() const override
@@ -886,7 +730,25 @@ protected:
         fUI.isVisible = false;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
+
+    void handleBufferSizeChanged(const uint32_t bufferSize) override
+    {
+        if (fDescriptor->dispatcher == nullptr)
+            return;
+
+        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_BUFFER_SIZE_CHANGED, 0, bufferSize, nullptr, 0.0f);
+    }
+
+    void handleSampleRateChanged(const double sampleRate) override
+    {
+        if (fDescriptor->dispatcher == nullptr)
+            return;
+
+        fDescriptor->dispatcher(fHandle, NATIVE_PLUGIN_OPCODE_SAMPLE_RATE_CHANGED, 0, 0, nullptr, (float)sampleRate);
+    }
+
+    // ----------------------------------------------------------------------------------------------------------------
 
     bool handleWriteMidiEvent(const NativeMidiEvent* const event)
     {
@@ -1010,48 +872,6 @@ private:
 
     uint32_t        fMidiEventCount;
     NativeMidiEvent fMidiEvents[kMaxMidiEvents];
-    NativeTimeInfo  fTimeInfo;
-
-    struct Lv2PositionData {
-        int32_t  bar;
-        float    bar_f;
-        float    barBeat;
-        uint32_t beatUnit;
-        float    beatsPerBar;
-        double   beatsPerMinute;
-        uint64_t frame;
-        double   speed;
-        double   ticksPerBeat;
-
-        Lv2PositionData()
-            : bar(-1),
-              bar_f(-1.0f),
-              barBeat(-1.0f),
-              beatUnit(0),
-              beatsPerBar(0.0f),
-              beatsPerMinute(-1.0),
-              frame(0),
-              speed(0.0),
-              ticksPerBeat(-1.0) {}
-
-    } fLastPositionData;
-
-    struct UI {
-        const LV2_External_UI_Host* host;
-        LV2UI_Write_Function writeFunction;
-        LV2UI_Controller controller;
-        uint32_t portOffset;
-        bool isEmbed;
-        bool isVisible;
-
-        UI()
-            : host(nullptr),
-              writeFunction(nullptr),
-              controller(nullptr),
-              portOffset(0),
-              isEmbed(false),
-              isVisible(false) {}
-    } fUI;
 
     struct Ports {
         // need to save current state

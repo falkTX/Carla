@@ -1092,7 +1092,7 @@ public:
             fTimeInfo.flags |= kVstNanosValid;
         }
 
-        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        if (timeInfo.bbt.valid)
         {
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.bar > 0, timeInfo.bbt.bar);
             CARLA_SAFE_ASSERT_INT(timeInfo.bbt.beat > 0, timeInfo.bbt.beat);

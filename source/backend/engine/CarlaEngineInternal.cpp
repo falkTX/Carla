@@ -175,7 +175,7 @@ void EngineInternalTime::fillEngineTimeInfo(const uint32_t newFrames) noexcept
 
     if (needsReset)
     {
-        timeInfo.valid = EngineTimeInfo::kValidBBT;
+        timeInfo.bbt.valid = true;
         timeInfo.bbt.beatType = 4.0f;
         timeInfo.bbt.ticksPerBeat = kTicksPerBeat;
 
@@ -563,6 +563,11 @@ void CarlaEngine::ProtectedData::initTime(const char* const features)
 #if defined(HAVE_HYLIA) && !defined(BUILD_BRIDGE)
     const bool linkEnabled = features != nullptr && std::strstr(features, ":link:") != nullptr;
     time.enableLink(linkEnabled);
+#else
+    return;
+
+    // unused
+    (void)features;
 #endif
 }
 

@@ -1388,12 +1388,12 @@ public:
         const EngineTimeInfo& timeInfo(pData->engine->getTimeInfo());
         BridgeTimeInfo& bridgeTimeInfo(fShmRtClientControl.data->timeInfo);
 
-        bridgeTimeInfo.playing = timeInfo.playing;
-        bridgeTimeInfo.frame   = timeInfo.frame;
-        bridgeTimeInfo.usecs   = timeInfo.usecs;
-        bridgeTimeInfo.valid   = timeInfo.valid;
+        bridgeTimeInfo.playing    = timeInfo.playing;
+        bridgeTimeInfo.frame      = timeInfo.frame;
+        bridgeTimeInfo.usecs      = timeInfo.usecs;
+        bridgeTimeInfo.validFlags = timeInfo.bbt.valid ? kPluginBridgeTimeInfoValidBBT : 0x0;
 
-        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        if (timeInfo.bbt.valid)
         {
             bridgeTimeInfo.bar  = timeInfo.bbt.bar;
             bridgeTimeInfo.beat = timeInfo.bbt.beat;

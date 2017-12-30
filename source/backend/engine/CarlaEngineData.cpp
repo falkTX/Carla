@@ -1,6 +1,6 @@
 /*
  * Carla Plugin Host
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -308,7 +308,8 @@ EngineOptions::Wine::~Wine() noexcept
 // EngineTimeInfoBBT
 
 EngineTimeInfoBBT::EngineTimeInfoBBT() noexcept
-    : bar(0),
+    : valid(false),
+      bar(0),
       beat(0),
       tick(0),
       barStartTick(0.0),
@@ -324,7 +325,6 @@ EngineTimeInfo::EngineTimeInfo() noexcept
     : playing(false),
       frame(0),
       usecs(0),
-      valid(0x0),
       bbt() {}
 
 void EngineTimeInfo::clear() noexcept
@@ -332,14 +332,14 @@ void EngineTimeInfo::clear() noexcept
     playing = false;
     frame   = 0;
     usecs   = 0;
-    valid   = 0x0;
+    carla_zeroStruct(bbt);
 }
 
 bool EngineTimeInfo::operator==(const EngineTimeInfo& timeInfo) const noexcept
 {
-    if (timeInfo.playing != playing || timeInfo.frame != frame || timeInfo.valid != valid)
+    if (timeInfo.playing != playing || timeInfo.frame != frame || timeInfo.bbt.valid != bbt.valid)
         return false;
-    if ((valid & kValidBBT) == 0)
+    if (! bbt.valid)
         return true;
     if (carla_isNotEqual(timeInfo.bbt.beatsPerMinute, bbt.beatsPerMinute))
         return false;

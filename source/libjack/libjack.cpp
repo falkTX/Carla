@@ -596,7 +596,7 @@ bool CarlaJackAppClient::handleRtData()
                     fServer.position.frame = bridgeTimeInfo.frame;
                     fServer.position.usecs = bridgeTimeInfo.usecs;
 
-                    if (bridgeTimeInfo.valid & 0x1 /* kValidBBT */)
+                    if (bridgeTimeInfo.validFlags & kPluginBridgeTimeInfoValidBBT)
                     {
                         fServer.position.valid = JackPositionBBT;
 
@@ -613,7 +613,7 @@ bool CarlaJackAppClient::handleRtData()
                     }
                     else
                     {
-                        fServer.position.valid = static_cast<jack_position_bits_t>(0);
+                        fServer.position.valid = static_cast<jack_position_bits_t>(0x0);
                     }
 
                     int numClientOutputsProcessed = 0;

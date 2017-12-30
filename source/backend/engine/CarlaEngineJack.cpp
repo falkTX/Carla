@@ -1393,7 +1393,7 @@ public:
 
         if (fClient != nullptr)
         {
-            if ((pData->timeInfo.valid & EngineTimeInfo::kValidBBT) == 0x0)
+            if (! pData->timeInfo.bbt.valid)
             {
                 // old timebase master no longer active, make ourselves master again
                 pData->time.setNeedsReset();
@@ -1573,7 +1573,7 @@ protected:
 
             if (jpos.valid & JackPositionBBT)
             {
-                pData->timeInfo.valid              = EngineTimeInfo::kValidBBT;
+                pData->timeInfo.bbt.valid          = true;
                 pData->timeInfo.bbt.bar            = jpos.bar;
                 pData->timeInfo.bbt.beat           = jpos.beat;
                 pData->timeInfo.bbt.tick           = jpos.tick;
@@ -1585,13 +1585,14 @@ protected:
             }
             else
             {
-                pData->timeInfo.valid = 0x0;
+                pData->timeInfo.bbt.valid = false;
             }
         }
         else
         {
             pData->timeInfo.frame = 0;
-            pData->timeInfo.valid = 0x0;
+            pData->timeInfo.usecs = 0;
+            pData->timeInfo.bbt.valid = false;
         }
     }
 

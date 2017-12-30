@@ -1471,15 +1471,13 @@ protected:
 
         const NativeTimeInfo* const timeInfo(pHost->get_time_info(pHost->handle));
 
-        pData->timeInfo.playing = timeInfo->playing;
-        pData->timeInfo.frame   = timeInfo->frame;
-        pData->timeInfo.usecs   = timeInfo->usecs;
-        pData->timeInfo.valid   = 0x0;
+        pData->timeInfo.playing   = timeInfo->playing;
+        pData->timeInfo.frame     = timeInfo->frame;
+        pData->timeInfo.usecs     = timeInfo->usecs;
+        pData->timeInfo.bbt.valid = timeInfo->bbt.valid;
 
         if (timeInfo->bbt.valid)
         {
-            pData->timeInfo.valid |= EngineTimeInfo::kValidBBT;
-
             pData->timeInfo.bbt.bar = timeInfo->bbt.bar;
             pData->timeInfo.bbt.beat = timeInfo->bbt.beat;
             pData->timeInfo.bbt.tick = timeInfo->bbt.tick;
@@ -1748,7 +1746,7 @@ protected:
         if (! fUiServer.writeMessage(timeInfo.playing ? "true\n" : "false\n"))
             return;
 
-        if (timeInfo.valid & EngineTimeInfo::kValidBBT)
+        if (timeInfo.bbt.valid)
         {
             std::sprintf(tmpBuf, P_UINT64 ":%i:%i:%i\n", timeInfo.frame, timeInfo.bbt.bar, timeInfo.bbt.beat, timeInfo.bbt.tick);
             if (! fUiServer.writeMessage(tmpBuf))
