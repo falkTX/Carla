@@ -33,11 +33,11 @@
 
 CARLA_BACKEND_START_NAMESPACE
 
-class CarlaEngineLV2Single : public CarlaEngine,
+class CarlaEngineSingleLV2 : public CarlaEngine,
                              public Lv2PluginBaseClass<EngineTimeInfo>
 {
 public:
-    CarlaEngineLV2Single(const double sampleRate,
+    CarlaEngineSingleLV2(const double sampleRate,
                          const char* const bundlePath,
                          const LV2_Feature* const* const features)
         : Lv2PluginBaseClass(sampleRate, features),
@@ -109,7 +109,7 @@ public:
         }
     }
 
-    ~CarlaEngineLV2Single()
+    ~CarlaEngineSingleLV2()
     {
         if (fPlugin != nullptr && fIsActive)
             fPlugin->setActive(false, false, false);
@@ -488,7 +488,7 @@ private:
 
     // -------------------------------------------------------------------
 
-    #define handlePtr ((CarlaEngineLV2Single*)handle)
+    #define handlePtr ((CarlaEngineSingleLV2*)handle)
 
     static void _engine_callback(void* handle, EngineCallbackOpcode action, uint pluginId, int value1, int value2, float value3, const char* valueStr)
     {
@@ -497,12 +497,12 @@ private:
 
     #undef handlePtr
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineLV2Single)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaEngineSingleLV2)
 };
 
 CARLA_BACKEND_END_NAMESPACE
 
-using CarlaBackend::CarlaEngineLV2Single;
+using CarlaBackend::CarlaEngineSingleLV2;
 
 // --------------------------------------------------------------------------------------------------------------------
 // LV2 DSP functions
@@ -511,7 +511,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
 {
     carla_stdout("lv2_instantiate(%p, %g, %s, %p)", lv2Descriptor, sampleRate, bundlePath, features);
 
-    CarlaEngineLV2Single* const instance(new CarlaEngineLV2Single(sampleRate, bundlePath, features));
+    CarlaEngineSingleLV2* const instance(new CarlaEngineSingleLV2(sampleRate, bundlePath, features));
 
     if (instance->hasPlugin())
         return (LV2_Handle)instance;
@@ -520,7 +520,7 @@ static LV2_Handle lv2_instantiate(const LV2_Descriptor* lv2Descriptor, double sa
     return nullptr;
 }
 
-#define instancePtr ((CarlaEngineLV2Single*)instance)
+#define instancePtr ((CarlaEngineSingleLV2*)instance)
 
 static void lv2_connect_port(LV2_Handle instance, uint32_t port, void* dataLocation)
 {
@@ -570,13 +570,13 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
 {
     carla_debug("lv2ui_instantiate(..., %p, %p, %p)", writeFunction, controller, widget, features);
 
-    CarlaEngineLV2Single* engine = nullptr;
+    CarlaEngineSingleLV2* engine = nullptr;
 
     for (int i=0; features[i] != nullptr; ++i)
     {
         if (std::strcmp(features[i]->URI, LV2_INSTANCE_ACCESS_URI) == 0)
         {
-            engine = (CarlaEngineLV2Single*)features[i]->data;
+            engine = (CarlaEngineSingleLV2*)features[i]->data;
             break;
         }
     }
@@ -593,7 +593,7 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char*, cons
     return (LV2UI_Handle)engine;
 }
 
-#define uiPtr ((CarlaEngineLV2Single*)ui)
+#define uiPtr ((CarlaEngineSingleLV2*)ui)
 
 static void lv2ui_port_event(LV2UI_Handle ui, uint32_t portIndex, uint32_t bufferSize, uint32_t format, const void* buffer)
 {

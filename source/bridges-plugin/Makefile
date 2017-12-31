@@ -117,7 +117,7 @@ OBJS_native = \
 	$(OBJDIR)/CarlaStandalone.cpp.o
 
 OBJS_lv2 = $(OBJS_native) \
-	$(OBJDIR)/CarlaBridgeLV2.cpp.o
+	$(OBJDIR)/CarlaBridgeSingleLV2.cpp.o
 
 OBJS_arch = \
 	$(OBJDIR)/CarlaBridgePlugin.cpp.arch.o \
@@ -233,7 +233,7 @@ $(OBJDIR)/CarlaBridgePlugin.cpp.o: CarlaBridgePlugin.cpp
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
 endif
 
-$(OBJDIR)/CarlaBridgeLV2.cpp.o: CarlaBridgeLV2.cpp
+$(OBJDIR)/CarlaBridgeSingleLV2.cpp.o: CarlaBridgeSingleLV2.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) $(NATIVE_BUILD_FLAGS) -c -o $@
