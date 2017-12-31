@@ -1,5 +1,5 @@
 /*
- * Carla Bridge UI, LV2 version
+ * Carla Bridge UI
  * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,7 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUI.hpp"
+#include "CarlaBridgeFormat.hpp"
+#include "CarlaBridgeToolkit.hpp"
+
 #include "CarlaLibUtils.hpp"
 #include "CarlaLv2Utils.hpp"
 #include "CarlaMIDI.h"
@@ -30,7 +32,7 @@
 
 using water::File;
 
-CARLA_BRIDGE_START_NAMESPACE
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 // -----------------------------------------------------
 
@@ -172,11 +174,11 @@ struct Lv2PluginOptions {
 
 // -------------------------------------------------------------------------
 
-class CarlaLv2Client : public CarlaBridgeUI
+class CarlaLv2Client : public CarlaBridgeFormat
 {
 public:
     CarlaLv2Client()
-        : CarlaBridgeUI(),
+        : CarlaBridgeFormat(),
           fHandle(nullptr),
           fWidget(nullptr),
           fDescriptor(nullptr),
@@ -410,7 +412,7 @@ public:
         // -----------------------------------------------------------------
         // init UI
 
-        if (! CarlaBridgeUI::init(argc, argv))
+        if (! CarlaBridgeFormat::init(argc, argv))
             return false;
 
         // -----------------------------------------------------------------
@@ -1162,13 +1164,13 @@ private:
 
 // -----------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -----------------------------------------------------------------------
 
 int main(int argc, const char* argv[])
 {
-    CARLA_BRIDGE_USE_NAMESPACE
+    CARLA_BRIDGE_UI_USE_NAMESPACE
 
     if (argc < 3)
     {

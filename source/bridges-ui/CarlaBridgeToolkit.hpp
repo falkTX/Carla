@@ -1,6 +1,6 @@
 /*
- * Carla Bridge Toolkit
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Carla Bridge UI
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -18,10 +18,11 @@
 #ifndef CARLA_BRIDGE_TOOLKIT_HPP_INCLUDED
 #define CARLA_BRIDGE_TOOLKIT_HPP_INCLUDED
 
-#include "CarlaBridge.hpp"
-#include "CarlaString.hpp"
+#include "CarlaBridgeUI.hpp"
 
-CARLA_BRIDGE_START_NAMESPACE
+#include "CarlaJuceUtils.hpp"
+
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 // -----------------------------------------------------------------------
 
@@ -43,19 +44,19 @@ public:
     virtual void* getContainerId() const  { return nullptr; }
     virtual void* getContainerId2() const { return nullptr; }
 
-    static CarlaBridgeToolkit* createNew(CarlaBridgeUI* const ui);
+    static CarlaBridgeToolkit* createNew(CarlaBridgeFormat* const format);
 
 protected:
-    CarlaBridgeUI* const fPluginUI;
+    CarlaBridgeFormat* const fPlugin;
 
-    CarlaBridgeToolkit(CarlaBridgeUI* const u)
-        : fPluginUI(u) {}
+    CarlaBridgeToolkit(CarlaBridgeFormat* const format)
+        : fPlugin(format) {}
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkit)
 };
 
 // -----------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE
 
 #endif // CARLA_BRIDGE_TOOLKIT_HPP_INCLUDED

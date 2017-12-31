@@ -1,5 +1,5 @@
 /*
- * Carla Bridge Toolkit, Plugin version
+ * Carla Bridge UI
  * Copyright (C) 2014-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,41 +15,42 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUI.hpp"
+#include "CarlaBridgeFormat.hpp"
 #include "CarlaBridgeToolkit.hpp"
+
 #include "CarlaMainLoop.hpp"
 #include "CarlaPluginUI.hpp"
 
-CARLA_BRIDGE_START_NAMESPACE
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 using CarlaBackend::runMainLoopOnce;
 
 // -------------------------------------------------------------------------
 
-class CarlaBridgeToolkitPlugin : public CarlaBridgeToolkit,
+class CarlaBridgeToolkitNative : public CarlaBridgeToolkit,
                                  private CarlaPluginUI::Callback
 {
 public:
-    CarlaBridgeToolkitPlugin(CarlaBridgeUI* const u)
-        : CarlaBridgeToolkit(u),
+    CarlaBridgeToolkitNative(CarlaBridgeFormat* const format)
+        : CarlaBridgeToolkit(format),
           fHostUI(nullptr),
           fIdling(false)
     {
-        carla_debug("CarlaBridgeToolkitPlugin::CarlaBridgeToolkitPlugin(%p)", u);
+        carla_debug("CarlaBridgeToolkitNative::CarlaBridgeToolkitNative(%p)", format);
     }
 
-    ~CarlaBridgeToolkitPlugin() override
+    ~CarlaBridgeToolkitNative() override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI == nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::~CarlaBridgeToolkitPlugin()");
+        carla_debug("CarlaBridgeToolkitNative::~CarlaBridgeToolkitNative()");
     }
 
     bool init(const int /*argc*/, const char** /*argv[]*/) override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI == nullptr, false);
-        carla_debug("CarlaBridgeToolkitPlugin::init()");
+        carla_debug("CarlaBridgeToolkitNative::init()");
 
-        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
+        const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
 #if defined(CARLA_OS_MAC) && defined(BRIDGE_COCOA)
         fHostUI = CarlaPluginUI::newCocoa(this, 0, options.isResizable);
@@ -80,9 +81,9 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::exec(%s)", bool2str(showUI));
+        carla_debug("CarlaBridgeToolkitNative::exec(%s)", bool2str(showUI));
 
         if (showUI)
             fHostUI->show();
@@ -91,10 +92,10 @@ public:
 
         for (; runMainLoopOnce() && fIdling;)
         {
-            if (fPluginUI->isPipeRunning())
-                fPluginUI->idlePipe();
+            if (fPlugin->isPipeRunning())
+                fPlugin->idlePipe();
 
-            fPluginUI->idleUI();
+            fPlugin->idleUI();
             fHostUI->idle();
 #if defined(CARLA_OS_MAC) || defined(CARLA_OS_WIN)
             // MacOS and Win32 have event-loops to run, so minimize sleep time
@@ -107,7 +108,7 @@ public:
 
     void quit() override
     {
-        carla_debug("CarlaBridgeToolkitPlugin::quit()");
+        carla_debug("CarlaBridgeToolkitNative::quit()");
 
         fIdling = false;
 
@@ -122,7 +123,7 @@ public:
     void show() override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::show()");
+        carla_debug("CarlaBridgeToolkitNative::show()");
 
         fHostUI->show();
     }
@@ -130,7 +131,7 @@ public:
     void focus() override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::focus()");
+        carla_debug("CarlaBridgeToolkitNative::focus()");
 
         fHostUI->focus();
     }
@@ -138,7 +139,7 @@ public:
     void hide() override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::hide()");
+        carla_debug("CarlaBridgeToolkitNative::hide()");
 
         fHostUI->hide();
     }
@@ -148,7 +149,7 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(width > 0,);
         CARLA_SAFE_ASSERT_RETURN(height > 0,);
-        carla_debug("CarlaBridgeToolkitPlugin::resize(%i, %i)", width, height);
+        carla_debug("CarlaBridgeToolkitNative::resize(%i, %i)", width, height);
 
         fHostUI->setSize(width, height, false);
     }
@@ -156,7 +157,7 @@ public:
     void setTitle(const char* const title) override
     {
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
-        carla_debug("CarlaBridgeToolkitPlugin::setTitle(\"%s\")", title);
+        carla_debug("CarlaBridgeToolkitNative::setTitle(\"%s\")", title);
 
         fHostUI->setTitle(title);
     }
@@ -187,7 +188,7 @@ protected:
 
     void handlePluginUIResized(const uint width, const uint height) override
     {
-        fPluginUI->uiResized(width, height);
+        fPlugin->uiResized(width, height);
     }
 
     // ---------------------------------------------------------------------
@@ -196,19 +197,19 @@ private:
     CarlaPluginUI* fHostUI;
     bool fIdling;
 
-    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitPlugin)
+    CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaBridgeToolkitNative)
 };
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
 {
-    return new CarlaBridgeToolkitPlugin(ui);
+    return new CarlaBridgeToolkitNative(format);
 }
 
 // -------------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE
 
 #include "CarlaPluginUI.cpp"
 

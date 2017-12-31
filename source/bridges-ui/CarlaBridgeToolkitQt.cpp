@@ -1,5 +1,5 @@
 /*
- * Carla Bridge Toolkit, Qt version
+ * Carla Bridge UI
  * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,8 +15,9 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUI.hpp"
+#include "CarlaBridgeFormat.hpp"
 #include "CarlaBridgeToolkit.hpp"
+
 #include "CarlaStyle.hpp"
 
 #include <QtCore/QTimerEvent>
@@ -34,7 +35,7 @@
 # endif
 #endif
 
-CARLA_BRIDGE_START_NAMESPACE
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
@@ -56,15 +57,15 @@ class CarlaBridgeToolkitQt: public QObject,
 #endif
 
 public:
-    CarlaBridgeToolkitQt(CarlaBridgeUI* const u)
+    CarlaBridgeToolkitQt(CarlaBridgeFormat* const format)
         : QObject(nullptr),
-          CarlaBridgeToolkit(u),
+          CarlaBridgeToolkit(format),
           fApp(nullptr),
           fWindow(nullptr),
           fMsgTimer(0),
           fNeedsShow(false)
     {
-        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", u);
+        carla_debug("CarlaBridgeToolkitQt::CarlaBridgeToolkitQt(%p)", format);
     }
 
     ~CarlaBridgeToolkitQt() override
@@ -93,14 +94,14 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::exec(%s)", bool2str(showUI));
 
-        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
+        const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
-        QWidget* const widget((QWidget*)fPluginUI->getWidget());
+        QWidget* const widget((QWidget*)fPlugin->getWidget());
 
         fWindow->setCentralWidget(widget);
         fWindow->adjustSize();
@@ -119,12 +120,14 @@ public:
         fWindow->setWindowIcon(QIcon::fromTheme("carla", QIcon(":/scalable/carla.svg")));
         fWindow->setWindowTitle(options.windowTitle.buffer());
 
+#ifdef USE_CUSTOM_X11_METHODS
         if (options.transientWindowId != 0)
         {
-#ifdef USE_CUSTOM_X11_METHODS
-            XSetTransientForHint(QX11Info::display(), static_cast< ::Window>(fWindow->winId()), static_cast< ::Window>(options.transientWindowId));
-#endif
+            XSetTransientForHint(QX11Info::display(),
+                                 static_cast< ::Window>(fWindow->winId()),
+                                 static_cast< ::Window>(options.transientWindowId));
         }
+#endif
 
         if (showUI || fNeedsShow)
         {
@@ -143,7 +146,7 @@ public:
 
     void quit() override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fApp != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitQt::quit()");
@@ -199,13 +202,13 @@ public:
 
     void setSize(const uint width, const uint height) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(width > 0,);
         CARLA_SAFE_ASSERT_RETURN(height > 0,);
         carla_debug("CarlaBridgeToolkitQt::resize(%i, %i)", width, height);
 
-        if (fPluginUI->getOptions().isResizable)
+        if (fPlugin->getOptions().isResizable)
             fWindow->resize(static_cast<int>(width), static_cast<int>(height));
         else
             fWindow->setFixedSize(static_cast<int>(width), static_cast<int>(height));
@@ -229,12 +232,12 @@ protected:
 
     void handleTimeout()
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
 
-        if (fPluginUI->isPipeRunning())
-            fPluginUI->idlePipe();
+        if (fPlugin->isPipeRunning())
+            fPlugin->idlePipe();
 
-        fPluginUI->idleUI();
+        fPlugin->idleUI();
     }
 
 private:
@@ -259,14 +262,14 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
 {
-    return new CarlaBridgeToolkitQt(ui);
+    return new CarlaBridgeToolkitQt(format);
 }
 
 // -------------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE
 
 // -------------------------------------------------------------------------
 

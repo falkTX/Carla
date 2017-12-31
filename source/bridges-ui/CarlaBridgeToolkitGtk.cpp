@@ -1,5 +1,5 @@
 /*
- * Carla Bridge Toolkit, Gtk version
+ * Carla Bridge UI
  * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -15,16 +15,16 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUI.hpp"
+#include "CarlaBridgeFormat.hpp"
+#include "CarlaBridgeToolkit.hpp"
 
 #include <gtk/gtk.h>
 
 #ifdef HAVE_X11
-# define USE_CUSTOM_X11_METHODS
 # include <gdk/gdkx.h>
 #endif
 
-CARLA_BRIDGE_START_NAMESPACE
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 // -------------------------------------------------------------------------
 
@@ -38,8 +38,8 @@ static const bool gHideShowTesting = std::getenv("CARLA_UI_TESTING") != nullptr;
 class CarlaBridgeToolkitGtk : public CarlaBridgeToolkit
 {
 public:
-    CarlaBridgeToolkitGtk(CarlaBridgeUI* const u)
-        : CarlaBridgeToolkit(u),
+    CarlaBridgeToolkitGtk(CarlaBridgeFormat* const format)
+        : CarlaBridgeToolkit(format),
           fNeedsShow(false),
           fWindow(nullptr),
           fLastX(0),
@@ -47,7 +47,7 @@ public:
           fLastWidth(0),
           fLastHeight(0)
     {
-        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", u);
+        carla_debug("CarlaBridgeToolkitGtk::CarlaBridgeToolkitGtk(%p)", format);
     }
 
     ~CarlaBridgeToolkitGtk() override
@@ -74,16 +74,16 @@ public:
 
     void exec(const bool showUI) override
     {
-        CARLA_SAFE_ASSERT_RETURN(fPluginUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::exec(%s)", bool2str(showUI));
 
-        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
+        const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
         GtkWindow* const gtkWindow(GTK_WINDOW(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gtkWindow != nullptr,);
 
-        GtkWidget* const widget((GtkWidget*)fPluginUI->getWidget());
+        GtkWidget* const widget((GtkWidget*)fPlugin->getWidget());
         gtk_container_add(GTK_CONTAINER(fWindow), widget);
 
         gtk_window_set_resizable(gtkWindow, options.isResizable);
@@ -182,7 +182,7 @@ protected:
     {
         carla_debug("CarlaBridgeToolkitGtk::handleRealize()");
 
-        const CarlaBridgeUI::Options& options(fPluginUI->getOptions());
+        const CarlaBridgeFormat::Options& options(fPlugin->getOptions());
 
         if (options.transientWindowId != 0)
             setTransient(options.transientWindowId);
@@ -196,10 +196,10 @@ protected:
             gtk_window_get_size(GTK_WINDOW(fWindow), &fLastWidth, &fLastHeight);
         }
 
-        if (fPluginUI->isPipeRunning())
-            fPluginUI->idlePipe();
+        if (fPlugin->isPipeRunning())
+            fPlugin->idlePipe();
 
-        fPluginUI->idleUI();
+        fPlugin->idleUI();
 
         if (gHideShowTesting)
         {
@@ -225,7 +225,7 @@ protected:
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);
         carla_debug("CarlaBridgeToolkitGtk::setTransient(0x" P_UINTPTR ")", winId);
 
-#ifdef USE_CUSTOM_X11_METHODS
+#ifdef HAVE_X11
         GdkWindow* const gdkWindow(gtk_widget_get_window(fWindow));
         CARLA_SAFE_ASSERT_RETURN(gdkWindow != nullptr,);
 
@@ -286,11 +286,11 @@ private:
 
 // -------------------------------------------------------------------------
 
-CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeUI* const ui)
+CarlaBridgeToolkit* CarlaBridgeToolkit::createNew(CarlaBridgeFormat* const format)
 {
-    return new CarlaBridgeToolkitGtk(ui);
+    return new CarlaBridgeToolkitGtk(format);
 }
 
 // -------------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE

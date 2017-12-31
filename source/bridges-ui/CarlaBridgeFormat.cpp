@@ -1,6 +1,6 @@
 /*
  * Carla Bridge UI
- * Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,11 +15,13 @@
  * For a full copy of the GNU General Public License see the doc/GPL.txt file.
  */
 
-#include "CarlaBridgeUI.hpp"
-#include "CarlaMIDI.h"
+#include "CarlaBridgeFormat.hpp"
+#include "CarlaBridgeToolkit.hpp"
 
 #include "CarlaBase64Utils.hpp"
+#include "CarlaMIDI.h"
 
+// FIXME move this into utils
 #ifdef CARLA_OS_LINUX
 # include <signal.h>
 # include <sys/prctl.h>
@@ -33,11 +35,11 @@
 
 #include "lv2/atom-util.h"
 
-CARLA_BRIDGE_START_NAMESPACE
+CARLA_BRIDGE_UI_START_NAMESPACE
 
 // ---------------------------------------------------------------------
 
-CarlaBridgeUI::CarlaBridgeUI() noexcept
+CarlaBridgeFormat::CarlaBridgeFormat() noexcept
     : CarlaPipeClient(),
       fQuitReceived(false),
       fGotOptions(false),
@@ -46,16 +48,16 @@ CarlaBridgeUI::CarlaBridgeUI() noexcept
       fLib(nullptr),
       fLibFilename()
 {
-    carla_debug("CarlaBridgeUI::CarlaBridgeUI()");
+    carla_debug("CarlaBridgeFormat::CarlaBridgeFormat()");
 
     try {
         fToolkit = CarlaBridgeToolkit::createNew(this);
     } CARLA_SAFE_EXCEPTION_RETURN("CarlaBridgeToolkit::createNew",);
 }
 
-CarlaBridgeUI::~CarlaBridgeUI() /*noexcept*/
+CarlaBridgeFormat::~CarlaBridgeFormat() /*noexcept*/
 {
-    carla_debug("CarlaBridgeUI::~CarlaBridgeUI()");
+    carla_debug("CarlaBridgeFormat::~CarlaBridgeFormat()");
 
     if (isPipeRunning() && ! fQuitReceived)
         writeExitingMessageAndWait();
@@ -78,7 +80,7 @@ CarlaBridgeUI::~CarlaBridgeUI() /*noexcept*/
 
 // ---------------------------------------------------------------------
 
-bool CarlaBridgeUI::libOpen(const char* const filename) noexcept
+bool CarlaBridgeFormat::libOpen(const char* const filename) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fLib == nullptr, false);
 
@@ -93,14 +95,14 @@ bool CarlaBridgeUI::libOpen(const char* const filename) noexcept
     return false;
 }
 
-void* CarlaBridgeUI::libSymbol(const char* const symbol) const noexcept
+void* CarlaBridgeFormat::libSymbol(const char* const symbol) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fLib != nullptr, nullptr);
 
     return lib_symbol<void*>(fLib, symbol);
 }
 
-const char* CarlaBridgeUI::libError() const noexcept
+const char* CarlaBridgeFormat::libError() const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(fLibFilename.isNotEmpty(), nullptr);
 
@@ -109,13 +111,13 @@ const char* CarlaBridgeUI::libError() const noexcept
 
 // ---------------------------------------------------------------------
 
-bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
+bool CarlaBridgeFormat::msgReceived(const char* const msg) noexcept
 {
-    carla_debug("CarlaBridgeUI::msgReceived(\"%s\")", msg);
+    carla_debug("CarlaBridgeFormat::msgReceived(\"%s\")", msg);
 
     if (! fGotOptions && std::strcmp(msg, "urid") != 0 && std::strcmp(msg, "uiOptions") != 0)
     {
-        carla_stderr2("CarlaBridgeUI::msgReceived(\"%s\") - invalid message while waiting for options", msg);
+        carla_stderr2("CarlaBridgeFormat::msgReceived(\"%s\") - invalid message while waiting for options", msg);
         return true;
     }
 
@@ -287,13 +289,13 @@ bool CarlaBridgeUI::msgReceived(const char* const msg) noexcept
         return true;
     }
 
-    carla_stderr("CarlaBridgeUI::msgReceived : %s", msg);
+    carla_stderr("CarlaBridgeFormat::msgReceived : %s", msg);
     return false;
 }
 
 // ---------------------------------------------------------------------
 
-bool CarlaBridgeUI::init(const int argc, const char* argv[])
+bool CarlaBridgeFormat::init(const int argc, const char* argv[])
 {
     CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr, false);
 
@@ -313,7 +315,7 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
 
         if (! fGotOptions)
         {
-            carla_stderr2("CarlaBridgeUI::init() - did not get options on time, quitting...");
+            carla_stderr2("CarlaBridgeFormat::init() - did not get options on time, quitting...");
             writeExitingMessageAndWait();
             closePipeClient();
             return false;
@@ -330,7 +332,7 @@ bool CarlaBridgeUI::init(const int argc, const char* argv[])
     return true;
 }
 
-void CarlaBridgeUI::exec(const bool showUI)
+void CarlaBridgeFormat::exec(const bool showUI)
 {
     CARLA_SAFE_ASSERT_RETURN(fToolkit != nullptr,);
 
@@ -345,7 +347,7 @@ void CarlaBridgeUI::exec(const bool showUI)
 
 // ---------------------------------------------------------------------
 
-CARLA_BRIDGE_END_NAMESPACE
+CARLA_BRIDGE_UI_END_NAMESPACE
 
 #include "CarlaPipeUtils.cpp"
 

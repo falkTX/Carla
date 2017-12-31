@@ -8,7 +8,7 @@ CWD=..
 MODULENAME=carla-bridge
 include $(CWD)/Makefile.mk
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 BINDIR    := $(CWD)/../bin
 
@@ -20,12 +20,12 @@ OBJDIR    := $(CWD)/../build/bridges-ui/Release
 MODULEDIR := $(CWD)/../build/modules/Release
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
+BUILD_CXX_FLAGS  += -DBUILD_BRIDGE -DBUILD_BRIDGE_UI -I. -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -I$(CWD)/modules
 LINK_FLAGS       += $(WATER_LIBS)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 BUILD_GTK2_FLAGS    = $(BUILD_CXX_FLAGS) -DBRIDGE_GTK2 $(shell pkg-config --cflags gtk+-2.0)
 LINK_GTK2_FLAGS     = $(LINK_FLAGS) $(shell pkg-config --libs gtk+-2.0) $(LIBDL_LIBS)
@@ -54,7 +54,7 @@ LINK_GTK3_FLAGS += -lX11
 LINK_QT4_FLAGS  += -lX11
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 ifneq ($(MACOS_OR_WIN32),true)
 ifeq ($(HAVE_GTK2),true)
@@ -86,11 +86,11 @@ ifeq ($(WIN32),true)
 TARGETS += ui_lv2-windows
 endif
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 all: $(TARGETS)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 clean:
 	rm -f $(OBJDIR)/*.cpp $(OBJDIR)/*.moc $(OBJDIR)/*.o
@@ -106,7 +106,7 @@ debug:
 doxygen: carla_bridge.doxygen
 	doxygen $<
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 ui_lv2-gtk2:    $(BINDIR)/$(MODULENAME)-lv2-gtk2
 ui_lv2-gtk3:    $(BINDIR)/$(MODULENAME)-lv2-gtk3
@@ -116,14 +116,14 @@ ui_lv2-x11:     $(BINDIR)/$(MODULENAME)-lv2-x11
 ui_lv2-cocoa:   $(BINDIR)/$(MODULENAME)-lv2-cocoa
 ui_lv2-windows: $(BINDIR)/$(MODULENAME)-lv2-windows.exe
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Common libs
 
 LIBS = \
 	$(MODULEDIR)/lilv.a \
 	$(MODULEDIR)/water.files.a
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # Common objects
 
 $(OBJDIR)/%.cpp.o: %.cpp
@@ -131,12 +131,12 @@ $(OBJDIR)/%.cpp.o: %.cpp
 	@echo "Compiling $<"
 	@$(CXX) $< $(BUILD_CXX_FLAGS) -c -o $@
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk2
 
 OBJS_GTK2 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-gtk2.o \
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-gtk2.o \
 	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk2.o
 
 $(BINDIR)/$(MODULENAME)-lv2-gtk2: $(OBJS_GTK2) $(LIBS)
@@ -151,12 +151,12 @@ $(OBJDIR)/%.cpp-gtk2.o: %.cpp
 
 -include $(OBJS_GTK2:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-gtk3
 
 OBJS_GTK3 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-gtk3.o \
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-gtk3.o \
 	$(OBJDIR)/CarlaBridgeToolkitGtk.cpp-gtk3.o
 
 $(BINDIR)/$(MODULENAME)-lv2-gtk3: $(OBJS_GTK3) $(LIBS)
@@ -171,12 +171,12 @@ $(OBJDIR)/%.cpp-gtk3.o: %.cpp
 
 -include $(OBJS_GTK3:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-qt4
 
 OBJS_QT4 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-qt4.o \
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-qt4.o \
 	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt4.o
 
 $(BINDIR)/$(MODULENAME)-lv2-qt4: $(OBJS_QT4) $(LIBS) $(MODULEDIR)/theme.qt4.a
@@ -201,12 +201,12 @@ $(OBJDIR)/resources.qt4.cpp: ../../resources/resources-theme.qrc
 
 -include $(OBJS_QT4:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-qt5
 
 OBJS_QT5 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-qt5.o \
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-qt5.o \
 	$(OBJDIR)/CarlaBridgeToolkitQt.cpp-qt5.o
 
 $(BINDIR)/$(MODULENAME)-lv2-qt5: $(OBJS_QT5) $(LIBS) $(MODULEDIR)/theme.qt5.a
@@ -231,13 +231,13 @@ $(OBJDIR)/resources.qt5.cpp: ../../resources/resources-theme.qrc
 
 -include $(OBJS_QT5:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-x11
 
 OBJS_X11 = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-x11.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-x11.o
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-x11.o \
+	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-x11.o
 
 $(BINDIR)/$(MODULENAME)-lv2-x11: $(OBJS_X11) $(LIBS)
 	-@mkdir -p $(BINDIR)
@@ -251,13 +251,13 @@ $(OBJDIR)/%.cpp-x11.o: %.cpp
 
 -include $(OBJS_X11:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-cocoa
 
 OBJS_COCOA = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-cocoa.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-cocoa.o
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-cocoa.o \
+	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-cocoa.o
 
 $(BINDIR)/$(MODULENAME)-lv2-cocoa: $(OBJS_COCOA) $(LIBS)
 	-@mkdir -p $(BINDIR)
@@ -271,13 +271,13 @@ $(OBJDIR)/%.cpp-cocoa.o: %.cpp
 
 -include $(OBJS_COCOA:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # ui_lv2-windows
 
 OBJS_WINDOWS = \
-	$(OBJDIR)/CarlaBridgeUI.cpp.o \
-	$(OBJDIR)/CarlaBridgeUI-LV2.cpp-windows.o \
-	$(OBJDIR)/CarlaBridgeToolkitPlugin.cpp-windows.o
+	$(OBJDIR)/CarlaBridgeFormat.cpp.o \
+	$(OBJDIR)/CarlaBridgeFormatLV2.cpp-windows.o \
+	$(OBJDIR)/CarlaBridgeToolkitNative.cpp-windows.o
 
 $(BINDIR)/$(MODULENAME)-lv2-windows.exe: $(OBJS_WINDOWS) $(LIBS)
 	-@mkdir -p $(BINDIR)
@@ -291,4 +291,4 @@ $(OBJDIR)/%.cpp-windows.o: %.cpp
 
 -include $(OBJS_WINDOWS:%.o=%.d)
 
-# ----------------------------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
