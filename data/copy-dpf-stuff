@@ -4,8 +4,14 @@ set -e
 
 cp    -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/*.hpp /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/
 cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/dgl/src   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/
+cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/distrho/* /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/ || true
 
-cp -r -v /home/falktx/FOSS/GIT-mine/DISTRHO/DPF/distrho/*   /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/
+rm -r /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/resources
+rm -r /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/sofd
+rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/dgl/src/Resources.*
+
+rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/src/DistrhoPlugin{Jack,LADSPA+DSSI,LV2,LV2export,VST}.cpp
+rm    /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/distrho/src/DistrhoUI{DSSI,LV2}.cpp
 
 # cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandEQ/{*.cpp,*.hpp,*.h}       /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/3bandeq/
 # cp -v /home/falktx/FOSS/GIT-mine/DISTRHO/DISTRHO_mini-series/plugins/3BandSplitter/{*.cpp,*.hpp,*.h} /home/falktx/FOSS/GIT-mine/falkTX/Carla/source/modules/native-plugins/3bandsplitter/

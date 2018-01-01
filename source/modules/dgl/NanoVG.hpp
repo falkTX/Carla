@@ -20,7 +20,9 @@
 #include "Color.hpp"
 #include "Widget.hpp"
 
-#define NANOVG_DEJAVU_SANS_TTF "__dpf_dejavusans_ttf__"
+#ifndef DGL_NO_SHARED_RESOURCES
+# define NANOVG_DEJAVU_SANS_TTF "__dpf_dejavusans_ttf__"
+#endif
 
 struct NVGcontext;
 struct NVGpaint;
@@ -844,10 +846,12 @@ public:
     */
     int textBreakLines(const char* string, const char* end, float breakRowWidth, TextRow& rows, int maxRows);
 
+#ifndef DGL_NO_SHARED_RESOURCES
    /**
       Load DPF's internal shared resources for this NanoVG class.
     */
     virtual void loadSharedResources();
+#endif
 
 private:
     NVGcontext* const fContext;

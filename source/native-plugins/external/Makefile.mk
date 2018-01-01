@@ -82,7 +82,7 @@ DGL_FLAGS  = $(shell pkg-config --cflags gl x11)
 DGL_LIBS   = $(shell pkg-config --libs gl x11)
 endif
 
-DGL_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED
+DGL_FLAGS += -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ endif
 DPF_FLAGS  = -I$(CWDE)/modules/distrho
 
 ifeq ($(HAVE_DGL),true)
-DPF_FLAGS += -I$(CWDE)/modules/dgl -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED
+DPF_FLAGS += -I$(CWDE)/modules/dgl -DDGL_NAMESPACE=CarlaDGL -DDGL_FILE_BROWSER_DISABLED -DDGL_NO_SHARED_RESOURCES
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
