@@ -79,7 +79,7 @@ BinaryType getBinaryTypeFromFile(const char* const filename)
     using water::FileInputStream;
 
     ScopedPointer<FileInputStream> stream(File(filename).createInputStream());
-    CARLA_SAFE_ASSERT_RETURN(stream != nullptr || stream->failedToOpen(), BINARY_NATIVE);
+    CARLA_SAFE_ASSERT_RETURN(stream != nullptr && ! stream->failedToOpen(), BINARY_NATIVE);
 
     // -------------------------------------------------------------------
     // binary type code based on Ardour's dll_info function

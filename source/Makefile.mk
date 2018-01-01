@@ -238,9 +238,9 @@ HAVE_QT5          = $(shell pkg-config --exists Qt5Core Qt5Gui Qt5Widgets && ech
 HAVE_SNDFILE      = $(shell pkg-config --exists sndfile && echo true)
 
 # ---------------------------------------------------------------------------------------------------------------------
-# Check for optional libs (special non-pkgconfig unix tests)
+# Check for optional libs (special non-pkgconfig tests)
 
-ifeq ($(UNIX),true)
+ifneq ($(WIN32),true)
 
 # libmagic doesn't have a pkg-config file, so we need to call the compiler to test it
 HAVE_LIBMAGIC = $(shell echo '\#include <magic.h>' | $(CC) $(CFLAGS) -x c -w -c - -o .libmagic-tmp 2>/dev/null && echo true)

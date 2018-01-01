@@ -722,39 +722,48 @@ endif
 features_print_main:
 	@printf -- "$(tS)---> Main features $(tE)\n"
 ifeq ($(HAVE_PYQT),true)
-	@printf -- "Front-End:    $(ANS_YES) (Using $(FEV))\n"
+	@printf -- "Front-End:     $(ANS_YES) (Using $(FEV))\n"
 ifneq ($(WIN32),true)
-	@printf -- "LV2 plugin:   $(ANS_YES)\n"
+	@printf -- "LV2 plugin:    $(ANS_YES)\n"
 else
-	@printf -- "LV2 plugin:   $(ANS_NO)  $(mZ)Not available for Windows$(mE)\n"
+	@printf -- "LV2 plugin:    $(ANS_NO)  $(mZ)Not available for Windows$(mE)\n"
 endif
 ifeq ($(LINUX),true)
 ifeq ($(HAVE_X11),true)
-	@printf -- "VST plugin:   $(ANS_YES)\n"
+	@printf -- "VST plugin:    $(ANS_YES)\n"
 else # HAVE_X11
-	@printf -- "VST plugin:   $(ANS_NO)  $(mS)X11 missing$(mE)\n"
+	@printf -- "VST plugin:    $(ANS_NO)  $(mS)X11 missing$(mE)\n"
 endif
 else # LINUX
-	@printf -- "VST plugin:   $(ANS_NO)  $(mZ)Linux only$(mE)\n"
+	@printf -- "VST plugin:    $(ANS_NO)  $(mZ)Linux only$(mE)\n"
 endif
 else
-	@printf -- "Front-End:    $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
-	@printf -- "LV2 plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
-	@printf -- "VST plugin:   $(ANS_NO)  $(mS)No front-end$(mE)\n"
+	@printf -- "Front-End:     $(ANS_NO)  $(mS)Missing PyQt$(mE)\n"
+	@printf -- "LV2 plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
+	@printf -- "VST plugin:    $(ANS_NO)  $(mS)No front-end$(mE)\n"
 endif
 ifeq ($(HAVE_HYLIA),true)
-	@printf -- "Link support: $(ANS_YES)\n"
+	@printf -- "Link support:  $(ANS_YES)\n"
 else
 ifeq ($(MACOS_OLD),true)
-	@printf -- "Link support: $(ANS_NO)  $(mZ)MacOS >= 10.10 only$(mE)\n"
+	@printf -- "Link support:  $(ANS_NO)  $(mZ)MacOS >= 10.10 only$(mE)\n"
 else
-	@printf -- "Link support: $(ANS_NO)  $(mZ)Linux, MacOS and Windows only$(mE)\n"
+	@printf -- "Link support:  $(ANS_NO)  $(mZ)Linux, MacOS and Windows only$(mE)\n"
 endif
 endif
 ifeq ($(HAVE_LIBLO),true)
-	@printf -- "OSC support:  $(ANS_YES)\n"
+	@printf -- "OSC support:   $(ANS_YES)\n"
 else
-	@printf -- "OSC support:  $(ANS_NO)  $(mS)Missing liblo$(mE)\n"
+	@printf -- "OSC support:   $(ANS_NO)  $(mS)Missing liblo$(mE)\n"
+endif
+ifeq ($(WIN32),true)
+	@printf -- "Binary detect: $(ANS_YES)\n"
+else
+ifeq ($(HAVE_LIBMAGIC),true)
+	@printf -- "Binary detect: $(ANS_YES)\n"
+else
+	@printf -- "Binary detect: $(ANS_NO)  $(mS)Missing libmagic/file$(mE)\n"
+endif
 endif
 	@printf -- "\n"
 
