@@ -1317,16 +1317,6 @@ bool Window::handlePluginSpecial(const bool press, const Key key)
     return pData->handlePluginSpecial(press, key);
 }
 
-bool Window::handlePluginKeyboard(const bool press, const uint key)
-{
-    return pData->handlePluginKeyboard(press, key);
-}
-
-bool Window::handlePluginSpecial(const bool press, const Key key)
-{
-    return pData->handlePluginSpecial(press, key);
-}
-
 // -----------------------------------------------------------------------
 
 StandaloneWindow::StandaloneWindow()
