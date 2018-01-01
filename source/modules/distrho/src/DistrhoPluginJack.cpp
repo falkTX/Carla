@@ -70,20 +70,14 @@ static void closeSignalHandler(int) noexcept
 
 static void initSignalHandler()
 {
-    struct sigaction sint;
-    struct sigaction sterm;
+    struct sigaction sig;
+    memset(&sig, 0, sizeof(sig));
 
-    sint.sa_handler  = closeSignalHandler;
-    sint.sa_flags    = SA_RESTART;
-    sint.sa_restorer = nullptr;
-    sigemptyset(&sint.sa_mask);
-    sigaction(SIGINT, &sint, nullptr);
-
-    sterm.sa_handler  = closeSignalHandler;
-    sterm.sa_flags    = SA_RESTART;
-    sterm.sa_restorer = nullptr;
-    sigemptyset(&sterm.sa_mask);
-    sigaction(SIGTERM, &sterm, nullptr);
+    sig.sa_handler = closeSignalHandler;
+    sig.sa_flags   = SA_RESTART;
+    sigemptyset(&sig.sa_mask);
+    sigaction(SIGINT, &sig, nullptr);
+    sigaction(SIGTERM, &sig, nullptr);
 }
 #endif
 
@@ -103,28 +97,27 @@ public:
 #endif
           fClient(client)
     {
+#if DISTRHO_PLUGIN_NUM_INPUTS > 0 || DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         char strBuf[0xff+1];
         strBuf[0xff] = '\0';
 
-#if DISTRHO_PLUGIN_NUM_INPUTS > 0
+# if DISTRHO_PLUGIN_NUM_INPUTS > 0
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
         {
             std::snprintf(strBuf, 0xff, "in%i", i+1);
             fPortAudioIns[i] = jack_port_register(fClient, strBuf, JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
         }
-#endif
-
-#if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
+# endif
+# if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_OUTPUTS; ++i)
         {
             std::snprintf(strBuf, 0xff, "out%i", i+1);
             fPortAudioOuts[i] = jack_port_register(fClient, strBuf, JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0);
         }
+# endif
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-        fPortMidiIn = jack_port_register(fClient, "midi-in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
-#endif
+        fPortEventsIn = jack_port_register(fClient, "events-in", JACK_DEFAULT_MIDI_TYPE, JackPortIsInput, 0);
 
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         if (fPlugin.getProgramCount() > 0)
@@ -134,11 +127,18 @@ public:
             fUI.programLoaded(0);
 # endif
         }
+# if DISTRHO_PLUGIN_HAS_UI
+        fProgramChanged = -1;
+# endif
 #endif
 
         if (const uint32_t count = fPlugin.getParameterCount())
         {
             fLastOutputValues = new float[count];
+#if DISTRHO_PLUGIN_HAS_UI
+            fParametersChanged = new bool[count];
+            std::memset(fParametersChanged, 0, sizeof(bool)*count);
+#endif
 
             for (uint32_t i=0; i < count; ++i)
             {
@@ -149,15 +149,18 @@ public:
                 else
                 {
                     fLastOutputValues[i] = 0.0f;
-# if DISTRHO_PLUGIN_HAS_UI
+#if DISTRHO_PLUGIN_HAS_UI
                     fUI.parameterChanged(i, fPlugin.getParameterValue(i));
-# endif
+#endif
                 }
             }
         }
         else
         {
             fLastOutputValues = nullptr;
+#if DISTRHO_PLUGIN_HAS_UI
+            fParametersChanged = nullptr;
+#endif
         }
 
         jack_set_buffer_size_callback(fClient, jackBufferSizeCallback, this);
@@ -198,10 +201,8 @@ public:
         if (fClient == nullptr)
             return;
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-        jack_port_unregister(fClient, fPortMidiIn);
-        fPortMidiIn = nullptr;
-#endif
+        jack_port_unregister(fClient, fPortEventsIn);
+        fPortEventsIn = nullptr;
 
 #if DISTRHO_PLUGIN_NUM_INPUTS > 0
         for (uint32_t i=0; i < DISTRHO_PLUGIN_NUM_INPUTS; ++i)
@@ -231,20 +232,31 @@ protected:
         if (gCloseSignalReceived)
             return fUI.quit();
 
-        float value;
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
+        if (fProgramChanged >= 0)
+        {
+            fUI.programLoaded(fProgramChanged);
+            fProgramChanged = -1;
+        }
+# endif
 
         for (uint32_t i=0, count=fPlugin.getParameterCount(); i < count; ++i)
         {
-            if (! fPlugin.isParameterOutput(i))
-                continue;
+            if (fPlugin.isParameterOutput(i))
+            {
+                const float value = fPlugin.getParameterValue(i);
 
-            value = fPlugin.getParameterValue(i);
+                if (d_isEqual(fLastOutputValues[i], value))
+                    continue;
 
-            if (fLastOutputValues[i] == value)
-                continue;
-
-            fLastOutputValues[i] = value;
-            fUI.parameterChanged(i, value);
+                fLastOutputValues[i] = value;
+                fUI.parameterChanged(i, value);
+            }
+            else if (fParametersChanged[i])
+            {
+                fParametersChanged[i] = false;
+                fUI.parameterChanged(i, fPlugin.getParameterValue(i));
+            }
         }
 
         fUI.exec_idle();
@@ -316,14 +328,14 @@ protected:
         fPlugin.setTimePosition(fTimePosition);
 #endif
 
-#if DISTRHO_PLUGIN_IS_SYNTH
-        void* const midiBuf = jack_port_get_buffer(fPortMidiIn, nframes);
+        void* const midiBuf = jack_port_get_buffer(fPortEventsIn, nframes);
 
         if (const uint32_t eventCount = jack_midi_get_event_count(midiBuf))
         {
+#if DISTRHO_PLUGIN_IS_SYNTH
             uint32_t  midiEventCount = 0;
             MidiEvent midiEvents[eventCount];
-
+#endif
             jack_midi_event_t jevent;
 
             for (uint32_t i=0; i < eventCount; ++i)
@@ -331,6 +343,47 @@ protected:
                 if (jack_midi_event_get(&jevent, midiBuf, i) != 0)
                     break;
 
+                // Check if message is control change on channel 1
+                if (jevent.buffer[0] == 0xB0 && jevent.size == 3)
+                {
+                    const uint8_t control = jevent.buffer[1];
+                    const uint8_t value   = jevent.buffer[2];
+
+                    /* NOTE: This is not optimal, we're iterating all parameters on every CC message.
+                             Since the JACK standalone is more of a test tool, this will do for now. */
+                    for (uint32_t j=0, paramCount=fPlugin.getParameterCount(); j < paramCount; ++j)
+                    {
+                        if (fPlugin.isParameterOutput(j))
+                            continue;
+                        if (fPlugin.getParameterMidiCC(j) != control)
+                            continue;
+
+                        const float scaled = static_cast<float>(value)/127.0f;
+                        const float fvalue = fPlugin.getParameterRanges(j).getUnnormalizedValue(scaled);
+                        fPlugin.setParameterValue(j, fvalue);
+#if DISTRHO_PLUGIN_HAS_UI
+                        fParametersChanged[j] = true;
+#endif
+                        break;
+                    }
+                }
+#if DISTRHO_PLUGIN_WANT_PROGRAMS
+                // Check if message is program change on channel 1
+                else if (jevent.buffer[0] == 0xC0 && jevent.size == 2)
+                {
+                    const uint8_t program = jevent.buffer[1];
+
+                    if (program < fPlugin.getProgramCount())
+                    {
+                        fPlugin.loadProgram(program);
+# if DISTRHO_PLUGIN_HAS_UI
+                        fProgramChanged = program;
+# endif
+                    }
+                }
+#endif
+
+#if DISTRHO_PLUGIN_IS_SYNTH
                 MidiEvent& midiEvent(midiEvents[midiEventCount++]);
 
                 midiEvent.frame = jevent.time;
@@ -340,10 +393,14 @@ protected:
                     midiEvent.dataExt = jevent.buffer;
                 else
                     std::memcpy(midiEvent.data, jevent.buffer, midiEvent.size);
+#endif
             }
 
+#if DISTRHO_PLUGIN_IS_SYNTH
             fPlugin.run(audioIns, audioOuts, nframes, midiEvents, midiEventCount);
+#endif
         }
+#if DISTRHO_PLUGIN_IS_SYNTH
         else
         {
             fPlugin.run(audioIns, audioOuts, nframes, nullptr, 0);
@@ -399,15 +456,21 @@ private:
 #if DISTRHO_PLUGIN_NUM_OUTPUTS > 0
     jack_port_t* fPortAudioOuts[DISTRHO_PLUGIN_NUM_OUTPUTS];
 #endif
-#if DISTRHO_PLUGIN_IS_SYNTH
-    jack_port_t* fPortMidiIn;
-#endif
+    jack_port_t* fPortEventsIn;
 #if DISTRHO_PLUGIN_WANT_TIMEPOS
     TimePosition fTimePosition;
 #endif
 
     // Temporary data
     float* fLastOutputValues;
+
+#if DISTRHO_PLUGIN_HAS_UI
+    // Store DSP changes to send to UI
+    bool* fParametersChanged;
+# if DISTRHO_PLUGIN_WANT_PROGRAMS
+    int fProgramChanged;
+# endif
+#endif
 
     // -------------------------------------------------------------------
     // Callbacks

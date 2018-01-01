@@ -21,7 +21,7 @@
 #include "Sleep.hpp"
 #include "String.hpp"
 
-#ifdef DISTRHO_OS_LINUX_FULL
+#ifdef DISTRHO_OS_LINUX
 # include <sys/prctl.h>
 #endif
 
@@ -198,7 +198,7 @@ public:
     {
         DISTRHO_SAFE_ASSERT_RETURN(name != nullptr && name[0] != '\0',);
 
-#ifdef DISTRHO_OS_LINUX_FULL
+#ifdef DISTRHO_OS_LINUX
         prctl(PR_SET_NAME, name, 0, 0, 0);
 #endif
 #if defined(__GLIBC__) && (__GLIBC__ * 1000 + __GLIBC_MINOR__) >= 2012

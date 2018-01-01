@@ -52,6 +52,8 @@
 #define effGetProgramNameIndexed 29
 #define effGetPlugCategory 35
 #define effIdle 53
+#define effEditKeyDown 59
+#define effEditKeyUp 60
 #define kPlugCategEffect 1
 #define kPlugCategSynth 2
 #define kVstVersion 2400
@@ -122,8 +124,20 @@ public:
           fEffect(effect),
           fUiHelper(uiHelper),
           fPlugin(plugin),
-          fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer())
+          fUI(this, winId, editParameterCallback, setParameterCallback, setStateCallback, sendNoteCallback, setSizeCallback, plugin->getInstancePointer()),
+          fShouldCaptureVstKeys(false)
     {
+        // FIXME only needed for windows?
+//#ifdef DISTRHO_OS_WINDOWS
+        char strBuf[0xff+1];
+        std::memset(strBuf, 0, sizeof(char)*(0xff+1));
+        hostCallback(audioMasterGetProductString, 0, 0, strBuf);
+        d_stdout("Plugin UI running in '%s'", strBuf);
+
+        // TODO make a white-list of needed hosts
+        if (/*std::strcmp(strBuf, "") == 0*/ true)
+            fShouldCaptureVstKeys = true;
+//#endif
     }
 
     // -------------------------------------------------------------------
@@ -166,6 +180,60 @@ public:
         fUI.stateChanged(key, value);
     }
 # endif
+
+    int handlePluginKeyEvent(const bool down, int32_t index, const intptr_t value)
+    {
+# if !DISTRHO_PLUGIN_HAS_EXTERNAL_UI
+        if (! fShouldCaptureVstKeys)
+            return 0;
+
+        d_stdout("handlePluginKeyEvent %i %i %li\n", down, index, (long int)value);
+
+        int special = 0;
+        switch (value)
+        {
+        // convert some specials to normal keys
+        case  1: index = kCharBackspace; break;
+        case  6: index = kCharEscape;    break;
+        case  7: index = ' ';            break;
+        case 22: index = kCharDelete;    break;
+
+        // handle rest of special keys
+        case 40: special = kKeyF1;       break;
+        case 41: special = kKeyF2;       break;
+        case 42: special = kKeyF3;       break;
+        case 43: special = kKeyF4;       break;
+        case 44: special = kKeyF5;       break;
+        case 45: special = kKeyF6;       break;
+        case 46: special = kKeyF7;       break;
+        case 47: special = kKeyF8;       break;
+        case 48: special = kKeyF9;       break;
+        case 49: special = kKeyF10;      break;
+        case 50: special = kKeyF11;      break;
+        case 51: special = kKeyF12;      break;
+        case 11: special = kKeyLeft;     break;
+        case 12: special = kKeyUp;       break;
+        case 13: special = kKeyRight;    break;
+        case 14: special = kKeyDown;     break;
+        case 15: special = kKeyPageUp;   break;
+        case 16: special = kKeyPageDown; break;
+        case 10: special = kKeyHome;     break;
+        case  9: special = kKeyEnd;      break;
+        case 21: special = kKeyInsert;   break;
+        case 54: special = kKeyShift;    break;
+        case 55: special = kKeyControl;  break;
+        case 56: special = kKeyAlt;      break;
+        }
+
+        if (special != 0)
+            return fUI.handlePluginSpecial(down, static_cast<Key>(special));
+
+        if (index >= 0)
+            return fUI.handlePluginKeyboard(down, static_cast<uint>(index));
+# endif
+
+        return 0;
+    }
 
     // -------------------------------------------------------------------
 
@@ -231,6 +299,7 @@ private:
 
     // Plugin UI
     UIExporter fUI;
+    bool fShouldCaptureVstKeys;
 
     // -------------------------------------------------------------------
     // Callbacks
@@ -498,6 +567,16 @@ public:
         case effEditIdle:
             if (fVstUI != nullptr)
                 fVstUI->idle();
+            break;
+
+        case effEditKeyDown:
+            if (fVstUI != nullptr)
+                return fVstUI->handlePluginKeyEvent(true, index, value);
+            break;
+
+        case effEditKeyUp:
+            if (fVstUI != nullptr)
+                return fVstUI->handlePluginKeyEvent(false, index, value);
             break;
 #endif // DISTRHO_PLUGIN_HAS_UI
 

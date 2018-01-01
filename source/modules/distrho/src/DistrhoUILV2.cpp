@@ -23,6 +23,7 @@
 #include "lv2/data-access.h"
 #include "lv2/instance-access.h"
 #include "lv2/options.h"
+#include "lv2/parameters.h"
 #include "lv2/ui.h"
 #include "lv2/urid.h"
 #include "lv2/lv2_kxstudio_properties.h"
@@ -114,7 +115,9 @@ public:
         {
             const uint32_t parameterOffset(fUI.getParameterOffset());
 
-            DISTRHO_SAFE_ASSERT_RETURN(rindex >= parameterOffset,)
+            if (rindex < parameterOffset)
+                return;
+
             DISTRHO_SAFE_ASSERT_RETURN(bufferSize == sizeof(float),)
 
             const float value(*(const float*)buffer);
@@ -173,17 +176,17 @@ public:
     {
         for (int i=0; options[i].key != 0; ++i)
         {
-            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_CORE__sampleRate))
+            if (options[i].key == fUridMap->map(fUridMap->handle, LV2_PARAMETERS__sampleRate))
             {
-                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Double))
+                if (options[i].type == fUridMap->map(fUridMap->handle, LV2_ATOM__Float))
                 {
-                    const double sampleRate(*(const double*)options[i].value);
+                    const float sampleRate(*(const float*)options[i].value);
                     fUI.setSampleRate(sampleRate);
                     continue;
                 }
                 else
                 {
-                    d_stderr("Host changed sampleRate but with wrong value type");
+                    d_stderr("Host changed UI sample-rate but with wrong value type");
                     continue;
                 }
             }
@@ -237,7 +240,7 @@ protected:
         const size_t msgSize(tmpStr.length()+1);
 
         // reserve atom space
-        const size_t atomSize(lv2_atom_pad_size(sizeof(LV2_Atom) + msgSize));
+        const size_t atomSize(sizeof(LV2_Atom) + msgSize);
         char         atomBuf[atomSize];
         std::memset(atomBuf, 0, atomSize);
 
@@ -400,23 +403,23 @@ static LV2UI_Handle lv2ui_instantiate(const LV2UI_Descriptor*, const char* uri, 
 
     if (options != nullptr)
     {
-        const LV2_URID uridSampleRate(uridMap->map(uridMap->handle, LV2_CORE__sampleRate));
+        const LV2_URID uridSampleRate(uridMap->map(uridMap->handle, LV2_PARAMETERS__sampleRate));
 
         for (int i=0; options[i].key != 0; ++i)
         {
             if (options[i].key == uridSampleRate)
             {
-                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Double))
-                    d_lastUiSampleRate = *(const double*)options[i].value;
+                if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Float))
+                    d_lastUiSampleRate = *(const float*)options[i].value;
                 else
-                    d_stderr("Host provides sampleRate but has wrong value type");
+                    d_stderr("Host provides UI sample-rate but has wrong value type");
 
                 break;
             }
         }
     }
 
-    if (d_lastUiSampleRate == 0.0)
+    if (d_lastUiSampleRate < 1.0)
     {
         d_stdout("WARNING: this host does not send sample-rate information for LV2 UIs, using 44100 as fallback (this could be wrong)");
         d_lastUiSampleRate = 44100.0;

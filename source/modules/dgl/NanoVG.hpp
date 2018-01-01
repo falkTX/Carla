@@ -192,10 +192,10 @@ private:
 
    @code
        const char* txt = "Text me up.";
-       textBounds(vg, x,y, txt, NULL, bounds);
-       beginPath(vg);
-       roundedRect(vg, bounds[0], bounds[1], bounds[2]-bounds[0], bounds[3]-bounds[1]);
-       fill(vg);
+       vg.textBounds(x,y, txt, NULL, bounds);
+       vg.beginPath();
+       vg.roundedRect(bounds[0], bounds[1], bounds[2]-bounds[0], bounds[3]-bounds[1]);
+       vg.fill();
    @endcode
 
    Note: currently only solid color fill is supported for text.

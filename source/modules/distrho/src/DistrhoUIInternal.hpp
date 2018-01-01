@@ -418,6 +418,16 @@ public:
 
         return ! glApp.isQuiting();
     }
+
+    bool handlePluginKeyboard(const bool press, const uint key)
+    {
+        return glWindow.handlePluginKeyboard(press, key);
+    }
+
+    bool handlePluginSpecial(const bool press, const Key key)
+    {
+        return glWindow.handlePluginKeyboard(press, key);
+    }
 #else
     void setWindowSize(const uint width, const uint height, const bool updateUI = false) {}
     void setWindowTransientWinId(const uintptr_t winId) {}

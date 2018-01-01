@@ -445,7 +445,7 @@ dispatchKey(PuglView* view, XEvent* event, bool press)
 		view->redisplay = false;
 		return;
 	}
-	if (n == 0) {
+	if (n == 0 && sym == 0) {
 		goto send_event;
 		return;
 	}

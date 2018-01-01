@@ -19,6 +19,10 @@
 
 #include "Geometry.hpp"
 
+START_NAMESPACE_DISTRHO
+class UIExporter;
+END_NAMESPACE_DISTRHO
+
 START_NAMESPACE_DGL
 
 // -----------------------------------------------------------------------
@@ -125,10 +129,14 @@ private:
     friend class Application;
     friend class Widget;
     friend class StandaloneWindow;
+    friend class DISTRHO_NAMESPACE::UIExporter;
 
     virtual void _addWidget(Widget* const widget);
     virtual void _removeWidget(Widget* const widget);
     void _idle();
+
+    bool handlePluginKeyboard(const bool press, const uint key);
+    bool handlePluginSpecial(const bool press, const Key key);
 
     DISTRHO_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Window)
 };

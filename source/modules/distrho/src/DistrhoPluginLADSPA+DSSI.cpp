@@ -250,17 +250,16 @@ public:
                 midiEvents[j].data[2] = 0;
                 midiEvents[j].data[3] = 0;
                 break;
-#if 0 // TODO
             case SND_SEQ_EVENT_PITCHBEND:
                 j = midiEventCount++;
                 midiEvents[j].frame   = seqEvent.time.tick;
                 midiEvents[j].size    = 3;
                 midiEvents[j].data[0] = 0xE0 + seqEvent.data.control.channel;
-                midiEvents[j].data[1] = 0;
-                midiEvents[j].data[2] = 0;
+                uint16_t tempvalue = seqEvent.data.control.value + 8192;
+                midiEvents[j].data[1] = tempvalue & 0x7F;
+                midiEvents[j].data[2] = tempvalue >> 7;
                 midiEvents[j].data[3] = 0;
                 break;
-#endif
             }
         }
 
@@ -329,6 +328,21 @@ public:
         }
     }
 # endif
+
+    int dssi_get_midi_controller_for_port(const ulong port) noexcept
+    {
+        const uint32_t parameterOffset = fPlugin.getParameterOffset();
+
+        if (port > parameterOffset)
+            return DSSI_NONE;
+
+        const uint8_t midiCC = fPlugin.getParameterMidiCC(port-parameterOffset);
+
+        if (midiCC == 0 || midiCC == 32 || midiCC >= 0x78)
+            return DSSI_NONE;
+
+        return DSSI_CC(midiCC);
+    }
 #endif
 
     // -------------------------------------------------------------------
@@ -435,6 +449,11 @@ static void dssi_select_program(LADSPA_Handle instance, ulong bank, ulong progra
 }
 # endif
 
+static int dssi_get_midi_controller_for_port(LADSPA_Handle instance, ulong port)
+{
+    return instancePtr->dssi_get_midi_controller_for_port(port);
+}
+
 # if DISTRHO_PLUGIN_WANT_MIDI_INPUT
 static void dssi_run_synth(LADSPA_Handle instance, ulong sampleCount, snd_seq_event_t* events, ulong eventCount)
 {
@@ -489,7 +508,7 @@ static DSSI_Descriptor sDssiDescriptor = {
     /* get_program                  */ nullptr,
     /* select_program               */ nullptr,
 # endif
-    /* get_midi_controller_for_port */ nullptr,
+    dssi_get_midi_controller_for_port,
 # if DISTRHO_PLUGIN_WANT_MIDI_INPUT
     dssi_run_synth,
 # else
@@ -614,11 +633,16 @@ public:
                 const uint32_t hints(plugin.getParameterHints(i));
 
                 if (hints & kParameterIsBoolean)
+                {
                     portRangeHints[port].HintDescriptor |= LADSPA_HINT_TOGGLED;
-                if (hints & kParameterIsInteger)
-                    portRangeHints[port].HintDescriptor |= LADSPA_HINT_INTEGER;
-                if (hints & kParameterIsLogarithmic)
-                    portRangeHints[port].HintDescriptor |= LADSPA_HINT_LOGARITHMIC;
+                }
+                else
+                {
+                    if (hints & kParameterIsInteger)
+                        portRangeHints[port].HintDescriptor |= LADSPA_HINT_INTEGER;
+                    if (hints & kParameterIsLogarithmic)
+                        portRangeHints[port].HintDescriptor |= LADSPA_HINT_LOGARITHMIC;
+                }
             }
         }
 

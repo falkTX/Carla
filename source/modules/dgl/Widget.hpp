@@ -111,7 +111,7 @@ public:
    /**
       Mouse event.
       @a button The button number (1 = left, 2 = middle, 3 = right).
-      @a press  True if the key was pressed, false if released.
+      @a press  True if the button was pressed, false if released.
       @a pos    The widget-relative coordinates of the pointer.
       @see onMouse
     */

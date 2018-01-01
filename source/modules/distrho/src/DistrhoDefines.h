@@ -38,15 +38,8 @@
 # elif defined(__HAIKU__)
 #  define DISTRHO_OS_HAIKU      1
 # elif defined(__linux__) || defined(__linux)
-#  define DISTRHO_OS_LINUX      1
-#  define DISTRHO_OS_LINUX_FULL 1
-# elif defined(__FreeBSD__) || defined(__GNU__)
-#  define DISTRHO_OS_LINUX      1
+#  define DISTRHO_OS_LINUX 1
 # endif
-#endif
-
-#if defined(DISTRHO_OS_LINUX) || defined(DISTRHO_OS_MAC)
-# define DISTRHO_OS_UNIX
 #endif
 
 #ifndef DISTRHO_DLL_EXTENSION

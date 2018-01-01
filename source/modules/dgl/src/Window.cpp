@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2018 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -34,14 +34,12 @@
 # include "pugl/pugl_win.cpp"
 #elif defined(DISTRHO_OS_MAC)
 # include "pugl/pugl_osx.m"
-#elif defined(DISTRHO_OS_LINUX)
+#else
 # include <sys/types.h>
 # include <unistd.h>
 extern "C" {
 # include "pugl/pugl_x11.c"
 }
-#else
-# error Unsupported platform
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ >= 7)
@@ -90,13 +88,13 @@ struct Window::PrivateData {
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DISTRHO_OS_LINUX)
-          xDisplay(nullptr),
-          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(true),
           mView(nullptr),
           mWindow(nullptr)
+#else
+          xDisplay(nullptr),
+          xWindow(0)
 #endif
     {
         DBG("Creating window without parent..."); DBGF;
@@ -118,27 +116,30 @@ struct Window::PrivateData {
           fModal(parent.pData),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DISTRHO_OS_LINUX)
-          xDisplay(nullptr),
-          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(false),
           mView(nullptr),
           mWindow(nullptr)
+#else
+          xDisplay(nullptr),
+          xWindow(0)
 #endif
     {
         DBG("Creating window with parent..."); DBGF;
         init();
 
         const PuglInternals* const parentImpl(parent.pData->fView->impl);
-#if defined(DISTRHO_OS_LINUX)
-        XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
-//#elif defined(DISTRHO_OS_MAC)
-//        [parentImpl->window orderWindow:NSWindowBelow relativeTo:[[mView window] windowNumber]];
+#if defined(DISTRHO_OS_WINDOWS)
+        // TODO
+#elif defined(DISTRHO_OS_MAC)
+        [parentImpl->window orderWindow:NSWindowBelow relativeTo:[[mView window] windowNumber]];
 #else
-        // unused
-        return; (void)parentImpl;
+        XSetTransientForHint(xDisplay, xWindow, parentImpl->win);
 #endif
+        return;
+
+        // maybe unused
+        (void)parentImpl;
     }
 
     PrivateData(Application& app, Window* const self, const intptr_t parentId)
@@ -156,13 +157,13 @@ struct Window::PrivateData {
           fModal(),
 #if defined(DISTRHO_OS_WINDOWS)
           hwnd(0)
-#elif defined(DISTRHO_OS_LINUX)
-          xDisplay(nullptr),
-          xWindow(0)
 #elif defined(DISTRHO_OS_MAC)
           fNeedsIdle(parentId == 0),
           mView(nullptr),
           mWindow(nullptr)
+#else
+          xDisplay(nullptr),
+          xWindow(0)
 #endif
     {
         if (fUsingEmbed)
@@ -226,7 +227,7 @@ struct Window::PrivateData {
         } else {
             DISTRHO_SAFE_ASSERT(mWindow != nullptr);
         }
-#elif defined(DISTRHO_OS_LINUX)
+#else
         xDisplay = impl->display;
         xWindow  = impl->win;
         DISTRHO_SAFE_ASSERT(xWindow != 0);
@@ -286,7 +287,7 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
         mView   = nullptr;
         mWindow = nullptr;
-#elif defined(DISTRHO_OS_LINUX)
+#else
         xDisplay = nullptr;
         xWindow  = 0;
 #endif
@@ -380,7 +381,7 @@ struct Window::PrivateData {
             // TODO
 #elif defined(DISTRHO_OS_MAC)
             // TODO
-#elif defined(DISTRHO_OS_LINUX)
+#else
             int i, wx, wy;
             uint u;
             ::Window w;
@@ -404,7 +405,7 @@ struct Window::PrivateData {
 #elif defined(DISTRHO_OS_MAC)
         if (mWindow != nullptr)
             [mWindow makeKeyWindow];
-#elif defined(DISTRHO_OS_LINUX)
+#else
         XRaiseWindow(xDisplay, xWindow);
         XSetInputFocus(xDisplay, xWindow, RevertToPointerRoot, CurrentTime);
         XFlush(xDisplay);
@@ -455,7 +456,7 @@ struct Window::PrivateData {
             else
                 [mView setHidden:YES];
         }
-#elif defined(DISTRHO_OS_LINUX)
+#else
         if (yesNo)
             XMapRaised(xDisplay, xWindow);
         else
@@ -559,7 +560,7 @@ struct Window::PrivateData {
                 [[mWindow standardWindowButton:NSWindowZoomButton] setHidden:YES];
             }
         }
-#elif defined(DISTRHO_OS_LINUX)
+#else
         XResizeWindow(xDisplay, xWindow, width, height);
 
         if (! fResizable)
@@ -615,7 +616,7 @@ struct Window::PrivateData {
 
             [mWindow setTitle:titleString];
         }
-#elif defined(DISTRHO_OS_LINUX)
+#else
         XStoreName(xDisplay, xWindow, title);
 #endif
     }
@@ -624,14 +625,16 @@ struct Window::PrivateData {
     {
         DISTRHO_SAFE_ASSERT_RETURN(winId != 0,);
 
-#if defined(DISTRHO_OS_MAC)
-        NSWindow* window = [NSApp windowWithWindowNumber:winId];
+#if defined(DISTRHO_OS_WINDOWS)
+        // TODO
+#elif defined(DISTRHO_OS_MAC)
+        NSWindow* const window = [NSApp windowWithWindowNumber:winId];
         DISTRHO_SAFE_ASSERT_RETURN(window != nullptr,);
 
         [window addChildWindow:mWindow
                        ordered:NSWindowAbove];
         [mWindow makeKeyWindow];
-#elif defined(DISTRHO_OS_LINUX)
+#else
         XSetTransientForHint(xDisplay, xWindow, static_cast< ::Window>(winId));
 #endif
     }
@@ -859,6 +862,90 @@ struct Window::PrivateData {
 
     // -------------------------------------------------------------------
 
+    bool handlePluginKeyboard(const bool press, const uint key)
+    {
+        DBGp("PUGL: handlePluginKeyboard : %i %i\n", press, key);
+
+        if (fModal.childFocus != nullptr)
+        {
+            fModal.childFocus->focus();
+            return true;
+        }
+
+        Widget::KeyboardEvent ev;
+        ev.press = press;
+        ev.key   = key;
+        ev.mod   = static_cast<Modifier>(fView->mods);
+        ev.time  = 0;
+
+        if ((ev.mod & kModifierShift) != 0 && ev.key >= 'a' && ev.key <= 'z')
+            ev.key -= 'a' - 'A'; // a-z -> A-Z
+
+        FOR_EACH_WIDGET_INV(rit)
+        {
+            Widget* const widget(*rit);
+
+            if (widget->isVisible() && widget->onKeyboard(ev))
+                return true;
+        }
+
+        return false;
+    }
+
+    bool handlePluginSpecial(const bool press, const Key key)
+    {
+        DBGp("PUGL: handlePluginSpecial : %i %i\n", press, key);
+
+        if (fModal.childFocus != nullptr)
+        {
+            fModal.childFocus->focus();
+            return true;
+        }
+
+        int mods = 0x0;
+
+        switch (key)
+        {
+        case kKeyShift:
+            mods |= kModifierShift;
+            break;
+        case kKeyControl:
+            mods |= kModifierControl;
+            break;
+        case kKeyAlt:
+            mods |= kModifierAlt;
+            break;
+        default:
+            break;
+        }
+
+        if (mods != 0x0)
+        {
+            if (press)
+                fView->mods |= mods;
+            else
+                fView->mods &= ~(mods);
+        }
+
+        Widget::SpecialEvent ev;
+        ev.press = press;
+        ev.key   = key;
+        ev.mod   = static_cast<Modifier>(fView->mods);
+        ev.time  = 0;
+
+        FOR_EACH_WIDGET_INV(rit)
+        {
+            Widget* const widget(*rit);
+
+            if (widget->isVisible() && widget->onSpecial(ev))
+                return true;
+        }
+
+        return false;
+    }
+
+    // -------------------------------------------------------------------
+
     Application& fApp;
     Window*      fSelf;
     PuglView*    fView;
@@ -898,13 +985,13 @@ struct Window::PrivateData {
 
 #if defined(DISTRHO_OS_WINDOWS)
     HWND     hwnd;
-#elif defined(DISTRHO_OS_LINUX)
-    Display* xDisplay;
-    ::Window xWindow;
 #elif defined(DISTRHO_OS_MAC)
     bool            fNeedsIdle;
     PuglOpenGLView* mView;
     id              mWindow;
+#else
+    Display* xDisplay;
+    ::Window xWindow;
 #endif
 
     // -------------------------------------------------------------------
@@ -1020,7 +1107,7 @@ void Window::repaint() noexcept
 #ifndef DGL_FILE_BROWSER_DISABLED
 bool Window::openFileBrowser(const FileBrowserOptions& options)
 {
-#ifdef SOFD_HAVE_X11
+# ifdef SOFD_HAVE_X11
     using DISTRHO_NAMESPACE::String;
 
     // --------------------------------------------------------------------------
@@ -1078,10 +1165,10 @@ bool Window::openFileBrowser(const FileBrowserOptions& options)
     // show
 
     return (x_fib_show(pData->xDisplay, pData->xWindow, /*options.width*/0, /*options.height*/0) == 0);
-#else
+# else
     // not implemented
     return false;
-#endif
+# endif
 }
 #endif
 
@@ -1219,6 +1306,26 @@ void Window::fileBrowserSelected(const char*)
 {
 }
 #endif
+
+bool Window::handlePluginKeyboard(const bool press, const uint key)
+{
+    return pData->handlePluginKeyboard(press, key);
+}
+
+bool Window::handlePluginSpecial(const bool press, const Key key)
+{
+    return pData->handlePluginSpecial(press, key);
+}
+
+bool Window::handlePluginKeyboard(const bool press, const uint key)
+{
+    return pData->handlePluginKeyboard(press, key);
+}
+
+bool Window::handlePluginSpecial(const bool press, const Key key)
+{
+    return pData->handlePluginSpecial(press, key);
+}
 
 // -----------------------------------------------------------------------
 

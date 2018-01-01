@@ -1,6 +1,6 @@
 /*
  * DISTRHO Plugin Framework (DPF)
- * Copyright (C) 2012-2016 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2012-2017 Filipe Coelho <falktx@falktx.com>
  *
  * Permission to use, copy, modify, and/or distribute this software for any purpose with
  * or without fee is hereby granted, provided that the above copyright notice and this
@@ -33,6 +33,10 @@
 #include "lv2/worker.h"
 #include "lv2/lv2_kxstudio_properties.h"
 #include "lv2/lv2_programs.h"
+
+#ifdef DISTRHO_PLUGIN_LICENSED_FOR_MOD
+# include "mod-license.h"
+#endif
 
 #include <fstream>
 #include <iostream>
@@ -225,6 +229,9 @@ void lv2_generate_ttl(const char* const basename)
 #if DISTRHO_PLUGIN_WANT_PROGRAMS
         pluginString += ",\n                      <" LV2_PROGRAMS__Interface "> ";
 #endif
+#ifdef DISTRHO_PLUGIN_LICENSED_FOR_MOD
+        pluginString += ",\n                      <" MOD_LICENSE__interface "> ";
+#endif
         pluginString += ";\n\n";
 
         // optionalFeatures
@@ -241,6 +248,9 @@ void lv2_generate_ttl(const char* const basename)
         pluginString += ",\n                        <" LV2_URID__map "> ";
 #if DISTRHO_PLUGIN_WANT_STATE
         pluginString += ",\n                        <" LV2_WORKER__schedule "> ";
+#endif
+#ifdef DISTRHO_PLUGIN_LICENSED_FOR_MOD
+        pluginString += ",\n                        <" MOD_LICENSE__feature "> ";
 #endif
         pluginString += ";\n\n";
 
@@ -359,7 +369,7 @@ void lv2_generate_ttl(const char* const basename)
             pluginString += "        lv2:name \"Latency\" ;\n";
             pluginString += "        lv2:symbol \"lv2_latency\" ;\n";
             pluginString += "        lv2:designation lv2:latency ;\n";
-            pluginString += "        lv2:portProperty lv2:reportsLatency, lv2:integer ;\n";
+            pluginString += "        lv2:portProperty lv2:reportsLatency, lv2:integer, <" LV2_PORT_PROPS__notOnGUI "> ;\n";
             pluginString += "    ] ;\n\n";
             ++portIndex;
 #endif
@@ -377,10 +387,34 @@ void lv2_generate_ttl(const char* const basename)
                     pluginString += "        a lv2:InputPort, lv2:ControlPort ;\n";
 
                 pluginString += "        lv2:index " + String(portIndex) + " ;\n";
-                pluginString += "        lv2:name \"" + plugin.getParameterName(i) + "\" ;\n";
 
-                // symbol
+                bool designated = false;
+
+                // designation
+                if (! plugin.isParameterOutput(i))
                 {
+                    switch (plugin.getParameterDesignation(i))
+                    {
+                    case kParameterDesignationNull:
+                        break;
+                    case kParameterDesignationBypass:
+                        designated = true;
+                        pluginString += "        lv2:name \"Enabled\" ;\n";
+                        pluginString += "        lv2:symbol \"lv2_enabled\" ;\n";
+                        pluginString += "        lv2:default 1 ;\n";
+                        pluginString += "        lv2:minimum 0 ;\n";
+                        pluginString += "        lv2:maximum 1 ;\n";
+                        pluginString += "        lv2:portProperty lv2:toggled , lv2:integer ;\n";
+                        pluginString += "        lv2:designation lv2:enabled ;\n";
+                        break;
+                    }
+                }
+
+                // name and symbol
+                if (! designated)
+                {
+                    pluginString += "        lv2:name \"" + plugin.getParameterName(i) + "\" ;\n";
+
                     String symbol(plugin.getParameterSymbol(i));
 
                     if (symbol.isEmpty())
@@ -390,24 +424,28 @@ void lv2_generate_ttl(const char* const basename)
                 }
 
                 // ranges
+                if (! designated)
                 {
                     const ParameterRanges& ranges(plugin.getParameterRanges(i));
 
                     if (plugin.getParameterHints(i) & kParameterIsInteger)
                     {
-                        pluginString += "        lv2:default " + String(int(plugin.getParameterValue(i))) + " ;\n";
+                        if (! plugin.isParameterOutput(i))
+                            pluginString += "        lv2:default " + String(int(plugin.getParameterValue(i))) + " ;\n";
                         pluginString += "        lv2:minimum " + String(int(ranges.min)) + " ;\n";
                         pluginString += "        lv2:maximum " + String(int(ranges.max)) + " ;\n";
                     }
                     else
                     {
-                        pluginString += "        lv2:default " + String(plugin.getParameterValue(i)) + " ;\n";
+                        if (! plugin.isParameterOutput(i))
+                            pluginString += "        lv2:default " + String(plugin.getParameterValue(i)) + " ;\n";
                         pluginString += "        lv2:minimum " + String(ranges.min) + " ;\n";
                         pluginString += "        lv2:maximum " + String(ranges.max) + " ;\n";
                     }
                 }
 
                 // unit
+                if (! designated)
                 {
                     const String& unit(plugin.getParameterUnit(i));
 
@@ -453,6 +491,7 @@ void lv2_generate_ttl(const char* const basename)
                 }
 
                 // hints
+                if (! designated)
                 {
                     const uint32_t hints(plugin.getParameterHints(i));
 
@@ -606,7 +645,18 @@ void lv2_generate_ttl(const char* const basename)
 
             plugin.loadProgram(i);
 
-            presetString  = "<" DISTRHO_PLUGIN_URI + presetSeparator + "preset" + strBuf + ">\n";
+            presetString = "<" DISTRHO_PLUGIN_URI + presetSeparator + "preset" + strBuf + ">\n";
+
+# if DISTRHO_PLUGIN_WANT_FULL_STATE
+            if (numParameters == 0 && numStates == 0)
+#else
+            if (numParameters == 0)
+#endif
+            {
+                presetString += "    .";
+                presetsString += presetString;
+                continue;
+            }
 
 # if DISTRHO_PLUGIN_WANT_FULL_STATE
             presetString += "    state:state [\n";
@@ -629,12 +679,22 @@ void lv2_generate_ttl(const char* const basename)
                 presetString += "    ] .\n\n";
 # endif
 
+            bool firstParameter = true;
+
             for (uint32_t j=0; j <numParameters; ++j)
             {
-                if (j == 0)
+                if (plugin.isParameterOutput(j))
+                    continue;
+
+                if (firstParameter)
+                {
                     presetString += "    lv2:port [\n";
+                    firstParameter = false;
+                }
                 else
+                {
                     presetString += "    [\n";
+                }
 
                 presetString += "        lv2:symbol \"" + plugin.getParameterSymbol(j) + "\" ;\n";
 
@@ -643,7 +703,7 @@ void lv2_generate_ttl(const char* const basename)
                 else
                     presetString += "        pset:value " + String(plugin.getParameterValue(j)) + " ;\n";
 
-                if (j+1 == numParameters)
+                if (j+1 == numParameters || plugin.isParameterOutput(j+1))
                     presetString += "    ] .\n\n";
                 else
                     presetString += "    ] ,\n";

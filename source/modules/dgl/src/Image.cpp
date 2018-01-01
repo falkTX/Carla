@@ -68,7 +68,9 @@ Image::~Image()
 {
     if (fTextureId != 0)
     {
+#ifndef DISTRHO_OS_MAC // FIXME
         glDeleteTextures(1, &fTextureId);
+#endif
         fTextureId = 0;
     }
 }

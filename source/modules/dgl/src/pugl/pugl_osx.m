@@ -202,8 +202,6 @@ puglDisplay(PuglView* view)
 
 - (void) reshape
 {
-	[[self openGLContext] update];
-
 	if (!puglview) {
 		/* NOTE: Apparently reshape gets called when the GC gets around to
 		   deleting the view (?), so we must have reset puglview to NULL when
@@ -211,6 +209,8 @@ puglDisplay(PuglView* view)
 		*/
 		return;
 	}
+
+	[[self openGLContext] update];
 
 	NSRect bounds = [self bounds];
 	int    width  = bounds.size.width;

@@ -19,13 +19,13 @@
 
 #include "String.hpp"
 
-#ifdef DISTRHO_OS_UNIX
+#ifdef DISTRHO_OS_WINDOWS
+# error Unsupported platform!
+#else
 # include <cerrno>
 # include <signal.h>
 # include <sys/wait.h>
 # include <unistd.h>
-#else
-# error Unsupported platform!
 #endif
 
 START_NAMESPACE_DISTRHO
