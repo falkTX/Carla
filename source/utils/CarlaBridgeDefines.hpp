@@ -20,7 +20,7 @@
 
 #include "CarlaRingBuffer.hpp"
 
-#define CARLA_PLUGIN_BRIDGE_API_VERSION 1
+#define CARLA_PLUGIN_BRIDGE_API_VERSION 2
 
 // -------------------------------------------------------------------------------------------------------------------
 
