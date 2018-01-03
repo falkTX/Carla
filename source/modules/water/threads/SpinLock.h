@@ -87,7 +87,7 @@ public:
     /** Releases the lock. */
     inline void exit() const noexcept
     {
-        CARLA_SAFE_ASSERT_RETURN(lock.value == 1,);
+        CARLA_SAFE_ASSERT_RETURN(lock.get() == 1,);
         lock = 0;
     }
 
