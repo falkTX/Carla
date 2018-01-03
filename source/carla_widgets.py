@@ -239,6 +239,7 @@ class PluginParameter(QWidget):
         if pHints & PARAMETER_USES_CUSTOM_TEXT and not host.isPlugin:
             self.ui.widget.setTextCallback(self._textCallBack)
 
+        self.ui.widget.setValueCallback(self._valueCallBack)
         self.ui.widget.updateAll()
 
         self.setMidiControl(pInfo['midiCC'])
@@ -251,7 +252,6 @@ class PluginParameter(QWidget):
         self.ui.sb_channel.customContextMenuRequested.connect(self.slot_channelSpinboxCustomMenu)
         self.ui.sb_control.valueChanged.connect(self.slot_controlSpinboxChanged)
         self.ui.sb_channel.valueChanged.connect(self.slot_channelSpinboxChanged)
-        self.ui.widget.valueChanged.connect(self.slot_widgetValueChanged)
 
         # -------------------------------------------------------------
 
@@ -342,12 +342,11 @@ class PluginParameter(QWidget):
         self.fMidiChannel = channel
         self.midiChannelChanged.emit(self.fParameterId, channel)
 
-    @pyqtSlot(float)
-    def slot_widgetValueChanged(self, value):
-        self.valueChanged.emit(self.fParameterId, value)
-
     def _textCallBack(self):
         return self.host.get_parameter_text(self.fPluginId, self.fParameterId)
+
+    def _valueCallBack(self, value):
+        self.valueChanged.emit(self.fParameterId, value)
 
 # ------------------------------------------------------------------------------------------------------------
 # Plugin Editor Parent (Meta class)
