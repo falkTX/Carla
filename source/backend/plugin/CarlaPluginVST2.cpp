@@ -300,7 +300,7 @@ public:
         dispatcher(effGetParamName, static_cast<int32_t>(parameterId), 0, strBuf, 0.0f);
     }
 
-    void getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept override
+    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count,);
@@ -754,9 +754,7 @@ public:
             }
 
             pData->param.data[j].hints |= PARAMETER_IS_ENABLED;
-#ifndef BUILD_BRIDGE
             pData->param.data[j].hints |= PARAMETER_USES_CUSTOM_TEXT;
-#endif
 
             if ((pData->hints & PLUGIN_USES_OLD_VSTSDK) != 0 || dispatcher(effCanBeAutomated, static_cast<int32_t>(j), 0, nullptr, 0.0f) == 1)
                 pData->param.data[j].hints |= PARAMETER_IS_AUTOMABLE;

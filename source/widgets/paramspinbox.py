@@ -128,10 +128,14 @@ class ParamProgressBar(QProgressBar):
         self.fMaximum   = 1.0
         self.fRealValue = 0.0
 
+        self.fLastPaintedValue   = None
+        self.fCurrentPaintedText = ""
+
         self.fLabel = ""
         self.fName  = ""
         self.fPreLabel = " "
-        self.fTextCall = None
+        self.fTextCall  = None
+        self.fValueCall = None
 
         self.setFormat("(none)")
 
@@ -165,6 +169,9 @@ class ParamProgressBar(QProgressBar):
             self.fLabel = ""
             self.fPreLabel = "*"
 
+        # force refresh of text value
+        self.fLastPaintedValue = None
+
         self.update()
 
     def setName(self, name):
@@ -172,6 +179,9 @@ class ParamProgressBar(QProgressBar):
 
     def setTextCall(self, textCall):
         self.fTextCall = textCall
+
+    def setValueCall(self, valueCall):
+        self.fValueCall = valueCall
 
     def handleMouseEventPos(self, pos):
         xper  = float(pos.x()) / float(self.width())
@@ -181,6 +191,9 @@ class ParamProgressBar(QProgressBar):
             value = self.fMinimum
         elif value > self.fMaximum:
             value = self.fMaximum
+
+        if self.fValueCall is not None:
+            self.fValueCall(value)
 
         self.valueChanged.emit(value)
 
@@ -203,9 +216,14 @@ class ParamProgressBar(QProgressBar):
 
     def paintEvent(self, event):
         if self.fTextCall is not None:
-            self.setFormat("%s %s %s" % (self.fPreLabel, self.fTextCall(), self.fLabel))
+            if self.fLastPaintedValue != self.fRealValue:
+                self.fLastPaintedValue   = self.fRealValue
+                self.fCurrentPaintedText = self.fTextCall()
+            self.setFormat("%s %s %s" % (self.fPreLabel, self.fCurrentPaintedText, self.fLabel))
+
         elif self.fIsInteger:
             self.setFormat("%s %i %s" % (self.fPreLabel, int(self.fRealValue), self.fLabel))
+
         else:
             self.setFormat("%s %f %s" % (self.fPreLabel, self.fRealValue, self.fLabel))
 
@@ -318,6 +336,9 @@ class ParamSpinBox(QAbstractSpinBox):
 
     def setTextCallback(self, textCall):
         self.fBar.setTextCall(textCall)
+
+    def setValueCallback(self, valueCall):
+        self.fBar.setValueCall(valueCall)
 
     def setReadOnly(self, yesNo):
         self.fIsReadOnly = yesNo

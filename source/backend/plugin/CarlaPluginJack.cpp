@@ -1157,6 +1157,7 @@ public:
             }   break;
 
             case kPluginBridgeNonRtServerSetLatency:
+            case kPluginBridgeNonRtServerSetParameterText:
                 break;
 
             case kPluginBridgeNonRtServerReady:

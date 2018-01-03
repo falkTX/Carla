@@ -824,6 +824,30 @@ public:
                 break;
             }
 
+            case kPluginBridgeNonRtClientGetParameterText: {
+                const int32_t index(fShmNonRtClientControl.readInt());
+
+                if (index >= 0 && plugin != nullptr && plugin->isEnabled())
+                {
+                    char strBuf[STR_MAX];
+                    plugin->getParameterText(index, strBuf);
+                    const uint32_t strBufLen(std::strlen(strBuf));
+
+                    const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
+
+                    fShmNonRtServerControl.writeOpcode(kPluginBridgeNonRtServerSetParameterText);
+
+                    fShmNonRtServerControl.writeInt(index);
+                    fShmNonRtServerControl.writeUInt(strBufLen);
+                    fShmNonRtServerControl.writeCustomData(strBuf, strBufLen);
+                    fShmNonRtServerControl.commitWrite();
+
+                    fShmNonRtServerControl.waitIfDataIsReachingLimit();
+                }
+
+                break;
+            }
+
             case kPluginBridgeNonRtClientPrepareForSave: {
                 if (plugin == nullptr || ! plugin->isEnabled()) break;
 

@@ -365,6 +365,7 @@ public:
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
           fWinePrefix(),
+          fReceivingParamText(),
           fInfo(),
           fUniqueId(0),
           fLatency(0),
@@ -524,6 +525,26 @@ public:
         std::strncpy(strBuf, fParams[parameterId].name.buffer(), STR_MAX);
     }
 
+    void getParameterText(const uint32_t parameterId, char* const strBuf) noexcept override
+    {
+        CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
+        CARLA_SAFE_ASSERT_RETURN(! fReceivingParamText.isCurrentlyWaitingData(), nullStrBuf(strBuf));
+
+        const int32_t parameterIdi = static_cast<int32_t>(parameterId);
+        fReceivingParamText.setTargetData(parameterIdi, strBuf);
+
+        {
+            const CarlaMutexLocker _cml(fShmNonRtClientControl.mutex);
+
+            fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientGetParameterText);
+            fShmNonRtClientControl.writeInt(parameterIdi);
+            fShmNonRtClientControl.commitWrite();
+        }
+
+        if (! waitForParameterText())
+            std::snprintf(strBuf, STR_MAX, "%f", fParams[parameterId].value);
+    }
+
     void getParameterSymbol(const uint32_t parameterId, char* const strBuf) const noexcept override
     {
         CARLA_SAFE_ASSERT_RETURN(parameterId < pData->param.count, nullStrBuf(strBuf));
@@ -551,6 +572,35 @@ public:
             fShmNonRtClientControl.writeOpcode(kPluginBridgeNonRtClientPrepareForSave);
             fShmNonRtClientControl.commitWrite();
         }
+    }
+
+    bool waitForParameterText()
+    {
+        bool success;
+        if (fReceivingParamText.wasDataReceived(&success))
+            return success;
+
+        const uint32_t timeoutEnd(Time::getMillisecondCounter() + 500); // 500 ms
+
+        for (; Time::getMillisecondCounter() < timeoutEnd && fBridgeThread.isThreadRunning();)
+        {
+            if (fReceivingParamText.wasDataReceived(&success))
+                return success;
+
+            carla_msleep(5);
+        }
+
+        carla_stderr("CarlaPluginBridge::waitForParameterText() - Timeout while requesting text");
+
+#if 0
+        // we waited and blocked for 5 secs, give host idle time now
+        pData->engine->callback(ENGINE_CALLBACK_IDLE, 0, 0, 0, 0.0f, nullptr);
+
+        if (pData->engine->getType() != kEngineTypePlugin)
+            pData->engine->idle();
+#endif
+
+        return false;
     }
 
     void waitForSaved()
@@ -2094,6 +2144,17 @@ public:
 #endif
                 break;
 
+            case kPluginBridgeNonRtServerSetParameterText: {
+                const int32_t index = fShmNonRtServerControl.readInt();
+
+                const uint32_t textSize(fShmNonRtServerControl.readUInt());
+                char text[textSize+1];
+                carla_zeroChars(text, textSize+1);
+                fShmNonRtServerControl.readCustomData(text, textSize);
+
+                fReceivingParamText.setReceivedData(index, text, textSize);
+            }   break;
+
             case kPluginBridgeNonRtServerReady:
                 fInitiated = true;
                 break;
@@ -2368,6 +2429,65 @@ private:
     BridgeNonRtServerControl fShmNonRtServerControl;
 
     String fWinePrefix;
+
+    class ReceivingParamText {
+    public:
+        ReceivingParamText() noexcept
+            : dataRecv(false),
+              dataOk(false),
+              index(-1),
+              strBuf(nullptr),
+              mutex() {}
+
+        bool isCurrentlyWaitingData() const noexcept
+        {
+            return index >= 0;
+        }
+
+        bool wasDataReceived(bool* const success) const noexcept
+        {
+            *success = dataOk;
+            return dataRecv;
+        }
+
+        void setTargetData(const int32_t i, char* const b) noexcept
+        {
+            const CarlaMutexLocker cml(mutex);
+
+            dataOk   = false;
+            dataRecv = false;
+            index    = i;
+            strBuf   = b;
+        }
+
+        void setReceivedData(const int32_t i, const char* const b, const uint blen) noexcept
+        {
+            ScopedValueSetter<bool> svs(dataRecv, false, true);
+
+            const CarlaMutexLocker cml(mutex);
+
+            // make backup and reset data
+            const int32_t indexCopy = index;
+            char* const strBufCopy = strBuf;
+            index  = -1;
+            strBuf = nullptr;
+
+            CARLA_SAFE_ASSERT_RETURN(indexCopy == i,);
+            CARLA_SAFE_ASSERT_RETURN(strBufCopy != nullptr,);
+
+            std::strncpy(strBufCopy, b, std::min(blen, STR_MAX-1U));
+            dataOk = true;
+        }
+
+    private:
+        bool dataRecv;
+        bool dataOk;
+        int32_t index;
+        char* strBuf;
+        CarlaMutex mutex;
+
+        CARLA_DECLARE_NON_COPY_CLASS(ReceivingParamText)
+    } fReceivingParamText;
 
     struct Info {
         uint32_t aIns, aOuts;

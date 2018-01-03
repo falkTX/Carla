@@ -59,6 +59,7 @@ enum PluginBridgeNonRtClientOpcode {
     kPluginBridgeNonRtClientSetChunkDataFile,        // uint/size, str[] (filename, base64 content)
     kPluginBridgeNonRtClientSetCtrlChannel,          // short
     kPluginBridgeNonRtClientSetOption,               // uint/option, bool
+    kPluginBridgeNonRtClientGetParameterText,        // uint
     kPluginBridgeNonRtClientPrepareForSave,
     kPluginBridgeNonRtClientShowUI,
     kPluginBridgeNonRtClientHideUI,
@@ -96,6 +97,7 @@ enum PluginBridgeNonRtServerOpcode {
     kPluginBridgeNonRtServerSetCustomData,      // uint/size, str[], uint/size, str[], uint/size, str[]
     kPluginBridgeNonRtServerSetChunkDataFile,   // uint/size, str[] (filename, base64 content)
     kPluginBridgeNonRtServerSetLatency,         // uint
+    kPluginBridgeNonRtServerSetParameterText,   // uint/index, uint/size, str[] (name)
     kPluginBridgeNonRtServerReady,
     kPluginBridgeNonRtServerSaved,
     kPluginBridgeNonRtServerUiClosed,

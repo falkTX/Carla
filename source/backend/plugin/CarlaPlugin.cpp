@@ -333,7 +333,7 @@ void CarlaPlugin::getParameterSymbol(const uint32_t parameterId, char* const str
     strBuf[0] = '\0';
 }
 
-void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) const noexcept
+void CarlaPlugin::getParameterText(const uint32_t parameterId, char* const strBuf) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(parameterId < getParameterCount(),);
     CARLA_SAFE_ASSERT(false); // this should never happen

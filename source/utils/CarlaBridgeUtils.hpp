@@ -108,6 +108,8 @@ const char* PluginBridgeNonRtClientOpcode2str(const PluginBridgeNonRtClientOpcod
         return "kPluginBridgeNonRtClientSetCtrlChannel";
     case kPluginBridgeNonRtClientSetOption:
         return "kPluginBridgeNonRtClientSetOption";
+    case kPluginBridgeNonRtClientGetParameterText:
+        return "kPluginBridgeNonRtClientGetParameterText";
     case kPluginBridgeNonRtClientPrepareForSave:
         return "kPluginBridgeNonRtClientPrepareForSave";
     case kPluginBridgeNonRtClientShowUI:
@@ -185,6 +187,8 @@ const char* PluginBridgeNonRtServerOpcode2str(const PluginBridgeNonRtServerOpcod
         return "kPluginBridgeNonRtServerSetChunkDataFile";
     case kPluginBridgeNonRtServerSetLatency:
         return "kPluginBridgeNonRtServerSetLatency";
+    case kPluginBridgeNonRtServerSetParameterText:
+        return "kPluginBridgeNonRtServerSetParameterText";
     case kPluginBridgeNonRtServerReady:
         return "kPluginBridgeNonRtServerReady";
     case kPluginBridgeNonRtServerSaved:
