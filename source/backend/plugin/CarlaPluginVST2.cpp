@@ -23,17 +23,21 @@
 #include "CarlaMathUtils.hpp"
 #include "CarlaPluginUI.hpp"
 
-#include <pthread.h>
-
 #ifdef CARLA_OS_MAC
 # import <Foundation/Foundation.h>
 #endif
+
+#include <pthread.h>
+
+#include "water/memory/ByteOrder.h"
 
 #undef VST_FORCE_DEPRECATED
 #define VST_FORCE_DEPRECATED 0
 
 #undef kEffectMagic
 #define kEffectMagic (CCONST( 'V', 's', 't', 'P' ))
+
+using water::ByteOrder;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -361,6 +365,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fEffect != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(data != nullptr,);
         CARLA_SAFE_ASSERT_RETURN(dataSize > 0,);
+
+        if (loadOldSaveFormat(data, dataSize))
+            return;
 
         if (fLastChunk != nullptr)
             std::free(fLastChunk);
@@ -2346,6 +2353,41 @@ private:
     static CarlaPluginVST2* sLastCarlaPluginVST2;
 
     // -------------------------------------------------------------------
+
+    static bool compareMagic (int32_t magic, const char* name) noexcept
+    {
+        return magic == (int32_t)ByteOrder::littleEndianInt (name)
+            || magic == (int32_t)ByteOrder::bigEndianInt (name);
+    }
+
+    static int32_t fxbSwap(const int32_t x) noexcept
+    {
+        return (int32_t)ByteOrder::swapIfLittleEndian ((uint32_t) x);
+    }
+
+    bool loadOldSaveFormat(const void* const data, const std::size_t dataSize)
+    {
+        if (dataSize < 28)
+            return false;
+
+        const int32_t* const set = (const int32_t*)data;
+
+        if (! compareMagic(set[0], "CcnK"))
+            return false;
+        if (! compareMagic(set[2], "FBCh"))
+            return false;
+        if (fxbSwap(set[3]) > 1)
+            return false;
+
+        const int32_t chunkSize = fxbSwap(set[39]);
+        CARLA_SAFE_ASSERT_RETURN(chunkSize > 0, false);
+
+        if (static_cast<const std::size_t>(chunkSize + 160) > dataSize)
+            return false;
+
+        setChunkData(&set[40], static_cast<const std::size_t>(chunkSize));
+        return true;
+    }
 
     static intptr_t carla_vst_hostCanDo(const char* const feature)
     {
