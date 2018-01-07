@@ -23,6 +23,7 @@
 #include "lv2/instance-access.h"
 #include "lv2/midi.h"
 #include "lv2/options.h"
+#include "lv2/parameters.h"
 #include "lv2/port-props.h"
 #include "lv2/state.h"
 #include "lv2/time.h"
@@ -109,6 +110,7 @@ static void writeManifestFile(PluginListManager& plm)
     // Header
 
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
+    text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
     text += "\n";
@@ -141,7 +143,8 @@ static void writeManifestFile(PluginListManager& plm)
     text += "    lv2:optionalFeature <" LV2_UI__fixedSize "> ,\n";
     text += "                        <" LV2_UI__noUserResize "> ;\n";
     text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> ,\n";
-    text += "                        <" LV2_UI__resize "> .\n";
+    text += "                        <" LV2_UI__resize "> ;\n";
+    text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
     text += "\n";
 #endif
 
@@ -151,7 +154,8 @@ static void writeManifestFile(PluginListManager& plm)
     text += "    lv2:extensionData <" LV2_UI__idleInterface "> ,\n";
     text += "                      <" LV2_UI__showInterface "> ,\n";
     text += "                      <" LV2_PROGRAMS__UIInterface "> ;\n";
-    text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> .\n";
+    text += "    lv2:requiredFeature <" LV2_INSTANCE_ACCESS_URI "> ;\n";
+    text += "    opts:supportedOption <" LV2_PARAMETERS__sampleRate "> .\n";
 
     // -------------------------------------------------------------------
     // Write file now
@@ -215,6 +219,7 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     text += "@prefix doap: <http://usefulinc.com/ns/doap#> .\n";
     text += "@prefix foaf: <http://xmlns.com/foaf/0.1/> .\n";
     text += "@prefix lv2:  <" LV2_CORE_PREFIX "> .\n";
+    text += "@prefix opts: <" LV2_OPTIONS_PREFIX "> .\n";
     text += "@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n";
     text += "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n";
     text += "@prefix ui:   <" LV2_UI_PREFIX "> .\n";
@@ -287,6 +292,14 @@ static void writePluginFile(const NativePluginDescriptor* const pluginDesc)
     if (pluginDesc->category != NATIVE_PLUGIN_CATEGORY_SYNTH)
         text += "    lv2:extensionData <" LV2_PROGRAMS__Interface "> ;\n";
 
+    text += "\n";
+
+    // -------------------------------------------------------------------
+    // Options
+
+    text += "    opts:supportedOption <" LV2_BUF_SIZE__nominalBlockLength "> ,\n";
+    text += "                         <" LV2_BUF_SIZE__maxBlockLength "> ,\n";
+    text += "                         <" LV2_PARAMETERS__sampleRate "> ;\n";
     text += "\n";
 
     // -------------------------------------------------------------------
