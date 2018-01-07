@@ -567,6 +567,11 @@ public:
         [fWindow makeKeyWindow];
     }
 
+    void setChildWindow(void* const winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
+    }
+
     void* getPtr() const noexcept override
     {
         return (void*)fView;
@@ -765,6 +770,11 @@ public:
         CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
 
         // TODO
+    }
+
+    void setChildWindow(void* const winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
     }
 
     void* getPtr() const noexcept override
