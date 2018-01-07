@@ -2133,7 +2133,6 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
             // --------------------------------------------------------------------------------------------------------
             // Set Port Scale Points
-
             {
                 Lilv::ScalePoints lilvScalePoints(lilvPort.get_scale_points());
 
@@ -2363,6 +2362,8 @@ const LV2_RDF_Descriptor* lv2_rdf_new(const LV2_URI uri, const bool loadPresets)
 
                 Lilv::UI lilvUI(lilvUIs.get(it));
                 LV2_RDF_UI* const rdfUI(&rdfDescriptor->UIs[h++]);
+
+                lv2World.load_resource(lilvUI.get_uri());
 
                 // ----------------------------------------------------------------------------------------------------
                 // Set UI Type
