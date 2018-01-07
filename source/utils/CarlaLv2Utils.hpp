@@ -586,7 +586,7 @@ public:
             {
                 if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
                 {
-                    const int value(*(const int*)options[i].value);
+                    const int32_t value(*(const int32_t*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                     fBufferSize = static_cast<uint32_t>(value);
@@ -603,7 +603,7 @@ public:
             {
                 if (options[i].type == uridMap->map(uridMap->handle, LV2_ATOM__Int))
                 {
-                    const int value(*(const int*)options[i].value);
+                    const int32_t value(*(const int32_t*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                     fBufferSize = static_cast<uint32_t>(value);
@@ -1015,7 +1015,7 @@ public:
             {
                 if (options[i].type == fURIs.atomInt)
                 {
-                    const int value(*(const int*)options[i].value);
+                    const int32_t value(*(const int32_t*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                     const uint32_t newBufferSize = static_cast<uint32_t>(value);
@@ -1035,7 +1035,7 @@ public:
             {
                 if (options[i].type == fURIs.atomInt)
                 {
-                    const int value(*(const int*)options[i].value);
+                    const int32_t value(*(const int32_t*)options[i].value);
                     CARLA_SAFE_ASSERT_CONTINUE(value > 0);
 
                     const uint32_t newBufferSize = static_cast<uint32_t>(value);
