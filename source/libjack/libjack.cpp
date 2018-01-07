@@ -168,7 +168,7 @@ public:
         jack_carla_interposed_action(1, fSetupHints, (void*)carla_interposed_callback);
         jack_carla_interposed_action(2, fSessionManager, nullptr);
 
-        fNonRealtimeThread.startThread();
+        fNonRealtimeThread.startThread(false);
     }
 
     ~CarlaJackAppClient() noexcept override
@@ -1024,8 +1024,7 @@ void CarlaJackAppClient::runNonRealtimeThread()
             fMidiOutBuffers[i].isInput = false;
     }
 
-    // TODO
-    fRealtimeThread.startThread(/*Thread::realtimeAudioPriority*/);
+    fRealtimeThread.startThread(true);
 
     fLastPingTime = getCurrentTimeMilliseconds();
     carla_stdout("Carla Jack Client Ready!");

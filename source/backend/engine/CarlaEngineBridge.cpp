@@ -215,8 +215,7 @@ public:
             fShmNonRtServerControl.commitWrite();
         }
 
-        // TODO
-        startThread(/*Thread::realtimeAudioPriority*/);
+        startThread(true);
         return true;
     }
 

@@ -86,33 +86,60 @@ public:
     /*
      * Start the thread.
      */
-    bool startThread() noexcept
+    bool startThread(const bool withRealtimePriority = false) noexcept
     {
         // check if already running
         CARLA_SAFE_ASSERT_RETURN(! isThreadRunning(), true);
+
+        pthread_t handle;
+
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+
+        struct sched_param sched_param;
+        carla_zeroStruct(sched_param);
+
+        if (withRealtimePriority)
+        {
+            sched_param.sched_priority = 80;
+
+            if (pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM)          == 0  &&
+                pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) == 0  &&
+#ifndef CARLA_OS_WIN
+               (pthread_attr_setschedpolicy(&attr, SCHED_FIFO)              == 0  ||
+                pthread_attr_setschedpolicy(&attr, SCHED_RR)                == 0) &&
+#endif
+                pthread_attr_setschedparam(&attr, &sched_param)             == 0)
+            {
+                carla_stdout("CarlaThread with realtime priority successful");
+            }
+            else
+            {
+                carla_stdout("CarlaThread with realtime priority failed, going with normal priority instead");
+                pthread_attr_destroy(&attr);
+                pthread_attr_init(&attr);
+            }
+        }
 
         const CarlaMutexLocker cml(fLock);
 
         fShouldExit = false;
 
-        pthread_t handle;
+        const bool ok = pthread_create(&handle, &attr, _entryPoint, this) == 0;
+        pthread_attr_destroy(&attr);
 
-        if (pthread_create(&handle, nullptr, _entryPoint, this) == 0)
-        {
+        CARLA_SAFE_ASSERT_RETURN(ok, false);
 #ifdef PTW32_DLLPORT
-            CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
+        CARLA_SAFE_ASSERT_RETURN(handle.p != nullptr, false);
 #else
-            CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
+        CARLA_SAFE_ASSERT_RETURN(handle != 0, false);
 #endif
-            pthread_detach(handle);
-            _copyFrom(handle);
+        pthread_detach(handle);
+        _copyFrom(handle);
 
-            // wait for thread to start
-            fSignal.wait();
-            return true;
-        }
-
-        return false;
+        // wait for thread to start
+        fSignal.wait();
+        return true;
     }
 
     /*
