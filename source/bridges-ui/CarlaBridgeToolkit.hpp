@@ -38,6 +38,7 @@ public:
     virtual void show() = 0;
     virtual void focus() = 0;
     virtual void hide() = 0;
+    virtual void setChildWindow(void* const ptr) = 0;
     virtual void setSize(const uint width, const uint height) = 0;
     virtual void setTitle(const char* const title) = 0;
 

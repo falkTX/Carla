@@ -21,6 +21,10 @@
 #include "CarlaMainLoop.hpp"
 #include "CarlaPluginUI.hpp"
 
+#if defined(HAVE_X11) && defined(BRIDGE_X11)
+# include <X11/Xlib.h>
+#endif
+
 CARLA_BRIDGE_UI_START_NAMESPACE
 
 using CarlaBackend::runMainLoopOnce;
@@ -57,6 +61,7 @@ public:
 #elif defined(CARLA_OS_WIN) && defined(BRIDGE_HWND)
         fHostUI = CarlaPluginUI::newWindows(this, 0, options.isResizable);
 #elif defined(HAVE_X11) && defined(BRIDGE_X11)
+        XInitThreads();
         fHostUI = CarlaPluginUI::newX11(this, 0, options.isResizable);
 #endif
         CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr, false);
@@ -142,6 +147,15 @@ public:
         carla_debug("CarlaBridgeToolkitNative::hide()");
 
         fHostUI->hide();
+    }
+
+    void setChildWindow(void* const ptr) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(fHostUI != nullptr,);
+        CARLA_SAFE_ASSERT_RETURN(ptr != nullptr,);
+        carla_debug("CarlaBridgeToolkitNative::setChildWindow(%p)", ptr);
+
+        fHostUI->setChildWindow(ptr);
     }
 
     void setSize(const uint width, const uint height) override

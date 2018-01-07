@@ -56,7 +56,8 @@ public:
     X11PluginUI(Callback* const cb, const uintptr_t parentId, const bool isResizable) noexcept
         : CarlaPluginUI(cb, isResizable),
           fDisplay(nullptr),
-          fWindow(0),
+          fHostWindow(0),
+          fChildWindow(0),
           fIsVisible(false),
           fFirstShow(true),
           fSetSizeCalledAtLeastOnce(false),
@@ -76,26 +77,26 @@ public:
         if (fIsResizable)
             attr.event_mask |= StructureNotifyMask;
 
-        fWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
-                                0, 0, 300, 300, 0,
-                                DefaultDepth(fDisplay, screen),
-                                InputOutput,
-                                DefaultVisual(fDisplay, screen),
-                                CWBorderPixel|CWEventMask, &attr);
+        fHostWindow = XCreateWindow(fDisplay, RootWindow(fDisplay, screen),
+                                    0, 0, 300, 300, 0,
+                                    DefaultDepth(fDisplay, screen),
+                                    InputOutput,
+                                    DefaultVisual(fDisplay, screen),
+                                    CWBorderPixel|CWEventMask, &attr);
 
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
-        XGrabKey(fDisplay, X11Key_Escape, AnyModifier, fWindow, 1, GrabModeAsync, GrabModeAsync);
+        XGrabKey(fDisplay, X11Key_Escape, AnyModifier, fHostWindow, 1, GrabModeAsync, GrabModeAsync);
 
         Atom wmDelete = XInternAtom(fDisplay, "WM_DELETE_WINDOW", True);
-        XSetWMProtocols(fDisplay, fWindow, &wmDelete, 1);
+        XSetWMProtocols(fDisplay, fHostWindow, &wmDelete, 1);
 
         const pid_t pid = getpid();
         const Atom _nwp = XInternAtom(fDisplay, "_NET_WM_PID", False);
-        XChangeProperty(fDisplay, fWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
+        XChangeProperty(fDisplay, fHostWindow, _nwp, XA_CARDINAL, 32, PropModeReplace, (const uchar*)&pid, 1);
 
         const Atom _nwi = XInternAtom(fDisplay, "_NET_WM_ICON", False);
-        XChangeProperty(fDisplay, fWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
+        XChangeProperty(fDisplay, fHostWindow, _nwi, XA_CARDINAL, 32, PropModeReplace, (const uchar*)sCarlaX11Icon, sCarlaX11IconSize);
 
         if (parentId != 0)
             setTransientWinId(parentId);
@@ -107,14 +108,14 @@ public:
 
         if (fIsVisible)
         {
-            XUnmapWindow(fDisplay, fWindow);
+            XUnmapWindow(fDisplay, fHostWindow);
             fIsVisible = false;
         }
 
-        if (fWindow != 0)
+        if (fHostWindow != 0)
         {
-            XDestroyWindow(fDisplay, fWindow);
-            fWindow = 0;
+            XDestroyWindow(fDisplay, fHostWindow);
+            fHostWindow = 0;
         }
 
         if (fDisplay != nullptr)
@@ -127,7 +128,7 @@ public:
     void show() override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
         if (fFirstShow)
         {
@@ -137,6 +138,7 @@ public:
                 {
                     XSizeHints hints;
                     carla_zeroStruct(hints);
+
                     if (XGetNormalHints(fDisplay, childWindow, &hints) && hints.width > 0 && hints.height > 0)
                         setSize(hints.width, hints.height, false);
                 }
@@ -165,17 +167,17 @@ public:
         fIsVisible = true;
         fFirstShow = false;
 
-        XMapRaised(fDisplay, fWindow);
+        XMapRaised(fDisplay, fHostWindow);
         XFlush(fDisplay);
     }
 
     void hide() override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
         fIsVisible = false;
-        XUnmapWindow(fDisplay, fWindow);
+        XUnmapWindow(fDisplay, fHostWindow);
         XFlush(fDisplay);
     }
 
@@ -201,8 +203,16 @@ public:
                     CARLA_SAFE_ASSERT_CONTINUE(fCallback != nullptr);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.width > 0);
                     CARLA_SAFE_ASSERT_CONTINUE(event.xconfigure.height > 0);
-                    fCallback->handlePluginUIResized(static_cast<uint>(event.xconfigure.width),
-                                                     static_cast<uint>(event.xconfigure.height));
+
+                    {
+                        const uint width  = static_cast<uint>(event.xconfigure.width);
+                        const uint height = static_cast<uint>(event.xconfigure.height);
+
+                        if (fChildWindow != 0)
+                            XResizeWindow(fDisplay, fChildWindow, width, height);
+
+                        fCallback->handlePluginUIResized(width, height);
+                    }
                     break;
 
             case ClientMessage:
@@ -239,20 +249,23 @@ public:
     void focus() override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
-        XRaiseWindow(fDisplay, fWindow);
-        XSetInputFocus(fDisplay, fWindow, RevertToPointerRoot, CurrentTime);
+        XRaiseWindow(fDisplay, fHostWindow);
+        XSetInputFocus(fDisplay, fHostWindow, RevertToPointerRoot, CurrentTime);
         XFlush(fDisplay);
     }
 
     void setSize(const uint width, const uint height, const bool forceUpdate) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
         fSetSizeCalledAtLeastOnce = true;
-        XResizeWindow(fDisplay, fWindow, width, height);
+        XResizeWindow(fDisplay, fHostWindow, width, height);
+
+        if (fChildWindow != 0)
+            XResizeWindow(fDisplay, fChildWindow, width, height);
 
         if (! fIsResizable)
         {
@@ -267,7 +280,7 @@ public:
             sizeHints.max_width  = static_cast<int>(width);
             sizeHints.max_height = static_cast<int>(height);
 
-            XSetNormalHints(fDisplay, fWindow, &sizeHints);
+            XSetNormalHints(fDisplay, fHostWindow, &sizeHints);
         }
 
         if (forceUpdate)
@@ -277,22 +290,29 @@ public:
     void setTitle(const char* const title) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
-        XStoreName(fDisplay, fWindow, title);
+        XStoreName(fDisplay, fHostWindow, title);
     }
 
     void setTransientWinId(const uintptr_t winId) override
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr,);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0,);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0,);
 
-        XSetTransientForHint(fDisplay, fWindow, static_cast<Window>(winId));
+        XSetTransientForHint(fDisplay, fHostWindow, static_cast<Window>(winId));
+    }
+
+    void setChildWindow(void* const winId) override
+    {
+        CARLA_SAFE_ASSERT_RETURN(winId != nullptr,);
+
+        fChildWindow = (Window)winId;
     }
 
     void* getPtr() const noexcept override
     {
-        return (void*)fWindow;
+        return (void*)fHostWindow;
     }
 
     void* getDisplay() const noexcept override
@@ -304,13 +324,13 @@ protected:
     Window getChildWindow() const
     {
         CARLA_SAFE_ASSERT_RETURN(fDisplay != nullptr, 0);
-        CARLA_SAFE_ASSERT_RETURN(fWindow != 0, 0);
+        CARLA_SAFE_ASSERT_RETURN(fHostWindow != 0, 0);
 
         Window rootWindow, parentWindow, ret = 0;
         Window* childWindows = nullptr;
         uint numChildren = 0;
 
-        XQueryTree(fDisplay, fWindow, &rootWindow, &parentWindow, &childWindows, &numChildren);
+        XQueryTree(fDisplay, fHostWindow, &rootWindow, &parentWindow, &childWindows, &numChildren);
 
         if (numChildren > 0 && childWindows != nullptr)
         {
@@ -323,7 +343,8 @@ protected:
 
 private:
     Display* fDisplay;
-    Window   fWindow;
+    Window   fHostWindow;
+    Window   fChildWindow;
     bool     fIsVisible;
     bool     fFirstShow;
     bool     fSetSizeCalledAtLeastOnce;

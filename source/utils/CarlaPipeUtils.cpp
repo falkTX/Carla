@@ -871,6 +871,23 @@ void CarlaPipeCommon::writeMidiProgramMessage(const uint32_t bank, const uint32_
     flushMessages();
 }
 
+void CarlaPipeCommon::writeReloadProgramsMessage(const int32_t index) const noexcept
+{
+    char tmpBuf[0xff+1];
+    tmpBuf[0xff] = '\0';
+
+    const CarlaMutexLocker cml(pData->writeLock);
+
+    if (! _writeMsgBuffer("reloadprograms\n", 15))
+        return;
+
+    std::snprintf(tmpBuf, 0xff, "%i\n", index);
+    if (! _writeMsgBuffer(tmpBuf, std::strlen(tmpBuf)))
+        return;
+
+    flushMessages();
+}
+
 void CarlaPipeCommon::writeMidiNoteMessage(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) const noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(channel < MAX_MIDI_CHANNELS,);

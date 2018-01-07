@@ -198,6 +198,11 @@ public:
     void writeMidiProgramMessage(const uint32_t bank, const uint32_t program) const noexcept;
 
     /*!
+     * Write a "reloadprograms" message.
+     */
+    void writeReloadProgramsMessage(const int32_t index) const noexcept;
+
+    /*!
      * Write a MIDI "note" message.
      */
     void writeMidiNoteMessage(const bool onOff, const uint8_t channel, const uint8_t note, const uint8_t velocity) const noexcept;

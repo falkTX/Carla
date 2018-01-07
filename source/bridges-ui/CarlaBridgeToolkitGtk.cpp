@@ -144,6 +144,8 @@ public:
             gtk_widget_hide(fWindow);
     }
 
+    void setChildWindow(void* const) override {}
+
     void setSize(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fWindow != nullptr,);

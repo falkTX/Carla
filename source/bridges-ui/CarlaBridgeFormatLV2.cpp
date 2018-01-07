@@ -34,7 +34,7 @@ using water::File;
 
 CARLA_BRIDGE_UI_START_NAMESPACE
 
-// -----------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 static double gInitialSampleRate = 44100.0;
 
@@ -117,7 +117,7 @@ enum CarlaLv2Features {
     kFeatureCount
 };
 
-// -------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 struct Lv2PluginOptions {
     enum OptIndex {
@@ -172,7 +172,7 @@ struct Lv2PluginOptions {
     }
 };
 
-// -------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 class CarlaLv2Client : public CarlaBridgeFormat
 {
@@ -184,6 +184,7 @@ public:
           fDescriptor(nullptr),
           fRdfDescriptor(nullptr),
           fRdfUiDescriptor(nullptr),
+          fControlDesignatedPort(0),
           fLv2Options(),
           fUiOptions(),
           fCustomURIDs(kUridCount, std::string("urn:null")),
@@ -193,7 +194,7 @@ public:
 
         carla_zeroPointers(fFeatures, kFeatureCount+1);
 
-        // ---------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // initialize features (part 1)
 
         LV2_Log_Log* const logFt = new LV2_Log_Log;
@@ -234,7 +235,7 @@ public:
         uiResizeFt->handle                = this;
         uiResizeFt->ui_resize             = carla_lv2_ui_resize;
 
-        // ---------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // initialize features (part 2)
 
         for (uint32_t i=0; i < kFeatureCount; ++i)
@@ -331,7 +332,7 @@ public:
         }
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI initialization
 
     bool init(const int argc, const char* argv[]) override
@@ -339,29 +340,31 @@ public:
         const char* pluginURI = argv[1];
         const char* uiURI     = argv[2];
 
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // load plugin
 
         Lv2WorldClass& lv2World(Lv2WorldClass::getInstance());
         lv2World.initIfNeeded(std::getenv("LV2_PATH"));
 
-        //Lilv::Node bundleNode(lv2World.new_file_uri(nullptr, uiBundle));
-        //CARLA_SAFE_ASSERT_RETURN(bundleNode.is_uri(), false);
+#if 0
+        Lilv::Node bundleNode(lv2World.new_file_uri(nullptr, uiBundle));
+        CARLA_SAFE_ASSERT_RETURN(bundleNode.is_uri(), false);
 
-        //CarlaString sBundle(bundleNode.as_uri());
+        CarlaString sBundle(bundleNode.as_uri());
 
-        //if (! sBundle.endsWith("/"))
-        //    sBundle += "/";
+        if (! sBundle.endsWith("/"))
+           sBundle += "/";
 
-        //lv2World.load_bundle(sBundle);
+        lv2World.load_bundle(sBundle);
+#endif
 
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // get plugin from lv2_rdf (lilv)
 
-        fRdfDescriptor = lv2_rdf_new(pluginURI, true);
+        fRdfDescriptor = lv2_rdf_new(pluginURI, false);
         CARLA_SAFE_ASSERT_RETURN(fRdfDescriptor != nullptr, false);
 
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // find requested UI
 
         for (uint32_t i=0; i < fRdfDescriptor->UICount; ++i)
@@ -375,30 +378,11 @@ public:
 
         CARLA_SAFE_ASSERT_RETURN(fRdfUiDescriptor != nullptr, false);
 
-        // -----------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // check if not resizable
-
-#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-        // embed UIs can only be resizable if they provide resize extension
-        fUiOptions.isResizable = false;
-        // TODO: put this trick into main carla
-
-        for (uint32_t i=0; i < fRdfUiDescriptor->ExtensionCount; ++i)
-        {
-            carla_stdout("Test UI extension %s", fRdfUiDescriptor->Extensions[i]);
-
-            if (std::strcmp(fRdfUiDescriptor->Extensions[i], LV2_UI__resize) == 0)
-            {
-                fUiOptions.isResizable = true;
-                break;
-            }
-        }
-#endif
 
         for (uint32_t i=0; i < fRdfUiDescriptor->FeatureCount; ++i)
         {
-            carla_stdout("Test UI feature %s", fRdfUiDescriptor->Features[i].URI);
-
             if (std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__fixedSize   ) == 0 ||
                 std::strcmp(fRdfUiDescriptor->Features[i].URI, LV2_UI__noUserResize) == 0)
             {
@@ -407,15 +391,13 @@ public:
             }
         }
 
-        carla_stdout("Is resizable => %s", bool2str(fUiOptions.isResizable));
-
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // init UI
 
         if (! CarlaBridgeFormat::init(argc, argv))
             return false;
 
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // open DLL
 
         if (! libOpen(fRdfUiDescriptor->Binary))
@@ -424,7 +406,7 @@ public:
             return false;
         }
 
-        // -----------------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // get DLL main entry
 
         const LV2UI_DescriptorFunction ui_descFn = (LV2UI_DescriptorFunction)libSymbol("lv2ui_descriptor");
@@ -432,11 +414,10 @@ public:
         if (ui_descFn == nullptr)
             return false;
 
-        // -----------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // get descriptor that matches URI
 
-        uint32_t i = 0;
-        while ((fDescriptor = ui_descFn(i++)))
+        for (uint32_t i=0; (fDescriptor = ui_descFn(i++)) != nullptr;)
         {
             if (std::strcmp(fDescriptor->URI, uiURI) == 0)
                 break;
@@ -448,17 +429,22 @@ public:
             return false;
         }
 
-        // -----------------------------------------------------------
+        // ------------------------------------------------------------------------------------------------------------
         // initialize UI
 
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
         fFeatures[kFeatureIdUiParent]->data = fToolkit->getContainerId();
 #endif
 
-        fHandle = fDescriptor->instantiate(fDescriptor, fRdfDescriptor->URI, fRdfUiDescriptor->Bundle, carla_lv2_ui_write_function, this, &fWidget, fFeatures);
+        fHandle = fDescriptor->instantiate(fDescriptor, fRdfDescriptor->URI, fRdfUiDescriptor->Bundle,
+                                           carla_lv2_ui_write_function, this, &fWidget, fFeatures);
         CARLA_SAFE_ASSERT_RETURN(fHandle != nullptr, false);
 
-        // -----------------------------------------------------------
+#if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
+        fToolkit->setChildWindow(fWidget);
+#endif
+
+        // ------------------------------------------------------------------------------------------------------------
         // check for known extensions
 
         if (fDescriptor->extension_data != nullptr)
@@ -477,18 +463,30 @@ public:
                 fExt.resize = nullptr;
         }
 
+        for (uint32_t i=0; i<fRdfDescriptor->PortCount; ++i)
+        {
+            if (LV2_IS_PORT_DESIGNATION_CONTROL(fRdfDescriptor->Ports[i].Designation))
+            {
+                fControlDesignatedPort = i;
+                break;
+            }
+        }
+
         return true;
     }
 
     void idleUI() override
     {
 #if defined(BRIDGE_COCOA) || defined(BRIDGE_HWND) || defined(BRIDGE_X11)
-        if (fHandle != nullptr && fExt.idle != nullptr)
-            fExt.idle->idle(fHandle);
+        if (fHandle != nullptr && fExt.idle != nullptr && fExt.idle->idle(fHandle) != 0)
+        {
+            if (isPipeRunning() && ! fQuitReceived)
+                writeExitingMessageAndWait();
+        }
 #endif
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI management
 
     void* getWidget() const noexcept override
@@ -501,7 +499,7 @@ public:
         return fUiOptions;
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // DSP Callbacks
 
     void dspParameterChanged(const uint32_t index, const float value) override
@@ -515,8 +513,9 @@ public:
         fDescriptor->port_event(fHandle, index, sizeof(float), kUridNull, &value);
     }
 
-    void dspProgramChanged(const uint32_t) override
+    void dspProgramChanged(const uint32_t index) override
     {
+        carla_stderr2("dspProgramChanged(%i) - not handled", index);
     }
 
     void dspMidiProgramChanged(const uint32_t bank, const uint32_t program) override
@@ -548,7 +547,7 @@ public:
         midiEv.data[1] = note;
         midiEv.data[2] = velocity;
 
-        fDescriptor->port_event(fHandle, /* TODO */ 0, lv2_atom_total_size(midiEv), kUridAtomTransferEvent, &midiEv);
+        fDescriptor->port_event(fHandle, fControlDesignatedPort, lv2_atom_total_size(midiEv), kUridAtomTransferEvent, &midiEv);
     }
 
     void dspAtomReceived(const uint32_t portIndex, const LV2_Atom* const atom) override
@@ -575,8 +574,6 @@ public:
     {
         carla_debug("CarlaLv2Client::uiOptionsChanged(%g, %s, %s, \"%s\", " P_UINTPTR ")", sampleRate, bool2str(useTheme), bool2str(useThemeColors), windowTitle, transientWindowId);
 
-        delete[] fLv2Options.windowTitle;
-
         const float sampleRatef = static_cast<float>(sampleRate);
 
         if (carla_isNotEqual(fLv2Options.sampleRate, sampleRatef))
@@ -600,12 +597,13 @@ public:
             }
         }
 
+        delete[] fLv2Options.windowTitle;
         fLv2Options.transientWinId = static_cast<int64_t>(transientWindowId);
         fLv2Options.windowTitle    = carla_strdup_safe(windowTitle);
 
         fUiOptions.useTheme          = useTheme;
         fUiOptions.useThemeColors    = useThemeColors;
-        fUiOptions.windowTitle       = windowTitle;
+        fUiOptions.windowTitle       = fLv2Options.windowTitle;
         fUiOptions.transientWindowId = transientWindowId;
     }
 
@@ -615,7 +613,7 @@ public:
             fExt.resize->ui_resize(fHandle, static_cast<int>(width), static_cast<int>(height));
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
     LV2_URID getCustomURID(const char* const uri)
     {
@@ -654,12 +652,12 @@ public:
         return fCustomURIDs[urid].c_str();
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
-    void handleProgramChanged(const int32_t /*index*/)
+    void handleProgramChanged(const int32_t index)
     {
         if (isPipeRunning())
-            writeConfigureMessage("reloadprograms", "");
+            writeReloadProgramsMessage(index);
     }
 
     uint32_t handleUiPortMap(const char* const symbol)
@@ -684,7 +682,6 @@ public:
         carla_debug("CarlaLv2Client::handleUiResize(%i, %i)", width, height);
 
         fToolkit->setSize(static_cast<uint>(width), static_cast<uint>(height));
-
         return 0;
     }
 
@@ -728,7 +725,7 @@ public:
         }
     }
 
-    // ---------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
 
 private:
     LV2UI_Handle fHandle;
@@ -738,6 +735,7 @@ private:
     const LV2UI_Descriptor*   fDescriptor;
     const LV2_RDF_Descriptor* fRdfDescriptor;
     const LV2_RDF_UI*         fRdfUiDescriptor;
+    uint32_t                  fControlDesignatedPort;
     Lv2PluginOptions          fLv2Options;
 
     Options fUiOptions;
@@ -756,7 +754,7 @@ private:
               resize(nullptr) {}
     } fExt;
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Logs Feature
 
     static int carla_lv2_log_printf(LV2_Log_Handle handle, LV2_URID type, const char* fmt, ...)
@@ -817,7 +815,7 @@ private:
         return ret;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // Programs Feature
 
     static void carla_lv2_program_changed(LV2_Programs_Handle handle, int32_t index)
@@ -828,7 +826,7 @@ private:
         ((CarlaLv2Client*)handle)->handleProgramChanged(index);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // State Feature
 
     static char* carla_lv2_state_make_path(LV2_State_Make_Path_Handle handle, const char* path)
@@ -876,7 +874,7 @@ private:
         return strdup(File::getCurrentWorkingDirectory().getChildFile(abstract_path).getFullPathName().toRawUTF8());
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // URI-Map Feature
 
     static uint32_t carla_lv2_uri_to_id(LV2_URI_Map_Callback_Data data, const char* map, const char* uri)
@@ -888,7 +886,7 @@ private:
         (void)map;
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // URID Feature
 
     static LV2_URID carla_lv2_urid_map(LV2_URID_Map_Handle handle, const char* uri)
@@ -1126,7 +1124,7 @@ private:
         return ((CarlaLv2Client*)handle)->getCustomURIDString(urid);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI Port-Map Feature
 
     static uint32_t carla_lv2_ui_port_map(LV2UI_Feature_Handle handle, const char* symbol)
@@ -1137,7 +1135,7 @@ private:
         return ((CarlaLv2Client*)handle)->handleUiPortMap(symbol);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI Resize Feature
 
     static int carla_lv2_ui_resize(LV2UI_Feature_Handle handle, int width, int height)
@@ -1148,7 +1146,7 @@ private:
         return ((CarlaLv2Client*)handle)->handleUiResize(width, height);
     }
 
-    // -------------------------------------------------------------------
+    // ----------------------------------------------------------------------------------------------------------------
     // UI Extension
 
     static void carla_lv2_ui_write_function(LV2UI_Controller controller, uint32_t port_index, uint32_t buffer_size, uint32_t format, const void* buffer)
@@ -1162,11 +1160,11 @@ private:
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaLv2Client)
 };
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 CARLA_BRIDGE_UI_END_NAMESPACE
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 
 int main(int argc, const char* argv[])
 {
@@ -1203,4 +1201,4 @@ int main(int argc, const char* argv[])
     return ret;
 }
 
-// -----------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------

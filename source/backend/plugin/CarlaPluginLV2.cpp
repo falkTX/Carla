@@ -1483,6 +1483,8 @@ public:
 #ifndef LV2_UIS_ONLY_BRIDGES
             if (fUI.type == UI::TYPE_EMBED)
             {
+                fUI.window->setChildWindow(fUI.widget);
+
                 if (fUI.window != nullptr)
                 {
                     fUI.window->show();
@@ -1600,7 +1602,9 @@ public:
 
             // note: UI might have been closed by window idle
             if (fNeedsUiClose)
+            {
                 pass();
+            }
             else if (fUI.handle != nullptr && fExt.uiidle != nullptr && fExt.uiidle->idle(fUI.handle) != 0)
             {
                 showCustomUI(false);
@@ -4208,10 +4212,12 @@ public:
         case LV2_UI_X11:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-x11";
             break;
+#if 0
         case LV2_UI_EXTERNAL:
         case LV2_UI_OLD_EXTERNAL:
             bridgeBinary += CARLA_OS_SEP_STR "carla-bridge-lv2-external";
             break;
+#endif
         default:
             return nullptr;
         }
@@ -4372,7 +4378,7 @@ public:
         fCustomURIDs.push_back(uri);
 
         if (fUI.type == UI::TYPE_BRIDGE && fPipeServer.isPipeRunning())
-            fPipeServer.writeLv2UridMessage(uriCount, uri);
+            fPipeServer.writeLv2UridMessage(urid, uri);
 
         return urid;
     }
@@ -4648,7 +4654,6 @@ public:
         carla_debug("CarlaPluginLV2::handleUIResize(%i, %i)", width, height);
 
         fUI.window->setSize(static_cast<uint>(width), static_cast<uint>(height), true);
-
         return 0;
     }
 
@@ -6338,6 +6343,19 @@ bool CarlaPipeServerLV2::msgReceived(const char* const msg) noexcept
         }
 
         delete[] uri;
+        return true;
+    }
+
+    if (std::strcmp(msg, "reloadprograms") == 0)
+    {
+        int32_t index;
+
+        CARLA_SAFE_ASSERT_RETURN(readNextLineAsInt(index), true);
+
+        try {
+            kPlugin->handleProgramChanged(index);
+        } CARLA_SAFE_EXCEPTION("handleProgramChanged");
+
         return true;
     }
 

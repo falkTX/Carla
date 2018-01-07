@@ -200,6 +200,8 @@ public:
             fWindow->hide();
     }
 
+    void setChildWindow(void* const) override {}
+
     void setSize(const uint width, const uint height) override
     {
         CARLA_SAFE_ASSERT_RETURN(fPlugin != nullptr,);

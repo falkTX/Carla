@@ -39,6 +39,7 @@ public:
     virtual void idle() = 0;
     virtual void setSize(const uint with, const uint height, const bool forceUpdate) = 0;
     virtual void setTitle(const char* const title) = 0;
+    virtual void setChildWindow(void* const ptr) = 0;
     virtual void setTransientWinId(const uintptr_t winId) = 0;
     virtual void* getPtr() const noexcept = 0;
 #ifdef HAVE_X11
