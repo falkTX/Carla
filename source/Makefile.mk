@@ -260,33 +260,10 @@ endif
 endif
 
 ifeq ($(HAVE_QT5),true)
-QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
-ifeq ($(BSD),true)
-MOC_QT5 ?= $(QT5_LIBDIR)/bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/bin/uic
-endif
-ifeq ($(HAIKU),true)
-MOC_QT5 ?= $(QT5_LIBDIR)/../../bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/../../bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/../../bin/uic
-endif
-ifeq ($(MACOS),true)
-MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/../bin/uic
-endif
-ifeq ($(MOC_QT5),)
-ifneq (,$(wildcard $(QT5_LIBDIR)/qt5/bin/moc))
-MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
-else
-MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
-RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
-endif
-endif
+QT5_HOSTBINS = $(shell pkg-config --variable=host_bins Qt5Core)
+MOC_QT5 ?= $(QT5_HOSTBINS)/moc
+RCC_QT5 ?= $(QT5_HOSTBINS)/rcc
+UIC_QT5 ?= $(QT5_HOSTBINS)/uic
 ifeq (,$(wildcard $(MOC_QT5)))
 HAVE_QT5=false
 endif
