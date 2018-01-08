@@ -1861,12 +1861,12 @@ public:
 
     static NativePluginHandle _instantiatePatchbay16(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 16);
+        return new CarlaEngineNative(host, true, true, 16, 16);
     }
 
     static NativePluginHandle _instantiatePatchbay32(const NativeHostDescriptor* host)
     {
-        return new CarlaEngineNative(host, true, true, 32);
+        return new CarlaEngineNative(host, true, true, 32, 32);
     }
 
     static void _cleanup(NativePluginHandle handle)
