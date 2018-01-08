@@ -921,6 +921,10 @@ bool CarlaJackAppClient::handleNonRtData()
             fShmNonRtClientControl.readShort();
             break;
 
+        case kPluginBridgeNonRtClientGetParameterText:
+            fShmNonRtClientControl.readUInt();
+            break;
+
         case kPluginBridgeNonRtClientPrepareForSave:
             {
                 const CarlaMutexLocker _cml(fShmNonRtServerControl.mutex);
