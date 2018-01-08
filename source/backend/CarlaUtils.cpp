@@ -559,14 +559,26 @@ public:
     CarlaPipeClientPlugin(const CarlaPipeCallbackFunc callbackFunc, void* const callbackPtr) noexcept
         : CarlaPipeClient(),
           fCallbackFunc(callbackFunc),
-          fCallbackPtr(callbackPtr)
+          fCallbackPtr(callbackPtr),
+          fLastReadLine(nullptr)
     {
         CARLA_SAFE_ASSERT(fCallbackFunc != nullptr);
     }
 
+    ~CarlaPipeClientPlugin() override
+    {
+        if (fLastReadLine != nullptr)
+        {
+            delete[] fLastReadLine;
+            fLastReadLine = nullptr;
+        }
+    }
+
     const char* readlineblock(const uint timeout) noexcept
     {
-        return CarlaPipeClient::_readlineblock(timeout);
+        delete[] fLastReadLine;
+        fLastReadLine = CarlaPipeClient::_readlineblock(timeout);
+        return fLastReadLine;
     }
 
     bool msgReceived(const char* const msg) noexcept
@@ -584,6 +596,7 @@ public:
 private:
     const CarlaPipeCallbackFunc fCallbackFunc;
     void* const fCallbackPtr;
+    const char* fLastReadLine;
 
     CARLA_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(CarlaPipeClientPlugin)
 };
