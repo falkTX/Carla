@@ -28,7 +28,7 @@ endif
 
 # ----------------------------------------------------------------------------------------------------------------------------
 
-BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/utils -isystem $(CWD)/modules
+BUILD_CXX_FLAGS += -I$(CWD)/backend -I$(CWD)/includes -I$(CWD)/modules -I$(CWD)/utils
 
 ifeq ($(MACOS),true)
 BUILD_CXX_FLAGS += -ObjC++
