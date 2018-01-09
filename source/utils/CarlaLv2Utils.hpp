@@ -71,6 +71,7 @@
 
 #include "lilv/lilvmm.hpp"
 #include "sratom/sratom.h"
+#include "lilv/config/lilv_config.h"
 
 // enable -Wdocumentation again
 #if defined(__clang__) && (__clang_major__ * 100 + __clang_minor__) > 300
@@ -416,9 +417,13 @@ public:
         return lv2World;
     }
 
-    void initIfNeeded(const char* const LV2_PATH)
+    void initIfNeeded(const char* LV2_PATH)
     {
-        CARLA_SAFE_ASSERT_RETURN(LV2_PATH != nullptr,);
+        if (LV2_PATH == nullptr || LV2_PATH[0] == '\0')
+        {
+            static const char* const DEFAULT_LV2_PATH = LILV_DEFAULT_LV2_PATH;
+            LV2_PATH = DEFAULT_LV2_PATH;
+        }
 
         if (! needsInit)
             return;
