@@ -253,7 +253,6 @@ endif
 ifeq ($(HAVE_QT4),true)
 MOC_QT4 ?= $(shell pkg-config --variable=moc_location QtCore)
 RCC_QT4 ?= $(shell pkg-config --variable=rcc_location QtCore)
-UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4=false
 endif
@@ -267,27 +266,22 @@ QT5_LIBDIR = $(shell pkg-config --variable=libdir Qt5Core)
 ifeq ($(BSD),true)
 MOC_QT5 ?= $(QT5_LIBDIR)/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/bin/uic
 endif
 ifeq ($(HAIKU),true)
 MOC_QT5 ?= $(QT5_LIBDIR)/../../bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/../../bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/../../bin/uic
 endif
 ifeq ($(MACOS),true)
 MOC_QT5 ?= $(QT5_LIBDIR)/../bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/../bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/../bin/uic
 endif
 ifeq ($(MOC_QT5),)
 ifneq (,$(wildcard $(QT5_LIBDIR)/qt5/bin/moc))
 MOC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt5/bin/uic
 else
 MOC_QT5 ?= $(QT5_LIBDIR)/qt/bin/moc
 RCC_QT5 ?= $(QT5_LIBDIR)/qt/bin/rcc
-UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
 endif
 endif
 ifeq (,$(wildcard $(MOC_QT5)))
