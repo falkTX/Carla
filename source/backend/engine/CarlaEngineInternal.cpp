@@ -694,7 +694,11 @@ PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 // -----------------------------------------------------------------------
 // ScopedActionLock
 
-ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAction action, const uint pluginId, const uint value, const bool lockWait) noexcept
+ScopedActionLock::ScopedActionLock(CarlaEngine* const engine,
+                                   const EnginePostAction action,
+                                   const uint pluginId,
+                                   const uint value,
+                                   const bool lockWait) noexcept
     : pData(engine->pData)
 {
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
@@ -717,7 +721,12 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAc
         carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
 
         if (! pData->nextAction.postDone)
-            carla_sem_timedwait(*pData->nextAction.sem, 2000);
+        {
+            if (pData->nextAction.sem != nullptr)
+                carla_sem_timedwait(*pData->nextAction.sem, 2000);
+            else
+                carla_sleep(2);
+        }
 
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
 
