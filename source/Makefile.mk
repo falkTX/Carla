@@ -257,6 +257,9 @@ UIC_QT4 ?= $(shell pkg-config --variable=uic_location QtCore)
 ifeq (,$(wildcard $(MOC_QT4)))
 HAVE_QT4=false
 endif
+ifeq (,$(wildcard $(RCC_QT4)))
+HAVE_QT4=false
+endif
 endif
 
 ifeq ($(HAVE_QT5),true)
@@ -288,6 +291,9 @@ UIC_QT5 ?= $(QT5_LIBDIR)/qt/bin/uic
 endif
 endif
 ifeq (,$(wildcard $(MOC_QT5)))
+HAVE_QT5=false
+endif
+ifeq (,$(wildcard $(RCC_QT5)))
 HAVE_QT5=false
 endif
 endif
