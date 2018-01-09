@@ -1379,6 +1379,9 @@ bool CarlaPipeServer::startPipeServer(const char* const filename,
 #endif
 
     return false;
+
+    // maybe unused
+    (void)size;
 }
 
 void CarlaPipeServer::stopPipeServer(const uint32_t timeOutMilliseconds) noexcept

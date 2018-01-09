@@ -581,7 +581,7 @@ public:
         return fLastReadLine;
     }
 
-    bool msgReceived(const char* const msg) noexcept
+    bool msgReceived(const char* const msg) noexcept override
     {
         if (fCallbackFunc != nullptr)
         {
