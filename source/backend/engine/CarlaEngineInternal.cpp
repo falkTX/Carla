@@ -720,6 +720,28 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAc
             carla_sem_timedwait(*pData->nextAction.sem, 2000);
 
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
+
+        // check if anything went wrong...
+        if (! pData->nextAction.postDone)
+        {
+            bool needsCorrection = false;
+
+            {
+                const CarlaMutexLocker cml(pData->nextAction.mutex);
+
+                if (pData->nextAction.opcode != kEnginePostActionNull)
+                {
+                    needsCorrection = true;
+                    pData->nextAction.needsPost = false;
+                }
+            }
+
+            if (needsCorrection)
+            {
+                pData->doNextPluginAction();
+                carla_stderr2("Failed to wait for engine, is audio not running?");
+            }
+        }
     }
     else
     {
