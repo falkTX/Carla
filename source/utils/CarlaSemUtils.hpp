@@ -138,6 +138,7 @@ void carla_sem_destroy(carla_sem_t* const sem) noexcept
 
 /*
  * Connect to semaphore.
+ * Used only on macOS for a client to connect to a server.
  */
 static inline
 bool carla_sem_connect(carla_sem_t& sem) noexcept
@@ -161,7 +162,7 @@ bool carla_sem_connect(carla_sem_t& sem) noexcept
  * Post semaphore (unlock).
  */
 static inline
-void carla_sem_post(carla_sem_t& sem, const bool server) noexcept
+void carla_sem_post(carla_sem_t& sem, const bool server = true) noexcept
 {
 #ifdef CARLA_OS_WIN
     ::ReleaseSemaphore(sem.handle, 1, nullptr);
@@ -184,7 +185,7 @@ void carla_sem_post(carla_sem_t& sem, const bool server) noexcept
  * Wait for a semaphore (lock).
  */
 static inline
-bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server) noexcept
+bool carla_sem_timedwait(carla_sem_t& sem, const uint msecs, const bool server = true) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(msecs > 0, false);
 

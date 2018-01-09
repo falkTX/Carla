@@ -17,6 +17,7 @@
 
 #include "CarlaEngineInternal.hpp"
 #include "CarlaPlugin.hpp"
+#include "CarlaSemUtils.hpp"
 
 #include "jackbridge/JackBridge.hpp"
 
@@ -369,45 +370,33 @@ EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
       value(0),
-      condition(),
       mutex(),
-      triggered(false)
-    {
-        pthread_condattr_t cattr;
-        pthread_condattr_init(&cattr);
-        pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_PRIVATE);
-        pthread_cond_init(&condition, &cattr);
-        pthread_condattr_destroy(&cattr);
-
-        pthread_mutexattr_t mattr;
-        pthread_mutexattr_init(&mattr);
-        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
-        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);
-        pthread_mutex_init(&mutex, &mattr);
-        pthread_mutexattr_destroy(&mattr);
-    }
+      needsPost(false),
+      postDone(false),
+      sem(carla_sem_create()) {}
 
 EngineNextAction::~EngineNextAction() noexcept
 {
     CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
 
-    pthread_cond_destroy(&condition);
-    pthread_mutex_destroy(&mutex);
+    if (sem != nullptr)
+    {
+        carla_sem_destroy(sem);
+        sem = nullptr;
+    }
 }
-
-// void EngineNextAction::ready() const noexcept
-// {
-//     mutex.lock();
-//     mutex.unlock();
-// }
 
 void EngineNextAction::clearAndReset() noexcept
 {
-    pthread_mutex_lock(&mutex);
-    opcode   = kEnginePostActionNull;
-    pluginId = 0;
-    value    = 0;
-    pthread_mutex_unlock(&mutex);
+    mutex.lock();
+    CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
+
+    opcode    = kEnginePostActionNull;
+    pluginId  = 0;
+    value     = 0;
+    needsPost = false;
+    postDone  = false;
+    mutex.unlock();
 }
 
 // -----------------------------------------------------------------------
@@ -546,7 +535,6 @@ void CarlaEngine::ProtectedData::close()
     CARLA_SAFE_ASSERT(plugins != nullptr);
     CARLA_SAFE_ASSERT(nextPluginId == maxPluginNumber);
 #endif
-    CARLA_SAFE_ASSERT(nextAction.opcode == kEnginePostActionNull);
 
     aboutToClose = true;
 
@@ -593,14 +581,14 @@ void CarlaEngine::ProtectedData::initTime(const char* const features)
 // -----------------------------------------------------------------------
 
 #ifndef BUILD_BRIDGE
-void CarlaEngine::ProtectedData::doPluginRemove() noexcept
+void CarlaEngine::ProtectedData::doPluginRemove(const uint pluginId) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount > 0,);
-    CARLA_SAFE_ASSERT_RETURN(nextAction.pluginId < curPluginCount,);
+    CARLA_SAFE_ASSERT_RETURN(pluginId < curPluginCount,);
     --curPluginCount;
 
     // move all plugins 1 spot backwards
-    for (uint i=nextAction.pluginId; i < curPluginCount; ++i)
+    for (uint i=pluginId; i < curPluginCount; ++i)
     {
         CarlaPlugin* const plugin(plugins[i+1].plugin);
 
@@ -625,12 +613,9 @@ void CarlaEngine::ProtectedData::doPluginRemove() noexcept
     plugins[id].outsPeak[1] = 0.0f;
 }
 
-void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
+void CarlaEngine::ProtectedData::doPluginsSwitch(const uint idA, const uint idB) noexcept
 {
     CARLA_SAFE_ASSERT_RETURN(curPluginCount >= 2,);
-
-    const uint idA(nextAction.pluginId);
-    const uint idB(nextAction.value);
 
     CARLA_SAFE_ASSERT_RETURN(idA < curPluginCount,);
     CARLA_SAFE_ASSERT_RETURN(idB < curPluginCount,);
@@ -648,9 +633,26 @@ void CarlaEngine::ProtectedData::doPluginsSwitch() noexcept
 }
 #endif
 
-void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
+void CarlaEngine::ProtectedData::doNextPluginAction() noexcept
 {
-    switch (nextAction.opcode)
+    if (! nextAction.mutex.tryLock())
+        return;
+
+    const EnginePostAction opcode    = nextAction.opcode;
+    const bool             needsPost = nextAction.needsPost;
+#ifndef BUILD_BRIDGE
+    const uint             pluginId  = nextAction.pluginId;
+    const uint             value     = nextAction.value;
+#endif
+
+    nextAction.opcode    = kEnginePostActionNull;
+    nextAction.pluginId  = 0;
+    nextAction.value     = 0;
+    nextAction.needsPost = false;
+
+    nextAction.mutex.unlock();
+
+    switch (opcode)
     {
     case kEnginePostActionNull:
         break;
@@ -659,29 +661,19 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
         break;
 #ifndef BUILD_BRIDGE
     case kEnginePostActionRemovePlugin:
-        doPluginRemove();
+        doPluginRemove(pluginId);
         break;
     case kEnginePostActionSwitchPlugins:
-        doPluginsSwitch();
+        doPluginsSwitch(pluginId, value);
         break;
 #endif
     }
 
-    nextAction.opcode   = kEnginePostActionNull;
-    nextAction.pluginId = 0;
-    nextAction.value    = 0;
-
-    if (unlock)
+    if (needsPost)
     {
-        pthread_mutex_lock(&nextAction.mutex);
-
-        if (! nextAction.triggered)
-        {
-            nextAction.triggered = true;
-            pthread_cond_broadcast(&nextAction.condition);
-        }
-
-        pthread_mutex_unlock(&nextAction.mutex);
+        if (nextAction.sem != nullptr)
+            carla_sem_post(*nextAction.sem);
+        nextAction.postDone = true;
     }
 }
 
@@ -696,7 +688,7 @@ PendingRtEventsRunner::PendingRtEventsRunner(CarlaEngine* const engine, const ui
 
 PendingRtEventsRunner::~PendingRtEventsRunner() noexcept
 {
-    pData->doNextPluginAction(true);
+    pData->doNextPluginAction();
 }
 
 // -----------------------------------------------------------------------
@@ -707,43 +699,37 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAc
 {
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
 
-    pthread_mutex_lock(&pData->nextAction.mutex);
+    {
+        const CarlaMutexLocker cml(pData->nextAction.mutex);
 
-    CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,);
+        CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,);
 
-    pData->nextAction.opcode   = action;
-    pData->nextAction.pluginId = pluginId;
-    pData->nextAction.value    = value;
+        pData->nextAction.opcode    = action;
+        pData->nextAction.pluginId  = pluginId;
+        pData->nextAction.value     = value;
+        pData->nextAction.needsPost = lockWait;
+        pData->nextAction.postDone  = false;
+    }
 
     if (lockWait)
     {
         // block wait for unlock on processing side
         carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
 
-        while (! pData->nextAction.triggered)
-        {
-            try {
-                pthread_cond_wait(&pData->nextAction.condition, &pData->nextAction.mutex);
-            } CARLA_SAFE_EXCEPTION("pthread_cond_wait");
-        }
-
-        pData->nextAction.triggered = false;
+        if (! pData->nextAction.postDone)
+            carla_sem_timedwait(*pData->nextAction.sem, 2000);
 
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
     }
     else
     {
-        pData->doNextPluginAction(false);
+        pData->doNextPluginAction();
     }
-
-    pthread_mutex_unlock(&pData->nextAction.mutex);
 }
 
 ScopedActionLock::~ScopedActionLock() noexcept
 {
-    pthread_mutex_lock(&pData->nextAction.mutex);
     CARLA_SAFE_ASSERT(pData->nextAction.opcode == kEnginePostActionNull);
-    pthread_mutex_unlock(&pData->nextAction.mutex);
 }
 
 // -----------------------------------------------------------------------

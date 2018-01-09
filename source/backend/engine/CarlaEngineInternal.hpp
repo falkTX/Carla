@@ -28,6 +28,7 @@
 // maybe separate macro
 
 typedef struct _jack_position jack_position_t;
+struct carla_sem_t;
 
 CARLA_BACKEND_START_NAMESPACE
 
@@ -177,14 +178,14 @@ struct EngineNextAction {
     uint pluginId;
     uint value;
 
-    // reused from CarlaSignal class
-    pthread_cond_t  condition;
-    pthread_mutex_t mutex;
-    volatile bool   triggered;
+    CarlaMutex mutex;
+
+    bool needsPost;
+    volatile bool postDone;
+    carla_sem_t* sem;
 
     EngineNextAction() noexcept;
     ~EngineNextAction() noexcept;
-//     void ready() const noexcept;
     void clearAndReset() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)
@@ -269,9 +270,9 @@ struct CarlaEngine::ProtectedData {
 
     // -------------------------------------------------------------------
 
-    void doPluginRemove() noexcept;
-    void doPluginsSwitch() noexcept;
-    void doNextPluginAction(const bool unlock) noexcept;
+    void doPluginRemove(const uint pluginId) noexcept;
+    void doPluginsSwitch(const uint idA, const uint idB) noexcept;
+    void doNextPluginAction() noexcept;
 
     // -------------------------------------------------------------------
 
