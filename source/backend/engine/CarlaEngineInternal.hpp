@@ -176,11 +176,15 @@ struct EngineNextAction {
     EnginePostAction opcode;
     uint pluginId;
     uint value;
-    CarlaMutex mutex;
+
+    // reused from CarlaSignal class
+    pthread_cond_t  condition;
+    pthread_mutex_t mutex;
+    volatile bool   triggered;
 
     EngineNextAction() noexcept;
     ~EngineNextAction() noexcept;
-    void ready() const noexcept;
+//     void ready() const noexcept;
     void clearAndReset() noexcept;
 
     CARLA_DECLARE_NON_COPY_STRUCT(EngineNextAction)

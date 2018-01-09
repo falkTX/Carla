@@ -369,26 +369,45 @@ EngineNextAction::EngineNextAction() noexcept
     : opcode(kEnginePostActionNull),
       pluginId(0),
       value(0),
-      mutex(false) {}
+      condition(),
+      mutex(),
+      triggered(false)
+    {
+        pthread_condattr_t cattr;
+        pthread_condattr_init(&cattr);
+        pthread_condattr_setpshared(&cattr, PTHREAD_PROCESS_PRIVATE);
+        pthread_cond_init(&condition, &cattr);
+        pthread_condattr_destroy(&cattr);
+
+        pthread_mutexattr_t mattr;
+        pthread_mutexattr_init(&mattr);
+        pthread_mutexattr_setprotocol(&mattr, PTHREAD_PRIO_INHERIT);
+        pthread_mutexattr_settype(&mattr, PTHREAD_MUTEX_NORMAL);
+        pthread_mutex_init(&mutex, &mattr);
+        pthread_mutexattr_destroy(&mattr);
+    }
 
 EngineNextAction::~EngineNextAction() noexcept
 {
     CARLA_SAFE_ASSERT(opcode == kEnginePostActionNull);
+
+    pthread_cond_destroy(&condition);
+    pthread_mutex_destroy(&mutex);
 }
 
-void EngineNextAction::ready() const noexcept
-{
-    mutex.lock();
-    mutex.unlock();
-}
+// void EngineNextAction::ready() const noexcept
+// {
+//     mutex.lock();
+//     mutex.unlock();
+// }
 
 void EngineNextAction::clearAndReset() noexcept
 {
-    mutex.lock();
+    pthread_mutex_lock(&mutex);
     opcode   = kEnginePostActionNull;
     pluginId = 0;
     value    = 0;
-    mutex.unlock();
+    pthread_mutex_unlock(&mutex);
 }
 
 // -----------------------------------------------------------------------
@@ -514,7 +533,7 @@ bool CarlaEngine::ProtectedData::init(const char* const clientName)
     carla_zeroStructs(plugins, maxPluginNumber);
 #endif
 
-    nextAction.ready();
+    nextAction.clearAndReset();
     thread.startThread();
 
     return true;
@@ -532,7 +551,7 @@ void CarlaEngine::ProtectedData::close()
     aboutToClose = true;
 
     thread.stopThread(500);
-    nextAction.ready();
+    nextAction.clearAndReset();
 
 #ifdef HAVE_LIBLO
     osc.close();
@@ -654,8 +673,15 @@ void CarlaEngine::ProtectedData::doNextPluginAction(const bool unlock) noexcept
 
     if (unlock)
     {
-        nextAction.mutex.tryLock();
-        nextAction.mutex.unlock();
+        pthread_mutex_lock(&nextAction.mutex);
+
+        if (! nextAction.triggered)
+        {
+            nextAction.triggered = true;
+            pthread_cond_broadcast(&nextAction.condition);
+        }
+
+        pthread_mutex_unlock(&nextAction.mutex);
     }
 }
 
@@ -681,7 +707,7 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAc
 {
     CARLA_SAFE_ASSERT_RETURN(action != kEnginePostActionNull,);
 
-    pData->nextAction.mutex.lock();
+    pthread_mutex_lock(&pData->nextAction.mutex);
 
     CARLA_SAFE_ASSERT_RETURN(pData->nextAction.opcode == kEnginePostActionNull,);
 
@@ -693,20 +719,31 @@ ScopedActionLock::ScopedActionLock(CarlaEngine* const engine, const EnginePostAc
     {
         // block wait for unlock on processing side
         carla_stdout("ScopedPluginAction(%i) - blocking START", pluginId);
-        pData->nextAction.mutex.lock();
+
+        while (! pData->nextAction.triggered)
+        {
+            try {
+                pthread_cond_wait(&pData->nextAction.condition, &pData->nextAction.mutex);
+            } CARLA_SAFE_EXCEPTION("pthread_cond_wait");
+        }
+
+        pData->nextAction.triggered = false;
+
         carla_stdout("ScopedPluginAction(%i) - blocking DONE", pluginId);
     }
     else
     {
         pData->doNextPluginAction(false);
     }
+
+    pthread_mutex_unlock(&pData->nextAction.mutex);
 }
 
 ScopedActionLock::~ScopedActionLock() noexcept
 {
+    pthread_mutex_lock(&pData->nextAction.mutex);
     CARLA_SAFE_ASSERT(pData->nextAction.opcode == kEnginePostActionNull);
-    pData->nextAction.mutex.tryLock();
-    pData->nextAction.mutex.unlock();
+    pthread_mutex_unlock(&pData->nextAction.mutex);
 }
 
 // -----------------------------------------------------------------------
