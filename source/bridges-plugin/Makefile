@@ -65,7 +65,6 @@ LIBS_win64   += $(MODULEDIR)/water.win64.a
 LINK_FLAGS   += $(WATER_LIBS)
 
 LINK_FLAGS += $(LIBLO_LIBS)
-LINK_FLAGS += $(MAGIC_LIBS)
 LINK_FLAGS += $(X11_LIBS)
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -80,6 +79,7 @@ NATIVE_BUILD_FLAGS += $(LINUXSAMPLER_FLAGS)
 NATIVE_LINK_FLAGS  += $(LINUXSAMPLER_LIBS)
 
 NATIVE_LINK_FLAGS  += $(FFMPEG_LIBS)
+NATIVE_LINK_FLAGS  += $(MAGIC_LIBS)
 NATIVE_LINK_FLAGS  += $(SNDFILE_LIBS)
 
 LIBS_native        += $(MODULEDIR)/audio_decoder.a

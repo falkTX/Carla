@@ -421,6 +421,9 @@ endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
 MAGIC_LIBS += -lmagic
+ifeq ($(LINUX),true)
+MAGIC_LIBS += -lz
+endif
 endif
 
 # ---------------------------------------------------------------------------------------------------------------------
