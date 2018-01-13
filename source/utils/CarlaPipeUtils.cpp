@@ -43,6 +43,9 @@
 # include <sys/wait.h>
 # ifdef CARLA_OS_LINUX
 #  include <sys/prctl.h>
+#  ifndef F_SETPIPE_SZ
+#   define F_SETPIPE_SZ 1031
+#  endif
 # endif
 #endif
 

@@ -9,13 +9,13 @@ set -e
 # cd to correct path
 
 if [ ! -f Makefile ]; then
-  cd ../..
+  cd $(dirname $0)/../..
 fi
 
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
 
-source common.env
+source data/linux/common.env
 
 MAKE_FLAGS="${MAKE_FLAGS} HAVE_FFMPEG=false HAVE_PULSEAUDIO=false EXTERNAL_PLUGINS=false"
 
@@ -28,9 +28,9 @@ unset CPPFLAGS
 # ---------------------------------------------------------------------------------------------------------------------
 # Complete 64bit build
 
-export CFLAGS="-m64"
+export CFLAGS="-I${TARGETDIR}/carla64/include -m64"
 export CXXFLAGS=${CFLAGS}
-export LDFLAGS="-m64"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
 export PKG_CONFIG_PATH=${TARGETDIR}/carla64/lib/pkgconfig
 
 make ${MAKE_FLAGS}
@@ -38,9 +38,9 @@ make ${MAKE_FLAGS}
 # ---------------------------------------------------------------------------------------------------------------------
 # Build 32bit bridges
 
-export CFLAGS="-m32"
+export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
 export CXXFLAGS=${CFLAGS}
-export LDFLAGS="-m32"
+export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
 make posix32 ${MAKE_FLAGS}
