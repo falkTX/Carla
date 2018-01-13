@@ -39,7 +39,7 @@ public:
         : fMagic(magic_open(MAGIC_SYMLINK))
     {
         CARLA_SAFE_ASSERT_RETURN(fMagic != nullptr,);
-        magic_load(fMagic, nullptr);
+        magic_load(fMagic, std::getenv("CARLA_MAGIC_FILE"));
     }
 
     ~CarlaMagic()
