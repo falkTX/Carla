@@ -17,7 +17,7 @@ fi
 
 source data/linux/common.env
 
-MAKE_FLAGS="${MAKE_FLAGS} HAVE_FFMPEG=false HAVE_PULSEAUDIO=false EXTERNAL_PLUGINS=false"
+MAKE_ARGS="${MAKE_ARGS} HAVE_FFMPEG=false HAVE_PULSEAUDIO=false EXTERNAL_PLUGINS=false"
 
 export LINUX="true"
 export CC=gcc
@@ -33,7 +33,7 @@ export CXXFLAGS=${CFLAGS}
 export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
 export PKG_CONFIG_PATH=${TARGETDIR}/carla64/lib/pkgconfig
 
-make ${MAKE_FLAGS}
+make ${MAKE_ARGS}
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Build 32bit bridges
@@ -43,6 +43,6 @@ export CXXFLAGS=${CFLAGS}
 export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
 export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
-make posix32 ${MAKE_FLAGS}
+make posix32 ${MAKE_ARGS}
 
 # ---------------------------------------------------------------------------------------------------------------------
