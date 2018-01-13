@@ -112,8 +112,8 @@ git checkout .
 git pull
 
 # might be updated by git pull
-chmod 777 ${CHROOT_CARLA_DIR}/data/linux/*.sh
-chmod 777 ${CHROOT_CARLA_DIR}/data/linux/common.env
+chmod 777 data/linux/*.sh
+chmod 777 data/linux/common.env
 
 EOF
 
@@ -135,9 +135,6 @@ CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 cp build-deps.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
-mount -t proc none /proc/
-mount -t sysfs none /sys/
-mount -t devpts none /dev/pts
 export HOME=/root
 export LANG=C
 export LC_ALL=C
@@ -148,9 +145,9 @@ set -e
 ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
 if [ ! -f /tmp/setup-repo-packages-extra ]; then
-  apt-get install --no-install-recommends libasound2-dev libx11-dev
-  apt-get install --no-install-recommends libgtk2.0-dev libqt4-dev
-  apt-get install --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib
+  apt-get install --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev wine-rt-dev
+  apt-get install --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib python3-sip
+  apt-get install cx-freeze-python3 zip
   if [ x"${ARCH}" != x"32" ]; then
     apt-get install g++-4.8-multilib ia32-libs
   fi
@@ -178,9 +175,6 @@ CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 cp build${ARCH}.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
-mount -t proc none /proc/
-mount -t sysfs none /sys/
-mount -t devpts none /dev/pts
 export HOME=/root
 export LANG=C
 export LC_ALL=C
