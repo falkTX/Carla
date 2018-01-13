@@ -145,16 +145,18 @@ unset LC_TIME
 
 set -e
 
-${CHROOT_CARLA_DIR}/data/linux/build-deps.sh
+${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
-if [ ! -f /tmp/setup-repo-packages-extra4 ]; then
+if [ ! -f /tmp/setup-repo-packages-extra ]; then
   apt-get install --no-install-recommends libasound2-dev libx11-dev
   apt-get install --no-install-recommends libgtk2.0-dev libqt4-dev
   apt-get install --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib
-  touch /tmp/setup-repo-packages-extra4
+  if [ x"${ARCH}" != x"32" ]; then
+    apt-get install g++-4.8-multilib ia32-libs
+  fi
+  apt-get clean
+  touch /tmp/setup-repo-packages-extra
 fi
-
-# libgtk-3-dev
 
 EOF
 
@@ -184,15 +186,28 @@ export LANG=C
 export LC_ALL=C
 unset LC_TIME
 
+set -e
+
 export RCC_QT4=/usr/bin/rcc
-${CHROOT_CARLA_DIR}/data/linux/build${ARCH}.sh
+export LINUX="true"
+
+cd ${CHROOT_CARLA_DIR}
+make EXTERNAL_PLUGINS=false ${MAKE_ARGS}
+
+if [ x"${ARCH}" != x"32" ]; then
+  export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
+  export CXXFLAGS=${CFLAGS}
+  export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
+  export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
+  make posix32 ${MAKE_ARGS}
+fi
 
 EOF
 
 }
 
-# export ARCH=32
-# chroot_build_deps
+export ARCH=32
+chroot_build_carla
 
 export ARCH=64
 chroot_build_carla
