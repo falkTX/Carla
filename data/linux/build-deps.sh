@@ -4,60 +4,49 @@
 # automake, autoconf, bison, flex, libtool
 # p5-libxml-perl, p5-xml-libxml, p7zip, pkgconfig
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # stop on error
 
 set -e
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # cd to correct path
 
 if [ -f Makefile ]; then
   cd data/linux
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # set target dir
 
 TARGETDIR=$HOME/builds
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # function to remove old stuff
 
 cleanup()
 {
 
-rm -rf $TARGETDIR/carla/ $TARGETDIR/carla32/ $TARGETDIR/carla64/
-# rm -rf cx_Freeze-*
-# rm -rf Python-*
-# rm -rf PyQt-*
-# rm -rf file-*
-# rm -rf flac-*
-# rm -rf fltk-*
-# rm -rf fluidsynth-*
-# rm -rf fftw-*
-# rm -rf gettext-*
-# rm -rf glib-*
-# rm -rf libffi-*
-# rm -rf libgig-*
+rm -rf $TARGETDIR/carla32/ $TARGETDIR/carla64/
+rm -rf file-*
+rm -rf flac-*
+rm -rf fltk-*
+rm -rf fluidsynth-*
+rm -rf libgig-*
 rm -rf liblo-*
-# rm -rf libogg-*
-# rm -rf libsndfile-*
-# rm -rf libvorbis-*
-# rm -rf linuxsampler-*
-# rm -rf mxml-*
+rm -rf libogg-*
+rm -rf libsndfile-*
+rm -rf libvorbis-*
+rm -rf linuxsampler-*
 rm -rf pkg-config-*
-# rm -rf pyliblo-*
-# rm -rf qtbase-*
-# rm -rf qtmacextras-*
-# rm -rf qtsvg-*
-# rm -rf sip-*
-# rm -rf zlib-*
-# rm -rf PaxHeaders.20420
+rm -rf zlib-*
 
 }
 
-# ------------------------------------------------------------------------------------
+cleanup
+exit 0
+
+# ---------------------------------------------------------------------------------------------------------------------
 # function to build base libs
 
 build_base()
@@ -70,14 +59,14 @@ export PREFIX=$TARGETDIR/carla$ARCH
 export PATH=$PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
 export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
 
-export CFLAGS="-O2 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
-export CFLAGS="$CFLAGS -m$ARCH -fPIC -DPIC -DNDEBUG -I$PREFIX/include"
+export CFLAGS="-O3 -mtune=generic -msse -msse2 -mfpmath=sse -fvisibility=hidden -fdata-sections -ffunction-sections"
+export CFLAGS="$CFLAGS -fPIC -DPIC -DNDEBUG -I$PREFIX/include"
 export CXXFLAGS="$CFLAGS -fvisibility-inlines-hidden"
 
 export LDFLAGS="-fdata-sections -ffunction-sections -Wl,--gc-sections -Wl,-O1 -Wl,--as-needed -Wl,--strip-all"
-export LDFLAGS="$LDFLAGS -m$ARCH -L$PREFIX/lib"
+export LDFLAGS="$LDFLAGS -L$PREFIX/lib"
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # pkgconfig
 
 if [ ! -d pkg-config-0.28 ]; then
@@ -95,7 +84,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # liblo
 
 if [ ! -d liblo-0.28 ]; then
@@ -113,30 +102,13 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 
 if [ "$ARCH" == "32" ]; then
 return
 fi
 
-# ------------------------------------------------------------------------------------
-# file/magic
-
-if [ ! -d file-5.25 ]; then
-curl -O ftp://ftp.astron.com/pub/file/file-5.25.tar.gz
-tar -xf file-5.25.tar.gz
-fi
-
-if [ ! -f file-5.25/build-done ]; then
-cd file-5.25
-./configure --enable-static --disable-shared --prefix=$PREFIX
-make
-make install
-touch build-done
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # zlib
 
 if [ ! -d zlib-1.2.10 ]; then
@@ -153,29 +125,24 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
-# mxml
+# ---------------------------------------------------------------------------------------------------------------------
+# file/magic
 
-if [ ! -d mxml-2.11 ]; then
-wget https://github.com/michaelrsweet/mxml/releases/download/v2.11/mxml-2.11.tar.gz
-mkdir mxml-2.11
-cd mxml-2.11
-tar -xf ../mxml-2.11.tar.gz
-cd ..
+if [ ! -d file-5.25 ]; then
+curl -O ftp://ftp.astron.com/pub/file/file-5.25.tar.gz
+tar -xf file-5.25.tar.gz
 fi
 
-if [ ! -f mxml-2.11/build-done ]; then
-cd mxml-2.11
-./configure --disable-shared --prefix=$PREFIX
-make libmxml.a
-cp *.a    $PREFIX/lib/
-cp *.pc   $PREFIX/lib/pkgconfig/
-cp mxml.h $PREFIX/include/
+if [ ! -f file-5.25/build-done ]; then
+cd file-5.25
+./configure --enable-static --disable-shared --prefix=$PREFIX
+make
+make install
 touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libogg
 
 if [ ! -d libogg-1.3.2 ]; then
@@ -192,7 +159,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libvorbis
 
 if [ ! -d libvorbis-1.3.5 ]; then
@@ -209,7 +176,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # flac
 
 if [ ! -d flac-1.3.1 ]; then
@@ -227,7 +194,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libsndfile
 
 if [ ! -d libsndfile-1.0.26 ]; then
@@ -237,7 +204,7 @@ fi
 
 if [ ! -f libsndfile-1.0.26/build-done ]; then
 cd libsndfile-1.0.26
-sed -i -e "s/#include <Carbon.h>//" programs/sndfile-play.c
+# sed -i -e "s/#include <Carbon.h>//" programs/sndfile-play.c
 ./configure --enable-static --disable-shared --disable-sqlite --prefix=$PREFIX
 make
 make install
@@ -245,7 +212,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # libgig
 
 if [ ! -d libgig-4.0.0 ]; then
@@ -266,7 +233,7 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # linuxsampler
 
 if [ ! -d linuxsampler-2.0.0 ]; then
@@ -279,52 +246,33 @@ cd linuxsampler-2.0.0
 if [ ! -f patched ]; then
 patch -p1 -i ../patches/linuxsampler_allow-no-drivers-build.patch
 patch -p1 -i ../patches/linuxsampler_disable-ladspa-fx.patch
-sed -i -e "s/HAVE_AU/HAVE_VST/" src/hostplugins/Makefile.am
+# sed -i -e "s/HAVE_AU/HAVE_VST/" src/hostplugins/Makefile.am
 touch patched
 fi
 rm configure
 make -f Makefile.svn configure
 ./configure \
 --enable-static --disable-shared --prefix=$PREFIX \
---disable-alsa-driver \
---disable-arts-driver --disable-artstest --disable-instruments-db \
---disable-asio-driver --disable-midishare-driver --disable-coremidi-driver --disable-coreaudio-driver --disable-mmemidi-driver
-sed -i -e "s/bison (GNU Bison) //" config.h
+--disable-alsa-driver --disable-arts-driver --disable-jack-driver \
+--disable-asio-driver --disable-midishare-driver --disable-mmemidi-driver \
+--disable-coreaudio-driver --disable-coremidi-driver \
+--disable-instruments-db --disable-sf2-engine
+# sed -i -e "s/bison (GNU Bison) //" config.h
 make -j 8
 make install
-sed -i -e "s|-llinuxsampler|-llinuxsampler -L$PREFIX/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lpthread|" $PREFIX/lib/pkgconfig/linuxsampler.pc
+sed -i -e "s|-llinuxsampler|-llinuxsampler -L$PREFIX/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lpthread -lm|" $PREFIX/lib/pkgconfig/linuxsampler.pc
 touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
-# fltk
-
-if [ ! -d fltk-1.3.3 ]; then
-curl -O http://fltk.org/pub/fltk/1.3.3/fltk-1.3.3-source.tar.gz
-tar -xf fltk-1.3.3-source.tar.gz
-fi
-
-if [ ! -f fltk-1.3.3/build-done ]; then
-cd fltk-1.3.3
-./configure --prefix=$PREFIX \
---disable-shared --disable-debug \
---disable-threads --disable-gl \
---enable-localjpeg --enable-localpng
-make
-make install
-touch build-done
-cd ..
-fi
-
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # glib
 
 if [ ! -d $PREFIX/include/glib-2.0 ]; then
 cp -r /usr/include/glib-2.0 $PREFIX/include/
 fi
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # fluidsynth
 
 if [ ! -d fluidsynth-1.1.6 ]; then
@@ -347,33 +295,9 @@ touch build-done
 cd ..
 fi
 
-# ------------------------------------------------------------------------------------
-# fftw3 (needs to be last as it modifies C[XX]FLAGS)
-
-if [ ! -d fftw-3.3.4 ]; then
-curl -O http://www.fftw.org/fftw-3.3.4.tar.gz
-tar -xf fftw-3.3.4.tar.gz
-fi
-
-if [ ! -f fftw-3.3.4/build-done ]; then
-export CFLAGS="$CFLAGS -O3 -ffast-math"
-export CXXFLAGS="$CXXFLAGS -O3 -ffast-math"
-cd fftw-3.3.4
-./configure --enable-static --enable-sse2 --disable-shared --disable-debug --prefix=$PREFIX
-make
-make install
-make clean
-./configure --enable-static --enable-sse --enable-sse2 --enable-single --disable-shared --disable-debug --prefix=$PREFIX
-make
-make install
-make clean
-touch build-done
-cd ..
-fi
-
 }
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
 # build base libs
 
 export ARCH=32
@@ -382,4 +306,4 @@ build_base
 export ARCH=64
 build_base
 
-# ------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------------------
