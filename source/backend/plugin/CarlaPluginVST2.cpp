@@ -241,6 +241,7 @@ public:
             options |= PLUGIN_OPTION_SEND_NOTE_AFTERTOUCH;
             options |= PLUGIN_OPTION_SEND_PITCHBEND;
             options |= PLUGIN_OPTION_SEND_ALL_SOUND_OFF;
+            options |= PLUGIN_OPTION_SEND_PROGRAM_CHANGES;
         }
 
         return options;
@@ -1323,6 +1324,21 @@ public:
                     } // case kEngineControlEventTypeParameter
 
                     case kEngineControlEventTypeMidiBank:
+                        if ((pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES) != 0)
+                        {
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                                continue;
+
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
+
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_CONTROL_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = MIDI_CONTROL_BANK_SELECT;
+                            vstMidiEvent.midiData[2] = char(ctrlEvent.param);
+                        }
                         break;
 
                     case kEngineControlEventTypeMidiProgram:
@@ -1334,6 +1350,20 @@ public:
                                 pData->postponeRtEvent(kPluginPostRtEventProgramChange, ctrlEvent.param, 0, 0.0f);
                                 break;
                             }
+                        }
+                        else if (pData->options & PLUGIN_OPTION_SEND_PROGRAM_CHANGES)
+                        {
+                            if (fMidiEventCount >= kPluginMaxMidiEvents*2)
+                                continue;
+
+                            VstMidiEvent& vstMidiEvent(fMidiEvents[fMidiEventCount++]);
+                            carla_zeroStruct(vstMidiEvent);
+
+                            vstMidiEvent.type        = kVstMidiType;
+                            vstMidiEvent.byteSize    = kVstMidiEventSize;
+                            vstMidiEvent.deltaFrames = static_cast<int32_t>(isSampleAccurate ? startTime : event.time);
+                            vstMidiEvent.midiData[0] = char(MIDI_STATUS_PROGRAM_CHANGE | (event.channel & MIDI_CHANNEL_BIT));
+                            vstMidiEvent.midiData[1] = char(ctrlEvent.param);
                         }
                         break;
 
@@ -2281,6 +2311,8 @@ public:
 
             if (options & PLUGIN_OPTION_SEND_CONTROL_CHANGES)
                 pData->options |= PLUGIN_OPTION_SEND_CONTROL_CHANGES;
+            if (options & PLUGIN_OPTION_MAP_PROGRAM_CHANGES)
+                pData->options |= PLUGIN_OPTION_MAP_PROGRAM_CHANGES;
         }
 
         return true;
