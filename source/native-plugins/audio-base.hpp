@@ -284,8 +284,9 @@ public:
             carla_stderr("R: poll data - reading at %li:%02li", readFrame/44100/60, (readFrame/44100) % 60);
 
             ad_seek(fFilePtr, readFrame);
-            ssize_t i, j, rv = ad_read(fFilePtr, tmpData, tmpSize);
-            i = j = 0;
+            size_t i = 0;
+            ssize_t j = 0;
+            ssize_t rv = ad_read(fFilePtr, tmpData, tmpSize);
 
             // lock, and put data asap
             const CarlaMutexLocker cml(fMutex);
