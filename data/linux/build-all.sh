@@ -152,7 +152,7 @@ ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
 if [ ! -f /tmp/setup-repo-packages-extra2 ]; then
   apt-get install -y --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev
-  apt-get install -y --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib python3-sip
+  apt-get install -y --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-sip
   apt-get install -y cx-freeze-python3 zip
   apt-get clean
   touch /tmp/setup-repo-packages-extra2
@@ -224,8 +224,6 @@ cat <<EOF | sudo chroot ${CHROOT_DIR}
 set -e
 
 cd ${CHROOT_CARLA_DIR}
-
-rm -rf carla-pkgs
 
 if [ ! -d carla-pkgs ]; then
   rm -rf tmp-carla-pkgs
