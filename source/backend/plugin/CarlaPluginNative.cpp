@@ -351,7 +351,7 @@ public:
         if (pData->engine->getOptions().forceStereo)
             pass();
         // if inputs or outputs are just 1, then yes we can force stereo
-        else if (pData->audioIn.count == 1 || pData->audioOut.count == 1)
+        else if (pData->audioIn.count == 1 || pData->audioOut.count == 1 || fHandle2 != nullptr)
             options |= PLUGIN_OPTION_FORCE_STEREO;
 
         if (fDescriptor->supports & NATIVE_PLUGIN_SUPPORTS_CONTROL_CHANGES)
