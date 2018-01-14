@@ -25,15 +25,11 @@ int sfx_app_autorun_now()
     int i, cmdBufLen = 0;
     char cmdBuf[CMD_BUF_LEN];
 
-#ifdef WIN32
-    strcpy(cmdBuf, sfx_get_tmp_path(1));
+    const char* const path = sfx_get_tmp_path(1);
+    chdir(path);
+
+    strcpy(cmdBuf, path);
     strcat(cmdBuf, SFX_AUTORUN_CMD);
-#else
-    strcpy(cmdBuf, "cd ");
-    strcat(cmdBuf, sfx_get_tmp_path(1));
-    strcat(cmdBuf, "; ");
-    strcat(cmdBuf, SFX_AUTORUN_CMD);
-#endif
 
     cmdBufLen = strlen(cmdBuf);
 
@@ -54,7 +50,14 @@ int sfx_app_autorun_now()
     ShellExecute(NULL, "open", cmdBuf, NULL, NULL, SW_SHOWNORMAL);
     return 0;
 #else
-    return system(cmdBuf);
+    char magicBuf[512];
+    strcpy(magicBuf, path);
+    strcat(magicBuf, "magic.mgc");
+    setenv("CARLA_MAGIC_FILE", magicBuf, 1);
+
+    const int ret = system(cmdBuf);
+    exit(ret);
+    return ret;
 #endif
 }
 
@@ -62,10 +65,10 @@ char* sfx_get_tmp_path(int withAppName)
 {
 #ifdef WIN32
     {
-        GetTempPathA(512 - strlen(SFX_APP_MININAME), sfx_tmp_path);
+        GetTempPathA(512 - strlen(SFX_APP_MININAME_TITLE), sfx_tmp_path);
 
         if (withAppName == 1)
-            strcat(sfx_tmp_path, SFX_APP_MININAME);
+            strcat(sfx_tmp_path, SFX_APP_MININAME_TITLE);
     }
 #else
     {
@@ -77,7 +80,7 @@ char* sfx_get_tmp_path(int withAppName)
             strcpy(sfx_tmp_path, "/tmp");
 
         if (withAppName == 1)
-            strcat(sfx_tmp_path, "/" SFX_APP_MININAME);
+            strcat(sfx_tmp_path, "/" SFX_APP_MININAME_LCASE);
     }
 #endif
 

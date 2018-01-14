@@ -5,17 +5,15 @@
 #define REAL_BUILD
 #include "../../../../source/includes/CarlaDefines.h"
 
-#define SFX_APP_VERSION CARLA_VERSION_STRING
-#define SFX_APP_BANNER  "Carla self-contained executable " SFX_APP_VERSION ", based on UnZipSFX."
+#define SFX_APP_MININAME_TITLE "Carla"
+#define SFX_APP_MININAME_LCASE "carla"
 
-#ifndef SFX_APP_MININAME
-# define SFX_APP_MININAME "Carla"
-#endif
+#define SFX_APP_BANNER  SFX_APP_MININAME_TITLE " self-contained executable " CARLA_VERSION_STRING ", based on UnZipSFX."
 
 #ifdef WIN32
-# define SFX_AUTORUN_CMD  "\\" SFX_APP_MININAME ".exe"
+# define SFX_AUTORUN_CMD  "\\" SFX_APP_MININAME_TITLE ".exe"
 #else
-# define SFX_AUTORUN_CMD  "./" SFX_APP_MININAME
+# define SFX_AUTORUN_CMD  "/" SFX_APP_MININAME_LCASE
 #endif
 
 void  sfx_app_set_args(int argc, char** argv);
