@@ -373,7 +373,7 @@ cp data/linux/README ${PKG_FOLDER}${ARCH}/
 mv Carla CarlaControl build-lv2/*.lv2 build-vst/*.vst ${PKG_FOLDER}${ARCH}/
 # tar cJf ${PKG_FOLDER}${ARCH}.tar.xz ${PKG_FOLDER}${ARCH}
 # mv ${PKG_FOLDER}${ARCH}.tar.xz /tmp/
-rmdir build.lv2 build.vst
+rmdir build-lv2 build-vst
 
 EOF
 
