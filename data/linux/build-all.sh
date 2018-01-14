@@ -220,15 +220,54 @@ download_carla_extras()
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
 
-# if [ -d carla-pkgs ]; then
-#   rm -rf tmp-carla-pkgs
-#   mkdir tmp-carla-pkgs
-#   cd tmp-carla-pkgs
-#   wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_1.9.7+git20180106_i386.deb
-#   wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_1.9.7+git20180106_amd64.deb
-#   cd ..
-#   mv tmp-carla-pkgs carla-pkgs
-# fi
+cat <<EOF | sudo chroot ${CHROOT_DIR}
+set -e
+
+cd ${CHROOT_CARLA_DIR}
+
+rm -rf carla-pkgs
+
+if [ ! -d carla-pkgs ]; then
+  rm -rf tmp-carla-pkgs
+  mkdir tmp-carla-pkgs
+  cd tmp-carla-pkgs
+  wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win32_1.9.7+git20180106_i386.deb
+  wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-wine32_1.9.7+git20171202_i386.deb
+  if [ x"${ARCH}" != x"32" ]; then
+    wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-bridge-win64_1.9.7+git20180106_amd64.deb
+    wget https://github.com/KXStudio/Repository/releases/download/initial/carla-bridge-wine64_1.9.5.git20160114_amd64.deb
+    wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.7+git20180106_amd64.deb
+  else
+    wget https://launchpad.net/~kxstudio-debian/+archive/ubuntu/apps/+files/carla-git_1.9.7+git20180106_i386.deb
+  fi
+  cd ..
+  mv tmp-carla-pkgs carla-pkgs
+fi
+
+if [ ! -f carla-pkgs/extrated ]; then
+  cd carla-pkgs
+  dpkg -x carla-bridge-win32_1.9.7+git20180106_i386.deb .
+  dpkg -x carla-bridge-wine32_1.9.7+git20171202_i386.deb .
+  if [ x"${ARCH}" != x"32" ]; then
+    dpkg -x carla-bridge-win64_1.9.7+git20180106_amd64.deb .
+    dpkg -x carla-bridge-wine64_1.9.5.git20160114_amd64.deb .
+    dpkg -x carla-git_1.9.7+git20180106_amd64.deb .
+  else
+    dpkg -x carla-git_1.9.7+git20180106_i386.deb .
+  fi
+  touch extrated
+  cd ..
+fi
+
+if [ ! -f extra-bins/carla-bridge-win32.exe ]; then
+    mkdir -p extra-bins
+    cp carla-pkgs/usr/lib/carla/*.exe  extra-bins/
+    cp carla-pkgs/usr/lib/carla/*.dll  extra-bins/
+    cp carla-pkgs/usr/lib/carla/*-gtk3 extra-bins/
+    cp carla-pkgs/usr/lib/carla/*-qt5  extra-bins/
+fi
+
+EOF
 
 }
 
@@ -273,11 +312,7 @@ mkdir build-carla
 mkdir build-carla/resources
 mkdir build-carla/src
 
-# cp     extra/usr/lib/carla/*.dll      build-carla/
-# cp     extra/usr/lib/carla/*.exe      build-carla/
-# cp     extra/usr/lib/carla/*-gtk3     build-carla/
-# cp     extra/usr/lib/carla/*-qt5      build-carla/
-
+cp      extra-bins/*                               build-carla/
 cp -r  ./tmp-install/usr/lib/carla/*               build-carla/
 cp -LR ./tmp-install/usr/share/carla/resources/*   build-carla/resources/
 cp     ./tmp-install/usr/share/carla/carla         build-carla/src/
@@ -340,20 +375,20 @@ cp -LR ./tmp-install/usr/lib/lv2/carla.lv2 build-lv2/
 rm -r  build-lv2/carla.lv2/resources
 cp -LR build-carla/resources build-lv2/carla.lv2/
 cp     build-carla/magic.mgc build-lv2/carla.lv2/
-#cp     extra/usr/lib/carla/*.dll  build-lv2/carla.lv2/
-#cp     extra/usr/lib/carla/*.exe  build-lv2/carla.lv2/
-#cp     extra/usr/lib/carla/*-gtk3 build-lv2/carla.lv2/
-#cp     extra/usr/lib/carla/*-qt5  build-lv2/carla.lv2/
+cp     extra-bins/* build-lv2/carla.lv2/
+rm     build-lv2/carla.lv2/resources/*carla*.so build-lv2/carla.lv2/resources/carla-plugin-patchbay
+ln -s  ../libcarla_utils.so build-lv2/carla.lv2/resources/
+ln -s carla-plugin build-lv2/carla.lv2/resources/carla-plugin-patchbay
 
 mkdir build-vst
 cp -LR ./tmp-install/usr/lib/vst/carla.vst build-vst/
 rm -r  build-vst/carla.vst/resources
 cp -LR build-carla/resources build-vst/carla.vst/
 cp     build-carla/magic.mgc build-vst/carla.vst/
-#cp     extra/usr/lib/carla/*.dll  build-vst/carla.vst/
-#cp     extra/usr/lib/carla/*.exe  build-vst/carla.vst/
-#cp     extra/usr/lib/carla/*-gtk3 build-vst/carla.vst/
-#cp     extra/usr/lib/carla/*-qt5  build-vst/carla.vst/
+cp     extra-bins/* build-vst/carla.vst/
+rm     build-vst/carla.vst/resources/*carla*.so build-vst/carla.vst/resources/carla-plugin-patchbay
+ln -s  ../libcarla_utils.so build-vst/carla.vst/resources/
+ln -s carla-plugin build-vst/carla.vst/resources/carla-plugin-patchbay
 
 mv build-carla carla
 zip --symlinks -r -9 carla.zip carla
@@ -371,16 +406,16 @@ rm -rf ${PKG_FOLDER}${ARCH}
 mkdir ${PKG_FOLDER}${ARCH}
 cp data/linux/README ${PKG_FOLDER}${ARCH}/
 mv Carla CarlaControl build-lv2/*.lv2 build-vst/*.vst ${PKG_FOLDER}${ARCH}/
-# tar cJf ${PKG_FOLDER}${ARCH}.tar.xz ${PKG_FOLDER}${ARCH}
-# mv ${PKG_FOLDER}${ARCH}.tar.xz /tmp/
+tar cJf ${PKG_FOLDER}${ARCH}.tar.xz ${PKG_FOLDER}${ARCH}
+mv ${PKG_FOLDER}${ARCH}.tar.xz /tmp/
 rmdir build-lv2 build-vst
 
 EOF
 
 }
 
-# export ARCH=32
-# chroot_pack_carla
+export ARCH=32
+chroot_pack_carla
 
 export ARCH=64
 chroot_pack_carla
