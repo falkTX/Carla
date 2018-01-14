@@ -1,17 +1,27 @@
 #!/bin/bash
 
+# ------------------------------------------------------------------------------------
+# stop on error
+
 set -e
 
-JOBS="-j 2"
+# ------------------------------------------------------------------------------------
+# cd to correct path
 
 if [ ! -f Makefile ]; then
   cd ../..
 fi
 
-TARGETDIR=$HOME/builds
+# ---------------------------------------------------------------------------------------------------------------------
+# set variables
+
+source data/macos/common.env
+
+MAKE_ARGS="${MAKE_ARGS} EXTERNAL_PLUGINS=false"
 
 export MACOS="true"
 export MACOS_OLD="true"
+
 export CC=clang
 export CXX=clang++
 
@@ -20,32 +30,32 @@ unset CPPFLAGS
 ##############################################################################################
 # Complete 64bit build
 
-export CFLAGS="-O2 -m64"
-export CXXFLAGS=$CFLAGS
-export LDFLAGS="-m64"
+export CFLAGS="-I${TARGETDIR}/carla64/include -m64"
+export CXXFLAGS="${CFLAGS}"
+export LDFLAGS="-L${TARGETDIR}/carla64/lib -m64"
 
-export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=$TARGETDIR/carla/lib/pkgconfig:$TARGETDIR/carla64/lib/pkgconfig
+export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=${TARGETDIR}/carla/lib/pkgconfig:${TARGETDIR}/carla64/lib/pkgconfig
 
-make HAVE_QT5=true $JOBS
+make ${MAKE_ARGS}
 
 ##############################################################################################
 # Build 32bit bridges
 
-export CFLAGS="-O2 -m32"
-export CXXFLAGS=$CFLAGS
-export LDFLAGS="-m32"
+export CFLAGS="-I${TARGETDIR}/carla32/include -m32"
+export CXXFLAGS="${CFLAGS}"
+export LDFLAGS="-L${TARGETDIR}/carla32/lib -m32"
 
-export PATH=$TARGETDIR/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PKG_CONFIG_PATH=$TARGETDIR/carla32/lib/pkgconfig
+export PATH=${TARGETDIR}/carla32/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PKG_CONFIG_PATH=${TARGETDIR}/carla32/lib/pkgconfig
 
-make posix32 $JOBS
+make posix32 ${MAKE_ARGS}
 
 ##############################################################################################
 # Build Mac App
 
-export PATH=$TARGETDIR/carla/bin:$TARGETDIR/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
-export PYTHONPATH=`pwd`/source
+export PATH=${TARGETDIR}/carla/bin:${TARGETDIR}/carla64/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+export PYTHONPATH=$(pwd)/source
 unset CFLAGS
 unset CXXFLAGS
 unset LDLAGS
@@ -85,7 +95,6 @@ cp     bin/styles/*          build/Carla.app/Contents/MacOS/styles/
 cp     bin/*utils.dylib      build/Carla-Control.app/Contents/MacOS/
 cp     bin/styles/*          build/Carla-Control.app/Contents/MacOS/styles/
 
-rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-modgui
 rm -f build/Carla.app/Contents/MacOS/carla-bridge-lv2-qt5
 
 find build/ -type f -name "*.py" -delete
@@ -138,7 +147,6 @@ cp bin/carla.lv2/*.*        build/carla.lv2/
 cp bin/carla-bridge-*       build/carla.lv2/
 cp bin/carla-discovery-*    build/carla.lv2/
 cp bin/libcarla_utils.dylib build/carla.lv2/
-rm -f build/carla.lv2/carla-bridge-lv2-modgui
 rm -f build/carla.lv2/carla-bridge-lv2-qt5
 cp -LR build/Carla.app/Contents/MacOS/resources/* build/carla.lv2/resources/
 cp     build/Carla.app/Contents/MacOS/styles/*    build/carla.lv2/styles/

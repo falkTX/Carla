@@ -1,0 +1,22 @@
+diff --git a/qcocoawindow.mm b/qcocoawindow.mm
+index 0e5655f..6ab3a21 100644
+--- a/qcocoawindow.mm
++++ b/qcocoawindow.mm
+@@ -272,7 +272,7 @@ static bool isMouseEvent(NSEvent *ev)
+ + (void)applicationActivationChanged:(NSNotification*)notification
+ {
+     const id sender = self;
+-    NSEnumerator *windowEnumerator = nullptr;
++    NSEnumerator *windowEnumerator = Q_NULLPTR;
+     NSApplication *application = [NSApplication sharedApplication];
+ 
+ #if QT_OSX_PLATFORM_SDK_EQUAL_OR_ABOVE(__MAC_10_12)
+@@ -313,7 +313,7 @@ static bool isMouseEvent(NSEvent *ev)
+             continue;
+ 
+         if ([window conformsToProtocol:@protocol(QNSWindowProtocol)]) {
+-            QCocoaWindow *cocoaWindow = static_cast<id<QNSWindowProtocol>>(window).helper.platformWindow;
++            QCocoaWindow *cocoaWindow = static_cast< id<QNSWindowProtocol> >(window).helper.platformWindow;
+             window.level = notification.name == NSApplicationWillResignActiveNotification ?
+                 NSNormalWindowLevel : cocoaWindow->windowLevel(cocoaWindow->window()->flags());
+         }

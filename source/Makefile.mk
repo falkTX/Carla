@@ -402,7 +402,7 @@ endif
 
 ifeq ($(HAVE_LIBMAGIC),true)
 MAGIC_LIBS += -lmagic
-ifeq ($(LINUX),true)
+ifeq ($(LINUX_OR_MACOS),true)
 MAGIC_LIBS += -lz
 endif
 endif
