@@ -102,6 +102,10 @@ rm build/Carla.app/Contents/MacOS/resources/carla-plugin
 rm build/Carla.app/Contents/MacOS/resources/carla-plugin-patchbay
 rm build/Carla.app/Contents/MacOS/resources/*-ui
 rm -rf build/Carla.app/Contents/MacOS/resources/__pycache__
+rm -rf build/Carla.app/Contents/MacOS/resources/at1
+rm -rf build/Carla.app/Contents/MacOS/resources/bls1
+rm -rf build/Carla.app/Contents/MacOS/resources/rev1
+rm -rf build/Carla.app/Contents/MacOS/resources/zynaddsubfx
 rm -rf build/Carla-Control.app/Contents/MacOS/resources/__pycache__
 
 cd build/Carla.app/Contents/MacOS
@@ -131,7 +135,6 @@ cp build/carla-plugin.app/Contents/MacOS/fcntl.so         build/Carla.app/Conten
 cp build/bigmeter-ui.app/Contents/MacOS/bigmeter-ui       build/Carla.app/Contents/MacOS/resources/
 cp build/midipattern-ui.app/Contents/MacOS/midipattern-ui build/Carla.app/Contents/MacOS/resources/
 cp build/notes-ui.app/Contents/MacOS/notes-ui             build/Carla.app/Contents/MacOS/resources/
-#cp bin/resources/zynaddsubfx-ui                           build/Carla.app/Contents/MacOS/resources/
 rm -rf build/carla-plugin.app build/bigmeter-ui.app build/midipattern-ui.app build/notes-ui.app
 
 cd build/Carla.app/Contents/MacOS/resources/
