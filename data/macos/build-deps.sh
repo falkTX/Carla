@@ -304,8 +304,6 @@ if [ ! -f gettext-${GETTEXT_VERSION}/build-done ]; then
   cd ..
 fi
 
-return
-
 # ------------------------------------------------------------------------------------
 # glib
 
@@ -318,10 +316,13 @@ fi
 if [ ! -f glib-${GLIB_VERSION}/build-done ]; then
   cd glib-${GLIB_VERSION}
   chmod +x configure install-sh
-  env PATH=/opt/local/bin:$PATH ./configure --enable-static --disable-shared --prefix=${PREFIX}
+  env PATH=/opt/local/bin:$PATH LDFLAGS="-L${PREFIX}/lib -m${ARCH}" \
+    ./configure --enable-static --disable-shared --prefix=${PREFIX}
+  env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS} || true
+  touch gio/gio-querymodules gio/glib-compile-resources gio/gsettings gio/gdbus gio/gresource gio/gapplication
   env PATH=/opt/local/bin:$PATH make ${MAKE_ARGS}
   touch $PREFIX/bin/gtester-report
-  make install
+  env PATH=/opt/local/bin:$PATH make install
   touch build-done
   cd ..
 fi
@@ -330,7 +331,7 @@ fi
 # fluidsynth
 
 if [ ! -d fluidsynth-${FLUIDSYNTH_VERSION} ]; then
-  curl -O https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
+  curl -L https://download.sourceforge.net/fluidsynth/fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz -o fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
   tar -xf fluidsynth-${FLUIDSYNTH_VERSION}.tar.gz
 fi
 
