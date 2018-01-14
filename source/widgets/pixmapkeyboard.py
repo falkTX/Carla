@@ -91,6 +91,12 @@ kMidiKeyboard2KeyMap = {
     '%i' % Qt.Key_Y: 69,
     '%i' % Qt.Key_7: 70,
     '%i' % Qt.Key_U: 71,
+    # 5th octave
+    '%i' % Qt.Key_I: 72,
+    '%i' % Qt.Key_9: 73,
+    '%i' % Qt.Key_O: 74,
+    '%i' % Qt.Key_0: 75,
+    '%i' % Qt.Key_P: 76,
 }
 
 kBlackNotes = (1, 3, 6, 8, 10)
