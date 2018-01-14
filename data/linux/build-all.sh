@@ -16,9 +16,7 @@ set -e
 # ---------------------------------------------------------------------------------------------------------------------
 # cd to correct path
 
-if [ -f Makefile ]; then
-  cd data/linux
-fi
+cd $(dirname $0)
 
 # ---------------------------------------------------------------------------------------------------------------------
 # set variables
@@ -70,7 +68,7 @@ set -e
 
 if [ ! -f /tmp/setup-repo ]; then
   apt-get update
-  apt-get install python-software-properties wget
+  apt-get install -y python-software-properties wget
   add-apt-repository ppa:kxstudio-debian/libs
   add-apt-repository ppa:kxstudio-debian/toolchain
   apt-get update
@@ -81,7 +79,6 @@ if [ ! -f /tmp/setup-repo-list ]; then
   echo '
 deb http://old-releases.ubuntu.com/ubuntu/ lucid main restricted universe multiverse
 deb http://old-releases.ubuntu.com/ubuntu/ lucid-updates main restricted universe multiverse
-deb http://old-releases.ubuntu.com/ubuntu/ lucid-backports main restricted universe multiverse
 deb http://old-releases.ubuntu.com/ubuntu/ lucid-backports main restricted universe multiverse
 ' > /etc/apt/sources.list
   apt-get update
@@ -94,9 +91,9 @@ if [ ! -f /tmp/setup-repo-upgrade ]; then
 fi
 
 if [ ! -f /tmp/setup-repo-packages ]; then
-  apt-get install build-essential libglib2.0-dev uuid-dev git-core
-  apt-get install autoconf libtool
-  apt-get install bison flex libxml-libxml-perl libxml-parser-perl
+  apt-get install -y build-essential libglib2.0-dev uuid-dev git-core
+  apt-get install -y autoconf libtool
+  apt-get install -y bison flex libxml-libxml-perl libxml-parser-perl
   apt-get clean
   rm /usr/lib/libuuid.so
   touch /tmp/setup-repo-packages
@@ -142,17 +139,22 @@ unset LC_TIME
 
 set -e
 
+if [ ! -f /tmp/setup-repo-packages-extra1 ]; then
+  if [ x"${ARCH}" != x"32" ]; then
+    apt-get install -y g++-4.8-multilib ia32-libs
+    apt-get clean
+  fi
+  touch /tmp/setup-repo-packages-extra1
+fi
+
 ${CHROOT_CARLA_DIR}/data/linux/build-deps.sh ${ARCH}
 
-if [ ! -f /tmp/setup-repo-packages-extra ]; then
-  apt-get install --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev wine-rt-dev
-  apt-get install --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib python3-sip
-  apt-get install cx-freeze-python3 zip
-  if [ x"${ARCH}" != x"32" ]; then
-    apt-get install g++-4.8-multilib ia32-libs
-  fi
+if [ ! -f /tmp/setup-repo-packages-extra2 ]; then
+  apt-get install -y --no-install-recommends libasound2-dev libgtk2.0-dev libqt4-dev libx11-dev
+  apt-get install -y --no-install-recommends pyqt4-dev-tools python3-pyqt4.qtopengl python3-liblo python3-rdflib python3-sip
+  apt-get install -y cx-freeze-python3 zip
   apt-get clean
-  touch /tmp/setup-repo-packages-extra
+  touch /tmp/setup-repo-packages-extra2
 fi
 
 EOF
@@ -172,7 +174,6 @@ chroot_build_carla()
 {
 
 CHROOT_DIR=${TARGETDIR}/chroot${ARCH}
-cp build${ARCH}.sh common.env ${CHROOT_DIR}${CHROOT_CARLA_DIR}/data/linux/
 
 cat <<EOF | sudo chroot ${CHROOT_DIR}
 export HOME=/root
@@ -182,6 +183,10 @@ unset LC_TIME
 
 set -e
 
+export CFLAGS="-I${TARGETDIR}/carla${ARCH}/include"
+export CXXFLAGS=${CFLAGS}
+export LDFLAGS="-L${TARGETDIR}/carla${ARCH}/lib"
+export PKG_CONFIG_PATH=${TARGETDIR}/carla${ARCH}/lib/pkgconfig
 export RCC_QT4=/usr/bin/rcc
 export LINUX="true"
 
