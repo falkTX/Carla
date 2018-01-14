@@ -317,6 +317,18 @@ def split2str(split):
     else:
         return "SPLIT_???"
 
+def getStoredCanvasPosition(key, fallback_pos):
+    try:
+        return canvas.settings.value("CanvasPositions/" + key, fallback_pos, type=QPointF)
+    except:
+        return fallback_pos
+
+def getStoredCanvasSplit(group_name, fallback_split_mode):
+    try:
+        return canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, fallback_split_mode, type=int)
+    except:
+        return fallback_split_mode
+
 # PatchCanvas API
 def setOptions(new_options):
     if canvas.initiated: return
@@ -453,7 +465,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         isHardware = bool(icon == ICON_HARDWARE)
 
         if features.handle_group_pos:
-            split = canvas.settings.value("CanvasPositions/%s_SPLIT" % group_name, SPLIT_YES if isHardware else split, type=int)
+            split = getStoredCanvasSplit(group_name, SPLIT_YES if isHardware else split)
         elif isHardware:
             split = SPLIT_YES
 
@@ -472,7 +484,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_box.setSplit(True, PORT_MODE_OUTPUT)
 
         if features.handle_group_pos:
-            group_box.setPos(canvas.settings.value("CanvasPositions/%s_OUTPUT" % group_name, CanvasGetNewGroupPos(False), type=QPointF))
+            group_box.setPos(getStoredCanvasPosition(group_name + "_OUTPUT", CanvasGetNewGroupPos(False)))
         else:
             group_box.setPos(CanvasGetNewGroupPos(False))
 
@@ -482,7 +494,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_dict.widgets[1] = group_sbox
 
         if features.handle_group_pos:
-            group_sbox.setPos(canvas.settings.value("CanvasPositions/%s_INPUT" % group_name, CanvasGetNewGroupPos(True), type=QPointF))
+            group_sbox.setPos(getStoredCanvasPosition(group_name + "_INPUT", CanvasGetNewGroupPos(True)))
         else:
             group_sbox.setPos(CanvasGetNewGroupPos(True))
 
@@ -498,7 +510,7 @@ def addGroup(group_id, group_name, split=SPLIT_UNDEF, icon=ICON_APPLICATION):
         group_box.setSplit(False)
 
         if features.handle_group_pos:
-            group_box.setPos(canvas.settings.value("CanvasPositions/%s" % group_name, CanvasGetNewGroupPos(False), type=QPointF))
+            group_box.setPos(getStoredCanvasPosition(group_name, CanvasGetNewGroupPos(False)))
         else:
             # Special ladish fake-split groups
             horizontal = bool(icon == ICON_HARDWARE or icon == ICON_LADISH_ROOM)
