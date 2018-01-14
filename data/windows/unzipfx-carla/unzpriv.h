@@ -2698,6 +2698,8 @@ char    *GetLoadPath     OF((__GPRO));                              /* local */
  *      (fputs((char *)(sprintf sprf_arg, (buf)), \
  *             (flag)&1? stderr : stdout) < 0)
  */
+static inline void noop(void) {}
+#define Info(...) noop()
 #ifndef Info   /* may already have been defined for redirection */
 #  ifdef FUNZIP
 #    define Info(buf,flag,sprf_arg) \

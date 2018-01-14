@@ -237,8 +237,6 @@ class CarlaApplication(object):
         else:
             self.fApp.setWindowIcon(QIcon(":/scalable/carla.svg"))
 
-        print("Using \"%s\" theme" % self.fApp.style().objectName())
-
     def exec_(self):
         return self.fApp.exec_()
 

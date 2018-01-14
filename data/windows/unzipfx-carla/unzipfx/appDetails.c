@@ -46,6 +46,9 @@ int sfx_app_autorun_now()
         strcat(cmdBuf, sfx_app_argv[i]);
     }
 
+    puts(SFX_APP_BANNER);
+    printf("Launching: '%s'\n", cmdBuf);
+
 #ifdef WIN32
     ShellExecute(NULL, "open", cmdBuf, NULL, NULL, SW_SHOWNORMAL);
     return 0;
