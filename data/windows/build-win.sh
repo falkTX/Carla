@@ -1,44 +1,76 @@
 #!/bin/bash
 
-### fluidsynth.pc:
-# -lglib-2.0 -lgthread-2.0 -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -ldsound -lwinmm -lole32 -lws2_32
-### linuxsampler.pc:
-# -L${prefix}/lib/libgig -lgig -lsndfile -lFLAC -lvorbisenc -lvorbis -logg -lm -lrpcrt4
+# ---------------------------------------------------------------------------------------------------------------------
+# check input
+
+ARCH="${1}"
+
+if [ x"${ARCH}" != x"32" ] && [ x"${ARCH}" != x"64" ]; then
+  echo "usage: $0 32|64"
+  exit 1
+fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# stop on error
 
 set -e
 
-MINGW=i686-w64-mingw32
-MINGW_PATH=/opt/mingw32
-
-JOBS="-j 8"
+# ---------------------------------------------------------------------------------------------------------------------
+# cd to correct path
 
 if [ ! -f Makefile ]; then
-  cd ../..
+  cd $(dirname $0)/../..
 fi
+
+# ---------------------------------------------------------------------------------------------------------------------
+# set variables
+
+source data/windows/common.env
+
+MAKE_ARGS="${MAKE_ARGS} HAVE_QT4=false HAVE_QT5=false HAVE_PYQT5=true HAVE_FFMPEG=false EXTERNAL_PLUGINS=false"
+
+if [ x"${ARCH}" != x"32" ]; then
+  CPUARCH="x86_64"
+else
+  CPUARCH="i686"
+fi
+
+MINGW_PREFIX="${CPUARCH}-w64-mingw32"
+
+export PREFIX=${TARGETDIR}/carla-w${ARCH}
+export PATH=/opt/mingw${ARCH}/bin:${PREFIX}/bin/usr/sbin:/usr/bin:/sbin:/bin
+export PKG_CONFIG_PATH=${PREFIX}/lib/pkgconfig
+
+export AR=${MINGW_PREFIX}-ar
+export CC=${MINGW_PREFIX}-gcc
+export CXX=${MINGW_PREFIX}-g++
+export STRIP=${MINGW_PREFIX}-strip
+export WINDRES=${MINGW_PREFIX}-windres
+
+export CFLAGS="-DBUILDING_CARLA_FOR_WINDOWS -DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
+export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${ARCH}/include -I/opt/mingw${ARCH}/${MINGW_PREFIX}/include"
+export CXXFLAGS="${CFLAGS}"
+export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${ARCH}/lib -L/opt/mingw${ARCH}/${MINGW_PREFIX}/lib"
 
 export WIN32=true
 
-export PATH=$MINGW_PATH/bin:$MINGW_PATH/$MINGW/bin:$PATH
-export CC=$MINGW-gcc
-export CXX=$MINGW-g++
-export WINDRES=$MINGW-windres
+if [ x"${ARCH}" != x"32" ]; then
+  export WIN64=true
+fi
 
-export CFLAGS="-DBUILDING_CARLA_FOR_WINDOWS -DPTW32_STATIC_LIB"
-export CXXFLAGS="$CFLAGS -DFLUIDSYNTH_NOT_A_DLL"
-unset CPPFLAGS
-unset LDFLAGS
-
-export WINEARCH=win32
-export WINEPREFIX=~/.winepy3_x86
+export WINEARCH=win${ARCH}
+export WINEPREFIX=~/.winepy3_x${ARCH}
 export PYTHON_EXE="wine C:\\\\Python34\\\\python.exe"
 
 export CXFREEZE="$PYTHON_EXE C:\\\\Python34\\\\Scripts\\\\cxfreeze"
 export PYUIC="$PYTHON_EXE -m PyQt5.uic.pyuic"
 export PYRCC="wine C:\\\\Python34\\\\Lib\\\\site-packages\\\\PyQt5\\\\pyrcc5.exe"
 
-export DEFAULT_QT=5
+make ${MAKE_ARGS}
 
-make BUILDING_FOR_WINDOWS=true HAVE_ZYN_DEPS=false $JOBS
+if [ x"${ARCH}" != x"32" ]; then
+  make ${MAKE_ARGS} HAVE_LIBLO=false LDFLAGS="-L${TARGETDIR}/carla-w32/lib -L/opt/mingw32/lib -L/opt/mingw32/i686-w64-mingw32/lib" win32
+fi
 
 export PYTHONPATH=`pwd`/source
 
@@ -106,15 +138,15 @@ chmod +x Carla.exe
 rm -f Carla.zip CarlaControl.zip
 
 # Create release zip
-rm -rf Carla-2.0beta5-win32
-mkdir Carla-2.0beta5-win32
-mkdir Carla-2.0beta5-win32/vcredist
-cp Carla.exe README.txt Carla-2.0beta5-win32
-cp ~/.cache/winetricks/vcrun2010/vcredist_x86.exe Carla-2.0beta5-win32/vcredist
-zip -r -9 Carla-2.0beta5-win32.zip Carla-2.0beta5-win32
+rm -rf Carla-2.0beta5-win${ARCH}
+mkdir Carla-2.0beta5-win${ARCH}
+mkdir Carla-2.0beta5-win${ARCH}/vcredist
+cp Carla.exe README.txt Carla-2.0beta5-win${ARCH}
+cp ~/.cache/winetricks/vcrun2010/vcredist_x${ARCH}.exe Carla-2.0beta5-win${ARCH}/vcredist
+zip -r -9 Carla-2.0beta5-win${ARCH}.zip Carla-2.0beta5-win${ARCH}
 
 cd ../..
 
 # Testing:
-echo "export WINEPREFIX=~/.winepy3_x86"
+echo "export WINEPREFIX=~/.winepy3_x${ARCH}"
 echo "$PYTHON_EXE ./source/carla"

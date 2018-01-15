@@ -1,0 +1,10 @@
+--- linuxsampler-static-1.0.0+svn2497.orig/src/effects/LadspaEffect.cpp
++++ linuxsampler-static-1.0.0+svn2497/src/effects/LadspaEffect.cpp
+@@ -374,6 +374,7 @@ static String defaultLadspaDir() {
+ 
+ std::vector<EffectInfo*> LadspaEffect::AvailableEffects() {
+     std::vector<EffectInfo*> v; // will be filled in callback function _foundLadspaDll()
++    return v;
+ 
+     char* pcLadspaPath = getenv("LADSPA_PATH");
+     String ladspaDir = pcLadspaPath ? pcLadspaPath : defaultLadspaDir();

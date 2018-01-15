@@ -1,0 +1,11 @@
+--- a/src/fluid_dll.c
++++ b/src/fluid_dll.c
+@@ -76,7 +76,7 @@ void* fluid_get_hinstance(void)
+   return (void*) fluid_hinstance;
+ }
+ 
+-static long FAR PASCAL fluid_win32_wndproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
++static LRESULT CALLBACK fluid_win32_wndproc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+ {
+   switch (message) {
+   case WM_CREATE:

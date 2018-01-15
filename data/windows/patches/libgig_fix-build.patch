@@ -1,0 +1,29 @@
+diff --git a/src/DLS.h b/src/DLS.h
+index 065bfe6..6c9d76c 100644
+--- a/src/DLS.h
++++ b/src/DLS.h
+@@ -515,10 +515,10 @@ namespace DLS {
+             virtual void Save(const String& Path, progress_t* pProgress = NULL);
+             virtual void Save(progress_t* pProgress = NULL);
+             virtual ~File();
+-        protected:
+             typedef std::list<Sample*>     SampleList;
+             typedef std::list<Instrument*> InstrumentList;
+ 
++        protected:
+             RIFF::File*              pRIFF;
+             std::list<RIFF::File*>   ExtensionFiles;
+             SampleList*              pSamples;
+diff --git a/src/gig.cpp b/src/gig.cpp
+index 6a24f16..902e1ae 100644
+--- a/src/gig.cpp
++++ b/src/gig.cpp
+@@ -4181,7 +4181,7 @@ namespace {
+      * @param pGroup - script's new group
+      */
+     void Script::SetGroup(ScriptGroup* pGroup) {
+-        if (this->pGroup = pGroup) return;
++        if (this->pGroup == pGroup) return;
+         if (pChunk)
+             pChunk->GetParent()->MoveSubChunk(pChunk, pGroup->pList);
+         this->pGroup = pGroup;
