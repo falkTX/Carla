@@ -42,7 +42,7 @@ HINSTANCE water_getCurrentModuleInstanceHandle() noexcept
 #include "text/StringArray.cpp"
 #include "text/String.cpp"
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(BUILDING_CARLA_FOR_WINDOWS)
 # include "files/DirectoryIterator.cpp"
 # include "files/FileInputStream.cpp"
 # include "files/FileOutputStream.cpp"

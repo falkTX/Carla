@@ -37,7 +37,9 @@
 #include "water/misc/Time.h"
 #include "water/text/String.h"
 
-#ifndef CARLA_OS_WIN
+#ifdef CARLA_OS_WIN
+# include <ctime>
+#else
 # include <cerrno>
 # include <signal.h>
 # include <sys/wait.h>

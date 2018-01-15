@@ -801,7 +801,7 @@ int carla_cocoa_get_window(void* nsViewPtr)
 
 #include "CarlaPipeUtils.cpp"
 
-#ifndef DEBUG
+#if !(defined(DEBUG) || defined(BUILDING_CARLA_FOR_WINDOWS))
 # include "water/misc/Time.cpp"
 #endif
 
