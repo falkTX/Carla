@@ -143,9 +143,6 @@ endif
 
 ifeq ($(DEBUG),true)
 BASE_FLAGS += -DDEBUG -O0 -g
-ifeq ($(WIN32),true)
-BASE_FLAGS += -msse -msse2
-endif
 LINK_OPTS   =
 else
 BASE_FLAGS += -DNDEBUG $(BASE_OPTS) -fvisibility=hidden
