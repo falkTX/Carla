@@ -248,6 +248,7 @@ if [ ! -f linuxsampler-${LINUXSAMPLER_VERSION}/build-done ]; then
   make -f Makefile.svn configure
   ./configure \
     --enable-static --disable-shared --prefix=${PREFIX} \
+    --enable-signed-triang-algo=diharmonic --enable-unsigned-triang-algo=diharmonic --enable-subfragment-size=8 \
     --disable-alsa-driver --disable-arts-driver --disable-jack-driver \
     --disable-asio-driver --disable-midishare-driver --disable-mmemidi-driver \
     --disable-coreaudio-driver --disable-coremidi-driver \
