@@ -131,12 +131,18 @@ chmod +x Carla.exe
 # Cleanup
 rm -f Carla.zip CarlaControl.zip
 
+if [ x"${ARCH}" = x"32" ]; then
+  VCARCH="86"
+else
+  VCARCH="${ARCH}"
+fi
+
 # Create release zip
 rm -rf ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}
 mkdir ${PKG_FOLDER}/vcredist
 cp Carla.exe README.txt ${PKG_FOLDER}
-cp ~/.cache/winetricks/vcrun2010/vcredist_x${ARCH}.exe ${PKG_FOLDER}/vcredist
+cp ~/.cache/winetricks/vcrun2010/vcredist_x${VCARCH}.exe ${PKG_FOLDER}/vcredist
 zip -r -9 ${PKG_FOLDER}.zip ${PKG_FOLDER}
 
 cd ../..

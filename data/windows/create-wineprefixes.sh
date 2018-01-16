@@ -1,11 +1,12 @@
 #!/bin/bash
 
 rm -rf ~/.winepy3
+rm -rf ~/.winepy3_x32
 rm -rf ~/.winepy3_x86
 rm -rf ~/.winepy3_x64
 
 export WINEARCH=win32
-export WINEPREFIX=~/.winepy3_x86
+export WINEPREFIX=~/.winepy3_x32
 wineboot
 winetricks vcrun2010
 winetricks corefonts
