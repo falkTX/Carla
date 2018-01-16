@@ -327,6 +327,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_PREVENT_BAD_BEHAVIOUR";
     case ENGINE_OPTION_FRONTEND_WIN_ID:
         return "ENGINE_OPTION_FRONTEND_WIN_ID";
+#ifndef CARLA_OS_WIN
     case ENGINE_OPTION_WINE_EXECUTABLE:
         return "ENGINE_OPTION_WINE_EXECUTABLE";
     case ENGINE_OPTION_WINE_AUTO_PREFIX:
@@ -339,6 +340,7 @@ const char* EngineOption2Str(const EngineOption option) noexcept
         return "ENGINE_OPTION_WINE_BASE_RT_PRIO";
     case ENGINE_OPTION_WINE_SERVER_RT_PRIO:
         return "ENGINE_OPTION_WINE_SERVER_RT_PRIO";
+#endif
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         return "ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT";
     }

@@ -1084,6 +1084,7 @@ typedef enum {
      */
     ENGINE_OPTION_FRONTEND_WIN_ID = 17,
 
+#ifndef CARLA_OS_WIN
     /*!
      * Set path to wine executable.
      */
@@ -1113,6 +1114,7 @@ typedef enum {
      * Wine server realtime priority.
      */
     ENGINE_OPTION_WINE_SERVER_RT_PRIO = 23,
+#endif
 
     /*!
      * Capture console output into debug callbacks.

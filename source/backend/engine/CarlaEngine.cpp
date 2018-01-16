@@ -1571,6 +1571,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         pData->options.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
 
+#ifndef CARLA_OS_WIN
     case ENGINE_OPTION_WINE_EXECUTABLE:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 
@@ -1608,6 +1609,7 @@ void CarlaEngine::setOption(const EngineOption option, const int value, const ch
         CARLA_SAFE_ASSERT_RETURN(value >= 1 && value <= 99,);
         pData->options.wine.serverRtPrio = value;
         break;
+#endif
 
     case ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         break;

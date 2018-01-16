@@ -260,6 +260,7 @@ static void carla_engine_init_common()
         gStandalone.engine->setOption(CB::ENGINE_OPTION_FRONTEND_WIN_ID, 0, "0");
     }
 
+# ifndef CARLA_OS_WIN
     if (gStandalone.engineOptions.wine.executable != nullptr && gStandalone.engineOptions.wine.executable[0] != '\0')
         gStandalone.engine->setOption(CB::ENGINE_OPTION_WINE_EXECUTABLE, 0, gStandalone.engineOptions.wine.executable);
 
@@ -271,7 +272,7 @@ static void carla_engine_init_common()
     gStandalone.engine->setOption(CB::ENGINE_OPTION_WINE_RT_PRIO_ENABLED, gStandalone.engineOptions.wine.rtPrio ? 1 : 0, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_WINE_BASE_RT_PRIO, gStandalone.engineOptions.wine.baseRtPrio, nullptr);
     gStandalone.engine->setOption(CB::ENGINE_OPTION_WINE_SERVER_RT_PRIO, gStandalone.engineOptions.wine.serverRtPrio, nullptr);
-
+# endif
 #endif
 }
 
@@ -348,13 +349,6 @@ bool carla_engine_init_bridge(const char audioBaseName[6+1], const char rtClient
         carla_stderr2("Engine is already running");
         gStandalone.lastError = "Engine is already running";
         return false;
-    }
-
-    // TODO: make this an option, put somewhere else
-    if (std::getenv("WINE_RT") == nullptr)
-    {
-        carla_setenv("WINE_RT", "55");
-        carla_setenv("WINE_SVR_RT", "70");
     }
 
     gStandalone.engine = CarlaEngine::newBridge(audioBaseName, rtClientBaseName, nonRtClientBaseName, nonRtServerBaseName);
@@ -604,6 +598,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         gStandalone.engineOptions.frontendWinId = static_cast<uintptr_t>(winId);
     }   break;
 
+#ifndef CARLA_OS_WIN
     case CB::ENGINE_OPTION_WINE_EXECUTABLE:
         CARLA_SAFE_ASSERT_RETURN(valueStr != nullptr && valueStr[0] != '\0',);
 
@@ -641,6 +636,7 @@ void carla_set_engine_option(EngineOption option, int value, const char* valueSt
         CARLA_SAFE_ASSERT_RETURN(value >= 1 && value <= 99,);
         gStandalone.engineOptions.wine.serverRtPrio = value;
         break;
+#endif
 
     case CB::ENGINE_OPTION_DEBUG_CONSOLE_OUTPUT:
         gStandalone.logThreadEnabled = (value != 0);

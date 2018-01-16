@@ -215,8 +215,7 @@ EngineOptions::EngineOptions() noexcept
       binaryDir(nullptr),
       resourceDir(nullptr),
       preventBadBehaviour(false),
-      frontendWinId(0),
-      wine() {}
+      frontendWinId(0) {}
 
 EngineOptions::~EngineOptions() noexcept
 {
@@ -281,6 +280,7 @@ EngineOptions::~EngineOptions() noexcept
     }
 }
 
+#ifndef CARLA_OS_WIN
 EngineOptions::Wine::Wine() noexcept
     : executable(nullptr),
       autoPrefix(true),
@@ -303,6 +303,7 @@ EngineOptions::Wine::~Wine() noexcept
         fallbackPrefix = nullptr;
     }
 }
+#endif
 
 // -----------------------------------------------------------------------
 // EngineTimeInfoBBT

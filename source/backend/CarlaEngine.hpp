@@ -248,6 +248,7 @@ struct CARLA_API EngineOptions {
     bool preventBadBehaviour;
     uintptr_t frontendWinId;
 
+#ifndef CARLA_OS_WIN
     struct Wine {
         const char* executable;
 
@@ -262,6 +263,7 @@ struct CARLA_API EngineOptions {
         ~Wine() noexcept;
         CARLA_DECLARE_NON_COPY_STRUCT(Wine)
     } wine;
+#endif
 
 #ifndef DOXYGEN
     EngineOptions() noexcept;

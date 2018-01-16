@@ -93,10 +93,15 @@ public:
           fBinary(),
           fLabel(),
           fShmIds(),
+#ifndef CARLA_OS_WIN
           fWinePrefix(),
+#endif
           fProcess() {}
 
-    void setData(const char* const winePrefix,
+    void setData(
+#ifndef CARLA_OS_WIN
+                 const char* const winePrefix,
+#endif
                  const char* const binary,
                  const char* const label,
                  const char* const shmIds) noexcept
@@ -105,7 +110,9 @@ public:
         CARLA_SAFE_ASSERT_RETURN(shmIds != nullptr && shmIds[0] != '\0',);
         CARLA_SAFE_ASSERT(! isThreadRunning());
 
+#ifndef CARLA_OS_WIN
         fWinePrefix = winePrefix;
+#endif
         fBinary = binary;
         fShmIds = shmIds;
 
@@ -335,7 +342,9 @@ private:
     String fBinary;
     String fLabel;
     String fShmIds;
+#ifndef CARLA_OS_WIN
     String fWinePrefix;
+#endif
 
     ScopedPointer<ChildProcess> fProcess;
 
@@ -364,7 +373,9 @@ public:
           fShmRtClientControl(),
           fShmNonRtClientControl(),
           fShmNonRtServerControl(),
+#ifndef CARLA_OS_WIN
           fWinePrefix(),
+#endif
           fReceivingParamText(),
           fInfo(),
           fUniqueId(0),
@@ -2296,6 +2307,7 @@ public:
         fShmRtClientControl.writeOpcode(kPluginBridgeRtClientNull);
         fShmRtClientControl.commitWrite();
 
+#ifndef CARLA_OS_WIN
         // ---------------------------------------------------------------
         // set wine prefix
 
@@ -2318,6 +2330,7 @@ public:
                     fWinePrefix = File::getSpecialLocation(File::userHomeDirectory).getFullPathName() + "/.wine";
             }
         }
+#endif
 
         // ---------------------------------------------------------------
         // init bridge thread
@@ -2331,7 +2344,11 @@ public:
             std::strncpy(shmIdsStr+6*2, &fShmNonRtClientControl.filename[fShmNonRtClientControl.filename.length()-6], 6);
             std::strncpy(shmIdsStr+6*3, &fShmNonRtServerControl.filename[fShmNonRtServerControl.filename.length()-6], 6);
 
-            fBridgeThread.setData(fWinePrefix.toRawUTF8(), bridgeBinary, label, shmIdsStr);
+            fBridgeThread.setData(
+#ifndef CARLA_OS_WIN
+                                  fWinePrefix.toRawUTF8(),
+#endif
+                                  bridgeBinary, label, shmIdsStr);
             fBridgeThread.startThread();
         }
 
@@ -2428,7 +2445,9 @@ private:
     BridgeNonRtClientControl fShmNonRtClientControl;
     BridgeNonRtServerControl fShmNonRtServerControl;
 
+#ifndef CARLA_OS_WIN
     String fWinePrefix;
+#endif
 
     class ReceivingParamText {
     public:
