@@ -128,6 +128,10 @@ endif
 ifneq ($(WIN32),true)
 # Not needed for Windows
 BASE_FLAGS += -fPIC -DPIC
+else
+ifeq ($(BUILDING_FOR_WINDOWS),true)
+BASE_FLAGS += -DBUILDING_CARLA_FOR_WINDOWS
+endif
 endif
 
 ifeq ($(CLANG),true)
