@@ -27,6 +27,8 @@ fi
 
 source data/windows/common.env
 
+PKG_FOLDER="Carla_2.0-beta6-win${ARCH}"
+
 if [ x"${ARCH}" != x"32" ]; then
   CPUARCH="x86_64"
 else
@@ -130,11 +132,11 @@ chmod +x Carla.exe
 rm -f Carla.zip CarlaControl.zip
 
 # Create release zip
-rm -rf Carla-2.0beta5-win${ARCH}
-mkdir Carla-2.0beta5-win${ARCH}
-mkdir Carla-2.0beta5-win${ARCH}/vcredist
-cp Carla.exe README.txt Carla-2.0beta5-win${ARCH}
-cp ~/.cache/winetricks/vcrun2010/vcredist_x${ARCH}.exe Carla-2.0beta5-win${ARCH}/vcredist
-zip -r -9 Carla-2.0beta5-win${ARCH}.zip Carla-2.0beta5-win${ARCH}
+rm -rf ${PKG_FOLDER}
+mkdir ${PKG_FOLDER}
+mkdir ${PKG_FOLDER}/vcredist
+cp Carla.exe README.txt ${PKG_FOLDER}
+cp ~/.cache/winetricks/vcrun2010/vcredist_x${ARCH}.exe ${PKG_FOLDER}/vcredist
+zip -r -9 ${PKG_FOLDER}.zip ${PKG_FOLDER}
 
 cd ../..
