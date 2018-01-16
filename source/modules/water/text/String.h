@@ -780,6 +780,16 @@ public:
     */
     String unquoted() const;
 
+    /** Adds quotation marks around a string.
+        This will return a copy of the string with a quote at the start and end, (but won't
+        add the quote if there's already one there, so it's safe to call this on strings that
+        may already have quotes around them).
+        Note that this is a const method, and won't alter the string itself.
+        @param quoteCharacter   the character to add at the start and end
+        @see isQuotedString, unquoted
+    */
+    String quoted (water_uchar quoteCharacter = '"') const;
+
     //==============================================================================
     /** Creates a string which is a version of a string repeated and joined together.
 
@@ -1102,11 +1112,11 @@ private:
 
 //==============================================================================
 /** Concatenates two strings. */
-String operator+ (const char* string1,     const String& string2);
+String operator+ (const char* string1, const String& string2);
 /** Concatenates two strings. */
-String operator+ (char string1,            const String& string2);
+String operator+ (char string1, const String& string2);
 /** Concatenates two strings. */
-String operator+ (water_uchar string1,      const String& string2);
+String operator+ (water_uchar string1, const String& string2);
 
 /** Concatenates two strings. */
 String operator+ (String string1, const String& string2);

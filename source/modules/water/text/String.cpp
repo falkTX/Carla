@@ -1523,6 +1523,22 @@ String String::unquoted() const
     return substring (dropAtStart, len - dropAtEnd);
 }
 
+String String::quoted (water_uchar quoteCharacter) const
+{
+    if (isEmpty())
+        return charToString (quoteCharacter) + quoteCharacter;
+
+    String t (*this);
+
+    if (! t.startsWithChar (quoteCharacter))
+        t = charToString (quoteCharacter) + t;
+
+    if (! t.endsWithChar (quoteCharacter))
+        t += quoteCharacter;
+
+    return t;
+}
+
 //==============================================================================
 static String::CharPointerType findTrimmedEnd (const String::CharPointerType start,
                                                String::CharPointerType end)
