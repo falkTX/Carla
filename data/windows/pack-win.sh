@@ -45,7 +45,7 @@ export CXX=${MINGW_PREFIX}-g++
 export STRIP=${MINGW_PREFIX}-strip
 export WINDRES=${MINGW_PREFIX}-windres
 
-export CFLAGS="-DBUILDING_CARLA_FOR_WINDOWS -DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
+export CFLAGS="-DPTW32_STATIC_LIB -DFLUIDSYNTH_NOT_A_DLL"
 export CFLAGS="${CFLAGS} -I${PREFIX}/include -I/opt/mingw${ARCH}/include -I/opt/mingw${ARCH}/${MINGW_PREFIX}/include"
 export CXXFLAGS="${CFLAGS}"
 export LDFLAGS="-L${PREFIX}/lib -L/opt/mingw${ARCH}/lib -L/opt/mingw${ARCH}/${MINGW_PREFIX}/lib"
