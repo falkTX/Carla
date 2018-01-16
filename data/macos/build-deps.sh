@@ -55,6 +55,7 @@ rm -rf qtsvg-*
 rm -rf sip-*
 rm -rf zlib-*
 rm -rf PaxHeaders.*
+exit 0
 
 }
 
