@@ -1484,7 +1484,7 @@ class PluginDatabaseW(QDialog):
             bridgeText = self.tr("No")
 
         else:
-            if LINUX or MACOS:
+            if WINDOWS:
                 if plugin['build'] == BINARY_WIN32:
                     typeText = "32bit"
                 elif plugin['build'] == BINARY_WIN64:
