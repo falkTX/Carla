@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla plugin database code
-# Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -916,6 +916,12 @@ class PluginRefreshW(QDialog):
                 self.ui.ch_win32.setVisible(False)
                 self.ui.ico_win32.setVisible(False)
                 self.ui.label_win32.setVisible(False)
+
+            self.ui.ch_posix32.setEnabled(False)
+            self.ui.ch_posix32.setVisible(False)
+            self.ui.ch_posix64.setEnabled(False)
+            self.ui.ch_posix64.setVisible(False)
+
         else:
             if kIs64bit:
                 hasNonNative = bool(hasPosix32 or hasWin32 or hasWin64)
@@ -977,7 +983,7 @@ class PluginRefreshW(QDialog):
             self.ui.label_win64.hide()
             self.ui.sep_format.hide()
 
-        elif not host.showWineBridges:
+        elif not (WINDOWS or host.showWineBridges):
             self.ui.ch_win32.setChecked(False)
             self.ui.ch_win32.setEnabled(False)
             self.ui.ch_win32.setVisible(False)
