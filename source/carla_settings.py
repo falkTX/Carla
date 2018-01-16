@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Carla settings code
-# Copyright (C) 2011-2014 Filipe Coelho <falktx@falktx.com>
+# Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -251,6 +251,10 @@ class CarlaSettingsW(QDialog):
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
             self.ui.lw_page.hideRow(self.TAB_INDEX_ENGINE)
             self.ui.lw_page.hideRow(self.TAB_INDEX_PATHS)
+            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+            self.ui.ch_main_experimental.setEnabled(False)
+            self.ui.group_main_experimental.setEnabled(False)
+            self.ui.group_main_experimental.setVisible(False)
 
         elif not hasCanvas:
             self.ui.lw_page.hideRow(self.TAB_INDEX_CANVAS)
@@ -378,14 +382,15 @@ class CarlaSettingsW(QDialog):
         # ----------------------------------------------------------------------------------------------------
         # Main
 
-        self.ui.ch_main_experimental.setChecked(self.host.experimental)
+        if not self.host.isControl:
+            self.ui.ch_main_experimental.setChecked(self.host.experimental)
 
-        if not self.host.experimental:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
-            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+            if not self.host.experimental:
+                self.ui.lw_page.hideRow(self.TAB_INDEX_EXPERIMENTAL)
+                self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
-        elif not self.host.showWineBridges:
-            self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
+            elif not self.host.showWineBridges:
+                self.ui.lw_page.hideRow(self.TAB_INDEX_WINE)
 
         # ----------------------------------------------------------------------------------------------------
         # Engine
