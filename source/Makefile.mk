@@ -114,12 +114,6 @@ LINK_OPTS += -Wl,--strip-all
 endif
 endif
 
-ifeq ($(RASPPI),true)
-# Raspberry-Pi optimization flags
-BASE_OPTS  = -O3 -ffast-math -march=armv6 -mfpu=vfp -mfloat-abi=hard
-LINK_OPTS  = -Wl,-O1 -Wl,--as-needed -Wl,--strip-all
-endif
-
 ifeq ($(NOOPT),true)
 # No CPU-specific optimization flags
 BASE_OPTS  = -O3 -ffast-math -fdata-sections -ffunction-sections
@@ -136,13 +130,6 @@ endif
 
 ifeq ($(CLANG),true)
 BASE_FLAGS += -Wabsolute-value
-endif
-
-ifeq ($(STOAT),true)
-CC  = clang
-CXX = clang++
-BASE_FLAGS += -emit-llvm
-BASE_OPTS  += -O0
 endif
 
 ifeq ($(DEBUG),true)
