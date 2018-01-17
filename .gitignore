@@ -100,7 +100,8 @@ zita-bls1-ui
 zita-rev1-ui
 zynaddsubfx-ui
 
-data/stoat-callgraph.png
+stoat-output.png
+
 data/linux/unzipfx2cat32
 data/linux/unzipfx2cat64
 data/macos/*-svn/
