@@ -1,0 +1,217 @@
+cos cosl cosf
+sin sinl sinf
+tan tanl tanf
+tanh tanhl tanhf
+abs fabs fabsf fabsl cabs
+fmin fminf fminl
+fmax fmaxf fmaxl
+exp exp2f expf expl
+pow powf powl
+fmod fmodf fmodl
+memset memcpy
+strlen strcpy strcmp snprintf strtol strcasecmp
+toupper towupper
+strcasestr
+index
+jack_port_get_buffer
+jack_midi_clear_buffer jack_midi_get_event_count jack_midi_event_get
+jack_get_sample_rate jack_ringbuffer_read_space jack_ringbuffer_read_advance
+jack_ringbuffer_write_space
+jack_ringbuffer_get_read_vector
+jack_transport_query
+jack_get_current_transport_frame
+jack_get_buffer_size
+jack_midi_event_write
+jack_ringbuffer_peek
+jack_last_frame_time
+jack_midi_max_event_size
+jack_client_thread_id
+jack_get_cycle_times
+
+std::__throw_bad_function_call
+std::__throw_bad_alloc
+std::_Rb_tree_increment
+sem_post sem_getvalue sem_trywait
+pthread_cond_signal
+pthread_mutex_trylock
+pthread_mutex_unlock
+pthread_rwlock_unlock
+pthread_rwlock_tryrdlock
+pthread_self
+pthread_setspecific
+pthread_getspecific
+jack_ringbuffer_read jack_ringbuffer_write
+jack_midi_event_reserve
+(process_callback)
+isalnum isalpha isascii isblank iscntrl isdigit isgraph islower isprint ispunct
+isspace isupper isxdigit
+sprintf
+
+# std::basic_string<char, std::char_traits<char>, std::allocator<char> >::c_str
+_ZNKSs5c_strEv
+_ZNKSs6lengthEv
+
+ceil
+ceilf
+rint
+isnan
+
+atoi
+atof
+
+strncmp
+strstr
+memmove
+strncpy
+sinh
+log logf logl
+log10 log10f log10l
+log2 log2f log2l
+asinh
+atan
+atanh
+atanf
+sqrt
+floor
+floorf
+sqrtf
+ffs ffsl ffsll
+rint rintf rintl
+lrint lrintf lrintl
+llrint llrintf llrintl
+nearbyintf
+round roundf roundl
+trunc truncf truncl
+modf modff modfl
+carg
+asinf
+copysign copysignf copysignl
+errx
+warnx
+cexp
+cabsf
+__fmod_finite
+__fmodf_finite
+__expf_finite
+__logf_finite
+__log_finite
+__log10_finite
+__exp_finite
+__expf_finite
+__muldc3
+__asinf_finite
+__log10f_finite
+__sinh_finite
+__sinhf_finite
+__ctype_b_loc
+
+std::rint
+rint
+strcat
+strncat
+
+memcmp
+vsnprintf
+abort
+
+__assert_fail
+
+fftw_execute
+
+rtosc_message
+rtosc_vmessage
+rtosc_amessage
+rtosc_narguments
+rtosc_type
+rtosc_argument
+rtosc_message_length
+rtosc_message_ring_length
+rtosc_argument_string
+rtosc_bundle
+rtosc_bundle_elements
+rtosc_bundle_fetch
+rtosc_bundle_size
+rtosc_bundle_p
+rtosc_bundle_timetag
+rtosc_match
+rtosc_match_path
+
+rtosc::Ports::dispatch
+rtosc::RtData::RtData
+
+std::__throw_out_of_range
+std::__throw_length_error
+
+__cxa_begin_catch
+__cxa_rethrow
+__cxa_call_unexpected
+__cxa_end_catch
+__cxa_guard_acquire
+__cxa_atexit
+__cxa_guard_release
+__cxa_guard_abort
+__dynamic_cast
+_ZSt9terminatev
+
+rand
+scalbnf
+
+strchr
+__log2_finite
+__divdc3
+__mulsc3
+
+_ZNSt6chrono3_V212system_clock3nowEv
+_ZNSt3__16chrono12steady_clock3nowEv
+
+_ZNSt18condition_variable10notify_allEv
+_ZNSt18condition_variable10notify_oneEv
+
+# hacks here
+struct.rtosc::RtData0
+struct.rtosc::RtData1
+struct.rtosc::RtData2
+
+# This might not be 100% RT safe, but they're external libs outside of our control
+fluid_synth_all_notes_off
+fluid_synth_all_sounds_off
+fluid_synth_cc
+fluid_synth_channel_pressure
+fluid_synth_get_active_voice_count
+fluid_synth_noteoff
+fluid_synth_noteon
+fluid_synth_program_select
+fluid_synth_pitch_bend
+fluid_synth_process
+fluid_synth_write_float
+LinuxSampler::AudioOutputDevice::RenderAudio
+LinuxSampler::AudioOutputDevicePlugin::Render
+LinuxSampler::MidiInputPort::DispatchControlChange
+LinuxSampler::MidiInputPort::DispatchNoteOff
+LinuxSampler::MidiInputPort::DispatchNoteOn
+LinuxSampler::MidiInputPort::DispatchControlChange
+LinuxSampler::MidiInputPort::DispatchRaw
+LinuxSampler::EngineChannel::GetDiskStreamCount
+LinuxSampler::EngineChannel::GetVoiceCount
+
+# TODO
+__carla_fopen
+carla_safe_assert
+carla_stderr2
+carla_sem_timedwait
+
+# TODO: recheck
+LinuxSampler::AudioOutputDevice::Channel
+
+# FIXME: real non-rt safe stuff
+fluid_synth_set_reverb_on
+fluid_synth_set_reverb
+fluid_synth_set_chorus_on
+fluid_synth_set_chorus
+fluid_synth_set_polyphony
+fluid_synth_set_interp_method
+
+# Report upstream
+llround
+llabs
+clock_gettime

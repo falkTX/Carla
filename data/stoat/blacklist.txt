@@ -1,0 +1,13 @@
+malloc free realloc
+fwrite vfprintf
+access
+pthread_mutex_lock
+std::mutex::lock
+std::condition_variable::wait
+getcwd
+open
+_ZNSo5flushEv
+_ZdlPv
+_ZdaPv
+_Znwm
+_Znaj
