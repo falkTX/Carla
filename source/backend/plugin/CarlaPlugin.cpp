@@ -1,6 +1,6 @@
 ﻿/*
  * Carla Plugin
- * Copyright (C) 2011-2017 Filipe Coelho <falktx@falktx.com>
+ * Copyright (C) 2011-2018 Filipe Coelho <falktx@falktx.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -1909,8 +1909,10 @@ bool CarlaPlugin::tryLock(const bool forcedOffline) noexcept
 {
     if (forcedOffline)
     {
+#ifndef STOAT_TEST_BUILD
         pData->masterMutex.lock();
         return true;
+#endif
     }
 
     return pData->masterMutex.tryLock();
